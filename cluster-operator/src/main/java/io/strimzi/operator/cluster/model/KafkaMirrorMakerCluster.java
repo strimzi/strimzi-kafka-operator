@@ -30,8 +30,13 @@ import io.strimzi.api.kafka.model.template.PodTemplate;
 import io.strimzi.api.kafka.model.tracing.JaegerTracing;
 import io.strimzi.api.kafka.model.tracing.OpenTelemetryTracing;
 import io.strimzi.api.kafka.model.tracing.Tracing;
+import io.strimzi.operator.cluster.model.logging.LoggingModel;
+import io.strimzi.operator.cluster.model.logging.SupportsLogging;
+import io.strimzi.operator.cluster.model.metrics.MetricsModel;
+import io.strimzi.operator.cluster.model.metrics.SupportsMetrics;
 import io.strimzi.operator.cluster.model.securityprofiles.ContainerSecurityProviderContextImpl;
 import io.strimzi.operator.cluster.model.securityprofiles.PodSecurityProviderContextImpl;
+import io.strimzi.operator.common.MetricsAndLogging;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.Util;
 
@@ -46,7 +51,7 @@ import static io.strimzi.api.kafka.model.template.DeploymentStrategy.ROLLING_UPD
  * Kafka Mirror Maker 1 model
  */
 @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:NPathComplexity"})
-public class KafkaMirrorMakerCluster extends AbstractModel {
+public class KafkaMirrorMakerCluster extends AbstractModel implements SupportsMetrics, SupportsLogging {
     protected static final String COMPONENT_TYPE = "kafka-mirror-maker";
 
     protected static final String TLS_CERTS_VOLUME_MOUNT_CONSUMER = "/opt/kafka/consumer-certs/";
@@ -61,7 +66,6 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
     private static final int DEFAULT_HEALTHCHECK_TIMEOUT = 5;
     private static final int DEFAULT_HEALTHCHECK_PERIOD = 10;
     private static final Probe READINESS_PROBE_OPTIONS = new ProbeBuilder().withTimeoutSeconds(DEFAULT_HEALTHCHECK_TIMEOUT).withInitialDelaySeconds(DEFAULT_HEALTHCHECK_DELAY).build();
-    protected static final boolean DEFAULT_KAFKA_MIRRORMAKER_METRICS_ENABLED = false;
 
     // Kafka Mirror Maker configuration keys (EnvVariables)
     protected static final String ENV_VAR_PREFIX = "KAFKA_MIRRORMAKER_";
@@ -111,6 +115,8 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
 
     protected String include;
     protected Tracing tracing;
+    private MetricsModel metrics;
+    private LoggingModel logging;
 
     protected KafkaMirrorMakerProducerSpec producer;
     protected KafkaMirrorMakerConsumerSpec consumer;
@@ -137,12 +143,10 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
     protected KafkaMirrorMakerCluster(Reconciliation reconciliation, HasMetadata resource) {
         super(reconciliation, resource, KafkaMirrorMakerResources.deploymentName(resource.getMetadata().getName()), COMPONENT_TYPE);
 
-        this.ancillaryConfigMapName = KafkaMirrorMakerResources.metricsAndLogConfigMapName(cluster);
         this.readinessPath = "/";
         this.readinessProbeOptions = READINESS_PROBE_OPTIONS;
         this.livenessPath = "/";
         this.livenessProbeOptions = READINESS_PROBE_OPTIONS;
-        this.isMetricsEnabled = DEFAULT_KAFKA_MIRRORMAKER_METRICS_ENABLED;
 
         this.mountPath = "/var/lib/kafka";
         this.logAndMetricsConfigVolumeName = "kafka-metrics-and-logging";
@@ -202,12 +206,10 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
 
             result.image = versions.kafkaMirrorMakerImage(spec.getImage(), spec.getVersion());
 
-            result.logging = spec.getLogging();
             result.gcLoggingEnabled = spec.getJvmOptions() == null ? JvmOptions.DEFAULT_GC_LOGGING_ENABLED : spec.getJvmOptions().isGcLoggingEnabled();
             result.jvmOptions = spec.getJvmOptions();
-
-            // Parse different types of metrics configurations
-            ModelUtils.parseMetrics(result, spec);
+            result.metrics = new MetricsModel(spec);
+            result.logging = new LoggingModel(spec, result.getClass().getSimpleName(), false, true);
 
             if (spec.getTemplate() != null) {
                 KafkaMirrorMakerTemplate template = spec.getTemplate();
@@ -227,8 +229,8 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
 
     protected List<ContainerPort> getContainerPortList() {
         List<ContainerPort> portList = new ArrayList<>(1);
-        if (isMetricsEnabled) {
-            portList.add(ContainerUtils.createContainerPort(METRICS_PORT_NAME, METRICS_PORT));
+        if (metrics.isEnabled()) {
+            portList.add(ContainerUtils.createContainerPort(MetricsModel.METRICS_PORT_NAME, MetricsModel.METRICS_PORT));
         }
 
         return portList;
@@ -238,7 +240,7 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
         List<Volume> volumeList = new ArrayList<>(2);
 
         volumeList.add(VolumeUtils.createTempDirVolume(templatePod));
-        volumeList.add(VolumeUtils.createConfigMapVolume(logAndMetricsConfigVolumeName, ancillaryConfigMapName));
+        volumeList.add(VolumeUtils.createConfigMapVolume(logAndMetricsConfigVolumeName, KafkaMirrorMakerResources.metricsAndLogConfigMapName(cluster)));
 
         if (producer.getTls() != null) {
             VolumeUtils.createSecretVolume(volumeList, producer.getTls().getTrustedCertificates(), isOpenShift);
@@ -362,7 +364,7 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
                 getConsumerConfiguration().getConfiguration()));
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_MIRRORMAKER_CONFIGURATION_PRODUCER,
                 getProducerConfiguration().getConfiguration()));
-        varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_MIRRORMAKER_METRICS_ENABLED, String.valueOf(isMetricsEnabled)));
+        varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_MIRRORMAKER_METRICS_ENABLED, String.valueOf(metrics.isEnabled())));
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_MIRRORMAKER_BOOTSTRAP_SERVERS_CONSUMER, consumer.getBootstrapServers()));
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_MIRRORMAKER_BOOTSTRAP_SERVERS_PRODUCER, producer.getBootstrapServers()));
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_MIRRORMAKER_INCLUDE, include));
@@ -480,16 +482,35 @@ public class KafkaMirrorMakerCluster extends AbstractModel {
     }
 
     /**
-     * Generates the logging configuration as a String. The configuration is generated based on the default logging
-     * configuration files from resources, the (optional) inline logging configuration from the custom resource
-     * and the (optional) external logging configuration in a user-provided ConfigMap.
+     * Generates a metrics and logging ConfigMap according to the configuration. If this operand doesn't support logging
+     * or metrics, they will nto be set.
      *
-     * @param externalCm The user-provided ConfigMap with custom Log4j / Log4j2 file
+     * @param metricsAndLogging     The external CMs with logging and metrics configuration
      *
-     * @return String with the Log4j / Log4j2 properties used for configuration
+     * @return The generated ConfigMap
      */
-    @Override
-    public String loggingConfiguration(ConfigMap externalCm) {
-        return loggingConfiguration(externalCm, true);
+    public ConfigMap generateMetricsAndLogConfigMap(MetricsAndLogging metricsAndLogging) {
+        return ConfigMapUtils
+                .createConfigMap(
+                        KafkaMirrorMakerResources.metricsAndLogConfigMapName(cluster),
+                        namespace,
+                        labels,
+                        ownerReference,
+                        MetricsAndLoggingUtils.generateMetricsAndLogConfigMapData(reconciliation, this, metricsAndLogging)
+                );
+    }
+
+    /**
+     * @return  Metrics Model instance for configuring Prometheus metrics
+     */
+    public MetricsModel metrics()   {
+        return metrics;
+    }
+
+    /**
+     * @return  Logging Model instance for configuring logging
+     */
+    public LoggingModel logging()   {
+        return logging;
     }
 }

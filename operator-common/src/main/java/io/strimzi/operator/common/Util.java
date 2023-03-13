@@ -4,16 +4,11 @@
  */
 package io.strimzi.operator.common;
 
-import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.strimzi.api.kafka.model.CertSecretSource;
-import io.strimzi.api.kafka.model.ExternalLogging;
 import io.strimzi.api.kafka.model.GenericSecretSource;
-import io.strimzi.api.kafka.model.JmxPrometheusExporterMetrics;
-import io.strimzi.api.kafka.model.Logging;
-import io.strimzi.api.kafka.model.MetricsConfig;
 import io.strimzi.api.kafka.model.authentication.KafkaClientAuthentication;
 import io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationOAuth;
 import io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationPlain;
@@ -23,7 +18,6 @@ import io.strimzi.certs.CertAndKey;
 import io.strimzi.operator.cluster.model.InvalidResourceException;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.OrderedProperties;
-import io.strimzi.operator.common.operator.resource.ConfigMapOperator;
 import io.strimzi.operator.common.operator.resource.SecretOperator;
 import io.strimzi.operator.common.operator.resource.TimeoutException;
 import io.vertx.core.CompositeFuture;
@@ -31,7 +25,6 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
-import java.time.Instant;
 import org.apache.kafka.common.KafkaFuture;
 import org.apache.kafka.common.config.ConfigResource;
 import org.quartz.CronExpression;
@@ -52,6 +45,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.text.ParseException;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Collections;
@@ -581,27 +575,6 @@ public class Util {
     }
 
     /**
-     * Gets a config map with external logging configuration
-     *
-     * @param configMapOperations   Config Map operator
-     * @param namespace             Namespace of operand which uses the logging
-     * @param logging               Logging configuration from the CR
-     *
-     * @return  Future with the external logging Config Map
-     */
-    public static Future<ConfigMap> getExternalLoggingCm(ConfigMapOperator configMapOperations, String namespace, ExternalLogging logging) {
-        Future<ConfigMap> loggingCmFut;
-        if (logging.getValueFrom() != null
-                && logging.getValueFrom().getConfigMapKeyRef() != null
-                && logging.getValueFrom().getConfigMapKeyRef().getName() != null) {
-            loggingCmFut = configMapOperations.getAsync(namespace, logging.getValueFrom().getConfigMapKeyRef().getName());
-        } else {
-            loggingCmFut = Future.succeededFuture(null);
-        }
-        return loggingCmFut;
-    }
-
-    /**
      * When TLS certificate or Auth certificate (or password) is changed, the has is computed.
      * It is used for rolling updates.
      * @param secretOperations Secret operator
@@ -669,39 +642,6 @@ public class Util {
                     });
         }
         return Future.succeededFuture(0);
-    }
-
-    /**
-     * Creates a Metrics and Logging holder based on the operand logging configuration
-     *
-     * @param reconciliation        Reconciliation marker
-     * @param configMapOperations   ConfigMap operator
-     * @param namespace             Namespace of the operand and Config Maps
-     * @param logging               Logging configuration
-     * @param metricsConfigInCm     Metrics configuration
-     *
-     * @return  Future with the metrics and logging configuration holder
-     */
-    public static Future<MetricsAndLogging> metricsAndLogging(Reconciliation reconciliation,
-                                                              ConfigMapOperator configMapOperations,
-                                                              String namespace,
-                                                              Logging logging, MetricsConfig metricsConfigInCm) {
-        List<Future> configMaps = new ArrayList<>(2);
-        if (metricsConfigInCm instanceof JmxPrometheusExporterMetrics) {
-            configMaps.add(configMapOperations.getAsync(namespace, ((JmxPrometheusExporterMetrics) metricsConfigInCm).getValueFrom().getConfigMapKeyRef().getName()));
-        } else if (metricsConfigInCm == null) {
-            configMaps.add(Future.succeededFuture(null));
-        } else {
-            LOGGER.warnCr(reconciliation, "Unknown metrics type {}", metricsConfigInCm.getType());
-            throw new InvalidResourceException("Unknown metrics type " + metricsConfigInCm.getType());
-        }
-
-        if (logging instanceof ExternalLogging) {
-            configMaps.add(Util.getExternalLoggingCm(configMapOperations, namespace, (ExternalLogging) logging));
-        } else {
-            configMaps.add(Future.succeededFuture(null));
-        }
-        return CompositeFuture.join(configMaps).map(result -> new MetricsAndLogging(result.resultAt(0), result.resultAt(1)));
     }
 
     /**

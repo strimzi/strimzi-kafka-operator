@@ -158,8 +158,8 @@ public class EntityTopicOperatorTest {
         assertThat(entityTopicOperator.kafkaBootstrapServers, is(KafkaResources.bootstrapServiceName(cluster) + ":" + KafkaCluster.REPLICATION_PORT));
         assertThat(entityTopicOperator.resourceLabels, is(ModelUtils.defaultResourceLabels(cluster)));
         assertThat(entityTopicOperator.topicMetadataMaxAttempts, is(toTopicMetadataMaxAttempts));
-        assertThat(entityTopicOperator.getLogging().getType(), is(topicOperatorLogging.getType()));
-        assertThat(((InlineLogging) entityTopicOperator.getLogging()).getLoggers(), is(topicOperatorLogging.getLoggers()));
+        assertThat(entityTopicOperator.logging().getLogging().getType(), is(topicOperatorLogging.getType()));
+        assertThat(((InlineLogging) entityTopicOperator.logging().getLogging()).getLoggers(), is(topicOperatorLogging.getLoggers()));
     }
 
     @ParallelTest
@@ -189,7 +189,7 @@ public class EntityTopicOperatorTest {
         assertThat(entityTopicOperator.readinessProbeOptions.getTimeoutSeconds(), is(EntityTopicOperatorSpec.DEFAULT_HEALTHCHECK_TIMEOUT));
         assertThat(entityTopicOperator.livenessProbeOptions.getInitialDelaySeconds(), is(EntityTopicOperatorSpec.DEFAULT_HEALTHCHECK_DELAY));
         assertThat(entityTopicOperator.livenessProbeOptions.getTimeoutSeconds(), is(EntityTopicOperatorSpec.DEFAULT_HEALTHCHECK_TIMEOUT));
-        assertThat(entityTopicOperator.getLogging(), is(nullValue()));
+        assertThat(entityTopicOperator.logging().getLogging(), is(nullValue()));
     }
 
     @ParallelTest

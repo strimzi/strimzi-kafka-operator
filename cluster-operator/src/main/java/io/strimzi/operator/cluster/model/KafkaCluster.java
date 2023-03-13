@@ -70,6 +70,10 @@ import io.strimzi.api.kafka.model.template.ResourceTemplate;
 import io.strimzi.api.kafka.model.template.StatefulSetTemplate;
 import io.strimzi.certs.CertAndKey;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
+import io.strimzi.operator.cluster.model.logging.LoggingModel;
+import io.strimzi.operator.cluster.model.logging.SupportsLogging;
+import io.strimzi.operator.cluster.model.metrics.MetricsModel;
+import io.strimzi.operator.cluster.model.metrics.SupportsMetrics;
 import io.strimzi.operator.cluster.model.securityprofiles.ContainerSecurityProviderContextImpl;
 import io.strimzi.operator.cluster.model.securityprofiles.PodSecurityProviderContextImpl;
 import io.strimzi.operator.cluster.operator.resource.KafkaSpecChecker;
@@ -106,7 +110,7 @@ import static java.util.Collections.singletonMap;
  * Kafka cluster model
  */
 @SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling", "checkstyle:ClassFanOutComplexity"})
-public class KafkaCluster extends AbstractStatefulModel implements SupportsJmx {
+public class KafkaCluster extends AbstractStatefulModel implements SupportsMetrics, SupportsLogging, SupportsJmx {
     protected static final String COMPONENT_TYPE = "kafka";
 
     protected static final String ENV_VAR_KAFKA_INIT_EXTERNAL_ADDRESS = "EXTERNAL_ADDRESS";
@@ -213,6 +217,8 @@ public class KafkaCluster extends AbstractStatefulModel implements SupportsJmx {
     private boolean useKRaft = false;
     private String clusterId;
     private JmxModel jmx;
+    private MetricsModel metrics;
+    private LoggingModel logging;
 
     // Templates
     private PodDisruptionBudgetTemplate templatePodDisruptionBudget;
@@ -235,7 +241,6 @@ public class KafkaCluster extends AbstractStatefulModel implements SupportsJmx {
     private static final int DEFAULT_REPLICAS = 3;
     private static final Probe DEFAULT_HEALTHCHECK_OPTIONS = new ProbeBuilder().withTimeoutSeconds(5)
             .withInitialDelaySeconds(15).build();
-    private static final boolean DEFAULT_KAFKA_METRICS_ENABLED = false;
 
     private static final Map<String, String> DEFAULT_POD_LABELS = new HashMap<>();
     static {
@@ -254,11 +259,9 @@ public class KafkaCluster extends AbstractStatefulModel implements SupportsJmx {
     private KafkaCluster(Reconciliation reconciliation, HasMetadata resource) {
         super(reconciliation, resource, KafkaResources.kafkaStatefulSetName(resource.getMetadata().getName()), COMPONENT_TYPE);
 
-        this.ancillaryConfigMapName = KafkaResources.kafkaMetricsAndLogConfigMapName(cluster);
         this.replicas = DEFAULT_REPLICAS;
         this.livenessProbeOptions = DEFAULT_HEALTHCHECK_OPTIONS;
         this.readinessProbeOptions = DEFAULT_HEALTHCHECK_OPTIONS;
-        this.isMetricsEnabled = DEFAULT_KAFKA_METRICS_ENABLED;
 
         this.mountPath = "/var/lib/kafka";
 
@@ -335,10 +338,10 @@ public class KafkaCluster extends AbstractStatefulModel implements SupportsJmx {
         }
         result.initImage = initImage;
 
-        result.logging = kafkaClusterSpec.getLogging();
         result.gcLoggingEnabled = kafkaClusterSpec.getJvmOptions() == null ? JvmOptions.DEFAULT_GC_LOGGING_ENABLED : kafkaClusterSpec.getJvmOptions().isGcLoggingEnabled();
         result.jvmOptions = kafkaClusterSpec.getJvmOptions();
-
+        result.metrics = new MetricsModel(kafkaClusterSpec);
+        result.logging = new LoggingModel(kafkaClusterSpec, result.getClass().getSimpleName(), false, true);
         result.jmx = new JmxModel(
                 reconciliation.namespace(),
                 KafkaResources.kafkaJmxSecretName(result.cluster),
@@ -352,9 +355,6 @@ public class KafkaCluster extends AbstractStatefulModel implements SupportsJmx {
         configureCruiseControlMetrics(kafkaAssembly, result, configuration);
         validateConfiguration(reconciliation, kafkaAssembly, result.kafkaVersion, configuration);
         result.setConfiguration(configuration);
-
-        // Parse different types of metrics configurations
-        ModelUtils.parseMetrics(result, kafkaClusterSpec);
 
         if (oldStorage != null) {
             Storage newStorage = kafkaClusterSpec.getStorage();
@@ -1212,8 +1212,8 @@ public class KafkaCluster extends AbstractStatefulModel implements SupportsJmx {
             ports.add(ContainerUtils.createContainerPort(ListenersUtils.backwardsCompatiblePortName(listener), listener.getPort()));
         }
 
-        if (isMetricsEnabled) {
-            ports.add(ContainerUtils.createContainerPort(METRICS_PORT_NAME, METRICS_PORT));
+        if (metrics.isEnabled()) {
+            ports.add(ContainerUtils.createContainerPort(MetricsModel.METRICS_PORT_NAME, MetricsModel.METRICS_PORT));
         }
 
         ports.addAll(jmx.containerPorts());
@@ -1263,7 +1263,7 @@ public class KafkaCluster extends AbstractStatefulModel implements SupportsJmx {
         if (perBrokerConfiguration) {
             volumeList.add(VolumeUtils.createConfigMapVolume(logAndMetricsConfigVolumeName, podName));
         } else {
-            volumeList.add(VolumeUtils.createConfigMapVolume(logAndMetricsConfigVolumeName, ancillaryConfigMapName));
+            volumeList.add(VolumeUtils.createConfigMapVolume(logAndMetricsConfigVolumeName, KafkaResources.kafkaMetricsAndLogConfigMapName(cluster)));
         }
 
         volumeList.add(VolumeUtils.createEmptyDirVolume("ready-files", "1Ki", "Memory"));
@@ -1484,7 +1484,7 @@ public class KafkaCluster extends AbstractStatefulModel implements SupportsJmx {
 
     protected List<EnvVar> getEnvVars() {
         List<EnvVar> varList = new ArrayList<>();
-        varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_METRICS_ENABLED, String.valueOf(isMetricsEnabled)));
+        varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_METRICS_ENABLED, String.valueOf(metrics.isEnabled())));
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_STRIMZI_KAFKA_GC_LOG_ENABLED, String.valueOf(gcLoggingEnabled)));
 
         ModelUtils.heapOptions(varList, 50, 5L * 1024L * 1024L * 1024L, jvmOptions, resources);
@@ -1578,8 +1578,8 @@ public class KafkaCluster extends AbstractStatefulModel implements SupportsJmx {
         }
 
         // The Metrics port (if enabled) is opened to all by default
-        if (isMetricsEnabled) {
-            rules.add(NetworkPolicyUtils.createIngressRule(METRICS_PORT, List.of()));
+        if (metrics.isEnabled()) {
+            rules.add(NetworkPolicyUtils.createIngressRule(MetricsModel.METRICS_PORT, List.of()));
         }
 
         // The JMX port (if enabled) is opened to all by default
@@ -1736,13 +1736,13 @@ public class KafkaCluster extends AbstractStatefulModel implements SupportsJmx {
     public ConfigMap generateSharedConfigurationConfigMap(MetricsAndLogging metricsAndLogging, Map<Integer, Map<String, String>> advertisedHostnames, Map<Integer, Map<String, String>> advertisedPorts)   {
         Map<String, String> data = new HashMap<>(6);
 
-        String parsedMetrics = metricsConfiguration(metricsAndLogging.getMetricsCm());
+        String parsedMetrics = metrics.metricsJson(reconciliation, metricsAndLogging.metricsCm());
         if (parsedMetrics != null) {
-            data.put(ANCILLARY_CM_KEY_METRICS, parsedMetrics);
+            data.put(MetricsModel.CONFIG_MAP_KEY, parsedMetrics);
         }
 
         // Logging configuration
-        data.put(ANCILLARY_CM_KEY_LOG_CONFIG, loggingConfiguration(metricsAndLogging.getLoggingCm()));
+        data.put(logging.configMapKey(), logging().loggingConfiguration(reconciliation, metricsAndLogging.loggingCm()));
         // Broker configuration
         data.put(BROKER_CONFIGURATION_FILENAME, generateSharedBrokerConfiguration());
         // Array with advertised hostnames used for replacement inside the pod
@@ -1779,7 +1779,7 @@ public class KafkaCluster extends AbstractStatefulModel implements SupportsJmx {
         data.put(BROKER_LISTENERS_FILENAME,
                 listeners.stream().map(ListenersUtils::envVarIdentifier).collect(Collectors.joining(" ")));
 
-        return ConfigMapUtils.createConfigMap(ancillaryConfigMapName, namespace, labels, ownerReference, data);
+        return ConfigMapUtils.createConfigMap(KafkaResources.kafkaMetricsAndLogConfigMapName(cluster), namespace, labels, ownerReference, data);
     }
 
     /**
@@ -1843,18 +1843,18 @@ public class KafkaCluster extends AbstractStatefulModel implements SupportsJmx {
      * @return ConfigMap with the shared configuration.
      */
     public List<ConfigMap> generatePerBrokerConfigurationConfigMaps(MetricsAndLogging metricsAndLogging, Map<Integer, Map<String, String>> advertisedHostnames, Map<Integer, Map<String, String>> advertisedPorts)   {
-        String parsedMetrics = metricsConfiguration(metricsAndLogging.getMetricsCm());
-        String parsedLogging = loggingConfiguration(metricsAndLogging.getLoggingCm());
+        String parsedMetrics = metrics.metricsJson(reconciliation, metricsAndLogging.metricsCm());
+        String parsedLogging = logging().loggingConfiguration(reconciliation, metricsAndLogging.loggingCm());
         List<ConfigMap> configMaps = new ArrayList<>(replicas);
 
         for (int brokerId = 0; brokerId < replicas; brokerId++) {
             Map<String, String> data = new HashMap<>(4);
 
             if (parsedMetrics != null) {
-                data.put(ANCILLARY_CM_KEY_METRICS, parsedMetrics);
+                data.put(MetricsModel.CONFIG_MAP_KEY, parsedMetrics);
             }
 
-            data.put(ANCILLARY_CM_KEY_LOG_CONFIG, parsedLogging);
+            data.put(logging.configMapKey(), parsedLogging);
             data.put(BROKER_CONFIGURATION_FILENAME, generatePerBrokerBrokerConfiguration(brokerId, advertisedHostnames, advertisedPorts));
             // List of configured listeners => StrimziPodSets still need this because of OAUTH and how the OAUTH secret
             // environment variables are parsed in the container bash scripts
@@ -1871,20 +1871,6 @@ public class KafkaCluster extends AbstractStatefulModel implements SupportsJmx {
      */
     public KafkaVersion getKafkaVersion() {
         return this.kafkaVersion;
-    }
-
-    /**
-     * Generates the logging configuration as a String. The configuration is generated based on the default logging
-     * configuration files from resources, the (optional) inline logging configuration from the custom resource
-     * and the (optional) external logging configuration in a user-provided ConfigMap.
-     *
-     * @param externalCm The user-provided ConfigMap with custom Log4j / Log4j2 file
-     *
-     * @return String with the Log4j / Log4j2 properties used for configuration
-     */
-    @Override
-    public String loggingConfiguration(ConfigMap externalCm) {
-        return loggingConfiguration(externalCm, true);
     }
 
     /**
@@ -1924,5 +1910,19 @@ public class KafkaCluster extends AbstractStatefulModel implements SupportsJmx {
      */
     public JmxModel jmx()   {
         return jmx;
+    }
+
+    /**
+     * @return  Metrics Model instance for configuring Prometheus metrics
+     */
+    public MetricsModel metrics()   {
+        return metrics;
+    }
+
+    /**
+     * @return  Logging Model instance for configuring logging
+     */
+    public LoggingModel logging()   {
+        return logging;
     }
 }

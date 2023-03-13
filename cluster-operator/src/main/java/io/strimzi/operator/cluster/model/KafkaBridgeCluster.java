@@ -4,8 +4,10 @@
  */
 package io.strimzi.operator.cluster.model;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.fabric8.kubernetes.api.model.Affinity;
 import io.fabric8.kubernetes.api.model.AffinityBuilder;
+import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.ContainerPort;
 import io.fabric8.kubernetes.api.model.EnvVar;
@@ -45,8 +47,11 @@ import io.strimzi.api.kafka.model.template.PodTemplate;
 import io.strimzi.api.kafka.model.template.ResourceTemplate;
 import io.strimzi.api.kafka.model.tracing.Tracing;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
+import io.strimzi.operator.cluster.model.logging.LoggingModel;
+import io.strimzi.operator.cluster.model.logging.SupportsLogging;
 import io.strimzi.operator.cluster.model.securityprofiles.ContainerSecurityProviderContextImpl;
 import io.strimzi.operator.cluster.model.securityprofiles.PodSecurityProviderContextImpl;
+import io.strimzi.operator.common.MetricsAndLogging;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
@@ -63,7 +68,7 @@ import java.util.Map;
  * Kafka Bridge model class
  */
 @SuppressWarnings({"checkstyle:ClassFanOutComplexity"})
-public class KafkaBridgeCluster extends AbstractModel {
+public class KafkaBridgeCluster extends AbstractModel implements SupportsLogging {
     /**
      * HTTP port configuration
      */
@@ -79,7 +84,6 @@ public class KafkaBridgeCluster extends AbstractModel {
     protected static final int DEFAULT_REPLICAS = 1;
     protected static final int DEFAULT_HEALTHCHECK_DELAY = 15;
     protected static final int DEFAULT_HEALTHCHECK_TIMEOUT = 5;
-    protected static final boolean DEFAULT_KAFKA_BRIDGE_METRICS_ENABLED = false;
 
     private static final Probe DEFAULT_HEALTHCHECK_OPTIONS = new ProbeBuilder()
             .withTimeoutSeconds(DEFAULT_HEALTHCHECK_TIMEOUT)
@@ -128,6 +132,8 @@ public class KafkaBridgeCluster extends AbstractModel {
     private KafkaBridgeAdminClientSpec kafkaBridgeAdminClient;
     private KafkaBridgeConsumerSpec kafkaBridgeConsumer;
     private KafkaBridgeProducerSpec kafkaBridgeProducer;
+    private boolean isMetricsEnabled = false;
+    private LoggingModel logging;
 
     // Templates
     private PodDisruptionBudgetTemplate templatePodDisruptionBudget;
@@ -139,6 +145,7 @@ public class KafkaBridgeCluster extends AbstractModel {
 
     private Tracing tracing;
 
+    @SuppressFBWarnings({"UWF_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR"}) // This field is initialized in the fromCrd method
     private Rack rack;
 
     private String initImage;
@@ -157,16 +164,14 @@ public class KafkaBridgeCluster extends AbstractModel {
      * @param reconciliation The reconciliation
      * @param resource Kubernetes resource with metadata containing the namespace and cluster name
      */
-    protected KafkaBridgeCluster(Reconciliation reconciliation, HasMetadata resource) {
+    private KafkaBridgeCluster(Reconciliation reconciliation, HasMetadata resource) {
         super(reconciliation, resource, KafkaBridgeResources.deploymentName(resource.getMetadata().getName()), COMPONENT_TYPE);
 
-        this.ancillaryConfigMapName = KafkaBridgeResources.metricsAndLogConfigMapName(cluster);
         this.replicas = DEFAULT_REPLICAS;
         this.readinessPath = "/ready";
         this.livenessPath = "/healthy";
         this.livenessProbeOptions = DEFAULT_HEALTHCHECK_OPTIONS;
         this.readinessProbeOptions = DEFAULT_HEALTHCHECK_OPTIONS;
-        this.isMetricsEnabled = DEFAULT_KAFKA_BRIDGE_METRICS_ENABLED;
 
         this.mountPath = "/var/lib/bridge";
         this.logAndMetricsConfigVolumeName = "kafka-metrics-and-logging";
@@ -188,7 +193,7 @@ public class KafkaBridgeCluster extends AbstractModel {
         KafkaBridgeSpec spec = kafkaBridge.getSpec();
         result.tracing = spec.getTracing();
         result.resources = spec.getResources();
-        result.logging = spec.getLogging();
+        result.logging = new LoggingModel(spec, result.getClass().getSimpleName(), true, false);
         result.gcLoggingEnabled = spec.getJvmOptions() == null ? JvmOptions.DEFAULT_GC_LOGGING_ENABLED : spec.getJvmOptions().isGcLoggingEnabled();
         result.jvmOptions = spec.getJvmOptions();
         String image = spec.getImage();
@@ -307,7 +312,7 @@ public class KafkaBridgeCluster extends AbstractModel {
     protected List<Volume> getVolumes(boolean isOpenShift) {
         List<Volume> volumeList = new ArrayList<>(2);
         volumeList.add(VolumeUtils.createTempDirVolume(templatePod));
-        volumeList.add(VolumeUtils.createConfigMapVolume(logAndMetricsConfigVolumeName, ancillaryConfigMapName));
+        volumeList.add(VolumeUtils.createConfigMapVolume(logAndMetricsConfigVolumeName, KafkaBridgeResources.metricsAndLogConfigMapName(cluster)));
 
         if (tls != null) {
             VolumeUtils.createSecretVolume(volumeList, tls.getTrustedCertificates(), isOpenShift);
@@ -468,11 +473,6 @@ public class KafkaBridgeCluster extends AbstractModel {
         return varList;
     }
 
-    @Override
-    public String getAncillaryConfigMapKeyLogConfig() {
-        return "log4j2.properties";
-    }
-
     /**
      * Set the HTTP configuration
      * @param kafkaBridgeHttpConfig HTTP configuration
@@ -607,5 +607,31 @@ public class KafkaBridgeCluster extends AbstractModel {
         ContainerUtils.addContainerEnvsToExistingEnvs(reconciliation, varList, templateInitContainer);
 
         return varList;
+    }
+
+    /**
+     * Generates a metrics and logging ConfigMap according to the configuration. If this operand doesn't support logging
+     * or metrics, they will nto be set.
+     *
+     * @param metricsAndLogging     The external CMs with logging and metrics configuration
+     *
+     * @return The generated ConfigMap
+     */
+    public ConfigMap generateMetricsAndLogConfigMap(MetricsAndLogging metricsAndLogging) {
+        return ConfigMapUtils
+                .createConfigMap(
+                        KafkaBridgeResources.metricsAndLogConfigMapName(cluster),
+                        namespace,
+                        labels,
+                        ownerReference,
+                        MetricsAndLoggingUtils.generateMetricsAndLogConfigMapData(reconciliation, this, metricsAndLogging)
+                );
+    }
+
+    /**
+     * @return  Logging Model instance for configuring logging
+     */
+    public LoggingModel logging()   {
+        return logging;
     }
 }

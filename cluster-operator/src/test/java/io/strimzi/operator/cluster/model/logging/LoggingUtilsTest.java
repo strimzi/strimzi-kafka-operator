@@ -2,11 +2,15 @@
  * Copyright Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.strimzi.operator.cluster.model;
+package io.strimzi.operator.cluster.model.logging;
 
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
+import io.fabric8.kubernetes.api.model.ConfigMapKeySelector;
 import io.strimzi.api.kafka.model.ExternalLoggingBuilder;
 import io.strimzi.api.kafka.model.InlineLoggingBuilder;
+import io.strimzi.api.kafka.model.KafkaConnectSpec;
+import io.strimzi.api.kafka.model.KafkaConnectSpecBuilder;
+import io.strimzi.operator.cluster.model.InvalidResourceException;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.OrderedProperties;
 import org.junit.jupiter.api.Test;
@@ -15,6 +19,8 @@ import java.util.Map;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class LoggingUtilsTest {
     @Test
@@ -76,10 +82,7 @@ public class LoggingUtilsTest {
     public void testNullLog4j1LoggingConfiguration()  {
         String log4jProperties = LoggingUtils.loggingConfiguration(
                 Reconciliation.DUMMY_RECONCILIATION,
-                "KafkaConnectCluster",
-                true,
-                false,
-                null,
+                new LoggingModel(new KafkaConnectSpec(), "KafkaConnectCluster", false, true),
                 null
         );
 
@@ -100,10 +103,7 @@ public class LoggingUtilsTest {
     public void testNullLog4j2LoggingConfiguration()  {
         String log4jProperties = LoggingUtils.loggingConfiguration(
                 Reconciliation.DUMMY_RECONCILIATION,
-                "KafkaConnectCluster",
-                true,
-                true,
-                null,
+                new LoggingModel(new KafkaConnectSpec(), "KafkaConnectCluster", true, true),
                 null
         );
 
@@ -126,10 +126,13 @@ public class LoggingUtilsTest {
     public void testLog4j1InlineLoggingConfiguration()  {
         String log4jProperties = LoggingUtils.loggingConfiguration(
                 Reconciliation.DUMMY_RECONCILIATION,
-                "KafkaConnectCluster",
-                true,
-                false,
-                new InlineLoggingBuilder().withLoggers(Map.of("log4j.logger.org.reflections", "DEBUG", "logger.myclass.level", "TRACE")).build(),
+                new LoggingModel(
+                        new KafkaConnectSpecBuilder()
+                                .withLogging(new InlineLoggingBuilder().withLoggers(Map.of("log4j.logger.org.reflections", "DEBUG", "logger.myclass.level", "TRACE")).build())
+                                .build(),
+                        "KafkaConnectCluster",
+                        false,
+                        true),
                 null
         );
 
@@ -151,10 +154,13 @@ public class LoggingUtilsTest {
     public void testLog4j2InlineLoggingConfiguration()  {
         String log4jProperties = LoggingUtils.loggingConfiguration(
                 Reconciliation.DUMMY_RECONCILIATION,
-                "KafkaConnectCluster",
-                true,
-                true,
-                new InlineLoggingBuilder().withLoggers(Map.of("log4j.logger.org.reflections", "DEBUG", "logger.myclass.level", "TRACE")).build(),
+                new LoggingModel(
+                        new KafkaConnectSpecBuilder()
+                                .withLogging(new InlineLoggingBuilder().withLoggers(Map.of("log4j.logger.org.reflections", "DEBUG", "logger.myclass.level", "TRACE")).build())
+                                .build(),
+                        "KafkaConnectCluster",
+                        true,
+                        true),
                 null
         );
 
@@ -178,14 +184,17 @@ public class LoggingUtilsTest {
     public void testLog4j1ExternalLoggingConfiguration()  {
         String log4jProperties = LoggingUtils.loggingConfiguration(
                 Reconciliation.DUMMY_RECONCILIATION,
-                "KafkaConnectCluster",
-                true,
-                false,
-                new ExternalLoggingBuilder()
-                        .withNewValueFrom()
-                            .withNewConfigMapKeyRef("my-key", "my-cm", false)
-                        .endValueFrom()
-                        .build(),
+                new LoggingModel(
+                        new KafkaConnectSpecBuilder()
+                                .withLogging(new ExternalLoggingBuilder()
+                                        .withNewValueFrom()
+                                        .withNewConfigMapKeyRef("my-key", "my-cm", false)
+                                        .endValueFrom()
+                                        .build())
+                                .build(),
+                        "KafkaConnectCluster",
+                        false,
+                        true),
                 new ConfigMapBuilder()
                         .withData(Map.of("my-key", """
                                 log4j.appender.CONSOLE=org.apache.log4j.ConsoleAppender
@@ -210,14 +219,17 @@ public class LoggingUtilsTest {
     public void testLog4j2ExternalLoggingConfiguration()  {
         String log4jProperties = LoggingUtils.loggingConfiguration(
                 Reconciliation.DUMMY_RECONCILIATION,
-                "KafkaConnectCluster",
-                true,
-                true,
-                new ExternalLoggingBuilder()
-                        .withNewValueFrom()
-                        .withNewConfigMapKeyRef("my-key", "my-cm", false)
-                        .endValueFrom()
-                        .build(),
+                new LoggingModel(
+                        new KafkaConnectSpecBuilder()
+                                .withLogging(new ExternalLoggingBuilder()
+                                        .withNewValueFrom()
+                                        .withNewConfigMapKeyRef("my-key", "my-cm", false)
+                                        .endValueFrom()
+                                        .build())
+                                .build(),
+                        "KafkaConnectCluster",
+                        true,
+                        true),
                 new ConfigMapBuilder()
                         .withData(Map.of("my-key", """
                                 log4j.appender.CONSOLE=org.apache.log4j.ConsoleAppender
@@ -238,5 +250,29 @@ public class LoggingUtilsTest {
                                 
                 monitorInterval=30
                 """));
+    }
+
+    @Test
+    public void testLoggingValidation() {
+        assertDoesNotThrow(() -> LoggingUtils.validateLogging(null));
+
+        // Inline logging
+        assertDoesNotThrow(() -> LoggingUtils.validateLogging(new InlineLoggingBuilder().build()));
+        assertDoesNotThrow(() -> LoggingUtils.validateLogging(new InlineLoggingBuilder().withLoggers(Map.of("my.logger", "WARN")).build()));
+
+        // ExternalLogging
+        assertDoesNotThrow(() -> LoggingUtils.validateLogging(new ExternalLoggingBuilder().withNewValueFrom().withConfigMapKeyRef(new ConfigMapKeySelector("my-key", "my-name", false)).endValueFrom().build()));
+
+        InvalidResourceException ex = assertThrows(InvalidResourceException.class, () -> LoggingUtils.validateLogging(new ExternalLoggingBuilder().withNewValueFrom().withConfigMapKeyRef(new ConfigMapKeySelector()).endValueFrom().build()));
+        assertThat(ex.getMessage(), is("Logging configuration is invalid: [Name of the Config Map with logging configuration is missing, The key under which the logging configuration is stored in the ConfigMap is missing]"));
+
+        ex = assertThrows(InvalidResourceException.class, () -> LoggingUtils.validateLogging(new ExternalLoggingBuilder().withNewValueFrom().withConfigMapKeyRef(new ConfigMapKeySelector(null, "my-name", false)).endValueFrom().build()));
+        assertThat(ex.getMessage(), is("Logging configuration is invalid: [The key under which the logging configuration is stored in the ConfigMap is missing]"));
+
+        ex = assertThrows(InvalidResourceException.class, () -> LoggingUtils.validateLogging(new ExternalLoggingBuilder().withNewValueFrom().endValueFrom().build()));
+        assertThat(ex.getMessage(), is("Logging configuration is invalid: [Config Map reference is missing]"));
+
+        ex = assertThrows(InvalidResourceException.class, () -> LoggingUtils.validateLogging(new ExternalLoggingBuilder().build()));
+        assertThat(ex.getMessage(), is("Logging configuration is invalid: [Config Map reference is missing]"));
     }
 }

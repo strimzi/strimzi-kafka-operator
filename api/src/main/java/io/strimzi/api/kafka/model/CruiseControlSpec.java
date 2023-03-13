@@ -30,7 +30,7 @@ import lombok.EqualsAndHashCode;
     "image", "tlsSidecar", "resources", "livenessProbe", "readinessProbe", "jvmOptions", "logging", "template",
     "brokerCapacity", "config", "metricsConfig"})
 @EqualsAndHashCode
-public class CruiseControlSpec implements HasConfigurableMetrics, UnknownPropertyPreserving, Serializable {
+public class CruiseControlSpec implements HasConfigurableMetrics, HasConfigurableLogging, UnknownPropertyPreserving, Serializable {
     private static final long serialVersionUID = 1L;
 
     // For the full configuration list refer to https://github.com/linkedin/cruise-control/wiki/Configurations
@@ -112,10 +112,12 @@ public class CruiseControlSpec implements HasConfigurableMetrics, UnknownPropert
 
     @Description("Logging configuration (Log4j 2) for Cruise Control.")
     @JsonInclude(value = JsonInclude.Include.NON_NULL)
+    @Override
     public Logging getLogging() {
         return logging;
     }
 
+    @Override
     public void setLogging(Logging logging) {
         this.logging = logging;
     }

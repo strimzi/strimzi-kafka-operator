@@ -31,7 +31,7 @@ import lombok.EqualsAndHashCode;
     "logging", "metricsConfig", "tracing", "template"})
 @OneOf({@OneOf.Alternative(@OneOf.Alternative.Property("include")), @OneOf.Alternative(@OneOf.Alternative.Property("whitelist"))})
 @EqualsAndHashCode
-public class KafkaMirrorMakerSpec extends Spec implements HasConfigurableMetrics {
+public class KafkaMirrorMakerSpec extends Spec implements HasConfigurableMetrics, HasConfigurableLogging {
     private static final long serialVersionUID = 1L;
 
     private static final int DEFAULT_REPLICAS = 3;
@@ -153,10 +153,12 @@ public class KafkaMirrorMakerSpec extends Spec implements HasConfigurableMetrics
 
     @Description("Logging configuration for MirrorMaker.")
     @JsonInclude(value = JsonInclude.Include.NON_NULL)
+    @Override
     public Logging getLogging() {
         return logging;
     }
 
+    @Override
     public void setLogging(Logging logging) {
         this.logging = logging;
     }

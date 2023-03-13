@@ -29,7 +29,7 @@ import lombok.EqualsAndHashCode;
     "producer", "resources", "jvmOptions", "logging", "clientRackInitImage", "rack",
     "enableMetrics", "livenessProbe", "readinessProbe", "template", "tracing"})
 @EqualsAndHashCode
-public class KafkaBridgeSpec extends Spec {
+public class KafkaBridgeSpec extends Spec implements HasConfigurableLogging {
     private static final long serialVersionUID = 1L;
     private static final int DEFAULT_REPLICAS = 1;
 
@@ -77,10 +77,12 @@ public class KafkaBridgeSpec extends Spec {
 
     @Description("Logging configuration for Kafka Bridge.")
     @JsonInclude(value = JsonInclude.Include.NON_NULL)
+    @Override
     public Logging getLogging() {
         return logging;
     }
 
+    @Override
     public void setLogging(Logging logging) {
         this.logging = logging;
     }

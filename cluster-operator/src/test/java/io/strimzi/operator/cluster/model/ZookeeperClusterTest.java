@@ -43,6 +43,7 @@ import io.strimzi.api.kafka.model.template.IpFamily;
 import io.strimzi.api.kafka.model.template.IpFamilyPolicy;
 import io.strimzi.certs.OpenSslCertManager;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
+import io.strimzi.operator.cluster.model.metrics.MetricsModel;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.MetricsAndLogging;
 import io.strimzi.operator.common.PasswordGenerator;
@@ -170,9 +171,9 @@ public class ZookeeperClusterTest {
                 .build();
         ZookeeperCluster zc = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, VERSIONS);
 
-        ConfigMap brokerCm = zc.generateMetricsAndLogConfigMap(new MetricsAndLogging(metricsCm, null));
+        ConfigMap brokerCm = zc.generateConfigurationConfigMap(new MetricsAndLogging(metricsCm, null));
         TestUtils.checkOwnerReference(brokerCm, KAFKA);
-        assertThat(brokerCm.getData().get(AbstractModel.ANCILLARY_CM_KEY_METRICS), is("{\"animal\":\"wombat\"}"));
+        assertThat(brokerCm.getData().get(MetricsModel.CONFIG_MAP_KEY), is("{\"animal\":\"wombat\"}"));
     }
 
     @ParallelTest
@@ -970,14 +971,16 @@ public class ZookeeperClusterTest {
 
         ZookeeperCluster zc = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS);
 
-        assertThat(zc.isMetricsEnabled(), is(true));
-        assertThat(zc.getMetricsConfigInCm(), is(metrics));
+        assertThat(zc.metrics().isEnabled(), is(true));
+        assertThat(zc.metrics().getConfigMapName(), is("zoo-metrics-config"));
+        assertThat(zc.metrics().getConfigMapKey(), is("zoo-metrics-config.yml"));
     }
 
     @ParallelTest
     public void testMetricsParsingNoMetrics() {
-        assertThat(ZC.isMetricsEnabled(), is(false));
-        assertThat(ZC.getMetricsConfigInCm(), is(nullValue()));
+        assertThat(ZC.metrics().isEnabled(), is(false));
+        assertThat(ZC.metrics().getConfigMapName(), is(nullValue()));
+        assertThat(ZC.metrics().getConfigMapKey(), is(nullValue()));
     }
 
     @ParallelTest

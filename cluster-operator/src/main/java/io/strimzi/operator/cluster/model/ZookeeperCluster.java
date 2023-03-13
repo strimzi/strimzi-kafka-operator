@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.cluster.model;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.ContainerPort;
@@ -38,6 +39,10 @@ import io.strimzi.api.kafka.model.template.ResourceTemplate;
 import io.strimzi.api.kafka.model.template.StatefulSetTemplate;
 import io.strimzi.api.kafka.model.template.ZookeeperClusterTemplate;
 import io.strimzi.certs.CertAndKey;
+import io.strimzi.operator.cluster.model.logging.LoggingModel;
+import io.strimzi.operator.cluster.model.logging.SupportsLogging;
+import io.strimzi.operator.cluster.model.metrics.MetricsModel;
+import io.strimzi.operator.cluster.model.metrics.SupportsMetrics;
 import io.strimzi.operator.cluster.model.securityprofiles.ContainerSecurityProviderContextImpl;
 import io.strimzi.operator.cluster.model.securityprofiles.PodSecurityProviderContextImpl;
 import io.strimzi.operator.common.Annotations;
@@ -61,7 +66,7 @@ import static java.util.Collections.emptyMap;
  * ZooKeeper cluster model
  */
 @SuppressWarnings({"checkstyle:ClassFanOutComplexity"})
-public class ZookeeperCluster extends AbstractStatefulModel implements SupportsJmx {
+public class ZookeeperCluster extends AbstractStatefulModel implements SupportsMetrics, SupportsLogging, SupportsJmx {
     /**
      * Port for plaintext access for ZooKeeper clients (available inside the pod only)
      */
@@ -96,12 +101,14 @@ public class ZookeeperCluster extends AbstractStatefulModel implements SupportsJ
     // Zookeeper configuration
     private final boolean isSnapshotCheckEnabled;
     private JmxModel jmx;
+    @SuppressFBWarnings({"UWF_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR"}) // This field is initialized in the fromCrd method
+    private MetricsModel metrics;
+    private LoggingModel logging;
 
     private static final Probe DEFAULT_HEALTHCHECK_OPTIONS = new ProbeBuilder()
             .withTimeoutSeconds(5)
             .withInitialDelaySeconds(15)
             .build();
-    private static final boolean DEFAULT_ZOOKEEPER_METRICS_ENABLED = false;
     private static final boolean DEFAULT_ZOOKEEPER_SNAPSHOT_CHECK_ENABLED = true;
 
     // Zookeeper configuration keys (EnvVariables)
@@ -140,14 +147,12 @@ public class ZookeeperCluster extends AbstractStatefulModel implements SupportsJ
     private ZookeeperCluster(Reconciliation reconciliation, HasMetadata resource) {
         super(reconciliation, resource, KafkaResources.zookeeperStatefulSetName(resource.getMetadata().getName()), COMPONENT_TYPE);
 
-        this.ancillaryConfigMapName = KafkaResources.zookeeperMetricsAndLogConfigMapName(cluster);
         this.image = null;
         this.replicas = ZookeeperClusterSpec.DEFAULT_REPLICAS;
         this.readinessPath = "/opt/kafka/zookeeper_healthcheck.sh";
         this.readinessProbeOptions = DEFAULT_HEALTHCHECK_OPTIONS;
         this.livenessPath = "/opt/kafka/zookeeper_healthcheck.sh";
         this.livenessProbeOptions = DEFAULT_HEALTHCHECK_OPTIONS;
-        this.isMetricsEnabled = DEFAULT_ZOOKEEPER_METRICS_ENABLED;
         this.isSnapshotCheckEnabled = DEFAULT_ZOOKEEPER_SNAPSHOT_CHECK_ENABLED;
 
         this.mountPath = "/var/lib/zookeeper";
@@ -211,11 +216,7 @@ public class ZookeeperCluster extends AbstractStatefulModel implements SupportsJ
             result.livenessProbeOptions = zookeeperClusterSpec.getLivenessProbe();
         }
 
-        result.logging = zookeeperClusterSpec.getLogging();
         result.gcLoggingEnabled = zookeeperClusterSpec.getJvmOptions() == null ? JvmOptions.DEFAULT_GC_LOGGING_ENABLED : zookeeperClusterSpec.getJvmOptions().isGcLoggingEnabled();
-
-        // Parse different types of metrics configurations
-        ModelUtils.parseMetrics(result, zookeeperClusterSpec);
 
         if (oldStorage != null) {
             Storage newStorage = zookeeperClusterSpec.getStorage();
@@ -251,7 +252,8 @@ public class ZookeeperCluster extends AbstractStatefulModel implements SupportsJ
         result.resources = zookeeperClusterSpec.getResources();
 
         result.jvmOptions = zookeeperClusterSpec.getJvmOptions();
-
+        result.metrics = new MetricsModel(zookeeperClusterSpec);
+        result.logging = new LoggingModel(zookeeperClusterSpec, result.getClass().getSimpleName(), false, false);
         result.jmx = new JmxModel(
                 reconciliation.namespace(),
                 KafkaResources.zookeeperJmxSecretName(result.cluster),
@@ -321,8 +323,8 @@ public class ZookeeperCluster extends AbstractStatefulModel implements SupportsJ
         rules.add(NetworkPolicyUtils.createIngressRule(CLIENT_TLS_PORT, List.of(kafkaClusterPeer, zookeeperClusterPeer, entityOperatorPeer, clusterOperatorPeer)));
 
         // The Metrics port (if enabled) is opened to all by default
-        if (isMetricsEnabled) {
-            rules.add(NetworkPolicyUtils.createIngressRule(METRICS_PORT, List.of()));
+        if (metrics.isEnabled()) {
+            rules.add(NetworkPolicyUtils.createIngressRule(MetricsModel.METRICS_PORT, List.of()));
         }
 
         // The JMX port (if enabled) is opened to all by default
@@ -496,7 +498,7 @@ public class ZookeeperCluster extends AbstractStatefulModel implements SupportsJ
 
     protected List<EnvVar> getEnvVars() {
         List<EnvVar> varList = new ArrayList<>();
-        varList.add(ContainerUtils.createEnvVar(ENV_VAR_ZOOKEEPER_METRICS_ENABLED, String.valueOf(isMetricsEnabled)));
+        varList.add(ContainerUtils.createEnvVar(ENV_VAR_ZOOKEEPER_METRICS_ENABLED, String.valueOf(metrics.isEnabled())));
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_ZOOKEEPER_SNAPSHOT_CHECK_ENABLED, String.valueOf(isSnapshotCheckEnabled)));
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_STRIMZI_KAFKA_GC_LOG_ENABLED, String.valueOf(gcLoggingEnabled)));
 
@@ -533,8 +535,8 @@ public class ZookeeperCluster extends AbstractStatefulModel implements SupportsJ
         portList.add(ContainerUtils.createContainerPort(LEADER_ELECTION_PORT_NAME, LEADER_ELECTION_PORT));
         portList.add(ContainerUtils.createContainerPort(CLIENT_TLS_PORT_NAME, CLIENT_TLS_PORT));
 
-        if (isMetricsEnabled) {
-            portList.add(ContainerUtils.createContainerPort(METRICS_PORT_NAME, METRICS_PORT));
+        if (metrics.isEnabled()) {
+            portList.add(ContainerUtils.createContainerPort(MetricsModel.METRICS_PORT_NAME, MetricsModel.METRICS_PORT));
         }
 
         portList.addAll(jmx.containerPorts());
@@ -554,7 +556,7 @@ public class ZookeeperCluster extends AbstractStatefulModel implements SupportsJ
         List<Volume> volumeList = new ArrayList<>(4);
 
         volumeList.add(VolumeUtils.createTempDirVolume(templatePod));
-        volumeList.add(VolumeUtils.createConfigMapVolume(logAndMetricsConfigVolumeName, ancillaryConfigMapName));
+        volumeList.add(VolumeUtils.createConfigMapVolume(logAndMetricsConfigVolumeName, KafkaResources.zookeeperMetricsAndLogConfigMapName(cluster)));
         volumeList.add(VolumeUtils.createSecretVolume(ZOOKEEPER_NODE_CERTIFICATES_VOLUME_NAME, KafkaResources.zookeeperSecretName(cluster), isOpenShift));
         volumeList.add(VolumeUtils.createSecretVolume(ZOOKEEPER_CLUSTER_CA_VOLUME_NAME, AbstractModel.clusterCaCertSecretName(cluster), isOpenShift));
 
@@ -667,9 +669,17 @@ public class ZookeeperCluster extends AbstractStatefulModel implements SupportsJ
      * @return      The generated configuration ConfigMap.
      */
     public ConfigMap generateConfigurationConfigMap(MetricsAndLogging metricsAndLogging) {
-        ConfigMap zkConfigMap = super.generateMetricsAndLogConfigMap(metricsAndLogging);
-        zkConfigMap.getData().put(CONFIG_MAP_KEY_ZOOKEEPER_NODE_COUNT, Integer.toString(getReplicas()));
-        return zkConfigMap;
+        Map<String, String> data = MetricsAndLoggingUtils.generateMetricsAndLogConfigMapData(reconciliation, this, metricsAndLogging);
+        data.put(CONFIG_MAP_KEY_ZOOKEEPER_NODE_COUNT, Integer.toString(getReplicas()));
+
+        return ConfigMapUtils
+                .createConfigMap(
+                        KafkaResources.zookeeperMetricsAndLogConfigMapName(cluster),
+                        namespace,
+                        labels,
+                        ownerReference,
+                        data
+                );
     }
 
     /**
@@ -677,5 +687,19 @@ public class ZookeeperCluster extends AbstractStatefulModel implements SupportsJ
      */
     public JmxModel jmx()   {
         return jmx;
+    }
+
+    /**
+     * @return  Metrics Model instance for configuring Prometheus metrics
+     */
+    public MetricsModel metrics()   {
+        return metrics;
+    }
+
+    /**
+     * @return  Logging Model instance for configuring logging
+     */
+    public LoggingModel logging()   {
+        return logging;
     }
 }

@@ -25,6 +25,7 @@ import io.strimzi.operator.cluster.model.ClusterCa;
 import io.strimzi.operator.cluster.model.DnsNameGenerator;
 import io.strimzi.operator.cluster.model.ImagePullPolicy;
 import io.strimzi.operator.cluster.model.KafkaVersionChange;
+import io.strimzi.operator.cluster.model.MetricsAndLoggingUtils;
 import io.strimzi.operator.cluster.model.ModelUtils;
 import io.strimzi.operator.cluster.model.ZookeeperCluster;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
@@ -464,11 +465,11 @@ public class ZooKeeperReconciler {
      * @return  Completes when the ConfigMap was successfully created or updated
      */
     protected Future<Void> loggingAndMetricsConfigMap() {
-        return Util.metricsAndLogging(reconciliation, configMapOperator, reconciliation.namespace(), zk.getLogging(), zk.getMetricsConfigInCm())
+        return MetricsAndLoggingUtils.metricsAndLogging(reconciliation, configMapOperator, zk.logging(), zk.metrics())
                 .compose(metricsAndLogging -> {
                     ConfigMap logAndMetricsConfigMap = zk.generateConfigurationConfigMap(metricsAndLogging);
 
-                    loggingHash = Util.hashStub(logAndMetricsConfigMap.getData().get(zk.getAncillaryConfigMapKeyLogConfig()));
+                    loggingHash = Util.hashStub(logAndMetricsConfigMap.getData().get(zk.logging().configMapKey()));
 
                     return configMapOperator.reconcile(reconciliation, reconciliation.namespace(), KafkaResources.zookeeperMetricsAndLogConfigMapName(reconciliation.name()), logAndMetricsConfigMap)
                             .map((Void) null);

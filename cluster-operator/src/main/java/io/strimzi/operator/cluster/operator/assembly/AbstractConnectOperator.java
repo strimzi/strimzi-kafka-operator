@@ -45,6 +45,7 @@ import io.strimzi.operator.cluster.model.ImagePullPolicy;
 import io.strimzi.operator.cluster.model.InvalidResourceException;
 import io.strimzi.operator.cluster.model.KafkaConnectCluster;
 import io.strimzi.operator.cluster.model.KafkaConnectorConfiguration;
+import io.strimzi.operator.cluster.model.MetricsAndLoggingUtils;
 import io.strimzi.operator.cluster.model.NoSuchResourceException;
 import io.strimzi.operator.cluster.model.StatusDiff;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
@@ -352,7 +353,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
      * @return                     Future for tracking the asynchronous result of getting the metrics and logging config map
      */
     protected Future<ConfigMap> generateMetricsAndLoggingConfigMap(Reconciliation reconciliation, String namespace, KafkaConnectCluster kafkaConnectCluster) {
-        return Util.metricsAndLogging(reconciliation, configMapOperations, namespace, kafkaConnectCluster.getLogging(), kafkaConnectCluster.getMetricsConfigInCm())
+        return MetricsAndLoggingUtils.metricsAndLogging(reconciliation, configMapOperations, kafkaConnectCluster.logging(), kafkaConnectCluster.metrics())
                 .compose(metricsAndLoggingCm -> Future.succeededFuture(kafkaConnectCluster.generateMetricsAndLogConfigMap(metricsAndLoggingCm)));
     }
 

@@ -28,7 +28,6 @@ import io.strimzi.api.kafka.model.storage.Storage;
 import io.strimzi.operator.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.FeatureGates;
-import io.strimzi.operator.cluster.model.AbstractModel;
 import io.strimzi.operator.cluster.model.Ca;
 import io.strimzi.operator.cluster.model.CertUtils;
 import io.strimzi.operator.cluster.model.ClientsCa;
@@ -38,6 +37,7 @@ import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.KafkaConfiguration;
 import io.strimzi.operator.cluster.model.KafkaVersionChange;
 import io.strimzi.operator.cluster.model.ListenersUtils;
+import io.strimzi.operator.cluster.model.MetricsAndLoggingUtils;
 import io.strimzi.operator.cluster.model.ModelUtils;
 import io.strimzi.operator.cluster.model.NodeUtils;
 import io.strimzi.operator.cluster.model.PodSetUtils;
@@ -610,11 +610,11 @@ public class KafkaReconciler {
         this.brokerConfigurationHash.put(sharedConfigurationId, Util.hashStub(brokerConfiguration + kc.unknownConfigsWithValues(kafka.getKafkaVersion()).toString()));
 
         // This is used during Kafka rolling updates -> we have to store it for later
-        this.logging = sharedCm.getData().get(AbstractModel.ANCILLARY_CM_KEY_LOG_CONFIG);
+        this.logging = sharedCm.getData().get(kafka.logging().configMapKey());
         this.loggingHash = Util.hashStub(Util.getLoggingDynamicallyUnmodifiableEntries(logging));
 
         return configMapOperator
-                .reconcile(reconciliation, reconciliation.namespace(), kafka.getAncillaryConfigMapName(), sharedCm)
+                .reconcile(reconciliation, reconciliation.namespace(), KafkaResources.kafkaMetricsAndLogConfigMapName(reconciliation.name()), sharedCm)
                 .map((Void) null);
     }
 
@@ -631,7 +631,7 @@ public class KafkaReconciler {
         return configMapOperator.listAsync(reconciliation.namespace(), kafka.getSelectorLabels())
                 .compose(existingConfigMaps -> {
                     // This is used during Kafka rolling updates -> we have to store it for later
-                    this.logging = kafka.loggingConfiguration(metricsAndLogging.getLoggingCm());
+                    this.logging = kafka.logging().loggingConfiguration(reconciliation, metricsAndLogging.loggingCm());
                     this.loggingHash = Util.hashStub(Util.getLoggingDynamicallyUnmodifiableEntries(logging));
 
                     List<ConfigMap> desiredConfigMaps = kafka.generatePerBrokerConfigurationConfigMaps(metricsAndLogging, listenerReconciliationResults.advertisedHostnames, listenerReconciliationResults.advertisedPorts);
@@ -640,7 +640,7 @@ public class KafkaReconciler {
 
                     // Delete all existing ConfigMaps which are not desired and are not the shared config map
                     List<String> desiredNames = new ArrayList<>(desiredConfigMaps.size() + 1);
-                    desiredNames.add(kafka.getAncillaryConfigMapName()); // We do not want to delete the shared ConfigMap, so we add it here
+                    desiredNames.add(KafkaResources.kafkaMetricsAndLogConfigMapName(reconciliation.name())); // We do not want to delete the shared ConfigMap, so we add it here
                     desiredNames.addAll(desiredConfigMaps.stream().map(cm -> cm.getMetadata().getName()).toList());
 
                     for (ConfigMap cm : existingConfigMaps) {
@@ -702,7 +702,7 @@ public class KafkaReconciler {
      * @return  Future which completes when the Config Map(s) with configuration are created or updated
      */
     protected Future<Void> brokerConfigurationConfigMaps() {
-        return Util.metricsAndLogging(reconciliation, configMapOperator, reconciliation.namespace(), kafka.getLogging(), kafka.getMetricsConfigInCm())
+        return MetricsAndLoggingUtils.metricsAndLogging(reconciliation, configMapOperator, kafka.logging(), kafka.metrics())
                 .compose(metricsAndLoggingCm -> {
                     if (featureGates.useStrimziPodSetsEnabled())    {
                         return perBrokerKafkaConfiguration(metricsAndLoggingCm);

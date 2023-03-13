@@ -68,6 +68,7 @@ import io.strimzi.kafka.oauth.server.ServerConfig;
 import io.strimzi.operator.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
+import io.strimzi.operator.cluster.model.metrics.MetricsModel;
 import io.strimzi.operator.cluster.operator.resource.PodRevision;
 import io.strimzi.operator.common.MetricsAndLogging;
 import io.strimzi.operator.common.Reconciliation;
@@ -160,7 +161,7 @@ public class KafkaConnectClusterTest {
     }
 
     private void checkMetricsConfigMap(ConfigMap metricsCm) {
-        assertThat(metricsCm.getData().get(AbstractModel.ANCILLARY_CM_KEY_METRICS), is(metricsCmJson));
+        assertThat(metricsCm.getData().get(MetricsModel.CONFIG_MAP_KEY), is(metricsCmJson));
     }
 
     private Map<String, String> expectedLabels(String name)    {
@@ -1748,7 +1749,7 @@ public class KafkaConnectClusterTest {
         assertThat(np.getSpec().getIngress().get(0).getFrom().get(1).getPodSelector().getMatchLabels(), is(singletonMap(Labels.STRIMZI_KIND_LABEL, "cluster-operator")));
         assertThat(np.getSpec().getIngress().get(0).getFrom().get(1).getNamespaceSelector().getMatchLabels(), is(Map.of()));
         assertThat(np.getSpec().getIngress().get(1).getPorts().size(), is(1));
-        assertThat(np.getSpec().getIngress().get(1).getPorts().get(0).getPort().getIntVal(), is(KafkaConnectCluster.METRICS_PORT));
+        assertThat(np.getSpec().getIngress().get(1).getPorts().get(0).getPort().getIntVal(), is(MetricsModel.METRICS_PORT));
     }
 
     @ParallelTest
@@ -1770,7 +1771,7 @@ public class KafkaConnectClusterTest {
         assertThat(np.getSpec().getIngress().get(0).getFrom().get(1).getPodSelector().getMatchLabels(), is(singletonMap(Labels.STRIMZI_KIND_LABEL, "cluster-operator")));
         assertThat(np.getSpec().getIngress().get(0).getFrom().get(1).getNamespaceSelector(), is(nullValue()));
         assertThat(np.getSpec().getIngress().get(1).getPorts().size(), is(1));
-        assertThat(np.getSpec().getIngress().get(1).getPorts().get(0).getPort().getIntVal(), is(KafkaConnectCluster.METRICS_PORT));
+        assertThat(np.getSpec().getIngress().get(1).getPorts().get(0).getPort().getIntVal(), is(MetricsModel.METRICS_PORT));
     }
 
     @ParallelTest
@@ -1792,7 +1793,7 @@ public class KafkaConnectClusterTest {
         assertThat(np.getSpec().getIngress().get(0).getFrom().get(1).getPodSelector().getMatchLabels(), is(singletonMap(Labels.STRIMZI_KIND_LABEL, "cluster-operator")));
         assertThat(np.getSpec().getIngress().get(0).getFrom().get(1).getNamespaceSelector().getMatchLabels(), is(Collections.singletonMap("nsLabelKey", "nsLabelValue")));
         assertThat(np.getSpec().getIngress().get(1).getPorts().size(), is(1));
-        assertThat(np.getSpec().getIngress().get(1).getPorts().get(0).getPort().getIntVal(), is(KafkaConnectCluster.METRICS_PORT));
+        assertThat(np.getSpec().getIngress().get(1).getPorts().get(0).getPort().getIntVal(), is(MetricsModel.METRICS_PORT));
     }
 
     @ParallelTest
@@ -1909,16 +1910,18 @@ public class KafkaConnectClusterTest {
 
         KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaConnect, VERSIONS);
 
-        assertThat(kc.isMetricsEnabled(), is(true));
-        assertThat(kc.getMetricsConfigInCm(), is(metrics));
+        assertThat(kc.metrics().isEnabled(), is(true));
+        assertThat(kc.metrics().getConfigMapName(), is("my-metrics-configuration"));
+        assertThat(kc.metrics().getConfigMapKey(), is("config.yaml"));
     }
 
     @ParallelTest
     public void testMetricsParsingNoMetrics() {
         KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, this.resource, VERSIONS);
 
-        assertThat(kc.isMetricsEnabled(), is(false));
-        assertThat(kc.getMetricsConfigInCm(), is(nullValue()));
+        assertThat(kc.metrics().isEnabled(), is(false));
+        assertThat(kc.metrics().getConfigMapName(), is(nullValue()));
+        assertThat(kc.metrics().getConfigMapKey(), is(nullValue()));
     }
 
     @ParallelTest

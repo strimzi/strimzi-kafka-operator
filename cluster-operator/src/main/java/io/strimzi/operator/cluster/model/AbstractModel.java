@@ -4,30 +4,19 @@
  */
 package io.strimzi.operator.cluster.model;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.fabric8.kubernetes.api.model.ServiceAccount;
-import io.strimzi.api.kafka.model.JmxPrometheusExporterMetrics;
 import io.strimzi.api.kafka.model.JvmOptions;
 import io.strimzi.api.kafka.model.KafkaResources;
-import io.strimzi.api.kafka.model.Logging;
-import io.strimzi.api.kafka.model.MetricsConfig;
 import io.strimzi.api.kafka.model.template.ContainerTemplate;
 import io.strimzi.api.kafka.model.template.ResourceTemplate;
 import io.strimzi.operator.cluster.model.securityprofiles.PodSecurityProviderFactory;
-import io.strimzi.operator.common.MetricsAndLogging;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.plugin.security.profiles.PodSecurityProvider;
-
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * AbstractModel an abstract base model for all components of the {@code Kafka} custom resource
@@ -50,15 +39,6 @@ public abstract class AbstractModel {
     protected static final String INIT_VOLUME_MOUNT = "/opt/kafka/init";
     protected static final String ENV_VAR_KAFKA_INIT_RACK_TOPOLOGY_KEY = "RACK_TOPOLOGY_KEY";
     protected static final String ENV_VAR_KAFKA_INIT_NODE_NAME = "NODE_NAME";
-
-    /**
-     * Key under which the metrics configuration is stored in the ConfigMap
-     */
-    public static final String ANCILLARY_CM_KEY_METRICS = "metrics-config.json";
-    /**
-     * Key under which the Log4j properties are stored in the ConfigMap
-     */
-    public static final String ANCILLARY_CM_KEY_LOG_CONFIG = "log4j.properties";
 
     protected static final String ENV_VAR_DYNAMIC_HEAP_PERCENTAGE = "STRIMZI_DYNAMIC_HEAP_PERCENTAGE";
     protected static final String ENV_VAR_KAFKA_HEAP_OPTS = "KAFKA_HEAP_OPTS";
@@ -85,7 +65,6 @@ public abstract class AbstractModel {
      * Application configuration
      */
     protected AbstractConfiguration configuration;
-    protected Logging logging;
     protected boolean gcLoggingEnabled = true;
     protected JvmOptions jvmOptions;
 
@@ -94,15 +73,6 @@ public abstract class AbstractModel {
      */
     public static final String VOLUME_NAME = "data";
     protected String mountPath;
-
-    /**
-     * Metrics configuration
-     */
-    protected boolean isMetricsEnabled;
-    protected static final String METRICS_PORT_NAME = "tcp-prometheus";
-    protected static final int METRICS_PORT = 9404;
-    protected MetricsConfig metricsConfigInCm;
-    protected String ancillaryConfigMapName;
     protected String logAndMetricsConfigMountPath;
     protected String logAndMetricsConfigVolumeName;
 
@@ -165,139 +135,6 @@ public abstract class AbstractModel {
     }
 
     /**
-     * @return Whether metrics are enabled.
-     */
-    public boolean isMetricsEnabled() {
-        return isMetricsEnabled;
-    }
-
-    /**
-     * @return The logging configuration
-     */
-    public Logging getLogging() {
-        return logging;
-    }
-
-    /**
-     * Generates the logging configuration as a String. The configuration is generated based on the default logging
-     * configuration files from resources, the (optional) inline logging configuration from the custom resource
-     * and the (optional) external logging configuration in a user-provided ConfigMap.
-     *
-     * @param externalCm The user-provided ConfigMap with custom Log4j / Log4j2 file
-     *
-     * @return String with the Log4j / Log4j2 properties used for configuration
-     */
-    public String loggingConfiguration(ConfigMap externalCm) {
-        return loggingConfiguration(externalCm, false);
-    }
-
-    /**
-     * Generates the logging configuration as a String. The configuration is generated based on the default logging
-     * configuration files from resources, the (optional) inline logging configuration from the custom resource
-     * and the (optional) external logging configuration in a user-provided ConfigMap.
-     *
-     * @param externalCm                    The user-provided ConfigMap with custom Log4j / Log4j2 file
-     * @param shouldPatchLoggerAppender     Indicator if logger appender should be patched
-     *
-     * @return String with the Log4j / Log4j2 properties used for configuration
-     */
-    String loggingConfiguration(ConfigMap externalCm, boolean shouldPatchLoggerAppender) {
-        return LoggingUtils
-                .loggingConfiguration(
-                        reconciliation,
-                        this.getClass().getSimpleName(),
-                        shouldPatchLoggerAppender,
-                        !ANCILLARY_CM_KEY_LOG_CONFIG.equals(getAncillaryConfigMapKeyLogConfig()), // If the file name for the Config Map is not log4j.properties, we assume it is Log4j2
-                        logging,
-                        externalCm
-                );
-    }
-
-    /**
-     * Generates a metrics and logging ConfigMap according to configured defaults. This is used with most operands, but
-     * not all of them. Kafka brokers have own methods in the KafkaCluster class. So does the Bridge. And Kafka Exporter
-     * has no metrics or logging ConfigMap at all.
-     *
-     * @param metricsAndLogging The external CMs
-     * @return The generated ConfigMap.
-     */
-    public ConfigMap generateMetricsAndLogConfigMap(MetricsAndLogging metricsAndLogging) {
-        Map<String, String> data = new HashMap<>(2);
-        data.put(getAncillaryConfigMapKeyLogConfig(), loggingConfiguration(metricsAndLogging.getLoggingCm()));
-        if (getMetricsConfigInCm() != null) {
-            String parseResult = metricsConfiguration(metricsAndLogging.getMetricsCm());
-            if (parseResult != null) {
-                this.isMetricsEnabled = true;
-                data.put(ANCILLARY_CM_KEY_METRICS, parseResult);
-            }
-        }
-
-        return ConfigMapUtils.createConfigMap(ancillaryConfigMapName, namespace, labels, ownerReference, data);
-    }
-
-    /**
-     * Generates Prometheus metrics configuration based on the JMXExporter configuration from the user-provided ConfigMap.
-     *
-     * @param externalCm    ConfigMap with the JMX Prometheus configuration YAML
-     *
-     * @return              String with JSON formatted metrics configuration
-     */
-    public String metricsConfiguration(ConfigMap externalCm) {
-        if (getMetricsConfigInCm() != null) {
-            if (getMetricsConfigInCm() instanceof JmxPrometheusExporterMetrics) {
-                if (externalCm == null) {
-                    LOGGER.warnCr(reconciliation, "ConfigMap {} does not exist. Metrics disabled.",
-                            ((JmxPrometheusExporterMetrics) getMetricsConfigInCm()).getValueFrom().getConfigMapKeyRef().getName());
-                    throw new InvalidResourceException("ConfigMap " + ((JmxPrometheusExporterMetrics) getMetricsConfigInCm()).getValueFrom().getConfigMapKeyRef().getName() + " does not exist.");
-                } else {
-                    String data = externalCm.getData().get(((JmxPrometheusExporterMetrics) getMetricsConfigInCm()).getValueFrom().getConfigMapKeyRef().getKey());
-                    if (data == null) {
-                        LOGGER.warnCr(reconciliation, "ConfigMap {} does not contain specified key {}.", ((JmxPrometheusExporterMetrics) getMetricsConfigInCm()).getValueFrom().getConfigMapKeyRef().getName(),
-                                ((JmxPrometheusExporterMetrics) getMetricsConfigInCm()).getValueFrom().getConfigMapKeyRef().getKey());
-                        throw new InvalidResourceException("ConfigMap " + ((JmxPrometheusExporterMetrics) getMetricsConfigInCm()).getValueFrom().getConfigMapKeyRef().getName()
-                                + " does not contain specified key " + ((JmxPrometheusExporterMetrics) getMetricsConfigInCm()).getValueFrom().getConfigMapKeyRef().getKey() + ".");
-                    } else {
-                        if (data.isEmpty()) {
-                            return "{}";
-                        }
-                        try {
-                            ObjectMapper yamlReader = new ObjectMapper(new YAMLFactory());
-                            Object yaml = yamlReader.readValue(data, Object.class);
-                            ObjectMapper jsonWriter = new ObjectMapper();
-                            return jsonWriter.writeValueAsString(yaml);
-                        } catch (JsonProcessingException e) {
-                            throw new InvalidResourceException("Parsing metrics configuration failed. ", e);
-                        }
-                    }
-                }
-            } else {
-                LOGGER.warnCr(reconciliation, "Unknown type of metrics {}.", getMetricsConfigInCm().getClass());
-                throw new InvalidResourceException("Unknown type of metrics " + getMetricsConfigInCm().getClass() + ".");
-            }
-        }
-        return null;
-    }
-
-    protected void setMetricsConfigInCm(MetricsConfig metricsConfigInCm) {
-        this.metricsConfigInCm = metricsConfigInCm;
-    }
-
-    /**
-     * @return  Returns the ConfigMap with metrics configuration
-     */
-    public MetricsConfig getMetricsConfigInCm() {
-        return metricsConfigInCm;
-    }
-
-    /**
-     * Returns name of config map used for storing metrics and logging configuration.
-     * @return The name of config map used for storing metrics and logging configuration.
-     */
-    public String getAncillaryConfigMapName() {
-        return ancillaryConfigMapName;
-    }
-
-    /**
      * @return an implementation of AbstractConfiguration configured by a user for a component.
      */
     public AbstractConfiguration getConfiguration() {
@@ -330,18 +167,11 @@ public abstract class AbstractModel {
     /**
      * Gets the name of a given pod in a StatefulSet.
      *
-     * @param podId The Id (ordinal) of the pod.
+     * @param podId The ID (ordinal) of the pod.
      * @return The name of the pod with the given name.
      */
     public String getPodName(Integer podId) {
         return componentName + "-" + podId;
-    }
-
-    /**
-     * @return  The key under which tge logging configuration is stored in the Logging Config Map
-     */
-    public String getAncillaryConfigMapKeyLogConfig() {
-        return ANCILLARY_CM_KEY_LOG_CONFIG;
     }
 
     /**

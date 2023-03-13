@@ -27,13 +27,14 @@ import io.strimzi.api.kafka.model.status.KafkaConnectStatus;
 import io.strimzi.api.kafka.model.connect.build.BuildBuilder;
 import io.strimzi.api.kafka.model.connect.build.JarArtifactBuilder;
 import io.strimzi.api.kafka.model.connect.build.PluginBuilder;
-import io.strimzi.operator.cluster.model.LoggingUtils;
+import io.strimzi.operator.cluster.model.logging.LoggingModel;
+import io.strimzi.operator.cluster.model.logging.LoggingUtils;
+import io.strimzi.operator.cluster.model.metrics.MetricsModel;
 import io.strimzi.operator.common.operator.resource.StrimziPodSetOperator;
 import io.strimzi.platform.KubernetesVersion;
 import io.strimzi.operator.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
-import io.strimzi.operator.cluster.model.AbstractModel;
 import io.strimzi.operator.cluster.model.KafkaConnectCluster;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
@@ -425,7 +426,7 @@ public class KafkaConnectAssemblyOperatorTest {
                     .withName(KafkaConnectResources.metricsAndLogConfigMapName(kcName))
                     .withNamespace(kcNamespace)
                 .endMetadata()
-                .withData(Collections.singletonMap(AbstractModel.ANCILLARY_CM_KEY_METRICS, METRICS_CONFIG))
+                .withData(Collections.singletonMap(MetricsModel.CONFIG_MAP_KEY, METRICS_CONFIG))
                 .build();
         when(mockCmOps.get(kcNamespace, KafkaConnectResources.metricsAndLogConfigMapName(kcName))).thenReturn(metricsCm);
 
@@ -433,7 +434,7 @@ public class KafkaConnectAssemblyOperatorTest {
                     .withName(KafkaConnectResources.metricsAndLogConfigMapName(kcName))
                     .withNamespace(kcNamespace)
                     .endMetadata()
-                    .withData(Collections.singletonMap(AbstractModel.ANCILLARY_CM_KEY_LOG_CONFIG, LOGGING_CONFIG))
+                    .withData(Collections.singletonMap(LoggingModel.LOG4J1_CONFIG_MAP_KEY, LOGGING_CONFIG))
                     .build();
 
         when(mockCmOps.get(kcNamespace, KafkaConnectResources.metricsAndLogConfigMapName(kcName))).thenReturn(metricsCm);
@@ -479,7 +480,7 @@ public class KafkaConnectAssemblyOperatorTest {
                 Deployment dc = capturedDc.get(0);
                 assertThat(dc.getMetadata().getName(), is(compareTo.getComponentName()));
 
-                String loggingConfiguration = loggingCm.getData().get(AbstractModel.ANCILLARY_CM_KEY_LOG_CONFIG);
+                String loggingConfiguration = loggingCm.getData().get(LoggingModel.LOG4J1_CONFIG_MAP_KEY);
                 String dynamicallyUnmodifiableEntries = Util.getLoggingDynamicallyUnmodifiableEntries(loggingConfiguration);
                 String hashedLoggingConf = Util.hashStub(dynamicallyUnmodifiableEntries);
                 Map<String, String> annotations = new HashMap<>();

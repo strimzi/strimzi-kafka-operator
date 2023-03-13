@@ -38,6 +38,7 @@ import io.strimzi.api.kafka.model.storage.Storage;
 import io.strimzi.api.kafka.model.template.DeploymentStrategy;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
+import io.strimzi.operator.cluster.model.metrics.MetricsModel;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.test.TestUtils;
@@ -67,7 +68,7 @@ public class KafkaExporterTest {
     private final int healthDelay = 120;
     private final int healthTimeout = 30;
     private final String metricsCMName = "metrics-cm";
-    private final JmxPrometheusExporterMetrics jmxMetricsConfig = io.strimzi.operator.cluster.TestUtils.getJmxPrometheusExporterMetrics(AbstractModel.ANCILLARY_CM_KEY_METRICS, metricsCMName);
+    private final JmxPrometheusExporterMetrics jmxMetricsConfig = io.strimzi.operator.cluster.TestUtils.getJmxPrometheusExporterMetrics(MetricsModel.CONFIG_MAP_KEY, metricsCMName);
     private final Map<String, Object> kafkaConfig = singletonMap("foo", "bar");
     private final Map<String, Object> zooConfig = singletonMap("foo", "bar");
     private final Storage kafkaStorage = new EphemeralStorage();
@@ -166,19 +167,19 @@ public class KafkaExporterTest {
         assertThat(containers.get(0).getImage(), is(ke.image));
         assertThat(containers.get(0).getEnv(), is(getExpectedEnvVars()));
         assertThat(containers.get(0).getPorts().size(), is(1));
-        assertThat(containers.get(0).getPorts().get(0).getName(), is(KafkaExporter.METRICS_PORT_NAME));
+        assertThat(containers.get(0).getPorts().get(0).getName(), is(MetricsModel.METRICS_PORT_NAME));
         assertThat(containers.get(0).getPorts().get(0).getProtocol(), is("TCP"));
         assertThat(dep.getSpec().getStrategy().getType(), is("RollingUpdate"));
 
         // Test healthchecks
         assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getLivenessProbe().getHttpGet().getPath(), is("/healthz"));
-        assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getLivenessProbe().getHttpGet().getPort(), is(new IntOrString(KafkaExporter.METRICS_PORT_NAME)));
+        assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getLivenessProbe().getHttpGet().getPort(), is(new IntOrString(MetricsModel.METRICS_PORT_NAME)));
         assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getLivenessProbe().getInitialDelaySeconds(), is(KafkaExporter.DEFAULT_HEALTHCHECK_DELAY));
         assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getLivenessProbe().getPeriodSeconds(), is(KafkaExporter.DEFAULT_HEALTHCHECK_PERIOD));
         assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getLivenessProbe().getTimeoutSeconds(), is(KafkaExporter.DEFAULT_HEALTHCHECK_TIMEOUT));
 
         assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().getHttpGet().getPath(), is("/healthz"));
-        assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().getHttpGet().getPort(), is(new IntOrString(KafkaExporter.METRICS_PORT_NAME)));
+        assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().getHttpGet().getPort(), is(new IntOrString(MetricsModel.METRICS_PORT_NAME)));
         assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().getInitialDelaySeconds(), is(KafkaExporter.DEFAULT_HEALTHCHECK_DELAY));
         assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().getPeriodSeconds(), is(KafkaExporter.DEFAULT_HEALTHCHECK_PERIOD));
         assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().getTimeoutSeconds(), is(KafkaExporter.DEFAULT_HEALTHCHECK_TIMEOUT));

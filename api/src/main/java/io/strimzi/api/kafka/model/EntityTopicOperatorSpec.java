@@ -32,7 +32,7 @@ import java.util.Map;
     "startupProbe", "livenessProbe", "readinessProbe",
     "resources", "topicMetadataMaxAttempts", "logging", "jvmOptions"})
 @EqualsAndHashCode
-public class EntityTopicOperatorSpec implements UnknownPropertyPreserving, Serializable {
+public class EntityTopicOperatorSpec implements HasConfigurableLogging, UnknownPropertyPreserving, Serializable {
 
     private static final long serialVersionUID = 1L;
 
@@ -153,10 +153,12 @@ public class EntityTopicOperatorSpec implements UnknownPropertyPreserving, Seria
 
     @Description("Logging configuration")
     @JsonInclude(value = JsonInclude.Include.NON_NULL)
+    @Override
     public Logging getLogging() {
         return logging;
     }
 
+    @Override
     public void setLogging(Logging logging) {
         this.logging = logging;
     }
