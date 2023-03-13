@@ -93,16 +93,25 @@ public class AuthenticationUtils {
 
         // Additional validation
         ArrayList<String> errors = new ArrayList<>();
-
-        if (auth.getConnectTimeoutSeconds() != null && auth.getConnectTimeoutSeconds() <= 0) {
-            errors.add("If specified, 'connectTimeoutSeconds' has to be greater than 0");
-        }
-        if (auth.getReadTimeoutSeconds() != null && auth.getReadTimeoutSeconds() <= 0) {
-            errors.add("If specified, 'readTimeoutSeconds' has to be greater than 0");
-        }
+        checkValueGreaterThanZero(errors, "connectTimeoutSeconds", auth.getConnectTimeoutSeconds());
+        checkValueGreaterThanZero(errors, "readTimeoutSeconds", auth.getReadTimeoutSeconds());
+        checkValueGreaterOrEqualZero(errors, "httpRetries", auth.getHttpRetries());
+        checkValueGreaterOrEqualZero(errors, "httpRetryPauseMs", auth.getHttpRetryPauseMs());
 
         if (errors.size() > 0) {
             throw new InvalidResourceException("OAUTH authentication selected, but some options are invalid. " + errors);
+        }
+    }
+
+    private static void checkValueGreaterThanZero(ArrayList<String> errors, String name, Integer value) {
+        if (value != null && value <= 0) {
+            errors.add("If specified, '" + name + "' has to be greater than 0");
+        }
+    }
+
+    private static void checkValueGreaterOrEqualZero(ArrayList<String> errors, String name, Integer value) {
+        if (value != null && value < 0) {
+            errors.add("If specified, '" + name + "' has to be greater or equal 0");
         }
     }
 
@@ -284,17 +293,19 @@ public class AuthenticationUtils {
             } else if (authentication instanceof KafkaClientAuthenticationOAuth oauth) {
                 properties.put(SASL_MECHANISM, KafkaClientAuthenticationOAuth.TYPE_OAUTH);
 
-                List<String> options = new ArrayList<>(2);
-                if (oauth.getClientId() != null) options.add(String.format("%s=\"%s\"", ClientConfig.OAUTH_CLIENT_ID, oauth.getClientId()));
-                if (oauth.getUsername() != null) options.add(String.format("%s=\"%s\"", ClientConfig.OAUTH_PASSWORD_GRANT_USERNAME, oauth.getUsername()));
-                if (oauth.getTokenEndpointUri() != null) options.add(String.format("%s=\"%s\"", ClientConfig.OAUTH_TOKEN_ENDPOINT_URI, oauth.getTokenEndpointUri()));
-                if (oauth.getScope() != null) options.add(String.format("%s=\"%s\"", ClientConfig.OAUTH_SCOPE, oauth.getScope()));
-                if (oauth.getAudience() != null) options.add(String.format("%s=\"%s\"", ClientConfig.OAUTH_AUDIENCE, oauth.getAudience()));
+                List<String> options = new ArrayList<>(13);
+                addOption(options, ClientConfig.OAUTH_CLIENT_ID, oauth.getClientId());
+                addOption(options, ClientConfig.OAUTH_PASSWORD_GRANT_USERNAME, oauth.getUsername());
+                addOption(options, ClientConfig.OAUTH_TOKEN_ENDPOINT_URI, oauth.getTokenEndpointUri());
+                addOption(options, ClientConfig.OAUTH_SCOPE, oauth.getScope());
+                addOption(options, ClientConfig.OAUTH_AUDIENCE, oauth.getAudience());
                 if (oauth.isDisableTlsHostnameVerification()) options.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM, ""));
                 if (!oauth.isAccessTokenIsJwt()) options.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_ACCESS_TOKEN_IS_JWT, false));
-                if (oauth.getMaxTokenExpirySeconds() > 0) options.add(String.format("%s=\"%s\"", ClientConfig.OAUTH_MAX_TOKEN_EXPIRY_SECONDS, oauth.getMaxTokenExpirySeconds()));
-                if (oauth.getConnectTimeoutSeconds() != null && oauth.getConnectTimeoutSeconds() > 0) options.add(String.format("%s=\"%s\"", ClientConfig.OAUTH_CONNECT_TIMEOUT_SECONDS, oauth.getConnectTimeoutSeconds()));
-                if (oauth.getReadTimeoutSeconds() != null && oauth.getReadTimeoutSeconds() > 0)  options.add(String.format("%s=\"%s\"", ClientConfig.OAUTH_READ_TIMEOUT_SECONDS, oauth.getReadTimeoutSeconds()));
+                addOptionIfGreaterThanZero(options, ClientConfig.OAUTH_MAX_TOKEN_EXPIRY_SECONDS, oauth.getMaxTokenExpirySeconds());
+                addOptionIfGreaterThanZero(options, ClientConfig.OAUTH_CONNECT_TIMEOUT_SECONDS, oauth.getConnectTimeoutSeconds());
+                addOptionIfGreaterThanZero(options, ClientConfig.OAUTH_READ_TIMEOUT_SECONDS, oauth.getReadTimeoutSeconds());
+                addOptionIfGreaterThanZero(options, ClientConfig.OAUTH_HTTP_RETRIES, oauth.getHttpRetries());
+                addOptionIfGreaterThanZero(options, ClientConfig.OAUTH_HTTP_RETRY_PAUSE_MILLIS, oauth.getHttpRetryPauseMs());
                 if (oauth.isEnableMetrics()) options.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_ENABLE_METRICS, true));
 
                 properties.put(OAUTH_CONFIG, String.join(" ", options));
@@ -302,6 +313,18 @@ public class AuthenticationUtils {
         }
         
         return properties;
+    }
+
+    private static void addOptionIfGreaterThanZero(List<String> options, String name, Integer value) {
+        if (value != null && value > 0) {
+            options.add(String.format("%s=\"%s\"", name, value));
+        }
+    }
+
+    private static void addOption(List<String> options, String name, String value) {
+        if (value != null) {
+            options.add(String.format("%s=\"%s\"", name, value));
+        }
     }
 
     /**

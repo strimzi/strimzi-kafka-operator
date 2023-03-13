@@ -571,6 +571,12 @@ public class KafkaBrokerConfigurationBuilder {
         if (oauth.getReadTimeoutSeconds() != null && oauth.getReadTimeoutSeconds() > 0) {
             addOption(options, ServerConfig.OAUTH_READ_TIMEOUT_SECONDS, String.valueOf(oauth.getReadTimeoutSeconds()));
         }
+        if (oauth.getHttpRetries() != null && oauth.getHttpRetries() > 0) {
+            addOption(options, ServerConfig.OAUTH_HTTP_RETRIES, String.valueOf(oauth.getHttpRetries()));
+        }
+        if (oauth.getHttpRetryPauseMs() != null && oauth.getHttpRetryPauseMs() > 0) {
+            addOption(options, ServerConfig.OAUTH_HTTP_RETRY_PAUSE_MILLIS, String.valueOf(oauth.getHttpRetryPauseMs()));
+        }
 
         addBooleanOptionIfTrue(options, ServerConfig.OAUTH_ENABLE_METRICS, oauth.isEnableMetrics());
         addBooleanOptionIfFalse(options, ServerConfig.OAUTH_FAIL_FAST, oauth.getFailFast());
@@ -710,6 +716,7 @@ public class KafkaBrokerConfigurationBuilder {
         addOption(writer, "strimzi.authorization.grants.refresh.pool.size", authorization.getGrantsRefreshPoolSize());
         addOption(writer, "strimzi.authorization.connect.timeout.seconds", authorization.getConnectTimeoutSeconds());
         addOption(writer, "strimzi.authorization.read.timeout.seconds", authorization.getReadTimeoutSeconds());
+        addOption(writer, "strimzi.authorization.http.retries", authorization.getHttpRetries());
 
         if (authorization.isEnableMetrics()) {
             writer.println("strimzi.authorization.enable.metrics=true");

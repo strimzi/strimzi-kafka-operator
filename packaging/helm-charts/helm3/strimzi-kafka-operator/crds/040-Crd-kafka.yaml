@@ -163,6 +163,12 @@ spec:
                               groupsClaimDelimiter:
                                 type: string
                                 description: "A delimiter used to parse groups when they are extracted as a single String value rather than a JSON array. Default value is ',' (comma)."
+                              httpRetries:
+                                type: integer
+                                description: "The maximum number of retries to attempt if an initial HTTP request fails. If not set, the default is to not attempt any retries."
+                              httpRetryPauseMs:
+                                type: integer
+                                description: "The pause to take before retrying a failed HTTP request. If not set, the default is to not pause at all but to immediately repeat a request."
                               introspectionEndpointUri:
                                 type: string
                                 description: URI of the token introspection endpoint which can be used to validate opaque non-JWT tokens.
@@ -590,6 +596,10 @@ spec:
                           type: integer
                           minimum: 1
                           description: "The number of threads to use to refresh grants for active sessions. The more threads, the more parallelism, so the sooner the job completes. However, using more threads places a heavier load on the authorization server. The default value is 5."
+                        httpRetries:
+                          type: integer
+                          minimum: 0
+                          description: "The maximum number of retries to attempt if an initial HTTP request fails. If not set, the default is to not attempt any retries."
                         initialCacheCapacity:
                           type: integer
                           description: Initial capacity of the local cache used by the authorizer to avoid querying the Open Policy Agent for every request Defaults to `5000`.
