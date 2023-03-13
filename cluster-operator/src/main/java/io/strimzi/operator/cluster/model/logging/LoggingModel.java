@@ -10,7 +10,7 @@ import io.strimzi.api.kafka.model.Logging;
 import io.strimzi.operator.common.Reconciliation;
 
 /**
- * Represents a model for components with enabled JMX access
+ * Represents a model for logging configuration
  */
 public class LoggingModel {
     /**
@@ -29,9 +29,9 @@ public class LoggingModel {
     private final boolean shouldPatchLoggerAppender;
 
     /**
-     * Constructs the JMX Model for managing JMX access to Strimzi
+     * Constructs the Logging Model for managing logging
      *
-     * @param specSection                   Custom resource section configuring the JMX access
+     * @param specSection                   Custom resource section configuring logging
      * @param defaultLogConfigBaseName      Base of the file name with the default logging configuration
      * @param isLog4j2                      Indicates whether this logging is based on Log4j1 or Log4j2
      * @param shouldPatchLoggerAppender     Indicates whether logger appenders should be patched or not
