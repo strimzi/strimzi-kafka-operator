@@ -80,7 +80,7 @@ public class OlmResource implements SpecificResourceType {
 
     @Override
     public void delete() {
-
+        // Deletion is done by ResourceManager using StoredResource
     }
 
     /**
