@@ -524,6 +524,17 @@
         </profile>
 
         <profile>
+            <id>azp_bridge</id>
+            <properties>
+                <skipTests>false</skipTests>
+                <groups>bridge</groups>
+                <it.test>
+                    !olm/**/*ST,
+                </it.test>
+            </properties>
+        </profile>
+
+        <profile>
             <id>scalability</id>
             <properties>
                 <skipTests>false</skipTests>
