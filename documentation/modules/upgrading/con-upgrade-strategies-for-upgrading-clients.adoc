@@ -7,11 +7,15 @@
 = Strategies for upgrading clients
 
 [role="_abstract"]
-The goal of upgrading clients is to enable them to consume new message formats produced by updated producers.
-You do this by upgrading all the consumers for a topic _before_ upgrading any of the producers.
-Upgrading consumers first ensures that consuming applications can understand the new message format before any new messages in that format are produced.
-The chosen upgrade strategy depends on a number of factors, such as the number of applications that need to be upgraded and how much downtime is tolerable. 
-You can combine more than one strategy.
+The goal of upgrading Kafka clients is to enable them to consume new message formats produced by updated producers. 
+The chosen upgrade strategy depends on whether you are upgrading brokers or clients first. 
+If you upgrade clients before brokers, some new features may not work as they are not yet supported by brokers. 
+However, brokers can handle producers and consumers running with different versions and supporting different log message versions.
+
+If you upgrade brokers first, there may be a need for down-conversion or retention of older log message versions to ensure compatibility with older applications. 
+The decision to upgrade clients or brokers first depends on several factors, such as the number of applications that need to be upgraded and how much downtime is tolerable.
+
+Therefore, it is important to carefully consider the best approach for upgrading Kafka clients and brokers to ensure a smooth transition.
 
 .Consumers first strategy
 
@@ -43,6 +47,14 @@ It also works for applications that are both consumers and producers of the same
 The approach ensures that the upgraded producers and consumers are working correctly before you commit to using the new message format version.
 The main drawback of this approach is that it can be complicated to manage in a cluster with many topics and applications.
 
-TIP: You can use Kafka metrics to monitor the performance of message down-conversion. 
-The _message conversion time_ metric measures the time taken to perform message conversion. 
-The _message conversion rate_ metric measures the number of messages converted over a period of time.  
+[TIP]
+====
+The following Kafka broker metrics help monitor the performance of message down-conversion:
+
+* `kafka.network:type=RequestMetrics,name=MessageConversionsTimeMs,request={Produce|Fetch}` provides metrics on the time taken to perform message conversion. 
+* `kafka.server:type=BrokerTopicMetrics,name={Produce|Fetch}MessageConversionsPerSec,topic=([-.\w]+)` provides metrics on the number of messages converted over a period of time.  
+
+You can track Kafka client names and versions using this metric:
+
+* `kafka.server:type=socket-server-metrics,clientSoftwareName=<name>,clientSoftwareVersion=<version>,listener=<listener>,networkProcessor=<processor>`  
+====
