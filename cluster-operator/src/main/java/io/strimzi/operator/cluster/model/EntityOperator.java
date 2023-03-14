@@ -13,6 +13,8 @@ import io.fabric8.kubernetes.api.model.LifecycleBuilder;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
+import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy;
+import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyIngressRule;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRole;
 import io.fabric8.kubernetes.api.model.rbac.PolicyRule;
 import io.fabric8.kubernetes.api.model.rbac.Role;
@@ -21,6 +23,7 @@ import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaClusterSpec;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.TlsSidecar;
+import io.strimzi.api.kafka.model.CruiseControlResources;
 import io.strimzi.api.kafka.model.template.DeploymentTemplate;
 import io.strimzi.api.kafka.model.template.EntityOperatorTemplate;
 import io.strimzi.api.kafka.model.template.PodTemplate;
@@ -31,6 +34,7 @@ import io.strimzi.operator.cluster.model.securityprofiles.ContainerSecurityProvi
 import io.strimzi.operator.cluster.model.securityprofiles.PodSecurityProviderContextImpl;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.Util;
+import io.strimzi.operator.common.model.Labels;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -82,6 +86,7 @@ public class EntityOperator extends AbstractModel {
     private ResourceTemplate templateRole;
     private DeploymentTemplate templateDeployment;
     private PodTemplate templatePod;
+    private static final boolean DEFAULT_ENTITY_OPERATOR_METRICS_ENABLED = false;
 
     private static final Map<String, String> DEFAULT_POD_LABELS = new HashMap<>();
     static {
@@ -101,6 +106,7 @@ public class EntityOperator extends AbstractModel {
         super(reconciliation, resource, KafkaResources.entityOperatorDeploymentName(resource.getMetadata().getName()), COMPONENT_TYPE);
 
         this.zookeeperConnect = KafkaResources.zookeeperServiceName(cluster) + ":" + ZookeeperCluster.CLIENT_TLS_PORT;
+        this.isMetricsEnabled = DEFAULT_ENTITY_OPERATOR_METRICS_ENABLED;
     }
 
     /**
@@ -318,5 +324,32 @@ public class EntityOperator extends AbstractModel {
         }
 
         return role;
+    }
+
+    /**
+     * Generates the NetworkPolicies relevant for Cruise Control
+     *
+     * @param operatorNamespace                             Namespace where the Strimzi Cluster Operator runs. Null if not configured.
+     * @param operatorNamespaceLabels                       Labels of the namespace where the Strimzi Cluster Operator runs. Null if not configured.
+     *
+     * @return The network policy.
+     */
+    public NetworkPolicy generateNetworkPolicy(String operatorNamespace, Labels operatorNamespaceLabels) {
+        // List of network policy rules for all ports
+        List<NetworkPolicyIngressRule> rules = new ArrayList<>();
+
+        // Everyone can access metrics
+        if (isMetricsEnabled) {
+            rules.add(NetworkPolicyUtils.createIngressRule(METRICS_PORT, List.of()));
+        }
+
+        // Build the final network policy with all rules covering all the ports
+        return NetworkPolicyUtils.createNetworkPolicy(
+                CruiseControlResources.networkPolicyName(cluster),
+                namespace,
+                labels,
+                ownerReference,
+                rules
+        );
     }
 }
