@@ -23,7 +23,6 @@ public class OlmConfiguration {
     private String olmSourceName = Environment.OLM_SOURCE_NAME;
     private String olmSourceNamespace = Environment.OLM_SOURCE_NAMESPACE;
     private String operatorVersion;
-    private String csvName;
     private OlmInstallationStrategy olmInstallationStrategy;
     private String channelName;
     private List<EnvVar> envVars;

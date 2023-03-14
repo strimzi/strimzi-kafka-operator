@@ -364,8 +364,7 @@ public class SetupClusterOperator {
 
         updateSubscription(olmConfiguration);
         OlmUtils.waitUntilInstallPlanContainingCertainCsvIsPresent(namespaceInstallTo, olmConfiguration.getCsvName());
-        DeploymentUtils.waitForDeploymentReady(namespaceInstallTo,
-            ResourceManager.kubeClient().getDeploymentNameByPrefix(olmConfiguration.getOlmOperatorDeploymentName()));
+        DeploymentUtils.waitForDeploymentAndPodsReady(namespaceInstallTo, olmConfiguration.getOlmOperatorDeploymentName(), 1);
     }
 
     public void updateSubscription(OlmConfiguration olmConfiguration) {
