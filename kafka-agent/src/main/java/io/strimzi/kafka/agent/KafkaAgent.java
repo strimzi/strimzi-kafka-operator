@@ -66,12 +66,12 @@ public class KafkaAgent {
     private static final byte BROKER_RUNNING_STATE = 3;
     private static final byte BROKER_RECOVERY_STATE = 2;
     private static final byte BROKER_UNKNOWN_STATE = 127;
-    private final File sessionConnectedFile;
-    private final File brokerReadyFile;
-    private final String sslKeyStorePath;
-    private final String sslKeyStorePassword;
-    private final String sslTruststorePath;
-    private final String sslTruststorePassword;
+    private File sessionConnectedFile;
+    private File brokerReadyFile;
+    private String sslKeyStorePath;
+    private String sslKeyStorePassword;
+    private String sslTruststorePath;
+    private String sslTruststorePassword;
     private MetricName brokerStateName;
     private Gauge brokerState;
     private Gauge remainingLogsToRecover;
@@ -97,6 +97,13 @@ public class KafkaAgent {
         this.sslKeyStorePassword = sslKeyStorePass;
         this.sslTruststorePath = sslTruststorePath;
         this.sslTruststorePassword = sslTruststorePass;
+    }
+
+    // public for testing
+    public KafkaAgent(Gauge brokerState, Gauge remainingLogsToRecover, Gauge remainingSegmentsToRecover) {
+        this.brokerState = brokerState;
+        this.remainingLogsToRecover = remainingLogsToRecover;
+        this.remainingSegmentsToRecover = remainingSegmentsToRecover;
     }
 
     private void run() {
@@ -223,7 +230,17 @@ public class KafkaAgent {
         conn.setPort(HTTPS_PORT);
 
         ContextHandler context = new ContextHandler(BROKER_STATE_PATH);
-        Handler handler = new AbstractHandler() {
+        context.setHandler(getServerHandler());
+
+        server.setConnectors(new Connector[]{conn});
+        server.setHandler(context);
+        server.setStopTimeout(GRACEFUL_SHUTDOWN_TIMEOUT_MS);
+        server.setStopAtShutdown(true);
+        server.start();
+    }
+
+    public Handler getServerHandler() {
+        return new AbstractHandler() {
             @Override
             public void handle(String s, Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws IOException {
                 response.setContentType("application/json");
@@ -251,14 +268,8 @@ public class KafkaAgent {
                 }
             }
         };
-        context.setHandler(handler);
-
-        server.setConnectors(new Connector[]{conn});
-        server.setHandler(context);
-        server.setStopTimeout(GRACEFUL_SHUTDOWN_TIMEOUT_MS);
-        server.setStopAtShutdown(true);
-        server.start();
     }
+
 
     private SslContextFactory getSSLContextFactory() {
         SslContextFactory.Server sslContextFactory = new SslContextFactory.Server();
