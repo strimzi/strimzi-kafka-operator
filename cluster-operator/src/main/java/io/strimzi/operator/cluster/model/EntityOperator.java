@@ -327,7 +327,7 @@ public class EntityOperator extends AbstractModel {
     }
 
     /**
-     * Generates the NetworkPolicies relevant for Cruise Control
+     * Generates the NetworkPolicies relevant for Entity Operator
      *
      * @param operatorNamespace                             Namespace where the Strimzi Cluster Operator runs. Null if not configured.
      * @param operatorNamespaceLabels                       Labels of the namespace where the Strimzi Cluster Operator runs. Null if not configured.

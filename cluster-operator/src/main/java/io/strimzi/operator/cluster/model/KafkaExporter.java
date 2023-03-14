@@ -272,7 +272,7 @@ public class KafkaExporter extends AbstractModel {
     }
 
     /**
-     * Generates the NetworkPolicies relevant for Cruise Control
+     * Generates the NetworkPolicies relevant for Kafka Exporter
      *
      * @param operatorNamespace                             Namespace where the Strimzi Cluster Operator runs. Null if not configured.
      * @param operatorNamespaceLabels                       Labels of the namespace where the Strimzi Cluster Operator runs. Null if not configured.
