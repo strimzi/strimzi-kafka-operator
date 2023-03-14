@@ -300,7 +300,7 @@ public class KafkaUserOperator {
             // User is a SCRAM-SHA-512 user and requested some specific password instead of generating a random password
             desiredPasswordSecret = client.secrets().inNamespace(reconciliation.namespace()).withName(user.desiredPasswordSecretName()).get();
             if (desiredPasswordSecret == null) {
-                throw new InvalidResourceException("Secret " + config.getCaCertSecretName() + " in namespace " + config.getCaNamespace() + " with requested password not found");
+                throw new InvalidResourceException("Secret " + user.desiredPasswordSecretName() + " in namespace " + reconciliation.namespace() + " with requested password not found");
             }
         }
 
