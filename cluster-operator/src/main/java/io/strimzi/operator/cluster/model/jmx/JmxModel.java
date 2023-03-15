@@ -42,12 +42,12 @@ public class JmxModel {
     public static final int JMX_PORT = 9999;
 
     /**
-     * Key under which the JMX username is stored int he JMX Secret
+     * Key under which the JMX username is stored in the JMX Secret
      */
     public static final String JMX_USERNAME_KEY = "jmx-username";
 
     /**
-     * Key under which the JMX password is stored int he JMX Secret
+     * Key under which the JMX password is stored in the JMX Secret
      */
     public static final String JMX_PASSWORD_KEY = "jmx-password";
 
