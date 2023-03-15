@@ -11,14 +11,16 @@ Upgrading Kafka clients ensures that they benefit from the features, fixes, and 
 Upgraded clients maintain compatibility with other upgraded Kafka components.
 The performance and stability of the clients might also be improved.
 
+Consider the best approach for upgrading Kafka clients and brokers to ensure a smooth transition.
 The chosen upgrade strategy depends on whether you are upgrading brokers or clients first. 
+The decision to upgrade clients or brokers first depends on several factors, such as the number of applications that need to be upgraded and how much downtime is tolerable.
+Absent of changes to the log message version, you can usually update in any order without risking downtime.
+
 If you upgrade clients before brokers, some new features may not work as they are not yet supported by brokers. 
 However, brokers can handle producers and consumers running with different versions and supporting different log message versions.
 
-If you upgrade brokers first, there may be a need for down-conversion or retention of older log message versions to ensure compatibility with older applications. 
-The decision to upgrade clients or brokers first depends on several factors, such as the number of applications that need to be upgraded and how much downtime is tolerable.
-
-Therefore, it is important to carefully consider the best approach for upgrading Kafka clients and brokers to ensure a smooth transition.
+It's usually better to upgrade brokers first, so that applications can start using new features as soon as they are upgraded.
+If you do upgrade brokers first, there may be a need for down-conversion or retention of older log message versions to ensure compatibility with older applications. 
 
 .Consumers first strategy
 
