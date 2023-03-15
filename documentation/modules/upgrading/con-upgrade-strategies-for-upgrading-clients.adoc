@@ -7,7 +7,10 @@
 = Strategies for upgrading clients
 
 [role="_abstract"]
-The goal of upgrading Kafka clients is to enable them to consume new message formats produced by updated producers. 
+Upgrading Kafka clients ensures that they benefit from the features, fixes, and improvements that are introduced in new versions of Kafka. 
+Upgraded clients maintain compatibility with other upgraded Kafka components.
+The performance and stability of the clients might also be improved.
+
 The chosen upgrade strategy depends on whether you are upgrading brokers or clients first. 
 If you upgrade clients before brokers, some new features may not work as they are not yet supported by brokers. 
 However, brokers can handle producers and consumers running with different versions and supporting different log message versions.
