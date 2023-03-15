@@ -9,11 +9,11 @@ metadata:
 webhooks:
   - name: strimzi-drain-cleaner.strimzi.io
     rules:
-      - apiGroups:   [""]
+      - apiGroups: [""]
         apiVersions: ["v1"]
-        operations:  ["CREATE"]
-        resources:   ["pods/eviction"]
-        scope:       "Namespaced"
+        operations: ["CREATE"]
+        resources: ["pods/eviction"]
+        scope: "Namespaced"
     clientConfig:
       service:
         namespace: "strimzi-drain-cleaner"
