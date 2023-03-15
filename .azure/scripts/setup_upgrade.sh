@@ -16,10 +16,10 @@ sed -i "s#quay.io/strimzi/kafka#${DOCKER_REGISTRY}/${DOCKER_ORG}/kafka#g" packag
 sed -i "s#quay.io/strimzi/operator#${DOCKER_REGISTRY}/${DOCKER_ORG}/operator#g" packaging/install/cluster-operator/*-Deployment-strimzi-cluster-operator.yaml
 sed -i "s#quay.io/strimzi/jmxtrans#${DOCKER_REGISTRY}/${DOCKER_ORG}/jmxtrans#g" packaging/install/cluster-operator/*-Deployment-strimzi-cluster-operator.yaml
 
-sed -i "s#strimzi/kafka:latest#${DOCKER_ORG}/kafka:${DOCKER_TAG}#g" systemtest/src/test/resources/upgrade/StrimziUpgradeST.yaml
-sed -i "s#strimzi/operator:latest#${DOCKER_ORG}/operator:${DOCKER_TAG}#g" systemtest/src/test/resources/upgrade/StrimziUpgradeST.yaml
+sed -i "s#strimzi/kafka:latest#${DOCKER_ORG}/kafka:${DOCKER_TAG}#g" systemtest/src/test/resources/upgrade/BundleUpgrade.yaml
+sed -i "s#strimzi/operator:latest#${DOCKER_ORG}/operator:${DOCKER_TAG}#g" systemtest/src/test/resources/upgrade/BundleUpgrade.yaml
 
 cat packaging/install/cluster-operator/*-Deployment-strimzi-cluster-operator.yaml
-cat systemtest/src/test/resources/upgrade/StrimziUpgradeST.yaml
-cat systemtest/src/test/resources/upgrade/StrimziDowngradeST.yaml
+cat systemtest/src/test/resources/upgrade/BundleUpgrade.yaml
+cat systemtest/src/test/resources/upgrade/BundleDowngrade.yaml
 

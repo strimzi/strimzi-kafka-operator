@@ -9,7 +9,6 @@ import io.fabric8.openshift.api.model.operatorhub.v1.OperatorGroupBuilder;
 import io.fabric8.openshift.api.model.operatorhub.v1alpha1.Subscription;
 import io.fabric8.openshift.api.model.operatorhub.v1alpha1.SubscriptionBuilder;
 import io.strimzi.systemtest.Constants;
-import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.enums.OlmInstallationStrategy;
 import io.strimzi.systemtest.resources.ResourceItem;
 import io.strimzi.systemtest.resources.ResourceManager;
@@ -50,16 +49,8 @@ public class OlmResource implements SpecificResourceType {
 
     public void create() {
         ResourceManager.STORED_RESOURCES.computeIfAbsent(olmConfiguration.getExtensionContext().getDisplayName(), k -> new Stack<>());
-        clusterOperator();
-    }
 
-    @Override
-    public void delete() {
-
-    }
-
-    private void clusterOperator() {
-        // if on cluster is not defaultOlmNamespace apply 'operator group' in current namespace
+        // Apply Operator Group in OLM namespace if the default OLM namespace is missing
         if (!KubeClusterResource.getInstance().getDefaultOlmNamespace().equals(olmConfiguration.getNamespaceName())) {
             createOperatorGroup();
         }
@@ -68,9 +59,9 @@ public class OlmResource implements SpecificResourceType {
 
         createAndModifySubscription();
 
-        // manual installation needs approval with patch
+        // Manual installation needs to be approved with a patch
         if (olmConfiguration.getOlmInstallationStrategy() == OlmInstallationStrategy.Manual) {
-            OlmUtils.waitUntilNonUsedInstallPlanIsPresent(olmConfiguration.getNamespaceName(), olmConfiguration.getOperatorVersion());
+            OlmUtils.waitUntilNonUsedInstallPlanIsPresent(olmConfiguration.getNamespaceName());
             approveNotApprovedInstallPlan();
         }
 
@@ -78,13 +69,18 @@ public class OlmResource implements SpecificResourceType {
         TestUtils.waitFor("Cluster Operator deployment creation", Constants.GLOBAL_POLL_INTERVAL, CR_CREATION_TIMEOUT,
             () -> kubeClient(olmConfiguration.getNamespaceName()).getDeploymentNameByPrefix(olmConfiguration.getOlmOperatorDeploymentName()) != null);
 
-        deploymentName = kubeClient(olmConfiguration.getNamespaceName()).getDeploymentNameByPrefix(Environment.OLM_OPERATOR_DEPLOYMENT_NAME);
+        deploymentName = kubeClient(olmConfiguration.getNamespaceName()).getDeploymentNameByPrefix(olmConfiguration.getOlmOperatorDeploymentName());
         ResourceManager.setCoDeploymentName(deploymentName);
 
         // Wait for operator creation
         DeploymentUtils.waitForDeploymentAndPodsReady(olmConfiguration.getNamespaceName(), deploymentName, 1);
 
         exampleResources = parseExamplesFromCsv();
+    }
+
+    @Override
+    public void delete() {
+        // Deletion is done by ResourceManager using StoredResource
     }
 
     /**
@@ -108,6 +104,7 @@ public class OlmResource implements SpecificResourceType {
     /**
      * Creates Subscription with spec from OlmConfiguration
      */
+
     private void createAndModifySubscription() {
         Subscription subscription = new SubscriptionBuilder()
             .editOrNewMetadata()
@@ -120,6 +117,7 @@ public class OlmResource implements SpecificResourceType {
                 .withSource(olmConfiguration.getOlmSourceName())
                 .withSourceNamespace(olmConfiguration.getOlmSourceNamespace())
                 .withChannel(olmConfiguration.getChannelName())
+                .withStartingCSV(olmConfiguration.getCsvName())
                 .withInstallPlanApproval(olmConfiguration.getOlmInstallationStrategy().toString())
                 .editOrNewConfig()
                     .withEnv(olmConfiguration.getAllEnvVariablesForOlm())
@@ -129,36 +127,28 @@ public class OlmResource implements SpecificResourceType {
 
         ResourceManager.getInstance().createResource(olmConfiguration.getExtensionContext(), subscription);
     }
+    public void updateSubscription(OlmConfiguration olmConfiguration) {
+        this.olmConfiguration = olmConfiguration;
+        // add CSV resource to the end of the stack -> to be deleted after the subscription and operator group
+        ResourceManager.STORED_RESOURCES
+            .get(olmConfiguration.getExtensionContext().getDisplayName())
+            .add(ResourceManager.STORED_RESOURCES
+                    .get(olmConfiguration.getExtensionContext().getDisplayName()).size(),
+                new ResourceItem(this::deleteCSV));
+        createAndModifySubscription();
+    }
 
     /**
      * Approves non-approved InstallPlan.
      * Used for manual installation type.
      */
     private void approveNotApprovedInstallPlan() {
-        String notApprovedIPName = kubeClient().getInstallPlanNameUsingCsvPrefix(olmConfiguration.getNamespaceName(), olmConfiguration.getCsvName());
+        String notApprovedIPName = kubeClient().getNonApprovedInstallPlan(olmConfiguration.getNamespaceName()).getMetadata().getName();
         kubeClient().approveInstallPlan(olmConfiguration.getNamespaceName(), notApprovedIPName);
     }
 
-    /**
-     * Upgrade cluster operator by obtaining new install plan, which was not used and also approves the installation
-     */
-    public void upgradeClusterOperator() {
-        if (kubeClient().listPodsByPrefixInName(ResourceManager.getCoDeploymentName()).size() == 0) {
-            throw new RuntimeException("We can not perform upgrade! Cluster operator pod is not present.");
-        }
-        approveNotApprovedInstallPlan();
-    }
-
-    public void updateSubscription(OlmConfiguration olmConfiguration) {
-        this.olmConfiguration = olmConfiguration;
-        // add CSV resource to the end of the stack -> to be deleted after the subscription and operator group
-        ResourceManager.STORED_RESOURCES.get(olmConfiguration.getExtensionContext().getDisplayName())
-            .add(ResourceManager.STORED_RESOURCES.get(olmConfiguration.getExtensionContext().getDisplayName()).size(), new ResourceItem(this::deleteCSV));
-        createAndModifySubscription();
-    }
-
     private Map<String, JsonObject> parseExamplesFromCsv() {
-        JsonArray examples = new JsonArray(kubeClient().getCsv(olmConfiguration.getNamespaceName(), olmConfiguration.getCsvName()).getMetadata().getAnnotations().get("alm-examples"));
+        JsonArray examples = new JsonArray(kubeClient().getCsvWithPrefix(olmConfiguration.getNamespaceName(), olmConfiguration.getOlmAppBundlePrefix()).getMetadata().getAnnotations().get("alm-examples"));
         return examples.stream().map(o -> (JsonObject) o).collect(Collectors.toMap(object -> object.getString("kind"), object -> object));
     }
 
@@ -170,8 +160,12 @@ public class OlmResource implements SpecificResourceType {
         return olmConfiguration;
     }
 
-    private void deleteCSV() {
-        LOGGER.info("Deleting CSV {}/{}", olmConfiguration.getNamespaceName(), olmConfiguration.getCsvName());
-        kubeClient().deleteCsv(olmConfiguration.getNamespaceName(), olmConfiguration.getCsvName());
+    public void deleteCSV() {
+        LOGGER.info("Deleting CSV {}/{}", olmConfiguration.getNamespaceName(), olmConfiguration.getOlmAppBundlePrefix());
+        if (olmConfiguration.getOperatorVersion() == null) {
+            kubeClient().deleteCsv(olmConfiguration.getNamespaceName(), kubeClient().getCsvWithPrefix(olmConfiguration.getNamespaceName(), olmConfiguration.getOlmAppBundlePrefix()).getMetadata().getName());
+        } else {
+            kubeClient().deleteCsv(olmConfiguration.getNamespaceName(), olmConfiguration.getCsvName());
+        }
     }
 }

@@ -1,10 +1,10 @@
 # --- Structure ---
-#- fromVersion: String - From this version we will downgrade the CO
-#  toVersion: String - From this version we will upgrade the CO to latest = "HEAD"
-#  fromExamples: String - Folder name which contains examples to deploy. Downloaded from "urlFrom"
-#  toExamples: String - Folder name which contains examples to upgrade / downgrade to. Downloaded from "urlTo"
-#  urlFrom: String - url, from which examples are downloaded
-#  urlTo: String - url, from which examples are downloaded during downgrade
+#  fromVersion: String - From this version we will start downgrade of the CO
+#  toVersion: String - Version we will downgrade to
+#  fromExamples: String - Folder name which contains examples to deploy. Downloaded from "fromUrl"
+#  toExamples: String - Folder name which contains examples to upgrade / downgrade to. Downloaded from "toUrl"
+#  fromUrl: String - url, from which examples are downloaded
+#  toUrl: String - url, from which examples are downloaded during downgrade and replace the original ones
 #  fromKafkaVersionsUrl: String - url, from which kafka-versions.yaml is downloaded
 #  additionalTopics: int - number of additional topics, which will be created
 #  oldestKafka: String - version of Kafka, used in initial deployment of Kafka CR
@@ -29,8 +29,8 @@
   toVersion: 0.33.2
   fromExamples: HEAD
   toExamples: strimzi-0.33.2
-  urlFrom: HEAD
-  urlTo: https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.33.2/strimzi-0.33.2.zip
+  fromUrl: HEAD
+  toUrl: https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.33.2/strimzi-0.33.2.zip
   fromKafkaVersionsUrl: HEAD
   additionalTopics: 2
   imagesAfterOperations:
@@ -52,8 +52,8 @@
   toVersion: 0.33.2
   fromExamples: HEAD
   toExamples: strimzi-0.33.2
-  urlFrom: HEAD
-  urlTo: https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.33.2/strimzi-0.33.2.zip
+  fromUrl: HEAD
+  toUrl: https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.33.2/strimzi-0.33.2.zip
   fromKafkaVersionsUrl: HEAD
   additionalTopics: 2
   imagesAfterOperations:

@@ -26,6 +26,7 @@ import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.enums.ClusterOperatorRBACType;
 import io.strimzi.systemtest.enums.OlmInstallationStrategy;
+import io.strimzi.systemtest.resources.ResourceItem;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.kubernetes.ClusterRoleBindingResource;
 import io.strimzi.systemtest.resources.kubernetes.NetworkPolicyResource;
@@ -37,6 +38,8 @@ import io.strimzi.systemtest.resources.operator.specific.HelmResource;
 import io.strimzi.systemtest.resources.operator.specific.OlmResource;
 import io.strimzi.systemtest.templates.kubernetes.ClusterRoleBindingTemplates;
 import io.strimzi.systemtest.utils.StUtils;
+import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
+import io.strimzi.systemtest.utils.specific.OlmUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.executor.Exec;
 import io.strimzi.test.logs.CollectorElement;
@@ -245,7 +248,7 @@ public class SetupClusterOperator {
         return this;
     }
 
-    public SetupClusterOperator runManualOlmInstallation(final String fromVersion, final String channelName) {
+    public SetupClusterOperator runManualOlmInstallation(final String fromOlmChannelName, final String fromVersion) {
         if (isClusterOperatorNamespaceNotCreated()) {
             cluster.setNamespace(namespaceInstallTo);
             cluster.createNamespaces(CollectorElement.createCollectorElement(testClassName, testMethodName), namespaceInstallTo, bindingsNamespaces);
@@ -256,8 +259,8 @@ public class SetupClusterOperator {
             .withNamespaceName(this.namespaceInstallTo)
             .withExtensionContext(extensionContext)
             .withOlmInstallationStrategy(OlmInstallationStrategy.Manual)
+            .withChannelName(fromOlmChannelName)
             .withOperatorVersion(fromVersion)
-            .withChannelName(channelName)
             .withEnvVars(extraEnvVars)
             .withOperationTimeout(operationTimeout)
             .withReconciliationInterval(reconciliationInterval)
@@ -348,6 +351,27 @@ public class SetupClusterOperator {
             olmResource = new OlmResource(olmConfiguration.withNamespaceName(namespaceInstallTo).build());
             olmResource.create();
         }
+    }
+
+    /**
+     * Upgrade cluster operator by updating subscription and obtaining new install plan,
+     * which has not been used yet and also approves the installation
+     */
+    public void upgradeClusterOperator(OlmConfiguration olmConfiguration) {
+        if (kubeClient().listPodsByPrefixInName(ResourceManager.getCoDeploymentName()).size() == 0) {
+            throw new RuntimeException("We can not perform upgrade! Cluster operator pod is not present.");
+        }
+
+        updateSubscription(olmConfiguration);
+        OlmUtils.waitUntilInstallPlanContainingCertainCsvIsPresent(namespaceInstallTo, olmConfiguration.getCsvName());
+        DeploymentUtils.waitForDeploymentAndPodsReady(namespaceInstallTo, olmConfiguration.getOlmOperatorDeploymentName(), 1);
+    }
+
+    public void updateSubscription(OlmConfiguration olmConfiguration) {
+        // add CSV resource to the end of the stack -> to be deleted after the subscription and operator group
+        ResourceManager.STORED_RESOURCES.get(olmConfiguration.getExtensionContext().getDisplayName())
+            .add(ResourceManager.STORED_RESOURCES.get(olmConfiguration.getExtensionContext().getDisplayName()).size(), new ResourceItem(olmResource::deleteCSV));
+        olmResource.updateSubscription(olmConfiguration);
     }
 
     public void createCONamespaceIfNeeded() {

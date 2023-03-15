@@ -1,11 +1,11 @@
 #  --- Structure ---
-#- fromVersion: String - From this version we will upgrade the CO to latest = "HEAD"
-#  fromExamples: String - Folder name which contains examples to deploy. Downloaded from "urlFrom"
+#  fromVersion: String - From this version we will upgrade the CO to latest = "HEAD"
+#  fromExamples: String - Folder name which contains examples to deploy. Downloaded from "fromUrl"
 #  oldestKafka: String - version of Kafka, used in initial deployment of Kafka CR
-#  urlFrom: String - url, from which examples are downloaded
+#  fromUrl: String - url, from which examples are downloaded
 #  fromKafkaVersionsUrl: String - url, from which is kafka-versions.yaml file downloaded
 #  conversionTool:
-#    urlToConversionTool:  String - url, from which conversion tool is downloaded
+#    toUrlConversionTool:  String - url, from which conversion tool is downloaded
 #    toConversionTool: String - name of folder, which contains conversion tool
 #  additionalTopics: int - number of additional topics, which will be created
 #  imagesAfterOperations:  Strings - images that corresponding pods should contain. They are checked after upgrade
@@ -27,7 +27,7 @@
 - fromVersion: 0.33.2
   fromExamples: strimzi-0.33.2
   oldestKafka: 3.2.0
-  urlFrom: https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.33.2/strimzi-0.33.2.zip
+  fromUrl: https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.33.2/strimzi-0.33.2.zip
   fromKafkaVersionsUrl: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/0.33.2/kafka-versions.yaml
   additionalTopics: 2
   imagesAfterOperations:
@@ -47,7 +47,7 @@
 - fromVersion: 0.33.2
   fromExamples: strimzi-0.33.2
   oldestKafka: 3.2.0
-  urlFrom: https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.33.2/strimzi-0.33.2.zip
+  fromUrl: https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.33.2/strimzi-0.33.2.zip
   fromKafkaVersionsUrl: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/0.33.2/kafka-versions.yaml
   additionalTopics: 2
   imagesAfterOperations:
