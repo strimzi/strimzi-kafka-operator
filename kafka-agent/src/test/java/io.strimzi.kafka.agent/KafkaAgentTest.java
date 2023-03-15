@@ -1,14 +1,20 @@
+/*
+ * Copyright Strimzi authors.
+ * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
+ */
+package io.strimzi.kafka.agent;
+
 import com.yammer.metrics.core.Gauge;
-import io.strimzi.kafka.agent.KafkaAgent;
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import org.eclipse.jetty.http.HttpStatus;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import javax.servlet.http.HttpServletResponse;
+import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.Server;
-import org.eclipse.jetty.servlet.DefaultServlet;
-import org.eclipse.jetty.servlet.ServletContextHandler;
-import org.eclipse.jetty.servlet.ServletHolder;
+import org.eclipse.jetty.server.ServerConnector;
+import org.eclipse.jetty.server.handler.ContextHandler;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -19,15 +25,21 @@ import static org.mockito.Mockito.when;
 
 public class KafkaAgentTest {
     private Server server;
-    private ServletContextHandler context;
-    private final String testServerURL = "http://localhost:8080/";
+    private ContextHandler context;
+    private HttpRequest req;
 
     @Before
-    public void setUp() {
-        server = new Server(8080);
-        context = new ServletContextHandler();
-        ServletHolder defaultServ = new ServletHolder("default", DefaultServlet.class);
-        context.addServlet(defaultServ,"/");
+    public void setUp() throws URISyntaxException {
+        server = new Server();
+        ServerConnector conn = new ServerConnector(server);
+        conn.setPort(8080);
+        server.setConnectors(new Connector[] {conn});
+        context = new ContextHandler("/");
+
+        req = HttpRequest.newBuilder()
+                .uri(new URI("http://localhost:8080/"))
+                .GET()
+                .build();
     }
 
     @After
@@ -46,11 +58,13 @@ public class KafkaAgentTest {
         server.setHandler(context);
         server.start();
 
-        HttpURLConnection http = (HttpURLConnection)new URL(testServerURL).openConnection();
-        http.connect();
-        assertEquals(http.getResponseCode(), (HttpStatus.OK_200));
-        BufferedReader br = new BufferedReader(new InputStreamReader((http.getInputStream())));
-        assertEquals("{\"brokerState\":3}", br.readLine());
+        HttpResponse<String> response = HttpClient.newBuilder()
+                .build()
+                .send(req, HttpResponse.BodyHandlers.ofString());
+        assertEquals(response.statusCode(), HttpServletResponse.SC_OK);
+
+        String expectedResponse = "{\"brokerState\":3}";
+        assertEquals(expectedResponse, response.body());
     }
 
     @Test
@@ -69,17 +83,13 @@ public class KafkaAgentTest {
         server.setHandler(context);
         server.start();
 
-        HttpURLConnection http = (HttpURLConnection)new URL(testServerURL).openConnection();
-        http.connect();
-        assertEquals(http.getResponseCode(), (HttpStatus.OK_200));
+        HttpResponse<String> response = HttpClient.newBuilder()
+                .build()
+                .send(req, HttpResponse.BodyHandlers.ofString());
+        assertEquals(response.statusCode(), HttpServletResponse.SC_OK);
 
         String expectedResponse = "{\"brokerState\":2,\"recoveryState\":{\"remainingLogsToRecover\":10,\"remainingSegmentsToRecover\":100}}";
-        BufferedReader br = new BufferedReader(new InputStreamReader((http.getInputStream())));
-        StringBuilder responseStrBuilder = new StringBuilder();
-        String inputStr;
-        while ((inputStr = br.readLine()) != null)
-            responseStrBuilder.append(inputStr);
-        assertEquals(expectedResponse, responseStrBuilder.toString());
+        assertEquals(expectedResponse, response.body());
     }
 
     @Test
@@ -89,9 +99,11 @@ public class KafkaAgentTest {
         server.setHandler(context);
         server.start();
 
-        HttpURLConnection http = (HttpURLConnection)new URL(testServerURL).openConnection();
-        http.connect();
-        assertEquals(http.getResponseCode(), (HttpStatus.NOT_FOUND_404));
+        HttpResponse<String> response = HttpClient.newBuilder()
+                .build()
+                .send(req, HttpResponse.BodyHandlers.ofString());
+        assertEquals(response.statusCode(), HttpServletResponse.SC_NOT_FOUND);
+
     }
 
 }

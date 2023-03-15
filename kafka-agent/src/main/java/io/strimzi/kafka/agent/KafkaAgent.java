@@ -100,6 +100,13 @@ public class KafkaAgent {
     }
 
     // public for testing
+    /**
+     * Constructor of the KafkaAgent
+     *
+     * @param brokerState                 Current state of the broker
+     * @param remainingLogsToRecover      Number of remaining logs to recover
+     * @param remainingSegmentsToRecover  Number of remaining segments to recover
+     */
     public KafkaAgent(Gauge brokerState, Gauge remainingLogsToRecover, Gauge remainingSegmentsToRecover) {
         this.brokerState = brokerState;
         this.remainingLogsToRecover = remainingLogsToRecover;
@@ -239,6 +246,12 @@ public class KafkaAgent {
         server.start();
     }
 
+    /**
+     * Creates a Handler instance to handle incoming HTTP requests
+     *
+     * @return Handler
+     */
+    // public for testing
     public Handler getServerHandler() {
         return new AbstractHandler() {
             @Override
