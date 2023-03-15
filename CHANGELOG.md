@@ -1,5 +1,8 @@
 # CHANGELOG
 
+## 0.35.0
+
+
 ## 0.34.0
 
 * Add support for Kafka 3.4.0 and remove support for Kafka 3.2.x
