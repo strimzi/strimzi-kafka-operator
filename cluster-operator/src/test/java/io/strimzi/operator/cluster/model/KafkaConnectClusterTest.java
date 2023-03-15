@@ -121,7 +121,7 @@ public class KafkaConnectClusterTest {
     private final JmxPrometheusExporterMetrics jmxMetricsConfig = io.strimzi.operator.cluster.TestUtils.getJmxPrometheusExporterMetrics("metrics-config.yml", metricsCMName);
     private final String configurationJson = "foo: bar";
     private final String bootstrapServers = "foo-kafka:9092";
-    private final String kafkaHeapOpts = "-Xms" + AbstractModel.DEFAULT_JVM_XMS;
+    private final String kafkaHeapOpts = "-Xms" + ModelUtils.DEFAULT_JVM_XMS;
 
     private final OrderedProperties defaultConfiguration = new OrderedProperties()
             .addPair("offset.storage.topic", "connect-cluster-offsets")
@@ -205,23 +205,23 @@ public class KafkaConnectClusterTest {
         KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, ResourceUtils.createEmptyKafkaConnect(namespace, clusterName), VERSIONS);
 
         assertThat(kc.image, is(KafkaVersionTestUtils.DEFAULT_KAFKA_CONNECT_IMAGE));
-        assertThat(kc.replicas, is(KafkaConnectCluster.DEFAULT_REPLICAS));
+        assertThat(kc.getReplicas(), is(KafkaConnectCluster.DEFAULT_REPLICAS));
         assertThat(kc.readinessProbeOptions.getInitialDelaySeconds(), is(KafkaConnectCluster.DEFAULT_HEALTHCHECK_DELAY));
         assertThat(kc.readinessProbeOptions.getTimeoutSeconds(), is(KafkaConnectCluster.DEFAULT_HEALTHCHECK_TIMEOUT));
         assertThat(kc.livenessProbeOptions.getInitialDelaySeconds(), is(KafkaConnectCluster.DEFAULT_HEALTHCHECK_DELAY));
         assertThat(kc.livenessProbeOptions.getTimeoutSeconds(), is(KafkaConnectCluster.DEFAULT_HEALTHCHECK_TIMEOUT));
-        assertThat(kc.getConfiguration().asOrderedProperties(), is(defaultConfiguration));
+        assertThat(kc.configuration.asOrderedProperties(), is(defaultConfiguration));
     }
 
     @ParallelTest
     public void testFromCrd() {
-        assertThat(kc.replicas, is(replicas));
+        assertThat(kc.getReplicas(), is(replicas));
         assertThat(kc.image, is(image));
         assertThat(kc.readinessProbeOptions.getInitialDelaySeconds(), is(healthDelay));
         assertThat(kc.readinessProbeOptions.getTimeoutSeconds(), is(healthTimeout));
         assertThat(kc.livenessProbeOptions.getInitialDelaySeconds(), is(healthDelay));
         assertThat(kc.livenessProbeOptions.getTimeoutSeconds(), is(healthTimeout));
-        assertThat(kc.getConfiguration().asOrderedProperties(), is(expectedConfiguration));
+        assertThat(kc.configuration.asOrderedProperties(), is(expectedConfiguration));
         assertThat(kc.bootstrapServers, is(bootstrapServers));
     }
 

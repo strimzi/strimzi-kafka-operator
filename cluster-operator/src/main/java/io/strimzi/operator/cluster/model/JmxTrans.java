@@ -106,7 +106,6 @@ public class JmxTrans extends AbstractModel {
     protected JmxTrans(Reconciliation reconciliation, HasMetadata resource) {
         super(reconciliation, resource, JmxTransResources.deploymentName(resource.getMetadata().getName()), COMPONENT_TYPE);
 
-        this.replicas = 1;
         this.readinessProbeOptions = READINESS_PROBE_OPTIONS;
     }
 
@@ -176,7 +175,7 @@ public class JmxTrans extends AbstractModel {
                 labels,
                 ownerReference,
                 templateDeployment,
-                replicas,
+                1,
                 null,
                 WorkloadUtils.deploymentStrategy(TemplateUtils.deploymentStrategy(templateDeployment, ROLLING_UPDATE)),
                 WorkloadUtils.createPodTemplateSpec(

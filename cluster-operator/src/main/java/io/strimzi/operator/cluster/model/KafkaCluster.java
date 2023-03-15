@@ -150,6 +150,9 @@ public class KafkaCluster extends AbstractStatefulModel implements SupportsMetri
     protected static final String CLIENT_CA_CERTS_VOLUME_MOUNT = "/opt/kafka/client-ca-certs";
     protected static final String TRUSTED_CERTS_BASE_VOLUME_MOUNT = "/opt/kafka/certificates";
     protected static final String CUSTOM_AUTHN_SECRETS_VOLUME_MOUNT = "/opt/kafka/custom-authn-secrets";
+    private static final String DATA_VOLUME_MOUNT_PATH = "/var/lib/kafka";
+    private static final String LOG_AND_METRICS_CONFIG_VOLUME_NAME = "kafka-metrics-and-logging";
+    private static final String LOG_AND_METRICS_CONFIG_VOLUME_MOUNT = "/opt/kafka/custom-config/";
 
     private static final String KAFKA_METRIC_REPORTERS_CONFIG_FIELD = "metric.reporters";
     private static final String KAFKA_NUM_PARTITIONS_CONFIG_FIELD = "num.partitions";
@@ -207,6 +210,7 @@ public class KafkaCluster extends AbstractStatefulModel implements SupportsMetri
     private static final String CRUISE_CONTROL_DEFAULT_REPLICATION_FACTOR = "1";
 
     // Kafka configuration
+    private int replicas;
     private Rack rack;
     private String initImage;
     private List<GenericKafkaListener> listeners;
@@ -221,6 +225,7 @@ public class KafkaCluster extends AbstractStatefulModel implements SupportsMetri
     private JmxModel jmx;
     private MetricsModel metrics;
     private LoggingModel logging;
+    /* test */ KafkaConfiguration configuration;
 
     // Templates
     private PodDisruptionBudgetTemplate templatePodDisruptionBudget;
@@ -264,11 +269,6 @@ public class KafkaCluster extends AbstractStatefulModel implements SupportsMetri
         this.replicas = DEFAULT_REPLICAS;
         this.livenessProbeOptions = DEFAULT_HEALTHCHECK_OPTIONS;
         this.readinessProbeOptions = DEFAULT_HEALTHCHECK_OPTIONS;
-
-        this.mountPath = "/var/lib/kafka";
-
-        this.logAndMetricsConfigVolumeName = "kafka-metrics-and-logging";
-        this.logAndMetricsConfigMountPath = "/opt/kafka/custom-config/";
 
         this.initImage = System.getenv().getOrDefault(ClusterOperatorConfig.STRIMZI_DEFAULT_KAFKA_INIT_IMAGE, "quay.io/strimzi/operator:latest");
     }
@@ -356,7 +356,7 @@ public class KafkaCluster extends AbstractStatefulModel implements SupportsMetri
         KafkaConfiguration configuration = new KafkaConfiguration(reconciliation, kafkaClusterSpec.getConfig().entrySet());
         configureCruiseControlMetrics(kafkaAssembly, result, configuration);
         validateConfiguration(reconciliation, kafkaAssembly, result.kafkaVersion, configuration);
-        result.setConfiguration(configuration);
+        result.configuration = configuration;
 
         if (oldStorage != null) {
             Storage newStorage = kafkaClusterSpec.getStorage();
@@ -1263,9 +1263,9 @@ public class KafkaCluster extends AbstractStatefulModel implements SupportsMetri
         volumeList.add(VolumeUtils.createSecretVolume(CLIENT_CA_CERTS_VOLUME, KafkaResources.clientsCaCertificateSecretName(cluster), isOpenShift));
 
         if (perBrokerConfiguration) {
-            volumeList.add(VolumeUtils.createConfigMapVolume(logAndMetricsConfigVolumeName, podName));
+            volumeList.add(VolumeUtils.createConfigMapVolume(LOG_AND_METRICS_CONFIG_VOLUME_NAME, podName));
         } else {
-            volumeList.add(VolumeUtils.createConfigMapVolume(logAndMetricsConfigVolumeName, KafkaResources.kafkaMetricsAndLogConfigMapName(cluster)));
+            volumeList.add(VolumeUtils.createConfigMapVolume(LOG_AND_METRICS_CONFIG_VOLUME_NAME, KafkaResources.kafkaMetricsAndLogConfigMapName(cluster)));
         }
 
         volumeList.add(VolumeUtils.createEmptyDirVolume("ready-files", "1Ki", "Memory"));
@@ -1357,12 +1357,12 @@ public class KafkaCluster extends AbstractStatefulModel implements SupportsMetri
     }
 
     private List<VolumeMount> getVolumeMounts() {
-        List<VolumeMount> volumeMountList = new ArrayList<>(VolumeUtils.createVolumeMounts(storage, mountPath, false));
+        List<VolumeMount> volumeMountList = new ArrayList<>(VolumeUtils.createVolumeMounts(storage, DATA_VOLUME_MOUNT_PATH, false));
         volumeMountList.add(VolumeUtils.createTempDirVolumeMount());
         volumeMountList.add(VolumeUtils.createVolumeMount(CLUSTER_CA_CERTS_VOLUME, CLUSTER_CA_CERTS_VOLUME_MOUNT));
         volumeMountList.add(VolumeUtils.createVolumeMount(BROKER_CERTS_VOLUME, BROKER_CERTS_VOLUME_MOUNT));
         volumeMountList.add(VolumeUtils.createVolumeMount(CLIENT_CA_CERTS_VOLUME, CLIENT_CA_CERTS_VOLUME_MOUNT));
-        volumeMountList.add(VolumeUtils.createVolumeMount(logAndMetricsConfigVolumeName, logAndMetricsConfigMountPath));
+        volumeMountList.add(VolumeUtils.createVolumeMount(LOG_AND_METRICS_CONFIG_VOLUME_NAME, LOG_AND_METRICS_CONFIG_VOLUME_MOUNT));
         volumeMountList.add(VolumeUtils.createVolumeMount("ready-files", "/var/opt/kafka"));
 
         if (rack != null || isExposedWithNodePort()) {
@@ -1699,9 +1699,14 @@ public class KafkaCluster extends AbstractStatefulModel implements SupportsMetri
         return String.valueOf(advertisedPort != null ? advertisedPort : port);
     }
 
-    @Override
+    /**
+     * Returns the configuration of the Kafka cluster. This method is currently used by the KafkaSpecChecker to get the
+     * Kafka configuration and check it for warnings.
+     *
+     * @return  Kafka cluster configuration
+     */
     public KafkaConfiguration getConfiguration() {
-        return (KafkaConfiguration) configuration;
+        return configuration;
     }
 
     /**
@@ -1717,7 +1722,7 @@ public class KafkaCluster extends AbstractStatefulModel implements SupportsMetri
                 .withBrokerId()
                 .withRackId(rack)
                 .withZookeeper(cluster)
-                .withLogDirs(VolumeUtils.createVolumeMounts(storage, mountPath, false))
+                .withLogDirs(VolumeUtils.createVolumeMounts(storage, DATA_VOLUME_MOUNT_PATH, false))
                 .withListeners(cluster, namespace, listeners)
                 .withAuthorization(cluster, authorization, false)
                 .withCruiseControl(cluster, cruiseControlSpec, ccNumPartitions, ccReplicationFactor, ccMinInSyncReplicas)
@@ -1802,7 +1807,7 @@ public class KafkaCluster extends AbstractStatefulModel implements SupportsMetri
                     .withBrokerId(String.valueOf(brokerId))
                     .withRackId(rack)
                     .withKRaft(cluster, namespace, replicas)
-                    .withLogDirs(VolumeUtils.createVolumeMounts(storage, mountPath, false))
+                    .withLogDirs(VolumeUtils.createVolumeMounts(storage, DATA_VOLUME_MOUNT_PATH, false))
                     .withListeners(cluster,
                             namespace,
                             listeners,
@@ -1819,7 +1824,7 @@ public class KafkaCluster extends AbstractStatefulModel implements SupportsMetri
                     .withBrokerId(String.valueOf(brokerId))
                     .withRackId(rack)
                     .withZookeeper(cluster)
-                    .withLogDirs(VolumeUtils.createVolumeMounts(storage, mountPath, false))
+                    .withLogDirs(VolumeUtils.createVolumeMounts(storage, DATA_VOLUME_MOUNT_PATH, false))
                     .withListeners(cluster,
                             namespace,
                             listeners,
@@ -1905,6 +1910,13 @@ public class KafkaCluster extends AbstractStatefulModel implements SupportsMetri
      */
     public void setInterBrokerProtocolVersion(String interBrokerProtocolVersion) {
         configuration.setConfigOption(KafkaConfiguration.INTERBROKER_PROTOCOL_VERSION, interBrokerProtocolVersion);
+    }
+
+    /**
+     * @return The number of replicas
+     */
+    public int getReplicas() {
+        return replicas;
     }
 
     /**

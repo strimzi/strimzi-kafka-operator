@@ -89,14 +89,12 @@ public class KafkaExporter extends AbstractModel {
     protected KafkaExporter(Reconciliation reconciliation, HasMetadata resource) {
         super(reconciliation, resource, KafkaExporterResources.deploymentName(resource.getMetadata().getName()), COMPONENT_TYPE);
 
-        this.replicas = 1;
         this.readinessPath = "/healthz";
         this.readinessProbeOptions = READINESS_PROBE_OPTIONS;
         this.livenessPath = "/healthz";
         this.livenessProbeOptions = READINESS_PROBE_OPTIONS;
 
         this.saramaLoggingEnabled = false;
-        this.mountPath = "/var/lib/kafka";
     }
 
     /**
@@ -176,7 +174,7 @@ public class KafkaExporter extends AbstractModel {
                 labels,
                 ownerReference,
                 templateDeployment,
-                replicas,
+                1,
                 null,
                 WorkloadUtils.deploymentStrategy(TemplateUtils.deploymentStrategy(templateDeployment, ROLLING_UPDATE)),
                 WorkloadUtils.createPodTemplateSpec(

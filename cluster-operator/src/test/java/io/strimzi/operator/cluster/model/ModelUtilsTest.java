@@ -326,7 +326,7 @@ public class ModelUtilsTest {
     @ParallelTest
     public void testJvmMemoryOptionsDefaultWithNoMemoryLimitOrJvmOptions() {
         Map<String, String> env = heapOptions(jvmOptions(null, null), 50, 5_000_000_000L, null);
-        assertThat(env.get(AbstractModel.ENV_VAR_KAFKA_HEAP_OPTS), is("-Xms" + AbstractModel.DEFAULT_JVM_XMS));
+        assertThat(env.get(AbstractModel.ENV_VAR_KAFKA_HEAP_OPTS), is("-Xms" + ModelUtils.DEFAULT_JVM_XMS));
         assertThat(env.get(AbstractModel.ENV_VAR_DYNAMIC_HEAP_PERCENTAGE), is(nullValue()));
         assertThat(env.get(AbstractModel.ENV_VAR_DYNAMIC_HEAP_MAX), is(nullValue()));
     }

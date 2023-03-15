@@ -390,7 +390,7 @@ public class ZookeeperClusterTest {
 
         for (int i = 0; i < REPLICAS; i++) {
             assertThat(pvc.getMetadata().getName() + "-" + KafkaResources.zookeeperPodName(CLUSTER, i),
-                    is(ZookeeperCluster.VOLUME_NAME + "-" + KafkaResources.zookeeperPodName(CLUSTER, i)));
+                    is(VolumeUtils.DATA_VOLUME_NAME + "-" + KafkaResources.zookeeperPodName(CLUSTER, i)));
         }
     }
 
@@ -659,7 +659,7 @@ public class ZookeeperClusterTest {
         for (PersistentVolumeClaim pvc : pvcs) {
             assertThat(pvc.getSpec().getResources().getRequests().get("storage"), is(new Quantity("100Gi")));
             assertThat(pvc.getSpec().getStorageClassName(), is("gp2-ssd"));
-            assertThat(pvc.getMetadata().getName().startsWith(ZookeeperCluster.VOLUME_NAME), is(true));
+            assertThat(pvc.getMetadata().getName().startsWith(VolumeUtils.DATA_VOLUME_NAME), is(true));
             assertThat(pvc.getMetadata().getOwnerReferences().size(), is(1));
             assertThat(pvc.getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_IO_DELETE_CLAIM), is("true"));
         }
@@ -684,7 +684,7 @@ public class ZookeeperClusterTest {
         for (PersistentVolumeClaim pvc : pvcs) {
             assertThat(pvc.getSpec().getResources().getRequests().get("storage"), is(new Quantity("100Gi")));
             assertThat(pvc.getSpec().getStorageClassName(), is("gp2-ssd"));
-            assertThat(pvc.getMetadata().getName().startsWith(ZookeeperCluster.VOLUME_NAME), is(true));
+            assertThat(pvc.getMetadata().getName().startsWith(VolumeUtils.DATA_VOLUME_NAME), is(true));
             assertThat(pvc.getMetadata().getOwnerReferences().size(), is(0));
             assertThat(pvc.getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_IO_DELETE_CLAIM), is("false"));
         }
@@ -725,7 +725,7 @@ public class ZookeeperClusterTest {
                 assertThat(pvc.getSpec().getStorageClassName(), is("gp2-ssd-az1"));
             }
 
-            assertThat(pvc.getMetadata().getName().startsWith(ZookeeperCluster.VOLUME_NAME), is(true));
+            assertThat(pvc.getMetadata().getName().startsWith(VolumeUtils.DATA_VOLUME_NAME), is(true));
             assertThat(pvc.getMetadata().getOwnerReferences().size(), is(0));
             assertThat(pvc.getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_IO_DELETE_CLAIM), is("false"));
         }

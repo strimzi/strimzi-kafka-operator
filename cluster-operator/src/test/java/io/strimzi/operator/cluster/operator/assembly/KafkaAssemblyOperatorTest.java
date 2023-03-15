@@ -54,7 +54,6 @@ import io.strimzi.operator.cluster.ClusterOperator;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
-import io.strimzi.operator.cluster.model.AbstractModel;
 import io.strimzi.operator.cluster.model.CruiseControl;
 import io.strimzi.operator.cluster.model.EntityOperator;
 import io.strimzi.operator.cluster.model.KafkaCluster;
@@ -544,7 +543,7 @@ public class KafkaAssemblyOperatorTest {
         when(mockNodeOps.listAsync(any(Labels.class))).thenReturn(Future.succeededFuture(emptyList()));
 
         Map<String, PersistentVolumeClaim> zkPvcs = createPvcs(kafkaNamespace, zookeeperCluster.getStorage(), zookeeperCluster.getReplicas(),
-            (replica, storageId) -> AbstractModel.VOLUME_NAME + "-" + KafkaResources.zookeeperPodName(kafkaName, replica));
+            (replica, storageId) -> VolumeUtils.DATA_VOLUME_NAME + "-" + KafkaResources.zookeeperPodName(kafkaName, replica));
 
         Map<String, PersistentVolumeClaim> kafkaPvcs = createPvcs(kafkaNamespace, kafkaCluster.getStorage(), kafkaCluster.getReplicas(),
             (replica, storageId) -> {
@@ -918,9 +917,9 @@ public class KafkaAssemblyOperatorTest {
 
         Map<String, PersistentVolumeClaim> zkPvcs =
                 createPvcs(clusterNamespace, originalZookeeperCluster.getStorage(), originalZookeeperCluster.getReplicas(),
-                    (replica, storageId) -> AbstractModel.VOLUME_NAME + "-" + KafkaResources.zookeeperPodName(clusterName, replica));
+                    (replica, storageId) -> VolumeUtils.DATA_VOLUME_NAME + "-" + KafkaResources.zookeeperPodName(clusterName, replica));
         zkPvcs.putAll(createPvcs(clusterNamespace, updatedZookeeperCluster.getStorage(), updatedZookeeperCluster.getReplicas(),
-            (replica, storageId) -> AbstractModel.VOLUME_NAME + "-" + KafkaResources.zookeeperPodName(clusterName, replica)));
+            (replica, storageId) -> VolumeUtils.DATA_VOLUME_NAME + "-" + KafkaResources.zookeeperPodName(clusterName, replica)));
 
         Map<String, PersistentVolumeClaim> kafkaPvcs =
                 createPvcs(clusterNamespace, originalKafkaCluster.getStorage(), originalKafkaCluster.getReplicas(),

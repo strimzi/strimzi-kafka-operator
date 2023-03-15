@@ -40,6 +40,10 @@ import io.strimzi.operator.common.Util;
  * Shared methods for working with Volume
  */
 public class VolumeUtils {
+    /**
+     * Base name used to name data volumes
+     */
+    public static final String DATA_VOLUME_NAME = "data";
     /*
      * Default values for the Strimzi temporary directory
      */
@@ -459,9 +463,9 @@ public class VolumeUtils {
                 throw new InvalidResourceException("The 'id' property is required for volumes in JBOD storage.");
             }
 
-            return AbstractModel.VOLUME_NAME + "-" + id;
+            return DATA_VOLUME_NAME + "-" + id;
         } else {
-            return AbstractModel.VOLUME_NAME;
+            return DATA_VOLUME_NAME;
         }
     }
 

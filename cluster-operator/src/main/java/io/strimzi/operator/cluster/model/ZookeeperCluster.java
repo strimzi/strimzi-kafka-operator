@@ -99,13 +99,18 @@ public class ZookeeperCluster extends AbstractStatefulModel implements SupportsM
     protected static final String ZOOKEEPER_NODE_CERTIFICATES_VOLUME_MOUNT = "/opt/kafka/zookeeper-node-certs/";
     protected static final String ZOOKEEPER_CLUSTER_CA_VOLUME_NAME = "cluster-ca-certs";
     protected static final String ZOOKEEPER_CLUSTER_CA_VOLUME_MOUNT = "/opt/kafka/cluster-ca-certs/";
+    private static final String DATA_VOLUME_MOUNT_PATH = "/var/lib/zookeeper";
+    private static final String LOG_AND_METRICS_CONFIG_VOLUME_NAME = "zookeeper-metrics-and-logging";
+    private static final String LOG_AND_METRICS_CONFIG_VOLUME_MOUNT = "/opt/kafka/custom-config/";
 
     // Zookeeper configuration
+    private int replicas;
     private final boolean isSnapshotCheckEnabled;
     private JmxModel jmx;
     @SuppressFBWarnings({"UWF_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR"}) // This field is initialized in the fromCrd method
     private MetricsModel metrics;
     private LoggingModel logging;
+    /* test */ ZookeeperConfiguration configuration;
 
     private static final Probe DEFAULT_HEALTHCHECK_OPTIONS = new ProbeBuilder()
             .withTimeoutSeconds(5)
@@ -156,11 +161,6 @@ public class ZookeeperCluster extends AbstractStatefulModel implements SupportsM
         this.livenessPath = "/opt/kafka/zookeeper_healthcheck.sh";
         this.livenessProbeOptions = DEFAULT_HEALTHCHECK_OPTIONS;
         this.isSnapshotCheckEnabled = DEFAULT_ZOOKEEPER_SNAPSHOT_CHECK_ENABLED;
-
-        this.mountPath = "/var/lib/zookeeper";
-
-        this.logAndMetricsConfigVolumeName = "zookeeper-metrics-and-logging";
-        this.logAndMetricsConfigMountPath = "/opt/kafka/custom-config/";
     }
 
     /**
@@ -249,7 +249,7 @@ public class ZookeeperCluster extends AbstractStatefulModel implements SupportsM
             result.setStorage(zookeeperClusterSpec.getStorage());
         }
 
-        result.setConfiguration(new ZookeeperConfiguration(reconciliation, zookeeperClusterSpec.getConfig().entrySet()));
+        result.configuration = new ZookeeperConfiguration(reconciliation, zookeeperClusterSpec.getConfig().entrySet());
 
         result.resources = zookeeperClusterSpec.getResources();
 
@@ -558,7 +558,7 @@ public class ZookeeperCluster extends AbstractStatefulModel implements SupportsM
         List<Volume> volumeList = new ArrayList<>(4);
 
         volumeList.add(VolumeUtils.createTempDirVolume(templatePod));
-        volumeList.add(VolumeUtils.createConfigMapVolume(logAndMetricsConfigVolumeName, KafkaResources.zookeeperMetricsAndLogConfigMapName(cluster)));
+        volumeList.add(VolumeUtils.createConfigMapVolume(LOG_AND_METRICS_CONFIG_VOLUME_NAME, KafkaResources.zookeeperMetricsAndLogConfigMapName(cluster)));
         volumeList.add(VolumeUtils.createSecretVolume(ZOOKEEPER_NODE_CERTIFICATES_VOLUME_NAME, KafkaResources.zookeeperSecretName(cluster), isOpenShift));
         volumeList.add(VolumeUtils.createSecretVolume(ZOOKEEPER_CLUSTER_CA_VOLUME_NAME, AbstractModel.clusterCaCertSecretName(cluster), isOpenShift));
 
@@ -623,8 +623,8 @@ public class ZookeeperCluster extends AbstractStatefulModel implements SupportsM
         volumeMountList.add(VolumeUtils.createTempDirVolumeMount());
         // ZooKeeper uses mount path which is different from the one used by Kafka.
         // As a result it cannot use VolumeUtils.getVolumeMounts and creates the volume mount directly
-        volumeMountList.add(VolumeUtils.createVolumeMount(VOLUME_NAME, mountPath));
-        volumeMountList.add(VolumeUtils.createVolumeMount(logAndMetricsConfigVolumeName, logAndMetricsConfigMountPath));
+        volumeMountList.add(VolumeUtils.createVolumeMount(VolumeUtils.DATA_VOLUME_NAME, DATA_VOLUME_MOUNT_PATH));
+        volumeMountList.add(VolumeUtils.createVolumeMount(LOG_AND_METRICS_CONFIG_VOLUME_NAME, LOG_AND_METRICS_CONFIG_VOLUME_MOUNT));
         volumeMountList.add(VolumeUtils.createVolumeMount(ZOOKEEPER_NODE_CERTIFICATES_VOLUME_NAME, ZOOKEEPER_NODE_CERTIFICATES_VOLUME_MOUNT));
         volumeMountList.add(VolumeUtils.createVolumeMount(ZOOKEEPER_CLUSTER_CA_VOLUME_NAME, ZOOKEEPER_CLUSTER_CA_VOLUME_MOUNT));
 
@@ -672,7 +672,7 @@ public class ZookeeperCluster extends AbstractStatefulModel implements SupportsM
      */
     public ConfigMap generateConfigurationConfigMap(MetricsAndLogging metricsAndLogging) {
         Map<String, String> data = MetricsAndLoggingUtils.generateMetricsAndLogConfigMapData(reconciliation, this, metricsAndLogging);
-        data.put(CONFIG_MAP_KEY_ZOOKEEPER_NODE_COUNT, Integer.toString(getReplicas()));
+        data.put(CONFIG_MAP_KEY_ZOOKEEPER_NODE_COUNT, Integer.toString(replicas));
 
         return ConfigMapUtils
                 .createConfigMap(
@@ -682,6 +682,13 @@ public class ZookeeperCluster extends AbstractStatefulModel implements SupportsM
                         ownerReference,
                         data
                 );
+    }
+
+    /**
+     * @return The number of replicas
+     */
+    public int getReplicas() {
+        return replicas;
     }
 
     /**

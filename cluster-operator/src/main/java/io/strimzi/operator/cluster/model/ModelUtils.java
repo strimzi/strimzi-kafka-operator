@@ -52,6 +52,10 @@ import static java.util.Collections.emptyMap;
  * These are generally to be used within the classes that extend the AbstractModel class
  */
 public class ModelUtils {
+    /**
+     * Default JVM -Xms setting
+     */
+    protected static final String DEFAULT_JVM_XMS = "128M";
 
     private ModelUtils() {}
 
@@ -491,7 +495,7 @@ public class ModelUtils {
             } else if (xms == null) {
                 // When no memory limit, `Xms`, and `Xmx` are defined then set a default `Xms` and
                 // leave `Xmx` undefined.
-                kafkaHeapOpts.append("-Xms").append(AbstractModel.DEFAULT_JVM_XMS);
+                kafkaHeapOpts.append("-Xms").append(DEFAULT_JVM_XMS);
             }
         }
 

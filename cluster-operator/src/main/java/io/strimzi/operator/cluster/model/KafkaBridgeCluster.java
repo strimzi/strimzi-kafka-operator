@@ -79,6 +79,8 @@ public class KafkaBridgeCluster extends AbstractModel implements SupportsLogging
     protected static final String TLS_CERTS_BASE_VOLUME_MOUNT = "/opt/strimzi/bridge-certs/";
     protected static final String PASSWORD_VOLUME_MOUNT = "/opt/strimzi/bridge-password/";
     protected static final String ENV_VAR_KAFKA_INIT_INIT_FOLDER_KEY = "INIT_FOLDER";
+    private static final String LOG_AND_METRICS_CONFIG_VOLUME_NAME = "kafka-metrics-and-logging";
+    private static final String LOG_AND_METRICS_CONFIG_VOLUME_MOUNT = "/opt/strimzi/custom-config/";
 
     // Configuration defaults
     protected static final int DEFAULT_REPLICAS = 1;
@@ -125,6 +127,8 @@ public class KafkaBridgeCluster extends AbstractModel implements SupportsLogging
 
     protected static final String CO_ENV_VAR_CUSTOM_BRIDGE_POD_LABELS = "STRIMZI_CUSTOM_KAFKA_BRIDGE_LABELS";
     protected static final String INIT_VOLUME_MOUNT = "/opt/strimzi/init";
+
+    private int replicas;
     private ClientTls tls;
     private KafkaClientAuthentication authentication;
     private KafkaBridgeHttpConfig http;
@@ -172,10 +176,6 @@ public class KafkaBridgeCluster extends AbstractModel implements SupportsLogging
         this.livenessPath = "/healthy";
         this.livenessProbeOptions = DEFAULT_HEALTHCHECK_OPTIONS;
         this.readinessProbeOptions = DEFAULT_HEALTHCHECK_OPTIONS;
-
-        this.mountPath = "/var/lib/bridge";
-        this.logAndMetricsConfigVolumeName = "kafka-metrics-and-logging";
-        this.logAndMetricsConfigMountPath = "/opt/strimzi/custom-config/";
     }
 
     /**
@@ -312,7 +312,7 @@ public class KafkaBridgeCluster extends AbstractModel implements SupportsLogging
     protected List<Volume> getVolumes(boolean isOpenShift) {
         List<Volume> volumeList = new ArrayList<>(2);
         volumeList.add(VolumeUtils.createTempDirVolume(templatePod));
-        volumeList.add(VolumeUtils.createConfigMapVolume(logAndMetricsConfigVolumeName, KafkaBridgeResources.metricsAndLogConfigMapName(cluster)));
+        volumeList.add(VolumeUtils.createConfigMapVolume(LOG_AND_METRICS_CONFIG_VOLUME_NAME, KafkaBridgeResources.metricsAndLogConfigMapName(cluster)));
 
         if (tls != null) {
             VolumeUtils.createSecretVolume(volumeList, tls.getTrustedCertificates(), isOpenShift);
@@ -328,7 +328,7 @@ public class KafkaBridgeCluster extends AbstractModel implements SupportsLogging
         List<VolumeMount> volumeMountList = new ArrayList<>(2);
 
         volumeMountList.add(VolumeUtils.createTempDirVolumeMount());
-        volumeMountList.add(VolumeUtils.createVolumeMount(logAndMetricsConfigVolumeName, logAndMetricsConfigMountPath));
+        volumeMountList.add(VolumeUtils.createVolumeMount(LOG_AND_METRICS_CONFIG_VOLUME_NAME, LOG_AND_METRICS_CONFIG_VOLUME_MOUNT));
         if (tls != null) {
             VolumeUtils.createSecretVolumeMount(volumeMountList, tls.getTrustedCertificates(), TLS_CERTS_BASE_VOLUME_MOUNT);
         }
@@ -626,6 +626,13 @@ public class KafkaBridgeCluster extends AbstractModel implements SupportsLogging
                         ownerReference,
                         MetricsAndLoggingUtils.generateMetricsAndLogConfigMapData(reconciliation, this, metricsAndLogging)
                 );
+    }
+
+    /**
+     * @return The number of replicas
+     */
+    public int getReplicas() {
+        return replicas;
     }
 
     /**

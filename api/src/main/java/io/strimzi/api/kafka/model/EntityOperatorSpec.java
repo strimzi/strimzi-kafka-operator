@@ -29,9 +29,6 @@ public class EntityOperatorSpec implements UnknownPropertyPreserving, Serializab
 
     private static final long serialVersionUID = 1L;
 
-    public static final int DEFAULT_REPLICAS = 1;
-    public static final int DEFAULT_ZOOKEEPER_PORT = 2181;
-
     private EntityTopicOperatorSpec topicOperator;
     private EntityUserOperatorSpec userOperator;
     private TlsSidecar tlsSidecar;

@@ -109,7 +109,7 @@ public class KafkaMirrorMaker2ClusterTest {
     private final String configurationJson = "foo: bar";
     private final String bootstrapServers = "foo-kafka:9092";
     private final String targetClusterAlias = "target";
-    private final String kafkaHeapOpts = "-Xms" + AbstractModel.DEFAULT_JVM_XMS;
+    private final String kafkaHeapOpts = "-Xms" + ModelUtils.DEFAULT_JVM_XMS;
 
     private final OrderedProperties defaultConfiguration = new OrderedProperties()
             .addPair("config.storage.topic", "mirrormaker2-cluster-configs")
@@ -206,23 +206,23 @@ public class KafkaMirrorMaker2ClusterTest {
         KafkaMirrorMaker2Cluster kmm2 = KafkaMirrorMaker2Cluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, ResourceUtils.createEmptyKafkaMirrorMaker2(namespace, clusterName), VERSIONS);
 
         assertThat(kmm2.image, is(KafkaVersionTestUtils.DEFAULT_KAFKA_CONNECT_IMAGE));
-        assertThat(kmm2.replicas, is(KafkaMirrorMaker2Cluster.DEFAULT_REPLICAS));
+        assertThat(kmm2.getReplicas(), is(KafkaMirrorMaker2Cluster.DEFAULT_REPLICAS));
         assertThat(kmm2.readinessProbeOptions.getInitialDelaySeconds(), is(KafkaMirrorMaker2Cluster.DEFAULT_HEALTHCHECK_DELAY));
         assertThat(kmm2.readinessProbeOptions.getTimeoutSeconds(), is(KafkaMirrorMaker2Cluster.DEFAULT_HEALTHCHECK_TIMEOUT));
         assertThat(kmm2.livenessProbeOptions.getInitialDelaySeconds(), is(KafkaMirrorMaker2Cluster.DEFAULT_HEALTHCHECK_DELAY));
         assertThat(kmm2.livenessProbeOptions.getTimeoutSeconds(), is(KafkaMirrorMaker2Cluster.DEFAULT_HEALTHCHECK_TIMEOUT));
-        assertThat(kmm2.getConfiguration().asOrderedProperties(), is(defaultConfiguration));
+        assertThat(kmm2.configuration.asOrderedProperties(), is(defaultConfiguration));
     }
 
     @ParallelTest
     public void testFromCrd() {
-        assertThat(kmm2.replicas, is(replicas));
+        assertThat(kmm2.getReplicas(), is(replicas));
         assertThat(kmm2.image, is(image));
         assertThat(kmm2.readinessProbeOptions.getInitialDelaySeconds(), is(healthDelay));
         assertThat(kmm2.readinessProbeOptions.getTimeoutSeconds(), is(healthTimeout));
         assertThat(kmm2.livenessProbeOptions.getInitialDelaySeconds(), is(healthDelay));
         assertThat(kmm2.livenessProbeOptions.getTimeoutSeconds(), is(healthTimeout));
-        assertThat(kmm2.getConfiguration().asOrderedProperties(), is(expectedConfiguration));
+        assertThat(kmm2.configuration.asOrderedProperties(), is(expectedConfiguration));
         assertThat(kmm2.bootstrapServers, is(bootstrapServers));
     }
 
