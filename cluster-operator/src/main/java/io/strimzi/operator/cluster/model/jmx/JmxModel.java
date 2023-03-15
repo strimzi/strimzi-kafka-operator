@@ -2,7 +2,7 @@
  * Copyright Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.strimzi.operator.cluster.model;
+package io.strimzi.operator.cluster.model.jmx;
 
 import io.fabric8.kubernetes.api.model.ContainerPort;
 import io.fabric8.kubernetes.api.model.EnvVar;
@@ -13,6 +13,11 @@ import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyIngressRule;
 import io.strimzi.api.kafka.model.HasJmxOptions;
 import io.strimzi.api.kafka.model.KafkaJmxAuthenticationPassword;
 import io.strimzi.api.kafka.model.template.ResourceTemplate;
+import io.strimzi.operator.cluster.model.ContainerUtils;
+import io.strimzi.operator.cluster.model.ModelUtils;
+import io.strimzi.operator.cluster.model.NetworkPolicyUtils;
+import io.strimzi.operator.cluster.model.ServiceUtils;
+import io.strimzi.operator.cluster.model.TemplateUtils;
 import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
@@ -26,15 +31,40 @@ import java.util.Map;
  * Represents a model for components with enabled JMX access
  */
 public class JmxModel {
-    protected static final String JMX_PORT_NAME = "jmx";
-    protected static final int JMX_PORT = 9999;
+    /**
+     * Name of the port used for JMX
+     */
+    public static final String JMX_PORT_NAME = "jmx";
 
-    protected static final String JMX_USERNAME_KEY = "jmx-username";
-    protected static final String JMX_PASSWORD_KEY = "jmx-password";
+    /**
+     * Port number used for JMX
+     */
+    public static final int JMX_PORT = 9999;
 
-    protected static final String ENV_VAR_STRIMZI_JMX_ENABLED = "STRIMZI_JMX_ENABLED";
-    protected static final String ENV_VAR_STRIMZI_JMX_USERNAME = "STRIMZI_JMX_USERNAME";
-    protected static final String ENV_VAR_STRIMZI_JMX_PASSWORD = "STRIMZI_JMX_PASSWORD";
+    /**
+     * Key under which the JMX username is stored in the JMX Secret
+     */
+    public static final String JMX_USERNAME_KEY = "jmx-username";
+
+    /**
+     * Key under which the JMX password is stored in the JMX Secret
+     */
+    public static final String JMX_PASSWORD_KEY = "jmx-password";
+
+    /**
+     * Name of the environment variable used to indicate that JMX should be enabled in the container
+     */
+    public static final String ENV_VAR_STRIMZI_JMX_ENABLED = "STRIMZI_JMX_ENABLED";
+
+    /**
+     * Name of the environment variable used for the JMX username. This variable is mapped from the JMX Secret.
+     */
+    public static final String ENV_VAR_STRIMZI_JMX_USERNAME = "STRIMZI_JMX_USERNAME";
+
+    /**
+     * Name of the environment variable used for the JMX password. This variable is mapped from the JMX Secret.
+     */
+    public static final String ENV_VAR_STRIMZI_JMX_PASSWORD = "STRIMZI_JMX_PASSWORD";
 
     private final boolean isEnabled;
     private final boolean isAuthenticated;
