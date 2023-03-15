@@ -6,65 +6,40 @@
 
 = Strategies for upgrading clients
 
-The right approach to upgrading your client applications (including Kafka Connect connectors) depends on your particular circumstances.
+[role="_abstract"]
+Upgrading Kafka clients ensures that they benefit from the features, fixes, and improvements that are introduced in new versions of Kafka. 
+Upgraded clients maintain compatibility with other upgraded Kafka components.
+The performance and stability of the clients might also be improved.
 
-Consuming applications need to receive messages in a message format that they understand. You can ensure that this is the case in one of two ways:
+Consider the best approach for upgrading Kafka clients and brokers to ensure a smooth transition.
+The chosen upgrade strategy depends on whether you are upgrading brokers or clients first. 
+Since Kafka 3.0, you can upgrade brokers and client independently and in any order.
+The decision to upgrade clients or brokers first depends on several factors, such as the number of applications that need to be upgraded and how much downtime is tolerable.
 
-* By upgrading all the consumers for a topic _before_ upgrading any of the producers.
-* By having the brokers down-convert messages to an older format.
+If you upgrade clients before brokers, some new features may not work as they are not yet supported by brokers. 
+However, brokers can handle producers and consumers running with different versions and supporting different log message versions.
 
-Using broker down-conversion puts extra load on the brokers, so it is not ideal to rely on down-conversion for all topics for a prolonged period of time.
-For brokers to perform optimally they should not be down converting messages at all.
+.Upgrading clients when using Kafka versions older than Kafka 3.0
 
-Broker down-conversion is configured in two ways:
+Before Kafka 3.0, you would configure a specific message format for brokers using the `log.message.format.version` property (or the `message.format.version` property at the topic level). 
+This allowed brokers to support older Kafka clients that were using an outdated message format. 
+Otherwise, the brokers would need to convert the messages from the older clients, which came with a significant performance cost.
 
-* The topic-level `message.format.version` configures it for a single topic.
+Apache Kafka Java clients have supported the latest message format version since version 0.11. 
+If all of your clients are using the latest message version, you can remove the `log.message.format.version` or `message.format.version` overrides when upgrading your brokers.
 
-* The broker-level `log.message.format.version` is the default for topics that do not have the topic-level `message.format.version` configured.
+However, if you still have clients that are using an older message format version, we recommend upgrading your clients first. 
+Start with the consumers, then upgrade the producers before removing the `log.message.format.version` or  `message.format.version` overrides when upgrading your brokers. 
+This will ensure that all of your clients can support the latest message format version and that the upgrade process goes smoothly.
 
-Messages published to a topic in a new-version format will be visible to consumers, because brokers perform down-conversion when they receive messages from producers, not when they are sent to consumers.
+You can track Kafka client names and versions using this metric:
 
-Common strategies you can use to upgrade your clients are described as follows.
-Other strategies for upgrading client applications are also possible.
+* `kafka.server:type=socket-server-metrics,clientSoftwareName=<name>,clientSoftwareVersion=<version>,listener=<listener>,networkProcessor=<processor>`  
 
-IMPORTANT: The steps outlined in each strategy change slightly when upgrading to Kafka 3.0.0 or later.
-From Kafka 3.0.0, the message format version values are assumed to match the `inter.broker.protocol.version` and don't need to be set.
+[TIP]
+====
+The following Kafka broker metrics help monitor the performance of message down-conversion:
 
-.Broker-level consumers first strategy
-
-. Upgrade all the consuming applications.
-. Change the broker-level `log.message.format.version` to the new version.
-. Upgrade all the producing applications.
-
-This strategy is straightforward, and avoids any broker down-conversion.
-However, it assumes that all consumers in your organization can be upgraded in a coordinated way, and it does not work for applications that are both consumers and producers.
-There is also a risk that, if there is a problem with the upgraded clients, new-format messages might get added to the message log so that you cannot revert to the previous consumer version.
-
-.Topic-level consumers first strategy
-
-For each topic:
-
-. Upgrade all the consuming applications.
-. Change the topic-level `message.format.version` to the new version.
-. Upgrade all the producing applications.
-
-This strategy avoids any broker down-conversion, and means you can proceed on a topic-by-topic basis. It does not work for applications that are both consumers and producers of the same topic. Again, it has the risk that, if there is a problem with the upgraded clients, new-format messages might get added to the message log.
-
-.Topic-level consumers first strategy with down conversion
-
-For each topic:
-
-. Change the topic-level `message.format.version` to the old version
-(or rely on the topic defaulting to the broker-level `log.message.format.version`).
-. Upgrade all the consuming and producing applications.
-. Verify that the upgraded applications function correctly.
-. Change the topic-level `message.format.version` to the new version.
-
-This strategy requires broker down-conversion, but the load on the brokers is minimized because it is only required for a single topic (or small group of topics) at a time. It also works for applications that are both consumers and producers of the same topic. This approach ensures that the upgraded producers and consumers are working correctly before you commit to using the new message format version.
-
-The main drawback of this approach is that it can be complicated to manage in a cluster with many topics and applications.
-
-NOTE: It is also possible to apply multiple strategies.
-For example, for the first few applications and topics the
-"per-topic consumers first, with down conversion" strategy can be used.
-When this has proved successful another, more efficient strategy can be considered acceptable to use instead.
+* `kafka.network:type=RequestMetrics,name=MessageConversionsTimeMs,request={Produce|Fetch}` provides metrics on the time taken to perform message conversion. 
+* `kafka.server:type=BrokerTopicMetrics,name={Produce|Fetch}MessageConversionsPerSec,topic=([-.\w]+)` provides metrics on the number of messages converted over a period of time.  
+====
