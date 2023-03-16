@@ -54,7 +54,7 @@ public class ResourceUtils {
             envVars.put(UserOperatorConfig.STRIMZI_SECRET_PREFIX, secretPrefix);
         }
 
-        return UserOperatorConfig.fromMap(envVars);
+        return new UserOperatorConfig(envVars);
     }
 
     public static UserOperatorConfig createUserOperatorConfigForUserControllerTesting(Map<String, String> labels, int fullReconciliationInterval, int queueSize, int poolSize, String secretPrefix) {
@@ -69,7 +69,7 @@ public class ResourceUtils {
         envVars.put(UserOperatorConfig.STRIMZI_CONTROLLER_THREAD_POOL_SIZE, Integer.toString(poolSize));
         envVars.put(UserOperatorConfig.STRIMZI_SECRET_PREFIX, secretPrefix);
 
-        return UserOperatorConfig.fromMap(envVars);
+        return new UserOperatorConfig(envVars);
     }
 
     public static UserOperatorConfig createUserOperatorConfig() {

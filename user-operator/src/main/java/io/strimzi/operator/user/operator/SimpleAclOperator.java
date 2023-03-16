@@ -53,11 +53,11 @@ public class SimpleAclOperator implements AdminApiOperator<Set<SimpleAclRule>, S
         this.executor = executor;
 
         // Create cache for querying the ACLs locally
-        this.cache = new AclCache(adminClient, config.getCacheRefresh());
+        this.cache = new AclCache(adminClient, config.get(UserOperatorConfig.CACHE_REFRESH_INTERVAL_MS));
 
         // Create micro-batching reconcilers for managing the ACLs
-        this.addReconciler = new AddAclsBatchReconciler(adminClient, config.getBatchQueueSize(), config.getBatchMaxBlockSize(), config.getBatchMaxBlockTime());
-        this.deleteReconciler = new DeleteAclsBatchReconciler(adminClient, config.getBatchQueueSize(), config.getBatchMaxBlockSize(), config.getBatchMaxBlockTime());
+        this.addReconciler = new AddAclsBatchReconciler(adminClient, config.get(UserOperatorConfig.BATCH_QUEUE_SIZE), config.get(UserOperatorConfig.BATCH_MAXIMUM_BLOCK_SIZE), config.get(UserOperatorConfig.BATCH_MAXIMUM_BLOCK_TIME_MS));
+        this.deleteReconciler = new DeleteAclsBatchReconciler(adminClient, config.get(UserOperatorConfig.BATCH_QUEUE_SIZE), config.get(UserOperatorConfig.BATCH_MAXIMUM_BLOCK_SIZE), config.get(UserOperatorConfig.BATCH_MAXIMUM_BLOCK_TIME_MS));
     }
 
     /**

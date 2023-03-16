@@ -82,8 +82,8 @@ public class KafkaUserOperator {
         this.executor = executor;
         this.config = config;
 
-        this.selector = (config.getLabels() == null || config.getLabels().toMap().isEmpty()) ? new LabelSelector() : new LabelSelector(null, config.getLabels().toMap());
-        this.passwordGenerator = new PasswordGenerator(this.config.getScramPasswordLength());
+        this.selector = (config.get(UserOperatorConfig.LABELS) == null || config.get(UserOperatorConfig.LABELS).toMap().isEmpty()) ? new LabelSelector() : new LabelSelector(null, config.get(UserOperatorConfig.LABELS).toMap());
+        this.passwordGenerator = new PasswordGenerator(this.config.get(UserOperatorConfig.SCRAM_SHA_PASSWORD_LENGTH));
     }
 
     /**
@@ -122,7 +122,7 @@ public class KafkaUserOperator {
 
         // Get the ACL users
         CompletionStage<Set<String>> aclUsers;
-        if (config.isAclsAdminApiSupported())   {
+        if (config.get(UserOperatorConfig.ACLS_ADMIN_API_SUPPORTED))   {
             aclUsers = aclOperator.getAllUsers();
         } else {
             aclUsers = CompletableFuture.completedFuture(Set.of());
@@ -130,7 +130,7 @@ public class KafkaUserOperator {
 
         // Get the SCRAM-SHA users
         CompletionStage<List<String>> scramUsers;
-        if (!config.isKraftEnabled()) {
+        if (!config.get(UserOperatorConfig.KRAFT_ENABLED)) {
             scramUsers = scramCredentialsOperator.getAllUsers();
         } else {
             scramUsers = CompletableFuture.completedFuture(List.of());
@@ -218,10 +218,10 @@ public class KafkaUserOperator {
 
         // Delete everything what can be deleted
         return CompletableFuture.allOf(
-                CompletableFuture.supplyAsync(() -> client.secrets().inNamespace(namespace).withName(KafkaUserModel.getSecretName(config.getSecretPrefix(), user)).delete(), executor),
-                config.isAclsAdminApiSupported() ? aclOperator.reconcile(reconciliation, KafkaUserModel.getTlsUserName(user), null).toCompletableFuture() : CompletableFuture.completedFuture(ReconcileResult.noop(null)),
-                config.isAclsAdminApiSupported() ? aclOperator.reconcile(reconciliation, KafkaUserModel.getScramUserName(user), null).toCompletableFuture() : CompletableFuture.completedFuture(ReconcileResult.noop(null)),
-                !config.isKraftEnabled() ? scramCredentialsOperator.reconcile(reconciliation, KafkaUserModel.getScramUserName(user), null).toCompletableFuture() : CompletableFuture.completedFuture(ReconcileResult.noop(null)),
+                CompletableFuture.supplyAsync(() -> client.secrets().inNamespace(namespace).withName(KafkaUserModel.getSecretName(config.get(UserOperatorConfig.SECRET_PREFIX), user)).delete(), executor),
+                config.get(UserOperatorConfig.ACLS_ADMIN_API_SUPPORTED) ? aclOperator.reconcile(reconciliation, KafkaUserModel.getTlsUserName(user), null).toCompletableFuture() : CompletableFuture.completedFuture(ReconcileResult.noop(null)),
+                config.get(UserOperatorConfig.ACLS_ADMIN_API_SUPPORTED) ? aclOperator.reconcile(reconciliation, KafkaUserModel.getScramUserName(user), null).toCompletableFuture() : CompletableFuture.completedFuture(ReconcileResult.noop(null)),
+                !config.get(UserOperatorConfig.KRAFT_ENABLED) ? scramCredentialsOperator.reconcile(reconciliation, KafkaUserModel.getScramUserName(user), null).toCompletableFuture() : CompletableFuture.completedFuture(ReconcileResult.noop(null)),
                 quotasOperator.reconcile(reconciliation, KafkaUserModel.getTlsUserName(user), null).toCompletableFuture(),
                 quotasOperator.reconcile(reconciliation, KafkaUserModel.getScramUserName(user), null).toCompletableFuture()
         );
@@ -243,7 +243,7 @@ public class KafkaUserOperator {
         KafkaUserStatus userStatus = new KafkaUserStatus();
 
         try {
-            user = KafkaUserModel.fromCrd(kafkaUser, config.getSecretPrefix(), config.isAclsAdminApiSupported(), config.isKraftEnabled());
+            user = KafkaUserModel.fromCrd(kafkaUser, config.get(UserOperatorConfig.SECRET_PREFIX), config.get(UserOperatorConfig.ACLS_ADMIN_API_SUPPORTED), config.get(UserOperatorConfig.KRAFT_ENABLED));
             LOGGER.debugCr(reconciliation, "Updating User {} in namespace {}", reconciliation.name(), reconciliation.namespace());
         } catch (Exception e) {
             LOGGER.warnCr(reconciliation, e);
@@ -320,14 +320,14 @@ public class KafkaUserOperator {
      * @param userSecret        Secret with existing user credentials or null if the secret doesn't exist yet
      */
     private void maybeGenerateTlsCredentials(Reconciliation reconciliation, KafkaUserModel user, Secret userSecret) {
-        Secret caCert = client.secrets().inNamespace(config.getCaNamespace()).withName(config.getCaCertSecretName()).get();
+        Secret caCert = client.secrets().inNamespace(config.get(UserOperatorConfig.CA_NAMESPACE)).withName(config.get(UserOperatorConfig.CA_CERT_SECRET_NAME)).get();
         if (caCert == null) {
-            throw new InvalidConfigurationException("CA certificate secret " + config.getCaCertSecretName() + " in namespace " + config.getCaNamespace() + " not found");
+            throw new InvalidConfigurationException("CA certificate secret " + config.get(UserOperatorConfig.CA_CERT_SECRET_NAME) + " in namespace " + config.get(UserOperatorConfig.CA_NAMESPACE) + " not found");
         }
 
-        Secret caKey = client.secrets().inNamespace(config.getCaNamespace()).withName(config.getCaKeySecretName()).get();
+        Secret caKey = client.secrets().inNamespace(config.get(UserOperatorConfig.CA_NAMESPACE)).withName(config.get(UserOperatorConfig.CA_CERT_SECRET_NAME)).get();
         if (caKey == null) {
-            throw new InvalidConfigurationException("CA certificate secret " + config.getCaKeySecretName() + " in namespace " + config.getCaNamespace() + " not found");
+            throw new InvalidConfigurationException("CA certificate secret " + config.get(UserOperatorConfig.CA_KEY_SECRET_NAME) + " in namespace " + config.get(UserOperatorConfig.CA_NAMESPACE) + " not found");
         }
 
         user.maybeGenerateCertificates(
@@ -337,9 +337,9 @@ public class KafkaUserOperator {
                 caCert,
                 caKey,
                 userSecret,
-                config.getClientsCaValidityDays(),
-                config.getClientsCaRenewalDays(),
-                config.getMaintenanceWindows(),
+                config.get(UserOperatorConfig.CERTS_VALIDITY_DAYS),
+                config.get(UserOperatorConfig.CERTS_RENEWAL_DAYS),
+                UserOperatorConfig.parseMaintenanceTimeWindows(config.get(UserOperatorConfig.MAINTENANCE_TIME_WINDOWS)),
                 Clock.systemUTC()
         );
     }
@@ -370,7 +370,7 @@ public class KafkaUserOperator {
 
         // Reconcile the user SCRAM-SHA-512 credentials
         CompletionStage<ReconcileResult<String>> scramCredentialsFuture;
-        if (config.isKraftEnabled()) {
+        if (config.get(UserOperatorConfig.KRAFT_ENABLED)) {
             // SCRAM-SHA authentication is currently not supported when KRaft is used
             scramCredentialsFuture = CompletableFuture.completedFuture(ReconcileResult.noop(null));
         } else {
@@ -388,7 +388,7 @@ public class KafkaUserOperator {
         CompletionStage<ReconcileResult<Set<SimpleAclRule>>> aclsTlsUserFuture;
         CompletionStage<ReconcileResult<Set<SimpleAclRule>>> aclsScramUserFuture;
 
-        if (config.isAclsAdminApiSupported()) {
+        if (config.get(UserOperatorConfig.ACLS_ADMIN_API_SUPPORTED)) {
             aclsTlsUserFuture = aclOperator.reconcile(reconciliation, KafkaUserModel.getTlsUserName(reconciliation.name()), tlsAcls);
             aclsScramUserFuture = aclOperator.reconcile(reconciliation, KafkaUserModel.getScramUserName(reconciliation.name()), scramOrNoneAcls);
         } else {
