@@ -75,21 +75,21 @@ public class Main {
         // Create and log UserOperatorConfig
         Map<String, String> m = new HashMap<>(System.getenv());
         m.keySet().retainAll(UserOperatorConfig.keyNames());
-        UserOperatorConfig config = new UserOperatorConfig(System.getenv());
+        UserOperatorConfig config = new UserOperatorConfig(m);
         LOGGER.info("Cluster Operator configuration is {}", config);
 
         // Create KubernetesClient, AdminClient and KafkaUserOperator classes
         KubernetesClient client = new OperatorKubernetesClientBuilder("strimzi-user-operator", Main.class.getPackage().getImplementationVersion()).build();
         Admin adminClient = createAdminClient(config, client, new DefaultAdminClientProvider());
         AtomicInteger kafkaUserOperatorExecutorThreadCounter = new AtomicInteger(0);
-        ExecutorService kafkaUserOperatorExecutor = Executors.newFixedThreadPool(config.get(UserOperatorConfig.USER_OPERATIONS_THREAD_POOL_SIZE), r -> new Thread(r, "operator-thread-pool-" + kafkaUserOperatorExecutorThreadCounter.getAndIncrement()));
+        ExecutorService kafkaUserOperatorExecutor = Executors.newFixedThreadPool(config.getUserOperationsThreadPoolSize(), r -> new Thread(r, "operator-thread-pool-" + kafkaUserOperatorExecutorThreadCounter.getAndIncrement()));
         KafkaUserOperator kafkaUserOperator = new KafkaUserOperator(
                 config,
                 client,
                 new OpenSslCertManager(),
-                config.get(UserOperatorConfig.KRAFT_ENABLED) ? new DisabledScramCredentialsOperator() : new ScramCredentialsOperator(adminClient, config, kafkaUserOperatorExecutor),
+                config.isKraftEnabled() ? new DisabledScramCredentialsOperator() : new ScramCredentialsOperator(adminClient, config, kafkaUserOperatorExecutor),
                 new QuotasOperator(adminClient, config, kafkaUserOperatorExecutor),
-                config.get(UserOperatorConfig.ACLS_ADMIN_API_SUPPORTED) ? new SimpleAclOperator(adminClient, config, kafkaUserOperatorExecutor) : new DisabledSimpleAclOperator(),
+                config.isAclsAdminApiSupported() ? new SimpleAclOperator(adminClient, config, kafkaUserOperatorExecutor) : new DisabledSimpleAclOperator(),
                 kafkaUserOperatorExecutor
         );
 
@@ -145,21 +145,21 @@ public class Main {
      */
     private static Admin createAdminClient(UserOperatorConfig config, KubernetesClient client, AdminClientProvider adminClientProvider)    {
         Secret clusterCaCert = null;
-        if (config.get(UserOperatorConfig.CLUSTER_CA_CERT_SECRET_NAME) != null && !config.get(UserOperatorConfig.CLUSTER_CA_CERT_SECRET_NAME).isEmpty()) {
-            clusterCaCert = client.secrets().inNamespace(config.get(UserOperatorConfig.CA_CERT_SECRET_NAME)).withName(config.get(UserOperatorConfig.CLUSTER_CA_CERT_SECRET_NAME)).get();
+        if (config.getClusterCaCertSecretName() != null && !config.getClusterCaCertSecretName().isEmpty()) {
+            clusterCaCert = client.secrets().inNamespace(config.getCaNamespace()).withName(config.getClusterCaCertSecretName()).get();
         }
 
         Secret uoKeyAndCert = null;
-        if (config.get(UserOperatorConfig.EO_KEY_SECRET_NAME) != null && !config.get(UserOperatorConfig.EO_KEY_SECRET_NAME).isEmpty()) {
-            uoKeyAndCert = client.secrets().inNamespace(config.get(UserOperatorConfig.CA_CERT_SECRET_NAME)).withName(config.get(UserOperatorConfig.EO_KEY_SECRET_NAME)).get();
+        if (config.getEuoKeySecretName() != null && !config.getEuoKeySecretName().isEmpty()) {
+            uoKeyAndCert = client.secrets().inNamespace(config.getCaNamespace()).withName(config.getEuoKeySecretName()).get();
         }
 
         return adminClientProvider.createAdminClient(
-                config.get(UserOperatorConfig.KAFKA_BOOTSTRAP_SERVERS),
+                config.getKafkaBootstrapServers(),
                 clusterCaCert,
                 uoKeyAndCert,
                 uoKeyAndCert != null ? "entity-operator" : null, // When the UO secret is not null (i.e. mTLS is used), we set the name. Otherwise, we just pass null.
-                UserOperatorConfig.parseKafkaAdminClientConfiguration(config.get(UserOperatorConfig.KAFKA_ADMIN_CLIENT_CONFIGURATION)));
+                config.getKafkaAdminClientConfiguration());
     }
 
     /**

@@ -85,8 +85,8 @@ public class UserControllerLoop extends AbstractControllerLoop {
         this.userOperator = userOperator;
         this.metrics = metrics;
 
-        this.secretPrefix = config.get(UserOperatorConfig.SECRET_PREFIX);
-        this.operationTimeoutMs = config.get(UserOperatorConfig.OPERATION_TIMEOUT_MS);
+        this.secretPrefix = config.getSecretPrefix();
+        this.operationTimeoutMs = config.getOperationTimeoutMs();
     }
 
     /**

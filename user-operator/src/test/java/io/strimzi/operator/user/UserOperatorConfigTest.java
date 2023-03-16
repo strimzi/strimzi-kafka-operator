@@ -47,25 +47,25 @@ public class UserOperatorConfigTest {
     public void testFromMap()    {
         UserOperatorConfig config = new UserOperatorConfig(ENV_VARS);
 
-        assertThat(config.get(UserOperatorConfig.NAMESPACE), is(ENV_VARS.get(UserOperatorConfig.STRIMZI_NAMESPACE)));
-        assertThat(config.get(UserOperatorConfig.RECONCILIATION_INTERVAL_MS), is(Long.parseLong(ENV_VARS.get(UserOperatorConfig.STRIMZI_FULL_RECONCILIATION_INTERVAL_MS))));
-        assertThat(config.get(UserOperatorConfig.LABELS), is(EXPECTED_LABELS));
-        assertThat(config.get(UserOperatorConfig.CA_CERT_SECRET_NAME), is(ENV_VARS.get(UserOperatorConfig.STRIMZI_CA_CERT_SECRET_NAME)));
-        assertThat(config.get(UserOperatorConfig.CA_NAMESPACE), is(ENV_VARS.get(UserOperatorConfig.STRIMZI_CA_NAMESPACE)));
-        assertThat(config.get(UserOperatorConfig.CERTS_VALIDITY_DAYS), is(1000));
-        assertThat(config.get(UserOperatorConfig.CERTS_RENEWAL_DAYS), is(10));
-        assertThat(config.get(UserOperatorConfig.ACLS_ADMIN_API_SUPPORTED), is(false));
-        assertThat(config.get(UserOperatorConfig.KRAFT_ENABLED), is(true));
-        assertThat(config.get(UserOperatorConfig.SCRAM_SHA_PASSWORD_LENGTH), is(20));
-        assertThat(config.get(UserOperatorConfig.MAINTENANCE_TIME_WINDOWS), is(nullValue()));
-        assertThat(config.get(UserOperatorConfig.OPERATION_TIMEOUT_MS), is(300_000L));
-        assertThat(config.get(UserOperatorConfig.WORK_QUEUE_SIZE), is(1_024));
-        assertThat(config.get(UserOperatorConfig.CONTROLLER_THREAD_POOL_SIZE), is(50));
-        assertThat(config.get(UserOperatorConfig.CACHE_REFRESH_INTERVAL_MS), is(15_000L));
-        assertThat(config.get(UserOperatorConfig.BATCH_QUEUE_SIZE), is(1_024));
-        assertThat(config.get(UserOperatorConfig.BATCH_MAXIMUM_BLOCK_SIZE), is(100));
-        assertThat(config.get(UserOperatorConfig.BATCH_MAXIMUM_BLOCK_TIME_MS), is(100));
-        assertThat(config.get(UserOperatorConfig.USER_OPERATIONS_THREAD_POOL_SIZE), is(4));
+        assertThat(config.getNamespace(), is(ENV_VARS.get(UserOperatorConfig.STRIMZI_NAMESPACE)));
+        assertThat(config.getReconciliationIntervalMs(), is(Long.parseLong(ENV_VARS.get(UserOperatorConfig.STRIMZI_FULL_RECONCILIATION_INTERVAL_MS))));
+        assertThat(config.getLabels(), is(EXPECTED_LABELS));
+        assertThat(config.getCaCertSecretName(), is(ENV_VARS.get(UserOperatorConfig.STRIMZI_CA_CERT_SECRET_NAME)));
+        assertThat(config.getCaNamespace(), is(ENV_VARS.get(UserOperatorConfig.STRIMZI_CA_NAMESPACE)));
+        assertThat(config.getClientCaValidityDays(), is(1000));
+        assertThat(config.getClientCaRenewalDays(), is(10));
+        assertThat(config.isAclsAdminApiSupported(), is(false));
+        assertThat(config.isKraftEnabled(), is(true));
+        assertThat(config.getScramPasswordLength(), is(20));
+        assertThat(config.getMaintenanceWindows(), is(nullValue()));
+        assertThat(config.getOperationTimeoutMs(), is(300_000L));
+        assertThat(config.getWorkQueueSize(), is(1_024));
+        assertThat(config.getControllerThreadPoolSize(), is(50));
+        assertThat(config.getCacheRefresh(), is(15_000L));
+        assertThat(config.getBatchQueueSize(), is(1_024));
+        assertThat(config.getBatchMaxBlockSize(), is(100));
+        assertThat(config.getBatchMaxBlockTime(), is(100));
+        assertThat(config.getUserOperationsThreadPoolSize(), is(4));
     }
 
     @Test
@@ -90,7 +90,7 @@ public class UserOperatorConfigTest {
         envVars.remove(UserOperatorConfig.STRIMZI_FULL_RECONCILIATION_INTERVAL_MS);
 
         UserOperatorConfig config = new UserOperatorConfig(envVars);
-        assertThat(config.get(UserOperatorConfig.RECONCILIATION_INTERVAL_MS), is(Long.parseLong(UserOperatorConfig.RECONCILIATION_INTERVAL_MS.getDefaultValue())));
+        assertThat(config.getReconciliationIntervalMs(), is(Long.parseLong(UserOperatorConfig.RECONCILIATION_INTERVAL_MS.defaultValue())));
     }
 
     @Test
@@ -99,7 +99,7 @@ public class UserOperatorConfigTest {
         envVars.remove(UserOperatorConfig.STRIMZI_SCRAM_SHA_PASSWORD_LENGTH);
 
         UserOperatorConfig config = new UserOperatorConfig(envVars);
-        assertThat(config.get(UserOperatorConfig.SCRAM_SHA_PASSWORD_LENGTH), is(Integer.parseInt(UserOperatorConfig.SCRAM_SHA_PASSWORD_LENGTH.getDefaultValue())));
+        assertThat(config.get(UserOperatorConfig.SCRAM_SHA_PASSWORD_LENGTH), is(Integer.parseInt(UserOperatorConfig.SCRAM_SHA_PASSWORD_LENGTH.defaultValue())));
     }
 
     @Test
@@ -151,8 +151,8 @@ public class UserOperatorConfigTest {
         envVars.remove(UserOperatorConfig.STRIMZI_CLIENTS_CA_RENEWAL);
 
         UserOperatorConfig config =  new UserOperatorConfig(envVars);
-        assertThat(config.get(UserOperatorConfig.CERTS_VALIDITY_DAYS), is(Integer.parseInt(UserOperatorConfig.CERTS_VALIDITY_DAYS.getDefaultValue())));
-        assertThat(config.get(UserOperatorConfig.CERTS_RENEWAL_DAYS), is(Integer.parseInt(UserOperatorConfig.CERTS_RENEWAL_DAYS.getDefaultValue())));
+        assertThat(config.get(UserOperatorConfig.CERTS_VALIDITY_DAYS), is(Integer.parseInt(UserOperatorConfig.CERTS_VALIDITY_DAYS.defaultValue())));
+        assertThat(config.get(UserOperatorConfig.CERTS_RENEWAL_DAYS), is(Integer.parseInt(UserOperatorConfig.CERTS_RENEWAL_DAYS.defaultValue())));
     }
 
     @Test
@@ -161,7 +161,7 @@ public class UserOperatorConfigTest {
         envVars.remove(UserOperatorConfig.STRIMZI_ACLS_ADMIN_API_SUPPORTED);
 
         UserOperatorConfig config =  new UserOperatorConfig(envVars);
-        assertThat(config.get(UserOperatorConfig.ACLS_ADMIN_API_SUPPORTED), is(Boolean.parseBoolean(UserOperatorConfig.ACLS_ADMIN_API_SUPPORTED.getDefaultValue())));
+        assertThat(config.get(UserOperatorConfig.ACLS_ADMIN_API_SUPPORTED), is(Boolean.parseBoolean(UserOperatorConfig.ACLS_ADMIN_API_SUPPORTED.defaultValue())));
     }
 
     @Test
@@ -170,7 +170,7 @@ public class UserOperatorConfigTest {
         envVars.remove(UserOperatorConfig.STRIMZI_KRAFT_ENABLED);
 
         UserOperatorConfig config =  new UserOperatorConfig(envVars);
-        assertThat(config.get(UserOperatorConfig.KRAFT_ENABLED), is(Boolean.parseBoolean(UserOperatorConfig.KRAFT_ENABLED.getDefaultValue())));
+        assertThat(config.get(UserOperatorConfig.KRAFT_ENABLED), is(Boolean.parseBoolean(UserOperatorConfig.KRAFT_ENABLED.defaultValue())));
     }
 
     @Test

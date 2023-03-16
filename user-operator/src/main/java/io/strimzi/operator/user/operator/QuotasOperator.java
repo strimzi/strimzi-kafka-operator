@@ -47,10 +47,10 @@ public class QuotasOperator implements AdminApiOperator<KafkaUserQuotas, Set<Str
         this.executor = executor;
 
         // Create cache for querying the Quotas locally
-        this.cache = new QuotasCache(adminClient, config.get(UserOperatorConfig.CACHE_REFRESH_INTERVAL_MS));
+        this.cache = new QuotasCache(adminClient, config.getCacheRefresh());
 
         // Create micro-batching reconcilers for managing the quotas
-        this.patchReconciler = new QuotasBatchReconciler(adminClient, config.get(UserOperatorConfig.BATCH_QUEUE_SIZE), config.get(UserOperatorConfig.BATCH_MAXIMUM_BLOCK_SIZE), config.get(UserOperatorConfig.BATCH_MAXIMUM_BLOCK_TIME_MS));
+        this.patchReconciler = new QuotasBatchReconciler(adminClient, config.getBatchQueueSize(), config.getBatchMaxBlockSize(), config.getBatchMaxBlockTime());
     }
 
     /**

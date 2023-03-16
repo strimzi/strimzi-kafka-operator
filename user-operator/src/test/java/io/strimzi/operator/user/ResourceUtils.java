@@ -23,7 +23,6 @@ import io.strimzi.operator.user.model.acl.SimpleAclRule;
 
 import java.util.Base64;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -37,39 +36,36 @@ public class ResourceUtils {
     public static final String CA_KEY_NAME = "ca-key";
     public static final String PASSWORD = "my-password";
 
+
     public static UserOperatorConfig createUserOperatorConfig(Map<String, String> labels, boolean aclsAdminApiSupported, boolean useKRaft, String scramShaPasswordLength, String secretPrefix) {
-        Map<String, String> envVars = new HashMap<>(4);
-        envVars.put(UserOperatorConfig.STRIMZI_NAMESPACE, NAMESPACE);
-        envVars.put(UserOperatorConfig.STRIMZI_LABELS, labels.entrySet().stream().map(e -> e.getKey() + "=" + e.getValue()).collect(Collectors.joining(",")));
-        envVars.put(UserOperatorConfig.STRIMZI_CA_CERT_SECRET_NAME, CA_CERT_NAME);
-        envVars.put(UserOperatorConfig.STRIMZI_CA_KEY_SECRET_NAME, CA_KEY_NAME);
-        envVars.put(UserOperatorConfig.STRIMZI_ACLS_ADMIN_API_SUPPORTED, Boolean.toString(aclsAdminApiSupported));
-        envVars.put(UserOperatorConfig.STRIMZI_KRAFT_ENABLED, Boolean.toString(useKRaft));
+
+        UserOperatorConfigBuilder config = new UserOperatorConfigBuilder()
+                                                   .withNamespace(NAMESPACE)
+                                                   .withLabels(labels.entrySet().stream().map(e -> e.getKey() + "=" + e.getValue()).collect(Collectors.joining(",")))
+                                                   .withCaCertSecretName(CA_CERT_NAME)
+                                                   .withCaKeySecretName(CA_KEY_NAME)
+                                                   .withAclsAdminApiSupported(aclsAdminApiSupported)
+                                                   .withKraftEnabled(useKRaft)
+                                                   .withScramPasswordLength(Integer.parseInt(scramShaPasswordLength))
+                                                   .withSecretPrefix(secretPrefix);
 
         if (!scramShaPasswordLength.equals("32")) {
-            envVars.put(UserOperatorConfig.STRIMZI_SCRAM_SHA_PASSWORD_LENGTH, scramShaPasswordLength);
+            config.withScramPasswordLength(Integer.parseInt(scramShaPasswordLength));
         }
 
         if (secretPrefix != null) {
-            envVars.put(UserOperatorConfig.STRIMZI_SECRET_PREFIX, secretPrefix);
+            config.withSecretPrefix(secretPrefix);
         }
 
-        return new UserOperatorConfig(envVars);
+        return config.build();
     }
 
     public static UserOperatorConfig createUserOperatorConfigForUserControllerTesting(Map<String, String> labels, int fullReconciliationInterval, int queueSize, int poolSize, String secretPrefix) {
-        Map<String, String> envVars = new HashMap<>();
-        envVars.put(UserOperatorConfig.STRIMZI_NAMESPACE, NAMESPACE);
-        envVars.put(UserOperatorConfig.STRIMZI_LABELS, labels.entrySet().stream().map(e -> e.getKey() + "=" + e.getValue()).collect(Collectors.joining(",")));
-        envVars.put(UserOperatorConfig.STRIMZI_CA_CERT_SECRET_NAME, CA_CERT_NAME);
-        envVars.put(UserOperatorConfig.STRIMZI_CA_KEY_SECRET_NAME, CA_KEY_NAME);
-        envVars.put(UserOperatorConfig.STRIMZI_CA_KEY_SECRET_NAME, CA_KEY_NAME);
-        envVars.put(UserOperatorConfig.STRIMZI_FULL_RECONCILIATION_INTERVAL_MS, Integer.toString(fullReconciliationInterval));
-        envVars.put(UserOperatorConfig.STRIMZI_WORK_QUEUE_SIZE, Integer.toString(queueSize));
-        envVars.put(UserOperatorConfig.STRIMZI_CONTROLLER_THREAD_POOL_SIZE, Integer.toString(poolSize));
-        envVars.put(UserOperatorConfig.STRIMZI_SECRET_PREFIX, secretPrefix);
-
-        return new UserOperatorConfig(envVars);
+        return new UserOperatorConfigBuilder(createUserOperatorConfig(labels, false, false, "32", secretPrefix))
+                      .withReconciliationIntervalMs(fullReconciliationInterval)
+                      .withWorkQueueSize(queueSize)
+                      .withControllerThreadPoolSize(poolSize)
+                      .build();
     }
 
     public static UserOperatorConfig createUserOperatorConfig() {
@@ -77,7 +73,9 @@ public class ResourceUtils {
     }
 
     public static UserOperatorConfig createUserOperatorConfig(String scramShaPasswordLength) {
-        return createUserOperatorConfig(Map.of(), true, false, scramShaPasswordLength, null);
+        return new UserOperatorConfigBuilder(createUserOperatorConfig())
+                       .withScramPasswordLength(Integer.parseInt(scramShaPasswordLength))
+                       .build();
     }
 
     public static KafkaUser createKafkaUser(KafkaUserAuthentication authentication) {

@@ -72,13 +72,13 @@ public class UserController {
         this.userOperator = userOperator;
 
         // Store some useful settings into local fields
-        this.watchedNamespace = config.get(UserOperatorConfig.NAMESPACE);
-        this.secretPrefix = config.get(UserOperatorConfig.SECRET_PREFIX);
-        this.reconcileIntervalMs = config.get(UserOperatorConfig.RECONCILIATION_INTERVAL_MS);
-        this.operationTimeoutMs = config.get(UserOperatorConfig.OPERATION_TIMEOUT_MS);
+        this.watchedNamespace = config.getNamespace();
+        this.secretPrefix = config.getSecretPrefix();
+        this.reconcileIntervalMs = config.getReconciliationIntervalMs();
+        this.operationTimeoutMs = config.getOperationTimeoutMs();
 
         // User selector is used to select the KafkaUser resources
-        Map<String, String> userSelector = (config.get(UserOperatorConfig.LABELS) == null || config.get(UserOperatorConfig.LABELS).toMap().isEmpty()) ? Map.of() : config.get(UserOperatorConfig.LABELS).toMap();
+        Map<String, String> userSelector = (config.getLabels() == null || config.getLabels().toMap().isEmpty()) ? Map.of() : config.getLabels().toMap();
 
         // Selector for the secrets contains the original KafkaUSer selector adn the Strimzi Kind label
         Map<String, String> secretSelector = new HashMap<>(userSelector.size() + 1);
@@ -89,7 +89,7 @@ public class UserController {
         this.metrics = new ControllerMetricsHolder(RESOURCE_KIND, Labels.fromMap(userSelector), metricsProvider);
 
         // Set up the work queue
-        this.workQueue = new ControllerQueue(config.get(UserOperatorConfig.WORK_QUEUE_SIZE), this.metrics);
+        this.workQueue = new ControllerQueue(config.getWorkQueueSize(), this.metrics);
 
         // Secret informer and lister is used to get events about Secrets and get Secrets quickly
         this.secretInformer = client.secrets().inNamespace(watchedNamespace).withLabels(secretSelector).inform();
@@ -106,8 +106,8 @@ public class UserController {
         ReconciliationLockManager lockManager = new ReconciliationLockManager();
 
         // Create a thread pool for the reconciliation loops and add the reconciliation loops
-        this.threadPool = new ArrayList<>(config.get(UserOperatorConfig.CONTROLLER_THREAD_POOL_SIZE));
-        for (int i = 0; i < config.get(UserOperatorConfig.CONTROLLER_THREAD_POOL_SIZE); i++)  {
+        this.threadPool = new ArrayList<>(config.getControllerThreadPoolSize());
+        for (int i = 0; i < config.getControllerThreadPoolSize(); i++)  {
             threadPool.add(new UserControllerLoop(RESOURCE_KIND + "-ControllerLoop-" + i, workQueue, lockManager, scheduledExecutor, client, userLister, secretLister, userOperator, metrics, config));
         }
     }

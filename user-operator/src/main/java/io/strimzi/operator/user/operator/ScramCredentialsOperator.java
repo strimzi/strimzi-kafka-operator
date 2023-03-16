@@ -53,10 +53,10 @@ public class ScramCredentialsOperator implements AdminApiOperator<String, List<S
         this.executor = executor;
 
         // Create cache for querying the SCRAM-SHA Credentials locally
-        this.cache = new ScramShaCredentialsCache(adminClient, config.get(UserOperatorConfig.CACHE_REFRESH_INTERVAL_MS));
+        this.cache = new ScramShaCredentialsCache(adminClient, config.getCacheRefresh());
 
         // Create micro-batching reconciler for updating the SCRAM-SHA credentials
-        this.patchReconciler = new ScramShaCredentialsBatchReconciler(adminClient, config.get(UserOperatorConfig.BATCH_QUEUE_SIZE), config.get(UserOperatorConfig.BATCH_MAXIMUM_BLOCK_SIZE), config.get(UserOperatorConfig.BATCH_MAXIMUM_BLOCK_TIME_MS));
+        this.patchReconciler = new ScramShaCredentialsBatchReconciler(adminClient, config.getBatchQueueSize(), config.getBatchMaxBlockSize(), config.getBatchMaxBlockTime());
     }
 
     /**
