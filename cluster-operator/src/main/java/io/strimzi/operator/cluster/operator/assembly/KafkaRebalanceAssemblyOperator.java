@@ -1064,7 +1064,7 @@ public class KafkaRebalanceAssemblyOperator
                                 p.complete(new MapAndStatus<>(null, currentKafkaRebalance.getStatus()));
                             }
                         } else {
-                            LOGGER.debugCr(reconciliation, "Rebalance resource was deleted, stopping the request time");
+                            LOGGER.warnCr(reconciliation, "Rebalance resource was deleted, rebalancing is still in progress but the status won't be reported");
                             vertx.cancelTimer(t);
                             p.complete();
                         }
