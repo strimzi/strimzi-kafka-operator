@@ -29,8 +29,6 @@ public abstract class AbstractModel {
 
     protected static final ReconciliationLogger LOGGER = ReconciliationLogger.create(AbstractModel.class.getName());
 
-    protected static final String DEFAULT_JVM_XMS = "128M";
-
     /**
      * Init container related configuration
      */
@@ -58,23 +56,9 @@ public abstract class AbstractModel {
 
     // Docker image configuration
     protected String image;
-    // Number of replicas
-    protected int replicas;
 
-    /**
-     * Application configuration
-     */
-    protected AbstractConfiguration configuration;
     protected boolean gcLoggingEnabled = true;
     protected JvmOptions jvmOptions;
-
-    /**
-     * Base name used to name data volumes
-     */
-    public static final String VOLUME_NAME = "data";
-    protected String mountPath;
-    protected String logAndMetricsConfigMountPath;
-    protected String logAndMetricsConfigVolumeName;
 
     /**
      * Container configuration
@@ -114,13 +98,6 @@ public abstract class AbstractModel {
     }
 
     /**
-     * @return The number of replicas
-     */
-    public int getReplicas() {
-        return replicas;
-    }
-
-    /**
      * @return the default Kubernetes resource name.
      */
     public String getComponentName() {
@@ -132,22 +109,6 @@ public abstract class AbstractModel {
      */
     public Labels getSelectorLabels() {
         return labels.strimziSelectorLabels();
-    }
-
-    /**
-     * @return an implementation of AbstractConfiguration configured by a user for a component.
-     */
-    public AbstractConfiguration getConfiguration() {
-        return configuration;
-    }
-
-    /**
-     * Set the configuration object which may be configured by the user for some components.
-     *
-     * @param configuration Configuration settings for a component.
-     */
-    protected void setConfiguration(AbstractConfiguration configuration) {
-        this.configuration = configuration;
     }
 
     /**

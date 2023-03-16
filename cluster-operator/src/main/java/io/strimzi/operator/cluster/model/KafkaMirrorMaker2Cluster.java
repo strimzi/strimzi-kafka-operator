@@ -111,7 +111,7 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
                     .findFirst()
                     .orElseThrow(() -> new InvalidResourceException("connectCluster with alias " + connectClusterAlias + " cannot be found in the list of clusters at spec.clusters"));
         }        
-        result.setConfiguration(new KafkaMirrorMaker2Configuration(reconciliation, connectCluster.getConfig().entrySet()));
+        result.configuration = new KafkaMirrorMaker2Configuration(reconciliation, connectCluster.getConfig().entrySet());
 
         return fromSpec(reconciliation, buildKafkaConnectSpec(spec, connectCluster), versions, result);
     }

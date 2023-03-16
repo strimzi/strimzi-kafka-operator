@@ -100,7 +100,6 @@ public class EntityOperator extends AbstractModel {
     protected EntityOperator(Reconciliation reconciliation, HasMetadata resource) {
         super(reconciliation, resource, KafkaResources.entityOperatorDeploymentName(resource.getMetadata().getName()), COMPONENT_TYPE);
 
-        this.replicas = EntityOperatorSpec.DEFAULT_REPLICAS;
         this.zookeeperConnect = KafkaResources.zookeeperServiceName(cluster) + ":" + ZookeeperCluster.CLIENT_TLS_PORT;
     }
 
@@ -189,7 +188,7 @@ public class EntityOperator extends AbstractModel {
                 labels,
                 ownerReference,
                 templateDeployment,
-                replicas,
+                1,
                 null,
                 WorkloadUtils.deploymentStrategy(RECREATE), // we intentionally ignore the template here as EO doesn't support RU strategy
                 WorkloadUtils.createPodTemplateSpec(

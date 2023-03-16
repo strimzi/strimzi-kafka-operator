@@ -122,7 +122,7 @@ public class ZookeeperClusterPodSetTest {
             assertThat(io.strimzi.operator.cluster.TestUtils.containerEnvVars(pod.getSpec().getContainers().get(0)).get(ZookeeperCluster.ENV_VAR_STRIMZI_KAFKA_GC_LOG_ENABLED), is(Boolean.toString(JvmOptions.DEFAULT_GC_LOGGING_ENABLED)));
             assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(0).getName(), is(VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_VOLUME_NAME));
             assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(0).getMountPath(), is(VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_MOUNT_PATH));
-            assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(1).getName(), is(AbstractModel.VOLUME_NAME));
+            assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(1).getName(), is(VolumeUtils.DATA_VOLUME_NAME));
             assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(1).getMountPath(), is("/var/lib/zookeeper"));
             assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(2).getName(), is("zookeeper-metrics-and-logging"));
             assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(2).getMountPath(), is("/opt/kafka/custom-config/"));
@@ -338,7 +338,7 @@ public class ZookeeperClusterPodSetTest {
             assertThat(io.strimzi.operator.cluster.TestUtils.containerEnvVars(pod.getSpec().getContainers().get(0)).get(ZookeeperCluster.ENV_VAR_STRIMZI_KAFKA_GC_LOG_ENABLED), is("true"));
             assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(0).getName(), is(VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_VOLUME_NAME));
             assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(0).getMountPath(), is(VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_MOUNT_PATH));
-            assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(1).getName(), is(AbstractModel.VOLUME_NAME));
+            assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(1).getName(), is(VolumeUtils.DATA_VOLUME_NAME));
             assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(1).getMountPath(), is("/var/lib/zookeeper"));
             assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(2).getName(), is("zookeeper-metrics-and-logging"));
             assertThat(pod.getSpec().getContainers().get(0).getVolumeMounts().get(2).getMountPath(), is("/opt/kafka/custom-config/"));

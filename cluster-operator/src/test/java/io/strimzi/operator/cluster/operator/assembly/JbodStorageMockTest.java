@@ -23,7 +23,6 @@ import io.strimzi.operator.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
-import io.strimzi.operator.cluster.model.AbstractModel;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.VolumeUtils;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
@@ -316,7 +315,7 @@ public class JbodStorageMockTest {
         for (int i = 0; i < kafka.getSpec().getKafka().getReplicas(); i++) {
             for (SingleVolumeStorage volume : ((JbodStorage) kafka.getSpec().getKafka().getStorage()).getVolumes()) {
                 if (volume instanceof PersistentClaimStorage) {
-                    expectedPvcs.add(AbstractModel.VOLUME_NAME + "-" + volume.getId() + "-"
+                    expectedPvcs.add(VolumeUtils.DATA_VOLUME_NAME + "-" + volume.getId() + "-"
                             + KafkaResources.kafkaPodName(NAME, i));
                 }
             }

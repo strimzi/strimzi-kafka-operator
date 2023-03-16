@@ -127,7 +127,7 @@ public class EntityOperatorTest {
 
         assertThat(dep.getMetadata().getName(), is(KafkaResources.entityOperatorDeploymentName(cluster)));
         assertThat(dep.getMetadata().getNamespace(), is(namespace));
-        assertThat(dep.getSpec().getReplicas(), is(EntityOperatorSpec.DEFAULT_REPLICAS));
+        assertThat(dep.getSpec().getReplicas(), is(1));
         TestUtils.checkOwnerReference(dep, resource);
 
         assertThat(containers.size(), is(3));

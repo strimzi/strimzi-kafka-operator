@@ -104,7 +104,6 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
     protected static final String ENV_VAR_CRUISE_CONTROL_METRICS_ENABLED = "CRUISE_CONTROL_METRICS_ENABLED";
 
     // Configuration defaults
-    protected static final int DEFAULT_REPLICAS = 1;
     protected static final boolean DEFAULT_CRUISE_CONTROL_METRICS_ENABLED = false;
 
     // Default probe settings (liveness and readiness) for health checks
@@ -124,6 +123,7 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
     @SuppressFBWarnings({"UWF_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR"}) // This field is initialized in the fromCrd method
     private MetricsModel metrics;
     private LoggingModel logging;
+    /* test */ CruiseControlConfiguration configuration;
 
     /**
      * Port of the Cruise Control REST API
@@ -170,12 +170,8 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
     private CruiseControl(Reconciliation reconciliation, HasMetadata resource) {
         super(reconciliation, resource, CruiseControlResources.deploymentName(resource.getMetadata().getName()), COMPONENT_TYPE);
 
-        this.replicas = DEFAULT_REPLICAS;
         this.livenessProbeOptions = DEFAULT_HEALTHCHECK_OPTIONS;
         this.readinessProbeOptions = DEFAULT_HEALTHCHECK_OPTIONS;
-        this.mountPath = "/var/lib/kafka";
-        this.logAndMetricsConfigVolumeName = LOG_AND_METRICS_CONFIG_VOLUME_NAME;
-        this.logAndMetricsConfigMountPath = LOG_AND_METRICS_CONFIG_VOLUME_MOUNT;
     }
 
     /**
@@ -198,8 +194,6 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
         if (ccSpec != null) {
             CruiseControl result = new CruiseControl(reconciliation, kafkaCr);
 
-            result.replicas = DEFAULT_REPLICAS;
-
             String image = ccSpec.getImage();
             if (image == null) {
                 image = System.getenv().getOrDefault(ClusterOperatorConfig.STRIMZI_DEFAULT_CRUISE_CONTROL_IMAGE, versions.kafkaImage(kafkaClusterSpec.getImage(), versions.defaultVersion().version()));
@@ -207,7 +201,7 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
             result.image = image;
 
             result.updateConfiguration(ccSpec);
-            CruiseControlConfiguration ccConfiguration = (CruiseControlConfiguration) result.getConfiguration();
+            CruiseControlConfiguration ccConfiguration = result.configuration;
             result.sslEnabled = ccConfiguration.isApiSslEnabled();
             result.authEnabled = ccConfiguration.isApiAuthEnabled();
 
@@ -259,7 +253,7 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
         }
         // Ensure that the configured anomaly.detection.goals are a sub-set of the default goals
         checkGoals(userConfiguration);
-        this.setConfiguration(userConfiguration);
+        this.configuration = userConfiguration;
     }
 
     /**
@@ -331,7 +325,7 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
                 createSecretVolume(TLS_CC_CERTS_VOLUME_NAME, CruiseControlResources.secretName(cluster), isOpenShift),
                 createSecretVolume(TLS_CA_CERTS_VOLUME_NAME, AbstractModel.clusterCaCertSecretName(cluster), isOpenShift),
                 createSecretVolume(API_AUTH_CONFIG_VOLUME_NAME, CruiseControlResources.apiSecretName(cluster), isOpenShift),
-                createConfigMapVolume(logAndMetricsConfigVolumeName, CruiseControlResources.logAndMetricsConfigMapName(cluster)));
+                createConfigMapVolume(LOG_AND_METRICS_CONFIG_VOLUME_NAME, CruiseControlResources.logAndMetricsConfigMapName(cluster)));
     }
 
     protected List<VolumeMount> getVolumeMounts() {
@@ -339,7 +333,7 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
                 createVolumeMount(CruiseControl.TLS_CC_CERTS_VOLUME_NAME, CruiseControl.TLS_CC_CERTS_VOLUME_MOUNT),
                 createVolumeMount(CruiseControl.TLS_CA_CERTS_VOLUME_NAME, CruiseControl.TLS_CA_CERTS_VOLUME_MOUNT),
                 createVolumeMount(CruiseControl.API_AUTH_CONFIG_VOLUME_NAME, CruiseControl.API_AUTH_CONFIG_VOLUME_MOUNT),
-                createVolumeMount(logAndMetricsConfigVolumeName, logAndMetricsConfigMountPath));
+                createVolumeMount(LOG_AND_METRICS_CONFIG_VOLUME_NAME, LOG_AND_METRICS_CONFIG_VOLUME_MOUNT));
     }
 
     /**
@@ -358,7 +352,7 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
                 labels,
                 ownerReference,
                 templateDeployment,
-                replicas,
+                1,
                 null,
                 WorkloadUtils.deploymentStrategy(TemplateUtils.deploymentStrategy(templateDeployment, ROLLING_UPDATE)),
                 WorkloadUtils.createPodTemplateSpec(

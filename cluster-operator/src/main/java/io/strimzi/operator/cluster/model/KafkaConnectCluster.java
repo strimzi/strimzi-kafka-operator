@@ -99,6 +99,9 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
     protected static final String PASSWORD_VOLUME_MOUNT = "/opt/kafka/connect-password/";
     protected static final String EXTERNAL_CONFIGURATION_VOLUME_MOUNT_BASE_PATH = "/opt/kafka/external-configuration/";
     protected static final String EXTERNAL_CONFIGURATION_VOLUME_NAME_PREFIX = "ext-conf-";
+    protected static final String OAUTH_TLS_CERTS_BASE_VOLUME_MOUNT = "/opt/kafka/oauth-certs/";
+    protected static final String LOG_AND_METRICS_CONFIG_VOLUME_NAME = "kafka-metrics-and-logging";
+    protected static final String LOG_AND_METRICS_CONFIG_VOLUME_MOUNT = "/opt/kafka/custom-config/";
 
     // Configuration defaults
     /* test */ static final int DEFAULT_REPLICAS = 3;
@@ -124,12 +127,12 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
     protected static final String ENV_VAR_KAFKA_CONNECT_OAUTH_ACCESS_TOKEN = "KAFKA_CONNECT_OAUTH_ACCESS_TOKEN";
     protected static final String ENV_VAR_KAFKA_CONNECT_OAUTH_REFRESH_TOKEN = "KAFKA_CONNECT_OAUTH_REFRESH_TOKEN";
     protected static final String ENV_VAR_KAFKA_CONNECT_OAUTH_PASSWORD_GRANT_PASSWORD = "KAFKA_CONNECT_OAUTH_PASSWORD_GRANT_PASSWORD";
-    protected static final String OAUTH_TLS_CERTS_BASE_VOLUME_MOUNT = "/opt/kafka/oauth-certs/";
     protected static final String ENV_VAR_STRIMZI_TRACING = "STRIMZI_TRACING";
     protected static final String ENV_VAR_STRIMZI_STABLE_IDENTITIES_ENABLED = "STRIMZI_STABLE_IDENTITIES_ENABLED";
 
     protected static final String CO_ENV_VAR_CUSTOM_CONNECT_POD_LABELS = "STRIMZI_CUSTOM_KAFKA_CONNECT_LABELS";
 
+    protected int replicas;
     private Rack rack;
     private String initImage;
     protected String serviceName;
@@ -142,6 +145,7 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
     protected JmxModel jmx;
     protected MetricsModel metrics;
     protected LoggingModel logging;
+    protected AbstractConfiguration configuration;
 
     private ClientTls tls;
     private KafkaClientAuthentication authentication;
@@ -192,10 +196,6 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
         this.readinessProbeOptions = DEFAULT_HEALTHCHECK_OPTIONS;
         this.livenessPath = "/";
         this.livenessProbeOptions = DEFAULT_HEALTHCHECK_OPTIONS;
-
-        this.mountPath = "/var/lib/kafka";
-        this.logAndMetricsConfigVolumeName = "kafka-metrics-and-logging";
-        this.logAndMetricsConfigMountPath = "/opt/kafka/custom-config/";
     }
 
     /**
@@ -231,10 +231,12 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
         result.replicas = spec.getReplicas() != null && spec.getReplicas() >= 0 ? spec.getReplicas() : DEFAULT_REPLICAS;
         result.tracing = spec.getTracing();
 
-        AbstractConfiguration config = result.getConfiguration();
+        // Might already contain configuration from Mirror Maker 2 which extends Connect
+        // We have to check it and either use the Mirror Maker 2 configs or get the Connect configs
+        AbstractConfiguration config = result.configuration;
         if (config == null) {
             config = new KafkaConnectConfiguration(reconciliation, spec.getConfig().entrySet());
-            result.setConfiguration(config);
+            result.configuration = config;
         }
         if (result.tracing != null)   {
             if (JaegerTracing.TYPE_JAEGER.equals(result.tracing.getType())) {
@@ -377,7 +379,7 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
     protected List<Volume> getVolumes(boolean isOpenShift) {
         List<Volume> volumeList = new ArrayList<>(2);
         volumeList.add(VolumeUtils.createTempDirVolume(templatePod));
-        volumeList.add(VolumeUtils.createConfigMapVolume(logAndMetricsConfigVolumeName, loggingAndMetricsConfigMapName));
+        volumeList.add(VolumeUtils.createConfigMapVolume(LOG_AND_METRICS_CONFIG_VOLUME_NAME, loggingAndMetricsConfigMapName));
 
         if (rack != null) {
             volumeList.add(VolumeUtils.createEmptyDirVolume(INIT_VOLUME_NAME, "1Mi", "Memory"));
@@ -438,7 +440,7 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
     protected List<VolumeMount> getVolumeMounts() {
         List<VolumeMount> volumeMountList = new ArrayList<>(2);
         volumeMountList.add(VolumeUtils.createTempDirVolumeMount());
-        volumeMountList.add(VolumeUtils.createVolumeMount(logAndMetricsConfigVolumeName, logAndMetricsConfigMountPath));
+        volumeMountList.add(VolumeUtils.createVolumeMount(LOG_AND_METRICS_CONFIG_VOLUME_NAME, LOG_AND_METRICS_CONFIG_VOLUME_MOUNT));
 
         if (rack != null) {
             volumeMountList.add(VolumeUtils.createVolumeMount(INIT_VOLUME_NAME, INIT_VOLUME_MOUNT));
@@ -930,6 +932,13 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
                         ownerReference,
                         MetricsAndLoggingUtils.generateMetricsAndLogConfigMapData(reconciliation, this, metricsAndLogging)
                 );
+    }
+
+    /**
+     * @return The number of replicas
+     */
+    public int getReplicas() {
+        return replicas;
     }
 
     /**

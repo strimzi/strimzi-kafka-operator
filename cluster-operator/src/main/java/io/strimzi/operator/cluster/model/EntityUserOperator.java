@@ -45,6 +45,9 @@ public class EntityUserOperator extends AbstractModel implements SupportsLogging
     private static final String NAME_SUFFIX = "-entity-user-operator";
     private static final String CERT_SECRET_KEY_NAME = "entity-operator";
 
+    private static final String LOG_AND_METRICS_CONFIG_VOLUME_NAME = "entity-user-operator-metrics-and-logging";
+    private static final String LOG_AND_METRICS_CONFIG_VOLUME_MOUNT = "/opt/user-operator/custom-config/";
+
     // Port configuration
     protected static final int HEALTHCHECK_PORT = 8081;
     protected static final String HEALTHCHECK_PORT_NAME = "healthcheck";
@@ -105,8 +108,6 @@ public class EntityUserOperator extends AbstractModel implements SupportsLogging
         this.secretPrefix = EntityUserOperatorSpec.DEFAULT_SECRET_PREFIX;
         this.resourceLabels = ModelUtils.defaultResourceLabels(cluster);
 
-        this.logAndMetricsConfigVolumeName = "entity-user-operator-metrics-and-logging";
-        this.logAndMetricsConfigMountPath = "/opt/user-operator/custom-config/";
         this.clientsCaValidityDays = CertificateAuthority.DEFAULT_CERTS_VALIDITY_DAYS;
         this.clientsCaRenewalDays = CertificateAuthority.DEFAULT_CERTS_RENEWAL_DAYS;
     }
@@ -229,12 +230,12 @@ public class EntityUserOperator extends AbstractModel implements SupportsLogging
     }
 
     protected List<Volume> getVolumes() {
-        return List.of(VolumeUtils.createConfigMapVolume(logAndMetricsConfigVolumeName, KafkaResources.entityUserOperatorLoggingConfigMapName(cluster)));
+        return List.of(VolumeUtils.createConfigMapVolume(LOG_AND_METRICS_CONFIG_VOLUME_NAME, KafkaResources.entityUserOperatorLoggingConfigMapName(cluster)));
     }
 
     private List<VolumeMount> getVolumeMounts() {
         return List.of(VolumeUtils.createTempDirVolumeMount(USER_OPERATOR_TMP_DIRECTORY_DEFAULT_VOLUME_NAME),
-                VolumeUtils.createVolumeMount(logAndMetricsConfigVolumeName, logAndMetricsConfigMountPath),
+                VolumeUtils.createVolumeMount(LOG_AND_METRICS_CONFIG_VOLUME_NAME, LOG_AND_METRICS_CONFIG_VOLUME_MOUNT),
                 VolumeUtils.createVolumeMount(EntityOperator.EUO_CERTS_VOLUME_NAME, EntityOperator.EUO_CERTS_VOLUME_MOUNT),
                 VolumeUtils.createVolumeMount(EntityOperator.TLS_SIDECAR_CA_CERTS_VOLUME_NAME, EntityOperator.TLS_SIDECAR_CA_CERTS_VOLUME_MOUNT));
     }

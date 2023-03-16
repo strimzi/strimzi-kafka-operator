@@ -60,6 +60,8 @@ public class KafkaMirrorMakerCluster extends AbstractModel implements SupportsMe
     protected static final String PASSWORD_VOLUME_MOUNT_PRODUCER = "/opt/kafka/producer-password/";
     protected static final String OAUTH_TLS_CERTS_BASE_VOLUME_MOUNT_CONSUMER = "/opt/kafka/consumer-oauth-certs/";
     protected static final String OAUTH_TLS_CERTS_BASE_VOLUME_MOUNT_PRODUCER = "/opt/kafka/producer-oauth-certs/";
+    private static final String LOG_AND_METRICS_CONFIG_VOLUME_NAME = "kafka-metrics-and-logging";
+    private static final String LOG_AND_METRICS_CONFIG_VOLUME_MOUNT = "/opt/kafka/custom-config/";
 
     // Configuration defaults
     private static final int DEFAULT_HEALTHCHECK_DELAY = 60;
@@ -113,6 +115,7 @@ public class KafkaMirrorMakerCluster extends AbstractModel implements SupportsMe
 
     protected static final String CO_ENV_VAR_CUSTOM_MIRROR_MAKER_POD_LABELS = "STRIMZI_CUSTOM_KAFKA_MIRROR_MAKER_LABELS";
 
+    private int replicas;
     protected String include;
     protected Tracing tracing;
     private MetricsModel metrics;
@@ -147,10 +150,6 @@ public class KafkaMirrorMakerCluster extends AbstractModel implements SupportsMe
         this.readinessProbeOptions = READINESS_PROBE_OPTIONS;
         this.livenessPath = "/";
         this.livenessProbeOptions = READINESS_PROBE_OPTIONS;
-
-        this.mountPath = "/var/lib/kafka";
-        this.logAndMetricsConfigVolumeName = "kafka-metrics-and-logging";
-        this.logAndMetricsConfigMountPath = "/opt/kafka/custom-config/";
     }
 
     /**
@@ -240,7 +239,7 @@ public class KafkaMirrorMakerCluster extends AbstractModel implements SupportsMe
         List<Volume> volumeList = new ArrayList<>(2);
 
         volumeList.add(VolumeUtils.createTempDirVolume(templatePod));
-        volumeList.add(VolumeUtils.createConfigMapVolume(logAndMetricsConfigVolumeName, KafkaMirrorMakerResources.metricsAndLogConfigMapName(cluster)));
+        volumeList.add(VolumeUtils.createConfigMapVolume(LOG_AND_METRICS_CONFIG_VOLUME_NAME, KafkaMirrorMakerResources.metricsAndLogConfigMapName(cluster)));
 
         if (producer.getTls() != null) {
             VolumeUtils.createSecretVolume(volumeList, producer.getTls().getTrustedCertificates(), isOpenShift);
@@ -259,7 +258,7 @@ public class KafkaMirrorMakerCluster extends AbstractModel implements SupportsMe
         List<VolumeMount> volumeMountList = new ArrayList<>(2);
 
         volumeMountList.add(VolumeUtils.createTempDirVolumeMount());
-        volumeMountList.add(VolumeUtils.createVolumeMount(logAndMetricsConfigVolumeName, logAndMetricsConfigMountPath));
+        volumeMountList.add(VolumeUtils.createVolumeMount(LOG_AND_METRICS_CONFIG_VOLUME_NAME, LOG_AND_METRICS_CONFIG_VOLUME_MOUNT));
         /* producer auth*/
         if (producer.getTls() != null) {
             VolumeUtils.createSecretVolumeMount(volumeMountList, producer.getTls().getTrustedCertificates(), TLS_CERTS_VOLUME_MOUNT_PRODUCER);
@@ -498,6 +497,13 @@ public class KafkaMirrorMakerCluster extends AbstractModel implements SupportsMe
                         ownerReference,
                         MetricsAndLoggingUtils.generateMetricsAndLogConfigMapData(reconciliation, this, metricsAndLogging)
                 );
+    }
+
+    /**
+     * @return The number of replicas
+     */
+    public int getReplicas() {
+        return replicas;
     }
 
     /**

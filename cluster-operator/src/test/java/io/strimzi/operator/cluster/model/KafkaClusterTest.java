@@ -750,7 +750,7 @@ public class KafkaClusterTest {
 
         for (int i = 0; i < REPLICAS; i++) {
             assertThat(pvcs.get(0).getMetadata().getName() + "-" + KafkaResources.kafkaPodName(CLUSTER, i),
-                    is(KafkaCluster.VOLUME_NAME + "-" + KafkaResources.kafkaPodName(CLUSTER, i)));
+                    is(VolumeUtils.DATA_VOLUME_NAME + "-" + KafkaResources.kafkaPodName(CLUSTER, i)));
         }
 
         assembly = new KafkaBuilder(KAFKA)
@@ -771,7 +771,7 @@ public class KafkaClusterTest {
             int id = 0;
             for (PersistentVolumeClaim pvc : pvcs) {
                 assertThat(pvc.getMetadata().getName() + "-" + KafkaResources.kafkaPodName(CLUSTER, i),
-                        is(KafkaCluster.VOLUME_NAME + "-" + id++ + "-" + KafkaResources.kafkaPodName(CLUSTER, i)));
+                        is(VolumeUtils.DATA_VOLUME_NAME + "-" + id++ + "-" + KafkaResources.kafkaPodName(CLUSTER, i)));
             }
         }
     }
@@ -799,7 +799,7 @@ public class KafkaClusterTest {
         for (PersistentVolumeClaim pvc : pvcs) {
             assertThat(pvc.getSpec().getResources().getRequests().get("storage"), is(new Quantity("100Gi")));
             assertThat(pvc.getSpec().getStorageClassName(), is("gp2-ssd"));
-            assertThat(pvc.getMetadata().getName().startsWith(KafkaCluster.VOLUME_NAME), is(true));
+            assertThat(pvc.getMetadata().getName().startsWith(VolumeUtils.DATA_VOLUME_NAME), is(true));
             assertThat(pvc.getMetadata().getOwnerReferences().size(), is(1));
             assertThat(pvc.getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_IO_DELETE_CLAIM), is("true"));
         }
@@ -824,7 +824,7 @@ public class KafkaClusterTest {
         for (PersistentVolumeClaim pvc : pvcs) {
             assertThat(pvc.getSpec().getResources().getRequests().get("storage"), is(new Quantity("100Gi")));
             assertThat(pvc.getSpec().getStorageClassName(), is("gp2-ssd"));
-            assertThat(pvc.getMetadata().getName().startsWith(KafkaCluster.VOLUME_NAME), is(true));
+            assertThat(pvc.getMetadata().getName().startsWith(VolumeUtils.DATA_VOLUME_NAME), is(true));
             assertThat(pvc.getMetadata().getOwnerReferences().size(), is(0));
             assertThat(pvc.getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_IO_DELETE_CLAIM), is("false"));
         }
@@ -865,7 +865,7 @@ public class KafkaClusterTest {
                 assertThat(pvc.getSpec().getStorageClassName(), is("gp2-ssd-az1"));
             }
 
-            assertThat(pvc.getMetadata().getName().startsWith(KafkaCluster.VOLUME_NAME), is(true));
+            assertThat(pvc.getMetadata().getName().startsWith(VolumeUtils.DATA_VOLUME_NAME), is(true));
             assertThat(pvc.getMetadata().getOwnerReferences().size(), is(0));
             assertThat(pvc.getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_IO_DELETE_CLAIM), is("false"));
         }
@@ -911,7 +911,7 @@ public class KafkaClusterTest {
                 assertThat(pvc.getSpec().getStorageClassName(), is("gp2-ssd-az1"));
             }
 
-            assertThat(pvc.getMetadata().getName().startsWith(KafkaCluster.VOLUME_NAME), is(true));
+            assertThat(pvc.getMetadata().getName().startsWith(VolumeUtils.DATA_VOLUME_NAME), is(true));
             assertThat(pvc.getMetadata().getOwnerReferences().size(), is(0));
             assertThat(pvc.getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_IO_DELETE_CLAIM), is("false"));
         }
@@ -926,7 +926,7 @@ public class KafkaClusterTest {
                 assertThat(pvc.getSpec().getStorageClassName(), is("gp2-st1-az1"));
             }
 
-            assertThat(pvc.getMetadata().getName().startsWith(KafkaCluster.VOLUME_NAME), is(true));
+            assertThat(pvc.getMetadata().getName().startsWith(VolumeUtils.DATA_VOLUME_NAME), is(true));
             assertThat(pvc.getMetadata().getOwnerReferences().size(), is(1));
             assertThat(pvc.getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_IO_DELETE_CLAIM), is("true"));
         }
@@ -955,7 +955,7 @@ public class KafkaClusterTest {
             PersistentVolumeClaim pvc = pvcs.get(i);
             assertThat(pvc.getSpec().getResources().getRequests().get("storage"), is(new Quantity("100Gi")));
             assertThat(pvc.getSpec().getStorageClassName(), is("gp2-ssd"));
-            assertThat(pvc.getMetadata().getName().startsWith(KafkaCluster.VOLUME_NAME), is(true));
+            assertThat(pvc.getMetadata().getName().startsWith(VolumeUtils.DATA_VOLUME_NAME), is(true));
             assertThat(pvc.getMetadata().getOwnerReferences().size(), is(0));
             assertThat(pvc.getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_IO_DELETE_CLAIM), is("false"));
         }
@@ -964,7 +964,7 @@ public class KafkaClusterTest {
             PersistentVolumeClaim pvc = pvcs.get(i);
             assertThat(pvc.getSpec().getResources().getRequests().get("storage"), is(new Quantity("1000Gi")));
             assertThat(pvc.getSpec().getStorageClassName(), is("gp2-st1"));
-            assertThat(pvc.getMetadata().getName().startsWith(KafkaCluster.VOLUME_NAME), is(true));
+            assertThat(pvc.getMetadata().getName().startsWith(VolumeUtils.DATA_VOLUME_NAME), is(true));
             assertThat(pvc.getMetadata().getOwnerReferences().size(), is(1));
             assertThat(pvc.getMetadata().getAnnotations().get(Annotations.ANNO_STRIMZI_IO_DELETE_CLAIM), is("true"));
         }

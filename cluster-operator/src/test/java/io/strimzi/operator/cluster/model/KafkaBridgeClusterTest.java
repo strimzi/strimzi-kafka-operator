@@ -148,7 +148,7 @@ public class KafkaBridgeClusterTest {
         KafkaBridgeCluster kbc = KafkaBridgeCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, ResourceUtils.createEmptyKafkaBridge(namespace, cluster));
 
         assertThat(kbc.image, is("quay.io/strimzi/kafka-bridge:latest"));
-        assertThat(kbc.replicas, is(KafkaBridgeCluster.DEFAULT_REPLICAS));
+        assertThat(kbc.getReplicas(), is(KafkaBridgeCluster.DEFAULT_REPLICAS));
         assertThat(kbc.readinessProbeOptions.getInitialDelaySeconds(), is(KafkaBridgeCluster.DEFAULT_HEALTHCHECK_DELAY));
         assertThat(kbc.readinessProbeOptions.getTimeoutSeconds(), is(KafkaBridgeCluster.DEFAULT_HEALTHCHECK_TIMEOUT));
         assertThat(kbc.livenessProbeOptions.getInitialDelaySeconds(), is(KafkaBridgeCluster.DEFAULT_HEALTHCHECK_DELAY));
@@ -157,7 +157,7 @@ public class KafkaBridgeClusterTest {
 
     @ParallelTest
     public void testFromCrd() {
-        assertThat(kbc.replicas, is(replicas));
+        assertThat(kbc.getReplicas(), is(replicas));
         assertThat(kbc.image, is(image));
         assertThat(kbc.readinessProbeOptions.getInitialDelaySeconds(), is(healthDelay));
         assertThat(kbc.readinessProbeOptions.getTimeoutSeconds(), is(healthTimeout));
