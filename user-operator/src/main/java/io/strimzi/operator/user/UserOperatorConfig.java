@@ -155,11 +155,6 @@ public class UserOperatorConfig {
 
         Map<String, Object> generatedMap = ConfigParameter.define(envMap, CONFIG_VALUES);
 
-        // This is to make sure that if CA namespace is empty or null, then we can use the namespace value
-        if (generatedMap.get(CA_NAMESPACE.key()) == null || String.valueOf(generatedMap.get(CA_NAMESPACE.key())).isEmpty()) {
-            generatedMap.put(CA_NAMESPACE.key(), generatedMap.get(NAMESPACE.key()));
-        }
-
         return new UserOperatorConfig(generatedMap);
     }
 
@@ -253,10 +248,14 @@ public class UserOperatorConfig {
     }
 
     /**
-     * @return The namespace of the Client CA
+     * @return The namespace of the Client CA if not null or empty, else it will return namespace
      */
-    public String getCaNamespace() {
-        return get(CA_NAMESPACE);
+    public String getCaNamespaceOrNamespace() {
+        if (get(CA_NAMESPACE) == null || get(CA_NAMESPACE).isEmpty()) {
+            return getNamespace();
+        } else {
+            return get(CA_NAMESPACE);
+        }
     }
 
     /**
@@ -391,7 +390,7 @@ public class UserOperatorConfig {
                 ", caKeySecretName='" + getCaKeySecretName() + '\'' +
                 ", clusterCaCertSecretName='" + getClusterCaCertSecretName() + '\'' +
                 ", euoKeySecretName='" + getEuoKeySecretName() + '\'' +
-                ", caNamespace='" + getCaNamespace() + '\'' +
+                ", caNamespace='" + getCaNamespaceOrNamespace() + '\'' +
                 ", secretPrefix='" + getSecretPrefix() + '\'' +
                 ", clientsCaValidityDays=" + getClientsCaValidityDays() +
                 ", clientsCaRenewalDays=" + getClientsCaRenewalDays() +

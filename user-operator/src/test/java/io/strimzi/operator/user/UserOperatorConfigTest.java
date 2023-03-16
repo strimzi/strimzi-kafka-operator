@@ -50,7 +50,7 @@ public class UserOperatorConfigTest {
         assertThat(config.getReconciliationIntervalMs(), is(Long.parseLong(ENV_VARS.get(UserOperatorConfig.RECONCILIATION_INTERVAL_MS.key()))));
         assertThat(config.getLabels(), is(EXPECTED_LABELS));
         assertThat(config.getCaCertSecretName(), is(ENV_VARS.get(UserOperatorConfig.CA_CERT_SECRET_NAME.key())));
-        assertThat(config.getCaNamespace(), is(ENV_VARS.get(UserOperatorConfig.CA_NAMESPACE.key())));
+        assertThat(config.getCaNamespaceOrNamespace(), is(ENV_VARS.get(UserOperatorConfig.CA_NAMESPACE.key())));
         assertThat(config.getClientsCaValidityDays(), is(1000));
         assertThat(config.getClientsCaRenewalDays(), is(10));
         assertThat(config.isAclsAdminApiSupported(), is(false));
@@ -116,7 +116,7 @@ public class UserOperatorConfigTest {
         envVars.remove(UserOperatorConfig.CA_NAMESPACE.key());
 
         UserOperatorConfig config = UserOperatorConfig.buildFromMap(envVars);
-        assertThat(config.get(UserOperatorConfig.CA_NAMESPACE), is(envVars.get(UserOperatorConfig.NAMESPACE.key())));
+        assertThat(config.get(UserOperatorConfig.CA_NAMESPACE), is(envVars.get(UserOperatorConfig.CA_NAMESPACE.key())));
     }
 
     @Test
