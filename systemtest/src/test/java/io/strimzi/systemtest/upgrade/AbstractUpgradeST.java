@@ -14,9 +14,14 @@ import io.strimzi.api.kafka.model.KafkaConnectResources;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaUser;
+import io.strimzi.api.kafka.model.connect.build.JarArtifactBuilder;
+import io.strimzi.api.kafka.model.connect.build.Plugin;
+import io.strimzi.api.kafka.model.connect.build.PluginBuilder;
 import io.strimzi.operator.common.Annotations;
+import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
+import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 import io.strimzi.systemtest.resources.ResourceManager;
@@ -49,6 +54,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Random;
 
 import static io.strimzi.systemtest.Constants.PATH_TO_KAFKA_TOPIC_CONFIG;
 import static io.strimzi.systemtest.Constants.PATH_TO_PACKAGING_EXAMPLES;
@@ -510,11 +516,29 @@ public class AbstractUpgradeST extends AbstractST {
             } else {
                 kafkaConnectYaml = new File(dir, acrossUpgradeData.getFromExamples() + "/examples/connect/kafka-connect.yaml");
 
+                final Plugin fileSinkPlugin = new PluginBuilder()
+                    .withName("file-plugin")
+                    .withArtifacts(
+                        new JarArtifactBuilder()
+                            .withUrl(Environment.ST_FILE_PLUGIN_URL)
+                            .build()
+                    )
+                    .build();
+
+                final String imageName = Environment.getImageOutputRegistry() + "/" + testStorage.getNamespaceName() + "/connect-" + Util.hashStub(String.valueOf(new Random().nextInt(Integer.MAX_VALUE))) + ":latest";
+
                 KafkaConnect kafkaConnect = new KafkaConnectBuilder(TestUtils.configFromYaml(kafkaConnectYaml, KafkaConnect.class))
                     .editMetadata()
+                        .withName(clusterName)
                         .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
                     .endMetadata()
                     .editSpec()
+                        .editOrNewBuild()
+                            .withPlugins(fileSinkPlugin)
+                            .withNewDockerOutput()
+                                .withImage(imageName)
+                            .endDockerOutput()
+                        .endBuild()
                         .addToConfig("key.converter.schemas.enable", false)
                         .addToConfig("value.converter.schemas.enable", false)
                         .addToConfig("key.converter", "org.apache.kafka.connect.storage.StringConverter")
@@ -531,6 +555,7 @@ public class AbstractUpgradeST extends AbstractST {
                 resourceManager.createResource(extensionContext, KafkaConnectorTemplates.kafkaConnector(clusterName)
                     .editMetadata()
                         .withNamespace(testStorage.getNamespaceName())
+                        .addToLabels(Labels.STRIMZI_CLUSTER_LABEL, kafkaConnect.getMetadata().getName())
                     .endMetadata()
                     .editSpec()
                         .withClassName("org.apache.kafka.connect.file.FileStreamSinkConnector")

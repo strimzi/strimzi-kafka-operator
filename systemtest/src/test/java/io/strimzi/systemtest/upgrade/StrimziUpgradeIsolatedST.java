@@ -12,6 +12,7 @@ import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.storage.TestStorage;
+import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.RollingUpdateUtils;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.TestKafkaVersion;
@@ -168,40 +169,48 @@ public class StrimziUpgradeIsolatedST extends AbstractUpgradeST {
         this.deployCoWithWaitForReadiness(extensionContext, acrossUpgradeData, testStorage.getNamespaceName());
         this.deployKafkaClusterWithWaitForReadiness(extensionContext, acrossUpgradeData, upgradeKafkaVersion);
         this.deployKafkaConnectAndKafkaConnectorWithWaitForReadiness(extensionContext, acrossUpgradeData, testStorage);
+        this.deployKafkaUserWithWaitForReadiness(extensionContext, acrossUpgradeData, testStorage.getNamespaceName());
 
         final KafkaClients clients = new KafkaClientsBuilder()
             .withProducerName(testStorage.getProducerName())
             .withConsumerName(testStorage.getConsumerName())
-            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
+            .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(clusterName))
             .withTopicName(testStorage.getTopicName())
+            .withUserName(userName)
             .withMessageCount(500)
             .withNamespaceName(testStorage.getNamespaceName())
             .build();
 
-        resourceManager.createResource(extensionContext, clients.producerStrimzi());
+        resourceManager.createResource(extensionContext, clients.producerTlsStrimzi(clusterName));
+        // Verify that Producer finish successfully
+        ClientUtils.waitForProducerClientSuccess(testStorage);
 
         makeSnapshots();
         logPodImages(clusterName);
 
-        // upgrade CO to HEAD and wait for readiness of ClusterOperator
-        changeClusterOperator(acrossUpgradeData, clusterOperator.getDeploymentNamespace(), extensionContext);
+        // Verify FileSink KafkaConnector before upgrade
+        String connectorPodName = kubeClient().listPodsByPrefixInName(testStorage.getNamespaceName(), clusterName + "-connect").get(0).getMetadata().getName();
+        KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(testStorage.getNamespaceName(), connectorPodName, Constants.DEFAULT_SINK_FILE_PATH, "\"Hello-world - 499\"");
 
-        // Wait for Kafka cluster rolling update
-        waitForKafkaClusterRollingUpdate();
+        // Upgrade CO to HEAD and wait for readiness of ClusterOperator
+        changeClusterOperator(acrossUpgradeData, testStorage.getNamespaceName(), extensionContext);
+
         // Verify that KafkaConnect pods are rolling and KafkaConnector is ready
-        RollingUpdateUtils.waitTillComponentHasRolled(clusterOperator.getDeploymentNamespace(), connectLabelSelector, 1, connectPods);
-        KafkaConnectorUtils.waitForConnectorReady(testStorage.getNamespaceName(), testStorage.getClusterName());
+        RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), connectLabelSelector, 1, connectPods);
+        KafkaConnectorUtils.waitForConnectorReady(testStorage.getNamespaceName(), clusterName);
 
+        // send again new messages
+        resourceManager.createResource(extensionContext, clients.producerTlsStrimzi(clusterName));
+        // Verify that Producer finish successfully
+        ClientUtils.waitForProducerClientSuccess(testStorage);
         // Verify FileSink KafkaConnector
-        final String connectorPodName = kubeClient().listPodsByPrefixInName(testStorage.getNamespaceName(), testStorage.getClusterName() + "-connect").get(0).getMetadata().getName();
+        connectorPodName = kubeClient().listPodsByPrefixInName(testStorage.getNamespaceName(), clusterName + "-connect").get(0).getMetadata().getName();
         KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(testStorage.getNamespaceName(), connectorPodName, Constants.DEFAULT_SINK_FILE_PATH, "\"Hello-world - 499\"");
 
         // Verify that pods are stable
-        PodUtils.verifyThatRunningPodsAreStable(clusterOperator.getDeploymentNamespace(), clusterName);
-        // Verify upgrade
-        verifyProcedure(acrossUpgradeData, testStorage.getProducerName(), testStorage.getConsumerName(), clusterOperator.getDeploymentNamespace());
+        PodUtils.verifyThatRunningPodsAreStable(testStorage.getNamespaceName(), clusterName);
         // Check errors in CO log
-        assertNoCoErrorsLogged(clusterOperator.getDeploymentNamespace(), 0);
+        assertNoCoErrorsLogged(testStorage.getNamespaceName(), 0);
     }
 
     private void performUpgrade(BundleVersionModificationData upgradeData, ExtensionContext extensionContext) throws IOException {
