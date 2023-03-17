@@ -4,6 +4,8 @@
  */
 package io.strimzi.operator.cluster.model;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import io.fabric8.kubernetes.api.model.ConfigMap;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import io.fabric8.kubernetes.api.model.Container;
@@ -20,6 +22,7 @@ import io.fabric8.kubernetes.api.model.rbac.PolicyRule;
 import io.fabric8.kubernetes.api.model.rbac.Role;
 import io.strimzi.api.kafka.model.EntityOperatorSpec;
 import io.strimzi.api.kafka.model.Kafka;
+import io.strimzi.api.kafka.model.HasConfigurableMetrics;
 import io.strimzi.api.kafka.model.KafkaClusterSpec;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.TlsSidecar;
@@ -30,8 +33,11 @@ import io.strimzi.api.kafka.model.template.PodTemplate;
 import io.strimzi.api.kafka.model.template.ResourceTemplate;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.Main;
+import io.strimzi.operator.cluster.model.metrics.MetricsModel;
+import io.strimzi.operator.cluster.model.metrics.SupportsMetrics;
 import io.strimzi.operator.cluster.model.securityprofiles.ContainerSecurityProviderContextImpl;
 import io.strimzi.operator.cluster.model.securityprofiles.PodSecurityProviderContextImpl;
+import io.strimzi.operator.common.MetricsAndLogging;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
@@ -55,7 +61,7 @@ import static io.strimzi.operator.cluster.model.EntityUserOperator.USER_OPERATOR
  * Represents the Entity Operator deployment
  */
 @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:NPathComplexity"})
-public class EntityOperator extends AbstractModel {
+public class EntityOperator extends AbstractModel implements SupportsMetrics {
     protected static final String COMPONENT_TYPE = "entity-operator";
     // Certificates for the Entity Topic Operator
     protected static final String ETO_CERTS_VOLUME_NAME = "eto-certs";
@@ -86,6 +92,8 @@ public class EntityOperator extends AbstractModel {
     private ResourceTemplate templateRole;
     private DeploymentTemplate templateDeployment;
     private PodTemplate templatePod;
+    @SuppressFBWarnings({"UWF_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR"}) // This field is initialized in the fromCrd method
+    private MetricsModel metrics;
 
     private static final Map<String, String> DEFAULT_POD_LABELS = new HashMap<>();
     static {
@@ -130,7 +138,7 @@ public class EntityOperator extends AbstractModel {
             result.tlsSidecar = entityOperatorSpec.getTlsSidecar();
             result.topicOperator = topicOperator;
             result.userOperator = userOperator;
-
+            result.metrics = new MetricsModel((HasConfigurableMetrics) entityOperatorSpec);
             String tlsSideCarImage = entityOperatorSpec.getTlsSidecar() != null ? entityOperatorSpec.getTlsSidecar().getImage() : null;
             if (tlsSideCarImage == null) {
                 KafkaClusterSpec kafkaClusterSpec = kafkaAssembly.getSpec().getKafka();
@@ -337,8 +345,8 @@ public class EntityOperator extends AbstractModel {
         List<NetworkPolicyIngressRule> rules = new ArrayList<>();
 
         // Everyone can access metrics
-        if (isMetricsEnabled) {
-            rules.add(NetworkPolicyUtils.createIngressRule(METRICS_PORT, List.of()));
+        if (metrics.isEnabled()) {
+            rules.add(NetworkPolicyUtils.createIngressRule(MetricsModel.METRICS_PORT, List.of()));
         }
 
         // Build the final network policy with all rules covering all the ports
@@ -349,5 +357,31 @@ public class EntityOperator extends AbstractModel {
                 ownerReference,
                 rules
         );
+    }
+
+    /**
+     * Generates a metrics and logging ConfigMap according to the configuration. If this operand doesn't support logging
+     * or metrics, they will nto be set.
+     *
+     * @param metricsAndLogging     The external CMs with logging and metrics configuration
+     *
+     * @return The generated ConfigMap
+     */
+    public ConfigMap generateMetricsAndLogConfigMap(MetricsAndLogging metricsAndLogging) {
+        return ConfigMapUtils
+                .createConfigMap(
+                        CruiseControlResources.logAndMetricsConfigMapName(cluster),
+                        namespace,
+                        labels,
+                        ownerReference,
+                        MetricsAndLoggingUtils.generateMetricsAndLogConfigMapData(reconciliation, this, metricsAndLogging)
+                );
+    }
+
+    /**
+     * @return  Metrics Model instance for configuring Prometheus metrics
+     */
+    public MetricsModel metrics()   {
+        return metrics;
     }
 }

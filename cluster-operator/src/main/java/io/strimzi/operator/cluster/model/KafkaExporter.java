@@ -4,6 +4,8 @@
  */
 package io.strimzi.operator.cluster.model;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.ContainerPort;
 import io.fabric8.kubernetes.api.model.EnvVar;
@@ -15,6 +17,8 @@ import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyIngressRule;
 import io.strimzi.api.kafka.model.Kafka;
+import io.strimzi.api.kafka.model.HasConfigurableMetrics;
+import io.strimzi.api.kafka.model.CruiseControlResources;
 import io.strimzi.api.kafka.model.KafkaClusterSpec;
 import io.strimzi.api.kafka.model.KafkaExporterResources;
 import io.strimzi.api.kafka.model.KafkaExporterSpec;
@@ -24,11 +28,11 @@ import io.strimzi.api.kafka.model.ProbeBuilder;
 import io.strimzi.api.kafka.model.template.DeploymentTemplate;
 import io.strimzi.api.kafka.model.template.KafkaExporterTemplate;
 import io.strimzi.api.kafka.model.template.PodTemplate;
-import io.strimzi.api.kafka.model.CruiseControlResources;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.model.metrics.MetricsModel;
 import io.strimzi.operator.cluster.model.securityprofiles.ContainerSecurityProviderContextImpl;
 import io.strimzi.operator.cluster.model.securityprofiles.PodSecurityProviderContextImpl;
+import io.strimzi.operator.common.MetricsAndLogging;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
@@ -75,7 +79,8 @@ public class KafkaExporter extends AbstractModel {
 
     private DeploymentTemplate templateDeployment;
     private PodTemplate templatePod;
-
+    @SuppressFBWarnings({"UWF_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR"}) // This field is initialized in the fromCrd method
+    private MetricsModel metrics;
     private static final Map<String, String> DEFAULT_POD_LABELS = new HashMap<>();
     static {
         String value = System.getenv(CO_ENV_VAR_CUSTOM_KAFKA_EXPORTER_POD_LABELS);
@@ -117,7 +122,7 @@ public class KafkaExporter extends AbstractModel {
             KafkaExporter result = new KafkaExporter(reconciliation, kafkaAssembly);
 
             result.resources = spec.getResources();
-
+            result.metrics = new MetricsModel((HasConfigurableMetrics) spec);
             if (spec.getReadinessProbe() != null) {
                 result.readinessProbeOptions = spec.getReadinessProbe();
             }
@@ -284,8 +289,8 @@ public class KafkaExporter extends AbstractModel {
         List<NetworkPolicyIngressRule> rules = new ArrayList<>();
 
         // Everyone can access metrics
-        if (isMetricsEnabled) {
-            rules.add(NetworkPolicyUtils.createIngressRule(METRICS_PORT, List.of()));
+        if (metrics.isEnabled()) {
+            rules.add(NetworkPolicyUtils.createIngressRule(MetricsModel.METRICS_PORT, List.of()));
         }
 
         // Build the final network policy with all rules covering all the ports
@@ -296,5 +301,31 @@ public class KafkaExporter extends AbstractModel {
                 ownerReference,
                 rules
         );
+    }
+
+    /**
+     * Generates a metrics and logging ConfigMap according to the configuration. If this operand doesn't support logging
+     * or metrics, they will nto be set.
+     *
+     * @param metricsAndLogging     The external CMs with logging and metrics configuration
+     *
+     * @return The generated ConfigMap
+     */
+    public ConfigMap generateMetricsAndLogConfigMap(MetricsAndLogging metricsAndLogging) {
+        return ConfigMapUtils
+                .createConfigMap(
+                        CruiseControlResources.logAndMetricsConfigMapName(cluster),
+                        namespace,
+                        labels,
+                        ownerReference,
+                        MetricsAndLoggingUtils.generateMetricsAndLogConfigMapData(reconciliation, this, metricsAndLogging)
+                );
+    }
+
+    /**
+     * @return  Metrics Model instance for configuring Prometheus metrics
+     */
+    public MetricsModel metrics()   {
+        return metrics;
     }
 }
