@@ -245,7 +245,7 @@ class RollingUpdateST extends AbstractST {
     @ParallelNamespaceTest
     @Tag(ACCEPTANCE)
     @Tag(COMPONENT_SCALING)
-    void testKafkaScaleUpScaleDown(ExtensionContext extensionContext) {
+    void testKafkaAndZookeeperScaleUpScaleDown(ExtensionContext extensionContext) {
         final TestStorage testStorage = new TestStorage(extensionContext, namespace);
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), 3, 3)
@@ -306,13 +306,14 @@ class RollingUpdateST extends AbstractST {
             pvc -> pvc.getMetadata().getName().contains(testStorage.getKafkaStatefulSetName())).count(), is(scaleTo));
 
         if (!Environment.isKRaftModeEnabled()) {
+            // try to scale up ZK in ZK mode to make sure everything is good
             final int zookeeperScaleTo = initialReplicas + 2;
             Map<String, String> zooKeeperPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getKafkaSelector());
 
             LOGGER.info("Scale up Zookeeper to {}", zookeeperScaleTo);
 
             KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), k -> k.getSpec().getZookeeper().setReplicas(zookeeperScaleTo), testStorage.getNamespaceName());
-            zooKeeperPods = RollingUpdateUtils.waitForComponentScaleUpOrDown(testStorage.getNamespaceName(), testStorage.getZookeeperSelector(), zookeeperScaleTo, zooKeeperPods);
+            RollingUpdateUtils.waitForComponentScaleUpOrDown(testStorage.getNamespaceName(), testStorage.getZookeeperSelector(), zookeeperScaleTo, zooKeeperPods);
 
             LOGGER.info("Zookeeper scale up to {} finished", zookeeperScaleTo);
         }
