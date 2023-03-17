@@ -86,7 +86,6 @@ public class EntityOperator extends AbstractModel {
     private ResourceTemplate templateRole;
     private DeploymentTemplate templateDeployment;
     private PodTemplate templatePod;
-    private static final boolean DEFAULT_ENTITY_OPERATOR_METRICS_ENABLED = false;
 
     private static final Map<String, String> DEFAULT_POD_LABELS = new HashMap<>();
     static {
@@ -106,7 +105,6 @@ public class EntityOperator extends AbstractModel {
         super(reconciliation, resource, KafkaResources.entityOperatorDeploymentName(resource.getMetadata().getName()), COMPONENT_TYPE);
 
         this.zookeeperConnect = KafkaResources.zookeeperServiceName(cluster) + ":" + ZookeeperCluster.CLIENT_TLS_PORT;
-        this.isMetricsEnabled = DEFAULT_ENTITY_OPERATOR_METRICS_ENABLED;
     }
 
     /**
