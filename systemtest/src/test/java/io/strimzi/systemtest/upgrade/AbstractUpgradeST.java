@@ -36,6 +36,8 @@ import io.strimzi.systemtest.utils.FileUtils;
 import io.strimzi.systemtest.utils.RollingUpdateUtils;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.TestKafkaVersion;
+import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
+import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectorUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
@@ -56,9 +58,9 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Random;
 
+import static io.strimzi.systemtest.Constants.DEFAULT_SINK_FILE_PATH;
 import static io.strimzi.systemtest.Constants.PATH_TO_KAFKA_TOPIC_CONFIG;
 import static io.strimzi.systemtest.Constants.PATH_TO_PACKAGING_EXAMPLES;
-import static io.strimzi.systemtest.Constants.DEFAULT_SINK_FILE_PATH;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.CoreMatchers.containsString;
@@ -71,7 +73,7 @@ public class AbstractUpgradeST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(AbstractUpgradeST.class);
 
-    protected  File dir = null;
+    protected File dir = null;
     protected File coDir = null;
     protected File kafkaTopicYaml = null;
     protected File kafkaUserYaml = null;
@@ -217,7 +219,7 @@ public class AbstractUpgradeST extends AbstractST {
         DeploymentUtils.waitForDeploymentAndPodsReady(clusterOperator.getDeploymentNamespace(), KafkaResources.entityOperatorDeploymentName(clusterName), 1);
     }
 
-    protected void changeClusterOperator(BundleVersionModificationData versionModificationData, String namespace, ExtensionContext extensionContext) throws IOException {
+    protected void  changeClusterOperator(BundleVersionModificationData versionModificationData, String namespace, ExtensionContext extensionContext) throws IOException {
         File coDir;
         // Modify + apply installation files
         LOGGER.info("Update CO from {} to {}", versionModificationData.getFromVersion(), versionModificationData.getToVersion());
@@ -510,7 +512,7 @@ public class AbstractUpgradeST extends AbstractST {
                     .editSpec()
                         .withClassName("org.apache.kafka.connect.file.FileStreamSinkConnector")
                         .addToConfig("topics", testStorage.getTopicName())
-                        .addToConfig("file", DEFAULT_SINK_FILE_PATH)
+                        .addToConfig("file", io.strimzi.systemtest.Constants.DEFAULT_SINK_FILE_PATH)
                     .endSpec()
                     .build());
             } else {
@@ -565,5 +567,58 @@ public class AbstractUpgradeST extends AbstractST {
                     .build());
             }
         }
+    }
+
+    protected void doKafkaConnectAndKafkaConnectorUpgradeOrDowngradeProcedure(final ExtensionContext extensionContext,
+                                                                              final BundleVersionModificationData bundleDowngradeDataWithFeatureGates,
+                                                                              final TestStorage testStorage,
+                                                                              final UpgradeKafkaVersion upgradeKafkaVersion) throws IOException {
+        this.deployCoWithWaitForReadiness(extensionContext, bundleDowngradeDataWithFeatureGates, testStorage.getNamespaceName());
+        this.deployKafkaClusterWithWaitForReadiness(extensionContext, bundleDowngradeDataWithFeatureGates, upgradeKafkaVersion);
+        this.deployKafkaConnectAndKafkaConnectorWithWaitForReadiness(extensionContext, bundleDowngradeDataWithFeatureGates, testStorage);
+        this.deployKafkaUserWithWaitForReadiness(extensionContext, bundleDowngradeDataWithFeatureGates, testStorage.getNamespaceName());
+
+        final KafkaClients clients = new KafkaClientsBuilder()
+                .withProducerName(testStorage.getProducerName())
+                .withConsumerName(testStorage.getConsumerName())
+                .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(clusterName))
+                .withTopicName(testStorage.getTopicName())
+                .withUserName(userName)
+                .withMessageCount(500)
+                .withNamespaceName(testStorage.getNamespaceName())
+                .build();
+
+        resourceManager.createResource(extensionContext, clients.producerTlsStrimzi(clusterName));
+        // Verify that Producer finish successfully
+        ClientUtils.waitForProducerClientSuccess(testStorage);
+
+        makeSnapshots();
+        logPodImages(clusterName);
+
+        // Verify FileSink KafkaConnector before upgrade
+        String connectorPodName = kubeClient().listPodsByPrefixInName(testStorage.getNamespaceName(), clusterName + "-connect").get(0).getMetadata().getName();
+        KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(testStorage.getNamespaceName(), connectorPodName, DEFAULT_SINK_FILE_PATH, "\"Hello-world - 499\"");
+
+        // Upgrade CO to HEAD and wait for readiness of ClusterOperator
+        changeClusterOperator(bundleDowngradeDataWithFeatureGates, testStorage.getNamespaceName(), extensionContext);
+
+        // Verify that Kafka cluster RU
+        waitForKafkaClusterRollingUpdate();
+        // Verify that KafkaConnect pods are rolling and KafkaConnector is ready
+        RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), connectLabelSelector, 1, connectPods);
+        KafkaConnectorUtils.waitForConnectorReady(testStorage.getNamespaceName(), clusterName);
+
+        // send again new messages
+        resourceManager.createResource(extensionContext, clients.producerTlsStrimzi(clusterName));
+        // Verify that Producer finish successfully
+        ClientUtils.waitForProducerClientSuccess(testStorage);
+        // Verify FileSink KafkaConnector
+        connectorPodName = kubeClient().listPodsByPrefixInName(testStorage.getNamespaceName(), clusterName + "-connect").get(0).getMetadata().getName();
+        KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(testStorage.getNamespaceName(), connectorPodName, DEFAULT_SINK_FILE_PATH, "\"Hello-world - 499\"");
+
+        // Verify that pods are stable
+        PodUtils.verifyThatRunningPodsAreStable(testStorage.getNamespaceName(), clusterName);
+        // Check errors in CO log
+        assertNoCoErrorsLogged(testStorage.getNamespaceName(), 0);
     }
 }

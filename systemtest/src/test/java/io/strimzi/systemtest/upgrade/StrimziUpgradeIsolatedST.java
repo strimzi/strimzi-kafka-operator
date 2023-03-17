@@ -6,18 +6,12 @@ package io.strimzi.systemtest.upgrade;
 
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaTopic;
-import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.annotations.KRaftNotSupported;
-import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
-import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.storage.TestStorage;
-import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.RollingUpdateUtils;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.TestKafkaVersion;
-import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
-import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectorUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
@@ -39,7 +33,6 @@ import java.util.Map;
 
 import static io.strimzi.systemtest.Constants.UPGRADE;
 import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
-import static io.strimzi.systemtest.resources.ResourceManager.kubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -164,53 +157,9 @@ public class StrimziUpgradeIsolatedST extends AbstractUpgradeST {
     @Test
     void testUpgradeOfKafkaConnectAndKafkaConnector(final ExtensionContext extensionContext) throws IOException {
         final TestStorage testStorage = new TestStorage(extensionContext);
-        final UpgradeKafkaVersion upgradeKafkaVersion = UpgradeKafkaVersion.getKafkaWithVersionFromUrl(acrossUpgradeData.getFromKafkaVersionsUrl(), acrossUpgradeData.getStartingKafkaVersion());
+        final UpgradeKafkaVersion upgradeKafkaVersion = new UpgradeKafkaVersion(acrossUpgradeData.getDefaultKafka());
 
-        this.deployCoWithWaitForReadiness(extensionContext, acrossUpgradeData, testStorage.getNamespaceName());
-        this.deployKafkaClusterWithWaitForReadiness(extensionContext, acrossUpgradeData, upgradeKafkaVersion);
-        this.deployKafkaConnectAndKafkaConnectorWithWaitForReadiness(extensionContext, acrossUpgradeData, testStorage);
-        this.deployKafkaUserWithWaitForReadiness(extensionContext, acrossUpgradeData, testStorage.getNamespaceName());
-
-        final KafkaClients clients = new KafkaClientsBuilder()
-            .withProducerName(testStorage.getProducerName())
-            .withConsumerName(testStorage.getConsumerName())
-            .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(clusterName))
-            .withTopicName(testStorage.getTopicName())
-            .withUserName(userName)
-            .withMessageCount(500)
-            .withNamespaceName(testStorage.getNamespaceName())
-            .build();
-
-        resourceManager.createResource(extensionContext, clients.producerTlsStrimzi(clusterName));
-        // Verify that Producer finish successfully
-        ClientUtils.waitForProducerClientSuccess(testStorage);
-
-        makeSnapshots();
-        logPodImages(clusterName);
-
-        // Verify FileSink KafkaConnector before upgrade
-        String connectorPodName = kubeClient().listPodsByPrefixInName(testStorage.getNamespaceName(), clusterName + "-connect").get(0).getMetadata().getName();
-        KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(testStorage.getNamespaceName(), connectorPodName, Constants.DEFAULT_SINK_FILE_PATH, "\"Hello-world - 499\"");
-
-        // Upgrade CO to HEAD and wait for readiness of ClusterOperator
-        changeClusterOperator(acrossUpgradeData, testStorage.getNamespaceName(), extensionContext);
-
-        // Verify that KafkaConnect pods are rolling and KafkaConnector is ready
-        RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), connectLabelSelector, 1, connectPods);
-        KafkaConnectorUtils.waitForConnectorReady(testStorage.getNamespaceName(), clusterName);
-
-        // send again new messages
-        resourceManager.createResource(extensionContext, clients.producerTlsStrimzi(clusterName));
-        // Verify that Producer finish successfully
-        ClientUtils.waitForProducerClientSuccess(testStorage);
-        // Verify FileSink KafkaConnector
-        connectorPodName = kubeClient().listPodsByPrefixInName(testStorage.getNamespaceName(), clusterName + "-connect").get(0).getMetadata().getName();
-        KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(testStorage.getNamespaceName(), connectorPodName, Constants.DEFAULT_SINK_FILE_PATH, "\"Hello-world - 499\"");
-
-        // Verify that pods are stable
-        PodUtils.verifyThatRunningPodsAreStable(testStorage.getNamespaceName(), clusterName);
-        // Check errors in CO log
-        assertNoCoErrorsLogged(testStorage.getNamespaceName(), 0);
+        doKafkaConnectAndKafkaConnectorUpgradeOrDowngradeProcedure(extensionContext, acrossUpgradeData, testStorage, upgradeKafkaVersion);
     }
 
     private void performUpgrade(BundleVersionModificationData upgradeData, ExtensionContext extensionContext) throws IOException {

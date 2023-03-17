@@ -93,15 +93,15 @@ public class VersionModificationDataLoader {
         return olmUpgradeData;
     }
 
-    public List<BundleVersionModificationData> getBundleUpgradeDataList() {
+    public List<BundleVersionModificationData> getBundleUpgradeOrDowngradeDataList() {
         return bundleVersionModificationDataList;
     }
 
-    public BundleVersionModificationData getBundleUpgradeData(final int index) {
+    public BundleVersionModificationData getBundleUpgradeOrDowngradeData(final int index) {
         return bundleVersionModificationDataList.get(index);
     }
 
-    public int getBundleUpgradeDataSize() {
+    public int getBundleUpgradeOrDowngradeDataSize() {
         return bundleVersionModificationDataList.size();
     }
 
@@ -109,7 +109,7 @@ public class VersionModificationDataLoader {
         List<TestKafkaVersion> sortedVersions = TestKafkaVersion.getSupportedKafkaVersions();
         TestKafkaVersion latestKafkaSupported = sortedVersions.get(sortedVersions.size() - 1);
 
-        BundleVersionModificationData acrossUpgradeData = getBundleUpgradeData(getBundleUpgradeDataList().size() - 1);
+        BundleVersionModificationData acrossUpgradeData = getBundleUpgradeOrDowngradeData(getBundleUpgradeOrDowngradeDataList().size() - 1);
         BundleVersionModificationData startingVersion = acrossUpgradeData;
 
         startingVersion.setDefaultKafka(acrossUpgradeData.getDefaultKafkaVersionPerStrimzi());
@@ -135,7 +135,7 @@ public class VersionModificationDataLoader {
         VersionModificationDataLoader dataLoader = new VersionModificationDataLoader(ModificationType.BUNDLE_DOWNGRADE);
         List<Arguments> parameters = new LinkedList<>();
 
-        dataLoader.getBundleUpgradeDataList().forEach(downgradeData -> {
+        dataLoader.getBundleUpgradeOrDowngradeDataList().forEach(downgradeData -> {
             parameters.add(Arguments.of(downgradeData.getFromVersion(), downgradeData.getToVersion(), downgradeData));
         });
 
@@ -152,7 +152,7 @@ public class VersionModificationDataLoader {
         // Generate procedures for upgrade
         UpgradeKafkaVersion procedures = new UpgradeKafkaVersion(testKafkaVersion.version());
 
-        upgradeDataList.getBundleUpgradeDataList().forEach(upgradeData -> {
+        upgradeDataList.getBundleUpgradeOrDowngradeDataList().forEach(upgradeData -> {
             upgradeData.setProcedures(procedures);
             parameters.add(Arguments.of(
                 upgradeData.getFromVersion(), upgradeData.getToVersion(),
