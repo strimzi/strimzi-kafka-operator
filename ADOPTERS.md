@@ -4,6 +4,7 @@
     * [Optimizing Kafka Cluster Deployments in Kubernetes](https://itnext.io/optimizing-kafka-cluster-deployments-in-kubernetes-ceda3f95c157)
 * [Grupo MASMOVIL](https://www.grupomasmovil.com/)
 * [Helvetia](https://helvetia.com/)
+* [Baloise](https://baloise.ch/)
 * [IBM](https://www.ibm.com/cloud/event-streams)
 * [Lightbend](https://www.lightbend.com/)
 * [Marlow Navigation](https://marlow-navigation.com/)
