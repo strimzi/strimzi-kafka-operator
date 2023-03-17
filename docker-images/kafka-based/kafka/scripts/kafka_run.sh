@@ -63,6 +63,11 @@ if [ "$STRIMZI_KRAFT_ENABLED" = "true" ]; then
     echo "Kraft storage is already formatted"
   fi
 
+  if [ -f "$KRAFT_LOG_DIR/__cluster_metadata-0/quorum-state" ]; then
+    echo "Removing quorum-state file"
+    rm -f "$KRAFT_LOG_DIR/__cluster_metadata-0/quorum-state"
+  fi
+
 else
   rm -f /var/opt/kafka/kafka-ready /var/opt/kafka/zk-connected 2> /dev/null
   KAFKA_OPTS="${KAFKA_OPTS} -javaagent:$(ls "$KAFKA_HOME"/libs/kafka-agent*.jar)=/var/opt/kafka/kafka-ready:/var/opt/kafka/zk-connected"
