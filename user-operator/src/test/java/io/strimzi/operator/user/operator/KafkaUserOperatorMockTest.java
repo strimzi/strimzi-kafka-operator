@@ -54,8 +54,6 @@ import static org.mockito.Mockito.when;
 
 @EnableKubernetesMockClient(crud = true)
 public class KafkaUserOperatorMockTest {
-    public static final String NAMESPACE = "namespace";
-
     private final static ExecutorService EXECUTOR = Executors.newSingleThreadExecutor();
 
     private final CertManager mockCertManager = new MockCertManager();

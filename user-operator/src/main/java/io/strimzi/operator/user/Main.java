@@ -70,7 +70,7 @@ public class Main {
         Security.setProperty("networkaddress.cache.ttl", dnsCacheTtl);
 
         // Create and log UserOperatorConfig
-        UserOperatorConfig config = UserOperatorConfig.fromMap(System.getenv());
+        UserOperatorConfig config = UserOperatorConfig.buildFromMap(System.getenv());
         LOGGER.info("Cluster Operator configuration is {}", config);
 
         // Create KubernetesClient, AdminClient and KafkaUserOperator classes
@@ -141,12 +141,12 @@ public class Main {
     private static Admin createAdminClient(UserOperatorConfig config, KubernetesClient client, AdminClientProvider adminClientProvider)    {
         Secret clusterCaCert = null;
         if (config.getClusterCaCertSecretName() != null && !config.getClusterCaCertSecretName().isEmpty()) {
-            clusterCaCert = client.secrets().inNamespace(config.getCaNamespace()).withName(config.getClusterCaCertSecretName()).get();
+            clusterCaCert = client.secrets().inNamespace(config.getCaNamespaceOrNamespace()).withName(config.getClusterCaCertSecretName()).get();
         }
 
         Secret uoKeyAndCert = null;
         if (config.getEuoKeySecretName() != null && !config.getEuoKeySecretName().isEmpty()) {
-            uoKeyAndCert = client.secrets().inNamespace(config.getCaNamespace()).withName(config.getEuoKeySecretName()).get();
+            uoKeyAndCert = client.secrets().inNamespace(config.getCaNamespaceOrNamespace()).withName(config.getEuoKeySecretName()).get();
         }
 
         return adminClientProvider.createAdminClient(
