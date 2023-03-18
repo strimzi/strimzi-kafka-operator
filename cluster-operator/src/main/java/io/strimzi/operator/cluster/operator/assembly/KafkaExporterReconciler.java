@@ -6,6 +6,7 @@ package io.strimzi.operator.cluster.operator.assembly;
 
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
+import io.strimzi.api.kafka.model.CruiseControlResources;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaExporterResources;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
@@ -20,10 +21,12 @@ import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Util;
+import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.resource.DeploymentOperator;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.strimzi.operator.common.operator.resource.SecretOperator;
 import io.strimzi.operator.common.operator.resource.ServiceAccountOperator;
+import io.strimzi.operator.common.operator.resource.NetworkPolicyOperator;
 import io.vertx.core.Future;
 
 import java.time.Clock;
@@ -41,10 +44,13 @@ public class KafkaExporterReconciler {
     private final KafkaExporter kafkaExporter;
     private final ClusterCa clusterCa;
     private final List<String> maintenanceWindows;
-
+    private final String operatorNamespace;
+    private final Labels operatorNamespaceLabels;
+    private final boolean isNetworkPolicyGeneration;
     private final DeploymentOperator deploymentOperator;
     private final SecretOperator secretOperator;
     private final ServiceAccountOperator serviceAccountOperator;
+    private final NetworkPolicyOperator networkPolicyOperator;
 
     private boolean existingKafkaExporterCertsChanged = false;
 
@@ -71,10 +77,14 @@ public class KafkaExporterReconciler {
         this.kafkaExporter = KafkaExporter.fromCrd(reconciliation, kafkaAssembly, versions);
         this.clusterCa = clusterCa;
         this.maintenanceWindows = kafkaAssembly.getSpec().getMaintenanceTimeWindows();
+        this.isNetworkPolicyGeneration = config.isNetworkPolicyGeneration();
+        this.operatorNamespace = config.getOperatorNamespace();
+        this.operatorNamespaceLabels = config.getOperatorNamespaceLabels();
 
         this.deploymentOperator = supplier.deploymentOperations;
         this.secretOperator = supplier.secretOperations;
         this.serviceAccountOperator = supplier.serviceAccountOperations;
+        this.networkPolicyOperator = supplier.networkPolicyOperator;
     }
 
     /**
@@ -141,6 +151,25 @@ public class KafkaExporterReconciler {
             return secretOperator
                     .reconcile(reconciliation, reconciliation.namespace(), KafkaExporterResources.secretName(reconciliation.name()), null)
                     .map((Void) null);
+        }
+    }
+
+    /**
+     * Manages the Cruise Control Network Policies.
+     *
+     * @return  Future which completes when the reconciliation is done
+     */
+    protected Future<Void> networkPolicy() {
+        if (isNetworkPolicyGeneration) {
+            return networkPolicyOperator
+                    .reconcile(
+                            reconciliation,
+                            reconciliation.namespace(),
+                            CruiseControlResources.networkPolicyName(reconciliation.name()),
+                            kafkaExporter != null ? kafkaExporter.generateNetworkPolicy(operatorNamespace, operatorNamespaceLabels) : null
+                    ).map((Void) null);
+        } else {
+            return Future.succeededFuture();
         }
     }
 
