@@ -140,6 +140,10 @@
             <version>${strimzi-oauth.version}</version>
             <exclusions>
                 <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-api</artifactId>
+                </exclusion>
+                <exclusion>
                     <groupId>org.apache.kafka</groupId>
                     <artifactId>kafka-clients</artifactId>
                 </exclusion>
@@ -335,6 +339,10 @@
             <artifactId>kafka-kubernetes-config-provider</artifactId>
             <version>${kafka-kubernetes-config-provider.version}</version>
             <exclusions>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-api</artifactId>
+                </exclusion>
                 <exclusion>
                     <groupId>com.fasterxml.jackson.core</groupId>
                     <artifactId>jackson-core</artifactId>
