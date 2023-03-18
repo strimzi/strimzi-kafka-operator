@@ -300,30 +300,4 @@ public class KafkaExporter extends AbstractModel {
                 rules
         );
     }
-
-    /**
-     * Generates a metrics and logging ConfigMap according to the configuration. If this operand doesn't support logging
-     * or metrics, they will nto be set.
-     *
-     * @param metricsAndLogging     The external CMs with logging and metrics configuration
-     *
-     * @return The generated ConfigMap
-     */
-    public ConfigMap generateMetricsAndLogConfigMap(MetricsAndLogging metricsAndLogging) {
-        return ConfigMapUtils
-                .createConfigMap(
-                        CruiseControlResources.logAndMetricsConfigMapName(cluster),
-                        namespace,
-                        labels,
-                        ownerReference,
-                        MetricsAndLoggingUtils.generateMetricsAndLogConfigMapData(reconciliation, this, metricsAndLogging)
-                );
-    }
-
-    /**
-     * @return  Metrics Model instance for configuring Prometheus metrics
-     */
-    public MetricsModel metrics()   {
-        return metrics;
-    }
 }
