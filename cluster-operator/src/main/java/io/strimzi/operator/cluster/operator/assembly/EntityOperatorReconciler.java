@@ -117,6 +117,7 @@ public class EntityOperatorReconciler {
                 .compose(i -> entityOperatorRole())
                 .compose(i -> topicOperatorRole())
                 .compose(i -> userOperatorRole())
+                .compose(i -> networkPolicy())
                 .compose(i -> topicOperatorRoleBindings())
                 .compose(i -> userOperatorRoleBindings())
                 .compose(i -> topicOperagorConfigMap())
@@ -401,7 +402,7 @@ public class EntityOperatorReconciler {
         }
     }
     /**
-     * Manages the Cruise Control Network Policies.
+     * Manages the Entity Operator Network Policies.
      *
      * @return  Future which completes when the reconciliation is done
      */

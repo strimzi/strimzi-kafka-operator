@@ -102,6 +102,7 @@ public class KafkaExporterReconciler {
     public Future<Void> reconcile(boolean isOpenShift, ImagePullPolicy imagePullPolicy, List<LocalObjectReference> imagePullSecrets, Clock clock)    {
         return serviceAccount()
                 .compose(i -> certificatesSecret(clock))
+                .compose(i -> networkPolicy())
                 .compose(i -> deployment(isOpenShift, imagePullPolicy, imagePullSecrets))
                 .compose(i -> waitForDeploymentReadiness());
     }
@@ -155,7 +156,7 @@ public class KafkaExporterReconciler {
     }
 
     /**
-     * Manages the Cruise Control Network Policies.
+     * Manages the Kafka Exporter Network Policies.
      *
      * @return  Future which completes when the reconciliation is done
      */
