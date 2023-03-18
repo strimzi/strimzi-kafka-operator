@@ -17,7 +17,6 @@ import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyIngressRule;
 import io.strimzi.api.kafka.model.Kafka;
-import io.strimzi.api.kafka.model.HasConfigurableMetrics;
 import io.strimzi.api.kafka.model.CruiseControlResources;
 import io.strimzi.api.kafka.model.KafkaClusterSpec;
 import io.strimzi.api.kafka.model.KafkaExporterResources;
@@ -122,7 +121,6 @@ public class KafkaExporter extends AbstractModel {
             KafkaExporter result = new KafkaExporter(reconciliation, kafkaAssembly);
 
             result.resources = spec.getResources();
-            result.metrics = new MetricsModel((HasConfigurableMetrics) spec);
             if (spec.getReadinessProbe() != null) {
                 result.readinessProbeOptions = spec.getReadinessProbe();
             }
