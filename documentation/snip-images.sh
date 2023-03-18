@@ -62,12 +62,5 @@ a|
 a|
 Strimzi image for running the Strimzi Drain Cleaner
 
-|JmxTrans
-a|
-* {DockerOrg}/jmxtrans:{DockerTag}
-
-a|
-Strimzi image for running the Strimzi JmxTrans
-
 |===
 EOF

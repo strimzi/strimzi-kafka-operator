@@ -180,27 +180,31 @@ public interface PodSecurityProvider {
     }
 
     /**
-     * Provides the Pod security context for the JMXTrans pod. The default implementation just returns the security
-     * context configured by the user in the template section or null (no Pod security context).
+     * This method used to provide PodSecurityContext for the JMXTrans deployment. It is deprecated and returns always
+     * null since JMXTrans is not supported anymore in Strimzi.
      *
      * @param context   Provides the context which can be used to generate the Pod security context
      *
      * @return  Pod security context which will be set for the JMXTrans pod
      */
+    @Deprecated
+    @SuppressWarnings("unused")
     default PodSecurityContext jmxTransPodSecurityContext(PodSecurityProviderContext context) {
-        return podSecurityContextOrNull(context);
+        return null;
     }
 
     /**
-     * Provides the (container) security context for the JMXTrans container. The default implementation just
-     * returns the security context configured by the user in the template section or null (no security context).
+     * This method used to provide SecurityContext for the JMXTrans container. It is deprecated and returns always
+     * null since JMXTrans is not supported anymore in Strimzi.
      *
      * @param context   Provides the context which can be used to generate the security context
      *
      * @return  Security context which will be set for the JMXTrans container
      */
+    @Deprecated
+    @SuppressWarnings("unused")
     default SecurityContext jmxTransContainerSecurityContext(ContainerSecurityProviderContext context) {
-        return securityContextOrNull(context);
+        return null;
     }
 
     /**

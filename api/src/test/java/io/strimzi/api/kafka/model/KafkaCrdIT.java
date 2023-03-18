@@ -146,30 +146,6 @@ public class KafkaCrdIT extends AbstractCrdIT {
                 containsStringIgnoringCase("spec.zookeeper.jmxOptions.authentication.type: Unsupported value: \"not-right\": supported values: \"password\"")));
     }
 
-    @Test
-    void testJmxOptionsWithoutRequiredOutputDefinitionKeys() {
-        Throwable exception = assertThrows(
-            KubeClusterException.class,
-            () -> {
-                createDeleteCustomResource("JmxTrans-output-definition-with-missing-required-property.yaml");
-            });
-
-        assertMissingRequiredPropertiesMessage(exception.getMessage(), "outputType", "name");
-    }
-
-    @Test
-    void testJmxOptionsWithoutRequiredQueryKeys() {
-        Throwable exception = assertThrows(
-            KubeClusterException.class,
-            () -> {
-                createDeleteCustomResource("JmxTrans-queries-with-missing-required-property.yaml");
-            });
-
-        assertMissingRequiredPropertiesMessage(exception.getMessage(),
-                "attributes",
-                "outputs");
-    }
-
     @BeforeAll
     void setupEnvironment() {
         cluster.createNamespace(NAMESPACE);

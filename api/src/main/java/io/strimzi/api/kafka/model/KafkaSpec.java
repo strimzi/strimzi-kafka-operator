@@ -36,6 +36,7 @@ public class KafkaSpec extends Spec {
     private ZookeeperClusterSpec zookeeper;
     private EntityOperatorSpec entityOperator;
     private CertificateAuthority clusterCa;
+    @SuppressWarnings("deprecation")
     private JmxTransSpec jmxTrans;
     private KafkaExporterSpec kafkaExporter;
     private CruiseControlSpec cruiseControl;
@@ -96,10 +97,9 @@ public class KafkaSpec extends Spec {
     }
 
     @Deprecated
-    @DeprecatedProperty(description = "JMXTrans is deprecated and will be removed in Strimzi 0.35.0")
+    @DeprecatedProperty(description = "JMXTrans is deprecated and removed in Strimzi 0.35.0")
     @PresentInVersions("v1alpha1-v1beta2")
-    @Description("Configuration for JmxTrans. When the property is present a JmxTrans deployment is created for gathering JMX metrics from each Kafka broker. " +
-            "For more information see https://github.com/jmxtrans/jmxtrans[JmxTrans GitHub]")
+    @Description("JMXTrans is not supported anymore from Strimzi 0.35.0 and this option will be ignored.")
     public JmxTransSpec getJmxTrans() {
         return jmxTrans;
     }

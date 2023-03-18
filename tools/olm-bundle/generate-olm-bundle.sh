@@ -182,7 +182,7 @@ generate_related_images() {
   done
 
   # Add auxiliary images
-  ENV="*BRIDGE* *JMXTRANS* *KANIKO_EXECUTOR*"
+  ENV="*BRIDGE* *KANIKO_EXECUTOR*"
   for env in $ENV;
   do
     image=$(yq ea ".. | select(has(\"name\")).env[] | (select (.name == \"$env\")).value" "${CSV_FILE}")

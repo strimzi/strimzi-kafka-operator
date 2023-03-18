@@ -3,6 +3,7 @@
 ## 0.35.0
 
 * Redesigned the `UserOperatorConfig` to make it more efficient and flexible
+* Remove support for JMX Trans
 
 ## 0.34.0
 
