@@ -694,7 +694,7 @@ public class KafkaAssemblyOperatorTest {
                         KafkaResources.brokersServiceName(kafkaName));
 
                 if (kafkaListeners != null) {
-                    List<GenericKafkaListener> externalListeners = ListenersUtils.externalListeners(kafkaListeners);
+                    List<GenericKafkaListener> externalListeners = ListenersUtils.listenersWithOwnServices(kafkaListeners);
 
                     for (GenericKafkaListener listener : externalListeners) {
                         expectedServices.add(ListenersUtils.backwardsCompatibleBootstrapServiceName(kafkaName, listener));

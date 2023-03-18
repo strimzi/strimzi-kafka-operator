@@ -32,11 +32,12 @@ public class ListenersUtils {
      * Finds out if any of the listeners has OAuth authentication enabled
      *
      * @param listeners List of all listeners
-     * @return          List of used names
+     *
+     * @return          True if any listener in the list is using OAuth authentication. False otherwise.
      */
     public static boolean hasListenerWithOAuth(List<GenericKafkaListener> listeners)    {
         return listeners.stream()
-                .anyMatch(listener -> isListenerWithOAuth(listener));
+                .anyMatch(ListenersUtils::isListenerWithOAuth);
     }
 
     /**
@@ -91,12 +92,12 @@ public class ListenersUtils {
     }
 
     /**
-     * Returns list of all external listeners (i.e. not internal)
+     * Returns list of all listeners which use their own services (i.e. all apart from type=internal)
      *
      * @param listeners List of all listeners
-     * @return          List of external listeners
+     * @return          List of listeners with their own services
      */
-    public static List<GenericKafkaListener> externalListeners(List<GenericKafkaListener> listeners)    {
+    public static List<GenericKafkaListener> listenersWithOwnServices(List<GenericKafkaListener> listeners)    {
         return listeners.stream()
                 .filter(listener -> KafkaListenerType.INTERNAL != listener.getType())
                 .collect(Collectors.toList());
@@ -161,40 +162,7 @@ public class ListenersUtils {
      */
     private static boolean hasListenerOfType(List<GenericKafkaListener> listeners, KafkaListenerType type)    {
         return listeners.stream()
-                .filter(listener -> type == listener.getType())
-                .findFirst()
-                .isPresent();
-    }
-
-    /**
-     * Check whether we have at least one interface for access from outside of Kubernetes
-     *
-     * @param listeners List of all listeners
-     * @return          List of external listeners
-     */
-    public static boolean hasExternalListener(List<GenericKafkaListener> listeners)    {
-        return listeners.stream()
-                .anyMatch(listener -> KafkaListenerType.INTERNAL != listener.getType());
-    }
-
-    /**
-     * Checks whether we have at least one Route listener
-     *
-     * @param listeners List of all listeners
-     * @return          True if at least one Route listener exists. False otherwise.
-     */
-    public static boolean hasRouteListener(List<GenericKafkaListener> listeners)    {
-        return hasListenerOfType(listeners, KafkaListenerType.ROUTE);
-    }
-
-    /**
-     * Checks whether we have at least one Load Balancer listener
-     *
-     * @param listeners List of all listeners
-     * @return          True if at least one Load Balancer listener exists. False otherwise.
-     */
-    public static boolean hasLoadBalancerListener(List<GenericKafkaListener> listeners)    {
-        return hasListenerOfType(listeners, KafkaListenerType.LOADBALANCER);
+                .anyMatch(listener -> type == listener.getType());
     }
 
     /**

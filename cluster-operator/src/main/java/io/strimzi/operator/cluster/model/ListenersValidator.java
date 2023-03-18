@@ -57,7 +57,7 @@ public class ListenersValidator {
             errors.add("every listener needs to have a unique name");
         }
 
-        List<String> invalidNames = names.stream().filter(name -> !LISTENER_NAME_PATTERN.matcher(name).matches()).collect(Collectors.toList());
+        List<String> invalidNames = names.stream().filter(name -> !LISTENER_NAME_PATTERN.matcher(name).matches()).toList();
         if (!invalidNames.isEmpty())    {
             errors.add("listener names " + invalidNames + " are invalid and do not match the pattern " + GenericKafkaListener.LISTENER_NAME_REGEX);
         }

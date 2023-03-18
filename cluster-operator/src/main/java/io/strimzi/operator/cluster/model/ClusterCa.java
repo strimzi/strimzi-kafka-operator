@@ -40,7 +40,7 @@ public class ClusterCa extends Ca {
     /**
      * Constructor
      *
-     * @param reconciliation        Reocnciliation marker
+     * @param reconciliation        Reconciliation marker
      * @param certManager           Certificate manager instance
      * @param passwordGenerator     Password generator instance
      * @param clusterName           Name of the Kafka cluster
@@ -54,7 +54,7 @@ public class ClusterCa extends Ca {
     /**
      * Constructor
      *
-     * @param reconciliation        Reocnciliation marker
+     * @param reconciliation        Reconciliation marker
      * @param certManager           Certificate manager instance
      * @param passwordGenerator     Password generator instance
      * @param clusterName           Name of the Kafka cluster

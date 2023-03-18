@@ -230,21 +230,16 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
 
             KafkaClientAuthentication authentication = mirrorMaker2Cluster.getAuthentication();
             if (authentication != null) {
-                if (authentication instanceof KafkaClientAuthenticationTls) {
-                    KafkaClientAuthenticationTls tlsAuth = (KafkaClientAuthenticationTls) authentication;
+                if (authentication instanceof KafkaClientAuthenticationTls tlsAuth) {
                     if (tlsAuth.getCertificateAndKey() != null) {
                         appendCluster(clustersTlsAuthCerts, clusterAlias, () -> tlsAuth.getCertificateAndKey().getSecretName() + "/" + tlsAuth.getCertificateAndKey().getCertificate());
                         appendCluster(clustersTlsAuthKeys, clusterAlias, () -> tlsAuth.getCertificateAndKey().getSecretName() + "/" + tlsAuth.getCertificateAndKey().getKey());
                     }
-                } else if (authentication instanceof KafkaClientAuthenticationPlain) {
-                    KafkaClientAuthenticationPlain passwordAuth = (KafkaClientAuthenticationPlain) authentication;
+                } else if (authentication instanceof KafkaClientAuthenticationPlain passwordAuth) {
                     appendClusterPasswordSecretSource(clustersSaslPasswordFiles, clusterAlias, passwordAuth.getPasswordSecret());
-                } else if (authentication instanceof KafkaClientAuthenticationScram) {
-                    KafkaClientAuthenticationScram passwordAuth = (KafkaClientAuthenticationScram) authentication;
+                } else if (authentication instanceof KafkaClientAuthenticationScram passwordAuth) {
                     appendClusterPasswordSecretSource(clustersSaslPasswordFiles, clusterAlias, passwordAuth.getPasswordSecret());
-                } else if (authentication instanceof KafkaClientAuthenticationOAuth) {
-                    KafkaClientAuthenticationOAuth oauth = (KafkaClientAuthenticationOAuth) authentication;
-
+                } else if (authentication instanceof KafkaClientAuthenticationOAuth oauth) {
                     if (oauth.getTlsTrustedCertificates() != null && !oauth.getTlsTrustedCertificates().isEmpty()) {
                         hasClusterOauthTrustedCerts = true;
                     }

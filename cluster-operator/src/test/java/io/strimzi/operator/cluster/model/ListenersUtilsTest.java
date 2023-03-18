@@ -31,28 +31,28 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @ParallelSuite
 public class ListenersUtilsTest {
-    private GenericKafkaListener oldPlain = new GenericKafkaListenerBuilder()
+    private final GenericKafkaListener oldPlain = new GenericKafkaListenerBuilder()
             .withName("plain")
             .withPort(9092)
             .withType(KafkaListenerType.INTERNAL)
             .withTls(false)
             .build();
 
-    private GenericKafkaListener oldTls = new GenericKafkaListenerBuilder()
+    private final GenericKafkaListener oldTls = new GenericKafkaListenerBuilder()
             .withName("tls")
             .withPort(9093)
             .withType(KafkaListenerType.INTERNAL)
             .withTls(true)
             .build();
 
-    private GenericKafkaListener oldExternal = new GenericKafkaListenerBuilder()
+    private final GenericKafkaListener oldExternal = new GenericKafkaListenerBuilder()
             .withName("external")
             .withPort(9094)
             .withType(KafkaListenerType.ROUTE)
             .withTls(true)
             .build();
 
-    private GenericKafkaListener newPlain = new GenericKafkaListenerBuilder()
+    private final GenericKafkaListener newPlain = new GenericKafkaListenerBuilder()
             .withName("plain2")
             .withPort(9900)
             .withType(KafkaListenerType.INTERNAL)
@@ -72,7 +72,7 @@ public class ListenersUtilsTest {
             .endConfiguration()
             .build();
 
-    private GenericKafkaListener newTls = new GenericKafkaListenerBuilder()
+    private final GenericKafkaListener newTls = new GenericKafkaListenerBuilder()
             .withName("tls2")
             .withPort(9901)
             .withType(KafkaListenerType.INTERNAL)
@@ -100,7 +100,7 @@ public class ListenersUtilsTest {
             .endConfiguration()
             .build();
 
-    private GenericKafkaListener newRoute = new GenericKafkaListenerBuilder()
+    private final GenericKafkaListener newRoute = new GenericKafkaListenerBuilder()
             .withName("route")
             .withPort(9902)
             .withType(KafkaListenerType.ROUTE)
@@ -131,7 +131,7 @@ public class ListenersUtilsTest {
             .endConfiguration()
             .build();
 
-    private GenericKafkaListener newNodePort = new GenericKafkaListenerBuilder()
+    private final GenericKafkaListener newNodePort = new GenericKafkaListenerBuilder()
             .withName("np1")
             .withPort(9903)
             .withType(KafkaListenerType.NODEPORT)
@@ -140,7 +140,7 @@ public class ListenersUtilsTest {
             .endConfiguration()
             .build();
 
-    private GenericKafkaListener newNodePort2 = new GenericKafkaListenerBuilder()
+    private final GenericKafkaListener newNodePort2 = new GenericKafkaListenerBuilder()
             .withName("np2")
             .withPort(9904)
             .withType(KafkaListenerType.NODEPORT)
@@ -175,7 +175,7 @@ public class ListenersUtilsTest {
             .endConfiguration()
             .build();
 
-    private GenericKafkaListener newLoadBalancer = new GenericKafkaListenerBuilder()
+    private final GenericKafkaListener newLoadBalancer = new GenericKafkaListenerBuilder()
             .withName("lb1")
             .withPort(9905)
             .withType(KafkaListenerType.LOADBALANCER)
@@ -189,7 +189,7 @@ public class ListenersUtilsTest {
             .endConfiguration()
             .build();
 
-    private GenericKafkaListener newLoadBalancer2 = new GenericKafkaListenerBuilder()
+    private final GenericKafkaListener newLoadBalancer2 = new GenericKafkaListenerBuilder()
             .withName("lb2")
             .withPort(9906)
             .withType(KafkaListenerType.LOADBALANCER)
@@ -199,7 +199,7 @@ public class ListenersUtilsTest {
                 .withIpFamilyPolicy(IpFamilyPolicy.REQUIRE_DUAL_STACK)
                 .withIpFamilies(IpFamily.IPV6, IpFamily.IPV4)
                 .withLoadBalancerSourceRanges(asList("10.0.0.0/8", "130.211.204.1/32"))
-                .withFinalizers(asList("service.kubernetes.io/load-balancer-cleanup"))
+                .withFinalizers(List.of("service.kubernetes.io/load-balancer-cleanup"))
                 .withNewBootstrap()
                     .withAlternativeNames(asList("my-lb-1", "my-lb-2"))
                     .withLoadBalancerIP("130.211.204.1")
@@ -225,7 +225,7 @@ public class ListenersUtilsTest {
             .endConfiguration()
             .build();
 
-    private GenericKafkaListener newIngress = new GenericKafkaListenerBuilder()
+    private final GenericKafkaListener newIngress = new GenericKafkaListenerBuilder()
             .withName("ing1")
             .withPort(9907)
             .withType(KafkaListenerType.INGRESS)
@@ -245,7 +245,7 @@ public class ListenersUtilsTest {
             .endConfiguration()
             .build();
 
-    private GenericKafkaListener newIngress2 = new GenericKafkaListenerBuilder()
+    private final GenericKafkaListener newIngress2 = new GenericKafkaListenerBuilder()
             .withName("ing2")
             .withPort(9908)
             .withType(KafkaListenerType.INGRESS)
@@ -277,7 +277,7 @@ public class ListenersUtilsTest {
             .endConfiguration()
             .build();
 
-    private GenericKafkaListener newNodePort3 = new GenericKafkaListenerBuilder()
+    private final GenericKafkaListener newNodePort3 = new GenericKafkaListenerBuilder()
             .withName("np3")
             .withPort(9909)
             .withType(KafkaListenerType.NODEPORT)
@@ -289,7 +289,7 @@ public class ListenersUtilsTest {
             .endConfiguration()
             .build();
 
-    private GenericKafkaListener newClusterIP = new GenericKafkaListenerBuilder()
+    private final GenericKafkaListener newClusterIP = new GenericKafkaListenerBuilder()
             .withName("clusterIP")
             .withPort(9907)
             .withType(KafkaListenerType.CLUSTER_IP)
@@ -309,7 +309,6 @@ public class ListenersUtilsTest {
             .endConfiguration()
             .build();
 
-    List<GenericKafkaListener> oldListeners = asList(oldPlain, oldTls, oldExternal);
     List<GenericKafkaListener> simpleListeners = asList(oldPlain, oldTls, oldExternal, newNodePort, newLoadBalancer, newIngress, newClusterIP);
     List<GenericKafkaListener> internalListeners = asList(oldPlain, oldTls, newPlain, newTls);
     List<GenericKafkaListener> allListeners = asList(oldPlain, oldTls, oldExternal, newPlain, newTls, newRoute,
@@ -320,28 +319,6 @@ public class ListenersUtilsTest {
         assertThat(ListenersUtils.internalListeners(allListeners), hasSize(4));
         assertThat(ListenersUtils.internalListeners(allListeners).stream().map(GenericKafkaListener::getName).collect(Collectors.toList()),
                 containsInAnyOrder("plain", "tls", "plain2", "tls2"));
-    }
-
-    @ParallelTest
-    public void testExternalListeners()    {
-        assertThat(ListenersUtils.externalListeners(allListeners), hasSize(10));
-        assertThat(ListenersUtils.externalListeners(allListeners).stream().map(GenericKafkaListener::getName).collect(Collectors.toList()),
-                containsInAnyOrder("external", "route", "np1", "np2", "np3", "lb1", "lb2", "ing1", "ing2", "clusterIP"));
-        assertThat(ListenersUtils.hasExternalListener(allListeners), is(true));
-
-        assertThat(ListenersUtils.externalListeners(internalListeners), hasSize(0));
-        assertThat(ListenersUtils.hasExternalListener(internalListeners), is(false));
-    }
-
-    @ParallelTest
-    public void testLoadBalancerListeners()    {
-        assertThat(ListenersUtils.loadBalancerListeners(allListeners), hasSize(2));
-        assertThat(ListenersUtils.loadBalancerListeners(allListeners).stream().map(GenericKafkaListener::getName).collect(Collectors.toList()),
-                containsInAnyOrder("lb1", "lb2"));
-        assertThat(ListenersUtils.hasLoadBalancerListener(allListeners), is(true));
-
-        assertThat(ListenersUtils.loadBalancerListeners(internalListeners), hasSize(0));
-        assertThat(ListenersUtils.hasLoadBalancerListener(internalListeners), is(false));
     }
 
     @ParallelTest
@@ -375,17 +352,6 @@ public class ListenersUtilsTest {
 
         assertThat(ListenersUtils.clusterIPListeners(internalListeners), hasSize(0));
         assertThat(ListenersUtils.hasClusterIPListener(internalListeners), is(false));
-    }
-
-    @ParallelTest
-    public void testRouteListeners()    {
-        assertThat(ListenersUtils.routeListeners(allListeners), hasSize(2));
-        assertThat(ListenersUtils.routeListeners(allListeners).stream().map(GenericKafkaListener::getName).collect(Collectors.toList()),
-                containsInAnyOrder("external", "route"));
-        assertThat(ListenersUtils.hasRouteListener(allListeners), is(true));
-
-        assertThat(ListenersUtils.routeListeners(internalListeners), hasSize(0));
-        assertThat(ListenersUtils.hasRouteListener(internalListeners), is(false));
     }
 
     @ParallelTest
