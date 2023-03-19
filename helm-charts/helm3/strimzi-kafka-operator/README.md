@@ -99,11 +99,12 @@ the documentation for more details.
 | `watchAnyNamespace`                  | Watch the whole Kubernetes cluster (all namespaces) | `false`                                    |
 | `defaultImageRegistry`               | Default image registry for all the images | `quay.io`                                            |
 | `defaultImageRepository`             | Default image registry for all the images | `strimzi`                                            |
-| `defaultImageTag`                    | Default image tag for all the images except Kafka Bridge | `0.33.2`                              |
+| `defaultImageTag`                    | Default image tag for all the images except Kafka Bridge | `0.34.0`                              |
 | `image.registry`                     | Override default Cluster Operator image registry  | `nil`                                        |
 | `image.repository`                   | Override default Cluster Operator image repository  | `nil`                                      |
 | `image.name`                         | Cluster Operator image name               | `cluster-operator`                                   |
 | `image.tag`                          | Override default Cluster Operator image tag       | `nil`                                        |
+| `image.digest`                       | Override Cluster Operator image tag with digest     | `nil`                                      |
 | `image.imagePullPolicy`              | Image pull policy for all pods deployed by Cluster Operator       | `IfNotPresent`               |
 | `image.imagePullSecrets`             | Docker registry pull secret               | `nil`                                                |
 | `fullReconciliationIntervalMs`       | Full reconciliation interval in milliseconds | 120000                                            |
@@ -120,46 +121,74 @@ the documentation for more details.
 | `jmxtrans.image.repository`          | Override default JmxTrans image repository                 | `nil`                               |
 | `jmxtrans.image.name`                | JmxTrans image name                       | `jmxtrans`                                           |
 | `jmxtrans.image.tag`                 | Override default JmxTrans image tag prefix                 | `nil`                               |
+| `jmxtrans.image.digest`              | Override JmxTrans image tag with digest                    | `nil`                               |
 | `kafka.image.registry`               | Override default Kafka image registry                      | `nil`                               |
 | `kafka.image.repository`             | Override default Kafka image repository                    | `nil`                               |
 | `kafka.image.name`                   | Kafka image name                          | `kafka`                                              |
 | `kafka.image.tagPrefix`              | Override default Kafka image tag prefix                    | `nil`                               |
+| `kafka.image.tag`                    | Override default Kafka image tag and ignore suffix         | `nil`                               |
+| `kafka.image.digest`                 | Override Kafka image tag with digest                       | `nil`                               |
 | `kafkaConnect.image.registry`        | Override default Kafka Connect image registry              | `nil`                               |
 | `kafkaConnect.image.repository`      | Override default Kafka Connect image repository            | `nil`                               |
 | `kafkaConnect.image.name`            | Kafka Connect image name                  | `kafka`                                              |
 | `kafkaConnect.image.tagPrefix`       | Override default Kafka Connect image tag prefix            | `nil`                               |
+| `kafkaConnect.image.tag`             | Override default Kafka Connect image tag and ignore suffix | `nil`                               |
+| `kafkaConnect.image.digest`          | Override Kafka Connect image tag with digest               | `nil`                               |
 | `kafkaMirrorMaker.image.registry`    | Override default Kafka Mirror Maker image registry         | `nil`                               |
 | `kafkaMirrorMaker.image.repository`  | Override default Kafka Mirror Maker image repository       | `nil`                               |
 | `kafkaMirrorMaker.image.name`        | Kafka Mirror Maker image name             | `kafka`                                              |
 | `kafkaMirrorMaker.image.tagPrefix`   | Override default Kafka Mirror Maker image tag prefix       | `nil`                               |
+| `kafkaMirrorMaker.image.tag`         | Override default Kafka Mirror Maker image tag and ignore suffix | `nil`                          |
+| `kafkaMirrorMaker.image.digest`      | Override Kafka Mirror Maker image tag with digest          | `nil`                               |
 | `cruiseControl.image.registry`       | Override default Cruise Control image registry             | `nil`                               |
 | `cruiseControl.image.repository`     | Override default Cruise Control image repository           | `nil`                               |
 | `cruiseControl.image.name`           | Cruise Control image name                 | `kafka`                                              |
-| `cruiseControl.image.tag`            | Override default Cruise Control image tag prefix           | `nil`                               |
+| `cruiseControl.image.tagPrefix`      | Override default Cruise Control image tag prefix           | `nil`                               |
+| `cruiseControl.image.tag`            | Override default Cruise Control image tag and ignore suffix | `nil`                              |
+| `cruiseControl.image.digest`         | Override Cruise Control image tag with digest              | `nil`                               |
 | `topicOperator.image.registry`       | Override default Topic Operator image registry             | `nil`                               |
 | `topicOperator.image.repository`     | Override default  Topic Operator image repository          | `nil`                               |
 | `topicOperator.image.name`           | Topic Operator image name                 | `operator`                                           |
 | `topicOperator.image.tag`            | Override default Topic Operator image tag                  | `nil`                               |
+| `topicOperator.image.digest`         | Override Topic Operator image tag with digest              | `nil`                               |
 | `userOperator.image.registry`        | Override default User Operator image registry              | `nil`                               |
 | `userOperator.image.repository`      | Override default User Operator image repository            | `nil`                               |
 | `userOperator.image.name`            | User Operator image name                  | `operator`                                           |
 | `userOperator.image.tag`             | Override default User Operator image tag                   | `nil`                               |
+| `userOperator.image.digest`          | Override User Operator image tag with digest               | `nil`                               |
 | `kafkaInit.image.registry`           | Override default Init Kafka image registry                 | `nil`                               |
 | `kafkaInit.image.repository`         | Override default Init Kafka image repository               | `nil`                               |
 | `kafkaInit.image.name`               | Init Kafka image name                     | `operator`                                           |
 | `kafkaInit.image.tag`                | Override default Init Kafka image tag                      | `nil`                               |
-| `tlsSidecarTopicOperator.image.registry` | Override default TLS Sidecar for Topic Operator image registry | `nil`                       |
-| `tlsSidecarTopicOperator.image.repository` | Override default TLS Sidecar for Topic Operator image repository | `nil`                   |
-| `tlsSidecarTopicOperator.image.name` | TLS Sidecar for Topic Operator image name | `kafka`                                              |
-| `tlsSidecarTopicOperator.image.tag`  | Override default TLS Sidecar for Topic Operator image tag prefix | `nil`                         |
+| `kafkaInit.image.digest`             | Override Init Kafka image tag with digest                  | `nil`                               |
+| `tlsSidecarEntityOperator.image.registry` | Override default TLS Sidecar Entity Operator image registry | `nil`                         |
+| `tlsSidecarEntityOperator.image.repository` | Override default TLS Sidecar Entity Operator image repository | `nil`                     |
+| `tlsSidecarEntityOperator.image.name` | TLS Sidecar Entity Operator image name | `kafka`                                                |
+| `tlsSidecarEntityOperator.image.tagPrefix` | Override default TLS Sidecar Entity Operator image tag prefix | `nil`                      |
+| `tlsSidecarEntityOperator.image.tag`       | Override default TLS Sidecar Entity Operator image tag and ignore suffix | `nil`           |
+| `tlsSidecarEntityOperator.image.digest` | Override TLS Sidecar Entity Operator image tag with digest | `nil`                            |
 | `kafkaBridge.image.registry`         | Override default Kafka Bridge image registry               | `quay.io`                           |
 | `kafkaBridge.image.repository`       | Override default Kafka Bridge image repository             | `strimzi`                           |
 | `kafkaBridge.image.name`             | Kafka Bridge image name                   | `kafka-bridge`                                       |
-| `kafkaBridge.image.tag`              | Override default Kafka Bridge image tag                    | `0.24.0`                            |
+| `kafkaBridge.image.tag`              | Override default Kafka Bridge image tag                    | `0.25.0`                            |
+| `kafkaBridge.image.digest`           | Override Kafka Bridge image tag with digest                | `nil`                               |
+| `kafkaExporter.image.registry`       | Override default Kafka Exporter image registry             | `nil`                               |
+| `kafkaExporter.image.repository`     | Override default Kafka Exporter image repository           | `nil`                               |
+| `kafkaExporter.image.name`           | Kafka Exporter image name                 | `kafka`                                              |
+| `kafkaExporter.image.tagPrefix`      | Override default Kafka Exporter image tag prefix           | `nil`                               |
+| `kafkaExporter.image.tag`            | Override default Kafka Exporter image tag and ignore suffix | `nil`                              |
+| `kafkaExporter.image.digest`         | Override Kafka Exporter image tag with digest              | `nil`                               |
+| `kafkaMirrorMaker2.image.registry`   | Override default Kafka Mirror Maker 2 image registry       | `nil`                               |
+| `kafkaMirrorMaker2.image.repository` | Override default Kafka Mirror Maker 2 image repository     | `nil`                               |
+| `kafkaMirrorMaker2.image.name`       | Kafka Mirror Maker 2 image name           | `kafka`                                              |
+| `kafkaMirrorMaker2.image.tagPrefix`  | Override default Kafka Mirror Maker 2 image tag prefix     | `nil`                               |
+| `kafkaMirrorMaker2.image.tag`        | Override default Kafka Mirror Maker 2 image tag and ignore suffix | `nil`                        |
+| `kafkaMirrorMaker2.image.digest`     | Override Kafka Mirror Maker 2 image tag with digest        | `nil`                               |
 | `kanikoExecutor.image.registry`      | Override default Kaniko Executor image registry            | `nil`                               |
 | `kanikoExecutor.image.repository`    | Override default Kaniko Executor image repository          | `nil`                               |
 | `kanikoExecutor.image.name`          | Kaniko Executor image name                | `kaniko-executor`                                    |
 | `kanikoExecutor.image.tag`           | Override default Kaniko Executor image tag                 | `nil`                               |
+| `kanikoExecutor.image.digest`        | Override Kaniko Executor image tag with digest             | `nil`                               |
 | `resources.limits.memory`            | Memory constraint for limits              | `256Mi`                                              |
 | `resources.limits.cpu`               | CPU constraint for limits                 | `1000m`                                              |
 | `resources.requests.memory`          | Memory constraint for requests            | `256Mi`                                              |
@@ -184,10 +213,11 @@ the documentation for more details.
 | `mavenBuilder.image.repository`      | Maven Builder image repository            | `nil`                                                |
 | `mavenBuilder.image.name`            | Override default Maven Builder image name                  | `maven-builder`                     |
 | `mavenBuilder.image.tag`             | Override default Maven Builder image tag                   | `nil`                               |
+| `mavenBuilder.image.digest`          | Override Maven Builder image tag with digest               | `nil`                               |
 | `logConfiguration`                   | Override default `log4j.properties` content                | `nil`                               |
 
 Specify each parameter using the `--set key=value[,key=value]` argument to `helm install`. For example,
 
 ```bash
-$ helm install --name my-release --set logLevel=DEBUG,fullReconciliationIntervalMs=240000 strimzi/strimzi-kafka-operator
+$ helm install my-release --set logLevel=DEBUG,fullReconciliationIntervalMs=240000 strimzi/strimzi-kafka-operator
 ```

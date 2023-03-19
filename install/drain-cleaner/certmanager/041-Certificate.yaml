@@ -9,8 +9,8 @@ spec:
   secretName: strimzi-drain-cleaner
   commonName: strimzi-drain-cleaner
   dnsNames:
-  - strimzi-drain-cleaner.strimzi-drain-cleaner.svc
-  - strimzi-drain-cleaner.strimzi-drain-cleaner
-  - strimzi-drain-cleaner
+    - strimzi-drain-cleaner.strimzi-drain-cleaner.svc
+    - strimzi-drain-cleaner.strimzi-drain-cleaner
+    - strimzi-drain-cleaner
   issuerRef:
     name: strimzi-drain-cleaner
