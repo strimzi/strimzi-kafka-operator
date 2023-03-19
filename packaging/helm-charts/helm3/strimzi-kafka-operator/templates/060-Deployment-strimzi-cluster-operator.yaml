@@ -29,6 +29,7 @@ spec:
       {{- end }}
     spec:
       serviceAccountName: {{ .Values.serviceAccount }}
+      {{- /* imagePullSecrets is allowed to be for backwards compatibility */ -}}
       {{- if kindIs "string" .Values.image.imagePullSecrets }}
       imagePullSecrets:
         - name: {{ .Values.image.imagePullSecrets }}
@@ -106,6 +107,7 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.namespace
+            {{- /* imagePullSecrets is allowed to be for backwards compatibility */ -}}
             {{- if kindIs "string" .Values.image.imagePullSecrets }}
             - name: STRIMZI_IMAGE_PULL_SECRETS
               value: {{ .Values.image.imagePullSecrets }}
