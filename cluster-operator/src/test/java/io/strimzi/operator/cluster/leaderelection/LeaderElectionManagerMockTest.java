@@ -18,7 +18,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-@Disabled // Disabled because of https://github.com/fabric8io/kubernetes-client/issues/4965
+@Disabled // Disabled because of https://github.com/strimzi/strimzi-kafka-operator/issues/8268
 @EnableKubernetesMockClient(crud = true)
 public class LeaderElectionManagerMockTest {
     private final static String NAMESPACE = "my-le-namespace";

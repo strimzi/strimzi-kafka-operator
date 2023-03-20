@@ -123,8 +123,6 @@ public abstract class AbstractNonNamespacedResourceOperatorTest<C extends Kubern
                     verify(mockResource).patch(any(), (T) any());
                     verify(mockResource, never()).create();
                     verify(mockResource, never()).create();
-                    verify(mockResource, never()).createOrReplace();
-                    //verify(mockCms, never()).createOrReplace();
                     async.flag();
                 }));
     }
@@ -155,8 +153,6 @@ public abstract class AbstractNonNamespacedResourceOperatorTest<C extends Kubern
                     verify(mockResource, never()).patch(any(), any());
                     verify(mockResource, never()).create();
                     verify(mockResource, never()).create();
-                    verify(mockResource, never()).createOrReplace();
-                    //verify(mockCms, never()).createOrReplace();
                     async.flag();
                 }));
     }

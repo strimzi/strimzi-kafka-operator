@@ -117,8 +117,6 @@ public class ServiceAccountOperatorTest extends AbstractNamespacedResourceOperat
                 verify(mockResource, never()).patch(any(), any());
                 verify(mockResource, never()).create();
                 verify(mockResource, never()).create();
-                verify(mockResource, never()).createOrReplace();
-                //verify(mockCms, never()).createOrReplace(any());
                 async.flag();
             }));
     }
