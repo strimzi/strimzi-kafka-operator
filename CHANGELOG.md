@@ -5,6 +5,12 @@
 * Redesigned the `UserOperatorConfig` to make it more efficient and flexible
 * Remove support for JMX Trans
 
+### Changes, deprecations and removals
+
+* Support for JMX Trans has been removed in Strimzi 0.35.0.
+  If you have JMX Trans enabled in your `Kafka` custom resource in the `.spec.jmxTrans` section, you should remove it.
+  If you upgrade to Strimzi 0.35.0 or newer with JMX Trans deployed / enabled in the `Kafka` custom resource, Strimzi will be automatically deleted after the upgrade.
+
 ## 0.34.0
 
 * Add support for Kafka 3.4.0 and remove support for Kafka 3.2.x
