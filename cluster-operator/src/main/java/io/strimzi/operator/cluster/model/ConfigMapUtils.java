@@ -22,7 +22,7 @@ public class ConfigMapUtils {
      * @param namespace         Namespace of the Config Map
      * @param labels            Labels of the Config Map
      * @param ownerReference    OwnerReference of the Config Map
-     * @param data              Data which will be stored int he Config Map
+     * @param data              Data which will be stored in the Config Map
      *
      * @return  New Config Map
      */

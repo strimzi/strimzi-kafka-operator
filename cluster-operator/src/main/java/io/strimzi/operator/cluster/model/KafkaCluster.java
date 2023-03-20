@@ -666,7 +666,7 @@ public class KafkaCluster extends AbstractStatefulModel implements SupportsMetri
      * @return The list with generated Services
      */
     public List<Service> generateExternalBootstrapServices() {
-        List<GenericKafkaListener> externalListeners = ListenersUtils.externalListeners(listeners);
+        List<GenericKafkaListener> externalListeners = ListenersUtils.listenersWithOwnServices(listeners);
         List<Service> services = new ArrayList<>(externalListeners.size());
 
         for (GenericKafkaListener listener : externalListeners)   {
@@ -745,7 +745,7 @@ public class KafkaCluster extends AbstractStatefulModel implements SupportsMetri
      * @return The list with generated Services
      */
     public List<Service> generateExternalServices(int pod) {
-        List<GenericKafkaListener> externalListeners = ListenersUtils.externalListeners(listeners);
+        List<GenericKafkaListener> externalListeners = ListenersUtils.listenersWithOwnServices(listeners);
         List<Service> services = new ArrayList<>(externalListeners.size());
 
         for (GenericKafkaListener listener : externalListeners)   {
