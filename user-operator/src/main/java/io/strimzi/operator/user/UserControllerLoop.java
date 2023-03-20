@@ -160,7 +160,7 @@ public class UserControllerLoop extends AbstractControllerLoop {
                                 .withStatus(desiredStatus)
                                 .build();
 
-                        Crds.kafkaUserOperation(client).inNamespace(reconciliation.namespace()).resource(updateKafkaUser).replaceStatus();
+                        Crds.kafkaUserOperation(client).inNamespace(reconciliation.namespace()).resource(updateKafkaUser).updateStatus();
                     }
                 } catch (KubernetesClientException e)   {
                     if (e.getCode() == 409) {

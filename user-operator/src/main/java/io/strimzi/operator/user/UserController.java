@@ -80,7 +80,7 @@ public class UserController {
         // User selector is used to select the KafkaUser resources
         Map<String, String> userSelector = (config.getLabels() == null || config.getLabels().toMap().isEmpty()) ? Map.of() : config.getLabels().toMap();
 
-        // Selector for the secrets contains the original KafkaUSer selector adn the Strimzi Kind label
+        // Selector for the secrets contains the original KafkaUser selector and the Strimzi Kind label
         Map<String, String> secretSelector = new HashMap<>(userSelector.size() + 1);
         secretSelector.putAll(userSelector);
         secretSelector.put(Labels.STRIMZI_KIND_LABEL, RESOURCE_KIND);

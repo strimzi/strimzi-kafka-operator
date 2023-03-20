@@ -62,10 +62,10 @@ public class LeaderElectionManagerIT {
         le2Leader.await();
         assertThat(getLease().getSpec().getHolderIdentity(), is("le-2"));
 
-        // Stop the second member => the leadership in the lease resource will stay as it was
+        // Stop the second member => the leadership should be released
         le2.stop();
         le2NotLeader.await();
-        assertThat(getLease().getSpec().getHolderIdentity(), is("le-2"));
+        assertThat(getLease().getSpec().getHolderIdentity(), is(""));
     }
 
     private LeaderElectionManager createLeaderElectionManager(String identity, Runnable startLeadershipCallback, Runnable stopLeadershipCallback)   {

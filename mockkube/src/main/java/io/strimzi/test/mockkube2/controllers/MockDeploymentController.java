@@ -52,14 +52,14 @@ public class MockDeploymentController extends AbstractMockController {
                                                     .withAvailableReplicas(deployment.getSpec().getReplicas())
                                                     .build())
                                             .build())
-                                    .replaceStatus();
+                                    .updateStatus();
                         } catch (KubernetesClientException e)   {
                             if (e.getCode() == 409) {
-                                LOGGER.info("StatefulSet {} in namespace {} changed while trying to update status", deployment.getMetadata().getName(), deployment.getMetadata().getNamespace());
+                                LOGGER.info("Deployment {} in namespace {} changed while trying to update status", deployment.getMetadata().getName(), deployment.getMetadata().getNamespace());
                             } else if (e.getCode() == 404) {
-                                LOGGER.info("StatefulSet {} in namespace {} does not exist anymore", deployment.getMetadata().getName(), deployment.getMetadata().getNamespace());
+                                LOGGER.info("Deployment {} in namespace {} does not exist anymore", deployment.getMetadata().getName(), deployment.getMetadata().getNamespace());
                             } else {
-                                LOGGER.error("Failed to update status of StatefulSet {} in namespace {}", deployment.getMetadata().getName(), deployment.getMetadata().getNamespace(), e);
+                                LOGGER.error("Failed to update status of Deployment {} in namespace {}", deployment.getMetadata().getName(), deployment.getMetadata().getNamespace(), e);
                             }
                         }
 

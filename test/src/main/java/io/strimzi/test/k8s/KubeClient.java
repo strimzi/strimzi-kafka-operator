@@ -55,6 +55,9 @@ import java.util.stream.Collectors;
 
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
+// This class is using the deprecated createOrReplace methods which should be removed
+// Removing these deprecated calls is tracked by https://github.com/strimzi/strimzi-kafka-operator/issues/8269
+@SuppressWarnings("deprecation")
 public class KubeClient {
 
     private static final Logger LOGGER = LogManager.getLogger(KubeClient.class);

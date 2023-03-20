@@ -50,17 +50,31 @@ public class MockServiceController extends AbstractMockController {
                         String namespace = svc.getMetadata().getNamespace();
 
                         try {
-                            client.endpoints().inNamespace(namespace).resource(new EndpointsBuilder()
-                                    .withNewMetadata()
-                                    .withName(name)
-                                    .withNamespace(namespace)
-                                    .endMetadata()
-                                    .withSubsets(new EndpointSubsetBuilder()
-                                            .withAddresses(new EndpointAddressBuilder().withHostname("some-address").build())
-                                            .withPorts(new EndpointPortBuilder().withPort(1234).build())
-                                            .build())
-                                    .build())
-                                    .createOrReplace();
+                            if (client.endpoints().inNamespace(namespace).withName(name).get() != null) {
+                                client.endpoints().inNamespace(namespace).resource(new EndpointsBuilder()
+                                                .withNewMetadata()
+                                                .withName(name)
+                                                .withNamespace(namespace)
+                                                .endMetadata()
+                                                .withSubsets(new EndpointSubsetBuilder()
+                                                        .withAddresses(new EndpointAddressBuilder().withHostname("some-address").build())
+                                                        .withPorts(new EndpointPortBuilder().withPort(1234).build())
+                                                        .build())
+                                                .build())
+                                        .update();
+                            } else {
+                                client.endpoints().inNamespace(namespace).resource(new EndpointsBuilder()
+                                                .withNewMetadata()
+                                                .withName(name)
+                                                .withNamespace(namespace)
+                                                .endMetadata()
+                                                .withSubsets(new EndpointSubsetBuilder()
+                                                        .withAddresses(new EndpointAddressBuilder().withHostname("some-address").build())
+                                                        .withPorts(new EndpointPortBuilder().withPort(1234).build())
+                                                        .build())
+                                                .build())
+                                        .create();
+                            }
                         } catch (KubernetesClientException e)   {
                             LOGGER.error("Failed to update Endpoint {} in namespace {}", name, namespace, e);
                         }
