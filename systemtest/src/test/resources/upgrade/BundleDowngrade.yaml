@@ -26,18 +26,18 @@
 # --- Structure ---
   
 - fromVersion: HEAD
-  toVersion: 0.33.2
+  toVersion: 0.34.0
   fromExamples: HEAD
-  toExamples: strimzi-0.33.2
+  toExamples: strimzi-0.34.0
   fromUrl: HEAD
-  toUrl: https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.33.2/strimzi-0.33.2.zip
+  toUrl: https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.34.0/strimzi-0.34.0.zip
   fromKafkaVersionsUrl: HEAD
   additionalTopics: 2
   imagesAfterOperations:
-    zookeeper: strimzi/kafka:0.33.2-kafka-3.3.2
-    kafka: strimzi/kafka:0.33.2-kafka-3.3.2
-    topicOperator: strimzi/operator:0.33.2
-    userOperator: strimzi/operator:0.33.2
+    zookeeper: strimzi/kafka:0.34.0-kafka-3.3.2
+    kafka: strimzi/kafka:0.34.0-kafka-3.3.2
+    topicOperator: strimzi/operator:0.34.0
+    userOperator: strimzi/operator:0.34.0
   deployKafkaVersion: 3.3.2
   client:
     continuousClientsMessages: 500
@@ -49,18 +49,18 @@
   featureGatesBefore: "+UseStrimziPodSets"
   featureGatesAfter: "-UseStrimziPodSets"
 - fromVersion: HEAD
-  toVersion: 0.33.2
+  toVersion: 0.34.0
   fromExamples: HEAD
-  toExamples: strimzi-0.33.2
+  toExamples: strimzi-0.34.0
   fromUrl: HEAD
-  toUrl: https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.33.2/strimzi-0.33.2.zip
+  toUrl: https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.34.0/strimzi-0.34.0.zip
   fromKafkaVersionsUrl: HEAD
   additionalTopics: 2
   imagesAfterOperations:
-    zookeeper: strimzi/kafka:0.33.2-kafka-3.3.2
-    kafka: strimzi/kafka:0.33.2-kafka-3.3.2
-    topicOperator: strimzi/operator:0.33.2
-    userOperator: strimzi/operator:0.33.2
+    zookeeper: strimzi/kafka:0.34.0-kafka-3.3.2
+    kafka: strimzi/kafka:0.34.0-kafka-3.3.2
+    topicOperator: strimzi/operator:0.34.0
+    userOperator: strimzi/operator:0.34.0
   deployKafkaVersion: 3.3.2
   client:
     continuousClientsMessages: 500
