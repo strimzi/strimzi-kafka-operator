@@ -35,8 +35,8 @@ spec:
         - name: {{ .Values.image.imagePullSecrets }}
       {{- else if kindIs "slice" .Values.image.imagePullSecrets }}
       imagePullSecrets:
-        {{- range .Values.image.imagePullSecrets }}
-        - name: {{ . }}
+        {{- with .Values.image.imagePullSecrets }}
+        {{- toYaml . | nindent 8 }}
         {{- end }}
       {{- end }}
       {{- with .Values.podSecurityContext }}
@@ -113,7 +113,7 @@ spec:
               value: {{ .Values.image.imagePullSecrets }}
             {{- else if kindIs "slice" .Values.image.imagePullSecrets }}
             - name: STRIMZI_IMAGE_PULL_SECRETS
-              value: {{ join "," .Values.image.imagePullSecrets }}
+              value: {{ template "strimzi.listPluck" (dict "list" .Values.image.imagePullSecrets "key" "name") }}
             {{- end }}
             {{- if .Values.image.operatorNamespaceLabels }}
             - name: STRIMZI_OPERATOR_NAMESPACE_LABELS
