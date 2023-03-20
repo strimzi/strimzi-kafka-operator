@@ -1024,7 +1024,7 @@
             "rgba(237, 129, 40, 0.89)",
             "rgba(50, 172, 45, 0.97)"
           ],
-          "decimals": 2,
+          "decimals": 0,
           "pattern": "/.*/",
           "thresholds": [],
           "type": "number",
@@ -1097,7 +1097,7 @@
             "rgba(237, 129, 40, 0.89)",
             "rgba(50, 172, 45, 0.97)"
           ],
-          "decimals": 2,
+          "decimals": 0,
           "pattern": "/.*/",
           "thresholds": [],
           "type": "number",
@@ -1243,7 +1243,7 @@
             "rgba(237, 129, 40, 0.89)",
             "rgba(50, 172, 45, 0.97)"
           ],
-          "decimals": 2,
+          "decimals": 0,
           "pattern": "/.*/",
           "thresholds": [],
           "type": "number",
@@ -1316,7 +1316,7 @@
             "rgba(237, 129, 40, 0.89)",
             "rgba(50, 172, 45, 0.97)"
           ],
-          "decimals": 2,
+          "decimals": 0,
           "pattern": "/.*/",
           "thresholds": [],
           "type": "number",
