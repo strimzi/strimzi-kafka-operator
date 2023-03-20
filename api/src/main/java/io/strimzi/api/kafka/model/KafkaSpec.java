@@ -97,9 +97,9 @@ public class KafkaSpec extends Spec {
     }
 
     @Deprecated
-    @DeprecatedProperty(description = "JMXTrans is deprecated and related resources removed in Strimzi 0.35.0")
+    @DeprecatedProperty(description = "JMXTrans is deprecated and related resources removed in Strimzi 0.35.0.")
     @PresentInVersions("v1alpha1-v1beta2")
-    @Description("JMXTrans is not supported anymore from Strimzi 0.35.0 and this option will be ignored.")
+    @Description("As of Strimzi 0.35.0, JMXTrans is not supported anymore and this option is ignored.")
     public JmxTransSpec getJmxTrans() {
         return jmxTrans;
     }

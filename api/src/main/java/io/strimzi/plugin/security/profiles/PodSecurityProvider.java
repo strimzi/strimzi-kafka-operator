@@ -180,8 +180,8 @@ public interface PodSecurityProvider {
     }
 
     /**
-     * This method used to provide PodSecurityContext for the JMXTrans deployment. It is deprecated and returns always
-     * null since JMXTrans is not supported anymore in Strimzi.
+     * Previously, this method was responsible for providing PodSecurityContext for the JMXTrans deployment in Strimzi.
+     * However, since JMXTrans is no longer supported, this method has been deprecated and always returns null.
      *
      * @param context   Provides the context which can be used to generate the Pod security context
      *
@@ -194,8 +194,8 @@ public interface PodSecurityProvider {
     }
 
     /**
-     * This method used to provide SecurityContext for the JMXTrans container. It is deprecated and returns always
-     * null since JMXTrans is not supported anymore in Strimzi.
+     * Previously, this method was responsible for providing SecurityContext for the JMXTrans container in Strimzi.
+     * However, since JMXTrans is no longer supported, this method has been deprecated and always returns null.
      *
      * @param context   Provides the context which can be used to generate the security context
      *

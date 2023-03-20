@@ -5481,7 +5481,7 @@ spec:
                   required:
                     - outputDefinitions
                     - kafkaQueries
-                  description: JMXTrans is not supported anymore from Strimzi 0.35.0 and this option will be ignored.
+                  description: "As of Strimzi 0.35.0, JMXTrans is not supported anymore and this option is ignored."
                 kafkaExporter:
                   type: object
                   properties:
