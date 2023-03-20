@@ -17,6 +17,8 @@ image:
   repository: ""
   name: operator
   tag: ""
+  # imagePullSecrets:
+  #   - name: secretname
 logVolume: co-config-volume
 logConfigMap: strimzi-cluster-operator
 logConfiguration: ""

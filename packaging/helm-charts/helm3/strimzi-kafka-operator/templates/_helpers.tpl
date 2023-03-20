@@ -50,3 +50,14 @@ To use, add the following key/value pairs to the scope:
 {{- $_ := unset . "key" -}}
 {{- $_ := unset . "tagSuffix" -}}
 {{- end -}}
+
+{{/*
+ Create a list of comma-separated values corresponding to a given key in a map array.
+*/}}
+{{- define "strimzi.listPluck" -}}
+{{- $pluckedList := list -}}
+{{- range .list -}}
+{{- $pluckedList = append $pluckedList (get . $.key) -}}
+{{- end -}}
+{{- join "," $pluckedList -}}
+{{- end -}}
