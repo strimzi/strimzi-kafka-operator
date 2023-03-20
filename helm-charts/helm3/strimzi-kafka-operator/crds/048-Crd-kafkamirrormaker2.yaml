@@ -153,6 +153,12 @@ spec:
                           enableMetrics:
                             type: boolean
                             description: Enable or disable OAuth metrics. Default value is `false`.
+                          httpRetries:
+                            type: integer
+                            description: "The maximum number of retries to attempt if an initial HTTP request fails. If not set, the default is to not attempt any retries."
+                          httpRetryPauseMs:
+                            type: integer
+                            description: "The pause to take before retrying a failed HTTP request. If not set, the default is to not pause at all but to immediately repeat a request."
                           maxTokenExpirySeconds:
                             type: integer
                             description: Set or limit time-to-live of the access tokens to the specified number of seconds. This should be set if the authorization server returns opaque tokens.
@@ -512,6 +518,22 @@ spec:
                             - Recreate
                           description: Pod replacement strategy for deployment configuration changes. Valid values are `RollingUpdate` and `Recreate`. Defaults to `RollingUpdate`.
                       description: Template for Kafka Connect `Deployment`.
+                    podSet:
+                      type: object
+                      properties:
+                        metadata:
+                          type: object
+                          properties:
+                            labels:
+                              x-kubernetes-preserve-unknown-fields: true
+                              type: object
+                              description: "Labels added to the resource template. Can be applied to different resources such as `StatefulSets`, `Deployments`, `Pods`, and `Services`."
+                            annotations:
+                              x-kubernetes-preserve-unknown-fields: true
+                              type: object
+                              description: "Annotations added to the resource template. Can be applied to different resources such as `StatefulSets`, `Deployments`, `Pods`, and `Services`."
+                          description: Metadata applied to the resource.
+                      description: Template for Kafka Connect `StrimziPodSet` resource.
                     pod:
                       type: object
                       properties:
@@ -998,6 +1020,37 @@ spec:
                               - IPv6
                           description: "Specifies the IP Families used by the service. Available options are `IPv4` and `IPv6. If unspecified, Kubernetes will choose the default value based on the `ipFamilyPolicy` setting. Available on Kubernetes 1.20 and newer."
                       description: Template for Kafka Connect API `Service`.
+                    headlessService:
+                      type: object
+                      properties:
+                        metadata:
+                          type: object
+                          properties:
+                            labels:
+                              x-kubernetes-preserve-unknown-fields: true
+                              type: object
+                              description: "Labels added to the resource template. Can be applied to different resources such as `StatefulSets`, `Deployments`, `Pods`, and `Services`."
+                            annotations:
+                              x-kubernetes-preserve-unknown-fields: true
+                              type: object
+                              description: "Annotations added to the resource template. Can be applied to different resources such as `StatefulSets`, `Deployments`, `Pods`, and `Services`."
+                          description: Metadata applied to the resource.
+                        ipFamilyPolicy:
+                          type: string
+                          enum:
+                            - SingleStack
+                            - PreferDualStack
+                            - RequireDualStack
+                          description: "Specifies the IP Family Policy used by the service. Available options are `SingleStack`, `PreferDualStack` and `RequireDualStack`. `SingleStack` is for a single IP family. `PreferDualStack` is for two IP families on dual-stack configured clusters or a single IP family on single-stack clusters. `RequireDualStack` fails unless there are two IP families on dual-stack configured clusters. If unspecified, Kubernetes will choose the default value based on the service type. Available on Kubernetes 1.20 and newer."
+                        ipFamilies:
+                          type: array
+                          items:
+                            type: string
+                            enum:
+                              - IPv4
+                              - IPv6
+                          description: "Specifies the IP Families used by the service. Available options are `IPv4` and `IPv6. If unspecified, Kubernetes will choose the default value based on the `ipFamilyPolicy` setting. Available on Kubernetes 1.20 and newer."
+                      description: Template for Kafka Connect headless `Service`.
                     connectContainer:
                       type: object
                       properties:
