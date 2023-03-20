@@ -117,11 +117,6 @@ the documentation for more details.
 | `serviceAccountCreate`               | Whether to create a serviceaccount |  `yes`                                                      |
 | `serviceAccount`                     | Cluster Operator's service account |  `strimzi-cluster-operator`                                 |
 | `extraEnvs`                          | Extra environment variables for the Cluster operator container | `[]`                            |
-| `jmxtrans.image.registry`            | Override default JmxTrans image registry                   | `nil`                               |
-| `jmxtrans.image.repository`          | Override default JmxTrans image repository                 | `nil`                               |
-| `jmxtrans.image.name`                | JmxTrans image name                       | `jmxtrans`                                           |
-| `jmxtrans.image.tag`                 | Override default JmxTrans image tag prefix                 | `nil`                               |
-| `jmxtrans.image.digest`              | Override JmxTrans image tag with digest                    | `nil`                               |
 | `kafka.image.registry`               | Override default Kafka image registry                      | `nil`                               |
 | `kafka.image.repository`             | Override default Kafka image repository                    | `nil`                               |
 | `kafka.image.name`                   | Kafka image name                          | `kafka`                                              |

@@ -26,8 +26,6 @@ import io.strimzi.api.kafka.model.EntityTopicOperatorSpecBuilder;
 import io.strimzi.api.kafka.model.EntityUserOperatorSpecBuilder;
 import io.strimzi.api.kafka.model.InlineLogging;
 import io.strimzi.api.kafka.model.JmxPrometheusExporterMetrics;
-import io.strimzi.api.kafka.model.JmxTransResources;
-import io.strimzi.api.kafka.model.JmxTransSpecBuilder;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.strimzi.api.kafka.model.KafkaExporterResources;
@@ -47,8 +45,6 @@ import io.strimzi.api.kafka.model.storage.PersistentClaimStorage;
 import io.strimzi.api.kafka.model.storage.PersistentClaimStorageBuilder;
 import io.strimzi.api.kafka.model.storage.SingleVolumeStorage;
 import io.strimzi.api.kafka.model.storage.Storage;
-import io.strimzi.api.kafka.model.template.JmxTransOutputDefinitionTemplateBuilder;
-import io.strimzi.api.kafka.model.template.JmxTransQueryTemplateBuilder;
 import io.strimzi.operator.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ClusterOperator;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
@@ -60,11 +56,11 @@ import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.KafkaExporter;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.ListenersUtils;
-import io.strimzi.operator.cluster.model.logging.LoggingModel;
-import io.strimzi.operator.cluster.model.metrics.MetricsModel;
 import io.strimzi.operator.cluster.model.PodSetUtils;
 import io.strimzi.operator.cluster.model.VolumeUtils;
 import io.strimzi.operator.cluster.model.ZookeeperCluster;
+import io.strimzi.operator.cluster.model.logging.LoggingModel;
+import io.strimzi.operator.cluster.model.metrics.MetricsModel;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.StatefulSetOperator;
 import io.strimzi.operator.common.Annotations;
@@ -347,39 +343,6 @@ public class KafkaAssemblyOperatorTest {
         createCluster(context, kafka, List.of(kafkaJmxSecret, zookeeperJmxSecret));
     }
 
-    @ParameterizedTest
-    @MethodSource("data")
-    @SuppressWarnings("deprecation") // Suppress deprecated JMX Trans
-    public void testCreateClusterWithJmxTrans(Params params, VertxTestContext context) {
-        setFields(params);
-        Kafka kafka = getKafkaAssembly("foo");
-        kafka.getSpec()
-                .getKafka().setJmxOptions(new KafkaJmxOptionsBuilder()
-                .withAuthentication(new KafkaJmxAuthenticationPasswordBuilder().build())
-                .build());
-
-        kafka.getSpec().setJmxTrans(new JmxTransSpecBuilder()
-                .withKafkaQueries(new JmxTransQueryTemplateBuilder()
-                        .withTargetMBean("mbean")
-                        .withAttributes("attribute")
-                        .withOutputs("output")
-                        .build())
-                .withOutputDefinitions(new JmxTransOutputDefinitionTemplateBuilder()
-                        .withOutputType("host")
-                        .withName("output")
-                        .build())
-                .build());
-
-        createCluster(context, kafka, Collections.singletonList(new SecretBuilder()
-                .withNewMetadata()
-                .withName(KafkaResources.kafkaJmxSecretName("foo"))
-                .withNamespace("test")
-                .endMetadata()
-                .withData(Collections.singletonMap("foo", "bar"))
-                .build()
-        ));
-    }
-
     private Map<String, PersistentVolumeClaim> createPvcs(String namespace, Storage storage, int replicas,
                                                    BiFunction<Integer, Integer, String> pvcNameFunction) {
 
@@ -660,11 +623,6 @@ public class KafkaAssemblyOperatorTest {
         when(mockCmOps.getAsync(kafkaNamespace, KafkaResources.kafkaMetricsAndLogConfigMapName(kafkaName))).thenReturn(Future.succeededFuture(metricsCm));
         when(mockCmOps.getAsync(kafkaNamespace, metricsCMName)).thenReturn(Future.succeededFuture(metricsCM));
         when(mockCmOps.getAsync(kafkaNamespace, differentMetricsCMName)).thenReturn(Future.succeededFuture(metricsCM));
-        when(mockCmOps.getAsync(anyString(), eq(JmxTransResources.configMapName(kafkaName)))).thenReturn(
-            Future.succeededFuture(new ConfigMapBuilder()
-                    .withNewMetadata().withResourceVersion("123").endMetadata()
-                    .build())
-        );
         when(mockCmOps.listAsync(kafkaNamespace, kafkaCluster.getSelectorLabels())).thenReturn(Future.succeededFuture(List.of()));
         when(mockCmOps.deleteAsync(any(), any(), any(), anyBoolean())).thenReturn(Future.succeededFuture());
 

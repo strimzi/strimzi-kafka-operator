@@ -570,9 +570,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         JmxTransReconciler jmxTransReconciler()   {
             return new JmxTransReconciler(
                     reconciliation,
-                    config,
-                    supplier,
-                    kafkaAssembly
+                    supplier
             );
         }
 
@@ -583,7 +581,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
          */
         Future<ReconciliationState> reconcileJmxTrans()    {
             return jmxTransReconciler()
-                    .reconcile(imagePullPolicy, imagePullSecrets)
+                    .reconcile()
                     .map(this);
         }
 

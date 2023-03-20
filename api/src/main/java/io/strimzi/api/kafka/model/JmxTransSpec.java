@@ -4,11 +4,11 @@
  */
 package io.strimzi.api.kafka.model;
 
-
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
+import io.strimzi.api.annotations.DeprecatedType;
 import io.strimzi.api.kafka.model.template.JmxTransOutputDefinitionTemplate;
 import io.strimzi.api.kafka.model.template.JmxTransQueryTemplate;
 import io.strimzi.api.kafka.model.template.JmxTransTemplate;
@@ -32,6 +32,8 @@ import java.util.Map;
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
 @JsonPropertyOrder({ "image", "outputDefinitions", "logLevel", "kafkaQueries", "resources", "template" })
 @EqualsAndHashCode
+@Deprecated
+@DeprecatedType(replacedWithType = void.class)
 public class JmxTransSpec implements UnknownPropertyPreserving, Serializable {
     public static final int DEFAULT_HEALTHCHECK_DELAY = 15;
     public static final int DEFAULT_HEALTHCHECK_TIMEOUT = 5;

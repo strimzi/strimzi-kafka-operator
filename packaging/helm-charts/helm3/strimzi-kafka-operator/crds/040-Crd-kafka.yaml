@@ -5537,7 +5537,7 @@ spec:
                   required:
                     - outputDefinitions
                     - kafkaQueries
-                  description: "Configuration for JmxTrans. When the property is present a JmxTrans deployment is created for gathering JMX metrics from each Kafka broker. For more information see https://github.com/jmxtrans/jmxtrans[JmxTrans GitHub]."
+                  description: "As of Strimzi 0.35.0, JMXTrans is not supported anymore and this option is ignored."
                 kafkaExporter:
                   type: object
                   properties:

@@ -253,7 +253,6 @@ You can specify which container image to use for a component using the `image` p
 * `Kafka.spec.entityOperator.topicOperator`
 * `Kafka.spec.entityOperator.userOperator`
 * `Kafka.spec.entityOperator.tlsSidecar`
-* `Kafka.spec.jmxTrans`
 * `KafkaConnect.spec`
 * `KafkaMirrorMaker.spec`
 * `KafkaMirrorMaker2.spec`
@@ -313,9 +312,6 @@ If the `image` name is not defined in the Cluster Operator configuration, then t
 * For Kafka broker initializer:
 . Container image specified in the `STRIMZI_DEFAULT_KAFKA_INIT_IMAGE` environment variable from the Cluster Operator configuration.
 . `{DockerKafkaInit}` container image.
-* For Kafka jmxTrans:
-. Container image specified in the `STRIMZI_DEFAULT_JMXTRANS_IMAGE` environment variable from the Cluster Operator configuration.
-. `{DockerJmxtrans}` container image.
 
 .Example container image configuration
 [source,yaml,subs=attributes+]

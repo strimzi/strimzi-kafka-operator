@@ -8,8 +8,6 @@ import io.fabric8.kubernetes.api.model.Secret;
 import io.strimzi.api.kafka.model.KafkaConnectResources;
 import io.strimzi.api.kafka.model.KafkaJmxAuthenticationPassword;
 import io.strimzi.api.kafka.model.KafkaResources;
-import io.strimzi.api.kafka.model.template.JmxTransOutputDefinitionTemplateBuilder;
-import io.strimzi.api.kafka.model.template.JmxTransQueryTemplateBuilder;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.BeforeAllOnce;
 import io.strimzi.systemtest.Constants;
@@ -57,28 +55,12 @@ public class JmxIsolatedST extends AbstractST {
         final String zkSecretName = clusterName + "-zookeeper-jmx";
         final String connectJmxSecretName = clusterName + "-kafka-connect-jmx";
         final String kafkaJmxSecretName = clusterName + "-kafka-jmx";
-        final String jmxTransName = clusterName + "-kafka-jmx-trans";
-
-        final String jmxTransMetricTypeName = "KafkaServer";
-        final String jmxTransMetricName = "BrokerState";
-        final String expectedJmxTransValue = "value=3";
 
         Map<String, String> jmxSecretLabels = Collections.singletonMap("my-label", "my-value");
         Map<String, String> jmxSecretAnnotations = Collections.singletonMap("my-annotation", "some-value");
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3)
             .editOrNewSpec()
-                .withNewJmxTrans()
-                    .withOutputDefinitions(new JmxTransOutputDefinitionTemplateBuilder()
-                            .withName("standardOut")
-                            .withOutputType("com.googlecode.jmxtrans.model.output.StdOutWriter")
-                            .build())
-                    .withKafkaQueries(new JmxTransQueryTemplateBuilder()
-                            .withTargetMBean("kafka.server:type=" + jmxTransMetricTypeName + ",name=" + jmxTransMetricName)
-                            .withAttributes("Value")
-                            .withOutputs("standardOut")
-                            .build())
-                .endJmxTrans()
                 .editKafka()
                     .withNewJmxOptions()
                         .withAuthentication(new KafkaJmxAuthenticationPassword())
@@ -117,15 +99,11 @@ public class JmxIsolatedST extends AbstractST {
         assertThat("Result from Kafka JMX doesn't contain right version of Kafka, result: " + kafkaResults, kafkaResults, containsString("version = " + Environment.ST_KAFKA_VERSION));
         assertThat("Result from KafkaConnect JMX doesn't contain right version of Kafka, result: " + kafkaConnectResults, kafkaConnectResults, containsString("version = " + Environment.ST_KAFKA_VERSION));
 
-        String jmxTransResult = JmxUtils.collectJmxTransMetricsWithWait(namespaceName, jmxTransMetricName, jmxTransName);
-        // Note: Broker State = 3: Running as Broker
-        assertThat("Result from Kafka JmxTrans doesn't contain correct metric" + jmxTransMetricName +  ", result: " + jmxTransResult, jmxTransResult, containsString(expectedJmxTransValue));
-
         if (!Environment.isKRaftModeEnabled()) {
             Secret jmxZkSecret = kubeClient().getSecret(namespaceName, zkSecretName);
 
             String zkBeans = JmxUtils.collectJmxMetricsWithWait(namespaceName, KafkaResources.zookeeperHeadlessServiceName(clusterName), zkSecretName, scraperPodName, "domain org.apache.ZooKeeperService\nbeans");
-            String zkBean = Arrays.asList(zkBeans.split("\\n")).stream().filter(bean -> bean.matches("org.apache.ZooKeeperService:name[0-9]+=ReplicatedServer_id[0-9]+")).findFirst().get();
+            String zkBean = Arrays.stream(zkBeans.split("\\n")).filter(bean -> bean.matches("org.apache.ZooKeeperService:name[0-9]+=ReplicatedServer_id[0-9]+")).findFirst().orElseThrow();
 
             String zkResults = JmxUtils.collectJmxMetricsWithWait(namespaceName, KafkaResources.zookeeperHeadlessServiceName(clusterName), zkSecretName, scraperPodName, "bean " + zkBean + "\nget -i *");
             assertThat("Result from Zookeeper JMX doesn't contain right quorum size, result: " + zkResults, zkResults, containsString("QuorumSize = 3"));
@@ -137,7 +115,7 @@ public class JmxIsolatedST extends AbstractST {
     }
 
     @BeforeAll
-    void setup(ExtensionContext extensionContext) {
+    void setup() {
         final String namespaceToWatch = Environment.isNamespaceRbacScope() ? INFRA_NAMESPACE : Constants.WATCH_ALL_NAMESPACES;
 
         clusterOperator.unInstall();

@@ -107,12 +107,6 @@ kafkaExporter:
     repository: ""
     name: kafka
     tagPrefix: ""
-jmxTrans:
-  image:
-    registry: ""
-    repository: ""
-    name: jmxtrans
-    tag: ""
 kafkaMirrorMaker2:
   image:
     registry: ""

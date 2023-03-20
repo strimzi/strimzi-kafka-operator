@@ -98,7 +98,6 @@ Labels can be applied to the following components:
 * `CRUISE_CONTROL`
 * `KAFKA_BRIDGE`
 * `KAFKA_EXPORTER`
-* `JMX_TRANS`
 
 `STRIMZI_CUSTOM_RESOURCE_SELECTOR`:: Optional.
 The label selector to filter the custom resources handled by the Cluster Operator.

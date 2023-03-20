@@ -105,15 +105,3 @@ These resources are only created if Cruise Control was deployed using the Cluste
 `_cluster-name_-cruise-control-config`:: ConfigMap that contains the Cruise Control ancillary configuration, and is mounted as a volume by the Cruise Control pods.
 `_cluster-name_-cruise-control-certs`:: Secret with Cruise Control keys for communication with Kafka and ZooKeeper.
 `_cluster-name_-network-policy-cruise-control`:: Network policy managing access to the Cruise Control service.
-
-.JMXTrans
-
-These resources are only created if JMXTrans is deployed using the Cluster Operator.
-
-`_cluster-name_-jmxtrans`:: Name given to the following JMXTrans resources:
-+
-- Deployment with JMXTrans.
-- Service account used by the JMXTrans.
-
-`_cluster-name_-jmxtrans-_random-string_`:: Pod created by the JMXTrans deployment.
-`_cluster-name_-jmxtrans-config`:: ConfigMap that contains the JMXTrans ancillary configuration, and is mounted as a volume by the JMXTrans pods.
