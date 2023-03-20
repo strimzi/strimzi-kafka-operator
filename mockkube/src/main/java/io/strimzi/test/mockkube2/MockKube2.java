@@ -6,7 +6,6 @@ package io.strimzi.test.mockkube2;
 
 import io.fabric8.kubernetes.api.model.DefaultKubernetesResourceList;
 import io.fabric8.kubernetes.api.model.KubernetesResource;
-import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinition;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
@@ -75,13 +74,10 @@ public class MockKube2 {
     private void registerCrd(String apiVersion, String kind, Class<? extends KubernetesResource> crdClass, String crdPath)  {
         KubernetesDeserializer.registerCustomKind(apiVersion, kind, crdClass);
 
-        CustomResourceDefinition crd = client
-                .apiextensions().v1()
+        client.apiextensions().v1()
                 .customResourceDefinitions()
                 .load(crdPath)
-                .get();
-
-        client.apiextensions().v1().customResourceDefinitions().resource(crd).create();
+                .create();
     }
 
     /**

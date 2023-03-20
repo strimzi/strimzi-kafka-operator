@@ -8,6 +8,7 @@ import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.ListOptionsBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.KafkaUserQuotas;
@@ -433,13 +434,13 @@ public class KafkaUserOperator {
                     } else {
                         // Secrets differ
                         LOGGER.debugCr(reconciliation, "Secret {}/{} exist, patching it", namespace, name);
-                        client.secrets().inNamespace(namespace).resource(desiredSecret).createOrReplace();
+                        client.secrets().inNamespace(namespace).resource(desiredSecret).update();
                         userStatus.setSecret(desiredSecret.getMetadata().getName());
                         return ReconcileResult.patched(desiredSecret);
                     }
                 } else {
                     LOGGER.debugCr(reconciliation, "Secret {}/{} does not exist, creating it", namespace, name);
-                    client.secrets().inNamespace(namespace).resource(desiredSecret).createOrReplace();
+                    createOrReplaceSecret(reconciliation, namespace, desiredSecret);
                     userStatus.setSecret(desiredSecret.getMetadata().getName());
                     return ReconcileResult.created(desiredSecret);
                 }
@@ -454,5 +455,29 @@ public class KafkaUserOperator {
                 }
             }
         }, executor);
+    }
+
+    /**
+     * When the Secret has a wrong labels, the informers will not have it even if it exists and the create() call will
+     * fail with the 409 (Conflict) error. This utility method captures this error and tries to update the Secret
+     * instead. This replaces the original createOrReplace() call which was deprecated in Fabric8 Kubernetes client. If
+     * any other error occurs, we just re-throw it without any special handling.
+     *
+     * @param reconciliation    Reconciliation marker
+     * @param namespace         Namespace of the Secret
+     * @param secret            The Secret which should be created or replaced
+     */
+    private void createOrReplaceSecret(Reconciliation reconciliation, String namespace, Secret secret)    {
+        try {
+            client.secrets().inNamespace(namespace).resource(secret).create();
+        } catch (KubernetesClientException e)   {
+            if (e.getCode() == 409) {
+                LOGGER.debugCr(reconciliation, "Secret {} in namespace {} already exists and cannot be created. It will be updated instead", secret.getMetadata().getName(), namespace);
+                client.secrets().inNamespace(namespace).resource(secret).update();
+            } else {
+                throw e;
+            }
+        }
+
     }
 }

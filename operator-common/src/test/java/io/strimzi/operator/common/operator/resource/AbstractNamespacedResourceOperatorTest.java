@@ -150,7 +150,6 @@ public abstract class AbstractNamespacedResourceOperatorTest<C extends Kubernete
             verify(mockResource).get();
             verify(mockResource).patch(any(), (T) any());
             verify(mockResource, never()).create();
-            verify(mockResource, never()).createOrReplace();
             async.flag();
         })));
     }
@@ -183,7 +182,6 @@ public abstract class AbstractNamespacedResourceOperatorTest<C extends Kubernete
             verify(mockResource).get();
             verify(mockResource, never()).patch(any(), any());
             verify(mockResource, never()).create();
-            verify(mockResource, never()).createOrReplace();
             async.flag();
         })));
     }

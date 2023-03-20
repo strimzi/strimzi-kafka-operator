@@ -336,6 +336,13 @@ spec:
               resources:
                 type: object
                 properties:
+                  claims:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        name:
+                          type: string
                   limits:
                     x-kubernetes-preserve-unknown-fields: true
                     type: object

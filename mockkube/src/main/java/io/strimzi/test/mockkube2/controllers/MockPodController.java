@@ -66,7 +66,7 @@ public class MockPodController extends AbstractMockController {
                                                         .withConditions(new PodConditionBuilder().withType("Ready").withStatus("True").build())
                                                         .build())
                                                 .build())
-                                        .replaceStatus();
+                                        .updateStatus();
                             }
                         } catch (KubernetesClientException e)   {
                             if (e.getCode() == 409) {

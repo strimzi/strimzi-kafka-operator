@@ -106,7 +106,7 @@ the documentation for more details.
 | `image.tag`                          | Override default Cluster Operator image tag       | `nil`                                        |
 | `image.digest`                       | Override Cluster Operator image tag with digest     | `nil`                                      |
 | `image.imagePullPolicy`              | Image pull policy for all pods deployed by Cluster Operator       | `IfNotPresent`               |
-| `image.imagePullSecrets`             | Docker registry pull secret               | `nil`                                                |
+| `image.imagePullSecrets`             | List of Docker registry pull secrets               | `[]`                                                |
 | `fullReconciliationIntervalMs`       | Full reconciliation interval in milliseconds | 120000                                            |
 | `operationTimeoutMs`                 | Operation timeout in milliseconds         | 300000                                               |
 | `operatorNamespaceLabels`            | Labels of the namespace where the operator runs | `nil`                                          |

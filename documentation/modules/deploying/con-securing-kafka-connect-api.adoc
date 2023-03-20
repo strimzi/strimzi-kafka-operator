@@ -13,7 +13,7 @@ Someone with access to the Kafka Connect API could potentially obtain sensitive 
 The Kafka Connect REST API can be accessed by anyone who has authenticated access to the Kubernetes cluster and knows the endpoint URL, which includes the hostname/IP address and port number.
 
 For example, suppose an organization uses a Kafka Connect cluster and connectors to stream sensitive data from a customer database to a central database. 
-The administrator uses a configuration provider plugin to store store sensitive information related to connecting to the customer database and the central database, such as database connection details and authentication credentials.  
+The administrator uses a configuration provider plugin to store sensitive information related to connecting to the customer database and the central database, such as database connection details and authentication credentials.
 The configuration provider protects this sensitive information from being exposed to unauthorized users. 
 However, someone who has access to the Kafka Connect API can still obtain access to the customer database without the consent of the administrator.
 They can do this by setting up a fake database and configuring a connector to connect to it. 

@@ -3,6 +3,7 @@
 ## 0.35.0
 
 * Redesigned the `UserOperatorConfig` to make it more efficient and flexible
+* Allow multiple imagePullSecrets in the Strimzi Helm chart
 * Remove support for JMX Trans
 
 ### Changes, deprecations and removals
