@@ -413,7 +413,7 @@ public class EntityOperatorReconciler {
                             reconciliation,
                             reconciliation.namespace(),
                             CruiseControlResources.networkPolicyName(reconciliation.name()),
-                            entityOperator != null ? entityOperator.generateNetworkPolicy(operatorNamespace, operatorNamespaceLabels) : null
+                            entityOperator != null ? entityOperator.generateNetworkPolicy() : null
                     ).map((Void) null);
         } else {
             return Future.succeededFuture();

@@ -35,7 +35,6 @@ import io.strimzi.operator.cluster.model.securityprofiles.ContainerSecurityProvi
 import io.strimzi.operator.cluster.model.securityprofiles.PodSecurityProviderContextImpl;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.Util;
-import io.strimzi.operator.common.model.Labels;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -87,7 +86,6 @@ public class EntityOperator extends AbstractModel {
     private ResourceTemplate templateRole;
     private DeploymentTemplate templateDeployment;
     private PodTemplate templatePod;
-    private MetricsModel metrics;
 
     private static final Map<String, String> DEFAULT_POD_LABELS = new HashMap<>();
     static {
@@ -132,6 +130,7 @@ public class EntityOperator extends AbstractModel {
             result.tlsSidecar = entityOperatorSpec.getTlsSidecar();
             result.topicOperator = topicOperator;
             result.userOperator = userOperator;
+
             String tlsSideCarImage = entityOperatorSpec.getTlsSidecar() != null ? entityOperatorSpec.getTlsSidecar().getImage() : null;
             if (tlsSideCarImage == null) {
                 KafkaClusterSpec kafkaClusterSpec = kafkaAssembly.getSpec().getKafka();
@@ -328,19 +327,22 @@ public class EntityOperator extends AbstractModel {
     /**
      * Generates the NetworkPolicies relevant for Entity Operator
      *
-     * @param operatorNamespace                             Namespace where the Strimzi Cluster Operator runs. Null if not configured.
-     * @param operatorNamespaceLabels                       Labels of the namespace where the Strimzi Cluster Operator runs. Null if not configured.
-     *
      * @return The network policy.
      */
-    public NetworkPolicy generateNetworkPolicy(String operatorNamespace, Labels operatorNamespaceLabels) {
+    public NetworkPolicy generateNetworkPolicy() {
         // List of network policy rules for all ports
         List<NetworkPolicyIngressRule> rules = new ArrayList<>();
 
+        // For Topic Operator
+
+        rules.add(NetworkPolicyUtils.createIngressRule(EntityTopicOperator.HEALTHCHECK_PORT, List.of()));
+
+        // For User Operator
+        rules.add(NetworkPolicyUtils.createIngressRule(EntityUserOperator.HEALTHCHECK_PORT, List.of()));
+
         // Everyone can access metrics
-        if (metrics.isEnabled()) {
-            rules.add(NetworkPolicyUtils.createIngressRule(MetricsModel.METRICS_PORT, List.of()));
-        }
+        rules.add(NetworkPolicyUtils.createIngressRule(MetricsModel.METRICS_PORT, List.of()));
+
 
         // Build the final network policy with all rules covering all the ports
         return NetworkPolicyUtils.createNetworkPolicy(
