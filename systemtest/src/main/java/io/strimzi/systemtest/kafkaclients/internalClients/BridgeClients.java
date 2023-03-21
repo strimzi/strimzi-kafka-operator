@@ -130,7 +130,7 @@ public class BridgeClients extends KafkaClients {
                         .withRestartPolicy("Never")
                         .addNewContainer()
                             .withName(this.getConsumerName())
-                            .withImagePullPolicy(Constants.ALWAYS_IMAGE_PULL_POLICY)
+                            .withImagePullPolicy(Constants.IF_NOT_PRESENT_IMAGE_PULL_POLICY)
                             .withImage(Environment.TEST_CLIENTS_IMAGE)
                             .addNewEnv()
                                 .withName("HOSTNAME")

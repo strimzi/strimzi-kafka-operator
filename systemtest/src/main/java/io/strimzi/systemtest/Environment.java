@@ -188,9 +188,9 @@ public class Environment {
 
     // variables for kafka client app images
     private static final String TEST_CLIENTS_VERSION = getOrDefault(TEST_CLIENTS_VERSION_ENV, TEST_CLIENTS_VERSION_DEFAULT);
-//    private static final String TEST_CLIENTS_IMAGE_DEFAULT = STRIMZI_REGISTRY_DEFAULT + "/" + TEST_CLIENTS_ORG_DEFAULT + "/test-clients:" + TEST_CLIENTS_VERSION + "-kafka-" + CLIENTS_KAFKA_VERSION;
-    private static final String TEST_CLIENTS_IMAGE_DEFAULT = "quay.io/lkral/test-clients@sha256:6fd033c29a511611bca19002116a1000d5e97667f1dea209a6a271f072d9a6f4";
-    private static final String TEST_ADMIN_IMAGE_DEFAULT = STRIMZI_REGISTRY_DEFAULT + "/" + TEST_CLIENTS_ORG_DEFAULT + "/test-client-kafka-admin:latest-kafka-3.4.0";
+    private static final String TEST_CLIENTS_IMAGE_DEFAULT = STRIMZI_REGISTRY_DEFAULT + "/" + TEST_CLIENTS_ORG_DEFAULT + "/test-clients:" + TEST_CLIENTS_VERSION + "-kafka-" + CLIENTS_KAFKA_VERSION;
+    // Admin client is not part of the test-clients, but the changes need to be made in ThrottlingQuotaST to remove this image
+    private static final String TEST_ADMIN_IMAGE_DEFAULT = STRIMZI_REGISTRY_DEFAULT + "/" + TEST_CLIENTS_ORG_DEFAULT + "/test-client-kafka-admin:0.4.2-kafka-3.3.1";
     public static final String TEST_CLIENTS_IMAGE = getOrDefault(TEST_CLIENTS_IMAGE_ENV, TEST_CLIENTS_IMAGE_DEFAULT);
     public static final String TEST_ADMIN_IMAGE = getOrDefault(TEST_ADMIN_IMAGE_ENV, TEST_ADMIN_IMAGE_DEFAULT);
 
