@@ -842,7 +842,7 @@ public class VersionChangeCreatorTest {
         Checkpoint async = context.checkpoint();
         vcc.reconcile().onComplete(context.failing(c -> context.verify(() -> {
             assertThat(c.getClass(), is(KafkaUpgradeException.class));
-            assertThat(c.getMessage(), is("Kafka Pods or StatefulSet exist, but do not contain the strimzi.io/kafka-version annotation to detect their version. Kafka upgrade cannot be detected."));
+            assertThat(c.getMessage(), is("Kafka Pods or StrimziPodSet exist, but do not contain the strimzi.io/kafka-version annotation to detect their version. Kafka upgrade cannot be detected."));
 
             async.flag();
         })));

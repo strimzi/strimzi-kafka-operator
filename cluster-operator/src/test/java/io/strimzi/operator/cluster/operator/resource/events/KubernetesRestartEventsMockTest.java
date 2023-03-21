@@ -139,7 +139,7 @@ public class KubernetesRestartEventsMockTest {
     @SuppressWarnings("unused")
     private KubernetesClient client;
 
-    private final ClusterOperatorConfig useStrimziPodSetsConfig = dummyClusterOperatorConfig();
+    private final ClusterOperatorConfig clusterOperatorConfig = dummyClusterOperatorConfig();
 
     private KafkaStatus ks;
 
@@ -173,7 +173,7 @@ public class KubernetesRestartEventsMockTest {
         podSetController.start();
 
         // Initial reconciliation to create cluster
-        KafkaAssemblyOperator kao = new KafkaAssemblyOperator(vertx, PFA, mockCertManager, passwordGenerator, supplier, useStrimziPodSetsConfig);
+        KafkaAssemblyOperator kao = new KafkaAssemblyOperator(vertx, PFA, mockCertManager, passwordGenerator, supplier, clusterOperatorConfig);
         kao.reconcile(new Reconciliation("initial", "kafka", NAMESPACE, CLUSTER_NAME)).toCompletionStage().toCompletableFuture().get();
 
         reconciliation = new Reconciliation("test", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME);
@@ -206,7 +206,7 @@ public class KubernetesRestartEventsMockTest {
                 clusterCa,
                 clientsCa,
                 VERSION_CHANGE,
-                useStrimziPodSetsConfig,
+                clusterOperatorConfig,
                 supplier,
                 PFA,
                 vertx
@@ -230,7 +230,7 @@ public class KubernetesRestartEventsMockTest {
                 .endStatus()
                 .build();
 
-        pvcOps().resource(patch).replace();
+        pvcOps().resource(patch).update();
 
         defaultReconciler(vertx).reconcile(ks, Clock.systemUTC()).onComplete(verifyEventPublished(FILE_SYSTEM_RESIZE_NEEDED, context));
     }
@@ -247,7 +247,7 @@ public class KubernetesRestartEventsMockTest {
                 oldGenClusterCa,
                 clientsCa,
                 VERSION_CHANGE,
-                useStrimziPodSetsConfig,
+                clusterOperatorConfig,
                 supplier,
                 PFA,
                 vertx);
@@ -271,7 +271,7 @@ public class KubernetesRestartEventsMockTest {
                 ca,
                 clientsCa,
                 VERSION_CHANGE,
-                useStrimziPodSetsConfig,
+                clusterOperatorConfig,
                 supplier,
                 PFA,
                 vertx);
@@ -295,7 +295,7 @@ public class KubernetesRestartEventsMockTest {
                 ca,
                 clientsCa,
                 VERSION_CHANGE,
-                useStrimziPodSetsConfig,
+                clusterOperatorConfig,
                 supplier,
                 PFA,
                 vertx);
@@ -317,7 +317,7 @@ public class KubernetesRestartEventsMockTest {
         // Bump ca cert generation to make it look newer than pod knows of
         patchClusterSecretWithAnnotation(Ca.ANNO_STRIMZI_IO_CLIENTS_CA_CERT_GENERATION, "100000");
 
-        CaReconciler reconciler = new CaReconciler(reconciliation, kafkaWithoutClientCaGen, useStrimziPodSetsConfig, supplier, vertx, mockCertManager, passwordGenerator);
+        CaReconciler reconciler = new CaReconciler(reconciliation, kafkaWithoutClientCaGen, clusterOperatorConfig, supplier, vertx, mockCertManager, passwordGenerator);
         reconciler.reconcile(Clock.systemUTC()).onComplete(verifyEventPublished(CLIENT_CA_CERT_KEY_REPLACED, context));
     }
 
@@ -335,7 +335,7 @@ public class KubernetesRestartEventsMockTest {
         // Bump ca cert generation to make it look newer than pod knows of
         patchClusterSecretWithAnnotation(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, "100001");
 
-        CaReconciler reconciler = new CaReconciler(reconciliation, kafkaWithoutClusterCaGen, useStrimziPodSetsConfig, supplier, vertx, mockCertManager, passwordGenerator);
+        CaReconciler reconciler = new CaReconciler(reconciliation, kafkaWithoutClusterCaGen, clusterOperatorConfig, supplier, vertx, mockCertManager, passwordGenerator);
         reconciler.reconcile(Clock.systemUTC()).onComplete(verifyEventPublished(CLUSTER_CA_CERT_KEY_REPLACED, context));
     }
 
@@ -352,7 +352,7 @@ public class KubernetesRestartEventsMockTest {
                 clusterCa,
                 clientsCa,
                 VERSION_CHANGE,
-                useStrimziPodSetsConfig,
+                clusterOperatorConfig,
                 supplierWithModifiedAdmin,
                 PFA,
                 vertx);
@@ -404,7 +404,7 @@ public class KubernetesRestartEventsMockTest {
                 clusterCa,
                 clientsCa,
                 VERSION_CHANGE,
-                useStrimziPodSetsConfig,
+                clusterOperatorConfig,
                 supplierWithModifiedAdmin,
                 PFA,
                 vertx);
@@ -434,7 +434,7 @@ public class KubernetesRestartEventsMockTest {
                 .endStatus()
                 .build();
 
-        podOps().resource(patch).replace();
+        podOps().resource(patch).update();
 
         defaultReconciler(vertx).reconcile(ks, Clock.systemUTC()).onComplete(verifyEventPublished(POD_STUCK, context));
     }
@@ -452,7 +452,7 @@ public class KubernetesRestartEventsMockTest {
                 createInitialCaKeySecret(NAMESPACE, CLUSTER_NAME, clusterCaKeySecretName(CLUSTER_NAME), MockCertManager.clusterCaKey())
         );
 
-        KafkaReconciler reconciler = new KafkaReconciler(reconciliation, KAFKA, null, 1, changedCa, clientsCa, VERSION_CHANGE, useStrimziPodSetsConfig, supplier, PFA, vertx);
+        KafkaReconciler reconciler = new KafkaReconciler(reconciliation, KAFKA, null, 1, changedCa, clientsCa, VERSION_CHANGE, clusterOperatorConfig, supplier, PFA, vertx);
         reconciler.reconcile(ks, Clock.systemUTC()).onComplete(verifyEventPublished(KAFKA_CERTIFICATES_CHANGED, context));
 
     }
@@ -477,7 +477,7 @@ public class KubernetesRestartEventsMockTest {
     }
 
     private KafkaReconciler defaultReconciler(Vertx vertx) {
-        return new KafkaReconciler(reconciliation, KAFKA, null, 1, clusterCa, clientsCa, VERSION_CHANGE, useStrimziPodSetsConfig, supplier, PFA, vertx);
+        return new KafkaReconciler(reconciliation, KAFKA, null, 1, clusterCa, clientsCa, VERSION_CHANGE, clusterOperatorConfig, supplier, PFA, vertx);
     }
 
     private ResourceOperatorSupplier supplierWithAdmin(Vertx vertx, Supplier<Admin> adminClientSupplier) {
@@ -542,7 +542,7 @@ public class KubernetesRestartEventsMockTest {
                     .addToAnnotations(annotationName, annotationValue)
                 .endMetadata()
                 .build();
-        podOps().resource(podPatch).replace();
+        podOps().resource(podPatch).update();
     }
 
     private ClusterCa createClusterCa() {
@@ -580,7 +580,7 @@ public class KubernetesRestartEventsMockTest {
         Secret brokerSecret = client.secrets().inNamespace(NAMESPACE).withName(KafkaResources.kafkaSecretName(CLUSTER_NAME)).get();
         Secret patchedSecret = modifySecretWithAnnotation(brokerSecret, annotation, value);
 
-        client.secrets().resource(patchedSecret).replace();
+        client.secrets().resource(patchedSecret).update();
     }
 
     private Secret modifySecretWithAnnotation(Secret brokerSecret, String annotation, String value) {

@@ -31,7 +31,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 @ExtendWith(VertxExtension.class)
 public class CaRenewalTest {
     @ParallelTest
-    public void renewalOfStatefulSetCertificatesWithNullSecret() throws IOException {
+    public void renewalOfCertificatesWithNullSecret() throws IOException {
         Ca mockedCa = new MockedCa(Reconciliation.DUMMY_RECONCILIATION, null, null, null, null, null, null, null, 2, 1, true, null);
 
         int replicas = 3;
@@ -62,7 +62,7 @@ public class CaRenewalTest {
     }
 
     @ParallelTest
-    public void renewalOfStatefulSetCertificatesWithCaRenewal() throws IOException {
+    public void renewalOfCertificatesWithCaRenewal() throws IOException {
         MockedCa mockedCa = new MockedCa(Reconciliation.DUMMY_RECONCILIATION, null, null, null, null, null, null, null, 2, 1, true, null);
         mockedCa.setCertRenewed(true);
 
@@ -113,7 +113,7 @@ public class CaRenewalTest {
     }
 
     @ParallelTest
-    public void renewalOfStatefulSetCertificatesDelayedRenewalInWindow() throws IOException {
+    public void renewalOfCertificatesDelayedRenewalInWindow() throws IOException {
         MockedCa mockedCa = new MockedCa(Reconciliation.DUMMY_RECONCILIATION, null, null, null, null, null, null, null, 2, 1, true, null);
         mockedCa.setCertExpiring(true);
 
@@ -164,7 +164,7 @@ public class CaRenewalTest {
     }
 
     @ParallelTest
-    public void renewalOfStatefulSetCertificatesDelayedRenewalOutsideWindow() throws IOException {
+    public void renewalOfCertificatesDelayedRenewalOutsideWindow() throws IOException {
         MockedCa mockedCa = new MockedCa(Reconciliation.DUMMY_RECONCILIATION, null, null, null, null, null, null, null, 2, 1, true, null);
         mockedCa.setCertExpiring(true);
 

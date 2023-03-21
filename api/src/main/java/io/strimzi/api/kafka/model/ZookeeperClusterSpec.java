@@ -178,7 +178,7 @@ public class ZookeeperClusterSpec implements HasConfigurableMetrics, HasConfigur
     }
 
     @Description("Template for ZooKeeper cluster resources. " +
-            "The template allows users to specify how the `StatefulSet`, `Pods`, and `Services` are generated.")
+            "The template allows users to specify how the Kubernetes resources are generated.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public ZookeeperClusterTemplate getTemplate() {
         return template;

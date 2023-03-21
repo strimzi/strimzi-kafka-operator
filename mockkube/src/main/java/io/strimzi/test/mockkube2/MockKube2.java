@@ -25,7 +25,6 @@ import io.strimzi.test.mockkube2.controllers.AbstractMockController;
 import io.strimzi.test.mockkube2.controllers.MockDeploymentController;
 import io.strimzi.test.mockkube2.controllers.MockPodController;
 import io.strimzi.test.mockkube2.controllers.MockServiceController;
-import io.strimzi.test.mockkube2.controllers.MockStatefulSetController;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -123,16 +122,6 @@ public class MockKube2 {
          */
         public MockKube2Builder withDeploymentController()  {
             mock.registerController(new MockDeploymentController(client));
-            return this;
-        }
-
-        /**
-         * Registers stateful set controller to manage Kubernetes StatefulSets
-         *
-         * @return  MockKube builder instance
-         */
-        public MockKube2Builder withStatefulSetController()  {
-            mock.registerController(new MockStatefulSetController(client));
             return this;
         }
 

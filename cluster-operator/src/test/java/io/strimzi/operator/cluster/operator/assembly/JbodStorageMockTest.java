@@ -130,7 +130,6 @@ public class JbodStorageMockTest {
                 .withStrimziPodSetCrd()
                 .withDeploymentController()
                 .withPodController()
-                .withStatefulSetController()
                 .withServiceController()
                 .build();
         mockKube.start();

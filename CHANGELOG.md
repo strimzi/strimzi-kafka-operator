@@ -5,12 +5,16 @@
 * Redesigned the `UserOperatorConfig` to make it more efficient and flexible
 * Allow multiple imagePullSecrets in the Strimzi Helm chart
 * Remove support for JMX Trans
+* Move feature gate `UseStrimziPodSets` to GA and remove support for StatefulSets
 
 ### Changes, deprecations and removals
 
 * Support for JMX Trans has been removed in Strimzi 0.35.0.
   If you have JMX Trans enabled in your `Kafka` custom resource in the `.spec.jmxTrans` section, you should remove it.
   If you upgrade to Strimzi 0.35.0 or newer with JMX Trans deployed / enabled in the `Kafka` custom resource, Strimzi will be automatically deleted after the upgrade.
+* The feature gate `UseStrimziPodSets` has graduated to GA and cannot be disabled anymore.
+  The StatefulSet template properties in the `Kafka` custom resource in `.spec.zookeeper.template.statefulSet` and `.spec.kafka.template.statefulSet` are deprecated and will be ignored.
+  You should remove them from your custom resources.
 
 ## 0.34.0
 

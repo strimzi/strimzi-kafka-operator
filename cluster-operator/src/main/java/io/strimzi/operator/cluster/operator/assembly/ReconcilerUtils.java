@@ -4,23 +4,19 @@
  */
 package io.strimzi.operator.cluster.operator.assembly;
 
-import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Secret;
-import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.StrimziPodSet;
 import io.strimzi.operator.cluster.ClusterOperator;
 import io.strimzi.operator.cluster.model.Ca;
 import io.strimzi.operator.cluster.model.ClientsCa;
-import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.ModelUtils;
 import io.strimzi.operator.cluster.model.RestartReason;
 import io.strimzi.operator.cluster.model.RestartReasons;
 import io.strimzi.operator.cluster.model.jmx.SupportsJmx;
 import io.strimzi.operator.cluster.operator.resource.PodRevision;
-import io.strimzi.operator.cluster.operator.resource.StatefulSetOperator;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
@@ -133,7 +129,7 @@ public class ReconcilerUtils {
      * Determines if the Pod needs to be rolled / restarted. If it does, returns a list of reasons why.
      *
      * @param reconciliation            Reconciliation Marker
-     * @param ctrlResource              Controller resource to which pod belongs
+     * @param podSet                    StrimziPodSet to which pod belongs
      * @param pod                       Pod to restart
      * @param fsResizingRestartRequest  Indicates which pods might need restart for filesystem resizing
      * @param nodeCertsChange           Indicates whether any certificates changed
@@ -141,7 +137,7 @@ public class ReconcilerUtils {
      *
      * @return empty RestartReasons if restart is not needed, non-empty RestartReasons otherwise
      */
-    public static RestartReasons reasonsToRestartPod(Reconciliation reconciliation, HasMetadata ctrlResource, Pod pod, Set<String> fsResizingRestartRequest, boolean nodeCertsChange, Ca... cas) {
+    public static RestartReasons reasonsToRestartPod(Reconciliation reconciliation, StrimziPodSet podSet, Pod pod, Set<String> fsResizingRestartRequest, boolean nodeCertsChange, Ca... cas) {
         RestartReasons restartReasons = RestartReasons.empty();
 
         if (pod == null)    {
@@ -150,18 +146,8 @@ public class ReconcilerUtils {
             return restartReasons;
         }
 
-        if (ctrlResource instanceof StatefulSet sts) {
-            if (!isStatefulSetGenerationUpToDate(reconciliation, sts, pod)) {
-                restartReasons.add(RestartReason.POD_HAS_OLD_GENERATION);
-            }
-
-            if (!isCustomCertUpToDate(reconciliation, sts, pod)) {
-                restartReasons.add(RestartReason.CUSTOM_LISTENER_CA_CERT_CHANGE);
-            }
-        } else if (ctrlResource instanceof StrimziPodSet podSet) {
-            if (PodRevision.hasChanged(pod, podSet)) {
-                restartReasons.add(RestartReason.POD_HAS_OLD_REVISION);
-            }
+        if (PodRevision.hasChanged(pod, podSet)) {
+            restartReasons.add(RestartReason.POD_HAS_OLD_REVISION);
         }
 
         for (Ca ca: cas) {
@@ -213,63 +199,6 @@ public class ReconcilerUtils {
      */
     private static String getCaCertAnnotation(Ca ca) {
         return ca instanceof ClientsCa ? Ca.ANNO_STRIMZI_IO_CLIENTS_CA_CERT_GENERATION : Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION;
-    }
-
-    /**
-     * Checks whether the Pod and the StatefulSet have the same generation. If the generation differs, rolling update
-     * will be needed.
-     *
-     * @param reconciliation    Reconciliation marker
-     * @param sts               StatefulSet with the generation
-     * @param pod               Pod with the Generation
-     *
-     * @return                  True if the generations match. False otherwise.
-     */
-    private static boolean isStatefulSetGenerationUpToDate(Reconciliation reconciliation, StatefulSet sts, Pod pod) {
-        final int stsGeneration = StatefulSetOperator.getStsGeneration(sts);
-        final int podGeneration = StatefulSetOperator.getPodGeneration(pod);
-
-        LOGGER.debugCr(
-                reconciliation,
-                "Rolling update of {}/{}: pod {} has {}={}; sts has {}={}",
-                sts.getMetadata().getNamespace(),
-                sts.getMetadata().getName(),
-                pod.getMetadata().getName(),
-                StatefulSetOperator.ANNO_STRIMZI_IO_GENERATION,
-                podGeneration,
-                StatefulSetOperator.ANNO_STRIMZI_IO_GENERATION,
-                stsGeneration
-        );
-
-        return stsGeneration == podGeneration;
-    }
-
-    /**
-     * Checks whether custom certificate annotation is up-to-date.
-     *
-     * @param reconciliation    Reconciliation marker
-     * @param sts               StatefulSet with the generation
-     * @param pod               Pod with the Generation
-     *
-     * @return                  True if the generations match. False otherwise.
-     */
-    private static boolean isCustomCertUpToDate(Reconciliation reconciliation, StatefulSet sts, Pod pod) {
-        final String stsThumbprint = Annotations.stringAnnotation(sts.getSpec().getTemplate(), KafkaCluster.ANNO_STRIMZI_CUSTOM_LISTENER_CERT_THUMBPRINTS, "");
-        final String podThumbprint = Annotations.stringAnnotation(pod, KafkaCluster.ANNO_STRIMZI_CUSTOM_LISTENER_CERT_THUMBPRINTS, "");
-
-        LOGGER.debugCr(
-                reconciliation,
-                "Rolling update of {}/{}: pod {} has {}={}; sts has {}={}",
-                sts.getMetadata().getNamespace(),
-                sts.getMetadata().getName(),
-                pod.getMetadata().getName(),
-                KafkaCluster.ANNO_STRIMZI_CUSTOM_LISTENER_CERT_THUMBPRINTS,
-                podThumbprint,
-                KafkaCluster.ANNO_STRIMZI_CUSTOM_LISTENER_CERT_THUMBPRINTS,
-                stsThumbprint
-        );
-
-        return podThumbprint.equals(stsThumbprint);
     }
 
     /**

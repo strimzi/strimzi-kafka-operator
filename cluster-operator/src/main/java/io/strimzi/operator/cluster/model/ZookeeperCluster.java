@@ -17,7 +17,6 @@ import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServicePort;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeMount;
-import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyIngressRule;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyPeer;
@@ -36,7 +35,6 @@ import io.strimzi.api.kafka.model.template.InternalServiceTemplate;
 import io.strimzi.api.kafka.model.template.PodDisruptionBudgetTemplate;
 import io.strimzi.api.kafka.model.template.PodTemplate;
 import io.strimzi.api.kafka.model.template.ResourceTemplate;
-import io.strimzi.api.kafka.model.template.StatefulSetTemplate;
 import io.strimzi.api.kafka.model.template.ZookeeperClusterTemplate;
 import io.strimzi.certs.CertAndKey;
 import io.strimzi.operator.cluster.model.jmx.JmxModel;
@@ -131,7 +129,6 @@ public class ZookeeperCluster extends AbstractStatefulModel implements SupportsM
     // Templates
     private PodDisruptionBudgetTemplate templatePodDisruptionBudget;
     private ResourceTemplate templatePersistentVolumeClaims;
-    private StatefulSetTemplate templateStatefulSet;
     private ResourceTemplate templatePodSet;
     private PodTemplate templatePod;
     private InternalServiceTemplate templateHeadlessService;
@@ -269,7 +266,6 @@ public class ZookeeperCluster extends AbstractStatefulModel implements SupportsM
 
             result.templatePodDisruptionBudget = template.getPodDisruptionBudget();
             result.templatePersistentVolumeClaims = template.getPersistentVolumeClaim();
-            result.templateStatefulSet = template.getStatefulset();
             result.templatePodSet = template.getPodSet();
             result.templatePod = template.getPod();
             result.templateService = template.getClientService();
@@ -357,44 +353,7 @@ public class ZookeeperCluster extends AbstractStatefulModel implements SupportsM
     }
 
     /**
-     * Generates ZooKeeper StatefulSet
-     *
-     * @param isOpenShift       Flag indicating if we are on OpenShift or not
-     * @param imagePullPolicy   Image pull policy
-     * @param imagePullSecrets  List of image pull secrets
-     *
-     * @return  Generated StatefulSet
-     */
-    public StatefulSet generateStatefulSet(boolean isOpenShift, ImagePullPolicy imagePullPolicy, List<LocalObjectReference> imagePullSecrets) {
-        return WorkloadUtils.createStatefulSet(
-                componentName,
-                namespace,
-                labels,
-                ownerReference,
-                templateStatefulSet,
-                replicas,
-                KafkaResources.zookeeperHeadlessServiceName(cluster),
-                Map.of(Annotations.ANNO_STRIMZI_IO_STORAGE, ModelUtils.encodeStorageToJson(storage)),
-                getPersistentVolumeClaimTemplates(),
-                WorkloadUtils.createPodTemplateSpec(
-                        componentName,
-                        labels,
-                        templatePod,
-                        DEFAULT_POD_LABELS,
-                        Map.of(),
-                        templatePod != null ? templatePod.getAffinity() : null,
-                        null,
-                        List.of(createContainer(imagePullPolicy)),
-                        getStatefulSetVolumes(isOpenShift),
-                        imagePullSecrets,
-                        securityProvider.zooKeeperPodSecurityContext(new PodSecurityProviderContextImpl(storage, templatePod))
-                )
-        );
-    }
-
-    /**
-     * Generates the StrimziPodSet for the ZooKeeper cluster. This is used when the UseStrimziPodSets feature gate is
-     * enabled.
+     * Generates the StrimziPodSet for the ZooKeeper cluster.
      *
      * @param replicas                  Number of replicas the StrimziPodSet should have. During scale-ups or scale-downs,
      *                                  node sets with different numbers of pods are generated.
@@ -547,42 +506,6 @@ public class ZookeeperCluster extends AbstractStatefulModel implements SupportsM
     }
 
     /**
-     * Generates list of non-data volumes used by ZooKeeper Pods. This includes tmp volumes, mounted secrets and config
-     * maps.
-     *
-     * @param isOpenShift   Indicates whether we are on OpenShift or not
-     *
-     * @return              List of nondata volumes used by the ZooKeeper pods
-     */
-    private List<Volume> getNonDataVolumes(boolean isOpenShift) {
-        List<Volume> volumeList = new ArrayList<>(4);
-
-        volumeList.add(VolumeUtils.createTempDirVolume(templatePod));
-        volumeList.add(VolumeUtils.createConfigMapVolume(LOG_AND_METRICS_CONFIG_VOLUME_NAME, KafkaResources.zookeeperMetricsAndLogConfigMapName(cluster)));
-        volumeList.add(VolumeUtils.createSecretVolume(ZOOKEEPER_NODE_CERTIFICATES_VOLUME_NAME, KafkaResources.zookeeperSecretName(cluster), isOpenShift));
-        volumeList.add(VolumeUtils.createSecretVolume(ZOOKEEPER_CLUSTER_CA_VOLUME_NAME, AbstractModel.clusterCaCertSecretName(cluster), isOpenShift));
-
-        return volumeList;
-    }
-
-    /**
-     * Generates a list of volumes used by StatefulSet. For StatefulSet, it needs to include only ephemeral data
-     * volumes. Persistent claim volumes are generated directly by StatefulSet.
-     *
-     * @param isOpenShift   Flag whether we are on OpenShift or not
-     *
-     * @return              List of volumes to be included in the StatefulSet pod template
-     */
-    private List<Volume> getStatefulSetVolumes(boolean isOpenShift) {
-        List<Volume> volumeList = new ArrayList<>(5);
-
-        volumeList.addAll(VolumeUtils.createStatefulSetVolumes(storage, false));
-        volumeList.addAll(getNonDataVolumes(isOpenShift));
-
-        return volumeList;
-    }
-
-    /**
      * Generates a list of volumes used by PodSets. For StrimziPodSet, it needs to include also all persistent claim
      * volumes which StatefulSet would generate on its own.
      *
@@ -594,19 +517,13 @@ public class ZookeeperCluster extends AbstractStatefulModel implements SupportsM
     private List<Volume> getPodSetVolumes(String podName, boolean isOpenShift) {
         List<Volume> volumeList = new ArrayList<>(5);
 
+        volumeList.add(VolumeUtils.createTempDirVolume(templatePod));
+        volumeList.add(VolumeUtils.createConfigMapVolume(LOG_AND_METRICS_CONFIG_VOLUME_NAME, KafkaResources.zookeeperMetricsAndLogConfigMapName(cluster)));
+        volumeList.add(VolumeUtils.createSecretVolume(ZOOKEEPER_NODE_CERTIFICATES_VOLUME_NAME, KafkaResources.zookeeperSecretName(cluster), isOpenShift));
+        volumeList.add(VolumeUtils.createSecretVolume(ZOOKEEPER_CLUSTER_CA_VOLUME_NAME, AbstractModel.clusterCaCertSecretName(cluster), isOpenShift));
         volumeList.addAll(VolumeUtils.createPodSetVolumes(podName, storage, false));
-        volumeList.addAll(getNonDataVolumes(isOpenShift));
 
         return volumeList;
-    }
-
-    /**
-     * Creates a list of Persistent Volume Claim templates for use in StatefulSets
-     *
-     * @return  List of Persistent Volume Claim Templates
-     */
-    /* test */ List<PersistentVolumeClaim> getPersistentVolumeClaimTemplates() {
-        return VolumeUtils.createPersistentVolumeClaimTemplates(storage, false);
     }
 
     /**
@@ -614,7 +531,7 @@ public class ZookeeperCluster extends AbstractStatefulModel implements SupportsM
      */
     public List<PersistentVolumeClaim> generatePersistentVolumeClaims() {
         return PersistentVolumeClaimUtils
-                .createPersistentVolumeClaims(componentName, namespace, replicas, storage, false, labels, ownerReference, templatePersistentVolumeClaims, templateStatefulSet);
+                .createPersistentVolumeClaims(componentName, namespace, replicas, storage, false, labels, ownerReference, templatePersistentVolumeClaims);
     }
 
     private List<VolumeMount> getVolumeMounts() {
@@ -634,33 +551,19 @@ public class ZookeeperCluster extends AbstractStatefulModel implements SupportsM
     /**
      * Generates the PodDisruptionBudget.
      *
-     * @param customController  Identifies whether the PDB should be generated for a custom controller (StrimziPodSets)
-     *                          or not (Deployments, StatefulSet)
-     *
      * @return The PodDisruptionBudget.
      */
-    public PodDisruptionBudget generatePodDisruptionBudget(boolean customController) {
-        if (customController) {
-            return PodDisruptionBudgetUtils.createCustomControllerPodDisruptionBudget(componentName, namespace, labels, ownerReference, templatePodDisruptionBudget, replicas);
-        } else {
-            return PodDisruptionBudgetUtils.createPodDisruptionBudget(componentName, namespace, labels, ownerReference, templatePodDisruptionBudget);
-        }
+    public PodDisruptionBudget generatePodDisruptionBudget() {
+        return PodDisruptionBudgetUtils.createCustomControllerPodDisruptionBudget(componentName, namespace, labels, ownerReference, templatePodDisruptionBudget, replicas);
     }
 
     /**
      * Generates the PodDisruptionBudget V1Beta1.
      *
-     * @param customController  Identifies whether the PDB should be generated for a custom controller (StrimziPodSets)
-     *                          or not (Deployments, StatefulSet)
-     *
      * @return The PodDisruptionBudget V1Beta1.
      */
-    public io.fabric8.kubernetes.api.model.policy.v1beta1.PodDisruptionBudget generatePodDisruptionBudgetV1Beta1(boolean customController) {
-        if (customController) {
-            return PodDisruptionBudgetUtils.createCustomControllerPodDisruptionBudgetV1Beta1(componentName, namespace, labels, ownerReference, templatePodDisruptionBudget, replicas);
-        } else {
-            return PodDisruptionBudgetUtils.createPodDisruptionBudgetV1Beta1(componentName, namespace, labels, ownerReference, templatePodDisruptionBudget);
-        }
+    public io.fabric8.kubernetes.api.model.policy.v1beta1.PodDisruptionBudget generatePodDisruptionBudgetV1Beta1() {
+        return PodDisruptionBudgetUtils.createCustomControllerPodDisruptionBudgetV1Beta1(componentName, namespace, labels, ownerReference, templatePodDisruptionBudget, replicas);
     }
 
     /**

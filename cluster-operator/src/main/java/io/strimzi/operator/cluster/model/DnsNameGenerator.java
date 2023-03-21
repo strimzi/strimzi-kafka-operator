@@ -44,7 +44,7 @@ public class DnsNameGenerator {
      * (i.e. usually with the cluster.local - but can be different on different clusters)
      * Example: my-pod-1.my-service.my-ns.svc.cluster.local
      *
-     * Note: Conventionally this would only be used for pods with deterministic names such as statefulset pods
+     * Note: Conventionally this would only be used for pods with deterministic names such as StrimziPodSet pods
      *
      * @param podName       Name of the pod
      *
@@ -75,7 +75,7 @@ public class DnsNameGenerator {
      * (i.e. usually without the cluster.local - but can be different on different clusters)
      * Example: my-cluster-pod-1.my-cluster-service.my-ns.svc
      *
-     * Note: Conventionally this would only be used for pods with deterministic names such as statefulset pods
+     * Note: Conventionally this would only be used for pods with deterministic names such as StrimziPodSet pods
      *
      * @param podName       Name of the pod
      *

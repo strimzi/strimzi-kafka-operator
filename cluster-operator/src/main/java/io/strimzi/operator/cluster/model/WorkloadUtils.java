@@ -10,7 +10,6 @@ import io.fabric8.kubernetes.api.model.IntOrString;
 import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.OwnerReference;
-import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.PodBuilder;
 import io.fabric8.kubernetes.api.model.PodSecurityContext;
@@ -23,15 +22,11 @@ import io.fabric8.kubernetes.api.model.apps.DeploymentBuilder;
 import io.fabric8.kubernetes.api.model.apps.DeploymentStrategy;
 import io.fabric8.kubernetes.api.model.apps.DeploymentStrategyBuilder;
 import io.fabric8.kubernetes.api.model.apps.RollingUpdateDeploymentBuilder;
-import io.fabric8.kubernetes.api.model.apps.StatefulSet;
-import io.fabric8.kubernetes.api.model.apps.StatefulSetBuilder;
 import io.strimzi.api.kafka.model.StrimziPodSet;
 import io.strimzi.api.kafka.model.StrimziPodSetBuilder;
 import io.strimzi.api.kafka.model.template.DeploymentTemplate;
-import io.strimzi.api.kafka.model.template.PodManagementPolicy;
 import io.strimzi.api.kafka.model.template.PodTemplate;
 import io.strimzi.api.kafka.model.template.ResourceTemplate;
-import io.strimzi.api.kafka.model.template.StatefulSetTemplate;
 import io.strimzi.operator.cluster.operator.resource.PodRevision;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.Util;
@@ -86,59 +81,6 @@ public class WorkloadUtils {
                         .withMatchLabels(labels.strimziSelectorLabels().toMap())
                     .endSelector()
                     .withTemplate(podTemplateSpec)
-                .endSpec()
-                .build();
-    }
-
-    /**
-     * Create a Kubernetes StatefulSet with the Pod template passed as a parameter
-     *
-     * @param name                      Name of the StatefulSet
-     * @param namespace                 Namespace of the StatefulSet
-     * @param labels                    Labels of the StatefulSet
-     * @param ownerReference            OwnerReference of the StatefulSet
-     * @param template                  StatefulSet template with user's custom configuration
-     * @param replicas                  Number of replicas
-     * @param headlessServiceName       Name of the headless service used by this StatefulSet
-     * @param annotations               Additional annotations which should be set on the StatefulSet. This might
-     *                                  contain annotations for tracking storage configuration, Kafka versions and similar.
-     * @param volumeClaimsTemplates     PersistentVolumeClaim templates to be used in the StatefulSet
-     * @param podTemplate               The PodTemplateSpec which defines how the pods created by this StatefulSet look like
-
-     * @return  Created StatefulSet
-     */
-    public static StatefulSet createStatefulSet(
-            String name,
-            String namespace,
-            Labels labels,
-            OwnerReference ownerReference,
-            StatefulSetTemplate template,
-            int replicas,
-            String headlessServiceName,
-            Map<String, String> annotations,
-            List<PersistentVolumeClaim> volumeClaimsTemplates,
-            PodTemplateSpec podTemplate
-    ) {
-        return new StatefulSetBuilder()
-                .withNewMetadata()
-                    .withName(name)
-                    .withLabels(labels.withAdditionalLabels(TemplateUtils.labels(template)).toMap())
-                    .withNamespace(namespace)
-                    .withAnnotations(Util.mergeLabelsOrAnnotations(annotations, TemplateUtils.annotations(template)))
-                    .withOwnerReferences(ownerReference)
-                .endMetadata()
-                .withNewSpec()
-                    .withPodManagementPolicy(template != null && template.getPodManagementPolicy() != null ? template.getPodManagementPolicy().toValue() : PodManagementPolicy.PARALLEL.toValue())
-                    .withNewUpdateStrategy()
-                        .withType("OnDelete")
-                    .endUpdateStrategy()
-                    .withNewSelector()
-                        .withMatchLabels(labels.strimziSelectorLabels().toMap())
-                    .endSelector()
-                    .withServiceName(headlessServiceName)
-                    .withReplicas(replicas)
-                    .withTemplate(podTemplate)
-                    .withVolumeClaimTemplates(volumeClaimsTemplates)
                 .endSpec()
                 .build();
     }

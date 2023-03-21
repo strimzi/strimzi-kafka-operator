@@ -15,7 +15,6 @@ import io.strimzi.api.kafka.model.storage.PersistentClaimStorageOverride;
 import io.strimzi.api.kafka.model.storage.SingleVolumeStorage;
 import io.strimzi.api.kafka.model.storage.Storage;
 import io.strimzi.api.kafka.model.template.ResourceTemplate;
-import io.strimzi.api.kafka.model.template.StatefulSetTemplate;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
@@ -35,18 +34,15 @@ public class PersistentVolumeClaimUtils {
      * recursively to handle volumes inside JBOD storage. When it calls itself to handle the volumes inside JBOD array,
      * the {@code jbod} flag should be set to {@code true}. When called from outside, it should be set to {@code false}.
      *
-     * @param componentName             Name of the Strimzi component to which these PVCs belong. It is used to generate
-     *                                  the PVC names.
-     * @param namespace                 Namespace of the PVC
-     * @param replicas                  Number of replicas this component has
-     * @param storage                   The user supplied configuration of the PersistentClaimStorage
-     * @param jbod                      Indicator whether the {@code storage} is part of JBOD array or not
-     * @param labels                    Labels of the PVC
-     * @param ownerReference            OwnerReference of the PVC
-     * @param template                  PVC template with user's custom configuration
-     * @param stsTemplate               StatefulSet template with user configured labels. These are added to the PVC
-     *                                  labels for historical reasons. This should be removed when removing StatefulSet
-     *                                  support.
+     * @param componentName     Name of the Strimzi component to which these PVCs belong. It is used to generate
+     *                          the PVC names.
+     * @param namespace         Namespace of the PVC
+     * @param replicas          Number of replicas this component has
+     * @param storage           The user supplied configuration of the PersistentClaimStorage
+     * @param jbod              Indicator whether the {@code storage} is part of JBOD array or not
+     * @param labels            Labels of the PVC
+     * @param ownerReference    OwnerReference of the PVC
+     * @param template          PVC template with user's custom configuration
      *
      * @return  List with Persistent Volume Claims
      */
@@ -58,8 +54,7 @@ public class PersistentVolumeClaimUtils {
             boolean jbod,
             Labels labels,
             OwnerReference ownerReference,
-            ResourceTemplate template,
-            StatefulSetTemplate stsTemplate
+            ResourceTemplate template
     )   {
         List<PersistentVolumeClaim> pvcs = new ArrayList<>();
 
@@ -68,12 +63,12 @@ public class PersistentVolumeClaimUtils {
                 String pvcBaseName = VolumeUtils.createVolumePrefix(persistentStorage.getId(), jbod) + "-" + componentName;
 
                 for (int brokerId = 0; brokerId < replicas; brokerId++) {
-                    pvcs.add(createPersistentVolumeClaim(pvcBaseName + "-" + brokerId, namespace, brokerId, persistentStorage, labels, ownerReference, template, TemplateUtils.labels(stsTemplate)));
+                    pvcs.add(createPersistentVolumeClaim(pvcBaseName + "-" + brokerId, namespace, brokerId, persistentStorage, labels, ownerReference, template));
                 }
             } else if (storage instanceof JbodStorage jbodStorage) {
                 for (SingleVolumeStorage volume : jbodStorage.getVolumes()) {
                     // it's called recursively for setting the information from the current volume
-                    pvcs.addAll(createPersistentVolumeClaims(componentName, namespace, replicas, volume, true, labels, ownerReference, template, stsTemplate));
+                    pvcs.addAll(createPersistentVolumeClaims(componentName, namespace, replicas, volume, true, labels, ownerReference, template));
                 }
             }
         }
@@ -113,18 +108,16 @@ public class PersistentVolumeClaimUtils {
     /**
      * Generates a persistent volume claim for a given broker ID.
      *
-     * @param name                      Name of the PVC
-     * @param namespace                 Namespace of the PVC
-     * @param brokerId                  ID of the broker to which this PVC belongs. It is used to find configuration
-     *                                  overrides for Storage class.
-     * @param storage                   The user supplied configuration of the PersistentClaimStorage
-     * @param labels                    Labels of the PVC
-     * @param ownerReference            OwnerReference of the PVC
-     * @param template                  PVC template with user's custom configuration
-     * @param statefulSetTemplateLabels User configured labels from StatefulSet template. These are added to the PVC
-     *                                  labels for historical reasons. This should be removed when removing StatefulSet support.
+     * @param name              Name of the PVC
+     * @param namespace         Namespace of the PVC
+     * @param brokerId          ID of the broker to which this PVC belongs. It is used to find configuration
+     *                          overrides for Storage class.
+     * @param storage           The user supplied configuration of the PersistentClaimStorage
+     * @param labels            Labels of the PVC
+     * @param ownerReference    OwnerReference of the PVC
+     * @param template          PVC template with user's custom configuration
      *
-     * @return  Generated PersistentVolumeClaim
+     * @return Generated PersistentVolumeClaim
      */
     private static PersistentVolumeClaim createPersistentVolumeClaim(
             String name,
@@ -133,8 +126,7 @@ public class PersistentVolumeClaimUtils {
             PersistentClaimStorage storage,
             Labels labels,
             OwnerReference ownerReference,
-            ResourceTemplate template,
-            Map<String, String> statefulSetTemplateLabels
+            ResourceTemplate template
     ) {
         Map<String, Quantity> requests = new HashMap<>(1);
         requests.put("storage", new Quantity(storage.getSize(), null));
@@ -148,7 +140,7 @@ public class PersistentVolumeClaimUtils {
                 .withNewMetadata()
                     .withName(name)
                     .withNamespace(namespace)
-                    .withLabels(labels.withAdditionalLabels(Util.mergeLabelsOrAnnotations(TemplateUtils.labels(template), statefulSetTemplateLabels)).toMap())
+                    .withLabels(labels.withAdditionalLabels(TemplateUtils.labels(template)).toMap())
                     .withAnnotations(Util.mergeLabelsOrAnnotations(Collections.singletonMap(Annotations.ANNO_STRIMZI_IO_DELETE_CLAIM, Boolean.toString(storage.isDeleteClaim())), TemplateUtils.annotations(template)))
                 .endMetadata()
                 .withNewSpec()

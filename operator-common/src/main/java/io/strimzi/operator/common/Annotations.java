@@ -39,7 +39,7 @@ public class Annotations {
 
     /**
      * Annotations for rolling a cluster whenever the logging (or it's part) has changed.
-     * By changing the annotation we force a restart since the pod will be out of date compared to the statefulset.
+     * By changing the annotation we force a restart since the pod will be out of date compared to the StrimziPodSet.
      */
     public static final String ANNO_STRIMZI_LOGGING_HASH = STRIMZI_DOMAIN + "logging-hash";
 
@@ -179,7 +179,7 @@ public class Annotations {
     }
 
     /**
-     * Gets annotations from Pod Template in Deployments, StatefulSets and so on
+     * Gets annotations from Pod Template in Deployments.
      *
      * @param podSpec  Pod template from which we want to get the annotations
      *

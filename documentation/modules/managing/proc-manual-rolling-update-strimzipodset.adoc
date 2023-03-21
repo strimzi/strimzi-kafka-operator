@@ -2,14 +2,12 @@
 //
 // managing/assembly-rolling-updates.adoc
 
-[id='proc-manual-rolling-update-statefulset-{context}']
+[id='proc-manual-rolling-update-strimzipodset-{context}']
 = Performing a rolling update using a pod management annotation
 
 [role="_abstract"]
 This procedure describes how to trigger a rolling update of a Kafka cluster or ZooKeeper cluster.
-
-To trigger the update, you add an annotation to the resource you are using to manage the pods running on the cluster.
-You annotate the `StatefulSet` or `StrimziPodSet` resource (if you enabled the `UseStrimziPodSets` feature gate).
+To trigger the update, you add an annotation to the `StrimziPodSet` that manages the pods running on the cluster.
 
 .Prerequisites
 
@@ -22,14 +20,6 @@ To perform a manual rolling update, you need a running Cluster Operator and Kafk
 For example, if your Kafka cluster is named _my-cluster_, the corresponding names are _my-cluster-kafka_ and _my-cluster-zookeeper_.
 
 . Use `kubectl annotate` to annotate the appropriate resource in Kubernetes.
-+
-.Annotating a StatefulSet
-[source,shell,subs=+quotes]
-----
-kubectl annotate statefulset _<cluster_name>_-kafka strimzi.io/manual-rolling-update=true
-
-kubectl annotate statefulset _<cluster_name>_-zookeeper strimzi.io/manual-rolling-update=true
-----
 +
 .Annotating a StrimziPodSet
 [source,shell,subs=+quotes]

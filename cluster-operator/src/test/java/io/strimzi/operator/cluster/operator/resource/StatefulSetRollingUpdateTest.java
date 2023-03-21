@@ -4,14 +4,10 @@
  */
 package io.strimzi.operator.cluster.operator.resource;
 
+import io.fabric8.kubernetes.api.model.ContainerBuilder;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
-import io.strimzi.api.kafka.model.InlineLogging;
-import io.strimzi.api.kafka.model.Kafka;
-import io.strimzi.api.kafka.model.KafkaBuilder;
-import io.strimzi.operator.cluster.ResourceUtils;
-import io.strimzi.operator.cluster.model.KafkaCluster;
-import io.strimzi.operator.cluster.model.KafkaVersion;
+import io.fabric8.kubernetes.api.model.apps.StatefulSetBuilder;
 import io.strimzi.operator.common.Reconciliation;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -19,58 +15,47 @@ import org.junit.jupiter.api.Test;
 import java.util.HashMap;
 import java.util.Map;
 
-import static java.util.Collections.emptyMap;
-import static java.util.Collections.singletonMap;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 public class StatefulSetRollingUpdateTest {
-    public static final InlineLogging KAFKA_LOG_CONFIG = new InlineLogging();
-    public static final InlineLogging ZOOKEEPER_LOG_CONFIG = new InlineLogging();
-
-    static {
-        KAFKA_LOG_CONFIG.setLoggers(singletonMap("zookeeper.root.logger", "OFF"));
-        ZOOKEEPER_LOG_CONFIG.setLoggers(singletonMap("kafka.root.logger.level", "OFF"));
-    }
-
-    private StatefulSet currectSts;
+    private StatefulSet currentSts;
     private StatefulSet desiredSts;
 
     @BeforeEach
     public void before() {
-        KafkaVersion.Lookup versions = new KafkaVersion.Lookup(emptyMap(), emptyMap(), emptyMap(), emptyMap());
-        currectSts = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, getResource(), versions).generateStatefulSet(true, null, null, null);
-        desiredSts = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, getResource(), versions).generateStatefulSet(true, null, null, null);
+        currentSts = getStatefulSet();
+        desiredSts = getStatefulSet();
     }
 
-    private Kafka getResource() {
-        String kafkaName = "foo";
-        String kafkaNamespace = "test";
-        int replicas = 3;
-        String image = "bar";
-        int healthDelay = 120;
-        int healthTimeout = 30;
-
-        return new KafkaBuilder(ResourceUtils.createKafka(kafkaNamespace, kafkaName,
-                replicas, image, healthDelay, healthTimeout))
-                .editSpec()
-                    .editKafka()
-                        .withNewPersistentClaimStorage()
-                            .withSize("123")
-                            .withStorageClass("foo")
-                            .withDeleteClaim(true)
-                        .endPersistentClaimStorage()
-                        .withLogging(KAFKA_LOG_CONFIG)
-                    .endKafka()
-                    .editZookeeper()
-                        .withLogging(ZOOKEEPER_LOG_CONFIG)
-                    .endZookeeper()
+    private StatefulSet getStatefulSet()    {
+        return new StatefulSetBuilder()
+                .withNewMetadata()
+                    .withName("my-sts")
+                    .withNamespace("my-namespace")
+                    .withLabels(Map.of("label1", "value1", "label2", "value2"))
+                .endMetadata()
+                .withNewSpec()
+                    .withReplicas(3)
+                    .withNewTemplate()
+                        .withNewSpec()
+                            .withContainers(new ContainerBuilder()
+                                    .withName("my-container")
+                                    .withImage("my-image")
+                                    .withNewReadinessProbe()
+                                        .withInitialDelaySeconds(18)
+                                        .withTimeoutSeconds(74)
+                                    .endReadinessProbe()
+                                    .withEnv(new EnvVar("my-env-var", "my-env-var-value", null))
+                                    .build())
+                        .endSpec()
+                    .endTemplate()
                 .endSpec()
                 .build();
     }
 
     private StatefulSetDiff createDiff() {
-        return new StatefulSetDiff(Reconciliation.DUMMY_RECONCILIATION, currectSts, desiredSts);
+        return new StatefulSetDiff(Reconciliation.DUMMY_RECONCILIATION, currentSts, desiredSts);
     }
 
     @Test
@@ -80,7 +65,7 @@ public class StatefulSetRollingUpdateTest {
 
     @Test
     public void testNotNeedsRollingUpdateWhenReplicasDecrease() {
-        currectSts.getSpec().setReplicas(desiredSts.getSpec().getReplicas() + 1);
+        currentSts.getSpec().setReplicas(desiredSts.getSpec().getReplicas() + 1);
         assertThat(StatefulSetOperator.needsRollingUpdate(Reconciliation.DUMMY_RECONCILIATION, createDiff()), is(false));
     }
 
@@ -88,35 +73,35 @@ public class StatefulSetRollingUpdateTest {
     public void testNeedsRollingUpdateWhenLabelsRemoved() {
         Map<String, String> labels = new HashMap<>(desiredSts.getMetadata().getLabels());
         labels.put("foo", "bar");
-        currectSts.getMetadata().setLabels(labels);
+        currentSts.getMetadata().setLabels(labels);
         assertThat(StatefulSetOperator.needsRollingUpdate(Reconciliation.DUMMY_RECONCILIATION, createDiff()), is(true));
     }
 
     @Test
     public void testNeedsRollingUpdateWhenImageChanges() {
-        String newImage = currectSts.getSpec().getTemplate().getSpec().getContainers().get(0).getImage() + "-foo";
-        currectSts.getSpec().getTemplate().getSpec().getContainers().get(0).setImage(newImage);
+        String newImage = currentSts.getSpec().getTemplate().getSpec().getContainers().get(0).getImage() + "-foo";
+        currentSts.getSpec().getTemplate().getSpec().getContainers().get(0).setImage(newImage);
         assertThat(StatefulSetOperator.needsRollingUpdate(Reconciliation.DUMMY_RECONCILIATION, createDiff()), is(true));
     }
 
     @Test
     public void testNeedsRollingUpdateWhenReadinessDelayChanges() {
-        Integer newDelay = currectSts.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().getInitialDelaySeconds() + 1;
-        currectSts.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().setInitialDelaySeconds(newDelay);
+        Integer newDelay = currentSts.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().getInitialDelaySeconds() + 1;
+        currentSts.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().setInitialDelaySeconds(newDelay);
         assertThat(StatefulSetOperator.needsRollingUpdate(Reconciliation.DUMMY_RECONCILIATION, createDiff()), is(true));
     }
 
     @Test
     public void testNeedsRollingUpdateWhenReadinessTimeoutChanges() {
-        Integer newTimeout = currectSts.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().getTimeoutSeconds() + 1;
-        currectSts.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().setTimeoutSeconds(newTimeout);
+        Integer newTimeout = currentSts.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().getTimeoutSeconds() + 1;
+        currentSts.getSpec().getTemplate().getSpec().getContainers().get(0).getReadinessProbe().setTimeoutSeconds(newTimeout);
         assertThat(StatefulSetOperator.needsRollingUpdate(Reconciliation.DUMMY_RECONCILIATION, createDiff()), is(true));
     }
 
     @Test
     public void testNeedsRollingUpdateWhenNewEnvRemoved() {
         String envVar = "SOME_RANDOM_ENV";
-        currectSts.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv().add(new EnvVar(envVar,
+        currentSts.getSpec().getTemplate().getSpec().getContainers().get(0).getEnv().add(new EnvVar(envVar,
                 "foo", null));
         assertThat(StatefulSetOperator.needsRollingUpdate(Reconciliation.DUMMY_RECONCILIATION, createDiff()), is(true));
     }

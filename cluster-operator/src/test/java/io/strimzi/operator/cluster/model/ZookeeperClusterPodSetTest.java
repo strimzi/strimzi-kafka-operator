@@ -459,7 +459,7 @@ public class ZookeeperClusterPodSetTest {
     }
 
     @ParallelTest
-    public void testGenerateStatefulSetWithSetSizeLimit() {
+    public void testGeneratePodSetWithSetSizeLimit() {
         String sizeLimit = "1Gi";
         Kafka kafkaAssembly = new KafkaBuilder(KAFKA)
                 .editSpec()
@@ -474,12 +474,12 @@ public class ZookeeperClusterPodSetTest {
         StrimziPodSet ps = zc.generatePodSet(3, false, null, null, podNum -> Map.of());
         List<Pod> pods = PodSetUtils.mapsToPods(ps.getSpec().getPods());
         for (Pod pod : pods) {
-            assertThat(pod.getSpec().getVolumes().get(0).getEmptyDir().getSizeLimit(), is(new Quantity("1", "Gi")));
+            assertThat(pod.getSpec().getVolumes().get(4).getEmptyDir().getSizeLimit(), is(new Quantity("1", "Gi")));
         }
     }
 
     @ParallelTest
-    public void testGenerateStatefulSetWithEmptySizeLimit() {
+    public void testGeneratePodSetWithEmptySizeLimit() {
         Kafka kafkaAssembly = new KafkaBuilder(KAFKA)
                 .editSpec()
                     .editZookeeper()
@@ -494,7 +494,7 @@ public class ZookeeperClusterPodSetTest {
         StrimziPodSet ps = zc.generatePodSet(3, false, null, null, podNum -> Map.of());
         List<Pod> pods = PodSetUtils.mapsToPods(ps.getSpec().getPods());
         for (Pod pod : pods) {
-            assertThat(pod.getSpec().getVolumes().get(0).getEmptyDir().getSizeLimit(), is(Matchers.nullValue()));
+            assertThat(pod.getSpec().getVolumes().get(4).getEmptyDir().getSizeLimit(), is(Matchers.nullValue()));
         }
     }
 

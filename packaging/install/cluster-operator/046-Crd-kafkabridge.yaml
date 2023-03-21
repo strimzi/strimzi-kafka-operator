@@ -420,11 +420,11 @@ spec:
                           labels:
                             x-kubernetes-preserve-unknown-fields: true
                             type: object
-                            description: "Labels added to the resource template. Can be applied to different resources such as `StatefulSets`, `Deployments`, `Pods`, and `Services`."
+                            description: Labels added to the Kubernetes resource.
                           annotations:
                             x-kubernetes-preserve-unknown-fields: true
                             type: object
-                            description: "Annotations added to the resource template. Can be applied to different resources such as `StatefulSets`, `Deployments`, `Pods`, and `Services`."
+                            description: Annotations added to the Kubernetes resource.
                         description: Metadata applied to the resource.
                       deploymentStrategy:
                         type: string
@@ -442,11 +442,11 @@ spec:
                           labels:
                             x-kubernetes-preserve-unknown-fields: true
                             type: object
-                            description: "Labels added to the resource template. Can be applied to different resources such as `StatefulSets`, `Deployments`, `Pods`, and `Services`."
+                            description: Labels added to the Kubernetes resource.
                           annotations:
                             x-kubernetes-preserve-unknown-fields: true
                             type: object
-                            description: "Annotations added to the resource template. Can be applied to different resources such as `StatefulSets`, `Deployments`, `Pods`, and `Services`."
+                            description: Annotations added to the Kubernetes resource.
                         description: Metadata applied to the resource.
                       imagePullSecrets:
                         type: array
@@ -897,11 +897,11 @@ spec:
                           labels:
                             x-kubernetes-preserve-unknown-fields: true
                             type: object
-                            description: "Labels added to the resource template. Can be applied to different resources such as `StatefulSets`, `Deployments`, `Pods`, and `Services`."
+                            description: Labels added to the Kubernetes resource.
                           annotations:
                             x-kubernetes-preserve-unknown-fields: true
                             type: object
-                            description: "Annotations added to the resource template. Can be applied to different resources such as `StatefulSets`, `Deployments`, `Pods`, and `Services`."
+                            description: Annotations added to the Kubernetes resource.
                         description: Metadata applied to the resource.
                       ipFamilyPolicy:
                         type: string
@@ -928,11 +928,11 @@ spec:
                           labels:
                             x-kubernetes-preserve-unknown-fields: true
                             type: object
-                            description: "Labels added to the resource template. Can be applied to different resources such as `StatefulSets`, `Deployments`, `Pods`, and `Services`."
+                            description: Labels added to the Kubernetes resource.
                           annotations:
                             x-kubernetes-preserve-unknown-fields: true
                             type: object
-                            description: "Annotations added to the resource template. Can be applied to different resources such as `StatefulSets`, `Deployments`, `Pods`, and `Services`."
+                            description: Annotations added to the Kubernetes resource.
                         description: Metadata to apply to the `PodDisruptionBudgetTemplate` resource.
                       maxUnavailable:
                         type: integer
@@ -1022,11 +1022,11 @@ spec:
                           labels:
                             x-kubernetes-preserve-unknown-fields: true
                             type: object
-                            description: "Labels added to the resource template. Can be applied to different resources such as `StatefulSets`, `Deployments`, `Pods`, and `Services`."
+                            description: Labels added to the Kubernetes resource.
                           annotations:
                             x-kubernetes-preserve-unknown-fields: true
                             type: object
-                            description: "Annotations added to the resource template. Can be applied to different resources such as `StatefulSets`, `Deployments`, `Pods`, and `Services`."
+                            description: Annotations added to the Kubernetes resource.
                         description: Metadata applied to the resource.
                     description: Template for the Kafka Bridge ClusterRoleBinding.
                   serviceAccount:
@@ -1038,11 +1038,11 @@ spec:
                           labels:
                             x-kubernetes-preserve-unknown-fields: true
                             type: object
-                            description: "Labels added to the resource template. Can be applied to different resources such as `StatefulSets`, `Deployments`, `Pods`, and `Services`."
+                            description: Labels added to the Kubernetes resource.
                           annotations:
                             x-kubernetes-preserve-unknown-fields: true
                             type: object
-                            description: "Annotations added to the resource template. Can be applied to different resources such as `StatefulSets`, `Deployments`, `Pods`, and `Services`."
+                            description: Annotations added to the Kubernetes resource.
                         description: Metadata applied to the resource.
                     description: Template for the Kafka Bridge service account.
                   initContainer:

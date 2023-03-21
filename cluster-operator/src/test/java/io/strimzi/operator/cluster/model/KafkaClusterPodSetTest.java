@@ -550,7 +550,7 @@ public class KafkaClusterPodSetTest {
     }
 
     @ParallelTest
-    public void testGenerateStatefulSetWithSetSizeLimit() {
+    public void testGeneratePodSetWithSetSizeLimit() {
         String sizeLimit = "1Gi";
         Kafka kafkaAssembly = new KafkaBuilder(KAFKA)
                 .editSpec()
@@ -570,7 +570,7 @@ public class KafkaClusterPodSetTest {
     }
 
     @ParallelTest
-    public void testGenerateStatefulSetWithEmptySizeLimit() {
+    public void testGeneratePodSetWithEmptySizeLimit() {
         Kafka kafkaAssembly = new KafkaBuilder(KAFKA)
                 .editSpec()
                     .editKafka()

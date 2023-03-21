@@ -64,7 +64,6 @@ import io.strimzi.operator.cluster.model.metrics.MetricsModel;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.StatefulSetOperator;
 import io.strimzi.operator.common.Annotations;
-import io.strimzi.operator.common.MetricsAndLogging;
 import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
@@ -420,8 +419,6 @@ public class KafkaAssemblyOperatorTest {
 
         // Mock StatefulSets
         when(mockStsOps.getAsync(any(), any())).thenReturn(Future.succeededFuture(null));
-        when(mockStsOps.deleteAsync(any(), eq(kafkaNamespace), eq(KafkaResources.zookeeperStatefulSetName(kafkaName)), anyBoolean())).thenReturn(Future.succeededFuture());
-        when(mockStsOps.deleteAsync(any(), eq(kafkaNamespace), eq(KafkaResources.kafkaStatefulSetName(kafkaName)), anyBoolean())).thenReturn(Future.succeededFuture());
 
         ArgumentCaptor<Service> serviceCaptor = ArgumentCaptor.forClass(Service.class);
         ArgumentCaptor<NetworkPolicy> policyCaptor = ArgumentCaptor.forClass(NetworkPolicy.class);
@@ -619,8 +616,6 @@ public class KafkaAssemblyOperatorTest {
         ArgumentCaptor<String> logNameCaptor = ArgumentCaptor.forClass(String.class);
         when(mockCmOps.reconcile(any(), anyString(), logNameCaptor.capture(), logCaptor.capture())).thenReturn(Future.succeededFuture(ReconcileResult.created(new ConfigMap())));
 
-        ConfigMap metricsCm = kafkaCluster.generateSharedConfigurationConfigMap(new MetricsAndLogging(metricsCM, null), Map.of(), Map.of());
-        when(mockCmOps.getAsync(kafkaNamespace, KafkaResources.kafkaMetricsAndLogConfigMapName(kafkaName))).thenReturn(Future.succeededFuture(metricsCm));
         when(mockCmOps.getAsync(kafkaNamespace, metricsCMName)).thenReturn(Future.succeededFuture(metricsCM));
         when(mockCmOps.getAsync(kafkaNamespace, differentMetricsCMName)).thenReturn(Future.succeededFuture(metricsCM));
         when(mockCmOps.listAsync(kafkaNamespace, kafkaCluster.getSelectorLabels())).thenReturn(Future.succeededFuture(List.of()));
@@ -931,16 +926,6 @@ public class KafkaAssemblyOperatorTest {
         when(mockKafkaOps.getAsync(eq(clusterNamespace), eq(clusterName))).thenReturn(Future.succeededFuture(updatedAssembly));
         when(mockKafkaOps.updateStatusAsync(any(), any(Kafka.class))).thenReturn(Future.succeededFuture());
 
-        ConfigMap metricsCm = new ConfigMapBuilder()
-                .withNewMetadata()
-                    .withName("metrics-cm")
-                .endMetadata()
-                .withData(singletonMap("metrics-config.yml", ""))
-                .build();
-        ConfigMap metricsAndLoggingCm = originalKafkaCluster.generateSharedConfigurationConfigMap(new MetricsAndLogging(metricsCm, null), Map.of(), Map.of());
-        when(mockCmOps.get(clusterNamespace, KafkaResources.kafkaMetricsAndLogConfigMapName(clusterName))).thenReturn(metricsAndLoggingCm);
-        when(mockCmOps.getAsync(clusterNamespace, KafkaResources.kafkaMetricsAndLogConfigMapName(clusterName))).thenReturn(Future.succeededFuture(metricsAndLoggingCm));
-
         ConfigMap zkMetricsCm = new ConfigMapBuilder().withNewMetadata()
                 .withName(KafkaResources.zookeeperMetricsAndLogConfigMapName(clusterName))
                 .withNamespace(clusterNamespace)
@@ -1095,8 +1080,8 @@ public class KafkaAssemblyOperatorTest {
         when(mockPolicyOps.get(clusterNamespace, KafkaResources.zookeeperNetworkPolicyName(clusterName))).thenReturn(originalZookeeperCluster.generateNetworkPolicy(null, null));
 
         // Mock PodDisruptionBudget get
-        when(mockPdbOps.get(clusterNamespace, KafkaResources.kafkaStatefulSetName(clusterName))).thenReturn(originalKafkaCluster.generatePodDisruptionBudget(false));
-        when(mockPdbOps.get(clusterNamespace, KafkaResources.zookeeperStatefulSetName(clusterName))).thenReturn(originalZookeeperCluster.generatePodDisruptionBudget(false));
+        when(mockPdbOps.get(clusterNamespace, KafkaResources.kafkaStatefulSetName(clusterName))).thenReturn(originalKafkaCluster.generatePodDisruptionBudget());
+        when(mockPdbOps.get(clusterNamespace, KafkaResources.zookeeperStatefulSetName(clusterName))).thenReturn(originalZookeeperCluster.generatePodDisruptionBudget());
 
         // Mock StrimziPodSets
         AtomicReference<StrimziPodSet> zooPodSetRef = new AtomicReference<>();
@@ -1118,8 +1103,6 @@ public class KafkaAssemblyOperatorTest {
         when(mockPodSetOps.getAsync(eq(clusterNamespace), eq(KafkaResources.kafkaStatefulSetName(clusterName)))).thenReturn(Future.succeededFuture(kafkaPodSetRef.get()));
 
         // Mock StatefulSet get
-        when(mockStsOps.deleteAsync(any(), eq(clusterNamespace), eq(KafkaResources.zookeeperStatefulSetName(clusterName)), anyBoolean())).thenReturn(Future.succeededFuture());
-        when(mockStsOps.deleteAsync(any(), eq(clusterNamespace), eq(KafkaResources.kafkaStatefulSetName(clusterName)), anyBoolean())).thenReturn(Future.succeededFuture());
         when(mockStsOps.getAsync(eq(clusterNamespace), eq(KafkaResources.zookeeperStatefulSetName(clusterName)))).thenReturn(Future.succeededFuture());
         when(mockStsOps.getAsync(eq(clusterNamespace), eq(KafkaResources.kafkaStatefulSetName(clusterName)))).thenReturn(Future.succeededFuture());
 

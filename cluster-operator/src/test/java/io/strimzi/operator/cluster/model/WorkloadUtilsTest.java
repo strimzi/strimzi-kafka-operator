@@ -29,17 +29,13 @@ import io.fabric8.kubernetes.api.model.TopologySpreadConstraint;
 import io.fabric8.kubernetes.api.model.TopologySpreadConstraintBuilder;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.DeploymentStrategy;
-import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.strimzi.api.kafka.model.StrimziPodSet;
 import io.strimzi.api.kafka.model.storage.PersistentClaimStorageBuilder;
 import io.strimzi.api.kafka.model.storage.Storage;
 import io.strimzi.api.kafka.model.template.DeploymentTemplateBuilder;
-import io.strimzi.api.kafka.model.template.PodManagementPolicy;
 import io.strimzi.api.kafka.model.template.PodTemplate;
 import io.strimzi.api.kafka.model.template.PodTemplateBuilder;
 import io.strimzi.api.kafka.model.template.ResourceTemplateBuilder;
-import io.strimzi.api.kafka.model.template.StatefulSetTemplate;
-import io.strimzi.api.kafka.model.template.StatefulSetTemplateBuilder;
 import io.strimzi.operator.cluster.operator.resource.PodRevision;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
@@ -184,115 +180,6 @@ public class WorkloadUtilsTest {
         assertThat(dep.getSpec().getSelector().getMatchLabels().get(Labels.STRIMZI_CLUSTER_LABEL), is("my-cluster"));
         assertThat(dep.getSpec().getSelector().getMatchLabels().get(Labels.STRIMZI_NAME_LABEL), is("my-workload"));
         assertThat(dep.getSpec().getSelector().getMatchLabels().get(Labels.STRIMZI_KIND_LABEL), is("my-kind"));
-    }
-
-    //////////////////////////////////////////////////
-    // StatefulSet tests
-    //////////////////////////////////////////////////
-
-    @Test
-    public void testCreateStatefulSetWithNullTemplate()  {
-        StatefulSet sts = WorkloadUtils.createStatefulSet(
-                NAME,
-                NAMESPACE,
-                LABELS,
-                OWNER_REFERENCE,
-                null,
-                REPLICAS,
-                HEADLESS_SERVICE_NAME,
-                Map.of("extra", "annotations"),
-                VolumeUtils.createPersistentVolumeClaimTemplates(DEFAULT_STORAGE, false),
-                DUMMY_POD_TEMPLATE_SPEC
-        );
-
-        assertThat(sts.getMetadata().getName(), is(NAME));
-        assertThat(sts.getMetadata().getNamespace(), is(NAMESPACE));
-        assertThat(sts.getMetadata().getOwnerReferences(), is(List.of(OWNER_REFERENCE)));
-        assertThat(sts.getMetadata().getLabels(), is(LABELS.toMap()));
-        assertThat(sts.getMetadata().getAnnotations(), is(Map.of("extra", "annotations")));
-
-        assertThat(sts.getSpec().getPodManagementPolicy(), is("Parallel"));
-        assertThat(sts.getSpec().getServiceName(), is(HEADLESS_SERVICE_NAME));
-        assertThat(sts.getSpec().getReplicas(), is(REPLICAS));
-        assertThat(sts.getSpec().getTemplate(), is(DUMMY_POD_TEMPLATE_SPEC));
-        assertThat(sts.getSpec().getUpdateStrategy().getType(), is("OnDelete"));
-        assertThat(sts.getSpec().getVolumeClaimTemplates(), is(VolumeUtils.createPersistentVolumeClaimTemplates(DEFAULT_STORAGE, false)));
-        assertThat(sts.getSpec().getSelector().getMatchLabels().size(), is(3));
-        assertThat(sts.getSpec().getSelector().getMatchLabels().get(Labels.STRIMZI_CLUSTER_LABEL), is("my-cluster"));
-        assertThat(sts.getSpec().getSelector().getMatchLabels().get(Labels.STRIMZI_NAME_LABEL), is("my-workload"));
-        assertThat(sts.getSpec().getSelector().getMatchLabels().get(Labels.STRIMZI_KIND_LABEL), is("my-kind"));
-    }
-
-    @Test
-    public void testCreateStatefulSetWithEmptyTemplate()  {
-        StatefulSet sts = WorkloadUtils.createStatefulSet(
-                NAME,
-                NAMESPACE,
-                LABELS,
-                OWNER_REFERENCE,
-                new StatefulSetTemplate(),
-                REPLICAS,
-                HEADLESS_SERVICE_NAME,
-                Map.of("extra", "annotations"),
-                VolumeUtils.createPersistentVolumeClaimTemplates(DEFAULT_STORAGE, false),
-                DUMMY_POD_TEMPLATE_SPEC
-        );
-
-        assertThat(sts.getMetadata().getName(), is(NAME));
-        assertThat(sts.getMetadata().getNamespace(), is(NAMESPACE));
-        assertThat(sts.getMetadata().getOwnerReferences(), is(List.of(OWNER_REFERENCE)));
-        assertThat(sts.getMetadata().getLabels(), is(LABELS.toMap()));
-        assertThat(sts.getMetadata().getAnnotations(), is(Map.of("extra", "annotations")));
-
-        assertThat(sts.getSpec().getPodManagementPolicy(), is("Parallel"));
-        assertThat(sts.getSpec().getServiceName(), is(HEADLESS_SERVICE_NAME));
-        assertThat(sts.getSpec().getReplicas(), is(REPLICAS));
-        assertThat(sts.getSpec().getTemplate(), is(DUMMY_POD_TEMPLATE_SPEC));
-        assertThat(sts.getSpec().getUpdateStrategy().getType(), is("OnDelete"));
-        assertThat(sts.getSpec().getVolumeClaimTemplates(), is(VolumeUtils.createPersistentVolumeClaimTemplates(DEFAULT_STORAGE, false)));
-        assertThat(sts.getSpec().getSelector().getMatchLabels().size(), is(3));
-        assertThat(sts.getSpec().getSelector().getMatchLabels().get(Labels.STRIMZI_CLUSTER_LABEL), is("my-cluster"));
-        assertThat(sts.getSpec().getSelector().getMatchLabels().get(Labels.STRIMZI_NAME_LABEL), is("my-workload"));
-        assertThat(sts.getSpec().getSelector().getMatchLabels().get(Labels.STRIMZI_KIND_LABEL), is("my-kind"));
-    }
-
-    @Test
-    public void testCreateStatefulSetWithTemplate()  {
-        StatefulSet sts = WorkloadUtils.createStatefulSet(
-                NAME,
-                NAMESPACE,
-                LABELS,
-                OWNER_REFERENCE,
-                new StatefulSetTemplateBuilder()
-                        .withNewMetadata()
-                            .withLabels(Map.of("label-3", "value-3", "label-4", "value-4"))
-                            .withAnnotations(Map.of("anno-1", "value-1", "anno-2", "value-2"))
-                        .endMetadata()
-                        .withPodManagementPolicy(PodManagementPolicy.ORDERED_READY)
-                        .build(),
-                REPLICAS,
-                HEADLESS_SERVICE_NAME,
-                Map.of("extra", "annotations"),
-                VolumeUtils.createPersistentVolumeClaimTemplates(DEFAULT_STORAGE, false),
-                DUMMY_POD_TEMPLATE_SPEC
-        );
-
-        assertThat(sts.getMetadata().getName(), is(NAME));
-        assertThat(sts.getMetadata().getNamespace(), is(NAMESPACE));
-        assertThat(sts.getMetadata().getOwnerReferences(), is(List.of(OWNER_REFERENCE)));
-        assertThat(sts.getMetadata().getLabels(), is(LABELS.withAdditionalLabels(Map.of("label-3", "value-3", "label-4", "value-4")).toMap()));
-        assertThat(sts.getMetadata().getAnnotations(), is(Map.of("extra", "annotations", "anno-1", "value-1", "anno-2", "value-2")));
-
-        assertThat(sts.getSpec().getPodManagementPolicy(), is("OrderedReady"));
-        assertThat(sts.getSpec().getServiceName(), is(HEADLESS_SERVICE_NAME));
-        assertThat(sts.getSpec().getReplicas(), is(REPLICAS));
-        assertThat(sts.getSpec().getTemplate(), is(DUMMY_POD_TEMPLATE_SPEC));
-        assertThat(sts.getSpec().getUpdateStrategy().getType(), is("OnDelete"));
-        assertThat(sts.getSpec().getVolumeClaimTemplates(), is(VolumeUtils.createPersistentVolumeClaimTemplates(DEFAULT_STORAGE, false)));
-        assertThat(sts.getSpec().getSelector().getMatchLabels().size(), is(3));
-        assertThat(sts.getSpec().getSelector().getMatchLabels().get(Labels.STRIMZI_CLUSTER_LABEL), is("my-cluster"));
-        assertThat(sts.getSpec().getSelector().getMatchLabels().get(Labels.STRIMZI_NAME_LABEL), is("my-workload"));
-        assertThat(sts.getSpec().getSelector().getMatchLabels().get(Labels.STRIMZI_KIND_LABEL), is("my-kind"));
     }
 
     //////////////////////////////////////////////////

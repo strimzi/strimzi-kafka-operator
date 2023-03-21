@@ -5,7 +5,6 @@
 package io.strimzi.operator.cluster.model;
 
 import io.fabric8.kubernetes.api.model.KeyToPathBuilder;
-import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.strimzi.api.kafka.model.storage.EphemeralStorageBuilder;
 import io.strimzi.api.kafka.model.storage.JbodStorageBuilder;
@@ -227,109 +226,5 @@ public class VolumeUtilsTest {
         assertThat(volumes.size(), is(1));
         assertThat(volumes.get(0).getName(), is("data"));
         assertThat(volumes.get(0).getEmptyDir(), is(notNullValue()));
-    }
-
-    ////////////////////
-    // StatefulSet volume tests
-    ////////////////////
-
-    @ParallelTest
-    public void testStatefulSetVolumesWithJbod()    {
-        List<Volume> volumes = VolumeUtils.createStatefulSetVolumes(JBOD_STORAGE, false);
-
-        assertThat(volumes.size(), is(0));
-    }
-
-    @ParallelTest
-    public void testStatefulSetVolumesWithJbodWithEphemeral()    {
-        List<Volume> volumes = VolumeUtils.createStatefulSetVolumes(JBOD_STORAGE_WITH_EPHEMERAL, false);
-
-        assertThat(volumes.size(), is(1));
-        assertThat(volumes.get(0).getName(), is("data-1"));
-        assertThat(volumes.get(0).getEmptyDir(), is(notNullValue()));
-    }
-
-    @ParallelTest
-    public void testStatefulSetVolumesWithJbodWithoutId()    {
-        List<Volume> volumes = VolumeUtils.createStatefulSetVolumes(JBOD_STORAGE, false);
-
-        assertThat(volumes.size(), is(0));
-    }
-
-    @ParallelTest
-    public void testStatefulSetVolumesPersistentClaimOnly()    {
-        List<Volume> volumes = VolumeUtils.createStatefulSetVolumes(PERSISTENT_CLAIM_STORAGE, false);
-
-        assertThat(volumes.size(), is(0));
-    }
-
-    @ParallelTest
-    public void testStatefulSetVolumesPersistentClaimWithId()    {
-        List<Volume> volumes = VolumeUtils.createStatefulSetVolumes(PERSISTENT_CLAIM_STORAGE_WITH_ID, false);
-
-        assertThat(volumes.size(), is(0));
-    }
-
-    @ParallelTest
-    public void testStatefulSetVolumesEphemeralOnly()    {
-        List<Volume> volumes = VolumeUtils.createStatefulSetVolumes(EPHEMERAL_STORAGE, false);
-
-        assertThat(volumes.size(), is(1));
-        assertThat(volumes.get(0).getName(), is("data"));
-        assertThat(volumes.get(0).getEmptyDir(), is(notNullValue()));
-    }
-
-    ////////////////////
-    // Persistent Volume CLaim templates tests
-    ////////////////////
-
-    @ParallelTest
-    public void testPvcTemplatesWithJbod()    {
-        List<PersistentVolumeClaim> pvcs = VolumeUtils.createPersistentVolumeClaimTemplates(JBOD_STORAGE, false);
-
-        assertThat(pvcs.size(), is(2));
-        assertThat(pvcs.get(0).getMetadata().getName(), is("data-0"));
-        assertThat(pvcs.get(1).getMetadata().getName(), is("data-1"));
-    }
-
-    @ParallelTest
-    public void testPvcTemplatesWithJbodWithEphemeral()    {
-        List<PersistentVolumeClaim> pvcs = VolumeUtils.createPersistentVolumeClaimTemplates(JBOD_STORAGE_WITH_EPHEMERAL, false);
-
-        assertThat(pvcs.size(), is(1));
-        assertThat(pvcs.get(0).getMetadata().getName(), is("data-0"));
-    }
-
-    @ParallelTest
-    public void testPvcTemplatesWithJbodWithoutId()    {
-        InvalidResourceException ex = Assertions.assertThrows(
-                InvalidResourceException.class,
-                () -> VolumeUtils.createPersistentVolumeClaimTemplates(JBOD_STORAGE_WITHOUT_ID, false)
-        );
-
-        assertThat(ex.getMessage(), is("The 'id' property is required for volumes in JBOD storage."));
-    }
-
-    @ParallelTest
-    public void testPvcTemplatesPersistentClaimOnly()    {
-        List<PersistentVolumeClaim> pvcs = VolumeUtils.createPersistentVolumeClaimTemplates(PERSISTENT_CLAIM_STORAGE, false);
-
-        assertThat(pvcs.size(), is(1));
-        assertThat(pvcs.get(0).getMetadata().getName(), is("data"));
-    }
-
-    @ParallelTest
-    public void testPvcTemplatesPersistentClaimWithId()    {
-        List<PersistentVolumeClaim> pvcs = VolumeUtils.createPersistentVolumeClaimTemplates(PERSISTENT_CLAIM_STORAGE_WITH_ID, false);
-
-        assertThat(pvcs.size(), is(1));
-        assertThat(pvcs.get(0).getMetadata().getName(), is("data"));
-    }
-
-    @ParallelTest
-    public void testPvcTemplatesEphemeralOnly()    {
-        List<PersistentVolumeClaim> pvcs = VolumeUtils.createPersistentVolumeClaimTemplates(EPHEMERAL_STORAGE, false);
-
-        assertThat(pvcs.size(), is(0));
     }
 }

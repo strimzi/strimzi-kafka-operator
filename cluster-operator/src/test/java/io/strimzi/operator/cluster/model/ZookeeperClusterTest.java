@@ -386,10 +386,10 @@ public class ZookeeperClusterTest {
                 .build();
         ZookeeperCluster zc = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, ka, VERSIONS);
 
-        PersistentVolumeClaim pvc = zc.getPersistentVolumeClaimTemplates().get(0);
+        List<PersistentVolumeClaim> pvcs = zc.generatePersistentVolumeClaims();
 
         for (int i = 0; i < REPLICAS; i++) {
-            assertThat(pvc.getMetadata().getName() + "-" + KafkaResources.zookeeperPodName(CLUSTER, i),
+            assertThat(pvcs.get(i).getMetadata().getName(),
                     is(VolumeUtils.DATA_VOLUME_NAME + "-" + KafkaResources.zookeeperPodName(CLUSTER, i)));
         }
     }
@@ -495,12 +495,12 @@ public class ZookeeperClusterTest {
         assertThat(svc.getSpec().getIpFamilies(), contains("IPv6"));
 
         // Check PodDisruptionBudget
-        PodDisruptionBudget pdb = zc.generatePodDisruptionBudget(false);
+        PodDisruptionBudget pdb = zc.generatePodDisruptionBudget();
         assertThat(pdb.getMetadata().getLabels().entrySet().containsAll(pdbLabels.entrySet()), is(true));
         assertThat(pdb.getMetadata().getAnnotations().entrySet().containsAll(pdbAnnotations.entrySet()), is(true));
 
         // Check PodDisruptionBudgetV1Beta1
-        io.fabric8.kubernetes.api.model.policy.v1beta1.PodDisruptionBudget pdbV1Beta1 = zc.generatePodDisruptionBudgetV1Beta1(false);
+        io.fabric8.kubernetes.api.model.policy.v1beta1.PodDisruptionBudget pdbV1Beta1 = zc.generatePodDisruptionBudgetV1Beta1();
         assertThat(pdbV1Beta1.getMetadata().getLabels().entrySet().containsAll(pdbLabels.entrySet()), is(true));
         assertThat(pdbV1Beta1.getMetadata().getAnnotations().entrySet().containsAll(pdbAnnotations.entrySet()), is(true));
 
@@ -508,38 +508,6 @@ public class ZookeeperClusterTest {
         ServiceAccount sa = zc.generateServiceAccount();
         assertThat(sa.getMetadata().getLabels().entrySet().containsAll(saLabels.entrySet()), is(true));
         assertThat(sa.getMetadata().getAnnotations().entrySet().containsAll(saAnnotations.entrySet()), is(true));
-    }
-
-    @ParallelTest
-    public void testPodDisruptionBudget() {
-        Kafka kafkaAssembly = new KafkaBuilder(KAFKA)
-                .editSpec()
-                    .editZookeeper()
-                        .withNewTemplate()
-                            .withNewPodDisruptionBudget()
-                                .withMaxUnavailable(2)
-                            .endPodDisruptionBudget()
-                        .endTemplate()
-                    .endZookeeper()
-                .endSpec()
-                .build();
-        ZookeeperCluster zc = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS);
-
-        PodDisruptionBudget pdb = zc.generatePodDisruptionBudget(false);
-        assertThat(pdb.getSpec().getMaxUnavailable(), is(new IntOrString(2)));
-
-        io.fabric8.kubernetes.api.model.policy.v1beta1.PodDisruptionBudget pdbV1Beta1 = zc.generatePodDisruptionBudgetV1Beta1(false);
-        assertThat(pdbV1Beta1.getSpec().getMaxUnavailable(), is(new IntOrString(2)));        
-    }
-
-    @ParallelTest
-    public void testDefaultPodDisruptionBudget() {
-        Kafka kafkaAssembly = new KafkaBuilder(KAFKA)
-                .build();
-        ZookeeperCluster zc = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS);
-
-        PodDisruptionBudget pdb = zc.generatePodDisruptionBudget(false);
-        assertThat(pdb.getSpec().getMaxUnavailable(), is(new IntOrString(1)));
     }
 
     @ParallelTest
@@ -1039,9 +1007,9 @@ public class ZookeeperClusterTest {
     }
 
     @ParallelTest
-    public void testDefaultCustomControllerPodDisruptionBudget()   {
-        PodDisruptionBudget pdb = ZC.generatePodDisruptionBudget(true);
-        io.fabric8.kubernetes.api.model.policy.v1beta1.PodDisruptionBudget pdbV1Beta1 = ZC.generatePodDisruptionBudgetV1Beta1(true);
+    public void testDefaultPodDisruptionBudget()   {
+        PodDisruptionBudget pdb = ZC.generatePodDisruptionBudget();
+        io.fabric8.kubernetes.api.model.policy.v1beta1.PodDisruptionBudget pdbV1Beta1 = ZC.generatePodDisruptionBudgetV1Beta1();
 
         assertThat(pdb.getMetadata().getName(), is(KafkaResources.zookeeperStatefulSetName(CLUSTER)));
         assertThat(pdb.getSpec().getMaxUnavailable(), is(nullValue()));
@@ -1055,7 +1023,7 @@ public class ZookeeperClusterTest {
     }
 
     @ParallelTest
-    public void testCustomizedCustomControllerPodDisruptionBudget()   {
+    public void testCustomizedPodDisruptionBudget()   {
         Map<String, String> pdbLabels = TestUtils.map("l1", "v1", "l2", "v2");
         Map<String, String> pdbAnnos = TestUtils.map("a1", "v1", "a2", "v2");
 
@@ -1076,8 +1044,8 @@ public class ZookeeperClusterTest {
                 .build();
 
         ZookeeperCluster zc = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, VERSIONS);
-        PodDisruptionBudget pdb = zc.generatePodDisruptionBudget(true);
-        io.fabric8.kubernetes.api.model.policy.v1beta1.PodDisruptionBudget pdbV1Beta1 = zc.generatePodDisruptionBudgetV1Beta1(true);
+        PodDisruptionBudget pdb = zc.generatePodDisruptionBudget();
+        io.fabric8.kubernetes.api.model.policy.v1beta1.PodDisruptionBudget pdbV1Beta1 = zc.generatePodDisruptionBudgetV1Beta1();
 
         assertThat(pdb.getMetadata().getLabels().entrySet().containsAll(pdbLabels.entrySet()), is(true));
         assertThat(pdb.getMetadata().getAnnotations().entrySet().containsAll(pdbAnnos.entrySet()), is(true));
