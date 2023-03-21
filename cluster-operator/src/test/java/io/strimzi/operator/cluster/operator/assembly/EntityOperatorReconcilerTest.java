@@ -8,8 +8,10 @@ import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.ServiceAccount;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
+import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy;
 import io.fabric8.kubernetes.api.model.rbac.Role;
 import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
+import io.strimzi.api.kafka.model.CruiseControlResources;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
@@ -29,6 +31,7 @@ import io.strimzi.operator.common.operator.resource.RoleBindingOperator;
 import io.strimzi.operator.common.operator.resource.RoleOperator;
 import io.strimzi.operator.common.operator.resource.SecretOperator;
 import io.strimzi.operator.common.operator.resource.ServiceAccountOperator;
+import io.strimzi.operator.common.operator.resource.NetworkPolicyOperator;
 import io.vertx.core.Future;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
@@ -72,6 +75,7 @@ public class EntityOperatorReconcilerTest {
         ServiceAccountOperator mockSaOps = supplier.serviceAccountOperations;
         RoleOperator mockRoleOps = supplier.roleOperations;
         RoleBindingOperator mockRoleBindingOps = supplier.roleBindingOperations;
+        NetworkPolicyOperator mockNetPolicyOps = supplier.networkPolicyOperator;
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
 
         ArgumentCaptor<ServiceAccount> saCaptor = ArgumentCaptor.forClass(ServiceAccount.class);
@@ -86,6 +90,9 @@ public class EntityOperatorReconcilerTest {
 
         ArgumentCaptor<Role> operatorRoleCaptor = ArgumentCaptor.forClass(Role.class);
         when(mockRoleOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.entityOperatorDeploymentName(NAME)), operatorRoleCaptor.capture())).thenReturn(Future.succeededFuture());
+
+        ArgumentCaptor<NetworkPolicy> netPolicyCaptor = ArgumentCaptor.forClass(NetworkPolicy.class);
+        when(mockNetPolicyOps.reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.networkPolicyName(NAME)), netPolicyCaptor.capture())).thenReturn(Future.succeededFuture());
 
         ArgumentCaptor<RoleBinding> toRoleBindingCaptor = ArgumentCaptor.forClass(RoleBinding.class);
         when(mockRoleBindingOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.entityTopicOperatorRoleBinding(NAME)), toRoleBindingCaptor.capture())).thenReturn(Future.succeededFuture());
@@ -134,6 +141,9 @@ public class EntityOperatorReconcilerTest {
                     assertThat(toSecretCaptor.getAllValues().get(0), is(notNullValue()));
                     assertThat(uoSecretCaptor.getAllValues().size(), is(1));
                     assertThat(uoSecretCaptor.getAllValues().get(0), is(notNullValue()));
+
+                    assertThat(netPolicyCaptor.getAllValues().size(), is(1));
+                    assertThat(netPolicyCaptor.getValue(), is(notNullValue()));
 
                     assertThat(operatorRoleCaptor.getAllValues().size(), is(1));
                     assertThat(operatorRoleCaptor.getValue(), is(notNullValue()));
