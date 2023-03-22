@@ -624,6 +624,7 @@ class ConnectIsolatedST extends AbstractST {
                 .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
             .endMetadata()
             .editOrNewSpec()
+                .addToConfig("group.id", Constants.ECHO_SINK_CONNECTOR_GROUP_ID)
                 .addToConfig("key.converter.schemas.enable", false)
                 .addToConfig("value.converter.schemas.enable", false)
                 .addToConfig("key.converter", "org.apache.kafka.connect.storage.StringConverter")

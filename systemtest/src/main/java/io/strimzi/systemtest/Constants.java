@@ -82,6 +82,7 @@ public interface Constants {
     String ECHO_SINK_JAR_CHECKSUM = "1d59ede165c0d547e3217d20fd40d7f67ed820c78fc9b5551a3cea53c5928479dc8f5ddf8806d1775e9080bac6a59d044456402c375ae5393f67b96171df7caf";
     String ECHO_SINK_FILE_NAME = "echo-sink-test.jar";
     String ECHO_SINK_JAR_WRONG_CHECKSUM = "f1f167902325062efc8c755647bc1b782b2b067a87a6e507ff7a3f6205803220";
+    String ECHO_SINK_CONNECTOR_GROUP_ID = "connect-echo-sink-connector";
 
     /**
      * Scraper pod labels
