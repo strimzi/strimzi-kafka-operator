@@ -9,7 +9,7 @@
 [role="_abstract"]
 The partition reassignment tool provides the following capabilities for managing Kafka partitions and brokers:
 
-Scaling clusters up and down:: Scale your cluster up and down by adding or removing brokers, and move Kafka partitions from heavily loaded brokers to under-utilized brokers. 
+Redistributing partition replicas:: Scale your cluster up and down by adding or removing brokers, and move Kafka partitions from heavily loaded brokers to under-utilized brokers. 
 To do this, you need to create a partition reassignment plan that identifies which topics and partitions to move and where to move them.
 Cruise Control is recommended for this type of operation as it xref:cruise-control-concepts-str[automates the cluster rebalancing process]. 
 
