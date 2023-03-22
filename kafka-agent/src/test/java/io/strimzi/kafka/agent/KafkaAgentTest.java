@@ -102,7 +102,7 @@ public class KafkaAgentTest {
         HttpResponse<String> response = HttpClient.newBuilder()
                 .build()
                 .send(req, HttpResponse.BodyHandlers.ofString());
-        assertEquals(response.statusCode(), HttpServletResponse.SC_NOT_FOUND);
+        assertEquals(HttpServletResponse.SC_NOT_FOUND, response.statusCode());
 
     }
 

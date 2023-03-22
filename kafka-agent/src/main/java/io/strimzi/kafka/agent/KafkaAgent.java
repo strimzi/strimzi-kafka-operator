@@ -135,16 +135,13 @@ public class KafkaAgent {
 
             @Override
             public synchronized void onMetricAdded(MetricName metricName, Metric metric) {
-                LOGGER.trace("Metric added {}", metricName);
+                LOGGER.debug("Metric added {}", metricName);
                 if (isBrokerState(metricName) && metric instanceof Gauge) {
-                    LOGGER.debug("Metric {} added ", metricName);
                     brokerStateName = metricName;
                     brokerState = (Gauge) metric;
                 } else if (isRemainingLogsToRecover(metricName) && metric instanceof Gauge) {
-                    LOGGER.debug("Metric {} added ", metricName);
                     remainingLogsToRecover = (Gauge) metric;
                 } else if (isRemainingSegmentsToRecover(metricName) && metric instanceof Gauge) {
-                    LOGGER.debug("Metric {} added ", metricName);
                     remainingSegmentsToRecover = (Gauge) metric;
                 } else if (isSessionState(metricName)
                         && metric instanceof Gauge) {
