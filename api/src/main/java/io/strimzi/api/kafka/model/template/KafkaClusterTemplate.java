@@ -57,7 +57,7 @@ public class KafkaClusterTemplate implements HasJmxSecretTemplate, Serializable,
     @Description("Template for Kafka `StatefulSet`.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     @Deprecated
-    @DeprecatedProperty(description = "Support for StatefulSets was removed in Strimzi 0.35.0. This property will be ignored.")
+    @DeprecatedProperty(description = "Support for StatefulSets was removed in Strimzi 0.35.0. This property is ignored.")
     public StatefulSetTemplate getStatefulset() {
         return statefulset;
     }

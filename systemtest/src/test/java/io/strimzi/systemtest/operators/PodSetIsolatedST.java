@@ -25,7 +25,6 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -44,8 +43,6 @@ public class PodSetIsolatedST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(PodSetIsolatedST.class);
 
-    private static final List<EnvVar> INITIAL_ENV_VARS = Collections.singletonList(new EnvVar(Environment.STRIMZI_FEATURE_GATES_ENV, Constants.USE_STRIMZI_POD_SET, null));
-
     @IsolatedTest("We are changing CO env variables in this test")
     void testPodSetOnlyReconciliation(ExtensionContext extensionContext) {
         final TestStorage testStorage = new TestStorage(extensionContext);
@@ -55,7 +52,6 @@ public class PodSetIsolatedST extends AbstractST {
 
         EnvVar reconciliationEnv = new EnvVar(Environment.STRIMZI_POD_SET_RECONCILIATION_ONLY_ENV, "true", null);
         List<EnvVar> envVars = kubeClient().getDeployment(clusterOperator.getDeploymentNamespace(), Constants.STRIMZI_DEPLOYMENT_NAME).getSpec().getTemplate().getSpec().getContainers().get(0).getEnv();
-        envVars.addAll(INITIAL_ENV_VARS);
         envVars.add(reconciliationEnv);
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), replicas).build());
@@ -109,7 +105,6 @@ public class PodSetIsolatedST extends AbstractST {
         clusterOperator.unInstall();
         clusterOperator = clusterOperator
             .defaultInstallation()
-            .withExtraEnvVars(INITIAL_ENV_VARS)
             .createInstallation()
             .runInstallation();
     }

@@ -843,7 +843,7 @@ Used in: xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`]
 [options="header"]
 |====
 |Property                         |Description
-|statefulset               1.2+<.<a|**The `statefulset` property has been deprecated.** Support for StatefulSets was removed in Strimzi 0.35.0. This property will be ignored. Template for Kafka `StatefulSet`.
+|statefulset               1.2+<.<a|**The `statefulset` property has been deprecated.** Support for StatefulSets was removed in Strimzi 0.35.0. This property is ignored. Template for Kafka `StatefulSet`.
 |xref:type-StatefulSetTemplate-{context}[`StatefulSetTemplate`]
 |pod                       1.2+<.<a|Template for Kafka `Pods`.
 |xref:type-PodTemplate-{context}[`PodTemplate`]
@@ -1118,7 +1118,7 @@ Used in: xref:type-ZookeeperClusterSpec-{context}[`ZookeeperClusterSpec`]
 [options="header"]
 |====
 |Property                      |Description
-|statefulset            1.2+<.<a|**The `statefulset` property has been deprecated.** Support for StatefulSets was removed in Strimzi 0.35.0. This property will be ignored. Template for ZooKeeper `StatefulSet`.
+|statefulset            1.2+<.<a|**The `statefulset` property has been deprecated.** Support for StatefulSets was removed in Strimzi 0.35.0. This property is ignored. Template for ZooKeeper `StatefulSet`.
 |xref:type-StatefulSetTemplate-{context}[`StatefulSetTemplate`]
 |pod                    1.2+<.<a|Template for ZooKeeper `Pods`.
 |xref:type-PodTemplate-{context}[`PodTemplate`]

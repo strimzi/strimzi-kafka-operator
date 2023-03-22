@@ -47,7 +47,7 @@ public class ZookeeperClusterTemplate implements HasJmxSecretTemplate, Serializa
     @Description("Template for ZooKeeper `StatefulSet`.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     @Deprecated
-    @DeprecatedProperty(description = "Support for StatefulSets was removed in Strimzi 0.35.0. This property will be ignored.")
+    @DeprecatedProperty(description = "Support for StatefulSets was removed in Strimzi 0.35.0. This property is ignored.")
     public StatefulSetTemplate getStatefulset() {
         return statefulset;
     }
