@@ -4,7 +4,6 @@
  */
 package io.strimzi.operator.cluster.model;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.ContainerPort;
 import io.fabric8.kubernetes.api.model.EnvVar;
@@ -76,8 +75,6 @@ public class KafkaExporter extends AbstractModel {
 
     private DeploymentTemplate templateDeployment;
     private PodTemplate templatePod;
-    @SuppressFBWarnings({"UWF_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR"}) // This field is initialized in the fromCrd method
-    private MetricsModel metrics;
     private static final Map<String, String> DEFAULT_POD_LABELS = new HashMap<>();
     static {
         String value = System.getenv(CO_ENV_VAR_CUSTOM_KAFKA_EXPORTER_POD_LABELS);
@@ -275,19 +272,14 @@ public class KafkaExporter extends AbstractModel {
     /**
      * Generates the NetworkPolicies relevant for Kafka Exporter
      *
-     * @param operatorNamespace                             Namespace where the Strimzi Cluster Operator runs. Null if not configured.
-     * @param operatorNamespaceLabels                       Labels of the namespace where the Strimzi Cluster Operator runs. Null if not configured.
-     *
      * @return The network policy.
      */
-    public NetworkPolicy generateNetworkPolicy(String operatorNamespace, Labels operatorNamespaceLabels) {
+    public NetworkPolicy generateNetworkPolicy() {
         // List of network policy rules for all ports
         List<NetworkPolicyIngressRule> rules = new ArrayList<>();
 
         // Everyone can access metrics
-        if (metrics.isEnabled()) {
             rules.add(NetworkPolicyUtils.createIngressRule(MetricsModel.METRICS_PORT, List.of()));
-        }
 
         // Build the final network policy with all rules covering all the ports
         return NetworkPolicyUtils.createNetworkPolicy(

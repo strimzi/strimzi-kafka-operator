@@ -6,7 +6,6 @@ package io.strimzi.operator.cluster.operator.assembly;
 
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
-import io.strimzi.api.kafka.model.CruiseControlResources;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaExporterResources;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
@@ -166,8 +165,8 @@ public class KafkaExporterReconciler {
                     .reconcile(
                             reconciliation,
                             reconciliation.namespace(),
-                            CruiseControlResources.networkPolicyName(reconciliation.name()),
-                            kafkaExporter != null ? kafkaExporter.generateNetworkPolicy(operatorNamespace, operatorNamespaceLabels) : null
+                            KafkaExporterResources.networkPolicyName(reconciliation.name()),
+                            kafkaExporter != null ? kafkaExporter.generateNetworkPolicy() : null
                     ).map((Void) null);
         } else {
             return Future.succeededFuture();
