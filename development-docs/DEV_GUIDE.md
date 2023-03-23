@@ -269,7 +269,7 @@ To configure the `docker_tag` and `docker_push` targets you can set following en
 * `DOCKER_ORG` configures the Docker organization for tagging/pushing the images (defaults to the value of the `$USER`
   environment variable)
 * `DOCKER_TAG` configured Docker tag (default is `latest`)
-* `DOCKER_REGISTRY` configures the Docker registry where the image will be pushed (default is `quay.io`)
+* `DOCKER_REGISTRY` configures the Docker registry where the image will be pushed (default is `docker.io`)
 
 ### Docker build options
 

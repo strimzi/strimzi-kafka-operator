@@ -45,7 +45,7 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
  */
 @Tag(UPGRADE)
 @IsolatedSuite
-@KRaftNotSupported("Strimzi and Kafka downgrade is not supported with KRaft mode")
+@KRaftNotSupported("Strimzi and Kafka upgrade is not supported with KRaft mode")
 public class StrimziUpgradeIsolatedST extends AbstractUpgradeST {
 
     private static final Logger LOGGER = LogManager.getLogger(StrimziUpgradeIsolatedST.class);
@@ -152,6 +152,14 @@ public class StrimziUpgradeIsolatedST extends AbstractUpgradeST {
 
         // Check errors in CO log
         assertNoCoErrorsLogged(clusterOperator.getDeploymentNamespace(), 0);
+    }
+
+    @Test
+    void testUpgradeOfKafkaConnectAndKafkaConnector(final ExtensionContext extensionContext) throws IOException {
+        final TestStorage testStorage = new TestStorage(extensionContext);
+        final UpgradeKafkaVersion upgradeKafkaVersion = new UpgradeKafkaVersion(acrossUpgradeData.getDefaultKafka());
+
+        doKafkaConnectAndKafkaConnectorUpgradeOrDowngradeProcedure(extensionContext, acrossUpgradeData, testStorage, upgradeKafkaVersion);
     }
 
     private void performUpgrade(BundleVersionModificationData upgradeData, ExtensionContext extensionContext) throws IOException {

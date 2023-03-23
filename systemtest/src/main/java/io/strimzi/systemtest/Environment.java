@@ -59,12 +59,8 @@ public class Environment {
     /**
      * Specify Kafka client app images used in system tests.
      */
-    private static final String TEST_PRODUCER_IMAGE_ENV = "TEST_PRODUCER_IMAGE";
-    private static final String TEST_CONSUMER_IMAGE_ENV = "TEST_CONSUMER_IMAGE";
-    private static final String TEST_STREAMS_IMAGE_ENV = "TEST_STREAMS_IMAGE";
+    private static final String TEST_CLIENTS_IMAGE_ENV = "TEST_CLIENTS_IMAGE";
     private static final String TEST_ADMIN_IMAGE_ENV = "TEST_ADMIN_IMAGE";
-    private static final String TEST_HTTP_PRODUCER_IMAGE_ENV = "TEST_HTTP_PRODUCER_IMAGE";
-    private static final String TEST_HTTP_CONSUMER_IMAGE_ENV = "TEST_HTTP_CONSUMER_IMAGE";
     private static final String TEST_CLIENTS_VERSION_ENV = "TEST_CLIENTS_VERSION";
 
     private static final String SCRAPER_IMAGE_ENV = "SCRAPER_IMAGE";
@@ -170,8 +166,8 @@ public class Environment {
     private static final String RESOURCE_ALLOCATION_STRATEGY_DEFAULT = "SHARE_MEMORY_FOR_ALL_COMPONENTS";
 
     private static final String ST_KAFKA_VERSION_DEFAULT = TestKafkaVersion.getDefaultSupportedKafkaVersion();
-    private static final String ST_CLIENTS_KAFKA_VERSION_DEFAULT = "3.3.1";
-    public static final String TEST_CLIENTS_VERSION_DEFAULT = "0.4.2";
+    private static final String ST_CLIENTS_KAFKA_VERSION_DEFAULT = "3.4.0";
+    public static final String TEST_CLIENTS_VERSION_DEFAULT = "0.5.0";
     public static final String ST_FILE_PLUGIN_URL_DEFAULT = "https://repo1.maven.org/maven2/org/apache/kafka/connect-file/" + ST_KAFKA_VERSION_DEFAULT + "/connect-file-" + ST_KAFKA_VERSION_DEFAULT + ".jar";
 
     /**
@@ -192,19 +188,11 @@ public class Environment {
 
     // variables for kafka client app images
     private static final String TEST_CLIENTS_VERSION = getOrDefault(TEST_CLIENTS_VERSION_ENV, TEST_CLIENTS_VERSION_DEFAULT);
-    private static final String TEST_PRODUCER_IMAGE_DEFAULT = STRIMZI_REGISTRY_DEFAULT + "/" + TEST_CLIENTS_ORG_DEFAULT + "/test-client-kafka-producer:" + TEST_CLIENTS_VERSION + "-kafka-" + CLIENTS_KAFKA_VERSION;
-    private static final String TEST_CONSUMER_IMAGE_DEFAULT = STRIMZI_REGISTRY_DEFAULT + "/" + TEST_CLIENTS_ORG_DEFAULT + "/test-client-kafka-consumer:" + TEST_CLIENTS_VERSION + "-kafka-" + CLIENTS_KAFKA_VERSION;
-    private static final String TEST_STREAMS_IMAGE_DEFAULT = STRIMZI_REGISTRY_DEFAULT + "/" + TEST_CLIENTS_ORG_DEFAULT + "/test-client-kafka-streams:" + TEST_CLIENTS_VERSION + "-kafka-" + CLIENTS_KAFKA_VERSION;
-    private static final String TEST_ADMIN_IMAGE_DEFAULT = STRIMZI_REGISTRY_DEFAULT + "/" + TEST_CLIENTS_ORG_DEFAULT + "/test-client-kafka-admin:" + TEST_CLIENTS_VERSION + "-kafka-" + CLIENTS_KAFKA_VERSION;
-    private static final String TEST_HTTP_PRODUCER_IMAGE_DEFAULT = STRIMZI_REGISTRY_DEFAULT + "/" + TEST_CLIENTS_ORG_DEFAULT + "/test-client-http-producer:" + TEST_CLIENTS_VERSION;
-    private static final String TEST_HTTP_CONSUMER_IMAGE_DEFAULT = STRIMZI_REGISTRY_DEFAULT + "/" + TEST_CLIENTS_ORG_DEFAULT + "/test-client-http-consumer:" + TEST_CLIENTS_VERSION;
-
-    public static final String TEST_PRODUCER_IMAGE = getOrDefault(TEST_PRODUCER_IMAGE_ENV, TEST_PRODUCER_IMAGE_DEFAULT);
-    public static final String TEST_CONSUMER_IMAGE = getOrDefault(TEST_CONSUMER_IMAGE_ENV, TEST_CONSUMER_IMAGE_DEFAULT);
-    public static final String TEST_STREAMS_IMAGE = getOrDefault(TEST_STREAMS_IMAGE_ENV, TEST_STREAMS_IMAGE_DEFAULT);
+    private static final String TEST_CLIENTS_IMAGE_DEFAULT = STRIMZI_REGISTRY_DEFAULT + "/" + TEST_CLIENTS_ORG_DEFAULT + "/test-clients:" + TEST_CLIENTS_VERSION + "-kafka-" + CLIENTS_KAFKA_VERSION;
+    // Admin client is not part of the test-clients, but the changes need to be made in ThrottlingQuotaST to remove this image
+    private static final String TEST_ADMIN_IMAGE_DEFAULT = STRIMZI_REGISTRY_DEFAULT + "/" + TEST_CLIENTS_ORG_DEFAULT + "/test-client-kafka-admin:0.4.2-kafka-3.3.1";
+    public static final String TEST_CLIENTS_IMAGE = getOrDefault(TEST_CLIENTS_IMAGE_ENV, TEST_CLIENTS_IMAGE_DEFAULT);
     public static final String TEST_ADMIN_IMAGE = getOrDefault(TEST_ADMIN_IMAGE_ENV, TEST_ADMIN_IMAGE_DEFAULT);
-    public static final String TEST_HTTP_PRODUCER_IMAGE = getOrDefault(TEST_HTTP_PRODUCER_IMAGE_ENV, TEST_HTTP_PRODUCER_IMAGE_DEFAULT);
-    public static final String TEST_HTTP_CONSUMER_IMAGE = getOrDefault(TEST_HTTP_CONSUMER_IMAGE_ENV, TEST_HTTP_CONSUMER_IMAGE_DEFAULT);
 
     private static final String SCRAPER_IMAGE_DEFAULT = STRIMZI_REGISTRY + "/" + STRIMZI_ORG + "/kafka:" + STRIMZI_TAG + "-kafka-" + ST_KAFKA_VERSION;
     public static final String SCRAPER_IMAGE = getOrDefault(SCRAPER_IMAGE_ENV, SCRAPER_IMAGE_DEFAULT);
@@ -221,7 +209,7 @@ public class Environment {
     public static final String OLM_SOURCE_NAME = getOrDefault(OLM_SOURCE_NAME_ENV, OLM_SOURCE_NAME_DEFAULT);
     public static final String OLM_SOURCE_NAMESPACE = getOrDefault(OLM_SOURCE_NAMESPACE_ENV, OpenShift.OLM_SOURCE_NAMESPACE);
     public static final String OLM_APP_BUNDLE_PREFIX = getOrDefault(OLM_APP_BUNDLE_PREFIX_ENV, OLM_APP_BUNDLE_PREFIX_DEFAULT);
-    public static final String OLM_OPERATOR_LATEST_RELEASE_VERSION = getOrDefault(OLM_OPERATOR_VERSION_ENV, "0.33.2");
+    public static final String OLM_OPERATOR_LATEST_RELEASE_VERSION = getOrDefault(OLM_OPERATOR_VERSION_ENV, "0.34.0");
     // NetworkPolicy variable
     public static final boolean DEFAULT_TO_DENY_NETWORK_POLICIES = getOrDefault(DEFAULT_TO_DENY_NETWORK_POLICIES_ENV, Boolean::parseBoolean, DEFAULT_TO_DENY_NETWORK_POLICIES_DEFAULT);
     // ClusterOperator installation type variable
