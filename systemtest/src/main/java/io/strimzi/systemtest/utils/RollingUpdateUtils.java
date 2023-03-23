@@ -172,25 +172,21 @@ public class RollingUpdateUtils {
         }
     }
 
-    public static void waitForNoKafkaAndZKRollingUpdate(String namespaceName, String clusterName, Map<String, String> kafkaPods, Map<String, String> zkPods) {
+    public static void waitForNoKafkaAndZKRollingUpdate(String namespaceName, String clusterName, Map<String, String> kafkaPods) {
         int[] i = {0};
 
         LabelSelector kafkaSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.kafkaStatefulSetName(clusterName));
-        LabelSelector zkSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.zookeeperStatefulSetName(clusterName));
 
         TestUtils.waitFor("Waiting for stability of rolling update will be not triggered", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
             () -> {
                 boolean kafkaRolled = componentHasRolled(namespaceName, kafkaSelector, kafkaPods);
-                boolean zkRolled = componentHasRolled(namespaceName, zkSelector, zkPods);
 
-                if (!kafkaRolled && !zkRolled) {
-                    LOGGER.info("Kafka and ZK pods didn't roll. Remaining seconds for stability: {}", Constants.GLOBAL_RECONCILIATION_COUNT - i[0]);
+                if (!kafkaRolled) {
+                    LOGGER.info("Kafka pods didn't roll. Remaining seconds for stability: {}", Constants.GLOBAL_RECONCILIATION_COUNT - i[0]);
                 } else {
-                    if (kafkaRolled) {
-                        throw new RuntimeException(kafkaPods.toString() + " pods are rolling!");
-                    }
-                    throw new RuntimeException(zkPods.toString() + " pods are rolling!");
+                    throw new RuntimeException(kafkaPods.toString() + " pods are rolling!");
                 }
+
                 return i[0]++ == Constants.GLOBAL_RECONCILIATION_COUNT;
             }
         );
