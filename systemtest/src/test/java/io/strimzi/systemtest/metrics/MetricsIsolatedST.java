@@ -482,7 +482,7 @@ public class MetricsIsolatedST extends AbstractST {
         // Expected PodSet counts per component
         int zooPodSetCount = Environment.isKRaftModeEnabled() ? 0 : 1;
         int kafkaPodSetCount = 1;
-        int connectAndMm2PodSetCount = Environment.isStableConnectIdentitiesEnabled() ? 2 : 0
+        int connectAndMm2PodSetCount = Environment.isStableConnectIdentitiesEnabled() ? 2 : 0;
 
         // check StrimziPodSet metrics in CO
         assertCoMetricResources(StrimziPodSet.RESOURCE_KIND, clusterOperator.getDeploymentNamespace(), zooPodSetCount + kafkaPodSetCount + connectAndMm2PodSetCount);
