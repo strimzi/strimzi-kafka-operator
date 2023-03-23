@@ -334,11 +334,15 @@ public class EntityOperator extends AbstractModel {
         List<NetworkPolicyIngressRule> rules = new ArrayList<>();
 
         // For Topic Operator
-
-        rules.add(NetworkPolicyUtils.createIngressRule(EntityTopicOperator.HEALTHCHECK_PORT, List.of()));
+        if( topicOperator != null){
+            rules.add(NetworkPolicyUtils.createIngressRule(EntityTopicOperator.HEALTHCHECK_PORT, List.of()));
+        }
 
         // For User Operator
-        rules.add(NetworkPolicyUtils.createIngressRule(EntityUserOperator.HEALTHCHECK_PORT, List.of()));
+        if( userOperator != null){
+            rules.add(NetworkPolicyUtils.createIngressRule(EntityUserOperator.HEALTHCHECK_PORT, List.of()));
+        }
+
 
         // Everyone can access metrics
         rules.add(NetworkPolicyUtils.createIngressRule(MetricsModel.METRICS_PORT, List.of()));
