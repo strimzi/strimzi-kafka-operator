@@ -479,9 +479,14 @@ public class MetricsIsolatedST extends AbstractST {
     @ParallelTest
     @StrimziPodSetTest
     void testStrimziPodSetMetrics() {
+        // Expected PodSet counts per component
+        int zooPodSetCount = Environment.isKRaftModeEnabled() ? 0 : 1;
+        int kafkaPodSetCount = 1;
+        int connectAndMm2PodSetCount = Environment.isStableConnectIdentitiesEnabled() ? 2 : 0
+
         // check StrimziPodSet metrics in CO
-        assertCoMetricResources(StrimziPodSet.RESOURCE_KIND, clusterOperator.getDeploymentNamespace(), Environment.isKRaftModeEnabled() ? 1 : 2);
-        assertCoMetricResources(StrimziPodSet.RESOURCE_KIND, SECOND_NAMESPACE, Environment.isKRaftModeEnabled() ? 1 : 2);
+        assertCoMetricResources(StrimziPodSet.RESOURCE_KIND, clusterOperator.getDeploymentNamespace(), zooPodSetCount + kafkaPodSetCount + connectAndMm2PodSetCount);
+        assertCoMetricResources(StrimziPodSet.RESOURCE_KIND, SECOND_NAMESPACE, zooPodSetCount + kafkaPodSetCount);
 
         assertCoMetricResourceNotNull("strimzi_reconciliations_duration_seconds_bucket", StrimziPodSet.RESOURCE_KIND);
         assertCoMetricResourceNotNull("strimzi_reconciliations_duration_seconds_count", StrimziPodSet.RESOURCE_KIND);
