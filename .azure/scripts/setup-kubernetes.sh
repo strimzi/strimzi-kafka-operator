@@ -88,14 +88,14 @@ if [ "$TEST_CLUSTER" = "minikube" ]; then
 
       set -ex
     fi
-
-    if [ "$ARCH" = "s390x" ]; then
+    
+    if [ "$ARCH" = "s390x" ] || [ "$ARCH" = "ppc64le" ]; then
         git clone -b v1.9.11 --depth 1 https://github.com/kubernetes/kubernetes.git
         sed -i 's/:1.11//' kubernetes/cluster/addons/registry/images/Dockerfile
-        docker build --pull -t gcr.io/google_containers/kube-registry-proxy:0.4-s390x kubernetes/cluster/addons/registry/images/
-        minikube cache add s390x/registry:2.8.0-beta.1 gcr.io/google_containers/kube-registry-proxy:0.4-s390x
-        minikube addons enable registry --images="Registry=s390x/registry:2.8.0-beta.1,KubeRegistryProxy=google_containers/kube-registry-proxy:0.4-s390x"
-        rm -rf kubernetes
+        docker build --pull -t gcr.io/google_containers/kube-registry-proxy:0.4-${ARCH} kubernetes/cluster/addons/registry/images/
+        minikube cache add ${ARCH}/registry:2.8.0-beta.1 gcr.io/google_containers/kube-registry-proxy:0.4-${ARCH}
+        minikube addons enable registry --images="Registry=${ARCH}/registry:2.8.0-beta.1,KubeRegistryProxy=google_containers/kube-registry-proxy:0.4-${ARCH}"
+	rm -rf kubernetes
     else
         minikube addons enable registry
     fi
