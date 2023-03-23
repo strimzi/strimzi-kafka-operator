@@ -7,6 +7,20 @@
 = Partition reassignment tool overview
 
 [role="_abstract"]
+The partition reassignment tool provides the following capabilities for managing Kafka partitions and brokers:
+
+Redistributing partition replicas:: Scale your cluster up and down by adding or removing brokers, and move Kafka partitions from heavily loaded brokers to under-utilized brokers. 
+To do this, you must create a partition reassignment plan that identifies which topics and partitions to move and where to move them.
+Cruise Control is recommended for this type of operation as it xref:cruise-control-concepts-str[automates the cluster rebalancing process]. 
+
+Scaling topic replication factor up and down:: Increase or decrease the replication factor of your Kafka topics. To do this, you must create a partition reassignment plan that identifies the existing replication assignment across partitions and an updated assignment with the replication factor changes.
+
+Changing the preferred leader:: Change the preferred leader of a Kafka partition. This can be useful if the current preferred leader is unavailable or if you want to redistribute load across the brokers in the cluster. To do this, you must create a partition reassignment plan that specifies the new preferred leader for each partition by changing the order of replicas.
+
+Changing the log directories to use a specific JBOD volume:: Change the log directories of your Kafka brokers to use a specific JBOD volume. This can be useful if you want to move your Kafka data to a different disk or storage device. To do this, you must create a partition reassignment plan that specifies the new log directory for each topic.
+
+== Generating a partition reassignment plan
+
 The partition reassignment tool (`kafka-reassign-partitions.sh`) works by generating a partition assignment plan that specifies which partitions should be moved from their current broker to a new broker.
 
 If you are satisfied with the plan, you can execute it.
@@ -33,16 +47,16 @@ If the reassignment is complete, `--verify` also removes any traffic throttles (
 Unless removed, throttles will continue to affect the cluster even after the reassignment has finished.
 
 It is only possible to have one reassignment running in a cluster at any given time, and it is not possible to cancel a running reassignment.
-If you need to cancel a reassignment, wait for it to complete and then perform another reassignment to revert the effects of the first reassignment.
+If you must cancel a reassignment, wait for it to complete and then perform another reassignment to revert the effects of the first reassignment.
 The `kafka-reassign-partitions.sh` will print the reassignment JSON for this reversion as part of its output.
-Very large reassignments should be broken down into a number of smaller reassignments in case there is a need to stop in-progress reassignment.
+Very large reassignments should be broken down into a number of smaller reassignments in case there is a must stop in-progress reassignment.
 
 == Specifying topics in a partition reassignment JSON file
 
 The tool uses a reassignment JSON file that specifies the topics to reassign.
 You can generate a reassignment JSON file or create a file manually if you want to move specific partitions.
 
-The _reassignment JSON file_ has the following structure:
+The reassignment JSON file has the following structure:
 
 [source,subs=+quotes]
 ----
@@ -64,8 +78,6 @@ Where _<PartitionObjects>_ is a comma-separated list of objects like:
   "replicas": [ _<AssignedBrokerIds>_ ]
 }
 ----
-
-NOTE: Although Kafka also supports a `"log_dirs"` property this should not be used in Strimzi.
 
 The following is an example reassignment JSON file that assigns partition `4` of topic `topic-a` to brokers `2`, `4` and `7`, and partition `2` of topic `topic-b` to brokers `1`, `5` and `7`:
 
