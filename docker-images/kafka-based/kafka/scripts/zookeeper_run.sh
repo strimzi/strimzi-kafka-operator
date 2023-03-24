@@ -16,7 +16,7 @@ BASE_FQDN=$(hostname -f | cut -d "." -f2-4)
 export BASE_FQDN
 
 # Detect the server ID based on the hostname.
-# StatefulSets are numbered from 0 so we have to always increment by 1
+# Pods are numbered from 0 so we have to always increment by 1
 ZOOKEEPER_ID=$(hostname | awk -F'-' '{print $NF+1}')
 export ZOOKEEPER_ID
 echo "Detected Zookeeper ID $ZOOKEEPER_ID"

@@ -8,7 +8,7 @@
 [role="_abstract"]
 The Cluster Operator creates and manages RBAC resources for Strimzi components that need access to Kubernetes resources.
 
-For the Cluster Operator to function, it needs permission within the Kubernetes cluster to interact with Kafka resources, such as `Kafka` and `KafkaConnect`, as well as managed resources like `ConfigMap`, `Pod`, `Deployment`, `StatefulSet`, and `Service`.
+For the Cluster Operator to function, it needs permission within the Kubernetes cluster to interact with Kafka resources, such as `Kafka` and `KafkaConnect`, as well as managed resources like `ConfigMap`, `Pod`, `Deployment`, and `Service`.
 
 Permission is specified through Kubernetes role-based access control (RBAC) resources:
 
@@ -135,7 +135,7 @@ Depending on the Kubernetes cluster setup, a cluster administrator might be need
 NOTE: Cluster administrator rights are only needed for the creation of `ClusterRole` resources.
 The Cluster Operator will not run under a cluster admin account.
 
-`ClusterRole` resources follow the _principle of least privilege_ and contain only those privileges needed by the Cluster Operator to operate the cluster of the Kafka component. The first set of assigned privileges allow the Cluster Operator to manage Kubernetes resources such as `StatefulSet`, `Deployment`, `Pod`, and `ConfigMap`.
+`ClusterRole` resources follow the _principle of least privilege_ and contain only those privileges needed by the Cluster Operator to operate the cluster of the Kafka component. The first set of assigned privileges allow the Cluster Operator to manage Kubernetes resources such as `Deployment`, `Pod`, and `ConfigMap`.
 
 All cluster roles are required by the Cluster Operator in order to delegate privileges. 
 

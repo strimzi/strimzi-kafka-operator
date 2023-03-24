@@ -16,12 +16,10 @@ import static java.util.Arrays.asList;
 public class FeatureGates {
     /* test */ static final FeatureGates NONE = new FeatureGates("");
 
-    private static final String USE_STRIMZI_POD_SETS = "UseStrimziPodSets";
     private static final String USE_KRAFT = "UseKRaft";
     private static final String STABLE_CONNECT_IDENTITIES = "StableConnectIdentities";
 
     // When adding new feature gates, do not forget to add them to allFeatureGates() and toString() methods
-    private final FeatureGate useStrimziPodSets = new FeatureGate(USE_STRIMZI_POD_SETS, true);
     private final FeatureGate useKRaft = new FeatureGate(USE_KRAFT, false);
     private final FeatureGate stableConnectIdentities = new FeatureGate(STABLE_CONNECT_IDENTITIES, false);
 
@@ -45,9 +43,6 @@ public class FeatureGates {
                 featureGate = featureGate.substring(1);
 
                 switch (featureGate) {
-                    case USE_STRIMZI_POD_SETS:
-                        setValueOnlyOnce(useStrimziPodSets, value);
-                        break;
                     case USE_KRAFT:
                         setValueOnlyOnce(useKRaft, value);
                         break;
@@ -64,14 +59,12 @@ public class FeatureGates {
     }
 
     /**
-     * Validates any dependencies between various feature gates. For example, the UseKRaft feature gate can be
-     * enabled only when UseStrimziPodSets is enabled as well. When the dependencies are not satisfied,
+     * Validates any dependencies between various feature gates. For example, in the past, the UseKRaft feature gate
+     * could be enabled only when UseStrimziPodSets was enabled as well. When the dependencies are not satisfied,
      * InvalidConfigurationException is thrown.
      */
     private void validateInterDependencies()    {
-        if (useKRaftEnabled() && !useStrimziPodSetsEnabled())   {
-            throw new InvalidConfigurationException("The UseKRaft feature gate can be enabled only when the UseStrimziPodSets feature gate is enabled as well.");
-        }
+        // Currently, there are no interdependencies between different feature gates
     }
 
     /**
@@ -87,13 +80,6 @@ public class FeatureGates {
         }
 
         gate.setValue(value);
-    }
-
-    /**
-     * @return  Returns true when the UseStrimziPodSets feature gate is enabled
-     */
-    public boolean useStrimziPodSetsEnabled() {
-        return useStrimziPodSets.isEnabled();
     }
 
     /**
@@ -117,7 +103,6 @@ public class FeatureGates {
      */
     /*test*/ List<FeatureGate> allFeatureGates()  {
         return List.of(
-                useStrimziPodSets,
                 useKRaft,
                 stableConnectIdentities
         );
@@ -126,7 +111,6 @@ public class FeatureGates {
     @Override
     public String toString() {
         return "FeatureGates(" +
-                "UseStrimziPodSets=" + useStrimziPodSets.isEnabled() + "," +
                 "UseKRaft=" + useKRaft.isEnabled() + "," +
                 "StableConnectIdentities=" + stableConnectIdentities.isEnabled() +
                 ")";

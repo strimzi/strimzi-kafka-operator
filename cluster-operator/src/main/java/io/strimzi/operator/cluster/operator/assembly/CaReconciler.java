@@ -16,7 +16,6 @@ import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.certs.CertManager;
 import io.strimzi.operator.cluster.ClusterOperator;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
-import io.strimzi.operator.cluster.FeatureGates;
 import io.strimzi.operator.cluster.model.AbstractModel;
 import io.strimzi.operator.cluster.model.Ca;
 import io.strimzi.operator.cluster.model.ClientsCa;
@@ -28,7 +27,6 @@ import io.strimzi.operator.cluster.model.RestartReason;
 import io.strimzi.operator.cluster.model.RestartReasons;
 import io.strimzi.operator.cluster.operator.resource.KafkaRoller;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
-import io.strimzi.operator.cluster.operator.resource.StatefulSetOperator;
 import io.strimzi.operator.cluster.operator.resource.ZooKeeperRoller;
 import io.strimzi.operator.cluster.operator.resource.ZookeeperLeaderFinder;
 import io.strimzi.operator.cluster.operator.resource.events.KubernetesRestartEventPublisher;
@@ -66,10 +64,8 @@ public class CaReconciler {
     private final Reconciliation reconciliation;
     private final Vertx vertx;
     private final long operationTimeoutMs;
-    private final FeatureGates featureGates;
 
     private final DeploymentOperator deploymentOperator;
-    private final StatefulSetOperator stsOperator;
     private final StrimziPodSetOperator strimziPodSetOperator;
     private final SecretOperator secretOperator;
     private final PodOperator podOperator;
@@ -117,10 +113,8 @@ public class CaReconciler {
         this.reconciliation = reconciliation;
         this.vertx = vertx;
         this.operationTimeoutMs = config.getOperationTimeoutMs();
-        this.featureGates = config.featureGates();
 
         this.deploymentOperator = supplier.deploymentOperations;
-        this.stsOperator = supplier.stsOperations;
         this.strimziPodSetOperator = supplier.strimziPodSetOperator;
         this.secretOperator = supplier.secretOperations;
         this.podOperator = supplier.podOperations;
@@ -397,25 +391,14 @@ public class CaReconciler {
     }
 
     private Future<List<String>> getKafkaReplicas() {
-        if (featureGates.useStrimziPodSetsEnabled())   {
-            return strimziPodSetOperator.getAsync(reconciliation.namespace(), KafkaResources.kafkaStatefulSetName(reconciliation.name()))
-                                        .compose(podSet -> {
-                                            if (podSet != null) {
-                                                return Future.succeededFuture(KafkaCluster.generatePodList(reconciliation.name(), podSet.getSpec().getPods().size()));
-                                            } else {
-                                                return Future.succeededFuture(List.of());
-                                            }
-                                        });
-        } else {
-            return stsOperator.getAsync(reconciliation.namespace(), KafkaResources.kafkaStatefulSetName(reconciliation.name()))
-                              .compose(sts -> {
-                                  if (sts != null) {
-                                      return Future.succeededFuture(KafkaCluster.generatePodList(reconciliation.name(), sts.getSpec().getReplicas()));
-                                  } else {
-                                      return Future.succeededFuture(List.of());
-                                  }
-                              });
-        }
+        return strimziPodSetOperator.getAsync(reconciliation.namespace(), KafkaResources.kafkaStatefulSetName(reconciliation.name()))
+                                    .compose(podSet -> {
+                                        if (podSet != null) {
+                                            return Future.succeededFuture(KafkaCluster.generatePodList(reconciliation.name(), podSet.getSpec().getPods().size()));
+                                        } else {
+                                            return Future.succeededFuture(List.of());
+                                        }
+                                    });
     }
 
     private Future<Void> rollKafkaBrokers(List<String> replicas, RestartReasons podRollReasons) {

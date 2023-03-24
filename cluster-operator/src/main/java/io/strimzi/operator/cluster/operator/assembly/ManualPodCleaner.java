@@ -11,7 +11,6 @@ import io.strimzi.api.kafka.model.StrimziPodSetBuilder;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.model.PodSetUtils;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
-import io.strimzi.operator.cluster.operator.resource.StatefulSetOperator;
 import io.strimzi.operator.common.operator.resource.StrimziPodSetOperator;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
@@ -36,39 +35,35 @@ public class ManualPodCleaner {
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(ManualPodCleaner.class.getName());
 
     private final Reconciliation reconciliation;
-    private final String controllerResourceName;
+    private final String strimziPodSetName;
     private final Labels selector;
     private final long operationTimeoutMs;
-    private final boolean useStrimziPodSets;
 
     private final PodOperator podOperator;
     private final PvcOperator pvcOperator;
-    private final StatefulSetOperator stsOperator;
     private final StrimziPodSetOperator strimziPodSetOperator;
 
     /**
      * Constructs the Manual Pod Cleaner.
      *
      * @param reconciliation    Reconciliation marker
-     * @param ctrlResourceName  Name of the controller resource (e.g. StatefulSet)
+     * @param strimziPodSetName Name of the controller resource (e.g. StrimziPodSet)
      * @param selector          Selector for selecting the Pods belonging to this controller
      * @param config            Cluster Operator Configuration
      * @param supplier          Resource Operator Supplier with the Kubernetes resource operators
      */
     public ManualPodCleaner(
             Reconciliation reconciliation,
-            String ctrlResourceName,
+            String strimziPodSetName,
             Labels selector,
             ClusterOperatorConfig config,
             ResourceOperatorSupplier supplier
     ) {
         this.reconciliation = reconciliation;
-        this.controllerResourceName = ctrlResourceName;
+        this.strimziPodSetName = strimziPodSetName;
         this.selector = selector;
         this.operationTimeoutMs = config.getOperationTimeoutMs();
-        this.useStrimziPodSets = config.featureGates().useStrimziPodSetsEnabled();
 
-        this.stsOperator = supplier.stsOperations;
         this.strimziPodSetOperator = supplier.strimziPodSetOperator;
         this.pvcOperator = supplier.pvcOperations;
         this.podOperator = supplier.podOperations;
@@ -77,42 +72,36 @@ public class ManualPodCleaner {
     /**
      * Constructs the Manual Pod Cleaner
      *
-     * @param reconciliation        Reconciliation marker
-     * @param ctrlResourceName      Name of the controller resource (e.g. StatefulSet)
-     * @param selector              Selector for selecting the Pods belonging to this controller
-     * @param operationTimeoutMs    Timeout for Kubernetes operations
-     * @param useStrimziPodSets     Flag indicating whether StrimziPodSets are being used
-     * @param stsOperator           The StatefulSet operator for working with Kubernetes StatefulSet
-     * @param strimziPodSetOperator The Pod Set operator for working with Strimzi Pod Sets
-     * @param podOperator           The Pod operator for working with Kubernetes Pods
-     * @param pvcOperator           The Persistent Volume Claim operator for working with Kubernetes PVC
+     * @param reconciliation            Reconciliation marker
+     * @param strimziPodSetName         Name of the controller resource (e.g. strimziPodSetName)
+     * @param selector                  Selector for selecting the Pods belonging to this controller
+     * @param operationTimeoutMs        Timeout for Kubernetes operations
+     * @param strimziPodSetOperator     The Pod Set operator for working with Strimzi Pod Sets
+     * @param podOperator               The Pod operator for working with Kubernetes Pods
+     * @param pvcOperator               The Persistent Volume Claim operator for working with Kubernetes PVC
      */
     public ManualPodCleaner(
             Reconciliation reconciliation,
-            String ctrlResourceName,
+            String strimziPodSetName,
             Labels selector,
             long operationTimeoutMs,
-            boolean useStrimziPodSets,
 
-            StatefulSetOperator stsOperator,
             StrimziPodSetOperator strimziPodSetOperator,
             PodOperator podOperator,
             PvcOperator pvcOperator
     ) {
         this.reconciliation = reconciliation;
-        this.controllerResourceName = ctrlResourceName;
+        this.strimziPodSetName = strimziPodSetName;
         this.selector = selector;
         this.operationTimeoutMs = operationTimeoutMs;
-        this.useStrimziPodSets = useStrimziPodSets;
 
-        this.stsOperator = stsOperator;
         this.strimziPodSetOperator = strimziPodSetOperator;
         this.pvcOperator = pvcOperator;
         this.podOperator = podOperator;
     }
 
     /**
-     * Checks pods belonging to a single controller (e.g. StatefulSet) cluster to see whether the user requested
+     * Checks pods belonging to a single controller (e.g. StrimziPodSet) cluster to see whether the user requested
      * them to be deleted including their PVCs. If the user requested it, it will delete them. In a single
      * reconciliation, always only one Pod is deleted. If multiple pods are marked for cleanup, they will be done
      * in subsequent reconciliations. This method only checks if cleanup was requested and calls other methods to
@@ -172,11 +161,7 @@ public class ManualPodCleaner {
                             .filter(pvc -> pvc.getMetadata().getName().endsWith(podName))
                             .collect(Collectors.toList());
 
-                    if (useStrimziPodSets) {
-                        return cleanPodPvcAndPodSet(controllerResourceName, podName, createPvcs, deletePvcs);
-                    } else {
-                        return cleanPodPvcAndStatefulSet(controllerResourceName, podName, createPvcs, deletePvcs);
-                    }
+                    return cleanPodPvcAndPodSet(strimziPodSetName, podName, createPvcs, deletePvcs);
                 });
     }
 
@@ -218,7 +203,7 @@ public class ManualPodCleaner {
                             .compose(ignore -> cleanPodAndPvc(podName, desiredPvcs, currentPvcs))
                             .compose(ignore -> {
                                 // We recreate the StrimziPodSet in its old configuration => any further changes have to be done by rolling update
-                                // These fields need to be cleared before recreating the StatefulSet
+                                // These fields need to be cleared before recreating the StrimziPodSet
                                 podSet.getMetadata().setResourceVersion(null);
                                 podSet.getMetadata().setSelfLink(null);
                                 podSet.getMetadata().setUid(null);
@@ -232,51 +217,12 @@ public class ManualPodCleaner {
     }
 
     /**
-     * Handles the deletion and recreation of the StatefulSet controlling the pod which should be cleaned. In order
-     * to clean the pod and its PVCs, we first need to delete the StatefulSet (non-cascading). Otherwise, the
-     * StatefulSet will break the process by recreating the pods or PVCs. This method first deletes the StatefulSet
-     * and then calls other method to delete the Pod, PVCs and create the new PVCs. Once this method completes, it
-     * will recreate the StatefulSet again. The Pod will be then recreated by the StatefulSet and this method just
-     * waits for it to become ready.
-     *
-     * The complete flow looks like this
-     *     1. Delete the STS (non-cascading)
-     *     2. Trigger the Pod and PVC deletion and recreation
-     *     3. Recreate the STS
-     *     4. Wait for the Pod to be created and become ready
-     *
-     * @param stsName       NAme of the StatefulSet to which this pod belongs
-     * @param podName       Name of the Pod which should be cleaned / deleted
-     * @param desiredPvcs   The list of desired PVCs which should be created after the old Pod and PVCs are deleted
-     * @param currentPvcs   The list of current PVCs which should be deleted
-     *
-     * @return              Future indicating the result of the cleanup
-     */
-    private Future<Void> cleanPodPvcAndStatefulSet(String stsName, String podName, List<PersistentVolumeClaim> desiredPvcs, List<PersistentVolumeClaim> currentPvcs) {
-        return stsOperator.getAsync(reconciliation.namespace(), stsName)
-                .compose(sts -> stsOperator.deleteAsync(reconciliation, reconciliation.namespace(), stsName, false)
-                        .compose(ignore -> cleanPodAndPvc(podName, desiredPvcs, currentPvcs))
-                        .compose(ignore -> {
-                            // We recreate the StatefulSet in its old configuration => any further changes have to be done by rolling update
-                            // These fields need to be cleared before recreating the StatefulSet
-                            sts.getMetadata().setResourceVersion(null);
-                            sts.getMetadata().setSelfLink(null);
-                            sts.getMetadata().setUid(null);
-                            sts.setStatus(null);
-
-                            return stsOperator.reconcile(reconciliation, reconciliation.namespace(), stsName, sts);
-                        })
-                        .compose(ignore -> podOperator.readiness(reconciliation, reconciliation.namespace(), podName, 1_000L, operationTimeoutMs))
-                        .map((Void) null));
-    }
-
-    /**
      * This is an internal method which actually executes the deletion of the Pod and PVC. This is a non-trivial
      * since the PVC and the Pod are tightly coupled and one cannot be deleted without the other. It will first
      * trigger the Pod deletion. Once the Pod is deleted, it will delete the PVCs. Once they are deleted as well, it
-     * will create the new PVCs. The Pod is not recreated here => that is done by the controller (e.g. StatefulSet).
+     * will create the new PVCs. The Pod is not recreated here => that is done by the controller (e.g. StrimziPodSet).
      *
-     * This method expects that the StatefulSet or any other controller are already deleted to not interfere with
+     * This method expects that the StrimziPodSet or any other controller are already deleted to not interfere with
      * the process.
      *
      * To address these, we:

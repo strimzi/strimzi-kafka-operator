@@ -112,11 +112,10 @@ class KubernetesRestartEventPublisherTest {
             }
         };
 
-        Set<String> expectedReasons = Set.of("ClientCaCertKeyReplaced", "ClusterCaCertKeyReplaced", "CustomListenerCaCertChange");
+        Set<String> expectedReasons = Set.of("ClientCaCertKeyReplaced", "ClusterCaCertKeyReplaced");
 
         RestartReasons reasons = new RestartReasons().add(RestartReason.CLIENT_CA_CERT_KEY_REPLACED)
-                                                     .add(RestartReason.CLUSTER_CA_CERT_KEY_REPLACED)
-                                                     .add(RestartReason.CUSTOM_LISTENER_CA_CERT_CHANGE);
+                                                     .add(RestartReason.CLUSTER_CA_CERT_KEY_REPLACED);
 
         capturingPublisher.publishRestartEvents(mockPod, reasons);
 
@@ -159,7 +158,7 @@ class KubernetesRestartEventPublisherTest {
 
         KubernetesRestartEventPublisher eventPublisher = new KubernetesRestartEventPublisher(client, "cluster-operator-id", clock);
 
-        RestartReasons reasons = new RestartReasons().add(RestartReason.JBOD_VOLUMES_CHANGED);
+        RestartReasons reasons = new RestartReasons().add(RestartReason.FILE_SYSTEM_RESIZE_NEEDED);
         eventPublisher.publishRestartEvents(pod, reasons);
 
         verify(mockEventResource, times(1)).create();
@@ -172,10 +171,10 @@ class KubernetesRestartEventPublisherTest {
         assertThat(publishedEvent.getReportingController(), is("strimzi.io/cluster-operator"));
         assertThat(publishedEvent.getReportingInstance(), is("cluster-operator-id"));
 
-        assertThat(publishedEvent.getReason(), is("JbodVolumesChanged"));
+        assertThat(publishedEvent.getReason(), is("FileSystemResizeNeeded"));
         assertThat(publishedEvent.getAction(), is("StrimziInitiatedPodRestart"));
         assertThat(publishedEvent.getType(), is("Normal"));
-        assertThat(publishedEvent.getNote(), is(RestartReason.JBOD_VOLUMES_CHANGED.getDefaultNote()));
+        assertThat(publishedEvent.getNote(), is(RestartReason.FILE_SYSTEM_RESIZE_NEEDED.getDefaultNote()));
         assertThat(publishedEvent.getEventTime().getTime(), is("2020-10-11T00:00:00.000000Z"));
 
     }

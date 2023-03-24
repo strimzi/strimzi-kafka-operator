@@ -49,12 +49,12 @@ import io.vertx.core.Vertx;
 import java.time.Clock;
 
 /**
- * <p>Assembly operator for a "Kafka" assembly, which manages:</p>
- * <ul>
- *     <li>A ZooKeeper cluster StatefulSet and related Services</li>
- *     <li>A Kafka cluster StatefulSet and related Services</li>
- *     <li>Optionally, a TopicOperator Deployment</li>
- * </ul>
+ * Assembly operator for the Kafka custom resource. It manages the following components:
+ *   - ZooKeeper cluster
+ *   - Kafka cluster
+ *   - Entity operator
+ *   - Cruise Control
+ *   - Kafka Exporter
  */
 public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesClient, Kafka, KafkaList, Resource<Kafka>, KafkaSpec, KafkaStatus> {
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(KafkaAssemblyOperator.class.getName());
@@ -405,22 +405,17 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                         Storage oldStorage = null;
 
                         if (sts != null && podSet != null)  {
-                            // Both StatefulSet and PodSet exist => we create the description based on the feature gate
-                            if (featureGates.useStrimziPodSetsEnabled())    {
-                                oldStorage = getOldStorage(podSet);
-                                currentReplicas = currentReplicas(podSet);
-                            } else {
-                                oldStorage = getOldStorage(sts);
-                                currentReplicas = currentReplicas(sts);
-                            }
+                            // Both StatefulSet and PodSet exist => we use the StrimziPodSet as that is the main controller resource
+                            oldStorage = getOldStorage(podSet);
+                            currentReplicas = currentReplicas(podSet);
+                        } else if (podSet != null) {
+                            // PodSet exists, StatefulSet does not => we create the description from the PodSet
+                            oldStorage = getOldStorage(podSet);
+                            currentReplicas = currentReplicas(podSet);
                         } else if (sts != null) {
                             // StatefulSet exists, PodSet does not exist => we create the description from the StatefulSet
                             oldStorage = getOldStorage(sts);
                             currentReplicas = currentReplicas(sts);
-                        } else if (podSet != null) {
-                            //PodSet exists, StatefulSet does not => we create the description from the PodSet
-                            oldStorage = getOldStorage(podSet);
-                            currentReplicas = currentReplicas(podSet);
                         }
 
                         ZooKeeperReconciler reconciler = new ZooKeeperReconciler(
@@ -491,22 +486,17 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                         Storage oldStorage = null;
 
                         if (sts != null && podSet != null)  {
-                            // Both StatefulSet and PodSet exist => we create the description based on the feature gate
-                            if (featureGates.useStrimziPodSetsEnabled())    {
-                                oldStorage = getOldStorage(podSet);
-                                currentReplicas = currentReplicas(podSet);
-                            } else {
-                                oldStorage = getOldStorage(sts);
-                                currentReplicas = currentReplicas(sts);
-                            }
+                            // Both StatefulSet and PodSet exist => we use the StrimziPodSet as that is the main controller resource
+                            oldStorage = getOldStorage(podSet);
+                            currentReplicas = currentReplicas(podSet);
+                        } else if (podSet != null) {
+                            // PodSet exists, StatefulSet does not => we create the description from the PodSet
+                            oldStorage = getOldStorage(podSet);
+                            currentReplicas = currentReplicas(podSet);
                         } else if (sts != null) {
                             // StatefulSet exists, PodSet does not exist => we create the description from the StatefulSet
                             oldStorage = getOldStorage(sts);
                             currentReplicas = currentReplicas(sts);
-                        } else if (podSet != null) {
-                            //PodSet exists, StatefulSet does not => we create the description from the PodSet
-                            oldStorage = getOldStorage(podSet);
-                            currentReplicas = currentReplicas(podSet);
                         }
 
                         KafkaReconciler reconciler = kafkaReconciler(oldStorage, currentReplicas);

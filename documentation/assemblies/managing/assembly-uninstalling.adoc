@@ -20,7 +20,7 @@ Such resources include:
 
 These are resources referenced by `Kafka`, `KafkaConnect`, `KafkaMirrorMaker`, or `KafkaBridge` configuration.
 
-WARNING: Deleting `CustomResourceDefinitions` results in the garbage collection of the corresponding custom resources (`Kafka`, `KafkaConnect`, `KafkaMirrorMaker`, or `KafkaBridge`) and the resources dependent on them (Deployments, StatefulSets, and other dependent resources).
+WARNING: Deleting a `CustomResourceDefinition` results in the garbage collection of the corresponding custom resources (`Kafka`, `KafkaConnect`, `KafkaMirrorMaker`, or `KafkaBridge`) and dependent resources  (`Deployment`, `Pod`, `Service`, and so on).
 
 //Uninstall from command line
 include::../../modules/deploying/proc-uninstalling.adoc[leveloffset=+1]

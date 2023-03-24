@@ -10,7 +10,6 @@ import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.StrimziPodSet;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
-import io.strimzi.operator.cluster.FeatureGates;
 import io.strimzi.operator.cluster.KafkaUpgradeException;
 import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.KafkaConfiguration;
@@ -41,7 +40,6 @@ public class VersionChangeCreator {
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(VersionChangeCreator.class.getName());
 
     private final Reconciliation reconciliation;
-    private final FeatureGates featureGates;
     private final KafkaVersion.Lookup versions;
 
     private final StatefulSetOperator stsOperator;
@@ -91,7 +89,6 @@ public class VersionChangeCreator {
 
         // Store operators and Feature Gates configuration
         this.versions = config.versions();
-        this.featureGates = config.featureGates();
         this.stsOperator = supplier.stsOperations;
         this.strimziPodSetOperator = supplier.strimziPodSetOperator;
         this.podOperator = supplier.podOperations;
@@ -126,21 +123,16 @@ public class VersionChangeCreator {
                     StrimziPodSet podSet = res.resultAt(1);
 
                     if (sts != null && podSet != null)  {
-                        // Both StatefulSet and PodSet exist => we create the description based on the feature gate
-                        if (featureGates.useStrimziPodSetsEnabled())    {
-                            versionFromControllerResource = Annotations.annotations(podSet).get(ANNO_STRIMZI_IO_KAFKA_VERSION);
-                        } else {
-                            versionFromControllerResource = Annotations.annotations(sts).get(ANNO_STRIMZI_IO_KAFKA_VERSION);
-                        }
-
+                        // Both StatefulSet and PodSet exist => we use StrimziPodSet as the main controller resource
+                        versionFromControllerResource = Annotations.annotations(podSet).get(ANNO_STRIMZI_IO_KAFKA_VERSION);
+                        freshDeployment = false;
+                    } else if (podSet != null) {
+                        // PodSet exists, StatefulSet does not => we create the description from the PodSet
+                        versionFromControllerResource = Annotations.annotations(podSet).get(ANNO_STRIMZI_IO_KAFKA_VERSION);
                         freshDeployment = false;
                     } else if (sts != null) {
                         // StatefulSet exists, PodSet does nto exist => we create the description from the StatefulSet
                         versionFromControllerResource = Annotations.annotations(sts).get(ANNO_STRIMZI_IO_KAFKA_VERSION);
-                        freshDeployment = false;
-                    } else if (podSet != null) {
-                        //PodSet exists, StatefulSet does not => we create the description from the PodSet
-                        versionFromControllerResource = Annotations.annotations(podSet).get(ANNO_STRIMZI_IO_KAFKA_VERSION);
                         freshDeployment = false;
                     }
 
@@ -228,8 +220,8 @@ public class VersionChangeCreator {
                 // Either Pods or StatefulSet already exist. However, none of them contains the version
                 // annotation. This suggests they are not created by the current versions of Strimzi.
                 // Without the annotation, we cannot detect the Kafka version and decide on upgrade.
-                LOGGER.warnCr(reconciliation, "Kafka Pods or StatefulSet exist, but do not contain the {} annotation to detect their version. Kafka upgrade cannot be detected.", ANNO_STRIMZI_IO_KAFKA_VERSION);
-                throw new KafkaUpgradeException("Kafka Pods or StatefulSet exist, but do not contain the " + ANNO_STRIMZI_IO_KAFKA_VERSION + " annotation to detect their version. Kafka upgrade cannot be detected.");
+                LOGGER.warnCr(reconciliation, "Kafka Pods or StrimziPodSet exist, but do not contain the {} annotation to detect their version. Kafka upgrade cannot be detected.", ANNO_STRIMZI_IO_KAFKA_VERSION);
+                throw new KafkaUpgradeException("Kafka Pods or StrimziPodSet exist, but do not contain the " + ANNO_STRIMZI_IO_KAFKA_VERSION + " annotation to detect their version. Kafka upgrade cannot be detected.");
             }
         } else if (lowestKafkaVersion.equals(highestKafkaVersion)) {
             // All brokers have the same version. We can use it as the current version.

@@ -6,7 +6,7 @@
 = Customizing Kubernetes resources
 
 [role="_abstract"]
-A Strimzi deployment creates Kubernetes resources, such as `Deployments`, `StatefulSets`, `Pods`, and `Services`.
+A Strimzi deployment creates Kubernetes resources, such as `Deployment`, `Pod`, and `Service` resources.
 These resources are managed by Strimzi operators.
 Only the operator that is responsible for managing a particular Kubernetes resource can change that resource.
 If you try to manually change an operator-managed Kubernetes resource, the operator will revert your changes back.

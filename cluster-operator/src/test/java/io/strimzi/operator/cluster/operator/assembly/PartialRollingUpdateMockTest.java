@@ -132,7 +132,6 @@ public class PartialRollingUpdateMockTest {
                 .withStrimziPodSetCrd()
                 .withDeploymentController()
                 .withPodController()
-                .withStatefulSetController()
                 .withServiceController()
                 .build();
         mockKube.start();

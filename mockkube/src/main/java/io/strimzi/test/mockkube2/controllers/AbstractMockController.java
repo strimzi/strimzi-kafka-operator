@@ -16,7 +16,7 @@ public abstract class AbstractMockController {
     protected final KubernetesClient client;
 
     /**
-     * Constructs the mokc Kubernetes controller
+     * Constructs the mock Kubernetes controller
      *
      * @param client    Kubernetes client which should be used to mock the controller behavior
      */

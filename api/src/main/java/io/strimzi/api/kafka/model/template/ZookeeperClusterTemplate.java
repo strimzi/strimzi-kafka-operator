@@ -6,6 +6,7 @@ package io.strimzi.api.kafka.model.template;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import io.strimzi.api.annotations.DeprecatedProperty;
 import io.strimzi.api.kafka.model.Constants;
 import io.strimzi.api.kafka.model.UnknownPropertyPreserving;
 import io.strimzi.crdgenerator.annotations.Description;
@@ -45,6 +46,8 @@ public class ZookeeperClusterTemplate implements HasJmxSecretTemplate, Serializa
 
     @Description("Template for ZooKeeper `StatefulSet`.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    @Deprecated
+    @DeprecatedProperty(description = "Support for StatefulSets was removed in Strimzi 0.35.0. This property is ignored.")
     public StatefulSetTemplate getStatefulset() {
         return statefulset;
     }

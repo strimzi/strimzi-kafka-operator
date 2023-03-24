@@ -29,7 +29,7 @@ The Cluster Operator watches for changes to the following resources:
 * `KafkaBridge` for the Kafka Bridge instance.
 * `KafkaRebalance` for the Cruise Control optimization requests.
 
-When one of these resources is created in the Kubernetes cluster, the operator gets the cluster description from the resource and starts creating a new cluster for the resource by creating the necessary Kubernetes resources, such as StatefulSets, Services and ConfigMaps.
+When one of these resources is created in the Kubernetes cluster, the operator gets the cluster description from the resource and starts creating a new cluster for the resource by creating the necessary Kubernetes resources, such as Deployments, Pods, Services and ConfigMaps.
 
 Each time a Kafka resource is updated, the operator performs corresponding updates on the Kubernetes resources that make up the cluster for the resource.
 

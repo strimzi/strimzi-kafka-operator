@@ -25,7 +25,6 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -44,8 +43,6 @@ public class PodSetIsolatedST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(PodSetIsolatedST.class);
 
-    private static final List<EnvVar> INITIAL_ENV_VARS = Collections.singletonList(new EnvVar(Environment.STRIMZI_FEATURE_GATES_ENV, Constants.USE_STRIMZI_POD_SET, null));
-
     @IsolatedTest("We are changing CO env variables in this test")
     void testPodSetOnlyReconciliation(ExtensionContext extensionContext) {
         final TestStorage testStorage = new TestStorage(extensionContext);
@@ -55,7 +52,6 @@ public class PodSetIsolatedST extends AbstractST {
 
         EnvVar reconciliationEnv = new EnvVar(Environment.STRIMZI_POD_SET_RECONCILIATION_ONLY_ENV, "true", null);
         List<EnvVar> envVars = kubeClient().getDeployment(clusterOperator.getDeploymentNamespace(), Constants.STRIMZI_DEPLOYMENT_NAME).getSpec().getTemplate().getSpec().getContainers().get(0).getEnv();
-        envVars.addAll(INITIAL_ENV_VARS);
         envVars.add(reconciliationEnv);
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), replicas).build());
@@ -68,27 +64,21 @@ public class PodSetIsolatedST extends AbstractST {
         DeploymentUtils.waitTillDepHasRolled(clusterOperator.getDeploymentNamespace(), STRIMZI_DEPLOYMENT_NAME, 1, coPod);
 
         Map<String, String> kafkaPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getKafkaSelector());
-        Map<String, String> zkPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getZookeeperSelector());
 
         LOGGER.info("Changing Kafka resource configuration, the pods should not be rolled");
 
         KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(),
             kafka -> {
-                kafka.getSpec().getZookeeper().setReadinessProbe(new ProbeBuilder().withTimeoutSeconds(probeTimeoutSeconds).build());
                 kafka.getSpec().getKafka().setReadinessProbe(new ProbeBuilder().withTimeoutSeconds(probeTimeoutSeconds).build());
             }, testStorage.getNamespaceName());
 
-        RollingUpdateUtils.waitForNoKafkaAndZKRollingUpdate(testStorage.getNamespaceName(), testStorage.getClusterName(), kafkaPods, zkPods);
+        RollingUpdateUtils.waitForNoKafkaAndZKRollingUpdate(testStorage.getNamespaceName(), testStorage.getClusterName(), kafkaPods);
 
-        LOGGER.info("Deleting one Kafka and one ZK pod, the should be recreated");
+        LOGGER.info("Deleting one Kafka pod, the should be recreated");
         kubeClient().deletePodWithName(testStorage.getNamespaceName(), KafkaResources.kafkaPodName(testStorage.getClusterName(), 0));
         PodUtils.waitForPodsReady(testStorage.getNamespaceName(), testStorage.getKafkaSelector(), replicas, true);
 
-        kubeClient().deletePodWithName(testStorage.getNamespaceName(), KafkaResources.zookeeperPodName(testStorage.getClusterName(), 0));
-        PodUtils.waitForPodsReady(testStorage.getNamespaceName(), testStorage.getZookeeperSelector(), replicas, true);
-
         kafkaPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getKafkaSelector());
-        zkPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getZookeeperSelector());
 
         LOGGER.info("Removing {} env from CO", Environment.STRIMZI_POD_SET_RECONCILIATION_ONLY_ENV);
 
@@ -100,8 +90,7 @@ public class PodSetIsolatedST extends AbstractST {
 
         LOGGER.info("Because the configuration was changed, pods should be rolled");
 
-        RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), testStorage.getZookeeperSelector(), replicas, kafkaPods);
-        RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), testStorage.getKafkaSelector(), replicas, zkPods);
+        RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), testStorage.getKafkaSelector(), replicas, kafkaPods);
     }
 
     @BeforeAll
@@ -109,7 +98,6 @@ public class PodSetIsolatedST extends AbstractST {
         clusterOperator.unInstall();
         clusterOperator = clusterOperator
             .defaultInstallation()
-            .withExtraEnvVars(INITIAL_ENV_VARS)
             .createInstallation()
             .runInstallation();
     }

@@ -536,7 +536,7 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
     }
 
     /**
-     * Generates the StrimziPodSet for the Kafka cluster. This is used when the UseStrimziPodSets feature gate is
+     * Generates the StrimziPodSet for the Kafka cluster.
      * enabled.
      *
      * @param replicas                  Number of replicas the StrimziPodSet should have. During scale-ups or scale-downs, node

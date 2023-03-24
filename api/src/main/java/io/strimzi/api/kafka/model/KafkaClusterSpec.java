@@ -243,7 +243,7 @@ public class KafkaClusterSpec implements HasConfigurableMetrics, HasConfigurable
     }
 
     @Description("Template for Kafka cluster resources. " +
-            "The template allows users to specify how the `StatefulSet`, `Pods`, and `Services` are generated.")
+            "The template allows users to specify how the Kubernetes resources are generated.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public KafkaClusterTemplate getTemplate() {
         return template;

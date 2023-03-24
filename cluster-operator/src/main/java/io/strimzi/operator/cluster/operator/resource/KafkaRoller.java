@@ -350,7 +350,7 @@ public class KafkaRoller {
         try {
             pod = podOperations.get(namespace, podRef.getPodName());
             if (pod == null) {
-                LOGGER.debugCr(reconciliation, "Pod {} doesn't exist. There seems to be some problem with the creation of pod by StatefulSets/StrimziPodSets controller", podRef.getPodName());
+                LOGGER.debugCr(reconciliation, "Pod {} doesn't exist. There seems to be some problem with the creation of pod by StrimziPodSets controller", podRef.getPodName());
                 return;
             }
         } catch (KubernetesClientException e) {
@@ -473,9 +473,7 @@ public class KafkaRoller {
             restartContext.restartReasons.add(RestartReason.POD_STUCK);
         }
 
-        if (podStuck
-                && !reasonToRestartPod.contains(RestartReason.POD_HAS_OLD_GENERATION)   // "Pod has old generation" is used with StatefulSets
-                && !reasonToRestartPod.contains(RestartReason.POD_HAS_OLD_REVISION)) {  // "Pod has old revision" is used with PodSets
+        if (podStuck && !reasonToRestartPod.contains(RestartReason.POD_HAS_OLD_REVISION)) {
             // If the pod is unschedulable then deleting it, or trying to open an Admin client to it will make no difference
             // Treat this as fatal because if it's not possible to schedule one pod then it's likely that proceeding
             // and deleting a different pod in the meantime will likely result in another unschedulable pod.

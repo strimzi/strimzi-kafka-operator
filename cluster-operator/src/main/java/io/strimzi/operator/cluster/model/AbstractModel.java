@@ -126,7 +126,7 @@ public abstract class AbstractModel {
     }
 
     /**
-     * Gets the name of a given pod in a StatefulSet.
+     * Gets the name of a given pod in a StrimziPodSet.
      *
      * @param podId The ID (ordinal) of the pod.
      * @return The name of the pod with the given name.

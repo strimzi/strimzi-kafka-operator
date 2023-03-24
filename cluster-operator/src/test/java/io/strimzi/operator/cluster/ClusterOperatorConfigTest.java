@@ -45,7 +45,7 @@ public class ClusterOperatorConfigTest {
         ENV_VARS.put(ClusterOperatorConfig.STRIMZI_KAFKA_MIRROR_MAKER_IMAGES, KafkaVersionTestUtils.getKafkaMirrorMakerImagesEnvVarString());
         ENV_VARS.put(ClusterOperatorConfig.STRIMZI_KAFKA_MIRROR_MAKER_2_IMAGES, KafkaVersionTestUtils.getKafkaMirrorMaker2ImagesEnvVarString());
         ENV_VARS.put(ClusterOperatorConfig.STRIMZI_OPERATOR_NAMESPACE, "operator-namespace");
-        ENV_VARS.put(ClusterOperatorConfig.STRIMZI_FEATURE_GATES, "-UseStrimziPodSets");
+        ENV_VARS.put(ClusterOperatorConfig.STRIMZI_FEATURE_GATES, "+StableConnectIdentities");
         ENV_VARS.put(ClusterOperatorConfig.STRIMZI_DNS_CACHE_TTL, "10");
         ENV_VARS.put(ClusterOperatorConfig.STRIMZI_POD_SECURITY_PROVIDER_CLASS, "my.package.CustomPodSecurityProvider");
     }
@@ -67,7 +67,7 @@ public class ClusterOperatorConfigTest {
         assertThat(config.getConnectBuildTimeoutMs(), is(ClusterOperatorConfig.DEFAULT_CONNECT_BUILD_TIMEOUT_MS));
         assertThat(config.getOperatorNamespace(), is("operator-namespace"));
         assertThat(config.getOperatorNamespaceLabels(), is(nullValue()));
-        assertThat(config.featureGates().useStrimziPodSetsEnabled(), is(true));
+        assertThat(config.featureGates().stableConnectIdentitiesEnabled(), is(false));
         assertThat(config.featureGates().useKRaftEnabled(), is(false));
         assertThat(config.isCreateClusterRoles(), is(false));
         assertThat(config.isNetworkPolicyGeneration(), is(true));
@@ -117,7 +117,7 @@ public class ClusterOperatorConfigTest {
         assertThat(config.getOperationTimeoutMs(), is(30_000L));
         assertThat(config.getConnectBuildTimeoutMs(), is(40_000L));
         assertThat(config.getOperatorNamespace(), is("operator-namespace"));
-        assertThat(config.featureGates().useStrimziPodSetsEnabled(), is(false));
+        assertThat(config.featureGates().stableConnectIdentitiesEnabled(), is(true));
         assertThat(config.getDnsCacheTtlSec(), is(10));
         assertThat(config.getPodSecurityProviderClass(), is("my.package.CustomPodSecurityProvider"));
     }

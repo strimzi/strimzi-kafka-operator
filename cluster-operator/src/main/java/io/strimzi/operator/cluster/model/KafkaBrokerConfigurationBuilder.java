@@ -48,16 +48,9 @@ public class KafkaBrokerConfigurationBuilder {
     private final static String REPLICATION_LISTENER_NAME = "REPLICATION-9091";
 
     // Names of environment variables placeholders replaced only in the running container
-    //       => needed both for shared and per-broker configuration
     private final static String PLACEHOLDER_CERT_STORE_PASSWORD = "${CERTS_STORE_PASSWORD}";
     private final static String PLACEHOLDER_RACK_ID = "${STRIMZI_RACK_ID}";
     private final static String PLACEHOLDER_OAUTH_CLIENT_SECRET = "${STRIMZI_%s_OAUTH_CLIENT_SECRET}";
-
-    // Names of environment variables placeholders replaced only in the running container
-    //       => needed only for shared configuration in StatefulSets
-    private final static String PLACEHOLDER_BROKER_ID = "${STRIMZI_BROKER_ID}";
-    private final static String PLACEHOLDER_ADVERTISED_HOSTNAME = "${STRIMZI_%s_ADVERTISED_HOSTNAME}";
-    private final static String PLACEHOLDER_ADVERTISED_PORT = "${STRIMZI_%s_ADVERTISED_PORT}";
 
     // Additional placeholders are used in the configuration file for node port addresses. These are used for both
     // per-broker and shared configurations. Listed here for reference only, they are constructed in the
@@ -72,39 +65,27 @@ public class KafkaBrokerConfigurationBuilder {
     private final StringWriter stringWriter = new StringWriter();
     private final PrintWriter writer = new PrintWriter(stringWriter);
     private final Reconciliation reconciliation;
-
-    private String brokerId = PLACEHOLDER_BROKER_ID;
+    private final String brokerId;
 
     /**
      * Broker configuration template constructor
      *
-     * @param reconciliation The reconciliation
+     * @param reconciliation    The reconciliation
+     * @param brokerId          The ID of the broker
      */
-    public KafkaBrokerConfigurationBuilder(Reconciliation reconciliation) {
+    public KafkaBrokerConfigurationBuilder(Reconciliation reconciliation, String brokerId) {
         printHeader();
         this.reconciliation = reconciliation;
+        this.brokerId = brokerId;
+
+        // Render the broker ID into the config file
+        configureBrokerId();
     }
 
     /**
-     * Adds the broker ID template. This is used for the shared configuration which used the placeholder environment
-     * variable {@code STRIMZI_BROKER_ID}which replaced with the actual broker ID only in the broker container.
-     *
-     * @return Returns the builder instance
+     * Renders the broker.id and node.id configurations
      */
-    public KafkaBrokerConfigurationBuilder withBrokerId()   {
-        return withBrokerId(PLACEHOLDER_BROKER_ID);
-    }
-
-    /**
-     * Adds the broker ID used in this broker configuration. This is used for the per-broker configuration which
-     * contains directly the broker ID instead of a placeholder.
-     *
-     * @param desiredBrokerId   ID of the broker for which the configuration is generated
-     *
-     * @return Returns the builder instance
-     */
-    public KafkaBrokerConfigurationBuilder withBrokerId(String desiredBrokerId)   {
-        brokerId = desiredBrokerId;
+    private void configureBrokerId()   {
         printSectionHeader("Broker ID");
         writer.println("broker.id=" + brokerId);
         // Node ID is ignored when not using Kraft mode => but it defaults to broker ID when not set
@@ -112,8 +93,6 @@ public class KafkaBrokerConfigurationBuilder {
         writer.println("node.id=" + brokerId);
 
         writer.println();
-
-        return this;
     }
 
     /**
@@ -229,26 +208,6 @@ public class KafkaBrokerConfigurationBuilder {
         writer.println();
 
         return this;
-    }
-
-    /**
-     * Configures the listeners based on the listeners enabled by the users in the Kafka CR. This is used to generate
-     * the shared configuration which uses placeholders instead of the actual advertised addresses.
-     *
-     * @param clusterName    Name of the cluster (important for the advertised hostnames)
-     * @param namespace      Namespace (important for generating the advertised hostname)
-     * @param kafkaListeners The listeners configuration from the Kafka CR
-     *
-     * @return Returns the builder instance
-     */
-    public KafkaBrokerConfigurationBuilder withListeners(String clusterName, String namespace, List<GenericKafkaListener> kafkaListeners)  {
-        return withListeners(clusterName,
-                namespace,
-                kafkaListeners,
-                () -> KafkaResources.kafkaStatefulSetName(clusterName) + "-" + brokerId,
-                (listenerId) -> String.format(PLACEHOLDER_ADVERTISED_HOSTNAME, listenerId),
-                (listenerId) -> String.format(PLACEHOLDER_ADVERTISED_PORT, listenerId),
-                false);
     }
 
     /**

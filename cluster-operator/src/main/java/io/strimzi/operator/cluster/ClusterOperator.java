@@ -150,20 +150,18 @@ public class ClusterOperator extends AbstractVerticle {
         Promise<Void> handler = Promise.promise();
         vertx.executeBlocking(future -> {
             try {
-                if (config.featureGates().useStrimziPodSetsEnabled() || config.featureGates().stableConnectIdentitiesEnabled()) {
-                    strimziPodSetController = new StrimziPodSetController(
-                            namespace,
-                            config.getCustomResourceSelector(),
-                            resourceOperatorSupplier.kafkaOperator,
-                            resourceOperatorSupplier.connectOperator,
-                            resourceOperatorSupplier.mirrorMaker2Operator,
-                            resourceOperatorSupplier.strimziPodSetOperator,
-                            resourceOperatorSupplier.podOperations,
-                            resourceOperatorSupplier.metricsProvider,
-                            config.getPodSetControllerWorkQueueSize()
-                    );
-                    strimziPodSetController.start();
-                }
+                strimziPodSetController = new StrimziPodSetController(
+                        namespace,
+                        config.getCustomResourceSelector(),
+                        resourceOperatorSupplier.kafkaOperator,
+                        resourceOperatorSupplier.connectOperator,
+                        resourceOperatorSupplier.mirrorMaker2Operator,
+                        resourceOperatorSupplier.strimziPodSetOperator,
+                        resourceOperatorSupplier.podOperations,
+                        resourceOperatorSupplier.metricsProvider,
+                        config.getPodSetControllerWorkQueueSize()
+                );
+                strimziPodSetController.start();
                 future.complete();
             } catch (Throwable e) {
                 LOGGER.error("StrimziPodSetController start failed");
@@ -183,10 +181,7 @@ public class ClusterOperator extends AbstractVerticle {
             }
         }
 
-        if (config.featureGates().useStrimziPodSetsEnabled()) {
-            strimziPodSetController.stop();
-        }
-
+        strimziPodSetController.stop();
         client.close();
         stop.complete();
     }

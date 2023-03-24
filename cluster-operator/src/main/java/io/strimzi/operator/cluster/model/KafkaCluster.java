@@ -18,7 +18,6 @@ import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServicePort;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeMount;
-import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.api.model.networking.v1.HTTPIngressPath;
 import io.fabric8.kubernetes.api.model.networking.v1.HTTPIngressPathBuilder;
 import io.fabric8.kubernetes.api.model.networking.v1.Ingress;
@@ -67,7 +66,6 @@ import io.strimzi.api.kafka.model.template.KafkaClusterTemplate;
 import io.strimzi.api.kafka.model.template.PodDisruptionBudgetTemplate;
 import io.strimzi.api.kafka.model.template.PodTemplate;
 import io.strimzi.api.kafka.model.template.ResourceTemplate;
-import io.strimzi.api.kafka.model.template.StatefulSetTemplate;
 import io.strimzi.certs.CertAndKey;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.model.jmx.JmxModel;
@@ -161,7 +159,7 @@ public class KafkaCluster extends AbstractStatefulModel implements SupportsMetri
     protected static final String CO_ENV_VAR_CUSTOM_KAFKA_POD_LABELS = "STRIMZI_CUSTOM_KAFKA_LABELS";
 
     /**
-     * Records the Kafka version currently running inside Kafka StatefulSet
+     * Records the Kafka version currently running inside Kafka StrimziPodSet
      */
     public static final String ANNO_STRIMZI_IO_KAFKA_VERSION = Annotations.STRIMZI_DOMAIN + "kafka-version";
 
@@ -195,16 +193,6 @@ public class KafkaCluster extends AbstractStatefulModel implements SupportsMetri
      */
     public static final String BROKER_LISTENERS_FILENAME = "listeners.config";
 
-    /**
-     * Key under which the advertised hostnames is stored in Config Map
-     */
-    public static final String BROKER_ADVERTISED_HOSTNAMES_FILENAME = "advertised-hostnames.config";
-
-    /**
-     * Key under which the advertised ports is stored in Config Map
-     */
-    public static final String BROKER_ADVERTISED_PORTS_FILENAME = "advertised-ports.config";
-
     // Cruise Control defaults
     private static final String CRUISE_CONTROL_DEFAULT_NUM_PARTITIONS = "1";
     private static final String CRUISE_CONTROL_DEFAULT_REPLICATION_FACTOR = "1";
@@ -231,7 +219,6 @@ public class KafkaCluster extends AbstractStatefulModel implements SupportsMetri
     private PodDisruptionBudgetTemplate templatePodDisruptionBudget;
     private ResourceTemplate templatePersistentVolumeClaims;
     private ResourceTemplate templateInitClusterRoleBinding;
-    private StatefulSetTemplate templateStatefulSet;
     private ResourceTemplate templatePodSet;
     private PodTemplate templatePod;
     private InternalServiceTemplate templateHeadlessService;
@@ -420,7 +407,6 @@ public class KafkaCluster extends AbstractStatefulModel implements SupportsMetri
             result.templatePodDisruptionBudget = template.getPodDisruptionBudget();
             result.templatePersistentVolumeClaims = template.getPersistentVolumeClaim();
             result.templateInitClusterRoleBinding = template.getClusterRoleBinding();
-            result.templateStatefulSet = template.getStatefulset();
             result.templatePodSet = template.getPodSet();
             result.templatePod = template.getPod();
             result.templateService = template.getBootstrapService();
@@ -1058,11 +1044,11 @@ public class KafkaCluster extends AbstractStatefulModel implements SupportsMetri
     }
 
     /**
-     * Prepares annotations for the controller resource such as StatefulSet or KafkaPodSet.
+     * Prepares annotations for the controller resource such as StrimziPodSet.
      *
      * @return  Map with all annotations which should be used for thr controller resource
      */
-    private Map<String, String> prepareControllerAnnotations()   {
+    private Map<String, String> preparePodSetAnnotations()   {
         Map<String, String> controllerAnnotations = new HashMap<>(2);
         controllerAnnotations.put(ANNO_STRIMZI_IO_KAFKA_VERSION, kafkaVersion.version());
         controllerAnnotations.put(Annotations.ANNO_STRIMZI_IO_STORAGE, ModelUtils.encodeStorageToJson(storage));
@@ -1071,48 +1057,7 @@ public class KafkaCluster extends AbstractStatefulModel implements SupportsMetri
     }
 
     /**
-     * Generates a StatefulSet according to configured defaults
-     *
-     * @param isOpenShift      True iff this operator is operating within OpenShift.
-     * @param imagePullPolicy  The image pull policy.
-     * @param imagePullSecrets The image pull secrets.
-     * @param podAnnotations   The annotations which should be passed to the pods
-     *
-     * @return The generated StatefulSet.
-     */
-    public StatefulSet generateStatefulSet(boolean isOpenShift,
-                                           ImagePullPolicy imagePullPolicy,
-                                           List<LocalObjectReference> imagePullSecrets,
-                                           Map<String, String> podAnnotations) {
-        return WorkloadUtils.createStatefulSet(
-                componentName,
-                namespace,
-                labels,
-                ownerReference,
-                templateStatefulSet,
-                replicas,
-                KafkaResources.brokersServiceName(cluster),
-                prepareControllerAnnotations(),
-                getPersistentVolumeClaimTemplates(),
-                WorkloadUtils.createPodTemplateSpec(
-                        componentName,
-                        labels,
-                        templatePod,
-                        DEFAULT_POD_LABELS,
-                        podAnnotations,
-                        getMergedAffinity(),
-                        ContainerUtils.listOrNull(createInitContainer(imagePullPolicy)),
-                        List.of(createContainer(imagePullPolicy)),
-                        getStatefulSetVolumes(isOpenShift),
-                        imagePullSecrets,
-                        securityProvider.kafkaPodSecurityContext(new PodSecurityProviderContextImpl(storage, templatePod))
-                )
-        );
-    }
-
-    /**
-     * Generates the StrimziPodSet for the Kafka cluster. This is used when the UseStrimziPodSets feature gate is
-     * enabled.
+     * Generates the StrimziPodSet for the Kafka cluster.
      *
      * @param replicas                  Number of replicas the StrimziPodSet should have. During scale-ups or scale-downs, node
      *                                  sets with different numbers of pods are generated.
@@ -1138,7 +1083,7 @@ public class KafkaCluster extends AbstractStatefulModel implements SupportsMetri
                 ownerReference,
                 templatePodSet,
                 replicas,
-                prepareControllerAnnotations(),
+                preparePodSetAnnotations(),
                 labels.strimziSelectorLabels(),
                 brokerId -> WorkloadUtils.createStatefulPod(
                         reconciliation,
@@ -1233,7 +1178,7 @@ public class KafkaCluster extends AbstractStatefulModel implements SupportsMetri
      */
     public List<PersistentVolumeClaim> generatePersistentVolumeClaims(Storage storage) {
         return PersistentVolumeClaimUtils
-                .createPersistentVolumeClaims(componentName, namespace, replicas, storage, false, labels, ownerReference, templatePersistentVolumeClaims, templateStatefulSet);
+                .createPersistentVolumeClaims(componentName, namespace, replicas, storage, false, labels, ownerReference, templatePersistentVolumeClaims);
     }
 
     /**
@@ -1313,23 +1258,6 @@ public class KafkaCluster extends AbstractStatefulModel implements SupportsMetri
     }
 
     /**
-     * Generates a list of volumes used by StatefulSet. For StatefulSet, it needs to include only ephemeral data
-     * volumes. Persistent claim volumes are generated directly by StatefulSet.
-     *
-     * @param isOpenShift   Flag whether we are on OpenShift or not
-     *
-     * @return              List of volumes to be included in the StatefulSet pod template
-     */
-    private List<Volume> getStatefulSetVolumes(boolean isOpenShift) {
-        List<Volume> volumeList = new ArrayList<>();
-
-        volumeList.addAll(VolumeUtils.createStatefulSetVolumes(storage, false));
-        volumeList.addAll(getNonDataVolumes(isOpenShift, false, null));
-
-        return volumeList;
-    }
-
-    /**
      * Generates a list of volumes used by PodSets. For StrimziPodSet, it needs to include also all persistent claim
      * volumes which StatefulSet would generate on its own.
      *
@@ -1345,15 +1273,6 @@ public class KafkaCluster extends AbstractStatefulModel implements SupportsMetri
         volumeList.addAll(getNonDataVolumes(isOpenShift, true, podName));
 
         return volumeList;
-    }
-
-    /**
-     * Creates a list of Persistent Volume Claim templates for use in StatefulSets
-     *
-     * @return  List of Persistent Volume Claim Templates
-     */
-    /* test */ List<PersistentVolumeClaim> getPersistentVolumeClaimTemplates() {
-        return VolumeUtils.createPersistentVolumeClaimTemplates(storage, false);
     }
 
     private List<VolumeMount> getVolumeMounts() {
@@ -1600,33 +1519,19 @@ public class KafkaCluster extends AbstractStatefulModel implements SupportsMetri
     /**
      * Generates the PodDisruptionBudget.
      *
-     * @param customController  Identifies whether the PDB should be generated for a custom controller (StrimziPodSets)
-     *                          or not (Deployments, StatefulSet)
-     *
      * @return The PodDisruptionBudget.
      */
-    public PodDisruptionBudget generatePodDisruptionBudget(boolean customController) {
-        if (customController) {
-            return PodDisruptionBudgetUtils.createCustomControllerPodDisruptionBudget(componentName, namespace, labels, ownerReference, templatePodDisruptionBudget, replicas);
-        } else {
-            return PodDisruptionBudgetUtils.createPodDisruptionBudget(componentName, namespace, labels, ownerReference, templatePodDisruptionBudget);
-        }
+    public PodDisruptionBudget generatePodDisruptionBudget() {
+        return PodDisruptionBudgetUtils.createCustomControllerPodDisruptionBudget(componentName, namespace, labels, ownerReference, templatePodDisruptionBudget, replicas);
     }
 
     /**
      * Generates the PodDisruptionBudget V1Beta1.
      *
-     * @param customController  Identifies whether the PDB should be generated for a custom controller (StrimziPodSets)
-     *                          or not (Deployments, StatefulSet)
-     *
      * @return The PodDisruptionBudget V1Beta1.
      */
-    public io.fabric8.kubernetes.api.model.policy.v1beta1.PodDisruptionBudget generatePodDisruptionBudgetV1Beta1(boolean customController) {
-        if (customController) {
-            return PodDisruptionBudgetUtils.createCustomControllerPodDisruptionBudgetV1Beta1(componentName, namespace, labels, ownerReference, templatePodDisruptionBudget, replicas);
-        } else {
-            return PodDisruptionBudgetUtils.createPodDisruptionBudgetV1Beta1(componentName, namespace, labels, ownerReference, templatePodDisruptionBudget);
-        }
+    public io.fabric8.kubernetes.api.model.policy.v1beta1.PodDisruptionBudget generatePodDisruptionBudgetV1Beta1() {
+        return PodDisruptionBudgetUtils.createCustomControllerPodDisruptionBudgetV1Beta1(componentName, namespace, labels, ownerReference, templatePodDisruptionBudget, replicas);
     }
 
     /**
@@ -1710,86 +1615,6 @@ public class KafkaCluster extends AbstractStatefulModel implements SupportsMetri
     }
 
     /**
-     * Generates the shared Kafka broker configuration. Shared configuration is using placeholders for most of the
-     * values which might be different for each broker such as advertised hostnames or ports or the broker ID. These
-     * placeholders are replaced with the actual value only in the Kafka container when it starts. This method is
-     * normally used with StatefulSets.
-     *
-     * @return The Kafka broker configuration as a String
-     */
-    public String generateSharedBrokerConfiguration()   {
-        return new KafkaBrokerConfigurationBuilder(reconciliation)
-                .withBrokerId()
-                .withRackId(rack)
-                .withZookeeper(cluster)
-                .withLogDirs(VolumeUtils.createVolumeMounts(storage, DATA_VOLUME_MOUNT_PATH, false))
-                .withListeners(cluster, namespace, listeners)
-                .withAuthorization(cluster, authorization, false)
-                .withCruiseControl(cluster, cruiseControlSpec, ccNumPartitions, ccReplicationFactor, ccMinInSyncReplicas)
-                .withUserConfiguration(configuration)
-                .build().trim();
-    }
-
-    /**
-     * Generates a shared configuration ConfigMap with shared configuration. This ConfigMap is used by all brokers in a
-     * Kafka StatefulSet.
-     *
-     * @param metricsAndLogging   Object with logging and metrics configuration collected from external user-provided config maps
-     * @param advertisedHostnames Map with advertised hostnames for different brokers and listeners
-     * @param advertisedPorts     Map with advertised ports for different brokers and listeners
-     *
-     * @return ConfigMap with the shared configuration.
-     */
-    public ConfigMap generateSharedConfigurationConfigMap(MetricsAndLogging metricsAndLogging, Map<Integer, Map<String, String>> advertisedHostnames, Map<Integer, Map<String, String>> advertisedPorts)   {
-        Map<String, String> data = new HashMap<>(6);
-
-        String parsedMetrics = metrics.metricsJson(reconciliation, metricsAndLogging.metricsCm());
-        if (parsedMetrics != null) {
-            data.put(MetricsModel.CONFIG_MAP_KEY, parsedMetrics);
-        }
-
-        // Logging configuration
-        data.put(logging.configMapKey(), logging().loggingConfiguration(reconciliation, metricsAndLogging.loggingCm()));
-        // Broker configuration
-        data.put(BROKER_CONFIGURATION_FILENAME, generateSharedBrokerConfiguration());
-        // Array with advertised hostnames used for replacement inside the pod
-        data.put(BROKER_ADVERTISED_HOSTNAMES_FILENAME,
-                advertisedHostnames
-                        .entrySet()
-                        .stream()
-                        .map(brokerIdMap -> brokerIdMap
-                                        .getValue()
-                                        .entrySet()
-                                        .stream()
-                                        .map(listenerAddress -> listenerAddress.getKey() + "_" + brokerIdMap.getKey() + "://" + listenerAddress.getValue())
-                                        .sorted()
-                                        .collect(Collectors.joining(" "))
-                        )
-                        .sorted()
-                        .collect(Collectors.joining(" ")));
-        // Array with advertised ports used for replacement inside the pod
-        data.put(BROKER_ADVERTISED_PORTS_FILENAME,
-                advertisedPorts
-                        .entrySet()
-                        .stream()
-                        .map(brokerIdMap -> brokerIdMap
-                                .getValue()
-                                .entrySet()
-                                .stream()
-                                .map(listenerAddress -> listenerAddress.getKey() + "_" + brokerIdMap.getKey() + "://" + listenerAddress.getValue())
-                                .sorted()
-                                .collect(Collectors.joining(" "))
-                        )
-                        .sorted()
-                        .collect(Collectors.joining(" ")));
-        // List of configured listeners
-        data.put(BROKER_LISTENERS_FILENAME,
-                listeners.stream().map(ListenersUtils::envVarIdentifier).collect(Collectors.joining(" ")));
-
-        return ConfigMapUtils.createConfigMap(KafkaResources.kafkaMetricsAndLogConfigMapName(cluster), namespace, labels, ownerReference, data);
-    }
-
-    /**
      * Generates the individual Kafka broker configuration. This configuration uses only minimum of placeholders - for
      * values which are known only inside the pod such as secret values (e.g. OAuth client secrets), NodePort addresses
      * or Rack IDs. All other values such as broker IDs, advertised ports or hostnames are already prefilled in the
@@ -1803,8 +1628,7 @@ public class KafkaCluster extends AbstractStatefulModel implements SupportsMetri
      */
     public String generatePerBrokerBrokerConfiguration(int brokerId, Map<Integer, Map<String, String>> advertisedHostnames, Map<Integer, Map<String, String>> advertisedPorts)   {
         if (useKRaft) {
-            return new KafkaBrokerConfigurationBuilder(reconciliation)
-                    .withBrokerId(String.valueOf(brokerId))
+            return new KafkaBrokerConfigurationBuilder(reconciliation, String.valueOf(brokerId))
                     .withRackId(rack)
                     .withKRaft(cluster, namespace, replicas)
                     .withLogDirs(VolumeUtils.createVolumeMounts(storage, DATA_VOLUME_MOUNT_PATH, false))
@@ -1820,8 +1644,7 @@ public class KafkaCluster extends AbstractStatefulModel implements SupportsMetri
                     .withUserConfiguration(configuration)
                     .build().trim();
         } else {
-            return new KafkaBrokerConfigurationBuilder(reconciliation)
-                    .withBrokerId(String.valueOf(brokerId))
+            return new KafkaBrokerConfigurationBuilder(reconciliation, String.valueOf(brokerId))
                     .withRackId(rack)
                     .withZookeeper(cluster)
                     .withLogDirs(VolumeUtils.createVolumeMounts(storage, DATA_VOLUME_MOUNT_PATH, false))

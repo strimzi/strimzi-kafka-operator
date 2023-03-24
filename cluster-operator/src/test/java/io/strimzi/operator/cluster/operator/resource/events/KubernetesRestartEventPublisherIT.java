@@ -81,14 +81,14 @@ public class KubernetesRestartEventPublisherIT {
         KubernetesRestartEventPublisher publisher = new KubernetesRestartEventPublisher(kubeClient, "op") {
         };
         publisher.publishRestartEvents(pod, RestartReasons.of(RestartReason.CLUSTER_CA_CERT_KEY_REPLACED)
-                .add(RestartReason.JBOD_VOLUMES_CHANGED));
+                .add(RestartReason.FILE_SYSTEM_RESIZE_NEEDED));
 
         ListOptions strimziEventsOnly = new ListOptionsBuilder()
                 .withFieldSelector("reportingController=" + KubernetesRestartEventPublisher.CONTROLLER)
                 .build();
         List<Event> items = kubeClient.events().v1().events().inNamespace(TEST_NAMESPACE).list(strimziEventsOnly).getItems();
         assertThat(items, hasSize(2));
-        assertThat(items.stream().map(Event::getReason).collect(toSet()), is(Set.of("ClusterCaCertKeyReplaced", "JbodVolumesChanged")));
+        assertThat(items.stream().map(Event::getReason).collect(toSet()), is(Set.of("ClusterCaCertKeyReplaced", "FileSystemResizeNeeded")));
 
         Event exemplar = items.get(0);
         assertThat(exemplar.getAction(), is(KubernetesRestartEventPublisher.ACTION));

@@ -18,7 +18,7 @@ A CRD defines a new `kind` of resource, such as `kind:Kafka`, within a Kubernete
 
 The Kubernetes API server allows custom resources to be created based on the `kind` and understands from the CRD how to validate and store the custom resource when it is added to the Kubernetes cluster.
 
-WARNING: When CRDs are deleted, custom resources of that type are also deleted. Additionally, the resources created by the custom resource, such as pods and statefulsets are also deleted.
+WARNING: When a `CustomResourceDefinition` is deleted, custom resources of that type are also deleted. Additionally, Kubernetes resources created by the custom resource are also deleted, such as `Deployment`, `Pod`, `Service` and `ConfigMap` resources.
 
 Each Strimzi-specific custom resource conforms to the schema defined by the CRD for the resource's `kind`.
 The custom resources for Strimzi components have common configuration properties, which are defined under `spec`.

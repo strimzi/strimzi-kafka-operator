@@ -15,8 +15,6 @@ import io.fabric8.kubernetes.api.model.ServiceBuilder;
 import io.fabric8.kubernetes.api.model.ServicePortBuilder;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.DeploymentBuilder;
-import io.fabric8.kubernetes.api.model.apps.StatefulSet;
-import io.fabric8.kubernetes.api.model.apps.StatefulSetBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.server.mock.EnableKubernetesMockClient;
 import io.strimzi.test.TestUtils;
@@ -24,16 +22,11 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.util.List;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
-import static org.hamcrest.Matchers.startsWith;
 
 @EnableKubernetesMockClient(crud = true)
 public class MockKube2ControllersTest {
@@ -51,7 +44,6 @@ public class MockKube2ControllersTest {
                 .withDeploymentController()
                 .withPodController()
                 .withServiceController()
-                .withStatefulSetController()
                 .build();
         mockKube.start();
     }
@@ -148,69 +140,5 @@ public class MockKube2ControllersTest {
         assertThat(createdPod.getStatus().getConditions().size(), is(1));
         assertThat(createdPod.getStatus().getConditions().get(0).getType(), is("Ready"));
         assertThat(createdPod.getStatus().getConditions().get(0).getStatus(), is("True"));
-    }
-
-    @Test
-    public void testStatefulSetController() {
-        final String statefulSetName = "my-sts";
-
-        StatefulSet sts = new StatefulSetBuilder()
-                .withNewMetadata()
-                    .withNamespace(NAMESPACE)
-                    .withName(statefulSetName)
-                .endMetadata()
-                .withNewSpec()
-                    .withReplicas(3)
-                    .withSelector(new LabelSelector(null, Map.of("app", "my-sts")))
-                    .withNewTemplate()
-                        .withNewMetadata()
-                            .withLabels(Map.of("app", "my-sts"))
-                        .endMetadata()
-                        .withNewSpec()
-                            .withContainers(new ContainerBuilder().withName("nginx").withImage("nginx:1.14.2").build())
-                        .endSpec()
-                    .endTemplate()
-                .endSpec()
-                .build();
-
-        client.apps().statefulSets().inNamespace(NAMESPACE).resource(sts).create();
-
-        // Creation
-        TestUtils.waitFor("Wait for stateful set to have status", 100L, 10_000L, () -> client.apps().statefulSets().inNamespace(NAMESPACE).withName(statefulSetName).get() != null && client.apps().statefulSets().inNamespace(NAMESPACE).withName(statefulSetName).get().getStatus() != null);
-
-        StatefulSet createdSts = client.apps().statefulSets().inNamespace(NAMESPACE).withName(statefulSetName).waitUntilReady(120_000, TimeUnit.MILLISECONDS);
-        assertThat(createdSts, is(notNullValue()));
-        assertThat(createdSts.getStatus(), is(notNullValue()));
-        assertThat(createdSts.getStatus().getReplicas(), is(3));
-        assertThat(createdSts.getStatus().getReadyReplicas(), is(3));
-        assertThat(createdSts.getStatus().getObservedGeneration(), is(1L));
-
-        List<Pod> pods = client.pods().inNamespace(NAMESPACE).withLabels(Map.of("app", "my-sts")).list().getItems();
-        assertThat(pods.size(), is(3));
-        assertThat(pods.stream().map(pod -> pod.getMetadata().getName()).collect(Collectors.toList()), containsInAnyOrder("my-sts-0", "my-sts-1", "my-sts-2"));
-        for (Pod pod : pods)    {
-            assertThat(pod.getMetadata().getName(), startsWith(statefulSetName + "-"));
-            assertThat(pod.getSpec().getContainers().size(), is(1));
-            assertThat(pod.getSpec().getContainers().get(0).getName(), is("nginx"));
-            assertThat(pod.getSpec().getContainers().get(0).getImage(), is("nginx:1.14.2"));
-        }
-
-        // Scale-up
-        client.apps().statefulSets().inNamespace(NAMESPACE).withName(statefulSetName).scale(5, true);
-
-        pods = client.pods().inNamespace(NAMESPACE).withLabels(Map.of("app", "my-sts")).list().getItems();
-        assertThat(pods.size(), is(5));
-        assertThat(pods.stream().map(pod -> pod.getMetadata().getName()).collect(Collectors.toList()), containsInAnyOrder("my-sts-0", "my-sts-1", "my-sts-2", "my-sts-3", "my-sts-4"));
-
-        // Scale-down
-        client.apps().statefulSets().inNamespace(NAMESPACE).withName(statefulSetName).scale(2, true);
-
-        pods = client.pods().inNamespace(NAMESPACE).withLabels(Map.of("app", "my-sts")).list().getItems();
-        assertThat(pods.size(), is(2));
-        assertThat(pods.stream().map(pod -> pod.getMetadata().getName()).collect(Collectors.toList()), containsInAnyOrder("my-sts-0", "my-sts-1"));
-
-        // Delete
-        client.apps().statefulSets().inNamespace(NAMESPACE).withName(statefulSetName).delete();
-        TestUtils.waitFor("Wait for stateful set to be deleted", 100L, 10_000L, () -> client.apps().statefulSets().inNamespace(NAMESPACE).withName(statefulSetName).get() == null);
     }
 }

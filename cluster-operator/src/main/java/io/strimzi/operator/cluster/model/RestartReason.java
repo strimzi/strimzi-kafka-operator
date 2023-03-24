@@ -44,22 +44,12 @@ public enum RestartReason {
     CONFIG_CHANGE_REQUIRES_RESTART("Pod needs to be restarted, because reconfiguration cannot be done dynamically"),
 
     /**
-     * Custom listener certificate changed
-     */
-    CUSTOM_LISTENER_CA_CERT_CHANGE("Custom certificate one or more listeners changed"),
-
-    /**
      * File system resize is needed
      */
     FILE_SYSTEM_RESIZE_NEEDED("File system needs to be resized"),
 
     /**
-     * JBOD volumes configuration changed
-     */
-    JBOD_VOLUMES_CHANGED("JBOD volumes were added or removed"),
-
-    /**
-     * Mnaual rolling update was requested
+     * Manual rolling update was requested
      */
     MANUAL_ROLLING_UPDATE("Pod was manually annotated to be rolled"),
 
@@ -67,11 +57,6 @@ public enum RestartReason {
      * Force restart is needed due to an error
      */
     POD_FORCE_RESTART_ON_ERROR("Pod needs to be forcibly restarted due to an error"),
-
-    /**
-     * Pod has an old genenration
-     */
-    POD_HAS_OLD_GENERATION("Pod has old generation"),
 
     /**
      * Pod has an old revision

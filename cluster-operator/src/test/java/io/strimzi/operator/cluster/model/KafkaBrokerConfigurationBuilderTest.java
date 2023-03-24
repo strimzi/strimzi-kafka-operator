@@ -49,7 +49,6 @@ import static io.strimzi.operator.cluster.model.KafkaBrokerConfigurationBuilderT
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
-import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
@@ -58,66 +57,59 @@ import static org.hamcrest.Matchers.equalTo;
 public class KafkaBrokerConfigurationBuilderTest {
     @ParallelTest
     public void testBrokerId()  {
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION)
-                .withBrokerId()
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, "2")
                 .build();
 
-        assertThat(configuration, isEquivalent("broker.id=${STRIMZI_BROKER_ID}\n" +
-                "node.id=${STRIMZI_BROKER_ID}"));
-    }
-
-    @ParallelTest
-    public void testPerBrokerBrokerId()  {
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION)
-                .withBrokerId("2")
-                .build();
-
-        assertThat(configuration, isEquivalent("broker.id=2\n" +
+        assertThat(configuration, isEquivalent("broker.id=2",
                 "node.id=2"));
     }
 
     @ParallelTest
     public void testKraft()  {
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION)
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, "2")
                 .withKRaft("my-cluster", "my-namespace", 3)
                 .build();
 
-        assertThat(configuration, isEquivalent("process.roles=broker,controller\n" +
-                "controller.listener.names=CONTROLPLANE-9090\n" +
+        assertThat(configuration, isEquivalent("broker.id=2",
+                "node.id=2",
+                "process.roles=broker,controller",
+                "controller.listener.names=CONTROLPLANE-9090",
                 "controller.quorum.voters=0@my-cluster-kafka-0.my-cluster-kafka-brokers.my-namespace.svc.cluster.local:9090,1@my-cluster-kafka-1.my-cluster-kafka-brokers.my-namespace.svc.cluster.local:9090,2@my-cluster-kafka-2.my-cluster-kafka-brokers.my-namespace.svc.cluster.local:9090"));
     }
 
     @ParallelTest
     public void testNoCruiseControl()  {
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION)
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, "2")
                 .withCruiseControl("my-cluster", null, "1", "1", "1")
                 .build();
 
-        assertThat(configuration, isEquivalent(""));
+        assertThat(configuration, isEquivalent("broker.id=2",
+                "node.id=2"));
     }
 
     @ParallelTest
     public void testCruiseControl()  {
         CruiseControlSpec cruiseControlSpec = new CruiseControlSpecBuilder().build();
 
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION)
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, "2")
                 .withCruiseControl("my-cluster", cruiseControlSpec, "1", "1", "1")
                 .build();
 
-        assertThat(configuration, containsString(
-                CruiseControlConfigurationParameters.METRICS_TOPIC_NAME + "=strimzi.cruisecontrol.metrics\n" +
-                CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_ENDPOINT_ID_ALGO + "=HTTPS\n" +
-                CruiseControlConfigurationParameters.METRICS_REPORTER_BOOTSTRAP_SERVERS + "=my-cluster-kafka-brokers:9091\n" +
-                CruiseControlConfigurationParameters.METRICS_REPORTER_SECURITY_PROTOCOL + "=SSL\n" +
-                CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_KEYSTORE_TYPE + "=PKCS12\n" +
-                CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_KEYSTORE_LOCATION + "=/tmp/kafka/cluster.keystore.p12\n" +
-                CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_KEYSTORE_PASSWORD + "=${CERTS_STORE_PASSWORD}\n" +
-                CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_TRUSTSTORE_TYPE + "=PKCS12\n" +
-                CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_TRUSTSTORE_LOCATION + "=/tmp/kafka/cluster.truststore.p12\n" +
-                CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_TRUSTSTORE_PASSWORD + "=${CERTS_STORE_PASSWORD}\n" +
-                CruiseControlConfigurationParameters.METRICS_TOPIC_AUTO_CREATE + "=true\n" +
-                CruiseControlConfigurationParameters.METRICS_TOPIC_NUM_PARTITIONS + "=1\n" +
-                CruiseControlConfigurationParameters.METRICS_TOPIC_REPLICATION_FACTOR + "=1\n" +
+        assertThat(configuration, isEquivalent("broker.id=2",
+                "node.id=2",
+                CruiseControlConfigurationParameters.METRICS_TOPIC_NAME + "=strimzi.cruisecontrol.metrics",
+                CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_ENDPOINT_ID_ALGO + "=HTTPS",
+                CruiseControlConfigurationParameters.METRICS_REPORTER_BOOTSTRAP_SERVERS + "=my-cluster-kafka-brokers:9091",
+                CruiseControlConfigurationParameters.METRICS_REPORTER_SECURITY_PROTOCOL + "=SSL",
+                CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_KEYSTORE_TYPE + "=PKCS12",
+                CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_KEYSTORE_LOCATION + "=/tmp/kafka/cluster.keystore.p12",
+                CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_KEYSTORE_PASSWORD + "=${CERTS_STORE_PASSWORD}",
+                CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_TRUSTSTORE_TYPE + "=PKCS12",
+                CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_TRUSTSTORE_LOCATION + "=/tmp/kafka/cluster.truststore.p12",
+                CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_TRUSTSTORE_PASSWORD + "=${CERTS_STORE_PASSWORD}",
+                CruiseControlConfigurationParameters.METRICS_TOPIC_AUTO_CREATE + "=true",
+                CruiseControlConfigurationParameters.METRICS_TOPIC_NUM_PARTITIONS + "=1",
+                CruiseControlConfigurationParameters.METRICS_TOPIC_REPLICATION_FACTOR + "=1",
                 CruiseControlConfigurationParameters.METRICS_TOPIC_MIN_ISR + "=1"));
     }
 
@@ -128,79 +120,87 @@ public class KafkaBrokerConfigurationBuilderTest {
         config.put(CruiseControlConfigurationParameters.METRIC_REPORTER_TOPIC_NAME.getValue(), metricReporterTopicName);
         CruiseControlSpec cruiseControlSpec = new CruiseControlSpecBuilder().withConfig(config).build();
 
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION)
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, "2")
                 .withCruiseControl("my-cluster", cruiseControlSpec, "1", "1", "1")
                 .build();
 
-        assertThat(configuration, containsString(CruiseControlConfigurationParameters.METRICS_TOPIC_NAME + "=" + metricReporterTopicName + "\n"));
+        assertThat(configuration, isEquivalent("broker.id=2",
+                "node.id=2",
+                CruiseControlConfigurationParameters.METRICS_TOPIC_NAME + "=" + metricReporterTopicName,
+                CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_ENDPOINT_ID_ALGO + "=HTTPS",
+                CruiseControlConfigurationParameters.METRICS_REPORTER_BOOTSTRAP_SERVERS + "=my-cluster-kafka-brokers:9091",
+                CruiseControlConfigurationParameters.METRICS_REPORTER_SECURITY_PROTOCOL + "=SSL",
+                CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_KEYSTORE_TYPE + "=PKCS12",
+                CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_KEYSTORE_LOCATION + "=/tmp/kafka/cluster.keystore.p12",
+                CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_KEYSTORE_PASSWORD + "=${CERTS_STORE_PASSWORD}",
+                CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_TRUSTSTORE_TYPE + "=PKCS12",
+                CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_TRUSTSTORE_LOCATION + "=/tmp/kafka/cluster.truststore.p12",
+                CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_TRUSTSTORE_PASSWORD + "=${CERTS_STORE_PASSWORD}",
+                CruiseControlConfigurationParameters.METRICS_TOPIC_AUTO_CREATE + "=true",
+                CruiseControlConfigurationParameters.METRICS_TOPIC_NUM_PARTITIONS + "=1",
+                CruiseControlConfigurationParameters.METRICS_TOPIC_REPLICATION_FACTOR + "=1",
+                CruiseControlConfigurationParameters.METRICS_TOPIC_MIN_ISR + "=1"));
     }
 
     @ParallelTest
     public void testNoRackAwareness()  {
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION)
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, "2")
                 .withRackId(null)
                 .build();
 
-        assertThat(configuration, isEquivalent(""));
+        assertThat(configuration, isEquivalent("broker.id=2",
+                "node.id=2"));
     }
 
     @ParallelTest
     public void testRackId()  {
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION)
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, "2")
                 .withRackId(new Rack("failure-domain.kubernetes.io/zone"))
                 .build();
 
-        assertThat(configuration, isEquivalent("broker.rack=${STRIMZI_RACK_ID}"));
+        assertThat(configuration, isEquivalent("broker.id=2",
+                "node.id=2",
+                "broker.rack=${STRIMZI_RACK_ID}"));
     }
 
     @ParallelTest
     public void testRackAndBrokerId()  {
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION)
-                .withBrokerId()
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, "0")
                 .withRackId(new Rack("failure-domain.kubernetes.io/zone"))
                 .build();
 
-        assertThat(configuration, isEquivalent("broker.id=${STRIMZI_BROKER_ID}\n" +
-                                                                "node.id=${STRIMZI_BROKER_ID}\n" +
-                                                                "broker.rack=${STRIMZI_RACK_ID}"));
-    }
-
-    @ParallelTest
-    public void testPerBrokerRackAndBrokerId()  {
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION)
-                .withBrokerId("0")
-                .withRackId(new Rack("failure-domain.kubernetes.io/zone"))
-                .build();
-
-        assertThat(configuration, isEquivalent("broker.id=0\n" +
-                "node.id=0\n" +
+        assertThat(configuration, isEquivalent("broker.id=0",
+                "node.id=0",
                 "broker.rack=${STRIMZI_RACK_ID}"));
     }
 
     @ParallelTest
     public void testZookeeperConfig()  {
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION)
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, "2")
                 .withZookeeper("my-cluster")
                 .build();
 
-        assertThat(configuration, isEquivalent(String.format("zookeeper.connect=%s:%d\n", KafkaResources.zookeeperServiceName("my-cluster"), ZookeeperCluster.CLIENT_TLS_PORT) +
-                "zookeeper.clientCnxnSocket=org.apache.zookeeper.ClientCnxnSocketNetty\n" +
-                "zookeeper.ssl.client.enable=true\n" +
-                "zookeeper.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12\n" +
-                "zookeeper.ssl.keystore.password=${CERTS_STORE_PASSWORD}\n" +
-                "zookeeper.ssl.keystore.type=PKCS12\n" +
-                "zookeeper.ssl.truststore.location=/tmp/kafka/cluster.truststore.p12\n" +
-                "zookeeper.ssl.truststore.password=${CERTS_STORE_PASSWORD}\n" +
+        assertThat(configuration, isEquivalent("broker.id=2",
+                "node.id=2",
+                String.format("zookeeper.connect=%s:%d", KafkaResources.zookeeperServiceName("my-cluster"), ZookeeperCluster.CLIENT_TLS_PORT),
+                "zookeeper.clientCnxnSocket=org.apache.zookeeper.ClientCnxnSocketNetty",
+                "zookeeper.ssl.client.enable=true",
+                "zookeeper.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12",
+                "zookeeper.ssl.keystore.password=${CERTS_STORE_PASSWORD}",
+                "zookeeper.ssl.keystore.type=PKCS12",
+                "zookeeper.ssl.truststore.location=/tmp/kafka/cluster.truststore.p12",
+                "zookeeper.ssl.truststore.password=${CERTS_STORE_PASSWORD}",
                 "zookeeper.ssl.truststore.type=PKCS12"));
     }
 
     @ParallelTest
     public void testNoAuthorization()  {
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION)
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, "2")
                 .withAuthorization("my-cluster", null, false)
                 .build();
 
-        assertThat(configuration, isEquivalent(""));
+        assertThat(configuration, isEquivalent("broker.id=2",
+                "node.id=2"));
     }
 
     @ParallelTest
@@ -209,11 +209,13 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .addToSuperUsers("jakub", "CN=kuba")
                 .build();
 
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION)
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, "2")
                 .withAuthorization("my-cluster", auth, false)
                 .build();
 
-        assertThat(configuration, isEquivalent("authorizer.class.name=kafka.security.authorizer.AclAuthorizer\n" +
+        assertThat(configuration, isEquivalent("broker.id=2",
+                "node.id=2",
+                "authorizer.class.name=kafka.security.authorizer.AclAuthorizer",
                 "super.users=User:CN=my-cluster-kafka,O=io.strimzi;User:CN=my-cluster-entity-topic-operator,O=io.strimzi;User:CN=my-cluster-entity-user-operator,O=io.strimzi;User:CN=my-cluster-kafka-exporter,O=io.strimzi;User:CN=my-cluster-cruise-control,O=io.strimzi;User:CN=cluster-operator,O=io.strimzi;User:jakub;User:CN=kuba"));
     }
 
@@ -223,12 +225,14 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .addToSuperUsers("jakub", "CN=kuba")
                 .build();
 
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION)
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, "2")
                 .withAuthorization("my-cluster", auth, true)
                 .build();
 
-        assertThat(configuration, isEquivalent("authorizer.class.name=org.apache.kafka.metadata.authorizer.StandardAuthorizer\n" +
-                "early.start.listeners=CONTROLPLANE-9090,REPLICATION-9091\n" +
+        assertThat(configuration, isEquivalent("broker.id=2",
+                "node.id=2",
+                "authorizer.class.name=org.apache.kafka.metadata.authorizer.StandardAuthorizer",
+                "early.start.listeners=CONTROLPLANE-9090,REPLICATION-9091",
                 "super.users=User:CN=my-cluster-kafka,O=io.strimzi;User:CN=my-cluster-entity-topic-operator,O=io.strimzi;User:CN=my-cluster-entity-user-operator,O=io.strimzi;User:CN=my-cluster-kafka-exporter,O=io.strimzi;User:CN=my-cluster-cruise-control,O=io.strimzi;User:CN=cluster-operator,O=io.strimzi;User:jakub;User:CN=kuba"));
     }
 
@@ -237,11 +241,13 @@ public class KafkaBrokerConfigurationBuilderTest {
         KafkaAuthorization auth = new KafkaAuthorizationSimpleBuilder()
                 .build();
 
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION)
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, "2")
                 .withAuthorization("my-cluster", auth, false)
                 .build();
 
-        assertThat(configuration, isEquivalent("authorizer.class.name=kafka.security.authorizer.AclAuthorizer\n" +
+        assertThat(configuration, isEquivalent("broker.id=2",
+                "node.id=2",
+                "authorizer.class.name=kafka.security.authorizer.AclAuthorizer",
                 "super.users=User:CN=my-cluster-kafka,O=io.strimzi;User:CN=my-cluster-entity-topic-operator,O=io.strimzi;User:CN=my-cluster-entity-user-operator,O=io.strimzi;User:CN=my-cluster-kafka-exporter,O=io.strimzi;User:CN=my-cluster-cruise-control,O=io.strimzi;User:CN=cluster-operator,O=io.strimzi"));
     }
 
@@ -267,25 +273,27 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .withEnableMetrics(true)
                 .build();
 
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION)
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, "2")
                 .withAuthorization("my-cluster", auth, false)
                 .build();
 
-        assertThat(configuration, isEquivalent("authorizer.class.name=io.strimzi.kafka.oauth.server.authorizer.KeycloakRBACAuthorizer\n" +
-                "strimzi.authorization.token.endpoint.uri=http://token-endpoint-uri\n" +
-                "strimzi.authorization.client.id=my-client-id\n" +
-                "strimzi.authorization.delegate.to.kafka.acl=false\n" +
-                "strimzi.authorization.kafka.cluster.name=my-cluster\n" +
-                "strimzi.authorization.ssl.truststore.location=/tmp/kafka/authz-keycloak.truststore.p12\n" +
-                "strimzi.authorization.ssl.truststore.password=${CERTS_STORE_PASSWORD}\n" +
-                "strimzi.authorization.ssl.truststore.type=PKCS12\n" +
-                "strimzi.authorization.ssl.endpoint.identification.algorithm=\n" +
-                "strimzi.authorization.grants.refresh.period.seconds=120\n" +
-                "strimzi.authorization.grants.refresh.pool.size=10\n" +
-                "strimzi.authorization.connect.timeout.seconds=30\n" +
-                "strimzi.authorization.read.timeout.seconds=10\n" +
-                "strimzi.authorization.http.retries=2\n" +
-                "strimzi.authorization.enable.metrics=true\n" +
+        assertThat(configuration, isEquivalent("broker.id=2",
+                "node.id=2",
+                "authorizer.class.name=io.strimzi.kafka.oauth.server.authorizer.KeycloakRBACAuthorizer",
+                "strimzi.authorization.token.endpoint.uri=http://token-endpoint-uri",
+                "strimzi.authorization.client.id=my-client-id",
+                "strimzi.authorization.delegate.to.kafka.acl=false",
+                "strimzi.authorization.kafka.cluster.name=my-cluster",
+                "strimzi.authorization.ssl.truststore.location=/tmp/kafka/authz-keycloak.truststore.p12",
+                "strimzi.authorization.ssl.truststore.password=${CERTS_STORE_PASSWORD}",
+                "strimzi.authorization.ssl.truststore.type=PKCS12",
+                "strimzi.authorization.ssl.endpoint.identification.algorithm=",
+                "strimzi.authorization.grants.refresh.period.seconds=120",
+                "strimzi.authorization.grants.refresh.pool.size=10",
+                "strimzi.authorization.connect.timeout.seconds=30",
+                "strimzi.authorization.read.timeout.seconds=10",
+                "strimzi.authorization.http.retries=2",
+                "strimzi.authorization.enable.metrics=true",
                 "super.users=User:CN=my-cluster-kafka,O=io.strimzi;User:CN=my-cluster-entity-topic-operator,O=io.strimzi;User:CN=my-cluster-entity-user-operator,O=io.strimzi;User:CN=my-cluster-kafka-exporter,O=io.strimzi;User:CN=my-cluster-cruise-control,O=io.strimzi;User:CN=cluster-operator,O=io.strimzi;User:giada;User:CN=paccu"));
     }
 
@@ -303,20 +311,22 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .withReadTimeoutSeconds(30)
                 .build();
 
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION)
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, "2")
                 .withAuthorization("my-cluster", auth, false)
                 .build();
 
-        assertThat(configuration, isEquivalent("authorizer.class.name=io.strimzi.kafka.oauth.server.authorizer.KeycloakRBACAuthorizer\n" +
-                "strimzi.authorization.token.endpoint.uri=http://token-endpoint-uri\n" +
-                "strimzi.authorization.client.id=my-client-id\n" +
-                "strimzi.authorization.delegate.to.kafka.acl=false\n" +
-                "strimzi.authorization.kafka.cluster.name=my-cluster\n" +
-                "strimzi.authorization.ssl.truststore.location=/tmp/kafka/authz-keycloak.truststore.p12\n" +
-                "strimzi.authorization.ssl.truststore.password=${CERTS_STORE_PASSWORD}\n" +
-                "strimzi.authorization.ssl.truststore.type=PKCS12\n" +
-                "strimzi.authorization.ssl.endpoint.identification.algorithm=HTTPS\n" +
-                "strimzi.authorization.read.timeout.seconds=30\n" +
+        assertThat(configuration, isEquivalent("broker.id=2",
+                "node.id=2",
+                "authorizer.class.name=io.strimzi.kafka.oauth.server.authorizer.KeycloakRBACAuthorizer",
+                "strimzi.authorization.token.endpoint.uri=http://token-endpoint-uri",
+                "strimzi.authorization.client.id=my-client-id",
+                "strimzi.authorization.delegate.to.kafka.acl=false",
+                "strimzi.authorization.kafka.cluster.name=my-cluster",
+                "strimzi.authorization.ssl.truststore.location=/tmp/kafka/authz-keycloak.truststore.p12",
+                "strimzi.authorization.ssl.truststore.password=${CERTS_STORE_PASSWORD}",
+                "strimzi.authorization.ssl.truststore.type=PKCS12",
+                "strimzi.authorization.ssl.endpoint.identification.algorithm=HTTPS",
+                "strimzi.authorization.read.timeout.seconds=30",
                 "super.users=User:CN=my-cluster-kafka,O=io.strimzi;User:CN=my-cluster-entity-topic-operator,O=io.strimzi;User:CN=my-cluster-entity-user-operator,O=io.strimzi;User:CN=my-cluster-kafka-exporter,O=io.strimzi;User:CN=my-cluster-cruise-control,O=io.strimzi;User:CN=cluster-operator,O=io.strimzi"));
     }
 
@@ -326,17 +336,19 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .withUrl("http://opa:8181/v1/data/kafka/allow")
                 .build();
 
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION)
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, "2")
                 .withAuthorization("my-cluster", auth, false)
                 .build();
 
-        assertThat(configuration, isEquivalent("authorizer.class.name=org.openpolicyagent.kafka.OpaAuthorizer\n" +
-                "opa.authorizer.url=http://opa:8181/v1/data/kafka/allow\n" +
-                "opa.authorizer.allow.on.error=false\n" +
-                "opa.authorizer.metrics.enabled=false\n" +
-                "opa.authorizer.cache.initial.capacity=5000\n" +
-                "opa.authorizer.cache.maximum.size=50000\n" +
-                "opa.authorizer.cache.expire.after.seconds=3600\n" +
+        assertThat(configuration, isEquivalent("broker.id=2",
+                "node.id=2",
+                "authorizer.class.name=org.openpolicyagent.kafka.OpaAuthorizer",
+                "opa.authorizer.url=http://opa:8181/v1/data/kafka/allow",
+                "opa.authorizer.allow.on.error=false",
+                "opa.authorizer.metrics.enabled=false",
+                "opa.authorizer.cache.initial.capacity=5000",
+                "opa.authorizer.cache.maximum.size=50000",
+                "opa.authorizer.cache.expire.after.seconds=3600",
                 "super.users=User:CN=my-cluster-kafka,O=io.strimzi;User:CN=my-cluster-entity-topic-operator,O=io.strimzi;User:CN=my-cluster-entity-user-operator,O=io.strimzi;User:CN=my-cluster-kafka-exporter,O=io.strimzi;User:CN=my-cluster-cruise-control,O=io.strimzi;User:CN=cluster-operator,O=io.strimzi"));
     }
 
@@ -351,17 +363,19 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .addToSuperUsers("jack", "CN=conor")
                 .build();
 
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION)
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, "2")
                 .withAuthorization("my-cluster", auth, false)
                 .build();
 
-        assertThat(configuration, isEquivalent("authorizer.class.name=org.openpolicyagent.kafka.OpaAuthorizer\n" +
-                "opa.authorizer.url=http://opa:8181/v1/data/kafka/allow\n" +
-                "opa.authorizer.allow.on.error=true\n" +
-                "opa.authorizer.metrics.enabled=false\n" +
-                "opa.authorizer.cache.initial.capacity=1000\n" +
-                "opa.authorizer.cache.maximum.size=10000\n" +
-                "opa.authorizer.cache.expire.after.seconds=60\n" +
+        assertThat(configuration, isEquivalent("broker.id=2",
+                "node.id=2",
+                "authorizer.class.name=org.openpolicyagent.kafka.OpaAuthorizer",
+                "opa.authorizer.url=http://opa:8181/v1/data/kafka/allow",
+                "opa.authorizer.allow.on.error=true",
+                "opa.authorizer.metrics.enabled=false",
+                "opa.authorizer.cache.initial.capacity=1000",
+                "opa.authorizer.cache.maximum.size=10000",
+                "opa.authorizer.cache.expire.after.seconds=60",
                 "super.users=User:CN=my-cluster-kafka,O=io.strimzi;User:CN=my-cluster-entity-topic-operator,O=io.strimzi;User:CN=my-cluster-entity-user-operator,O=io.strimzi;User:CN=my-cluster-kafka-exporter,O=io.strimzi;User:CN=my-cluster-cruise-control,O=io.strimzi;User:CN=cluster-operator,O=io.strimzi;User:jack;User:CN=conor"));
     }
 
@@ -382,30 +396,33 @@ public class KafkaBrokerConfigurationBuilderTest {
             .addToSuperUsers("jack", "CN=conor")
             .build();
 
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION)
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, "2")
             .withAuthorization("my-cluster", auth, false)
             .build();
 
-        assertThat(configuration, isEquivalent("authorizer.class.name=org.openpolicyagent.kafka.OpaAuthorizer\n" +
-            "opa.authorizer.url=https://opa:8181/v1/data/kafka/allow\n" +
-            "opa.authorizer.allow.on.error=true\n" +
-            "opa.authorizer.metrics.enabled=false\n" +
-            "opa.authorizer.cache.initial.capacity=1000\n" +
-            "opa.authorizer.cache.maximum.size=10000\n" +
-            "opa.authorizer.cache.expire.after.seconds=60\n" +
-            "opa.authorizer.truststore.path=/tmp/kafka/authz-opa.truststore.p12\n" +
-            "opa.authorizer.truststore.password=${CERTS_STORE_PASSWORD}\n" +
-            "opa.authorizer.truststore.type=PKCS12\n" +
+        assertThat(configuration, isEquivalent("broker.id=2",
+                "node.id=2",
+                "authorizer.class.name=org.openpolicyagent.kafka.OpaAuthorizer",
+            "opa.authorizer.url=https://opa:8181/v1/data/kafka/allow",
+            "opa.authorizer.allow.on.error=true",
+            "opa.authorizer.metrics.enabled=false",
+            "opa.authorizer.cache.initial.capacity=1000",
+            "opa.authorizer.cache.maximum.size=10000",
+            "opa.authorizer.cache.expire.after.seconds=60",
+            "opa.authorizer.truststore.path=/tmp/kafka/authz-opa.truststore.p12",
+            "opa.authorizer.truststore.password=${CERTS_STORE_PASSWORD}",
+            "opa.authorizer.truststore.type=PKCS12",
             "super.users=User:CN=my-cluster-kafka,O=io.strimzi;User:CN=my-cluster-entity-topic-operator,O=io.strimzi;User:CN=my-cluster-entity-user-operator,O=io.strimzi;User:CN=my-cluster-kafka-exporter,O=io.strimzi;User:CN=my-cluster-cruise-control,O=io.strimzi;User:CN=cluster-operator,O=io.strimzi;User:jack;User:CN=conor"));
     }
 
     @ParallelTest
     public void testNullUserConfiguration()  {
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION)
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, "2")
                 .withUserConfiguration(null)
                 .build();
 
-        assertThat(configuration, isEquivalent(""));
+        assertThat(configuration, isEquivalent("broker.id=2",
+                "node.id=2"));
     }
 
     @ParallelTest
@@ -413,11 +430,12 @@ public class KafkaBrokerConfigurationBuilderTest {
         Map<String, Object> userConfiguration = new HashMap<>();
         KafkaConfiguration kafkaConfiguration = new KafkaConfiguration(Reconciliation.DUMMY_RECONCILIATION, userConfiguration.entrySet());
 
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION)
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, "2")
                 .withUserConfiguration(kafkaConfiguration)
                 .build();
 
-        assertThat(configuration, isEquivalent(""));
+        assertThat(configuration, isEquivalent("broker.id=2",
+                "node.id=2"));
     }
 
     @ParallelTest
@@ -430,13 +448,15 @@ public class KafkaBrokerConfigurationBuilderTest {
 
         KafkaConfiguration kafkaConfiguration = new KafkaConfiguration(Reconciliation.DUMMY_RECONCILIATION, userConfiguration.entrySet());
 
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION)
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, "2")
                 .withUserConfiguration(kafkaConfiguration)
                 .build();
 
-        assertThat(configuration, isEquivalent("auto.create.topics.enable=false\n" +
-                                                            "offsets.topic.replication.factor=3\n" +
-                                                            "transaction.state.log.replication.factor=3\n" +
+        assertThat(configuration, isEquivalent("broker.id=2",
+                "node.id=2",
+                "auto.create.topics.enable=false",
+                                                            "offsets.topic.replication.factor=3",
+                                                            "transaction.state.log.replication.factor=3",
                                                             "transaction.state.log.min.isr=2"));
     }
 
@@ -446,21 +466,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .withSizeLimit("5Gi")
                 .build();
 
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION)
-                .withLogDirs(VolumeUtils.createVolumeMounts(storage, "/var/lib/kafka", false))
-                .build();
-
-        assertThat(configuration, isEquivalent("log.dirs=/var/lib/kafka/data/kafka-log${STRIMZI_BROKER_ID}"));
-    }
-
-    @ParallelTest
-    public void testPerBrokerEphemeralStorageLogDirs()  {
-        Storage storage = new EphemeralStorageBuilder()
-                .withSizeLimit("5Gi")
-                .build();
-
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION)
-                .withBrokerId("2")
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, "2")
                 .withLogDirs(VolumeUtils.createVolumeMounts(storage, "/var/lib/kafka", false))
                 .build();
 
@@ -477,23 +483,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .withDeleteClaim(true)
                 .build();
 
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION)
-                .withLogDirs(VolumeUtils.createVolumeMounts(storage, "/var/lib/kafka", false))
-                .build();
-
-        assertThat(configuration, isEquivalent("log.dirs=/var/lib/kafka/data/kafka-log${STRIMZI_BROKER_ID}"));
-    }
-
-    @ParallelTest
-    public void testPerBrokerPersistentStorageLogDirs()  {
-        Storage storage = new PersistentClaimStorageBuilder()
-                .withSize("1Ti")
-                .withStorageClass("aws-ebs")
-                .withDeleteClaim(true)
-                .build();
-
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION)
-                .withBrokerId("2")
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, "2")
                 .withLogDirs(VolumeUtils.createVolumeMounts(storage, "/var/lib/kafka", false))
                 .build();
 
@@ -527,40 +517,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .withVolumes(vol1, vol2, vol5)
                 .build();
 
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION)
-                .withLogDirs(VolumeUtils.createVolumeMounts(storage, "/var/lib/kafka", false))
-                .build();
-
-        assertThat(configuration, isEquivalent("log.dirs=/var/lib/kafka/data-1/kafka-log${STRIMZI_BROKER_ID},/var/lib/kafka/data-2/kafka-log${STRIMZI_BROKER_ID},/var/lib/kafka/data-5/kafka-log${STRIMZI_BROKER_ID}"));
-    }
-
-    @ParallelTest
-    public void testPerBrokerJbodStorageLogDirs()  {
-        SingleVolumeStorage vol1 = new PersistentClaimStorageBuilder()
-                .withId(1)
-                .withSize("1Ti")
-                .withStorageClass("aws-ebs")
-                .withDeleteClaim(true)
-                .build();
-
-        SingleVolumeStorage vol2 = new EphemeralStorageBuilder()
-                .withId(2)
-                .withSizeLimit("5Gi")
-                .build();
-
-        SingleVolumeStorage vol5 = new PersistentClaimStorageBuilder()
-                .withId(5)
-                .withSize("10Ti")
-                .withStorageClass("aws-ebs")
-                .withDeleteClaim(false)
-                .build();
-
-        Storage storage = new JbodStorageBuilder()
-                .withVolumes(vol1, vol2, vol5)
-                .build();
-
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION)
-                .withBrokerId("2")
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, "2")
                 .withLogDirs(VolumeUtils.createVolumeMounts(storage, "/var/lib/kafka", false))
                 .build();
 
@@ -571,38 +528,8 @@ public class KafkaBrokerConfigurationBuilderTest {
 
     @ParallelTest
     public void testWithNoListeners() {
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION)
-                .withListeners("my-cluster", "my-namespace", emptyList())
-                .build();
-
-        assertThat(configuration, isEquivalent("listener.name.controlplane-9090.ssl.client.auth=required",
-                "listener.name.controlplane-9090.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12",
-                "listener.name.controlplane-9090.ssl.keystore.password=${CERTS_STORE_PASSWORD}",
-                "listener.name.controlplane-9090.ssl.keystore.type=PKCS12",
-                "listener.name.controlplane-9090.ssl.truststore.location=/tmp/kafka/cluster.truststore.p12",
-                "listener.name.controlplane-9090.ssl.truststore.password=${CERTS_STORE_PASSWORD}",
-                "listener.name.controlplane-9090.ssl.truststore.type=PKCS12",
-                "listener.name.replication-9091.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12",
-                "listener.name.replication-9091.ssl.keystore.password=${CERTS_STORE_PASSWORD}",
-                "listener.name.replication-9091.ssl.keystore.type=PKCS12",
-                "listener.name.replication-9091.ssl.truststore.location=/tmp/kafka/cluster.truststore.p12",
-                "listener.name.replication-9091.ssl.truststore.password=${CERTS_STORE_PASSWORD}",
-                "listener.name.replication-9091.ssl.truststore.type=PKCS12",
-                "listener.name.replication-9091.ssl.client.auth=required",
-                "listeners=CONTROLPLANE-9090://0.0.0.0:9090,REPLICATION-9091://0.0.0.0:9091",
-                "advertised.listeners=CONTROLPLANE-9090://my-cluster-kafka-${STRIMZI_BROKER_ID}.my-cluster-kafka-brokers.my-namespace.svc:9090,REPLICATION-9091://my-cluster-kafka-${STRIMZI_BROKER_ID}.my-cluster-kafka-brokers.my-namespace.svc:9091",
-                "listener.security.protocol.map=CONTROLPLANE-9090:SSL,REPLICATION-9091:SSL",
-                "control.plane.listener.name=CONTROLPLANE-9090",
-                "inter.broker.listener.name=REPLICATION-9091",
-                "sasl.enabled.mechanisms=",
-                "ssl.endpoint.identification.algorithm=HTTPS"));
-    }
-
-    @ParallelTest
-    public void testPerBrokerWithNoListeners() {
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION)
-                .withBrokerId("2")
-                .withListeners("my-cluster", "my-namespace", emptyList())
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, "2")
+                .withListeners("my-cluster", "my-namespace", emptyList(), () -> "my-cluster-kafka-2", null, null, false)
                 .build();
 
         assertThat(configuration, isEquivalent("broker.id=2",
@@ -670,11 +597,13 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .withTls(false)
                 .build();
 
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION)
-                .withListeners("my-cluster", "my-namespace", asList(listener1, listener2, listener3, listener4))
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, "2")
+                .withListeners("my-cluster", "my-namespace", asList(listener1, listener2, listener3, listener4), () -> "my-cluster-kafka-2", listenerId -> "dummy-advertised-address", listenerId -> "1919", false)
                 .build();
 
-        assertThat(configuration, isEquivalent("listener.name.controlplane-9090.ssl.client.auth=required",
+        assertThat(configuration, isEquivalent("broker.id=2",
+                "node.id=2",
+                "listener.name.controlplane-9090.ssl.client.auth=required",
                 "listener.name.controlplane-9090.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12",
                 "listener.name.controlplane-9090.ssl.keystore.password=${CERTS_STORE_PASSWORD}",
                 "listener.name.controlplane-9090.ssl.keystore.type=PKCS12",
@@ -693,7 +622,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "listener.name.listener2-9101.max.connections=1000",
                 "listener.name.listener2-9101.max.connection.creation.rate=50",
                 "listeners=CONTROLPLANE-9090://0.0.0.0:9090,REPLICATION-9091://0.0.0.0:9091,LISTENER1-9100://0.0.0.0:9100,LISTENER2-9101://0.0.0.0:9101,LISTENER3-9102://0.0.0.0:9102,LISTENER4-9103://0.0.0.0:9103",
-                "advertised.listeners=CONTROLPLANE-9090://my-cluster-kafka-${STRIMZI_BROKER_ID}.my-cluster-kafka-brokers.my-namespace.svc:9090,REPLICATION-9091://my-cluster-kafka-${STRIMZI_BROKER_ID}.my-cluster-kafka-brokers.my-namespace.svc:9091,LISTENER1-9100://${STRIMZI_LISTENER1_9100_ADVERTISED_HOSTNAME}:${STRIMZI_LISTENER1_9100_ADVERTISED_PORT},LISTENER2-9101://${STRIMZI_LISTENER2_9101_ADVERTISED_HOSTNAME}:${STRIMZI_LISTENER2_9101_ADVERTISED_PORT},LISTENER3-9102://${STRIMZI_LISTENER3_9102_ADVERTISED_HOSTNAME}:${STRIMZI_LISTENER3_9102_ADVERTISED_PORT},LISTENER4-9103://${STRIMZI_LISTENER4_9103_ADVERTISED_HOSTNAME}:${STRIMZI_LISTENER4_9103_ADVERTISED_PORT}",
+                "advertised.listeners=CONTROLPLANE-9090://my-cluster-kafka-2.my-cluster-kafka-brokers.my-namespace.svc:9090,REPLICATION-9091://my-cluster-kafka-2.my-cluster-kafka-brokers.my-namespace.svc:9091,LISTENER1-9100://dummy-advertised-address:1919,LISTENER2-9101://dummy-advertised-address:1919,LISTENER3-9102://dummy-advertised-address:1919,LISTENER4-9103://dummy-advertised-address:1919",
                 "listener.security.protocol.map=CONTROLPLANE-9090:SSL,REPLICATION-9091:SSL,LISTENER1-9100:PLAINTEXT,LISTENER2-9101:PLAINTEXT,LISTENER3-9102:PLAINTEXT,LISTENER4-9103:PLAINTEXT",
                 "control.plane.listener.name=CONTROLPLANE-9090",
                 "inter.broker.listener.name=REPLICATION-9091",
@@ -710,44 +639,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .withTls(false)
                 .build();
 
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION)
-                .withListeners("my-cluster", "my-namespace", singletonList(listener))
-                .build();
-
-        assertThat(configuration, isEquivalent("listener.name.controlplane-9090.ssl.client.auth=required",
-                "listener.name.controlplane-9090.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12",
-                "listener.name.controlplane-9090.ssl.keystore.password=${CERTS_STORE_PASSWORD}",
-                "listener.name.controlplane-9090.ssl.keystore.type=PKCS12",
-                "listener.name.controlplane-9090.ssl.truststore.location=/tmp/kafka/cluster.truststore.p12",
-                "listener.name.controlplane-9090.ssl.truststore.password=${CERTS_STORE_PASSWORD}",
-                "listener.name.controlplane-9090.ssl.truststore.type=PKCS12",
-                "listener.name.replication-9091.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12",
-                "listener.name.replication-9091.ssl.keystore.password=${CERTS_STORE_PASSWORD}",
-                "listener.name.replication-9091.ssl.keystore.type=PKCS12",
-                "listener.name.replication-9091.ssl.truststore.location=/tmp/kafka/cluster.truststore.p12",
-                "listener.name.replication-9091.ssl.truststore.password=${CERTS_STORE_PASSWORD}",
-                "listener.name.replication-9091.ssl.truststore.type=PKCS12",
-                "listener.name.replication-9091.ssl.client.auth=required",
-                "listeners=CONTROLPLANE-9090://0.0.0.0:9090,REPLICATION-9091://0.0.0.0:9091,PLAIN-9092://0.0.0.0:9092",
-                "advertised.listeners=CONTROLPLANE-9090://my-cluster-kafka-${STRIMZI_BROKER_ID}.my-cluster-kafka-brokers.my-namespace.svc:9090,REPLICATION-9091://my-cluster-kafka-${STRIMZI_BROKER_ID}.my-cluster-kafka-brokers.my-namespace.svc:9091,PLAIN-9092://${STRIMZI_PLAIN_9092_ADVERTISED_HOSTNAME}:${STRIMZI_PLAIN_9092_ADVERTISED_PORT}",
-                "listener.security.protocol.map=CONTROLPLANE-9090:SSL,REPLICATION-9091:SSL,PLAIN-9092:PLAINTEXT",
-                "control.plane.listener.name=CONTROLPLANE-9090",
-                "inter.broker.listener.name=REPLICATION-9091",
-                "sasl.enabled.mechanisms=",
-                "ssl.endpoint.identification.algorithm=HTTPS"));
-    }
-
-    @ParallelTest
-    public void testPerBrokerWithPlainListenersWithoutAuth()  {
-        GenericKafkaListener listener = new GenericKafkaListenerBuilder()
-                .withName("plain")
-                .withPort(9092)
-                .withType(KafkaListenerType.INTERNAL)
-                .withTls(false)
-                .build();
-
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION)
-                .withBrokerId("2")
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, "2")
                 .withListeners("my-cluster", "my-namespace", singletonList(listener), () -> "my-cluster-kafka-2", listenerId -> "my-cluster-kafka-2.my-cluster-kafka-brokers.my-namespace.svc", listenerId -> "9092", false)
                 .build();
 
@@ -785,8 +677,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .withTls(false)
                 .build();
 
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION)
-                .withBrokerId("2")
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, "2")
                 .withKRaft("my-cluster", "my-namespace", 3)
                 .withListeners("my-cluster", "my-namespace", singletonList(listener), () -> "my-cluster-kafka-2", listenerId -> "my-cluster-kafka-2.my-cluster-kafka-brokers.my-namespace.svc", listenerId -> "9092", true)
                 .build();
@@ -829,11 +720,13 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .endKafkaListenerAuthenticationScramSha512Auth()
                 .build();
 
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION)
-                .withListeners("my-cluster", "my-namespace", singletonList(listener))
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, "2")
+                .withListeners("my-cluster", "my-namespace", singletonList(listener), () -> "my-cluster-kafka-2", listenerId -> "dummy-advertised-address", listenerId -> "1919", false)
                 .build();
 
-        assertThat(configuration, isEquivalent("listener.name.controlplane-9090.ssl.client.auth=required",
+        assertThat(configuration, isEquivalent("broker.id=2",
+                "node.id=2",
+                "listener.name.controlplane-9090.ssl.client.auth=required",
                 "listener.name.controlplane-9090.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12",
                 "listener.name.controlplane-9090.ssl.keystore.password=${CERTS_STORE_PASSWORD}",
                 "listener.name.controlplane-9090.ssl.keystore.type=PKCS12",
@@ -848,7 +741,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "listener.name.replication-9091.ssl.truststore.type=PKCS12",
                 "listener.name.replication-9091.ssl.client.auth=required",
                 "listeners=CONTROLPLANE-9090://0.0.0.0:9090,REPLICATION-9091://0.0.0.0:9091,PLAIN-9092://0.0.0.0:9092",
-                "advertised.listeners=CONTROLPLANE-9090://my-cluster-kafka-${STRIMZI_BROKER_ID}.my-cluster-kafka-brokers.my-namespace.svc:9090,REPLICATION-9091://my-cluster-kafka-${STRIMZI_BROKER_ID}.my-cluster-kafka-brokers.my-namespace.svc:9091,PLAIN-9092://${STRIMZI_PLAIN_9092_ADVERTISED_HOSTNAME}:${STRIMZI_PLAIN_9092_ADVERTISED_PORT}",
+                "advertised.listeners=CONTROLPLANE-9090://my-cluster-kafka-2.my-cluster-kafka-brokers.my-namespace.svc:9090,REPLICATION-9091://my-cluster-kafka-2.my-cluster-kafka-brokers.my-namespace.svc:9091,PLAIN-9092://dummy-advertised-address:1919",
                 "listener.security.protocol.map=CONTROLPLANE-9090:SSL,REPLICATION-9091:SSL,PLAIN-9092:SASL_PLAINTEXT",
                 "control.plane.listener.name=CONTROLPLANE-9090",
                 "inter.broker.listener.name=REPLICATION-9091",
@@ -867,11 +760,13 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .withTls(true)
                 .build();
 
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION)
-                .withListeners("my-cluster", "my-namespace", singletonList(listener))
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, "2")
+                .withListeners("my-cluster", "my-namespace", singletonList(listener), () -> "my-cluster-kafka-2", listenerId -> "dummy-advertised-address", listenerId -> "1919", false)
                 .build();
 
-        assertThat(configuration, isEquivalent("listener.name.controlplane-9090.ssl.client.auth=required",
+        assertThat(configuration, isEquivalent("broker.id=2",
+                "node.id=2",
+                "listener.name.controlplane-9090.ssl.client.auth=required",
                 "listener.name.controlplane-9090.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12",
                 "listener.name.controlplane-9090.ssl.keystore.password=${CERTS_STORE_PASSWORD}",
                 "listener.name.controlplane-9090.ssl.keystore.type=PKCS12",
@@ -886,7 +781,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "listener.name.replication-9091.ssl.truststore.type=PKCS12",
                 "listener.name.replication-9091.ssl.client.auth=required",
                 "listeners=CONTROLPLANE-9090://0.0.0.0:9090,REPLICATION-9091://0.0.0.0:9091,TLS-9093://0.0.0.0:9093",
-                "advertised.listeners=CONTROLPLANE-9090://my-cluster-kafka-${STRIMZI_BROKER_ID}.my-cluster-kafka-brokers.my-namespace.svc:9090,REPLICATION-9091://my-cluster-kafka-${STRIMZI_BROKER_ID}.my-cluster-kafka-brokers.my-namespace.svc:9091,TLS-9093://${STRIMZI_TLS_9093_ADVERTISED_HOSTNAME}:${STRIMZI_TLS_9093_ADVERTISED_PORT}",
+                "advertised.listeners=CONTROLPLANE-9090://my-cluster-kafka-2.my-cluster-kafka-brokers.my-namespace.svc:9090,REPLICATION-9091://my-cluster-kafka-2.my-cluster-kafka-brokers.my-namespace.svc:9091,TLS-9093://dummy-advertised-address:1919",
                 "listener.security.protocol.map=CONTROLPLANE-9090:SSL,REPLICATION-9091:SSL,TLS-9093:SSL",
                 "control.plane.listener.name=CONTROLPLANE-9090",
                 "inter.broker.listener.name=REPLICATION-9091",
@@ -908,11 +803,13 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .endKafkaListenerAuthenticationTlsAuth()
                 .build();
 
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION)
-                .withListeners("my-cluster", "my-namespace", singletonList(listener))
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, "2")
+                .withListeners("my-cluster", "my-namespace", singletonList(listener), () -> "my-cluster-kafka-2", listenerId -> "dummy-advertised-address", listenerId -> "1919", false)
                 .build();
 
-        assertThat(configuration, isEquivalent("listener.name.controlplane-9090.ssl.client.auth=required",
+        assertThat(configuration, isEquivalent("broker.id=2",
+                "node.id=2",
+                "listener.name.controlplane-9090.ssl.client.auth=required",
                 "listener.name.controlplane-9090.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12",
                 "listener.name.controlplane-9090.ssl.keystore.password=${CERTS_STORE_PASSWORD}",
                 "listener.name.controlplane-9090.ssl.keystore.type=PKCS12",
@@ -927,7 +824,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "listener.name.replication-9091.ssl.truststore.type=PKCS12",
                 "listener.name.replication-9091.ssl.client.auth=required",
                 "listeners=CONTROLPLANE-9090://0.0.0.0:9090,REPLICATION-9091://0.0.0.0:9091,TLS-9093://0.0.0.0:9093",
-                "advertised.listeners=CONTROLPLANE-9090://my-cluster-kafka-${STRIMZI_BROKER_ID}.my-cluster-kafka-brokers.my-namespace.svc:9090,REPLICATION-9091://my-cluster-kafka-${STRIMZI_BROKER_ID}.my-cluster-kafka-brokers.my-namespace.svc:9091,TLS-9093://${STRIMZI_TLS_9093_ADVERTISED_HOSTNAME}:${STRIMZI_TLS_9093_ADVERTISED_PORT}",
+                "advertised.listeners=CONTROLPLANE-9090://my-cluster-kafka-2.my-cluster-kafka-brokers.my-namespace.svc:9090,REPLICATION-9091://my-cluster-kafka-2.my-cluster-kafka-brokers.my-namespace.svc:9091,TLS-9093://dummy-advertised-address:1919",
                 "listener.security.protocol.map=CONTROLPLANE-9090:SSL,REPLICATION-9091:SSL,TLS-9093:SSL",
                 "control.plane.listener.name=CONTROLPLANE-9090",
                 "inter.broker.listener.name=REPLICATION-9091",
@@ -958,11 +855,13 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .endConfiguration()
                 .build();
 
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION)
-                .withListeners("my-cluster", "my-namespace", singletonList(listener))
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, "2")
+                .withListeners("my-cluster", "my-namespace", singletonList(listener), () -> "my-cluster-kafka-2", listenerId -> "dummy-advertised-address", listenerId -> "1919", false)
                 .build();
 
-        assertThat(configuration, isEquivalent("listener.name.controlplane-9090.ssl.client.auth=required",
+        assertThat(configuration, isEquivalent("broker.id=2",
+                "node.id=2",
+                "listener.name.controlplane-9090.ssl.client.auth=required",
                 "listener.name.controlplane-9090.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12",
                 "listener.name.controlplane-9090.ssl.keystore.password=${CERTS_STORE_PASSWORD}",
                 "listener.name.controlplane-9090.ssl.keystore.type=PKCS12",
@@ -977,7 +876,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "listener.name.replication-9091.ssl.truststore.type=PKCS12",
                 "listener.name.replication-9091.ssl.client.auth=required",
                 "listeners=CONTROLPLANE-9090://0.0.0.0:9090,REPLICATION-9091://0.0.0.0:9091,TLS-9093://0.0.0.0:9093",
-                "advertised.listeners=CONTROLPLANE-9090://my-cluster-kafka-${STRIMZI_BROKER_ID}.my-cluster-kafka-brokers.my-namespace.svc:9090,REPLICATION-9091://my-cluster-kafka-${STRIMZI_BROKER_ID}.my-cluster-kafka-brokers.my-namespace.svc:9091,TLS-9093://${STRIMZI_TLS_9093_ADVERTISED_HOSTNAME}:${STRIMZI_TLS_9093_ADVERTISED_PORT}",
+                "advertised.listeners=CONTROLPLANE-9090://my-cluster-kafka-2.my-cluster-kafka-brokers.my-namespace.svc:9090,REPLICATION-9091://my-cluster-kafka-2.my-cluster-kafka-brokers.my-namespace.svc:9091,TLS-9093://dummy-advertised-address:1919",
                 "listener.security.protocol.map=CONTROLPLANE-9090:SSL,REPLICATION-9091:SSL,TLS-9093:SSL",
                 "control.plane.listener.name=CONTROLPLANE-9090",
                 "inter.broker.listener.name=REPLICATION-9091",
@@ -997,11 +896,13 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .withTls(true)
                 .build();
 
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION)
-                .withListeners("my-cluster", "my-namespace", singletonList(listener))
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, "2")
+                .withListeners("my-cluster", "my-namespace", singletonList(listener), () -> "my-cluster-kafka-2", listenerId -> "dummy-advertised-address", listenerId -> "1919", false)
                 .build();
 
-        assertThat(configuration, isEquivalent("listener.name.controlplane-9090.ssl.client.auth=required",
+        assertThat(configuration, isEquivalent("broker.id=2",
+                "node.id=2",
+                "listener.name.controlplane-9090.ssl.client.auth=required",
                 "listener.name.controlplane-9090.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12",
                 "listener.name.controlplane-9090.ssl.keystore.password=${CERTS_STORE_PASSWORD}",
                 "listener.name.controlplane-9090.ssl.keystore.type=PKCS12",
@@ -1016,7 +917,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "listener.name.replication-9091.ssl.truststore.type=PKCS12",
                 "listener.name.replication-9091.ssl.client.auth=required",
                 "listeners=CONTROLPLANE-9090://0.0.0.0:9090,REPLICATION-9091://0.0.0.0:9091,EXTERNAL-9094://0.0.0.0:9094",
-                "advertised.listeners=CONTROLPLANE-9090://my-cluster-kafka-${STRIMZI_BROKER_ID}.my-cluster-kafka-brokers.my-namespace.svc:9090,REPLICATION-9091://my-cluster-kafka-${STRIMZI_BROKER_ID}.my-cluster-kafka-brokers.my-namespace.svc:9091,EXTERNAL-9094://${STRIMZI_EXTERNAL_9094_ADVERTISED_HOSTNAME}:${STRIMZI_EXTERNAL_9094_ADVERTISED_PORT}",
+                "advertised.listeners=CONTROLPLANE-9090://my-cluster-kafka-2.my-cluster-kafka-brokers.my-namespace.svc:9090,REPLICATION-9091://my-cluster-kafka-2.my-cluster-kafka-brokers.my-namespace.svc:9091,EXTERNAL-9094://dummy-advertised-address:1919",
                 "listener.security.protocol.map=CONTROLPLANE-9090:SSL,REPLICATION-9091:SSL,EXTERNAL-9094:SSL",
                 "control.plane.listener.name=CONTROLPLANE-9090",
                 "inter.broker.listener.name=REPLICATION-9091",
@@ -1038,11 +939,13 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .endKafkaListenerAuthenticationTlsAuth()
                 .build();
 
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION)
-                .withListeners("my-cluster", "my-namespace", singletonList(listener))
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, "2")
+                .withListeners("my-cluster", "my-namespace", singletonList(listener), () -> "my-cluster-kafka-2", listenerId -> "dummy-advertised-address", listenerId -> "1919", false)
                 .build();
 
-        assertThat(configuration, isEquivalent("listener.name.controlplane-9090.ssl.client.auth=required",
+        assertThat(configuration, isEquivalent("broker.id=2",
+                "node.id=2",
+                "listener.name.controlplane-9090.ssl.client.auth=required",
                 "listener.name.controlplane-9090.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12",
                 "listener.name.controlplane-9090.ssl.keystore.password=${CERTS_STORE_PASSWORD}",
                 "listener.name.controlplane-9090.ssl.keystore.type=PKCS12",
@@ -1057,7 +960,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "listener.name.replication-9091.ssl.truststore.type=PKCS12",
                 "listener.name.replication-9091.ssl.client.auth=required",
                 "listeners=CONTROLPLANE-9090://0.0.0.0:9090,REPLICATION-9091://0.0.0.0:9091,EXTERNAL-9094://0.0.0.0:9094",
-                "advertised.listeners=CONTROLPLANE-9090://my-cluster-kafka-${STRIMZI_BROKER_ID}.my-cluster-kafka-brokers.my-namespace.svc:9090,REPLICATION-9091://my-cluster-kafka-${STRIMZI_BROKER_ID}.my-cluster-kafka-brokers.my-namespace.svc:9091,EXTERNAL-9094://${STRIMZI_EXTERNAL_9094_ADVERTISED_HOSTNAME}:${STRIMZI_EXTERNAL_9094_ADVERTISED_PORT}",
+                "advertised.listeners=CONTROLPLANE-9090://my-cluster-kafka-2.my-cluster-kafka-brokers.my-namespace.svc:9090,REPLICATION-9091://my-cluster-kafka-2.my-cluster-kafka-brokers.my-namespace.svc:9091,EXTERNAL-9094://dummy-advertised-address:1919",
                 "listener.security.protocol.map=CONTROLPLANE-9090:SSL,REPLICATION-9091:SSL,EXTERNAL-9094:SSL",
                 "control.plane.listener.name=CONTROLPLANE-9090",
                 "inter.broker.listener.name=REPLICATION-9091",
@@ -1083,11 +986,13 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .endKafkaListenerAuthenticationScramSha512Auth()
                 .build();
 
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION)
-                .withListeners("my-cluster", "my-namespace", singletonList(listener))
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, "2")
+                .withListeners("my-cluster", "my-namespace", singletonList(listener), () -> "my-cluster-kafka-2", listenerId -> "dummy-advertised-address", listenerId -> "1919", false)
                 .build();
 
-        assertThat(configuration, isEquivalent("listener.name.controlplane-9090.ssl.client.auth=required",
+        assertThat(configuration, isEquivalent("broker.id=2",
+                "node.id=2",
+                "listener.name.controlplane-9090.ssl.client.auth=required",
                 "listener.name.controlplane-9090.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12",
                 "listener.name.controlplane-9090.ssl.keystore.password=${CERTS_STORE_PASSWORD}",
                 "listener.name.controlplane-9090.ssl.keystore.type=PKCS12",
@@ -1102,7 +1007,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "listener.name.replication-9091.ssl.truststore.type=PKCS12",
                 "listener.name.replication-9091.ssl.client.auth=required",
                 "listeners=CONTROLPLANE-9090://0.0.0.0:9090,REPLICATION-9091://0.0.0.0:9091,EXTERNAL-9094://0.0.0.0:9094",
-                "advertised.listeners=CONTROLPLANE-9090://my-cluster-kafka-${STRIMZI_BROKER_ID}.my-cluster-kafka-brokers.my-namespace.svc:9090,REPLICATION-9091://my-cluster-kafka-${STRIMZI_BROKER_ID}.my-cluster-kafka-brokers.my-namespace.svc:9091,EXTERNAL-9094://${STRIMZI_EXTERNAL_9094_ADVERTISED_HOSTNAME}:${STRIMZI_EXTERNAL_9094_ADVERTISED_PORT}",
+                "advertised.listeners=CONTROLPLANE-9090://my-cluster-kafka-2.my-cluster-kafka-brokers.my-namespace.svc:9090,REPLICATION-9091://my-cluster-kafka-2.my-cluster-kafka-brokers.my-namespace.svc:9091,EXTERNAL-9094://dummy-advertised-address:1919",
                 "listener.security.protocol.map=CONTROLPLANE-9090:SSL,REPLICATION-9091:SSL,EXTERNAL-9094:SASL_SSL",
                 "control.plane.listener.name=CONTROLPLANE-9090",
                 "inter.broker.listener.name=REPLICATION-9091",
@@ -1131,11 +1036,13 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .endConfiguration()
                 .build();
 
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION)
-                .withListeners("my-cluster", "my-namespace", singletonList(listener))
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, "2")
+                .withListeners("my-cluster", "my-namespace", singletonList(listener), () -> "my-cluster-kafka-2", listenerId -> "dummy-advertised-address", listenerId -> "1919", false)
                 .build();
 
-        assertThat(configuration, isEquivalent("listener.name.controlplane-9090.ssl.client.auth=required",
+        assertThat(configuration, isEquivalent("broker.id=2",
+                "node.id=2",
+                "listener.name.controlplane-9090.ssl.client.auth=required",
                 "listener.name.controlplane-9090.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12",
                 "listener.name.controlplane-9090.ssl.keystore.password=${CERTS_STORE_PASSWORD}",
                 "listener.name.controlplane-9090.ssl.keystore.type=PKCS12",
@@ -1150,7 +1057,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "listener.name.replication-9091.ssl.truststore.type=PKCS12",
                 "listener.name.replication-9091.ssl.client.auth=required",
                 "listeners=CONTROLPLANE-9090://0.0.0.0:9090,REPLICATION-9091://0.0.0.0:9091,EXTERNAL-9094://0.0.0.0:9094",
-                "advertised.listeners=CONTROLPLANE-9090://my-cluster-kafka-${STRIMZI_BROKER_ID}.my-cluster-kafka-brokers.my-namespace.svc:9090,REPLICATION-9091://my-cluster-kafka-${STRIMZI_BROKER_ID}.my-cluster-kafka-brokers.my-namespace.svc:9091,EXTERNAL-9094://${STRIMZI_EXTERNAL_9094_ADVERTISED_HOSTNAME}:${STRIMZI_EXTERNAL_9094_ADVERTISED_PORT}",
+                "advertised.listeners=CONTROLPLANE-9090://my-cluster-kafka-2.my-cluster-kafka-brokers.my-namespace.svc:9090,REPLICATION-9091://my-cluster-kafka-2.my-cluster-kafka-brokers.my-namespace.svc:9091,EXTERNAL-9094://dummy-advertised-address:1919",
                 "listener.security.protocol.map=CONTROLPLANE-9090:SSL,REPLICATION-9091:SSL,EXTERNAL-9094:SSL",
                 "control.plane.listener.name=CONTROLPLANE-9090",
                 "inter.broker.listener.name=REPLICATION-9091",
@@ -1170,11 +1077,13 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .withTls(true)
                 .build();
         
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION)
-                .withListeners("my-cluster", "my-namespace", singletonList(listener))
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, "2")
+                .withListeners("my-cluster", "my-namespace", singletonList(listener), () -> "my-cluster-kafka-2", listenerId -> "dummy-advertised-address", listenerId -> "1919", false)
                 .build();
 
-        assertThat(configuration, isEquivalent("listener.name.controlplane-9090.ssl.client.auth=required",
+        assertThat(configuration, isEquivalent("broker.id=2",
+                "node.id=2",
+                "listener.name.controlplane-9090.ssl.client.auth=required",
                 "listener.name.controlplane-9090.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12",
                 "listener.name.controlplane-9090.ssl.keystore.password=${CERTS_STORE_PASSWORD}",
                 "listener.name.controlplane-9090.ssl.keystore.type=PKCS12",
@@ -1189,7 +1098,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "listener.name.replication-9091.ssl.truststore.type=PKCS12",
                 "listener.name.replication-9091.ssl.client.auth=required",
                 "listeners=CONTROLPLANE-9090://0.0.0.0:9090,REPLICATION-9091://0.0.0.0:9091,EXTERNAL-9094://0.0.0.0:9094",
-                "advertised.listeners=CONTROLPLANE-9090://my-cluster-kafka-${STRIMZI_BROKER_ID}.my-cluster-kafka-brokers.my-namespace.svc:9090,REPLICATION-9091://my-cluster-kafka-${STRIMZI_BROKER_ID}.my-cluster-kafka-brokers.my-namespace.svc:9091,EXTERNAL-9094://${STRIMZI_EXTERNAL_9094_ADVERTISED_HOSTNAME}:${STRIMZI_EXTERNAL_9094_ADVERTISED_PORT}",
+                "advertised.listeners=CONTROLPLANE-9090://my-cluster-kafka-2.my-cluster-kafka-brokers.my-namespace.svc:9090,REPLICATION-9091://my-cluster-kafka-2.my-cluster-kafka-brokers.my-namespace.svc:9091,EXTERNAL-9094://dummy-advertised-address:1919",
                 "listener.security.protocol.map=CONTROLPLANE-9090:SSL,REPLICATION-9091:SSL,EXTERNAL-9094:SSL",
                 "control.plane.listener.name=CONTROLPLANE-9090",
                 "inter.broker.listener.name=REPLICATION-9091",
@@ -1209,8 +1118,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .withTls(true)
                 .build();
 
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION)
-                .withBrokerId("2")
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, "2")
                 .withListeners("my-cluster", "my-namespace", singletonList(listener), () -> "my-cluster-kafka-2", listenerId -> "my-lb.com", listenerId -> "9094", false)
                 .build();
 
@@ -1251,11 +1159,13 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .withTls(false)
                 .build();
 
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION)
-                .withListeners("my-cluster", "my-namespace", singletonList(listener))
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, "2")
+                .withListeners("my-cluster", "my-namespace", singletonList(listener), () -> "my-cluster-kafka-2", listenerId -> "dummy-advertised-address", listenerId -> "1919", false)
                 .build();
 
-        assertThat(configuration, isEquivalent("listener.name.controlplane-9090.ssl.client.auth=required",
+        assertThat(configuration, isEquivalent("broker.id=2",
+                "node.id=2",
+                "listener.name.controlplane-9090.ssl.client.auth=required",
                 "listener.name.controlplane-9090.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12",
                 "listener.name.controlplane-9090.ssl.keystore.password=${CERTS_STORE_PASSWORD}",
                 "listener.name.controlplane-9090.ssl.keystore.type=PKCS12",
@@ -1270,7 +1180,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "listener.name.replication-9091.ssl.truststore.type=PKCS12",
                 "listener.name.replication-9091.ssl.client.auth=required",
                 "listeners=CONTROLPLANE-9090://0.0.0.0:9090,REPLICATION-9091://0.0.0.0:9091,EXTERNAL-9094://0.0.0.0:9094",
-                "advertised.listeners=CONTROLPLANE-9090://my-cluster-kafka-${STRIMZI_BROKER_ID}.my-cluster-kafka-brokers.my-namespace.svc:9090,REPLICATION-9091://my-cluster-kafka-${STRIMZI_BROKER_ID}.my-cluster-kafka-brokers.my-namespace.svc:9091,EXTERNAL-9094://${STRIMZI_EXTERNAL_9094_ADVERTISED_HOSTNAME}:${STRIMZI_EXTERNAL_9094_ADVERTISED_PORT}",
+                "advertised.listeners=CONTROLPLANE-9090://my-cluster-kafka-2.my-cluster-kafka-brokers.my-namespace.svc:9090,REPLICATION-9091://my-cluster-kafka-2.my-cluster-kafka-brokers.my-namespace.svc:9091,EXTERNAL-9094://dummy-advertised-address:1919",
                 "listener.security.protocol.map=CONTROLPLANE-9090:SSL,REPLICATION-9091:SSL,EXTERNAL-9094:PLAINTEXT",
                 "control.plane.listener.name=CONTROLPLANE-9090",
                 "inter.broker.listener.name=REPLICATION-9091",
@@ -1287,11 +1197,13 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .withTls(true)
                 .build();
 
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION)
-                .withListeners("my-cluster", "my-namespace", singletonList(listener))
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, "2")
+                .withListeners("my-cluster", "my-namespace", singletonList(listener), () -> "my-cluster-kafka-2", listenerId -> "dummy-advertised-address", listenerId -> "1919", false)
                 .build();
 
-        assertThat(configuration, isEquivalent("listener.name.controlplane-9090.ssl.client.auth=required",
+        assertThat(configuration, isEquivalent("broker.id=2",
+                "node.id=2",
+                "listener.name.controlplane-9090.ssl.client.auth=required",
                 "listener.name.controlplane-9090.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12",
                 "listener.name.controlplane-9090.ssl.keystore.password=${CERTS_STORE_PASSWORD}",
                 "listener.name.controlplane-9090.ssl.keystore.type=PKCS12",
@@ -1306,7 +1218,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "listener.name.replication-9091.ssl.truststore.type=PKCS12",
                 "listener.name.replication-9091.ssl.client.auth=required",
                 "listeners=CONTROLPLANE-9090://0.0.0.0:9090,REPLICATION-9091://0.0.0.0:9091,EXTERNAL-9094://0.0.0.0:9094",
-                "advertised.listeners=CONTROLPLANE-9090://my-cluster-kafka-${STRIMZI_BROKER_ID}.my-cluster-kafka-brokers.my-namespace.svc:9090,REPLICATION-9091://my-cluster-kafka-${STRIMZI_BROKER_ID}.my-cluster-kafka-brokers.my-namespace.svc:9091,EXTERNAL-9094://${STRIMZI_EXTERNAL_9094_ADVERTISED_HOSTNAME}:${STRIMZI_EXTERNAL_9094_ADVERTISED_PORT}",
+                "advertised.listeners=CONTROLPLANE-9090://my-cluster-kafka-2.my-cluster-kafka-brokers.my-namespace.svc:9090,REPLICATION-9091://my-cluster-kafka-2.my-cluster-kafka-brokers.my-namespace.svc:9091,EXTERNAL-9094://dummy-advertised-address:1919",
                 "listener.security.protocol.map=CONTROLPLANE-9090:SSL,REPLICATION-9091:SSL,EXTERNAL-9094:SSL",
                 "control.plane.listener.name=CONTROLPLANE-9090",
                 "inter.broker.listener.name=REPLICATION-9091",
@@ -1326,11 +1238,13 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .withTls(false)
                 .build();
 
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION)
-                .withListeners("my-cluster", "my-namespace", singletonList(listener))
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, "2")
+                .withListeners("my-cluster", "my-namespace", singletonList(listener), () -> "my-cluster-kafka-2", listenerId -> "dummy-advertised-address", listenerId -> "1919", false)
                 .build();
 
-        assertThat(configuration, isEquivalent("listener.name.controlplane-9090.ssl.client.auth=required",
+        assertThat(configuration, isEquivalent("broker.id=2",
+                "node.id=2",
+                "listener.name.controlplane-9090.ssl.client.auth=required",
                 "listener.name.controlplane-9090.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12",
                 "listener.name.controlplane-9090.ssl.keystore.password=${CERTS_STORE_PASSWORD}",
                 "listener.name.controlplane-9090.ssl.keystore.type=PKCS12",
@@ -1345,7 +1259,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "listener.name.replication-9091.ssl.truststore.type=PKCS12",
                 "listener.name.replication-9091.ssl.client.auth=required",
                 "listeners=CONTROLPLANE-9090://0.0.0.0:9090,REPLICATION-9091://0.0.0.0:9091,EXTERNAL-9094://0.0.0.0:9094",
-                "advertised.listeners=CONTROLPLANE-9090://my-cluster-kafka-${STRIMZI_BROKER_ID}.my-cluster-kafka-brokers.my-namespace.svc:9090,REPLICATION-9091://my-cluster-kafka-${STRIMZI_BROKER_ID}.my-cluster-kafka-brokers.my-namespace.svc:9091,EXTERNAL-9094://${STRIMZI_EXTERNAL_9094_ADVERTISED_HOSTNAME}:${STRIMZI_EXTERNAL_9094_ADVERTISED_PORT}",
+                "advertised.listeners=CONTROLPLANE-9090://my-cluster-kafka-2.my-cluster-kafka-brokers.my-namespace.svc:9090,REPLICATION-9091://my-cluster-kafka-2.my-cluster-kafka-brokers.my-namespace.svc:9091,EXTERNAL-9094://dummy-advertised-address:1919",
                 "listener.security.protocol.map=CONTROLPLANE-9090:SSL,REPLICATION-9091:SSL,EXTERNAL-9094:PLAINTEXT",
                 "control.plane.listener.name=CONTROLPLANE-9090",
                 "inter.broker.listener.name=REPLICATION-9091",
@@ -1362,8 +1276,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .withTls(false)
                 .build();
 
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION)
-                .withBrokerId("2")
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, "2")
                 .withListeners("my-cluster", "my-namespace", singletonList(listener), () -> "my-cluster-kafka-2", listenerId -> "${STRIMZI_NODEPORT_DEFAULT_ADDRESS}", listenerId -> "31234", false)
                 .build();
 
@@ -1413,11 +1326,13 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .endConfiguration()
                 .build();
 
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION)
-                .withListeners("my-cluster", "my-namespace", singletonList(listener))
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, "2")
+                .withListeners("my-cluster", "my-namespace", singletonList(listener), () -> "my-cluster-kafka-2", listenerId -> "dummy-advertised-address", listenerId -> "1919", false)
                 .build();
 
-        assertThat(configuration, isEquivalent("listener.name.controlplane-9090.ssl.client.auth=required",
+        assertThat(configuration, isEquivalent("broker.id=2",
+                "node.id=2",
+                "listener.name.controlplane-9090.ssl.client.auth=required",
                 "listener.name.controlplane-9090.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12",
                 "listener.name.controlplane-9090.ssl.keystore.password=${CERTS_STORE_PASSWORD}",
                 "listener.name.controlplane-9090.ssl.keystore.type=PKCS12",
@@ -1432,7 +1347,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "listener.name.replication-9091.ssl.truststore.type=PKCS12",
                 "listener.name.replication-9091.ssl.client.auth=required",
                 "listeners=CONTROLPLANE-9090://0.0.0.0:9090,REPLICATION-9091://0.0.0.0:9091,EXTERNAL-9094://0.0.0.0:9094",
-                "advertised.listeners=CONTROLPLANE-9090://my-cluster-kafka-${STRIMZI_BROKER_ID}.my-cluster-kafka-brokers.my-namespace.svc:9090,REPLICATION-9091://my-cluster-kafka-${STRIMZI_BROKER_ID}.my-cluster-kafka-brokers.my-namespace.svc:9091,EXTERNAL-9094://${STRIMZI_EXTERNAL_9094_ADVERTISED_HOSTNAME}:${STRIMZI_EXTERNAL_9094_ADVERTISED_PORT}",
+                "advertised.listeners=CONTROLPLANE-9090://my-cluster-kafka-2.my-cluster-kafka-brokers.my-namespace.svc:9090,REPLICATION-9091://my-cluster-kafka-2.my-cluster-kafka-brokers.my-namespace.svc:9091,EXTERNAL-9094://dummy-advertised-address:1919",
                 "listener.security.protocol.map=CONTROLPLANE-9090:SSL,REPLICATION-9091:SSL,EXTERNAL-9094:SSL",
                 "control.plane.listener.name=CONTROLPLANE-9090",
                 "inter.broker.listener.name=REPLICATION-9091",
@@ -1461,11 +1376,13 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .endConfiguration()
                 .build();
 
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION)
-                .withListeners("my-cluster", "my-namespace", singletonList(listener))
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, "2")
+                .withListeners("my-cluster", "my-namespace", singletonList(listener), () -> "my-cluster-kafka-2", listenerId -> "dummy-advertised-address", listenerId -> "1919", false)
                 .build();
 
-        assertThat(configuration, isEquivalent("listener.name.controlplane-9090.ssl.client.auth=required",
+        assertThat(configuration, isEquivalent("broker.id=2",
+                "node.id=2",
+                "listener.name.controlplane-9090.ssl.client.auth=required",
                 "listener.name.controlplane-9090.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12",
                 "listener.name.controlplane-9090.ssl.keystore.password=${CERTS_STORE_PASSWORD}",
                 "listener.name.controlplane-9090.ssl.keystore.type=PKCS12",
@@ -1480,7 +1397,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "listener.name.replication-9091.ssl.truststore.type=PKCS12",
                 "listener.name.replication-9091.ssl.client.auth=required",
                 "listeners=CONTROLPLANE-9090://0.0.0.0:9090,REPLICATION-9091://0.0.0.0:9091,EXTERNAL-9094://0.0.0.0:9094",
-                "advertised.listeners=CONTROLPLANE-9090://my-cluster-kafka-${STRIMZI_BROKER_ID}.my-cluster-kafka-brokers.my-namespace.svc:9090,REPLICATION-9091://my-cluster-kafka-${STRIMZI_BROKER_ID}.my-cluster-kafka-brokers.my-namespace.svc:9091,EXTERNAL-9094://${STRIMZI_EXTERNAL_9094_ADVERTISED_HOSTNAME}:${STRIMZI_EXTERNAL_9094_ADVERTISED_PORT}",
+                "advertised.listeners=CONTROLPLANE-9090://my-cluster-kafka-2.my-cluster-kafka-brokers.my-namespace.svc:9090,REPLICATION-9091://my-cluster-kafka-2.my-cluster-kafka-brokers.my-namespace.svc:9091,EXTERNAL-9094://dummy-advertised-address:1919",
                 "listener.security.protocol.map=CONTROLPLANE-9090:SSL,REPLICATION-9091:SSL,EXTERNAL-9094:SSL",
                 "control.plane.listener.name=CONTROLPLANE-9090",
                 "inter.broker.listener.name=REPLICATION-9091",
@@ -1509,11 +1426,13 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .endConfiguration()
                 .build();
 
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION)
-                .withListeners("my-cluster", "my-namespace", singletonList(listener))
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, "2")
+                .withListeners("my-cluster", "my-namespace", singletonList(listener), () -> "my-cluster-kafka-2", listenerId -> "dummy-advertised-address", listenerId -> "1919", false)
                 .build();
 
-        assertThat(configuration, isEquivalent("listener.name.controlplane-9090.ssl.client.auth=required",
+        assertThat(configuration, isEquivalent("broker.id=2",
+                "node.id=2",
+                "listener.name.controlplane-9090.ssl.client.auth=required",
                 "listener.name.controlplane-9090.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12",
                 "listener.name.controlplane-9090.ssl.keystore.password=${CERTS_STORE_PASSWORD}",
                 "listener.name.controlplane-9090.ssl.keystore.type=PKCS12",
@@ -1528,7 +1447,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "listener.name.replication-9091.ssl.truststore.type=PKCS12",
                 "listener.name.replication-9091.ssl.client.auth=required",
                 "listeners=CONTROLPLANE-9090://0.0.0.0:9090,REPLICATION-9091://0.0.0.0:9091,EXTERNAL-9094://0.0.0.0:9094",
-                "advertised.listeners=CONTROLPLANE-9090://my-cluster-kafka-${STRIMZI_BROKER_ID}.my-cluster-kafka-brokers.my-namespace.svc:9090,REPLICATION-9091://my-cluster-kafka-${STRIMZI_BROKER_ID}.my-cluster-kafka-brokers.my-namespace.svc:9091,EXTERNAL-9094://${STRIMZI_EXTERNAL_9094_ADVERTISED_HOSTNAME}:${STRIMZI_EXTERNAL_9094_ADVERTISED_PORT}",
+                "advertised.listeners=CONTROLPLANE-9090://my-cluster-kafka-2.my-cluster-kafka-brokers.my-namespace.svc:9090,REPLICATION-9091://my-cluster-kafka-2.my-cluster-kafka-brokers.my-namespace.svc:9091,EXTERNAL-9094://dummy-advertised-address:1919",
                 "listener.security.protocol.map=CONTROLPLANE-9090:SSL,REPLICATION-9091:SSL,EXTERNAL-9094:PLAINTEXT",
                 "control.plane.listener.name=CONTROLPLANE-9090",
                 "inter.broker.listener.name=REPLICATION-9091",
@@ -1560,11 +1479,13 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .endKafkaListenerAuthenticationOAuth()
                 .build();
 
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION)
-                .withListeners("my-cluster", "my-namespace", singletonList(listener))
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, "2")
+                .withListeners("my-cluster", "my-namespace", singletonList(listener), () -> "my-cluster-kafka-2", listenerId -> "dummy-advertised-address", listenerId -> "1919", false)
                 .build();
 
-        assertThat(configuration, isEquivalent("listener.name.controlplane-9090.ssl.client.auth=required",
+        assertThat(configuration, isEquivalent("broker.id=2",
+                "node.id=2",
+                "listener.name.controlplane-9090.ssl.client.auth=required",
                 "listener.name.controlplane-9090.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12",
                 "listener.name.controlplane-9090.ssl.keystore.password=${CERTS_STORE_PASSWORD}",
                 "listener.name.controlplane-9090.ssl.keystore.type=PKCS12",
@@ -1579,7 +1500,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "listener.name.replication-9091.ssl.truststore.type=PKCS12",
                 "listener.name.replication-9091.ssl.client.auth=required",
                 "listeners=CONTROLPLANE-9090://0.0.0.0:9090,REPLICATION-9091://0.0.0.0:9091,PLAIN-9092://0.0.0.0:9092",
-                "advertised.listeners=CONTROLPLANE-9090://my-cluster-kafka-${STRIMZI_BROKER_ID}.my-cluster-kafka-brokers.my-namespace.svc:9090,REPLICATION-9091://my-cluster-kafka-${STRIMZI_BROKER_ID}.my-cluster-kafka-brokers.my-namespace.svc:9091,PLAIN-9092://${STRIMZI_PLAIN_9092_ADVERTISED_HOSTNAME}:${STRIMZI_PLAIN_9092_ADVERTISED_PORT}",
+                "advertised.listeners=CONTROLPLANE-9090://my-cluster-kafka-2.my-cluster-kafka-brokers.my-namespace.svc:9090,REPLICATION-9091://my-cluster-kafka-2.my-cluster-kafka-brokers.my-namespace.svc:9091,PLAIN-9092://dummy-advertised-address:1919",
                 "listener.security.protocol.map=CONTROLPLANE-9090:SSL,REPLICATION-9091:SSL,PLAIN-9092:SASL_PLAINTEXT",
                 "control.plane.listener.name=CONTROLPLANE-9090",
                 "inter.broker.listener.name=REPLICATION-9091",
@@ -1617,11 +1538,13 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .endKafkaListenerAuthenticationOAuth()
                 .build();
 
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION)
-                .withListeners("my-cluster", "my-namespace", singletonList(listener))
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, "2")
+                .withListeners("my-cluster", "my-namespace", singletonList(listener), () -> "my-cluster-kafka-2", listenerId -> "dummy-advertised-address", listenerId -> "1919", false)
                 .build();
 
-        assertThat(configuration, isEquivalent("listener.name.controlplane-9090.ssl.client.auth=required",
+        assertThat(configuration, isEquivalent("broker.id=2",
+                "node.id=2",
+                "listener.name.controlplane-9090.ssl.client.auth=required",
                 "listener.name.controlplane-9090.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12",
                 "listener.name.controlplane-9090.ssl.keystore.password=${CERTS_STORE_PASSWORD}",
                 "listener.name.controlplane-9090.ssl.keystore.type=PKCS12",
@@ -1636,7 +1559,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "listener.name.replication-9091.ssl.truststore.type=PKCS12",
                 "listener.name.replication-9091.ssl.client.auth=required",
                 "listeners=CONTROLPLANE-9090://0.0.0.0:9090,REPLICATION-9091://0.0.0.0:9091,PLAIN-9092://0.0.0.0:9092",
-                "advertised.listeners=CONTROLPLANE-9090://my-cluster-kafka-${STRIMZI_BROKER_ID}.my-cluster-kafka-brokers.my-namespace.svc:9090,REPLICATION-9091://my-cluster-kafka-${STRIMZI_BROKER_ID}.my-cluster-kafka-brokers.my-namespace.svc:9091,PLAIN-9092://${STRIMZI_PLAIN_9092_ADVERTISED_HOSTNAME}:${STRIMZI_PLAIN_9092_ADVERTISED_PORT}",
+                "advertised.listeners=CONTROLPLANE-9090://my-cluster-kafka-2.my-cluster-kafka-brokers.my-namespace.svc:9090,REPLICATION-9091://my-cluster-kafka-2.my-cluster-kafka-brokers.my-namespace.svc:9091,PLAIN-9092://dummy-advertised-address:1919",
                 "listener.security.protocol.map=CONTROLPLANE-9090:SSL,REPLICATION-9091:SSL,PLAIN-9092:SASL_PLAINTEXT",
                 "control.plane.listener.name=CONTROLPLANE-9090",
                 "inter.broker.listener.name=REPLICATION-9091",
@@ -1660,11 +1583,13 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .endKafkaListenerAuthenticationOAuth()
                 .build();
 
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION)
-                .withListeners("my-cluster", "my-namespace", singletonList(listener))
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, "2")
+                .withListeners("my-cluster", "my-namespace", singletonList(listener), () -> "my-cluster-kafka-2", listenerId -> "dummy-advertised-address", listenerId -> "1919", false)
                 .build();
 
-        assertThat(configuration, isEquivalent("listener.name.controlplane-9090.ssl.client.auth=required",
+        assertThat(configuration, isEquivalent("broker.id=2",
+                "node.id=2",
+                "listener.name.controlplane-9090.ssl.client.auth=required",
                 "listener.name.controlplane-9090.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12",
                 "listener.name.controlplane-9090.ssl.keystore.password=${CERTS_STORE_PASSWORD}",
                 "listener.name.controlplane-9090.ssl.keystore.type=PKCS12",
@@ -1679,7 +1604,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "listener.name.replication-9091.ssl.truststore.type=PKCS12",
                 "listener.name.replication-9091.ssl.client.auth=required",
                 "listeners=CONTROLPLANE-9090://0.0.0.0:9090,REPLICATION-9091://0.0.0.0:9091,PLAIN-9092://0.0.0.0:9092",
-                "advertised.listeners=CONTROLPLANE-9090://my-cluster-kafka-${STRIMZI_BROKER_ID}.my-cluster-kafka-brokers.my-namespace.svc:9090,REPLICATION-9091://my-cluster-kafka-${STRIMZI_BROKER_ID}.my-cluster-kafka-brokers.my-namespace.svc:9091,PLAIN-9092://${STRIMZI_PLAIN_9092_ADVERTISED_HOSTNAME}:${STRIMZI_PLAIN_9092_ADVERTISED_PORT}",
+                "advertised.listeners=CONTROLPLANE-9090://my-cluster-kafka-2.my-cluster-kafka-brokers.my-namespace.svc:9090,REPLICATION-9091://my-cluster-kafka-2.my-cluster-kafka-brokers.my-namespace.svc:9091,PLAIN-9092://dummy-advertised-address:1919",
                 "listener.security.protocol.map=CONTROLPLANE-9090:SSL,REPLICATION-9091:SSL,PLAIN-9092:SASL_PLAINTEXT",
                 "control.plane.listener.name=CONTROLPLANE-9090",
                 "inter.broker.listener.name=REPLICATION-9091",
@@ -1713,11 +1638,13 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .endKafkaListenerAuthenticationOAuth()
                 .build();
         
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION)
-                .withListeners("my-cluster", "my-namespace", singletonList(listener))
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, "2")
+                .withListeners("my-cluster", "my-namespace", singletonList(listener), () -> "my-cluster-kafka-2", listenerId -> "dummy-advertised-address", listenerId -> "1919", false)
                 .build();
 
-        assertThat(configuration, isEquivalent("listener.name.controlplane-9090.ssl.client.auth=required",
+        assertThat(configuration, isEquivalent("broker.id=2",
+                "node.id=2",
+                "listener.name.controlplane-9090.ssl.client.auth=required",
                 "listener.name.controlplane-9090.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12",
                 "listener.name.controlplane-9090.ssl.keystore.password=${CERTS_STORE_PASSWORD}",
                 "listener.name.controlplane-9090.ssl.keystore.type=PKCS12",
@@ -1732,7 +1659,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "listener.name.replication-9091.ssl.truststore.type=PKCS12",
                 "listener.name.replication-9091.ssl.client.auth=required",
                 "listeners=CONTROLPLANE-9090://0.0.0.0:9090,REPLICATION-9091://0.0.0.0:9091,PLAIN-9092://0.0.0.0:9092",
-                "advertised.listeners=CONTROLPLANE-9090://my-cluster-kafka-${STRIMZI_BROKER_ID}.my-cluster-kafka-brokers.my-namespace.svc:9090,REPLICATION-9091://my-cluster-kafka-${STRIMZI_BROKER_ID}.my-cluster-kafka-brokers.my-namespace.svc:9091,PLAIN-9092://${STRIMZI_PLAIN_9092_ADVERTISED_HOSTNAME}:${STRIMZI_PLAIN_9092_ADVERTISED_PORT}",
+                "advertised.listeners=CONTROLPLANE-9090://my-cluster-kafka-2.my-cluster-kafka-brokers.my-namespace.svc:9090,REPLICATION-9091://my-cluster-kafka-2.my-cluster-kafka-brokers.my-namespace.svc:9091,PLAIN-9092://dummy-advertised-address:1919",
                 "listener.security.protocol.map=CONTROLPLANE-9090:SSL,REPLICATION-9091:SSL,PLAIN-9092:SASL_PLAINTEXT",
                 "control.plane.listener.name=CONTROLPLANE-9090",
                 "inter.broker.listener.name=REPLICATION-9091",
@@ -1764,11 +1691,13 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .endKafkaListenerAuthenticationOAuth()
                 .build();
 
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION)
-                .withListeners("my-cluster", "my-namespace", singletonList(listener))
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, "2")
+                .withListeners("my-cluster", "my-namespace", singletonList(listener), () -> "my-cluster-kafka-2", listenerId -> "dummy-advertised-address", listenerId -> "1919", false)
                 .build();
 
-        assertThat(configuration, isEquivalent("listener.name.controlplane-9090.ssl.client.auth=required",
+        assertThat(configuration, isEquivalent("broker.id=2",
+                "node.id=2",
+                "listener.name.controlplane-9090.ssl.client.auth=required",
                 "listener.name.controlplane-9090.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12",
                 "listener.name.controlplane-9090.ssl.keystore.password=${CERTS_STORE_PASSWORD}",
                 "listener.name.controlplane-9090.ssl.keystore.type=PKCS12",
@@ -1783,7 +1712,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "listener.name.replication-9091.ssl.truststore.type=PKCS12",
                 "listener.name.replication-9091.ssl.client.auth=required",
                 "listeners=CONTROLPLANE-9090://0.0.0.0:9090,REPLICATION-9091://0.0.0.0:9091,PLAIN-9092://0.0.0.0:9092",
-                "advertised.listeners=CONTROLPLANE-9090://my-cluster-kafka-${STRIMZI_BROKER_ID}.my-cluster-kafka-brokers.my-namespace.svc:9090,REPLICATION-9091://my-cluster-kafka-${STRIMZI_BROKER_ID}.my-cluster-kafka-brokers.my-namespace.svc:9091,PLAIN-9092://${STRIMZI_PLAIN_9092_ADVERTISED_HOSTNAME}:${STRIMZI_PLAIN_9092_ADVERTISED_PORT}",
+                "advertised.listeners=CONTROLPLANE-9090://my-cluster-kafka-2.my-cluster-kafka-brokers.my-namespace.svc:9090,REPLICATION-9091://my-cluster-kafka-2.my-cluster-kafka-brokers.my-namespace.svc:9091,PLAIN-9092://dummy-advertised-address:1919",
                 "listener.security.protocol.map=CONTROLPLANE-9090:SSL,REPLICATION-9091:SSL,PLAIN-9092:SASL_PLAINTEXT",
                 "control.plane.listener.name=CONTROLPLANE-9090",
                 "inter.broker.listener.name=REPLICATION-9091",
@@ -1879,8 +1808,8 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .endKafkaListenerAuthenticationCustomAuth()
                 .build();
 
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION)
-                .withListeners("my-cluster", "my-namespace", singletonList(listener))
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, "2")
+                .withListeners("my-cluster", "my-namespace", singletonList(listener), () -> "my-cluster-kafka-2", listenerId -> "dummy-advertised-address", listenerId -> "1919", false)
                 .build();
 
         assertThat(configuration, configuration.contains("listener.security.protocol.map=CONTROLPLANE-9090:SSL,REPLICATION-9091:SSL,CUSTOM-LISTENER-9092:SASL_SSL"));
@@ -1899,8 +1828,8 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .endKafkaListenerAuthenticationCustomAuth()
                 .build();
 
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION)
-                .withListeners("my-cluster", "my-namespace", singletonList(listener))
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, "2")
+                .withListeners("my-cluster", "my-namespace", singletonList(listener), () -> "my-cluster-kafka-2", listenerId -> "dummy-advertised-address", listenerId -> "1919", false)
                 .build();
 
         assertThat(configuration, configuration.contains("listener.security.protocol.map=CONTROLPLANE-9090:SSL,REPLICATION-9091:SSL,CUSTOM-LISTENER-9092:SASL_PLAINTEXT"));
@@ -1920,8 +1849,8 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .endKafkaListenerAuthenticationCustomAuth()
                 .build();
 
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION)
-                .withListeners("my-cluster", "my-namespace", singletonList(listener))
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, "2")
+                .withListeners("my-cluster", "my-namespace", singletonList(listener), () -> "my-cluster-kafka-2", listenerId -> "dummy-advertised-address", listenerId -> "1919", false)
                 .build();
 
         assertThat(configuration, configuration.contains("listener.security.protocol.map=CONTROLPLANE-9090:SSL,REPLICATION-9091:SSL,CUSTOM-LISTENER-9092:PLAINTEXT"));
@@ -1940,8 +1869,8 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .endKafkaListenerAuthenticationCustomAuth()
                 .build();
 
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION)
-                .withListeners("my-cluster", "my-namespace", singletonList(listener))
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, "2")
+                .withListeners("my-cluster", "my-namespace", singletonList(listener), () -> "my-cluster-kafka-2", listenerId -> "dummy-advertised-address", listenerId -> "1919", false)
                 .build();
 
         assertThat(configuration, !configuration.contains("ssl.truststore.path"));
@@ -1965,11 +1894,13 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .endKafkaListenerAuthenticationCustomAuth()
                 .build();
 
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION)
-                .withListeners("my-cluster", "my-namespace", singletonList(listener))
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, "2")
+                .withListeners("my-cluster", "my-namespace", singletonList(listener), () -> "my-cluster-kafka-2", listenerId -> "dummy-advertised-address", listenerId -> "1919", false)
                 .build();
 
-        assertThat(configuration, isEquivalent("listener.name.controlplane-9090.ssl.client.auth=required",
+        assertThat(configuration, isEquivalent("broker.id=2",
+                "node.id=2",
+                "listener.name.controlplane-9090.ssl.client.auth=required",
                 "listener.name.controlplane-9090.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12",
                 "listener.name.controlplane-9090.ssl.keystore.password=${CERTS_STORE_PASSWORD}",
                 "listener.name.controlplane-9090.ssl.keystore.type=PKCS12",
@@ -1987,8 +1918,8 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "listener.name.custom-listener-9092.ssl.keystore.password=${CERTS_STORE_PASSWORD}",
                 "listener.name.custom-listener-9092.ssl.keystore.type=PKCS12",
                 "listeners=CONTROLPLANE-9090://0.0.0.0:9090,REPLICATION-9091://0.0.0.0:9091,CUSTOM-LISTENER-9092://0.0.0.0:9092",
-                "advertised.listeners=CONTROLPLANE-9090://my-cluster-kafka-${STRIMZI_BROKER_ID}.my-cluster" +
-                        "-kafka-brokers.my-namespace.svc:9090,REPLICATION-9091://my-cluster-kafka-${STRIMZI_BROKER_ID}.my-cluster-kafka-brokers.my-namespace.svc:9091,CUSTOM-LISTENER-9092://${STRIMZI_CUSTOM-LISTENER_9092_ADVERTISED_HOSTNAME}:${STRIMZI_CUSTOM-LISTENER_9092_ADVERTISED_PORT}",
+                "advertised.listeners=CONTROLPLANE-9090://my-cluster-kafka-2.my-cluster" +
+                        "-kafka-brokers.my-namespace.svc:9090,REPLICATION-9091://my-cluster-kafka-2.my-cluster-kafka-brokers.my-namespace.svc:9091,CUSTOM-LISTENER-9092://dummy-advertised-address:1919",
                 "listener.security.protocol.map=CONTROLPLANE-9090:SSL,REPLICATION-9091:SSL,CUSTOM-LISTENER-9092:SASL_SSL",
                 "control.plane.listener.name=CONTROLPLANE-9090",
                 "inter.broker.listener.name=REPLICATION-9091",

@@ -18,7 +18,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Representation of a Metadata template for Strimzi pods, statefulsets, deployments and services.
+ * Representation of a Metadata template for Kubernetes resources
  */
 @Buildable(
         editableEnabled = false,
@@ -35,8 +35,7 @@ public class MetadataTemplate implements Serializable, UnknownPropertyPreserving
     private Map<String, String> annotations = new HashMap<>(0);
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
-    @Description("Labels added to the resource template. " +
-            "Can be applied to different resources such as `StatefulSets`, `Deployments`, `Pods`, and `Services`.")
+    @Description("Labels added to the Kubernetes resource.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public Map<String, String> getLabels() {
         return labels;
@@ -46,8 +45,7 @@ public class MetadataTemplate implements Serializable, UnknownPropertyPreserving
         this.labels = labels;
     }
 
-    @Description("Annotations added to the resource template. " +
-            "Can be applied to different resources such as `StatefulSets`, `Deployments`, `Pods`, and `Services`.")
+    @Description("Annotations added to the Kubernetes resource.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public Map<String, String> getAnnotations() {
         return annotations;

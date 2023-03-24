@@ -207,6 +207,17 @@ public class KafkaClusterTest {
     public void testMetricsConfigMap() {
         ConfigMap metricsCm = io.strimzi.operator.cluster.TestUtils.getJmxMetricsCm("{\"animal\":\"wombat\"}", "kafka-metrics-config", "kafka-metrics-config.yml");
 
+        Map<Integer, Map<String, String>> advertisedHostnames = Map.of(
+                0, Map.of("PLAIN_9092", "broker-0"),
+                1, Map.of("PLAIN_9092", "broker-1"),
+                2, Map.of("PLAIN_9092", "broker-2")
+        );
+        Map<Integer, Map<String, String>> advertisedPorts = Map.of(
+                0, Map.of("PLAIN_9092", "9092"),
+                1, Map.of("PLAIN_9092", "9092"),
+                2, Map.of("PLAIN_9092", "9092")
+        );
+
         Kafka kafka = new KafkaBuilder(KAFKA)
                 .editSpec()
                     .editKafka()
@@ -220,9 +231,12 @@ public class KafkaClusterTest {
                 .build();
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, VERSIONS);
 
-        ConfigMap brokerCm = kc.generateSharedConfigurationConfigMap(new MetricsAndLogging(metricsCm, null), Map.of(), Map.of());
-        TestUtils.checkOwnerReference(brokerCm, KAFKA);
-        assertThat(brokerCm.getData().get(MetricsModel.CONFIG_MAP_KEY), is("{\"animal\":\"wombat\"}"));
+        List<ConfigMap> cms = kc.generatePerBrokerConfigurationConfigMaps(new MetricsAndLogging(metricsCm, null), advertisedHostnames, advertisedPorts);
+
+        for (ConfigMap cm : cms)    {
+            TestUtils.checkOwnerReference(cm, KAFKA);
+            assertThat(cm.getData().get(MetricsModel.CONFIG_MAP_KEY), is("{\"animal\":\"wombat\"}"));
+        }
     }
 
     @ParallelTest
@@ -598,12 +612,12 @@ public class KafkaClusterTest {
         assertThat(rt.getMetadata().getAnnotations().entrySet().containsAll(perPodRouteAnnotations.entrySet()), is(true));
 
         // Check PodDisruptionBudget
-        PodDisruptionBudget pdb = kc.generatePodDisruptionBudget(false);
+        PodDisruptionBudget pdb = kc.generatePodDisruptionBudget();
         assertThat(pdb.getMetadata().getLabels().entrySet().containsAll(pdbLabels.entrySet()), is(true));
         assertThat(pdb.getMetadata().getAnnotations().entrySet().containsAll(pdbAnnotations.entrySet()), is(true));
 
         // Check PodDisruptionBudget V1Beta1
-        io.fabric8.kubernetes.api.model.policy.v1beta1.PodDisruptionBudget pdbV1Beta1 = kc.generatePodDisruptionBudgetV1Beta1(false);
+        io.fabric8.kubernetes.api.model.policy.v1beta1.PodDisruptionBudget pdbV1Beta1 = kc.generatePodDisruptionBudgetV1Beta1();
         assertThat(pdbV1Beta1.getMetadata().getLabels().entrySet().containsAll(pdbLabels.entrySet()), is(true));
         assertThat(pdbV1Beta1.getMetadata().getAnnotations().entrySet().containsAll(pdbAnnotations.entrySet()), is(true));
 
@@ -694,37 +708,23 @@ public class KafkaClusterTest {
 
     @ParallelTest
     public void testPerBrokerConfiguration() {
-        String config = KC.generateSharedBrokerConfiguration();
-
-        assertThat(config, CoreMatchers.containsString("broker.id=${STRIMZI_BROKER_ID}"));
-        assertThat(config, CoreMatchers.containsString("node.id=${STRIMZI_BROKER_ID}"));
-        assertThat(config, CoreMatchers.containsString("log.dirs=/var/lib/kafka/data-0/kafka-log${STRIMZI_BROKER_ID}"));
-        assertThat(config, CoreMatchers.containsString("advertised.listeners=CONTROLPLANE-9090://foo-kafka-${STRIMZI_BROKER_ID}.foo-kafka-brokers.test.svc:9090,REPLICATION-9091://foo-kafka-${STRIMZI_BROKER_ID}.foo-kafka-brokers.test.svc:9091,PLAIN-9092://${STRIMZI_PLAIN_9092_ADVERTISED_HOSTNAME}:${STRIMZI_PLAIN_9092_ADVERTISED_PORT},TLS-9093://${STRIMZI_TLS_9093_ADVERTISED_HOSTNAME}:${STRIMZI_TLS_9093_ADVERTISED_PORT}\n"));
-    }
-
-    @ParallelTest
-    public void testPerBrokerConfigMaps() {
-        MetricsAndLogging metricsAndLogging = new MetricsAndLogging(null, null);
         Map<Integer, Map<String, String>> advertisedHostnames = Map.of(
                 0, Map.of("PLAIN_9092", "broker-0", "TLS_9093", "broker-0"),
                 1, Map.of("PLAIN_9092", "broker-1", "TLS_9093", "broker-1"),
                 2, Map.of("PLAIN_9092", "broker-2", "TLS_9093", "broker-2")
         );
         Map<Integer, Map<String, String>> advertisedPorts = Map.of(
-                0, Map.of("PLAIN_9092", "10000", "TLS_9093", "20000"),
-                1, Map.of("PLAIN_9092", "10001", "TLS_9093", "20001"),
-                2, Map.of("PLAIN_9092", "10002", "TLS_9093", "20002")
+                0, Map.of("PLAIN_9092", "9092", "TLS_9093", "10000"),
+                1, Map.of("PLAIN_9092", "9092", "TLS_9093", "10001"),
+                2, Map.of("PLAIN_9092", "9092", "TLS_9093", "10002")
         );
 
-        ConfigMap cm = KC.generateSharedConfigurationConfigMap(metricsAndLogging, advertisedHostnames, advertisedPorts);
+        String config = KC.generatePerBrokerBrokerConfiguration(1, advertisedHostnames, advertisedPorts);
 
-        assertThat(cm.getData().size(), is(5));
-        assertThat(cm.getMetadata().getName(), is("foo-kafka-config"));
-        assertThat(cm.getData().get("log4j.properties"), is(notNullValue()));
-        assertThat(cm.getData().get("server.config"), is(notNullValue()));
-        assertThat(cm.getData().get("listeners.config"), is("PLAIN_9092 TLS_9093"));
-        assertThat(cm.getData().get("advertised-hostnames.config"), is("PLAIN_9092_0://broker-0 TLS_9093_0://broker-0 PLAIN_9092_1://broker-1 TLS_9093_1://broker-1 PLAIN_9092_2://broker-2 TLS_9093_2://broker-2"));
-        assertThat(cm.getData().get("advertised-ports.config"), is("PLAIN_9092_0://10000 TLS_9093_0://20000 PLAIN_9092_1://10001 TLS_9093_1://20001 PLAIN_9092_2://10002 TLS_9093_2://20002"));
+        assertThat(config, CoreMatchers.containsString("broker.id=1"));
+        assertThat(config, CoreMatchers.containsString("node.id=1"));
+        assertThat(config, CoreMatchers.containsString("log.dirs=/var/lib/kafka/data-0/kafka-log1"));
+        assertThat(config, CoreMatchers.containsString("advertised.listeners=CONTROLPLANE-9090://foo-kafka-1.foo-kafka-brokers.test.svc:9090,REPLICATION-9091://foo-kafka-1.foo-kafka-brokers.test.svc:9091,PLAIN-9092://broker-1:9092,TLS-9093://broker-1:10001\n"));
     }
 
     @ParallelTest
@@ -746,10 +746,10 @@ public class KafkaClusterTest {
                 .build();
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, assembly, VERSIONS);
 
-        List<PersistentVolumeClaim> pvcs = kc.getPersistentVolumeClaimTemplates();
+        List<PersistentVolumeClaim> pvcs = kc.generatePersistentVolumeClaims(kc.storage);
 
         for (int i = 0; i < REPLICAS; i++) {
-            assertThat(pvcs.get(0).getMetadata().getName() + "-" + KafkaResources.kafkaPodName(CLUSTER, i),
+            assertThat(pvcs.get(i).getMetadata().getName(),
                     is(VolumeUtils.DATA_VOLUME_NAME + "-" + KafkaResources.kafkaPodName(CLUSTER, i)));
         }
 
@@ -765,13 +765,12 @@ public class KafkaClusterTest {
                 .build();
         kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, assembly, VERSIONS);
 
-        pvcs = kc.getPersistentVolumeClaimTemplates();
+        pvcs = kc.generatePersistentVolumeClaims(kc.getStorage());
 
         for (int i = 0; i < REPLICAS; i++) {
-            int id = 0;
-            for (PersistentVolumeClaim pvc : pvcs) {
-                assertThat(pvc.getMetadata().getName() + "-" + KafkaResources.kafkaPodName(CLUSTER, i),
-                        is(VolumeUtils.DATA_VOLUME_NAME + "-" + id++ + "-" + KafkaResources.kafkaPodName(CLUSTER, i)));
+            for (int id = 0; id < 2; id++) {
+                assertThat(pvcs.get(i + (id * REPLICAS)).getMetadata().getName(),
+                        is(VolumeUtils.DATA_VOLUME_NAME + "-" + id + "-" + KafkaResources.kafkaPodName(CLUSTER, i)));
             }
         }
     }
@@ -2563,73 +2562,15 @@ public class KafkaClusterTest {
     }
 
     @ParallelTest
-    public void testPodDisruptionBudget() {
-        Kafka kafkaAssembly = new KafkaBuilder(KAFKA)
-                .editSpec()
-                    .editKafka()
-                    .withNewTemplate()
-                        .withNewPodDisruptionBudget()
-                            .withMaxUnavailable(2)
-                        .endPodDisruptionBudget()
-                    .endTemplate()
-                    .endKafka()
-                .endSpec()
-                .build();
-        KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS);
-
-        PodDisruptionBudget pdb = kc.generatePodDisruptionBudget(false);
-        assertThat(pdb.getSpec().getMaxUnavailable(), is(new IntOrString(2)));
-    }
-
-    @ParallelTest
-    public void testPodDisruptionBudgetV1Beta1() {
-        Kafka kafkaAssembly = new KafkaBuilder(KAFKA)
-                .editSpec()
-                    .editKafka()
-                    .withNewTemplate()
-                        .withNewPodDisruptionBudget()
-                            .withMaxUnavailable(2)
-                        .endPodDisruptionBudget()
-                    .endTemplate()
-                    .endKafka()
-                .endSpec()
-                .build();
-        KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS);
-
-        io.fabric8.kubernetes.api.model.policy.v1beta1.PodDisruptionBudget pdbV1Beta1 = kc.generatePodDisruptionBudgetV1Beta1(false);
-        assertThat(pdbV1Beta1.getSpec().getMaxUnavailable(), is(new IntOrString(2)));
-    }
-
-    @ParallelTest
-    public void testDefaultPodDisruptionBudget() {
-        Kafka kafkaAssembly = new KafkaBuilder(KAFKA)
-                .build();
-        KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS);
-
-        PodDisruptionBudget pdb = kc.generatePodDisruptionBudget(false);
-        assertThat(pdb.getSpec().getMaxUnavailable(), is(new IntOrString(1)));
-    }
-
-    @ParallelTest
-    public void testDefaultPodDisruptionBudgetV1Beta1() {
-        Kafka kafkaAssembly = new KafkaBuilder(KAFKA)
-                .build();
-        KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS);
-
-        io.fabric8.kubernetes.api.model.policy.v1beta1.PodDisruptionBudget pdbV1Beta1 = kc.generatePodDisruptionBudgetV1Beta1(false);
-        assertThat(pdbV1Beta1.getSpec().getMaxUnavailable(), is(new IntOrString(1)));
-    }
-
-    @ParallelTest
-    public void testDefaultCustomControllerPodDisruptionBudget()   {
+    public void testDefaultPodDisruptionBudget()   {
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, KAFKA, VERSIONS);
-        PodDisruptionBudget pdb = kc.generatePodDisruptionBudget(true);
+        PodDisruptionBudget pdb = kc.generatePodDisruptionBudget();
         assertThat(pdb.getMetadata().getName(), is(KafkaResources.kafkaStatefulSetName(CLUSTER)));
         assertThat(pdb.getSpec().getMaxUnavailable(), is(nullValue()));
         assertThat(pdb.getSpec().getMinAvailable().getIntVal(), is(2));
         assertThat(pdb.getSpec().getSelector().getMatchLabels(), is(kc.getSelectorLabels().toMap()));
 
-        io.fabric8.kubernetes.api.model.policy.v1beta1.PodDisruptionBudget pdbV1Beta1 = kc.generatePodDisruptionBudgetV1Beta1(true);
+        io.fabric8.kubernetes.api.model.policy.v1beta1.PodDisruptionBudget pdbV1Beta1 = kc.generatePodDisruptionBudgetV1Beta1();
         assertThat(pdbV1Beta1.getMetadata().getName(), is(KafkaResources.kafkaStatefulSetName(CLUSTER)));
         assertThat(pdbV1Beta1.getSpec().getMaxUnavailable(), is(nullValue()));
         assertThat(pdbV1Beta1.getSpec().getMinAvailable().getIntVal(), is(2));
@@ -2637,7 +2578,7 @@ public class KafkaClusterTest {
     }
 
     @ParallelTest
-    public void testCustomizedCustomControllerPodDisruptionBudget()   {
+    public void testCustomizedPodDisruptionBudget()   {
         Map<String, String> pdbLabels = TestUtils.map("l1", "v1", "l2", "v2");
         Map<String, String> pdbAnnos = TestUtils.map("a1", "v1", "a2", "v2");
 
@@ -2658,7 +2599,7 @@ public class KafkaClusterTest {
                 .build();
 
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, VERSIONS);
-        PodDisruptionBudget pdb = kc.generatePodDisruptionBudget(true);
+        PodDisruptionBudget pdb = kc.generatePodDisruptionBudget();
 
         assertThat(pdb.getMetadata().getLabels().entrySet().containsAll(pdbLabels.entrySet()), is(true));
         assertThat(pdb.getMetadata().getAnnotations().entrySet().containsAll(pdbAnnos.entrySet()), is(true));
@@ -3594,6 +3535,16 @@ public class KafkaClusterTest {
 
     @ParallelTest
     public void testCruiseControl() {
+        Map<Integer, Map<String, String>> advertisedHostnames = Map.of(
+                0, Map.of("PLAIN_9092", "broker-0", "TLS_9093", "broker-0"),
+                1, Map.of("PLAIN_9092", "broker-1", "TLS_9093", "broker-1"),
+                2, Map.of("PLAIN_9092", "broker-2", "TLS_9093", "broker-2")
+        );
+        Map<Integer, Map<String, String>> advertisedPorts = Map.of(
+                0, Map.of("PLAIN_9092", "9092", "TLS_9093", "10000"),
+                1, Map.of("PLAIN_9092", "9092", "TLS_9093", "10001"),
+                2, Map.of("PLAIN_9092", "9092", "TLS_9093", "10002")
+        );
 
         Kafka kafkaAssembly = new KafkaBuilder(KAFKA)
                 .editSpec()
@@ -3602,7 +3553,8 @@ public class KafkaClusterTest {
                 .endSpec()
                 .build();
         KafkaCluster kafkaCluster = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS);
-        String brokerConfig = kafkaCluster.generateSharedBrokerConfiguration();
+        String brokerConfig = kafkaCluster.generatePerBrokerBrokerConfiguration(1, advertisedHostnames, advertisedPorts);
+
         assertThat(brokerConfig, CoreMatchers.containsString(CruiseControlConfigurationParameters.METRICS_TOPIC_NUM_PARTITIONS + "=" + 1));
         assertThat(brokerConfig, CoreMatchers.containsString(CruiseControlConfigurationParameters.METRICS_TOPIC_REPLICATION_FACTOR + "=" + 1));
         assertThat(brokerConfig, CoreMatchers.containsString(CruiseControlConfigurationParameters.METRICS_TOPIC_MIN_ISR + "=" + 1));
@@ -3610,6 +3562,17 @@ public class KafkaClusterTest {
 
     @ParallelTest
     public void testCruiseControlCustomMetricsReporterTopic() {
+        Map<Integer, Map<String, String>> advertisedHostnames = Map.of(
+                0, Map.of("PLAIN_9092", "broker-0", "TLS_9093", "broker-0"),
+                1, Map.of("PLAIN_9092", "broker-1", "TLS_9093", "broker-1"),
+                2, Map.of("PLAIN_9092", "broker-2", "TLS_9093", "broker-2")
+        );
+        Map<Integer, Map<String, String>> advertisedPorts = Map.of(
+                0, Map.of("PLAIN_9092", "9092", "TLS_9093", "10000"),
+                1, Map.of("PLAIN_9092", "9092", "TLS_9093", "10001"),
+                2, Map.of("PLAIN_9092", "9092", "TLS_9093", "10002")
+        );
+
         int replicationFactor = 3;
         int minInsync = 2;
         int partitions = 5;
@@ -3628,7 +3591,8 @@ public class KafkaClusterTest {
                 .endSpec()
                 .build();
         KafkaCluster kafkaCluster = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS);
-        String brokerConfig = kafkaCluster.generateSharedBrokerConfiguration();
+        String brokerConfig = kafkaCluster.generatePerBrokerBrokerConfiguration(1, advertisedHostnames, advertisedPorts);
+
         assertThat(brokerConfig, CoreMatchers.containsString(CruiseControlConfigurationParameters.METRICS_TOPIC_NUM_PARTITIONS + "=" + partitions));
         assertThat(brokerConfig, CoreMatchers.containsString(CruiseControlConfigurationParameters.METRICS_TOPIC_REPLICATION_FACTOR + "=" + replicationFactor));
         assertThat(brokerConfig, CoreMatchers.containsString(CruiseControlConfigurationParameters.METRICS_TOPIC_MIN_ISR + "=" + minInsync));
@@ -3636,6 +3600,17 @@ public class KafkaClusterTest {
 
     @ParallelTest
     public void testCruiseControlCustomMetricsReporterTopicMinInsync() {
+        Map<Integer, Map<String, String>> advertisedHostnames = Map.of(
+                0, Map.of("PLAIN_9092", "broker-0", "TLS_9093", "broker-0"),
+                1, Map.of("PLAIN_9092", "broker-1", "TLS_9093", "broker-1"),
+                2, Map.of("PLAIN_9092", "broker-2", "TLS_9093", "broker-2")
+        );
+        Map<Integer, Map<String, String>> advertisedPorts = Map.of(
+                0, Map.of("PLAIN_9092", "9092", "TLS_9093", "10000"),
+                1, Map.of("PLAIN_9092", "9092", "TLS_9093", "10001"),
+                2, Map.of("PLAIN_9092", "9092", "TLS_9093", "10002")
+        );
+
         int minInsync = 1;
         Map<String, Object> config = new HashMap<>();
         config.put(CruiseControlConfigurationParameters.METRICS_TOPIC_MIN_ISR.getValue(), minInsync);
@@ -3650,7 +3625,8 @@ public class KafkaClusterTest {
                 .endSpec()
                 .build();
         KafkaCluster kafkaCluster = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS);
-        String brokerConfig = kafkaCluster.generateSharedBrokerConfiguration();
+        String brokerConfig = kafkaCluster.generatePerBrokerBrokerConfiguration(1, advertisedHostnames, advertisedPorts);
+
         assertThat(brokerConfig, CoreMatchers.containsString(CruiseControlConfigurationParameters.METRICS_TOPIC_MIN_ISR + "=" + minInsync));
     }
 

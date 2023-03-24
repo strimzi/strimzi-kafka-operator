@@ -6,20 +6,10 @@ package io.strimzi.operator.cluster.model;
 
 import io.fabric8.kubernetes.api.model.ConfigMapVolumeSource;
 import io.fabric8.kubernetes.api.model.ConfigMapVolumeSourceBuilder;
-
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.regex.Pattern;
-
 import io.fabric8.kubernetes.api.model.EmptyDirVolumeSource;
 import io.fabric8.kubernetes.api.model.EmptyDirVolumeSourceBuilder;
 import io.fabric8.kubernetes.api.model.KeyToPath;
 import io.fabric8.kubernetes.api.model.KeyToPathBuilder;
-import io.fabric8.kubernetes.api.model.LabelSelector;
-import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
-import io.fabric8.kubernetes.api.model.PersistentVolumeClaimBuilder;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.SecretVolumeSource;
 import io.fabric8.kubernetes.api.model.SecretVolumeSourceBuilder;
@@ -35,6 +25,11 @@ import io.strimzi.api.kafka.model.storage.SingleVolumeStorage;
 import io.strimzi.api.kafka.model.storage.Storage;
 import io.strimzi.api.kafka.model.template.PodTemplate;
 import io.strimzi.operator.common.Util;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.regex.Pattern;
 
 /**
  * Shared methods for working with Volume
@@ -284,43 +279,6 @@ public class VolumeUtils {
     }
 
     /**
-     * Generates the list of data volumes as used in StatefulSets. This method calls itself recursively to create the
-     * volumes from a JBOD storage array. When it does so, it sets the {@code jbod} parameter to {@code true}. When
-     * called from outside, it should be set to {@code false}.
-     *
-     * For StatefulSets, we need only the ephemeral (emptyDir volumes). The persistent claim volumes are generated from
-     * the template by Kubernetes directly. But ephemeral volumes can be still part of JBOD storage, so we need to
-     * iterate through it.
-     *
-     * @param storage   Storage configuration
-     * @param jbod      Indicates that the storage is part of JBOD storage and volume names are created accordingly
-     *
-     * @return          List of data volumes for use in StatefulSet definition
-     */
-    public static List<Volume> createStatefulSetVolumes(Storage storage, boolean jbod) {
-        List<Volume> volumes = new ArrayList<>();
-
-        if (storage != null) {
-            if (storage instanceof JbodStorage) {
-                for (SingleVolumeStorage volume : ((JbodStorage) storage).getVolumes()) {
-                    // it's called recursively for setting the information from the current volume
-                    volumes.addAll(createStatefulSetVolumes(volume, true));
-                }
-            } else if (storage instanceof EphemeralStorage ephemeralStorage) {
-                volumes.add(
-                        createEmptyDirVolume(
-                                createVolumePrefix(ephemeralStorage.getId(), jbod),
-                                ephemeralStorage.getSizeLimit(),
-                                null
-                        )
-                );
-            }
-        }
-
-        return volumes;
-    }
-
-    /**
      * Generates the list of data volumes as used in PodSets and individual Pods. This includes both ephemeral and
      * persistent data volumes. This method calls itself recursively to create the volumes from a JBOD storage array.
      * When it does so, it sets the {@code jbod} parameter to {@code true}. When called from outside, it should be set
@@ -356,66 +314,6 @@ public class VolumeUtils {
         }
 
         return volumes;
-    }
-
-    /**
-     * Creates list of PersistentVolumeClaims templates required by StatefulSets (Kafka and Zoo). This method calls itself
-     * recursively to handle volumes inside JBOD storage. When it calls itself to handle the volumes inside JBOD array,
-     * the {@code jbod} flag should be set to {@code true}. When called from outside, it should be set to {@code false}.
-     *
-     * @param storage   The storage configuration
-     * @param jbod      Indicator whether the {@code storage} is part of JBOD array or not
-     *
-     * @return          List with Persistent Volume Claims templates
-     */
-    public static List<PersistentVolumeClaim> createPersistentVolumeClaimTemplates(Storage storage, boolean jbod) {
-        List<PersistentVolumeClaim> pvcs = new ArrayList<>();
-
-        if (storage != null) {
-            if (storage instanceof JbodStorage) {
-                for (SingleVolumeStorage volume : ((JbodStorage) storage).getVolumes()) {
-                    // it's called recursively for setting the information from the current volume
-                    pvcs.addAll(createPersistentVolumeClaimTemplates(volume, true));
-                }
-            } else if (storage instanceof PersistentClaimStorage persistentStorage) {
-                String name = createVolumePrefix(persistentStorage.getId(), jbod);
-                pvcs.add(createPersistentVolumeClaimTemplate(name, persistentStorage));
-            }
-        }
-
-        return pvcs;
-    }
-
-    /**
-     * Creates a PVC template for use in StatefulSets
-     *
-     * @param name      Name of the PVC in the template
-     * @param storage   Definition of the persistent claim storage configuration
-     *
-     * @return          The PVC created
-     */
-    public static PersistentVolumeClaim createPersistentVolumeClaimTemplate(String name, PersistentClaimStorage storage) {
-        Map<String, Quantity> requests = new HashMap<>(1);
-        requests.put("storage", new Quantity(storage.getSize(), null));
-
-        LabelSelector selector = null;
-        if (storage.getSelector() != null && !storage.getSelector().isEmpty()) {
-            selector = new LabelSelector(null, storage.getSelector());
-        }
-
-        return new PersistentVolumeClaimBuilder()
-                .withNewMetadata()
-                    .withName(name)
-                .endMetadata()
-                .withNewSpec()
-                    .withAccessModes("ReadWriteOnce")
-                    .withNewResources()
-                        .withRequests(requests)
-                    .endResources()
-                    .withStorageClassName(storage.getStorageClass())
-                    .withSelector(selector)
-                .endSpec()
-                .build();
     }
 
     /**

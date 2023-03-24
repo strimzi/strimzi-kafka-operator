@@ -52,9 +52,9 @@ public class KafkaResources {
     ////////
 
     /**
-     * Returns the name of the Kafka {@code StatefulSet} for a {@code Kafka} cluster of the given name.
+     * Returns the name of the Kafka {@code StrimziPodSet} for a {@code Kafka} cluster of the given name.
      * @param clusterName  The {@code metadata.name} of the {@code Kafka} resource.
-     * @return The name of the corresponding Kafka {@code StatefulSet}.
+     * @return The name of the corresponding Kafka {@code StrimziPodSet}.
      */
     public static String kafkaStatefulSetName(String clusterName) {
         return clusterName + "-kafka";
@@ -192,9 +192,9 @@ public class KafkaResources {
     ////////
 
     /**
-     * Returns the name of the ZooKeeper {@code StatefulSet} for a {@code Kafka} cluster of the given name.
+     * Returns the name of the ZooKeeper {@code StrimziPodSet} for a {@code Kafka} cluster of the given name.
      * @param clusterName  The {@code metadata.name} of the {@code Kafka} resource.
-     * @return The name of the corresponding ZooKeeper {@code StatefulSet}.
+     * @return The name of the corresponding ZooKeeper {@code StrimziPodSet}.
      */
     public static String zookeeperStatefulSetName(String clusterName) {
         return clusterName + "-zookeeper";
