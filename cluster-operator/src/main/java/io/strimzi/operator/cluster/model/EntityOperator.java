@@ -23,7 +23,7 @@ import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaClusterSpec;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.TlsSidecar;
-import io.strimzi.api.kafka.model.CruiseControlResources;
+import io.strimzi.api.kafka.model.KafkaExporterResources;
 import io.strimzi.api.kafka.model.template.DeploymentTemplate;
 import io.strimzi.api.kafka.model.template.EntityOperatorTemplate;
 import io.strimzi.api.kafka.model.template.PodTemplate;
@@ -350,7 +350,7 @@ public class EntityOperator extends AbstractModel {
 
         // Build the final network policy with all rules covering all the ports
         return NetworkPolicyUtils.createNetworkPolicy(
-                CruiseControlResources.networkPolicyName(cluster),
+                KafkaExporterResources.networkPolicyName(reconciliation.name()),
                 namespace,
                 labels,
                 ownerReference,

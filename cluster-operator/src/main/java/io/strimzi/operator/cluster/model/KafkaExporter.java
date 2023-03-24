@@ -15,7 +15,6 @@ import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyIngressRule;
 import io.strimzi.api.kafka.model.Kafka;
-import io.strimzi.api.kafka.model.CruiseControlResources;
 import io.strimzi.api.kafka.model.KafkaClusterSpec;
 import io.strimzi.api.kafka.model.KafkaExporterResources;
 import io.strimzi.api.kafka.model.KafkaExporterSpec;
@@ -282,7 +281,7 @@ public class KafkaExporter extends AbstractModel {
 
         // Build the final network policy with all rules covering all the ports
         return NetworkPolicyUtils.createNetworkPolicy(
-                CruiseControlResources.networkPolicyName(cluster),
+                reconciliation.name() + "-network-policy-entity-operator",
                 namespace,
                 labels,
                 ownerReference,
