@@ -467,7 +467,7 @@ public abstract class AbstractST implements TestSeparator {
     }
 
     protected void testDockerImagesForKafkaCluster(String clusterName, String clusterOperatorNamespaceName, String kafkaNamespaceName,
-                                                   int kafkaPods, int zkPods, boolean rackAwareEnabled) {
+                                                   int kafkaPods, int zkPods, boolean rackAwareEnabled, boolean isKRaftEnabled) {
         LOGGER.info("Verifying docker image names");
         //Verifying docker image for cluster-operator
 
@@ -478,10 +478,12 @@ public abstract class AbstractST implements TestSeparator {
             kafkaVersion = Environment.ST_KAFKA_VERSION;
         }
 
-        //Verifying docker image for zookeeper pods
-        for (int i = 0; i < zkPods; i++) {
-            String imgFromPod = PodUtils.getContainerImageNameFromPod(kafkaNamespaceName, KafkaResources.zookeeperPodName(clusterName, i), "zookeeper");
-            assertThat("Zookeeper pod " + i + " uses wrong image", imgFromPod, containsString(TestUtils.parseImageMap(imgFromDeplConf.get(KAFKA_IMAGE_MAP)).get(kafkaVersion)));
+        if (!isKRaftEnabled) {
+            //Verifying docker image for zookeeper pods
+            for (int i = 0; i < zkPods; i++) {
+                String imgFromPod = PodUtils.getContainerImageNameFromPod(kafkaNamespaceName, KafkaResources.zookeeperPodName(clusterName, i), "zookeeper");
+                assertThat("Zookeeper pod " + i + " uses wrong image", imgFromPod, containsString(TestUtils.parseImageMap(imgFromDeplConf.get(KAFKA_IMAGE_MAP)).get(kafkaVersion)));
+            }
         }
 
         //Verifying docker image for kafka pods
@@ -497,12 +499,16 @@ public abstract class AbstractST implements TestSeparator {
         //Verifying docker image for entity-operator
         String entityOperatorPodName = cmdKubeClient(kafkaNamespaceName).listResourcesByLabel("pod",
                 Labels.STRIMZI_NAME_LABEL + "=" + clusterName + "-entity-operator").get(0);
-        String imgFromPod = PodUtils.getContainerImageNameFromPod(kafkaNamespaceName, entityOperatorPodName, "topic-operator");
-        assertThat(imgFromPod, containsString(imgFromDeplConf.get(TO_IMAGE)));
-        imgFromPod = PodUtils.getContainerImageNameFromPod(kafkaNamespaceName, entityOperatorPodName, "user-operator");
+
+        String imgFromPod = PodUtils.getContainerImageNameFromPod(kafkaNamespaceName, entityOperatorPodName, "user-operator");
         assertThat(imgFromPod, containsString(imgFromDeplConf.get(UO_IMAGE)));
-        imgFromPod = PodUtils.getContainerImageNameFromPod(kafkaNamespaceName, entityOperatorPodName, "tls-sidecar");
-        assertThat(imgFromPod, containsString(imgFromDeplConf.get(TLS_SIDECAR_EO_IMAGE)));
+
+        if (!isKRaftEnabled) {
+            imgFromPod = PodUtils.getContainerImageNameFromPod(kafkaNamespaceName, entityOperatorPodName, "topic-operator");
+            assertThat(imgFromPod, containsString(imgFromDeplConf.get(TO_IMAGE)));
+            imgFromPod = PodUtils.getContainerImageNameFromPod(kafkaNamespaceName, entityOperatorPodName, "tls-sidecar");
+            assertThat(imgFromPod, containsString(imgFromDeplConf.get(TLS_SIDECAR_EO_IMAGE)));
+        }
 
         LOGGER.info("Docker images verified");
     }

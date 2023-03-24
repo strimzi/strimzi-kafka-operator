@@ -252,7 +252,7 @@ class RollingUpdateST extends AbstractST {
             .editSpec()
                 .editKafka()
                     .addToConfig(singletonMap("default.replication.factor", 1))
-                    .addToConfig("auto.create.topics.enable", "false")
+                    .addToConfig("auto.create.topics.enable", Environment.isKRaftModeEnabled())
                 .endKafka()
             .endSpec()
             .build(),
@@ -261,11 +261,7 @@ class RollingUpdateST extends AbstractST {
 
         Map<String, String> kafkaPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getKafkaSelector());
 
-        if (!Environment.isKRaftModeEnabled()) {
-            testDockerImagesForKafkaCluster(testStorage.getClusterName(), clusterOperator.getDeploymentNamespace(), testStorage.getNamespaceName(), 3, 3, false);
-        } else {
-            testDockerImagesForKafkaCluster(testStorage.getClusterName(), clusterOperator.getDeploymentNamespace(), testStorage.getNamespaceName(), 3, 0, false);
-        }
+        testDockerImagesForKafkaCluster(testStorage.getClusterName(), clusterOperator.getDeploymentNamespace(), testStorage.getNamespaceName(), 3, 3, false, Environment.isKRaftModeEnabled());
 
         LOGGER.info("Running kafkaScaleUpScaleDown {}", testStorage.getClusterName());
 
