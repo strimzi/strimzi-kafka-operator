@@ -2,9 +2,9 @@
 // configuring/assembly-config-mirrormaker2.adoc
 
 [id='proc-manual-restart-mirrormaker2-connector-{context}']
-= Performing a restart of a Kafka MirrorMaker 2.0 connector
+= Performing a restart of a Kafka MirrorMaker 2 connector
 
-This procedure describes how to manually trigger a restart of a Kafka MirrorMaker 2.0 connector by using a Kubernetes annotation.
+This procedure describes how to manually trigger a restart of a Kafka MirrorMaker 2 connector by using a Kubernetes annotation.
 
 .Prerequisites
 
@@ -12,14 +12,14 @@ This procedure describes how to manually trigger a restart of a Kafka MirrorMake
 
 .Procedure
 
-. Find the name of the `KafkaMirrorMaker2` custom resource that controls the Kafka MirrorMaker 2.0 connector you want to restart:
+. Find the name of the `KafkaMirrorMaker2` custom resource that controls the Kafka MirrorMaker 2 connector you want to restart:
 +
 [source,shell,subs="+quotes"]
 ----
 kubectl get KafkaMirrorMaker2
 ----
 
-. Find the name of the Kafka MirrorMaker 2.0 connector to be restarted from the `KafkaMirrorMaker2` custom resource.
+. Find the name of the Kafka MirrorMaker 2 connector to be restarted from the `KafkaMirrorMaker2` custom resource.
 +
 [source,shell,subs="+quotes"]
 ----
@@ -36,10 +36,10 @@ kubectl annotate KafkaMirrorMaker2 _KAFKAMIRRORMAKER-2-NAME_ "strimzi.io/restart
 
 . Wait for the next reconciliation to occur (every two minutes by default).
 +
-The Kafka MirrorMaker 2.0 connector is restarted, as long as the annotation was detected by the reconciliation process.
+The Kafka MirrorMaker 2 connector is restarted, as long as the annotation was detected by the reconciliation process.
 When the restart request is accepted, the annotation is removed from the `KafkaMirrorMaker2` custom resource.
 
 [role="_additional-resources"]
 .Additional resources
 
-* xref:assembly-mirrormaker-{context}[Kafka MirrorMaker 2.0 cluster configuration].
+* xref:assembly-mirrormaker-{context}[Kafka MirrorMaker 2 cluster configuration].

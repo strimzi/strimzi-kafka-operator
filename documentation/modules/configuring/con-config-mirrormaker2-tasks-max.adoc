@@ -66,15 +66,15 @@ spec:
   # ...
 ----
 
-By default, MirrorMaker 2.0 checks for new consumer groups every 10 minutes. 
+By default, MirrorMaker 2 checks for new consumer groups every 10 minutes. 
 You can adjust the `refresh.groups.interval.seconds` configuration to change the frequency.
 Take care when adjusting lower.
 More frequent checks can have a negative impact on performance.   
 
 == Checking connector task operations
 
-If you are using Prometheus and Grafana to monitor your deployment, you can check MirrorMaker 2.0 performance.
-The example MirrorMaker 2.0 Grafana dashboard provided with Strimzi shows the following metrics related to tasks and latency.
+If you are using Prometheus and Grafana to monitor your deployment, you can check MirrorMaker 2 performance.
+The example MirrorMaker 2 Grafana dashboard provided with Strimzi shows the following metrics related to tasks and latency.
 
 * The number of tasks
 * Replication latency

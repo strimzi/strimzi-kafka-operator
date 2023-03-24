@@ -68,7 +68,7 @@ Kafka brokers use the IDs to spread partition replicas across racks.
 You can also specify the `RackAwareReplicaSelector` selector plugin to use with rack awareness. 
 The plugin matches the rack IDs of brokers and consumers, so that messages are consumed from the closest replica. 
 To use the plugin, consumers must also have rack awareness enabled. 
-You can enable rack awareness in Kafka Connect, MirrorMaker 2.0, and the Kafka Bridge.   
+You can enable rack awareness in Kafka Connect, MirrorMaker 2, and the Kafka Bridge.   
 
 [discrete]
 == Example YAML showing Kafka configuration

@@ -3,11 +3,11 @@
 // assembly-config-mirrormaker2.adoc
 
 [id='proc-mirrormaker-replication-{context}']
-= Configuring Kafka MirrorMaker 2.0
+= Configuring Kafka MirrorMaker 2
 
 [role="_abstract"]
-Use the properties of the `KafkaMirrorMaker2` resource to configure your Kafka MirrorMaker 2.0 deployment.
-Use MirrorMaker 2.0 to synchronize data between Kafka clusters.
+Use the properties of the `KafkaMirrorMaker2` resource to configure your Kafka MirrorMaker 2 deployment.
+Use MirrorMaker 2 to synchronize data between Kafka clusters.
 
 The configuration must specify:
 
@@ -19,12 +19,12 @@ The configuration must specify:
 
 NOTE: The previous version of MirrorMaker continues to be supported.
 If you wish to use the resources configured for the previous version,
-they must be updated to the format supported by MirrorMaker 2.0.
+they must be updated to the format supported by MirrorMaker 2.
 
-MirrorMaker 2.0 provides default configuration values for properties such as replication factors.
+MirrorMaker 2 provides default configuration values for properties such as replication factors.
 A minimal configuration, with defaults left unchanged, would be something like this example:
 
-.Minimal configuration for MirrorMaker 2.0
+.Minimal configuration for MirrorMaker 2
 [source,yaml,subs="+quotes,attributes"]
 ----
 apiVersion: {KafkaMirrorMaker2ApiVersion}
@@ -219,9 +219,9 @@ Standard Apache Kafka configuration may be provided, restricted to those propert
 <13> xref:con-common-configuration-ssl-reference[SSL properties] for external listeners to run with a specific _cipher suite_ for a TLS version.
 <14> xref:type-KafkaMirrorMaker2ClusterSpec-reference[Hostname verification is enabled] by setting to `HTTPS`. An empty string disables the verification.
 <15> TLS encryption for the target Kafka cluster is configured in the same way as for the source Kafka cluster.
-<16> xref:type-KafkaMirrorMaker2MirrorSpec-reference[MirrorMaker 2.0 connectors].
-<17> xref:type-KafkaMirrorMaker2MirrorSpec-reference[Cluster alias] for the source cluster used by the MirrorMaker 2.0 connectors.
-<18> xref:type-KafkaMirrorMaker2MirrorSpec-reference[Cluster alias] for the target cluster used by the MirrorMaker 2.0 connectors.
+<16> xref:type-KafkaMirrorMaker2MirrorSpec-reference[MirrorMaker 2 connectors].
+<17> xref:type-KafkaMirrorMaker2MirrorSpec-reference[Cluster alias] for the source cluster used by the MirrorMaker 2 connectors.
+<18> xref:type-KafkaMirrorMaker2MirrorSpec-reference[Cluster alias] for the target cluster used by the MirrorMaker 2 connectors.
 <19> xref:type-KafkaMirrorMaker2ConnectorSpec-reference[Configuration for the `MirrorSourceConnector`] that creates remote topics. The `config` overrides the default configuration options.
 <20> The maximum number of tasks that the connector may create. Tasks handle the data replication and run in parallel. If the infrastructure supports the processing overhead, increasing this value can improve throughput. Kafka Connect distributes the tasks between members of the cluster. If there are more tasks than workers, workers are assigned multiple tasks. For sink connectors, aim to have one task for each topic partition consumed. For source connectors, the number of tasks that can run in parallel may also depend on the external system. The connector creates fewer than the maximum number of tasks if it cannot achieve the parallelism.
 <21> Enables automatic restarts of failed connectors and tasks. Up to seven restart attempts are made, after which restarts must be made manually.

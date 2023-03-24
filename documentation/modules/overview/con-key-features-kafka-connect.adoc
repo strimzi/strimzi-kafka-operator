@@ -33,13 +33,13 @@ Plugins provide the implementation for Kafka Connect to run connector instances.
 Connector instances create the tasks required to transfer data in and out of Kafka.
 The Kafka Connect runtime orchestrates the tasks to split the work required between the worker pods.
 
-MirrorMaker 2.0 also uses the Kafka Connect framework.
+MirrorMaker 2 also uses the Kafka Connect framework.
 In this case, the external data system is another Kafka cluster.
-Specialized connectors for MirrorMaker 2.0 manage data replication between source and target Kafka clusters.
+Specialized connectors for MirrorMaker 2 manage data replication between source and target Kafka clusters.
 
 [NOTE]
 ====
-In addition to the MirrorMaker 2.0 connectors, Kafka provides two connectors as examples:
+In addition to the MirrorMaker 2 connectors, Kafka provides two connectors as examples:
 
 * `FileStreamSourceConnector` streams data from a file on the worker's filesystem to Kafka, reading the input file and sending each line to a given Kafka topic.
 * `FileStreamSinkConnector` streams data from Kafka to the worker's filesystem, reading messages from a Kafka topic and writing a line for each in an output file.
@@ -137,4 +137,4 @@ NOTE: You can also specify converters for specific connectors to override the ge
 .Additional resources
 * http://kafka.apache.org[Apache Kafka documentation^]
 * link:{BookURLConfiguring}#property-kafka-connect-config-reference[Kafka Connect configuration of workers^]
-* link:{BookURLConfiguring}#proc-mirrormaker-replication-str[Synchronizing data between Kafka clusters using MirrorMaker 2.0^]
+* link:{BookURLConfiguring}#proc-mirrormaker-replication-str[Synchronizing data between Kafka clusters using MirrorMaker 2^]

@@ -2,10 +2,10 @@
 // configuring/assembly-config-mirrormaker2.adoc
 
 [id='proc-config-mirrormaker2-securing-connection-{context}']
-= Securing a Kafka MirrorMaker 2.0 deployment
+= Securing a Kafka MirrorMaker 2 deployment
 
 [role="_abstract"]
-This procedure describes in outline the configuration required to secure a MirrorMaker 2.0 deployment.
+This procedure describes in outline the configuration required to secure a MirrorMaker 2 deployment.
 
 You need separate configuration for the source Kafka cluster and the target Kafka cluster.
 You also need separate user configuration to provide the credentials required for MirrorMaker to connect to the source and target Kafka clusters.
@@ -13,7 +13,7 @@ You also need separate user configuration to provide the credentials required fo
 For the Kafka clusters, you specify internal listeners for secure connections within a Kubernetes cluster and external listeners for connections outside the Kubernetes cluster.
 
 You can configure authentication and authorization mechanisms.
-The security options implemented for the source and target Kafka clusters must be compatible with the security options implemented for MirrorMaker 2.0.
+The security options implemented for the source and target Kafka clusters must be compatible with the security options implemented for MirrorMaker 2.
 
 After you have created the cluster and user authentication credentials, you specify them in your MirrorMaker configuration for secure connections.
 
@@ -22,10 +22,10 @@ You can also configure your listener to link:{BookURLDeploying}#proc-installing-
 
 .Before you start
 Before starting this procedure, take a look at the link:{BookURLDeploying}#deploy-examples-{context}[example configuration files^] provided by Strimzi.
-They include examples for securing a deployment of MirrorMaker 2.0 using mTLS or SCRAM-SHA-512 authentication.
+They include examples for securing a deployment of MirrorMaker 2 using mTLS or SCRAM-SHA-512 authentication.
 The examples specify internal listeners for connecting within a Kubernetes cluster.
 
-The examples provide the configuration for full authorization, including all the ACLs needed by MirrorMaker 2.0 to allow operations on the source and target Kafka clusters.
+The examples provide the configuration for full authorization, including all the ACLs needed by MirrorMaker 2 to allow operations on the source and target Kafka clusters.
 
 
 .Prerequisites
@@ -156,7 +156,7 @@ The certificates are created in the secret `_<cluster_name>_-cluster-ca-cert`.
 .. Configure the same authentication and authorization types as the corresponding source and target Kafka cluster.
 For example, if you used `tls` authentication and the `simple` authorization type in the `Kafka` configuration for the source Kafka cluster, use the same in the `KafkaUser` configuration.
 
-.. Configure the ACLs needed by MirrorMaker 2.0 to allow operations on the source and target Kafka clusters.
+.. Configure the ACLs needed by MirrorMaker 2 to allow operations on the source and target Kafka clusters.
 +
 The ACLs are used by the internal MirrorMaker connectors, and by the underlying Kafka Connect framework.
 --
@@ -312,7 +312,7 @@ The public key is contained in a user certificate, which is signed by the client
 
 . Configure a `KafkaMirrorMaker2` resource with the authentication details to connect to the source and target Kafka clusters.
 +
-.Example MirrorMaker 2.0 configuration with TLS encryption and mTLS authentication
+.Example MirrorMaker 2 configuration with TLS encryption and mTLS authentication
 [source,yaml,subs="attributes+"]
 ----
 apiVersion: {KafkaMirrorMaker2ApiVersion}

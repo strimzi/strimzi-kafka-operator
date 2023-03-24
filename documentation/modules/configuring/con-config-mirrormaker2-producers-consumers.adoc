@@ -6,12 +6,12 @@
 = Connector producer and consumer configuration
 
 [role="_abstract"]
-MirrorMaker 2.0 connectors use internal producers and consumers.
+MirrorMaker 2 connectors use internal producers and consumers.
 If needed, you can configure these producers and consumers to override the default settings. 
 
 For example, you can increase the `batch.size` for the source producer that sends topics to the target Kafka cluster to better accommodate large volumes of messages.
 
-IMPORTANT: Producer and consumer configuration options depend on the MirrorMaker 2.0 implementation, and may be subject to change.  
+IMPORTANT: Producer and consumer configuration options depend on the MirrorMaker 2 implementation, and may be subject to change.  
 
 The following tables describe the producers and consumers for each of the connectors and where you can add configuration. 
 
