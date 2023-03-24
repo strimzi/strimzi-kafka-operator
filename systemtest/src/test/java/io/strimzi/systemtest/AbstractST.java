@@ -467,7 +467,7 @@ public abstract class AbstractST implements TestSeparator {
     }
 
     protected void testDockerImagesForKafkaCluster(String clusterName, String clusterOperatorNamespaceName, String kafkaNamespaceName,
-                                                   int kafkaPods, int zkPods, boolean rackAwareEnabled, boolean isKRaftEnabled) {
+                                                   int kafkaPods, int zkPods, boolean rackAwareEnabled) {
         LOGGER.info("Verifying docker image names");
         //Verifying docker image for cluster-operator
 
@@ -478,7 +478,7 @@ public abstract class AbstractST implements TestSeparator {
             kafkaVersion = Environment.ST_KAFKA_VERSION;
         }
 
-        if (!isKRaftEnabled) {
+        if (!Environment.isKRaftModeEnabled()) {
             //Verifying docker image for zookeeper pods
             for (int i = 0; i < zkPods; i++) {
                 String imgFromPod = PodUtils.getContainerImageNameFromPod(kafkaNamespaceName, KafkaResources.zookeeperPodName(clusterName, i), "zookeeper");
@@ -503,7 +503,7 @@ public abstract class AbstractST implements TestSeparator {
         String imgFromPod = PodUtils.getContainerImageNameFromPod(kafkaNamespaceName, entityOperatorPodName, "user-operator");
         assertThat(imgFromPod, containsString(imgFromDeplConf.get(UO_IMAGE)));
 
-        if (!isKRaftEnabled) {
+        if (!Environment.isKRaftModeEnabled()) {
             imgFromPod = PodUtils.getContainerImageNameFromPod(kafkaNamespaceName, entityOperatorPodName, "topic-operator");
             assertThat(imgFromPod, containsString(imgFromDeplConf.get(TO_IMAGE)));
             imgFromPod = PodUtils.getContainerImageNameFromPod(kafkaNamespaceName, entityOperatorPodName, "tls-sidecar");

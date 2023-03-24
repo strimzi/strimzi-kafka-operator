@@ -261,7 +261,7 @@ class RollingUpdateST extends AbstractST {
 
         Map<String, String> kafkaPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getKafkaSelector());
 
-        testDockerImagesForKafkaCluster(testStorage.getClusterName(), clusterOperator.getDeploymentNamespace(), testStorage.getNamespaceName(), 3, 3, false, Environment.isKRaftModeEnabled());
+        testDockerImagesForKafkaCluster(testStorage.getClusterName(), clusterOperator.getDeploymentNamespace(), testStorage.getNamespaceName(), 3, 3, false);
 
         LOGGER.info("Running kafkaScaleUpScaleDown {}", testStorage.getClusterName());
 
