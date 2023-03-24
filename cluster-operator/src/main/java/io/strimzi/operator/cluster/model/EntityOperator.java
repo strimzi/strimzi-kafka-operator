@@ -23,7 +23,6 @@ import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaClusterSpec;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.TlsSidecar;
-import io.strimzi.api.kafka.model.KafkaExporterResources;
 import io.strimzi.api.kafka.model.template.DeploymentTemplate;
 import io.strimzi.api.kafka.model.template.EntityOperatorTemplate;
 import io.strimzi.api.kafka.model.template.PodTemplate;

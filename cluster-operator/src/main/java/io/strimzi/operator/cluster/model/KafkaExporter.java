@@ -20,7 +20,6 @@ import io.strimzi.api.kafka.model.KafkaExporterResources;
 import io.strimzi.api.kafka.model.KafkaExporterSpec;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.Probe;
-import io.strimzi.api.kafka.model.KafkaExporterResources;
 import io.strimzi.api.kafka.model.ProbeBuilder;
 import io.strimzi.api.kafka.model.template.DeploymentTemplate;
 import io.strimzi.api.kafka.model.template.KafkaExporterTemplate;
