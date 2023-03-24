@@ -20,6 +20,7 @@ import io.strimzi.api.kafka.model.KafkaExporterResources;
 import io.strimzi.api.kafka.model.KafkaExporterSpec;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.Probe;
+import io.strimzi.api.kafka.model.KafkaExporterResources;
 import io.strimzi.api.kafka.model.ProbeBuilder;
 import io.strimzi.api.kafka.model.template.DeploymentTemplate;
 import io.strimzi.api.kafka.model.template.KafkaExporterTemplate;
@@ -281,7 +282,7 @@ public class KafkaExporter extends AbstractModel {
 
         // Build the final network policy with all rules covering all the ports
         return NetworkPolicyUtils.createNetworkPolicy(
-                reconciliation.name() + "-network-policy-entity-operator",
+                KafkaExporterResources.networkPolicyName(reconciliation.name()),
                 namespace,
                 labels,
                 ownerReference,

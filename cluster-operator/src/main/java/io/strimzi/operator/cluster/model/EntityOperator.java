@@ -350,7 +350,7 @@ public class EntityOperator extends AbstractModel {
 
         // Build the final network policy with all rules covering all the ports
         return NetworkPolicyUtils.createNetworkPolicy(
-                KafkaExporterResources.networkPolicyName(reconciliation.name()),
+                reconciliation.name() + "-network-policy-entity-operator",
                 namespace,
                 labels,
                 ownerReference,
