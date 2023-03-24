@@ -7,7 +7,6 @@ package io.strimzi.operator.cluster.operator.assembly;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
-import io.strimzi.api.kafka.model.CruiseControlResources;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
@@ -412,7 +411,7 @@ public class EntityOperatorReconciler {
                     .reconcile(
                             reconciliation,
                             reconciliation.namespace(),
-                            CruiseControlResources.networkPolicyName(reconciliation.name()),
+                            reconciliation.name() + "-network-policy-entity-operator",
                             entityOperator != null ? entityOperator.generateNetworkPolicy() : null
                     ).map((Void) null);
         } else {

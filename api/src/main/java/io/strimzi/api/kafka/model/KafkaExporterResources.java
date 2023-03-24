@@ -51,7 +51,7 @@ public class KafkaExporterResources {
     }
 
     /**
-     * Returns the name of the Cruise Control {@code NetworkPolicy} for a {@code Kafka} cluster of the given name.
+     * Returns the name of the Kafka Exportor {@code NetworkPolicy} for a {@code Kafka} cluster of the given name.
      * This {@code NetworkPolicy} will only exist if {@code Kafka.spec.kafka-exporter} is configured in the
      * {@code Kafka} resource with the given name.
      *

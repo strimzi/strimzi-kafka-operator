@@ -56,7 +56,10 @@ import io.strimzi.test.annotations.ParallelTest;
 import org.junit.jupiter.api.AfterAll;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import static io.strimzi.test.TestUtils.map;
@@ -1083,8 +1086,8 @@ public class EntityOperatorTest {
         Kafka resource = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout))
                 .editSpec()
                 .editOrNewEntityOperator()
-                .withNewTopicOperator()
-                .endTopicOperator()
+                .withNewUserOperator()
+                .endUserOperator()
                 .endEntityOperator()
                 .endSpec()
                 .build();

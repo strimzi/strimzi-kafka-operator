@@ -637,7 +637,7 @@ public class EntityOperatorReconcilerTest {
                     assertThat(uoSecretCaptor.getAllValues().get(0), is(nullValue()));
 
                     assertThat(netPolicyCaptor.getAllValues().size(), is(1));
-                    assertThat(netPolicyCaptor.getValue(), is(notNullValue()));
+                    assertThat(netPolicyCaptor.getValue(), is(nullValue()));
 
                     assertThat(operatorRoleCaptor.getAllValues().size(), is(1));
                     assertThat(operatorRoleCaptor.getValue(), is(nullValue()));

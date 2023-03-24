@@ -31,7 +31,6 @@ import io.strimzi.operator.cluster.model.securityprofiles.ContainerSecurityProvi
 import io.strimzi.operator.cluster.model.securityprofiles.PodSecurityProviderContextImpl;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.Util;
-import io.strimzi.operator.common.model.Labels;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -279,7 +278,7 @@ public class KafkaExporter extends AbstractModel {
         List<NetworkPolicyIngressRule> rules = new ArrayList<>();
 
         // Everyone can access metrics
-            rules.add(NetworkPolicyUtils.createIngressRule(MetricsModel.METRICS_PORT, List.of()));
+        rules.add(NetworkPolicyUtils.createIngressRule(MetricsModel.METRICS_PORT, List.of()));
 
         // Build the final network policy with all rules covering all the ports
         return NetworkPolicyUtils.createNetworkPolicy(
