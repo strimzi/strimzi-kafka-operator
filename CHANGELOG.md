@@ -9,6 +9,8 @@
 
 ### Changes, deprecations and removals
 
+* Strimzi 0.35.0 (and any possible patch releases) is the last Strimzi version with support for Kubernetes 1.19 and 1.20.
+  From Strimzi 0.36.0 on, we will support only Kubernetes 1.21 and newer.
 * Support for JMX Trans has been removed in Strimzi 0.35.0.
   If you have JMX Trans enabled in your `Kafka` custom resource in the `.spec.jmxTrans` section, you should remove it.
   If you upgrade to Strimzi 0.35.0 or newer with JMX Trans deployed / enabled in the `Kafka` custom resource, Strimzi will be automatically deleted after the upgrade.
