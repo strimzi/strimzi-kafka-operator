@@ -297,22 +297,23 @@ public class ListenersUtils {
      * @throws  UnsupportedOperationException Throws UnsupportedOperationException if called for internal service
      *                                          which does not have per-pod services
      *
-     * @param clusterName Name of the cluster to which this service belongs
-     * @param pod         Number of the pod for which this service will be used
+     * @param baseName  The base name which should be used to generate the Service name - for example my-cluster-kafka
+     * @param pod       Number of the pod for which this service will be used
      * @param listener  Listener for which the name should be generated
+     *
      * @return          Name of the bootstrap service
      */
-    public static String backwardsCompatibleBrokerServiceName(String clusterName, int pod, GenericKafkaListener listener) {
+    public static String backwardsCompatiblePerBrokerServiceName(String baseName, int pod, GenericKafkaListener listener) {
         if (listener.getPort() == 9092 && "plain".equals(listener.getName()) && KafkaListenerType.INTERNAL == listener.getType())   {
             throw new UnsupportedOperationException("Per-broker services are not used for internal listener");
         } else if (listener.getPort() == 9093 && "tls".equals(listener.getName()) && KafkaListenerType.INTERNAL == listener.getType())   {
             throw new UnsupportedOperationException("Per-broker services are not used for internal listener");
         } else if (listener.getPort() == 9094 && "external".equals(listener.getName()))   {
-            return clusterName + "-kafka-" + pod;
+            return baseName + "-" + pod;
         } else if (KafkaListenerType.INTERNAL == listener.getType()) {
             throw new UnsupportedOperationException("Per-broker services are not used for internal listener");
         } else {
-            return clusterName + "-kafka-" + listener.getName() + "-" + pod;
+            return baseName + "-" + listener.getName() + "-" + pod;
         }
     }
 

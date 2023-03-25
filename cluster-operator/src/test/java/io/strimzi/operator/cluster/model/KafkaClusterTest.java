@@ -597,7 +597,7 @@ public class KafkaClusterTest {
         assertThat(svc.getMetadata().getAnnotations().entrySet().containsAll(exSvcAnnotations.entrySet()), is(true));
 
         // Check per pod service
-        svc = kc.generateExternalServices(0).get(0);
+        svc = kc.generatePerPodServices().get(0);
         assertThat(svc.getMetadata().getLabels().entrySet().containsAll(perPodSvcLabels.entrySet()), is(true));
         assertThat(svc.getMetadata().getAnnotations().entrySet().containsAll(perPodSvcAnnotations.entrySet()), is(true));
 
@@ -607,7 +607,7 @@ public class KafkaClusterTest {
         assertThat(rt.getMetadata().getAnnotations().entrySet().containsAll(exRouteAnnotations.entrySet()), is(true));
 
         // Check PerPodRoute
-        rt = kc.generateExternalRoutes(0).get(0);
+        rt = kc.generateExternalRoutes().get(0);
         assertThat(rt.getMetadata().getLabels().entrySet().containsAll(perPodRouteLabels.entrySet()), is(true));
         assertThat(rt.getMetadata().getAnnotations().entrySet().containsAll(perPodRouteAnnotations.entrySet()), is(true));
 
@@ -1490,8 +1490,10 @@ public class KafkaClusterTest {
         TestUtils.checkOwnerReference(ext, KAFKA);
 
         // Check per pod services
+        List<Service> services = kc.generatePerPodServices();
+
         for (int i = 0; i < REPLICAS; i++)  {
-            Service srv = kc.generateExternalServices(i).get(0);
+            Service srv = services.get(i);
             assertThat(srv.getMetadata().getName(), is(KafkaResources.kafkaStatefulSetName(CLUSTER) + "-" + i));
             assertThat(srv.getSpec().getType(), is("ClusterIP"));
             assertThat(srv.getSpec().getSelector().get(Labels.KUBERNETES_STATEFULSET_POD_LABEL), is(KafkaResources.kafkaPodName(CLUSTER, i)));
@@ -1514,8 +1516,10 @@ public class KafkaClusterTest {
         TestUtils.checkOwnerReference(brt, KAFKA);
 
         // Check per pod router
+        List<Route> routes = kc.generateExternalRoutes();
+
         for (int i = 0; i < REPLICAS; i++)  {
-            Route rt = kc.generateExternalRoutes(i).get(0);
+            Route rt = routes.get(i);
             assertThat(rt.getMetadata().getName(), is(KafkaResources.kafkaStatefulSetName(CLUSTER) + "-" + i));
             assertThat(rt.getSpec().getTls().getTermination(), is("passthrough"));
             assertThat(rt.getSpec().getTo().getKind(), is("Service"));
@@ -1568,8 +1572,10 @@ public class KafkaClusterTest {
         assertThat(brt.getSpec().getHost(), is("my-boostrap.cz"));
 
         // Check per pod router
+        List<Route> routes = kc.generateExternalRoutes();
+
         for (int i = 0; i < REPLICAS; i++)  {
-            Route rt = kc.generateExternalRoutes(i).get(0);
+            Route rt = routes.get(i);
             assertThat(rt.getMetadata().getName(), is(KafkaResources.kafkaStatefulSetName(CLUSTER) + "-" + i));
             assertThat(rt.getSpec().getHost(), is("my-host-" + i + ".cz"));
         }
@@ -1623,8 +1629,10 @@ public class KafkaClusterTest {
         assertThat(brt.getMetadata().getLabels().get("label"), is("label-value"));
 
         // Check per pod router
+        List<Route> routes = kc.generateExternalRoutes();
+
         for (int i = 0; i < REPLICAS; i++)  {
-            Route rt = kc.generateExternalRoutes(i).get(0);
+            Route rt = routes.get(i);
             assertThat(rt.getMetadata().getName(), is(KafkaResources.kafkaStatefulSetName(CLUSTER) + "-" + i));
             assertThat(rt.getMetadata().getAnnotations().get("anno"), is("anno-value-" + i));
             assertThat(rt.getMetadata().getLabels().get("label"), is("label-value-" + i));
@@ -1671,8 +1679,10 @@ public class KafkaClusterTest {
         TestUtils.checkOwnerReference(ext, KAFKA);
 
         // Check per pod services
+        List<Service> services = kc.generatePerPodServices();
+
         for (int i = 0; i < REPLICAS; i++)  {
-            Service srv = kc.generateExternalServices(i).get(0);
+            Service srv = services.get(i);
             assertThat(srv.getMetadata().getName(), is(KafkaResources.kafkaStatefulSetName(CLUSTER) + "-" + i));
             assertThat(srv.getMetadata().getFinalizers(), is(emptyList()));
             assertThat(srv.getSpec().getType(), is("LoadBalancer"));
@@ -1739,8 +1749,10 @@ public class KafkaClusterTest {
         assertThat(ext.getSpec().getExternalTrafficPolicy(), is(ExternalTrafficPolicy.LOCAL.toValue()));
 
         // Check per pod services
+        List<Service> services = kc.generatePerPodServices();
+
         for (int i = 0; i < REPLICAS; i++)  {
-            Service srv = kc.generateExternalServices(i).get(0);
+            Service srv = services.get(i);
             assertThat(srv.getSpec().getExternalTrafficPolicy(), is(ExternalTrafficPolicy.LOCAL.toValue()));
         }
     }
@@ -1769,8 +1781,10 @@ public class KafkaClusterTest {
         assertThat(ext.getSpec().getExternalTrafficPolicy(), is(ExternalTrafficPolicy.CLUSTER.toValue()));
 
         // Check per pod services
+        List<Service> services = kc.generatePerPodServices();
+
         for (int i = 0; i < REPLICAS; i++)  {
-            Service srv = kc.generateExternalServices(i).get(0);
+            Service srv = services.get(i);
             assertThat(srv.getSpec().getExternalTrafficPolicy(), is(ExternalTrafficPolicy.CLUSTER.toValue()));
         }
     }
@@ -1801,8 +1815,10 @@ public class KafkaClusterTest {
         assertThat(ext.getMetadata().getFinalizers(), is(finalizers));
 
         // Check per pod services
+        List<Service> services = kc.generatePerPodServices();
+
         for (int i = 0; i < REPLICAS; i++)  {
-            Service srv = kc.generateExternalServices(i).get(0);
+            Service srv = services.get(i);
             assertThat(srv.getMetadata().getFinalizers(), is(finalizers));
         }
     }
@@ -1833,8 +1849,10 @@ public class KafkaClusterTest {
         assertThat(ext.getSpec().getLoadBalancerSourceRanges(), is(sourceRanges));
 
         // Check per pod services
+        List<Service> services = kc.generatePerPodServices();
+
         for (int i = 0; i < REPLICAS; i++)  {
-            Service srv = kc.generateExternalServices(i).get(0);
+            Service srv = services.get(i);
             assertThat(srv.getSpec().getLoadBalancerSourceRanges(), is(sourceRanges));
         }
     }
@@ -1879,12 +1897,14 @@ public class KafkaClusterTest {
         // Check annotations
         assertThat(kc.generateExternalBootstrapServices().get(0).getMetadata().getAnnotations(), is(Collections.singletonMap("external-dns.alpha.kubernetes.io/hostname", "bootstrap.myingress.com.")));
         assertThat(kc.generateExternalBootstrapServices().get(0).getMetadata().getLabels().get("label"), is("label-value"));
-        assertThat(kc.generateExternalServices(0).get(0).getMetadata().getAnnotations(), is(Collections.singletonMap("external-dns.alpha.kubernetes.io/hostname", "broker-0.myingress.com.")));
-        assertThat(kc.generateExternalServices(0).get(0).getMetadata().getLabels().get("label"), is("label-value"));
-        assertThat(kc.generateExternalServices(1).get(0).getMetadata().getAnnotations().isEmpty(), is(true));
-        assertThat(kc.generateExternalServices(1).get(0).getMetadata().getLabels().get("label"), is(nullValue()));
-        assertThat(kc.generateExternalServices(2).get(0).getMetadata().getAnnotations(), is(Collections.singletonMap("external-dns.alpha.kubernetes.io/hostname", "broker-2.myingress.com.")));
-        assertThat(kc.generateExternalServices(2).get(0).getMetadata().getLabels().get("label"), is("label-value"));
+
+        List<Service> services = kc.generatePerPodServices();
+        assertThat(services.get(0).getMetadata().getAnnotations(), is(Collections.singletonMap("external-dns.alpha.kubernetes.io/hostname", "broker-0.myingress.com.")));
+        assertThat(services.get(0).getMetadata().getLabels().get("label"), is("label-value"));
+        assertThat(services.get(1).getMetadata().getAnnotations().isEmpty(), is(true));
+        assertThat(services.get(1).getMetadata().getLabels().get("label"), is(nullValue()));
+        assertThat(services.get(2).getMetadata().getAnnotations(), is(Collections.singletonMap("external-dns.alpha.kubernetes.io/hostname", "broker-2.myingress.com.")));
+        assertThat(services.get(2).getMetadata().getLabels().get("label"), is("label-value"));
     }
 
     @ParallelTest
@@ -1923,9 +1943,11 @@ public class KafkaClusterTest {
 
         // Check annotations
         assertThat(kc.generateExternalBootstrapServices().get(0).getSpec().getLoadBalancerIP(), is("10.0.0.1"));
-        assertThat(kc.generateExternalServices(0).get(0).getSpec().getLoadBalancerIP(), is("10.0.0.2"));
-        assertThat(kc.generateExternalServices(1).get(0).getSpec().getLoadBalancerIP(), is(nullValue()));
-        assertThat(kc.generateExternalServices(2).get(0).getSpec().getLoadBalancerIP(), is("10.0.0.3"));
+
+        List<Service> services = kc.generatePerPodServices();
+        assertThat(services.get(0).getSpec().getLoadBalancerIP(), is("10.0.0.2"));
+        assertThat(services.get(1).getSpec().getLoadBalancerIP(), is(nullValue()));
+        assertThat(services.get(2).getSpec().getLoadBalancerIP(), is("10.0.0.3"));
     }
 
     @ParallelTest
@@ -1951,8 +1973,10 @@ public class KafkaClusterTest {
         Service ext = kc.generateExternalBootstrapServices().get(0);
         assertThat(ext.getSpec().getLoadBalancerClass(), is("metallb-class"));
 
+        List<Service> services = kc.generatePerPodServices();
+
         for (int i = 0; i < REPLICAS; i++) {
-            Service service = kc.generateExternalServices(i).get(0);
+            Service service = services.get(i);
             assertThat(service.getSpec().getLoadBalancerClass(), is("metallb-class"));
         }
     }
@@ -1997,12 +2021,14 @@ public class KafkaClusterTest {
         // Check annotations
         assertThat(kc.generateExternalBootstrapServices().get(0).getMetadata().getAnnotations(), is(Collections.singletonMap("external-dns.alpha.kubernetes.io/hostname", "bootstrap.myingress.com.")));
         assertThat(kc.generateExternalBootstrapServices().get(0).getMetadata().getLabels().get("label"), is("label-value"));
-        assertThat(kc.generateExternalServices(0).get(0).getMetadata().getAnnotations(), is(Collections.singletonMap("external-dns.alpha.kubernetes.io/hostname", "broker-0.myingress.com.")));
-        assertThat(kc.generateExternalServices(0).get(0).getMetadata().getLabels().get("label"), is("label-value"));
-        assertThat(kc.generateExternalServices(1).get(0).getMetadata().getAnnotations().isEmpty(), is(true));
-        assertThat(kc.generateExternalServices(1).get(0).getMetadata().getLabels().get("label"), is(nullValue()));
-        assertThat(kc.generateExternalServices(2).get(0).getMetadata().getAnnotations(), is(Collections.singletonMap("external-dns.alpha.kubernetes.io/hostname", "broker-2.myingress.com.")));
-        assertThat(kc.generateExternalServices(2).get(0).getMetadata().getLabels().get("label"), is("label-value"));
+
+        List<Service> services = kc.generatePerPodServices();
+        assertThat(services.get(0).getMetadata().getAnnotations(), is(Collections.singletonMap("external-dns.alpha.kubernetes.io/hostname", "broker-0.myingress.com.")));
+        assertThat(services.get(0).getMetadata().getLabels().get("label"), is("label-value"));
+        assertThat(services.get(1).getMetadata().getAnnotations().isEmpty(), is(true));
+        assertThat(services.get(1).getMetadata().getLabels().get("label"), is(nullValue()));
+        assertThat(services.get(2).getMetadata().getAnnotations(), is(Collections.singletonMap("external-dns.alpha.kubernetes.io/hostname", "broker-2.myingress.com.")));
+        assertThat(services.get(2).getMetadata().getLabels().get("label"), is("label-value"));
 
     }
 
@@ -2042,8 +2068,10 @@ public class KafkaClusterTest {
         TestUtils.checkOwnerReference(ext, KAFKA);
 
         // Check per pod services
+        List<Service> services = kc.generatePerPodServices();
+
         for (int i = 0; i < REPLICAS; i++)  {
-            Service srv = kc.generateExternalServices(i).get(0);
+            Service srv = services.get(i);
             assertThat(srv.getMetadata().getName(), is(KafkaResources.kafkaStatefulSetName(CLUSTER) + "-" + i));
             assertThat(srv.getSpec().getType(), is("NodePort"));
             assertThat(srv.getSpec().getSelector().get(Labels.KUBERNETES_STATEFULSET_POD_LABEL), is(KafkaResources.kafkaPodName(CLUSTER, i)));
@@ -2128,8 +2156,10 @@ public class KafkaClusterTest {
         TestUtils.checkOwnerReference(ext, KAFKA);
 
         // Check per pod services
+        List<Service> services = kc.generatePerPodServices();
+
         for (int i = 0; i < REPLICAS; i++)  {
-            Service srv = kc.generateExternalServices(i).get(0);
+            Service srv = services.get(i);
             assertThat(srv.getMetadata().getName(), is(KafkaResources.kafkaStatefulSetName(CLUSTER) + "-" + i));
             assertThat(srv.getSpec().getType(), is("NodePort"));
             assertThat(srv.getSpec().getSelector().get(Labels.KUBERNETES_STATEFULSET_POD_LABEL), is(KafkaResources.kafkaPodName(CLUSTER, i)));
@@ -2186,7 +2216,7 @@ public class KafkaClusterTest {
         assertThat(kc.generateExternalBootstrapServices().get(0).getSpec().getPorts().get(0).getTargetPort().getIntVal(), is(9094));
         assertThat(kc.generateExternalBootstrapServices().get(0).getSpec().getPorts().get(0).getNodePort(), is(32189));
         assertThat(kc.generateExternalBootstrapServices().get(0).getSpec().getPorts().get(0).getProtocol(), is("TCP"));
-        assertThat(kc.generateExternalServices(0).get(0).getSpec().getPorts().get(0).getNodePort(), is(32001));
+        assertThat(kc.generatePerPodServices().get(0).getSpec().getPorts().get(0).getNodePort(), is(32001));
 
         assertThat(ListenersUtils.bootstrapNodePort(kc.getListeners().get(0)), is(32189));
         assertThat(ListenersUtils.brokerNodePort(kc.getListeners().get(0), 0), is(32001));
@@ -2218,7 +2248,7 @@ public class KafkaClusterTest {
             .build();
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS);
 
-        assertThat(kc.generateExternalServices(0).get(0).getSpec().getPorts().get(0).getNodePort(), is(32101));
+        assertThat(kc.generatePerPodServices().get(0).getSpec().getPorts().get(0).getNodePort(), is(32101));
         assertThat(kc.generateExternalBootstrapServices().get(0).getSpec().getPorts().get(0).getNodePort(), is(32001));
         assertThat(ListenersUtils.bootstrapNodePort(kc.getListeners().get(0)), is(32001));
         assertThat(ListenersUtils.brokerNodePort(kc.getListeners().get(0), 0), is(32101));
@@ -2251,7 +2281,7 @@ public class KafkaClusterTest {
             .build();
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS);
 
-        assertThat(kc.generateExternalServices(0).get(0).getSpec().getPorts().get(0).getNodePort(), is(32101));
+        assertThat(kc.generatePerPodServices().get(0).getSpec().getPorts().get(0).getNodePort(), is(32101));
         assertThat(kc.generateExternalBootstrapServices().get(0).getSpec().getPorts().get(0).getNodePort(), is(32001));
 
         assertThat(ListenersUtils.bootstrapNodePort(kc.getListeners().get(0)), is(32001));
@@ -2641,9 +2671,7 @@ public class KafkaClusterTest {
 
         List<Service> services = new ArrayList<>();
         services.addAll(kc.generateExternalBootstrapServices());
-        services.addAll(kc.generateExternalServices(0));
-        services.addAll(kc.generateExternalServices(1));
-        services.addAll(kc.generateExternalServices(2));
+        services.addAll(kc.generatePerPodServices());
 
         for (Service svc : services)    {
             assertThat(svc.getSpec().getIpFamilyPolicy(), is("PreferDualStack"));
@@ -3010,8 +3038,10 @@ public class KafkaClusterTest {
         TestUtils.checkOwnerReference(ext, KAFKA);
 
         // Check per pod services
+        List<Service> services = kc.generatePerPodServices();
+
         for (int i = 0; i < REPLICAS; i++)  {
-            Service srv = kc.generateExternalServices(i).get(0);
+            Service srv = services.get(i);
             assertThat(srv.getMetadata().getName(), is(KafkaResources.kafkaStatefulSetName(CLUSTER) + "-" + i));
             assertThat(srv.getSpec().getType(), is("ClusterIP"));
             assertThat(srv.getSpec().getSelector().get(Labels.KUBERNETES_STATEFULSET_POD_LABEL), is(KafkaResources.kafkaPodName(CLUSTER, i)));
@@ -3042,8 +3072,10 @@ public class KafkaClusterTest {
         TestUtils.checkOwnerReference(bing, KAFKA);
 
         // Check per pod ingress
+        List<Ingress> ingresses = kc.generateExternalIngresses();
+
         for (int i = 0; i < REPLICAS; i++)  {
-            Ingress ing = kc.generateExternalIngresses(i).get(0);
+            Ingress ing = ingresses.get(i);
             assertThat(ing.getMetadata().getName(), is(KafkaResources.kafkaStatefulSetName(CLUSTER) + "-" + i));
             assertThat(ing.getSpec().getIngressClassName(), is(nullValue()));
             assertThat(ing.getMetadata().getAnnotations().get("dns-annotation"), is("my-kafka-broker.com"));
@@ -3106,8 +3138,10 @@ public class KafkaClusterTest {
         assertThat(bing.getSpec().getIngressClassName(), is("nginx-internal"));
 
         // Check per pod ingress
+        List<Ingress> ingresses = kc.generateExternalIngresses();
+
         for (int i = 0; i < REPLICAS; i++)  {
-            Ingress ing = kc.generateExternalIngresses(i).get(0);
+            Ingress ing = ingresses.get(i);
             assertThat(ing.getSpec().getIngressClassName(), is("nginx-internal"));
         }
     }
@@ -3204,8 +3238,10 @@ public class KafkaClusterTest {
         TestUtils.checkOwnerReference(ext, KAFKA);
 
         // Check per pod services
+        List<Service> services = kc.generatePerPodServices();
+
         for (int i = 0; i < REPLICAS; i++)  {
-            Service srv = kc.generateExternalServices(i).get(0);
+            Service srv = services.get(i);
             assertThat(srv.getMetadata().getName(), is(KafkaResources.kafkaStatefulSetName(CLUSTER) + "-" + i));
             assertThat(srv.getSpec().getType(), is("ClusterIP"));
             assertThat(srv.getSpec().getSelector().get(Labels.KUBERNETES_STATEFULSET_POD_LABEL), is(KafkaResources.kafkaPodName(CLUSTER, i)));
