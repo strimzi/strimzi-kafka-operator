@@ -251,7 +251,8 @@ class RollingUpdateST extends AbstractST {
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), 3, 3)
             .editSpec()
                 .editKafka()
-                    .addToConfig(singletonMap("default.replication.factor", 1))
+                    // Topic operator doesn't support KRaft, yet, using auto topic creation and default replication factor as workaround
+                    .addToConfig(singletonMap("default.replication.factor", Environment.isKRaftModeEnabled() ? 3 : 1))
                     .addToConfig("auto.create.topics.enable", Environment.isKRaftModeEnabled())
                 .endKafka()
             .endSpec()
@@ -316,14 +317,15 @@ class RollingUpdateST extends AbstractST {
             RollingUpdateUtils.waitForComponentScaleUpOrDown(testStorage.getNamespaceName(), testStorage.getZookeeperSelector(), zookeeperScaleTo, zooKeeperPods);
 
             LOGGER.info("Zookeeper scale up to {} finished", zookeeperScaleTo);
+
+
+            clients = new KafkaClientsBuilder(clients)
+                    .withConsumerGroup(ClientUtils.generateRandomConsumerGroup())
+                    .build();
+
+            resourceManager.createResource(extensionContext, clients.consumerTlsStrimzi(testStorage.getClusterName()));
+            ClientUtils.waitForConsumerClientSuccess(testStorage);
         }
-
-        clients = new KafkaClientsBuilder(clients)
-            .withConsumerGroup(ClientUtils.generateRandomConsumerGroup())
-            .build();
-
-        resourceManager.createResource(extensionContext, clients.consumerTlsStrimzi(testStorage.getClusterName()));
-        ClientUtils.waitForConsumerClientSuccess(testStorage);
 
         // scale down
         LOGGER.info("Scale down Kafka to {}", initialReplicas);
