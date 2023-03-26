@@ -14,7 +14,7 @@ import io.strimzi.api.kafka.model.storage.PersistentClaimStorage;
 import io.strimzi.api.kafka.model.storage.SingleVolumeStorage;
 import io.strimzi.api.kafka.model.storage.Storage;
 import io.strimzi.operator.cluster.model.KafkaCluster;
-import io.strimzi.operator.cluster.model.ModelUtils;
+import io.strimzi.operator.cluster.model.NodeRef;
 import io.strimzi.operator.cluster.model.StorageUtils;
 import io.strimzi.operator.cluster.model.VolumeUtils;
 import io.strimzi.operator.cluster.operator.resource.Quantities;
@@ -354,12 +354,11 @@ public class Capacity {
             // requires a distinct broker capacity entry for every broker because the
             // Kafka volume paths are not homogeneous across brokers and include
             // the broker pod index in their names.
-            List<String> podList = KafkaCluster.generatePodList(reconciliation.name(), replicas);
-            for (int podIndex = 0; podIndex < podList.size(); podIndex++) {
-                int id = ModelUtils.idOfPod(podList.get(podIndex));
-                disk = processDisk(storage, id);
-                BrokerCapacity broker = new BrokerCapacity(id, cpu, disk, inboundNetwork, outboundNetwork);
-                capacityEntries.put(id, broker);
+            List<NodeRef> nodeList = KafkaCluster.nodes(reconciliation.name(), replicas);
+            for (NodeRef node : nodeList)   {
+                disk = processDisk(storage, node.nodeId());
+                BrokerCapacity broker = new BrokerCapacity(node.nodeId(), cpu, disk, inboundNetwork, outboundNetwork);
+                capacityEntries.put(node.nodeId(), broker);
             }
         }
 

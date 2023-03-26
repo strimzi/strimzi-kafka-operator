@@ -430,18 +430,18 @@ public class KafkaCluster extends AbstractStatefulModel implements SupportsMetri
     }
 
     /**
-     * Generates list of Kafka pods
+     * Generates list of references to Kafka nodes. The references contain both the pod name and the ID of the Kafka node
      *
      * @param cluster   Name of the Kafka cluster
      * @param replicas  Number of replicas
      *
-     * @return  List with the Kafka pod names
+     * @return  List with Kafka node references
      */
-    public static List<String> generatePodList(String cluster, int replicas) {
-        ArrayList<String> podNames = new ArrayList<>(replicas);
+    public static List<NodeRef> nodes(String cluster, int replicas) {
+        ArrayList<NodeRef> podNames = new ArrayList<>(replicas);
 
-        for (int podId = 0; podId < replicas; podId++) {
-            podNames.add(KafkaResources.kafkaPodName(cluster, podId));
+        for (int nodeId = 0; nodeId < replicas; nodeId++) {
+            podNames.add(new NodeRef(KafkaResources.kafkaPodName(cluster, nodeId), nodeId));
         }
 
         return podNames;
