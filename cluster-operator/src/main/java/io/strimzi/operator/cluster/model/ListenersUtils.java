@@ -660,4 +660,43 @@ public class ListenersUtils {
             return "ClusterIP";
         }
     }
+
+
+    /**
+     * Returns the advertised host for given broker. If user specified some override in the listener configuration, it
+     * will return this override. If no override is specified, it will return the host obtained from Kubernetes
+     * passes as parameter to this method.
+     *
+     * @param listener  Listener where the configuration should be found
+     * @param nodeId    Kafka node ID
+     * @param hostname  The advertised hostname which will be used if there is no listener override
+     *
+     * @return  The advertised hostname
+     */
+    public static String advertisedHostnameFromOverrideOrParameter(GenericKafkaListener listener, int nodeId, String hostname) {
+        String advertisedHost = ListenersUtils.brokerAdvertisedHost(listener, nodeId);
+
+        if (advertisedHost == null && hostname == null)  {
+            return null;
+        }
+
+        return advertisedHost != null ? advertisedHost : hostname;
+    }
+
+    /**
+     * Returns the advertised port for given broker. If user specified some override in the listener configuration, it
+     * will return this override. If no override is specified, it will return the port obtained from Kubernetes
+     * passes as parameter to this method.
+     *
+     * @param listener  Listener where the configuration should be found
+     * @param nodeId    Kafka node ID
+     * @param port      The advertised port
+     *
+     * @return  The advertised port as String
+     */
+    public static String advertisedPortFromOverrideOrParameter(GenericKafkaListener listener, int nodeId, Integer port) {
+        Integer advertisedPort = ListenersUtils.brokerAdvertisedPort(listener, nodeId);
+
+        return String.valueOf(advertisedPort != null ? advertisedPort : port);
+    }
 }
