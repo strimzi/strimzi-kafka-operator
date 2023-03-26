@@ -425,7 +425,7 @@ public class ZooKeeperReconciler {
                                         zkCertificateHash.put(
                                                 podNum,
                                                 CertUtils.getCertificateThumbprint(patchResult.resource(),
-                                                        Ca.secretEntryNameForPod(podName, Ca.SecretEntry.CRT)
+                                                        ClusterCa.secretEntryNameForPod(podName, Ca.SecretEntry.CRT)
                                                 ));
                                     }
                                 }
