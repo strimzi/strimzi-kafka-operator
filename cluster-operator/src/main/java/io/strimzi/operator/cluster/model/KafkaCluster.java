@@ -725,76 +725,77 @@ public class KafkaCluster extends AbstractStatefulModel implements SupportsMetri
     }
 
     /**
-     * Generates list of service for pod. These services are used for exposing it externally.
+     * Generates list of per-pod service.
      *
-     * @param pod Number of the pod for which this service should be generated
      * @return The list with generated Services
      */
-    public List<Service> generateExternalServices(int pod) {
+    public List<Service> generatePerPodServices() {
         List<GenericKafkaListener> externalListeners = ListenersUtils.listenersWithOwnServices(listeners);
         List<Service> services = new ArrayList<>(externalListeners.size());
 
         for (GenericKafkaListener listener : externalListeners)   {
-            String serviceName = ListenersUtils.backwardsCompatibleBrokerServiceName(cluster, pod, listener);
+            for (int nodeId = 0; nodeId < replicas; nodeId++) {
+                String serviceName = ListenersUtils.backwardsCompatiblePerBrokerServiceName(componentName, nodeId, listener);
 
-            List<ServicePort> ports = Collections.singletonList(
-                    ServiceUtils.createServicePort(
-                            ListenersUtils.backwardsCompatiblePortName(listener),
-                            listener.getPort(),
-                            listener.getPort(),
-                            ListenersUtils.brokerNodePort(listener, pod),
-                            "TCP")
-            );
+                List<ServicePort> ports = Collections.singletonList(
+                        ServiceUtils.createServicePort(
+                                ListenersUtils.backwardsCompatiblePortName(listener),
+                                listener.getPort(),
+                                listener.getPort(),
+                                ListenersUtils.brokerNodePort(listener, nodeId),
+                                "TCP")
+                );
 
-            Service service = ServiceUtils.createService(
-                    serviceName,
-                    namespace,
-                    labels,
-                    ownerReference,
-                    templatePerBrokerService,
-                    ports,
-                    labels.strimziSelectorLabels().withStatefulSetPod(KafkaResources.kafkaPodName(cluster, pod)),
-                    ListenersUtils.serviceType(listener),
-                    ListenersUtils.brokerLabels(listener, pod),
-                    ListenersUtils.brokerAnnotations(listener, pod),
-                    ListenersUtils.ipFamilyPolicy(listener),
-                    ListenersUtils.ipFamilies(listener)
-            );
+                Service service = ServiceUtils.createService(
+                        serviceName,
+                        namespace,
+                        labels,
+                        ownerReference,
+                        templatePerBrokerService,
+                        ports,
+                        labels.strimziSelectorLabels().withStatefulSetPod(KafkaResources.kafkaPodName(cluster, nodeId)),
+                        ListenersUtils.serviceType(listener),
+                        ListenersUtils.brokerLabels(listener, nodeId),
+                        ListenersUtils.brokerAnnotations(listener, nodeId),
+                        ListenersUtils.ipFamilyPolicy(listener),
+                        ListenersUtils.ipFamilies(listener)
+                );
 
-            if (KafkaListenerType.LOADBALANCER == listener.getType()) {
-                String loadBalancerIP = ListenersUtils.brokerLoadBalancerIP(listener, pod);
-                if (loadBalancerIP != null) {
-                    service.getSpec().setLoadBalancerIP(loadBalancerIP);
+                if (KafkaListenerType.LOADBALANCER == listener.getType()) {
+                    String loadBalancerIP = ListenersUtils.brokerLoadBalancerIP(listener, nodeId);
+                    if (loadBalancerIP != null) {
+                        service.getSpec().setLoadBalancerIP(loadBalancerIP);
+                    }
+
+                    List<String> loadBalancerSourceRanges = ListenersUtils.loadBalancerSourceRanges(listener);
+                    if (loadBalancerSourceRanges != null
+                            && !loadBalancerSourceRanges.isEmpty()) {
+                        service.getSpec().setLoadBalancerSourceRanges(loadBalancerSourceRanges);
+                    }
+
+                    List<String> finalizers = ListenersUtils.finalizers(listener);
+                    if (finalizers != null
+                            && !finalizers.isEmpty()) {
+                        service.getMetadata().setFinalizers(finalizers);
+                    }
+
+                    String loadBalancerClass = ListenersUtils.controllerClass(listener);
+                    if (loadBalancerClass != null) {
+                        service.getSpec().setLoadBalancerClass(loadBalancerClass);
+                    }
                 }
 
-                List<String> loadBalancerSourceRanges = ListenersUtils.loadBalancerSourceRanges(listener);
-                if (loadBalancerSourceRanges != null
-                        && !loadBalancerSourceRanges.isEmpty()) {
-                    service.getSpec().setLoadBalancerSourceRanges(loadBalancerSourceRanges);
+                if (KafkaListenerType.LOADBALANCER == listener.getType() || KafkaListenerType.NODEPORT == listener.getType()) {
+                    ExternalTrafficPolicy etp = ListenersUtils.externalTrafficPolicy(listener);
+                    if (etp != null) {
+                        service.getSpec().setExternalTrafficPolicy(etp.toValue());
+                    } else {
+                        service.getSpec().setExternalTrafficPolicy(ExternalTrafficPolicy.CLUSTER.toValue());
+                    }
                 }
 
-                List<String> finalizers = ListenersUtils.finalizers(listener);
-                if (finalizers != null
-                        && !finalizers.isEmpty()) {
-                    service.getMetadata().setFinalizers(finalizers);
-                }
-
-                String loadBalancerClass = ListenersUtils.controllerClass(listener);
-                if (loadBalancerClass != null) {
-                    service.getSpec().setLoadBalancerClass(loadBalancerClass);
-                }
+                services.add(service);
             }
-
-            if (KafkaListenerType.LOADBALANCER == listener.getType() || KafkaListenerType.NODEPORT == listener.getType()) {
-                ExternalTrafficPolicy etp = ListenersUtils.externalTrafficPolicy(listener);
-                if (etp != null) {
-                    service.getSpec().setExternalTrafficPolicy(etp.toValue());
-                } else {
-                    service.getSpec().setExternalTrafficPolicy(ExternalTrafficPolicy.CLUSTER.toValue());
-                }
-            }
-
-            services.add(service);
         }
 
         return services;
@@ -847,45 +848,46 @@ public class KafkaCluster extends AbstractStatefulModel implements SupportsMetri
     }
 
     /**
-     * Generates list of routes for pod. These routes are used for exposing it externally using OpenShift Routes.
+     * Generates list of per-pod routes. These routes are used for exposing it externally using OpenShift Routes.
      *
-     * @param pod Number of the pod for which this route should be generated
      * @return The list with generated Routes
      */
-    public List<Route> generateExternalRoutes(int pod) {
+    public List<Route> generateExternalRoutes() {
         List<GenericKafkaListener> routeListeners = ListenersUtils.routeListeners(listeners);
         List<Route> routes = new ArrayList<>(routeListeners.size());
 
         for (GenericKafkaListener listener : routeListeners)   {
-            String routeName = ListenersUtils.backwardsCompatibleBrokerServiceName(cluster, pod, listener);
-            Route route = new RouteBuilder()
-                    .withNewMetadata()
-                        .withName(routeName)
-                        .withLabels(labels.withAdditionalLabels(Util.mergeLabelsOrAnnotations(TemplateUtils.labels(templatePerBrokerRoute), ListenersUtils.brokerLabels(listener, pod))).toMap())
-                        .withAnnotations(Util.mergeLabelsOrAnnotations(TemplateUtils.annotations(templatePerBrokerRoute), ListenersUtils.brokerAnnotations(listener, pod)))
-                        .withNamespace(namespace)
-                        .withOwnerReferences(ownerReference)
-                    .endMetadata()
-                    .withNewSpec()
-                        .withNewTo()
-                            .withKind("Service")
+            for (int nodeId = 0; nodeId < replicas; nodeId++) {
+                String routeName = ListenersUtils.backwardsCompatiblePerBrokerServiceName(componentName, nodeId, listener);
+                Route route = new RouteBuilder()
+                        .withNewMetadata()
                             .withName(routeName)
-                        .endTo()
-                        .withNewPort()
-                            .withNewTargetPort(listener.getPort())
-                        .endPort()
-                        .withNewTls()
-                            .withTermination("passthrough")
-                        .endTls()
-                    .endSpec()
-                    .build();
+                            .withLabels(labels.withAdditionalLabels(Util.mergeLabelsOrAnnotations(TemplateUtils.labels(templatePerBrokerRoute), ListenersUtils.brokerLabels(listener, nodeId))).toMap())
+                            .withAnnotations(Util.mergeLabelsOrAnnotations(TemplateUtils.annotations(templatePerBrokerRoute), ListenersUtils.brokerAnnotations(listener, nodeId)))
+                            .withNamespace(namespace)
+                            .withOwnerReferences(ownerReference)
+                        .endMetadata()
+                        .withNewSpec()
+                            .withNewTo()
+                                .withKind("Service")
+                                .withName(routeName)
+                            .endTo()
+                            .withNewPort()
+                                .withNewTargetPort(listener.getPort())
+                            .endPort()
+                            .withNewTls()
+                                .withTermination("passthrough")
+                            .endTls()
+                        .endSpec()
+                        .build();
 
-            String host = ListenersUtils.brokerHost(listener, pod);
-            if (host != null)   {
-                route.getSpec().setHost(host);
+                String host = ListenersUtils.brokerHost(listener, nodeId);
+                if (host != null)   {
+                    route.getSpec().setHost(host);
+                }
+
+                routes.add(route);
             }
-
-            routes.add(route);
         }
 
         return routes;
@@ -953,60 +955,61 @@ public class KafkaCluster extends AbstractStatefulModel implements SupportsMetri
     }
 
     /**
-     * Generates list of ingress for pod. This ingress is used for exposing it externally using Nginx Ingress.
+     * Generates list of per-pod ingress. This ingress is used for exposing it externally using Nginx Ingress.
      *
-     * @param pod Number of the pod for which this ingress should be generated
      * @return The list of generated Ingresses
      */
-    public List<Ingress> generateExternalIngresses(int pod) {
+    public List<Ingress> generateExternalIngresses() {
         List<GenericKafkaListener> ingressListeners = ListenersUtils.ingressListeners(listeners);
         List<Ingress> ingresses = new ArrayList<>(ingressListeners.size());
 
         for (GenericKafkaListener listener : ingressListeners)   {
-            String ingressName = ListenersUtils.backwardsCompatibleBrokerServiceName(cluster, pod, listener);
-            String host = ListenersUtils.brokerHost(listener, pod);
-            String ingressClass = ListenersUtils.controllerClass(listener);
+            for (int nodeId = 0; nodeId < replicas; nodeId++) {
+                String ingressName = ListenersUtils.backwardsCompatiblePerBrokerServiceName(componentName, nodeId, listener);
+                String host = ListenersUtils.brokerHost(listener, nodeId);
+                String ingressClass = ListenersUtils.controllerClass(listener);
 
-            HTTPIngressPath path = new HTTPIngressPathBuilder()
-                    .withPath("/")
-                    .withPathType("Prefix")
-                    .withNewBackend()
-                        .withNewService()
+                HTTPIngressPath path = new HTTPIngressPathBuilder()
+                        .withPath("/")
+                        .withPathType("Prefix")
+                        .withNewBackend()
+                            .withNewService()
+                                .withName(ingressName)
+                                .withNewPort()
+                                    .withNumber(listener.getPort())
+                                .endPort()
+                            .endService()
+                        .endBackend()
+                        .build();
+
+                IngressRule rule = new IngressRuleBuilder()
+                        .withHost(host)
+                        .withNewHttp()
+                            .withPaths(path)
+                        .endHttp()
+                        .build();
+
+                IngressTLS tls = new IngressTLSBuilder()
+                        .withHosts(host)
+                        .build();
+
+                Ingress ingress = new IngressBuilder()
+                        .withNewMetadata()
                             .withName(ingressName)
-                            .withNewPort()
-                                .withNumber(listener.getPort())
-                            .endPort()
-                        .endService()
-                    .endBackend()
-                    .build();
+                            .withLabels(labels.withAdditionalLabels(Util.mergeLabelsOrAnnotations(TemplateUtils.labels(templatePerBrokerIngress), ListenersUtils.brokerLabels(listener, nodeId))).toMap())
+                            .withAnnotations(Util.mergeLabelsOrAnnotations(generateInternalIngressAnnotations(), TemplateUtils.annotations(templatePerBrokerIngress), ListenersUtils.brokerAnnotations(listener, nodeId)))
+                            .withNamespace(namespace)
+                            .withOwnerReferences(ownerReference)
+                        .endMetadata()
+                        .withNewSpec()
+                            .withIngressClassName(ingressClass)
+                            .withRules(rule)
+                            .withTls(tls)
+                        .endSpec()
+                        .build();
 
-            IngressRule rule = new IngressRuleBuilder()
-                    .withHost(host)
-                    .withNewHttp()
-                        .withPaths(path)
-                    .endHttp()
-                    .build();
-
-            IngressTLS tls = new IngressTLSBuilder()
-                    .withHosts(host)
-                    .build();
-
-            Ingress ingress = new IngressBuilder()
-                    .withNewMetadata()
-                        .withName(ingressName)
-                        .withLabels(labels.withAdditionalLabels(Util.mergeLabelsOrAnnotations(TemplateUtils.labels(templatePerBrokerIngress), ListenersUtils.brokerLabels(listener, pod))).toMap())
-                        .withAnnotations(Util.mergeLabelsOrAnnotations(generateInternalIngressAnnotations(), TemplateUtils.annotations(templatePerBrokerIngress), ListenersUtils.brokerAnnotations(listener, pod)))
-                        .withNamespace(namespace)
-                        .withOwnerReferences(ownerReference)
-                    .endMetadata()
-                    .withNewSpec()
-                        .withIngressClassName(ingressClass)
-                        .withRules(rule)
-                        .withTls(tls)
-                    .endSpec()
-                    .build();
-
-            ingresses.add(ingress);
+                ingresses.add(ingress);
+            }
         }
 
         return ingresses;

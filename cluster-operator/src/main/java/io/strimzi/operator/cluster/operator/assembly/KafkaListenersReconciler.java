@@ -144,11 +144,7 @@ public class KafkaListenersReconciler {
         services.add(kafka.generateService());
         services.add(kafka.generateHeadlessService());
         services.addAll(kafka.generateExternalBootstrapServices());
-
-        int replicas = kafka.getReplicas();
-        for (int i = 0; i < replicas; i++) {
-            services.addAll(kafka.generateExternalServices(i));
-        }
+        services.addAll(kafka.generatePerPodServices());
 
         return serviceOperator.batchReconcile(reconciliation, reconciliation.namespace(), services, kafka.getSelectorLabels());
     }
@@ -160,14 +156,10 @@ public class KafkaListenersReconciler {
      */
     protected Future<Void> routes() {
         List<Route> routes = new ArrayList<>(kafka.generateExternalBootstrapRoutes());
+        routes.addAll(kafka.generateExternalRoutes());
 
         if (routes.size() > 0) {
             if (pfa.hasRoutes()) {
-                int replicas = kafka.getReplicas();
-                for (int i = 0; i < replicas; i++) {
-                    routes.addAll(kafka.generateExternalRoutes(i));
-                }
-
                 return routeOperator.batchReconcile(reconciliation, reconciliation.namespace(), routes, kafka.getSelectorLabels());
             } else {
                 LOGGER.warnCr(reconciliation, "The OpenShift route API is not available in this Kubernetes cluster. Exposing Kafka cluster {} using routes is not possible.", reconciliation.name());
@@ -185,11 +177,7 @@ public class KafkaListenersReconciler {
      */
     protected Future<Void> ingresses() {
         List<Ingress> ingresses = new ArrayList<>(kafka.generateExternalBootstrapIngresses());
-
-        int replicas = kafka.getReplicas();
-        for (int i = 0; i < replicas; i++) {
-            ingresses.addAll(kafka.generateExternalIngresses(i));
-        }
+        ingresses.addAll(kafka.generateExternalIngresses());
 
         return ingressOperator.batchReconcile(reconciliation, reconciliation.namespace(), ingresses, kafka.getSelectorLabels());
     }
@@ -340,7 +328,7 @@ public class KafkaListenersReconciler {
 
             // Set advertised hostnames and ports
             for (int brokerId = 0; brokerId < kafka.getReplicas(); brokerId++) {
-                String brokerServiceName = ListenersUtils.backwardsCompatibleBrokerServiceName(reconciliation.name(), brokerId, listener);
+                String brokerServiceName = ListenersUtils.backwardsCompatiblePerBrokerServiceName(kafka.getComponentName(), brokerId, listener);
                 String brokerAddress = getInternalServiceHostname(reconciliation.namespace(), brokerServiceName, useServiceDnsDomain);
                 if (listener.isTls()) {
                     result.brokerDnsNames.computeIfAbsent(brokerId, k -> new HashSet<>(2)).add(brokerAddress);
@@ -407,7 +395,7 @@ public class KafkaListenersReconciler {
 
                 for (int pod = 0; pod < kafka.getReplicas(); pod++)  {
                     perPodFutures.add(
-                            serviceOperator.hasIngressAddress(reconciliation, reconciliation.namespace(), ListenersUtils.backwardsCompatibleBrokerServiceName(reconciliation.name(), pod, listener), 1_000, operationTimeoutMs)
+                            serviceOperator.hasIngressAddress(reconciliation, reconciliation.namespace(), ListenersUtils.backwardsCompatiblePerBrokerServiceName(kafka.getComponentName(), pod, listener), 1_000, operationTimeoutMs)
                     );
                 }
 
@@ -418,7 +406,7 @@ public class KafkaListenersReconciler {
 
                 for (int brokerId = 0; brokerId < kafka.getReplicas(); brokerId++)  {
                     final int finalBrokerId = brokerId;
-                    Future<Void> perBrokerFut = serviceOperator.getAsync(reconciliation.namespace(), ListenersUtils.backwardsCompatibleBrokerServiceName(reconciliation.name(), brokerId, listener))
+                    Future<Void> perBrokerFut = serviceOperator.getAsync(reconciliation.namespace(), ListenersUtils.backwardsCompatiblePerBrokerServiceName(kafka.getComponentName(), brokerId, listener))
                             .compose(svc -> {
                                 String brokerAddress;
 
@@ -505,7 +493,7 @@ public class KafkaListenersReconciler {
 
                         for (int pod = 0; pod < kafka.getReplicas(); pod++)  {
                             perPodFutures.add(
-                                    serviceOperator.hasNodePort(reconciliation, reconciliation.namespace(), ListenersUtils.backwardsCompatibleBrokerServiceName(reconciliation.name(), pod, listener), 1_000, operationTimeoutMs)
+                                    serviceOperator.hasNodePort(reconciliation, reconciliation.namespace(), ListenersUtils.backwardsCompatiblePerBrokerServiceName(kafka.getComponentName(), pod, listener), 1_000, operationTimeoutMs)
                             );
                         }
 
@@ -517,7 +505,7 @@ public class KafkaListenersReconciler {
 
                         for (int brokerId = 0; brokerId < kafka.getReplicas(); brokerId++)  {
                             final int finalBrokerId = brokerId;
-                            Future<Void> perBrokerFut = serviceOperator.getAsync(reconciliation.namespace(), ListenersUtils.backwardsCompatibleBrokerServiceName(reconciliation.name(), brokerId, listener))
+                            Future<Void> perBrokerFut = serviceOperator.getAsync(reconciliation.namespace(), ListenersUtils.backwardsCompatiblePerBrokerServiceName(kafka.getComponentName(), brokerId, listener))
                                     .compose(svc -> {
                                         Integer externalBrokerNodePort = svc.getSpec().getPorts().get(0).getNodePort();
                                         LOGGER.debugCr(reconciliation, "Found node port {} for Service {}", externalBrokerNodePort, svc.getMetadata().getName());
@@ -600,7 +588,7 @@ public class KafkaListenersReconciler {
 
                         for (int pod = 0; pod < kafka.getReplicas(); pod++)  {
                             perPodFutures.add(
-                                    routeOperator.hasAddress(reconciliation, reconciliation.namespace(), ListenersUtils.backwardsCompatibleBrokerServiceName(reconciliation.name(), pod, listener), 1_000, operationTimeoutMs)
+                                    routeOperator.hasAddress(reconciliation, reconciliation.namespace(), ListenersUtils.backwardsCompatiblePerBrokerServiceName(kafka.getComponentName(), pod, listener), 1_000, operationTimeoutMs)
                             );
                         }
 
@@ -612,7 +600,7 @@ public class KafkaListenersReconciler {
 
                         for (int brokerId = 0; brokerId < kafka.getReplicas(); brokerId++)  {
                             final int finalBrokerId = brokerId;
-                            Future<Void> perBrokerFut = routeOperator.getAsync(reconciliation.namespace(), ListenersUtils.backwardsCompatibleBrokerServiceName(reconciliation.name(), brokerId, listener))
+                            Future<Void> perBrokerFut = routeOperator.getAsync(reconciliation.namespace(), ListenersUtils.backwardsCompatiblePerBrokerServiceName(kafka.getComponentName(), brokerId, listener))
                                     .compose(route -> {
                                         String brokerAddress = route.getStatus().getIngress().get(0).getHost();
                                         LOGGER.debugCr(reconciliation, "Found address {} for Route {}", brokerAddress, route.getMetadata().getName());
@@ -685,7 +673,7 @@ public class KafkaListenersReconciler {
 
                         for (int pod = 0; pod < kafka.getReplicas(); pod++)  {
                             perPodFutures.add(
-                                    ingressOperator.hasIngressAddress(reconciliation, reconciliation.namespace(), ListenersUtils.backwardsCompatibleBrokerServiceName(reconciliation.name(), pod, listener), 1_000, operationTimeoutMs)
+                                    ingressOperator.hasIngressAddress(reconciliation, reconciliation.namespace(), ListenersUtils.backwardsCompatiblePerBrokerServiceName(kafka.getComponentName(), pod, listener), 1_000, operationTimeoutMs)
                             );
                         }
 
@@ -699,7 +687,7 @@ public class KafkaListenersReconciler {
                                     .map(GenericKafkaListenerConfigurationBroker::getHost)
                                     .findAny()
                                     .orElse(null);
-                            LOGGER.debugCr(reconciliation, "Using address {} for Ingress {}", brokerAddress, ListenersUtils.backwardsCompatibleBrokerServiceName(reconciliation.name(), brokerId, listener));
+                            LOGGER.debugCr(reconciliation, "Using address {} for Ingress {}", brokerAddress, ListenersUtils.backwardsCompatiblePerBrokerServiceName(kafka.getComponentName(), brokerId, listener));
 
                             result.brokerDnsNames.computeIfAbsent(brokerId, k -> new HashSet<>(2)).add(brokerAddress);
 

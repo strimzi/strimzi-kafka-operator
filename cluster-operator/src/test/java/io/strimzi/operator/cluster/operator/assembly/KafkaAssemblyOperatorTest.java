@@ -431,11 +431,7 @@ public class KafkaAssemblyOperatorTest {
         createdServices.add(kafkaCluster.generateService());
         createdServices.add(kafkaCluster.generateHeadlessService());
         createdServices.addAll(kafkaCluster.generateExternalBootstrapServices());
-
-        int replicas = kafkaCluster.getReplicas();
-        for (int i = 0; i < replicas; i++) {
-            createdServices.addAll(kafkaCluster.generateExternalServices(i));
-        }
+        createdServices.addAll(kafkaCluster.generatePerPodServices());
 
         Map<String, Service> expectedServicesMap = createdServices.stream().collect(Collectors.toMap(s -> s.getMetadata().getName(), s -> s));
 
@@ -466,9 +462,7 @@ public class KafkaAssemblyOperatorTest {
         // Route Mocks
         if (openShift) {
             Set<Route> expectedRoutes = new HashSet<>(kafkaCluster.generateExternalBootstrapRoutes());
-            for (int i = 0; i < replicas; i++) {
-                expectedRoutes.addAll(kafkaCluster.generateExternalRoutes(i));
-            }
+            expectedRoutes.addAll(kafkaCluster.generateExternalRoutes());
 
             Map<String, Route> expectedRoutesMap = expectedRoutes.stream().collect(Collectors.toMap(s -> s.getMetadata().getName(), s -> s));
 
@@ -653,7 +647,7 @@ public class KafkaAssemblyOperatorTest {
                         expectedServices.add(ListenersUtils.backwardsCompatibleBootstrapServiceName(kafkaName, listener));
 
                         for (int i = 0; i < kafkaCluster.getReplicas(); i++) {
-                            expectedServices.add(ListenersUtils.backwardsCompatibleBrokerServiceName(kafkaName, i, listener));
+                            expectedServices.add(ListenersUtils.backwardsCompatiblePerBrokerServiceName(kafkaCluster.getComponentName(), i, listener));
                         }
                     }
                 }
@@ -969,11 +963,7 @@ public class KafkaAssemblyOperatorTest {
         expectedServices.add(updatedKafkaCluster.generateService());
         expectedServices.add(updatedKafkaCluster.generateHeadlessService());
         expectedServices.addAll(updatedKafkaCluster.generateExternalBootstrapServices());
-
-        int replicas = updatedKafkaCluster.getReplicas();
-        for (int i = 0; i < replicas; i++) {
-            expectedServices.addAll(updatedKafkaCluster.generateExternalServices(i));
-        }
+        expectedServices.addAll(updatedKafkaCluster.generatePerPodServices());
 
         Map<String, Service> expectedServicesMap = expectedServices.stream().collect(Collectors.toMap(s -> s.getMetadata().getName(), s -> s));
 
@@ -1013,9 +1003,8 @@ public class KafkaAssemblyOperatorTest {
         // Route Mocks
         if (openShift) {
             Set<Route> expectedRoutes = new HashSet<>(originalKafkaCluster.generateExternalBootstrapRoutes());
-            for (int i = 0; i < replicas; i++) {
-                expectedRoutes.addAll(originalKafkaCluster.generateExternalRoutes(i));
-            }
+            // We use the updatedKafkaCluster here to mock the Route status even for the scaled up replicas
+            expectedRoutes.addAll(updatedKafkaCluster.generateExternalRoutes());
 
             Map<String, Route> expectedRoutesMap = expectedRoutes.stream().collect(Collectors.toMap(s -> s.getMetadata().getName(), s -> s));
 

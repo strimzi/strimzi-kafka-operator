@@ -412,16 +412,16 @@ public class ListenersUtilsTest {
 
     @ParallelTest
     public void testBackwardsCompatibleBrokerServiceName()    {
-        String clusterName = "my-cluster";
+        String componentName = "my-cluster-kafka";
 
-        assertThrows(UnsupportedOperationException.class, () -> ListenersUtils.backwardsCompatibleBrokerServiceName(clusterName, 1, oldPlain));
-        assertThrows(UnsupportedOperationException.class, () -> ListenersUtils.backwardsCompatibleBrokerServiceName(clusterName, 1, oldTls));
-        assertThrows(UnsupportedOperationException.class, () -> ListenersUtils.backwardsCompatibleBrokerServiceName(clusterName, 1, newPlain));
-        assertThrows(UnsupportedOperationException.class, () -> ListenersUtils.backwardsCompatibleBrokerServiceName(clusterName, 1, newTls));
-        assertThat(ListenersUtils.backwardsCompatibleBrokerServiceName(clusterName, 1, oldExternal), is(clusterName + "-kafka-1"));
-        assertThat(ListenersUtils.backwardsCompatibleBrokerServiceName(clusterName, 1, newLoadBalancer), is(clusterName + "-kafka-lb1-1"));
-        assertThat(ListenersUtils.backwardsCompatibleBrokerServiceName(clusterName, 1, newNodePort), is(clusterName + "-kafka-np1-1"));
-        assertThat(ListenersUtils.backwardsCompatibleBrokerServiceName(clusterName, 1, newRoute), is(clusterName + "-kafka-route-1"));
+        assertThrows(UnsupportedOperationException.class, () -> ListenersUtils.backwardsCompatiblePerBrokerServiceName(componentName, 1, oldPlain));
+        assertThrows(UnsupportedOperationException.class, () -> ListenersUtils.backwardsCompatiblePerBrokerServiceName(componentName, 1, oldTls));
+        assertThrows(UnsupportedOperationException.class, () -> ListenersUtils.backwardsCompatiblePerBrokerServiceName(componentName, 1, newPlain));
+        assertThrows(UnsupportedOperationException.class, () -> ListenersUtils.backwardsCompatiblePerBrokerServiceName(componentName, 1, newTls));
+        assertThat(ListenersUtils.backwardsCompatiblePerBrokerServiceName(componentName, 1, oldExternal), is(componentName + "-1"));
+        assertThat(ListenersUtils.backwardsCompatiblePerBrokerServiceName(componentName, 1, newLoadBalancer), is(componentName + "-lb1-1"));
+        assertThat(ListenersUtils.backwardsCompatiblePerBrokerServiceName(componentName, 1, newNodePort), is(componentName + "-np1-1"));
+        assertThat(ListenersUtils.backwardsCompatiblePerBrokerServiceName(componentName, 1, newRoute), is(componentName + "-route-1"));
     }
 
     @ParallelTest
