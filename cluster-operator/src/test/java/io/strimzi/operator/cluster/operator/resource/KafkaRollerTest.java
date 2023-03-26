@@ -9,6 +9,7 @@ import io.fabric8.kubernetes.api.model.PodBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
+import io.strimzi.operator.cluster.model.NodeRef;
 import io.strimzi.operator.cluster.model.RestartReason;
 import io.strimzi.operator.cluster.model.RestartReasons;
 import io.strimzi.operator.cluster.operator.resource.events.KubernetesRestartEventPublisher;
@@ -243,24 +244,24 @@ public class KafkaRollerTest {
                 singletonList(2));
     }
 
-    public List<String> addPodNames(int replicas) {
-        ArrayList<String> podNames = new ArrayList<>(replicas);
+    public List<NodeRef> addPodNames(int replicas) {
+        ArrayList<NodeRef> podNames = new ArrayList<>(replicas);
 
         for (int podId = 0; podId < replicas; podId++) {
-            podNames.add(KafkaResources.kafkaPodName(clusterName(), podId));
+            podNames.add(new NodeRef(KafkaResources.kafkaPodName(clusterName(), podId), podId));
         }
 
         return podNames;
     }
 
-    public List<String> addDisconnectedPodNames(int replicas) {
-        ArrayList<String> podNames = new ArrayList<>(replicas);
+    public List<NodeRef> addDisconnectedPodNames(int replicas) {
+        ArrayList<NodeRef> podNames = new ArrayList<>(replicas);
 
-        podNames.add(KafkaResources.kafkaPodName(clusterName(), 10));
-        podNames.add(KafkaResources.kafkaPodName(clusterName(), 200));
-        podNames.add(KafkaResources.kafkaPodName(clusterName(), 30));
-        podNames.add(KafkaResources.kafkaPodName(clusterName(), 400));
-        podNames.add(KafkaResources.kafkaPodName(clusterName(), 500));
+        podNames.add(new NodeRef(KafkaResources.kafkaPodName(clusterName(), 10), 10));
+        podNames.add(new NodeRef(KafkaResources.kafkaPodName(clusterName(), 200), 200));
+        podNames.add(new NodeRef(KafkaResources.kafkaPodName(clusterName(), 30), 30));
+        podNames.add(new NodeRef(KafkaResources.kafkaPodName(clusterName(), 400), 400));
+        podNames.add(new NodeRef(KafkaResources.kafkaPodName(clusterName(), 500), 500));
         return podNames;
     }
 
@@ -268,7 +269,7 @@ public class KafkaRollerTest {
     public void testRollWithDisconnectedPodNames(VertxTestContext testContext) {
         PodOperator podOps = mockPodOps(podId -> succeededFuture());
         TestingKafkaRoller kafkaRoller = new TestingKafkaRoller(null, null, addDisconnectedPodNames(REPLICAS), podOps,
-                bootstrapBrokers -> bootstrapBrokers != null && bootstrapBrokers.equals(singletonList(1)) ? new RuntimeException("Test Exception") : null,
+                bootstrapBrokers -> bootstrapBrokers != null && bootstrapBrokers.stream().map(node -> node.nodeId()).toList().equals(singletonList(1)) ? new RuntimeException("Test Exception") : null,
                 null, noException(), noException(), noException(),
                 brokerId -> succeededFuture(true),
                 false, new DefaultAdminClientProvider(), false, 30);
@@ -284,7 +285,7 @@ public class KafkaRollerTest {
     public void testRollHandlesErrorWhenOpeningAdminClient(VertxTestContext testContext) {
         PodOperator podOps = mockPodOps(podId -> succeededFuture());
         TestingKafkaRoller kafkaRoller = new TestingKafkaRoller(null, null, addPodNames(REPLICAS), podOps,
-            bootstrapBrokers -> bootstrapBrokers != null && bootstrapBrokers.equals(singletonList(1)) ? new RuntimeException("Test Exception") : null,
+            bootstrapBrokers -> bootstrapBrokers != null && bootstrapBrokers.stream().map(node -> node.nodeId()).toList().equals(singletonList(1)) ? new RuntimeException("Test Exception") : null,
             null, noException(), noException(), noException(),
             brokerId -> succeededFuture(true),
                 false, new DefaultAdminClientProvider(), false, 2);
@@ -624,21 +625,21 @@ public class KafkaRollerTest {
 
         int controllerCall;
         private final IdentityHashMap<Admin, Throwable> unclosedAdminClients;
-        private final Function<List<Integer>, RuntimeException> acOpenException;
+        private final Function<List<NodeRef>, RuntimeException> acOpenException;
         private final Throwable acCloseException;
         private final Function<Integer, Future<Boolean>> canRollFn;
         private final Function<Integer, Throwable> controllerException;
         private final Function<Integer, ForceableProblem> alterConfigsException;
         private final Function<Integer, ForceableProblem> getConfigsException;
-        private boolean delegateControllerCall;
-        private boolean delegateAdminClientCall;
+        private final boolean delegateControllerCall;
+        private final boolean delegateAdminClientCall;
         private final int[] controllers;
-        private List<String> tcpProbes = new ArrayList<>();
+        private final List<String> tcpProbes = new ArrayList<>();
 
         @SuppressWarnings("checkstyle:ParameterNumber")
-        private TestingKafkaRoller(Secret clusterCaCertSecret, Secret coKeySecret, List<String> podList,
+        private TestingKafkaRoller(Secret clusterCaCertSecret, Secret coKeySecret, List<NodeRef> nodes,
                                    PodOperator podOps,
-                                   Function<List<Integer>, RuntimeException> acOpenException,
+                                   Function<List<NodeRef>, RuntimeException> acOpenException,
                                    Throwable acCloseException,
                                    Function<Integer, Throwable> controllerException,
                                    Function<Integer, ForceableProblem> alterConfigsException,
@@ -654,7 +655,7 @@ public class KafkaRollerTest {
                     500,
                     1000,
                     () -> new BackOff(10L, 2, 4),
-                    podList,
+                    nodes,
                     clusterCaCertSecret,
                     coKeySecret,
                     adminClientProvider,
@@ -679,11 +680,11 @@ public class KafkaRollerTest {
         }
 
         @Override
-        protected Admin adminClient(List<Integer> bootstrapBrokers, boolean b) throws ForceableProblem, FatalProblem {
+        protected Admin adminClient(List<NodeRef> nodes, boolean b) throws ForceableProblem, FatalProblem {
             if (delegateAdminClientCall) {
-                return super.adminClient(bootstrapBrokers, b);
+                return super.adminClient(nodes, b);
             }
-            RuntimeException exception = acOpenException.apply(bootstrapBrokers);
+            RuntimeException exception = acOpenException.apply(nodes);
             if (exception != null) {
                 throw new ForceableProblem("An error while try to create the admin client", exception);
             }
@@ -698,7 +699,7 @@ public class KafkaRollerTest {
                 }
                 throw new RuntimeException("Not mocked " + invocation.getMethod());
             });
-            unclosedAdminClients.put(ac, new Throwable("Pod " + bootstrapBrokers));
+            unclosedAdminClients.put(ac, new Throwable("Pod " + nodes));
             return ac;
         }
 
@@ -723,13 +724,13 @@ public class KafkaRollerTest {
         }
 
         @Override
-        int controller(PodRef podRef, long timeout, TimeUnit unit, RestartContext restartContext) throws Exception {
+        int controller(NodeRef nodeRef, long timeout, TimeUnit unit, RestartContext restartContext) throws Exception {
             if (delegateControllerCall) {
-                return super.controller(podRef, timeout, unit, restartContext);
+                return super.controller(nodeRef, timeout, unit, restartContext);
             }
-            Throwable throwable = controllerException.apply(podRef.getPodId());
+            Throwable throwable = controllerException.apply(nodeRef.nodeId());
             if (throwable != null) {
-                throw new ForceableProblem("An error while trying to determine the cluster controller from pod " + podRef.getPodName(), throwable);
+                throw new ForceableProblem("An error while trying to determine the cluster controller from pod " + nodeRef.podName(), throwable);
             } else {
                 int index;
                 if (controllerCall < controllers.length) {
@@ -743,8 +744,8 @@ public class KafkaRollerTest {
         }
 
         @Override
-        protected Config brokerConfig(PodRef podRef) throws ForceableProblem {
-            ForceableProblem problem = getConfigsException.apply(podRef.getPodId());
+        protected Config brokerConfig(NodeRef nodeRef) throws ForceableProblem {
+            ForceableProblem problem = getConfigsException.apply(nodeRef.nodeId());
             if (problem != null) {
                 throw problem;
             } else return new Config(emptyList());
@@ -756,8 +757,8 @@ public class KafkaRollerTest {
         }
 
         @Override
-        protected void dynamicUpdateBrokerConfig(PodRef podRef, Admin ac, KafkaBrokerConfigurationDiff configurationDiff, KafkaBrokerLoggingConfigurationDiff logDiff) throws ForceableProblem {
-            ForceableProblem problem = alterConfigsException.apply(podRef.getPodId());
+        protected void dynamicUpdateBrokerConfig(NodeRef nodeRef, Admin ac, KafkaBrokerConfigurationDiff configurationDiff, KafkaBrokerLoggingConfigurationDiff logDiff) throws ForceableProblem {
+            ForceableProblem problem = alterConfigsException.apply(nodeRef.nodeId());
             if (problem != null) {
                 throw problem;
             }

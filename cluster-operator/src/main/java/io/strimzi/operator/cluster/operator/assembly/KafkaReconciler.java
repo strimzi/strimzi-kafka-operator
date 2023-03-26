@@ -401,7 +401,7 @@ public class KafkaReconciler {
                                 1_000,
                                 operationTimeoutMs,
                                 () -> new BackOff(250, 2, 10),
-                                KafkaCluster.generatePodList(reconciliation.name(), replicas),
+                                KafkaCluster.nodes(reconciliation.name(), replicas),
                                 compositeFuture.resultAt(0),
                                 compositeFuture.resultAt(1),
                                 adminClientProvider,

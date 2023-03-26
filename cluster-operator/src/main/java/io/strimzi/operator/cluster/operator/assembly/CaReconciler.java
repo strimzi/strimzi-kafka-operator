@@ -23,6 +23,7 @@ import io.strimzi.operator.cluster.model.ClusterCa;
 import io.strimzi.operator.cluster.model.InvalidResourceException;
 import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.ModelUtils;
+import io.strimzi.operator.cluster.model.NodeRef;
 import io.strimzi.operator.cluster.model.RestartReason;
 import io.strimzi.operator.cluster.model.RestartReasons;
 import io.strimzi.operator.cluster.operator.resource.KafkaRoller;
@@ -361,7 +362,7 @@ public class CaReconciler {
         if (podRollReasons.shouldRestart()) {
             return maybeRollZookeeper(podRollReasons)
                     .compose(i -> getKafkaReplicas())
-                    .compose(replicas -> rollKafkaBrokers(replicas, podRollReasons))
+                    .compose(nodes -> rollKafkaBrokers(nodes, podRollReasons))
                     .compose(i -> maybeRollDeploymentIfExists(KafkaResources.entityOperatorDeploymentName(reconciliation.name()), podRollReasons))
                     .compose(i -> maybeRollDeploymentIfExists(KafkaExporterResources.deploymentName(reconciliation.name()), podRollReasons))
                     .compose(i -> maybeRollDeploymentIfExists(CruiseControlResources.deploymentName(reconciliation.name()), podRollReasons));
@@ -390,18 +391,18 @@ public class CaReconciler {
         }
     }
 
-    private Future<List<String>> getKafkaReplicas() {
+    private Future<List<NodeRef>> getKafkaReplicas() {
         return strimziPodSetOperator.getAsync(reconciliation.namespace(), KafkaResources.kafkaStatefulSetName(reconciliation.name()))
                                     .compose(podSet -> {
                                         if (podSet != null) {
-                                            return Future.succeededFuture(KafkaCluster.generatePodList(reconciliation.name(), podSet.getSpec().getPods().size()));
+                                            return Future.succeededFuture(KafkaCluster.nodes(reconciliation.name(), podSet.getSpec().getPods().size()));
                                         } else {
                                             return Future.succeededFuture(List.of());
                                         }
                                     });
     }
 
-    private Future<Void> rollKafkaBrokers(List<String> replicas, RestartReasons podRollReasons) {
+    private Future<Void> rollKafkaBrokers(List<NodeRef> nodes, RestartReasons podRollReasons) {
         return new KafkaRoller(
                 reconciliation,
                 vertx,
@@ -409,7 +410,7 @@ public class CaReconciler {
                 1_000,
                 operationTimeoutMs,
                 () -> new BackOff(250, 2, 10),
-                replicas,
+                nodes,
                 clusterCa.caCertSecret(),
                 oldCoSecret,
                 adminClientProvider,
