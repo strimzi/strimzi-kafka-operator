@@ -13,6 +13,6 @@ package io.strimzi.operator.cluster.model;
 public record NodeRef(String podName, int nodeId) {
     @Override
     public String toString() {
-        return podName;
+        return podName + "/" + nodeId;
     }
 }
