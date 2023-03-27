@@ -194,7 +194,7 @@ public class KafkaListenersReconciler {
     private void registerAdvertisedHostname(int brokerId, GenericKafkaListener listener, String brokerHostname)   {
         result.advertisedHostnames
                 .computeIfAbsent(brokerId, id -> new HashMap<>())
-                .put(ListenersUtils.envVarIdentifier(listener), kafka.getAdvertisedHostname(listener, brokerId, brokerHostname));
+                .put(ListenersUtils.envVarIdentifier(listener), ListenersUtils.advertisedHostnameFromOverrideOrParameter(listener, brokerId, brokerHostname));
     }
 
     /**
@@ -209,7 +209,7 @@ public class KafkaListenersReconciler {
     private void registerAdvertisedPort(int brokerId, GenericKafkaListener listener, int brokerPort)   {
         result.advertisedPorts
                 .computeIfAbsent(brokerId, id -> new HashMap<>())
-                .put(ListenersUtils.envVarIdentifier(listener), kafka.getAdvertisedPort(listener, brokerId, brokerPort));
+                .put(ListenersUtils.envVarIdentifier(listener), ListenersUtils.advertisedPortFromOverrideOrParameter(listener, brokerId, brokerPort));
     }
 
     /**

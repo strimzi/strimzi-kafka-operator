@@ -1590,42 +1590,6 @@ public class KafkaCluster extends AbstractStatefulModel implements SupportsMetri
     }
 
     /**
-     * Returns the advertised URL for given broker.
-     * It will take into account the overrides specified by the user.
-     *
-     * @param listener Listener where the configuration should be found
-     * @param brokerId Broker ID
-     * @param address  The advertised hostname
-     *
-     * @return The advertised hostname
-     */
-    public String getAdvertisedHostname(GenericKafkaListener listener, int brokerId, String address) {
-        String advertisedHost = ListenersUtils.brokerAdvertisedHost(listener, brokerId);
-
-        if (advertisedHost == null && address == null)  {
-            return null;
-        }
-
-        return advertisedHost != null ? advertisedHost : address;
-    }
-
-    /**
-     * Returns the advertised port for given broker.
-     * It will take into account the overrides specified by the user.
-     *
-     * @param listener Listener where the configuration should be found
-     * @param brokerId Broker ID
-     * @param port     The advertised port
-     *
-     * @return The advertised port as String
-     */
-    public String getAdvertisedPort(GenericKafkaListener listener, int brokerId, Integer port) {
-        Integer advertisedPort = ListenersUtils.brokerAdvertisedPort(listener, brokerId);
-
-        return String.valueOf(advertisedPort != null ? advertisedPort : port);
-    }
-
-    /**
      * Returns the configuration of the Kafka cluster. This method is currently used by the KafkaSpecChecker to get the
      * Kafka configuration and check it for warnings.
      *

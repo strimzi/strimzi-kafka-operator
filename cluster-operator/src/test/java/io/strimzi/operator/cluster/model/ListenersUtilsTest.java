@@ -7,6 +7,7 @@ package io.strimzi.operator.cluster.model;
 import io.strimzi.api.kafka.model.listener.NodeAddressType;
 import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListener;
 import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBuilder;
+import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerConfigurationBroker;
 import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerConfigurationBrokerBuilder;
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.api.kafka.model.template.ExternalTrafficPolicy;
@@ -664,5 +665,49 @@ public class ListenersUtilsTest {
         assertThat(ListenersUtils.serviceType(newClusterIP), is("ClusterIP"));
         assertThat(ListenersUtils.serviceType(newNodePort), is("NodePort"));
         assertThat(ListenersUtils.serviceType(newRoute), is("ClusterIP"));
+    }
+
+    @ParallelTest
+    public void testGetExternalAdvertisedUrlWithOverrides() {
+        GenericKafkaListenerConfigurationBroker nodePortListenerBrokerConfig0 = new GenericKafkaListenerConfigurationBroker();
+        nodePortListenerBrokerConfig0.setBroker(0);
+        nodePortListenerBrokerConfig0.setAdvertisedHost("my-host-0.cz");
+        nodePortListenerBrokerConfig0.setAdvertisedPort(10000);
+
+        GenericKafkaListener listener = new GenericKafkaListenerBuilder()
+                .withName("external")
+                .withPort(9094)
+                .withType(KafkaListenerType.NODEPORT)
+                .withTls(true)
+                .withNewConfiguration()
+                    .withBrokers(nodePortListenerBrokerConfig0)
+                .endConfiguration()
+                .build();
+
+        assertThat(ListenersUtils.advertisedHostnameFromOverrideOrParameter(listener, 0, "some-host.com"), is("my-host-0.cz"));
+        assertThat(ListenersUtils.advertisedHostnameFromOverrideOrParameter(listener, 0, ""), is("my-host-0.cz"));
+        assertThat(ListenersUtils.advertisedHostnameFromOverrideOrParameter(listener, 1, "some-host.com"), is("some-host.com"));
+        assertThat(ListenersUtils.advertisedHostnameFromOverrideOrParameter(listener, 1, ""), is(""));
+
+        assertThat(ListenersUtils.advertisedPortFromOverrideOrParameter(listener, 0, 12345), is("10000"));
+        assertThat(ListenersUtils.advertisedPortFromOverrideOrParameter(listener, 0, 12345), is("10000"));
+        assertThat(ListenersUtils.advertisedPortFromOverrideOrParameter(listener, 1, 12345), is("12345"));
+        assertThat(ListenersUtils.advertisedPortFromOverrideOrParameter(listener, 1, 12345), is("12345"));
+    }
+
+    @ParallelTest
+    public void testGetExternalAdvertisedUrlWithoutOverrides() {
+        GenericKafkaListener listener = new GenericKafkaListenerBuilder()
+                .withName("external")
+                .withPort(9094)
+                .withType(KafkaListenerType.NODEPORT)
+                .withTls(true)
+                .build();
+
+        assertThat(ListenersUtils.advertisedHostnameFromOverrideOrParameter(listener, 0, "some-host.com"), is("some-host.com"));
+        assertThat(ListenersUtils.advertisedHostnameFromOverrideOrParameter(listener, 0, ""), is(""));
+
+        assertThat(ListenersUtils.advertisedPortFromOverrideOrParameter(listener, 0, 12345), is("12345"));
+        assertThat(ListenersUtils.advertisedPortFromOverrideOrParameter(listener, 0, 12345), is("12345"));
     }
 }

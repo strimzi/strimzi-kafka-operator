@@ -2728,14 +2728,14 @@ public class KafkaClusterTest {
     public void testGetExternalServiceWithoutAdvertisedHostAndPortOverride() {
         Kafka kafkaAssembly = new KafkaBuilder(KAFKA)
                 .editSpec()
-                    .editKafka()
-                        .withListeners(new GenericKafkaListenerBuilder()
-                                .withName("external")
-                                .withPort(9094)
-                                .withType(KafkaListenerType.NODEPORT)
-                                .withTls(true)
-                                .build())
-                    .endKafka()
+                .editKafka()
+                .withListeners(new GenericKafkaListenerBuilder()
+                        .withName("external")
+                        .withPort(9094)
+                        .withType(KafkaListenerType.NODEPORT)
+                        .withTls(true)
+                        .build())
+                .endKafka()
                 .endSpec()
                 .build();
 
@@ -2749,66 +2749,6 @@ public class KafkaClusterTest {
 
         assertThat(ListenersUtils.brokerAdvertisedPort(kc.getListeners().get(0), 2), is(nullValue()));
         assertThat(ListenersUtils.brokerAdvertisedHost(kc.getListeners().get(0), 2), is(nullValue()));
-    }
-
-    @ParallelTest
-    public void testGetExternalAdvertisedUrlWithOverrides() {
-        GenericKafkaListenerConfigurationBroker nodePortListenerBrokerConfig0 = new GenericKafkaListenerConfigurationBroker();
-        nodePortListenerBrokerConfig0.setBroker(0);
-        nodePortListenerBrokerConfig0.setAdvertisedHost("my-host-0.cz");
-        nodePortListenerBrokerConfig0.setAdvertisedPort(10000);
-
-        Kafka kafkaAssembly = new KafkaBuilder(KAFKA)
-                .editSpec()
-                    .editKafka()
-                        .withListeners(new GenericKafkaListenerBuilder()
-                                .withName("external")
-                                .withPort(9094)
-                                .withType(KafkaListenerType.NODEPORT)
-                                .withTls(true)
-                                .withNewConfiguration()
-                                    .withBrokers(nodePortListenerBrokerConfig0)
-                                .endConfiguration()
-                                .build())
-                    .endKafka()
-                .endSpec()
-                .build();
-
-        KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS);
-
-        assertThat(kc.getAdvertisedHostname(kc.getListeners().get(0), 0, "some-host.com"), is("my-host-0.cz"));
-        assertThat(kc.getAdvertisedHostname(kc.getListeners().get(0), 0, ""), is("my-host-0.cz"));
-        assertThat(kc.getAdvertisedHostname(kc.getListeners().get(0), 1, "some-host.com"), is("some-host.com"));
-        assertThat(kc.getAdvertisedHostname(kc.getListeners().get(0), 1, ""), is(""));
-
-        assertThat(kc.getAdvertisedPort(kc.getListeners().get(0), 0, 12345), is("10000"));
-        assertThat(kc.getAdvertisedPort(kc.getListeners().get(0), 0, 12345), is("10000"));
-        assertThat(kc.getAdvertisedPort(kc.getListeners().get(0), 1, 12345), is("12345"));
-        assertThat(kc.getAdvertisedPort(kc.getListeners().get(0), 1, 12345), is("12345"));
-    }
-
-    @ParallelTest
-    public void testGetExternalAdvertisedUrlWithoutOverrides() {
-        Kafka kafkaAssembly = new KafkaBuilder(KAFKA)
-                .editSpec()
-                    .editKafka()
-                        .withListeners(new GenericKafkaListenerBuilder()
-                                .withName("external")
-                                .withPort(9094)
-                                .withType(KafkaListenerType.NODEPORT)
-                                .withTls(true)
-                                .build())
-                    .endKafka()
-                .endSpec()
-                .build();
-
-        KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, VERSIONS);
-
-        assertThat(kc.getAdvertisedHostname(kc.getListeners().get(0), 0, "some-host.com"), is("some-host.com"));
-        assertThat(kc.getAdvertisedHostname(kc.getListeners().get(0), 0, ""), is(""));
-
-        assertThat(kc.getAdvertisedPort(kc.getListeners().get(0), 0, 12345), is("12345"));
-        assertThat(kc.getAdvertisedPort(kc.getListeners().get(0), 0, 12345), is("12345"));
     }
 
     @ParallelTest
