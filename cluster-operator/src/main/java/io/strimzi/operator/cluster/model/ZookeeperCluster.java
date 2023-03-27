@@ -531,7 +531,15 @@ public class ZookeeperCluster extends AbstractStatefulModel implements SupportsM
      */
     public List<PersistentVolumeClaim> generatePersistentVolumeClaims() {
         return PersistentVolumeClaimUtils
-                .createPersistentVolumeClaims(componentName, namespace, replicas, storage, false, labels, ownerReference, templatePersistentVolumeClaims);
+                .createPersistentVolumeClaims(
+                        namespace,
+                        nodes(),
+                        storage,
+                        false,
+                        labels,
+                        ownerReference,
+                        templatePersistentVolumeClaims
+                );
     }
 
     private List<VolumeMount> getVolumeMounts() {
@@ -613,5 +621,18 @@ public class ZookeeperCluster extends AbstractStatefulModel implements SupportsM
      */
     public LoggingModel logging()   {
         return logging;
+    }
+
+    /**
+     * @return  List of node references for this ZooKeeper cluster
+     */
+    private List<NodeRef> nodes()   {
+        List<NodeRef> nodes = new ArrayList<>();
+
+        for (int i = 0; i < replicas; i++)  {
+            nodes.add(new NodeRef(getPodName(i), i));
+        }
+
+        return nodes;
     }
 }

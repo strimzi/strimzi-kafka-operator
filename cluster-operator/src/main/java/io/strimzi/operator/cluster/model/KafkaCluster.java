@@ -430,6 +430,16 @@ public class KafkaCluster extends AbstractStatefulModel implements SupportsMetri
     }
 
     /**
+     * Generates list of references to Kafka nodes for this Kafka cluster. The references contain both the pod name and
+     * the ID of the Kafka node.
+     *
+     * @return  List with Kafka node references
+     */
+    private List<NodeRef> nodes() {
+        return nodes(cluster, replicas);
+    }
+
+    /**
      * Generates list of references to Kafka nodes. The references contain both the pod name and the ID of the Kafka node
      *
      * @param cluster   Name of the Kafka cluster
@@ -1181,7 +1191,15 @@ public class KafkaCluster extends AbstractStatefulModel implements SupportsMetri
      */
     public List<PersistentVolumeClaim> generatePersistentVolumeClaims(Storage storage) {
         return PersistentVolumeClaimUtils
-                .createPersistentVolumeClaims(componentName, namespace, replicas, storage, false, labels, ownerReference, templatePersistentVolumeClaims);
+                .createPersistentVolumeClaims(
+                        namespace,
+                        nodes(),
+                        storage,
+                        false,
+                        labels,
+                        ownerReference,
+                        templatePersistentVolumeClaims
+                );
     }
 
     /**
