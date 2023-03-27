@@ -133,7 +133,6 @@ public class StorageUtils {
         return factor;
     }
 
-
     private static boolean isEphemeral(Storage storage) {
         return Storage.TYPE_EPHEMERAL.equals(storage.getType());
     }
@@ -160,25 +159,27 @@ public class StorageUtils {
 
     /**
      * Validates persistent storage
-     * If storage is of a persistent type, validations are made
-     * If storage is not of a persistent type, validation passes
+     * - If storage is of a persistent type, validations are made
+     * - If storage is not of a persistent type, validation passes
      *
      * @param storage   Persistent Storage configuration
+     * @param path      Path in the custom resource where the problem occurs
+     *
      * @throws InvalidResourceException if validations fails for any reason
      */
-    public static void validatePersistentStorage(Storage storage)   {
+    public static void validatePersistentStorage(Storage storage, String path)   {
         if (storage instanceof PersistentClaimStorage persistentClaimStorage) {
-            checkPersistentStorageSizeIsValid(persistentClaimStorage);
+            checkPersistentStorageSizeIsValid(persistentClaimStorage, path);
 
         } else if (storage instanceof JbodStorage jbodStorage)  {
 
-            if (jbodStorage.getVolumes().size() == 0)   {
-                throw new InvalidResourceException("JbodStorage needs to contain at least one volume!");
+            if (jbodStorage.getVolumes() == null || jbodStorage.getVolumes().size() == 0)   {
+                throw new InvalidResourceException("JbodStorage needs to contain at least one volume (" + path + ")");
             }
 
             for (Storage jbodVolume : jbodStorage.getVolumes()) {
                 if (jbodVolume instanceof PersistentClaimStorage persistentClaimStorage) {
-                    checkPersistentStorageSizeIsValid(persistentClaimStorage);
+                    checkPersistentStorageSizeIsValid(persistentClaimStorage, path);
                 }
             }
         }
@@ -188,12 +189,13 @@ public class StorageUtils {
      * Checks if the supplied PersistentClaimStorage has a valid size
      *
      * @param storage   PersistentClaimStorage configuration
+     * @param path      Path in the custom resource where the problem occurs
      *
      * @throws InvalidResourceException if the persistent storage size is not valid
      */
-    private static void checkPersistentStorageSizeIsValid(PersistentClaimStorage storage)   {
+    private static void checkPersistentStorageSizeIsValid(PersistentClaimStorage storage, String path)   {
         if (storage.getSize() == null || storage.getSize().isEmpty()) {
-            throw new InvalidResourceException("The size is mandatory for a persistent-claim storage");
+            throw new InvalidResourceException("The size is mandatory for a persistent-claim storage (" + path + ")");
         }
     }
 }

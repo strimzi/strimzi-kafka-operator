@@ -21,6 +21,7 @@ import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationScramSha51
 import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationTls;
 import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListener;
 import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerConfiguration;
+import io.strimzi.api.kafka.model.nodepool.ProcessRoles;
 import io.strimzi.kafka.oauth.server.ServerConfig;
 import io.strimzi.kafka.oauth.server.plain.ServerPlainConfig;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlConfigurationParameters;
@@ -30,11 +31,12 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Function;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 /**
@@ -189,19 +191,23 @@ public class KafkaBrokerConfigurationBuilder {
      *
      * @param clusterName   Name of the cluster (important for the advertised hostnames)
      * @param namespace     Namespace (important for generating the advertised hostname)
-     * @param replicas      Number of replicas to configure the KRaft quorum
+     * @param kraftRoles    KRaft process roles which this node will take
+     * @param nodes         Set of node references for configuring the KRaft quorum
      *
      * @return Returns the builder instance
      */
-    public KafkaBrokerConfigurationBuilder withKRaft(String clusterName, String namespace, int replicas)   {
+    public KafkaBrokerConfigurationBuilder withKRaft(String clusterName, String namespace, Set<ProcessRoles> kraftRoles, Set<NodeRef> nodes)   {
         printSectionHeader("KRaft configuration");
-        writer.println("process.roles=broker,controller");
+        writer.println("process.roles=" + kraftRoles.stream().map(role -> role.toValue()).sorted().collect(Collectors.joining(",")));
         writer.println("controller.listener.names=" + CONTROL_PLANE_LISTENER_NAME);
 
-        List<String> quorum = new ArrayList<>(replicas);
-        for (int i = 0; i < replicas; i++)  {
-            quorum.add(i + "@" + DnsNameGenerator.podDnsName(namespace, KafkaResources.brokersServiceName(clusterName), KafkaResources.kafkaStatefulSetName(clusterName) + "-" + i) + ":9090");
-        }
+        // Generates the controllers quorum list
+        // The list should be sorted to avoid random changes to the generated configuration file
+        List<String> quorum = nodes.stream()
+                .filter(NodeRef::controller)
+                .sorted(Comparator.comparingInt(NodeRef::nodeId))
+                .map(node -> String.format("%s@%s:9090", node.nodeId(), DnsNameGenerator.podDnsName(namespace, KafkaResources.brokersServiceName(clusterName), node.podName())))
+                .toList();
 
         writer.println("controller.quorum.voters=" + String.join(",", quorum));
 
@@ -216,9 +222,8 @@ public class KafkaBrokerConfigurationBuilder {
      *
      * @param clusterName                Name of the cluster (important for the advertised hostnames)
      * @param namespace                  Namespace (important for generating the advertised hostname)
+     * @param node                       Node reference describing the node for which we generate the configuration
      * @param kafkaListeners             The listeners configuration from the Kafka CR
-     * @param podNameProvider            Lambda method which provides the name of the pod for which this configuration
-     *                                   is used. This is needed to configure the replication and control plane listeners.
      * @param advertisedHostnameProvider Lambda method which provides the advertised hostname for given listener and
      *                                   broker. This is used to configure the user-configurable listeners.
      * @param advertisedPortProvider     Lambda method which provides the advertised port for given listener and broker.
@@ -228,9 +233,10 @@ public class KafkaBrokerConfigurationBuilder {
      * @return Returns the builder instance
      */
     public KafkaBrokerConfigurationBuilder withListeners(
-            String clusterName, String namespace,
+            String clusterName,
+            String namespace,
+            NodeRef node,
             List<GenericKafkaListener> kafkaListeners,
-            Supplier<String> podNameProvider,
             Function<String, String> advertisedHostnameProvider,
             Function<String, String> advertisedPortProvider,
             boolean useKRaft
@@ -239,66 +245,80 @@ public class KafkaBrokerConfigurationBuilder {
         List<String> advertisedListeners = new ArrayList<>();
         List<String> securityProtocol = new ArrayList<>();
 
-        // Control Plane listener
-        listeners.add(CONTROL_PLANE_LISTENER_NAME + "://0.0.0.0:9090");
-        if (!useKRaft) {
-            advertisedListeners.add(String.format("%s://%s:9090",
-                    CONTROL_PLANE_LISTENER_NAME,
-                    // Pod name constructed to be templatable for each individual ordinal
-                    DnsNameGenerator.podDnsNameWithoutClusterDomain(namespace, KafkaResources.brokersServiceName(clusterName),
-                            podNameProvider.get())
-            ));
+        boolean isKraftControllerOnly = useKRaft && node.controller() && !node.broker();
+        boolean isKraftBrokerOnly = useKRaft && node.broker() && !node.controller();
+
+        // Control Plane listener => ZooKeeper based brokers and KRaft controllers (including mixed nodes). But not on KRaft broker only nodes
+        if (!isKraftBrokerOnly) {
+            listeners.add(CONTROL_PLANE_LISTENER_NAME + "://0.0.0.0:9090");
+
+            if (!useKRaft) {
+                advertisedListeners.add(String.format("%s://%s:9090",
+                        CONTROL_PLANE_LISTENER_NAME,
+                        // Pod name constructed to be templatable for each individual ordinal
+                        DnsNameGenerator.podDnsNameWithoutClusterDomain(namespace, KafkaResources.brokersServiceName(clusterName), node.podName())
+                ));
+            }
         }
+
+        // Security protocol and Control Plane Listener are configured everywhere
         securityProtocol.add(CONTROL_PLANE_LISTENER_NAME + ":SSL");
         configureControlPlaneListener();
 
-        // Replication listener
-        listeners.add(REPLICATION_LISTENER_NAME + "://0.0.0.0:9091");
-        advertisedListeners.add(String.format("%s://%s:9091",
-                REPLICATION_LISTENER_NAME,
-                // Pod name constructed to be templatable for each individual ordinal
-                DnsNameGenerator.podDnsNameWithoutClusterDomain(namespace, KafkaResources.brokersServiceName(clusterName),
-                        podNameProvider.get())
-        ));
-        securityProtocol.add(REPLICATION_LISTENER_NAME + ":SSL");
-        configureReplicationListener();
+        // Non-controller listeners are used only on ZooKeeper based brokers or KRaft brokers (including mixed nodes)
+        if (!isKraftControllerOnly) {
+            // Replication listener
+            listeners.add(REPLICATION_LISTENER_NAME + "://0.0.0.0:9091");
+            advertisedListeners.add(String.format("%s://%s:9091",
+                    REPLICATION_LISTENER_NAME,
+                    // Pod name constructed to be templatable for each individual ordinal
+                    DnsNameGenerator.podDnsNameWithoutClusterDomain(namespace, KafkaResources.brokersServiceName(clusterName), node.podName())
+            ));
+            securityProtocol.add(REPLICATION_LISTENER_NAME + ":SSL");
+            configureReplicationListener();
 
-        for (GenericKafkaListener listener : kafkaListeners) {
-            int port = listener.getPort();
-            String listenerName = ListenersUtils.identifier(listener).toUpperCase(Locale.ENGLISH);
-            String envVarListenerName = ListenersUtils.envVarIdentifier(listener);
+            for (GenericKafkaListener listener : kafkaListeners) {
+                int port = listener.getPort();
+                String listenerName = ListenersUtils.identifier(listener).toUpperCase(Locale.ENGLISH);
+                String envVarListenerName = ListenersUtils.envVarIdentifier(listener);
 
-            printSectionHeader("Listener configuration: " + listenerName);
+                printSectionHeader("Listener configuration: " + listenerName);
 
-            listeners.add(listenerName + "://0.0.0.0:" + port);
-            advertisedListeners.add(String.format("%s://%s:%s", listenerName, advertisedHostnameProvider.apply(envVarListenerName), advertisedPortProvider.apply(envVarListenerName)));
-            configureAuthentication(listenerName, securityProtocol, listener.isTls(), listener.getAuth());
-            configureListener(listenerName, listener.getConfiguration());
+                listeners.add(listenerName + "://0.0.0.0:" + port);
+                advertisedListeners.add(String.format("%s://%s:%s", listenerName, advertisedHostnameProvider.apply(envVarListenerName), advertisedPortProvider.apply(envVarListenerName)));
+                configureAuthentication(listenerName, securityProtocol, listener.isTls(), listener.getAuth());
+                configureListener(listenerName, listener.getConfiguration());
 
-            if (listener.isTls())   {
-                CertAndKeySecretSource customServerCert = null;
-                if (listener.getConfiguration() != null) {
-                    customServerCert = listener.getConfiguration().getBrokerCertChainAndKey();
+                if (listener.isTls()) {
+                    CertAndKeySecretSource customServerCert = null;
+                    if (listener.getConfiguration() != null) {
+                        customServerCert = listener.getConfiguration().getBrokerCertChainAndKey();
+                    }
+
+                    configureTls(listenerName, customServerCert);
                 }
 
-                configureTls(listenerName, customServerCert);
+                writer.println();
             }
 
-            writer.println();
+            configureOAuthPrincipalBuilderIfNeeded(writer, kafkaListeners);
         }
 
-        configureOAuthPrincipalBuilderIfNeeded(writer, kafkaListeners);
-
         printSectionHeader("Common listener configuration");
-        writer.println("listeners=" + String.join(",", listeners));
-        writer.println("advertised.listeners=" + String.join(",", advertisedListeners));
         writer.println("listener.security.protocol.map=" + String.join(",", securityProtocol));
+        writer.println("listeners=" + String.join(",", listeners));
 
+        // Advertised listeners are not allowed on KRaft nodes with controller only role
+        if (!isKraftControllerOnly) {
+            writer.println("advertised.listeners=" + String.join(",", advertisedListeners));
+            writer.println("inter.broker.listener.name=" + REPLICATION_LISTENER_NAME);
+        }
+
+        // Control plane listener is on all ZooKeeper based brokers or on KRaft nodes with only the broker role (i.e. not mixed nodes)
         if (!useKRaft) {
             writer.println("control.plane.listener.name=" + CONTROL_PLANE_LISTENER_NAME);
         }
 
-        writer.println("inter.broker.listener.name=" + REPLICATION_LISTENER_NAME);
         writer.println("sasl.enabled.mechanisms=");
         writer.println("ssl.endpoint.identification.algorithm=HTTPS");
         writer.println();
@@ -324,14 +344,7 @@ public class KafkaBrokerConfigurationBuilder {
         final String controlPlaneListenerName = CONTROL_PLANE_LISTENER_NAME.toLowerCase(Locale.ENGLISH);
 
         printSectionHeader("Control Plane listener");
-        writer.println("listener.name." + controlPlaneListenerName + ".ssl.keystore.location=/tmp/kafka/cluster.keystore.p12");
-        writer.println("listener.name." + controlPlaneListenerName + ".ssl.keystore.password=" + PLACEHOLDER_CERT_STORE_PASSWORD);
-        writer.println("listener.name." + controlPlaneListenerName + ".ssl.keystore.type=PKCS12");
-        writer.println("listener.name." + controlPlaneListenerName + ".ssl.truststore.location=/tmp/kafka/cluster.truststore.p12");
-        writer.println("listener.name." + controlPlaneListenerName + ".ssl.truststore.password=" + PLACEHOLDER_CERT_STORE_PASSWORD);
-        writer.println("listener.name." + controlPlaneListenerName + ".ssl.truststore.type=PKCS12");
-        writer.println("listener.name." + controlPlaneListenerName + ".ssl.client.auth=required");
-        writer.println();
+        configureListener(controlPlaneListenerName);
     }
 
     /**
@@ -342,13 +355,23 @@ public class KafkaBrokerConfigurationBuilder {
         final String replicationListenerName = REPLICATION_LISTENER_NAME.toLowerCase(Locale.ENGLISH);
 
         printSectionHeader("Replication listener");
-        writer.println("listener.name." + replicationListenerName + ".ssl.keystore.location=/tmp/kafka/cluster.keystore.p12");
-        writer.println("listener.name." + replicationListenerName + ".ssl.keystore.password=" + PLACEHOLDER_CERT_STORE_PASSWORD);
-        writer.println("listener.name." + replicationListenerName + ".ssl.keystore.type=PKCS12");
-        writer.println("listener.name." + replicationListenerName + ".ssl.truststore.location=/tmp/kafka/cluster.truststore.p12");
-        writer.println("listener.name." + replicationListenerName + ".ssl.truststore.password=" + PLACEHOLDER_CERT_STORE_PASSWORD);
-        writer.println("listener.name." + replicationListenerName + ".ssl.truststore.type=PKCS12");
-        writer.println("listener.name." + replicationListenerName + ".ssl.client.auth=required");
+        configureListener(replicationListenerName);
+    }
+
+    /**
+     * Internal method which generates the configuration of the internal replication or control plane listener which use
+     * the same TLS configuration and differ only on the listener name.
+     *
+     * @param listenerName  Name of the listener
+     */
+    private void configureListener(String listenerName) {
+        writer.println("listener.name." + listenerName + ".ssl.keystore.location=/tmp/kafka/cluster.keystore.p12");
+        writer.println("listener.name." + listenerName + ".ssl.keystore.password=" + PLACEHOLDER_CERT_STORE_PASSWORD);
+        writer.println("listener.name." + listenerName + ".ssl.keystore.type=PKCS12");
+        writer.println("listener.name." + listenerName + ".ssl.truststore.location=/tmp/kafka/cluster.truststore.p12");
+        writer.println("listener.name." + listenerName + ".ssl.truststore.password=" + PLACEHOLDER_CERT_STORE_PASSWORD);
+        writer.println("listener.name." + listenerName + ".ssl.truststore.type=PKCS12");
+        writer.println("listener.name." + listenerName + ".ssl.client.auth=required");
         writer.println();
     }
 

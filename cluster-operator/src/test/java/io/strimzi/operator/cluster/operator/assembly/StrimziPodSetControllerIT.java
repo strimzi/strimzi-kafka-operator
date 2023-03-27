@@ -112,7 +112,7 @@ public class StrimziPodSetControllerIT {
         kafkaOperator = new CrdOperator<>(vertx, client, Kafka.class, KafkaList.class, Kafka.RESOURCE_KIND);
         kafkaConnectOperator = new CrdOperator<>(vertx, client, KafkaConnect.class, KafkaConnectList.class, KafkaConnect.RESOURCE_KIND);
         kafkaMirrorMaker2Operator = new CrdOperator<>(vertx, client, KafkaMirrorMaker2.class, KafkaMirrorMaker2List.class, KafkaMirrorMaker2.RESOURCE_KIND);
-        podSetOperator = new StrimziPodSetOperator(vertx, client, 60_000L);
+        podSetOperator = new StrimziPodSetOperator(vertx, client);
         podOperator = new PodOperator(vertx, client);
 
         kafkaOp().inNamespace(NAMESPACE).resource(kafka(KAFKA_NAME, MATCHING_LABELS)).create();

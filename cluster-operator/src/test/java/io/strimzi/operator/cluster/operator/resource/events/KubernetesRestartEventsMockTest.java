@@ -153,6 +153,7 @@ public class KubernetesRestartEventsMockTest {
                 .withMockWebServerLoggingSettings(Level.WARNING, true)
                 .withKafkaCrd()
                 .withInitialKafkas(KAFKA)
+                .withKafkaNodePoolCrd()
                 .withStrimziPodSetCrd()
                 .withPodController()
                 .withServiceController()
@@ -202,7 +203,8 @@ public class KubernetesRestartEventsMockTest {
         KafkaReconciler lowerVolumes = new KafkaReconciler(reconciliation,
                 kafkaWithLessVolumes,
                 null,
-                1,
+                Map.of(),
+                Map.of(CLUSTER_NAME + "-kafka", List.of(CLUSTER_NAME + "-kafka-0")),
                 clusterCa,
                 clientsCa,
                 VERSION_CHANGE,
@@ -243,7 +245,8 @@ public class KubernetesRestartEventsMockTest {
         KafkaReconciler reconciler = new KafkaReconciler(reconciliation,
                 KAFKA,
                 null,
-                1,
+                Map.of(),
+                Map.of(CLUSTER_NAME + "-kafka", List.of(CLUSTER_NAME + "-kafka-0")),
                 oldGenClusterCa,
                 clientsCa,
                 VERSION_CHANGE,
@@ -267,7 +270,8 @@ public class KubernetesRestartEventsMockTest {
         KafkaReconciler reconciler = new KafkaReconciler(reconciliation,
                 KAFKA,
                 null,
-                1,
+                Map.of(),
+                Map.of(CLUSTER_NAME + "-kafka", List.of(CLUSTER_NAME + "-kafka-0")),
                 ca,
                 clientsCa,
                 VERSION_CHANGE,
@@ -291,7 +295,8 @@ public class KubernetesRestartEventsMockTest {
         KafkaReconciler reconciler = new KafkaReconciler(reconciliation,
                 KAFKA,
                 null,
-                1,
+                Map.of(),
+                Map.of(CLUSTER_NAME + "-kafka", List.of(CLUSTER_NAME + "-kafka-0")),
                 ca,
                 clientsCa,
                 VERSION_CHANGE,
@@ -348,7 +353,8 @@ public class KubernetesRestartEventsMockTest {
         KafkaReconciler reconciler = new KafkaReconciler(reconciliation,
                 KAFKA,
                 null,
-                1,
+                Map.of(),
+                Map.of(CLUSTER_NAME + "-kafka", List.of(CLUSTER_NAME + "-kafka-0")),
                 clusterCa,
                 clientsCa,
                 VERSION_CHANGE,
@@ -400,7 +406,8 @@ public class KubernetesRestartEventsMockTest {
         KafkaReconciler reconciler = new KafkaReconciler(reconciliation,
                 KAFKA,
                 null,
-                1,
+                Map.of(),
+                Map.of(CLUSTER_NAME + "-kafka", List.of(CLUSTER_NAME + "-kafka-0")),
                 clusterCa,
                 clientsCa,
                 VERSION_CHANGE,
@@ -452,7 +459,7 @@ public class KubernetesRestartEventsMockTest {
                 createInitialCaKeySecret(NAMESPACE, CLUSTER_NAME, clusterCaKeySecretName(CLUSTER_NAME), MockCertManager.clusterCaKey())
         );
 
-        KafkaReconciler reconciler = new KafkaReconciler(reconciliation, KAFKA, null, 1, changedCa, clientsCa, VERSION_CHANGE, clusterOperatorConfig, supplier, PFA, vertx);
+        KafkaReconciler reconciler = new KafkaReconciler(reconciliation, KAFKA, null, Map.of(), Map.of(CLUSTER_NAME + "-kafka", List.of(CLUSTER_NAME + "-kafka-0")), changedCa, clientsCa, VERSION_CHANGE, clusterOperatorConfig, supplier, PFA, vertx);
         reconciler.reconcile(ks, Clock.systemUTC()).onComplete(verifyEventPublished(KAFKA_CERTIFICATES_CHANGED, context));
 
     }
@@ -477,7 +484,7 @@ public class KubernetesRestartEventsMockTest {
     }
 
     private KafkaReconciler defaultReconciler(Vertx vertx) {
-        return new KafkaReconciler(reconciliation, KAFKA, null, 1, clusterCa, clientsCa, VERSION_CHANGE, clusterOperatorConfig, supplier, PFA, vertx);
+        return new KafkaReconciler(reconciliation, KAFKA, null, Map.of(), Map.of(CLUSTER_NAME + "-kafka", List.of(CLUSTER_NAME + "-kafka-0")), clusterCa, clientsCa, VERSION_CHANGE, clusterOperatorConfig, supplier, PFA, vertx);
     }
 
     private ResourceOperatorSupplier supplierWithAdmin(Vertx vertx, Supplier<Admin> adminClientSupplier) {

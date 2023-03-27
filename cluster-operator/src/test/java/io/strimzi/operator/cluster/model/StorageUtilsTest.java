@@ -6,12 +6,17 @@ package io.strimzi.operator.cluster.model;
 
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.strimzi.api.kafka.model.storage.EphemeralStorageBuilder;
+import io.strimzi.api.kafka.model.storage.JbodStorage;
 import io.strimzi.api.kafka.model.storage.JbodStorageBuilder;
 import io.strimzi.api.kafka.model.storage.PersistentClaimStorageBuilder;
 import io.strimzi.api.kafka.model.storage.Storage;
 import io.strimzi.test.annotations.ParallelSuite;
 import io.strimzi.test.annotations.ParallelTest;
 
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
@@ -71,5 +76,19 @@ public class StorageUtilsTest {
         assertThat(StorageUtils.usesEphemeral(notEphemeral), is(false));
         assertThat(StorageUtils.usesEphemeral(isEphemeral), is(true));
         assertThat(StorageUtils.usesEphemeral(includesEphemeral), is(true));
+    }
+
+    @ParallelTest
+    public void testStorageValidation() {
+        InvalidResourceException e = assertThrows(InvalidResourceException.class, () -> StorageUtils.validatePersistentStorage(new JbodStorage(), "KafkaNodePool.spec.storage"));
+        assertThat(e.getMessage(), is("JbodStorage needs to contain at least one volume (KafkaNodePool.spec.storage)"));
+
+        e = assertThrows(InvalidResourceException.class, () -> StorageUtils.validatePersistentStorage(new JbodStorageBuilder().withVolumes(List.of()).build(), "KafkaNodePool.spec.storage"));
+        assertThat(e.getMessage(), is("JbodStorage needs to contain at least one volume (KafkaNodePool.spec.storage)"));
+
+        e = assertThrows(InvalidResourceException.class, () -> StorageUtils.validatePersistentStorage(new JbodStorageBuilder().withVolumes(new PersistentClaimStorageBuilder().withId(0).build()).build(), "KafkaNodePool.spec.storage"));
+        assertThat(e.getMessage(), is("The size is mandatory for a persistent-claim storage (KafkaNodePool.spec.storage)"));
+
+        assertDoesNotThrow(() -> StorageUtils.validatePersistentStorage(new JbodStorageBuilder().withVolumes(new PersistentClaimStorageBuilder().withId(0).withSize("100Gi").build()).build(), "KafkaNodePool.spec.storage"));
     }
 }

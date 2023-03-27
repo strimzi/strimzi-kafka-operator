@@ -13,6 +13,8 @@ import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.test.annotations.ParallelSuite;
 import io.strimzi.test.annotations.ParallelTest;
 
+import java.util.Set;
+
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
@@ -30,13 +32,13 @@ public class StorageDiffTest {
                 new PersistentClaimStorageBuilder().withStorageClass("gp2-ssd").withDeleteClaim(true).withId(1).withSize("1000Gi").build())
                 .build();
 
-        StorageDiff diff = new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, jbod, jbod, 3, 3);
+        StorageDiff diff = new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, jbod, jbod, Set.of(0, 1, 5), Set.of(0, 1, 5));
         assertThat(diff.changesType(), is(false));
         assertThat(diff.isEmpty(), is(true));
         assertThat(diff.shrinkSize(), is(false));
         assertThat(diff.isVolumesAddedOrRemoved(), is(false));
 
-        diff = new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, jbod, jbod2, 3, 3);
+        diff = new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, jbod, jbod2, Set.of(0, 1, 5), Set.of(0, 1, 5));
         assertThat(diff.changesType(), is(false));
         assertThat(diff.isEmpty(), is(false));
         assertThat(diff.shrinkSize(), is(false));
@@ -48,13 +50,13 @@ public class StorageDiffTest {
         Storage persistent = new PersistentClaimStorageBuilder().withStorageClass("gp2-ssd").withDeleteClaim(false).withId(0).withSize("100Gi").build();
         Storage persistent2 = new PersistentClaimStorageBuilder().withStorageClass("gp2-st1").withDeleteClaim(false).withId(0).withSize("1000Gi").build();
 
-        assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent, persistent, 3, 3).changesType(), is(false));
-        assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent, persistent, 3, 3).isEmpty(), is(true));
-        assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent, persistent, 3, 3).shrinkSize(), is(false));
+        assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent, persistent, Set.of(0, 1, 5), Set.of(0, 1, 5)).changesType(), is(false));
+        assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent, persistent, Set.of(0, 1, 5), Set.of(0, 1, 5)).isEmpty(), is(true));
+        assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent, persistent, Set.of(0, 1, 5), Set.of(0, 1, 5)).shrinkSize(), is(false));
 
-        assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent, persistent2, 3, 3).changesType(), is(false));
-        assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent, persistent2, 3, 3).isEmpty(), is(false));
-        assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent, persistent2, 3, 3).shrinkSize(), is(false));
+        assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent, persistent2, Set.of(0, 1, 5), Set.of(0, 1, 5)).changesType(), is(false));
+        assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent, persistent2, Set.of(0, 1, 5), Set.of(0, 1, 5)).isEmpty(), is(false));
+        assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent, persistent2, Set.of(0, 1, 5), Set.of(0, 1, 5)).shrinkSize(), is(false));
     }
 
     @ParallelTest
@@ -86,17 +88,17 @@ public class StorageDiffTest {
                         .build())
                 .build();
 
-        assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent, persistent, 3, 3).changesType(), is(false));
-        assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent, persistent, 3, 3).isEmpty(), is(true));
-        assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent, persistent, 3, 3).shrinkSize(), is(false));
+        assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent, persistent, Set.of(0, 1, 5), Set.of(0, 1, 5)).changesType(), is(false));
+        assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent, persistent, Set.of(0, 1, 5), Set.of(0, 1, 5)).isEmpty(), is(true));
+        assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent, persistent, Set.of(0, 1, 5), Set.of(0, 1, 5)).shrinkSize(), is(false));
 
-        assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent, persistent2, 3, 3).changesType(), is(false));
-        assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent, persistent2, 3, 3).isEmpty(), is(false));
-        assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent, persistent2, 3, 3).shrinkSize(), is(false));
+        assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent, persistent2, Set.of(0, 1, 5), Set.of(0, 1, 5)).changesType(), is(false));
+        assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent, persistent2, Set.of(0, 1, 5), Set.of(0, 1, 5)).isEmpty(), is(false));
+        assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent, persistent2, Set.of(0, 1, 5), Set.of(0, 1, 5)).shrinkSize(), is(false));
 
-        assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent2, persistent3, 3, 3).changesType(), is(false));
-        assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent2, persistent3, 3, 3).isEmpty(), is(false));
-        assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent2, persistent3, 3, 3).shrinkSize(), is(false));
+        assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent2, persistent3, Set.of(0, 1, 5), Set.of(0, 1, 5)).changesType(), is(false));
+        assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent2, persistent3, Set.of(0, 1, 5), Set.of(0, 1, 5)).isEmpty(), is(false));
+        assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent2, persistent3, Set.of(0, 1, 5), Set.of(0, 1, 5)).shrinkSize(), is(false));
     }
 
     @ParallelTest
@@ -107,21 +109,21 @@ public class StorageDiffTest {
         Storage persistent4 = new PersistentClaimStorageBuilder().withStorageClass("gp2-ssd").withDeleteClaim(false).withId(0).withSize("3.2Ti").build(); // Used to test millibytes
         Storage persistent5 = new PersistentClaimStorageBuilder().withStorageClass("gp2-ssd").withDeleteClaim(false).withId(0).withSize("3518437208883200m").build(); // Used to test millibytes
 
-        assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent, persistent, 3, 3).shrinkSize(), is(false));
-        assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent, persistent2, 3, 3).shrinkSize(), is(false));
-        assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent, persistent3, 3, 3).shrinkSize(), is(true));
-        assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent4, persistent5, 3, 3).shrinkSize(), is(false));
-        assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent4, persistent, 3, 3).shrinkSize(), is(true));
-        assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent5, persistent, 3, 3).shrinkSize(), is(true));
+        assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent, persistent, Set.of(0, 1, 5), Set.of(0, 1, 5)).shrinkSize(), is(false));
+        assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent, persistent2, Set.of(0, 1, 5), Set.of(0, 1, 5)).shrinkSize(), is(false));
+        assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent, persistent3, Set.of(0, 1, 5), Set.of(0, 1, 5)).shrinkSize(), is(true));
+        assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent4, persistent5, Set.of(0, 1, 5), Set.of(0, 1, 5)).shrinkSize(), is(false));
+        assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent4, persistent, Set.of(0, 1, 5), Set.of(0, 1, 5)).shrinkSize(), is(true));
+        assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent5, persistent, Set.of(0, 1, 5), Set.of(0, 1, 5)).shrinkSize(), is(true));
     }
 
     @ParallelTest
     public void testEphemeralDiff()    {
         Storage ephemeral = new EphemeralStorageBuilder().build();
 
-        assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, ephemeral, ephemeral, 3, 3).changesType(), is(false));
-        assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, ephemeral, ephemeral, 3, 3).isEmpty(), is(true));
-        assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, ephemeral, ephemeral, 3, 3).shrinkSize(), is(false));
+        assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, ephemeral, ephemeral, Set.of(0, 1, 5), Set.of(0, 1, 5)).changesType(), is(false));
+        assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, ephemeral, ephemeral, Set.of(0, 1, 5), Set.of(0, 1, 5)).isEmpty(), is(true));
+        assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, ephemeral, ephemeral, Set.of(0, 1, 5), Set.of(0, 1, 5)).shrinkSize(), is(false));
     }
 
     @ParallelTest
@@ -135,9 +137,9 @@ public class StorageDiffTest {
 
         Storage persistent = new PersistentClaimStorageBuilder().withStorageClass("gp2-ssd").withDeleteClaim(false).withId(0).withSize("100Gi").build();
 
-        StorageDiff diffJbodEphemeral = new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, jbod, ephemeral, 3, 3);
-        StorageDiff diffPersistentEphemeral = new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent, ephemeral, 3, 3);
-        StorageDiff diffJbodPersistent = new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, jbod, persistent, 3, 3);
+        StorageDiff diffJbodEphemeral = new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, jbod, ephemeral, Set.of(0, 1, 5), Set.of(0, 1, 5));
+        StorageDiff diffPersistentEphemeral = new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent, ephemeral, Set.of(0, 1, 5), Set.of(0, 1, 5));
+        StorageDiff diffJbodPersistent = new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, jbod, persistent, Set.of(0, 1, 5), Set.of(0, 1, 5));
 
         assertThat(diffJbodEphemeral.changesType(), is(true));
         assertThat(diffPersistentEphemeral.changesType(), is(true));
@@ -182,63 +184,63 @@ public class StorageDiffTest {
                 .build();
 
         // Volume added
-        StorageDiff diff = new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, jbod, jbod2, 3, 3);
+        StorageDiff diff = new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, jbod, jbod2, Set.of(0, 1, 5), Set.of(0, 1, 5));
         assertThat(diff.changesType(), is(false));
         assertThat(diff.isEmpty(), is(true));
         assertThat(diff.shrinkSize(), is(false));
         assertThat(diff.isVolumesAddedOrRemoved(), is(true));
 
         // Volume removed
-        diff = new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, jbod2, jbod, 3, 3);
+        diff = new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, jbod2, jbod, Set.of(0, 1, 5), Set.of(0, 1, 5));
         assertThat(diff.changesType(), is(false));
         assertThat(diff.isEmpty(), is(true));
         assertThat(diff.shrinkSize(), is(false));
         assertThat(diff.isVolumesAddedOrRemoved(), is(true));
 
         // Volume added with changes
-        diff = new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, jbod, jbod3, 3, 3);
+        diff = new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, jbod, jbod3, Set.of(0, 1, 5), Set.of(0, 1, 5));
         assertThat(diff.changesType(), is(false));
         assertThat(diff.isEmpty(), is(false));
         assertThat(diff.shrinkSize(), is(true));
         assertThat(diff.isVolumesAddedOrRemoved(), is(true));
 
         // No volume added, but with changes
-        diff = new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, jbod2, jbod3, 3, 3);
+        diff = new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, jbod2, jbod3, Set.of(0, 1, 5), Set.of(0, 1, 5));
         assertThat(diff.changesType(), is(false));
         assertThat(diff.isEmpty(), is(false));
         assertThat(diff.shrinkSize(), is(true));
         assertThat(diff.isVolumesAddedOrRemoved(), is(false));
 
         // Volume removed from the beginning
-        diff = new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, jbod3, jbod5, 3, 3);
+        diff = new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, jbod3, jbod5, Set.of(0, 1, 5), Set.of(0, 1, 5));
         assertThat(diff.changesType(), is(false));
         assertThat(diff.isEmpty(), is(true));
         assertThat(diff.shrinkSize(), is(false));
         assertThat(diff.isVolumesAddedOrRemoved(), is(true));
 
         // Volume added to the beginning
-        diff = new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, jbod5, jbod3, 3, 3);
+        diff = new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, jbod5, jbod3, Set.of(0, 1, 5), Set.of(0, 1, 5));
         assertThat(diff.changesType(), is(false));
         assertThat(diff.isEmpty(), is(true));
         assertThat(diff.shrinkSize(), is(false));
         assertThat(diff.isVolumesAddedOrRemoved(), is(true));
 
         // Volume replaced with another ID and another volume which is kept changed
-        diff = new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, jbod3, jbod6, 3, 3);
+        diff = new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, jbod3, jbod6, Set.of(0, 1, 5), Set.of(0, 1, 5));
         assertThat(diff.changesType(), is(false));
         assertThat(diff.isEmpty(), is(false));
         assertThat(diff.shrinkSize(), is(false));
         assertThat(diff.isVolumesAddedOrRemoved(), is(true));
 
         // Volume replaced with another ID in single volume broker
-        diff = new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, jbod, jbod4, 3, 3);
+        diff = new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, jbod, jbod4, Set.of(0, 1, 5), Set.of(0, 1, 5));
         assertThat(diff.changesType(), is(false));
         assertThat(diff.isEmpty(), is(true));
         assertThat(diff.shrinkSize(), is(false));
         assertThat(diff.isVolumesAddedOrRemoved(), is(true));
 
         // Volume replaced with another ID without chenging the volumes which are kept
-        diff = new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, jbod2, jbod6, 3, 3);
+        diff = new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, jbod2, jbod6, Set.of(0, 1, 5), Set.of(0, 1, 5));
         assertThat(diff.changesType(), is(false));
         assertThat(diff.isEmpty(), is(true));
         assertThat(diff.shrinkSize(), is(false));
@@ -262,9 +264,9 @@ public class StorageDiffTest {
                 new PersistentClaimStorageBuilder().withStorageClass("gp2-ssd").withDeleteClaim(true).withId(1).withSize("500Gi").build())
                 .build();
 
-        assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, jbod, jbod, 3, 3).shrinkSize(), is(false));
-        assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, jbod, jbod2, 3, 3).shrinkSize(), is(false));
-        assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, jbod, jbod3, 3, 3).shrinkSize(), is(true));
+        assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, jbod, jbod, Set.of(0, 1, 5), Set.of(0, 1, 5)).shrinkSize(), is(false));
+        assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, jbod, jbod2, Set.of(0, 1, 5), Set.of(0, 1, 5)).shrinkSize(), is(false));
+        assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, jbod, jbod3, Set.of(0, 1, 5), Set.of(0, 1, 5)).shrinkSize(), is(true));
     }
 
     @ParallelTest
@@ -280,7 +282,7 @@ public class StorageDiffTest {
                                 .withStorageClass("gp2-ssd-az1")
                                 .build(),
                         new PersistentClaimStorageOverrideBuilder()
-                                .withBroker(1)
+                                .withBroker(3)
                                 .withStorageClass("gp2-ssd-az2")
                                 .build())
                 .build();
@@ -296,26 +298,26 @@ public class StorageDiffTest {
                                 .withStorageClass("gp2-ssd-az1")
                                 .build(),
                         new PersistentClaimStorageOverrideBuilder()
-                                .withBroker(1)
+                                .withBroker(3)
                                 .withStorageClass("new-sc")
                                 .build())
                 .build();
 
         // Test no changes when the diff is the same
-        assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent, persistent, 2, 2).isEmpty(), is(true));
-        assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent2, persistent2, 2, 2).isEmpty(), is(true));
+        assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent, persistent, Set.of(0, 3), Set.of(0, 3)).isEmpty(), is(true));
+        assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent2, persistent2, Set.of(0, 3), Set.of(0, 3)).isEmpty(), is(true));
 
         // Override changed for node which does not exist => is allowed
-        assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent, persistent2, 1, 1).isEmpty(), is(true));
+        assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent, persistent2, Set.of(0), Set.of(0)).isEmpty(), is(true));
 
         // Override changed for node which is being scaled up => is allowed
-        assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent, persistent2, 1, 2).isEmpty(), is(true));
+        assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent, persistent2, Set.of(0), Set.of(0, 3)).isEmpty(), is(true));
 
         // Override changed for existing node  => is not allowed
-        assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent, persistent2, 2, 2).isEmpty(), is(false));
+        assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent, persistent2, Set.of(0, 3), Set.of(0, 3)).isEmpty(), is(false));
 
         // Override changed for node being scaled down => is allowed
-        assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent, persistent2, 2, 1).isEmpty(), is(true));
+        assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent, persistent2, Set.of(0, 3), Set.of(0)).isEmpty(), is(true));
     }
 
     @ParallelTest
@@ -350,29 +352,29 @@ public class StorageDiffTest {
                                 .withStorageClass("gp2-ssd-az1")
                                 .build(),
                         new PersistentClaimStorageOverrideBuilder()
-                                .withBroker(1)
+                                .withBroker(3)
                                 .withStorageClass("gp2-ssd-az2")
                                 .build())
                 .build();
 
         // Test no changes
-        assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent, persistent, 2, 2).isEmpty(), is(true));
-        assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent2, persistent2, 2, 2).isEmpty(), is(true));
-        assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent3, persistent3, 2, 2).isEmpty(), is(true));
+        assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent, persistent, Set.of(0, 3), Set.of(0, 3)).isEmpty(), is(true));
+        assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent2, persistent2, Set.of(0, 3), Set.of(0, 3)).isEmpty(), is(true));
+        assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent3, persistent3, Set.of(0, 3), Set.of(0, 3)).isEmpty(), is(true));
 
         // Overrides added for existing nodes => not allowed
-        assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent, persistent2, 2, 2).isEmpty(), is(false));
-        assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent, persistent3, 2, 2).isEmpty(), is(false));
-        assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent2, persistent3, 2, 2).isEmpty(), is(false));
+        assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent, persistent2, Set.of(0, 3), Set.of(0, 3)).isEmpty(), is(false));
+        assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent, persistent3, Set.of(0, 3), Set.of(0, 3)).isEmpty(), is(false));
+        assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent2, persistent3, Set.of(0, 3), Set.of(0, 3)).isEmpty(), is(false));
 
         // Overrides added for new nodes => allowed
-        assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent2, persistent3, 1, 2).isEmpty(), is(true));
+        assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent2, persistent3, Set.of(0), Set.of(0, 3)).isEmpty(), is(true));
 
         // Overrides added for removed nodes => allowed
-        assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent2, persistent3, 2, 1).isEmpty(), is(true));
+        assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent2, persistent3, Set.of(0, 3), Set.of(0)).isEmpty(), is(true));
 
         // Overrides added for non-existing nodes => allowed
-        assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent2, persistent3, 1, 1).isEmpty(), is(true));
+        assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent2, persistent3, Set.of(0), Set.of(0)).isEmpty(), is(true));
     }
 
     @ParallelTest
@@ -407,29 +409,29 @@ public class StorageDiffTest {
                                 .withStorageClass("gp2-ssd-az1")
                                 .build(),
                         new PersistentClaimStorageOverrideBuilder()
-                                .withBroker(1)
+                                .withBroker(3)
                                 .withStorageClass("gp2-ssd-az2")
                                 .build())
                 .build();
 
         // Test no changes
-        assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent, persistent, 2, 2).isEmpty(), is(true));
-        assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent2, persistent2, 2, 2).isEmpty(), is(true));
-        assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent3, persistent3, 2, 2).isEmpty(), is(true));
+        assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent, persistent, Set.of(0, 3), Set.of(0, 3)).isEmpty(), is(true));
+        assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent2, persistent2, Set.of(0, 3), Set.of(0, 3)).isEmpty(), is(true));
+        assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent3, persistent3, Set.of(0, 3), Set.of(0, 3)).isEmpty(), is(true));
 
         // Overrides removed for existing nodes => not allowed
-        assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent3, persistent, 2, 2).isEmpty(), is(false));
-        assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent3, persistent2, 2, 2).isEmpty(), is(false));
-        assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent2, persistent, 2, 2).isEmpty(), is(false));
+        assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent3, persistent, Set.of(0, 3), Set.of(0, 3)).isEmpty(), is(false));
+        assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent3, persistent2, Set.of(0, 3), Set.of(0, 3)).isEmpty(), is(false));
+        assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent2, persistent, Set.of(0, 3), Set.of(0, 3)).isEmpty(), is(false));
 
         // Overrides removed for new nodes => allowed
-        assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent3, persistent2, 1, 2).isEmpty(), is(true));
+        assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent3, persistent2, Set.of(0), Set.of(0, 3)).isEmpty(), is(true));
 
         // Overrides removed for removed nodes => allowed
-        assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent3, persistent2, 2, 1).isEmpty(), is(true));
+        assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent3, persistent2, Set.of(0, 3), Set.of(0)).isEmpty(), is(true));
 
         // Overrides removed for non-existing nodes => allowed
-        assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent3, persistent2, 1, 1).isEmpty(), is(true));
+        assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent3, persistent2, Set.of(0), Set.of(0)).isEmpty(), is(true));
     }
 
     @ParallelTest
@@ -459,17 +461,17 @@ public class StorageDiffTest {
                 .build();
 
         // Test no changes
-        assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent, persistent, 2, 2).isEmpty(), is(true));
-        assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent2, persistent2, 2, 2).isEmpty(), is(true));
+        assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent, persistent, Set.of(0, 3), Set.of(0, 3)).isEmpty(), is(true));
+        assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent2, persistent2, Set.of(0, 3), Set.of(0, 3)).isEmpty(), is(true));
 
         // Overrides added and removed for existing nodes => not allowed
-        assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent2, persistent, 2, 2).isEmpty(), is(false));
-        assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent, persistent2, 2, 2).isEmpty(), is(false));
+        assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent2, persistent, Set.of(0, 3), Set.of(0, 3)).isEmpty(), is(false));
+        assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent, persistent2, Set.of(0, 3), Set.of(0, 3)).isEmpty(), is(false));
 
         // Overrides added for new nodes but removed for old => not allowed
-        assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent, persistent2, 1, 2).isEmpty(), is(false));
+        assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent, persistent2, Set.of(0), Set.of(0, 3)).isEmpty(), is(false));
 
         // Overrides removed for new nodes but added for old => not allowed
-        assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent2, persistent, 1, 2).isEmpty(), is(false));
+        assertThat(new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, persistent2, persistent, Set.of(0), Set.of(0, 3)).isEmpty(), is(false));
     }
 }

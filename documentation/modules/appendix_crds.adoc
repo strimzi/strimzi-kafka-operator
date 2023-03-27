@@ -452,7 +452,7 @@ include::../api/io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaLi
 [id='type-EphemeralStorage-{context}']
 = `EphemeralStorage` schema reference
 
-Used in: xref:type-JbodStorage-{context}[`JbodStorage`], xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-ZookeeperClusterSpec-{context}[`ZookeeperClusterSpec`]
+Used in: xref:type-JbodStorage-{context}[`JbodStorage`], xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-KafkaNodePoolSpec-{context}[`KafkaNodePoolSpec`], xref:type-ZookeeperClusterSpec-{context}[`ZookeeperClusterSpec`]
 
 
 The `type` property is a discriminator that distinguishes use of the `EphemeralStorage` type from xref:type-PersistentClaimStorage-{context}[`PersistentClaimStorage`].
@@ -471,7 +471,7 @@ It must have the value `ephemeral` for the type `EphemeralStorage`.
 [id='type-PersistentClaimStorage-{context}']
 = `PersistentClaimStorage` schema reference
 
-Used in: xref:type-JbodStorage-{context}[`JbodStorage`], xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-ZookeeperClusterSpec-{context}[`ZookeeperClusterSpec`]
+Used in: xref:type-JbodStorage-{context}[`JbodStorage`], xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-KafkaNodePoolSpec-{context}[`KafkaNodePoolSpec`], xref:type-ZookeeperClusterSpec-{context}[`ZookeeperClusterSpec`]
 
 
 The `type` property is a discriminator that distinguishes use of the `PersistentClaimStorage` type from xref:type-EphemeralStorage-{context}[`EphemeralStorage`].
@@ -513,7 +513,7 @@ Used in: xref:type-PersistentClaimStorage-{context}[`PersistentClaimStorage`]
 [id='type-JbodStorage-{context}']
 = `JbodStorage` schema reference
 
-Used in: xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`]
+Used in: xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-KafkaNodePoolSpec-{context}[`KafkaNodePoolSpec`]
 
 
 The `type` property is a discriminator that distinguishes use of the `JbodStorage` type from xref:type-EphemeralStorage-{context}[`EphemeralStorage`], xref:type-PersistentClaimStorage-{context}[`PersistentClaimStorage`].
@@ -700,7 +700,7 @@ Used in: xref:type-CruiseControlSpec-{context}[`CruiseControlSpec`], xref:type-E
 [id='type-JvmOptions-{context}']
 = `JvmOptions` schema reference
 
-Used in: xref:type-CruiseControlSpec-{context}[`CruiseControlSpec`], xref:type-EntityTopicOperatorSpec-{context}[`EntityTopicOperatorSpec`], xref:type-EntityUserOperatorSpec-{context}[`EntityUserOperatorSpec`], xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`], xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-KafkaMirrorMaker2Spec-{context}[`KafkaMirrorMaker2Spec`], xref:type-KafkaMirrorMakerSpec-{context}[`KafkaMirrorMakerSpec`], xref:type-ZookeeperClusterSpec-{context}[`ZookeeperClusterSpec`]
+Used in: xref:type-CruiseControlSpec-{context}[`CruiseControlSpec`], xref:type-EntityTopicOperatorSpec-{context}[`EntityTopicOperatorSpec`], xref:type-EntityUserOperatorSpec-{context}[`EntityUserOperatorSpec`], xref:type-KafkaBridgeSpec-{context}[`KafkaBridgeSpec`], xref:type-KafkaClusterSpec-{context}[`KafkaClusterSpec`], xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-KafkaMirrorMaker2Spec-{context}[`KafkaMirrorMaker2Spec`], xref:type-KafkaMirrorMakerSpec-{context}[`KafkaMirrorMakerSpec`], xref:type-KafkaNodePoolSpec-{context}[`KafkaNodePoolSpec`], xref:type-ZookeeperClusterSpec-{context}[`ZookeeperClusterSpec`]
 
 
 [options="header"]
@@ -923,7 +923,7 @@ include::../api/io.strimzi.api.kafka.model.template.MetadataTemplate.adoc[levelo
 [id='type-PodTemplate-{context}']
 = `PodTemplate` schema reference
 
-Used in: xref:type-CruiseControlTemplate-{context}[`CruiseControlTemplate`], xref:type-EntityOperatorTemplate-{context}[`EntityOperatorTemplate`], xref:type-JmxTransTemplate-{context}[`JmxTransTemplate`], xref:type-KafkaBridgeTemplate-{context}[`KafkaBridgeTemplate`], xref:type-KafkaClusterTemplate-{context}[`KafkaClusterTemplate`], xref:type-KafkaConnectTemplate-{context}[`KafkaConnectTemplate`], xref:type-KafkaExporterTemplate-{context}[`KafkaExporterTemplate`], xref:type-KafkaMirrorMakerTemplate-{context}[`KafkaMirrorMakerTemplate`], xref:type-ZookeeperClusterTemplate-{context}[`ZookeeperClusterTemplate`]
+Used in: xref:type-CruiseControlTemplate-{context}[`CruiseControlTemplate`], xref:type-EntityOperatorTemplate-{context}[`EntityOperatorTemplate`], xref:type-JmxTransTemplate-{context}[`JmxTransTemplate`], xref:type-KafkaBridgeTemplate-{context}[`KafkaBridgeTemplate`], xref:type-KafkaClusterTemplate-{context}[`KafkaClusterTemplate`], xref:type-KafkaConnectTemplate-{context}[`KafkaConnectTemplate`], xref:type-KafkaExporterTemplate-{context}[`KafkaExporterTemplate`], xref:type-KafkaMirrorMakerTemplate-{context}[`KafkaMirrorMakerTemplate`], xref:type-KafkaNodePoolTemplate-{context}[`KafkaNodePoolTemplate`], xref:type-ZookeeperClusterTemplate-{context}[`ZookeeperClusterTemplate`]
 
 xref:type-PodTemplate-schema-{context}[Full list of `PodTemplate` schema properties]
 
@@ -994,7 +994,7 @@ Used in: xref:type-CruiseControlTemplate-{context}[`CruiseControlTemplate`], xre
 [id='type-ResourceTemplate-{context}']
 = `ResourceTemplate` schema reference
 
-Used in: xref:type-CruiseControlTemplate-{context}[`CruiseControlTemplate`], xref:type-EntityOperatorTemplate-{context}[`EntityOperatorTemplate`], xref:type-JmxTransTemplate-{context}[`JmxTransTemplate`], xref:type-KafkaBridgeTemplate-{context}[`KafkaBridgeTemplate`], xref:type-KafkaClusterTemplate-{context}[`KafkaClusterTemplate`], xref:type-KafkaConnectTemplate-{context}[`KafkaConnectTemplate`], xref:type-KafkaExporterTemplate-{context}[`KafkaExporterTemplate`], xref:type-KafkaMirrorMakerTemplate-{context}[`KafkaMirrorMakerTemplate`], xref:type-KafkaUserTemplate-{context}[`KafkaUserTemplate`], xref:type-ZookeeperClusterTemplate-{context}[`ZookeeperClusterTemplate`]
+Used in: xref:type-CruiseControlTemplate-{context}[`CruiseControlTemplate`], xref:type-EntityOperatorTemplate-{context}[`EntityOperatorTemplate`], xref:type-JmxTransTemplate-{context}[`JmxTransTemplate`], xref:type-KafkaBridgeTemplate-{context}[`KafkaBridgeTemplate`], xref:type-KafkaClusterTemplate-{context}[`KafkaClusterTemplate`], xref:type-KafkaConnectTemplate-{context}[`KafkaConnectTemplate`], xref:type-KafkaExporterTemplate-{context}[`KafkaExporterTemplate`], xref:type-KafkaMirrorMakerTemplate-{context}[`KafkaMirrorMakerTemplate`], xref:type-KafkaNodePoolTemplate-{context}[`KafkaNodePoolTemplate`], xref:type-KafkaUserTemplate-{context}[`KafkaUserTemplate`], xref:type-ZookeeperClusterTemplate-{context}[`ZookeeperClusterTemplate`]
 
 
 [options="header"]
@@ -1029,7 +1029,7 @@ include::../api/io.strimzi.api.kafka.model.template.PodDisruptionBudgetTemplate.
 [id='type-ContainerTemplate-{context}']
 = `ContainerTemplate` schema reference
 
-Used in: xref:type-CruiseControlTemplate-{context}[`CruiseControlTemplate`], xref:type-EntityOperatorTemplate-{context}[`EntityOperatorTemplate`], xref:type-JmxTransTemplate-{context}[`JmxTransTemplate`], xref:type-KafkaBridgeTemplate-{context}[`KafkaBridgeTemplate`], xref:type-KafkaClusterTemplate-{context}[`KafkaClusterTemplate`], xref:type-KafkaConnectTemplate-{context}[`KafkaConnectTemplate`], xref:type-KafkaExporterTemplate-{context}[`KafkaExporterTemplate`], xref:type-KafkaMirrorMakerTemplate-{context}[`KafkaMirrorMakerTemplate`], xref:type-ZookeeperClusterTemplate-{context}[`ZookeeperClusterTemplate`]
+Used in: xref:type-CruiseControlTemplate-{context}[`CruiseControlTemplate`], xref:type-EntityOperatorTemplate-{context}[`EntityOperatorTemplate`], xref:type-JmxTransTemplate-{context}[`JmxTransTemplate`], xref:type-KafkaBridgeTemplate-{context}[`KafkaBridgeTemplate`], xref:type-KafkaClusterTemplate-{context}[`KafkaClusterTemplate`], xref:type-KafkaConnectTemplate-{context}[`KafkaConnectTemplate`], xref:type-KafkaExporterTemplate-{context}[`KafkaExporterTemplate`], xref:type-KafkaMirrorMakerTemplate-{context}[`KafkaMirrorMakerTemplate`], xref:type-KafkaNodePoolTemplate-{context}[`KafkaNodePoolTemplate`], xref:type-ZookeeperClusterTemplate-{context}[`ZookeeperClusterTemplate`]
 
 xref:type-ContainerTemplate-schema-{context}[Full list of `ContainerTemplate` schema properties]
 
@@ -1606,6 +1606,8 @@ Used in: xref:type-Kafka-{context}[`Kafka`]
 |integer
 |listeners           1.2+<.<a|Addresses of the internal and external listeners.
 |xref:type-ListenerStatus-{context}[`ListenerStatus`] array
+|kafkaNodePools      1.2+<.<a|List of the KafkaNodePools used by this Kafka cluster.
+|xref:type-UsedNodePoolStatus-{context}[`UsedNodePoolStatus`] array
 |clusterId           1.2+<.<a|Kafka cluster Id.
 |string
 |====
@@ -1613,7 +1615,7 @@ Used in: xref:type-Kafka-{context}[`Kafka`]
 [id='type-Condition-{context}']
 = `Condition` schema reference
 
-Used in: xref:type-KafkaBridgeStatus-{context}[`KafkaBridgeStatus`], xref:type-KafkaConnectorStatus-{context}[`KafkaConnectorStatus`], xref:type-KafkaConnectStatus-{context}[`KafkaConnectStatus`], xref:type-KafkaMirrorMaker2Status-{context}[`KafkaMirrorMaker2Status`], xref:type-KafkaMirrorMakerStatus-{context}[`KafkaMirrorMakerStatus`], xref:type-KafkaRebalanceStatus-{context}[`KafkaRebalanceStatus`], xref:type-KafkaStatus-{context}[`KafkaStatus`], xref:type-KafkaTopicStatus-{context}[`KafkaTopicStatus`], xref:type-KafkaUserStatus-{context}[`KafkaUserStatus`]
+Used in: xref:type-KafkaBridgeStatus-{context}[`KafkaBridgeStatus`], xref:type-KafkaConnectorStatus-{context}[`KafkaConnectorStatus`], xref:type-KafkaConnectStatus-{context}[`KafkaConnectStatus`], xref:type-KafkaMirrorMaker2Status-{context}[`KafkaMirrorMaker2Status`], xref:type-KafkaMirrorMakerStatus-{context}[`KafkaMirrorMakerStatus`], xref:type-KafkaNodePoolStatus-{context}[`KafkaNodePoolStatus`], xref:type-KafkaRebalanceStatus-{context}[`KafkaRebalanceStatus`], xref:type-KafkaStatus-{context}[`KafkaStatus`], xref:type-KafkaTopicStatus-{context}[`KafkaTopicStatus`], xref:type-KafkaUserStatus-{context}[`KafkaUserStatus`]
 
 
 [options="header"]
@@ -1665,6 +1667,19 @@ Used in: xref:type-ListenerStatus-{context}[`ListenerStatus`]
 |string
 |port  1.2+<.<a|The port of the Kafka bootstrap service.
 |integer
+|====
+
+[id='type-UsedNodePoolStatus-{context}']
+= `UsedNodePoolStatus` schema reference
+
+Used in: xref:type-KafkaStatus-{context}[`KafkaStatus`]
+
+
+[options="header"]
+|====
+|Property     |Description
+|name  1.2+<.<a|The name of the KafkaNodePool used by this Kafka resource.
+|string
 |====
 
 [id='type-KafkaConnect-{context}']
@@ -3368,5 +3383,93 @@ Used in: xref:type-KafkaRebalance-{context}[`KafkaRebalance`]
 |string
 |optimizationResult  1.2+<.<a|A JSON object describing the optimization result.
 |map
+|====
+
+[id='type-KafkaNodePool-{context}']
+= `KafkaNodePool` schema reference
+
+
+[options="header"]
+|====
+|Property       |Description
+|spec    1.2+<.<a|The specification of the KafkaNodePool.
+|xref:type-KafkaNodePoolSpec-{context}[`KafkaNodePoolSpec`]
+|status  1.2+<.<a|The status of the KafkaNodePool.
+|xref:type-KafkaNodePoolStatus-{context}[`KafkaNodePoolStatus`]
+|====
+
+[id='type-KafkaNodePoolSpec-{context}']
+= `KafkaNodePoolSpec` schema reference
+
+Used in: xref:type-KafkaNodePool-{context}[`KafkaNodePool`]
+
+
+[options="header"]
+|====
+|Property           |Description
+|replicas    1.2+<.<a|The number of pods in the pool.
+|integer
+|storage     1.2+<.<a|Storage configuration (disk). Cannot be updated. The type depends on the value of the `storage.type` property within the given object, which must be one of [ephemeral, persistent-claim, jbod].
+|xref:type-EphemeralStorage-{context}[`EphemeralStorage`], xref:type-PersistentClaimStorage-{context}[`PersistentClaimStorage`], xref:type-JbodStorage-{context}[`JbodStorage`]
+|roles       1.2+<.<a|The roles that the nodes in this pool will have when KRaft mode is enabled. Supported values are 'broker' and 'controller'. This field is required. When KRaft mode is disabled, the only allowed value if `broker`.
+|string (one or more of [controller, broker]) array
+|resources   1.2+<.<a|CPU and memory resources to reserve. For more information, see the https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.23/#resourcerequirements-v1-core[external documentation for core/v1 resourcerequirements].
+
+
+|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.23/#resourcerequirements-v1-core[ResourceRequirements]
+|jvmOptions  1.2+<.<a|JVM Options for pods.
+|xref:type-JvmOptions-{context}[`JvmOptions`]
+|template    1.2+<.<a|Template for pool resources. The template allows users to specify how the resources belonging to this pool are generated.
+|xref:type-KafkaNodePoolTemplate-{context}[`KafkaNodePoolTemplate`]
+|====
+
+[id='type-KafkaNodePoolTemplate-{context}']
+= `KafkaNodePoolTemplate` schema reference
+
+Used in: xref:type-KafkaNodePoolSpec-{context}[`KafkaNodePoolSpec`]
+
+
+[options="header"]
+|====
+|Property                      |Description
+|podSet                 1.2+<.<a|Template for Kafka `StrimziPodSet` resource.
+|xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
+|pod                    1.2+<.<a|Template for Kafka `Pods`.
+|xref:type-PodTemplate-{context}[`PodTemplate`]
+|perPodService          1.2+<.<a|Template for Kafka per-pod `Services` used for access from outside of Kubernetes.
+|xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
+|perPodRoute            1.2+<.<a|Template for Kafka per-pod `Routes` used for access from outside of OpenShift.
+|xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
+|perPodIngress          1.2+<.<a|Template for Kafka per-pod `Ingress` used for access from outside of Kubernetes.
+|xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
+|persistentVolumeClaim  1.2+<.<a|Template for all Kafka `PersistentVolumeClaims`.
+|xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
+|kafkaContainer         1.2+<.<a|Template for the Kafka broker container.
+|xref:type-ContainerTemplate-{context}[`ContainerTemplate`]
+|initContainer          1.2+<.<a|Template for the Kafka init container.
+|xref:type-ContainerTemplate-{context}[`ContainerTemplate`]
+|====
+
+[id='type-KafkaNodePoolStatus-{context}']
+= `KafkaNodePoolStatus` schema reference
+
+Used in: xref:type-KafkaNodePool-{context}[`KafkaNodePool`]
+
+
+[options="header"]
+|====
+|Property                   |Description
+|conditions          1.2+<.<a|List of status conditions.
+|xref:type-Condition-{context}[`Condition`] array
+|observedGeneration  1.2+<.<a|The generation of the CRD that was last reconciled by the operator.
+|integer
+|nodeIds             1.2+<.<a|Node IDs used by Kafka nodes in this pool.
+|integer array
+|clusterId           1.2+<.<a|Kafka cluster ID.
+|string
+|replicas            1.2+<.<a|The current number of pods being used to provide this resource.
+|integer
+|labelSelector       1.2+<.<a|Label selector for pods providing this resource.
+|string
 |====
 

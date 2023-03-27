@@ -34,7 +34,6 @@ public class ManualPodCleaner {
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(ManualPodCleaner.class.getName());
 
     private final Reconciliation reconciliation;
-    private final String strimziPodSetName;
     private final Labels selector;
 
     private final PodOperator podOperator;
@@ -45,18 +44,15 @@ public class ManualPodCleaner {
      * Constructs the Manual Pod Cleaner.
      *
      * @param reconciliation    Reconciliation marker
-     * @param strimziPodSetName Name of the controller resource (e.g. StrimziPodSet)
      * @param selector          Selector for selecting the Pods belonging to this controller
      * @param supplier          Resource Operator Supplier with the Kubernetes resource operators
      */
     public ManualPodCleaner(
             Reconciliation reconciliation,
-            String strimziPodSetName,
             Labels selector,
             ResourceOperatorSupplier supplier
     ) {
         this.reconciliation = reconciliation;
-        this.strimziPodSetName = strimziPodSetName;
         this.selector = selector;
 
         this.strimziPodSetOperator = supplier.strimziPodSetOperator;
@@ -68,7 +64,6 @@ public class ManualPodCleaner {
      * Constructs the Manual Pod Cleaner
      *
      * @param reconciliation            Reconciliation marker
-     * @param strimziPodSetName         Name of the controller resource (e.g. strimziPodSetName)
      * @param selector                  Selector for selecting the Pods belonging to this controller
      * @param strimziPodSetOperator     The Pod Set operator for working with Strimzi Pod Sets
      * @param podOperator               The Pod operator for working with Kubernetes Pods
@@ -76,7 +71,6 @@ public class ManualPodCleaner {
      */
     public ManualPodCleaner(
             Reconciliation reconciliation,
-            String strimziPodSetName,
             Labels selector,
 
             StrimziPodSetOperator strimziPodSetOperator,
@@ -84,7 +78,6 @@ public class ManualPodCleaner {
             PvcOperator pvcOperator
     ) {
         this.reconciliation = reconciliation;
-        this.strimziPodSetName = strimziPodSetName;
         this.selector = selector;
 
         this.strimziPodSetOperator = strimziPodSetOperator;
@@ -93,11 +86,11 @@ public class ManualPodCleaner {
     }
 
     /**
-     * Checks pods belonging to a single controller (e.g. StrimziPodSet) cluster to see whether the user requested
-     * them to be deleted including their PVCs. If the user requested it, it will delete them. In a single
-     * reconciliation, always only one Pod is deleted. If multiple pods are marked for cleanup, they will be done
-     * in subsequent reconciliations. This method only checks if cleanup was requested and calls other methods to
-     * execute it. The Pod and PVCs will be recreated only by the further parts of the KafkaAssemblyOperator.
+     * Checks pods to see whether the user requested them to be deleted including their PVCs. If the user requested it,
+     * it will delete them. In a single reconciliation, always only one Pod is deleted. If multiple pods are marked for
+     * cleanup, they will be done in subsequent reconciliations. This method only checks if cleanup was requested and
+     * calls other methods to execute it. The Pod and PVCs will be recreated only by the further parts of the
+     * KafkaAssemblyOperator.
      *
      * @return  Future indicating the result of the cleanup operation. Returns always success if there are no pods to clean.
      */
@@ -145,7 +138,7 @@ public class ManualPodCleaner {
                         deletePvcs = List.of();
                     }
 
-                    return cleanPodPvcAndPodSet(strimziPodSetName, podName, deletePvcs);
+                    return cleanPodPvcAndPodSet(ReconcilerUtils.getControllerNameFromPodName(podName), podName, deletePvcs);
                 });
     }
 

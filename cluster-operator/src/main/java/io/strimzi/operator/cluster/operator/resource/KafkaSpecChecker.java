@@ -9,6 +9,7 @@ import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.KafkaConfiguration;
 import io.strimzi.operator.cluster.model.KafkaVersion;
+import io.strimzi.operator.cluster.model.NodeRef;
 import io.strimzi.operator.cluster.model.StorageUtils;
 import io.strimzi.operator.common.operator.resource.StatusUtils;
 
@@ -31,11 +32,13 @@ public class KafkaSpecChecker {
     private final static Pattern MAJOR_MINOR_REGEX = Pattern.compile("(\\d+\\.\\d+).*");
 
     /**
-     * @param spec The spec requested by the user in the CR
-     * @param versions List of versions supported by the Operator. Used to detect the default version.
-     * @param kafkaCluster The model generated based on the spec. This is requested so that default
-     *                     values not included in the spec can be taken into account, without needing
-     *                     this class to include awareness of what defaults are applied.
+     * Constructs the SpecCheck
+     *
+     * @param spec          The spec requested by the user in the CR
+     * @param versions      List of versions supported by the Operator. Used to detect the default version.
+     * @param kafkaCluster  The model generated based on the spec. This is requested so that default
+     *                      values not included in the spec can be taken into account, without needing
+     *                      this class to include awareness of what defaults are applied.
      */
     public KafkaSpecChecker(KafkaSpec spec, KafkaVersion.Lookup versions, KafkaCluster kafkaCluster) {
         this.kafkaCluster = kafkaCluster;
@@ -50,14 +53,24 @@ public class KafkaSpecChecker {
     /**
      * Runs the SpecChecker and returns a list of warning conditions
      *
-     * @return  List with warning conditions
+     * @param useKRaft Flag indicating if KRaft is enabled or not. When KRaft is enabled, some additional checks
+     *                 are done.
+     * @return List with warning conditions
      */
-    public List<Condition> run() {
+    public List<Condition> run(boolean useKRaft) {
         List<Condition> warnings = new ArrayList<>();
+
         checkKafkaLogMessageFormatVersion(warnings);
         checkKafkaInterBrokerProtocolVersion(warnings);
         checkKafkaReplicationConfig(warnings);
-        checkKafkaStorage(warnings);
+        checkKafkaBrokersStorage(warnings);
+
+        // Additional checks done for KRaft clusters
+        if (useKRaft)   {
+            checkKRaftControllerStorage(warnings);
+            checkKRaftControllerCount(warnings);
+        }
+
         return warnings;
     }
 
@@ -71,14 +84,14 @@ public class KafkaSpecChecker {
         String defaultReplicationFactor = kafkaCluster.getConfiguration().getConfigOption(KafkaConfiguration.DEFAULT_REPLICATION_FACTOR);
         String minInsyncReplicas = kafkaCluster.getConfiguration().getConfigOption(KafkaConfiguration.MIN_INSYNC_REPLICAS);
 
-        if (defaultReplicationFactor == null && kafkaCluster.getReplicas() > 1)   {
+        if (defaultReplicationFactor == null && kafkaCluster.nodes().stream().filter(NodeRef::broker).count() > 1)   {
             warnings.add(StatusUtils.buildWarningCondition("KafkaDefaultReplicationFactor",
                     "default.replication.factor option is not configured. " +
                             "It defaults to 1 which does not guarantee reliability and availability. " +
                             "You should configure this option in .spec.kafka.config."));
         }
 
-        if (minInsyncReplicas == null && kafkaCluster.getReplicas() > 1)   {
+        if (minInsyncReplicas == null && kafkaCluster.nodes().stream().filter(NodeRef::broker).count() > 1)   {
             warnings.add(StatusUtils.buildWarningCondition("KafkaMinInsyncReplicas",
                     "min.insync.replicas option is not configured. " +
                             "It defaults to 1 which does not guarantee reliability and availability. " +
@@ -135,10 +148,43 @@ public class KafkaSpecChecker {
      *
      * @param warnings List to add a warning to, if appropriate.
      */
-    private void checkKafkaStorage(List<Condition> warnings) {
-        if (kafkaCluster.getReplicas() == 1 && StorageUtils.usesEphemeral(kafkaCluster.getStorage())) {
+    private void checkKafkaBrokersStorage(List<Condition> warnings) {
+        if (kafkaCluster.nodes().stream().filter(NodeRef::broker).count() == 1
+                && StorageUtils.usesEphemeral(kafkaCluster.getStorageByPoolName().get(kafkaCluster.nodes().stream().filter(NodeRef::broker).toList().toArray(new NodeRef[]{})[0].poolName()))) {
             warnings.add(StatusUtils.buildWarningCondition("KafkaStorage",
-                    "A Kafka cluster with a single replica and ephemeral storage will lose topic messages after any restart or rolling update."));
+                    "A Kafka cluster with a single broker node and ephemeral storage will lose topic messages after any restart or rolling update."));
+        }
+    }
+
+    /**
+     * Checks for a single-controller KRaft cluster using ephemeral storage. This is potentially a problem as it
+     * means any restarts of the broker will result in data loss, as the single broker won't allow for any
+     * topic replicas.
+     *
+     * @param warnings List to add a warning to, if appropriate.
+     */
+    private void checkKRaftControllerStorage(List<Condition> warnings) {
+        if (kafkaCluster.nodes().stream().filter(NodeRef::controller).count() == 1
+                && StorageUtils.usesEphemeral(kafkaCluster.getStorageByPoolName().get(kafkaCluster.nodes().stream().filter(NodeRef::controller).toList().toArray(new NodeRef[]{})[0].poolName()))) {
+            warnings.add(StatusUtils.buildWarningCondition("KafkaStorage",
+                    "A Kafka cluster with a single controller node and ephemeral storage will lose data after any restart or rolling update."));
+        }
+    }
+
+    /**
+     * Checks for even number of controller nodes in KRaft mode which is not recommended.
+     *
+     * @param warnings List to add a warning to, if appropriate.
+     */
+    private void checkKRaftControllerCount(List<Condition> warnings)    {
+        long controllerCount = kafkaCluster.nodes().stream().filter(NodeRef::controller).count();
+
+        if (controllerCount == 2) {
+            warnings.add(StatusUtils.buildWarningCondition("KafkaKRaftControllerNodeCount",
+                    "Running KRaft controller quorum with two nodes is not advisable as both nodes will be needed to avoid downtime. It is recommended that a minimum of three nodes are used."));
+        } else if (controllerCount % 2 == 0) {
+            warnings.add(StatusUtils.buildWarningCondition("KafkaKRaftControllerNodeCount",
+                    "Running KRaft controller quorum with an odd number of nodes is recommended."));
         }
     }
 }

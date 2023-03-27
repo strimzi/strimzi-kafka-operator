@@ -83,6 +83,21 @@ public class Labels {
     public static final String STRIMZI_CONTROLLER_NAME_LABEL = STRIMZI_DOMAIN + "controller-name";
 
     /**
+     * Indicates the name of the pool
+     */
+    public static final String STRIMZI_POOL_NAME_LABEL = STRIMZI_DOMAIN + "pool-name";
+
+    /**
+     * Indicates the role of the node => in this case the broker role
+     */
+    public static final String STRIMZI_BROKER_ROLE_LABEL = STRIMZI_DOMAIN + "broker-role";
+
+    /**
+     * Indicates the role of the node => in this case the controller role
+     */
+    public static final String STRIMZI_CONTROLLER_ROLE_LABEL = STRIMZI_DOMAIN + "controller-role";
+
+    /**
      * The name of the label used for Strimzi discovery.
      * This label should be set by Strimzi on services which are user interfaces when users are expected to connect.
      * Applications using Strimzi can use this label to find the services and connect to Strimzi created clusters.
@@ -386,10 +401,43 @@ public class Labels {
      *
      * @param controllerName Name of the controlling StrimziPodSet
      *
-     * @return A new instance with the given pod name added.
+     * @return A new instance with the given controller name added.
      */
     public Labels withStrimziPodSetController(String controllerName) {
         return with(STRIMZI_CONTROLLER_LABEL, "strimzipodset").with(STRIMZI_CONTROLLER_NAME_LABEL, controllerName);
+    }
+
+    /**
+     * Sets the Strimzi pool name label
+     *
+     * @param poolName Name of the controlling KafkaNodePool
+     *
+     * @return A new instance with the given pool name added.
+     */
+    public Labels withStrimziPoolName(String poolName) {
+        return with(STRIMZI_POOL_NAME_LABEL, poolName);
+    }
+
+    /**
+     * Sets the Strimzi broker role label
+     *
+     * @param isBroker  Flag indicating whether this node has the broker role or not
+     *
+     * @return A new instance with the given broker role label added.
+     */
+    public Labels withStrimziBrokerRole(boolean isBroker) {
+        return with(STRIMZI_BROKER_ROLE_LABEL, isBroker ? "true" : "false");
+    }
+
+    /**
+     * Sets the Strimzi controller role label
+     *
+     * @param isController  Flag indicating whether this node has the controller role or not
+     *
+     * @return A new instance with the given controller role label added.
+     */
+    public Labels withStrimziControllerRole(boolean isController) {
+        return with(STRIMZI_CONTROLLER_ROLE_LABEL, isController ? "true" : "false");
     }
 
     /**
@@ -432,6 +480,7 @@ public class Labels {
         strimziSelectorLabels.add(STRIMZI_CLUSTER_LABEL);
         strimziSelectorLabels.add(STRIMZI_NAME_LABEL);
         strimziSelectorLabels.add(STRIMZI_KIND_LABEL);
+        strimziSelectorLabels.add(STRIMZI_POOL_NAME_LABEL);
 
         strimziSelectorLabels.forEach(key -> {
             if (labels.containsKey(key)) newLabels.put(key, labels.get(key));

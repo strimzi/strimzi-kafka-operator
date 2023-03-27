@@ -6,10 +6,12 @@ package io.strimzi.operator.cluster.operator.assembly;
 
 import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.OwnerReferenceBuilder;
+import io.fabric8.kubernetes.api.model.PodBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.strimzi.api.kafka.model.KafkaClusterSpec;
 import io.strimzi.api.kafka.model.KafkaClusterSpecBuilder;
+import io.strimzi.operator.cluster.model.NodeRef;
 import io.strimzi.operator.cluster.model.jmx.JmxModel;
 import io.strimzi.operator.cluster.model.jmx.SupportsJmx;
 import io.strimzi.operator.common.Reconciliation;
@@ -27,6 +29,7 @@ import org.mockito.ArgumentCaptor;
 import java.util.List;
 import java.util.Map;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
@@ -62,6 +65,79 @@ public class ReconcilerUtilsTest {
             .endMetadata()
             .withData(Map.of("jmx-username", "username", "jmx-password", "password"))
             .build();
+
+    @Test
+    public void testControllerNameFromPodName() {
+        assertThat(ReconcilerUtils.getControllerNameFromPodName("my-cluster-brokers-2"), is("my-cluster-brokers"));
+        assertThat(ReconcilerUtils.getControllerNameFromPodName("my-cluster-new-brokers-2"), is("my-cluster-new-brokers"));
+        assertThat(ReconcilerUtils.getControllerNameFromPodName("my-cluster-brokers2-2"), is("my-cluster-brokers2"));
+    }
+
+    @Test
+    public void testPoolNameFromPodName() {
+        assertThat(ReconcilerUtils.getPoolNameFromPodName("my-cluster", "my-cluster-brokers-2"), is("brokers"));
+        assertThat(ReconcilerUtils.getPoolNameFromPodName("my-cluster", "my-cluster-new-brokers-2"), is("new-brokers"));
+        assertThat(ReconcilerUtils.getPoolNameFromPodName("my-cluster", "my-cluster-brokers2-2"), is("brokers2"));
+    }
+
+    @Test
+    public void testClusterNameFromPodName() {
+        assertThat(ReconcilerUtils.clusterNameFromLabel(new PodBuilder()
+                .withNewMetadata()
+                    .withName("my-cluster-new-brokers-1")
+                    .withLabels(Map.of(Labels.STRIMZI_CLUSTER_LABEL, "my-cluster"))
+                .endMetadata()
+                .build()), is("my-cluster"));
+
+        RuntimeException ex = assertThrows(RuntimeException.class, () -> ReconcilerUtils.clusterNameFromLabel(new PodBuilder()
+                        .withNewMetadata()
+                            .withName("my-cluster-new-brokers-1")
+                        .endMetadata()
+                        .build()));
+        assertThat(ex.getMessage(), is("Failed to extract cluster name from Pod label"));
+    }
+
+    @Test
+    public void testNodeRefFromPod() {
+        NodeRef node = ReconcilerUtils.nodeFromPod(new PodBuilder()
+                .withNewMetadata()
+                    .withName("my-cluster-new-brokers-1")
+                    .withLabels(Map.of(Labels.STRIMZI_CLUSTER_LABEL, "my-cluster"))
+                .endMetadata()
+                .build());
+
+        assertThat(node.podName(), is("my-cluster-new-brokers-1"));
+        assertThat(node.nodeId(), is(1));
+        assertThat(node.poolName(), is("new-brokers"));
+        assertThat(node.controller(), is(false));
+        assertThat(node.broker(), is(false));
+
+        node = ReconcilerUtils.nodeFromPod(new PodBuilder()
+                .withNewMetadata()
+                    .withName("my-cluster-new-brokers-1")
+                    .withLabels(Map.of(Labels.STRIMZI_CLUSTER_LABEL, "my-cluster", Labels.STRIMZI_CONTROLLER_ROLE_LABEL, "true", Labels.STRIMZI_BROKER_ROLE_LABEL, "false"))
+                .endMetadata()
+                .build());
+
+        assertThat(node.podName(), is("my-cluster-new-brokers-1"));
+        assertThat(node.nodeId(), is(1));
+        assertThat(node.poolName(), is("new-brokers"));
+        assertThat(node.controller(), is(true));
+        assertThat(node.broker(), is(false));
+
+        node = ReconcilerUtils.nodeFromPod(new PodBuilder()
+                .withNewMetadata()
+                    .withName("my-cluster-new-brokers-1")
+                    .withLabels(Map.of(Labels.STRIMZI_CLUSTER_LABEL, "my-cluster", Labels.STRIMZI_CONTROLLER_ROLE_LABEL, "false", Labels.STRIMZI_BROKER_ROLE_LABEL, "true"))
+                .endMetadata()
+                .build());
+
+        assertThat(node.podName(), is("my-cluster-new-brokers-1"));
+        assertThat(node.nodeId(), is(1));
+        assertThat(node.poolName(), is("new-brokers"));
+        assertThat(node.controller(), is(false));
+        assertThat(node.broker(), is(true));
+    }
 
     @Test
     public void testDisabledJmxWithMissingSecret(VertxTestContext context) {

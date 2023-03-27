@@ -235,7 +235,6 @@ public class ZooKeeperReconciler {
     protected Future<Void> manualPodCleaning() {
         return new ManualPodCleaner(
                 reconciliation,
-                KafkaResources.zookeeperStatefulSetName(reconciliation.name()),
                 zk.getSelectorLabels(),
                 strimziPodSetOperator,
                 podOperator,

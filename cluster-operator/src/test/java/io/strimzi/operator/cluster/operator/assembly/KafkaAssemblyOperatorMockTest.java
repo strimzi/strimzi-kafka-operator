@@ -594,11 +594,4 @@ public class KafkaAssemblyOperatorMockTest {
                 async.flag();
             })));
     }
-
-    @Test
-    public void testReconcileResumePartialRoll(VertxTestContext context) {
-        Checkpoint async = context.checkpoint();
-        initialReconcile(context)
-            .onComplete(v -> async.flag());
-    }
 }

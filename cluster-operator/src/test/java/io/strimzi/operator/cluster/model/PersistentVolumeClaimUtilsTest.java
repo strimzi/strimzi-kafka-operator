@@ -58,13 +58,13 @@ public class PersistentVolumeClaimUtilsTest {
             .withStorageClass("my-storage-class")
             .withSize("100Gi")
             .build();
-    private final static Set<NodeRef> SINGLE_NODE = Set.of(new NodeRef(NAME + "-" + 0, 0));
+    private final static Set<NodeRef> SINGLE_NODE = Set.of(new NodeRef(NAME + "-" + 0, 0, null, false, true));
     // LinkedHashSet is used to maintain ordering and have predictable test results
     private final static Set<NodeRef> THREE_NODES = new LinkedHashSet<>();
     static {
-        THREE_NODES.add(new NodeRef(NAME + "-" + 0, 0));
-        THREE_NODES.add(new NodeRef(NAME + "-" + 1, 1));
-        THREE_NODES.add(new NodeRef(NAME + "-" + 2, 2));
+        THREE_NODES.add(new NodeRef(NAME + "-" + 0, 0, null, false, true));
+        THREE_NODES.add(new NodeRef(NAME + "-" + 1, 1, null, false, true));
+        THREE_NODES.add(new NodeRef(NAME + "-" + 2, 2, null, false, true));
     }
 
     @ParallelTest

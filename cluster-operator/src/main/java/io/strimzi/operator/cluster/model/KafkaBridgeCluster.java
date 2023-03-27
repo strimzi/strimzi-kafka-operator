@@ -251,6 +251,7 @@ public class KafkaBridgeCluster extends AbstractModel implements SupportsLogging
                 ownerReference,
                 templateService,
                 List.of(ServiceUtils.createServicePort(REST_API_PORT_NAME, port, port, "TCP")),
+                labels.strimziSelectorLabels(),
                 ModelUtils.getCustomLabelsOrAnnotations(CO_ENV_VAR_CUSTOM_SERVICE_LABELS),
                 Util.mergeLabelsOrAnnotations(getDiscoveryAnnotation(port), ModelUtils.getCustomLabelsOrAnnotations(CO_ENV_VAR_CUSTOM_SERVICE_ANNOTATIONS))
         );

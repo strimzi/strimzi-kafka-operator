@@ -44,8 +44,10 @@ import org.junit.jupiter.api.Test;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static java.util.Collections.singletonMap;
+import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -56,6 +58,11 @@ public class WorkloadUtilsTest {
     private final static String NAMESPACE = "my-namespace";
     private final static String HEADLESS_SERVICE_NAME = "my-workload-headless";
     private final static int REPLICAS = 5;
+    private final static Set<NodeRef> NODES = Set.of(
+            new NodeRef("my-cluster-nodes-10", 10, "nodes", false, true),
+            new NodeRef("my-cluster-nodes-11", 11, "nodes", false, true),
+            new NodeRef("my-cluster-nodes-12", 12, "nodes", false, true)
+    );
     private static final OwnerReference OWNER_REFERENCE = new OwnerReferenceBuilder()
             .withApiVersion("v1")
             .withKind("my-kind")
@@ -269,6 +276,92 @@ public class WorkloadUtilsTest {
         assertThat(podIds, is(List.of(0, 1, 2, 3, 4)));
         assertThat(sps.getSpec().getPods().size(), is(5));
         assertThat(sps.getSpec().getPods().stream().map(pod -> PodSetUtils.mapToPod(pod).getMetadata().getName()).toList(), is(List.of("my-workload-0", "my-workload-1", "my-workload-2", "my-workload-3", "my-workload-4")));
+    }
+
+    // Tests with node references instead of number of replicas
+    @Test
+    public void testCreateStrimziPodSetFromNodeReferencesWithNullTemplate()  {
+        List<String> podNames = new ArrayList<>();
+
+        StrimziPodSet sps = WorkloadUtils.createPodSet(
+                NAME,
+                NAMESPACE,
+                LABELS,
+                OWNER_REFERENCE,
+                null,
+                NODES,
+                Map.of("extra", "annotations"),
+                LABELS.strimziSelectorLabels(),
+                n -> {
+                    podNames.add(n.podName());
+                    return new PodBuilder()
+                            .withNewMetadata()
+                                .withName(n.podName())
+                            .endMetadata()
+                            .build();
+                }
+        );
+
+        assertThat(sps.getMetadata().getName(), is(NAME));
+        assertThat(sps.getMetadata().getNamespace(), is(NAMESPACE));
+        assertThat(sps.getMetadata().getOwnerReferences(), is(List.of(OWNER_REFERENCE)));
+        assertThat(sps.getMetadata().getLabels(), is(LABELS.toMap()));
+        assertThat(sps.getMetadata().getAnnotations(), is(Map.of("extra", "annotations")));
+
+        assertThat(sps.getSpec().getSelector().getMatchLabels().size(), is(3));
+        assertThat(sps.getSpec().getSelector().getMatchLabels().get(Labels.STRIMZI_CLUSTER_LABEL), is("my-cluster"));
+        assertThat(sps.getSpec().getSelector().getMatchLabels().get(Labels.STRIMZI_NAME_LABEL), is("my-workload"));
+        assertThat(sps.getSpec().getSelector().getMatchLabels().get(Labels.STRIMZI_KIND_LABEL), is("my-kind"));
+
+        // Test generating pods from the PodCreator method
+        assertThat(podNames.size(), is(3));
+        assertThat(podNames, hasItems("my-cluster-nodes-10", "my-cluster-nodes-11", "my-cluster-nodes-12"));
+        assertThat(sps.getSpec().getPods().size(), is(3));
+        assertThat(sps.getSpec().getPods().stream().map(pod -> PodSetUtils.mapToPod(pod).getMetadata().getName()).toList(), hasItems("my-cluster-nodes-10", "my-cluster-nodes-11", "my-cluster-nodes-12"));
+    }
+
+    @Test
+    public void testCreateStrimziPodSetFromNodeReferencesWithTemplate()  {
+        List<String> podNames = new ArrayList<>();
+
+        StrimziPodSet sps = WorkloadUtils.createPodSet(
+                NAME,
+                NAMESPACE,
+                LABELS,
+                OWNER_REFERENCE,
+                new ResourceTemplateBuilder()
+                        .withNewMetadata()
+                            .withLabels(Map.of("label-3", "value-3", "label-4", "value-4"))
+                            .withAnnotations(Map.of("anno-1", "value-1", "anno-2", "value-2"))
+                        .endMetadata()
+                        .build(),
+                NODES,
+                Map.of("extra", "annotations"),
+                Labels.fromMap(Map.of("custom", "selector")),
+                n -> {
+                    podNames.add(n.podName());
+                    return new PodBuilder()
+                            .withNewMetadata()
+                            .withName(n.podName())
+                            .endMetadata()
+                            .build();
+                }
+        );
+
+        assertThat(sps.getMetadata().getName(), is(NAME));
+        assertThat(sps.getMetadata().getNamespace(), is(NAMESPACE));
+        assertThat(sps.getMetadata().getOwnerReferences(), is(List.of(OWNER_REFERENCE)));
+        assertThat(sps.getMetadata().getLabels(), is(LABELS.withAdditionalLabels(Map.of("label-3", "value-3", "label-4", "value-4")).toMap()));
+        assertThat(sps.getMetadata().getAnnotations(), is(Map.of("extra", "annotations", "anno-1", "value-1", "anno-2", "value-2")));
+
+        assertThat(sps.getSpec().getSelector().getMatchLabels().size(), is(1));
+        assertThat(sps.getSpec().getSelector().getMatchLabels(), is(Map.of("custom", "selector")));
+
+        // Test generating pods from the PodCreator method
+        assertThat(podNames.size(), is(3));
+        assertThat(podNames, hasItems("my-cluster-nodes-10", "my-cluster-nodes-11", "my-cluster-nodes-12"));
+        assertThat(sps.getSpec().getPods().size(), is(3));
+        assertThat(sps.getSpec().getPods().stream().map(pod -> PodSetUtils.mapToPod(pod).getMetadata().getName()).toList(), hasItems("my-cluster-nodes-10", "my-cluster-nodes-11", "my-cluster-nodes-12"));
     }
 
     //////////////////////////////////////////////////

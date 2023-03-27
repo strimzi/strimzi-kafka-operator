@@ -15,42 +15,15 @@ import io.vertx.core.Vertx;
  * Operator for {@code StrimziPodSet}s
  */
 public class StrimziPodSetOperator extends CrdOperator<KubernetesClient, StrimziPodSet, StrimziPodSetList> {
-    protected final long operationTimeoutMs;
 
     /**
      * Constructs the StrimziPodSet operator
      *
-     * @param vertx                 The Vertx instance.
-     * @param client                The Kubernetes client.
-     * @param operationTimeoutMs    The timeout.
+     * @param vertx  The Vertx instance.
+     * @param client The Kubernetes client.
      */
-    public StrimziPodSetOperator(Vertx vertx, KubernetesClient client, long operationTimeoutMs) {
+    public StrimziPodSetOperator(Vertx vertx, KubernetesClient client) {
         super(vertx, client, StrimziPodSet.class, StrimziPodSetList.class, StrimziPodSet.RESOURCE_KIND);
-        this.operationTimeoutMs = operationTimeoutMs;
-    }
-
-    /**
-     * Creates the StrimziPodSet and waits for the pods to become ready.
-     *
-     * @param reconciliation    Reconciliation marker
-     * @param namespace         Namespace of the StrimziPodSet
-     * @param name              Name of the StrimziPodSet
-     * @param desired           The desired StrimziPodSet
-     *
-     * @return  Reconciliation result with the created StrimziPodSet
-     */
-    @Override
-    protected Future<ReconcileResult<StrimziPodSet>> internalCreate(Reconciliation reconciliation, String namespace, String name, StrimziPodSet desired) {
-        Future<ReconcileResult<StrimziPodSet>> create = super.internalCreate(reconciliation, namespace, name, desired);
-
-        // If it failed, we return immediately ...
-        if (create.failed()) {
-            return create;
-        }
-
-        // ... if it created, we wait for the PodSet / its pods to become ready and once they do, we return the original reconciliation result.
-        return create.compose(i -> waitFor(reconciliation, namespace, name, "ready", 1_000L, operationTimeoutMs, this::isReady))
-                .map(create.result());
     }
 
     /**

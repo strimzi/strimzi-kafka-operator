@@ -27,12 +27,15 @@ import io.strimzi.operator.cluster.model.AbstractModel;
 import io.strimzi.operator.cluster.model.ClientsCa;
 import io.strimzi.operator.cluster.model.ClusterCa;
 import io.strimzi.operator.cluster.model.KafkaCluster;
+import io.strimzi.operator.cluster.model.KafkaPool;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.KafkaVersionChange;
+import io.strimzi.operator.cluster.model.NodeRef;
 import io.strimzi.operator.cluster.model.PodSetUtils;
 import io.strimzi.operator.cluster.model.RestartReason;
 import io.strimzi.operator.cluster.model.RestartReasons;
 import io.strimzi.operator.cluster.model.ZookeeperCluster;
+import io.strimzi.operator.cluster.model.nodepools.NodePoolUtils;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.StatefulSetOperator;
 import io.strimzi.operator.common.MetricsAndLogging;
@@ -61,9 +64,12 @@ import org.mockito.ArgumentCaptor;
 
 import java.time.Clock;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
+import java.util.stream.IntStream;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -115,6 +121,9 @@ public class KafkaAssemblyOperatorPodSetTest {
                     .endZookeeper()
                 .endSpec()
                 .build();
+    private static final List<KafkaPool> POOLS = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, KAFKA, null, Map.of(), Map.of(), false);
+    private static final KafkaCluster KAFKA_CLUSTER = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, KAFKA, POOLS, VERSIONS, false);
+
     private static final Map<Integer, Map<String, String>> ADVERTISED_HOSTNAMES = Map.of(
             0, Map.of("PLAIN_9092", "broker-0"),
             1, Map.of("PLAIN_9092", "broker-1"),
@@ -178,8 +187,7 @@ public class KafkaAssemblyOperatorPodSetTest {
     public void testRegularReconciliation(VertxTestContext context)  {
         ZookeeperCluster zkCluster = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, KAFKA, VERSIONS);
         StrimziPodSet zkPodSet = zkCluster.generatePodSet(KAFKA.getSpec().getZookeeper().getReplicas(), false, null, null, podNum -> null);
-        KafkaCluster kafkaCluster = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, KAFKA, VERSIONS);
-        StrimziPodSet kafkaPodSet = kafkaCluster.generatePodSet(KAFKA.getSpec().getKafka().getReplicas(), false, null, null, brokerId -> null);
+        StrimziPodSet kafkaPodSet = KAFKA_CLUSTER.generatePodSets(false, null, null, brokerId -> null).get(0);
 
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
@@ -187,25 +195,36 @@ public class KafkaAssemblyOperatorPodSetTest {
         when(secretOps.reconcile(any(), any(), any(), any())).thenReturn(Future.succeededFuture());
 
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
-        when(mockCmOps.listAsync(any(), eq(kafkaCluster.getSelectorLabels()))).thenReturn(Future.succeededFuture(List.of()));
+        when(mockCmOps.listAsync(any(), eq(KAFKA_CLUSTER.getSelectorLabels()))).thenReturn(Future.succeededFuture(List.of()));
         ArgumentCaptor<String> cmReconciliationCaptor = ArgumentCaptor.forClass(String.class);
         when(mockCmOps.reconcile(any(), any(), cmReconciliationCaptor.capture(), any())).thenReturn(Future.succeededFuture());
         ArgumentCaptor<String> cmDeletionCaptor = ArgumentCaptor.forClass(String.class);
         when(mockCmOps.deleteAsync(any(), any(), cmDeletionCaptor.capture(), anyBoolean())).thenReturn(Future.succeededFuture());
 
         StrimziPodSetOperator mockPodSetOps = supplier.strimziPodSetOperator;
+        // Zoo
         when(mockPodSetOps.getAsync(any(), eq(zkCluster.getComponentName()))).thenReturn(Future.succeededFuture(zkPodSet));
         when(mockPodSetOps.reconcile(any(), any(), eq(zkCluster.getComponentName()), any())).thenReturn(Future.succeededFuture(ReconcileResult.noop(zkPodSet)));
-        when(mockPodSetOps.getAsync(any(), eq(kafkaCluster.getComponentName()))).thenReturn(Future.succeededFuture(kafkaPodSet));
-        when(mockPodSetOps.reconcile(any(), any(), eq(kafkaCluster.getComponentName()), any())).thenReturn(Future.succeededFuture(ReconcileResult.noop(kafkaPodSet)));
+        // Kafka
+        when(mockPodSetOps.listAsync(any(), eq(KAFKA_CLUSTER.getSelectorLabels()))).thenReturn(Future.succeededFuture(List.of(kafkaPodSet)));
+        when(mockPodSetOps.batchReconcile(any(), any(), any(), eq(KAFKA_CLUSTER.getSelectorLabels()))).thenAnswer(i -> {
+            List<StrimziPodSet> podSets = i.getArgument(2);
+            HashMap<String, ReconcileResult<StrimziPodSet>> result = new HashMap<>();
+
+            for (StrimziPodSet podSet : podSets)    {
+                result.put(podSet.getMetadata().getName(), ReconcileResult.noop(kafkaPodSet));
+            }
+
+            return Future.succeededFuture(result);
+        });
 
         StatefulSetOperator mockStsOps = supplier.stsOperations;
         when(mockStsOps.getAsync(any(), eq(zkCluster.getComponentName()))).thenReturn(Future.succeededFuture(null)); // Zoo STS is queried and deleted if it still exists
-        when(mockStsOps.getAsync(any(), eq(kafkaCluster.getComponentName()))).thenReturn(Future.succeededFuture(null)); // Kafka STS is queried and deleted if it still exists
+        when(mockStsOps.getAsync(any(), eq(KAFKA_CLUSTER.getComponentName()))).thenReturn(Future.succeededFuture(null)); // Kafka STS is queried and deleted if it still exists
 
         PodOperator mockPodOps = supplier.podOperations;
         when(mockPodOps.listAsync(any(), eq(zkCluster.getSelectorLabels()))).thenReturn(Future.succeededFuture(Collections.emptyList()));
-        when(mockPodOps.listAsync(any(), eq(kafkaCluster.getSelectorLabels()))).thenReturn(Future.succeededFuture(Collections.emptyList()));
+        when(mockPodOps.listAsync(any(), eq(KAFKA_CLUSTER.getSelectorLabels()))).thenReturn(Future.succeededFuture(Collections.emptyList()));
         when(mockPodOps.listAsync(any(), any(Labels.class))).thenReturn(Future.succeededFuture(Collections.emptyList()));
 
         CrdOperator<KubernetesClient, Kafka, KafkaList> mockKafkaOps = supplier.kafkaOperator;
@@ -235,8 +254,8 @@ public class KafkaAssemblyOperatorPodSetTest {
                 new PlatformFeaturesAvailability(false, KUBERNETES_VERSION),
                 KAFKA,
                 VERSION_CHANGE,
-                null,
-                0,
+                Map.of(),
+                Map.of(),
                 CLUSTER_CA,
                 CLIENTS_CA);
 
@@ -280,8 +299,7 @@ public class KafkaAssemblyOperatorPodSetTest {
     public void testFirstReconciliation(VertxTestContext context)  {
         ZookeeperCluster zkCluster = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, KAFKA, VERSIONS);
         StrimziPodSet zkPodSet = zkCluster.generatePodSet(KAFKA.getSpec().getZookeeper().getReplicas(), false, null, null, podNum -> null);
-        KafkaCluster kafkaCluster = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, KAFKA, VERSIONS);
-        StrimziPodSet kafkaPodSet = kafkaCluster.generatePodSet(KAFKA.getSpec().getKafka().getReplicas(), false, null, null, brokerId -> null);
+        StrimziPodSet kafkaPodSet = KAFKA_CLUSTER.generatePodSets(false, null, null, brokerId -> null).get(0);
 
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
@@ -289,27 +307,40 @@ public class KafkaAssemblyOperatorPodSetTest {
         when(secretOps.reconcile(any(), any(), any(), any())).thenReturn(Future.succeededFuture());
 
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
-        when(mockCmOps.listAsync(any(), eq(kafkaCluster.getSelectorLabels()))).thenReturn(Future.succeededFuture(kafkaCluster.generatePerBrokerConfigurationConfigMaps(new MetricsAndLogging(null, null), ADVERTISED_HOSTNAMES, ADVERTISED_PORTS)));
+        when(mockCmOps.listAsync(any(), eq(KAFKA_CLUSTER.getSelectorLabels()))).thenReturn(Future.succeededFuture(KAFKA_CLUSTER.generatePerBrokerConfigurationConfigMaps(new MetricsAndLogging(null, null), ADVERTISED_HOSTNAMES, ADVERTISED_PORTS)));
         ArgumentCaptor<String> cmReconciliationCaptor = ArgumentCaptor.forClass(String.class);
         when(mockCmOps.reconcile(any(), any(), cmReconciliationCaptor.capture(), any())).thenReturn(Future.succeededFuture());
         ArgumentCaptor<String> cmDeletionCaptor = ArgumentCaptor.forClass(String.class);
         when(mockCmOps.deleteAsync(any(), any(), cmDeletionCaptor.capture(), anyBoolean())).thenReturn(Future.succeededFuture());
 
         StrimziPodSetOperator mockPodSetOps = supplier.strimziPodSetOperator;
+        // Zoo
         when(mockPodSetOps.getAsync(any(), eq(zkCluster.getComponentName()))).thenReturn(Future.succeededFuture(null)); // The PodSet does not exist yet in the first reconciliation
         when(mockPodSetOps.reconcile(any(), any(), eq(zkCluster.getComponentName()), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(zkPodSet)));
-        when(mockPodSetOps.getAsync(any(), eq(kafkaCluster.getComponentName()))).thenReturn(Future.succeededFuture(null)); // The PodSet does not exist yet in the first reconciliation
-        when(mockPodSetOps.reconcile(any(), any(), eq(kafkaCluster.getComponentName()), any())).thenReturn(Future.succeededFuture(ReconcileResult.noop(kafkaPodSet)));
+        // Kafka
+        when(mockPodSetOps.listAsync(any(), eq(KAFKA_CLUSTER.getSelectorLabels()))).thenReturn(Future.succeededFuture(List.of()));
+        when(mockPodSetOps.batchReconcile(any(), any(), any(), eq(KAFKA_CLUSTER.getSelectorLabels()))).thenAnswer(i -> {
+            List<StrimziPodSet> podSets = i.getArgument(2);
+            HashMap<String, ReconcileResult<StrimziPodSet>> result = new HashMap<>();
+
+            for (StrimziPodSet podSet : podSets)    {
+                result.put(podSet.getMetadata().getName(), ReconcileResult.created(kafkaPodSet));
+            }
+
+            return Future.succeededFuture(result);
+        });
 
         StatefulSetOperator mockStsOps = supplier.stsOperations;
+        // Zoo
         when(mockStsOps.getAsync(any(), eq(zkCluster.getComponentName()))).thenReturn(Future.succeededFuture(new StatefulSetBuilder().withNewMetadata().withName(zkCluster.getComponentName()).withNamespace(NAMESPACE).endMetadata().build())); // Zoo STS still exists in the first reconciliation
         when(mockStsOps.deleteAsync(any(), any(), eq(zkCluster.getComponentName()), eq(false))).thenReturn(Future.succeededFuture()); // The Zoo STS will be deleted during the reconciliation
-        when(mockStsOps.getAsync(any(), eq(kafkaCluster.getComponentName()))).thenReturn(Future.succeededFuture(new StatefulSetBuilder().withNewMetadata().withName(kafkaCluster.getComponentName()).withNamespace(NAMESPACE).endMetadata().build()));
-        when(mockStsOps.deleteAsync(any(), any(), eq(kafkaCluster.getComponentName()), eq(false))).thenReturn(Future.succeededFuture()); // The Kafka STS will be deleted during the reconciliation
+        // Kafka
+        when(mockStsOps.getAsync(any(), eq(KAFKA_CLUSTER.getComponentName()))).thenReturn(Future.succeededFuture(new StatefulSetBuilder().withNewMetadata().withName(KAFKA_CLUSTER.getComponentName()).withNamespace(NAMESPACE).endMetadata().build()));
+        when(mockStsOps.deleteAsync(any(), any(), eq(KAFKA_CLUSTER.getComponentName()), eq(false))).thenReturn(Future.succeededFuture()); // The Kafka STS will be deleted during the reconciliation
 
         PodOperator mockPodOps = supplier.podOperations;
         when(mockPodOps.listAsync(any(), eq(zkCluster.getSelectorLabels()))).thenReturn(Future.succeededFuture(Collections.emptyList()));
-        when(mockPodOps.listAsync(any(), eq(kafkaCluster.getSelectorLabels()))).thenReturn(Future.succeededFuture(Collections.emptyList()));
+        when(mockPodOps.listAsync(any(), eq(KAFKA_CLUSTER.getSelectorLabels()))).thenReturn(Future.succeededFuture(Collections.emptyList()));
         when(mockPodOps.listAsync(any(), any(Labels.class))).thenReturn(Future.succeededFuture(Collections.emptyList()));
 
         CrdOperator<KubernetesClient, Kafka, KafkaList> mockKafkaOps = supplier.kafkaOperator;
@@ -339,8 +370,8 @@ public class KafkaAssemblyOperatorPodSetTest {
                 new PlatformFeaturesAvailability(false, KUBERNETES_VERSION),
                 KAFKA,
                 VERSION_CHANGE,
-                null,
-                0,
+                Map.of(),
+                Map.of(),
                 CLUSTER_CA,
                 CLIENTS_CA);
 
@@ -398,11 +429,11 @@ public class KafkaAssemblyOperatorPodSetTest {
 
         ZookeeperCluster oldZkCluster = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, oldKafka, VERSIONS);
         StrimziPodSet oldZkPodSet = oldZkCluster.generatePodSet(KAFKA.getSpec().getZookeeper().getReplicas(), false, null, null, podNum -> null);
-        KafkaCluster oldKafkaCluster = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, oldKafka, VERSIONS);
-        StrimziPodSet oldKafkaPodSet = oldKafkaCluster.generatePodSet(KAFKA.getSpec().getKafka().getReplicas(), false, null, null, brokerId -> null);
+        List<KafkaPool> oldPools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, oldKafka, null, Map.of(), Map.of(), false);
+        KafkaCluster oldKafkaCluster = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, oldKafka, oldPools, VERSIONS, false);
+        StrimziPodSet oldKafkaPodSet = oldKafkaCluster.generatePodSets(false, null, null, brokerId -> null).get(0);
 
         ZookeeperCluster newZkCluster = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, KAFKA, VERSIONS);
-        KafkaCluster newKafkaCluster = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, KAFKA, VERSIONS);
 
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
@@ -417,16 +448,25 @@ public class KafkaAssemblyOperatorPodSetTest {
         StrimziPodSetOperator mockPodSetOps = supplier.strimziPodSetOperator;
         when(mockPodSetOps.getAsync(any(), eq(newZkCluster.getComponentName()))).thenReturn(Future.succeededFuture(oldZkPodSet));
         when(mockPodSetOps.reconcile(any(), any(), eq(newZkCluster.getComponentName()), any())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.noop(i.getArgument(3))));
-        when(mockPodSetOps.getAsync(any(), eq(newKafkaCluster.getComponentName()))).thenReturn(Future.succeededFuture(oldKafkaPodSet));
-        when(mockPodSetOps.reconcile(any(), any(), eq(newKafkaCluster.getComponentName()), any())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.noop(i.getArgument(3))));
+        when(mockPodSetOps.listAsync(any(), eq(KAFKA_CLUSTER.getSelectorLabels()))).thenReturn(Future.succeededFuture(List.of(oldKafkaPodSet)));
+        when(mockPodSetOps.batchReconcile(any(), any(), any(), eq(KAFKA_CLUSTER.getSelectorLabels()))).thenAnswer(i -> {
+            List<StrimziPodSet> podSets = i.getArgument(2);
+            HashMap<String, ReconcileResult<StrimziPodSet>> result = new HashMap<>();
+
+            for (StrimziPodSet podSet : podSets)    {
+                result.put(podSet.getMetadata().getName(), ReconcileResult.noop(podSet));
+            }
+
+            return Future.succeededFuture(result);
+        });
 
         StatefulSetOperator mockStsOps = supplier.stsOperations;
         when(mockStsOps.getAsync(any(), eq(newZkCluster.getComponentName()))).thenReturn(Future.succeededFuture(null)); // Zoo STS is queried and deleted if it still exists
-        when(mockStsOps.getAsync(any(), eq(newKafkaCluster.getComponentName()))).thenReturn(Future.succeededFuture(null)); // Kafka STS is queried and deleted if it still exists
+        when(mockStsOps.getAsync(any(), eq(KAFKA_CLUSTER.getComponentName()))).thenReturn(Future.succeededFuture(null)); // Kafka STS is queried and deleted if it still exists
 
         PodOperator mockPodOps = supplier.podOperations;
         when(mockPodOps.listAsync(any(), eq(newZkCluster.getSelectorLabels()))).thenReturn(Future.succeededFuture(Collections.emptyList()));
-        when(mockPodOps.listAsync(any(), eq(newKafkaCluster.getSelectorLabels()))).thenReturn(Future.succeededFuture(Collections.emptyList()));
+        when(mockPodOps.listAsync(any(), eq(KAFKA_CLUSTER.getSelectorLabels()))).thenReturn(Future.succeededFuture(Collections.emptyList()));
         when(mockPodOps.listAsync(any(), any(Labels.class))).thenReturn(Future.succeededFuture(Collections.emptyList()));
 
         CrdOperator<KubernetesClient, Kafka, KafkaList> mockKafkaOps = supplier.kafkaOperator;
@@ -456,8 +496,8 @@ public class KafkaAssemblyOperatorPodSetTest {
                 new PlatformFeaturesAvailability(false, KUBERNETES_VERSION),
                 KAFKA,
                 VERSION_CHANGE,
-                null,
-                0,
+                Map.of(),
+                Map.of(),
                 CLUSTER_CA,
                 CLIENTS_CA);
 
@@ -507,11 +547,11 @@ public class KafkaAssemblyOperatorPodSetTest {
 
         ZookeeperCluster oldZkCluster = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, oldKafka, VERSIONS);
         StrimziPodSet oldZkPodSet = oldZkCluster.generatePodSet(oldKafka.getSpec().getZookeeper().getReplicas(), false, null, null, podNum -> null);
-        KafkaCluster oldKafkaCluster = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, oldKafka, VERSIONS);
-        StrimziPodSet oldKafkaPodSet = oldKafkaCluster.generatePodSet(oldKafka.getSpec().getKafka().getReplicas(), false, null, null, brokerId -> null);
+        List<KafkaPool> oldPools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, oldKafka, null, Map.of(), Map.of(), false);
+        KafkaCluster oldKafkaCluster = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, oldKafka, oldPools, VERSIONS, false);
+        StrimziPodSet oldKafkaPodSet = oldKafkaCluster.generatePodSets(false, null, null, brokerId -> null).get(0);
 
         ZookeeperCluster zkCluster = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, KAFKA, VERSIONS);
-        KafkaCluster kafkaCluster = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, KAFKA, VERSIONS);
 
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
@@ -532,17 +572,26 @@ public class KafkaAssemblyOperatorPodSetTest {
         ArgumentCaptor<StrimziPodSet> zkPodSetCaptor =  ArgumentCaptor.forClass(StrimziPodSet.class);
         when(mockPodSetOps.reconcile(any(), any(), eq(zkCluster.getComponentName()), zkPodSetCaptor.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.noop(i.getArgument(3))));
         // Zoo
-        when(mockPodSetOps.getAsync(any(), eq(kafkaCluster.getComponentName()))).thenReturn(Future.succeededFuture(oldKafkaPodSet));
-        ArgumentCaptor<StrimziPodSet> kafkaPodSetCaptor =  ArgumentCaptor.forClass(StrimziPodSet.class);
-        when(mockPodSetOps.reconcile(any(), any(), eq(kafkaCluster.getComponentName()), kafkaPodSetCaptor.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.noop(i.getArgument(3))));
+        when(mockPodSetOps.listAsync(any(), eq(KAFKA_CLUSTER.getSelectorLabels()))).thenReturn(Future.succeededFuture(List.of(oldKafkaPodSet)));
+        ArgumentCaptor<List<StrimziPodSet>> kafkaPodSetBatchCaptor =  ArgumentCaptor.forClass(List.class);
+        when(mockPodSetOps.batchReconcile(any(), any(), kafkaPodSetBatchCaptor.capture(), eq(KAFKA_CLUSTER.getSelectorLabels()))).thenAnswer(i -> {
+            List<StrimziPodSet> podSets = i.getArgument(2);
+            HashMap<String, ReconcileResult<StrimziPodSet>> result = new HashMap<>();
+
+            for (StrimziPodSet podSet : podSets)    {
+                result.put(podSet.getMetadata().getName(), ReconcileResult.noop(podSet));
+            }
+
+            return Future.succeededFuture(result);
+        });
 
         StatefulSetOperator mockStsOps = supplier.stsOperations;
         when(mockStsOps.getAsync(any(), eq(zkCluster.getComponentName()))).thenReturn(Future.succeededFuture(null)); // Zoo STS is queried and deleted if it still exists
-        when(mockStsOps.getAsync(any(), eq(kafkaCluster.getComponentName()))).thenReturn(Future.succeededFuture(null)); // Kafka STS is queried and deleted if it still exists
+        when(mockStsOps.getAsync(any(), eq(KAFKA_CLUSTER.getComponentName()))).thenReturn(Future.succeededFuture(null)); // Kafka STS is queried and deleted if it still exists
 
         PodOperator mockPodOps = supplier.podOperations;
         when(mockPodOps.listAsync(any(), eq(zkCluster.getSelectorLabels()))).thenReturn(Future.succeededFuture(Collections.emptyList()));
-        when(mockPodOps.listAsync(any(), eq(kafkaCluster.getSelectorLabels()))).thenReturn(Future.succeededFuture(Collections.emptyList()));
+        when(mockPodOps.listAsync(any(), eq(KAFKA_CLUSTER.getSelectorLabels()))).thenReturn(Future.succeededFuture(Collections.emptyList()));
         when(mockPodOps.listAsync(any(), any(Labels.class))).thenReturn(Future.succeededFuture(Collections.emptyList()));
         when(mockPodOps.readiness(any(), any(), any(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
 
@@ -573,8 +622,8 @@ public class KafkaAssemblyOperatorPodSetTest {
                 new PlatformFeaturesAvailability(false, KUBERNETES_VERSION),
                 KAFKA,
                 VERSION_CHANGE,
-                null,
-                1,
+                Map.of(),
+                Map.of(),
                 CLUSTER_CA,
                 CLIENTS_CA);
 
@@ -599,9 +648,9 @@ public class KafkaAssemblyOperatorPodSetTest {
                     // Still one maybe-roll invocation
                     assertThat(zr.maybeRollZooKeeperInvocations, is(1));
 
-                    // Scale-up of Kafka is done in one go => we should see two invocations (first from regular patching and second from scale-up)
-                    assertThat(kafkaPodSetCaptor.getAllValues().size(), is(1));
-                    assertThat(kafkaPodSetCaptor.getAllValues().get(0).getSpec().getPods().size(), is(3));
+                    // Scale-up of Kafka is done in one go => we should see two invocations from regular patching
+                    assertThat(kafkaPodSetBatchCaptor.getAllValues().size(), is(1));
+                    assertThat(kafkaPodSetBatchCaptor.getAllValues().get(0).get(0).getSpec().getPods().size(), is(3));
 
                     // Still one maybe-roll invocation
                     assertThat(kr.maybeRollKafkaInvocations, is(1));
@@ -637,11 +686,11 @@ public class KafkaAssemblyOperatorPodSetTest {
 
         ZookeeperCluster oldZkCluster = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, oldKafka, VERSIONS);
         StrimziPodSet oldZkPodSet = oldZkCluster.generatePodSet(oldKafka.getSpec().getZookeeper().getReplicas(), false, null, null, podNum -> null);
-        KafkaCluster oldKafkaCluster = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, oldKafka, VERSIONS);
-        StrimziPodSet oldKafkaPodSet = oldKafkaCluster.generatePodSet(oldKafka.getSpec().getKafka().getReplicas(), false, null, null, brokerId -> null);
+        List<KafkaPool> oldPools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, oldKafka, null, Map.of(), Map.of(), false);
+        KafkaCluster oldKafkaCluster = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, oldKafka, oldPools, VERSIONS, false);
+        StrimziPodSet oldKafkaPodSet = oldKafkaCluster.generatePodSets(false, null, null, brokerId -> null).get(0);
 
         ZookeeperCluster zkCluster = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, KAFKA, VERSIONS);
-        KafkaCluster kafkaCluster = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, KAFKA, VERSIONS);
 
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
@@ -662,17 +711,28 @@ public class KafkaAssemblyOperatorPodSetTest {
         ArgumentCaptor<StrimziPodSet> zkPodSetCaptor =  ArgumentCaptor.forClass(StrimziPodSet.class);
         when(mockPodSetOps.reconcile(any(), any(), eq(zkCluster.getComponentName()), zkPodSetCaptor.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.noop(i.getArgument(3))));
         // Kafka
-        when(mockPodSetOps.getAsync(any(), eq(kafkaCluster.getComponentName()))).thenReturn(Future.succeededFuture(oldKafkaPodSet));
+        when(mockPodSetOps.listAsync(any(), eq(KAFKA_CLUSTER.getSelectorLabels()))).thenReturn(Future.succeededFuture(List.of(oldKafkaPodSet)));
+        ArgumentCaptor<List<StrimziPodSet>> kafkaPodSetBatchCaptor =  ArgumentCaptor.forClass(List.class);
+        when(mockPodSetOps.batchReconcile(any(), any(), kafkaPodSetBatchCaptor.capture(), eq(KAFKA_CLUSTER.getSelectorLabels()))).thenAnswer(i -> {
+            List<StrimziPodSet> podSets = i.getArgument(2);
+            HashMap<String, ReconcileResult<StrimziPodSet>> result = new HashMap<>();
+
+            for (StrimziPodSet podSet : podSets)    {
+                result.put(podSet.getMetadata().getName(), ReconcileResult.noop(podSet));
+            }
+
+            return Future.succeededFuture(result);
+        });
         ArgumentCaptor<StrimziPodSet> kafkaPodSetCaptor =  ArgumentCaptor.forClass(StrimziPodSet.class);
-        when(mockPodSetOps.reconcile(any(), any(), eq(kafkaCluster.getComponentName()), kafkaPodSetCaptor.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.noop(i.getArgument(3))));
+        when(mockPodSetOps.reconcile(any(), any(), eq(KAFKA_CLUSTER.getComponentName()), kafkaPodSetCaptor.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.noop(i.getArgument(3))));
 
         StatefulSetOperator mockStsOps = supplier.stsOperations;
         when(mockStsOps.getAsync(any(), eq(zkCluster.getComponentName()))).thenReturn(Future.succeededFuture(null)); // Zoo STS is queried and deleted if it still exists
-        when(mockStsOps.getAsync(any(), eq(kafkaCluster.getComponentName()))).thenReturn(Future.succeededFuture(null)); // Kafka STS is queried and deleted if it still exists
+        when(mockStsOps.getAsync(any(), eq(KAFKA_CLUSTER.getComponentName()))).thenReturn(Future.succeededFuture(null)); // Kafka STS is queried and deleted if it still exists
 
         PodOperator mockPodOps = supplier.podOperations;
         when(mockPodOps.listAsync(any(), eq(zkCluster.getSelectorLabels()))).thenReturn(Future.succeededFuture(Collections.emptyList()));
-        when(mockPodOps.listAsync(any(), eq(kafkaCluster.getSelectorLabels()))).thenReturn(Future.succeededFuture(Collections.emptyList()));
+        when(mockPodOps.listAsync(any(), eq(KAFKA_CLUSTER.getSelectorLabels()))).thenReturn(Future.succeededFuture(Collections.emptyList()));
         when(mockPodOps.listAsync(any(), any(Labels.class))).thenReturn(Future.succeededFuture(Collections.emptyList()));
         when(mockPodOps.readiness(any(), any(), any(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
         when(mockPodOps.waitFor(any(), any(), any(), any(), anyLong(), anyLong(), any())).thenReturn(Future.succeededFuture());
@@ -704,8 +764,8 @@ public class KafkaAssemblyOperatorPodSetTest {
                 new PlatformFeaturesAvailability(false, KUBERNETES_VERSION),
                 KAFKA,
                 VERSION_CHANGE,
-                null,
-                5,
+                Map.of(),
+                Map.of(CLUSTER_NAME + "-kafka", IntStream.rangeClosed(0, 4).mapToObj(i -> CLUSTER_NAME + "-kafka-" + i).toList()),
                 CLUSTER_CA,
                 CLIENTS_CA);
 
@@ -730,10 +790,11 @@ public class KafkaAssemblyOperatorPodSetTest {
                     // Still one maybe-roll invocation
                     assertThat(zr.maybeRollZooKeeperInvocations, is(1));
 
-                    // Scale-down of Kafka is done in one go => we should see two invocations (first from regular patching and second from scale-down)
-                    assertThat(kafkaPodSetCaptor.getAllValues().size(), is(2));
-                    assertThat(kafkaPodSetCaptor.getAllValues().get(0).getSpec().getPods().size(), is(3)); // => first capture is from kafkaScaleDown() with old replica count
-                    assertThat(kafkaPodSetCaptor.getAllValues().get(1).getSpec().getPods().size(), is(3)); // => second capture is from kafkaPodSet() with new replica count
+                    // Scale-down of Kafka is done in one go => we should see two invocations (first from scale-down and second from regular patching)
+                    assertThat(kafkaPodSetCaptor.getAllValues().size(), is(1));
+                    assertThat(kafkaPodSetCaptor.getAllValues().get(0).getSpec().getPods().size(), is(3)); // => first capture is from kafkaScaleDown() with new replica count
+                    assertThat(kafkaPodSetBatchCaptor.getAllValues().size(), is(1));
+                    assertThat(kafkaPodSetBatchCaptor.getAllValues().get(0).get(0).getSpec().getPods().size(), is(3)); // => second capture is from kafkaPodSet() again with new replica count
 
                     // Still one maybe-roll invocation
                     assertThat(kr.maybeRollKafkaInvocations, is(1));
@@ -826,8 +887,8 @@ public class KafkaAssemblyOperatorPodSetTest {
         int maybeRollKafkaInvocations = 0;
         Function<Pod, RestartReasons> kafkaPodNeedsRestart = null;
 
-        public MockKafkaReconciler(Reconciliation reconciliation, Vertx vertx, ClusterOperatorConfig config, ResourceOperatorSupplier supplier, PlatformFeaturesAvailability pfa, Kafka kafkaAssembly, KafkaVersionChange versionChange, Storage oldStorage, int currentReplicas, ClusterCa clusterCa, ClientsCa clientsCa) {
-            super(reconciliation, kafkaAssembly, oldStorage, currentReplicas, clusterCa, clientsCa, versionChange, config, supplier, pfa, vertx);
+        public MockKafkaReconciler(Reconciliation reconciliation, Vertx vertx, ClusterOperatorConfig config, ResourceOperatorSupplier supplier, PlatformFeaturesAvailability pfa, Kafka kafkaAssembly, KafkaVersionChange versionChange, Map<String, Storage> oldStorage, Map<String, List<String>> currentPods, ClusterCa clusterCa, ClientsCa clientsCa) {
+            super(reconciliation, kafkaAssembly, null, oldStorage, currentPods, clusterCa, clientsCa, versionChange, config, supplier, pfa, vertx);
         }
 
         @Override
@@ -839,13 +900,13 @@ public class KafkaAssemblyOperatorPodSetTest {
                     .compose(i -> brokerConfigurationConfigMaps())
                     .compose(i -> migrateFromStatefulSetToPodSet())
                     .compose(i -> podSet())
-                    .compose(i -> rollingUpdate())
+                    .compose(podSetDiffs -> rollingUpdate(podSetDiffs))
                     .compose(i -> sharedKafkaConfigurationCleanup());
         }
 
         @Override
         protected Future<Void> maybeRollKafka(
-                int replicas,
+                Set<NodeRef> nodes,
                 Function<Pod, RestartReasons> podNeedsRestart,
                 Map<Integer, Map<String, String>> kafkaAdvertisedHostnames,
                 Map<Integer, Map<String, String>> kafkaAdvertisedPorts,
