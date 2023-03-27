@@ -41,7 +41,7 @@ import static io.strimzi.operator.cluster.ClusterOperatorConfig.STRIMZI_DEFAULT_
 public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
     protected static final String COMPONENT_TYPE = "kafka-mirror-maker-2";
 
-    // Kafka MirrorMaker 2.0 connector configuration keys (EnvVariables)
+    // Kafka MirrorMaker 2 connector configuration keys (EnvVariables)
     protected static final String ENV_VAR_KAFKA_MIRRORMAKER_2_CLUSTERS = "KAFKA_MIRRORMAKER_2_CLUSTERS";
     protected static final String ENV_VAR_KAFKA_MIRRORMAKER_2_TLS_CLUSTERS = "KAFKA_MIRRORMAKER_2_TLS_CLUSTERS";
     protected static final String ENV_VAR_KAFKA_MIRRORMAKER_2_TRUSTED_CERTS_CLUSTERS = "KAFKA_MIRRORMAKER_2_TRUSTED_CERTS_CLUSTERS";
@@ -89,8 +89,8 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
      *
      * @param reconciliation    The reconciliation
      * @param kafkaMirrorMaker2 The Custom Resource based on which the cluster model should be created.
-     * @param versions The image versions for MirrorMaker 2.0 clusters.
-     * @return The MirrorMaker 2.0 cluster model.
+     * @param versions The image versions for MirrorMaker 2 clusters.
+     * @return The MirrorMaker 2 cluster model.
      */
     public static KafkaMirrorMaker2Cluster fromCrd(Reconciliation reconciliation,
                                                    KafkaMirrorMaker2 kafkaMirrorMaker2,

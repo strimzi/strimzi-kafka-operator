@@ -36,7 +36,7 @@ The dashboards are populated with a representative set of metrics for monitoring
 |Kafka Connect
 |`strimzi-kafka-connect.json`
 
-|Kafka MirrorMaker 2.0
+|Kafka MirrorMaker 2
 |`strimzi-kafka-mirror-maker-2.json`
 
 |Kafka Bridge

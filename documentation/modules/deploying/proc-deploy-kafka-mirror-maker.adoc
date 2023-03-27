@@ -36,7 +36,7 @@ For MirrorMaker:
 kubectl apply -f examples/mirror-maker/kafka-mirror-maker.yaml
 ----
 +
-For MirrorMaker 2.0:
+For MirrorMaker 2:
 +
 [source,shell,subs="attributes+"]
 ----
@@ -59,7 +59,7 @@ my-mm2-cluster-mirrormaker2   1/1    1           1
 ----
 +
 `my-mirror-maker` is the name of the Kafka MirrorMaker cluster.
-`my-mm2-cluster` is the name of the Kafka MirrorMaker 2.0 cluster.
+`my-mm2-cluster` is the name of the Kafka MirrorMaker 2 cluster.
 +
 `READY` shows the number of replicas that are ready/expected.
 The deployment is successful when the `AVAILABLE` output shows `1`.

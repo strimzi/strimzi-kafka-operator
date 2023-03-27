@@ -411,7 +411,7 @@ public class ResourceUtils {
     }
 
     /**
-     * Create an empty Kafka MirrorMaker 2.0 custom resource
+     * Create an empty Kafka MirrorMaker 2 custom resource
      */
     public static KafkaMirrorMaker2 createEmptyKafkaMirrorMaker2(String namespace, String name, Integer replicas) {
         KafkaMirrorMaker2Builder kafkaMirrorMaker2Builder = new KafkaMirrorMaker2Builder()

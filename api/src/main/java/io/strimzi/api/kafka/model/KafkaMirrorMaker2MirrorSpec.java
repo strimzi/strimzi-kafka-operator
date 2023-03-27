@@ -104,7 +104,7 @@ public class KafkaMirrorMaker2MirrorSpec implements Serializable, UnknownPropert
         this.groupsExcludePattern = groupsExcludePattern;
     }
 
-    @Description("The alias of the source cluster used by the Kafka MirrorMaker 2.0 connectors. The alias must match a cluster in the list at `spec.clusters`.")
+    @Description("The alias of the source cluster used by the Kafka MirrorMaker 2 connectors. The alias must match a cluster in the list at `spec.clusters`.")
     @JsonProperty(required = true)
     public String getSourceCluster() {
         return sourceCluster;
@@ -114,7 +114,7 @@ public class KafkaMirrorMaker2MirrorSpec implements Serializable, UnknownPropert
         this.sourceCluster = sourceCluster;
     }
 
-    @Description("The alias of the target cluster used by the Kafka MirrorMaker 2.0 connectors. The alias must match a cluster in the list at `spec.clusters`.")
+    @Description("The alias of the target cluster used by the Kafka MirrorMaker 2 connectors. The alias must match a cluster in the list at `spec.clusters`.")
     @JsonProperty(required = true)
     public String getTargetCluster() {
         return targetCluster;
@@ -124,7 +124,7 @@ public class KafkaMirrorMaker2MirrorSpec implements Serializable, UnknownPropert
         this.targetCluster = targetCluster;
     }
 
-    @Description("The specification of the Kafka MirrorMaker 2.0 source connector.")
+    @Description("The specification of the Kafka MirrorMaker 2 source connector.")
     public KafkaMirrorMaker2ConnectorSpec getSourceConnector() {
         return sourceConnector;
     }
@@ -133,7 +133,7 @@ public class KafkaMirrorMaker2MirrorSpec implements Serializable, UnknownPropert
         this.sourceConnector = sourceConnector;
     }
 
-    @Description("The specification of the Kafka MirrorMaker 2.0 checkpoint connector.")
+    @Description("The specification of the Kafka MirrorMaker 2 checkpoint connector.")
     public KafkaMirrorMaker2ConnectorSpec getCheckpointConnector() {
         return checkpointConnector;
     }
@@ -142,7 +142,7 @@ public class KafkaMirrorMaker2MirrorSpec implements Serializable, UnknownPropert
         this.checkpointConnector = checkpointConnector;
     }
 
-    @Description("The specification of the Kafka MirrorMaker 2.0 heartbeat connector.")
+    @Description("The specification of the Kafka MirrorMaker 2 heartbeat connector.")
     public KafkaMirrorMaker2ConnectorSpec getHeartbeatConnector() {
         return heartbeatConnector;
     }

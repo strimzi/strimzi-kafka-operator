@@ -42,7 +42,7 @@ m¦KafkaConnector
 
 m¦KafkaMirrorMaker2
 ¦`KafkaMirrorMaker2Status` schema reference
-¦The Kafka MirrorMaker 2.0 cluster
+¦The Kafka MirrorMaker 2 cluster
 
 m¦KafkaMirrorMaker
 ¦`KafkaMirrorMakerStatus` schema reference

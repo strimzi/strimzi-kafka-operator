@@ -99,7 +99,7 @@ If required, set the `version` property for Kafka Connect and MirrorMaker as the
 +
 .. For Kafka Connect, update `KafkaConnect.spec.version`.
 .. For MirrorMaker, update `KafkaMirrorMaker.spec.version`.
-.. For MirrorMaker 2.0, update `KafkaMirrorMaker2.spec.version`.
+.. For MirrorMaker 2, update `KafkaMirrorMaker2.spec.version`.
 
 . If configured, update the Kafka resource to use the new `inter.broker.protocol.version` version. Otherwise, go to step 9.
 +

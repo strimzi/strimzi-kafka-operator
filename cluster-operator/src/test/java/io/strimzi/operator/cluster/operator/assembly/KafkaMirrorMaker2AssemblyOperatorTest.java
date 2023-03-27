@@ -616,16 +616,16 @@ public class KafkaMirrorMaker2AssemblyOperatorTest {
         KafkaMirrorMaker2 foo = ResourceUtils.createEmptyKafkaMirrorMaker2(kmm2Namespace, "foo");
         KafkaMirrorMaker2 bar = ResourceUtils.createEmptyKafkaMirrorMaker2(kmm2Namespace, "bar");
         when(mockMirrorMaker2Ops.listAsync(eq(kmm2Namespace), any(Optional.class))).thenReturn(Future.succeededFuture(asList(foo, bar)));
-        // when requested ConfigMap for a specific Kafka MirrorMaker 2.0 cluster
+        // when requested ConfigMap for a specific Kafka MirrorMaker 2 cluster
         when(mockMirrorMaker2Ops.get(eq(kmm2Namespace), eq("foo"))).thenReturn(foo);
         when(mockMirrorMaker2Ops.get(eq(kmm2Namespace), eq("bar"))).thenReturn(bar);
 
-        // providing the list of ALL Deployments for all the Kafka MirrorMaker 2.0 clusters
+        // providing the list of ALL Deployments for all the Kafka MirrorMaker 2 clusters
         Labels newLabels = Labels.forStrimziKind(KafkaMirrorMaker2.RESOURCE_KIND);
         when(mockDcOps.list(eq(kmm2Namespace), eq(newLabels))).thenReturn(
                 asList(KafkaMirrorMaker2Cluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, bar, VERSIONS).generateDeployment(3, null, new HashMap<>(), true, null, null, null)));
 
-        // providing the list Deployments for already "existing" Kafka MirrorMaker 2.0 clusters
+        // providing the list Deployments for already "existing" Kafka MirrorMaker 2 clusters
         Labels barLabels = Labels.forStrimziCluster("bar");
         when(mockDcOps.list(eq(kmm2Namespace), eq(barLabels))).thenReturn(
                 asList(KafkaMirrorMaker2Cluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, bar, VERSIONS).generateDeployment(3, null, new HashMap<>(), true, null, null, null))
@@ -655,7 +655,7 @@ public class KafkaMirrorMaker2AssemblyOperatorTest {
             }
         };
 
-        // Now try to reconcile all the Kafka MirrorMaker 2.0 clusters
+        // Now try to reconcile all the Kafka MirrorMaker 2 clusters
         ops.reconcileAll("test", kmm2Namespace,
             context.succeeding(v -> context.verify(() -> {
                 assertThat(createdOrUpdated, is(new HashSet<>(asList("foo", "bar"))));

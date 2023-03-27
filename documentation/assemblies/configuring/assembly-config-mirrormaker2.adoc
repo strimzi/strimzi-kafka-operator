@@ -3,16 +3,16 @@
 // assembly-deployment-configuration-kafka-mirror-maker.adoc
 
 [id='assembly-mirrormaker-{context}']
-= Kafka MirrorMaker 2.0 cluster configuration
+= Kafka MirrorMaker 2 cluster configuration
 
 [role="_abstract"]
-Configure a Kafka MirrorMaker 2.0 deployment using the `KafkaMirrorMaker2` resource.
-MirrorMaker 2.0 replicates data between two or more Kafka clusters, within or across data centers.
+Configure a Kafka MirrorMaker 2 deployment using the `KafkaMirrorMaker2` resource.
+MirrorMaker 2 replicates data between two or more Kafka clusters, within or across data centers.
 
 xref:type-KafkaMirrorMaker2-reference[] describes the full schema of the `KafkaMirrorMaker2` resource.
 
-MirrorMaker 2.0 resource configuration differs from the previous version of MirrorMaker.
-If you choose to use MirrorMaker 2.0, there is currently no legacy support, so any resources must be manually converted into the new format.
+MirrorMaker 2 resource configuration differs from the previous version of MirrorMaker.
+If you choose to use MirrorMaker 2, there is currently no legacy support, so any resources must be manually converted into the new format.
 
 //Describes the underlying architecture and how it is used in replication
 include::../../modules/configuring/con-config-mirrormaker2-replication.adoc[leveloffset=+1]

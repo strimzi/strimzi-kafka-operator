@@ -14,11 +14,11 @@ For more information on the configuration options, see the following:
 * {ApacheKafkaProducerConfig}
 * {ApacheKafkaConsumerConfig}
 
-You can also use the same configuration options with the producers and consumers used by the Kafka Connect runtime source connectors (including MirrorMaker 2.0) and sink connectors.
+You can also use the same configuration options with the producers and consumers used by the Kafka Connect runtime source connectors (including MirrorMaker 2) and sink connectors.
 
 Source connectors:: 
 * Producers from the Kafka Connect runtime send messages to the Kafka cluster.
-* For MirrorMaker 2.0, since the source system is Kafka, consumers retrieve messages from a source Kafka cluster. 
+* For MirrorMaker 2, since the source system is Kafka, consumers retrieve messages from a source Kafka cluster. 
 
 Sink connectors:: 
 * Consumers from the Kafka Connect runtime retrieve messages from the Kafka cluster.
@@ -27,7 +27,7 @@ For consumers, you might increase the amount of data fetched in a single fetch r
 You increase the fetch request size using the `fetch.max.bytes` and `max.partition.fetch.bytes` properties.
 You can also set a maximum limit on the number of messages returned from the consumer buffer using the `max.poll.records` property.
 
-For MirrorMaker 2.0, configure the `fetch.max.bytes`, `max.partition.fetch.bytes`, and `max.poll.records` values at the source connector level (`consumer.*`), as they relate to the specific consumer that fetches messages from the source.
+For MirrorMaker 2, configure the `fetch.max.bytes`, `max.partition.fetch.bytes`, and `max.poll.records` values at the source connector level (`consumer.*`), as they relate to the specific consumer that fetches messages from the source.
 
 For producers, you might increase the size of the message batches sent in a single produce request.
 You increase the batch size using the `batch.size` property.
@@ -54,9 +54,9 @@ For Kafka Connect sink connectors, the data streaming pipeline to the target ext
 .Data streaming pipeline for Kafka Connect sink connector
 *source Kafka topic -> (Kafka Connect tasks) sink message queue -> consumer buffer -> external data source*
 
-For MirrorMaker 2.0, the data mirroring pipeline to the target Kafka cluster is as follows:
+For MirrorMaker 2, the data mirroring pipeline to the target Kafka cluster is as follows:
 
-.Data mirroring pipeline for MirrorMaker 2.0
+.Data mirroring pipeline for MirrorMaker 2
 *source Kafka topic -> (Kafka Connect tasks) source message queue -> producer buffer -> target Kafka topic*
 
 The producer sends messages in its buffer to topics in the target Kafka cluster.
@@ -177,12 +177,12 @@ curl -X POST \
 }'
 ----
 
-== Configuring MirrorMaker 2.0 for high-volume messages 
-MirrorMaker 2.0 fetches data from the source cluster and hands it to the Kafka Connect runtime producers so that it's replicated to the target cluster.
+== Configuring MirrorMaker 2 for high-volume messages 
+MirrorMaker 2 fetches data from the source cluster and hands it to the Kafka Connect runtime producers so that it's replicated to the target cluster.
 
-The following example shows the configuration for MirrorMaker 2.0 using the `KafkaMirrorMaker2` custom resource. 
+The following example shows the configuration for MirrorMaker 2 using the `KafkaMirrorMaker2` custom resource. 
 
-.Example MirrorMaker 2.0 configuration for handling high volumes of messages
+.Example MirrorMaker 2 configuration for handling high volumes of messages
 [source,yaml,subs="+quotes,attributes"]
 ----
 apiVersion: {KafkaMirrorMaker2ApiVersion}
@@ -221,11 +221,11 @@ spec:
       memory: 4Gi      
 ----
 
-== Checking the MirrorMaker 2.0 message flow
+== Checking the MirrorMaker 2 message flow
 
-If you are using Prometheus and Grafana to monitor your deployment, you can check the MirrorMaker 2.0 message flow.
+If you are using Prometheus and Grafana to monitor your deployment, you can check the MirrorMaker 2 message flow.
 
-The example MirrorMaker 2.0 Grafana dashboards provided with Strimzi show the following metrics related to the flush pipeline.
+The example MirrorMaker 2 Grafana dashboards provided with Strimzi show the following metrics related to the flush pipeline.
 
 * The number of messages in Kafka Connect's outstanding messages queue
 * The available bytes of the producer buffer

@@ -188,7 +188,7 @@ class MirrorMaker2IsolatedST extends AbstractST {
     }
 
     /**
-     * Test mirroring messages by MirrorMaker 2.0 over tls transport using mutual tls auth
+     * Test mirroring messages by MirrorMaker 2 over tls transport using mutual tls auth
      */
     @SuppressWarnings({"checkstyle:MethodLength"})
     @ParallelNamespaceTest
@@ -321,7 +321,7 @@ class MirrorMaker2IsolatedST extends AbstractST {
     }
 
     /**
-     * Test mirroring messages by MirrorMaker 2.0 over tls transport using scram-sha-512 auth
+     * Test mirroring messages by MirrorMaker 2 over tls transport using scram-sha-512 auth
      */
     @ParallelNamespaceTest
     @KRaftNotSupported("Scram-sha is not supported by KRaft mode and is used in this test case")
@@ -963,7 +963,7 @@ class MirrorMaker2IsolatedST extends AbstractST {
     }
 
     /**
-     * Test mirroring messages by MirrorMaker 2.0 over tls transport using scram-sha-512 auth
+     * Test mirroring messages by MirrorMaker 2 over tls transport using scram-sha-512 auth
      * while user Scram passwords, CA cluster and clients certificates are changed.
      */
     @ParallelNamespaceTest

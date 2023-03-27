@@ -490,7 +490,7 @@ The following table shows the default heap values.
 |75%
 |None
 
-|MirrorMaker 2.0
+|MirrorMaker 2
 |75%
 |None
 

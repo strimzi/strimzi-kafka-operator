@@ -52,7 +52,7 @@ public class KafkaMirrorMaker2Spec extends AbstractKafkaConnectSpec {
         this.connectCluster = connectCluster;
     }
 
-    @Description("Configuration of the MirrorMaker 2.0 connectors.")
+    @Description("Configuration of the MirrorMaker 2 connectors.")
     public List<KafkaMirrorMaker2MirrorSpec> getMirrors() {
         return mirrors;
     }

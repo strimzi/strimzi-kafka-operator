@@ -52,7 +52,7 @@ import java.util.function.Predicate;
         additionalPrinterColumns = {
             @Crd.Spec.AdditionalPrinterColumn(
                 name = "Desired replicas",
-                description = "The desired number of Kafka MirrorMaker 2.0 replicas",
+                description = "The desired number of Kafka MirrorMaker 2 replicas",
                 jsonPath = ".spec.replicas",
                 type = "integer"),
             @Crd.Spec.AdditionalPrinterColumn(
@@ -112,13 +112,13 @@ public class KafkaMirrorMaker2 extends CustomResource<KafkaMirrorMaker2Spec, Kaf
     }
 
     @Override
-    @Description("The specification of the Kafka MirrorMaker 2.0 cluster.")
+    @Description("The specification of the Kafka MirrorMaker 2 cluster.")
     public KafkaMirrorMaker2Spec getSpec() {
         return super.getSpec();
     }
 
     @Override
-    @Description("The status of the Kafka MirrorMaker 2.0 cluster.")
+    @Description("The status of the Kafka MirrorMaker 2 cluster.")
     public KafkaMirrorMaker2Status getStatus() {
         return super.getStatus();
     }

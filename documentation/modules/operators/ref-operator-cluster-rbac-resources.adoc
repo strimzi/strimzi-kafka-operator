@@ -47,7 +47,7 @@ The following tables describe the RBAC resources created by the Cluster Operator
 |MirrorMaker pods
 
 |_<cluster_name>_-mirrormaker2
-|MirrorMaker 2.0 pods
+|MirrorMaker 2 pods
 
 |_<cluster_name>_-bridge
 |Kafka Bridge pods
