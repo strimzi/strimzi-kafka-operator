@@ -37,24 +37,7 @@ public class ClientsCa extends Ca {
         super(reconciliation, certManager, passwordGenerator,
                 "clients-ca", caCertSecretName,
                 forceRenewal(clientsCaCert, clientsCaKey, "clients-ca.key"), caSecretKeyName,
-                adapt060ClientsCaSecret(clientsCaKey), validityDays, renewalDays, generateCa, policy);
-    }
-
-    /**
-     * In Strimzi 0.6.0 the Secrets and keys used a different convention.
-     * Here we adapt the keys in the {@code *-clients-ca} Secret to match what
-     * 0.7.0 expects.
-     * @param clientsCaKey The secret to adapt.
-     * @return The same Secret instance.
-     */
-    public static Secret adapt060ClientsCaSecret(Secret clientsCaKey) {
-        if (clientsCaKey != null && clientsCaKey.getData() != null) {
-            String key = clientsCaKey.getData().get("clients-ca.key");
-            if (key != null) {
-                clientsCaKey.getData().put("ca.key", key);
-            }
-        }
-        return clientsCaKey;
+                clientsCaKey, validityDays, renewalDays, generateCa, policy);
     }
 
     /**

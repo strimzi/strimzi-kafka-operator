@@ -29,10 +29,10 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 @ParallelSuite
 @ExtendWith(VertxExtension.class)
-public class CaRenewalTest {
+public class ClusterCaRenewalTest {
     @ParallelTest
     public void renewalOfCertificatesWithNullSecret() throws IOException {
-        Ca mockedCa = new MockedCa(Reconciliation.DUMMY_RECONCILIATION, null, null, null, null, null, null, null, 2, 1, true, null);
+        ClusterCa mockedCa = new MockedClusterCa(Reconciliation.DUMMY_RECONCILIATION, null, null, null, null, null, 2, 1, true, null);
 
         int replicas = 3;
         Function<Integer, Subject> subjectFn = i -> new Subject.Builder().build();
@@ -63,7 +63,7 @@ public class CaRenewalTest {
 
     @ParallelTest
     public void renewalOfCertificatesWithCaRenewal() throws IOException {
-        MockedCa mockedCa = new MockedCa(Reconciliation.DUMMY_RECONCILIATION, null, null, null, null, null, null, null, 2, 1, true, null);
+        MockedClusterCa mockedCa = new MockedClusterCa(Reconciliation.DUMMY_RECONCILIATION, null, null, null, null, null, 2, 1, true, null);
         mockedCa.setCertRenewed(true);
 
         Secret initialSecret = new SecretBuilder()
@@ -114,7 +114,7 @@ public class CaRenewalTest {
 
     @ParallelTest
     public void renewalOfCertificatesDelayedRenewalInWindow() throws IOException {
-        MockedCa mockedCa = new MockedCa(Reconciliation.DUMMY_RECONCILIATION, null, null, null, null, null, null, null, 2, 1, true, null);
+        MockedClusterCa mockedCa = new MockedClusterCa(Reconciliation.DUMMY_RECONCILIATION, null, null, null, null, null, 2, 1, true, null);
         mockedCa.setCertExpiring(true);
 
         Secret initialSecret = new SecretBuilder()
@@ -165,7 +165,7 @@ public class CaRenewalTest {
 
     @ParallelTest
     public void renewalOfCertificatesDelayedRenewalOutsideWindow() throws IOException {
-        MockedCa mockedCa = new MockedCa(Reconciliation.DUMMY_RECONCILIATION, null, null, null, null, null, null, null, 2, 1, true, null);
+        MockedClusterCa mockedCa = new MockedClusterCa(Reconciliation.DUMMY_RECONCILIATION, null, null, null, null, null, 2, 1, true, null);
         mockedCa.setCertExpiring(true);
 
         Secret initialSecret = new SecretBuilder()
@@ -214,13 +214,13 @@ public class CaRenewalTest {
         assertThat(newCerts.get("pod2").storePassword(), is("old-password"));
     }
 
-    public static class MockedCa extends Ca {
+    public static class MockedClusterCa extends ClusterCa {
         private final AtomicInteger invocationCount = new AtomicInteger(0);
         private boolean isCertRenewed;
         private boolean isCertExpiring;
 
-        public MockedCa(Reconciliation reconciliation, CertManager certManager, PasswordGenerator passwordGenerator, String commonName, String caCertSecretName, Secret caCertSecret, String caKeySecretName, Secret caKeySecret, int validityDays, int renewalDays, boolean generateCa, CertificateExpirationPolicy policy) {
-            super(reconciliation, certManager, passwordGenerator, commonName, caCertSecretName, caCertSecret, caKeySecretName, caKeySecret, validityDays, renewalDays, generateCa, policy);
+        public MockedClusterCa(Reconciliation reconciliation, CertManager certManager, PasswordGenerator passwordGenerator, String commonName, Secret caCertSecret, Secret caKeySecret, int validityDays, int renewalDays, boolean generateCa, CertificateExpirationPolicy policy) {
+            super(reconciliation, certManager, passwordGenerator, commonName, caCertSecret, caKeySecret, validityDays, renewalDays, generateCa, policy);
         }
 
         @Override

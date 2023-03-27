@@ -647,7 +647,7 @@ public class KafkaReconciler {
                                         kafkaServerCertificateHash.put(
                                                 i,
                                                 CertUtils.getCertificateThumbprint(patchResult.resource(),
-                                                        Ca.secretEntryNameForPod(podName, Ca.SecretEntry.CRT)
+                                                        ClusterCa.secretEntryNameForPod(podName, Ca.SecretEntry.CRT)
                                                 ));
                                     }
                                 }
