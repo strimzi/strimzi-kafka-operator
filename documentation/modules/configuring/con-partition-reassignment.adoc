@@ -49,7 +49,7 @@ Unless removed, throttles will continue to affect the cluster even after the rea
 It is only possible to have one reassignment running in a cluster at any given time, and it is not possible to cancel a running reassignment.
 If you must cancel a reassignment, wait for it to complete and then perform another reassignment to revert the effects of the first reassignment.
 The `kafka-reassign-partitions.sh` will print the reassignment JSON for this reversion as part of its output.
-Very large reassignments should be broken down into a number of smaller reassignments in case there is a must stop in-progress reassignment.
+Very large reassignments should be broken down into a number of smaller reassignments in case there is a need to stop in-progress reassignment.
 
 == Specifying topics in a partition reassignment JSON file
 

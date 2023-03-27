@@ -110,9 +110,9 @@ spec:
       default.replication.factor: 3
       min.insync.replicas: 2
       inter.broker.protocol.version: "{DefaultInterBrokerVersion}"
-      ssl.cipher.suites: "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384" <19>
-      ssl.enabled.protocols: "TLSv1.2"
-      ssl.protocol: "TLSv1.2"
+      ssl.cipher.suites: TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384 <19>
+      ssl.enabled.protocols: TLSv1.2
+      ssl.protocol: TLSv1.2
     storage: <20>
       type: persistent-claim <21>
       size: 10000Gi <22>

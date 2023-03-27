@@ -49,9 +49,9 @@ spec:
     config: <8>
       max.poll.records: 100
       receive.buffer.bytes: 32768
-      ssl.cipher.suites: "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384" <9>
-      ssl.enabled.protocols: "TLSv1.2"
-      ssl.protocol: "TLSv1.2"
+      ssl.cipher.suites: TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384 <9>
+      ssl.enabled.protocols: TLSv1.2
+      ssl.protocol: TLSv1.2
       ssl.endpoint.identification.algorithm: HTTPS <10>
   producer:
     bootstrapServers: my-target-cluster-kafka-bootstrap:9092
@@ -69,9 +69,9 @@ spec:
     config:
       compression.type: gzip
       batch.size: 8192
-      ssl.cipher.suites: "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384" <12>
-      ssl.enabled.protocols: "TLSv1.2"
-      ssl.protocol: "TLSv1.2"
+      ssl.cipher.suites: TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384 <12>
+      ssl.enabled.protocols: TLSv1.2
+      ssl.protocol: TLSv1.2
       ssl.endpoint.identification.algorithm: HTTPS <13>
   include: "my-topic|other-topic" <14>
   resources: <15>
