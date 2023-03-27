@@ -11,18 +11,18 @@ package io.strimzi.api.kafka.model;
 public class KafkaMirrorMaker2Resources {
     
     /**
-     * Returns the name of the Kafka MirrorMaker 2.0 {@code Deployment} for a {@code KafkaMirrorMaker2} cluster of the given name.
+     * Returns the name of the Kafka MirrorMaker 2 {@code Deployment} for a {@code KafkaMirrorMaker2} cluster of the given name.
      * @param clusterName  The {@code metadata.name} of the {@code KafkaMirrorMaker2} resource.
-     * @return The name of the corresponding Kafka MirrorMaker 2.0 {@code Deployment}.
+     * @return The name of the corresponding Kafka MirrorMaker 2 {@code Deployment}.
      */
     public static String deploymentName(String clusterName) {
         return clusterName + "-mirrormaker2";
     }
 
     /**
-     * Returns the name of the Kafka MirrorMaker 2.0 {@code ServiceAccount} for a {@code KafkaMirrorMaker2} cluster of the given name.
+     * Returns the name of the Kafka MirrorMaker 2 {@code ServiceAccount} for a {@code KafkaMirrorMaker2} cluster of the given name.
      * @param clusterName  The {@code metadata.name} of the {@code KafkaMirrorMaker2} resource.
-     * @return The name of the corresponding Kafka MirrorMaker 2.0 {@code ServiceAccount}.
+     * @return The name of the corresponding Kafka MirrorMaker 2 {@code ServiceAccount}.
      */
     public static String serviceAccountName(String clusterName) {
         return deploymentName(clusterName);
@@ -38,7 +38,7 @@ public class KafkaMirrorMaker2Resources {
     }
 
     /**
-     * Returns the name of the Kafka MirrorMaker 2.0 metrics and log {@code ConfigMap} for a {@code KafkaMirrorMaker2} cluster of the given name.
+     * Returns the name of the Kafka MirrorMaker 2 metrics and log {@code ConfigMap} for a {@code KafkaMirrorMaker2} cluster of the given name.
      * @param clusterName  The {@code metadata.name} of the {@code KafkaMirrorMaker2} resource.
      * @return The name of the corresponding KafkaMirrorMaker2 metrics and log {@code ConfigMap}.
      */
@@ -58,7 +58,7 @@ public class KafkaMirrorMaker2Resources {
     }
 
     /**
-     * Returns the URL of the Kafka MirrorMaker 2.0 REST API for a {@code KafkaMirrorMaker2} cluster of the given name.
+     * Returns the URL of the Kafka MirrorMaker 2 REST API for a {@code KafkaMirrorMaker2} cluster of the given name.
      * @param clusterName  The {@code metadata.name} of the {@code KafkaMirrorMaker2} resource.
      * @param namespace The namespace where {@code KafkaMirrorMaker2} cluster is running.
      * @param port The port on which the {@code KafkaMirrorMaker2} API is available.

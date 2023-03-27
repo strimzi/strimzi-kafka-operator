@@ -13,7 +13,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Class for handling Kafka MirrorMaker 2.0 connect configuration passed by the user
+ * Class for handling Kafka MirrorMaker 2 connect configuration passed by the user
  */
 public class KafkaMirrorMaker2Configuration extends AbstractConfiguration {
     private static final List<String> FORBIDDEN_PREFIXES;

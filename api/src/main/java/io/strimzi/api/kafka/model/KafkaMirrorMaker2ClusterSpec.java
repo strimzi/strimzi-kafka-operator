@@ -64,7 +64,7 @@ public class KafkaMirrorMaker2ClusterSpec implements UnknownPropertyPreserving, 
         this.authentication = authentication;
     }
 
-    @Description("The MirrorMaker 2.0 cluster config. Properties with the following prefixes cannot be set: " + FORBIDDEN_PREFIXES + " (with the exception of: " + FORBIDDEN_PREFIX_EXCEPTIONS + ").")
+    @Description("The MirrorMaker 2 cluster config. Properties with the following prefixes cannot be set: " + FORBIDDEN_PREFIXES + " (with the exception of: " + FORBIDDEN_PREFIX_EXCEPTIONS + ").")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public Map<String, Object> getConfig() {
         return config;
@@ -74,7 +74,7 @@ public class KafkaMirrorMaker2ClusterSpec implements UnknownPropertyPreserving, 
         this.config = config;
     }
 
-    @Description("TLS configuration for connecting MirrorMaker 2.0 connectors to a cluster.")
+    @Description("TLS configuration for connecting MirrorMaker 2 connectors to a cluster.")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public ClientTls getTls() {
         return tls;

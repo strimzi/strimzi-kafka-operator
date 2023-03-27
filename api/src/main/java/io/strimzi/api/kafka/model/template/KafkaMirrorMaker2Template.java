@@ -17,7 +17,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Representation of a template for Kafka MirrorMaker 2.0 resources.
+ * Representation of a template for Kafka MirrorMaker 2 resources.
  */
 @Buildable(
         editableEnabled = false,
@@ -38,7 +38,7 @@ public class KafkaMirrorMaker2Template implements HasJmxSecretTemplate, Serializ
     private ResourceTemplate jmxSecret;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
-    @Description("Template for Kafka MirrorMaker 2.0 `Deployment`.")
+    @Description("Template for Kafka MirrorMaker 2 `Deployment`.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public DeploymentTemplate getDeployment() {
         return deployment;
@@ -48,7 +48,7 @@ public class KafkaMirrorMaker2Template implements HasJmxSecretTemplate, Serializ
         this.deployment = deployment;
     }
 
-    @Description("Template for Kafka MirrorMaker 2.0 `Pods`.")
+    @Description("Template for Kafka MirrorMaker 2 `Pods`.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public PodTemplate getPod() {
         return pod;
@@ -58,7 +58,7 @@ public class KafkaMirrorMaker2Template implements HasJmxSecretTemplate, Serializ
         this.pod = pod;
     }
 
-    @Description("Template for Kafka MirrorMaker 2.0 API `Service`.")
+    @Description("Template for Kafka MirrorMaker 2 API `Service`.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public InternalServiceTemplate getApiService() {
         return apiService;
@@ -68,7 +68,7 @@ public class KafkaMirrorMaker2Template implements HasJmxSecretTemplate, Serializ
         this.apiService = apiService;
     }
 
-    @Description("Template for Kafka MirrorMaker 2.0 `PodDisruptionBudget`.")
+    @Description("Template for Kafka MirrorMaker 2 `PodDisruptionBudget`.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public PodDisruptionBudgetTemplate getPodDisruptionBudget() {
         return podDisruptionBudget;
@@ -78,7 +78,7 @@ public class KafkaMirrorMaker2Template implements HasJmxSecretTemplate, Serializ
         this.podDisruptionBudget = podDisruptionBudget;
     }
 
-    @Description("Template for the Kafka MirrorMaker 2.0 container")
+    @Description("Template for the Kafka MirrorMaker 2 container")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public ContainerTemplate getMirrorMaker2Container() {
         return mirrorMaker2Container;

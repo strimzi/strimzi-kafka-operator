@@ -10,7 +10,7 @@ export CERTS_STORE_PASSWORD
 mkdir -p /tmp/kafka/clusters
 
 # Import cluster certificates into keystores and truststores
-echo "Preparing MirrorMaker 2.0 cluster truststores and keystores"
+echo "Preparing MirrorMaker 2 cluster truststores and keystores"
 
 declare -A TLS_AUTH_CERTS
 if [ -n "$KAFKA_MIRRORMAKER_2_TLS_AUTH_CERTS_CLUSTERS" ]; then
@@ -46,7 +46,7 @@ if [ -n "$KAFKA_MIRRORMAKER_2_CLUSTERS" ]; then
     IFS=';' read -ra CLUSTERS <<< "$KAFKA_MIRRORMAKER_2_CLUSTERS" || true
     for clusterAlias in "${CLUSTERS[@]}"
     do
-        echo "Preparing MirrorMaker 2.0 truststores and keystores for cluster ${clusterAlias}"
+        echo "Preparing MirrorMaker 2 truststores and keystores for cluster ${clusterAlias}"
         echo "  with trusted certs ${TRUSTED_CERTS["${clusterAlias}"]}"
         echo "  with tls auth certs ${TLS_AUTH_CERTS["${clusterAlias}"]}"
         echo "  with tls auth keys ${TLS_AUTH_KEYS["${clusterAlias}"]}"
@@ -61,7 +61,7 @@ if [ -n "$KAFKA_MIRRORMAKER_2_CLUSTERS" ]; then
             "/opt/kafka/mm2-oauth-certs/${clusterAlias}" \
             "/tmp/kafka/clusters/${clusterAlias}-oauth.truststore.p12"
     done
-    echo "Preparing MirrorMaker 2.0 cluster truststores is complete"
+    echo "Preparing MirrorMaker 2 cluster truststores is complete"
 fi
 
 # Generate and print the connector config file
