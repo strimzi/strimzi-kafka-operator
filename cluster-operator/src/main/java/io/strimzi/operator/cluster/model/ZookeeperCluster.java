@@ -416,7 +416,7 @@ public class ZookeeperCluster extends AbstractStatefulModel implements SupportsM
         Map<String, CertAndKey> certs;
 
         try {
-            certs = clusterCa.generateZkCerts(namespace, cluster, replicas, isMaintenanceTimeWindowsSatisfied);
+            certs = clusterCa.generateZkCerts(namespace, cluster, nodes(), isMaintenanceTimeWindowsSatisfied);
         } catch (IOException e) {
             LOGGER.warnCr(reconciliation, "Error while generating certificates", e);
             throw new RuntimeException("Failed to prepare ZooKeeper certificates", e);

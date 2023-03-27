@@ -1136,7 +1136,7 @@ public class KafkaCluster extends AbstractStatefulModel implements SupportsMetri
         Map<String, String> data = new HashMap<>(replicas * 4);
 
         try {
-            brokerCerts = clusterCa.generateBrokerCerts(namespace, cluster, replicas, externalBootstrapDnsName, externalDnsNames, isMaintenanceTimeWindowsSatisfied);
+            brokerCerts = clusterCa.generateBrokerCerts(namespace, cluster, nodes(), externalBootstrapDnsName, externalDnsNames, isMaintenanceTimeWindowsSatisfied);
         } catch (IOException e) {
             LOGGER.warnCr(reconciliation, "Error while generating certificates", e);
             throw new RuntimeException("Failed to prepare Kafka certificates", e);
