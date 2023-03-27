@@ -34,10 +34,8 @@ public class PersistentVolumeClaimUtils {
      * recursively to handle volumes inside JBOD storage. When it calls itself to handle the volumes inside JBOD array,
      * the {@code jbod} flag should be set to {@code true}. When called from outside, it should be set to {@code false}.
      *
-     * @param componentName     Name of the Strimzi component to which these PVCs belong. It is used to generate
-     *                          the PVC names.
      * @param namespace         Namespace of the PVC
-     * @param replicas          Number of replicas this component has
+     * @param nodes             List of node references for which the PCX should be generated
      * @param storage           The user supplied configuration of the PersistentClaimStorage
      * @param jbod              Indicator whether the {@code storage} is part of JBOD array or not
      * @param labels            Labels of the PVC
@@ -47,9 +45,8 @@ public class PersistentVolumeClaimUtils {
      * @return  List with Persistent Volume Claims
      */
     public static List<PersistentVolumeClaim> createPersistentVolumeClaims(
-            String componentName,
             String namespace,
-            int replicas,
+            List<NodeRef> nodes,
             Storage storage,
             boolean jbod,
             Labels labels,
@@ -60,15 +57,15 @@ public class PersistentVolumeClaimUtils {
 
         if (storage != null) {
             if (storage instanceof PersistentClaimStorage persistentStorage) {
-                String pvcBaseName = VolumeUtils.createVolumePrefix(persistentStorage.getId(), jbod) + "-" + componentName;
+                String namePrefix = VolumeUtils.createVolumePrefix(persistentStorage.getId(), jbod);
 
-                for (int brokerId = 0; brokerId < replicas; brokerId++) {
-                    pvcs.add(createPersistentVolumeClaim(pvcBaseName + "-" + brokerId, namespace, brokerId, persistentStorage, labels, ownerReference, template));
+                for (NodeRef node : nodes) {
+                    pvcs.add(createPersistentVolumeClaim(namePrefix + "-" + node.podName(), namespace, node.nodeId(), persistentStorage, labels, ownerReference, template));
                 }
             } else if (storage instanceof JbodStorage jbodStorage) {
                 for (SingleVolumeStorage volume : jbodStorage.getVolumes()) {
                     // it's called recursively for setting the information from the current volume
-                    pvcs.addAll(createPersistentVolumeClaims(componentName, namespace, replicas, volume, true, labels, ownerReference, template));
+                    pvcs.addAll(createPersistentVolumeClaims(namespace, nodes, volume, true, labels, ownerReference, template));
                 }
             }
         }

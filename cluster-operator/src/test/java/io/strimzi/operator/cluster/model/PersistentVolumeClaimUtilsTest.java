@@ -14,6 +14,7 @@ import io.strimzi.api.kafka.model.storage.JbodStorageBuilder;
 import io.strimzi.api.kafka.model.storage.PersistentClaimStorage;
 import io.strimzi.api.kafka.model.storage.PersistentClaimStorageBuilder;
 import io.strimzi.api.kafka.model.storage.PersistentClaimStorageOverrideBuilder;
+import io.strimzi.api.kafka.model.storage.Storage;
 import io.strimzi.api.kafka.model.template.ResourceTemplate;
 import io.strimzi.api.kafka.model.template.ResourceTemplateBuilder;
 import io.strimzi.operator.common.model.Labels;
@@ -55,12 +56,17 @@ public class PersistentVolumeClaimUtilsTest {
             .withStorageClass("my-storage-class")
             .withSize("100Gi")
             .build();
+    private final static List<NodeRef> SINGLE_NODE = List.of(new NodeRef(NAME + "-" + 0, 0));
+    private final static List<NodeRef> THREE_NODES = List.of(
+            new NodeRef(NAME + "-" + 0, 0),
+            new NodeRef(NAME + "-" + 1, 1),
+            new NodeRef(NAME + "-" + 2, 2));
 
     @ParallelTest
     public void testEphemeralStorage()  {
         assertThat(
                 PersistentVolumeClaimUtils
-                        .createPersistentVolumeClaims(NAME, NAMESPACE, 3, new EphemeralStorage(), false, LABELS, OWNER_REFERENCE, null),
+                        .createPersistentVolumeClaims(NAMESPACE, THREE_NODES, new EphemeralStorage(), false, LABELS, OWNER_REFERENCE, null),
                 is(List.of())
         );
     }
@@ -73,7 +79,7 @@ public class PersistentVolumeClaimUtilsTest {
 
         assertThat(
                 PersistentVolumeClaimUtils
-                        .createPersistentVolumeClaims(NAME, NAMESPACE, 3, jbod, false, LABELS, OWNER_REFERENCE, null),
+                        .createPersistentVolumeClaims(NAMESPACE, THREE_NODES, jbod, false, LABELS, OWNER_REFERENCE, null),
                 is(List.of())
         );
     }
@@ -81,7 +87,32 @@ public class PersistentVolumeClaimUtilsTest {
     @ParallelTest
     public void testPersistentClaimStorage()  {
         List<PersistentVolumeClaim> pvcs = PersistentVolumeClaimUtils
-                .createPersistentVolumeClaims(NAME, NAMESPACE, 1, PERSISTENT_CLAIM_STORAGE, false, LABELS, OWNER_REFERENCE, null);
+                .createPersistentVolumeClaims(NAMESPACE, SINGLE_NODE, PERSISTENT_CLAIM_STORAGE, false, LABELS, OWNER_REFERENCE, null);
+
+        assertThat(pvcs.size(), is(1));
+
+        assertThat(pvcs.get(0).getMetadata().getName(), is("data-my-cluster-kafka-0"));
+        assertThat(pvcs.get(0).getMetadata().getNamespace(), is(NAMESPACE));
+        assertThat(pvcs.get(0).getMetadata().getLabels(), is(LABELS.toMap()));
+        assertThat(pvcs.get(0).getMetadata().getAnnotations(), is(Map.of("strimzi.io/delete-claim", "false")));
+        assertThat(pvcs.get(0).getMetadata().getOwnerReferences(), is(List.of()));
+        assertThat(pvcs.get(0).getSpec().getVolumeMode(), is("Filesystem"));
+        assertThat(pvcs.get(0).getSpec().getAccessModes(), is(List.of("ReadWriteOnce")));
+        assertThat(pvcs.get(0).getSpec().getSelector(), is(nullValue()));
+        assertThat(pvcs.get(0).getSpec().getResources().getRequests(), is(Map.of("storage", new Quantity("100Gi", null))));
+        assertThat(pvcs.get(0).getSpec().getStorageClassName(), is("my-storage-class"));
+    }
+
+    @ParallelTest
+    public void testPersistentClaimStorageWithId()  {
+        Storage storage = new PersistentClaimStorageBuilder()
+                .withId(1)
+                .withStorageClass("my-storage-class")
+                .withSize("100Gi")
+                .build();
+
+        List<PersistentVolumeClaim> pvcs = PersistentVolumeClaimUtils
+                .createPersistentVolumeClaims(NAMESPACE, SINGLE_NODE, storage, false, LABELS, OWNER_REFERENCE, null);
 
         assertThat(pvcs.size(), is(1));
 
@@ -108,7 +139,7 @@ public class PersistentVolumeClaimUtilsTest {
                 .build();
 
         List<PersistentVolumeClaim> pvcs = PersistentVolumeClaimUtils
-                .createPersistentVolumeClaims(NAME, NAMESPACE, 1, jbod, false, LABELS, OWNER_REFERENCE, null);
+                .createPersistentVolumeClaims(NAMESPACE, SINGLE_NODE, jbod, false, LABELS, OWNER_REFERENCE, null);
 
         assertThat(pvcs.size(), is(1));
 
@@ -135,7 +166,7 @@ public class PersistentVolumeClaimUtilsTest {
                 .build();
 
         List<PersistentVolumeClaim> pvcs = PersistentVolumeClaimUtils
-                .createPersistentVolumeClaims(NAME, NAMESPACE, 1, jbod, false, LABELS, OWNER_REFERENCE, TEMPLATE);
+                .createPersistentVolumeClaims(NAMESPACE, SINGLE_NODE, jbod, false, LABELS, OWNER_REFERENCE, TEMPLATE);
 
         assertThat(pvcs.size(), is(1));
 
@@ -163,7 +194,7 @@ public class PersistentVolumeClaimUtilsTest {
                 .build();
 
         List<PersistentVolumeClaim> pvcs = PersistentVolumeClaimUtils
-                .createPersistentVolumeClaims(NAME, NAMESPACE, 1, jbod, false, LABELS, OWNER_REFERENCE, null);
+                .createPersistentVolumeClaims(NAMESPACE, SINGLE_NODE, jbod, false, LABELS, OWNER_REFERENCE, null);
 
         assertThat(pvcs.size(), is(1));
 
@@ -191,7 +222,7 @@ public class PersistentVolumeClaimUtilsTest {
                 .build();
 
         List<PersistentVolumeClaim> pvcs = PersistentVolumeClaimUtils
-                .createPersistentVolumeClaims(NAME, NAMESPACE, 1, jbod, false, LABELS, OWNER_REFERENCE, null);
+                .createPersistentVolumeClaims(NAMESPACE, SINGLE_NODE, jbod, false, LABELS, OWNER_REFERENCE, null);
 
         assertThat(pvcs.size(), is(1));
 
@@ -219,7 +250,7 @@ public class PersistentVolumeClaimUtilsTest {
                 .build();
 
         List<PersistentVolumeClaim> pvcs = PersistentVolumeClaimUtils
-                .createPersistentVolumeClaims(NAME, NAMESPACE, 1, jbod, false, LABELS, OWNER_REFERENCE, null);
+                .createPersistentVolumeClaims(NAMESPACE, SINGLE_NODE, jbod, false, LABELS, OWNER_REFERENCE, null);
 
         assertThat(pvcs.size(), is(1));
 
@@ -256,7 +287,7 @@ public class PersistentVolumeClaimUtilsTest {
                 .build();
 
         List<PersistentVolumeClaim> pvcs = PersistentVolumeClaimUtils
-                .createPersistentVolumeClaims(NAME, NAMESPACE, 3, jbod, false, LABELS, OWNER_REFERENCE, null);
+                .createPersistentVolumeClaims(NAMESPACE, THREE_NODES, jbod, false, LABELS, OWNER_REFERENCE, null);
 
         assertThat(pvcs.size(), is(6));
 
