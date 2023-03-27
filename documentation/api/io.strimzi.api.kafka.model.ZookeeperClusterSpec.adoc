@@ -50,9 +50,9 @@ spec:
     config:
       autopurge.snapRetainCount: 3
       autopurge.purgeInterval: 1
-      ssl.cipher.suites: "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384"
-      ssl.enabled.protocols: "TLSv1.2"
-      ssl.protocol: "TLSv1.2"
+      ssl.cipher.suites: TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+      ssl.enabled.protocols: TLSv1.2
+      ssl.protocol: TLSv1.2
     # ...
 ----
 

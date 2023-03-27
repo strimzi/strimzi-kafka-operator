@@ -74,9 +74,9 @@ spec:
     config.storage.replication.factor: 3
     offset.storage.replication.factor: 3
     status.storage.replication.factor: 3
-    ssl.cipher.suites: "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384"
-    ssl.enabled.protocols: "TLSv1.2"
-    ssl.protocol: "TLSv1.2"
+    ssl.cipher.suites: TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+    ssl.enabled.protocols: TLSv1.2
+    ssl.protocol: TLSv1.2
     ssl.endpoint.identification.algorithm: HTTPS
   # ...
 ----

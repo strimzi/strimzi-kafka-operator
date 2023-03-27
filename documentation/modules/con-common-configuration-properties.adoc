@@ -60,9 +60,9 @@ Use the `ssl.endpoint.identification.algorithm` property to enable or disable ho
 ----
 # ...
 config:
-  ssl.cipher.suites: "TLS_AES_256_GCM_SHA384", "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384" # <1>
-  ssl.enabled.protocols: "TLSv1.3", "TLSv1.2" # <2>
-  ssl.protocol: "TLSv1.3" # <3>
+  ssl.cipher.suites: TLS_AES_256_GCM_SHA384, TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384 # <1>
+  ssl.enabled.protocols: TLSv1.3, TLSv1.2 # <2>
+  ssl.protocol: TLSv1.3 # <3>
   ssl.endpoint.identification.algorithm: HTTPS # <4>
 # ...
 ----
