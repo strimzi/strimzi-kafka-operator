@@ -490,6 +490,7 @@ public class AbstractUpgradeST extends AbstractST {
 
     protected void deployKafkaConnectAndKafkaConnectorWithWaitForReadiness(final ExtensionContext extensionContext,
                                                                             final BundleVersionModificationData acrossUpgradeData,
+                                                                            final UpgradeKafkaVersion upgradeKafkaVersion,
                                                                             final TestStorage testStorage) {
         // setup KafkaConnect + KafkaConnector
         if (!cmdKubeClient().getResources(getResourceApiVersion(KafkaConnect.RESOURCE_PLURAL, acrossUpgradeData.getFromVersion())).contains(clusterName)) {
@@ -503,6 +504,7 @@ public class AbstractUpgradeST extends AbstractST {
                         .addToConfig("value.converter.schemas.enable", false)
                         .addToConfig("key.converter", "org.apache.kafka.connect.storage.StringConverter")
                         .addToConfig("value.converter", "org.apache.kafka.connect.storage.StringConverter")
+                        .withVersion(upgradeKafkaVersion.getVersion())
                     .endSpec()
                     .build());
                 resourceManager.createResource(extensionContext, KafkaConnectorTemplates.kafkaConnector(clusterName)
@@ -545,6 +547,7 @@ public class AbstractUpgradeST extends AbstractST {
                         .addToConfig("value.converter.schemas.enable", false)
                         .addToConfig("key.converter", "org.apache.kafka.connect.storage.StringConverter")
                         .addToConfig("value.converter", "org.apache.kafka.connect.storage.StringConverter")
+                        .withVersion(upgradeKafkaVersion.getVersion())
                     .endSpec()
                     .build();
 
@@ -575,7 +578,7 @@ public class AbstractUpgradeST extends AbstractST {
                                                                               final UpgradeKafkaVersion upgradeKafkaVersion) throws IOException {
         this.deployCoWithWaitForReadiness(extensionContext, bundleDowngradeDataWithFeatureGates, testStorage.getNamespaceName());
         this.deployKafkaClusterWithWaitForReadiness(extensionContext, bundleDowngradeDataWithFeatureGates, upgradeKafkaVersion);
-        this.deployKafkaConnectAndKafkaConnectorWithWaitForReadiness(extensionContext, bundleDowngradeDataWithFeatureGates, testStorage);
+        this.deployKafkaConnectAndKafkaConnectorWithWaitForReadiness(extensionContext, bundleDowngradeDataWithFeatureGates, upgradeKafkaVersion, testStorage);
         this.deployKafkaUserWithWaitForReadiness(extensionContext, bundleDowngradeDataWithFeatureGates, testStorage.getNamespaceName());
 
         final KafkaClients clients = new KafkaClientsBuilder()
