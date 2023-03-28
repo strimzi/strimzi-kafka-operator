@@ -152,7 +152,7 @@ public class ClusterCa extends Ca {
     protected Map<String, CertAndKey> generateCcCerts(String namespace, String kafkaName, boolean isMaintenanceTimeWindowsSatisfied) throws IOException {
         DnsNameGenerator ccDnsGenerator = DnsNameGenerator.of(namespace, CruiseControlResources.serviceName(kafkaName));
 
-        Function<Integer, Subject> subjectFn = i -> {
+        Function<NodeRef, Subject> subjectFn = node -> {
             Subject.Builder subject = new Subject.Builder()
                     .withOrganizationName("io.strimzi")
                     .withCommonName(CruiseControlResources.serviceName(kafkaName));
@@ -169,27 +169,31 @@ public class ClusterCa extends Ca {
         LOGGER.debugCr(reconciliation, "{}: Reconciling Cruise Control certificates", this);
         return maybeCopyOrGenerateCerts(
             reconciliation,
-           1,
+            List.of(new NodeRef("cruise-control", 0)),
             subjectFn,
             cruiseControlSecret,
-            podNum -> "cruise-control",
             isMaintenanceTimeWindowsSatisfied);
     }
 
-    protected Map<String, CertAndKey> generateZkCerts(String namespace, String kafkaName, int replicas, boolean isMaintenanceTimeWindowsSatisfied) throws IOException {
-        DnsNameGenerator zkDnsGenerator = DnsNameGenerator.of(namespace, KafkaResources.zookeeperServiceName(kafkaName));
-        DnsNameGenerator zkHeadlessDnsGenerator = DnsNameGenerator.of(namespace, KafkaResources.zookeeperHeadlessServiceName(kafkaName));
+    protected Map<String, CertAndKey> generateZkCerts(
+            String namespace,
+            String crName,
+            List<NodeRef> nodes,
+            boolean isMaintenanceTimeWindowsSatisfied
+    ) throws IOException {
+        DnsNameGenerator zkDnsGenerator = DnsNameGenerator.of(namespace, KafkaResources.zookeeperServiceName(crName));
+        DnsNameGenerator zkHeadlessDnsGenerator = DnsNameGenerator.of(namespace, KafkaResources.zookeeperHeadlessServiceName(crName));
 
-        Function<Integer, Subject> subjectFn = i -> {
+        Function<NodeRef, Subject> subjectFn = node -> {
             Subject.Builder subject = new Subject.Builder()
                     .withOrganizationName("io.strimzi")
-                    .withCommonName(KafkaResources.zookeeperStatefulSetName(kafkaName));
-            subject.addDnsName(KafkaResources.zookeeperServiceName(kafkaName));
-            subject.addDnsName(String.format("%s.%s", KafkaResources.zookeeperServiceName(kafkaName), namespace));
+                    .withCommonName(KafkaResources.zookeeperStatefulSetName(crName));
+            subject.addDnsName(KafkaResources.zookeeperServiceName(crName));
+            subject.addDnsName(String.format("%s.%s", KafkaResources.zookeeperServiceName(crName), namespace));
             subject.addDnsName(zkDnsGenerator.serviceDnsNameWithoutClusterDomain());
             subject.addDnsName(zkDnsGenerator.serviceDnsName());
-            subject.addDnsName(DnsNameGenerator.podDnsName(namespace, KafkaResources.zookeeperHeadlessServiceName(kafkaName), KafkaResources.zookeeperPodName(kafkaName, i)));
-            subject.addDnsName(DnsNameGenerator.podDnsNameWithoutClusterDomain(namespace, KafkaResources.zookeeperHeadlessServiceName(kafkaName), KafkaResources.zookeeperPodName(kafkaName, i)));
+            subject.addDnsName(DnsNameGenerator.podDnsName(namespace, KafkaResources.zookeeperHeadlessServiceName(crName), node.podName()));
+            subject.addDnsName(DnsNameGenerator.podDnsNameWithoutClusterDomain(namespace, KafkaResources.zookeeperHeadlessServiceName(crName), node.podName()));
             subject.addDnsName(zkDnsGenerator.wildcardServiceDnsNameWithoutClusterDomain());
             subject.addDnsName(zkDnsGenerator.wildcardServiceDnsName());
             subject.addDnsName(zkHeadlessDnsGenerator.wildcardServiceDnsNameWithoutClusterDomain());
@@ -200,25 +204,30 @@ public class ClusterCa extends Ca {
         LOGGER.debugCr(reconciliation, "{}: Reconciling zookeeper certificates", this);
         return maybeCopyOrGenerateCerts(
             reconciliation,
-            replicas,
+            nodes,
             subjectFn,
             zkNodesSecret,
-            podNum -> KafkaResources.zookeeperPodName(kafkaName, podNum),
             isMaintenanceTimeWindowsSatisfied);
     }
 
-    protected Map<String, CertAndKey> generateBrokerCerts(String namespace, String cluster, int replicas, Set<String> externalBootstrapAddresses,
-                                                       Map<Integer, Set<String>> externalAddresses, boolean isMaintenanceTimeWindowsSatisfied) throws IOException {
-        Function<Integer, Subject> subjectFn = i -> {
+    protected Map<String, CertAndKey> generateBrokerCerts(
+            String namespace,
+            String crName,
+            List<NodeRef> nodes,
+            Set<String> externalBootstrapAddresses,
+            Map<Integer, Set<String>> externalAddresses,
+            boolean isMaintenanceTimeWindowsSatisfied
+    ) throws IOException {
+        Function<NodeRef, Subject> subjectFn = node -> {
             Subject.Builder subject = new Subject.Builder()
                     .withOrganizationName("io.strimzi")
-                    .withCommonName(KafkaResources.kafkaStatefulSetName(cluster));
+                    .withCommonName(KafkaResources.kafkaStatefulSetName(crName));
 
-            subject.addDnsNames(ModelUtils.generateAllServiceDnsNames(namespace, KafkaResources.bootstrapServiceName(cluster)));
-            subject.addDnsNames(ModelUtils.generateAllServiceDnsNames(namespace, KafkaResources.brokersServiceName(cluster)));
+            subject.addDnsNames(ModelUtils.generateAllServiceDnsNames(namespace, KafkaResources.bootstrapServiceName(crName)));
+            subject.addDnsNames(ModelUtils.generateAllServiceDnsNames(namespace, KafkaResources.brokersServiceName(crName)));
 
-            subject.addDnsName(DnsNameGenerator.podDnsName(namespace, KafkaResources.brokersServiceName(cluster), KafkaResources.kafkaPodName(cluster, i)));
-            subject.addDnsName(DnsNameGenerator.podDnsNameWithoutClusterDomain(namespace, KafkaResources.brokersServiceName(cluster), KafkaResources.kafkaPodName(cluster, i)));
+            subject.addDnsName(DnsNameGenerator.podDnsName(namespace, KafkaResources.brokersServiceName(crName), node.podName()));
+            subject.addDnsName(DnsNameGenerator.podDnsNameWithoutClusterDomain(namespace, KafkaResources.brokersServiceName(crName), node.podName()));
 
             if (externalBootstrapAddresses != null)   {
                 for (String dnsName : externalBootstrapAddresses) {
@@ -230,8 +239,8 @@ public class ClusterCa extends Ca {
                 }
             }
 
-            if (externalAddresses.get(i) != null)   {
-                for (String dnsName : externalAddresses.get(i)) {
+            if (externalAddresses.get(node.nodeId()) != null)   {
+                for (String dnsName : externalAddresses.get(node.nodeId())) {
                     if (IpAndDnsValidation.isValidIpAddress(dnsName))   {
                         subject.addIpAddress(dnsName);
                     } else {
@@ -245,10 +254,9 @@ public class ClusterCa extends Ca {
         LOGGER.debugCr(reconciliation, "{}: Reconciling kafka broker certificates", this);
         return maybeCopyOrGenerateCerts(
             reconciliation,
-            replicas,
+            nodes,
             subjectFn,
             brokersSecret,
-            podNum -> KafkaResources.kafkaPodName(cluster, podNum),
             isMaintenanceTimeWindowsSatisfied);
     }
 
@@ -273,10 +281,9 @@ public class ClusterCa extends Ca {
      * and maybe generate new ones for new replicas (i.e. scale-up).
      *
      * @param reconciliation                        Reconciliation marker
-     * @param replicas                              Number of replicas
+     * @param nodes                                 List of nodes for which the certificates should be generated
      * @param subjectFn                             Function to generate certificate subject for given node / pod
      * @param secret                                Secret with certificates
-     * @param podNameFn                             Function to generate pod name for given node ID
      * @param isMaintenanceTimeWindowsSatisfied     Flag indicating if we are inside an maintenance window or not
      *
      * @return  Returns map with node certificates which can be used to create or update the certificate secret
@@ -285,79 +292,74 @@ public class ClusterCa extends Ca {
      */
     /* test */ Map<String, CertAndKey> maybeCopyOrGenerateCerts(
             Reconciliation reconciliation,
-            int replicas,
-            Function<Integer, Subject> subjectFn,
+            List<NodeRef> nodes,
+            Function<NodeRef, Subject> subjectFn,
             Secret secret,
-            Function<Integer, String> podNameFn,
-            boolean isMaintenanceTimeWindowsSatisfied) throws IOException {
-        int replicasInSecret;
-        if (secret == null || secret.getData() == null || this.certRenewed())   {
-            replicasInSecret = 0;
-        } else {
-            replicasInSecret = (int) secret.getData().keySet().stream().filter(k -> k.contains(".crt")).count();
-        }
+            boolean isMaintenanceTimeWindowsSatisfied
+    ) throws IOException {
+        // Maps for storing the certificates => will be used in the new or updated secret. This map is filled in in this method and returned at the end.
+        Map<String, CertAndKey> certs = new HashMap<>();
 
+        // Temp files used when we need to generate new certificates
         File brokerCsrFile = Files.createTempFile("tls", "broker-csr").toFile();
         File brokerKeyFile = Files.createTempFile("tls", "broker-key").toFile();
         File brokerCertFile = Files.createTempFile("tls", "broker-cert").toFile();
         File brokerKeyStoreFile = Files.createTempFile("tls", "broker-p12").toFile();
 
-        int replicasInNewSecret = Math.min(replicasInSecret, replicas);
-        Map<String, CertAndKey> certs = new HashMap<>(replicasInNewSecret);
-        // copying the minimum number of certificates already existing in the secret
-        // scale up -> it will copy all certificates
-        // scale down -> it will copy just the requested number of replicas
-        for (int i = 0; i < replicasInNewSecret; i++) {
-            String podName = podNameFn.apply(i);
-            LOGGER.debugCr(reconciliation, "Certificate for {} already exists", podName);
-            Subject subject = subjectFn.apply(i);
+        for (NodeRef node : nodes)  {
+            String podName = node.podName();
+            Subject subject = subjectFn.apply(node);
 
-            CertAndKey certAndKey;
+            if (!this.certRenewed() // No CA renewal is happening
+                    && secret != null && secret.getData() != null // Secret exists and has some data
+                    && secretEntryExists(secret, podName, SecretEntry.CRT) // The secret has the public key for this pod
+                    && secretEntryExists(secret, podName, SecretEntry.KEY) // The secret has the private key for this pod
+            )   {
+                // A certificate for this node already exists, so we will try to reuse it
+                LOGGER.debugCr(reconciliation, "Certificate for node {} already exists", node);
 
-            if (isNewVersion(secret, podName)) {
-                certAndKey = asCertAndKey(secret, podName);
+                CertAndKey certAndKey;
+
+                if (isNewVersion(secret, podName)) {
+                    certAndKey = asCertAndKey(secret, podName);
+                } else {
+                    // coming from an older operator version, the secret exists but without keystore and password
+                    certAndKey = addKeyAndCertToKeyStore(subject.commonName(),
+                            Base64.getDecoder().decode(secretEntryDataForPod(secret, podName, SecretEntry.KEY)),
+                            Base64.getDecoder().decode(secretEntryDataForPod(secret, podName, SecretEntry.CRT)));
+                }
+
+                List<String> reasons = new ArrayList<>(2);
+
+                if (certSubjectChanged(certAndKey, subject, podName))   {
+                    reasons.add("DNS names changed");
+                }
+
+                if (isExpiring(secret, podName + ".crt") && isMaintenanceTimeWindowsSatisfied)  {
+                    reasons.add("certificate is expiring");
+                }
+
+                if (renewalType.equals(RenewalType.CREATE)) {
+                    reasons.add("certificate added");
+                }
+
+                if (!reasons.isEmpty())  {
+                    LOGGER.infoCr(reconciliation, "Certificate for pod {} need to be regenerated because: {}", podName, String.join(", ", reasons));
+
+                    CertAndKey newCertAndKey = generateSignedCert(subject, brokerCsrFile, brokerKeyFile, brokerCertFile, brokerKeyStoreFile);
+                    certs.put(podName, newCertAndKey);
+                }   else {
+                    certs.put(podName, certAndKey);
+                }
             } else {
-                // coming from an older operator version, the secret exists but without keystore and password
-                certAndKey = addKeyAndCertToKeyStore(subject.commonName(),
-                        Base64.getDecoder().decode(secretEntryDataForPod(secret, podName, SecretEntry.KEY)),
-                        Base64.getDecoder().decode(secretEntryDataForPod(secret, podName, SecretEntry.CRT)));
-            }
-
-            List<String> reasons = new ArrayList<>(2);
-
-            if (certSubjectChanged(certAndKey, subject, podName))   {
-                reasons.add("DNS names changed");
-            }
-
-            if (isExpiring(secret, podName + ".crt") && isMaintenanceTimeWindowsSatisfied)  {
-                reasons.add("certificate is expiring");
-            }
-
-            if (renewalType.equals(RenewalType.CREATE)) {
-                reasons.add("certificate added");
-            }
-
-            if (!reasons.isEmpty())  {
-                LOGGER.infoCr(reconciliation, "Certificate for pod {} need to be regenerated because: {}", podName, String.join(", ", reasons));
-
-                CertAndKey newCertAndKey = generateSignedCert(subject, brokerCsrFile, brokerKeyFile, brokerCertFile, brokerKeyStoreFile);
-                certs.put(podName, newCertAndKey);
-            }   else {
-                certs.put(podName, certAndKey);
+                // A certificate for this node does not exist or it the CA got renewed, so we will generate new certificate
+                LOGGER.debugCr(reconciliation, "Generating new certificate for node {}", node);
+                CertAndKey k = generateSignedCert(subject, brokerCsrFile, brokerKeyFile, brokerCertFile, brokerKeyStoreFile);
+                certs.put(podName, k);
             }
         }
 
-        // generate the missing number of certificates
-        // scale up -> generate new certificates for added replicas
-        // scale down -> does nothing
-        for (int i = replicasInSecret; i < replicas; i++) {
-            String podName = podNameFn.apply(i);
-
-            LOGGER.debugCr(reconciliation, "Certificate for pod {} to generate", podName);
-            CertAndKey k = generateSignedCert(subjectFn.apply(i),
-                    brokerCsrFile, brokerKeyFile, brokerCertFile, brokerKeyStoreFile);
-            certs.put(podName, k);
-        }
+        // Delete the temp files used to generate new certificates
         delete(reconciliation, brokerCsrFile);
         delete(reconciliation, brokerKeyFile);
         delete(reconciliation, brokerCertFile);
@@ -444,6 +446,19 @@ public class ClusterCa extends Ca {
         }
 
         return subjectAltNames;
+    }
+
+    /**
+     * Checks whether a given key exists in the Secret
+     *
+     * @param secret    Kubernetes Secret containing desired entry
+     * @param podName   Name of the pod which secret entry is looked for
+     * @param entry     The SecretEntry type
+     *
+     * @return  True if the Secret contains a key based on the pod name and entry type. False otherwise.
+     */
+    private static boolean secretEntryExists(Secret secret, String podName, SecretEntry entry) {
+        return secret.getData().containsKey(secretEntryNameForPod(podName, entry));
     }
 
     /**
