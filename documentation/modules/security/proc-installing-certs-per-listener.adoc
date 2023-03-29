@@ -39,6 +39,8 @@ If you are not using a self-signed certificate, you can provide a certificate th
 
 You can only use the `brokerCertChainAndKey` properties if TLS encryption (`tls: true`) is configured for the listener.
 
+NOTE: Strimzi does not support the use of encrypted private keys for TLS. The private key stored in the secret must be unencrypted for this to work.
+
 .Procedure
 
 . Create a `Secret` containing your private key and server certificate:
