@@ -609,17 +609,6 @@ public class ModelUtils {
     }
 
     /**
-     * Returns the id of a pod given the pod name
-     *
-     * @param podName   Name of pod
-     *
-     * @return          Id of the pod
-     */
-    public static int idOfPod(String podName)  {
-        return Integer.parseInt(podName.substring(podName.lastIndexOf("-") + 1));
-    }
-
-    /**
      * Generates all possible DNS names for a Kubernetes service:
      *     - service-name
      *     - service-name.namespace
