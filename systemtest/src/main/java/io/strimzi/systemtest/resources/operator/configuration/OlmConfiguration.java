@@ -18,7 +18,7 @@ public class OlmConfiguration {
     private ExtensionContext extensionContext;
     private String namespaceName;
     private String featureGates = Environment.STRIMZI_FEATURE_GATES;
-    private String olmAppBundlePrefix = Environment.OLM_OPERATOR_DEPLOYMENT_NAME;
+    private String olmAppBundlePrefix = Environment.OLM_APP_BUNDLE_PREFIX;
     private String olmOperatorName = Environment.OLM_OPERATOR_NAME;
     private String olmSourceName = Environment.OLM_SOURCE_NAME;
     private String olmSourceNamespace = Environment.OLM_SOURCE_NAMESPACE;
@@ -109,7 +109,7 @@ public class OlmConfiguration {
     }
 
     public String getOlmOperatorDeploymentName() {
-        return olmAppBundlePrefix + "-v" + operatorVersion;
+        return Environment.OLM_OPERATOR_DEPLOYMENT_NAME + "-v" + operatorVersion;
     }
 
     public String getOlmOperatorName() {
