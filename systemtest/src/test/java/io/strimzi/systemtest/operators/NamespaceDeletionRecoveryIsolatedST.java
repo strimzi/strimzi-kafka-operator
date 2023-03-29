@@ -75,7 +75,7 @@ class NamespaceDeletionRecoveryIsolatedST extends AbstractST {
         // Recreate all KafkaTopic resources
         for (KafkaTopic kafkaTopic : kafkaTopicList) {
             kafkaTopic.getMetadata().setResourceVersion(null);
-            KafkaTopicResource.kafkaTopicClient().inNamespace(testStorage.getNamespaceName()).resource(kafkaTopic).createOrReplace();
+            KafkaTopicResource.kafkaTopicClient().inNamespace(testStorage.getNamespaceName()).resource(kafkaTopic).create();
         }
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), 3, 3)
@@ -239,11 +239,11 @@ class NamespaceDeletionRecoveryIsolatedST extends AbstractST {
     private void recreatePvcAndUpdatePv(List<PersistentVolumeClaim> persistentVolumeClaimList) {
         for (PersistentVolumeClaim pvc : persistentVolumeClaimList) {
             pvc.getMetadata().setResourceVersion(null);
-            kubeClient().getClient().persistentVolumeClaims().inNamespace(clusterOperator.getDeploymentNamespace()).resource(pvc).create();
+            kubeClient().createPersistentVolumeClaim(clusterOperator.getDeploymentNamespace(), pvc);
 
-            PersistentVolume pv = kubeClient().getClient().persistentVolumes().withName(pvc.getSpec().getVolumeName()).get();
+            PersistentVolume pv = kubeClient().getPersistentVolumeWithName(pvc.getSpec().getVolumeName());
             pv.getSpec().setClaimRef(null);
-            kubeClient().getClient().persistentVolumes().resource(pv).createOrReplace();
+            kubeClient().updatePersistentVolume(pv);
         }
     }
 
@@ -277,12 +277,12 @@ class NamespaceDeletionRecoveryIsolatedST extends AbstractST {
             .withReclaimPolicy("Retain")
             .build();
 
-        kubeClient().getClient().storage().v1().storageClasses().resource(storageClass).createOrReplace();
+        kubeClient().createStorageClass(storageClass);
     }
 
     @AfterAll
     void teardown() {
-        kubeClient().getClient().storage().v1().storageClasses().withName(storageClassName).delete();
+        kubeClient().deleteStorageClassWithName(storageClassName);
 
         kubeClient().getClient().persistentVolumes().list().getItems().stream()
             .filter(pv -> pv.getSpec().getClaimRef().getName().contains("kafka") || pv.getSpec().getClaimRef().getName().contains("zookeeper"))

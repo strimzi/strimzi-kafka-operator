@@ -24,7 +24,7 @@ public class ClusterRoleResource implements ResourceType<ClusterRole> {
     @Override
     public void create(ClusterRole resource) {
         // ClusterRole his operation namespace is only 'default'
-        kubeClient(KubeClusterResource.getInstance().defaultNamespace()).createOrReplaceClusterRoles(resource);
+        kubeClient(KubeClusterResource.getInstance().defaultNamespace()).createClusterRoles(resource);
     }
     @Override
     public void delete(ClusterRole resource) {

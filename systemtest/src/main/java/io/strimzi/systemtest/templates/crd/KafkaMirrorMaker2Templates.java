@@ -20,6 +20,8 @@ import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.KubeClusterResource;
 
+import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
+
 public class KafkaMirrorMaker2Templates {
 
     private KafkaMirrorMaker2Templates() {}
@@ -32,7 +34,7 @@ public class KafkaMirrorMaker2Templates {
     public static KafkaMirrorMaker2Builder kafkaMirrorMaker2WithMetrics(String namespaceName, String name, String targetClusterName, String sourceClusterName, int kafkaMirrorMaker2Replicas, String sourceNs, String targetNs) {
         KafkaMirrorMaker2 kafkaMirrorMaker2 = getKafkaMirrorMaker2FromYaml(Constants.PATH_TO_KAFKA_MIRROR_MAKER_2_METRICS_CONFIG);
         ConfigMap metricsCm = TestUtils.configMapFromYaml(Constants.PATH_TO_KAFKA_MIRROR_MAKER_2_METRICS_CONFIG, "mirror-maker-2-metrics");
-        KubeClusterResource.kubeClient().getClient().configMaps().inNamespace(namespaceName).resource(metricsCm).createOrReplace();
+        kubeClient().createConfigMapInNamespace(namespaceName, metricsCm);
         return defaultKafkaMirrorMaker2(kafkaMirrorMaker2, name, targetClusterName, sourceClusterName, kafkaMirrorMaker2Replicas, false, sourceNs, targetNs);
     }
 

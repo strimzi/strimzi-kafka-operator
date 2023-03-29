@@ -1200,9 +1200,9 @@ class ConnectIsolatedST extends AbstractST {
 
         kubeClient(namespaceName).createSecret(connectSecret);
         kubeClient(namespaceName).createSecret(dotedConnectSecret);
-        
-        kubeClient(namespaceName).getClient().configMaps().inNamespace(namespaceName).resource(configMap).createOrReplace();
-        kubeClient(namespaceName).getClient().configMaps().inNamespace(namespaceName).resource(dotedConfigMap).createOrReplace();
+
+        kubeClient().createConfigMapInNamespace(namespaceName, configMap);
+        kubeClient().createConfigMapInNamespace(namespaceName, dotedConfigMap);
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3).build());
         resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnect(clusterName, namespaceName, 1)

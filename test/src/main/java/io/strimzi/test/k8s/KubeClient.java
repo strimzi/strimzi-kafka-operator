@@ -4,18 +4,7 @@
  */
 package io.strimzi.test.k8s;
 
-import io.fabric8.kubernetes.api.model.ConfigMap;
-import io.fabric8.kubernetes.api.model.DeletionPropagation;
-import io.fabric8.kubernetes.api.model.Event;
-import io.fabric8.kubernetes.api.model.LabelSelector;
-import io.fabric8.kubernetes.api.model.Namespace;
-import io.fabric8.kubernetes.api.model.NamespaceBuilder;
-import io.fabric8.kubernetes.api.model.Node;
-import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
-import io.fabric8.kubernetes.api.model.Pod;
-import io.fabric8.kubernetes.api.model.Secret;
-import io.fabric8.kubernetes.api.model.Service;
-import io.fabric8.kubernetes.api.model.ServiceAccount;
+import io.fabric8.kubernetes.api.model.*;
 import io.fabric8.kubernetes.api.model.admissionregistration.v1.ValidatingWebhookConfiguration;
 import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinition;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
@@ -28,6 +17,7 @@ import io.fabric8.kubernetes.api.model.rbac.ClusterRole;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.fabric8.kubernetes.api.model.rbac.Role;
 import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
+import io.fabric8.kubernetes.api.model.storage.StorageClass;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import io.fabric8.kubernetes.client.VersionInfo;
@@ -55,9 +45,6 @@ import java.util.stream.Collectors;
 
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
-// This class is using the deprecated createOrReplace methods which should be removed
-// Removing these deprecated calls is tracked by https://github.com/strimzi/strimzi-kafka-operator/issues/8269
-@SuppressWarnings("deprecation")
 public class KubeClient {
 
     private static final Logger LOGGER = LogManager.getLogger(KubeClient.class);
@@ -95,11 +82,7 @@ public class KubeClient {
 
     public void createNamespace(String name) {
         Namespace ns = new NamespaceBuilder().withNewMetadata().withName(name).endMetadata().build();
-        client.namespaces().resource(ns).createOrReplace();
-    }
-
-    public void createOrReplaceNamespace(final Namespace namespace) {
-        client.namespaces().resource(namespace).createOrReplace();
+        client.namespaces().resource(ns).create();
     }
 
     public void deleteNamespace(String name) {
@@ -110,8 +93,16 @@ public class KubeClient {
     // ---------> CONFIG MAP <---------
     // ================================
 
-    public void createOrReplaceConfigMap(ConfigMap configMap) {
-        client.configMaps().inNamespace(configMap.getMetadata().getNamespace()).resource(configMap).createOrReplace();
+    public void createConfigMap(ConfigMap configMap) {
+        client.configMaps().inNamespace(configMap.getMetadata().getNamespace()).resource(configMap).create();
+    }
+
+    public void createConfigMapInNamespace(String namespaceName, ConfigMap configMap) {
+        client.configMaps().inNamespace(namespaceName).resource(configMap).create();
+    }
+
+    public void updateConfigMapInNamespace(String namespaceName, ConfigMap configMap) {
+        client.configMaps().inNamespace(namespaceName).resource(configMap).update();
     }
 
     public void deleteConfigMap(ConfigMap configMap) {
@@ -237,29 +228,11 @@ public class KubeClient {
             .collect(Collectors.toList());
     }
 
-    public PersistentVolumeClaim getPersistentVolumeClaim(String namespaceName, String pvcName) {
-        return client.persistentVolumeClaims().inNamespace(namespaceName).withName(pvcName).get();
-    }
-
-    public void deletePersistentVolumeClaim(String namespaceName, String pvcName) {
-        client.persistentVolumeClaims().inNamespace(namespaceName).withName(pvcName).delete();
-    }
-
-    public List<PersistentVolumeClaim> listPersistentVolumeClaims(String namespaceName, String clusterName) {
-        return client.persistentVolumeClaims().inNamespace(namespaceName).list().getItems().stream()
-            .filter(persistentVolumeClaim -> persistentVolumeClaim.getMetadata().getName().contains(clusterName))
-            .collect(Collectors.toList());
-    }
-
     public List<String> listPodNames(String namespaceName, String clusterName, String key, String value) {
         return listPods(namespaceName, Collections.singletonMap(key, value)).stream()
             .filter(pod -> pod.getMetadata().getName().startsWith(clusterName))
             .map(pod -> pod.getMetadata().getName())
             .collect(Collectors.toList());
-    }
-
-    public List<PersistentVolumeClaim> listPersistentVolumeClaims() {
-        return client.persistentVolumeClaims().inNamespace(getNamespace()).list().getItems();
     }
 
     public List<Pod> listPods() {
@@ -445,8 +418,12 @@ public class KubeClient {
         client.apps().deployments().inNamespace(namespaceName).withName(deploymentName).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
     }
 
-    public void createOrReplaceDeployment(Deployment deployment) {
-        client.apps().deployments().inNamespace(deployment.getMetadata().getNamespace()).resource(deployment).createOrReplace();
+    public void createDeployment(Deployment deployment) {
+        client.apps().deployments().inNamespace(deployment.getMetadata().getNamespace()).resource(deployment).create();
+    }
+
+    public void updateDeployment(Deployment deployment) {
+        client.apps().deployments().inNamespace(deployment.getMetadata().getNamespace()).resource(deployment).update();
     }
 
     // ==========================
@@ -479,7 +456,7 @@ public class KubeClient {
 
 
     public void createJob(Job job) {
-        client.batch().v1().jobs().inNamespace(job.getMetadata().getNamespace()).resource(job).createOrReplace();
+        client.batch().v1().jobs().inNamespace(job.getMetadata().getNamespace()).resource(job).create();
     }
 
     public void deleteJob(String jobName) {
@@ -527,7 +504,7 @@ public class KubeClient {
     // ============================
 
     public Secret createSecret(Secret secret) {
-        return client.secrets().inNamespace(secret.getMetadata().getNamespace()).resource(secret).createOrReplace();
+        return client.secrets().inNamespace(secret.getMetadata().getNamespace()).resource(secret).create();
     }
 
     public void patchSecret(String namespaceName, String secretName, Secret secret) {
@@ -572,7 +549,7 @@ public class KubeClient {
     }
 
     public void createService(Service service) {
-        client.services().inNamespace(service.getMetadata().getNamespace()).resource(service).createOrReplace();
+        client.services().inNamespace(service.getMetadata().getNamespace()).resource(service).create();
     }
 
     /**
@@ -604,8 +581,8 @@ public class KubeClient {
         return client.serviceAccounts().inNamespace(namespaceName).list().getItems();
     }
 
-    public void createOrReplaceServiceAccount(ServiceAccount serviceAccount) {
-        client.serviceAccounts().inNamespace(serviceAccount.getMetadata().getNamespace()).resource(serviceAccount).createOrReplace();
+    public void createServiceAccount(ServiceAccount serviceAccount) {
+        client.serviceAccounts().inNamespace(serviceAccount.getMetadata().getNamespace()).resource(serviceAccount).create();
     }
 
     public void deleteServiceAccount(ServiceAccount serviceAccount) {
@@ -663,8 +640,8 @@ public class KubeClient {
         return client.rbac().clusterRoles().list().getItems();
     }
 
-    public void createOrReplaceClusterRoles(ClusterRole clusterRole) {
-        client.rbac().clusterRoles().resource(clusterRole).createOrReplace();
+    public void createClusterRoles(ClusterRole clusterRole) {
+        client.rbac().clusterRoles().resource(clusterRole).create();
     }
 
     public void deleteClusterRole(ClusterRole clusterRole) {
@@ -679,12 +656,12 @@ public class KubeClient {
     // ---------> ROLE BINDING <---------
     // ==================================
 
-    public void createOrReplaceRoleBinding(RoleBinding roleBinding) {
-        client.rbac().roleBindings().inNamespace(getNamespace()).resource(roleBinding).createOrReplace();
+    public void createRoleBinding(RoleBinding roleBinding) {
+        client.rbac().roleBindings().inNamespace(getNamespace()).resource(roleBinding).create();
     }
 
-    public void createOrReplaceClusterRoleBinding(ClusterRoleBinding clusterRoleBinding) {
-        client.rbac().clusterRoleBindings().resource(clusterRoleBinding).createOrReplace();
+    public void createClusterRoleBinding(ClusterRoleBinding clusterRoleBinding) {
+        client.rbac().clusterRoleBindings().resource(clusterRoleBinding).create();
     }
 
     public void deleteClusterRoleBinding(ClusterRoleBinding clusterRoleBinding) {
@@ -707,8 +684,12 @@ public class KubeClient {
         client.rbac().roleBindings().inNamespace(namespace).withName(name).delete();
     }
 
-    public void createOrReplaceRole(Role role) {
-        client.rbac().roles().inNamespace(getNamespace()).resource(role).createOrReplace();
+    public void createRole(Role role) {
+        client.rbac().roles().inNamespace(getNamespace()).resource(role).create();
+    }
+
+    public void updateRole(Role role) {
+        client.rbac().roles().inNamespace(getNamespace()).resource(role).update();
     }
 
     public Role getRole(String name) {
@@ -763,7 +744,7 @@ public class KubeClient {
     }
 
     public void createNetworkPolicy(NetworkPolicy networkPolicy) {
-        client.network().networkPolicies().inNamespace(getNamespace()).resource(networkPolicy).createOrReplace();
+        client.network().networkPolicies().inNamespace(getNamespace()).resource(networkPolicy).create();
     }
 
     public void deleteNetworkPolicy(String name) {
@@ -774,8 +755,8 @@ public class KubeClient {
     // ---> CUSTOM RESOURCE DEFINITIONS <---
     // =====================================
 
-    public void createOrReplaceCustomResourceDefinition(CustomResourceDefinition resourceDefinition) {
-        client.apiextensions().v1().customResourceDefinitions().resource(resourceDefinition).createOrReplace();
+    public void createCustomResourceDefinition(CustomResourceDefinition resourceDefinition) {
+        client.apiextensions().v1().customResourceDefinitions().resource(resourceDefinition).create();
     }
 
     public void deleteCustomResourceDefinition(CustomResourceDefinition resourceDefinition) {
@@ -831,7 +812,7 @@ public class KubeClient {
     }
 
     public void createValidatingWebhookConfiguration(ValidatingWebhookConfiguration validatingWebhookConfiguration) {
-        client.admissionRegistration().v1().validatingWebhookConfigurations().resource(validatingWebhookConfiguration).createOrReplace();
+        client.admissionRegistration().v1().validatingWebhookConfigurations().resource(validatingWebhookConfiguration).create();
     }
 
     public void deleteValidatingWebhookConfiguration(ValidatingWebhookConfiguration validatingWebhookConfiguration) {
@@ -878,5 +859,55 @@ public class KubeClient {
 
     public void deleteCsv(String namespaceName, String csvName) {
         client.adapt(OpenShiftClient.class).operatorHub().clusterServiceVersions().inNamespace(namespaceName).withName(csvName).delete();
+    }
+
+    // =============================================
+    // ---------> PERSISTENT VOLUME CLAIM <---------
+    // =============================================
+
+    public void createPersistentVolumeClaim(String namespaceName, PersistentVolumeClaim pvc) {
+        client.persistentVolumeClaims().inNamespace(namespaceName).resource(pvc).create();
+    }
+
+    public PersistentVolumeClaim getPersistentVolumeClaim(String namespaceName, String pvcName) {
+        return client.persistentVolumeClaims().inNamespace(namespaceName).withName(pvcName).get();
+    }
+
+    public void deletePersistentVolumeClaim(String namespaceName, String pvcName) {
+        client.persistentVolumeClaims().inNamespace(namespaceName).withName(pvcName).delete();
+    }
+
+    public List<PersistentVolumeClaim> listPersistentVolumeClaims(String namespaceName, String clusterName) {
+        return client.persistentVolumeClaims().inNamespace(namespaceName).list().getItems().stream()
+            .filter(persistentVolumeClaim -> persistentVolumeClaim.getMetadata().getName().contains(clusterName))
+            .collect(Collectors.toList());
+    }
+
+    // =======================================
+    // ---------> PERSISTENT VOLUME <---------
+    // =======================================
+
+    public void createPersistentVolume(PersistentVolume pv) {
+        client.persistentVolumes().resource(pv).create();
+    }
+
+    public void updatePersistentVolume(PersistentVolume pv) {
+        client.persistentVolumes().resource(pv).update();
+    }
+
+    public PersistentVolume getPersistentVolumeWithName(String pvName) {
+        return client.persistentVolumes().withName(pvName).get();
+    }
+
+    // ===================================
+    // ---------> STORAGE CLASS <---------
+    // ===================================
+
+    public void createStorageClass(StorageClass storageClass) {
+        client.storage().v1().storageClasses().resource(storageClass).create();
+    }
+
+    public void deleteStorageClassWithName(String storageClassName) {
+        client.storage().v1().storageClasses().withName(storageClassName).delete();
     }
 }
