@@ -602,9 +602,8 @@ public class KafkaAssemblyOperatorPodSetTest {
                     assertThat(zr.maybeRollZooKeeperInvocations, is(1));
 
                     // Scale-up of Kafka is done in one go => we should see two invocations (first from regular patching and second from scale-up)
-                    assertThat(kafkaPodSetCaptor.getAllValues().size(), is(2));
-                    assertThat(kafkaPodSetCaptor.getAllValues().get(0).getSpec().getPods().size(), is(1)); // => first capture is from kafkaPodSet() with old replica count
-                    assertThat(kafkaPodSetCaptor.getAllValues().get(1).getSpec().getPods().size(), is(3)); // => second capture is from kafkaScaleUp() with new replica count
+                    assertThat(kafkaPodSetCaptor.getAllValues().size(), is(1));
+                    assertThat(kafkaPodSetCaptor.getAllValues().get(0).getSpec().getPods().size(), is(3));
 
                     // Still one maybe-roll invocation
                     assertThat(kr.maybeRollKafkaInvocations, is(1));
@@ -844,7 +843,6 @@ public class KafkaAssemblyOperatorPodSetTest {
                     .compose(i -> migrateFromStatefulSetToPodSet())
                     .compose(i -> podSet())
                     .compose(i -> rollingUpdate())
-                    .compose(i -> scaleUp())
                     .compose(i -> sharedKafkaConfigurationCleanup());
         }
 

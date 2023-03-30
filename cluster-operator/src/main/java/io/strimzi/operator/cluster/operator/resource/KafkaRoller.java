@@ -362,6 +362,17 @@ public class KafkaRoller {
             throw new UnforceableProblem("Error getting pod " + nodeRef.podName(), e);
         }
 
+        if (!isPodStuck(pod)) {
+            // We want to give pods chance to get ready before we try to connect to the or consider them for rolling.
+            // But only in case when they are not stuck as that would
+            LOGGER.debugCr(reconciliation, "Waiting for pod {} to become ready before checking its state", nodeRef.podName());
+            try {
+                await(isReady(pod), operationTimeoutMs, TimeUnit.MILLISECONDS, e -> new RuntimeException(e));
+            } catch (Exception e)   {
+                LOGGER.warnCr(reconciliation, "Pod {} is not ready. We will check if KafkaRoller can do anything about it.", nodeRef.podName());
+            }
+        }
+
         restartContext.restartReasons = podNeedsRestart.apply(pod);
 
         try {
@@ -424,10 +435,10 @@ public class KafkaRoller {
     }
 
     private boolean isPending(Pod pod) {
-        if (pod != null && pod.getStatus() != null && "Pending".equals(pod.getStatus().getPhase())) {
-            return true;
-        }
-        return false;
+        return pod != null
+                && pod.getStatus() != null
+                && "Pending".equals(pod.getStatus().getPhase())
+                && pod.getStatus().getConditions().stream().anyMatch(ps -> "PodScheduled".equals(ps.getType()) && "Unschedulable".equals(ps.getReason()) && "False".equals(ps.getStatus()));
     }
 
     private boolean isPodStuck(Pod pod) {
@@ -464,15 +475,8 @@ public class KafkaRoller {
      */
     @SuppressWarnings("checkstyle:CyclomaticComplexity")
     private void checkReconfigurability(NodeRef nodeRef, Pod pod, RestartContext restartContext) throws ForceableProblem, InterruptedException, FatalProblem {
-
         RestartReasons reasonToRestartPod = restartContext.restartReasons;
-        boolean podStuck = pod != null
-                && pod.getStatus() != null
-                && "Pending".equals(pod.getStatus().getPhase())
-                && pod.getStatus().getConditions().stream().anyMatch(ps ->
-                "PodScheduled".equals(ps.getType())
-                        && "Unschedulable".equals(ps.getReason())
-                        && "False".equals(ps.getStatus()));
+        boolean podStuck = isPodStuck(pod);
         if (podStuck) {
             LOGGER.infoCr(reconciliation, "Pod {} needs to be restarted, because it seems to be stuck and restart might help", nodeRef);
             restartContext.restartReasons.add(RestartReason.POD_STUCK);
