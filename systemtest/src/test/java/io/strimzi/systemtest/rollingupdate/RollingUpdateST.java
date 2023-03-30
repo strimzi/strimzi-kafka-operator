@@ -41,6 +41,7 @@ import io.strimzi.systemtest.utils.RollingUpdateUtils;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
+import io.strimzi.systemtest.utils.kubeUtils.objects.PersistentVolumeClaimUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.systemtest.annotations.ParallelSuite;
@@ -342,8 +343,7 @@ class RollingUpdateST extends AbstractST {
         resourceManager.createResource(extensionContext, clients.consumerTlsStrimzi(testStorage.getClusterName()));
         ClientUtils.waitForConsumerClientSuccess(testStorage);
 
-        assertThat(kubeClient().listPersistentVolumeClaims(testStorage.getNamespaceName(), testStorage.getClusterName()).stream()
-            .filter(pvc -> pvc.getMetadata().getName().contains("data-" + testStorage.getKafkaStatefulSetName())).collect(Collectors.toList()).size(), is(initialReplicas));
+        PersistentVolumeClaimUtils.waitForPersistentVolumeClaimDeletion(testStorage, initialReplicas);
 
         // Create new topic to ensure, that ZK or KRaft is working properly
         String newTopicName = KafkaTopicUtils.generateRandomNameOfTopic();

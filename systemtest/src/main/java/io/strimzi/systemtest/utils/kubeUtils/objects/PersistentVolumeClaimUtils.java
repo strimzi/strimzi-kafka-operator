@@ -8,7 +8,9 @@ import io.strimzi.api.kafka.model.storage.JbodStorage;
 import io.strimzi.api.kafka.model.storage.PersistentClaimStorage;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.resources.ResourceOperation;
+import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.test.TestUtils;
+import io.strimzi.test.k8s.KubeClusterResource;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -77,6 +79,14 @@ public class PersistentVolumeClaimUtils {
 
             return true;
         });
+    }
+
+    public static void waitForPersistentVolumeClaimDeletion(TestStorage testStorage, int expectedNum) {
+        LOGGER.info("Waiting till PVC under cluster:{} and namesapce:{} reach expected number:{}", testStorage.getClusterName(), testStorage.getNamespaceName(), expectedNum);
+        TestUtils.waitFor("PVC created/deleted", Constants.GLOBAL_POLL_INTERVAL_MEDIUM, Constants.GLOBAL_TIMEOUT,
+            () -> KubeClusterResource.kubeClient().listPersistentVolumeClaims(testStorage.getNamespaceName(), testStorage.getClusterName()).stream()
+                .filter(pvc -> pvc.getMetadata().getName().contains("data-" + testStorage.getKafkaStatefulSetName())).collect(Collectors.toList()).size() == expectedNum
+        );
     }
 
     public static void waitForJbodStorageDeletion(String namespaceName, int volumesCount, JbodStorage jbodStorage, String clusterName) {
