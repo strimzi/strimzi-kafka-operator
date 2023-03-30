@@ -41,6 +41,7 @@ import io.strimzi.systemtest.utils.RollingUpdateUtils;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
+import io.strimzi.systemtest.utils.kubeUtils.objects.PersistentVolumeClaimUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.systemtest.annotations.ParallelSuite;
@@ -245,15 +246,15 @@ class RollingUpdateST extends AbstractST {
     @ParallelNamespaceTest
     @Tag(ACCEPTANCE)
     @Tag(COMPONENT_SCALING)
-    @KRaftNotSupported("Zookeeper is not supported by KRaft mode and is used in this test case")
     void testKafkaAndZookeeperScaleUpScaleDown(ExtensionContext extensionContext) {
         final TestStorage testStorage = new TestStorage(extensionContext, namespace);
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), 3, 3)
             .editSpec()
                 .editKafka()
-                    .addToConfig(singletonMap("default.replication.factor", 1))
-                    .addToConfig("auto.create.topics.enable", "false")
+                    // Topic operator doesn't support KRaft, yet, using auto topic creation and default replication factor as workaround
+                    .addToConfig(singletonMap("default.replication.factor", Environment.isKRaftModeEnabled() ? 3 : 1))
+                    .addToConfig("auto.create.topics.enable", Environment.isKRaftModeEnabled())
                 .endKafka()
             .endSpec()
             .build(),
@@ -306,22 +307,26 @@ class RollingUpdateST extends AbstractST {
         assertThat((int) kubeClient().listPersistentVolumeClaims(testStorage.getNamespaceName(), testStorage.getClusterName()).stream().filter(
             pvc -> pvc.getMetadata().getName().contains(testStorage.getKafkaStatefulSetName())).count(), is(scaleTo));
 
-        final int zookeeperScaleTo = initialReplicas + 2;
-        Map<String, String> zooKeeperPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getKafkaSelector());
+        if (!Environment.isKRaftModeEnabled()) {
+            // try to scale up ZK in ZK mode to make sure everything is good
+            final int zookeeperScaleTo = initialReplicas + 2;
+            Map<String, String> zooKeeperPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getKafkaSelector());
 
-        LOGGER.info("Scale up Zookeeper to {}", zookeeperScaleTo);
+            LOGGER.info("Scale up Zookeeper to {}", zookeeperScaleTo);
 
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), k -> k.getSpec().getZookeeper().setReplicas(zookeeperScaleTo), testStorage.getNamespaceName());
-        zooKeeperPods = RollingUpdateUtils.waitForComponentScaleUpOrDown(testStorage.getNamespaceName(), testStorage.getZookeeperSelector(), zookeeperScaleTo, zooKeeperPods);
+            KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), k -> k.getSpec().getZookeeper().setReplicas(zookeeperScaleTo), testStorage.getNamespaceName());
+            RollingUpdateUtils.waitForComponentScaleUpOrDown(testStorage.getNamespaceName(), testStorage.getZookeeperSelector(), zookeeperScaleTo, zooKeeperPods);
 
-        LOGGER.info("Kafka scale up to {} finished", zookeeperScaleTo);
+            LOGGER.info("Zookeeper scale up to {} finished", zookeeperScaleTo);
 
-        clients = new KafkaClientsBuilder(clients)
-            .withConsumerGroup(ClientUtils.generateRandomConsumerGroup())
-            .build();
 
-        resourceManager.createResource(extensionContext, clients.consumerTlsStrimzi(testStorage.getClusterName()));
-        ClientUtils.waitForConsumerClientSuccess(testStorage);
+            clients = new KafkaClientsBuilder(clients)
+                    .withConsumerGroup(ClientUtils.generateRandomConsumerGroup())
+                    .build();
+
+            resourceManager.createResource(extensionContext, clients.consumerTlsStrimzi(testStorage.getClusterName()));
+            ClientUtils.waitForConsumerClientSuccess(testStorage);
+        }
 
         // scale down
         LOGGER.info("Scale down Kafka to {}", initialReplicas);
@@ -338,10 +343,9 @@ class RollingUpdateST extends AbstractST {
         resourceManager.createResource(extensionContext, clients.consumerTlsStrimzi(testStorage.getClusterName()));
         ClientUtils.waitForConsumerClientSuccess(testStorage);
 
-        assertThat(kubeClient().listPersistentVolumeClaims(testStorage.getNamespaceName(), testStorage.getClusterName()).stream()
-            .filter(pvc -> pvc.getMetadata().getName().contains("data-" + testStorage.getKafkaStatefulSetName())).collect(Collectors.toList()).size(), is(initialReplicas));
+        PersistentVolumeClaimUtils.waitForPersistentVolumeClaimDeletion(testStorage, initialReplicas);
 
-        // Create new topic to ensure, that ZK is working properly
+        // Create new topic to ensure, that ZK or KRaft is working properly
         String newTopicName = KafkaTopicUtils.generateRandomNameOfTopic();
 
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(testStorage.getClusterName(), newTopicName).build());
