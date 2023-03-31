@@ -60,8 +60,6 @@ public class KafkaAgent {
 
     // KafkaYammerMetrics class in Kafka 3.3+
     private static final String YAMMER_METRICS_IN_KAFKA_3_3_AND_LATER = "org.apache.kafka.server.metrics.KafkaYammerMetrics";
-    // KafkaYammerMetrics class in Kafka 3.2-
-    private static final String YAMMER_METRICS_IN_KAFKA_3_2_AND_EARLIER = "kafka.metrics.KafkaYammerMetrics";
 
     private static final byte BROKER_RUNNING_STATE = 3;
     private static final byte BROKER_RECOVERY_STATE = 2;
@@ -174,17 +172,7 @@ public class KafkaAgent {
             LOGGER.info("Found class {} for Kafka 3.3 and newer.", YAMMER_METRICS_IN_KAFKA_3_3_AND_LATER);
         } catch (ClassNotFoundException e)    {
             LOGGER.info("Class {} not found. We are probably on Kafka 3.2 or older.", YAMMER_METRICS_IN_KAFKA_3_3_AND_LATER);
-
-            // We did not find the KafkaYammerMetrics class from Kafka 3.3+. So we are probably on older Kafka version
-            //     => we will try the older class for Kafka 3.2-.
-            try {
-                yammerMetrics = Class.forName(YAMMER_METRICS_IN_KAFKA_3_2_AND_EARLIER);
-                LOGGER.info("Found class {} for Kafka 3.2 and older.", YAMMER_METRICS_IN_KAFKA_3_2_AND_EARLIER);
-            } catch (ClassNotFoundException e2) {
-                // No class was found for any Kafka version => we should fail
-                LOGGER.error("Class {} not found. We are not on Kafka 3.2 or earlier either.", YAMMER_METRICS_IN_KAFKA_3_2_AND_EARLIER);
-                throw new RuntimeException("Failed to find Yammer Metrics class", e2);
-            }
+            throw new RuntimeException("Failed to find Yammer Metrics class", e);
         }
 
         try {
