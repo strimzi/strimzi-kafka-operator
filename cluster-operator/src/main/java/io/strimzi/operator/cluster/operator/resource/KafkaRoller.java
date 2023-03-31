@@ -364,12 +364,18 @@ public class KafkaRoller {
 
         if (!isPodStuck(pod)) {
             // We want to give pods chance to get ready before we try to connect to the or consider them for rolling.
-            // But only in case when they are not stuck as that would
+            // This is important especially for pods which were just started. But only in case when they are not stuck.
+            // If the pod is stuck, it suggests that it is running already for some time and it will not become ready.
+            // Waiting for it would likely just waste time.
             LOGGER.debugCr(reconciliation, "Waiting for pod {} to become ready before checking its state", nodeRef.podName());
             try {
                 await(isReady(pod), operationTimeoutMs, TimeUnit.MILLISECONDS, e -> new RuntimeException(e));
             } catch (Exception e)   {
-                LOGGER.warnCr(reconciliation, "Pod {} is not ready. We will check if KafkaRoller can do anything about it.", nodeRef.podName());
+                if (e.getCause() instanceof TimeoutException) {
+                    LOGGER.warnCr(reconciliation, "Pod {} is not ready. We will check if KafkaRoller can do anything about it.", nodeRef.podName());
+                } else {
+                    LOGGER.warnCr(reconciliation, "Failed to wait for the readiness of the pod {}. We will proceed and check if it needs to be rolled.", nodeRef.podName(), e.getCause());
+                }
             }
         }
 
@@ -434,7 +440,7 @@ public class KafkaRoller {
         return false;
     }
 
-    private boolean isPending(Pod pod) {
+    private boolean isPendingAndUnschedulable(Pod pod) {
         return pod != null
                 && pod.getStatus() != null
                 && "Pending".equals(pod.getStatus().getPhase())
@@ -446,7 +452,7 @@ public class KafkaRoller {
         set.add("CrashLoopBackOff");
         set.add("ImagePullBackOff");
         set.add("ContainerCreating");
-        return isPending(pod) || podWaitingBecauseOfAnyReasons(pod, set);
+        return isPendingAndUnschedulable(pod) || podWaitingBecauseOfAnyReasons(pod, set);
     }
 
     /**
