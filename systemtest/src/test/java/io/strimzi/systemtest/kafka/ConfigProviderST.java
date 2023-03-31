@@ -134,7 +134,7 @@ public class ConfigProviderST extends AbstractST {
             .endRule()
             .build();
 
-        kubeClient().createRole(configRole);
+        kubeClient().createOrUpdateRole(configRole);
 
         String configPrefix = "configmaps:" + namespaceName + "/connector-config:";
 

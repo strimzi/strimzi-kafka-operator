@@ -84,7 +84,10 @@ public class SystemTestCertHolder {
             SecretUtils.deleteSecretWithWait(this.caKeySecretName, namespaceName);
             final File strimziKeyPKCS8 = convertPrivateKeyToPKCS8File(this.systemTestCa.getPrivateKey());
             //      b) Create the new (custom) secret.
-            SecretUtils.createSecretFromFile(strimziKeyPKCS8.getAbsolutePath(), "ca.key", this.caKeySecretName, namespaceName, additionalSecretLabels);
+
+            Secret secret = SecretUtils.createSecretFromFile(strimziKeyPKCS8.getAbsolutePath(), "ca.key", this.caKeySecretName, namespaceName, additionalSecretLabels);
+            kubeClient().namespace(namespaceName).createSecret(secret);
+            SecretUtils.waitForSecretReady(namespaceName, this.caKeySecretName, () -> { });
 
             // 4. Annotate the secrets
             SecretUtils.annotateSecret(namespaceName, this.caCertSecretName, Ca.ANNO_STRIMZI_IO_CA_CERT_GENERATION, "0");

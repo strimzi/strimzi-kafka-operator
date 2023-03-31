@@ -32,6 +32,7 @@ import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
 import io.fabric8.kubernetes.api.model.storage.StorageClass;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientBuilder;
+import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.VersionInfo;
 import io.fabric8.kubernetes.client.dsl.ExecListener;
 import io.fabric8.kubernetes.client.dsl.PodResource;
@@ -523,6 +524,10 @@ public class KubeClient {
         return client.secrets().inNamespace(secret.getMetadata().getNamespace()).resource(secret).create();
     }
 
+    public Secret updateSecret(Secret secret) {
+        return client.secrets().inNamespace(secret.getMetadata().getNamespace()).resource(secret).update();
+    }
+
     public void patchSecret(String namespaceName, String secretName, Secret secret) {
         client.secrets().inNamespace(namespaceName).withName(secretName).patch(PatchContext.of(PatchType.JSON), secret);
     }
@@ -597,8 +602,12 @@ public class KubeClient {
         return client.serviceAccounts().inNamespace(namespaceName).list().getItems();
     }
 
-    public void createServiceAccount(ServiceAccount serviceAccount) {
-        client.serviceAccounts().inNamespace(serviceAccount.getMetadata().getNamespace()).resource(serviceAccount).create();
+    public void createOrUpdateServiceAccount(ServiceAccount serviceAccount) {
+        try {
+            client.serviceAccounts().inNamespace(serviceAccount.getMetadata().getNamespace()).resource(serviceAccount).create();
+        } catch (KubernetesClientException e) {
+            client.serviceAccounts().inNamespace(serviceAccount.getMetadata().getNamespace()).resource(serviceAccount).update();
+        }
     }
 
     public void deleteServiceAccount(ServiceAccount serviceAccount) {
@@ -656,8 +665,19 @@ public class KubeClient {
         return client.rbac().clusterRoles().list().getItems();
     }
 
-    public void createClusterRoles(ClusterRole clusterRole) {
-        client.rbac().clusterRoles().resource(clusterRole).create();
+    /**
+     * Method for creating the specified ClusterRole.
+     * In case that the ClusterRole is already created, it is being updated.
+     * This can be caused by not cleared ClusterRoles from other tests on in case we shut down the test before the cleanup
+     * phase. It should not have an impact on the functionality, we just update the ClusterRole.
+     * @param clusterRole ClusterRole that we want to create or update
+     */
+    public void createOrUpdateClusterRoles(ClusterRole clusterRole) {
+        try {
+            client.rbac().clusterRoles().resource(clusterRole).create();
+        } catch (KubernetesClientException e) {
+            client.rbac().clusterRoles().resource(clusterRole).update();
+        }
     }
 
     public void deleteClusterRole(ClusterRole clusterRole) {
@@ -672,12 +692,27 @@ public class KubeClient {
     // ---------> ROLE BINDING <---------
     // ==================================
 
-    public void createRoleBinding(RoleBinding roleBinding) {
-        client.rbac().roleBindings().inNamespace(getNamespace()).resource(roleBinding).create();
+    public void createOrUpdateRoleBinding(RoleBinding roleBinding) {
+        try {
+            client.rbac().roleBindings().inNamespace(getNamespace()).resource(roleBinding).create();
+        } catch (KubernetesClientException e) {
+            client.rbac().roleBindings().inNamespace(getNamespace()).resource(roleBinding).update();
+        }
     }
 
-    public void createClusterRoleBinding(ClusterRoleBinding clusterRoleBinding) {
-        client.rbac().clusterRoleBindings().resource(clusterRoleBinding).create();
+    /**
+     * Method for creating the specified ClusterRoleBinding.
+     * In case that the CRB is already created, it is being updated.
+     * This can be caused by not cleared CRBs from other tests on in case we shut down the test before the cleanup
+     * phase. It should not have an impact on the functionality, we just update the CRB.
+     * @param clusterRoleBinding ClusterRoleBinding that we want to create or update
+     */
+    public void createOrUpdateClusterRoleBinding(ClusterRoleBinding clusterRoleBinding) {
+        try {
+            client.rbac().clusterRoleBindings().resource(clusterRoleBinding).create();
+        } catch (KubernetesClientException e) {
+            client.rbac().clusterRoleBindings().resource(clusterRoleBinding).update();
+        }
     }
 
     public void deleteClusterRoleBinding(ClusterRoleBinding clusterRoleBinding) {
@@ -700,12 +735,12 @@ public class KubeClient {
         client.rbac().roleBindings().inNamespace(namespace).withName(name).delete();
     }
 
-    public void createRole(Role role) {
-        client.rbac().roles().inNamespace(getNamespace()).resource(role).create();
-    }
-
-    public void updateRole(Role role) {
-        client.rbac().roles().inNamespace(getNamespace()).resource(role).update();
+    public void createOrUpdateRole(Role role) {
+        try {
+            client.rbac().roles().inNamespace(getNamespace()).resource(role).create();
+        } catch (KubernetesClientException e) {
+            client.rbac().roles().inNamespace(getNamespace()).resource(role).update();
+        }
     }
 
     public Role getRole(String name) {
@@ -771,8 +806,19 @@ public class KubeClient {
     // ---> CUSTOM RESOURCE DEFINITIONS <---
     // =====================================
 
-    public void createCustomResourceDefinition(CustomResourceDefinition resourceDefinition) {
-        client.apiextensions().v1().customResourceDefinitions().resource(resourceDefinition).create();
+    /**
+     * Method for creating the specified CustomResourceDefinition.
+     * In case that the CRD is already created, it is being updated.
+     * This can be caused by not cleared CRDs from other tests on in case we shut down the test before the cleanup
+     * phase. It should not have an impact on the functionality, we just update the CRD.
+     * @param resourceDefinition CustomResourceDefinition that we want to create or update
+     */
+    public void createOrUpdateCustomResourceDefinition(CustomResourceDefinition resourceDefinition) {
+        try {
+            client.apiextensions().v1().customResourceDefinitions().resource(resourceDefinition).create();
+        } catch (KubernetesClientException e) {
+            client.apiextensions().v1().customResourceDefinitions().resource(resourceDefinition).update();
+        }
     }
 
     public void deleteCustomResourceDefinition(CustomResourceDefinition resourceDefinition) {

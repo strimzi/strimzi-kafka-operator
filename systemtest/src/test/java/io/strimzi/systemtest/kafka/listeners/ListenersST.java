@@ -1705,8 +1705,8 @@ public class ListenersST extends AbstractST {
         resourceManager.createResource(extensionContext, kafkaClients.consumerTlsStrimzi(testStorage.getClusterName()));
         ClientUtils.waitForClientSuccess(testStorage.getConsumerName(), testStorage.getNamespaceName(), testStorage.getMessageCount() * 3);
 
-        SecretUtils.createCustomSecret(clusterCustomCertServer1, testStorage.getClusterName(), testStorage.getNamespaceName(), strimziCertAndKey2);
-        SecretUtils.createCustomSecret(clusterCustomCertServer2, testStorage.getClusterName(), testStorage.getNamespaceName(), strimziCertAndKey1);
+        SecretUtils.updateCustomSecret(clusterCustomCertServer1, testStorage.getClusterName(), testStorage.getNamespaceName(), strimziCertAndKey2);
+        SecretUtils.updateCustomSecret(clusterCustomCertServer2, testStorage.getClusterName(), testStorage.getNamespaceName(), strimziCertAndKey1);
 
         kafkaSnapshot = RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getKafkaSelector(), 3, kafkaSnapshot);
 
@@ -2264,7 +2264,7 @@ public class ListenersST extends AbstractST {
             .addToData("password", secondEncodedPassword)
             .build();
 
-        kubeClient().namespace(testStorage.getNamespaceName()).createSecret(password);
+        kubeClient().namespace(testStorage.getNamespaceName()).updateSecret(password);
         SecretUtils.waitForUserPasswordChange(testStorage.getNamespaceName(), testStorage.getUserName(), secondEncodedPassword);
 
         LOGGER.info("Receiving messages with new password");

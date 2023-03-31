@@ -712,12 +712,6 @@ class SecurityST extends AbstractST {
 
         KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), kafka -> kafka.getSpec().setMaintenanceTimeWindows(maintenanceTimeWindows), testStorage.getNamespaceName());
 
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), 3, 1)
-            .editSpec()
-                .addToMaintenanceTimeWindows(maintenanceWindowCron)
-            .endSpec()
-            .build());
-
         LOGGER.info("Wait until rolling update is triggered during maintenanceTimeWindows");
         RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getKafkaSelector(), 3, kafkaPods);
 

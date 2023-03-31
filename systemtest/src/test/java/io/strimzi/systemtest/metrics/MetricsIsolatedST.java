@@ -467,7 +467,7 @@ public class MetricsIsolatedST extends AbstractST {
                 .endMetadata()
                 .build();
 
-        kubeClient().createConfigMapInNamespace(SECOND_NAMESPACE, externalMetricsUpdatedCm);
+        kubeClient().updateConfigMapInNamespace(SECOND_NAMESPACE, externalMetricsUpdatedCm);
         PodUtils.verifyThatRunningPodsAreStable(SECOND_NAMESPACE, SECOND_CLUSTER);
 
         for (String cmName : StUtils.getKafkaConfigurationConfigMaps(SECOND_CLUSTER, 1)) {

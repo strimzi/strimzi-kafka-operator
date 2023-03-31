@@ -202,7 +202,7 @@ class LoggingChangeST extends AbstractST {
         kubeClient().createConfigMapInNamespace(namespaceName, configMapKafka);
         kubeClient().createConfigMapInNamespace(namespaceName, configMapOperators);
         kubeClient().createConfigMapInNamespace(namespaceName, configMapZookeeper);
-        kubeClient().createConfigMapInNamespace(clusterOperator.getDeploymentNamespace(), configMapCO);
+        kubeClient().updateConfigMapInNamespace(clusterOperator.getDeploymentNamespace(), configMapCO);
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(clusterName, 3, 3)
             .editOrNewSpec()

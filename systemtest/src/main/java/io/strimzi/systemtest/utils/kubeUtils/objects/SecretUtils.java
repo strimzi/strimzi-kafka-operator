@@ -72,11 +72,11 @@ public class SecretUtils {
             .build());
     }
 
-    public static void createSecretFromFile(String pathToOrigin, String key, String name, String namespace, Map<String, String> labels) {
-        createSecretFromFile(Collections.singletonMap(key, pathToOrigin), name, namespace, labels);
+    public static Secret createSecretFromFile(String pathToOrigin, String key, String name, String namespace, Map<String, String> labels) {
+        return createSecretFromFile(Collections.singletonMap(key, pathToOrigin), name, namespace, labels);
     }
 
-    public static void createSecretFromFile(Map<String, String> certFilesPath, String name, String namespace, Map<String, String> labels) {
+    public static Secret createSecretFromFile(Map<String, String> certFilesPath, String name, String namespace, Map<String, String> labels) {
         byte[] encoded;
         try {
             Map<String, String> data = new HashMap<>();
@@ -87,7 +87,7 @@ public class SecretUtils {
                 data.put(entry.getKey(), encoder.encodeToString(encoded));
             }
 
-            Secret secret = new SecretBuilder()
+            return new SecretBuilder()
                 .withData(data)
                     .withNewMetadata()
                         .withName(name)
@@ -95,10 +95,9 @@ public class SecretUtils {
                         .addToLabels(labels)
                     .endMetadata()
                 .build();
-            kubeClient().namespace(namespace).createSecret(secret);
-
         } catch (IOException e) {
             e.printStackTrace();
+            return null;
         }
     }
 
@@ -138,7 +137,22 @@ public class SecretUtils {
         certsPaths.put("ca.crt", certAndKeyFiles.getCertPath());
         certsPaths.put("ca.key", certAndKeyFiles.getKeyPath());
 
-        SecretUtils.createSecretFromFile(certsPaths, name, namespace, secretLabels);
+        Secret secret = createSecretFromFile(certsPaths, name, namespace, secretLabels);
+        kubeClient().namespace(namespace).createSecret(secret);
+        waitForSecretReady(namespace, name, () -> { });
+    }
+
+    public static void updateCustomSecret(String name, String clusterName, String namespace, CertAndKeyFiles certAndKeyFiles) {
+        Map<String, String> secretLabels = new HashMap<>();
+        secretLabels.put(Labels.STRIMZI_CLUSTER_LABEL, clusterName);
+        secretLabels.put(Labels.STRIMZI_KIND_LABEL, "Kafka");
+
+        Map<String, String> certsPaths = new HashMap<>();
+        certsPaths.put("ca.crt", certAndKeyFiles.getCertPath());
+        certsPaths.put("ca.key", certAndKeyFiles.getKeyPath());
+
+        Secret secret = createSecretFromFile(certsPaths, name, namespace, secretLabels);
+        kubeClient().namespace(namespace).updateSecret(secret);
         waitForSecretReady(namespace, name, () -> { });
     }
 
@@ -195,5 +209,15 @@ public class SecretUtils {
                 .execInCurrentNamespace("annotate", "secret", secretName, annotationKey + "=" + annotationValue)
                 .out()
                 .trim();
+    }
+
+    public static SecretBuilder createCopyOfSecret(String fromNamespace, String toNamespace, String secretName) {
+        Secret desiredSecret = kubeClient().getSecret(fromNamespace, secretName);
+
+        return new SecretBuilder(desiredSecret)
+            .withNewMetadata()
+                .withName(secretName)
+                .withNamespace(toNamespace)
+            .endMetadata();
     }
 }

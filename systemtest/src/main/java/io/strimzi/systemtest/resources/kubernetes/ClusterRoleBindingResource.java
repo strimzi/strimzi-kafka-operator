@@ -32,7 +32,7 @@ public class ClusterRoleBindingResource implements ResourceType<ClusterRoleBindi
     }
     @Override
     public void create(ClusterRoleBinding resource) {
-        kubeClient(KubeClusterResource.getInstance().defaultNamespace()).createClusterRoleBinding(resource);
+        kubeClient(KubeClusterResource.getInstance().defaultNamespace()).createOrUpdateClusterRoleBinding(resource);
     }
     @Override
     public void delete(ClusterRoleBinding resource) {

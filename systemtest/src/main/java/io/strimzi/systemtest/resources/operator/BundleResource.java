@@ -260,6 +260,11 @@ public class BundleResource implements ResourceType<Deployment> {
                                 .withNewSizeLimit("2Mi")
                             .endEmptyDir()
                         .endVolume()
+                        .editLastVolume()
+                            .editConfigMap()
+                                .withName(name)
+                            .endConfigMap()
+                        .endVolume()
                     .endSpec()
                 .endTemplate()
             .endSpec();
