@@ -17,7 +17,6 @@ import org.junit.jupiter.api.BeforeEach;
 import java.io.IOException;
 
 public class ZkTopicStoreTest extends TopicStoreTestBase {
-
     private static Vertx vertx;
 
     private EmbeddedZooKeeper zkServer;
@@ -25,7 +24,7 @@ public class ZkTopicStoreTest extends TopicStoreTestBase {
 
     @Override
     protected boolean canRunTest() {
-        return false; // test was disabled
+        return true;
     }
 
     @BeforeAll
