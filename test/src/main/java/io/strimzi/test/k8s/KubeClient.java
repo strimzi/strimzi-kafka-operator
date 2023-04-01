@@ -602,6 +602,13 @@ public class KubeClient {
         return client.serviceAccounts().inNamespace(namespaceName).list().getItems();
     }
 
+    /**
+     * Method for creating the specified ServiceAccount.
+     * In case that the ServiceAccount is already created, it is being updated.
+     * This can be caused by not cleared ServiceAccounts from other tests on in case we shut down the test before the cleanup
+     * phase. It should not have an impact on the functionality, we just update the ServiceAccount.
+     * @param serviceAccount ServiceAccount that we want to create or update
+     */
     public void createOrUpdateServiceAccount(ServiceAccount serviceAccount) {
         try {
             client.serviceAccounts().inNamespace(serviceAccount.getMetadata().getNamespace()).resource(serviceAccount).create();
@@ -692,6 +699,13 @@ public class KubeClient {
     // ---------> ROLE BINDING <---------
     // ==================================
 
+    /**
+     * Method for creating the specified RoleBinding.
+     * In case that the RoleBinding is already created, it is being updated.
+     * This can be caused by not cleared RoleBindings from other tests on in case we shut down the test before the cleanup
+     * phase. It should not have an impact on the functionality, we just update the RoleBinding.
+     * @param roleBinding RoleBinding that we want to create or update
+     */
     public void createOrUpdateRoleBinding(RoleBinding roleBinding) {
         try {
             client.rbac().roleBindings().inNamespace(getNamespace()).resource(roleBinding).create();
@@ -735,6 +749,13 @@ public class KubeClient {
         client.rbac().roleBindings().inNamespace(namespace).withName(name).delete();
     }
 
+    /**
+     * Method for creating the specified Role.
+     * In case that the Role is already created, it is being updated.
+     * This can be caused by not cleared Roles from other tests on in case we shut down the test before the cleanup
+     * phase. It should not have an impact on the functionality, we just update the Role.
+     * @param role Role that we want to create or update
+     */
     public void createOrUpdateRole(Role role) {
         try {
             client.rbac().roles().inNamespace(getNamespace()).resource(role).create();

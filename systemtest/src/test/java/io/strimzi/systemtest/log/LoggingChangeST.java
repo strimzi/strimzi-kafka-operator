@@ -255,7 +255,7 @@ class LoggingChangeST extends AbstractST {
 
         // set loggers of CO back to original
         configMapCO.getData().put("log4j2.properties", originalCoLoggers);
-        kubeClient().updateConfigMapInNamespace(namespaceName, configMapCO);
+        kubeClient().updateConfigMapInNamespace(clusterOperator.getDeploymentNamespace(), configMapCO);
     }
 
     @ParallelNamespaceTest
