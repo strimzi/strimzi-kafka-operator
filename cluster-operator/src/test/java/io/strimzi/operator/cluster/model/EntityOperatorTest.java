@@ -1075,7 +1075,8 @@ public class EntityOperatorTest {
         NetworkPolicy np = eo.generateNetworkPolicy();
 
         assertThat(np.getSpec().getIngress().stream().filter(ing -> ing.getPorts().get(0).getPort().equals(new IntOrString(EntityTopicOperator.HEALTHCHECK_PORT))).findFirst().orElse(null), is(notNullValue()));
-
+        assertThat(np.getSpec().getIngress().size(), is(1));
+        assertThat(np.getSpec().getIngress().get(0).getPorts().get(0).getPort(), is(new IntOrString(EntityTopicOperator.HEALTHCHECK_PORT)));
         List<NetworkPolicyPeer> rules = np.getSpec().getIngress().stream().filter(ing -> ing.getPorts().get(0).getPort().equals(new IntOrString(EntityTopicOperator.HEALTHCHECK_PORT))).map(NetworkPolicyIngressRule::getFrom).findFirst().orElse(null);
 
         assertThat(rules.size(), is(0));
@@ -1097,10 +1098,37 @@ public class EntityOperatorTest {
         NetworkPolicy np = eo.generateNetworkPolicy();
 
         assertThat(np.getSpec().getIngress().stream().filter(ing -> ing.getPorts().get(0).getPort().equals(new IntOrString(EntityUserOperator.HEALTHCHECK_PORT))).findFirst().orElse(null), is(notNullValue()));
+        assertThat(np.getSpec().getIngress().size(), is(1));
+        assertThat(np.getSpec().getIngress().get(0).getPorts().get(0).getPort(), is(new IntOrString(EntityUserOperator.HEALTHCHECK_PORT)));
 
         List<NetworkPolicyPeer> rules = np.getSpec().getIngress().stream().filter(ing -> ing.getPorts().get(0).getPort().equals(new IntOrString(EntityUserOperator.HEALTHCHECK_PORT))).map(NetworkPolicyIngressRule::getFrom).findFirst().orElse(null);
 
         assertThat(rules.size(), is(0));
 
     }
+
+    @ParallelTest
+    public void testUserOperatorAndTopicOperatorNetworkPolicy() {
+        Kafka resource = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout))
+                .editSpec()
+                .editOrNewEntityOperator()
+                .withNewUserOperator()
+                .endUserOperator()
+                .withNewTopicOperator()
+                .endTopicOperator()
+                .endEntityOperator()
+                .endSpec()
+                .build();
+
+        EntityOperator eo =  EntityOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, VERSIONS, true);
+
+        NetworkPolicy np = eo.generateNetworkPolicy();
+
+        assertThat(np.getSpec().getIngress().size(), is(2));
+        assertThat(np.getSpec().getIngress().get(0).getPorts().get(0).getPort(), is(new IntOrString(EntityTopicOperator.HEALTHCHECK_PORT)));
+        assertThat(np.getSpec().getIngress().get(1).getPorts().get(0).getPort(), is(new IntOrString(EntityUserOperator.HEALTHCHECK_PORT)));
+
+    }
 }
+
+

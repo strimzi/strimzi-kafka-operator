@@ -22,7 +22,6 @@ import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Util;
-import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.resource.ConfigMapOperator;
 import io.strimzi.operator.common.operator.resource.DeploymentOperator;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
@@ -53,8 +52,6 @@ public class EntityOperatorReconciler {
     private final DeploymentOperator deploymentOperator;
     private final SecretOperator secretOperator;
     private final ServiceAccountOperator serviceAccountOperator;
-    private final String operatorNamespace;
-    private final Labels operatorNamespaceLabels;
     private final boolean isNetworkPolicyGeneration;
     private final RoleOperator roleOperator;
     private final RoleBindingOperator roleBindingOperator;
@@ -87,8 +84,6 @@ public class EntityOperatorReconciler {
         this.clusterCa = clusterCa;
         this.maintenanceWindows = kafkaAssembly.getSpec().getMaintenanceTimeWindows();
         this.isNetworkPolicyGeneration = config.isNetworkPolicyGeneration();
-        this.operatorNamespace = config.getOperatorNamespace();
-        this.operatorNamespaceLabels = config.getOperatorNamespaceLabels();
 
         this.deploymentOperator = supplier.deploymentOperations;
         this.secretOperator = supplier.secretOperations;

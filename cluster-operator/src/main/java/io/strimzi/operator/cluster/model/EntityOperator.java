@@ -29,7 +29,6 @@ import io.strimzi.api.kafka.model.template.PodTemplate;
 import io.strimzi.api.kafka.model.template.ResourceTemplate;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.Main;
-import io.strimzi.operator.cluster.model.metrics.MetricsModel;
 import io.strimzi.operator.cluster.model.securityprofiles.ContainerSecurityProviderContextImpl;
 import io.strimzi.operator.cluster.model.securityprofiles.PodSecurityProviderContextImpl;
 import io.strimzi.operator.common.Reconciliation;
@@ -342,14 +341,9 @@ public class EntityOperator extends AbstractModel {
             rules.add(NetworkPolicyUtils.createIngressRule(EntityUserOperator.HEALTHCHECK_PORT, List.of()));
         }
 
-
-        // Everyone can access metrics
-        rules.add(NetworkPolicyUtils.createIngressRule(MetricsModel.METRICS_PORT, List.of()));
-
-
         // Build the final network policy with all rules covering all the ports
         return NetworkPolicyUtils.createNetworkPolicy(
-                reconciliation.name() + "-network-policy-entity-operator",
+                componentName,
                 namespace,
                 labels,
                 ownerReference,
