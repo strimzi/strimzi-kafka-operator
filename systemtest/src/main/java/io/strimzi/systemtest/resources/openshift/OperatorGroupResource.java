@@ -27,7 +27,7 @@ public class OperatorGroupResource implements ResourceType<OperatorGroup> {
 
     @Override
     public void create(OperatorGroup resource) {
-        operatorGroupClient().inNamespace(resource.getMetadata().getNamespace()).resource(resource).serverSideApply();
+        operatorGroupClient().inNamespace(resource.getMetadata().getNamespace()).resource(resource).create();
     }
 
     @Override

@@ -29,7 +29,7 @@ public class SubscriptionResource implements ResourceType<Subscription> {
 
     @Override
     public void create(Subscription resource) {
-        subscriptionClient().inNamespace(resource.getMetadata().getNamespace()).resource(resource).serverSideApply();
+        subscriptionClient().inNamespace(resource.getMetadata().getNamespace()).resource(resource).create();
     }
 
     @Override

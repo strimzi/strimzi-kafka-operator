@@ -23,7 +23,7 @@ public class LeaseResource implements ResourceType<Lease> {
 
     @Override
     public void create(Lease resource) {
-        kubeClient().getClient().leases().resource(resource).serverSideApply();
+        kubeClient().getClient().leases().resource(resource).create();
     }
 
     @Override
