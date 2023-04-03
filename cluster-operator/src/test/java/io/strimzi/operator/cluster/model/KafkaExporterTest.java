@@ -448,8 +448,6 @@ public class KafkaExporterTest {
         assertThat(np.getSpec().getIngress().stream().filter(ing -> ing.getPorts().get(0).getPort().equals(new IntOrString(MetricsModel.METRICS_PORT))).findFirst().orElse(null), is(notNullValue()));
     }
 
-
-
     @AfterAll
     public static void cleanUp() {
         ResourceUtils.cleanUpTemporaryTLSFiles();

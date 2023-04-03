@@ -49,5 +49,4 @@ public class KafkaExporterResources {
     public static String secretName(String clusterName) {
         return deploymentName(clusterName) + "-certs";
     }
-
 }
