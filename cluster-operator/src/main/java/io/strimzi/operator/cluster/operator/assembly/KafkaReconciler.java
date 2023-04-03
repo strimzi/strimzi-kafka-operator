@@ -251,7 +251,6 @@ public class KafkaReconciler {
                 .compose(i -> migrateFromStatefulSetToPodSet())
                 .compose(i -> podSet())
                 .compose(i -> rollingUpdate())
-                .compose(i -> scaleUp())
                 .compose(i -> podsReady())
                 .compose(i -> serviceEndpointsReady())
                 .compose(i -> headlessServiceEndpointsReady())
@@ -748,21 +747,7 @@ public class KafkaReconciler {
      * @return  Future which completes when the PodSet is created, updated or deleted
      */
     protected Future<Void> podSet() {
-        int replicas;
-
-        if (currentReplicas != 0
-                && currentReplicas < kafka.getReplicas())  {
-            // If there is previous replica count & it is smaller than the desired replica count, we use the
-            // previous one because the scale-up will happen only later during the reconciliation
-            replicas = currentReplicas;
-        } else {
-            // If there is no previous number of replicas (because the PodSet did not exist) or if the
-            // previous replicas are bigger than desired replicas we use desired replicas (scale-down already
-            // happened)
-            replicas = kafka.getReplicas();
-        }
-
-        StrimziPodSet kafkaPodSet = kafka.generatePodSet(replicas, pfa.isOpenshift(), imagePullPolicy, imagePullSecrets, this::podSetPodAnnotations);
+        StrimziPodSet kafkaPodSet = kafka.generatePodSet(kafka.getReplicas(), pfa.isOpenshift(), imagePullPolicy, imagePullSecrets, this::podSetPodAnnotations);
         return strimziPodSetOperator.reconcile(reconciliation, reconciliation.namespace(), KafkaResources.kafkaStatefulSetName(reconciliation.name()), kafkaPodSet)
                 .compose(rr -> {
                     podSetDiff = rr;
@@ -791,31 +776,6 @@ public class KafkaReconciler {
                 listenerReconciliationResults.advertisedPorts,
                 true
         );
-    }
-
-    /**
-     * Scales-up the Kafka cluster if needed. When scaling up the Kafka cluster, all new brokers are created in one go.
-     * This method does not wait for the readiness of the new pods, it just scales the controller resource.
-     *
-     * @return  Future which completes when the StrimziPodSet was scaled up
-     */
-    protected Future<Void> scaleUp() {
-        if (currentReplicas != 0
-                && currentReplicas < kafka.getReplicas()) {
-            // The previous number of replicas is known and is smaller than desired number of replicas
-            //   => we need to do scale-up
-            LOGGER.infoCr(reconciliation, "Scaling Kafka up from {} to {} replicas", currentReplicas, kafka.getReplicas());
-
-            StrimziPodSet kafkaPodSet = kafka.generatePodSet(kafka.getReplicas(), pfa.isOpenshift(), imagePullPolicy, imagePullSecrets, this::podSetPodAnnotations);
-            return strimziPodSetOperator.reconcile(reconciliation, reconciliation.namespace(), KafkaResources.kafkaStatefulSetName(reconciliation.name()), kafkaPodSet)
-                    .map((Void) null);
-        } else {
-            // Previous number of replicas is not known (because the PodSet did not exist) or is
-            // bigger than desired replicas => nothing to do
-            // (if the previous replica count was not known, the desired count was already used when patching
-            // the pod set, so no need to do it again)
-            return Future.succeededFuture();
-        }
     }
 
     /**
