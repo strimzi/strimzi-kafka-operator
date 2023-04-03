@@ -10,10 +10,10 @@ import io.micrometer.prometheus.PrometheusConfig;
 import io.micrometer.prometheus.PrometheusMeterRegistry;
 import io.strimzi.operator.common.MetricsProvider;
 import io.strimzi.operator.common.MicrometerMetricsProvider;
+import io.strimzi.test.TestUtils;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
-import java.net.ServerSocket;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.http.HttpClient;
@@ -37,7 +37,7 @@ public class HealthCheckAndMetricsServerTest {
         when(controller.isAlive()).thenReturn(true);
         when(controller.isReady()).thenReturn(true);
 
-        int port = getFreePort();
+        int port = TestUtils.getFreePort();
 
         HealthCheckAndMetricsServer server = new HealthCheckAndMetricsServer(port, controller, metrics);
         server.start();
@@ -77,7 +77,7 @@ public class HealthCheckAndMetricsServerTest {
         when(controller.isAlive()).thenReturn(false);
         when(controller.isReady()).thenReturn(false);
 
-        int port = getFreePort();
+        int port = TestUtils.getFreePort();
 
         HealthCheckAndMetricsServer server = new HealthCheckAndMetricsServer(port, controller, metrics);
         server.start();
@@ -98,19 +98,6 @@ public class HealthCheckAndMetricsServerTest {
             assertThat(response.body().trim(), is("{\"status\": \"not-ok\"}"));
         } finally {
             server.stop();
-        }
-    }
-
-    /**
-     * Finds a free server port which can be used by the web server
-     *
-     * @return  A free TCP port
-     */
-    private int getFreePort()   {
-        try (ServerSocket serverSocket = new ServerSocket(0)) {
-            return serverSocket.getLocalPort();
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to find free port", e);
         }
     }
 }

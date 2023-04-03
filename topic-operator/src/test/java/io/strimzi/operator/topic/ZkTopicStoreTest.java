@@ -20,7 +20,6 @@ import java.io.IOException;
 
 public class ZkTopicStoreTest extends TopicStoreTestBase {
     private static Vertx vertx;
-
     private EmbeddedZooKeeper zkServer;
     private Zk zk;
 
@@ -41,9 +40,9 @@ public class ZkTopicStoreTest extends TopicStoreTestBase {
 
     @BeforeEach
     public void setup() throws IOException, InterruptedException {
-        this.zkServer = new EmbeddedZooKeeper();
+        zkServer = new EmbeddedZooKeeper();
         zk = Zk.createSync(vertx, zkServer.getZkConnectString(), 60_000, 10_000);
-        this.store = new ZkTopicStore(zk, "/strimzi/topics");
+        store = new ZkTopicStore(zk, "/strimzi/topics");
     }
 
     @AfterEach
