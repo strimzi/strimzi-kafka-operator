@@ -406,7 +406,7 @@ public class EntityOperatorReconciler {
                     .reconcile(
                             reconciliation,
                             reconciliation.namespace(),
-                            reconciliation.name() + "-network-policy-entity-operator",
+                            KafkaResources.entityOperatorDeploymentName(reconciliation.name()),
                             entityOperator != null ? entityOperator.generateNetworkPolicy() : null
                     ).map((Void) null);
         } else {

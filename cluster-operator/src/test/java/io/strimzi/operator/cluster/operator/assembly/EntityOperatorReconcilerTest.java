@@ -13,7 +13,6 @@ import io.fabric8.kubernetes.api.model.rbac.Role;
 import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
-import io.strimzi.api.kafka.model.KafkaExporterResources;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.certs.OpenSslCertManager;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
@@ -92,7 +91,7 @@ public class EntityOperatorReconcilerTest {
         when(mockRoleOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.entityOperatorDeploymentName(NAME)), operatorRoleCaptor.capture())).thenReturn(Future.succeededFuture());
 
         ArgumentCaptor<NetworkPolicy> netPolicyCaptor = ArgumentCaptor.forClass(NetworkPolicy.class);
-        when(mockNetPolicyOps.reconcile(any(), eq(NAMESPACE), eq(KafkaExporterResources.deploymentName(NAME)), netPolicyCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockNetPolicyOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.entityOperatorDeploymentName(NAME)), netPolicyCaptor.capture())).thenReturn(Future.succeededFuture());
 
         ArgumentCaptor<RoleBinding> toRoleBindingCaptor = ArgumentCaptor.forClass(RoleBinding.class);
         when(mockRoleBindingOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.entityTopicOperatorRoleBinding(NAME)), toRoleBindingCaptor.capture())).thenReturn(Future.succeededFuture());
@@ -209,7 +208,7 @@ public class EntityOperatorReconcilerTest {
         when(mockCmOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.entityUserOperatorLoggingConfigMapName(NAME)), uoCmCaptor.capture())).thenReturn(Future.succeededFuture());
 
         ArgumentCaptor<NetworkPolicy> netPolicyCaptor = ArgumentCaptor.forClass(NetworkPolicy.class);
-        when(mockNetPolicyOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.entityUserOperatorRoleBinding(NAME)), netPolicyCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockNetPolicyOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.entityOperatorDeploymentName(NAME)), netPolicyCaptor.capture())).thenReturn(Future.succeededFuture());
 
         ArgumentCaptor<Deployment> depCaptor = ArgumentCaptor.forClass(Deployment.class);
         when(mockDepOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.entityOperatorDeploymentName(NAME)), depCaptor.capture())).thenReturn(Future.succeededFuture());
@@ -306,7 +305,7 @@ public class EntityOperatorReconcilerTest {
         when(mockSecretOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.entityUserOperatorSecretName(NAME)), uoSecretCaptor.capture())).thenReturn(Future.succeededFuture());
 
         ArgumentCaptor<NetworkPolicy> netPolicyCaptor = ArgumentCaptor.forClass(NetworkPolicy.class);
-        when(mockNetPolicyOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.entityUserOperatorRoleBinding(NAME)), netPolicyCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockNetPolicyOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.entityOperatorDeploymentName(NAME)), netPolicyCaptor.capture())).thenReturn(Future.succeededFuture());
 
         ArgumentCaptor<Role> operatorRoleCaptor = ArgumentCaptor.forClass(Role.class);
         when(mockRoleOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.entityOperatorDeploymentName(NAME)), operatorRoleCaptor.capture())).thenReturn(Future.succeededFuture());
@@ -410,7 +409,7 @@ public class EntityOperatorReconcilerTest {
         when(mockRoleBindingOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.entityUserOperatorRoleBinding(NAME)), uoRoleBindingCaptor.capture())).thenReturn(Future.succeededFuture());
 
         ArgumentCaptor<NetworkPolicy> netPolicyCaptor = ArgumentCaptor.forClass(NetworkPolicy.class);
-        when(mockNetPolicyOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.entityUserOperatorRoleBinding(NAME)), netPolicyCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockNetPolicyOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.entityOperatorDeploymentName(NAME)), netPolicyCaptor.capture())).thenReturn(Future.succeededFuture());
 
         ArgumentCaptor<ConfigMap> toCmCaptor = ArgumentCaptor.forClass(ConfigMap.class);
         when(mockCmOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.entityTopicOperatorLoggingConfigMapName(NAME)), toCmCaptor.capture())).thenReturn(Future.succeededFuture());
@@ -498,7 +497,7 @@ public class EntityOperatorReconcilerTest {
         when(mockSecretOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.entityUserOperatorSecretName(NAME)), uoSecretCaptor.capture())).thenReturn(Future.succeededFuture());
 
         ArgumentCaptor<NetworkPolicy> netPolicyCaptor = ArgumentCaptor.forClass(NetworkPolicy.class);
-        when(mockNetPolicyOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.entityUserOperatorRoleBinding(NAME)), netPolicyCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockNetPolicyOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.entityOperatorDeploymentName(NAME)), netPolicyCaptor.capture())).thenReturn(Future.succeededFuture());
 
         ArgumentCaptor<Role> operatorRoleCaptor = ArgumentCaptor.forClass(Role.class);
         when(mockRoleOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.entityOperatorDeploymentName(NAME)), operatorRoleCaptor.capture())).thenReturn(Future.succeededFuture());
@@ -600,7 +599,7 @@ public class EntityOperatorReconcilerTest {
         when(mockRoleBindingOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.entityUserOperatorRoleBinding(NAME)), uoRoleBindingCaptor.capture())).thenReturn(Future.succeededFuture());
 
         ArgumentCaptor<NetworkPolicy> netPolicyCaptor = ArgumentCaptor.forClass(NetworkPolicy.class);
-        when(mockNetPolicyOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.entityUserOperatorRoleBinding(NAME)), netPolicyCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockNetPolicyOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.entityOperatorDeploymentName(NAME)), netPolicyCaptor.capture())).thenReturn(Future.succeededFuture());
 
         ArgumentCaptor<ConfigMap> toCmCaptor = ArgumentCaptor.forClass(ConfigMap.class);
         when(mockCmOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.entityTopicOperatorLoggingConfigMapName(NAME)), toCmCaptor.capture())).thenReturn(Future.succeededFuture());
