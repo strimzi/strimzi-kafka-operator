@@ -6,6 +6,8 @@ package io.strimzi.operator.topic;
 
 import io.strimzi.operator.topic.zk.Zk;
 import io.strimzi.test.EmbeddedZooKeeper;
+import io.vertx.core.Future;
+import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxTestContext;
@@ -46,10 +48,17 @@ public class ZkTopicStoreTest extends TopicStoreTestBase {
 
     @AfterEach
     public void teardown(VertxTestContext context) {
-        Checkpoint async = context.checkpoint();
-        zk.disconnect(ar -> async.flag());
-        if (this.zkServer != null) {
-            this.zkServer.close();
-        }
+        Checkpoint zkDisconnected = context.checkpoint();
+
+        Promise<Void> promise = Promise.promise();
+        zk.disconnect(result -> promise.complete());
+
+        promise.future().compose(v -> {
+            if (this.zkServer != null) {
+                this.zkServer.close();
+            }
+            zkDisconnected.flag();
+            return Future.succeededFuture();
+        });
     }
 }
