@@ -15,8 +15,9 @@ import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBui
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.Constants;
-import io.strimzi.systemtest.annotations.IsolatedSuite;
 import io.strimzi.systemtest.Environment;
+import io.strimzi.systemtest.annotations.FIPSNotSupported;
+import io.strimzi.systemtest.annotations.IsolatedSuite;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.annotations.KRaftNotSupported;
 import io.strimzi.systemtest.annotations.ParallelTest;
@@ -66,6 +67,7 @@ import static org.junit.jupiter.api.Assumptions.assumeFalse;
 @Tag(ACCEPTANCE)
 @IsolatedSuite
 @KRaftNotSupported("OAuth is not supported by KRaft mode and is used in this test case")
+@FIPSNotSupported("Keycloak is not customized to run on FIPS env - https://github.com/strimzi/strimzi-kafka-operator/issues/8331")
 public class OauthTlsIsolatedST extends OauthAbstractST {
     protected static final Logger LOGGER = LogManager.getLogger(OauthTlsIsolatedST.class);
 
