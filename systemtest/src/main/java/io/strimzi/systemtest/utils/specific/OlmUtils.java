@@ -24,16 +24,13 @@ public class OlmUtils {
             () -> kubeClient().getNonApprovedInstallPlan(namespaceName) != null);
     }
 
-    public static void waitUntilInstallPlanContainingCertainCsvIsPresent(String namespaceName, String csvName) {
+    public static void waitUntilNonUsedInstallPlanWithSpecificCsvIsPresentAndApprove(String namespaceName, String csvName) {
         TestUtils.waitFor(String.format("non used install plan with CSV: {} to be present", csvName), Constants.OLM_UPGRADE_INSTALL_PLAN_POLL, Constants.OLM_UPGRADE_INSTALL_PLAN_TIMEOUT,
             () -> {
                 if (kubeClient().getNonApprovedInstallPlan(namespaceName) != null) {
                     InstallPlan installPlan = kubeClient().getNonApprovedInstallPlan(namespaceName);
-                    kubeClient().approveInstallPlan(namespaceName, installPlan.getMetadata().getName());
-                    String currentCsv = installPlan.getSpec().getClusterServiceVersionNames().get(0).toString();
-
-                    LOGGER.info("Waiting for CSV: {} to be present in InstallPlan, current CSV: {}", csvName, currentCsv);
-                    if (currentCsv.contains(csvName)) {
+                    if (installPlan.getSpec().getClusterServiceVersionNames().get(0).toString().contains(csvName)) {
+                        kubeClient().approveInstallPlan(namespaceName, installPlan.getMetadata().getName());
                         return true;
                     }
                 }

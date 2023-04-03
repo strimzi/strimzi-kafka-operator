@@ -363,7 +363,7 @@ public class SetupClusterOperator {
         }
 
         updateSubscription(olmConfiguration);
-        OlmUtils.waitUntilInstallPlanContainingCertainCsvIsPresent(namespaceInstallTo, olmConfiguration.getCsvName());
+        OlmUtils.waitUntilNonUsedInstallPlanWithSpecificCsvIsPresentAndApprove(namespaceInstallTo, olmConfiguration.getCsvName());
         DeploymentUtils.waitForDeploymentAndPodsReady(namespaceInstallTo, olmConfiguration.getOlmOperatorDeploymentName(), 1);
     }
 
