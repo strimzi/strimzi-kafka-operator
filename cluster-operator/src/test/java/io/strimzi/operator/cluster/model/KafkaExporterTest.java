@@ -22,6 +22,7 @@ import io.fabric8.kubernetes.api.model.TopologySpreadConstraint;
 import io.fabric8.kubernetes.api.model.TopologySpreadConstraintBuilder;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeMount;
+import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.strimzi.api.kafka.model.ContainerEnvVar;
 import io.strimzi.api.kafka.model.InlineLogging;
@@ -440,6 +441,14 @@ public class KafkaExporterTest {
         Deployment dep = ke.generateDeployment(true, null, null);
         assertThat(dep.getSpec().getStrategy().getType(), is("Recreate"));
     }
+
+    @ParallelTest
+    public void testNetworkPolicy() {
+        NetworkPolicy np = ke.generateNetworkPolicy();
+        assertThat(np.getSpec().getIngress().stream().filter(ing -> ing.getPorts().get(0).getPort().equals(new IntOrString(MetricsModel.METRICS_PORT))).findFirst().orElse(null), is(notNullValue()));
+    }
+
+
 
     @AfterAll
     public static void cleanUp() {
