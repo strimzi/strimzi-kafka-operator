@@ -134,7 +134,7 @@ public class Util {
         Promise<Void> promise = Promise.promise();
         LOGGER.debugCr(reconciliation, "Waiting for {} to get {}", logContext, logState);
         long deadline = System.currentTimeMillis() + timeoutMs;
-        Handler<Long> handler = new Handler<Long>() {
+        Handler<Long> handler = new Handler<>() {
             @Override
             public void handle(Long timerId) {
                 vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
@@ -180,18 +180,6 @@ public class Util {
         handler.handle(null);
 
         return promise.future();
-    }
-
-    /**
-     * Wrapper to minimise usage of raw types in code using composite futures
-     *
-     * @param futures   List of futures
-     *
-     * @return  Composite future based on a list of futures
-     */
-    @SuppressWarnings({"unchecked", "rawtypes"})
-    public static CompositeFuture compositeFuture(List<?> futures) {
-        return CompositeFuture.join((List<Future>) futures);
     }
 
     /**
@@ -285,8 +273,7 @@ public class Util {
      */
     public static File createFileTrustStore(String prefix, String suffix, Set<X509Certificate> certificates, char[] password) {
         try {
-            KeyStore trustStore = null;
-            trustStore = KeyStore.getInstance("PKCS12");
+            KeyStore trustStore = KeyStore.getInstance("PKCS12");
             trustStore.load(null, password);
 
             int aliasIndex = 0;
@@ -329,7 +316,7 @@ public class Util {
             sb.append("\t").append(entry.getKey()).append(": ").append(maskPassword(entry.getKey(), entry.getValue())).append("\n");
         }
 
-        LOGGER.infoOp("Using config:\n" + sb.toString());
+        LOGGER.infoOp("Using config:\n" + sb);
     }
 
     /**
@@ -375,9 +362,9 @@ public class Util {
                     .keySet()
                     .stream()
                     .filter(key -> key.startsWith(Labels.STRIMZI_DOMAIN))
-                    .collect(Collectors.toList());
+                    .toList();
                 if (bannedLabelsOrAnnotations.size() > 0) {
-                    throw new InvalidResourceException("User provided labels or annotations includes a Strimzi annotation: " + bannedLabelsOrAnnotations.toString());
+                    throw new InvalidResourceException("User provided labels or annotations includes a Strimzi annotation: " + bannedLabelsOrAnnotations);
                 }
 
                 Map<String, String> filteredToMerge = toMerge
@@ -398,7 +385,7 @@ public class Util {
      * Converts Kafka Future to VErt.x future
      *
      * @param reconciliation    Reconciliation marker
-     * @param vertx             Vert.x instnce
+     * @param vertx             Vert.x instance
      * @param kf                Kafka future
      *
      * @return  Vert.x future based on the Kafka future
@@ -522,7 +509,7 @@ public class Util {
         int startIdx;
         int prefixLen = "${".length();
         while ((startIdx = value.indexOf("${", endIdx + 1)) != -1) {
-            sb.append(value.substring(endIdx + 1, startIdx));
+            sb.append(value, endIdx + 1, startIdx);
             endIdx = value.indexOf("}", startIdx + prefixLen);
             if (endIdx != -1) {
                 String key = value.substring(startIdx + prefixLen, endIdx);
@@ -592,7 +579,7 @@ public class Util {
             tlsFuture = CompositeFuture.join(certSecretSources.stream().map(certSecretSource ->
                     getCertificateAsync(secretOperations, namespace, certSecretSource)
                     .compose(cert -> Future.succeededFuture(cert.hashCode()))).collect(Collectors.toList()))
-                .compose(hashes -> Future.succeededFuture(hashes.list().stream().collect(Collectors.summingInt(e -> (int) e))));
+                .compose(hashes -> Future.succeededFuture(hashes.list().stream().mapToInt(e -> (int) e).sum()));
         }
 
         if (auth == null) {
@@ -613,6 +600,7 @@ public class Util {
                         tlsFuture.compose(tlsHash -> getCertificateAndKeyAsync(secretOperations, namespace, (KafkaClientAuthenticationTls) auth)
                         .compose(crtAndKey -> Future.succeededFuture(crtAndKey.certAsBase64String().hashCode() + crtAndKey.keyAsBase64String().hashCode() + tlsHash)));
             } else if (auth instanceof KafkaClientAuthenticationOAuth) {
+                @SuppressWarnings({ "rawtypes" }) // Has to use Raw type because of the CompositeFuture
                 List<Future> futureList = ((KafkaClientAuthenticationOAuth) auth).getTlsTrustedCertificates() == null ?
                         new ArrayList<>() : ((KafkaClientAuthenticationOAuth) auth).getTlsTrustedCertificates().stream().map(certSecretSource ->
                         getCertificateAsync(secretOperations, namespace, certSecretSource)
@@ -622,7 +610,7 @@ public class Util {
                 futureList.add(addSecretHash(secretOperations, namespace, ((KafkaClientAuthenticationOAuth) auth).getClientSecret()));
                 futureList.add(addSecretHash(secretOperations, namespace, ((KafkaClientAuthenticationOAuth) auth).getRefreshToken()));
                 return CompositeFuture.join(futureList)
-                        .compose(hashes -> Future.succeededFuture(hashes.list().stream().collect(Collectors.summingInt(e -> (int) e))));
+                        .compose(hashes -> Future.succeededFuture(hashes.list().stream().mapToInt(e -> (int) e).sum()));
             } else {
                 // unknown Auth type
                 return tlsFuture;
@@ -645,7 +633,7 @@ public class Util {
     }
 
     /**
-     * Checks if the Kubernetes resource matches LabelSelector. This is useful when you use get/getAsync to retrieve an
+     * Checks if the Kubernetes resource matches LabelSelector. This is useful when you use get/getAsync to retrieve a
      * resource and want to check if it matches the labels from the selector (since get/getAsync is using name and not
      * labels to identify the resource). This method currently supports only the matchLabels object. matchExpressions
      * array is not supported.
@@ -727,13 +715,11 @@ public class Util {
     }
 
     private static Future<String> getPasswordAsync(SecretOperator secretOperator, String namespace, KafkaClientAuthentication auth) {
-        if (auth instanceof KafkaClientAuthenticationPlain) {
-            KafkaClientAuthenticationPlain plainAuth = (KafkaClientAuthenticationPlain) auth;
+        if (auth instanceof KafkaClientAuthenticationPlain plainAuth) {
 
             return getValidatedSecret(secretOperator, namespace, plainAuth.getPasswordSecret().getSecretName(), plainAuth.getPasswordSecret().getPassword())
                     .compose(secret -> Future.succeededFuture(secret.getData().get(plainAuth.getPasswordSecret().getPassword())));
-        } else if (auth instanceof KafkaClientAuthenticationScram) {
-            KafkaClientAuthenticationScram scramAuth = (KafkaClientAuthenticationScram) auth;
+        } else if (auth instanceof KafkaClientAuthenticationScram scramAuth) {
 
             return getValidatedSecret(secretOperator, namespace, scramAuth.getPasswordSecret().getSecretName(), scramAuth.getPasswordSecret().getPassword())
                     .compose(secret -> Future.succeededFuture(secret.getData().get(scramAuth.getPasswordSecret().getPassword())));
