@@ -63,6 +63,7 @@ import io.strimzi.operator.common.operator.resource.ClusterRoleBindingOperator;
 import io.strimzi.operator.common.operator.resource.ConfigMapOperator;
 import io.strimzi.operator.common.operator.resource.CrdOperator;
 import io.strimzi.operator.common.operator.resource.PodDisruptionBudgetOperator;
+import io.strimzi.operator.common.operator.resource.PodDisruptionBudgetV1Beta1Operator;
 import io.strimzi.operator.common.operator.resource.ServiceAccountOperator;
 import io.strimzi.operator.common.operator.resource.ServiceOperator;
 import io.strimzi.operator.common.operator.resource.StatusUtils;
@@ -109,6 +110,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
     protected final ServiceOperator serviceOperations;
     protected final SecretOperator secretOperations;
     protected final PodDisruptionBudgetOperator podDisruptionBudgetOperator;
+    protected final PodDisruptionBudgetV1Beta1Operator podDisruptionBudgetV1Beta1Operator;
     protected final List<LocalObjectReference> imagePullSecrets;
     protected final long operationTimeoutMs;
     protected final String operatorNamespace;
@@ -137,6 +139,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
         this.secretOperations = supplier.secretOperations;
         this.serviceAccountOperations = supplier.serviceAccountOperations;
         this.podDisruptionBudgetOperator = supplier.podDisruptionBudgetOperator;
+        this.podDisruptionBudgetV1Beta1Operator = supplier.podDisruptionBudgetV1Beta1Operator;
         this.imagePullPolicy = config.getImagePullPolicy();
         this.imagePullSecrets = config.getImagePullSecrets();
         this.operationTimeoutMs = config.getOperationTimeoutMs();
