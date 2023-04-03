@@ -12,6 +12,8 @@ import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
+import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy;
+import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyIngressRule;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaClusterSpec;
 import io.strimzi.api.kafka.model.KafkaExporterResources;
@@ -71,7 +73,6 @@ public class KafkaExporter extends AbstractModel {
 
     private DeploymentTemplate templateDeployment;
     private PodTemplate templatePod;
-
     private static final Map<String, String> DEFAULT_POD_LABELS = new HashMap<>();
     static {
         String value = System.getenv(CO_ENV_VAR_CUSTOM_KAFKA_EXPORTER_POD_LABELS);
@@ -113,7 +114,6 @@ public class KafkaExporter extends AbstractModel {
             KafkaExporter result = new KafkaExporter(reconciliation, kafkaAssembly);
 
             result.resources = spec.getResources();
-
             if (spec.getReadinessProbe() != null) {
                 result.readinessProbeOptions = spec.getReadinessProbe();
             }
@@ -265,5 +265,27 @@ public class KafkaExporter extends AbstractModel {
         Secret secret = clusterCa.kafkaExporterSecret();
         return ModelUtils.buildSecret(reconciliation, clusterCa, secret, namespace, KafkaExporterResources.secretName(cluster), componentName,
                 "kafka-exporter", labels, ownerReference, isMaintenanceTimeWindowsSatisfied);
+    }
+
+    /**
+     * Generates the NetworkPolicies relevant for Kafka Exporter
+     *
+     * @return The network policy.
+     */
+    public NetworkPolicy generateNetworkPolicy() {
+        // List of network policy rules for all ports
+        List<NetworkPolicyIngressRule> rules = new ArrayList<>();
+
+        // Everyone can access metrics
+        rules.add(NetworkPolicyUtils.createIngressRule(MetricsModel.METRICS_PORT, List.of()));
+
+        // Build the final network policy with all rules covering all the ports
+        return NetworkPolicyUtils.createNetworkPolicy(
+                componentName,
+                namespace,
+                labels,
+                ownerReference,
+                rules
+        );
     }
 }

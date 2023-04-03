@@ -29,6 +29,7 @@ import io.strimzi.operator.common.operator.resource.RoleBindingOperator;
 import io.strimzi.operator.common.operator.resource.RoleOperator;
 import io.strimzi.operator.common.operator.resource.SecretOperator;
 import io.strimzi.operator.common.operator.resource.ServiceAccountOperator;
+import io.strimzi.operator.common.operator.resource.NetworkPolicyOperator;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 
@@ -51,10 +52,11 @@ public class EntityOperatorReconciler {
     private final DeploymentOperator deploymentOperator;
     private final SecretOperator secretOperator;
     private final ServiceAccountOperator serviceAccountOperator;
+    private final boolean isNetworkPolicyGeneration;
     private final RoleOperator roleOperator;
     private final RoleBindingOperator roleBindingOperator;
     private final ConfigMapOperator configMapOperator;
-
+    private final NetworkPolicyOperator networkPolicyOperator;
     private boolean existingEntityTopicOperatorCertsChanged = false;
     private boolean existingEntityUserOperatorCertsChanged = false;
 
@@ -81,6 +83,7 @@ public class EntityOperatorReconciler {
         this.entityOperator = EntityOperator.fromCrd(reconciliation, kafkaAssembly, versions, config.featureGates().useKRaftEnabled());
         this.clusterCa = clusterCa;
         this.maintenanceWindows = kafkaAssembly.getSpec().getMaintenanceTimeWindows();
+        this.isNetworkPolicyGeneration = config.isNetworkPolicyGeneration();
 
         this.deploymentOperator = supplier.deploymentOperations;
         this.secretOperator = supplier.secretOperations;
@@ -88,6 +91,7 @@ public class EntityOperatorReconciler {
         this.roleOperator = supplier.roleOperations;
         this.roleBindingOperator = supplier.roleBindingOperations;
         this.configMapOperator = supplier.configMapOperations;
+        this.networkPolicyOperator = supplier.networkPolicyOperator;
     }
 
     /**
@@ -107,6 +111,7 @@ public class EntityOperatorReconciler {
                 .compose(i -> entityOperatorRole())
                 .compose(i -> topicOperatorRole())
                 .compose(i -> userOperatorRole())
+                .compose(i -> networkPolicy())
                 .compose(i -> topicOperatorRoleBindings())
                 .compose(i -> userOperatorRoleBindings())
                 .compose(i -> topicOperagorConfigMap())
@@ -388,6 +393,24 @@ public class EntityOperatorReconciler {
             return secretOperator
                     .reconcile(reconciliation, reconciliation.namespace(), KafkaResources.entityUserOperatorSecretName(reconciliation.name()), null)
                     .map((Void) null);
+        }
+    }
+    /**
+     * Manages the Entity Operator Network Policies.
+     *
+     * @return  Future which completes when the reconciliation is done
+     */
+    protected Future<Void> networkPolicy() {
+        if (isNetworkPolicyGeneration) {
+            return networkPolicyOperator
+                    .reconcile(
+                            reconciliation,
+                            reconciliation.namespace(),
+                            KafkaResources.entityOperatorDeploymentName(reconciliation.name()),
+                            entityOperator != null ? entityOperator.generateNetworkPolicy() : null
+                    ).map((Void) null);
+        } else {
+            return Future.succeededFuture();
         }
     }
 

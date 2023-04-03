@@ -24,6 +24,7 @@ import io.strimzi.operator.common.operator.resource.DeploymentOperator;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.strimzi.operator.common.operator.resource.SecretOperator;
 import io.strimzi.operator.common.operator.resource.ServiceAccountOperator;
+import io.strimzi.operator.common.operator.resource.NetworkPolicyOperator;
 import io.vertx.core.Future;
 
 import java.time.Clock;
@@ -41,10 +42,11 @@ public class KafkaExporterReconciler {
     private final KafkaExporter kafkaExporter;
     private final ClusterCa clusterCa;
     private final List<String> maintenanceWindows;
-
+    private final boolean isNetworkPolicyGeneration;
     private final DeploymentOperator deploymentOperator;
     private final SecretOperator secretOperator;
     private final ServiceAccountOperator serviceAccountOperator;
+    private final NetworkPolicyOperator networkPolicyOperator;
 
     private boolean existingKafkaExporterCertsChanged = false;
 
@@ -71,10 +73,12 @@ public class KafkaExporterReconciler {
         this.kafkaExporter = KafkaExporter.fromCrd(reconciliation, kafkaAssembly, versions);
         this.clusterCa = clusterCa;
         this.maintenanceWindows = kafkaAssembly.getSpec().getMaintenanceTimeWindows();
+        this.isNetworkPolicyGeneration = config.isNetworkPolicyGeneration();
 
         this.deploymentOperator = supplier.deploymentOperations;
         this.secretOperator = supplier.secretOperations;
         this.serviceAccountOperator = supplier.serviceAccountOperations;
+        this.networkPolicyOperator = supplier.networkPolicyOperator;
     }
 
     /**
@@ -92,6 +96,7 @@ public class KafkaExporterReconciler {
     public Future<Void> reconcile(boolean isOpenShift, ImagePullPolicy imagePullPolicy, List<LocalObjectReference> imagePullSecrets, Clock clock)    {
         return serviceAccount()
                 .compose(i -> certificatesSecret(clock))
+                .compose(i -> networkPolicy())
                 .compose(i -> deployment(isOpenShift, imagePullPolicy, imagePullSecrets))
                 .compose(i -> waitForDeploymentReadiness());
     }
@@ -141,6 +146,25 @@ public class KafkaExporterReconciler {
             return secretOperator
                     .reconcile(reconciliation, reconciliation.namespace(), KafkaExporterResources.secretName(reconciliation.name()), null)
                     .map((Void) null);
+        }
+    }
+
+    /**
+     * Manages the Kafka Exporter Network Policies.
+     *
+     * @return  Future which completes when the reconciliation is done
+     */
+    protected Future<Void> networkPolicy() {
+        if (isNetworkPolicyGeneration) {
+            return networkPolicyOperator
+                    .reconcile(
+                            reconciliation,
+                            reconciliation.namespace(),
+                            KafkaExporterResources.deploymentName(reconciliation.name()),
+                            kafkaExporter != null ? kafkaExporter.generateNetworkPolicy() : null
+                    ).map((Void) null);
+        } else {
+            return Future.succeededFuture();
         }
     }
 

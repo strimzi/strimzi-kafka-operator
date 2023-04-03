@@ -13,6 +13,8 @@ import io.fabric8.kubernetes.api.model.LifecycleBuilder;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
+import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy;
+import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyIngressRule;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRole;
 import io.fabric8.kubernetes.api.model.rbac.PolicyRule;
 import io.fabric8.kubernetes.api.model.rbac.Role;
@@ -318,5 +320,34 @@ public class EntityOperator extends AbstractModel {
         }
 
         return role;
+    }
+
+    /**
+     * Generates the NetworkPolicies relevant for Entity Operator
+     *
+     * @return The network policy.
+     */
+    public NetworkPolicy generateNetworkPolicy() {
+        // List of network policy rules for all ports
+        List<NetworkPolicyIngressRule> rules = new ArrayList<>();
+
+        // For Topic Operator
+        if (topicOperator != null) {
+            rules.add(NetworkPolicyUtils.createIngressRule(EntityTopicOperator.HEALTHCHECK_PORT, List.of()));
+        }
+
+        // For User Operator
+        if (userOperator != null) {
+            rules.add(NetworkPolicyUtils.createIngressRule(EntityUserOperator.HEALTHCHECK_PORT, List.of()));
+        }
+
+        // Build the final network policy with all rules covering all the ports
+        return NetworkPolicyUtils.createNetworkPolicy(
+                componentName,
+                namespace,
+                labels,
+                ownerReference,
+                rules
+        );
     }
 }
