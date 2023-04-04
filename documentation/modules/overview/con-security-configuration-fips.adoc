@@ -1,0 +1,15 @@
+// Module included in the following assemblies:
+//
+// overview/assembly-security-overview.adoc
+
+[id="security-configuration-fips_{context}"]
+= Federal Information Processing Standards (FIPS)
+
+[role="_abstract"]
+Federal Information Processing Standards (FIPS) are a set of security standards established by the US government to ensure the confidentiality, integrity, and availability of sensitive data and information that is processed or transmitted by information systems. 
+Strimzi supports FIPS compliance by automatically enabling FIPS mode on the OpenJDK used in Strimzi container images when running on a FIPS-enabled Kubernetes cluster.
+
+FIPS compliance requires the use of specific cryptographic algorithms and security protocols, which are supported in a FIPS-enabled Kubernetes cluster.
+Since switching to FIPS mode on an existing Kubernetes cluster or migrating to a FIPS-enabled cluster can be complex, it's easier to deploy Strimzi on a FIPS-enabled cluster from the outset.
+
+NOTE: If you don't want to use FIPS, you can disable it in the deployment configuration of the Cluster Operator using the `FIPS_MODE` environment variable.

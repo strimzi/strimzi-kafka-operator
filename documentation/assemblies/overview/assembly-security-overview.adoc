@@ -10,6 +10,7 @@ A secure deployment of Strimzi can encompass:
 * Encryption for data exchange
 * Authentication to prove identity
 * Authorization to allow or decline actions executed by users
+* Compliance with FIPS (Federal Information Processing Standards) to ensure data security and system interoperability.
 
 //key points on encryption
 include::../../modules/overview/con-security-configuration-encryption.adoc[leveloffset=+1]
@@ -19,3 +20,6 @@ include::../../modules/overview/con-security-configuration-authentication.adoc[l
 
 //key points on authorization
 include::../../modules/overview/con-security-configuration-authorization.adoc[leveloffset=+1]
+
+//key points on FIPS
+include::../../modules/overview/con-security-configuration-fips.adoc[leveloffset=+1]
