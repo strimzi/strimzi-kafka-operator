@@ -29,6 +29,7 @@ import io.strimzi.systemtest.templates.crd.KafkaMirrorMaker2Templates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
+import io.strimzi.systemtest.utils.kubeUtils.controllers.StrimziPodSetUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import org.apache.logging.log4j.LogManager;
@@ -69,7 +70,7 @@ class RackAwarenessST extends AbstractST {
         Pod pod = kubeClient().getPod(testStorage.getNamespaceName(), podName);
 
         // check that spec matches the actual pod configuration
-        Affinity specAffinity = StUtils.getStatefulSetOrStrimziPodSetAffinity(testStorage.getNamespaceName(), testStorage.getKafkaStatefulSetName());
+        Affinity specAffinity = StrimziPodSetUtils.getStrimziPodSetAffinity(testStorage.getNamespaceName(), testStorage.getKafkaStatefulSetName());
         NodeSelectorRequirement specNodeRequirement = specAffinity.getNodeAffinity().getRequiredDuringSchedulingIgnoredDuringExecution().getNodeSelectorTerms().get(0).getMatchExpressions().get(0);
         NodeAffinity podAffinity = pod.getSpec().getAffinity().getNodeAffinity();
         NodeSelectorRequirement podNodeRequirement = podAffinity.getRequiredDuringSchedulingIgnoredDuringExecution().getNodeSelectorTerms().get(0).getMatchExpressions().get(0);

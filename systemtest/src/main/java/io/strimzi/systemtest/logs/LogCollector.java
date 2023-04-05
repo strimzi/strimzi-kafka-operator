@@ -278,13 +278,9 @@ public class LogCollector {
     private void collectAllResourcesFromNamespace(String namespace) {
         List<String> resources = new ArrayList<>(Arrays.asList(Constants.DEPLOYMENT, Constants.REPLICA_SET));
 
-        if (!Environment.isStrimziPodSetEnabled()) {
-            resources.add(Constants.STATEFUL_SET);
-        } else {
-            // check if StrimziPodSets CRD is applied, if so, collect the yamls
-            if (kubeClient.getCustomResourceDefinition(StrimziPodSet.CRD_NAME) != null) {
-                resources.add(StrimziPodSet.RESOURCE_KIND);
-            }
+        // check if StrimziPodSets CRD is applied, if so, collect the yamls
+        if (kubeClient.getCustomResourceDefinition(StrimziPodSet.CRD_NAME) != null) {
+            resources.add(StrimziPodSet.RESOURCE_KIND);
         }
 
         resources.forEach(resource -> collectResource(resource, namespace));

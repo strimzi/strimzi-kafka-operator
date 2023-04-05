@@ -201,9 +201,9 @@ public class AbstractUpgradeST extends AbstractST {
     }
 
     protected void waitForKafkaClusterRollingUpdate() {
-        LOGGER.info("Waiting for ZK StatefulSet roll");
+        LOGGER.info("Waiting for ZK StrimziPodSet/StatefulSet roll");
         zkPods = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(clusterOperator.getDeploymentNamespace(), zkSelector, 3, zkPods);
-        LOGGER.info("Waiting for Kafka StatefulSet roll");
+        LOGGER.info("Waiting for Kafka StrimziPodSet/StatefulSet roll");
         kafkaPods = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(clusterOperator.getDeploymentNamespace(), kafkaSelector, 3, kafkaPods);
         LOGGER.info("Waiting for EO Deployment roll");
         // Check the TO and UO also got upgraded
@@ -211,9 +211,9 @@ public class AbstractUpgradeST extends AbstractST {
     }
 
     protected void waitForReadinessOfKafkaCluster() {
-        LOGGER.info("Waiting for Zookeeper StatefulSet");
+        LOGGER.info("Waiting for Zookeeper StrimziPodSet/StatefulSet");
         RollingUpdateUtils.waitForComponentAndPodsReady(clusterOperator.getDeploymentNamespace(), zkSelector, 3);
-        LOGGER.info("Waiting for Kafka StatefulSet");
+        LOGGER.info("Waiting for Kafka StrimziPodSet/StatefulSet");
         RollingUpdateUtils.waitForComponentAndPodsReady(clusterOperator.getDeploymentNamespace(), kafkaSelector, 3);
         LOGGER.info("Waiting for EO Deployment");
         DeploymentUtils.waitForDeploymentAndPodsReady(clusterOperator.getDeploymentNamespace(), KafkaResources.entityOperatorDeploymentName(clusterName), 1);

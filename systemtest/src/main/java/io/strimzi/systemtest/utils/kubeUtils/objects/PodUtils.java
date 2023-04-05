@@ -252,7 +252,7 @@ public class PodUtils {
     }
 
     /**
-     * Ensures every pod in a StatefulSet is stable in the {@code Running} phase.
+     * Ensures every pod in a StrimziPodSet is stable in the {@code Running} phase.
      * A pod must be in the Running phase for {@link Constants#GLOBAL_RECONCILIATION_COUNT} seconds for
      * it to be considered as stable. Otherwise this procedure will be repeat.
      * @param podPrefix all pods that matched the prefix will be verified
