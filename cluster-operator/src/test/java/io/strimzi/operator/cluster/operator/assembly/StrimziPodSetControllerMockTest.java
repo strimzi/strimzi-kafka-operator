@@ -389,7 +389,7 @@ public class StrimziPodSetControllerMockTest {
 
             // Scale-up the pod-set
             Pod pod2 = pod(pod2Name, KAFKA_NAME, podSetName, "Kafka");
-            podSetOp().inNamespace(NAMESPACE).resource(podSet(podSetName, KAFKA_NAME, "Kafka", pod1, pod2)).replace();
+            podSetOp().inNamespace(NAMESPACE).resource(podSet(podSetName, KAFKA_NAME, "Kafka", pod1, pod2)).update();
 
             // Wait until the new pod is ready
             TestUtils.waitFor(
@@ -413,7 +413,7 @@ public class StrimziPodSetControllerMockTest {
                     () -> context.failNow("Pod stats do not match"));
 
             // Scale-down the pod-set
-            podSetOp().inNamespace(NAMESPACE).resource(podSet(podSetName, KAFKA_NAME, "Kafka", pod1)).replace();
+            podSetOp().inNamespace(NAMESPACE).resource(podSet(podSetName, KAFKA_NAME, "Kafka", pod1)).update();
 
             // Wait until the pod is deleted
             TestUtils.waitFor(
@@ -487,7 +487,7 @@ public class StrimziPodSetControllerMockTest {
             Pod updatedPod = pod(podName, KAFKA_NAME, podSetName, "Kafka");
             updatedPod.getMetadata().getAnnotations().put(PodRevision.STRIMZI_REVISION_ANNOTATION, "new-revision");
             updatedPod.getSpec().setTerminationGracePeriodSeconds(1L);
-            podSetOp().inNamespace(NAMESPACE).resource(podSet(podSetName, KAFKA_NAME, "Kafka", updatedPod)).replace();
+            podSetOp().inNamespace(NAMESPACE).resource(podSet(podSetName, KAFKA_NAME, "Kafka", updatedPod)).update();
 
             // Check status of the PodSet
             TestUtils.waitFor(

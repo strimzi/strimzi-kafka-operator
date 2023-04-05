@@ -42,7 +42,7 @@ public class DeploymentResource implements ResourceType<Deployment> {
     public static void replaceDeployment(String deploymentName, Consumer<Deployment> editor, String namespaceName) {
         Deployment toBeReplaced = ResourceManager.kubeClient().getClient().resources(Deployment.class, DeploymentList.class).inNamespace(namespaceName).withName(deploymentName).get();
         editor.accept(toBeReplaced);
-        ResourceManager.kubeClient().getClient().resources(Deployment.class, DeploymentList.class).inNamespace(namespaceName).resource(toBeReplaced).replace();
+        ResourceManager.kubeClient().getClient().resources(Deployment.class, DeploymentList.class).inNamespace(namespaceName).resource(toBeReplaced).update();
     }
 
     public static Deployment getDeploymentFromYaml(String yamlPath) {

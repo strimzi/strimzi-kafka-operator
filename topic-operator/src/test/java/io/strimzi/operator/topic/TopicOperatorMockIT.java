@@ -181,7 +181,7 @@ public class TopicOperatorMockIT {
 
     private void updateInKube(KafkaTopic topic) {
         LOGGER.info("Updating topic {} in kube", topic.getMetadata().getName());
-        Crds.topicOperation(client).resource(topic).replace();
+        Crds.topicOperation(client).resource(topic).update();
     }
 
     @Test
