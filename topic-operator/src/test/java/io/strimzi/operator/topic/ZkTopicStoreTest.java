@@ -24,11 +24,6 @@ public class ZkTopicStoreTest extends TopicStoreTestBase {
     private EmbeddedZooKeeper zkServer;
     private Zk zkClient;
 
-    @Override
-    protected boolean canRunTest() {
-        return true;
-    }
-
     @BeforeAll
     public static void before() {
         vertx = Vertx.vertx();
