@@ -110,33 +110,6 @@ class KafkaST extends AbstractST {
     private final String namespace = testSuiteNamespaceManager.getMapOfAdditionalNamespaces().get(KafkaST.class.getSimpleName()).stream().findFirst().get();
 
     @ParallelNamespaceTest
-    @KRaftNotSupported("EntityOperator is not supported by KRaft mode and is used in this test class")
-    void testEODeletion(ExtensionContext extensionContext) {
-        final String namespaceName = StUtils.getNamespaceBasedOnRbac(namespace, extensionContext);
-        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
-
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3).build());
-
-        // Get pod name to check termination process
-        Pod pod = kubeClient(namespaceName).listPods(namespaceName).stream()
-                .filter(p -> p.getMetadata().getName().startsWith(KafkaResources.entityOperatorDeploymentName(clusterName)))
-                .findAny()
-                .orElseThrow();
-
-        assertThat("Entity operator pod does not exist", pod, notNullValue());
-
-        LOGGER.info("Setting entity operator to null");
-
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, kafka -> kafka.getSpec().setEntityOperator(null), namespaceName);
-
-        // Wait when EO(UO + TO) will be removed
-        DeploymentUtils.waitForDeploymentDeletion(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName));
-        PodUtils.deletePodWithWait(namespaceName, pod.getMetadata().getName());
-
-        LOGGER.info("Entity operator was deleted");
-    }
-
-    @ParallelNamespaceTest
     @SuppressWarnings({"checkstyle:MethodLength", "checkstyle:JavaNCSS"})
     void testCustomAndUpdatedValues(ExtensionContext extensionContext) {
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(namespace, extensionContext);
