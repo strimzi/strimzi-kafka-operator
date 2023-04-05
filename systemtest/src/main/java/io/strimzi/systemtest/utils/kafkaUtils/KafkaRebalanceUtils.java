@@ -87,10 +87,6 @@ public class KafkaRebalanceUtils {
         if (!autoApproval) {
             // it can sometimes happen that KafkaRebalance is already in the ProposalReady state -> race condition prevention
             if (!rebalanceStateCondition(reconciliation, namespaceName, rebalanceName).getType().equals(KafkaRebalanceState.ProposalReady.name())) {
-                LOGGER.infoCr(reconciliation, "Verifying that KafkaRebalance resource is in {} state", KafkaRebalanceState.PendingProposal);
-
-                waitForKafkaRebalanceCustomResourceState(namespaceName, rebalanceName, KafkaRebalanceState.PendingProposal);
-
                 LOGGER.infoCr(reconciliation, "Verifying that KafkaRebalance resource is in {} state", KafkaRebalanceState.ProposalReady);
 
                 waitForKafkaRebalanceCustomResourceState(namespaceName, rebalanceName, KafkaRebalanceState.ProposalReady);

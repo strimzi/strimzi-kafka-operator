@@ -22,7 +22,7 @@ public class ClusterOperatorCustomResourceDefinition implements ResourceType<Cus
     }
     @Override
     public void create(CustomResourceDefinition resource) {
-        kubeClient().createOrReplaceCustomResourceDefinition(resource);
+        kubeClient().createOrUpdateCustomResourceDefinition(resource);
     }
     @Override
     public void delete(CustomResourceDefinition resource) {

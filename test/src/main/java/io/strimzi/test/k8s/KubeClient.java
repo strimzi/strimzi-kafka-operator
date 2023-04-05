@@ -11,6 +11,7 @@ import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.Namespace;
 import io.fabric8.kubernetes.api.model.NamespaceBuilder;
 import io.fabric8.kubernetes.api.model.Node;
+import io.fabric8.kubernetes.api.model.PersistentVolume;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Secret;
@@ -28,8 +29,10 @@ import io.fabric8.kubernetes.api.model.rbac.ClusterRole;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.fabric8.kubernetes.api.model.rbac.Role;
 import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
+import io.fabric8.kubernetes.api.model.storage.StorageClass;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientBuilder;
+import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.VersionInfo;
 import io.fabric8.kubernetes.client.dsl.ExecListener;
 import io.fabric8.kubernetes.client.dsl.PodResource;
@@ -55,9 +58,6 @@ import java.util.stream.Collectors;
 
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
-// This class is using the deprecated createOrReplace methods which should be removed
-// Removing these deprecated calls is tracked by https://github.com/strimzi/strimzi-kafka-operator/issues/8269
-@SuppressWarnings("deprecation")
 public class KubeClient {
 
     private static final Logger LOGGER = LogManager.getLogger(KubeClient.class);
@@ -95,11 +95,11 @@ public class KubeClient {
 
     public void createNamespace(String name) {
         Namespace ns = new NamespaceBuilder().withNewMetadata().withName(name).endMetadata().build();
-        client.namespaces().resource(ns).createOrReplace();
+        client.namespaces().resource(ns).create();
     }
 
-    public void createOrReplaceNamespace(final Namespace namespace) {
-        client.namespaces().resource(namespace).createOrReplace();
+    public void updateNamespace(Namespace namespace) {
+        client.namespaces().resource(namespace).update();
     }
 
     public void deleteNamespace(String name) {
@@ -110,8 +110,16 @@ public class KubeClient {
     // ---------> CONFIG MAP <---------
     // ================================
 
-    public void createOrReplaceConfigMap(ConfigMap configMap) {
-        client.configMaps().inNamespace(configMap.getMetadata().getNamespace()).resource(configMap).createOrReplace();
+    public void createConfigMap(ConfigMap configMap) {
+        client.configMaps().inNamespace(configMap.getMetadata().getNamespace()).resource(configMap).create();
+    }
+
+    public void createConfigMapInNamespace(String namespaceName, ConfigMap configMap) {
+        client.configMaps().inNamespace(namespaceName).resource(configMap).create();
+    }
+
+    public void updateConfigMapInNamespace(String namespaceName, ConfigMap configMap) {
+        client.configMaps().inNamespace(namespaceName).resource(configMap).update();
     }
 
     public void deleteConfigMap(ConfigMap configMap) {
@@ -237,29 +245,11 @@ public class KubeClient {
             .collect(Collectors.toList());
     }
 
-    public PersistentVolumeClaim getPersistentVolumeClaim(String namespaceName, String pvcName) {
-        return client.persistentVolumeClaims().inNamespace(namespaceName).withName(pvcName).get();
-    }
-
-    public void deletePersistentVolumeClaim(String namespaceName, String pvcName) {
-        client.persistentVolumeClaims().inNamespace(namespaceName).withName(pvcName).delete();
-    }
-
-    public List<PersistentVolumeClaim> listPersistentVolumeClaims(String namespaceName, String clusterName) {
-        return client.persistentVolumeClaims().inNamespace(namespaceName).list().getItems().stream()
-            .filter(persistentVolumeClaim -> persistentVolumeClaim.getMetadata().getName().contains(clusterName))
-            .collect(Collectors.toList());
-    }
-
     public List<String> listPodNames(String namespaceName, String clusterName, String key, String value) {
         return listPods(namespaceName, Collections.singletonMap(key, value)).stream()
             .filter(pod -> pod.getMetadata().getName().startsWith(clusterName))
             .map(pod -> pod.getMetadata().getName())
             .collect(Collectors.toList());
-    }
-
-    public List<PersistentVolumeClaim> listPersistentVolumeClaims() {
-        return client.persistentVolumeClaims().inNamespace(getNamespace()).list().getItems();
     }
 
     public List<Pod> listPods() {
@@ -445,8 +435,12 @@ public class KubeClient {
         client.apps().deployments().inNamespace(namespaceName).withName(deploymentName).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
     }
 
-    public void createOrReplaceDeployment(Deployment deployment) {
-        client.apps().deployments().inNamespace(deployment.getMetadata().getNamespace()).resource(deployment).createOrReplace();
+    public void createDeployment(Deployment deployment) {
+        client.apps().deployments().inNamespace(deployment.getMetadata().getNamespace()).resource(deployment).create();
+    }
+
+    public void updateDeployment(Deployment deployment) {
+        client.apps().deployments().inNamespace(deployment.getMetadata().getNamespace()).resource(deployment).update();
     }
 
     // ==========================
@@ -479,7 +473,7 @@ public class KubeClient {
 
 
     public void createJob(Job job) {
-        client.batch().v1().jobs().inNamespace(job.getMetadata().getNamespace()).resource(job).createOrReplace();
+        client.batch().v1().jobs().inNamespace(job.getMetadata().getNamespace()).resource(job).create();
     }
 
     public void deleteJob(String jobName) {
@@ -527,7 +521,11 @@ public class KubeClient {
     // ============================
 
     public Secret createSecret(Secret secret) {
-        return client.secrets().inNamespace(secret.getMetadata().getNamespace()).resource(secret).createOrReplace();
+        return client.secrets().inNamespace(secret.getMetadata().getNamespace()).resource(secret).create();
+    }
+
+    public Secret updateSecret(Secret secret) {
+        return client.secrets().inNamespace(secret.getMetadata().getNamespace()).resource(secret).update();
     }
 
     public void patchSecret(String namespaceName, String secretName, Secret secret) {
@@ -572,7 +570,7 @@ public class KubeClient {
     }
 
     public void createService(Service service) {
-        client.services().inNamespace(service.getMetadata().getNamespace()).resource(service).createOrReplace();
+        client.services().inNamespace(service.getMetadata().getNamespace()).resource(service).create();
     }
 
     /**
@@ -604,8 +602,27 @@ public class KubeClient {
         return client.serviceAccounts().inNamespace(namespaceName).list().getItems();
     }
 
-    public void createOrReplaceServiceAccount(ServiceAccount serviceAccount) {
-        client.serviceAccounts().inNamespace(serviceAccount.getMetadata().getNamespace()).resource(serviceAccount).createOrReplace();
+    /**
+     * Method for creating the specified ServiceAccount.
+     * In case that the ServiceAccount is already created, it is being updated.
+     * This can be caused by not cleared ServiceAccounts from other tests or in case we shut down the test before the cleanup
+     * phase.
+     * The skip of the cleanup phase can then break the CO installation - because the resource already exists.
+     * Without the update, we would need to manually remove all existing resources before running the test again.
+     * It should not have an impact on the functionality, we just update the ServiceAccount.
+     * @param serviceAccount ServiceAccount that we want to create or update
+     */
+    public void createOrUpdateServiceAccount(ServiceAccount serviceAccount) {
+        try {
+            client.serviceAccounts().inNamespace(serviceAccount.getMetadata().getNamespace()).resource(serviceAccount).create();
+        } catch (KubernetesClientException e) {
+            if (e.getCode() == 409) {
+                LOGGER.info("ServiceAccount: {} is already created, going to update it", serviceAccount.getMetadata().getName());
+                client.serviceAccounts().inNamespace(serviceAccount.getMetadata().getNamespace()).resource(serviceAccount).update();
+            } else {
+                throw e;
+            }
+        }
     }
 
     public void deleteServiceAccount(ServiceAccount serviceAccount) {
@@ -663,8 +680,27 @@ public class KubeClient {
         return client.rbac().clusterRoles().list().getItems();
     }
 
-    public void createOrReplaceClusterRoles(ClusterRole clusterRole) {
-        client.rbac().clusterRoles().resource(clusterRole).createOrReplace();
+    /**
+     * Method for creating the specified ClusterRole.
+     * In case that the ClusterRole is already created, it is being updated.
+     * This can be caused by not cleared ClusterRoles from other tests or in case we shut down the test before the cleanup
+     * phase.
+     * The skip of the cleanup phase can then break the CO installation - because the resource already exists.
+     * Without the update, we would need to manually remove all existing resources before running the test again.
+     * It should not have an impact on the functionality, we just update the ClusterRole.
+     * @param clusterRole ClusterRole that we want to create or update
+     */
+    public void createOrUpdateClusterRoles(ClusterRole clusterRole) {
+        try {
+            client.rbac().clusterRoles().resource(clusterRole).create();
+        } catch (KubernetesClientException e) {
+            if (e.getCode() == 409) {
+                LOGGER.info("ClusterRole: {} is already created, going to update it", clusterRole.getMetadata().getName());
+                client.rbac().clusterRoles().resource(clusterRole).update();
+            } else {
+                throw e;
+            }
+        }
     }
 
     public void deleteClusterRole(ClusterRole clusterRole) {
@@ -679,12 +715,50 @@ public class KubeClient {
     // ---------> ROLE BINDING <---------
     // ==================================
 
-    public void createOrReplaceRoleBinding(RoleBinding roleBinding) {
-        client.rbac().roleBindings().inNamespace(getNamespace()).resource(roleBinding).createOrReplace();
+    /**
+     * Method for creating the specified RoleBinding.
+     * In case that the RoleBinding is already created, it is being updated.
+     * This can be caused by not cleared RoleBindings from other tests or in case we shut down the test before the cleanup
+     * phase.
+     * The skip of the cleanup phase can then break the CO installation - because the resource already exists.
+     * Without the update, we would need to manually remove all existing resources before running the test again.
+     * It should not have an impact on the functionality, we just update the RoleBinding.
+     * @param roleBinding RoleBinding that we want to create or update
+     */
+    public void createOrUpdateRoleBinding(RoleBinding roleBinding) {
+        try {
+            client.rbac().roleBindings().inNamespace(getNamespace()).resource(roleBinding).create();
+        } catch (KubernetesClientException e) {
+            if (e.getCode() == 409) {
+                LOGGER.info("RoleBinding: {} is already created, going to update it", roleBinding.getMetadata().getName());
+                client.rbac().roleBindings().inNamespace(getNamespace()).resource(roleBinding).update();
+            } else {
+                throw e;
+            }
+        }
     }
 
-    public void createOrReplaceClusterRoleBinding(ClusterRoleBinding clusterRoleBinding) {
-        client.rbac().clusterRoleBindings().resource(clusterRoleBinding).createOrReplace();
+    /**
+     * Method for creating the specified ClusterRoleBinding.
+     * In case that the CRB is already created, it is being updated.
+     * This can be caused by not cleared CRBs from other tests or in case we shut down the test before the cleanup
+     * phase.
+     * The skip of the cleanup phase can then break the CO installation - because the resource already exists.
+     * Without the update, we would need to manually remove all existing resources before running the test again.
+     * It should not have an impact on the functionality, we just update the CRB.
+     * @param clusterRoleBinding ClusterRoleBinding that we want to create or update
+     */
+    public void createOrUpdateClusterRoleBinding(ClusterRoleBinding clusterRoleBinding) {
+        try {
+            client.rbac().clusterRoleBindings().resource(clusterRoleBinding).create();
+        } catch (KubernetesClientException e) {
+            if (e.getCode() == 409) {
+                LOGGER.info("ClusterRoleBinding: {} is already created, going to update it", clusterRoleBinding.getMetadata().getName());
+                client.rbac().clusterRoleBindings().resource(clusterRoleBinding).update();
+            } else {
+                throw e;
+            }
+        }
     }
 
     public void deleteClusterRoleBinding(ClusterRoleBinding clusterRoleBinding) {
@@ -707,8 +781,27 @@ public class KubeClient {
         client.rbac().roleBindings().inNamespace(namespace).withName(name).delete();
     }
 
-    public void createOrReplaceRole(Role role) {
-        client.rbac().roles().inNamespace(getNamespace()).resource(role).createOrReplace();
+    /**
+     * Method for creating the specified Role.
+     * In case that the Role is already created, it is being updated.
+     * This can be caused by not cleared Roles from other tests or in case we shut down the test before the cleanup
+     * phase.
+     * The skip of the cleanup phase can then break the CO installation - because the resource already exists.
+     * Without the update, we would need to manually remove all existing resources before running the test again.
+     * It should not have an impact on the functionality, we just update the Role.
+     * @param role Role that we want to create or update
+     */
+    public void createOrUpdateRole(Role role) {
+        try {
+            client.rbac().roles().inNamespace(getNamespace()).resource(role).create();
+        } catch (KubernetesClientException e) {
+            if (e.getCode() == 409) {
+                LOGGER.info("Role: {} is already created, going to update it", role.getMetadata().getName());
+                client.rbac().roles().inNamespace(getNamespace()).resource(role).update();
+            } else {
+                throw e;
+            }
+        }
     }
 
     public Role getRole(String name) {
@@ -763,7 +856,7 @@ public class KubeClient {
     }
 
     public void createNetworkPolicy(NetworkPolicy networkPolicy) {
-        client.network().networkPolicies().inNamespace(getNamespace()).resource(networkPolicy).createOrReplace();
+        client.network().networkPolicies().inNamespace(getNamespace()).resource(networkPolicy).create();
     }
 
     public void deleteNetworkPolicy(String name) {
@@ -774,8 +867,27 @@ public class KubeClient {
     // ---> CUSTOM RESOURCE DEFINITIONS <---
     // =====================================
 
-    public void createOrReplaceCustomResourceDefinition(CustomResourceDefinition resourceDefinition) {
-        client.apiextensions().v1().customResourceDefinitions().resource(resourceDefinition).createOrReplace();
+    /**
+     * Method for creating the specified CustomResourceDefinition.
+     * In case that the CRD is already created, it is being updated.
+     * This can be caused by not cleared CRDs from other tests or in case we shut down the test before the cleanup
+     * phase.
+     * The skip of the cleanup phase can then break the CO installation - because the resource already exists.
+     * Without the update, we would need to manually remove all existing resources before running the test again.
+     * It should not have an impact on the functionality, we just update the CRD.
+     * @param resourceDefinition CustomResourceDefinition that we want to create or update
+     */
+    public void createOrUpdateCustomResourceDefinition(CustomResourceDefinition resourceDefinition) {
+        try {
+            client.apiextensions().v1().customResourceDefinitions().resource(resourceDefinition).create();
+        } catch (KubernetesClientException e) {
+            if (e.getCode() == 409) {
+                LOGGER.info("CustomResourceDefinition: {} is already created, going to update it", resourceDefinition.getMetadata().getName());
+                client.apiextensions().v1().customResourceDefinitions().resource(resourceDefinition).update();
+            } else {
+                throw e;
+            }
+        }
     }
 
     public void deleteCustomResourceDefinition(CustomResourceDefinition resourceDefinition) {
@@ -831,7 +943,7 @@ public class KubeClient {
     }
 
     public void createValidatingWebhookConfiguration(ValidatingWebhookConfiguration validatingWebhookConfiguration) {
-        client.admissionRegistration().v1().validatingWebhookConfigurations().resource(validatingWebhookConfiguration).createOrReplace();
+        client.admissionRegistration().v1().validatingWebhookConfigurations().resource(validatingWebhookConfiguration).create();
     }
 
     public void deleteValidatingWebhookConfiguration(ValidatingWebhookConfiguration validatingWebhookConfiguration) {
@@ -878,5 +990,55 @@ public class KubeClient {
 
     public void deleteCsv(String namespaceName, String csvName) {
         client.adapt(OpenShiftClient.class).operatorHub().clusterServiceVersions().inNamespace(namespaceName).withName(csvName).delete();
+    }
+
+    // =============================================
+    // ---------> PERSISTENT VOLUME CLAIM <---------
+    // =============================================
+
+    public void createPersistentVolumeClaim(String namespaceName, PersistentVolumeClaim pvc) {
+        client.persistentVolumeClaims().inNamespace(namespaceName).resource(pvc).create();
+    }
+
+    public PersistentVolumeClaim getPersistentVolumeClaim(String namespaceName, String pvcName) {
+        return client.persistentVolumeClaims().inNamespace(namespaceName).withName(pvcName).get();
+    }
+
+    public void deletePersistentVolumeClaim(String namespaceName, String pvcName) {
+        client.persistentVolumeClaims().inNamespace(namespaceName).withName(pvcName).delete();
+    }
+
+    public List<PersistentVolumeClaim> listPersistentVolumeClaims(String namespaceName, String clusterName) {
+        return client.persistentVolumeClaims().inNamespace(namespaceName).list().getItems().stream()
+            .filter(persistentVolumeClaim -> persistentVolumeClaim.getMetadata().getName().contains(clusterName))
+            .collect(Collectors.toList());
+    }
+
+    // =======================================
+    // ---------> PERSISTENT VOLUME <---------
+    // =======================================
+
+    public void createPersistentVolume(PersistentVolume pv) {
+        client.persistentVolumes().resource(pv).create();
+    }
+
+    public void updatePersistentVolume(PersistentVolume pv) {
+        client.persistentVolumes().resource(pv).update();
+    }
+
+    public PersistentVolume getPersistentVolumeWithName(String pvName) {
+        return client.persistentVolumes().withName(pvName).get();
+    }
+
+    // ===================================
+    // ---------> STORAGE CLASS <---------
+    // ===================================
+
+    public void createStorageClass(StorageClass storageClass) {
+        client.storage().v1().storageClasses().resource(storageClass).create();
+    }
+
+    public void deleteStorageClassWithName(String storageClassName) {
+        client.storage().v1().storageClasses().withName(storageClassName).delete();
     }
 }

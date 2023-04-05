@@ -30,7 +30,7 @@ public class KafkaMirrorMakerResource implements ResourceType<KafkaMirrorMaker> 
     }
     @Override
     public void create(KafkaMirrorMaker resource) {
-        kafkaMirrorMakerClient().inNamespace(resource.getMetadata().getNamespace()).resource(resource).createOrReplace();
+        kafkaMirrorMakerClient().inNamespace(resource.getMetadata().getNamespace()).resource(resource).create();
     }
     @Override
     public void delete(KafkaMirrorMaker resource) {

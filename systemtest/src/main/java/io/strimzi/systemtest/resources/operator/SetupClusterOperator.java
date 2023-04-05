@@ -649,6 +649,7 @@ public class SetupClusterOperator {
                     ResourceManager.getInstance().createResource(extensionContext, new ConfigMapBuilder(configMap)
                         .editMetadata()
                             .withNamespace(namespace)
+                            .withName(clusterOperatorName)
                         .endMetadata()
                         .build());
                     break;
@@ -659,6 +660,7 @@ public class SetupClusterOperator {
                     ResourceManager.getInstance().createResource(extensionContext, new LeaseBuilder(lease)
                             .editMetadata()
                                 .withNamespace(namespace)
+                                .withName(clusterOperatorName)
                             .endMetadata()
                             .build());
                     break;

@@ -30,7 +30,7 @@ public class DrainCleanerResource implements ResourceType<Deployment> {
 
     @Override
     public void create(Deployment resource) {
-        ResourceManager.kubeClient().createOrReplaceDeployment(resource);
+        ResourceManager.kubeClient().createDeployment(resource);
     }
 
     @Override

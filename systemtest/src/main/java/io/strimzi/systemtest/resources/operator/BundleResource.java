@@ -49,7 +49,7 @@ public class BundleResource implements ResourceType<Deployment> {
     }
     @Override
     public void create(Deployment resource) {
-        ResourceManager.kubeClient().createOrReplaceDeployment(resource);
+        ResourceManager.kubeClient().createDeployment(resource);
     }
     @Override
     public void delete(Deployment resource) {
@@ -259,6 +259,11 @@ public class BundleResource implements ResourceType<Deployment> {
                                 // in case we execute more than 10 test cases in parallel we at least 2Mi storage
                                 .withNewSizeLimit("2Mi")
                             .endEmptyDir()
+                        .endVolume()
+                        .editLastVolume()
+                            .editConfigMap()
+                                .withName(name)
+                            .endConfigMap()
                         .endVolume()
                     .endSpec()
                 .endTemplate()

@@ -29,6 +29,7 @@ import io.strimzi.systemtest.utils.RollingUpdateUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.JobUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
+import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
 import io.strimzi.systemtest.utils.specific.KeycloakUtils;
 import io.strimzi.test.WaitException;
 import io.vertx.core.cli.annotations.Description;
@@ -53,7 +54,6 @@ import java.util.Map;
 import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.OAUTH;
 import static io.strimzi.systemtest.Constants.REGRESSION;
-import static io.strimzi.systemtest.resources.ResourceManager.kubeClient;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @Tag(OAUTH)
@@ -591,9 +591,9 @@ public class OauthAuthorizationIsolatedST extends OauthAbstractST {
         TestStorage testStorage = new TestStorage(extensionContext);
 
         // we have to create keycloak, team-a-client and team-b-client secret from `infra-namespace` to the new namespace
-        resourceManager.createResource(extensionContext, kubeClient().getSecret(clusterOperator.getDeploymentNamespace(), KeycloakInstance.KEYCLOAK_SECRET_NAME));
-        resourceManager.createResource(extensionContext, kubeClient().getSecret(clusterOperator.getDeploymentNamespace(), TEAM_A_CLIENT_SECRET));
-        resourceManager.createResource(extensionContext, kubeClient().getSecret(clusterOperator.getDeploymentNamespace(), TEAM_B_CLIENT_SECRET));
+        resourceManager.createResource(extensionContext, SecretUtils.createCopyOfSecret(clusterOperator.getDeploymentNamespace(), testStorage.getNamespaceName(), KeycloakInstance.KEYCLOAK_SECRET_NAME).build());
+        resourceManager.createResource(extensionContext, SecretUtils.createCopyOfSecret(clusterOperator.getDeploymentNamespace(), testStorage.getNamespaceName(), TEAM_A_CLIENT_SECRET).build());
+        resourceManager.createResource(extensionContext, SecretUtils.createCopyOfSecret(clusterOperator.getDeploymentNamespace(), testStorage.getNamespaceName(), TEAM_B_CLIENT_SECRET).build());
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 1, 1)
             .editSpec()

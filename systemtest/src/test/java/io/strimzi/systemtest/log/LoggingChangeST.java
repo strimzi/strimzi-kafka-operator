@@ -199,10 +199,10 @@ class LoggingChangeST extends AbstractST {
             .addToData("log4j2.properties", loggersConfigCO)
             .build();
 
-        kubeClient().getClient().configMaps().inNamespace(namespaceName).resource(configMapKafka).createOrReplace();
-        kubeClient().getClient().configMaps().inNamespace(namespaceName).resource(configMapOperators).createOrReplace();
-        kubeClient().getClient().configMaps().inNamespace(namespaceName).resource(configMapZookeeper).createOrReplace();
-        kubeClient().getClient().configMaps().inNamespace(clusterOperator.getDeploymentNamespace()).resource(configMapCO).createOrReplace();
+        kubeClient().createConfigMapInNamespace(namespaceName, configMapKafka);
+        kubeClient().createConfigMapInNamespace(namespaceName, configMapOperators);
+        kubeClient().createConfigMapInNamespace(namespaceName, configMapZookeeper);
+        kubeClient().updateConfigMapInNamespace(clusterOperator.getDeploymentNamespace(), configMapCO);
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(clusterName, 3, 3)
             .editOrNewSpec()
@@ -255,7 +255,7 @@ class LoggingChangeST extends AbstractST {
 
         // set loggers of CO back to original
         configMapCO.getData().put("log4j2.properties", originalCoLoggers);
-        kubeClient().getClient().configMaps().inNamespace(clusterOperator.getDeploymentNamespace()).resource(configMapCO).createOrReplace();
+        kubeClient().updateConfigMapInNamespace(clusterOperator.getDeploymentNamespace(), configMapCO);
     }
 
     @ParallelNamespaceTest
@@ -348,8 +348,8 @@ class LoggingChangeST extends AbstractST {
                 "rootLogger.additivity=false"))
             .build();
 
-        kubeClient().getClient().configMaps().inNamespace(namespaceName).resource(configMapTo).createOrReplace();
-        kubeClient().getClient().configMaps().inNamespace(namespaceName).resource(configMapUo).createOrReplace();
+        kubeClient().createConfigMapInNamespace(namespaceName, configMapTo);
+        kubeClient().createConfigMapInNamespace(namespaceName, configMapUo);
 
         ExternalLogging elTo = new ExternalLoggingBuilder()
             .withNewValueFrom()
@@ -431,8 +431,8 @@ class LoggingChangeST extends AbstractST {
                 "rootLogger.additivity=false"))
             .build();
 
-        kubeClient().getClient().configMaps().inNamespace(namespaceName).resource(configMapTo).createOrReplace();
-        kubeClient().getClient().configMaps().inNamespace(namespaceName).resource(configMapUo).createOrReplace();
+        kubeClient().updateConfigMapInNamespace(namespaceName, configMapTo);
+        kubeClient().updateConfigMapInNamespace(namespaceName, configMapUo);
 
         LOGGER.info("Waiting for log4j2.properties will contain desired settings");
         TestUtils.waitFor("Logger change", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
@@ -544,7 +544,7 @@ class LoggingChangeST extends AbstractST {
                     "logger.ready.level = OFF"))
             .build();
 
-        kubeClient().getClient().configMaps().inNamespace(testStorage.getNamespaceName()).resource(configMapBridge).createOrReplace();
+        kubeClient().createConfigMapInNamespace(testStorage.getNamespaceName(), configMapBridge);
 
         ExternalLogging bridgeXternalLogging = new ExternalLoggingBuilder()
             .withNewValueFrom()
@@ -622,7 +622,7 @@ class LoggingChangeST extends AbstractST {
         assertThat(log4jConfig, not(equalTo(cmdKubeClient().namespace(clusterOperator.getDeploymentNamespace()).execInPod(coPodName, "/bin/bash", "-c", command).out().trim())));
 
         LOGGER.info("Changing logging for cluster-operator");
-        kubeClient().getClient().configMaps().inNamespace(clusterOperator.getDeploymentNamespace()).resource(coMap).createOrReplace();
+        kubeClient().updateConfigMapInNamespace(clusterOperator.getDeploymentNamespace(), coMap);
 
         LOGGER.info("Waiting for log4j2.properties will contain desired settings");
         TestUtils.waitFor("Logger change", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
@@ -648,7 +648,7 @@ class LoggingChangeST extends AbstractST {
         coMap.setData(Collections.singletonMap("log4j2.properties", log4jConfig));
 
         LOGGER.info("Changing logging for cluster-operator");
-        kubeClient().getClient().configMaps().inNamespace(clusterOperator.getDeploymentNamespace()).resource(coMap).createOrReplace();
+        kubeClient().updateConfigMapInNamespace(clusterOperator.getDeploymentNamespace(), coMap);
 
         LOGGER.info("Waiting for log4j2.properties will contain desired settings");
         TestUtils.waitFor("Logger change", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
@@ -751,7 +751,7 @@ class LoggingChangeST extends AbstractST {
                 .withData(Collections.singletonMap("log4j.properties", log4jConfig))
                 .build();
 
-        kubeClient().getClient().configMaps().inNamespace(testStorage.getNamespaceName()).resource(connectLoggingMap).createOrReplace();
+        kubeClient().createConfigMapInNamespace(testStorage.getNamespaceName(), connectLoggingMap);
 
         ExternalLogging connectXternalLogging = new ExternalLoggingBuilder()
             .withNewValueFrom()
@@ -883,7 +883,7 @@ class LoggingChangeST extends AbstractST {
                 "log4j.logger.kafka.authorizer.logger=INFO"))
             .build();
 
-        kubeClient().getClient().configMaps().inNamespace(namespaceName).resource(configMap).createOrReplace();
+        kubeClient().createConfigMapInNamespace(namespaceName, configMap);
 
         ExternalLogging elKafka = new ExternalLoggingBuilder()
             .withNewValueFrom()
@@ -1002,7 +1002,8 @@ class LoggingChangeST extends AbstractST {
                         ))
                 .build();
 
-        kubeClient().getClient().configMaps().inNamespace(namespaceName).resource(configMap).createOrReplace();
+        kubeClient().createConfigMapInNamespace(namespaceName, configMap);
+
         ExternalLogging el = new ExternalLoggingBuilder()
             .withNewValueFrom()
                 .withConfigMapKeyRef(
@@ -1052,7 +1053,7 @@ class LoggingChangeST extends AbstractST {
                         ))
                 .build();
 
-        kubeClient().getClient().configMaps().inNamespace(namespaceName).resource(configMap).createOrReplace();
+        kubeClient().updateConfigMapInNamespace(namespaceName, configMap);
         RollingUpdateUtils.waitForNoRollingUpdate(namespaceName, kafkaSelector, kafkaPods);
         assertThat("Kafka pod should not roll", RollingUpdateUtils.componentHasRolled(namespaceName, kafkaSelector, kafkaPods), is(false));
         TestUtils.waitFor("Verify logger change", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
@@ -1084,7 +1085,7 @@ class LoggingChangeST extends AbstractST {
                 ))
                 .build();
 
-        kubeClient().getClient().configMaps().inNamespace(namespaceName).resource(configMap).createOrReplace();
+        kubeClient().updateConfigMapInNamespace(namespaceName, configMap);
         RollingUpdateUtils.waitTillComponentHasRolled(namespaceName, kafkaSelector, kafkaPods);
 
         TestUtils.waitFor("Verify logger change", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
@@ -1169,7 +1170,7 @@ class LoggingChangeST extends AbstractST {
                 .withData(Collections.singletonMap("log4j.properties", log4jConfig))
                 .build();
 
-        kubeClient().getClient().configMaps().inNamespace(namespaceName).resource(mm2LoggingMap).createOrReplace();
+        kubeClient().createConfigMapInNamespace(namespaceName, mm2LoggingMap);
 
         ExternalLogging mm2XternalLogging = new ExternalLoggingBuilder()
             .withNewValueFrom()
@@ -1235,7 +1236,7 @@ class LoggingChangeST extends AbstractST {
                 .withData(Collections.singletonMap("log4j.properties", log4jConfig))
                 .build();
 
-        kubeClient().getClient().configMaps().inNamespace(namespaceName).resource(mm2LoggingMap).createOrReplace();
+        kubeClient().createConfigMapInNamespace(namespaceName, mm2LoggingMap);
 
         ExternalLogging mm2XternalLogging = new ExternalLoggingBuilder()
                 .withNewValueFrom()
@@ -1284,7 +1285,7 @@ class LoggingChangeST extends AbstractST {
                 .withData(Collections.singletonMap("log4j.properties", updatedLog4jConfig))
                 .build();
 
-        kubeClient().getClient().configMaps().inNamespace(namespaceName).resource(mm2LoggingMap).createOrReplace();
+        kubeClient().updateConfigMapInNamespace(namespaceName, mm2LoggingMap);
 
         TestUtils.waitFor("Logger change", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
             () -> cmdKubeClient().namespace(namespaceName).execInPod(kafkaMM2PodName, "curl", "http://localhost:8083/admin/loggers/root").out().contains("INFO")
@@ -1324,7 +1325,7 @@ class LoggingChangeST extends AbstractST {
             .withData(Collections.singletonMap("log4j.properties", cmData))
             .build();
 
-        kubeClient().getClient().configMaps().inNamespace(namespaceName).resource(configMap).createOrReplace();
+        kubeClient().createConfigMapInNamespace(namespaceName, configMap);
 
         LOGGER.info("Deploying Kafka with custom logging");
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(clusterName, 3, 1)

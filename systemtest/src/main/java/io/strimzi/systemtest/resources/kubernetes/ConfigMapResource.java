@@ -22,7 +22,7 @@ public class ConfigMapResource implements ResourceType<ConfigMap> {
     }
     @Override
     public void create(ConfigMap resource) {
-        kubeClient().createOrReplaceConfigMap(resource);
+        kubeClient().createConfigMap(resource);
     }
     @Override
     public void delete(ConfigMap resource) {

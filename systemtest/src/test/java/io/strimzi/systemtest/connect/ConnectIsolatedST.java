@@ -49,6 +49,7 @@ import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
 import io.strimzi.systemtest.resources.crd.KafkaConnectorResource;
+import io.strimzi.systemtest.resources.crd.KafkaUserResource;
 import io.strimzi.systemtest.resources.kubernetes.NetworkPolicyResource;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaConnectTemplates;
@@ -1200,9 +1201,9 @@ class ConnectIsolatedST extends AbstractST {
 
         kubeClient(namespaceName).createSecret(connectSecret);
         kubeClient(namespaceName).createSecret(dotedConnectSecret);
-        
-        kubeClient(namespaceName).getClient().configMaps().inNamespace(namespaceName).resource(configMap).createOrReplace();
-        kubeClient(namespaceName).getClient().configMaps().inNamespace(namespaceName).resource(dotedConfigMap).createOrReplace();
+
+        kubeClient().createConfigMapInNamespace(namespaceName, configMap);
+        kubeClient().createConfigMapInNamespace(namespaceName, dotedConfigMap);
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3).build());
         resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnect(clusterName, namespaceName, 1)
@@ -1401,7 +1402,6 @@ class ConnectIsolatedST extends AbstractST {
 
         resourceManager.createResource(extensionContext, kafkaUser);
 
-        resourceManager.createResource(extensionContext, KafkaUserTemplates.scramShaUser(namespaceName, clusterName, userName).build());
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(clusterName, topicName).build());
         resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnect(clusterName, namespaceName, 1)
                 .withNewSpec()
@@ -1432,7 +1432,7 @@ class ConnectIsolatedST extends AbstractST {
                     .withName("new-custom-pwd-secret")
                     .withNamespace(namespaceName)
                 .endMetadata()
-                .addToStringData("pwd", "completely_different_secret_password")
+                .addToStringData("pwd", "completely_different_secret_password_long_enough_for_fips")
                 .build();
 
         kubeClient(namespaceName).createSecret(newPasswordSecret);
@@ -1449,7 +1449,7 @@ class ConnectIsolatedST extends AbstractST {
                 .endSpec()
                 .build();
 
-        resourceManager.createResource(extensionContext, kafkaUser);
+        KafkaUserResource.kafkaUserClient().inNamespace(namespaceName).resource(kafkaUser).update();
 
         RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(namespaceName, labelSelector, 1, connectSnapshot);
 

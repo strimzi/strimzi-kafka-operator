@@ -16,11 +16,11 @@ import io.strimzi.api.kafka.model.connect.build.PluginBuilder;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.test.TestUtils;
-import io.strimzi.test.k8s.KubeClusterResource;
 
 import java.util.Random;
 
 import static io.strimzi.operator.common.Util.hashStub;
+import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 public class KafkaConnectTemplates {
 
@@ -56,7 +56,7 @@ public class KafkaConnectTemplates {
 
     private static void createOrReplaceConnectMetrics(String namespaceName) {
         ConfigMap metricsCm = TestUtils.configMapFromYaml(Constants.PATH_TO_KAFKA_CONNECT_METRICS_CONFIG, "connect-metrics");
-        KubeClusterResource.kubeClient().getClient().configMaps().inNamespace(namespaceName).resource(metricsCm).createOrReplace();
+        kubeClient().createConfigMapInNamespace(namespaceName, metricsCm);
     }
 
     private static KafkaConnectBuilder defaultKafkaConnect(KafkaConnect kafkaConnect, final String namespaceName, String name, String kafkaClusterName, int kafkaConnectReplicas) {

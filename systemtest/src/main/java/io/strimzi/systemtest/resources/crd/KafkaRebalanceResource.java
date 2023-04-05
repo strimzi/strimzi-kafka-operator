@@ -32,7 +32,7 @@ public class KafkaRebalanceResource implements ResourceType<KafkaRebalance> {
     }
     @Override
     public void create(KafkaRebalance resource) {
-        kafkaRebalanceClient().inNamespace(resource.getMetadata().getNamespace()).resource(resource).createOrReplace();
+        kafkaRebalanceClient().inNamespace(resource.getMetadata().getNamespace()).resource(resource).create();
     }
     @Override
     public void delete(KafkaRebalance resource) {
