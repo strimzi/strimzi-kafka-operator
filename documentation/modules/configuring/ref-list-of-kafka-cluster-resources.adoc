@@ -70,6 +70,7 @@ These resources are only created if the Entity Operator is deployed using the Cl
 +
 - Deployment with Topic and User Operators.
 - Service account used by the Entity Operator.
+- Network policy managing access to the Entity Operator metrics.
 
 `_cluster-name_-entity-operator-_random-string_`:: Pod created by the Entity Operator deployment.
 `_cluster-name_-entity-topic-operator-config`:: ConfigMap with ancillary configuration for Topic Operators.
@@ -88,6 +89,7 @@ These resources are only created if the Kafka Exporter is deployed using the Clu
 - Deployment with Kafka Exporter.
 - Service used to collect consumer lag metrics.
 - Service account used by the Kafka Exporter.
+- Network policy managing access to the Kafka Exporter metrics.
 
 `_cluster-name_-kafka-exporter-_random-string_`:: Pod created by the Kafka Exporter deployment.
 
