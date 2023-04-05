@@ -58,13 +58,13 @@ metadata:
     strimzi.io/use-connector-resources: "true"
 spec:
   # ...
-  build: <1>
-    output: <2>
+  build: # <1>
+    output: # <2>
       type: docker
       image: my-registry.io/my-org/my-connect-cluster:latest
       pushSecret: my-registry-credentials
-    plugins: <3>
-      - name: debezium-postgres-connector
+    plugins: # <3>
+      - name: my-connector
         artifacts:
           - type: tgz
             url: https://_ARTIFACT-ADDRESS_.tgz
