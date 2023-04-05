@@ -52,7 +52,7 @@ spec:
 Only allow trusted login modules and follow the latest advice from Kafka for the version you are using.
 As a best practice, you should explicitly disallow insecure login modules in your Kafka Connect configuration by using the `org.apache.kafka.disallowed.login.modules` system property.
 
-`connector.client.config.override.policy`:: Set the `connector.client.config.override.policy` property to `None` (default) to prevent connector configurations from overriding the Kafka Connect configuration and the consumers and producers it uses. 
+`connector.client.config.override.policy`:: Set the `connector.client.config.override.policy` property to `None` to prevent connector configurations from overriding the Kafka Connect configuration and the consumers and producers it uses. 
 +
 .Example configuration to specify connector override policy
 [source,yaml,subs=attributes+]
