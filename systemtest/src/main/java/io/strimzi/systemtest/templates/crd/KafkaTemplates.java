@@ -104,8 +104,6 @@ public class KafkaTemplates {
         Kafka kafka = getKafkaFromYaml(Constants.PATH_TO_KAFKA_METRICS_CONFIG);
         ConfigMap kafkaMetricsCm = TestUtils.configMapFromYaml(Constants.PATH_TO_KAFKA_METRICS_CONFIG, "kafka-metrics");
         KubeClusterResource.kubeClient().getClient().configMaps().inNamespace(namespaceName).resource(kafkaMetricsCm).create();
-        ConfigMap zkMetricsCm = TestUtils.configMapFromYaml(Constants.PATH_TO_KAFKA_METRICS_CONFIG, "kafka-metrics");
-        KubeClusterResource.kubeClient().getClient().configMaps().inNamespace(namespaceName).resource(zkMetricsCm).create();
 
         ConfigMap ccCm = new ConfigMapBuilder()
                 .withApiVersion("v1")

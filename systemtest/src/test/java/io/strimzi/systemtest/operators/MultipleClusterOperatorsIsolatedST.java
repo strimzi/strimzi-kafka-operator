@@ -216,7 +216,7 @@ public class MultipleClusterOperatorsIsolatedST extends AbstractST {
 
         assertThat(PodUtils.podSnapshot(DEFAULT_NAMESPACE, kafkaSelector).size(), is(scaleTo));
 
-        KafkaRebalanceUtils.doRebalancingProcess(new Reconciliation("test", KafkaRebalance.RESOURCE_KIND, SECOND_NAMESPACE, clusterName), DEFAULT_NAMESPACE, clusterName);
+        KafkaRebalanceUtils.doRebalancingProcess(new Reconciliation("test", KafkaRebalance.RESOURCE_KIND, DEFAULT_NAMESPACE, clusterName), DEFAULT_NAMESPACE, clusterName);
     }
 
     void deployCOInNamespace(ExtensionContext extensionContext, String coName, String coNamespace, List<EnvVar> extraEnvs, boolean multipleNamespaces) {
