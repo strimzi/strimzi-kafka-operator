@@ -16,12 +16,13 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 
-import java.io.IOException;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 
 public class ZkTopicStoreTest extends TopicStoreTestBase {
     private static Vertx vertx;
     private EmbeddedZooKeeper zkServer;
-    private Zk zk;
+    private Zk zkClient;
 
     @Override
     protected boolean canRunTest() {
@@ -39,10 +40,16 @@ public class ZkTopicStoreTest extends TopicStoreTestBase {
     }
 
     @BeforeEach
-    public void setup() throws IOException, InterruptedException {
+    public void setup() throws Exception {
         zkServer = new EmbeddedZooKeeper();
-        zk = Zk.createSync(vertx, zkServer.getZkConnectString(), 60_000, 10_000);
-        store = new ZkTopicStore(zk, "/strimzi/topics");
+        zkClient = Zk.createSync(vertx, zkServer.getZkConnectString(), 60_000, 10_000);
+        // wait some time for the topic store initialization before moving on with tests
+        CompletableFuture future = new CompletableFuture();
+        vertx.runOnContext(v -> {
+            ZkTopicStore store = new ZkTopicStore(zkClient, "/strimzi/topics");
+            future.complete(store);
+        });
+        store = (TopicStore) future.get(60, TimeUnit.SECONDS);
     }
 
     @AfterEach
@@ -50,7 +57,7 @@ public class ZkTopicStoreTest extends TopicStoreTestBase {
         Checkpoint zkDisconnected = context.checkpoint();
 
         Promise<Void> promise = Promise.promise();
-        zk.disconnect(result -> promise.complete());
+        zkClient.disconnect(result -> promise.complete());
 
         promise.future().compose(v -> {
             if (this.zkServer != null) {
