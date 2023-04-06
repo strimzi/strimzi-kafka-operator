@@ -31,7 +31,7 @@ With `ControlPlaneListener` enabled, the connections between the Kafka controlle
 Replication of data between brokers, as well as internal connections from Strimzi operators, Cruise Control, or the Kafka Exporter use the _replication listener_ on port 9091.
 
 IMPORTANT: With the `ControlPlaneListener` feature gate permanently enabled, it is no longer possible to upgrade or downgrade directly between Strimzi 0.22 and earlier and Strimzi 0.32 and newer.
-You have to upgrade or downgrade through one of the Strimzi versions in between.
+You have to first upgrade or downgrade through one of the Strimzi versions in-between, disable the `ControlPlaneListener` feature gate, and then downgrade or upgrade (with the feature gate enabled) to the target version.
 
 == ServiceAccountPatching feature gate
 
@@ -45,8 +45,8 @@ For example, when you change service account labels or annotations using the `te
 The `UseStrimziPodSets` feature gate has moved to GA, which means it is now permanently enabled and cannot be disabled.
 Support for `StatefulSets` has been removed and Strimzi is now always using `StrimziPodSets` to manage Kafka and ZooKeeper pods.
 
-IMPORTANT: Downgrade to Strimzi 0.27 and earlier versions is not possible when using `StrimziPodSets`.
-If you need to downgrade to Strimzi 0.27 or earlier, you have to first downgrade to Strimzi 0.28 - 0.34, disable the `USeStrimziPodSets` feature gate and only then downgrade to Strimzi 0.27 or earlier.
+IMPORTANT: With the `UseStrimziPodSets` feature gate permanently enabled, it is no longer possible to downgrade directly between Strimzi 0.27 or earlier and Strimzi 0.35 and newer.
+You have to first downgrade through one of the Strimzi versions in-between, disable the `USeStrimziPodSets` feature gate, and then downgrade to Strimzi 0.27 or earlier.
 
 [id='ref-operator-use-kraft-feature-gate-{context}']
 == (Preview) UseKRaft feature gate
@@ -76,7 +76,7 @@ Currently, the KRaft mode in Strimzi has the following major limitations:
 * All Kafka nodes have both the `controller` and `broker` KRaft roles.
   Kafka clusters with separate `controller` and `broker` nodes are not supported.
 
-.Enabling the UseStrimziPodSets feature gate
+.Enabling the UseKRaft feature gate
 To enable the `UseKRaft` feature gate, specify `+UseKRaft` in the `STRIMZI_FEATURE_GATES` environment variable in the Cluster Operator configuration.
 
 [id='ref-operator-stable-connect-identities-feature-gate-{context}']
@@ -84,7 +84,7 @@ To enable the `UseKRaft` feature gate, specify `+UseKRaft` in the `STRIMZI_FEATU
 
 The `StableConnectIdentities` feature gate has a default state of _disabled_.
 
-The `StableConnectIdentities` feature gate uses `StrimziPodSet` resources to manage Kafka Connect and Kafka MirrorMaker 2 pods instead of using Kubernetes Deployment resources.
+The `StableConnectIdentities` feature gate uses `StrimziPodSet` resources to manage Kafka Connect and Kafka MirrorMaker 2 pods instead of using Kubernetes `Deployment` resources.
 `StrimziPodSets` give the pods stable names and stable addresses, which do not change during rolling upgrades.
 This helps to minimize the number of rebalances of connector tasks.
 

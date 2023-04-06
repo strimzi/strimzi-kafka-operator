@@ -15,6 +15,11 @@ This procedure describes how to downgrade a Cluster Operator deployment to a pre
 * An existing Cluster Operator deployment is available.
 * You have xref:downloads-{context}[downloaded the installation files for the previous version].
 
+.Before you begin
+
+Check the downgrade requirements of the xref:ref-operator-cluster-feature-gates-{context}[Strimzi feature gates].
+If a feature gate is permanently enabled, you may need to downgrade to a version that allows you to disable it before downgrading to your target version. 
+
 .Procedure
 
 . Take note of any configuration changes made to the existing Cluster Operator resources (in the `/install/cluster-operator` directory).
