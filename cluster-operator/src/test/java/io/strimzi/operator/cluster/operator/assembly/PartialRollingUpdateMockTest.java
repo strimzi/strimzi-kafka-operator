@@ -198,7 +198,7 @@ public class PartialRollingUpdateMockTest {
             context.verify(() -> assertThat(ar.succeeded(), is(true)));
 
             StrimziPodSet kafkaPodSet = supplier.strimziPodSetOperator.client().inNamespace(NAMESPACE).withName(KafkaResources.kafkaStatefulSetName(CLUSTER_NAME)).get();
-            List<Pod> kafkaPodsFromPodSet = PodSetUtils.mapsToPods(kafkaPodSet.getSpec().getPods());
+            List<Pod> kafkaPodsFromPodSet = PodSetUtils.podSetToPods(kafkaPodSet);
 
             for (int i = 0; i <= 4; i++) {
                 int finalI = i;
@@ -264,7 +264,7 @@ public class PartialRollingUpdateMockTest {
             context.verify(() -> assertThat(ar.succeeded(), is(true)));
 
             StrimziPodSet zooPodSet = supplier.strimziPodSetOperator.client().inNamespace(NAMESPACE).withName(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME)).get();
-            List<Pod> zooPodsFromPodSet = PodSetUtils.mapsToPods(zooPodSet.getSpec().getPods());
+            List<Pod> zooPodsFromPodSet = PodSetUtils.podSetToPods(zooPodSet);
 
             for (int i = 0; i <= 2; i++) {
                 int finalI = i;
