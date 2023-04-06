@@ -201,7 +201,7 @@ public class KafkaAssemblyOperatorCustomCertMockTest {
                 })))
                 .compose(i -> {
                     // Update the custom listener certificate secret
-                    client.secrets().inNamespace(NAMESPACE).resource(getUpdatedSecret()).replace();
+                    client.secrets().inNamespace(NAMESPACE).resource(getUpdatedSecret()).update();
                     return Future.succeededFuture();
                 })
                 // The second loop should update the pods to have the new hash stub from the updated secret => which means they were rolled

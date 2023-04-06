@@ -366,7 +366,7 @@ public class ResourceManager {
     public static <T extends CustomResource, L extends DefaultKubernetesResourceList<T>> void replaceCrdResource(Class<T> crdClass, Class<L> listClass, String resourceName, Consumer<T> editor, String namespace) {
         T toBeReplaced = Crds.operation(kubeClient().getClient(), crdClass, listClass).inNamespace(namespace).withName(resourceName).get();
         editor.accept(toBeReplaced);
-        Crds.operation(kubeClient().getClient(), crdClass, listClass).inNamespace(namespace).resource(toBeReplaced).replace();
+        Crds.operation(kubeClient().getClient(), crdClass, listClass).inNamespace(namespace).resource(toBeReplaced).update();
     }
 
     public void deleteResources(ExtensionContext testContext) throws Exception {
