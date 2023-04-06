@@ -162,8 +162,9 @@ public class RollingUpdateUtils {
         );
     }
 
-    public static Map<String, String> waitForComponentScaleUpOrDown(String namespaceName, LabelSelector selector, int expectedPods, Map<String, String> pods) {
-        return waitTillComponentHasRolledAndPodsReady(namespaceName, selector, expectedPods, pods);
+    public static Map<String, String> waitForComponentScaleUpOrDown(String namespaceName, LabelSelector selector, int expectedPods) {
+        waitForComponentAndPodsReady(namespaceName, selector, expectedPods);
+        return PodUtils.podSnapshot(namespaceName, selector);
     }
 
     public static void waitForNoKafkaAndZKRollingUpdate(String namespaceName, String clusterName, Map<String, String> kafkaPods) {

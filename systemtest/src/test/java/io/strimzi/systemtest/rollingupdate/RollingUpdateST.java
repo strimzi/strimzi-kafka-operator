@@ -293,7 +293,7 @@ class RollingUpdateST extends AbstractST {
             kafka.getSpec().getKafka().setReplicas(scaleTo);
         }, testStorage.getNamespaceName());
 
-        kafkaPods = RollingUpdateUtils.waitForComponentScaleUpOrDown(testStorage.getNamespaceName(), testStorage.getKafkaSelector(), scaleTo, kafkaPods);
+        RollingUpdateUtils.waitForComponentScaleUpOrDown(testStorage.getNamespaceName(), testStorage.getKafkaSelector(), scaleTo);
 
         LOGGER.info("Kafka scale up to {} finished", scaleTo);
 
@@ -315,7 +315,7 @@ class RollingUpdateST extends AbstractST {
             LOGGER.info("Scale up Zookeeper to {}", zookeeperScaleTo);
 
             KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), k -> k.getSpec().getZookeeper().setReplicas(zookeeperScaleTo), testStorage.getNamespaceName());
-            RollingUpdateUtils.waitForComponentScaleUpOrDown(testStorage.getNamespaceName(), testStorage.getZookeeperSelector(), zookeeperScaleTo, zooKeeperPods);
+            RollingUpdateUtils.waitForComponentScaleUpOrDown(testStorage.getNamespaceName(), testStorage.getZookeeperSelector(), zookeeperScaleTo);
 
             LOGGER.info("Zookeeper scale up to {} finished", zookeeperScaleTo);
 
@@ -332,7 +332,7 @@ class RollingUpdateST extends AbstractST {
         LOGGER.info("Scale down Kafka to {}", initialReplicas);
         KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), k -> k.getSpec().getKafka().setReplicas(initialReplicas), testStorage.getNamespaceName());
 
-        RollingUpdateUtils.waitForComponentScaleUpOrDown(testStorage.getNamespaceName(), testStorage.getKafkaSelector(), initialReplicas, kafkaPods);
+        RollingUpdateUtils.waitForComponentScaleUpOrDown(testStorage.getNamespaceName(), testStorage.getKafkaSelector(), initialReplicas);
 
         LOGGER.info("Kafka scale down to {} finished", initialReplicas);
 

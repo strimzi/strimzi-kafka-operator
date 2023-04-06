@@ -97,8 +97,6 @@ public class KafkaRollerIsolatedST extends AbstractST {
             .endSpec()
             .build());
 
-        Map<String, String> kafkaPods = PodUtils.podSnapshot(namespaceName, kafkaSelector);
-
         LOGGER.info("Running kafkaScaleUpScaleDown {}", clusterName);
         final int initialReplicas = kubeClient(namespaceName).listPods(kafkaSelector).size();
         assertEquals(3, initialReplicas);
@@ -107,7 +105,7 @@ public class KafkaRollerIsolatedST extends AbstractST {
         int scaledUpReplicas = 4;
         KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, k -> k.getSpec().getKafka().setReplicas(scaledUpReplicas), namespaceName);
 
-        kafkaPods = RollingUpdateUtils.waitForComponentScaleUpOrDown(namespaceName, kafkaSelector, scaledUpReplicas, kafkaPods);
+        RollingUpdateUtils.waitForComponentScaleUpOrDown(namespaceName, kafkaSelector, scaledUpReplicas);
 
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(clusterName, topicName, 4, 4, 4).build());
 
@@ -122,7 +120,7 @@ public class KafkaRollerIsolatedST extends AbstractST {
 
         KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, k -> k.getSpec().getKafka().setReplicas(scaledDownReplicas), namespaceName);
 
-        kafkaPods = RollingUpdateUtils.waitForComponentScaleUpOrDown(namespaceName, kafkaSelector, scaledDownReplicas, kafkaPods);
+        Map<String, String> kafkaPods = RollingUpdateUtils.waitForComponentScaleUpOrDown(namespaceName, kafkaSelector, scaledDownReplicas);
 
         PodUtils.verifyThatRunningPodsAreStable(namespaceName, clusterName);
 
