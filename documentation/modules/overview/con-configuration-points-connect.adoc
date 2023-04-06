@@ -67,8 +67,8 @@ spec:
       - name: my-connector
         artifacts:
           - type: tgz
-            url: https://_ARTIFACT-ADDRESS_.tgz
-            sha512sum: _HASH-NUMBER-TO-VERIFY-ARTIFACT_
+            url: https://<plugin_download_location>.tgz
+            sha512sum: <checksum_to_verify_the_plugin>
       # ...
   # ...
 ----
