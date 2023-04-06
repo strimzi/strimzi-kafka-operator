@@ -8,7 +8,6 @@ import io.vertx.core.Promise;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
-import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
@@ -25,12 +24,8 @@ public abstract class TopicStoreTestBase {
 
     protected TopicStore store;
 
-    protected abstract boolean canRunTest();
-
     @Test
     public void testCrud(VertxTestContext context) {
-        Assumptions.assumeTrue(canRunTest());
-
         Checkpoint async = context.checkpoint();
 
         String topicName = "my_topic_" + ThreadLocalRandom.current().nextInt(Integer.MAX_VALUE);

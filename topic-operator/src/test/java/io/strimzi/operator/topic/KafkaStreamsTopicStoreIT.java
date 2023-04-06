@@ -30,11 +30,6 @@ public class KafkaStreamsTopicStoreIT extends TopicStoreTestBase {
 
     private static KafkaStreamsTopicStoreService service;
 
-    @Override
-    protected boolean canRunTest() {
-        return true;
-    }
-
     static KafkaStreamsTopicStoreService service(Map<String, String> configMap) throws Exception {
         Map<String, String> mergedMap = new HashMap<>(MANDATORY_CONFIG);
         mergedMap.putAll(configMap);

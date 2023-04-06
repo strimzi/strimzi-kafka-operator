@@ -9,7 +9,6 @@ import org.apache.zookeeper.server.ZooKeeperServer;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.nio.file.Files;
 
@@ -22,7 +21,7 @@ public class EmbeddedZooKeeper {
     public EmbeddedZooKeeper() throws IOException, InterruptedException {
         dir = Files.createTempDirectory("strimzi").toFile();
         zk = new ZooKeeperServer(dir, dir, 1000);
-        start(new InetSocketAddress(InetAddress.getLoopbackAddress(), 0));
+        start(new InetSocketAddress("localhost", TestUtils.getFreePort()));
     }
 
     private void start(InetSocketAddress addr) throws IOException, InterruptedException {
@@ -76,5 +75,4 @@ public class EmbeddedZooKeeper {
         InetSocketAddress addr = factory.getLocalAddress();
         return addr.getAddress().getHostAddress() + ":" + addr.getPort();
     }
-
 }

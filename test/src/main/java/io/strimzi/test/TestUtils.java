@@ -35,6 +35,7 @@ import java.io.PrintWriter;
 import java.io.Reader;
 import java.io.StringWriter;
 import java.io.Writer;
+import java.net.ServerSocket;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
@@ -429,6 +430,19 @@ public final class TestUtils {
             return Collections.unmodifiableMap(map);
         } else {
             return Collections.emptyMap();
+        }
+    }
+
+    /**
+     * Finds a free server port which can be used by the web server
+     *
+     * @return A free TCP port
+     */
+    public static int getFreePort()   {
+        try (ServerSocket serverSocket = new ServerSocket(0)) {
+            return serverSocket.getLocalPort();
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to find free port", e);
         }
     }
 }

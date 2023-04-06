@@ -4,12 +4,11 @@
  */
 package io.strimzi.operator.cluster.operator.assembly;
 
+import io.strimzi.test.TestUtils;
 import org.apache.kafka.connect.cli.ConnectDistributed;
 import org.apache.kafka.connect.errors.ConnectException;
 import org.apache.kafka.connect.runtime.Connect;
 
-import java.io.IOException;
-import java.net.ServerSocket;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -36,7 +35,7 @@ public class ConnectCluster {
 
     public void startup() throws InterruptedException {
         for (int i = 0; i < numNodes; i++) {
-            int port = getFreePort();
+            int port = TestUtils.getFreePort();
 
             Map<String, String> workerProps = new HashMap<>();
             workerProps.put("listeners", "http://localhost:" + port);
@@ -100,18 +99,5 @@ public class ConnectCluster {
      */
     public int getPort(int node) {
         return connectPorts.get(node);
-    }
-
-    /**
-     * Finds a free server port which can be used by the Connect REST API
-     *
-     * @return  A free TCP port
-     */
-    private int getFreePort()   {
-        try (ServerSocket serverSocket = new ServerSocket(0)) {
-            return serverSocket.getLocalPort();
-        } catch (IOException e) {
-            throw new RuntimeException("Failed to find free port", e);
-        }
     }
 }
