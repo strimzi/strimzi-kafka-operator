@@ -755,7 +755,7 @@ public class KafkaAssemblyOperatorPodSetTest {
 
     // Internal utility methods
     private Pod podFromPodSet(StrimziPodSet podSet, String name) {
-        return PodSetUtils.mapsToPods(podSet.getSpec().getPods()).stream().filter(p -> name.equals(p.getMetadata().getName())).findFirst().orElse(null);
+        return PodSetUtils.podSetToPods(podSet).stream().filter(p -> name.equals(p.getMetadata().getName())).findFirst().orElse(null);
     }
 
     static class MockKafkaAssemblyOperator extends KafkaAssemblyOperator  {

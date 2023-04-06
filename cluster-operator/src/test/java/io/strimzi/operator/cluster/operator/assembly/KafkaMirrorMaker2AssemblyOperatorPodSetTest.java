@@ -221,7 +221,7 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
     public void testScaleCluster(VertxTestContext context)  {
         KafkaMirrorMaker2 mm2 = new KafkaMirrorMaker2Builder(MM2).build();
         StrimziPodSet oldPodSet = CLUSTER.generatePodSet(1, null, null, false, null, null, null);
-        List<Pod> oldPods = PodSetUtils.mapsToPods(oldPodSet.getSpec().getPods());
+        List<Pod> oldPods = PodSetUtils.podSetToPods(oldPodSet);
 
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
@@ -323,7 +323,7 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
                 .build();
 
         StrimziPodSet oldPodSet = CLUSTER.generatePodSet(3, null, null, false, null, null, null);
-        List<Pod> oldPods = PodSetUtils.mapsToPods(oldPodSet.getSpec().getPods());
+        List<Pod> oldPods = PodSetUtils.podSetToPods(oldPodSet);
 
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
@@ -424,7 +424,7 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
                 .endSpec()
                 .build();
         StrimziPodSet oldPodSet = CLUSTER.generatePodSet(3, null, null, false, null, null, null);
-        List<Pod> oldPods = PodSetUtils.mapsToPods(oldPodSet.getSpec().getPods());
+        List<Pod> oldPods = PodSetUtils.podSetToPods(oldPodSet);
 
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 

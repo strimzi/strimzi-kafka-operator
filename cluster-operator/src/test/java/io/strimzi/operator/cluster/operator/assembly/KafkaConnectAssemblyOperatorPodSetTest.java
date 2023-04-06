@@ -215,7 +215,7 @@ public class KafkaConnectAssemblyOperatorPodSetTest {
     public void testScaleCluster(VertxTestContext context)  {
         KafkaConnect connect = new KafkaConnectBuilder(CONNECT).build();
         StrimziPodSet oldPodSet = CLUSTER.generatePodSet(1, null, null, false, null, null, null);
-        List<Pod> oldPods = PodSetUtils.mapsToPods(oldPodSet.getSpec().getPods());
+        List<Pod> oldPods = PodSetUtils.podSetToPods(oldPodSet);
 
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
@@ -311,7 +311,7 @@ public class KafkaConnectAssemblyOperatorPodSetTest {
                 .build();
 
         StrimziPodSet oldPodSet = CLUSTER.generatePodSet(3, null, null, false, null, null, null);
-        List<Pod> oldPods = PodSetUtils.mapsToPods(oldPodSet.getSpec().getPods());
+        List<Pod> oldPods = PodSetUtils.podSetToPods(oldPodSet);
 
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
@@ -406,7 +406,7 @@ public class KafkaConnectAssemblyOperatorPodSetTest {
                 .endSpec()
                 .build();
         StrimziPodSet oldPodSet = CLUSTER.generatePodSet(3, null, null, false, null, null, null);
-        List<Pod> oldPods = PodSetUtils.mapsToPods(oldPodSet.getSpec().getPods());
+        List<Pod> oldPods = PodSetUtils.podSetToPods(oldPodSet);
 
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
@@ -514,7 +514,7 @@ public class KafkaConnectAssemblyOperatorPodSetTest {
                 .endSpec()
                 .build();
         StrimziPodSet oldPodSet = CLUSTER.generatePodSet(3, null, null, false, null, null, null);
-        List<Pod> oldPods = PodSetUtils.mapsToPods(oldPodSet.getSpec().getPods());
+        List<Pod> oldPods = PodSetUtils.podSetToPods(oldPodSet);
         Pod terminatedBuildPod = new PodBuilder()
                 .withNewMetadata()
                     .withName(KafkaConnectResources.buildPodName(NAME))
@@ -616,7 +616,7 @@ public class KafkaConnectAssemblyOperatorPodSetTest {
                     assertThat(podSet.getMetadata().getAnnotations().get(Annotations.STRIMZI_IO_CONNECT_BUILD_IMAGE), is("my-connect-build@sha256:blablabla"));
                     assertThat(podSet.getSpec().getPods().size(), is(3));
 
-                    for (Pod pod : PodSetUtils.mapsToPods(podSet.getSpec().getPods()))  {
+                    for (Pod pod : PodSetUtils.podSetToPods(podSet))  {
                         assertThat(pod.getMetadata().getAnnotations().get(Annotations.STRIMZI_IO_CONNECT_BUILD_REVISION), is("a324347c751944b0"));
                         assertThat(pod.getSpec().getContainers().get(0).getImage(), is("my-connect-build@sha256:blablabla"));
                     }

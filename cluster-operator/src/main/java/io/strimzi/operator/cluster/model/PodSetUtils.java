@@ -8,6 +8,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.fabric8.kubernetes.api.model.Pod;
+import io.strimzi.api.kafka.model.StrimziPodSet;
 
 import java.util.List;
 import java.util.Map;
@@ -67,14 +68,20 @@ public class PodSetUtils {
     }
 
     /**
-     * Converts List of Maps to List of Pods which can be used in StrimziPodSets
+     * Converts a PdoSet to a List of Pods. This is useful when extracting information from the Pods in a PodSet
      *
-     * @param maps  List of Maps which should be converted
+     * @param podSet  PodSet with the Pods
      *
-     * @return      List of Maps with the Pod structures
+     * @return      List of Pods
      */
-    public static List<Pod> mapsToPods(List<Map<String, Object>> maps)  {
-        return maps.stream().map(m -> mapToPod(m)).collect(Collectors.toList());
+    public static List<Pod> podSetToPods(StrimziPodSet podSet)  {
+        if (podSet != null
+                && podSet.getSpec() != null
+                && podSet.getSpec().getPods() != null)   {
+            return podSet.getSpec().getPods().stream().map(m -> mapToPod(m)).toList();
+        } else {
+            return List.of();
+        }
     }
 
     /**

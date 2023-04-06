@@ -116,7 +116,7 @@ public class KafkaClusterPodSetTest {
         assertThat(ps.getSpec().getPods().size(), is(3));
 
         // We need to loop through the pods to make sure they have the right values
-        List<Pod> pods = PodSetUtils.mapsToPods(ps.getSpec().getPods());
+        List<Pod> pods = PodSetUtils.podSetToPods(ps);
         for (Pod pod : pods)  {
             assertThat(pod.getMetadata().getLabels().entrySet().containsAll(kc.labels.withStrimziPodName(pod.getMetadata().getName()).withStatefulSetPod(pod.getMetadata().getName()).withStrimziPodSetController(kc.getComponentName()).toMap().entrySet()), is(true));
             assertThat(pod.getMetadata().getAnnotations().size(), is(2));
@@ -371,7 +371,7 @@ public class KafkaClusterPodSetTest {
         assertThat(ps.getSpec().getPods().size(), is(3));
 
         // We need to loop through the pods to make sure they have the right values
-        List<Pod> pods = PodSetUtils.mapsToPods(ps.getSpec().getPods());
+        List<Pod> pods = PodSetUtils.podSetToPods(ps);
         for (Pod pod : pods)  {
             assertThat(pod.getMetadata().getLabels().entrySet().containsAll(podLabels.entrySet()), is(true));
             assertThat(pod.getMetadata().getAnnotations().entrySet().containsAll(podAnnos.entrySet()), is(true));
@@ -458,7 +458,7 @@ public class KafkaClusterPodSetTest {
         StrimziPodSet ps = kc.generatePodSet(3, true, null, null, brokerId -> new HashMap<>());
 
         // We need to loop through the pods to make sure they have the right values
-        List<Pod> pods = PodSetUtils.mapsToPods(ps.getSpec().getPods());
+        List<Pod> pods = PodSetUtils.podSetToPods(ps);
         for (Pod pod : pods) {
             assertThat(pod.getSpec().getImagePullSecrets().size(), is(2));
             assertThat(pod.getSpec().getImagePullSecrets().contains(secret1), is(true));
@@ -479,7 +479,7 @@ public class KafkaClusterPodSetTest {
         StrimziPodSet ps = kc.generatePodSet(3, true, null, secrets, brokerId -> new HashMap<>());
 
         // We need to loop through the pods to make sure they have the right values
-        List<Pod> pods = PodSetUtils.mapsToPods(ps.getSpec().getPods());
+        List<Pod> pods = PodSetUtils.podSetToPods(ps);
         for (Pod pod : pods) {
             assertThat(pod.getSpec().getImagePullSecrets().size(), is(2));
             assertThat(pod.getSpec().getImagePullSecrets().contains(secret1), is(true));
@@ -509,7 +509,7 @@ public class KafkaClusterPodSetTest {
         StrimziPodSet ps = kc.generatePodSet(3, true, null, List.of(secret1), brokerId -> new HashMap<>());
 
         // We need to loop through the pods to make sure they have the right values
-        List<Pod> pods = PodSetUtils.mapsToPods(ps.getSpec().getPods());
+        List<Pod> pods = PodSetUtils.podSetToPods(ps);
         for (Pod pod : pods) {
             assertThat(pod.getSpec().getImagePullSecrets().size(), is(1));
             assertThat(pod.getSpec().getImagePullSecrets().contains(secret1), is(false));
@@ -522,7 +522,7 @@ public class KafkaClusterPodSetTest {
         StrimziPodSet ps = KC.generatePodSet(3, true, null, null, brokerId -> new HashMap<>());
 
         // We need to loop through the pods to make sure they have the right values
-        List<Pod> pods = PodSetUtils.mapsToPods(ps.getSpec().getPods());
+        List<Pod> pods = PodSetUtils.podSetToPods(ps);
         for (Pod pod : pods) {
             assertThat(pod.getSpec().getImagePullSecrets().size(), is(0));
         }
@@ -534,7 +534,7 @@ public class KafkaClusterPodSetTest {
         StrimziPodSet ps = KC.generatePodSet(3, true, ImagePullPolicy.ALWAYS, null, brokerId -> new HashMap<>());
 
         // We need to loop through the pods to make sure they have the right values
-        List<Pod> pods = PodSetUtils.mapsToPods(ps.getSpec().getPods());
+        List<Pod> pods = PodSetUtils.podSetToPods(ps);
         for (Pod pod : pods) {
             assertThat(pod.getSpec().getContainers().get(0).getImagePullPolicy(), is(ImagePullPolicy.ALWAYS.toString()));
         }
@@ -543,7 +543,7 @@ public class KafkaClusterPodSetTest {
         ps = KC.generatePodSet(3, true, ImagePullPolicy.IFNOTPRESENT, null, brokerId -> new HashMap<>());
 
         // We need to loop through the pods to make sure they have the right values
-        pods = PodSetUtils.mapsToPods(ps.getSpec().getPods());
+        pods = PodSetUtils.podSetToPods(ps);
         for (Pod pod : pods) {
             assertThat(pod.getSpec().getContainers().get(0).getImagePullPolicy(), is(ImagePullPolicy.IFNOTPRESENT.toString()));
         }
@@ -563,7 +563,7 @@ public class KafkaClusterPodSetTest {
 
         // Test generated SPS
         StrimziPodSet ps = kc.generatePodSet(3, false, null, null, brokerId -> new HashMap<>());
-        List<Pod> pods = PodSetUtils.mapsToPods(ps.getSpec().getPods());
+        List<Pod> pods = PodSetUtils.podSetToPods(ps);
         for (Pod pod : pods) {
             assertThat(pod.getSpec().getVolumes().get(0).getEmptyDir().getSizeLimit(), is(new Quantity("1", "Gi")));
         }
@@ -583,7 +583,7 @@ public class KafkaClusterPodSetTest {
 
         // Test generated SPS
         StrimziPodSet ps = kc.generatePodSet(3, false, null, null, brokerId -> new HashMap<>());
-        List<Pod> pods = PodSetUtils.mapsToPods(ps.getSpec().getPods());
+        List<Pod> pods = PodSetUtils.podSetToPods(ps);
         for (Pod pod : pods) {
             assertThat(pod.getSpec().getVolumes().get(0).getEmptyDir().getSizeLimit(), is(Matchers.nullValue()));
         }
@@ -602,7 +602,7 @@ public class KafkaClusterPodSetTest {
 
         // Test generated SPS
         StrimziPodSet ps = kc.generatePodSet(3, false, null, null, brokerId -> new HashMap<>());
-        List<Pod> pods = PodSetUtils.mapsToPods(ps.getSpec().getPods());
+        List<Pod> pods = PodSetUtils.podSetToPods(ps);
         for (Pod pod : pods) {
             assertThat(pod.getSpec().getVolumes().stream().filter(v -> "data".equals(v.getName())).findFirst().orElseThrow().getEmptyDir(), is(notNullValue()));
         }
@@ -620,7 +620,7 @@ public class KafkaClusterPodSetTest {
 
         // Test generated SPS
         StrimziPodSet ps = kc.generatePodSet(3, false, null, null, brokerId -> new HashMap<>());
-        List<Pod> pods = PodSetUtils.mapsToPods(ps.getSpec().getPods());
+        List<Pod> pods = PodSetUtils.podSetToPods(ps);
         for (Pod pod : pods) {
             assertThat(pod.getSpec().getSecurityContext().getFsGroup(), is(0L));
 
@@ -644,7 +644,7 @@ public class KafkaClusterPodSetTest {
         StrimziPodSet sps = kc.generatePodSet(3, false, null, null, brokerId -> new HashMap<>());
         assertThat(sps.getMetadata().getLabels().get("foo"), is("bar"));
 
-        List<Pod> pods = PodSetUtils.mapsToPods(sps.getSpec().getPods());
+        List<Pod> pods = PodSetUtils.podSetToPods(sps);
         for (Pod pod : pods) {
             assertThat(pod.getMetadata().getLabels().get("foo"), is("bar"));
         }
@@ -654,7 +654,7 @@ public class KafkaClusterPodSetTest {
     public void testDefaultSecurityContext() {
         StrimziPodSet sps = KC.generatePodSet(3, false, null, null, brokerId -> new HashMap<>());
 
-        List<Pod> pods = PodSetUtils.mapsToPods(sps.getSpec().getPods());
+        List<Pod> pods = PodSetUtils.podSetToPods(sps);
         for (Pod pod : pods) {
             assertThat(pod.getSpec().getSecurityContext().getFsGroup(), is(0L));
             assertThat(pod.getSpec().getContainers().get(0).getSecurityContext(), is(nullValue()));
