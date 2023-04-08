@@ -62,6 +62,10 @@ public class KafkaExporterReconcilerTest {
             ResourceUtils.createInitialCaKeySecret(NAMESPACE, NAME, AbstractModel.clusterCaKeySecretName(NAME), MockCertManager.clusterCaKey())
     );
 
+    /*
+     * Tests Kafka Exporter reconciliation when Kafka Exporter is enabled. In such case, the KE Deployment and all other
+     * resources should be created ot updated. So the reconcile methods should be called with non-null values.
+     */
     @Test
     public void reconcileWithEnabledExporter(VertxTestContext context) {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
@@ -123,6 +127,12 @@ public class KafkaExporterReconcilerTest {
                 })));
     }
 
+    /*
+     * Tests Kafka Exporter reconciliation when Kafka Exporter is enabled. In such case, the KE Deployment and all other
+     * resources should be created ot updated. So the reconcile methods should be called with non-null values. However,
+     * when the network policy generation is disabled, network policies should not be touched (so the reconcile should
+     * not be called.)
+     */
     @Test
     public void reconcileWithEnabledExporterWithoutNetworkPolicies(VertxTestContext context) {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
@@ -178,6 +188,10 @@ public class KafkaExporterReconcilerTest {
                 })));
     }
 
+    /*
+     * Tests Kafka Exporter reconciliation when Kafka Exporter is disabled. In such case, the KE Deployment and all other
+     * resources should be deleted. So the reconcile methods should be called with null values.
+     */
     @Test
     public void reconcileWithDisabledExporter(VertxTestContext context) {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
@@ -230,6 +244,11 @@ public class KafkaExporterReconcilerTest {
                 })));
     }
 
+    /*
+     * Tests Kafka Exporter reconciliation when Kafka Exporter is disabled. In such case, the KE Deployment and all other
+     * resources should be deleted. So the reconcile methods should be called with null values. However, when the network
+     * policy generation is disabled, network policies should not be touched (so the reconcile should not be called.)
+     */
     @Test
     public void reconcileWithDisabledExporterWithoutNetworkPolicies(VertxTestContext context) {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
