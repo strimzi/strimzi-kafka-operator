@@ -9,7 +9,8 @@ This procedure describes how to delete an existing ZooKeeper node by using a Kub
 Deleting a ZooKeeper node consists of deleting both the `Pod` on which ZooKeeper is running and the related `PersistentVolumeClaim` (if the cluster was deployed with persistent storage).
 After deletion, the `Pod` and its related `PersistentVolumeClaim` are recreated automatically.
 
-WARNING: Deleting a `PersistentVolumeClaim` can cause permanent data loss. The following procedure should only be performed if you have encountered storage issues.
+WARNING: Deleting a `PersistentVolumeClaim` can cause permanent data loss and the availability of your cluster cannot be guaranteed.
+The following procedure should only be performed if you have encountered storage issues.
 
 .Prerequisites
 

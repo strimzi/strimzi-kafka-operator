@@ -8,7 +8,6 @@ import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.strimzi.api.kafka.model.StrimziPodSet;
 import io.strimzi.api.kafka.model.StrimziPodSetBuilder;
-import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.model.PodSetUtils;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.operator.resource.StrimziPodSetOperator;
@@ -25,11 +24,11 @@ import io.vertx.core.Future;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 /**
  * This class takes care of manually cleaning pods belonging to a specific controller if it is requested by the user
- * using an annotation. Pod clean-up in this case means deletion of the pod and related PVCs.
+ * using an annotation. Pod clean-up in this case means deletion of the pod and related PVCs. The Pod and PVCs will be
+ * recreated only by the further parts of the KafkaAssemblyOperator.
  */
 public class ManualPodCleaner {
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(ManualPodCleaner.class.getName());
@@ -37,7 +36,6 @@ public class ManualPodCleaner {
     private final Reconciliation reconciliation;
     private final String strimziPodSetName;
     private final Labels selector;
-    private final long operationTimeoutMs;
 
     private final PodOperator podOperator;
     private final PvcOperator pvcOperator;
@@ -49,20 +47,17 @@ public class ManualPodCleaner {
      * @param reconciliation    Reconciliation marker
      * @param strimziPodSetName Name of the controller resource (e.g. StrimziPodSet)
      * @param selector          Selector for selecting the Pods belonging to this controller
-     * @param config            Cluster Operator Configuration
      * @param supplier          Resource Operator Supplier with the Kubernetes resource operators
      */
     public ManualPodCleaner(
             Reconciliation reconciliation,
             String strimziPodSetName,
             Labels selector,
-            ClusterOperatorConfig config,
             ResourceOperatorSupplier supplier
     ) {
         this.reconciliation = reconciliation;
         this.strimziPodSetName = strimziPodSetName;
         this.selector = selector;
-        this.operationTimeoutMs = config.getOperationTimeoutMs();
 
         this.strimziPodSetOperator = supplier.strimziPodSetOperator;
         this.pvcOperator = supplier.pvcOperations;
@@ -75,7 +70,6 @@ public class ManualPodCleaner {
      * @param reconciliation            Reconciliation marker
      * @param strimziPodSetName         Name of the controller resource (e.g. strimziPodSetName)
      * @param selector                  Selector for selecting the Pods belonging to this controller
-     * @param operationTimeoutMs        Timeout for Kubernetes operations
      * @param strimziPodSetOperator     The Pod Set operator for working with Strimzi Pod Sets
      * @param podOperator               The Pod operator for working with Kubernetes Pods
      * @param pvcOperator               The Persistent Volume Claim operator for working with Kubernetes PVC
@@ -84,7 +78,6 @@ public class ManualPodCleaner {
             Reconciliation reconciliation,
             String strimziPodSetName,
             Labels selector,
-            long operationTimeoutMs,
 
             StrimziPodSetOperator strimziPodSetOperator,
             PodOperator podOperator,
@@ -93,7 +86,6 @@ public class ManualPodCleaner {
         this.reconciliation = reconciliation;
         this.strimziPodSetName = strimziPodSetName;
         this.selector = selector;
-        this.operationTimeoutMs = operationTimeoutMs;
 
         this.strimziPodSetOperator = strimziPodSetOperator;
         this.pvcOperator = pvcOperator;
@@ -105,13 +97,11 @@ public class ManualPodCleaner {
      * them to be deleted including their PVCs. If the user requested it, it will delete them. In a single
      * reconciliation, always only one Pod is deleted. If multiple pods are marked for cleanup, they will be done
      * in subsequent reconciliations. This method only checks if cleanup was requested and calls other methods to
-     * execute it.
+     * execute it. The Pod and PVCs will be recreated only by the further parts of the KafkaAssemblyOperator.
      *
-     * @param desiredPvcs   The list of desired PVCs which should be created after the old Pod and PVCs are deleted
-     *
-     * @return              Future indicating the result of the cleanup operation. Returns always success if there are no pods to clean.
+     * @return  Future indicating the result of the cleanup operation. Returns always success if there are no pods to clean.
      */
-    public Future<Void> maybeManualPodCleaning(List<PersistentVolumeClaim> desiredPvcs) {
+    public Future<Void> maybeManualPodCleaning() {
         return podOperator.listAsync(reconciliation.namespace(), selector)
                 .compose(pods -> {
                     // Only one pod per reconciliation is rolled
@@ -125,7 +115,7 @@ public class ManualPodCleaner {
                         // No pod is annotated for deletion => return success
                         return Future.succeededFuture();
                     } else {
-                        return manualPodCleaning(podToClean.getMetadata().getName(), desiredPvcs);
+                        return manualPodCleaning(podToClean.getMetadata().getName());
                     }
                 });
     }
@@ -133,14 +123,14 @@ public class ManualPodCleaner {
     /**
      * Cleans a Pod and its PVCs if the user marked them for cleanup (deletion). It will first identify the existing
      * PVCs used by given Pod and the desired PVCs which need to be created after the old PVCs are deleted. Once
-     * they are identified, it will start the deletion by deleting the controller resource.
+     * they are identified, it will start the deletion by removing it from the PodSet and then deleting the actual Pod
+     * and PVC.
      *
      * @param podName           Name of the Pod which should be cleaned / deleted
-     * @param desiredPvcs       The list of desired PVCs which should be created after the old Pod and PVCs are deleted
      *
      * @return                  Future indicating the result of the cleanup
      */
-    private Future<Void> manualPodCleaning(String podName, List<PersistentVolumeClaim> desiredPvcs) {
+    private Future<Void> manualPodCleaning(String podName) {
         return pvcOperator.listAsync(reconciliation.namespace(), selector)
                 .compose(existingPvcs -> {
                     // Find out which PVCs need to be deleted
@@ -150,18 +140,12 @@ public class ManualPodCleaner {
                         deletePvcs = existingPvcs
                                 .stream()
                                 .filter(pvc -> pvc.getMetadata().getName().endsWith(podName))
-                                .collect(Collectors.toList());
+                                .toList();
                     } else {
-                        deletePvcs = new ArrayList<>(0);
+                        deletePvcs = List.of();
                     }
 
-                    // Find out which PVCs need to be created
-                    List<PersistentVolumeClaim> createPvcs = desiredPvcs
-                            .stream()
-                            .filter(pvc -> pvc.getMetadata().getName().endsWith(podName))
-                            .collect(Collectors.toList());
-
-                    return cleanPodPvcAndPodSet(strimziPodSetName, podName, createPvcs, deletePvcs);
+                    return cleanPodPvcAndPodSet(strimziPodSetName, podName, deletePvcs);
                 });
     }
 
@@ -169,30 +153,26 @@ public class ManualPodCleaner {
      * Handles the modification of the StrimziPodSet controlling the pod which should be cleaned. In order
      * to clean the pod and its PVCs, we first need to remove the pod from the StrimziPodSet. Otherwise, the
      * StrimziPodSet will break the process by recreating the pods or PVCs. This method first modifies the StrimziPodSet
-     * and then calls other method to delete the Pod, PVCs and create the new PVCs. Once this method completes, it
-     * will update the StrimziPodSet again. The Pod will be then recreated by the StrimziPodSet and this method just
-     * waits for it to become ready.
+     * and then calls other method to delete the Pod and PVCs.
      *
      * The complete flow looks like this
      *     1. Remove the deleted pod from the PodSet
-     *     2. Trigger the Pod and PVC deletion and recreation
-     *     3. Recreate the original PodSet
-     *     4. Wait for the Pod to be created and become ready
+     *     2. Trigger the Pod and PVC deletion
      *
      * @param podSetName    Name of the StrimziPodSet to which this pod belongs
      * @param podName       Name of the Pod which should be cleaned / deleted
-     * @param desiredPvcs   The list of desired PVCs which should be created after the old Pod and PVCs are deleted
-     * @param currentPvcs   The list of current PVCs which should be deleted
+     * @param deletePvcs   The list of current PVCs which should be deleted
      *
      * @return              Future indicating the result of the cleanup
      */
-    private Future<Void> cleanPodPvcAndPodSet(String podSetName, String podName, List<PersistentVolumeClaim> desiredPvcs, List<PersistentVolumeClaim> currentPvcs) {
+    private Future<Void> cleanPodPvcAndPodSet(String podSetName, String podName, List<PersistentVolumeClaim> deletePvcs) {
         return strimziPodSetOperator.getAsync(reconciliation.namespace(), podSetName)
                 .compose(podSet -> {
                     List<Map<String, Object>> desiredPods = podSet.getSpec().getPods().stream()
                             .filter(pod -> !podName.equals(PodSetUtils.mapToPod(pod).getMetadata().getName()))
-                            .collect(Collectors.toList());
+                            .toList();
 
+                    // New PodSet without the Pod we are going to delete
                     StrimziPodSet reducedPodSet = new StrimziPodSetBuilder(podSet)
                             .editSpec()
                             .withPods(desiredPods)
@@ -200,18 +180,7 @@ public class ManualPodCleaner {
                             .build();
 
                     return strimziPodSetOperator.reconcile(reconciliation, reconciliation.namespace(), podSetName, reducedPodSet)
-                            .compose(ignore -> cleanPodAndPvc(podName, desiredPvcs, currentPvcs))
-                            .compose(ignore -> {
-                                // We recreate the StrimziPodSet in its old configuration => any further changes have to be done by rolling update
-                                // These fields need to be cleared before recreating the StrimziPodSet
-                                podSet.getMetadata().setResourceVersion(null);
-                                podSet.getMetadata().setSelfLink(null);
-                                podSet.getMetadata().setUid(null);
-                                podSet.setStatus(null);
-
-                                return strimziPodSetOperator.reconcile(reconciliation, reconciliation.namespace(), podSetName, podSet);
-                            })
-                            .compose(ignore -> podOperator.readiness(reconciliation, reconciliation.namespace(), podName, 1_000L, operationTimeoutMs))
+                            .compose(ignore -> deletePodAndPvc(podName, deletePvcs))
                             .map((Void) null);
                 });
     }
@@ -219,26 +188,23 @@ public class ManualPodCleaner {
     /**
      * This is an internal method which actually executes the deletion of the Pod and PVC. This is a non-trivial
      * since the PVC and the Pod are tightly coupled and one cannot be deleted without the other. It will first
-     * trigger the Pod deletion. Once the Pod is deleted, it will delete the PVCs. Once they are deleted as well, it
-     * will create the new PVCs. The Pod is not recreated here => that is done by the controller (e.g. StrimziPodSet).
+     * trigger the Pod deletion. Once the Pod is deleted, it will delete the PVCs.
      *
-     * This method expects that the StrimziPodSet or any other controller are already deleted to not interfere with
-     * the process.
+     * This method expects that the StrimziPodSet or any other controller are already deleted (or modified by removing
+     * the pod from it) to not interfere with the process.
      *
      * To address these, we:
      *     1. Delete the Pod
      *     2. Wait for the Pod to be actually deleted
      *     3. Delete the PVC
      *     4. Wait for the PVCs to be actually deleted
-     *     5. Recreate the PVCs
      *
      * @param podName           Name of the pod which should be deleted
      * @param deletePvcs        The list of PVCs which should be deleted
-     * @param createPvcs        The list of PVCs which should be recreated
      *
      * @return                  Future which completes when the Pod and PVC are deleted
      */
-    private Future<Void> cleanPodAndPvc(String podName, List<PersistentVolumeClaim> createPvcs, List<PersistentVolumeClaim> deletePvcs) {
+    private Future<Void> deletePodAndPvc(String podName, List<PersistentVolumeClaim> deletePvcs) {
         // First we delete the Pod which should be cleaned
         return podOperator.deleteAsync(reconciliation, reconciliation.namespace(), podName, true)
                 .compose(ignore -> {
@@ -252,19 +218,6 @@ public class ManualPodCleaner {
                         deleteResults.add(pvcOperator.deleteAsync(reconciliation, reconciliation.namespace(), pvcName, true));
                     }
                     return CompositeFuture.join(deleteResults);
-                })
-                .compose(ignore -> {
-                    // Once everything was deleted, we can recreate the PVCs
-                    // The Pod will be recreated later when the controller resource is recreated
-                    @SuppressWarnings({ "rawtypes" }) // Has to use Raw type because of the CompositeFuture
-                    List<Future> createResults = new ArrayList<>(createPvcs.size());
-
-                    for (PersistentVolumeClaim pvc : createPvcs)    {
-                        LOGGER.debugCr(reconciliation, "Reconciling PVC {} for Pod {} after it was deleted and maybe recreated by the pod", pvc.getMetadata().getName(), podName);
-                        createResults.add(pvcOperator.reconcile(reconciliation, reconciliation.namespace(), pvc.getMetadata().getName(), pvc));
-                    }
-
-                    return CompositeFuture.join(createResults);
                 })
                 .map((Void) null);
     }
