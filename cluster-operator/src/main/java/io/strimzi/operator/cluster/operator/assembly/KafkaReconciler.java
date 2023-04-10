@@ -103,7 +103,6 @@ public class KafkaReconciler {
     private final Vertx vertx;
     private final long operationTimeoutMs;
     /* test */ final KafkaCluster kafka;
-    private final Storage oldStorage;
     private final ClusterCa clusterCa;
     private final ClientsCa clientsCa;
     private final List<String> maintenanceWindows;
@@ -190,7 +189,6 @@ public class KafkaReconciler {
             this.kafka.setLogMessageFormatVersion(versionChange.logMessageFormatVersion());
         }
 
-        this.oldStorage = oldStorage;
         this.currentReplicas = currentReplicas;
         this.clusterCa = clusterCa;
         this.clientsCa = clientsCa;
@@ -287,11 +285,10 @@ public class KafkaReconciler {
                 reconciliation,
                 KafkaResources.kafkaStatefulSetName(reconciliation.name()),
                 kafka.getSelectorLabels(),
-                operationTimeoutMs,
                 strimziPodSetOperator,
                 podOperator,
                 pvcOperator
-        ).maybeManualPodCleaning(kafka.generatePersistentVolumeClaims(oldStorage));
+        ).maybeManualPodCleaning();
     }
 
     /**

@@ -241,11 +241,10 @@ public class ZooKeeperReconciler {
                 reconciliation,
                 KafkaResources.zookeeperStatefulSetName(reconciliation.name()),
                 zk.getSelectorLabels(),
-                operationTimeoutMs,
                 strimziPodSetOperator,
                 podOperator,
                 pvcOperator
-        ).maybeManualPodCleaning(zk.generatePersistentVolumeClaims());
+        ).maybeManualPodCleaning();
     }
 
     /**
