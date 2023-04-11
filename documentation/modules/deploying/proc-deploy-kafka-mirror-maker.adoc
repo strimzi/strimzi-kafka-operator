@@ -47,22 +47,26 @@ kubectl apply -f examples/mirror-maker/kafka-mirror-maker-2.yaml
 +
 [source,shell,subs="+quotes"]
 ----
-kubectl get deployments -n _<my_cluster_operator_namespace>_
+kubectl get pods -n _<my_cluster_operator_namespace>_
 ----
 +
 .Output shows the deployment name and readiness
 [source,shell,subs="+quotes"]
 ----
-NAME                          READY  UP-TO-DATE  AVAILABLE
-my-mirror-maker-mirror-maker  1/1    1           1
-my-mm2-cluster-mirrormaker2   1/1    1           1
+NAME                                    READY  STATUS   RESTARTS
+my-mirror-maker-mirror-maker-<pod_id>   1/1    Running  1
+my-mm2-cluster-mirrormaker2-<pod_id>            1/1    Running  1
 ----
 +
-`my-mirror-maker` is the name of the Kafka MirrorMaker cluster.
+`my-mirror-maker` is the name of the Kafka MirrorMaker cluster. 
 `my-mm2-cluster` is the name of the Kafka MirrorMaker 2 cluster.
 +
+A pod ID identifies each pod created.
++
+With the default deployment, you install a single MirrorMaker or MirrorMaker 2 pod.
++
 `READY` shows the number of replicas that are ready/expected.
-The deployment is successful when the `AVAILABLE` output shows `1`.
+The deployment is successful when the `STATUS` shows as `Running`.
 
 [role="_additional-resources"]
 .Additional resources

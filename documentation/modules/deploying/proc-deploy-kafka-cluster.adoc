@@ -103,7 +103,9 @@ my-cluster-zookeeper-2      1/1     Running   0
 +
 `my-cluster` is the name of the Kafka cluster.
 +
-With the default deployment, you install an Entity Operator cluster, 3 Kafka pods, and 3 ZooKeeper pods.
+A sequential index number starting with `0` identifies each Kafka and ZooKeeper pod created.
++
+With the default deployment, you create an Entity Operator cluster, 3 Kafka pods, and 3 ZooKeeper pods.
 +
 `READY` shows the number of replicas that are ready/expected.
 The deployment is successful when the `STATUS` shows as `Running`.

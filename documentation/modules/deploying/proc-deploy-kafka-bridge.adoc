@@ -32,20 +32,24 @@ kubectl apply -f examples/bridge/kafka-bridge.yaml
 +
 [source,shell,subs="+quotes"]
 ----
-kubectl get deployments -n _<my_cluster_operator_namespace>_
+kubectl get pods -n _<my_cluster_operator_namespace>_
 ----
 +
 .Output shows the deployment name and readiness
 [source,shell,subs="+quotes"]
 ----
-NAME              READY  UP-TO-DATE  AVAILABLE
-my-bridge-bridge  1/1    1           1
+NAME                       READY  STATUS   RESTARTS
+my-bridge-bridge-<pod_id>  1/1    Running  0
 ----
 +
 `my-bridge` is the name of the Kafka Bridge cluster.
 +
+A pod ID identifies each pod created.
++
+With the default deployment, you install a single Kafka Bridge pod.
++
 `READY` shows the number of replicas that are ready/expected.
-The deployment is successful when the `AVAILABLE` output shows `1`.
+The deployment is successful when the `STATUS` shows as `Running`.
 
 [role="_additional-resources"]
 .Additional resources
