@@ -1296,7 +1296,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
     }
 
     /**
-     * Tests the transition from 'Ready' to 'Ready' if Kafka cluster gets `NotReady` but the rebalance is in `Ready` state
+     * Tests that `KafkaRebalance` stays in `Ready` state when the Kafka cluster moves to `NotReady` state.
      *
      * 1. A new KafkaRebalance resource is created. It is moved directly to ready state
      * 2. The operator checks if the rebalance resource is in `Ready` state or not
