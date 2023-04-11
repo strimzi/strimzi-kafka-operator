@@ -1316,8 +1316,8 @@ public class KafkaRebalanceAssemblyOperatorTest {
 
         kr = new KafkaRebalanceBuilder(kr)
                 .withNewStatus()
-                .withObservedGeneration(1L)
-                .withConditions(new ConditionBuilder()
+                    .withObservedGeneration(1L)
+                    .withConditions(new ConditionBuilder()
                         .withType("Ready")
                         .withStatus("True")
                         .build())
