@@ -354,7 +354,7 @@ public class Capacity {
             // requires a distinct broker capacity entry for every broker because the
             // Kafka volume paths are not homogeneous across brokers and include
             // the broker pod index in their names.
-            List<NodeRef> nodeList = KafkaCluster.nodes(reconciliation.name(), replicas);
+            Set<NodeRef> nodeList = KafkaCluster.nodes(reconciliation.name(), replicas);
             for (NodeRef node : nodeList)   {
                 disk = processDisk(storage, node.nodeId());
                 BrokerCapacity broker = new BrokerCapacity(node.nodeId(), cpu, disk, inboundNetwork, outboundNetwork);

@@ -93,6 +93,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -433,9 +434,9 @@ public class KafkaCluster extends AbstractStatefulModel implements SupportsMetri
      * Generates list of references to Kafka nodes for this Kafka cluster. The references contain both the pod name and
      * the ID of the Kafka node.
      *
-     * @return  List with Kafka node references
+     * @return  Set of Kafka node references
      */
-    private List<NodeRef> nodes() {
+    private Set<NodeRef> nodes() {
         return nodes(cluster, replicas);
     }
 
@@ -445,10 +446,10 @@ public class KafkaCluster extends AbstractStatefulModel implements SupportsMetri
      * @param cluster   Name of the Kafka cluster
      * @param replicas  Number of replicas
      *
-     * @return  List with Kafka node references
+     * @return  Set of Kafka node references
      */
-    public static List<NodeRef> nodes(String cluster, int replicas) {
-        ArrayList<NodeRef> podNames = new ArrayList<>(replicas);
+    public static Set<NodeRef> nodes(String cluster, int replicas) {
+        Set<NodeRef> podNames = new LinkedHashSet<>(replicas);
 
         for (int nodeId = 0; nodeId < replicas; nodeId++) {
             podNames.add(new NodeRef(KafkaResources.kafkaPodName(cluster, nodeId), nodeId));
