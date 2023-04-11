@@ -232,7 +232,6 @@ public class KafkaBrokerConfigurationBuilderTest {
         assertThat(configuration, isEquivalent("broker.id=2",
                 "node.id=2",
                 "authorizer.class.name=org.apache.kafka.metadata.authorizer.StandardAuthorizer",
-                "early.start.listeners=CONTROLPLANE-9090,REPLICATION-9091",
                 "super.users=User:CN=my-cluster-kafka,O=io.strimzi;User:CN=my-cluster-entity-topic-operator,O=io.strimzi;User:CN=my-cluster-entity-user-operator,O=io.strimzi;User:CN=my-cluster-kafka-exporter,O=io.strimzi;User:CN=my-cluster-cruise-control,O=io.strimzi;User:CN=cluster-operator,O=io.strimzi;User:jakub;User:CN=kuba"));
     }
 
