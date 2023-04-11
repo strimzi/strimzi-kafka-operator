@@ -53,15 +53,15 @@ kubectl get pods -n _<my_cluster_operator_namespace>_
 .Output shows the deployment name and readiness
 [source,shell,subs="+quotes"]
 ----
-NAME                           READY  STATUS   RESTARTS
-my-mirror-maker-mirror-maker   1/1    Running  1
-my-mm2-cluster-mirrormaker2-0  1/1    Running  1
+NAME                                    READY  STATUS   RESTARTS
+my-mirror-maker-mirror-maker-<pod_id>   1/1    Running  1
+my-mm2-cluster-mirrormaker2-<pod_id>            1/1    Running  1
 ----
 +
 `my-mirror-maker` is the name of the Kafka MirrorMaker cluster. 
 `my-mm2-cluster` is the name of the Kafka MirrorMaker 2 cluster.
 +
-A sequential index number starting with `0` identifies each MirrorMaker 2 pod created.
+A pod ID identifies each pod created.
 +
 With the default deployment, you install a single MirrorMaker or MirrorMaker 2 pod.
 +

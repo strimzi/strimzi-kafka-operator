@@ -38,11 +38,13 @@ kubectl get pods -n _<my_cluster_operator_namespace>_
 .Output shows the deployment name and readiness
 [source,shell,subs="+quotes"]
 ----
-NAME              READY  STATUS   RESTARTS
-my-bridge-bridge  1/1    Running  0
+NAME                       READY  STATUS   RESTARTS
+my-bridge-bridge-<pod_id>  1/1    Running  0
 ----
 +
 `my-bridge` is the name of the Kafka Bridge cluster.
++
+A pod ID identifies each pod created.
 +
 With the default deployment, you install a single Kafka Bridge pod.
 +

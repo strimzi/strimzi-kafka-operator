@@ -20,14 +20,14 @@ kubectl get pods -o name
 
 pod/kafka-consumer
 # ...
-pod/my-bridge-bridge-7cbd55496b-nclrt
+pod/my-bridge-bridge-<pod_id>
 ----
 
 . Connect to the Kafka Bridge pod on port `8080`:
 +
 [source,shell,subs=attributes+]
 ----
-kubectl port-forward pod/my-bridge-bridge-7cbd55496b-nclrt 8080:8080 &
+kubectl port-forward pod/my-bridge-bridge-<pod_id> 8080:8080 &
 ----
 +
 NOTE: If port 8080 on your local machine is already in use, use an alternative HTTP port, such as `8008`.
