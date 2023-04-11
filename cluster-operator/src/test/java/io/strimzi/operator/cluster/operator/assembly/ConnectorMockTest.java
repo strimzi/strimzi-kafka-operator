@@ -173,11 +173,11 @@ public class ConnectorMockTest {
                 new DefaultZookeeperScalerProvider(),
                 metricsProvider,
                 pfa, 10_000);
-        ClusterOperatorConfig config = ClusterOperatorConfig.fromMap(map(
-            ClusterOperatorConfig.STRIMZI_KAFKA_IMAGES, KafkaVersionTestUtils.getKafkaImagesEnvVarString(),
-            ClusterOperatorConfig.STRIMZI_KAFKA_CONNECT_IMAGES, KafkaVersionTestUtils.getKafkaConnectImagesEnvVarString(),
-            ClusterOperatorConfig.STRIMZI_KAFKA_MIRROR_MAKER_2_IMAGES, KafkaVersionTestUtils.getKafkaMirrorMaker2ImagesEnvVarString(),
-            ClusterOperatorConfig.STRIMZI_FULL_RECONCILIATION_INTERVAL_MS, Long.toString(Long.MAX_VALUE)),
+        ClusterOperatorConfig config = ClusterOperatorConfig.buildFromMap(map(
+            ClusterOperatorConfig.STRIMZI_KAFKA_IMAGES.key(), KafkaVersionTestUtils.getKafkaImagesEnvVarString(),
+            ClusterOperatorConfig.STRIMZI_KAFKA_CONNECT_IMAGES.key(), KafkaVersionTestUtils.getKafkaConnectImagesEnvVarString(),
+            ClusterOperatorConfig.STRIMZI_KAFKA_MIRROR_MAKER_2_IMAGES.key(), KafkaVersionTestUtils.getKafkaMirrorMaker2ImagesEnvVarString(),
+            ClusterOperatorConfig.FULL_RECONCILIATION_INTERVAL_MS.key(), Long.toString(Long.MAX_VALUE)),
                 KafkaVersionTestUtils.getKafkaVersionLookup());
         kafkaConnectOperator = spy(new KafkaConnectAssemblyOperator(vertx,
             pfa,

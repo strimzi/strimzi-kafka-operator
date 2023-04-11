@@ -18,9 +18,9 @@ public class LeaderElectionManagerConfigTest {
     @Test
     public void testDefaultConfig() {
         Map<String, String> envVars = new HashMap<>();
-        envVars.put(LeaderElectionManagerConfig.ENV_VAR_LEADER_ELECTION_LEASE_NAME, "my-lease");
-        envVars.put(LeaderElectionManagerConfig.ENV_VAR_LEADER_ELECTION_LEASE_NAMESPACE, "my-namespace");
-        envVars.put(LeaderElectionManagerConfig.ENV_VAR_LEADER_ELECTION_IDENTITY, "my-pod");
+        envVars.put(LeaderElectionManagerConfig.ENV_VAR_LEADER_ELECTION_LEASE_NAME.key(), "my-lease");
+        envVars.put(LeaderElectionManagerConfig.ENV_VAR_LEADER_ELECTION_LEASE_NAMESPACE.key(), "my-namespace");
+        envVars.put(LeaderElectionManagerConfig.ENV_VAR_LEADER_ELECTION_IDENTITY.key(), "my-pod");
 
         LeaderElectionManagerConfig config = LeaderElectionManagerConfig.fromMap(envVars);
 
@@ -35,12 +35,12 @@ public class LeaderElectionManagerConfigTest {
     @Test
     public void testConfiguredTiming() {
         Map<String, String> envVars = new HashMap<>();
-        envVars.put(LeaderElectionManagerConfig.ENV_VAR_LEADER_ELECTION_LEASE_NAME, "my-lease");
-        envVars.put(LeaderElectionManagerConfig.ENV_VAR_LEADER_ELECTION_LEASE_NAMESPACE, "my-namespace");
-        envVars.put(LeaderElectionManagerConfig.ENV_VAR_LEADER_ELECTION_IDENTITY, "my-pod");
-        envVars.put(LeaderElectionManagerConfig.ENV_VAR_LEADER_ELECTION_LEASE_DURATION_MS, "30000");
-        envVars.put(LeaderElectionManagerConfig.ENV_VAR_LEADER_ELECTION_RENEW_DEADLINE_MS, "20000");
-        envVars.put(LeaderElectionManagerConfig.ENV_VAR_LEADER_ELECTION_RETRY_PERIOD_MS, "5000");
+        envVars.put(LeaderElectionManagerConfig.ENV_VAR_LEADER_ELECTION_LEASE_NAME.key(), "my-lease");
+        envVars.put(LeaderElectionManagerConfig.ENV_VAR_LEADER_ELECTION_LEASE_NAMESPACE.key(), "my-namespace");
+        envVars.put(LeaderElectionManagerConfig.ENV_VAR_LEADER_ELECTION_IDENTITY.key(), "my-pod");
+        envVars.put(LeaderElectionManagerConfig.ENV_VAR_LEADER_ELECTION_LEASE_DURATION_MS.key(), "30000");
+        envVars.put(LeaderElectionManagerConfig.ENV_VAR_LEADER_ELECTION_RENEW_DEADLINE_MS.key(), "20000");
+        envVars.put(LeaderElectionManagerConfig.ENV_VAR_LEADER_ELECTION_RETRY_PERIOD_MS.key(), "5000");
 
         LeaderElectionManagerConfig config = LeaderElectionManagerConfig.fromMap(envVars);
 
@@ -57,30 +57,30 @@ public class LeaderElectionManagerConfigTest {
         Map<String, String> envVars = new HashMap<>();
 
         InvalidConfigurationException e = assertThrows(InvalidConfigurationException.class, () -> LeaderElectionManagerConfig.fromMap(envVars));
-        assertThat(e.getMessage(), is("The STRIMZI_LEADER_ELECTION_LEASE_NAME, STRIMZI_LEADER_ELECTION_LEASE_NAMESPACE and STRIMZI_LEADER_ELECTION_IDENTITY options are required and have to be set when leader election is enabled."));
+        assertThat(e.getMessage(), is("Config value: STRIMZI_LEADER_ELECTION_LEASE_NAMESPACE is mandatory"));
     }
 
     @Test
     public void testMissingSomeRequired() {
         Map<String, String> envVars = new HashMap<>();
-        envVars.put(LeaderElectionManagerConfig.ENV_VAR_LEADER_ELECTION_LEASE_NAMESPACE, "my-namespace");
-        envVars.put(LeaderElectionManagerConfig.ENV_VAR_LEADER_ELECTION_IDENTITY, "my-pod");
+        envVars.put(LeaderElectionManagerConfig.ENV_VAR_LEADER_ELECTION_LEASE_NAMESPACE.key(), "my-namespace");
+        envVars.put(LeaderElectionManagerConfig.ENV_VAR_LEADER_ELECTION_IDENTITY.key(), "my-pod");
 
         InvalidConfigurationException e = assertThrows(InvalidConfigurationException.class, () -> LeaderElectionManagerConfig.fromMap(envVars));
-        assertThat(e.getMessage(), is("The STRIMZI_LEADER_ELECTION_LEASE_NAME, STRIMZI_LEADER_ELECTION_LEASE_NAMESPACE and STRIMZI_LEADER_ELECTION_IDENTITY options are required and have to be set when leader election is enabled."));
+        assertThat(e.getMessage(), is("Config value: STRIMZI_LEADER_ELECTION_LEASE_NAME is mandatory"));
 
         Map<String, String> envVars2 = new HashMap<>();
-        envVars2.put(LeaderElectionManagerConfig.ENV_VAR_LEADER_ELECTION_LEASE_NAME, "my-lease");
-        envVars2.put(LeaderElectionManagerConfig.ENV_VAR_LEADER_ELECTION_IDENTITY, "my-pod");
+        envVars2.put(LeaderElectionManagerConfig.ENV_VAR_LEADER_ELECTION_LEASE_NAME.key(), "my-lease");
+        envVars2.put(LeaderElectionManagerConfig.ENV_VAR_LEADER_ELECTION_IDENTITY.key(), "my-pod");
 
         e = assertThrows(InvalidConfigurationException.class, () -> LeaderElectionManagerConfig.fromMap(envVars2));
-        assertThat(e.getMessage(), is("The STRIMZI_LEADER_ELECTION_LEASE_NAME, STRIMZI_LEADER_ELECTION_LEASE_NAMESPACE and STRIMZI_LEADER_ELECTION_IDENTITY options are required and have to be set when leader election is enabled."));
+        assertThat(e.getMessage(), is("Config value: STRIMZI_LEADER_ELECTION_LEASE_NAMESPACE is mandatory"));
 
         Map<String, String> envVars3 = new HashMap<>();
-        envVars3.put(LeaderElectionManagerConfig.ENV_VAR_LEADER_ELECTION_LEASE_NAME, "my-lease");
-        envVars3.put(LeaderElectionManagerConfig.ENV_VAR_LEADER_ELECTION_LEASE_NAMESPACE, "my-namespace");
+        envVars3.put(LeaderElectionManagerConfig.ENV_VAR_LEADER_ELECTION_LEASE_NAME.key(), "my-lease");
+        envVars3.put(LeaderElectionManagerConfig.ENV_VAR_LEADER_ELECTION_LEASE_NAMESPACE.key(), "my-namespace");
 
         e = assertThrows(InvalidConfigurationException.class, () -> LeaderElectionManagerConfig.fromMap(envVars3));
-        assertThat(e.getMessage(), is("The STRIMZI_LEADER_ELECTION_LEASE_NAME, STRIMZI_LEADER_ELECTION_LEASE_NAMESPACE and STRIMZI_LEADER_ELECTION_IDENTITY options are required and have to be set when leader election is enabled."));
+        assertThat(e.getMessage(), is("Config value: STRIMZI_LEADER_ELECTION_IDENTITY is mandatory"));
     }
 }

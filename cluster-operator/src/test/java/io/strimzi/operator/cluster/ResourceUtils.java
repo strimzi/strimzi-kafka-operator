@@ -101,13 +101,13 @@ import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.Collection;
-import java.util.List;
+import java.util.HashMap;
 import java.util.Map;
+import java.util.List;
 import java.util.Properties;
+import java.util.Collection;
 
 import static java.util.Collections.emptyMap;
-import static java.util.Collections.singleton;
 import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
 import static org.mockito.ArgumentMatchers.any;
@@ -615,27 +615,22 @@ public class ResourceUtils {
     }
 
     public static ClusterOperatorConfig dummyClusterOperatorConfig(KafkaVersion.Lookup versions, long operationTimeoutMs, String featureGates, boolean networkPolicyGeneration) {
-        return new ClusterOperatorConfig(
-                singleton("dummy"),
-                60_000,
-                operationTimeoutMs,
-                300_000,
-                false,
-                networkPolicyGeneration,
-                versions,
-                null,
-                null,
-                null,
-                null,
-                null,
-                featureGates,
-                10,
-                10_000,
-                30,
-                false,
-                1024,
-                "cluster-operator-name",
-                ClusterOperatorConfig.DEFAULT_POD_SECURITY_PROVIDER_CLASS, null);
+
+        Map<String, String> envVars = new HashMap<>(4);
+        envVars.put(ClusterOperatorConfig.NAMESPACE.key(), "dummy");
+        envVars.put(ClusterOperatorConfig.FULL_RECONCILIATION_INTERVAL_MS.key(), "60000");
+        envVars.put(ClusterOperatorConfig.NETWORK_POLICY_GENERATION.key(), String.valueOf(networkPolicyGeneration));
+        envVars.put(ClusterOperatorConfig.OPERATION_TIMEOUT_MS.key(), String.valueOf(operationTimeoutMs));
+        envVars.put(ClusterOperatorConfig.CONNECT_BUILD_TIMEOUT_MS.key(), "300000");
+        envVars.put(ClusterOperatorConfig.STRIMZI_FEATURE_GATES.key(), featureGates);
+        envVars.put(ClusterOperatorConfig.OPERATIONS_THREAD_POOL_SIZE.key(), "10");
+        envVars.put(ClusterOperatorConfig.ZOOKEEPER_ADMIN_SESSION_TIMEOUT_MS.key(), "10000");
+        envVars.put(ClusterOperatorConfig.DNS_CACHE_TTL.key(), "30");
+        envVars.put(ClusterOperatorConfig.POD_SET_CONTROLLER_WORK_QUEUE_SIZE.key(), "1024");
+        envVars.put(ClusterOperatorConfig.OPERATOR_NAME.key(), "cluster-operator-name");
+        envVars.put(ClusterOperatorConfig.POD_SECURITY_PROVIDER_CLASS.key(), ClusterOperatorConfig.POD_SECURITY_PROVIDER_CLASS.defaultValue());
+
+        return ClusterOperatorConfig.buildFromMap(envVars, versions);
     }
 
     public static ClusterOperatorConfig dummyClusterOperatorConfig(KafkaVersion.Lookup versions, long operationTimeoutMs) {
@@ -643,7 +638,7 @@ public class ResourceUtils {
     }
 
     public static ClusterOperatorConfig dummyClusterOperatorConfig(KafkaVersion.Lookup versions) {
-        return dummyClusterOperatorConfig(versions, ClusterOperatorConfig.DEFAULT_OPERATION_TIMEOUT_MS, "", true);
+        return dummyClusterOperatorConfig(versions, Long.parseLong(ClusterOperatorConfig.OPERATION_TIMEOUT_MS.defaultValue()), "", true);
     }
 
     public static ClusterOperatorConfig dummyClusterOperatorConfig(long operationTimeoutMs) {
@@ -651,15 +646,15 @@ public class ResourceUtils {
     }
 
     public static ClusterOperatorConfig dummyClusterOperatorConfig() {
-        return dummyClusterOperatorConfig(KafkaVersionTestUtils.getKafkaVersionLookup(), ClusterOperatorConfig.DEFAULT_OPERATION_TIMEOUT_MS, "", true);
-    }
-
-    public static ClusterOperatorConfig dummyClusterOperatorConfig(String featureGates) {
-        return dummyClusterOperatorConfig(KafkaVersionTestUtils.getKafkaVersionLookup(), ClusterOperatorConfig.DEFAULT_OPERATION_TIMEOUT_MS, featureGates, true);
+        return dummyClusterOperatorConfig(KafkaVersionTestUtils.getKafkaVersionLookup(), Long.parseLong(ClusterOperatorConfig.OPERATION_TIMEOUT_MS.defaultValue()), "", true);
     }
 
     public static ClusterOperatorConfig dummyClusterOperatorConfig(boolean networkPolicyGeneration) {
-        return dummyClusterOperatorConfig(KafkaVersionTestUtils.getKafkaVersionLookup(), ClusterOperatorConfig.DEFAULT_OPERATION_TIMEOUT_MS, "", networkPolicyGeneration);
+        return dummyClusterOperatorConfig(KafkaVersionTestUtils.getKafkaVersionLookup(), Long.parseLong(ClusterOperatorConfig.OPERATION_TIMEOUT_MS.defaultValue()), "", networkPolicyGeneration);
+    }
+
+    public static ClusterOperatorConfig dummyClusterOperatorConfig(String featureGates) {
+        return dummyClusterOperatorConfig(KafkaVersionTestUtils.getKafkaVersionLookup(), Long.parseLong(ClusterOperatorConfig.OPERATION_TIMEOUT_MS.defaultValue()), featureGates, true);
     }
 
     /**

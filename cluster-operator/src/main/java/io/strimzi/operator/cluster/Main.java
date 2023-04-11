@@ -78,7 +78,7 @@ public class Main {
         final String strimziVersion = Main.class.getPackage().getImplementationVersion();
         LOGGER.info("ClusterOperator {} is starting", strimziVersion);
         Util.printEnvInfo(); // Prints configured environment variables
-        ClusterOperatorConfig config = ClusterOperatorConfig.fromMap(System.getenv());
+        ClusterOperatorConfig config = ClusterOperatorConfig.buildFromMap(System.getenv());
         LOGGER.info("Cluster Operator configuration is {}", config);
 
         // setting DNS cache TTL
