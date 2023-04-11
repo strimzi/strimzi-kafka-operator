@@ -21,6 +21,7 @@ import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.Collection;
 import java.util.Map;
 
 public class StrimziPodSetUtils {
@@ -40,7 +41,7 @@ public class StrimziPodSetUtils {
         return mapToPod(podMap);
     }
 
-    public static void waitForStrimziPodSetLabelsDeletion(String namespaceName, String resourceName, String... labelKeys) {
+    public static void waitForStrimziPodSetLabelsDeletion(String namespaceName, String resourceName, Collection<String> labelKeys) {
         for (final String labelKey : labelKeys) {
             LOGGER.info("Waiting for StrimziPodSet {}/{} label {} change to {}", namespaceName, resourceName, labelKey, null);
             TestUtils.waitFor("StrimziPodSet " + namespaceName + "/" + resourceName + " label" + labelKey + " change to " + null, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS,

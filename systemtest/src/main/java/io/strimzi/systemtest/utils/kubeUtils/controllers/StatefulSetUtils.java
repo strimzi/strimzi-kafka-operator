@@ -13,6 +13,7 @@ import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 public class StatefulSetUtils {

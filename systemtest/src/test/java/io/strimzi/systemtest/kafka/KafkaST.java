@@ -76,6 +76,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static io.strimzi.api.kafka.model.KafkaResources.kafkaStatefulSetName;
@@ -1057,12 +1058,9 @@ class KafkaST extends AbstractST {
         final TestStorage testStorage = new TestStorage(extensionContext);
         final int kafkaReplicas = 3;
 
-        Map<String, String> labels = new HashMap<>();
-        final String[] labelKeys = {"label-name-1", "label-name-2", ""};
-        final String[] labelValues = {"name-of-the-label-1", "name-of-the-label-2", ""};
-
-        labels.put(labelKeys[0], labelValues[0]);
-        labels.put(labelKeys[1], labelValues[1]);
+        final Map<String, String> labels = new HashMap<>();
+        labels.put("label-key-1", "label-value-1");
+        labels.put("label-key-2", "label-value-2");
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), kafkaReplicas, 1)
             .editMetadata()
@@ -1096,35 +1094,32 @@ class KafkaST extends AbstractST {
         LOGGER.info("Getting labels from stateful set resource");
         Map<String, String> kafkaLabels = StrimziPodSetUtils.getLabelsOfStrimziPodSet(testStorage.getNamespaceName(), testStorage.getKafkaStatefulSetName());
 
-        LOGGER.info("Verifying default labels in the Kafka CR");
+        LOGGER.info("Verifying existence of user defined labels in the Kafka CR");
 
-        assertThat("Label exists in stateful set with concrete value",
-                labelValues[0].equals(kafkaLabels.get(labelKeys[0])));
-        assertThat("Label exists in stateful set with concrete value",
-                labelValues[1].equals(kafkaLabels.get(labelKeys[1])));
+        for (Map.Entry<String, String> label : labels.entrySet()) {
+            String labelKey = label.getKey();
+            String labelValue = label.getValue();
+            assertThat("Label exists in stateful set with concrete value",
+                    labelValue.equals(kafkaLabels.get(labelKey)));
+        }
 
-        labelValues[0] = "new-name-of-the-label-1";
-        labelValues[1] = "new-name-of-the-label-2";
-        labelKeys[2] = "label-name-3";
-        labelValues[2] = "name-of-the-label-3";
-        LOGGER.info("Setting new values of labels from {} to {} | from {} to {} and adding one {} with value {}",
-                "name-of-the-label-1", labelValues[0], "name-of-the-label-2", labelValues[1], labelKeys[2], labelValues[2]);
+        LOGGER.info("Previously set values of labels {} are to be changed", labels);
+        labels.replace("label-key-1", "label-value-1-replacement");
+        labels.replace("label-key-2", "label-value-2-replacement");
+        labels.put("label-key-3", "label-value-3-new");
+        LOGGER.info("New values of labels after their replacement and addition of new one are following {}", labels);
 
         LOGGER.info("Edit kafka labels in Kafka CR");
         KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), resource -> {
-            resource.getMetadata().getLabels().put(labelKeys[0], labelValues[0]);
-            resource.getMetadata().getLabels().put(labelKeys[1], labelValues[1]);
-            resource.getMetadata().getLabels().put(labelKeys[2], labelValues[2]);
+            for (Map.Entry<String, String> label : labels.entrySet()) {
+                resource.getMetadata().getLabels().put(label.getKey(), label.getValue());
+            }
         }, testStorage.getNamespaceName());
 
         if (!Environment.isKRaftModeEnabled()) {
             zkPods = RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getZookeeperSelector(), 1, zkPods);
         }
         kafkaPods = RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getKafkaSelector(), 3, kafkaPods);
-
-        labels.put(labelKeys[0], labelValues[0]);
-        labels.put(labelKeys[1], labelValues[1]);
-        labels.put(labelKeys[2], labelValues[2]);
 
         LOGGER.info("Waiting for kafka service labels changed {}", labels);
         ServiceUtils.waitForServiceLabelsChange(testStorage.getNamespaceName(), KafkaResources.brokersServiceName(testStorage.getClusterName()), labels);
@@ -1152,19 +1147,18 @@ class KafkaST extends AbstractST {
         verifyPresentLabels(labels, StrimziPodSetUtils.getLabelsOfStrimziPodSet(testStorage.getNamespaceName(), testStorage.getKafkaStatefulSetName()));
 
         LOGGER.info("Verifying via kafka pods");
-        labels = kubeClient(testStorage.getNamespaceName()).getPod(testStorage.getNamespaceName(), KafkaResources.kafkaPodName(testStorage.getClusterName(), 0)).getMetadata().getLabels();
+        Map<String, String> podLabels = kubeClient(testStorage.getNamespaceName()).getPod(testStorage.getNamespaceName(), KafkaResources.kafkaPodName(testStorage.getClusterName(), 0)).getMetadata().getLabels();
 
-        assertThat("Label exists in kafka pods", labelValues[0].equals(labels.get(labelKeys[0])));
-        assertThat("Label exists in kafka pods", labelValues[1].equals(labels.get(labelKeys[1])));
-        assertThat("Label exists in kafka pods", labelValues[2].equals(labels.get(labelKeys[2])));
+        for (Map.Entry<String, String> label : labels.entrySet()) {
+            assertThat("Label exists in kafka pods", label.getValue().equals(podLabels.get(label.getKey())));
+        }
 
-        LOGGER.info("Removing labels: {} -> {}, {} -> {}, {} -> {}", labelKeys[0], labels.get(labelKeys[0]),
-            labelKeys[1], labels.get(labelKeys[1]), labelKeys[2], labels.get(labelKeys[2]));
+        LOGGER.info("Removing labels: {}", labels);
 
         KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), resource -> {
-            resource.getMetadata().getLabels().remove(labelKeys[0]);
-            resource.getMetadata().getLabels().remove(labelKeys[1]);
-            resource.getMetadata().getLabels().remove(labelKeys[2]);
+            for (String labelKey : labels.keySet()) {
+                resource.getMetadata().getLabels().remove(labelKey);
+            }
         }, testStorage.getNamespaceName());
 
         if (!Environment.isKRaftModeEnabled()) {
@@ -1172,41 +1166,40 @@ class KafkaST extends AbstractST {
         }
         RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getKafkaSelector(), 3, kafkaPods);
 
-        labels.remove(labelKeys[0]);
-        labels.remove(labelKeys[1]);
-        labels.remove(labelKeys[2]);
+        for (String labelKey : labels.keySet()) {
+            podLabels.remove(labelKey);
+        }
 
         LOGGER.info("Waiting for kafka service labels deletion {}", labels.toString());
-        ServiceUtils.waitForServiceLabelsDeletion(testStorage.getNamespaceName(), KafkaResources.brokersServiceName(testStorage.getClusterName()), labelKeys[0], labelKeys[1], labelKeys[2]);
+        ServiceUtils.waitForServiceLabelsDeletion(testStorage.getNamespaceName(), KafkaResources.brokersServiceName(testStorage.getClusterName()));
 
         LOGGER.info("Verifying kafka labels via services");
         service = kubeClient(testStorage.getNamespaceName()).getService(testStorage.getNamespaceName(), KafkaResources.brokersServiceName(testStorage.getClusterName()));
-
-        verifyNullLabels(labelKeys, service);
+        verifyNullLabels(labels.keySet(), service);
 
         for (String cmName : StUtils.getKafkaConfigurationConfigMaps(testStorage.getClusterName(), kafkaReplicas)) {
-            LOGGER.info("Waiting for Kafka ConfigMap {}/{} to have labels removed: {}", testStorage.getNamespaceName(), cmName, labelKeys);
-            ConfigMapUtils.waitForConfigMapLabelsDeletion(testStorage.getNamespaceName(), cmName, labelKeys[0], labelKeys[1], labelKeys[2]);
+            LOGGER.info("Waiting for Kafka ConfigMap {}/{} to have labels removed: {}", testStorage.getNamespaceName(), cmName, labels.keySet());
+            ConfigMapUtils.waitForConfigMapLabelsDeletion(testStorage.getNamespaceName(), cmName, labels.keySet());
 
             LOGGER.info("Verifying Kafka labels on ConfigMap {}/{}", testStorage.getNamespaceName(), cmName);
             ConfigMap configMap = kubeClient(testStorage.getNamespaceName()).getConfigMap(testStorage.getNamespaceName(), cmName);
 
-            verifyNullLabels(labelKeys, configMap);
+            verifyNullLabels(labels.keySet(), configMap);
         }
 
         LOGGER.info("Waiting for kafka stateful set labels changed {}", labels);
-        StrimziPodSetUtils.waitForStrimziPodSetLabelsDeletion(testStorage.getNamespaceName(), testStorage.getKafkaStatefulSetName(), labelKeys[0], labelKeys[1], labelKeys[2]);
+        StUtils.waitForStrimziPodSetLabelsDeletion(testStorage.getNamespaceName(), testStorage.getKafkaStatefulSetName(), labels.keySet());
 
         LOGGER.info("Verifying kafka labels via stateful set");
-        verifyNullLabels(labelKeys, StrimziPodSetUtils.getLabelsOfStrimziPodSet(testStorage.getNamespaceName(), testStorage.getKafkaStatefulSetName()));
+        verifyNullLabels(labels.keySet(), StUtils.getLabelsOfStrimziPodSet(testStorage.getNamespaceName(), testStorage.getKafkaStatefulSetName()));
 
-        LOGGER.info("Waiting for kafka pod labels deletion {}", labels.toString());
-        PodUtils.waitUntilPodLabelsDeletion(testStorage.getNamespaceName(), KafkaResources.kafkaPodName(testStorage.getClusterName(), 0), labelKeys[0], labelKeys[1], labelKeys[2]);
+        LOGGER.info("Waiting for kafka pod labels deletion {}", podLabels.toString());
+        PodUtils.waitUntilPodLabelsDeletion(testStorage.getNamespaceName(), KafkaResources.kafkaPodName(testStorage.getClusterName(), 0), labels.keySet());
 
-        labels = kubeClient(testStorage.getNamespaceName()).getPod(testStorage.getNamespaceName(), KafkaResources.kafkaPodName(testStorage.getClusterName(), 0)).getMetadata().getLabels();
+        podLabels = kubeClient(testStorage.getNamespaceName()).getPod(testStorage.getNamespaceName(), KafkaResources.kafkaPodName(testStorage.getClusterName(), 0)).getMetadata().getLabels();
 
         LOGGER.info("Verifying via kafka pods");
-        verifyNullLabels(labelKeys, labels);
+        verifyNullLabels(labels.keySet(), podLabels);
 
         resourceManager.createResource(extensionContext,
             kafkaClients.producerStrimzi(),
@@ -1235,9 +1228,7 @@ class KafkaST extends AbstractST {
 
         LOGGER.info("---> PODS <---");
 
-        List<Pod> pods = kubeClient(testStorage.getNamespaceName()).listPods(testStorage.getNamespaceName(), testStorage.getClusterName()).stream()
-                .filter(pod -> pod.getMetadata().getName().startsWith(testStorage.getClusterName()))
-                .collect(Collectors.toList());
+        List<Pod> pods = kubeClient(testStorage.getNamespaceName()).listPodsByPrefixInName(testStorage.getNamespaceName(), testStorage.getClusterName());
 
         for (Pod pod : pods) {
             LOGGER.info("Getting labels from {} pod", pod.getMetadata().getName());
@@ -1735,13 +1726,13 @@ class KafkaST extends AbstractST {
         }
     }
 
-    void verifyNullLabels(String[] labelKeys, Map<String, String> labels) {
+    void verifyNullLabels(Set<String> labelKeys, Map<String, String> labels) {
         for (String labelKey : labelKeys) {
             assertThat(labels.get(labelKey), nullValue());
         }
     }
 
-    void verifyNullLabels(String[] labelKeys, HasMetadata resources) {
+    void verifyNullLabels(Set<String> labelKeys, HasMetadata resources) {
         for (String labelKey : labelKeys) {
             assertThat(resources.getMetadata().getLabels().get(labelKey), nullValue());
         }

@@ -11,6 +11,7 @@ import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.Collection;
 import java.util.Map;
 
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
@@ -48,7 +49,7 @@ public class ConfigMapUtils {
         }
     }
 
-    public static void waitForConfigMapLabelsDeletion(String namespaceName, String configMapName, String... labelKeys) {
+    public static void waitForConfigMapLabelsDeletion(String namespaceName, String configMapName, Collection<String> labelKeys) {
         for (final String labelKey : labelKeys) {
             LOGGER.info("Waiting for ConfigMap {}/{} label {} change to {}", namespaceName, configMapName, labelKey, null);
             TestUtils.waitFor("Kafka configMap label" + labelKey + " change to " + null, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS,
