@@ -280,6 +280,7 @@ class RollingUpdateST extends AbstractST {
             .withTopicName(testStorage.getTopicName())
             .withMessageCount(testStorage.getMessageCount())
             .withUserName(testStorage.getUserName())
+            .withConsumerGroup(ClientUtils.generateRandomConsumerGroup())
             .build();
 
         resourceManager.createResource(extensionContext, clients.producerTlsStrimzi(testStorage.getClusterName()), clients.consumerTlsStrimzi(testStorage.getClusterName()));
