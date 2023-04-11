@@ -1234,7 +1234,7 @@ public class KafkaRebalanceAssemblyOperator
                 }, exception -> updateStatus(reconciliation, kafkaRebalance, new KafkaRebalanceStatus(), exception).mapEmpty());
     }
 
-    private boolean isKafkaClusterReady(Kafka kafka){
+    private boolean isKafkaClusterReady(Kafka kafka) {
         return kafka.getStatus() == null
                 || kafka.getStatus().getConditions() == null
                 || kafka.getStatus().getConditions().stream().noneMatch(condition -> condition.getType().equals("Ready") && condition.getStatus().equals("True"));

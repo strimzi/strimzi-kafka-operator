@@ -1324,44 +1324,44 @@ public class KafkaRebalanceAssemblyOperatorTest {
                 .endStatus()
                 .build();
 
-         KafkaRebalance kr1 = Crds.kafkaRebalanceOperation(client).inNamespace(CLUSTER_NAMESPACE).resource(kr).updateStatus();
+        KafkaRebalance kr1 = Crds.kafkaRebalanceOperation(client).inNamespace(CLUSTER_NAMESPACE).resource(kr).updateStatus();
 
-         Checkpoint checkpoint = context.checkpoint();
+        Checkpoint checkpoint = context.checkpoint();
 
-         kcrao.reconcileRebalance(
-                 new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, CLUSTER_NAMESPACE, RESOURCE_NAME),
-                         kr1).onComplete(context.succeeding(v -> context.verify(() -> {
-                             assertState(context, client, CLUSTER_NAMESPACE, kr1.getMetadata().getName(), KafkaRebalanceState.Ready);
-                })))
-                 .compose(v -> {
-                     KafkaRebalance kr2 = Crds.kafkaRebalanceOperation(client).inNamespace(CLUSTER_NAMESPACE).withName(RESOURCE_NAME).get();
-                     Kafka kafkaPatch = new KafkaBuilder(ResourceUtils.createKafka(CLUSTER_NAMESPACE, CLUSTER_NAME, replicas, image, healthDelay, healthTimeout))
-                             .editSpec()
-                             .editKafka()
-                             .withVersion(version)
-                             .endKafka()
-                             .editOrNewCruiseControl()
-                             .withImage(ccImage)
-                             .endCruiseControl()
-                             .endSpec()
-                             .withNewStatus()
-                             .withObservedGeneration(1L)
-                             .withConditions(new ConditionBuilder()
-                                     .withType("NotReady")
-                                     .withStatus("True")
-                                     .build())
-                             .endStatus()
-                             .build();
-                     when(mockKafkaOps.getAsync(CLUSTER_NAMESPACE, CLUSTER_NAME)).thenReturn(Future.succeededFuture(kafkaPatch));
-                     return kcrao.reconcileRebalance(
-                             new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, CLUSTER_NAMESPACE, RESOURCE_NAME),
-                             kr2);
-                 })
-                 .onComplete(context.succeeding(v -> {
+        kcrao.reconcileRebalance(
+                new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, CLUSTER_NAMESPACE, RESOURCE_NAME),
+                        kr1).onComplete(context.succeeding(v -> context.verify(() -> {
+                            assertState(context, client, CLUSTER_NAMESPACE, kr1.getMetadata().getName(), KafkaRebalanceState.Ready);
+                        })))
+                .compose(v -> {
+                    KafkaRebalance kr2 = Crds.kafkaRebalanceOperation(client).inNamespace(CLUSTER_NAMESPACE).withName(RESOURCE_NAME).get();
+                    Kafka kafkaPatch = new KafkaBuilder(ResourceUtils.createKafka(CLUSTER_NAMESPACE, CLUSTER_NAME, replicas, image, healthDelay, healthTimeout))
+                            .editSpec()
+                            .editKafka()
+                            .withVersion(version)
+                            .endKafka()
+                            .editOrNewCruiseControl()
+                            .withImage(ccImage)
+                            .endCruiseControl()
+                            .endSpec()
+                            .withNewStatus()
+                            .withObservedGeneration(1L)
+                            .withConditions(new ConditionBuilder()
+                                    .withType("NotReady")
+                                    .withStatus("True")
+                                    .build())
+                            .endStatus()
+                            .build();
+                    when(mockKafkaOps.getAsync(CLUSTER_NAMESPACE, CLUSTER_NAME)).thenReturn(Future.succeededFuture(kafkaPatch));
+                    return kcrao.reconcileRebalance(
+                            new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, CLUSTER_NAMESPACE, RESOURCE_NAME),
+                            kr2);
+                })
+                .onComplete(context.succeeding(v -> {
                     // the resource moved from ProposalReady to Rebalancing on approval
                     assertState(context, client, CLUSTER_NAMESPACE, RESOURCE_NAME, KafkaRebalanceState.Ready);
                     checkpoint.flag();
-                 }));
+                }));
     }
 
     /**
