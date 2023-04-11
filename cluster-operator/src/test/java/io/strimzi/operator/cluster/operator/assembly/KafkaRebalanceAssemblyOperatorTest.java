@@ -1296,6 +1296,75 @@ public class KafkaRebalanceAssemblyOperatorTest {
     }
 
     /**
+     * Tests the transition from 'Ready' to 'Ready' if Kafka cluster gets `NotReady` but the rebalance is in `Ready` state
+     *
+     * 1. A new KafkaRebalance resource is created. It is moved directly to ready state
+     * 2. The operator checks if the rebalance resource is in `Ready` state or not
+     * 3. The Kafka cluster is now moved to `NotReady` state
+     * 4. The KafkaRebalance resource still remains in `Ready` state
+     */
+    @Test
+    public void testKafkaRebalanceStaysReadyWhenComplete(VertxTestContext context) throws IOException, URISyntaxException {
+
+        KafkaRebalance kr = createKafkaRebalance(CLUSTER_NAMESPACE, CLUSTER_NAME, RESOURCE_NAME, EMPTY_KAFKA_REBALANCE_SPEC, false);
+        Crds.kafkaRebalanceOperation(client).inNamespace(CLUSTER_NAMESPACE).resource(kr).create();
+
+        when(mockKafkaOps.getAsync(CLUSTER_NAMESPACE, CLUSTER_NAME)).thenReturn(Future.succeededFuture(kafka));
+        mockSecretResources();
+        mockRebalanceOperator(mockRebalanceOps, mockCmOps, CLUSTER_NAMESPACE, kr.getMetadata().getName(), client);
+        when(mockCmOps.getAsync(CLUSTER_NAMESPACE, RESOURCE_NAME)).thenReturn(Future.succeededFuture(new ConfigMap()));
+
+        kr = new KafkaRebalanceBuilder(kr)
+                .withNewStatus()
+                .withObservedGeneration(1L)
+                .withConditions(new ConditionBuilder()
+                        .withType("Ready")
+                        .withStatus("True")
+                        .build())
+                .endStatus()
+                .build();
+
+         KafkaRebalance kr1 = Crds.kafkaRebalanceOperation(client).inNamespace(CLUSTER_NAMESPACE).resource(kr).updateStatus();
+
+         Checkpoint checkpoint = context.checkpoint();
+
+         kcrao.reconcileRebalance(
+                 new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, CLUSTER_NAMESPACE, RESOURCE_NAME),
+                         kr1).onComplete(context.succeeding(v -> context.verify(() -> {
+                             assertState(context, client, CLUSTER_NAMESPACE, kr1.getMetadata().getName(), KafkaRebalanceState.Ready);
+                })))
+                 .compose(v -> {
+                     KafkaRebalance kr2 = Crds.kafkaRebalanceOperation(client).inNamespace(CLUSTER_NAMESPACE).withName(RESOURCE_NAME).get();
+                     Kafka kafkaPatch = new KafkaBuilder(ResourceUtils.createKafka(CLUSTER_NAMESPACE, CLUSTER_NAME, replicas, image, healthDelay, healthTimeout))
+                             .editSpec()
+                             .editKafka()
+                             .withVersion(version)
+                             .endKafka()
+                             .editOrNewCruiseControl()
+                             .withImage(ccImage)
+                             .endCruiseControl()
+                             .endSpec()
+                             .withNewStatus()
+                             .withObservedGeneration(1L)
+                             .withConditions(new ConditionBuilder()
+                                     .withType("NotReady")
+                                     .withStatus("True")
+                                     .build())
+                             .endStatus()
+                             .build();
+                     when(mockKafkaOps.getAsync(CLUSTER_NAMESPACE, CLUSTER_NAME)).thenReturn(Future.succeededFuture(kafkaPatch));
+                     return kcrao.reconcileRebalance(
+                             new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, CLUSTER_NAMESPACE, RESOURCE_NAME),
+                             kr2);
+                 })
+                 .onComplete(context.succeeding(v -> {
+                    // the resource moved from ProposalReady to Rebalancing on approval
+                    assertState(context, client, CLUSTER_NAMESPACE, RESOURCE_NAME, KafkaRebalanceState.Ready);
+                    checkpoint.flag();
+                 }));
+    }
+
+    /**
      * When the Kafka cluster does not match the selector labels in the cluster operator configuration, the
      * KafkaRebalance resource should be ignored and not reconciled.
      */
