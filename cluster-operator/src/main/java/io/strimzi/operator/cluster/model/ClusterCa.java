@@ -169,7 +169,7 @@ public class ClusterCa extends Ca {
         LOGGER.debugCr(reconciliation, "{}: Reconciling Cruise Control certificates", this);
         return maybeCopyOrGenerateCerts(
             reconciliation,
-            List.of(new NodeRef("cruise-control", 0)),
+            Set.of(new NodeRef("cruise-control", 0)),
             subjectFn,
             cruiseControlSecret,
             isMaintenanceTimeWindowsSatisfied);
@@ -178,7 +178,7 @@ public class ClusterCa extends Ca {
     protected Map<String, CertAndKey> generateZkCerts(
             String namespace,
             String crName,
-            List<NodeRef> nodes,
+            Set<NodeRef> nodes,
             boolean isMaintenanceTimeWindowsSatisfied
     ) throws IOException {
         DnsNameGenerator zkDnsGenerator = DnsNameGenerator.of(namespace, KafkaResources.zookeeperServiceName(crName));
@@ -213,7 +213,7 @@ public class ClusterCa extends Ca {
     protected Map<String, CertAndKey> generateBrokerCerts(
             String namespace,
             String crName,
-            List<NodeRef> nodes,
+            Set<NodeRef> nodes,
             Set<String> externalBootstrapAddresses,
             Map<Integer, Set<String>> externalAddresses,
             boolean isMaintenanceTimeWindowsSatisfied
@@ -292,7 +292,7 @@ public class ClusterCa extends Ca {
      */
     /* test */ Map<String, CertAndKey> maybeCopyOrGenerateCerts(
             Reconciliation reconciliation,
-            List<NodeRef> nodes,
+            Set<NodeRef> nodes,
             Function<NodeRef, Subject> subjectFn,
             Secret secret,
             boolean isMaintenanceTimeWindowsSatisfied

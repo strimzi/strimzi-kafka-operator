@@ -24,6 +24,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Shared methods for working with Persistent Volume Claims
@@ -46,7 +47,7 @@ public class PersistentVolumeClaimUtils {
      */
     public static List<PersistentVolumeClaim> createPersistentVolumeClaims(
             String namespace,
-            List<NodeRef> nodes,
+            Set<NodeRef> nodes,
             Storage storage,
             boolean jbod,
             Labels labels,

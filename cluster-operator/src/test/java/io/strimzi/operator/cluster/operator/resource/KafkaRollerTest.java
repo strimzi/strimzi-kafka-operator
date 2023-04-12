@@ -44,6 +44,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.IdentityHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -244,8 +245,8 @@ public class KafkaRollerTest {
                 singletonList(2));
     }
 
-    public List<NodeRef> addPodNames(int replicas) {
-        ArrayList<NodeRef> podNames = new ArrayList<>(replicas);
+    public Set<NodeRef> addPodNames(int replicas) {
+        Set<NodeRef> podNames = new LinkedHashSet<>(replicas);
 
         for (int podId = 0; podId < replicas; podId++) {
             podNames.add(new NodeRef(KafkaResources.kafkaPodName(clusterName(), podId), podId));
@@ -254,8 +255,8 @@ public class KafkaRollerTest {
         return podNames;
     }
 
-    public List<NodeRef> addDisconnectedPodNames(int replicas) {
-        ArrayList<NodeRef> podNames = new ArrayList<>(replicas);
+    public Set<NodeRef> addDisconnectedPodNames(int replicas) {
+        Set<NodeRef> podNames = new LinkedHashSet<>(replicas);
 
         podNames.add(new NodeRef(KafkaResources.kafkaPodName(clusterName(), 10), 10));
         podNames.add(new NodeRef(KafkaResources.kafkaPodName(clusterName(), 200), 200));
@@ -625,7 +626,7 @@ public class KafkaRollerTest {
 
         int controllerCall;
         private final IdentityHashMap<Admin, Throwable> unclosedAdminClients;
-        private final Function<List<NodeRef>, RuntimeException> acOpenException;
+        private final Function<Set<NodeRef>, RuntimeException> acOpenException;
         private final Throwable acCloseException;
         private final Function<Integer, Future<Boolean>> canRollFn;
         private final Function<Integer, Throwable> controllerException;
@@ -637,9 +638,9 @@ public class KafkaRollerTest {
         private final List<String> tcpProbes = new ArrayList<>();
 
         @SuppressWarnings("checkstyle:ParameterNumber")
-        private TestingKafkaRoller(Secret clusterCaCertSecret, Secret coKeySecret, List<NodeRef> nodes,
+        private TestingKafkaRoller(Secret clusterCaCertSecret, Secret coKeySecret, Set<NodeRef> nodes,
                                    PodOperator podOps,
-                                   Function<List<NodeRef>, RuntimeException> acOpenException,
+                                   Function<Set<NodeRef>, RuntimeException> acOpenException,
                                    Throwable acCloseException,
                                    Function<Integer, Throwable> controllerException,
                                    Function<Integer, ForceableProblem> alterConfigsException,
@@ -680,7 +681,7 @@ public class KafkaRollerTest {
         }
 
         @Override
-        protected Admin adminClient(List<NodeRef> nodes, boolean b) throws ForceableProblem, FatalProblem {
+        protected Admin adminClient(Set<NodeRef> nodes, boolean b) throws ForceableProblem, FatalProblem {
             if (delegateAdminClientCall) {
                 return super.adminClient(nodes, b);
             }

@@ -20,8 +20,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import java.io.File;
 import java.io.IOException;
 import java.util.Base64;
-import java.util.List;
+import java.util.LinkedHashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 
@@ -33,11 +34,13 @@ import static org.hamcrest.MatcherAssert.assertThat;
 @ExtendWith(VertxExtension.class)
 public class ClusterCaRenewalTest {
     private static final Function<NodeRef, Subject> SUBJECT_FN = node -> new Subject.Builder().build();
-    private static final List<NodeRef> NODES = List.of(
-            new NodeRef("pod0", 0),
-            new NodeRef("pod1", 1),
-            new NodeRef("pod2", 2)
-    );
+    private static final Set<NodeRef> NODES = new LinkedHashSet<>();
+    // LinkedHashSet is used to maintain ordering and have predictable test results
+    static {
+        NODES.add(new NodeRef("pod0", 0));
+        NODES.add(new NodeRef("pod1", 1));
+        NODES.add(new NodeRef("pod2", 2));
+    }
 
     @ParallelTest
     public void renewalOfCertificatesWithNullSecret() throws IOException {
@@ -403,7 +406,7 @@ public class ClusterCaRenewalTest {
 
         Map<String, CertAndKey> newCerts = mockedCa.maybeCopyOrGenerateCerts(
                 Reconciliation.DUMMY_RECONCILIATION,
-                List.of(new NodeRef("pod1", 1)),
+                Set.of(new NodeRef("pod1", 1)),
                 SUBJECT_FN,
                 initialSecret,
                 true);

@@ -21,8 +21,10 @@ import io.strimzi.operator.common.model.Labels;
 import io.strimzi.test.annotations.ParallelSuite;
 import io.strimzi.test.annotations.ParallelTest;
 
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
@@ -56,11 +58,14 @@ public class PersistentVolumeClaimUtilsTest {
             .withStorageClass("my-storage-class")
             .withSize("100Gi")
             .build();
-    private final static List<NodeRef> SINGLE_NODE = List.of(new NodeRef(NAME + "-" + 0, 0));
-    private final static List<NodeRef> THREE_NODES = List.of(
-            new NodeRef(NAME + "-" + 0, 0),
-            new NodeRef(NAME + "-" + 1, 1),
-            new NodeRef(NAME + "-" + 2, 2));
+    private final static Set<NodeRef> SINGLE_NODE = Set.of(new NodeRef(NAME + "-" + 0, 0));
+    // LinkedHashSet is used to maintain ordering and have predictable test results
+    private final static Set<NodeRef> THREE_NODES = new LinkedHashSet<>();
+    static {
+        THREE_NODES.add(new NodeRef(NAME + "-" + 0, 0));
+        THREE_NODES.add(new NodeRef(NAME + "-" + 1, 1));
+        THREE_NODES.add(new NodeRef(NAME + "-" + 2, 2));
+    }
 
     @ParallelTest
     public void testEphemeralStorage()  {

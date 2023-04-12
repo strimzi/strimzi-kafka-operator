@@ -56,8 +56,10 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
 
 import static java.util.Collections.emptyMap;
@@ -624,10 +626,10 @@ public class ZookeeperCluster extends AbstractStatefulModel implements SupportsM
     }
 
     /**
-     * @return  List of node references for this ZooKeeper cluster
+     * @return  Set of node references for this ZooKeeper cluster
      */
-    private List<NodeRef> nodes()   {
-        List<NodeRef> nodes = new ArrayList<>();
+    private Set<NodeRef> nodes()   {
+        Set<NodeRef> nodes = new LinkedHashSet<>();
 
         for (int i = 0; i < replicas; i++)  {
             nodes.add(new NodeRef(getPodName(i), i));

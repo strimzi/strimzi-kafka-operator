@@ -53,6 +53,7 @@ import java.time.Clock;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
 
 /**
@@ -391,18 +392,18 @@ public class CaReconciler {
         }
     }
 
-    private Future<List<NodeRef>> getKafkaReplicas() {
+    private Future<Set<NodeRef>> getKafkaReplicas() {
         return strimziPodSetOperator.getAsync(reconciliation.namespace(), KafkaResources.kafkaStatefulSetName(reconciliation.name()))
                                     .compose(podSet -> {
                                         if (podSet != null) {
                                             return Future.succeededFuture(KafkaCluster.nodes(reconciliation.name(), podSet.getSpec().getPods().size()));
                                         } else {
-                                            return Future.succeededFuture(List.of());
+                                            return Future.succeededFuture(Set.of());
                                         }
                                     });
     }
 
-    private Future<Void> rollKafkaBrokers(List<NodeRef> nodes, RestartReasons podRollReasons) {
+    private Future<Void> rollKafkaBrokers(Set<NodeRef> nodes, RestartReasons podRollReasons) {
         return new KafkaRoller(
                 reconciliation,
                 vertx,

@@ -115,7 +115,7 @@ public class KafkaRoller {
     private final String cluster;
     private final Secret clusterCaCertSecret;
     private final Secret coKeySecret;
-    private final List<NodeRef> nodes;
+    private final Set<NodeRef> nodes;
     private final KubernetesRestartEventPublisher eventsPublisher;
     private final Supplier<BackOff> backoffSupplier;
     protected String namespace;
@@ -147,7 +147,7 @@ public class KafkaRoller {
      * @param eventsPublisher       Kubernetes Events publisher for publishing events about pod restarts
      */
     public KafkaRoller(Reconciliation reconciliation, Vertx vertx, PodOperator podOperations,
-                       long pollingIntervalMs, long operationTimeoutMs, Supplier<BackOff> backOffSupplier, List<NodeRef> nodes,
+                       long pollingIntervalMs, long operationTimeoutMs, Supplier<BackOff> backOffSupplier, Set<NodeRef> nodes,
                        Secret clusterCaCertSecret, Secret coKeySecret,
                        AdminClientProvider adminClientProvider,
                        Function<Integer, String> kafkaConfigProvider, String kafkaLogging, KafkaVersion kafkaVersion, boolean allowReconfiguration, KubernetesRestartEventPublisher eventsPublisher) {
@@ -219,8 +219,7 @@ public class KafkaRoller {
             List<NodeRef> pods = new ArrayList<>(nodes.size());
 
             for (NodeRef node : nodes)  {
-            //for (int podIndex = 0; podIndex < nodes.size(); podIndex++) {
-                // Order the podNames unready first otherwise repeated reconciliations might each restart a pod
+                // Order the nodes unready first otherwise repeated reconciliations might each restart a pod
                 // only for it not to become ready and thus drive the cluster to a worse state.
                 pods.add(podOperations.isReady(namespace, node.podName()) ? pods.size() : 0, node);
             }
@@ -754,7 +753,7 @@ public class KafkaRoller {
     /**
      * Returns an AdminClient instance bootstrapped from the given pod.
      */
-    protected Admin adminClient(List<NodeRef> nodes, boolean ceShouldBeFatal) throws ForceableProblem, FatalProblem {
+    protected Admin adminClient(Set<NodeRef> nodes, boolean ceShouldBeFatal) throws ForceableProblem, FatalProblem {
         List<String> podNames = nodes.stream().map(node -> node.podName()).toList();
         try {
             String bootstrapHostnames = podNames.stream().map(podName -> DnsNameGenerator.podDnsName(namespace, KafkaResources.brokersServiceName(cluster), podName) + ":" + KafkaCluster.REPLICATION_PORT).collect(Collectors.joining(","));
@@ -796,7 +795,7 @@ public class KafkaRoller {
     @SuppressFBWarnings("RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE") // seems to be completely spurious
     int controller(NodeRef nodeRef, long timeout, TimeUnit unit, RestartContext restartContext) throws Exception {
         // Don't use all allClient here, because it will have cache metadata about which is the controller.
-        try (Admin ac = adminClient(singletonList(nodeRef), false)) {
+        try (Admin ac = adminClient(Set.of(nodeRef), false)) {
             Node controllerNode = null;
             try {
                 DescribeClusterResult describeClusterResult = ac.describeCluster();
