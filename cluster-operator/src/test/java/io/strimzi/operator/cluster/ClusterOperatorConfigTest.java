@@ -368,10 +368,10 @@ public class ClusterOperatorConfigTest {
 
     @Test
     public void testParsePodSecurityProviderClass() {
-        assertThat(ClusterOperatorConfig.parsePodSecurityProviderClass("Baseline"), is("Baseline"));
-        assertThat(ClusterOperatorConfig.parsePodSecurityProviderClass("baseline"), is("baseline"));
-        assertThat(ClusterOperatorConfig.parsePodSecurityProviderClass("RESTRICTED"), is("RESTRICTED"));
-        assertThat(ClusterOperatorConfig.parsePodSecurityProviderClass("restricted"), is("restricted"));
+        assertThat(ClusterOperatorConfig.parsePodSecurityProviderClass("Baseline"), is(ClusterOperatorConfig.POD_SECURITY_PROVIDER_BASELINE_CLASS.defaultValue()));
+        assertThat(ClusterOperatorConfig.parsePodSecurityProviderClass("baseline"), is(ClusterOperatorConfig.POD_SECURITY_PROVIDER_BASELINE_CLASS.defaultValue()));
+        assertThat(ClusterOperatorConfig.parsePodSecurityProviderClass("RESTRICTED"), is(ClusterOperatorConfig.POD_SECURITY_PROVIDER_RESTRICTED_CLASS.defaultValue()));
+        assertThat(ClusterOperatorConfig.parsePodSecurityProviderClass("restricted"), is(ClusterOperatorConfig.POD_SECURITY_PROVIDER_RESTRICTED_CLASS.defaultValue()));
         assertThat(ClusterOperatorConfig.parsePodSecurityProviderClass("my.package.MyClass"), is("my.package.MyClass"));
     }
 

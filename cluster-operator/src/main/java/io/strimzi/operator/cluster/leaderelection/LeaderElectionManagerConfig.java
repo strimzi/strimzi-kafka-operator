@@ -25,17 +25,17 @@ public class LeaderElectionManagerConfig {
     /**
      * Name of the Kubernetes Lease resource
      */
-    public final static ConfigParameter<String> ENV_VAR_LEADER_ELECTION_LEASE_NAME = new ConfigParameter<>("STRIMZI_LEADER_ELECTION_LEASE_NAME", STRING, CONFIG_VALUES);
+    public final static ConfigParameter<String> ENV_VAR_LEADER_ELECTION_LEASE_NAME = new ConfigParameter<>("STRIMZI_LEADER_ELECTION_LEASE_NAME", STRING, null, CONFIG_VALUES);
 
     /**
      * Namespace of the Kubernetes Lease resource
      */
-    public final static ConfigParameter<String>  ENV_VAR_LEADER_ELECTION_LEASE_NAMESPACE = new ConfigParameter<>("STRIMZI_LEADER_ELECTION_LEASE_NAMESPACE", STRING, CONFIG_VALUES);
+    public final static ConfigParameter<String>  ENV_VAR_LEADER_ELECTION_LEASE_NAMESPACE = new ConfigParameter<>("STRIMZI_LEADER_ELECTION_LEASE_NAMESPACE", STRING, null, CONFIG_VALUES);
 
     /**
      * Identity of this operator for claiming the leadership
      */
-    public final static ConfigParameter<String>  ENV_VAR_LEADER_ELECTION_IDENTITY = new ConfigParameter<>("STRIMZI_LEADER_ELECTION_IDENTITY", STRING, CONFIG_VALUES);
+    public final static ConfigParameter<String>  ENV_VAR_LEADER_ELECTION_IDENTITY = new ConfigParameter<>("STRIMZI_LEADER_ELECTION_IDENTITY", STRING, null, CONFIG_VALUES);
 
     /**
      * Duration of the leadership
@@ -97,6 +97,10 @@ public class LeaderElectionManagerConfig {
      */
     public static Set<String> keyNames() {
         return Collections.unmodifiableSet(CONFIG_VALUES.keySet());
+    }
+
+    public static Map<String, ConfigParameter<?>> configValues() {
+        return Collections.unmodifiableMap(CONFIG_VALUES);
     }
 
     @SuppressWarnings("unchecked")

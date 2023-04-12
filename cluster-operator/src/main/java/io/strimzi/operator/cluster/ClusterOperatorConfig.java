@@ -240,7 +240,8 @@ public class ClusterOperatorConfig {
     public static ClusterOperatorConfig buildFromMap(Map<String, String> map, KafkaVersion.Lookup lookup) {
 
         Map<String, String> envMap = new HashMap<>(map);
-        CONFIG_VALUES.putAll(LeaderElectionManagerConfig.CONFIG_VALUES);
+
+        CONFIG_VALUES.putAll(LeaderElectionManagerConfig.configValues());
         envMap.keySet().retainAll(ClusterOperatorConfig.keyNames());
 
         Map<String, Object> generatedMap = ConfigParameter.define(envMap, CONFIG_VALUES);
@@ -329,11 +330,11 @@ public class ClusterOperatorConfig {
      * @return The full name of the class which should be used as the Pod security Provider
      */
     /* test */ static String parsePodSecurityProviderClass(String envVar) {
-        String value = envVar != null ? envVar : POD_SECURITY_PROVIDER_CLASS.key();
+        String value = envVar != null ? envVar : POD_SECURITY_PROVIDER_CLASS.defaultValue();
 
-        if (POD_SECURITY_PROVIDER_BASELINE_SHORTCUT.equals(value.toLowerCase(Locale.ENGLISH)))  {
+        if (POD_SECURITY_PROVIDER_BASELINE_SHORTCUT.defaultValue().equals(value.toLowerCase(Locale.ENGLISH)))  {
             return POD_SECURITY_PROVIDER_BASELINE_CLASS.defaultValue();
-        } else if (POD_SECURITY_PROVIDER_RESTRICTED_SHORTCUT.equals(value.toLowerCase(Locale.ENGLISH)))  {
+        } else if (POD_SECURITY_PROVIDER_RESTRICTED_SHORTCUT.defaultValue().equals(value.toLowerCase(Locale.ENGLISH)))  {
             return POD_SECURITY_PROVIDER_RESTRICTED_CLASS.defaultValue();
         } else {
             return value;
