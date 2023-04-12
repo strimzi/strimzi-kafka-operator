@@ -1166,9 +1166,7 @@ public class KafkaRebalanceAssemblyOperator
                                 new NoSuchResourceException("Kafka resource '" + clusterName
                                         + "' identified by label '" + Labels.STRIMZI_CLUSTER_LABEL
                                         + "' does not exist in namespace " + clusterNamespace + ".")).mapEmpty();
-                    } else if (kafka.getStatus() == null
-                            || kafka.getStatus().getConditions() == null
-                            || kafka.getStatus().getConditions().stream().noneMatch(condition -> condition.getType().equals("Ready") && condition.getStatus().equals("True"))) {
+                    } else if (!isKafkaClusterReady(kafka) && state(kafkaRebalance) != (KafkaRebalanceState.Ready)) {
                         LOGGER.warnCr(reconciliation, "Kafka cluster is not Ready");
                         KafkaRebalanceStatus status = new KafkaRebalanceStatus();
                         return updateStatus(reconciliation, kafkaRebalance, status,
@@ -1234,6 +1232,12 @@ public class KafkaRebalanceAssemblyOperator
                                         }, exception -> Future.failedFuture(exception).mapEmpty());
                             });
                 }, exception -> updateStatus(reconciliation, kafkaRebalance, new KafkaRebalanceStatus(), exception).mapEmpty());
+    }
+
+    private boolean isKafkaClusterReady(Kafka kafka) {
+        return kafka.getStatus() != null
+                && kafka.getStatus().getConditions() != null
+                && kafka.getStatus().getConditions().stream().anyMatch(condition -> condition.getType().equals("Ready") && condition.getStatus().equals("True"));
     }
 
     private Future<MapAndStatus<ConfigMap, KafkaRebalanceStatus>> requestRebalance(Reconciliation reconciliation,
