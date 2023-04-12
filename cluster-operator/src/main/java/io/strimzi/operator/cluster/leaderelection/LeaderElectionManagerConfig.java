@@ -20,7 +20,7 @@ import static io.strimzi.operator.common.operator.resource.ConfigParameterParser
  */
 public class LeaderElectionManagerConfig {
 
-    public static final Map<String, ConfigParameter<?>> CONFIG_VALUES = new HashMap<>();
+    private static final Map<String, ConfigParameter<?>> CONFIG_VALUES = new HashMap<>();
 
     /**
      * Name of the Kubernetes Lease resource
