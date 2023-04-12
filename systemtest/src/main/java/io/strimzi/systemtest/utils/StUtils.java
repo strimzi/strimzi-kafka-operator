@@ -16,15 +16,12 @@ import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
-import io.fabric8.kubernetes.api.model.apps.StatefulSetBuilder;
 import io.strimzi.api.kafka.model.ContainerEnvVar;
 import io.strimzi.api.kafka.model.ContainerEnvVarBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
-import io.strimzi.systemtest.resources.crd.StrimziPodSetResource;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
-import io.strimzi.systemtest.utils.kubeUtils.controllers.StatefulSetUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StrimziPodSetUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.KubeClusterResource;
@@ -513,97 +510,6 @@ public class StUtils {
         return testClassPath.replace("io.strimzi.systemtest.", "");
     }
 
-    /**
-     * These methods are operating with StatefulSets or StrimziPodSets depending on ENV variable.
-     * They should be removed together with StatefulSets in the future - and we should use
-     * StrimziPodSets related methods instead.
-     */
-
-    public static void annotateStatefulSetOrStrimziPodSet(String namespaceName, String resourceName, Map<String, String> annotations) {
-        if (Environment.isStrimziPodSetEnabled()) {
-            StrimziPodSetResource.replaceStrimziPodSetInSpecificNamespace(resourceName,
-                strimziPodSet -> strimziPodSet.getMetadata().setAnnotations(annotations), namespaceName);
-        } else {
-            kubeClient(namespaceName)
-                .statefulSet(resourceName)
-                .edit(sts -> new StatefulSetBuilder(sts)
-                .editMetadata()
-                    .addToAnnotations(annotations)
-                .endMetadata()
-                .build());
-        }
-    }
-
-    public static Map<String, String> getAnnotationsOfStatefulSetOrStrimziPodSet(String namespaceName, String resourceName) {
-        if (Environment.isStrimziPodSetEnabled()) {
-            return StrimziPodSetResource.strimziPodSetClient().inNamespace(namespaceName).withName(resourceName).get().getMetadata().getAnnotations();
-        }
-        return kubeClient().getStatefulSet(namespaceName, resourceName).getMetadata().getAnnotations();
-    }
-
-    public static Map<String, String> getLabelsOfStatefulSetOrStrimziPodSet(String namespaceName, String resourceName) {
-        if (Environment.isStrimziPodSetEnabled()) {
-            return StrimziPodSetResource.strimziPodSetClient().inNamespace(namespaceName).withName(resourceName).get().getMetadata().getLabels();
-        }
-        return kubeClient().getStatefulSet(namespaceName, resourceName).getMetadata().getLabels();
-    }
-
-    public static void waitForStatefulSetOrStrimziPodSetLabelsChange(String namespaceName, String resourceName, Map<String, String> labels) {
-        if (Environment.isStrimziPodSetEnabled()) {
-            StrimziPodSetUtils.waitForStrimziPodSetLabelsChange(namespaceName, resourceName, labels);
-        } else {
-            StatefulSetUtils.waitForStatefulSetLabelsChange(namespaceName, resourceName, labels);
-        }
-    }
-
-    public static void waitForStatefulSetOrStrimziPodSetLabelsDeletion(String namespaceName, String resourceName, String... labelKeys) {
-        if (Environment.isStrimziPodSetEnabled()) {
-            StrimziPodSetUtils.waitForStrimziPodSetLabelsDeletion(namespaceName, resourceName, labelKeys);
-        } else {
-            StatefulSetUtils.waitForStatefulSetLabelsDeletion(namespaceName, resourceName, labelKeys);
-        }
-    }
-
-    public static Affinity getStatefulSetOrStrimziPodSetAffinity(String namespaceName, String resourceName) {
-        if (Environment.isStrimziPodSetEnabled()) {
-            Pod firstPod = StrimziPodSetUtils.getFirstPodFromSpec(namespaceName, resourceName);
-            return firstPod.getSpec().getAffinity();
-        } else {
-            return kubeClient().getStatefulSet(namespaceName, resourceName).getSpec().getTemplate().getSpec().getAffinity();
-        }
-    }
-
-    public static void deleteStrimziPodSetOrStatefulSet(String namespaceName, String resourceName) {
-        if (Environment.isStrimziPodSetEnabled()) {
-            StrimziPodSetResource.strimziPodSetClient().inNamespace(namespaceName).withName(resourceName).delete();
-        } else {
-            kubeClient(namespaceName).deleteStatefulSet(resourceName);
-        }
-    }
-
-    public static void waitForStrimziPodSetOrStatefulSetRecovery(String namespaceName, String resourceName, String resourceUID) {
-        if (Environment.isStrimziPodSetEnabled()) {
-            StrimziPodSetUtils.waitForStrimziPodSetRecovery(namespaceName, resourceName, resourceUID);
-        } else {
-            StatefulSetUtils.waitForStatefulSetRecovery(namespaceName, resourceName, resourceUID);
-        }
-    }
-
-    public static void waitForStrimziPodSetOrStatefulSetAndPodsReady(String namespaceName, String resourceName, int expectPods) {
-        if (Environment.isStrimziPodSetEnabled()) {
-            StrimziPodSetUtils.waitForAllStrimziPodSetAndPodsReady(namespaceName, resourceName, expectPods);
-        } else {
-            StatefulSetUtils.waitForAllStatefulSetPodsReady(namespaceName, resourceName, expectPods);
-        }
-    }
-
-    public static String getStrimziPodSetOrStatefulSetUID(String namespaceName, String resourceName) {
-        if (Environment.isStrimziPodSetEnabled()) {
-            return StrimziPodSetResource.strimziPodSetClient().inNamespace(namespaceName).withName(resourceName).get().getMetadata().getUid();
-        }
-        return kubeClient(namespaceName).getStatefulSetUid(resourceName);
-    }
-
     public static Affinity getDeploymentOrStrimziPodSetAffinity(String namespaceName, String resourceName) {
         if (Environment.isStableConnectIdentitiesEnabled()) {
             Pod firstPod = StrimziPodSetUtils.getFirstPodFromSpec(namespaceName, resourceName);
@@ -625,8 +531,8 @@ public class StUtils {
     }
 
     /**
-     * Returns a list of names of ConfigMaps with broker configuration files. For StatefulSets, the list has only one
-     * item with the shared ConfigMap. For StrimziPodSets, it should be a ConfigMap per broker.
+     * Returns a list of names of ConfigMaps with broker configuration files.
+     * For StrimziPodSets, it should be a ConfigMap per broker.
      *
      * @param kafkaClusterName  Name of the Kafka cluster
      * @param replicas          Number of Kafka replicas
@@ -636,12 +542,8 @@ public class StUtils {
     public static List<String> getKafkaConfigurationConfigMaps(String kafkaClusterName, int replicas)    {
         List<String> cmNames = new ArrayList<>(replicas);
 
-        if (Environment.isStrimziPodSetEnabled())   {
-            for (int i = 0; i < replicas; i++)  {
-                cmNames.add(KafkaResources.kafkaPodName(kafkaClusterName, i));
-            }
-        } else {
-            cmNames.add(KafkaResources.kafkaMetricsAndLogConfigMapName(kafkaClusterName));
+        for (int i = 0; i < replicas; i++)  {
+            cmNames.add(KafkaResources.kafkaPodName(kafkaClusterName, i));
         }
 
         return cmNames;

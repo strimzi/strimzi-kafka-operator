@@ -55,6 +55,7 @@ import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.ConfigMapUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
+import io.strimzi.systemtest.utils.kubeUtils.controllers.StrimziPodSetUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PersistentVolumeClaimUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.ServiceUtils;
@@ -1090,10 +1091,10 @@ class KafkaST extends AbstractST {
         Map<String, String> kafkaPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getKafkaSelector());
 
         LOGGER.info("Waiting for kafka stateful set labels changed {}", labels);
-        StUtils.waitForStatefulSetOrStrimziPodSetLabelsChange(testStorage.getNamespaceName(), testStorage.getKafkaStatefulSetName(), labels);
+        StrimziPodSetUtils.waitForStrimziPodSetLabelsChange(testStorage.getNamespaceName(), testStorage.getKafkaStatefulSetName(), labels);
 
         LOGGER.info("Getting labels from stateful set resource");
-        Map<String, String> kafkaLabels = StUtils.getLabelsOfStatefulSetOrStrimziPodSet(testStorage.getNamespaceName(), testStorage.getKafkaStatefulSetName());
+        Map<String, String> kafkaLabels = StrimziPodSetUtils.getLabelsOfStrimziPodSet(testStorage.getNamespaceName(), testStorage.getKafkaStatefulSetName());
 
         LOGGER.info("Verifying default labels in the Kafka CR");
 
@@ -1144,11 +1145,11 @@ class KafkaST extends AbstractST {
         }
 
         LOGGER.info("Waiting for kafka stateful set labels changed {}", labels);
-        StUtils.waitForStatefulSetOrStrimziPodSetLabelsChange(testStorage.getNamespaceName(), testStorage.getKafkaStatefulSetName(), labels);
+        StrimziPodSetUtils.waitForStrimziPodSetLabelsChange(testStorage.getNamespaceName(), testStorage.getKafkaStatefulSetName(), labels);
 
         LOGGER.info("Verifying kafka labels via stateful set");
 
-        verifyPresentLabels(labels, StUtils.getLabelsOfStatefulSetOrStrimziPodSet(testStorage.getNamespaceName(), testStorage.getKafkaStatefulSetName()));
+        verifyPresentLabels(labels, StrimziPodSetUtils.getLabelsOfStrimziPodSet(testStorage.getNamespaceName(), testStorage.getKafkaStatefulSetName()));
 
         LOGGER.info("Verifying via kafka pods");
         labels = kubeClient(testStorage.getNamespaceName()).getPod(testStorage.getNamespaceName(), KafkaResources.kafkaPodName(testStorage.getClusterName(), 0)).getMetadata().getLabels();
@@ -1194,10 +1195,10 @@ class KafkaST extends AbstractST {
         }
 
         LOGGER.info("Waiting for kafka stateful set labels changed {}", labels);
-        StUtils.waitForStatefulSetOrStrimziPodSetLabelsDeletion(testStorage.getNamespaceName(), testStorage.getKafkaStatefulSetName(), labelKeys[0], labelKeys[1], labelKeys[2]);
+        StrimziPodSetUtils.waitForStrimziPodSetLabelsDeletion(testStorage.getNamespaceName(), testStorage.getKafkaStatefulSetName(), labelKeys[0], labelKeys[1], labelKeys[2]);
 
         LOGGER.info("Verifying kafka labels via stateful set");
-        verifyNullLabels(labelKeys, StUtils.getLabelsOfStatefulSetOrStrimziPodSet(testStorage.getNamespaceName(), testStorage.getKafkaStatefulSetName()));
+        verifyNullLabels(labelKeys, StrimziPodSetUtils.getLabelsOfStrimziPodSet(testStorage.getNamespaceName(), testStorage.getKafkaStatefulSetName()));
 
         LOGGER.info("Waiting for kafka pod labels deletion {}", labels.toString());
         PodUtils.waitUntilPodLabelsDeletion(testStorage.getNamespaceName(), KafkaResources.kafkaPodName(testStorage.getClusterName(), 0), labelKeys[0], labelKeys[1], labelKeys[2]);
@@ -1245,12 +1246,12 @@ class KafkaST extends AbstractST {
 
         LOGGER.info("---> STATEFUL SETS <---");
 
-        Map<String, String> kafkaLabels = StUtils.getLabelsOfStatefulSetOrStrimziPodSet(testStorage.getNamespaceName(), testStorage.getKafkaStatefulSetName());
+        Map<String, String> kafkaLabels = StrimziPodSetUtils.getLabelsOfStrimziPodSet(testStorage.getNamespaceName(), testStorage.getKafkaStatefulSetName());
 
         LOGGER.info("Getting labels from stateful set of kafka resource");
         verifyAppLabels(kafkaLabels);
 
-        Map<String, String> zooLabels = StUtils.getLabelsOfStatefulSetOrStrimziPodSet(testStorage.getNamespaceName(), testStorage.getZookeeperStatefulSetName());
+        Map<String, String> zooLabels = StrimziPodSetUtils.getLabelsOfStrimziPodSet(testStorage.getNamespaceName(), testStorage.getZookeeperStatefulSetName());
 
         LOGGER.info("Getting labels from stateful set of zookeeper resource");
         verifyAppLabels(zooLabels);
@@ -1516,7 +1517,7 @@ class KafkaST extends AbstractST {
 
         LOGGER.info("Check if Kubernetes labels are applied");
 
-        Map<String, String> actualStatefulSetLabels = StUtils.getLabelsOfStatefulSetOrStrimziPodSet(namespaceName, KafkaResources.kafkaStatefulSetName(clusterName));
+        Map<String, String> actualStatefulSetLabels = StrimziPodSetUtils.getLabelsOfStrimziPodSet(namespaceName, KafkaResources.kafkaStatefulSetName(clusterName));
 
         assertThat(actualStatefulSetLabels.get("app.kubernetes.io/part-of"), is("some-app"));
         assertThat(actualStatefulSetLabels.get("app.kubernetes.io/managed-by"), is("some-app"));

@@ -185,7 +185,6 @@ public interface Constants {
     /**
      * Feature gate related constants
      */
-    String USE_STRIMZI_STATEFULSETS = "-UseStrimziPodSets";
     String USE_KRAFT_MODE = "+UseKRaft";
     String USE_STABLE_CONNECT_IDENTITIES = "+StableConnectIdentities";
 

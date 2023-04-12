@@ -241,10 +241,6 @@ public class Environment {
         return STRIMZI_RBAC_SCOPE_NAMESPACE.equals(STRIMZI_RBAC_SCOPE);
     }
 
-    public static boolean isStrimziPodSetEnabled() {
-        return !STRIMZI_FEATURE_GATES.contains(Constants.USE_STRIMZI_STATEFULSETS);
-    }
-
     public static boolean isStableConnectIdentitiesEnabled() {
         return STRIMZI_FEATURE_GATES.contains(Constants.USE_STABLE_CONNECT_IDENTITIES);
     }
@@ -254,7 +250,7 @@ public class Environment {
      * @return true if KRaft mode is enabled, otherwise false
      */
     public static boolean isKRaftModeEnabled() {
-        return !STRIMZI_FEATURE_GATES.contains(Constants.USE_STRIMZI_STATEFULSETS) && STRIMZI_FEATURE_GATES.contains(Constants.USE_KRAFT_MODE);
+        return STRIMZI_FEATURE_GATES.contains(Constants.USE_KRAFT_MODE);
     }
 
     /**

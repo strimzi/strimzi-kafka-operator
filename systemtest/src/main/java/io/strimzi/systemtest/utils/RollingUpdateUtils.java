@@ -11,7 +11,6 @@ import io.strimzi.api.kafka.model.KafkaMirrorMaker2;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.Constants;
-import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.ResourceOperation;
 import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
@@ -33,11 +32,11 @@ public class RollingUpdateUtils {
     private static final Logger LOGGER = LogManager.getLogger(RollingUpdateUtils.class);
 
     /**
-     * Method to check that all pods for expected StatefulSet were rolled
+     * Method to check that all pods for expected component (StrimziPodSet, Deployment) were rolled
      * @param namespaceName Namespace name
      * @param selector
-     * @param snapshot Snapshot of pods for StatefulSet before the rolling update
-     * @return true when the pods for StatefulSet are recreated
+     * @param snapshot Snapshot of pods for component (StrimziPodSet, Deployment) before the rolling update
+     * @return true when the pods for component (StrimziPodSet, Deployment) are recreated
      */
     public static boolean componentHasRolled(String namespaceName, LabelSelector selector, Map<String, String> snapshot) {
         LOGGER.debug("Existing snapshot: {}/{}", namespaceName, new TreeMap<>(snapshot));
@@ -65,11 +64,11 @@ public class RollingUpdateUtils {
     }
 
     /**
-     *  Method to wait when StatefulSet will be recreated after rolling update
+     *  Method to wait when component (StrimziPodSet, Deployment) will be recreated after rolling update
      * @param namespaceName Namespace name
      * @param selector
-     * @param snapshot Snapshot of pods for StatefulSet before the rolling update
-     * @return The snapshot of the StatefulSet after rolling update with Uid for every pod
+     * @param snapshot Snapshot of pods for  component (StrimziPodSet, Deployment) before the rolling update
+     * @return The snapshot of the  component (StrimziPodSet, Deployment) after rolling update with Uid for every pod
      */
     public static Map<String, String> waitTillComponentHasRolled(String namespaceName, LabelSelector selector, Map<String, String> snapshot) {
         String componentName = selector.getMatchLabels().get(Labels.STRIMZI_NAME_LABEL);
@@ -163,13 +162,9 @@ public class RollingUpdateUtils {
         );
     }
 
-    public static Map<String, String> waitForComponentScaleUpOrDown(String namespaceName, LabelSelector selector, int expectedPods, Map<String, String> pods) {
-        if (Environment.isStrimziPodSetEnabled()) {
-            waitForComponentAndPodsReady(namespaceName, selector, expectedPods);
-            return PodUtils.podSnapshot(namespaceName, selector);
-        } else {
-            return waitTillComponentHasRolledAndPodsReady(namespaceName, selector, expectedPods, pods);
-        }
+    public static Map<String, String> waitForComponentScaleUpOrDown(String namespaceName, LabelSelector selector, int expectedPods) {
+        waitForComponentAndPodsReady(namespaceName, selector, expectedPods);
+        return PodUtils.podSnapshot(namespaceName, selector);
     }
 
     public static void waitForNoKafkaAndZKRollingUpdate(String namespaceName, String clusterName, Map<String, String> kafkaPods) {

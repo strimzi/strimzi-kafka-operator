@@ -5,6 +5,7 @@
 package io.strimzi.systemtest.utils.kubeUtils.controllers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.fabric8.kubernetes.api.model.Affinity;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.strimzi.api.kafka.model.StrimziPodSet;
@@ -26,7 +27,7 @@ public class StrimziPodSetUtils {
 
     private StrimziPodSetUtils() {}
 
-    private static final Logger LOGGER = LogManager.getLogger(StatefulSetUtils.class);
+    private static final Logger LOGGER = LogManager.getLogger(StrimziPodSetUtils.class);
     private static final long READINESS_TIMEOUT = ResourceOperation.getTimeoutForResourceReadiness(Constants.STATEFUL_SET);
     private static final long DELETION_TIMEOUT = ResourceOperation.getTimeoutForResourceDeletion(StrimziPodSet.RESOURCE_KIND);
 
@@ -113,5 +114,31 @@ public class StrimziPodSetUtils {
      */
     public static Pod mapToPod(Map<String, Object> map) {
         return MAPPER.convertValue(map, Pod.class);
+    }
+
+    public static void annotateStrimziPodSet(String namespaceName, String resourceName, Map<String, String> annotations) {
+        StrimziPodSetResource.replaceStrimziPodSetInSpecificNamespace(resourceName,
+            strimziPodSet -> strimziPodSet.getMetadata().setAnnotations(annotations), namespaceName);
+    }
+
+    public static Map<String, String> getAnnotationsOfStrimziPodSet(String namespaceName, String resourceName) {
+        return StrimziPodSetResource.strimziPodSetClient().inNamespace(namespaceName).withName(resourceName).get().getMetadata().getAnnotations();
+    }
+
+    public static Map<String, String> getLabelsOfStrimziPodSet(String namespaceName, String resourceName) {
+        return StrimziPodSetResource.strimziPodSetClient().inNamespace(namespaceName).withName(resourceName).get().getMetadata().getLabels();
+    }
+
+    public static Affinity getStrimziPodSetAffinity(String namespaceName, String resourceName) {
+        Pod firstPod = StrimziPodSetUtils.getFirstPodFromSpec(namespaceName, resourceName);
+        return firstPod.getSpec().getAffinity();
+    }
+
+    public static void deleteStrimziPodSet(String namespaceName, String resourceName) {
+        StrimziPodSetResource.strimziPodSetClient().inNamespace(namespaceName).withName(resourceName).delete();
+    }
+
+    public static String getStrimziPodSetUID(String namespaceName, String resourceName) {
+        return StrimziPodSetResource.strimziPodSetClient().inNamespace(namespaceName).withName(resourceName).get().getMetadata().getUid();
     }
 }

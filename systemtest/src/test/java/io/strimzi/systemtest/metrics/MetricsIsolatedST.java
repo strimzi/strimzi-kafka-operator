@@ -34,7 +34,6 @@ import io.strimzi.systemtest.annotations.IsolatedSuite;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.annotations.KRaftNotSupported;
 import io.strimzi.systemtest.annotations.ParallelTest;
-import io.strimzi.systemtest.annotations.StrimziPodSetTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.BridgeClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.BridgeClientsBuilder;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
@@ -477,7 +476,6 @@ public class MetricsIsolatedST extends AbstractST {
     }
 
     @ParallelTest
-    @StrimziPodSetTest
     void testStrimziPodSetMetrics() {
         // Expected PodSet counts per component
         int zooPodSetCount = Environment.isKRaftModeEnabled() ? 0 : 1;
