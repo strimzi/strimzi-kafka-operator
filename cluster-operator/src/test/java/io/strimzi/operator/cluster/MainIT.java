@@ -56,7 +56,7 @@ public class MainIT {
     public void testCreateClusterRolesCreatesClusterRoles(VertxTestContext context) {
         assertDoesNotThrow(KubeCluster::bootstrap);
         Map<String, String> envVars = new HashMap<>(6);
-        envVars.put(ClusterOperatorConfig.CREATE_CLUSTER_ROLES.key(), "TRUE");
+        envVars.put(ClusterOperatorConfig.CREATE_CLUSTER_ROLES.key(), "true");
         envVars.put(ClusterOperatorConfig.STRIMZI_KAFKA_IMAGES.key(), KafkaVersionTestUtils.getKafkaImagesEnvVarString());
         envVars.put(ClusterOperatorConfig.STRIMZI_KAFKA_CONNECT_IMAGES.key(), KafkaVersionTestUtils.getKafkaConnectImagesEnvVarString());
         envVars.put(ClusterOperatorConfig.STRIMZI_KAFKA_MIRROR_MAKER_IMAGES.key(), KafkaVersionTestUtils.getKafkaMirrorMakerImagesEnvVarString());
