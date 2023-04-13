@@ -130,7 +130,7 @@ public class EntityUserOperator extends AbstractModel implements SupportsLogging
 
             String image = userOperatorSpec.getImage();
             if (image == null) {
-                image = System.getenv().getOrDefault(ClusterOperatorConfig.STRIMZI_DEFAULT_USER_OPERATOR_IMAGE, "quay.io/strimzi/operator:latest");
+                image = System.getenv().getOrDefault(ClusterOperatorConfig.STRIMZI_DEFAULT_USER_OPERATOR_IMAGE.key(), "quay.io/strimzi/operator:latest");
             }
             result.image = image;
 

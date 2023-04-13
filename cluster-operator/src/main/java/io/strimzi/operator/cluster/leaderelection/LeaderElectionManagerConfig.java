@@ -12,7 +12,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-import static io.strimzi.operator.common.operator.resource.ConfigParameterParser.STRING;
+import static io.strimzi.operator.common.operator.resource.ConfigParameterParser.NON_EMPTY_STRING;
 import static io.strimzi.operator.common.operator.resource.ConfigParameterParser.DURATION;
 
 /**
@@ -25,17 +25,17 @@ public class LeaderElectionManagerConfig {
     /**
      * Name of the Kubernetes Lease resource
      */
-    public final static ConfigParameter<String> ENV_VAR_LEADER_ELECTION_LEASE_NAME = new ConfigParameter<>("STRIMZI_LEADER_ELECTION_LEASE_NAME", STRING, null, CONFIG_VALUES);
+    public final static ConfigParameter<String> ENV_VAR_LEADER_ELECTION_LEASE_NAME = new ConfigParameter<>("STRIMZI_LEADER_ELECTION_LEASE_NAME", NON_EMPTY_STRING, null, CONFIG_VALUES);
 
     /**
      * Namespace of the Kubernetes Lease resource
      */
-    public final static ConfigParameter<String>  ENV_VAR_LEADER_ELECTION_LEASE_NAMESPACE = new ConfigParameter<>("STRIMZI_LEADER_ELECTION_LEASE_NAMESPACE", STRING, null, CONFIG_VALUES);
+    public final static ConfigParameter<String>  ENV_VAR_LEADER_ELECTION_LEASE_NAMESPACE = new ConfigParameter<>("STRIMZI_LEADER_ELECTION_LEASE_NAMESPACE", NON_EMPTY_STRING, null, CONFIG_VALUES);
 
     /**
      * Identity of this operator for claiming the leadership
      */
-    public final static ConfigParameter<String>  ENV_VAR_LEADER_ELECTION_IDENTITY = new ConfigParameter<>("STRIMZI_LEADER_ELECTION_IDENTITY", STRING, null, CONFIG_VALUES);
+    public final static ConfigParameter<String>  ENV_VAR_LEADER_ELECTION_IDENTITY = new ConfigParameter<>("STRIMZI_LEADER_ELECTION_IDENTITY", NON_EMPTY_STRING, null, CONFIG_VALUES);
 
     /**
      * Duration of the leadership

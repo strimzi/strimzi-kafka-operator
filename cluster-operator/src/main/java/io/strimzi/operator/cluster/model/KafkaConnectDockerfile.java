@@ -119,7 +119,7 @@ public class KafkaConnectDockerfile {
      * @param connectBuild  The Build definition from the API
      */
     public KafkaConnectDockerfile(String fromImage, Build connectBuild) {
-        this.mavenBuilder = System.getenv().getOrDefault(ClusterOperatorConfig.STRIMZI_DEFAULT_MAVEN_BUILDER, DEFAULT_MAVEN_IMAGE);
+        this.mavenBuilder = System.getenv().getOrDefault(ClusterOperatorConfig.STRIMZI_DEFAULT_MAVEN_BUILDER.key(), DEFAULT_MAVEN_IMAGE);
         StringWriter stringWriter = new StringWriter();
         PrintWriter writer = new PrintWriter(stringWriter);
 

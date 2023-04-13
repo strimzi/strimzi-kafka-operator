@@ -55,32 +55,38 @@ public class LeaderElectionManagerConfigTest {
     @Test
     public void testMissingAllRequired() {
         Map<String, String> envVars = new HashMap<>();
+        envVars.put(LeaderElectionManagerConfig.ENV_VAR_LEADER_ELECTION_LEASE_NAMESPACE.key(), null);
+        envVars.put(LeaderElectionManagerConfig.ENV_VAR_LEADER_ELECTION_IDENTITY.key(), null);
+        envVars.put(LeaderElectionManagerConfig.ENV_VAR_LEADER_ELECTION_LEASE_NAME.key(), null);
 
         InvalidConfigurationException e = assertThrows(InvalidConfigurationException.class, () -> LeaderElectionManagerConfig.fromMap(envVars));
-        assertThat(e.getMessage(), is("Config value: STRIMZI_LEADER_ELECTION_LEASE_NAMESPACE is mandatory"));
+        assertThat(e.getMessage(), is("Failed to parse. Value cannot be empty or null"));
     }
 
     @Test
-    public void testMissingSomeRequired() {
+    public void testSomeRequiredValuesNotNull() {
         Map<String, String> envVars = new HashMap<>();
         envVars.put(LeaderElectionManagerConfig.ENV_VAR_LEADER_ELECTION_LEASE_NAMESPACE.key(), "my-namespace");
         envVars.put(LeaderElectionManagerConfig.ENV_VAR_LEADER_ELECTION_IDENTITY.key(), "my-pod");
+        envVars.put(LeaderElectionManagerConfig.ENV_VAR_LEADER_ELECTION_LEASE_NAME.key(), null);
 
         InvalidConfigurationException e = assertThrows(InvalidConfigurationException.class, () -> LeaderElectionManagerConfig.fromMap(envVars));
-        assertThat(e.getMessage(), is("Config value: STRIMZI_LEADER_ELECTION_LEASE_NAME is mandatory"));
+        assertThat(e.getMessage(), is("Failed to parse. Value cannot be empty or null"));
 
         Map<String, String> envVars2 = new HashMap<>();
         envVars2.put(LeaderElectionManagerConfig.ENV_VAR_LEADER_ELECTION_LEASE_NAME.key(), "my-lease");
         envVars2.put(LeaderElectionManagerConfig.ENV_VAR_LEADER_ELECTION_IDENTITY.key(), "my-pod");
+        envVars2.put(LeaderElectionManagerConfig.ENV_VAR_LEADER_ELECTION_LEASE_NAMESPACE.key(), null);
 
         e = assertThrows(InvalidConfigurationException.class, () -> LeaderElectionManagerConfig.fromMap(envVars2));
-        assertThat(e.getMessage(), is("Config value: STRIMZI_LEADER_ELECTION_LEASE_NAMESPACE is mandatory"));
+        assertThat(e.getMessage(), is("Failed to parse. Value cannot be empty or null"));
 
         Map<String, String> envVars3 = new HashMap<>();
         envVars3.put(LeaderElectionManagerConfig.ENV_VAR_LEADER_ELECTION_LEASE_NAME.key(), "my-lease");
         envVars3.put(LeaderElectionManagerConfig.ENV_VAR_LEADER_ELECTION_LEASE_NAMESPACE.key(), "my-namespace");
+        envVars3.put(LeaderElectionManagerConfig.ENV_VAR_LEADER_ELECTION_IDENTITY.key(), null);
 
         e = assertThrows(InvalidConfigurationException.class, () -> LeaderElectionManagerConfig.fromMap(envVars3));
-        assertThat(e.getMessage(), is("Config value: STRIMZI_LEADER_ELECTION_IDENTITY is mandatory"));
+        assertThat(e.getMessage(), is("Failed to parse. Value cannot be empty or null"));
     }
 }
