@@ -38,10 +38,10 @@ public class ClusterOperatorConfigTest {
         ENV_VARS.put(ClusterOperatorConfig.FULL_RECONCILIATION_INTERVAL_MS.key(), "30000");
         ENV_VARS.put(ClusterOperatorConfig.OPERATION_TIMEOUT_MS.key(), "30000");
         ENV_VARS.put(ClusterOperatorConfig.CONNECT_BUILD_TIMEOUT_MS.key(), "40000");
-        ENV_VARS.put(ClusterOperatorConfig.STRIMZI_KAFKA_IMAGES.key(), KafkaVersionTestUtils.getKafkaImagesEnvVarString());
-        ENV_VARS.put(ClusterOperatorConfig.STRIMZI_KAFKA_CONNECT_IMAGES.key(), KafkaVersionTestUtils.getKafkaConnectImagesEnvVarString());
-        ENV_VARS.put(ClusterOperatorConfig.STRIMZI_KAFKA_MIRROR_MAKER_IMAGES.key(), KafkaVersionTestUtils.getKafkaMirrorMakerImagesEnvVarString());
-        ENV_VARS.put(ClusterOperatorConfig.STRIMZI_KAFKA_MIRROR_MAKER_2_IMAGES.key(), KafkaVersionTestUtils.getKafkaMirrorMaker2ImagesEnvVarString());
+        ENV_VARS.put(ClusterOperatorConfig.STRIMZI_KAFKA_IMAGES, KafkaVersionTestUtils.getKafkaImagesEnvVarString());
+        ENV_VARS.put(ClusterOperatorConfig.STRIMZI_KAFKA_CONNECT_IMAGES, KafkaVersionTestUtils.getKafkaConnectImagesEnvVarString());
+        ENV_VARS.put(ClusterOperatorConfig.STRIMZI_KAFKA_MIRROR_MAKER_IMAGES, KafkaVersionTestUtils.getKafkaMirrorMakerImagesEnvVarString());
+        ENV_VARS.put(ClusterOperatorConfig.STRIMZI_KAFKA_MIRROR_MAKER_2_IMAGES, KafkaVersionTestUtils.getKafkaMirrorMaker2ImagesEnvVarString());
         ENV_VARS.put(ClusterOperatorConfig.OPERATOR_NAMESPACE.key(), "operator-namespace");
         ENV_VARS.put(ClusterOperatorConfig.FEATURE_GATES.key(), "+StableConnectIdentities");
         ENV_VARS.put(ClusterOperatorConfig.DNS_CACHE_TTL.key(), "10");
@@ -124,10 +124,10 @@ public class ClusterOperatorConfigTest {
 
     private Map<String, String> envWithImages() {
         Map<String, String> envVars = new HashMap<>(5);
-        envVars.put(ClusterOperatorConfig.STRIMZI_KAFKA_IMAGES.key(), KafkaVersionTestUtils.getKafkaImagesEnvVarString());
-        envVars.put(ClusterOperatorConfig.STRIMZI_KAFKA_CONNECT_IMAGES.key(), KafkaVersionTestUtils.getKafkaConnectImagesEnvVarString());
-        envVars.put(ClusterOperatorConfig.STRIMZI_KAFKA_MIRROR_MAKER_IMAGES.key(), KafkaVersionTestUtils.getKafkaMirrorMakerImagesEnvVarString());
-        envVars.put(ClusterOperatorConfig.STRIMZI_KAFKA_MIRROR_MAKER_2_IMAGES.key(), KafkaVersionTestUtils.getKafkaMirrorMaker2ImagesEnvVarString());
+        envVars.put(ClusterOperatorConfig.STRIMZI_KAFKA_IMAGES, KafkaVersionTestUtils.getKafkaImagesEnvVarString());
+        envVars.put(ClusterOperatorConfig.STRIMZI_KAFKA_CONNECT_IMAGES, KafkaVersionTestUtils.getKafkaConnectImagesEnvVarString());
+        envVars.put(ClusterOperatorConfig.STRIMZI_KAFKA_MIRROR_MAKER_IMAGES, KafkaVersionTestUtils.getKafkaMirrorMakerImagesEnvVarString());
+        envVars.put(ClusterOperatorConfig.STRIMZI_KAFKA_MIRROR_MAKER_2_IMAGES, KafkaVersionTestUtils.getKafkaMirrorMaker2ImagesEnvVarString());
         return envVars;
     }
 
@@ -268,10 +268,10 @@ public class ClusterOperatorConfigTest {
     @Test
     public void testConfigParsingWithAllVersionEnvVars() {
         Map<String, String> envVars = new HashMap<>(5);
-        envVars.put(ClusterOperatorConfig.STRIMZI_KAFKA_IMAGES.key(), KafkaVersionTestUtils.getKafkaImagesEnvVarString());
-        envVars.put(ClusterOperatorConfig.STRIMZI_KAFKA_CONNECT_IMAGES.key(), KafkaVersionTestUtils.getKafkaConnectImagesEnvVarString());
-        envVars.put(ClusterOperatorConfig.STRIMZI_KAFKA_MIRROR_MAKER_IMAGES.key(), KafkaVersionTestUtils.getKafkaMirrorMakerImagesEnvVarString());
-        envVars.put(ClusterOperatorConfig.STRIMZI_KAFKA_MIRROR_MAKER_2_IMAGES.key(), KafkaVersionTestUtils.getKafkaMirrorMaker2ImagesEnvVarString());
+        envVars.put(ClusterOperatorConfig.STRIMZI_KAFKA_IMAGES, KafkaVersionTestUtils.getKafkaImagesEnvVarString());
+        envVars.put(ClusterOperatorConfig.STRIMZI_KAFKA_CONNECT_IMAGES, KafkaVersionTestUtils.getKafkaConnectImagesEnvVarString());
+        envVars.put(ClusterOperatorConfig.STRIMZI_KAFKA_MIRROR_MAKER_IMAGES, KafkaVersionTestUtils.getKafkaMirrorMakerImagesEnvVarString());
+        envVars.put(ClusterOperatorConfig.STRIMZI_KAFKA_MIRROR_MAKER_2_IMAGES, KafkaVersionTestUtils.getKafkaMirrorMaker2ImagesEnvVarString());
 
         assertDoesNotThrow(() -> ClusterOperatorConfig.buildFromMap(envVars));
     }
@@ -279,10 +279,10 @@ public class ClusterOperatorConfigTest {
     @Test
     public void testConfigParsingWithMissingEnvVar() {
         Map<String, String> envVars = new HashMap<>(5);
-        envVars.put(ClusterOperatorConfig.STRIMZI_KAFKA_IMAGES.key(), KafkaVersionTestUtils.getKafkaImagesEnvVarString());
-        envVars.put(ClusterOperatorConfig.STRIMZI_KAFKA_CONNECT_IMAGES.key(), KafkaVersionTestUtils.getKafkaConnectImagesEnvVarString());
-        envVars.put(ClusterOperatorConfig.STRIMZI_KAFKA_MIRROR_MAKER_IMAGES.key(), KafkaVersionTestUtils.getKafkaMirrorMakerImagesEnvVarString());
-        envVars.put(ClusterOperatorConfig.STRIMZI_KAFKA_MIRROR_MAKER_2_IMAGES.key(), KafkaVersionTestUtils.getKafkaMirrorMaker2ImagesEnvVarString());
+        envVars.put(ClusterOperatorConfig.STRIMZI_KAFKA_IMAGES, KafkaVersionTestUtils.getKafkaImagesEnvVarString());
+        envVars.put(ClusterOperatorConfig.STRIMZI_KAFKA_CONNECT_IMAGES, KafkaVersionTestUtils.getKafkaConnectImagesEnvVarString());
+        envVars.put(ClusterOperatorConfig.STRIMZI_KAFKA_MIRROR_MAKER_IMAGES, KafkaVersionTestUtils.getKafkaMirrorMakerImagesEnvVarString());
+        envVars.put(ClusterOperatorConfig.STRIMZI_KAFKA_MIRROR_MAKER_2_IMAGES, KafkaVersionTestUtils.getKafkaMirrorMaker2ImagesEnvVarString());
 
         for (Map.Entry<String, String> envVar : envVars.entrySet())    {
             Map<String, String> editedEnvVars = new HashMap<>(envVars);
@@ -296,10 +296,10 @@ public class ClusterOperatorConfigTest {
     @Test
     public void testConfigUnsupportedVersions() {
         Map<String, String> envVars = new HashMap<>(5);
-        envVars.put(ClusterOperatorConfig.STRIMZI_KAFKA_IMAGES.key(), KafkaVersionTestUtils.getKafkaImagesEnvVarString() + " 2.6.0=myimage:2.6.0");
-        envVars.put(ClusterOperatorConfig.STRIMZI_KAFKA_CONNECT_IMAGES.key(), KafkaVersionTestUtils.getKafkaConnectImagesEnvVarString());
-        envVars.put(ClusterOperatorConfig.STRIMZI_KAFKA_MIRROR_MAKER_IMAGES.key(), KafkaVersionTestUtils.getKafkaMirrorMakerImagesEnvVarString());
-        envVars.put(ClusterOperatorConfig.STRIMZI_KAFKA_MIRROR_MAKER_2_IMAGES.key(), KafkaVersionTestUtils.getKafkaMirrorMaker2ImagesEnvVarString());
+        envVars.put(ClusterOperatorConfig.STRIMZI_KAFKA_IMAGES, KafkaVersionTestUtils.getKafkaImagesEnvVarString() + " 2.6.0=myimage:2.6.0");
+        envVars.put(ClusterOperatorConfig.STRIMZI_KAFKA_CONNECT_IMAGES, KafkaVersionTestUtils.getKafkaConnectImagesEnvVarString());
+        envVars.put(ClusterOperatorConfig.STRIMZI_KAFKA_MIRROR_MAKER_IMAGES, KafkaVersionTestUtils.getKafkaMirrorMakerImagesEnvVarString());
+        envVars.put(ClusterOperatorConfig.STRIMZI_KAFKA_MIRROR_MAKER_2_IMAGES, KafkaVersionTestUtils.getKafkaMirrorMaker2ImagesEnvVarString());
 
         Throwable exception = assertThrows(InvalidConfigurationException.class, () -> ClusterOperatorConfig.buildFromMap(envVars));
         assertThat(exception.getMessage(), is("Failed to parse default container image configuration for Kafka from environment variable STRIMZI_KAFKA_IMAGES"));

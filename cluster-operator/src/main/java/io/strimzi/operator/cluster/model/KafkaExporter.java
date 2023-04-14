@@ -128,7 +128,7 @@ public class KafkaExporter extends AbstractModel {
             String image = spec.getImage();
             if (image == null) {
                 KafkaClusterSpec kafkaClusterSpec = kafkaAssembly.getSpec().getKafka();
-                image = System.getenv().getOrDefault(ClusterOperatorConfig.KAFKA_EXPORTER_IMAGE.key(), versions.kafkaImage(kafkaClusterSpec.getImage(), versions.defaultVersion().version()));
+                image = System.getenv().getOrDefault(ClusterOperatorConfig.STRIMZI_DEFAULT_KAFKA_EXPORTER_IMAGE, versions.kafkaImage(kafkaClusterSpec.getImage(), versions.defaultVersion().version()));
             }
             result.image = image;
 

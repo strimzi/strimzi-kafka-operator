@@ -143,7 +143,7 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
                 .withJvmOptions(spec.getJvmOptions())
                 .withJmxOptions(spec.getJmxOptions())
                 .withMetricsConfig(spec.getMetricsConfig())
-                .withClientRackInitImage(System.getenv().getOrDefault(STRIMZI_DEFAULT_KAFKA_INIT_IMAGE.key(), "quay.io/strimzi/operator:latest"))
+                .withClientRackInitImage(System.getenv().getOrDefault(STRIMZI_DEFAULT_KAFKA_INIT_IMAGE, "quay.io/strimzi/operator:latest"))
                 .withRack(spec.getRack())
                 .withTracing(spec.getTracing())
                 .withTemplate(spec.getTemplate())

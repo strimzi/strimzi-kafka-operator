@@ -40,20 +40,20 @@ public class ContainerUtils {
     static {
         List<EnvVar> envVars = new ArrayList<>();
 
-        if (System.getenv(ClusterOperatorConfig.HTTP_PROXY.key()) != null)    {
-            envVars.add(createEnvVar(ClusterOperatorConfig.HTTP_PROXY.key(), System.getenv(ClusterOperatorConfig.HTTP_PROXY.key())));
+        if (System.getenv(ClusterOperatorConfig.HTTP_PROXY) != null)    {
+            envVars.add(createEnvVar(ClusterOperatorConfig.HTTP_PROXY, System.getenv(ClusterOperatorConfig.HTTP_PROXY)));
         }
 
-        if (System.getenv(ClusterOperatorConfig.HTTPS_PROXY.key()) != null)    {
-            envVars.add(createEnvVar(ClusterOperatorConfig.HTTPS_PROXY.key(), System.getenv(ClusterOperatorConfig.HTTPS_PROXY.key())));
+        if (System.getenv(ClusterOperatorConfig.HTTPS_PROXY) != null)    {
+            envVars.add(createEnvVar(ClusterOperatorConfig.HTTPS_PROXY, System.getenv(ClusterOperatorConfig.HTTPS_PROXY)));
         }
 
-        if (System.getenv(ClusterOperatorConfig.NO_PROXY.key()) != null)    {
-            envVars.add(createEnvVar(ClusterOperatorConfig.NO_PROXY.key(), System.getenv(ClusterOperatorConfig.NO_PROXY.key())));
+        if (System.getenv(ClusterOperatorConfig.NO_PROXY) != null)    {
+            envVars.add(createEnvVar(ClusterOperatorConfig.NO_PROXY, System.getenv(ClusterOperatorConfig.NO_PROXY)));
         }
 
-        if (System.getenv(ClusterOperatorConfig.FIPS_MODE.key()) != null)    {
-            envVars.add(createEnvVar(ClusterOperatorConfig.FIPS_MODE.key(), System.getenv(ClusterOperatorConfig.FIPS_MODE.key())));
+        if (System.getenv(ClusterOperatorConfig.FIPS_MODE) != null)    {
+            envVars.add(createEnvVar(ClusterOperatorConfig.FIPS_MODE, System.getenv(ClusterOperatorConfig.FIPS_MODE)));
         }
 
         if (envVars.size() > 0) {

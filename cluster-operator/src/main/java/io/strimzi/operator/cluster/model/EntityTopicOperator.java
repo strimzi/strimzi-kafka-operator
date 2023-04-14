@@ -130,7 +130,7 @@ public class EntityTopicOperator extends AbstractModel implements SupportsLoggin
 
             String image = topicOperatorSpec.getImage();
             if (image == null) {
-                image = System.getenv().getOrDefault(ClusterOperatorConfig.STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE.key(), "quay.io/strimzi/operator:latest");
+                image = System.getenv().getOrDefault(ClusterOperatorConfig.STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE, "quay.io/strimzi/operator:latest");
             }
             result.image = image;
             result.watchedNamespace = topicOperatorSpec.getWatchedNamespace() != null ? topicOperatorSpec.getWatchedNamespace() : kafkaAssembly.getMetadata().getNamespace();

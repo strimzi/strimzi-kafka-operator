@@ -132,7 +132,7 @@ public class EntityOperator extends AbstractModel {
             String tlsSideCarImage = entityOperatorSpec.getTlsSidecar() != null ? entityOperatorSpec.getTlsSidecar().getImage() : null;
             if (tlsSideCarImage == null) {
                 KafkaClusterSpec kafkaClusterSpec = kafkaAssembly.getSpec().getKafka();
-                tlsSideCarImage = System.getenv().getOrDefault(ClusterOperatorConfig.STRIMZI_DEFAULT_TLS_SIDECAR_ENTITY_OPERATOR_IMAGE.key(), versions.kafkaImage(kafkaClusterSpec.getImage(), versions.defaultVersion().version()));
+                tlsSideCarImage = System.getenv().getOrDefault(ClusterOperatorConfig.STRIMZI_DEFAULT_TLS_SIDECAR_ENTITY_OPERATOR_IMAGE, versions.kafkaImage(kafkaClusterSpec.getImage(), versions.defaultVersion().version()));
             }
             result.tlsSidecarImage = tlsSideCarImage;
 

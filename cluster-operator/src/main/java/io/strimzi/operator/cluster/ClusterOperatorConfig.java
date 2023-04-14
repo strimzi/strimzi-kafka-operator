@@ -46,90 +46,90 @@ public class ClusterOperatorConfig {
     /**
      * Configures the Kafka container images
      */
-    public static final ConfigParameter<String> STRIMZI_KAFKA_IMAGES =  new ConfigParameter<>("STRIMZI_KAFKA_IMAGES", STRING, "", CONFIG_VALUES);
+    public static final String STRIMZI_KAFKA_IMAGES = "STRIMZI_KAFKA_IMAGES";
 
     /**
      * Configures the Kafka Connect container images
      */
-    public static final ConfigParameter<String> STRIMZI_KAFKA_CONNECT_IMAGES =  new ConfigParameter<>("STRIMZI_KAFKA_CONNECT_IMAGES", STRING, "", CONFIG_VALUES);
+    public static final String STRIMZI_KAFKA_CONNECT_IMAGES = "STRIMZI_KAFKA_CONNECT_IMAGES";
 
     /**
      * Configures the Kafka Mirror Maker container images
      */
-    public static final ConfigParameter<String> STRIMZI_KAFKA_MIRROR_MAKER_IMAGES =  new ConfigParameter<>("STRIMZI_KAFKA_MIRROR_MAKER_IMAGES", STRING, "", CONFIG_VALUES);
+    public static final String STRIMZI_KAFKA_MIRROR_MAKER_IMAGES = "STRIMZI_KAFKA_MIRROR_MAKER_IMAGES";
 
     /**
      * Configures the Kafka Mirror Maker 2 container images
      */
-    public static final ConfigParameter<String> STRIMZI_KAFKA_MIRROR_MAKER_2_IMAGES =  new ConfigParameter<>("STRIMZI_KAFKA_MIRROR_MAKER_2_IMAGES", STRING, "", CONFIG_VALUES);
+    public static final String STRIMZI_KAFKA_MIRROR_MAKER_2_IMAGES = "STRIMZI_KAFKA_MIRROR_MAKER_2_IMAGES";
 
     /**
      * Configures the Entity Operator TLS sidecar container images
      */
-    public static final ConfigParameter<String> STRIMZI_DEFAULT_TLS_SIDECAR_ENTITY_OPERATOR_IMAGE =  new ConfigParameter<>("STRIMZI_DEFAULT_TLS_SIDECAR_ENTITY_OPERATOR_IMAGE", STRING, "", CONFIG_VALUES);
-    private static final ConfigParameter<String> STRIMZI_DEFAULT_TLS_SIDECAR_KAFKA_IMAGE =  new ConfigParameter<>("STRIMZI_DEFAULT_TLS_SIDECAR_KAFKA_IMAGE", STRING, "", CONFIG_VALUES); // Used only to produce warning if defined at startup
-    private static final ConfigParameter<String> STRIMZI_DEFAULT_TLS_SIDECAR_CRUISE_CONTROL_IMAGE =  new ConfigParameter<>("STRIMZI_DEFAULT_TLS_SIDECAR_CRUISE_CONTROL_IMAGE", STRING, "", CONFIG_VALUES); // Used only to produce warning if defined at startup
+    public static final String STRIMZI_DEFAULT_TLS_SIDECAR_ENTITY_OPERATOR_IMAGE = "STRIMZI_DEFAULT_TLS_SIDECAR_ENTITY_OPERATOR_IMAGE";
+    private static final String STRIMZI_DEFAULT_TLS_SIDECAR_KAFKA_IMAGE = "STRIMZI_DEFAULT_TLS_SIDECAR_KAFKA_IMAGE"; // Used only to produce warning if defined at startup
+    private static final String STRIMZI_DEFAULT_TLS_SIDECAR_CRUISE_CONTROL_IMAGE = "STRIMZI_DEFAULT_TLS_SIDECAR_CRUISE_CONTROL_IMAGE"; // Used only to produce warning if defined at startup
 
     /**
      * Configures the Kafka Exporter container image
      */
-    public static final ConfigParameter<String> KAFKA_EXPORTER_IMAGE = new ConfigParameter<>("STRIMZI_DEFAULT_KAFKA_EXPORTER_IMAGE", STRING, "", CONFIG_VALUES);
+    public static final String STRIMZI_DEFAULT_KAFKA_EXPORTER_IMAGE = "STRIMZI_DEFAULT_KAFKA_EXPORTER_IMAGE";
 
     /**
      * Configures the Topic Operator container image
      */
-    public static final ConfigParameter<String> STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE =  new ConfigParameter<>("STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE", STRING, "", CONFIG_VALUES);
+    public static final String STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE = "STRIMZI_DEFAULT_TOPIC_OPERATOR_IMAGE";
 
     /**
      * Configures the User Operator container image
      */
-    public static final ConfigParameter<String> STRIMZI_DEFAULT_USER_OPERATOR_IMAGE =  new ConfigParameter<>("STRIMZI_DEFAULT_USER_OPERATOR_IMAGE", STRING, "", CONFIG_VALUES);
+    public static final String STRIMZI_DEFAULT_USER_OPERATOR_IMAGE = "STRIMZI_DEFAULT_USER_OPERATOR_IMAGE";
 
     /**
      * Configures the Kafka init container image
      */
-    public static final ConfigParameter<String> STRIMZI_DEFAULT_KAFKA_INIT_IMAGE =  new ConfigParameter<>("STRIMZI_DEFAULT_KAFKA_INIT_IMAGE", STRING, "", CONFIG_VALUES);
+    public static final String STRIMZI_DEFAULT_KAFKA_INIT_IMAGE = "STRIMZI_DEFAULT_KAFKA_INIT_IMAGE";
 
     /**
      * Configures the HTTP Bridge container image
      */
-    public static final ConfigParameter<String> STRIMZI_DEFAULT_KAFKA_BRIDGE_IMAGE =  new ConfigParameter<>("STRIMZI_DEFAULT_KAFKA_BRIDGE_IMAGE", STRING, "", CONFIG_VALUES);
+    public static final String STRIMZI_DEFAULT_KAFKA_BRIDGE_IMAGE = "STRIMZI_DEFAULT_KAFKA_BRIDGE_IMAGE";
 
     /**
      * Configures the Cruise Control container image
      */
-    public static final ConfigParameter<String> STRIMZI_DEFAULT_CRUISE_CONTROL_IMAGE =  new ConfigParameter<>("STRIMZI_DEFAULT_CRUISE_CONTROL_IMAGE", STRING, "", CONFIG_VALUES);
+    public static final String STRIMZI_DEFAULT_CRUISE_CONTROL_IMAGE = "STRIMZI_DEFAULT_CRUISE_CONTROL_IMAGE";
 
     /**
      * Configures the Kaniko container image
      */
-    public static final ConfigParameter<String> STRIMZI_DEFAULT_KANIKO_EXECUTOR_IMAGE =  new ConfigParameter<>("STRIMZI_DEFAULT_KANIKO_EXECUTOR_IMAGE", STRING, "", CONFIG_VALUES);
+    public static final String STRIMZI_DEFAULT_KANIKO_EXECUTOR_IMAGE = "STRIMZI_DEFAULT_KANIKO_EXECUTOR_IMAGE";
 
     /**
      * Configures the Maven container image
      */
-    public static final ConfigParameter<String> STRIMZI_DEFAULT_MAVEN_BUILDER =  new ConfigParameter<>("STRIMZI_DEFAULT_MAVEN_BUILDER", STRING, "", CONFIG_VALUES);
+    public static final String STRIMZI_DEFAULT_MAVEN_BUILDER = "STRIMZI_DEFAULT_MAVEN_BUILDER";
 
     // Env vars configured in the Cluster operator deployment but passed to all operands
     /**
      * HTTP Proxy
      */
-    public static final ConfigParameter<String> HTTP_PROXY =  new ConfigParameter<>("HTTP_PROXY", STRING, "", CONFIG_VALUES);
+    public static final String HTTP_PROXY = "HTTP_PROXY";
 
     /**
      * HTTPS Proxy
      */
-    public static final ConfigParameter<String> HTTPS_PROXY =  new ConfigParameter<>("HTTPS_PROXY", STRING, "", CONFIG_VALUES);
+    public static final String HTTPS_PROXY = "HTTPS_PROXY";
 
     /**
      * Server which should not use proxy to connect to
      */
-    public static final ConfigParameter<String> NO_PROXY =  new ConfigParameter<>("NO_PROXY", STRING, "", CONFIG_VALUES);
+    public static final String NO_PROXY = "NO_PROXY";
 
     /**
      * Enabled or disables the FIPS mode
      */
-    public static final ConfigParameter<String> FIPS_MODE =  new ConfigParameter<>("FIPS_MODE", STRING, "", CONFIG_VALUES);
+    public static final String FIPS_MODE = "FIPS_MODE";
 
     // Default values
     /**
@@ -262,11 +262,11 @@ public class ClusterOperatorConfig {
      * @param map   map from which loading configuration parameters
      */
     private static void warningsForRemovedEndVars(Map<String, String> map) {
-        if (map.containsKey(STRIMZI_DEFAULT_TLS_SIDECAR_KAFKA_IMAGE.key()))    {
+        if (map.containsKey(STRIMZI_DEFAULT_TLS_SIDECAR_KAFKA_IMAGE))    {
             LOGGER.warn("Kafka TLS sidecar container has been removed and the environment variable {} is not used anymore. " +
                     "You can remove it from the Strimzi Cluster Operator deployment.", STRIMZI_DEFAULT_TLS_SIDECAR_KAFKA_IMAGE);
         }
-        if (map.containsKey(STRIMZI_DEFAULT_TLS_SIDECAR_CRUISE_CONTROL_IMAGE.key()))    {
+        if (map.containsKey(STRIMZI_DEFAULT_TLS_SIDECAR_CRUISE_CONTROL_IMAGE))    {
             LOGGER.warn("Cruise Control TLS sidecar container has been removed and the environment variable {} is not used anymore. " +
                     "You can remove it from the Strimzi Cluster Operator deployment.", STRIMZI_DEFAULT_TLS_SIDECAR_CRUISE_CONTROL_IMAGE);
         }
@@ -281,7 +281,7 @@ public class ClusterOperatorConfig {
 
     public static ClusterOperatorConfig buildFromMap(Map<String, String> map) {
         warningsForRemovedEndVars(map);
-        KafkaVersion.Lookup lookup = parseKafkaVersions(map.get(STRIMZI_KAFKA_IMAGES.key()), map.get(STRIMZI_KAFKA_CONNECT_IMAGES.key()), map.get(STRIMZI_KAFKA_MIRROR_MAKER_IMAGES.key()), map.get(STRIMZI_KAFKA_MIRROR_MAKER_2_IMAGES.key()));
+        KafkaVersion.Lookup lookup = parseKafkaVersions(map.get(STRIMZI_KAFKA_IMAGES), map.get(STRIMZI_KAFKA_CONNECT_IMAGES), map.get(STRIMZI_KAFKA_MIRROR_MAKER_IMAGES), map.get(STRIMZI_KAFKA_MIRROR_MAKER_2_IMAGES));
         return buildFromMap(map, lookup);
 
     }
@@ -347,19 +347,19 @@ public class ClusterOperatorConfig {
 
         try {
             image = "Kafka";
-            envVar = STRIMZI_KAFKA_IMAGES.key();
+            envVar = STRIMZI_KAFKA_IMAGES;
             lookup.validateKafkaImages(lookup.supportedVersions());
 
             image = "Kafka Connect";
-            envVar = STRIMZI_KAFKA_CONNECT_IMAGES.key();
+            envVar = STRIMZI_KAFKA_CONNECT_IMAGES;
             lookup.validateKafkaConnectImages(lookup.supportedVersions());
 
             image = "Kafka Mirror Maker";
-            envVar = STRIMZI_KAFKA_MIRROR_MAKER_IMAGES.key();
+            envVar = STRIMZI_KAFKA_MIRROR_MAKER_IMAGES;
             lookup.validateKafkaMirrorMakerImages(lookup.supportedVersions());
 
             image = "Kafka Mirror Maker 2";
-            envVar = STRIMZI_KAFKA_MIRROR_MAKER_2_IMAGES.key();
+            envVar = STRIMZI_KAFKA_MIRROR_MAKER_2_IMAGES;
             lookup.validateKafkaMirrorMaker2Images(lookup.supportedVersionsForFeature("kafkaMirrorMaker2"));
         } catch (NoImageException | UnsupportedVersionException e) {
             throw new InvalidConfigurationException("Failed to parse default container image configuration for " + image + " from environment variable " + envVar, e);

@@ -59,10 +59,10 @@ public class ClusterOperatorTest {
         Map<String, String> env = new HashMap<>();
         env.put(ClusterOperatorConfig.NAMESPACE.key(), namespaces);
         env.put(ClusterOperatorConfig.FULL_RECONCILIATION_INTERVAL_MS.key(), "120000");
-        env.put(ClusterOperatorConfig.STRIMZI_KAFKA_IMAGES.key(), KafkaVersionTestUtils.getKafkaImagesEnvVarString());
-        env.put(ClusterOperatorConfig.STRIMZI_KAFKA_CONNECT_IMAGES.key(), KafkaVersionTestUtils.getKafkaConnectImagesEnvVarString());
-        env.put(ClusterOperatorConfig.STRIMZI_KAFKA_MIRROR_MAKER_IMAGES.key(), KafkaVersionTestUtils.getKafkaMirrorMakerImagesEnvVarString());
-        env.put(ClusterOperatorConfig.STRIMZI_KAFKA_MIRROR_MAKER_2_IMAGES.key(), KafkaVersionTestUtils.getKafkaMirrorMaker2ImagesEnvVarString());
+        env.put(ClusterOperatorConfig.STRIMZI_KAFKA_IMAGES, KafkaVersionTestUtils.getKafkaImagesEnvVarString());
+        env.put(ClusterOperatorConfig.STRIMZI_KAFKA_CONNECT_IMAGES, KafkaVersionTestUtils.getKafkaConnectImagesEnvVarString());
+        env.put(ClusterOperatorConfig.STRIMZI_KAFKA_MIRROR_MAKER_IMAGES, KafkaVersionTestUtils.getKafkaMirrorMakerImagesEnvVarString());
+        env.put(ClusterOperatorConfig.STRIMZI_KAFKA_MIRROR_MAKER_2_IMAGES, KafkaVersionTestUtils.getKafkaMirrorMaker2ImagesEnvVarString());
 
         if (podSetsOnly) {
             env.put(ClusterOperatorConfig.POD_SET_RECONCILIATION_ONLY.key(), "true");

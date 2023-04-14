@@ -198,7 +198,7 @@ public class KafkaBridgeCluster extends AbstractModel implements SupportsLogging
         result.jvmOptions = spec.getJvmOptions();
         String image = spec.getImage();
         if (image == null) {
-            image = System.getenv().getOrDefault(ClusterOperatorConfig.STRIMZI_DEFAULT_KAFKA_BRIDGE_IMAGE.key(), "quay.io/strimzi/kafka-bridge:latest");
+            image = System.getenv().getOrDefault(ClusterOperatorConfig.STRIMZI_DEFAULT_KAFKA_BRIDGE_IMAGE, "quay.io/strimzi/kafka-bridge:latest");
         }
         result.image = image;
         result.replicas = spec.getReplicas();
@@ -209,7 +209,7 @@ public class KafkaBridgeCluster extends AbstractModel implements SupportsLogging
         result.rack = spec.getRack();
         String initImage = spec.getClientRackInitImage();
         if (initImage == null) {
-            initImage = System.getenv().getOrDefault(ClusterOperatorConfig.STRIMZI_DEFAULT_KAFKA_INIT_IMAGE.key(), "quay.io/strimzi/operator:latest");
+            initImage = System.getenv().getOrDefault(ClusterOperatorConfig.STRIMZI_DEFAULT_KAFKA_INIT_IMAGE, "quay.io/strimzi/operator:latest");
         }
         result.initImage = initImage;
         if (kafkaBridge.getSpec().getLivenessProbe() != null) {

@@ -39,9 +39,9 @@ public class KafkaConnectDockerfile {
     private static final String ENV_VAR_HTTPS_PROXY = "HTTPS_PROXY";
     private static final String ENV_VAR_NO_PROXY = "NO_PROXY";
 
-    private static final String HTTP_PROXY = System.getenv(ClusterOperatorConfig.HTTP_PROXY.key());
-    private static final String HTTPS_PROXY = System.getenv(ClusterOperatorConfig.HTTPS_PROXY.key());
-    private static final String NO_PROXY = System.getenv(ClusterOperatorConfig.NO_PROXY.key());
+    private static final String HTTP_PROXY = System.getenv(ClusterOperatorConfig.HTTP_PROXY);
+    private static final String HTTPS_PROXY = System.getenv(ClusterOperatorConfig.HTTPS_PROXY);
+    private static final String NO_PROXY = System.getenv(ClusterOperatorConfig.NO_PROXY);
 
     private final String dockerfile;
 
@@ -119,7 +119,7 @@ public class KafkaConnectDockerfile {
      * @param connectBuild  The Build definition from the API
      */
     public KafkaConnectDockerfile(String fromImage, Build connectBuild) {
-        this.mavenBuilder = System.getenv().getOrDefault(ClusterOperatorConfig.STRIMZI_DEFAULT_MAVEN_BUILDER.key(), DEFAULT_MAVEN_IMAGE);
+        this.mavenBuilder = System.getenv().getOrDefault(ClusterOperatorConfig.STRIMZI_DEFAULT_MAVEN_BUILDER, DEFAULT_MAVEN_IMAGE);
         StringWriter stringWriter = new StringWriter();
         PrintWriter writer = new PrintWriter(stringWriter);
 

@@ -196,7 +196,7 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
 
             String image = ccSpec.getImage();
             if (image == null) {
-                image = System.getenv().getOrDefault(ClusterOperatorConfig.STRIMZI_DEFAULT_CRUISE_CONTROL_IMAGE.key(), versions.kafkaImage(kafkaClusterSpec.getImage(), versions.defaultVersion().version()));
+                image = System.getenv().getOrDefault(ClusterOperatorConfig.STRIMZI_DEFAULT_CRUISE_CONTROL_IMAGE, versions.kafkaImage(kafkaClusterSpec.getImage(), versions.defaultVersion().version()));
             }
             result.image = image;
 

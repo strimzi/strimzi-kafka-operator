@@ -277,7 +277,7 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
 
         String initImage = spec.getClientRackInitImage();
         if (initImage == null) {
-            initImage = System.getenv().getOrDefault(ClusterOperatorConfig.STRIMZI_DEFAULT_KAFKA_INIT_IMAGE.key(), "quay.io/strimzi/operator:latest");
+            initImage = System.getenv().getOrDefault(ClusterOperatorConfig.STRIMZI_DEFAULT_KAFKA_INIT_IMAGE, "quay.io/strimzi/operator:latest");
         }
         result.setInitImage(initImage);
 

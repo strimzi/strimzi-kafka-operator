@@ -79,7 +79,7 @@ public class KafkaConnectBuild extends AbstractModel {
     protected KafkaConnectBuild(Reconciliation reconciliation, HasMetadata resource) {
         super(reconciliation, resource, KafkaConnectResources.buildPodName(resource.getMetadata().getName()), COMPONENT_TYPE);
 
-        this.image = System.getenv().getOrDefault(ClusterOperatorConfig.STRIMZI_DEFAULT_KANIKO_EXECUTOR_IMAGE.key(), DEFAULT_KANIKO_EXECUTOR_IMAGE);
+        this.image = System.getenv().getOrDefault(ClusterOperatorConfig.STRIMZI_DEFAULT_KANIKO_EXECUTOR_IMAGE, DEFAULT_KANIKO_EXECUTOR_IMAGE);
     }
 
     /**
