@@ -132,79 +132,129 @@ public class ClusterOperatorConfig {
     public static final ConfigParameter<String> FIPS_MODE =  new ConfigParameter<>("FIPS_MODE", STRING, "", CONFIG_VALUES);
 
     // Default values
-
-    /* test */ static final ConfigParameter<Set<String>> NAMESPACE = new ConfigParameter<>("STRIMZI_NAMESPACE", NAMESPACE_SET, "*",  CONFIG_VALUES);
-
-    /* test */ public static final ConfigParameter<Long> FULL_RECONCILIATION_INTERVAL_MS = new ConfigParameter<>("STRIMZI_FULL_RECONCILIATION_INTERVAL_MS", LONG, "120000", CONFIG_VALUES);
-
     /**
-     * Default work queue size for the Pod Set controller
+     * Namespace in which the operator will run and create resources
      */
-    public static final ConfigParameter<Integer> POD_SET_CONTROLLER_WORK_QUEUE_SIZE = new ConfigParameter<>("STRIMZI_POD_SET_CONTROLLER_WORK_QUEUE_SIZE", INTEGER, "1024", CONFIG_VALUES);
-    /* test */ static final ConfigParameter<FeatureGates> STRIMZI_FEATURE_GATES = new ConfigParameter<>("STRIMZI_FEATURE_GATES", parseFeatureGates(), "", CONFIG_VALUES);
-
+    public static final ConfigParameter<Set<String>> NAMESPACE = new ConfigParameter<>("STRIMZI_NAMESPACE", NAMESPACE_SET, "*",  CONFIG_VALUES);
 
     /**
-     * Default operations timeout
+     * Specify every how many milliseconds the reconciliation runs
+     */
+    public static final ConfigParameter<Long> FULL_RECONCILIATION_INTERVAL_MS = new ConfigParameter<>("STRIMZI_FULL_RECONCILIATION_INTERVAL_MS", LONG, "120000", CONFIG_VALUES);
+
+    /**
+     * Timeout for internal operations specified in milliseconds
      */
     public static final ConfigParameter<Long> OPERATION_TIMEOUT_MS = new ConfigParameter<>("STRIMZI_OPERATION_TIMEOUT_MS", LONG, "300000", CONFIG_VALUES);
-    public static final ConfigParameter<String> OPERATOR_NAME = new ConfigParameter<>("STRIMZI_OPERATOR_NAME", STRING, "cluster-operator-name-unset", CONFIG_VALUES);
-    public static final ConfigParameter<Integer> ZOOKEEPER_ADMIN_SESSION_TIMEOUT_MS = new ConfigParameter<>("STRIMZI_ZOOKEEPER_ADMIN_SESSION_TIMEOUT_MS", INTEGER, "10000", CONFIG_VALUES);
-    /* test */ static final ConfigParameter<Long> CONNECT_BUILD_TIMEOUT_MS = new ConfigParameter<>("STRIMZI_CONNECT_BUILD_TIMEOUT_MS", LONG, "300000", CONFIG_VALUES);
-    public static final ConfigParameter<Integer> OPERATIONS_THREAD_POOL_SIZE = new ConfigParameter<>("STRIMZI_OPERATIONS_THREAD_POOL_SIZE", INTEGER, "10", CONFIG_VALUES);
-    /* test */ static final ConfigParameter<Integer> DNS_CACHE_TTL = new ConfigParameter<>("STRIMZI_DNS_CACHE_TTL", INTEGER, "30", CONFIG_VALUES);
-    public static final ConfigParameter<Boolean> NETWORK_POLICY_GENERATION = new ConfigParameter<>("STRIMZI_NETWORK_POLICY_GENERATION", BOOLEAN, "true", CONFIG_VALUES);
-    public static final ConfigParameter<Boolean> CREATE_CLUSTER_ROLES = new ConfigParameter<>("STRIMZI_CREATE_CLUSTER_ROLES", BOOLEAN, "false", CONFIG_VALUES);
-    public static final ConfigParameter<Boolean> POD_SET_RECONCILIATION_ONLY = new ConfigParameter<>("STRIMZI_POD_SET_RECONCILIATION_ONLY", BOOLEAN, "false", CONFIG_VALUES);
 
-    /* test */ static final ConfigParameter<List<LocalObjectReference>> IMAGE_PULL_SECRETS = new ConfigParameter<>("STRIMZI_IMAGE_PULL_SECRETS", LOCAL_OBJECT_REFERENCE_LIST, null, CONFIG_VALUES);
-    /* test */ static final ConfigParameter<String> OPERATOR_NAMESPACE = new ConfigParameter<>("STRIMZI_OPERATOR_NAMESPACE", STRING, null, CONFIG_VALUES);
-    /* test */ public static final ConfigParameter<Labels> OPERATOR_NAMESPACE_LABELS = new ConfigParameter<>("STRIMZI_OPERATOR_NAMESPACE_LABELS", LABEL_PREDICATE, null, CONFIG_VALUES);
+    /**
+     * Timeout used to wait for a Kafka Connect builds to finish
+     */
+    public static final ConfigParameter<Long> CONNECT_BUILD_TIMEOUT_MS = new ConfigParameter<>("STRIMZI_CONNECT_BUILD_TIMEOUT_MS", LONG, "300000", CONFIG_VALUES);
+
+    /**
+     * Set true to create the ClusterRoles
+     */
+    public static final ConfigParameter<Boolean> CREATE_CLUSTER_ROLES = new ConfigParameter<>("STRIMZI_CREATE_CLUSTER_ROLES", BOOLEAN, "false", CONFIG_VALUES);
+
+    /**
+     * Set true to generate Network Policies
+     */
+    public static final ConfigParameter<Boolean> NETWORK_POLICY_GENERATION = new ConfigParameter<>("STRIMZI_NETWORK_POLICY_GENERATION", BOOLEAN, "true", CONFIG_VALUES);
+
+    /**
+     * Image pull policy configured by the user
+     */
     /* test */ static final ConfigParameter<ImagePullPolicy> IMAGE_PULL_POLICY = new ConfigParameter<>("STRIMZI_IMAGE_PULL_POLICY", parseImagePullPolicy(), null, CONFIG_VALUES);
 
-    /* test */ public static final ConfigParameter<Labels> CUSTOM_RESOURCE_SELECTOR = new ConfigParameter<>("STRIMZI_CUSTOM_RESOURCE_SELECTOR", LABEL_PREDICATE, null, CONFIG_VALUES);
+    /**
+     * Set of secrets for pulling container images from secured repositories
+     */
+    /* test */ static final ConfigParameter<List<LocalObjectReference>> IMAGE_PULL_SECRETS = new ConfigParameter<>("STRIMZI_IMAGE_PULL_SECRETS", LOCAL_OBJECT_REFERENCE_LIST, null, CONFIG_VALUES);
+
+    /**
+     * Name of the namespace in which the operator is running
+     */
+    public static final ConfigParameter<String> OPERATOR_NAMESPACE = new ConfigParameter<>("STRIMZI_OPERATOR_NAMESPACE", STRING, null, CONFIG_VALUES);
+
+    /**
+     * Labels of the namespace in which the operator is running (used for network policies)
+     */
+    public static final ConfigParameter<Labels> OPERATOR_NAMESPACE_LABELS = new ConfigParameter<>("STRIMZI_OPERATOR_NAMESPACE_LABELS", LABEL_PREDICATE, null, CONFIG_VALUES);
+
+    /**
+     * Labels used to filter the custom resources seen by the cluster operator
+     */
+    public static final ConfigParameter<Labels> CUSTOM_RESOURCE_SELECTOR = new ConfigParameter<>("STRIMZI_CUSTOM_RESOURCE_SELECTOR", LABEL_PREDICATE, null, CONFIG_VALUES);
+
+    /**
+     * Configuration string with feature gates settings
+     */
+    public static final ConfigParameter<FeatureGates> FEATURE_GATES = new ConfigParameter<>("STRIMZI_FEATURE_GATES", parseFeatureGates(), "", CONFIG_VALUES);
+
+    /**
+     * The size of the thread pool used for various operations
+     */
+    public static final ConfigParameter<Integer> OPERATIONS_THREAD_POOL_SIZE = new ConfigParameter<>("STRIMZI_OPERATIONS_THREAD_POOL_SIZE", INTEGER, "10", CONFIG_VALUES);
+
+    /**
+     * Session timeout for the Zookeeper Admin client used in ZK scaling operations
+     */
+    public static final ConfigParameter<Integer> ZOOKEEPER_ADMIN_SESSION_TIMEOUT_MS = new ConfigParameter<>("STRIMZI_ZOOKEEPER_ADMIN_SESSION_TIMEOUT_MS", INTEGER, "10000", CONFIG_VALUES);
+
+    /**
+     * Number of seconds to cache a successful DNS name lookup
+     */
+    /* test */ static final ConfigParameter<Integer> DNS_CACHE_TTL = new ConfigParameter<>("STRIMZI_DNS_CACHE_TTL", INTEGER, "30", CONFIG_VALUES);
+
+    /**
+     * Indicates whether this Cluster Operator instance should reconcile only the
+     * StrimziPodSet resources or not
+     */
+    public static final ConfigParameter<Boolean> POD_SET_RECONCILIATION_ONLY = new ConfigParameter<>("STRIMZI_POD_SET_RECONCILIATION_ONLY", BOOLEAN, "false", CONFIG_VALUES);
+
+    /**
+     * Indicates the size of the StrimziPodSetController work queue
+     */
+    public static final ConfigParameter<Integer> POD_SET_CONTROLLER_WORK_QUEUE_SIZE = new ConfigParameter<>("STRIMZI_POD_SET_CONTROLLER_WORK_QUEUE_SIZE", INTEGER, "1024", CONFIG_VALUES);
+
+
+    /**
+     * The Pod name of the cluster operator, used to identify source of K8s events the operator creates
+     */
+    public static final ConfigParameter<String> OPERATOR_NAME = new ConfigParameter<>("STRIMZI_OPERATOR_NAME", STRING, "cluster-operator-name-unset", CONFIG_VALUES);
 
     /**
      * Default Pod Security Provider class
      */
     public static final ConfigParameter<String> POD_SECURITY_PROVIDER_CLASS = new ConfigParameter<>("STRIMZI_POD_SECURITY_PROVIDER_CLASS", STRING, "io.strimzi.plugin.security.profiles.impl.BaselinePodSecurityProvider", CONFIG_VALUES);
 
+    /**
+     * Configuration of the Cluster Operator leader election
+     */
     public static final ConfigParameter<Boolean> LEADER_ELECTION_ENABLED = new ConfigParameter<>("STRIMZI_LEADER_ELECTION_ENABLED", BOOLEAN, "false", CONFIG_VALUES);
 
-    // PodSecurityPolicy shortcut keywords and the corresponding class names
-    public static final ConfigParameter<String> POD_SECURITY_PROVIDER_BASELINE_SHORTCUT = new ConfigParameter<>("POD_SECURITY_PROVIDER_BASELINE_SHORTCUT", STRING, "baseline", CONFIG_VALUES);
-    /* test */ static final ConfigParameter<String> POD_SECURITY_PROVIDER_BASELINE_CLASS = new ConfigParameter<>("POD_SECURITY_PROVIDER_BASELINE_CLASS", STRING, "io.strimzi.plugin.security.profiles.impl.BaselinePodSecurityProvider", CONFIG_VALUES);
-    public static final ConfigParameter<String> POD_SECURITY_PROVIDER_RESTRICTED_SHORTCUT = new ConfigParameter<>("POD_SECURITY_PROVIDER_RESTRICTED_SHORTCUT", STRING, "restricted", CONFIG_VALUES);
-    /* test */ static final ConfigParameter<String> POD_SECURITY_PROVIDER_RESTRICTED_CLASS = new ConfigParameter<>("POD_SECURITY_PROVIDER_RESTRICTED_CLASS", STRING, "io.strimzi.plugin.security.profiles.impl.RestrictedPodSecurityProvider", CONFIG_VALUES);
-    private final KafkaVersion.Lookup versions;
+    private static final ConfigParameter<String> POD_SECURITY_PROVIDER_BASELINE_SHORTCUT = new ConfigParameter<>("POD_SECURITY_PROVIDER_BASELINE_SHORTCUT", STRING, "baseline", CONFIG_VALUES);
 
     /**
-     * Constructor
-     *
-     * @param namespaces                    namespace in which the operator will run and create resources
-     * @param reconciliationIntervalMs      specify every how many milliseconds the reconciliation runs
-     * @param operationTimeoutMs            timeout for internal operations specified in milliseconds
-     * @param connectBuildTimeoutMs         timeout used to wait for a Kafka Connect builds to finish
-     * @param createClusterRoles            true to create the ClusterRoles
-     * @param networkPolicyGeneration       true to generate Network Policies
-     * @param versions                      The configured Kafka versions
-     * @param imagePullPolicy               Image pull policy configured by the user
-     * @param imagePullSecrets              Set of secrets for pulling container images from secured repositories
-     * @param operatorNamespace             Name of the namespace in which the operator is running
-     * @param operatorNamespaceLabels       Labels of the namespace in which the operator is running (used for network policies)
-     * @param customResourceSelector        Labels used to filter the custom resources seen by the cluster operator
-     * @param featureGates                  Configuration string with feature gates settings
-     * @param operationsThreadPoolSize      The size of the thread pool used for various operations
-     * @param zkAdminSessionTimeoutMs       Session timeout for the Zookeeper Admin client used in ZK scaling operations
-     * @param dnsCacheTtlSec                Number of seconds to cache a successful DNS name lookup
-     * @param podSetReconciliationOnly      Indicates whether this Cluster Operator instance should reconcile only the
-     *                                      StrimziPodSet resources or not
-     * @param podSetControllerWorkQueueSize Indicates the size of the StrimziPodSetController work queue
-     * @param operatorName                  The Pod name of the cluster operator, used to identify source of K8s events the operator creates
-     * @param podSecurityProviderClass      The PodSecurityProvider class which the operator should use
-     * @param leaderElectionConfig          Configuration of the Cluster Operator leader election
+     * Default pod security provider restricted baseline class
      */
+    /* test */ static final ConfigParameter<String> POD_SECURITY_PROVIDER_BASELINE_CLASS = new ConfigParameter<>("POD_SECURITY_PROVIDER_BASELINE_CLASS", STRING, "io.strimzi.plugin.security.profiles.impl.BaselinePodSecurityProvider", CONFIG_VALUES);
 
+    /**
+     * Default pod security provider restricted shortcut
+     */
+    /* test */public static final ConfigParameter<String> POD_SECURITY_PROVIDER_RESTRICTED_SHORTCUT = new ConfigParameter<>("POD_SECURITY_PROVIDER_RESTRICTED_SHORTCUT", STRING, "restricted", CONFIG_VALUES);
+
+    /**
+     * Default Pod Security Provider restricted class
+     */
+    /* test */ static final ConfigParameter<String> POD_SECURITY_PROVIDER_RESTRICTED_CLASS = new ConfigParameter<>("POD_SECURITY_PROVIDER_RESTRICTED_CLASS", STRING, "io.strimzi.plugin.security.profiles.impl.RestrictedPodSecurityProvider", CONFIG_VALUES);
+
+    /**
+     * The configured Kafka versions
+     */
+    private final KafkaVersion.Lookup versions;
 
     /**
      * Logs warnings for removed / deprecated environment variables
@@ -224,7 +274,6 @@ public class ClusterOperatorConfig {
 
     /**
      * Loads configuration parameters from a related map
-     * This is used for testing.
      *
      * @param map   map from which loading configuration parameters
      * @return  Cluster Operator configuration instance
@@ -237,6 +286,13 @@ public class ClusterOperatorConfig {
 
     }
 
+    /**
+     * Loads configuration parameters from a related map
+     *
+     * @param map   map from which loading configuration parameters
+     * @param lookup Configured Kafka version
+     * @return  Cluster Operator configuration instance
+     */
     public static ClusterOperatorConfig buildFromMap(Map<String, String> map, KafkaVersion.Lookup lookup) {
 
         Map<String, String> envMap = new HashMap<>(map);
@@ -277,17 +333,6 @@ public class ClusterOperatorConfig {
     @SuppressWarnings("unchecked")
     public <T> T get(ConfigParameter<T> value) {
         return (T) this.map.get(value.key());
-    }
-
-
-    /* test */ static boolean parseBoolean(String envVar, boolean defaultValue) {
-        boolean value = defaultValue;
-
-        if (envVar != null) {
-            value = Boolean.parseBoolean(envVar);
-        }
-
-        return value;
     }
 
     private static KafkaVersion.Lookup parseKafkaVersions(String kafkaImages, String connectImages, String mirrorMakerImages, String mirrorMaker2Images) {
@@ -370,21 +415,42 @@ public class ClusterOperatorConfig {
         };
     }
 
+    /**
+     * Builder class for ClusterOperatorConfig
+     */
     public static class ClusterOperatorConfigBuilder {
 
         private final Map<String, Object> map;
         KafkaVersion.Lookup versions;
 
+        /**
+         * Cosntructor
+         *
+         * @param config Existing ClusterOperatorConfig object
+         * @param lookup Configured version
+         */
         public ClusterOperatorConfigBuilder(ClusterOperatorConfig config, KafkaVersion.Lookup lookup) {
             this.map = config.map;
             this.versions = lookup;
         }
 
+        /**
+         * Adds/updates the configuration parameter to the existing ClusterOperatorConfig object
+         *
+         * @param key     Configuration name
+         * @param value   Configuartion value
+         * @return ClusterOperatorConfigBuilder object
+         */
         public ClusterOperatorConfigBuilder with(String key, String value) {
             this.map.put(key, CONFIG_VALUES.get(key).type().parse(value));
             return this;
         }
 
+        /**
+         * Builds ClusterOperatorConfig object
+         *
+         * @return ClusterOperatorConfig object
+         */
         public ClusterOperatorConfig build() {
             return new ClusterOperatorConfig(this.map, versions);
         }
@@ -486,7 +552,7 @@ public class ClusterOperatorConfig {
      * @return  Feature gates configuration
      */
     public FeatureGates featureGates()  {
-        return get(STRIMZI_FEATURE_GATES);
+        return get(FEATURE_GATES);
     }
 
     /**

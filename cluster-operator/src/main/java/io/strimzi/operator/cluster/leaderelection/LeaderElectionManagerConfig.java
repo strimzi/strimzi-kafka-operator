@@ -72,6 +72,13 @@ public class LeaderElectionManagerConfig {
 
     }
 
+    /**
+     * Creates the LeaderElectionManager configuration from existing map
+     *
+     * @param map   Map with environment variables
+     *
+     * @return  Instance of LeaderElectionManagerConfig
+     */
     public static LeaderElectionManagerConfig buildFromExistingMap(Map<String, Object> map) {
 
         map.keySet().retainAll(LeaderElectionManagerConfig.keyNames());
@@ -99,12 +106,15 @@ public class LeaderElectionManagerConfig {
         return Collections.unmodifiableSet(CONFIG_VALUES.keySet());
     }
 
+    /**
+     * @return  Configuration values map
+     */
     public static Map<String, ConfigParameter<?>> configValues() {
         return Collections.unmodifiableMap(CONFIG_VALUES);
     }
 
     @SuppressWarnings("unchecked")
-    public  <T> T get(ConfigParameter<T> value) {
+    private  <T> T get(ConfigParameter<T> value) {
         return (T) this.map.get(value.key());
     }
 

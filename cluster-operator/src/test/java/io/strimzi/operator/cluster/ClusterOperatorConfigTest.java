@@ -43,7 +43,7 @@ public class ClusterOperatorConfigTest {
         ENV_VARS.put(ClusterOperatorConfig.STRIMZI_KAFKA_MIRROR_MAKER_IMAGES.key(), KafkaVersionTestUtils.getKafkaMirrorMakerImagesEnvVarString());
         ENV_VARS.put(ClusterOperatorConfig.STRIMZI_KAFKA_MIRROR_MAKER_2_IMAGES.key(), KafkaVersionTestUtils.getKafkaMirrorMaker2ImagesEnvVarString());
         ENV_VARS.put(ClusterOperatorConfig.OPERATOR_NAMESPACE.key(), "operator-namespace");
-        ENV_VARS.put(ClusterOperatorConfig.STRIMZI_FEATURE_GATES.key(), "+StableConnectIdentities");
+        ENV_VARS.put(ClusterOperatorConfig.FEATURE_GATES.key(), "+StableConnectIdentities");
         ENV_VARS.put(ClusterOperatorConfig.DNS_CACHE_TTL.key(), "10");
         ENV_VARS.put(ClusterOperatorConfig.POD_SECURITY_PROVIDER_CLASS.key(), "my.package.CustomPodSecurityProvider");
     }
@@ -54,7 +54,7 @@ public class ClusterOperatorConfigTest {
         envVars.remove(ClusterOperatorConfig.FULL_RECONCILIATION_INTERVAL_MS.key());
         envVars.remove(ClusterOperatorConfig.OPERATION_TIMEOUT_MS.key());
         envVars.remove(ClusterOperatorConfig.CONNECT_BUILD_TIMEOUT_MS.key());
-        envVars.remove(ClusterOperatorConfig.STRIMZI_FEATURE_GATES.key());
+        envVars.remove(ClusterOperatorConfig.FEATURE_GATES.key());
         envVars.remove(ClusterOperatorConfig.POD_SECURITY_PROVIDER_CLASS.key());
 
         ClusterOperatorConfig config = ClusterOperatorConfig.buildFromMap(envVars, KafkaVersionTestUtils.getKafkaVersionLookup());
@@ -331,7 +331,7 @@ public class ClusterOperatorConfigTest {
     @Test
     public void testInvalidFeatureGate() {
         Map<String, String> envVars = new HashMap<>(ClusterOperatorConfigTest.ENV_VARS);
-        envVars.put(ClusterOperatorConfig.STRIMZI_FEATURE_GATES.key(), "-NonExistingGate");
+        envVars.put(ClusterOperatorConfig.FEATURE_GATES.key(), "-NonExistingGate");
 
         InvalidConfigurationException e = assertThrows(InvalidConfigurationException.class, () -> ClusterOperatorConfig.buildFromMap(envVars, KafkaVersionTestUtils.getKafkaVersionLookup()));
         assertThat(e.getMessage(), containsString("Unknown feature gate NonExistingGate found in the configuration"));
@@ -356,14 +356,6 @@ public class ClusterOperatorConfigTest {
 
         InvalidConfigurationException e = assertThrows(InvalidConfigurationException.class, () -> ClusterOperatorConfig.buildFromMap(envVars, KafkaVersionTestUtils.getKafkaVersionLookup()));
         assertThat(e.getMessage(), containsString("Failed to parse. Value is not valid"));
-    }
-
-    @Test
-    public void testParseBoolean() {
-        assertThat(ClusterOperatorConfig.parseBoolean(null, true), is(true));
-        assertThat(ClusterOperatorConfig.parseBoolean("true", true), is(true));
-        assertThat(ClusterOperatorConfig.parseBoolean("false", true), is(false));
-        assertThat(ClusterOperatorConfig.parseBoolean("FALSE", true), is(false));
     }
 
     @Test

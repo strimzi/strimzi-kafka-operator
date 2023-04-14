@@ -47,6 +47,7 @@ import io.strimzi.api.kafka.model.storage.Storage;
 import io.strimzi.operator.cluster.model.Ca;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
+import io.strimzi.operator.cluster.ClusterOperatorConfig.ClusterOperatorConfigBuilder;
 import io.strimzi.operator.cluster.operator.resource.StatefulSetOperator;
 import io.strimzi.operator.cluster.operator.resource.ZookeeperLeaderFinder;
 import io.strimzi.operator.cluster.operator.resource.ZookeeperScaler;
@@ -614,47 +615,39 @@ public class ResourceUtils {
         return supplier;
     }
 
-    public static ClusterOperatorConfig dummyClusterOperatorConfig(KafkaVersion.Lookup versions, long operationTimeoutMs, String featureGates, boolean networkPolicyGeneration) {
+    public static ClusterOperatorConfig dummyClusterOperatorConfig() {
 
-        Map<String, String> envVars = new HashMap<>(4);
-        envVars.put(ClusterOperatorConfig.NAMESPACE.key(), "dummy");
-        envVars.put(ClusterOperatorConfig.FULL_RECONCILIATION_INTERVAL_MS.key(), "60000");
-        envVars.put(ClusterOperatorConfig.NETWORK_POLICY_GENERATION.key(), String.valueOf(networkPolicyGeneration));
-        envVars.put(ClusterOperatorConfig.OPERATION_TIMEOUT_MS.key(), String.valueOf(operationTimeoutMs));
-        envVars.put(ClusterOperatorConfig.CONNECT_BUILD_TIMEOUT_MS.key(), "300000");
-        envVars.put(ClusterOperatorConfig.STRIMZI_FEATURE_GATES.key(), featureGates);
-        envVars.put(ClusterOperatorConfig.OPERATIONS_THREAD_POOL_SIZE.key(), "10");
-        envVars.put(ClusterOperatorConfig.ZOOKEEPER_ADMIN_SESSION_TIMEOUT_MS.key(), "10000");
-        envVars.put(ClusterOperatorConfig.DNS_CACHE_TTL.key(), "30");
-        envVars.put(ClusterOperatorConfig.POD_SET_CONTROLLER_WORK_QUEUE_SIZE.key(), "1024");
-        envVars.put(ClusterOperatorConfig.OPERATOR_NAME.key(), "cluster-operator-name");
-        envVars.put(ClusterOperatorConfig.POD_SECURITY_PROVIDER_CLASS.key(), ClusterOperatorConfig.POD_SECURITY_PROVIDER_CLASS.defaultValue());
+        Map<String, String> envVars = new HashMap<>();
 
-        return ClusterOperatorConfig.buildFromMap(envVars, versions);
+        return ClusterOperatorConfig.buildFromMap(envVars, KafkaVersionTestUtils.getKafkaVersionLookup());
     }
 
     public static ClusterOperatorConfig dummyClusterOperatorConfig(KafkaVersion.Lookup versions, long operationTimeoutMs) {
-        return dummyClusterOperatorConfig(versions, operationTimeoutMs, "", true);
+        return new ClusterOperatorConfigBuilder(dummyClusterOperatorConfig(), versions)
+                .with(ClusterOperatorConfig.OPERATION_TIMEOUT_MS.key(), String.valueOf(operationTimeoutMs))
+                .build();
     }
 
     public static ClusterOperatorConfig dummyClusterOperatorConfig(KafkaVersion.Lookup versions) {
-        return dummyClusterOperatorConfig(versions, Long.parseLong(ClusterOperatorConfig.OPERATION_TIMEOUT_MS.defaultValue()), "", true);
+        return new ClusterOperatorConfigBuilder(dummyClusterOperatorConfig(), versions)
+                .build();
     }
 
     public static ClusterOperatorConfig dummyClusterOperatorConfig(long operationTimeoutMs) {
-        return dummyClusterOperatorConfig(KafkaVersionTestUtils.getKafkaVersionLookup(), operationTimeoutMs, "", true);
-    }
-
-    public static ClusterOperatorConfig dummyClusterOperatorConfig() {
-        return dummyClusterOperatorConfig(KafkaVersionTestUtils.getKafkaVersionLookup(), Long.parseLong(ClusterOperatorConfig.OPERATION_TIMEOUT_MS.defaultValue()), "", true);
+        return new ClusterOperatorConfigBuilder(dummyClusterOperatorConfig(), KafkaVersionTestUtils.getKafkaVersionLookup())
+                .with(ClusterOperatorConfig.OPERATION_TIMEOUT_MS.key(), String.valueOf(operationTimeoutMs))
+                .build();
     }
 
     public static ClusterOperatorConfig dummyClusterOperatorConfig(boolean networkPolicyGeneration) {
-        return dummyClusterOperatorConfig(KafkaVersionTestUtils.getKafkaVersionLookup(), Long.parseLong(ClusterOperatorConfig.OPERATION_TIMEOUT_MS.defaultValue()), "", networkPolicyGeneration);
-    }
+        return new ClusterOperatorConfigBuilder(dummyClusterOperatorConfig(), KafkaVersionTestUtils.getKafkaVersionLookup())
+                .with(ClusterOperatorConfig.NETWORK_POLICY_GENERATION.key(), String.valueOf(networkPolicyGeneration))
+                .build();    }
 
     public static ClusterOperatorConfig dummyClusterOperatorConfig(String featureGates) {
-        return dummyClusterOperatorConfig(KafkaVersionTestUtils.getKafkaVersionLookup(), Long.parseLong(ClusterOperatorConfig.OPERATION_TIMEOUT_MS.defaultValue()), featureGates, true);
+        return new ClusterOperatorConfigBuilder(dummyClusterOperatorConfig(), KafkaVersionTestUtils.getKafkaVersionLookup())
+                .with(ClusterOperatorConfig.FEATURE_GATES.key(), featureGates)
+                .build();
     }
 
     /**

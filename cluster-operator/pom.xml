@@ -16,11 +16,6 @@
         </license>
     </licenses>
 
-    <properties>
-        <!-- No Javadocs warnings as errors here => we do not want to fail because of warnings -->
-        <!-- This should be removed once https://github.com/strimzi/strimzi-kafka-operator/issues/7703 is fixed -->
-        <javadoc.fail.on.warnings>false</javadoc.fail.on.warnings>
-    </properties>
     <dependencies>
         <dependency>
             <groupId>io.strimzi</groupId>
