@@ -64,7 +64,6 @@ spec:
 ----
 
 If you are using ConfigMaps that are managed externally, use configuration providers to load the data in the ConfigMaps.  
-For more information on using configuration providers, see xref:assembly-loading-config-with-providers-{context}[].
 
 == Naming custom ConfigMaps 
 
@@ -80,4 +79,4 @@ Make sure that any custom ConfigMaps you create do not have the same name as the
 * xref:external-logging_str[]
 * xref:con-common-configuration-prometheus-reference[]
 * xref:type-ExternalConfiguration-reference[]
-* xref:assembly-loading-config-with-providers-{context}[]
+* link:{BookURLDeploying}#assembly-loading-config-with-providers-{context}[Loading configuration values from external sources^]
