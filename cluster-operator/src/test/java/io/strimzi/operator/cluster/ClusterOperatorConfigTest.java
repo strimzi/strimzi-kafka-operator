@@ -85,7 +85,7 @@ public class ClusterOperatorConfigTest {
                 .build();
 
         assertThat(config.getNamespaces(), is(singleton("namespace")));
-        assertThat(config.getReconciliationIntervalMs(), is(60_000L));
+        assertThat(config.getReconciliationIntervalMs(), is(120_000L));
         assertThat(config.getOperationTimeoutMs(), is(30_000L));
         assertThat(config.getZkAdminSessionTimeoutMs(), is(20_000));
         assertThat(config.getConnectBuildTimeoutMs(), is(120_000L));
