@@ -30,7 +30,7 @@ import java.util.Map;
     "topicRegex", "resources", "logging",
     "enableSaramaLogging", "template"})
 @EqualsAndHashCode
-public class KafkaExporterSpec implements UnknownPropertyPreserving, Serializable {
+public class KafkaExporterSpec implements HasLivenessProbe, HasReadinessProbe, UnknownPropertyPreserving, Serializable {
     private static final long serialVersionUID = 1L;
 
     private String image;

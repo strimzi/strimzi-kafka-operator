@@ -49,8 +49,6 @@ import io.strimzi.api.kafka.model.KafkaClusterSpec;
 import io.strimzi.api.kafka.model.KafkaExporterResources;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaSpec;
-import io.strimzi.api.kafka.model.Probe;
-import io.strimzi.api.kafka.model.ProbeBuilder;
 import io.strimzi.api.kafka.model.Rack;
 import io.strimzi.api.kafka.model.StrimziPodSet;
 import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationCustom;
@@ -234,8 +232,6 @@ public class KafkaCluster extends AbstractStatefulModel implements SupportsMetri
 
     // Configuration defaults
     private static final int DEFAULT_REPLICAS = 3;
-    private static final Probe DEFAULT_HEALTHCHECK_OPTIONS = new ProbeBuilder().withTimeoutSeconds(5)
-            .withInitialDelaySeconds(15).build();
 
     private static final Map<String, String> DEFAULT_POD_LABELS = new HashMap<>();
     static {
@@ -255,8 +251,6 @@ public class KafkaCluster extends AbstractStatefulModel implements SupportsMetri
         super(reconciliation, resource, KafkaResources.kafkaStatefulSetName(resource.getMetadata().getName()), COMPONENT_TYPE);
 
         this.replicas = DEFAULT_REPLICAS;
-        this.livenessProbeOptions = DEFAULT_HEALTHCHECK_OPTIONS;
-        this.readinessProbeOptions = DEFAULT_HEALTHCHECK_OPTIONS;
 
         this.initImage = System.getenv().getOrDefault(ClusterOperatorConfig.STRIMZI_DEFAULT_KAFKA_INIT_IMAGE, "quay.io/strimzi/operator:latest");
     }
@@ -311,15 +305,8 @@ public class KafkaCluster extends AbstractStatefulModel implements SupportsMetri
         validateIntConfigProperty("transaction.state.log.min.isr", kafkaClusterSpec);
 
         result.image = versions.kafkaImage(kafkaClusterSpec.getImage(), kafkaClusterSpec.getVersion());
-
-        if (kafkaClusterSpec.getReadinessProbe() != null) {
-            result.readinessProbeOptions = kafkaClusterSpec.getReadinessProbe();
-        }
-
-        if (kafkaClusterSpec.getLivenessProbe() != null) {
-            result.livenessProbeOptions = kafkaClusterSpec.getLivenessProbe();
-        }
-
+        result.readinessProbeOptions = ProbeUtils.extractReadinessProbeOptionsOrDefault(kafkaClusterSpec, ProbeUtils.DEFAULT_HEALTHCHECK_OPTIONS);
+        result.livenessProbeOptions = ProbeUtils.extractLivenessProbeOptionsOrDefault(kafkaClusterSpec, ProbeUtils.DEFAULT_HEALTHCHECK_OPTIONS);
         result.rack = kafkaClusterSpec.getRack();
 
         String initImage = kafkaClusterSpec.getBrokerRackInitImage();
@@ -1419,8 +1406,8 @@ public class KafkaCluster extends AbstractStatefulModel implements SupportsMetri
                 getEnvVars(),
                 getContainerPortList(),
                 getVolumeMounts(),
-                ProbeGenerator.defaultBuilder(livenessProbeOptions).withNewExec().withCommand("/opt/kafka/kafka_liveness.sh").endExec().build(),
-                ProbeGenerator.defaultBuilder(readinessProbeOptions).withNewExec().withCommand("/opt/kafka/kafka_readiness.sh").endExec().build(),
+                ProbeUtils.defaultBuilder(livenessProbeOptions).withNewExec().withCommand("/opt/kafka/kafka_liveness.sh").endExec().build(),
+                ProbeUtils.defaultBuilder(readinessProbeOptions).withNewExec().withCommand("/opt/kafka/kafka_readiness.sh").endExec().build(),
                 imagePullPolicy
         );
     }

@@ -206,10 +206,10 @@ public class KafkaConnectClusterTest {
 
         assertThat(kc.image, is(KafkaVersionTestUtils.DEFAULT_KAFKA_CONNECT_IMAGE));
         assertThat(kc.getReplicas(), is(KafkaConnectCluster.DEFAULT_REPLICAS));
-        assertThat(kc.readinessProbeOptions.getInitialDelaySeconds(), is(KafkaConnectCluster.DEFAULT_HEALTHCHECK_DELAY));
-        assertThat(kc.readinessProbeOptions.getTimeoutSeconds(), is(KafkaConnectCluster.DEFAULT_HEALTHCHECK_TIMEOUT));
-        assertThat(kc.livenessProbeOptions.getInitialDelaySeconds(), is(KafkaConnectCluster.DEFAULT_HEALTHCHECK_DELAY));
-        assertThat(kc.livenessProbeOptions.getTimeoutSeconds(), is(KafkaConnectCluster.DEFAULT_HEALTHCHECK_TIMEOUT));
+        assertThat(kc.readinessProbeOptions.getInitialDelaySeconds(), is(60));
+        assertThat(kc.readinessProbeOptions.getTimeoutSeconds(), is(5));
+        assertThat(kc.livenessProbeOptions.getInitialDelaySeconds(), is(60));
+        assertThat(kc.livenessProbeOptions.getTimeoutSeconds(), is(5));
         assertThat(kc.configuration.asOrderedProperties(), is(defaultConfiguration));
     }
 

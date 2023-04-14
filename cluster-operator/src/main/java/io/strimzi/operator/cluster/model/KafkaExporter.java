@@ -54,7 +54,7 @@ public class KafkaExporter extends AbstractModel {
     /*test*/ static final int DEFAULT_HEALTHCHECK_DELAY = 15;
     /*test*/ static final int DEFAULT_HEALTHCHECK_TIMEOUT = 15;
     /*test*/ static final int DEFAULT_HEALTHCHECK_PERIOD = 30;
-    private static final Probe READINESS_PROBE_OPTIONS = new ProbeBuilder().withTimeoutSeconds(DEFAULT_HEALTHCHECK_TIMEOUT).withInitialDelaySeconds(DEFAULT_HEALTHCHECK_DELAY).withPeriodSeconds(DEFAULT_HEALTHCHECK_PERIOD).build();
+    private static final Probe DEFAULT_HEALTHCHECK_OPTIONS = new ProbeBuilder().withTimeoutSeconds(DEFAULT_HEALTHCHECK_TIMEOUT).withInitialDelaySeconds(DEFAULT_HEALTHCHECK_DELAY).withPeriodSeconds(DEFAULT_HEALTHCHECK_PERIOD).build();
 
     protected static final String ENV_VAR_KAFKA_EXPORTER_LOGGING = "KAFKA_EXPORTER_LOGGING";
     protected static final String ENV_VAR_KAFKA_EXPORTER_KAFKA_VERSION = "KAFKA_EXPORTER_KAFKA_VERSION";
@@ -90,11 +90,6 @@ public class KafkaExporter extends AbstractModel {
     protected KafkaExporter(Reconciliation reconciliation, HasMetadata resource) {
         super(reconciliation, resource, KafkaExporterResources.deploymentName(resource.getMetadata().getName()), COMPONENT_TYPE);
 
-        this.readinessPath = "/healthz";
-        this.readinessProbeOptions = READINESS_PROBE_OPTIONS;
-        this.livenessPath = "/healthz";
-        this.livenessProbeOptions = READINESS_PROBE_OPTIONS;
-
         this.saramaLoggingEnabled = false;
     }
 
@@ -114,13 +109,8 @@ public class KafkaExporter extends AbstractModel {
             KafkaExporter result = new KafkaExporter(reconciliation, kafkaAssembly);
 
             result.resources = spec.getResources();
-            if (spec.getReadinessProbe() != null) {
-                result.readinessProbeOptions = spec.getReadinessProbe();
-            }
-
-            if (spec.getLivenessProbe() != null) {
-                result.livenessProbeOptions = spec.getLivenessProbe();
-            }
+            result.readinessProbeOptions = ProbeUtils.extractReadinessProbeOptionsOrDefault(spec, DEFAULT_HEALTHCHECK_OPTIONS);
+            result.livenessProbeOptions = ProbeUtils.extractLivenessProbeOptionsOrDefault(spec, DEFAULT_HEALTHCHECK_OPTIONS);
 
             result.groupRegex = spec.getGroupRegex();
             result.topicRegex = spec.getTopicRegex();
@@ -205,8 +195,8 @@ public class KafkaExporter extends AbstractModel {
                 List.of(VolumeUtils.createTempDirVolumeMount(),
                         VolumeUtils.createVolumeMount(KAFKA_EXPORTER_CERTS_VOLUME_NAME, KAFKA_EXPORTER_CERTS_VOLUME_MOUNT),
                         VolumeUtils.createVolumeMount(CLUSTER_CA_CERTS_VOLUME_NAME, CLUSTER_CA_CERTS_VOLUME_MOUNT)),
-                ProbeGenerator.httpProbe(livenessProbeOptions, livenessPath, MetricsModel.METRICS_PORT_NAME),
-                ProbeGenerator.httpProbe(readinessProbeOptions, readinessPath, MetricsModel.METRICS_PORT_NAME),
+                ProbeUtils.httpProbe(livenessProbeOptions, "/healthz", MetricsModel.METRICS_PORT_NAME),
+                ProbeUtils.httpProbe(readinessProbeOptions, "/healthz", MetricsModel.METRICS_PORT_NAME),
                 imagePullPolicy
         );
     }

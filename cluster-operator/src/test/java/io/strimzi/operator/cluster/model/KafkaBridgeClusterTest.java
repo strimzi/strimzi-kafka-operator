@@ -149,10 +149,10 @@ public class KafkaBridgeClusterTest {
 
         assertThat(kbc.image, is("quay.io/strimzi/kafka-bridge:latest"));
         assertThat(kbc.getReplicas(), is(KafkaBridgeCluster.DEFAULT_REPLICAS));
-        assertThat(kbc.readinessProbeOptions.getInitialDelaySeconds(), is(KafkaBridgeCluster.DEFAULT_HEALTHCHECK_DELAY));
-        assertThat(kbc.readinessProbeOptions.getTimeoutSeconds(), is(KafkaBridgeCluster.DEFAULT_HEALTHCHECK_TIMEOUT));
-        assertThat(kbc.livenessProbeOptions.getInitialDelaySeconds(), is(KafkaBridgeCluster.DEFAULT_HEALTHCHECK_DELAY));
-        assertThat(kbc.livenessProbeOptions.getTimeoutSeconds(), is(KafkaBridgeCluster.DEFAULT_HEALTHCHECK_TIMEOUT));
+        assertThat(kbc.readinessProbeOptions.getInitialDelaySeconds(), is(15));
+        assertThat(kbc.readinessProbeOptions.getTimeoutSeconds(), is(5));
+        assertThat(kbc.livenessProbeOptions.getInitialDelaySeconds(), is(15));
+        assertThat(kbc.livenessProbeOptions.getTimeoutSeconds(), is(5));
     }
 
     @ParallelTest

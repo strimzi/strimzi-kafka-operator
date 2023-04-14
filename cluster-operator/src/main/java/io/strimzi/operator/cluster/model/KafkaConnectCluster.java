@@ -105,10 +105,7 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
 
     // Configuration defaults
     /* test */ static final int DEFAULT_REPLICAS = 3;
-    /* test */ static final int DEFAULT_HEALTHCHECK_DELAY = 60;
-    /* test */ static final int DEFAULT_HEALTHCHECK_TIMEOUT = 5;
-    private static final Probe DEFAULT_HEALTHCHECK_OPTIONS = new ProbeBuilder().withInitialDelaySeconds(DEFAULT_HEALTHCHECK_TIMEOUT)
-            .withInitialDelaySeconds(DEFAULT_HEALTHCHECK_DELAY).build();
+    private static final Probe DEFAULT_HEALTHCHECK_OPTIONS = new ProbeBuilder().withInitialDelaySeconds(5).withInitialDelaySeconds(60).build();
 
     // Kafka Connect configuration keys (EnvVariables)
     protected static final String ENV_VAR_PREFIX = "KAFKA_CONNECT_";
@@ -192,10 +189,6 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
         this.serviceName = KafkaConnectResources.serviceName(cluster);
         this.loggingAndMetricsConfigMapName = KafkaConnectResources.metricsAndLogConfigMapName(cluster);
         this.replicas = DEFAULT_REPLICAS;
-        this.readinessPath = "/";
-        this.readinessProbeOptions = DEFAULT_HEALTHCHECK_OPTIONS;
-        this.livenessPath = "/";
-        this.livenessProbeOptions = DEFAULT_HEALTHCHECK_OPTIONS;
     }
 
     /**
@@ -265,13 +258,8 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
                 result.ownerReference,
                 spec
         );
-
-        if (spec.getReadinessProbe() != null) {
-            result.readinessProbeOptions = spec.getReadinessProbe();
-        }
-        if (spec.getLivenessProbe() != null) {
-            result.livenessProbeOptions = spec.getLivenessProbe();
-        }
+        result.readinessProbeOptions = ProbeUtils.extractReadinessProbeOptionsOrDefault(spec, DEFAULT_HEALTHCHECK_OPTIONS);
+        result.livenessProbeOptions = ProbeUtils.extractLivenessProbeOptionsOrDefault(spec, DEFAULT_HEALTHCHECK_OPTIONS);
 
         result.setRack(spec.getRack());
 
@@ -623,8 +611,8 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
                 getEnvVars(stableIdentities),
                 getContainerPortList(),
                 getVolumeMounts(),
-                ProbeGenerator.httpProbe(livenessProbeOptions, livenessPath, REST_API_PORT_NAME),
-                ProbeGenerator.httpProbe(readinessProbeOptions, readinessPath, REST_API_PORT_NAME),
+                ProbeUtils.httpProbe(livenessProbeOptions, "/", REST_API_PORT_NAME),
+                ProbeUtils.httpProbe(readinessProbeOptions, "/", REST_API_PORT_NAME),
                 imagePullPolicy
         );
     }

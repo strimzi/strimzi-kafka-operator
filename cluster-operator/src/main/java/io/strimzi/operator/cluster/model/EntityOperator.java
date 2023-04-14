@@ -22,6 +22,7 @@ import io.strimzi.api.kafka.model.EntityOperatorSpec;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaClusterSpec;
 import io.strimzi.api.kafka.model.KafkaResources;
+import io.strimzi.api.kafka.model.Probe;
 import io.strimzi.api.kafka.model.TlsSidecar;
 import io.strimzi.api.kafka.model.template.DeploymentTemplate;
 import io.strimzi.api.kafka.model.template.EntityOperatorTemplate;
@@ -74,6 +75,11 @@ public class EntityOperator extends AbstractModel {
     /* test */ static final String ENV_VAR_ZOOKEEPER_CONNECT = "STRIMZI_ZOOKEEPER_CONNECT";
 
     protected static final String CO_ENV_VAR_CUSTOM_ENTITY_OPERATOR_POD_LABELS = "STRIMZI_CUSTOM_ENTITY_OPERATOR_LABELS";
+
+    /**
+     * Default healthcheck options used by the Topic and User operators
+     */
+    protected static final Probe DEFAULT_HEALTHCHECK_OPTIONS = new io.strimzi.api.kafka.model.ProbeBuilder().withTimeoutSeconds(5).withInitialDelaySeconds(10).build();
 
     /* test */ String zookeeperConnect;
     private EntityTopicOperator topicOperator;
@@ -237,8 +243,8 @@ public class EntityOperator extends AbstractModel {
                     List.of(VolumeUtils.createTempDirVolumeMount(TLS_SIDECAR_TMP_DIRECTORY_DEFAULT_VOLUME_NAME),
                             VolumeUtils.createVolumeMount(ETO_CERTS_VOLUME_NAME, ETO_CERTS_VOLUME_MOUNT),
                             VolumeUtils.createVolumeMount(TLS_SIDECAR_CA_CERTS_VOLUME_NAME, TLS_SIDECAR_CA_CERTS_VOLUME_MOUNT)),
-                    ProbeGenerator.tlsSidecarLivenessProbe(tlsSidecar),
-                    ProbeGenerator.tlsSidecarReadinessProbe(tlsSidecar),
+                    ProbeUtils.tlsSidecarLivenessProbe(tlsSidecar),
+                    ProbeUtils.tlsSidecarReadinessProbe(tlsSidecar),
                     null,
                     imagePullPolicy,
                     new LifecycleBuilder().withNewPreStop().withNewExec().withCommand("/opt/stunnel/entity_operator_stunnel_pre_stop.sh").endExec().endPreStop().build()

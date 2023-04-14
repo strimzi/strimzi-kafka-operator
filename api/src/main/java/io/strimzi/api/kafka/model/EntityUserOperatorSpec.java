@@ -34,12 +34,10 @@ import java.util.Map;
     "secretPrefix", "livenessProbe", "readinessProbe",
     "resources", "logging", "jvmOptions"})
 @EqualsAndHashCode
-public class EntityUserOperatorSpec implements HasConfigurableLogging, UnknownPropertyPreserving, Serializable {
+public class EntityUserOperatorSpec implements HasConfigurableLogging, HasLivenessProbe, HasReadinessProbe, UnknownPropertyPreserving, Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    public static final int DEFAULT_HEALTHCHECK_DELAY = 10;
-    public static final int DEFAULT_HEALTHCHECK_TIMEOUT = 5;
     public static final int DEFAULT_BOOTSTRAP_SERVERS_PORT = 9091;
     public static final long DEFAULT_FULL_RECONCILIATION_INTERVAL_SECONDS = 120;
     public static final String DEFAULT_SECRET_PREFIX = "";

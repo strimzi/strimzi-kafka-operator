@@ -207,10 +207,10 @@ public class KafkaMirrorMaker2ClusterTest {
 
         assertThat(kmm2.image, is(KafkaVersionTestUtils.DEFAULT_KAFKA_CONNECT_IMAGE));
         assertThat(kmm2.getReplicas(), is(KafkaMirrorMaker2Cluster.DEFAULT_REPLICAS));
-        assertThat(kmm2.readinessProbeOptions.getInitialDelaySeconds(), is(KafkaMirrorMaker2Cluster.DEFAULT_HEALTHCHECK_DELAY));
-        assertThat(kmm2.readinessProbeOptions.getTimeoutSeconds(), is(KafkaMirrorMaker2Cluster.DEFAULT_HEALTHCHECK_TIMEOUT));
-        assertThat(kmm2.livenessProbeOptions.getInitialDelaySeconds(), is(KafkaMirrorMaker2Cluster.DEFAULT_HEALTHCHECK_DELAY));
-        assertThat(kmm2.livenessProbeOptions.getTimeoutSeconds(), is(KafkaMirrorMaker2Cluster.DEFAULT_HEALTHCHECK_TIMEOUT));
+        assertThat(kmm2.readinessProbeOptions.getInitialDelaySeconds(), is(60));
+        assertThat(kmm2.readinessProbeOptions.getTimeoutSeconds(), is(5));
+        assertThat(kmm2.livenessProbeOptions.getInitialDelaySeconds(), is(60));
+        assertThat(kmm2.livenessProbeOptions.getTimeoutSeconds(), is(5));
         assertThat(kmm2.configuration.asOrderedProperties(), is(defaultConfiguration));
     }
 

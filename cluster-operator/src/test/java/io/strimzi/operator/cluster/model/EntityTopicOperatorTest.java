@@ -185,10 +185,10 @@ public class EntityTopicOperatorTest {
         assertThat(entityTopicOperator.zookeeperConnect, is("localhost:2181"));
         assertThat(entityTopicOperator.kafkaBootstrapServers, is(KafkaResources.bootstrapServiceName(cluster) + ":" + KafkaCluster.REPLICATION_PORT));
         assertThat(entityTopicOperator.resourceLabels, is(ModelUtils.defaultResourceLabels(cluster)));
-        assertThat(entityTopicOperator.readinessProbeOptions.getInitialDelaySeconds(), is(EntityTopicOperatorSpec.DEFAULT_HEALTHCHECK_DELAY));
-        assertThat(entityTopicOperator.readinessProbeOptions.getTimeoutSeconds(), is(EntityTopicOperatorSpec.DEFAULT_HEALTHCHECK_TIMEOUT));
-        assertThat(entityTopicOperator.livenessProbeOptions.getInitialDelaySeconds(), is(EntityTopicOperatorSpec.DEFAULT_HEALTHCHECK_DELAY));
-        assertThat(entityTopicOperator.livenessProbeOptions.getTimeoutSeconds(), is(EntityTopicOperatorSpec.DEFAULT_HEALTHCHECK_TIMEOUT));
+        assertThat(entityTopicOperator.readinessProbeOptions.getInitialDelaySeconds(), is(10));
+        assertThat(entityTopicOperator.readinessProbeOptions.getTimeoutSeconds(), is(5));
+        assertThat(entityTopicOperator.livenessProbeOptions.getInitialDelaySeconds(), is(10));
+        assertThat(entityTopicOperator.livenessProbeOptions.getTimeoutSeconds(), is(5));
         assertThat(entityTopicOperator.logging().getLogging(), is(nullValue()));
     }
 

@@ -6,6 +6,8 @@ package io.strimzi.operator.cluster.model;
 
 import io.fabric8.kubernetes.api.model.Probe;
 import io.fabric8.kubernetes.api.model.ProbeBuilder;
+import io.strimzi.api.kafka.model.EntityTopicOperatorSpec;
+import io.strimzi.api.kafka.model.EntityTopicOperatorSpecBuilder;
 import io.strimzi.api.kafka.model.TlsSidecar;
 import io.strimzi.api.kafka.model.TlsSidecarBuilder;
 import io.strimzi.test.annotations.ParallelSuite;
@@ -20,7 +22,7 @@ import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @ParallelSuite
-public class ProbeGeneratorTest {
+public class ProbeUtilsTest {
 
     private static final io.strimzi.api.kafka.model.Probe DEFAULT_CONFIG = new io.strimzi.api.kafka.model.ProbeBuilder()
             .withInitialDelaySeconds(1)
@@ -32,12 +34,12 @@ public class ProbeGeneratorTest {
 
     @ParallelTest
     public void testNullProbeConfigThrowsException() {
-        assertThrows(IllegalArgumentException.class, () -> ProbeGenerator.defaultBuilder(null));
+        assertThrows(IllegalArgumentException.class, () -> ProbeUtils.defaultBuilder(null));
     }
 
     @ParallelTest
     public void testDefaultBuilder() {
-        Probe probe = ProbeGenerator.defaultBuilder(DEFAULT_CONFIG)
+        Probe probe = ProbeUtils.defaultBuilder(DEFAULT_CONFIG)
                 .build();
         assertThat(probe, is(new ProbeBuilder()
                 .withInitialDelaySeconds(1)
@@ -53,7 +55,7 @@ public class ProbeGeneratorTest {
     // Inherits defaults from the io.strimzi.api.kafka.model.Probe class
     @ParallelTest
     public void testDefaultBuilderNoValues() {
-        Probe probe = ProbeGenerator.defaultBuilder(new io.strimzi.api.kafka.model.ProbeBuilder().build())
+        Probe probe = ProbeUtils.defaultBuilder(new io.strimzi.api.kafka.model.ProbeBuilder().build())
                 .build();
         assertThat(probe, is(new ProbeBuilder()
                 .withInitialDelaySeconds(15)
@@ -64,7 +66,7 @@ public class ProbeGeneratorTest {
 
     @ParallelTest
     public void testHttpProbe() {
-        Probe probe = ProbeGenerator.httpProbe(DEFAULT_CONFIG, "path", "1001");
+        Probe probe = ProbeUtils.httpProbe(DEFAULT_CONFIG, "path", "1001");
         assertThat(probe, is(new ProbeBuilder()
                 .withNewHttpGet()
                     .withPath("path")
@@ -81,19 +83,19 @@ public class ProbeGeneratorTest {
 
     @ParallelTest
     public void testHttpProbeMissingPathThrows() {
-        assertThrows(IllegalArgumentException.class, () -> ProbeGenerator.httpProbe(DEFAULT_CONFIG, null, "1001"));
-        assertThrows(IllegalArgumentException.class, () -> ProbeGenerator.httpProbe(DEFAULT_CONFIG, "", "1001"));
+        assertThrows(IllegalArgumentException.class, () -> ProbeUtils.httpProbe(DEFAULT_CONFIG, null, "1001"));
+        assertThrows(IllegalArgumentException.class, () -> ProbeUtils.httpProbe(DEFAULT_CONFIG, "", "1001"));
     }
 
     @ParallelTest
     public void testHttpProbeMissingPortThrows() {
-        assertThrows(IllegalArgumentException.class, () -> ProbeGenerator.httpProbe(DEFAULT_CONFIG, "path", null));
-        assertThrows(IllegalArgumentException.class, () -> ProbeGenerator.httpProbe(DEFAULT_CONFIG, "path", ""));
+        assertThrows(IllegalArgumentException.class, () -> ProbeUtils.httpProbe(DEFAULT_CONFIG, "path", null));
+        assertThrows(IllegalArgumentException.class, () -> ProbeUtils.httpProbe(DEFAULT_CONFIG, "path", ""));
     }
 
     @ParallelTest
     public void testExecProbe() {
-        Probe probe = ProbeGenerator.execProbe(DEFAULT_CONFIG, Arrays.asList("command1", "command2"));
+        Probe probe = ProbeUtils.execProbe(DEFAULT_CONFIG, Arrays.asList("command1", "command2"));
         assertThat(probe, is(new ProbeBuilder()
                 .withNewExec()
                     .addToCommand("command1", "command2")
@@ -109,8 +111,8 @@ public class ProbeGeneratorTest {
 
     @ParallelTest
     public void testExecProbeMissingCommandsThrows() {
-        assertThrows(IllegalArgumentException.class, () -> ProbeGenerator.execProbe(DEFAULT_CONFIG, null));
-        assertThrows(IllegalArgumentException.class, () -> ProbeGenerator.execProbe(DEFAULT_CONFIG, Collections.emptyList()));
+        assertThrows(IllegalArgumentException.class, () -> ProbeUtils.execProbe(DEFAULT_CONFIG, null));
+        assertThrows(IllegalArgumentException.class, () -> ProbeUtils.execProbe(DEFAULT_CONFIG, Collections.emptyList()));
     }
 
     private static final TlsSidecar TLS_SIDECAR = new TlsSidecarBuilder()
@@ -132,7 +134,7 @@ public class ProbeGeneratorTest {
 
     @ParallelTest
     public void testTlsSidecarLivenessProbe() {
-        Probe probe = ProbeGenerator.tlsSidecarLivenessProbe(TLS_SIDECAR);
+        Probe probe = ProbeUtils.tlsSidecarLivenessProbe(TLS_SIDECAR);
         assertThat(probe, is(new ProbeBuilder()
                 .withNewExec()
                     .addToCommand("/opt/stunnel/stunnel_healthcheck.sh", "2181")
@@ -148,7 +150,7 @@ public class ProbeGeneratorTest {
 
     @ParallelTest
     public void testTlsSidecarLivenessProbeWithNullTlsSidecarDefaults() {
-        Probe probe = ProbeGenerator.tlsSidecarLivenessProbe(null);
+        Probe probe = ProbeUtils.tlsSidecarLivenessProbe(null);
         assertThat(probe, is(new ProbeBuilder()
                 .withNewExec()
                 .addToCommand("/opt/stunnel/stunnel_healthcheck.sh", "2181")
@@ -161,7 +163,7 @@ public class ProbeGeneratorTest {
 
     @ParallelTest
     public void testTlsSidecarReadinessProbe() {
-        Probe probe = ProbeGenerator.tlsSidecarReadinessProbe(TLS_SIDECAR);
+        Probe probe = ProbeUtils.tlsSidecarReadinessProbe(TLS_SIDECAR);
         assertThat(probe, is(new ProbeBuilder()
                 .withNewExec()
                     .addToCommand("/opt/stunnel/stunnel_healthcheck.sh", "2181")
@@ -177,7 +179,7 @@ public class ProbeGeneratorTest {
 
     @ParallelTest
     public void testTlsSidecarReadinessProbeWithNullTlsSidecarDefaults() {
-        Probe probe = ProbeGenerator.tlsSidecarLivenessProbe(null);
+        Probe probe = ProbeUtils.tlsSidecarLivenessProbe(null);
         assertThat(probe, is(new ProbeBuilder()
                 .withNewExec()
                     .addToCommand("/opt/stunnel/stunnel_healthcheck.sh", "2181")
@@ -194,9 +196,83 @@ public class ProbeGeneratorTest {
                 .withInitialDelaySeconds(0)
                 .build();
 
-        Probe probe = ProbeGenerator.defaultBuilder(probeConfig)
+        Probe probe = ProbeUtils.defaultBuilder(probeConfig)
                 .build();
 
         assertThat(probe.getInitialDelaySeconds(), is(nullValue()));
+    }
+
+    @ParallelTest
+    public void testExtractProbeOptionSet()  {
+        EntityTopicOperatorSpec spec = new EntityTopicOperatorSpecBuilder()
+                .withNewLivenessProbe()
+                    .withInitialDelaySeconds(11)
+                    .withTimeoutSeconds(12)
+                    .withPeriodSeconds(13)
+                    .withFailureThreshold(14)
+                    .withSuccessThreshold(15)
+                .endLivenessProbe()
+                .withNewReadinessProbe()
+                    .withInitialDelaySeconds(21)
+                    .withTimeoutSeconds(22)
+                    .withPeriodSeconds(23)
+                    .withFailureThreshold(24)
+                    .withSuccessThreshold(25)
+                .endReadinessProbe()
+                .withNewStartupProbe()
+                    .withInitialDelaySeconds(31)
+                    .withTimeoutSeconds(32)
+                    .withPeriodSeconds(33)
+                    .withFailureThreshold(34)
+                    .withSuccessThreshold(35)
+                .endStartupProbe()
+                .build();
+
+        io.strimzi.api.kafka.model.Probe probe = ProbeUtils.extractLivenessProbeOptionsOrDefault(spec, ProbeUtils.DEFAULT_HEALTHCHECK_OPTIONS);
+        assertThat(probe.getInitialDelaySeconds(), is(11));
+        assertThat(probe.getTimeoutSeconds(), is(12));
+        assertThat(probe.getPeriodSeconds(), is(13));
+        assertThat(probe.getFailureThreshold(), is(14));
+        assertThat(probe.getSuccessThreshold(), is(15));
+
+        probe = ProbeUtils.extractReadinessProbeOptionsOrDefault(spec, ProbeUtils.DEFAULT_HEALTHCHECK_OPTIONS);
+        assertThat(probe.getInitialDelaySeconds(), is(21));
+        assertThat(probe.getTimeoutSeconds(), is(22));
+        assertThat(probe.getPeriodSeconds(), is(23));
+        assertThat(probe.getFailureThreshold(), is(24));
+        assertThat(probe.getSuccessThreshold(), is(25));
+
+        probe = ProbeUtils.extractStartupProbeOptionsOrDefault(spec, ProbeUtils.DEFAULT_HEALTHCHECK_OPTIONS);
+        assertThat(probe.getInitialDelaySeconds(), is(31));
+        assertThat(probe.getTimeoutSeconds(), is(32));
+        assertThat(probe.getPeriodSeconds(), is(33));
+        assertThat(probe.getFailureThreshold(), is(34));
+        assertThat(probe.getSuccessThreshold(), is(35));
+    }
+
+    @ParallelTest
+    public void testExtractProbeOptionNotSet()  {
+        EntityTopicOperatorSpec spec = new EntityTopicOperatorSpecBuilder().build();
+
+        io.strimzi.api.kafka.model.Probe probe = ProbeUtils.extractLivenessProbeOptionsOrDefault(spec, ProbeUtils.DEFAULT_HEALTHCHECK_OPTIONS);
+        assertThat(probe.getInitialDelaySeconds(), is(15));
+        assertThat(probe.getTimeoutSeconds(), is(5));
+        assertThat(probe.getPeriodSeconds(), is(nullValue()));
+        assertThat(probe.getFailureThreshold(), is(nullValue()));
+        assertThat(probe.getSuccessThreshold(), is(nullValue()));
+
+        probe = ProbeUtils.extractReadinessProbeOptionsOrDefault(spec, ProbeUtils.DEFAULT_HEALTHCHECK_OPTIONS);
+        assertThat(probe.getInitialDelaySeconds(), is(15));
+        assertThat(probe.getTimeoutSeconds(), is(5));
+        assertThat(probe.getPeriodSeconds(), is(nullValue()));
+        assertThat(probe.getFailureThreshold(), is(nullValue()));
+        assertThat(probe.getSuccessThreshold(), is(nullValue()));
+
+        probe = ProbeUtils.extractStartupProbeOptionsOrDefault(spec, ProbeUtils.DEFAULT_HEALTHCHECK_OPTIONS);
+        assertThat(probe.getInitialDelaySeconds(), is(15));
+        assertThat(probe.getTimeoutSeconds(), is(5));
+        assertThat(probe.getPeriodSeconds(), is(nullValue()));
+        assertThat(probe.getFailureThreshold(), is(nullValue()));
+        assertThat(probe.getSuccessThreshold(), is(nullValue()));
     }
 }

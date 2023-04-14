@@ -40,8 +40,8 @@ public class ContainerUtilsTest {
                 List.of(ContainerUtils.createEnvVar("VAR_1", "value1")),
                 List.of(ContainerUtils.createContainerPort("my-port", 8443)),
                 List.of(VolumeUtils.createVolumeMount("my-volume", "/my-volume")),
-                ProbeGenerator.execProbe(new Probe(), List.of("/liveness.sh")),
-                ProbeGenerator.execProbe(new Probe(), List.of("/readiness.sh")),
+                ProbeUtils.execProbe(new Probe(), List.of("/liveness.sh")),
+                ProbeUtils.execProbe(new Probe(), List.of("/readiness.sh")),
                 null
         );
 
@@ -81,9 +81,9 @@ public class ContainerUtilsTest {
                 List.of(ContainerUtils.createEnvVar("VAR_1", "value1")),
                 List.of(ContainerUtils.createContainerPort("my-port", 8443)),
                 List.of(VolumeUtils.createVolumeMount("my-volume", "/my-volume")),
-                ProbeGenerator.execProbe(new Probe(), List.of("/liveness.sh")),
-                ProbeGenerator.execProbe(new Probe(), List.of("/readiness.sh")),
-                ProbeGenerator.execProbe(new Probe(), List.of("/startup.sh")),
+                ProbeUtils.execProbe(new Probe(), List.of("/liveness.sh")),
+                ProbeUtils.execProbe(new Probe(), List.of("/readiness.sh")),
+                ProbeUtils.execProbe(new Probe(), List.of("/startup.sh")),
                 ImagePullPolicy.NEVER,
                 new LifecycleBuilder().withNewPreStop().withNewExec().withCommand("/pre-stop.sh").endExec().endPreStop().build()
         );

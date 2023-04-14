@@ -30,7 +30,7 @@ import lombok.EqualsAndHashCode;
     "image", "tlsSidecar", "resources", "livenessProbe", "readinessProbe", "jvmOptions", "logging", "template",
     "brokerCapacity", "config", "metricsConfig"})
 @EqualsAndHashCode
-public class CruiseControlSpec implements HasConfigurableMetrics, HasConfigurableLogging, UnknownPropertyPreserving, Serializable {
+public class CruiseControlSpec implements HasConfigurableMetrics, HasConfigurableLogging, HasLivenessProbe, HasReadinessProbe, UnknownPropertyPreserving, Serializable {
     private static final long serialVersionUID = 1L;
 
     // For the full configuration list refer to https://github.com/linkedin/cruise-control/wiki/Configurations

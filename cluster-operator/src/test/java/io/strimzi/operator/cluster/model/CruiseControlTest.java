@@ -373,10 +373,10 @@ public class CruiseControlTest {
         // checks on the main Cruise Control container
         Container ccContainer = containers.stream().filter(container -> ccImage.equals(container.getImage())).findFirst().orElseThrow();
         assertThat(ccContainer.getImage(), is(cc.image));
-        assertThat(ccContainer.getLivenessProbe().getInitialDelaySeconds(), is(CruiseControl.DEFAULT_HEALTHCHECK_DELAY));
-        assertThat(ccContainer.getLivenessProbe().getTimeoutSeconds(), is(CruiseControl.DEFAULT_HEALTHCHECK_TIMEOUT));
-        assertThat(ccContainer.getReadinessProbe().getInitialDelaySeconds(), is(CruiseControl.DEFAULT_HEALTHCHECK_DELAY));
-        assertThat(ccContainer.getReadinessProbe().getTimeoutSeconds(), is(CruiseControl.DEFAULT_HEALTHCHECK_TIMEOUT));
+        assertThat(ccContainer.getLivenessProbe().getInitialDelaySeconds(), is(15));
+        assertThat(ccContainer.getLivenessProbe().getTimeoutSeconds(), is(5));
+        assertThat(ccContainer.getReadinessProbe().getInitialDelaySeconds(), is(15));
+        assertThat(ccContainer.getReadinessProbe().getTimeoutSeconds(), is(5));
 
         assertThat(ccContainer.getEnv(), is(getExpectedEnvVars()));
         assertThat(ccContainer.getPorts().size(), is(1));

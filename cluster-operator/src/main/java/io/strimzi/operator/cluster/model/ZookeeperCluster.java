@@ -25,8 +25,6 @@ import io.strimzi.api.kafka.model.JvmOptions;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaClusterSpec;
 import io.strimzi.api.kafka.model.KafkaResources;
-import io.strimzi.api.kafka.model.Probe;
-import io.strimzi.api.kafka.model.ProbeBuilder;
 import io.strimzi.api.kafka.model.StrimziPodSet;
 import io.strimzi.api.kafka.model.ZookeeperClusterSpec;
 import io.strimzi.api.kafka.model.status.Condition;
@@ -54,7 +52,6 @@ import io.strimzi.operator.common.operator.resource.StatusUtils;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -112,10 +109,6 @@ public class ZookeeperCluster extends AbstractStatefulModel implements SupportsM
     private LoggingModel logging;
     /* test */ ZookeeperConfiguration configuration;
 
-    private static final Probe DEFAULT_HEALTHCHECK_OPTIONS = new ProbeBuilder()
-            .withTimeoutSeconds(5)
-            .withInitialDelaySeconds(15)
-            .build();
     private static final boolean DEFAULT_ZOOKEEPER_SNAPSHOT_CHECK_ENABLED = true;
 
     // Zookeeper configuration keys (EnvVariables)
@@ -155,10 +148,6 @@ public class ZookeeperCluster extends AbstractStatefulModel implements SupportsM
 
         this.image = null;
         this.replicas = ZookeeperClusterSpec.DEFAULT_REPLICAS;
-        this.readinessPath = "/opt/kafka/zookeeper_healthcheck.sh";
-        this.readinessProbeOptions = DEFAULT_HEALTHCHECK_OPTIONS;
-        this.livenessPath = "/opt/kafka/zookeeper_healthcheck.sh";
-        this.livenessProbeOptions = DEFAULT_HEALTHCHECK_OPTIONS;
         this.isSnapshotCheckEnabled = DEFAULT_ZOOKEEPER_SNAPSHOT_CHECK_ENABLED;
     }
 
@@ -210,12 +199,8 @@ public class ZookeeperCluster extends AbstractStatefulModel implements SupportsM
         }
         result.image = image;
 
-        if (zookeeperClusterSpec.getReadinessProbe() != null) {
-            result.readinessProbeOptions = zookeeperClusterSpec.getReadinessProbe();
-        }
-        if (zookeeperClusterSpec.getLivenessProbe() != null) {
-            result.livenessProbeOptions = zookeeperClusterSpec.getLivenessProbe();
-        }
+        result.readinessProbeOptions = ProbeUtils.extractReadinessProbeOptionsOrDefault(zookeeperClusterSpec, ProbeUtils.DEFAULT_HEALTHCHECK_OPTIONS);
+        result.livenessProbeOptions = ProbeUtils.extractLivenessProbeOptionsOrDefault(zookeeperClusterSpec, ProbeUtils.DEFAULT_HEALTHCHECK_OPTIONS);
 
         result.gcLoggingEnabled = zookeeperClusterSpec.getJvmOptions() == null ? JvmOptions.DEFAULT_GC_LOGGING_ENABLED : zookeeperClusterSpec.getJvmOptions().isGcLoggingEnabled();
 
@@ -453,8 +438,8 @@ public class ZookeeperCluster extends AbstractStatefulModel implements SupportsM
                 getEnvVars(),
                 getContainerPortList(),
                 getVolumeMounts(),
-                ProbeGenerator.execProbe(livenessProbeOptions, Collections.singletonList(livenessPath)),
-                ProbeGenerator.execProbe(readinessProbeOptions, Collections.singletonList(readinessPath)),
+                ProbeUtils.execProbe(livenessProbeOptions, List.of("/opt/kafka/zookeeper_healthcheck.sh")),
+                ProbeUtils.execProbe(readinessProbeOptions, List.of("/opt/kafka/zookeeper_healthcheck.sh")),
                 imagePullPolicy
         );
     }
