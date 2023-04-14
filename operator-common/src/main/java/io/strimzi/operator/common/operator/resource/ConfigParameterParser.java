@@ -83,7 +83,7 @@ public interface ConfigParameterParser<T> {
     };
 
     /**
-     * A java Long
+     * A Java Long
      */
     ConfigParameterParser<Long> LONG = s -> {
         try {
@@ -94,6 +94,9 @@ public interface ConfigParameterParser<T> {
     };
 
 
+    /**
+     * A Java Duration
+     */
     ConfigParameterParser<Duration> DURATION = s -> {
         try {
             return Duration.ofMillis(Long.parseLong(s));
@@ -151,7 +154,9 @@ public interface ConfigParameterParser<T> {
         }
     };
 
-
+    /**
+     * A kubernetes LocalObjectReference list
+     */
     ConfigParameterParser<List<LocalObjectReference>> LOCAL_OBJECT_REFERENCE_LIST = imagePullSecretList -> {
         List<LocalObjectReference> imagePullSecrets = null;
 
@@ -165,6 +170,10 @@ public interface ConfigParameterParser<T> {
         return imagePullSecrets;
     };
 
+
+    /**
+     * Set of namespaces
+     */
     ConfigParameterParser<Set<String>> NAMESPACE_SET = namespacesList -> {
         Set<String> namespaces;
         if (namespacesList.equals("*")) {
