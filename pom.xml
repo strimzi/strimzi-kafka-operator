@@ -189,6 +189,7 @@
         <module>kafka-init</module>
         <module>certificate-manager</module>
         <module>systemtest</module>
+        <module>systemtest-doc</module>
     </modules>
 
     <dependencyManagement>
@@ -267,6 +268,12 @@
                 <groupId>io.strimzi</groupId>
                 <artifactId>kafka-oauth-keycloak-authorizer</artifactId>
                 <version>${strimzi-oauth.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.strimzi</groupId>
+                <artifactId>systemtest-doc</artifactId>
+                <version>${project.version}</version>
+                <scope>compile</scope>
             </dependency>
             <dependency>
                 <groupId>io.fabric8</groupId>
