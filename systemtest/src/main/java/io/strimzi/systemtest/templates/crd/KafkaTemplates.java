@@ -31,6 +31,10 @@ public class KafkaTemplates {
 
     private KafkaTemplates() {}
 
+    private static final String KAFKA_METRICS_CONFIG_REF_KEY = "kafka-metrics-config.yml";
+    private static final String ZOOKEEPER_METRICS_CONFIG_REF_KEY = "zookeeper-metrics-config.yml";
+
+
     public static KafkaBuilder kafkaEphemeral(String name, int kafkaReplicas) {
         return kafkaEphemeral(name, kafkaReplicas, Math.min(kafkaReplicas, 3));
     }
@@ -82,8 +86,12 @@ public class KafkaTemplates {
 
     public static KafkaBuilder kafkaWithMetrics(String name, String namespace, int kafkaReplicas, int zookeeperReplicas) {
         Kafka kafka = getKafkaFromYaml(Constants.PATH_TO_KAFKA_METRICS_CONFIG);
-
+        String metricsConfigMapName = name + "-kafka-metrics";
         ConfigMap metricsCm = TestUtils.configMapFromYaml(Constants.PATH_TO_KAFKA_METRICS_CONFIG, "kafka-metrics");
+        metricsCm.getMetadata().setName(metricsConfigMapName);
+        if (KubeClusterResource.kubeClient().getClient().configMaps().inNamespace(namespace).withName(metricsConfigMapName).get() != null) {
+            KubeClusterResource.kubeClient().getClient().configMaps().inNamespace(namespace).withName(metricsConfigMapName).delete();
+        }
         KubeClusterResource.kubeClient().createConfigMapInNamespace(namespace, metricsCm);
         return defaultKafka(kafka, name, kafkaReplicas, zookeeperReplicas)
             .editOrNewMetadata()
@@ -92,6 +100,20 @@ public class KafkaTemplates {
             .editSpec()
                 .withNewKafkaExporter()
                 .endKafkaExporter()
+                .editKafka()
+                    .withNewJmxPrometheusExporterMetricsConfig()
+                        .withNewValueFrom()
+                            .withNewConfigMapKeyRef(KAFKA_METRICS_CONFIG_REF_KEY, metricsConfigMapName, false)
+                        .endValueFrom()
+                    .endJmxPrometheusExporterMetricsConfig()
+                .endKafka()
+                .editZookeeper()
+                    .withNewJmxPrometheusExporterMetricsConfig()
+                        .withNewValueFrom()
+                            .withNewConfigMapKeyRef(ZOOKEEPER_METRICS_CONFIG_REF_KEY, metricsConfigMapName, false)
+                        .endValueFrom()
+                    .endJmxPrometheusExporterMetricsConfig()
+                .endZookeeper()
             .endSpec();
     }
 
@@ -100,15 +122,21 @@ public class KafkaTemplates {
         return defaultKafka(kafka, name, kafkaReplicas, zookeeperReplicas);
     }
 
-    public static KafkaBuilder kafkaWithMetricsAndCruiseControlWithMetrics(String namespaceName, String name, int kafkaReplicas, int zookeeperReplicas) {
+    public static KafkaBuilder kafkaWithMetricsAndCruiseControlWithMetrics(String name, String namespaceName, int kafkaReplicas, int zookeeperReplicas) {
         Kafka kafka = getKafkaFromYaml(Constants.PATH_TO_KAFKA_METRICS_CONFIG);
+        String metricsConfigMapName = name + "-kafka-metrics";
+        String ccConfigMapName = name + "-cruise-control-metrics-test";
         ConfigMap kafkaMetricsCm = TestUtils.configMapFromYaml(Constants.PATH_TO_KAFKA_METRICS_CONFIG, "kafka-metrics");
+        kafkaMetricsCm.getMetadata().setName(metricsConfigMapName);
+        if (KubeClusterResource.kubeClient().getClient().configMaps().inNamespace(namespaceName).withName(metricsConfigMapName).get() != null) {
+            KubeClusterResource.kubeClient().getClient().configMaps().inNamespace(namespaceName).withName(metricsConfigMapName).delete();
+        }
         KubeClusterResource.kubeClient().getClient().configMaps().inNamespace(namespaceName).resource(kafkaMetricsCm).create();
 
         ConfigMap ccCm = new ConfigMapBuilder()
                 .withApiVersion("v1")
                 .withNewMetadata()
-                    .withName("cruise-control-metrics-test")
+                    .withName(ccConfigMapName)
                     .withLabels(Collections.singletonMap("app", "strimzi"))
                 .endMetadata()
                 .withData(Collections.singletonMap("metrics-config.yml",
@@ -118,10 +146,13 @@ public class KafkaTemplates {
                         "  name: kafka_cruisecontrol_$1_$2\n" +
                         "  type: GAUGE"))
                 .build();
+        if (KubeClusterResource.kubeClient().getClient().configMaps().inNamespace(namespaceName).withName(ccConfigMapName).get() != null) {
+            KubeClusterResource.kubeClient().getClient().configMaps().inNamespace(namespaceName).withName(ccConfigMapName).delete();
+        }
         KubeClusterResource.kubeClient().getClient().configMaps().inNamespace(namespaceName).resource(ccCm).create();
 
         ConfigMapKeySelector cmks = new ConfigMapKeySelectorBuilder()
-                .withName("cruise-control-metrics-test")
+                .withName(ccConfigMapName)
                 .withKey("metrics-config.yml")
                 .build();
         JmxPrometheusExporterMetrics jmxPrometheusExporterMetrics = new JmxPrometheusExporterMetricsBuilder()
@@ -137,6 +168,20 @@ public class KafkaTemplates {
                 .withNewCruiseControl()
                     .withMetricsConfig(jmxPrometheusExporterMetrics)
                 .endCruiseControl()
+                .editKafka()
+                    .withNewJmxPrometheusExporterMetricsConfig()
+                        .withNewValueFrom()
+                            .withNewConfigMapKeyRef(KAFKA_METRICS_CONFIG_REF_KEY, metricsConfigMapName, false)
+                        .endValueFrom()
+                    .endJmxPrometheusExporterMetricsConfig()
+                .endKafka()
+                .editZookeeper()
+                    .withNewJmxPrometheusExporterMetricsConfig()
+                        .withNewValueFrom()
+                            .withNewConfigMapKeyRef(ZOOKEEPER_METRICS_CONFIG_REF_KEY, metricsConfigMapName, false)
+                        .endValueFrom()
+                    .endJmxPrometheusExporterMetricsConfig()
+                .endZookeeper()
             .endSpec();
     }
 

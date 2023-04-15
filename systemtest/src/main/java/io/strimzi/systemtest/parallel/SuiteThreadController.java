@@ -45,6 +45,7 @@ public class SuiteThreadController {
             instance = new SuiteThreadController();
             if (System.getProperties().get(JUNIT_PARALLEL_COUNT_PROPERTY_NAME) != null) {
                 maxTestSuitesInParallel =  Integer.parseInt((String) System.getProperties().get(JUNIT_PARALLEL_COUNT_PROPERTY_NAME));
+                LOGGER.info("Going to execute {} tests in parallel", maxTestSuitesInParallel);
             } else {
                 LOGGER.warn("User did not specify junit.jupiter.execution.parallel.config.fixed.parallelism " +
                     "in junit-platform.properties gonna use default as 1 (sequence mode)");
