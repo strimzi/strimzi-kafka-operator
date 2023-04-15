@@ -55,7 +55,7 @@ kubectl get pods -n _<my_cluster_operator_namespace>_
 ----
 NAME                                    READY  STATUS   RESTARTS
 my-mirror-maker-mirror-maker-<pod_id>   1/1    Running  1
-my-mm2-cluster-mirrormaker2-<pod_id>            1/1    Running  1
+my-mm2-cluster-mirrormaker2-<pod_id>    1/1    Running  1
 ----
 +
 `my-mirror-maker` is the name of the Kafka MirrorMaker cluster. 

@@ -10,7 +10,7 @@ A secure deployment of Strimzi might encompass one or more of the following secu
 * Encryption for data exchange
 * Authentication to prove identity
 * Authorization to allow or decline actions executed by users
-* Running Strimzi on FIPS-enabled Kubernetes clusters to ensure data security and system interoperability.
+* Running Strimzi on FIPS-enabled Kubernetes clusters to ensure data security and system interoperability
 
 //key points on encryption
 include::../../modules/overview/con-security-configuration-encryption.adoc[leveloffset=+1]
