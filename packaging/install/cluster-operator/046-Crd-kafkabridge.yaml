@@ -53,7 +53,7 @@ spec:
               replicas:
                 type: integer
                 minimum: 0
-                description: The number of pods in the `Deployment`.
+                description: The number of pods in the `Deployment`.  Defaults to `1`.
               image:
                 type: string
                 description: The docker image for the pods.

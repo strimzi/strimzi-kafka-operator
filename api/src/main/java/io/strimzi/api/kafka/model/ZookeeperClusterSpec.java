@@ -44,8 +44,6 @@ public class ZookeeperClusterSpec implements HasConfigurableMetrics, HasConfigur
     public static final String FORBIDDEN_PREFIX_EXCEPTIONS = "ssl.protocol, ssl.quorum.protocol, ssl.enabledProtocols, " +
             "ssl.quorum.enabledProtocols, ssl.ciphersuites, ssl.quorum.ciphersuites, ssl.hostnameVerification, ssl.quorum.hostnameVerification";
 
-    public static final int DEFAULT_REPLICAS = 3;
-
     protected SingleVolumeStorage storage;
     private Map<String, Object> config = new HashMap<>(0);
     private Logging logging;

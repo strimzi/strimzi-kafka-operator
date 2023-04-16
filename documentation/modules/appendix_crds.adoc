@@ -1698,7 +1698,7 @@ include::../api/io.strimzi.api.kafka.model.KafkaConnectSpec.adoc[leveloffset=+1]
 |Property                      |Description
 |version                1.2+<.<a|The Kafka Connect version. Defaults to {DefaultKafkaVersion}. Consult the user documentation to understand the process required to upgrade or downgrade the version.
 |string
-|replicas               1.2+<.<a|The number of pods in the Kafka Connect group.
+|replicas               1.2+<.<a|The number of pods in the Kafka Connect group. Defaults to `3`.
 |integer
 |image                  1.2+<.<a|The docker image for the pods.
 |string
@@ -2856,7 +2856,7 @@ include::../api/io.strimzi.api.kafka.model.KafkaBridgeSpec.adoc[leveloffset=+1]
 [options="header"]
 |====
 |Property                    |Description
-|replicas             1.2+<.<a|The number of pods in the `Deployment`.
+|replicas             1.2+<.<a|The number of pods in the `Deployment`.  Defaults to `1`.
 |integer
 |image                1.2+<.<a|The docker image for the pods.
 |string
@@ -3154,7 +3154,7 @@ Used in: xref:type-KafkaMirrorMaker2-{context}[`KafkaMirrorMaker2`]
 |Property                      |Description
 |version                1.2+<.<a|The Kafka Connect version. Defaults to {DefaultKafkaVersion}. Consult the user documentation to understand the process required to upgrade or downgrade the version.
 |string
-|replicas               1.2+<.<a|The number of pods in the Kafka Connect group.
+|replicas               1.2+<.<a|The number of pods in the Kafka Connect group. Defaults to `3`.
 |integer
 |image                  1.2+<.<a|The docker image for the pods.
 |string

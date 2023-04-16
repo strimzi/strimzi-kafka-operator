@@ -205,7 +205,7 @@ public class KafkaConnectClusterTest {
         KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, ResourceUtils.createEmptyKafkaConnect(namespace, clusterName), VERSIONS);
 
         assertThat(kc.image, is(KafkaVersionTestUtils.DEFAULT_KAFKA_CONNECT_IMAGE));
-        assertThat(kc.getReplicas(), is(KafkaConnectCluster.DEFAULT_REPLICAS));
+        assertThat(kc.getReplicas(), is(3));
         assertThat(kc.readinessProbeOptions.getInitialDelaySeconds(), is(60));
         assertThat(kc.readinessProbeOptions.getTimeoutSeconds(), is(5));
         assertThat(kc.livenessProbeOptions.getInitialDelaySeconds(), is(60));

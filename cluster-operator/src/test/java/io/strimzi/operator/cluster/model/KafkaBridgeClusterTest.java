@@ -148,7 +148,7 @@ public class KafkaBridgeClusterTest {
         KafkaBridgeCluster kbc = KafkaBridgeCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, ResourceUtils.createEmptyKafkaBridge(namespace, cluster));
 
         assertThat(kbc.image, is("quay.io/strimzi/kafka-bridge:latest"));
-        assertThat(kbc.getReplicas(), is(KafkaBridgeCluster.DEFAULT_REPLICAS));
+        assertThat(kbc.getReplicas(), is(1));
         assertThat(kbc.readinessProbeOptions.getInitialDelaySeconds(), is(15));
         assertThat(kbc.readinessProbeOptions.getTimeoutSeconds(), is(5));
         assertThat(kbc.livenessProbeOptions.getInitialDelaySeconds(), is(15));

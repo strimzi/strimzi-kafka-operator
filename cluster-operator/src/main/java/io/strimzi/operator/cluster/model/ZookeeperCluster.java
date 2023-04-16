@@ -147,7 +147,6 @@ public class ZookeeperCluster extends AbstractStatefulModel implements SupportsM
         super(reconciliation, resource, KafkaResources.zookeeperStatefulSetName(resource.getMetadata().getName()), COMPONENT_TYPE);
 
         this.image = null;
-        this.replicas = ZookeeperClusterSpec.DEFAULT_REPLICAS;
         this.isSnapshotCheckEnabled = DEFAULT_ZOOKEEPER_SNAPSHOT_CHECK_ENABLED;
     }
 
@@ -181,9 +180,7 @@ public class ZookeeperCluster extends AbstractStatefulModel implements SupportsM
         ZookeeperClusterSpec zookeeperClusterSpec = kafkaAssembly.getSpec().getZookeeper();
 
         int replicas = zookeeperClusterSpec.getReplicas();
-        if (replicas <= 0) {
-            replicas = ZookeeperClusterSpec.DEFAULT_REPLICAS;
-        }
+
         if (replicas == 1 && zookeeperClusterSpec.getStorage() != null && "ephemeral".equals(zookeeperClusterSpec.getStorage().getType())) {
             LOGGER.warnCr(reconciliation, "A ZooKeeper cluster with a single replica and ephemeral storage will be in a defective state after any restart or rolling update. It is recommended that a minimum of three replicas are used.");
         }
