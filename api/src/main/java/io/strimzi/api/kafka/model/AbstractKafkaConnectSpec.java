@@ -26,7 +26,7 @@ import lombok.EqualsAndHashCode;
     "logging", "clientRackInitImage", "rack", "metricsConfig", "tracing",
     "template", "externalConfiguration" })
 @EqualsAndHashCode(doNotUseGetters = true, callSuper = true)
-public abstract class AbstractKafkaConnectSpec extends Spec implements HasConfigurableMetrics, HasConfigurableLogging, HasJmxOptions {
+public abstract class AbstractKafkaConnectSpec extends Spec implements HasConfigurableMetrics, HasConfigurableLogging, HasJmxOptions, HasLivenessProbe, HasReadinessProbe {
     private static final long serialVersionUID = 1L;
 
     private Logging logging;

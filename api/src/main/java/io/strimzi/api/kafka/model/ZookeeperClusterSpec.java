@@ -34,7 +34,7 @@ import java.util.Map;
     "replicas", "image", "storage", "config", "livenessProbe", "readinessProbe", "jvmOptions", "jmxOptions", "resources",
     "metricsConfig", "logging", "template"})
 @EqualsAndHashCode
-public class ZookeeperClusterSpec implements HasConfigurableMetrics, HasConfigurableLogging, HasJmxOptions, UnknownPropertyPreserving, Serializable {
+public class ZookeeperClusterSpec implements HasConfigurableMetrics, HasConfigurableLogging, HasJmxOptions, HasLivenessProbe, HasReadinessProbe, UnknownPropertyPreserving, Serializable {
 
     private static final long serialVersionUID = 1L;
 

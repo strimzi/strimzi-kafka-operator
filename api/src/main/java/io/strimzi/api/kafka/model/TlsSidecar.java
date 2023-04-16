@@ -24,7 +24,7 @@ import java.util.Map;
 )
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
 @EqualsAndHashCode(callSuper = true)
-public class TlsSidecar extends Sidecar {
+public class TlsSidecar extends Sidecar implements HasLivenessProbe, HasReadinessProbe {
     private static final long serialVersionUID = 1L;
 
     public static final int DEFAULT_HEALTHCHECK_DELAY = 15;

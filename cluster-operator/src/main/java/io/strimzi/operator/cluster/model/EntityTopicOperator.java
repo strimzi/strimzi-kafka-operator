@@ -20,7 +20,6 @@ import io.strimzi.api.kafka.model.EntityTopicOperatorSpec;
 import io.strimzi.api.kafka.model.JvmOptions;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaResources;
-import io.strimzi.api.kafka.model.Probe;
 import io.strimzi.api.kafka.model.ProbeBuilder;
 import io.strimzi.api.kafka.model.template.ResourceTemplate;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
@@ -63,10 +62,6 @@ public class EntityTopicOperator extends AbstractModel implements SupportsLoggin
 
     /* test */ static final String ENV_VAR_TLS_ENABLED = "STRIMZI_TLS_ENABLED";
 
-    private static final Probe DEFAULT_HEALTHCHECK_OPTIONS = new ProbeBuilder()
-            .withInitialDelaySeconds(EntityTopicOperatorSpec.DEFAULT_HEALTHCHECK_DELAY)
-            .withTimeoutSeconds(EntityTopicOperatorSpec.DEFAULT_HEALTHCHECK_TIMEOUT).build();
-
     // Volume name of the temporary volume used by the TO container
     // Because the container shares the pod with other containers, it needs to have unique name
     /* test */ static final String TOPIC_OPERATOR_TMP_DIRECTORY_DEFAULT_VOLUME_NAME = "strimzi-to-tmp";
@@ -92,17 +87,6 @@ public class EntityTopicOperator extends AbstractModel implements SupportsLoggin
      */
     protected EntityTopicOperator(Reconciliation reconciliation, HasMetadata resource) {
         super(reconciliation, resource, resource.getMetadata().getName() + NAME_SUFFIX, COMPONENT_TYPE);
-
-        this.readinessPath = "/";
-        this.readinessProbeOptions = DEFAULT_HEALTHCHECK_OPTIONS;
-        this.livenessPath = "/";
-        this.livenessProbeOptions = DEFAULT_HEALTHCHECK_OPTIONS;
-
-        // new KafkaStreamsTopicStore needs a bit more to start
-        this.startupProbeOptions = new ProbeBuilder()
-                .withPeriodSeconds(10)
-                .withFailureThreshold(12)
-                .build();
 
         // create a default configuration
         this.kafkaBootstrapServers = KafkaResources.bootstrapServiceName(cluster) + ":" + KafkaCluster.REPLICATION_PORT;
@@ -141,15 +125,9 @@ public class EntityTopicOperator extends AbstractModel implements SupportsLoggin
             result.gcLoggingEnabled = topicOperatorSpec.getJvmOptions() == null ? JvmOptions.DEFAULT_GC_LOGGING_ENABLED : topicOperatorSpec.getJvmOptions().isGcLoggingEnabled();
             result.jvmOptions = topicOperatorSpec.getJvmOptions();
             result.resources = topicOperatorSpec.getResources();
-            if (topicOperatorSpec.getStartupProbe() != null) {
-                result.startupProbeOptions = topicOperatorSpec.getStartupProbe();
-            }
-            if (topicOperatorSpec.getReadinessProbe() != null) {
-                result.readinessProbeOptions = topicOperatorSpec.getReadinessProbe();
-            }
-            if (topicOperatorSpec.getLivenessProbe() != null) {
-                result.livenessProbeOptions = topicOperatorSpec.getLivenessProbe();
-            }
+            result.readinessProbeOptions = ProbeUtils.extractReadinessProbeOptionsOrDefault(topicOperatorSpec, EntityOperator.DEFAULT_HEALTHCHECK_OPTIONS);
+            result.livenessProbeOptions = ProbeUtils.extractLivenessProbeOptionsOrDefault(topicOperatorSpec, EntityOperator.DEFAULT_HEALTHCHECK_OPTIONS);
+            result.startupProbeOptions = ProbeUtils.extractStartupProbeOptionsOrDefault(topicOperatorSpec, new ProbeBuilder().withPeriodSeconds(10).withFailureThreshold(12).build());
 
             if (kafkaAssembly.getSpec().getEntityOperator().getTemplate() != null)  {
                 result.templateRoleBinding = kafkaAssembly.getSpec().getEntityOperator().getTemplate().getTopicOperatorRoleBinding();
@@ -171,9 +149,9 @@ public class EntityTopicOperator extends AbstractModel implements SupportsLoggin
                 getEnvVars(),
                 List.of(ContainerUtils.createContainerPort(HEALTHCHECK_PORT_NAME, HEALTHCHECK_PORT)),
                 getVolumeMounts(),
-                ProbeGenerator.httpProbe(livenessProbeOptions, livenessPath + "healthy", HEALTHCHECK_PORT_NAME),
-                ProbeGenerator.httpProbe(readinessProbeOptions, readinessPath + "ready", HEALTHCHECK_PORT_NAME),
-                ProbeGenerator.httpProbe(startupProbeOptions, livenessPath + "healthy", HEALTHCHECK_PORT_NAME),
+                ProbeUtils.httpProbe(livenessProbeOptions, "/healthy", HEALTHCHECK_PORT_NAME),
+                ProbeUtils.httpProbe(readinessProbeOptions, "/ready", HEALTHCHECK_PORT_NAME),
+                ProbeUtils.httpProbe(startupProbeOptions, "/healthy", HEALTHCHECK_PORT_NAME),
                 imagePullPolicy,
                 null
         );

@@ -64,10 +64,8 @@ public class KafkaMirrorMakerCluster extends AbstractModel implements SupportsMe
     private static final String LOG_AND_METRICS_CONFIG_VOLUME_MOUNT = "/opt/kafka/custom-config/";
 
     // Configuration defaults
-    private static final int DEFAULT_HEALTHCHECK_DELAY = 60;
-    private static final int DEFAULT_HEALTHCHECK_TIMEOUT = 5;
-    private static final int DEFAULT_HEALTHCHECK_PERIOD = 10;
-    private static final Probe READINESS_PROBE_OPTIONS = new ProbeBuilder().withTimeoutSeconds(DEFAULT_HEALTHCHECK_TIMEOUT).withInitialDelaySeconds(DEFAULT_HEALTHCHECK_DELAY).build();
+    private static final int DEFAULT_HEALTHCHECK_PERIOD = 10; // This is used inside the Mirror Maker agent
+    private static final Probe DEFAULT_HEALTHCHECK_OPTIONS = new ProbeBuilder().withTimeoutSeconds(5).withInitialDelaySeconds(60).build();
 
     // Kafka Mirror Maker configuration keys (EnvVariables)
     protected static final String ENV_VAR_PREFIX = "KAFKA_MIRRORMAKER_";
@@ -145,11 +143,6 @@ public class KafkaMirrorMakerCluster extends AbstractModel implements SupportsMe
      */
     protected KafkaMirrorMakerCluster(Reconciliation reconciliation, HasMetadata resource) {
         super(reconciliation, resource, KafkaMirrorMakerResources.deploymentName(resource.getMetadata().getName()), COMPONENT_TYPE);
-
-        this.readinessPath = "/";
-        this.readinessProbeOptions = READINESS_PROBE_OPTIONS;
-        this.livenessPath = "/";
-        this.livenessProbeOptions = READINESS_PROBE_OPTIONS;
     }
 
     /**
@@ -169,14 +162,8 @@ public class KafkaMirrorMakerCluster extends AbstractModel implements SupportsMe
         if (spec != null) {
             result.replicas = spec.getReplicas();
             result.resources = spec.getResources();
-
-            if (spec.getReadinessProbe() != null) {
-                result.readinessProbeOptions = spec.getReadinessProbe();
-            }
-
-            if (spec.getLivenessProbe() != null) {
-                result.livenessProbeOptions = spec.getLivenessProbe();
-            }
+            result.readinessProbeOptions = ProbeUtils.extractReadinessProbeOptionsOrDefault(spec, DEFAULT_HEALTHCHECK_OPTIONS);
+            result.livenessProbeOptions = ProbeUtils.extractLivenessProbeOptionsOrDefault(spec, DEFAULT_HEALTHCHECK_OPTIONS);
 
             String whitelist = spec.getWhitelist();
             String include = spec.getInclude();
@@ -320,9 +307,9 @@ public class KafkaMirrorMakerCluster extends AbstractModel implements SupportsMe
                 getEnvVars(),
                 getContainerPortList(),
                 getVolumeMounts(),
-                ProbeGenerator.defaultBuilder(livenessProbeOptions).withNewExec().withCommand("/opt/kafka/kafka_mirror_maker_liveness.sh").endExec().build(),
+                ProbeUtils.defaultBuilder(livenessProbeOptions).withNewExec().withCommand("/opt/kafka/kafka_mirror_maker_liveness.sh").endExec().build(),
                 // The mirror-maker-agent will create /tmp/mirror-maker-ready in the container
-                ProbeGenerator.defaultBuilder(readinessProbeOptions).withNewExec().withCommand("test", "-f", "/tmp/mirror-maker-ready").endExec().build(),
+                ProbeUtils.defaultBuilder(readinessProbeOptions).withNewExec().withCommand("test", "-f", "/tmp/mirror-maker-ready").endExec().build(),
                 imagePullPolicy
         );
     }

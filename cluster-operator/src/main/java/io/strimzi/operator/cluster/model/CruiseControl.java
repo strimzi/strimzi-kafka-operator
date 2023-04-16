@@ -25,8 +25,6 @@ import io.strimzi.api.kafka.model.JvmOptions;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaClusterSpec;
 import io.strimzi.api.kafka.model.KafkaResources;
-import io.strimzi.api.kafka.model.Probe;
-import io.strimzi.api.kafka.model.ProbeBuilder;
 import io.strimzi.api.kafka.model.storage.Storage;
 import io.strimzi.api.kafka.model.template.CruiseControlTemplate;
 import io.strimzi.api.kafka.model.template.DeploymentTemplate;
@@ -106,14 +104,6 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
     // Configuration defaults
     protected static final boolean DEFAULT_CRUISE_CONTROL_METRICS_ENABLED = false;
 
-    // Default probe settings (liveness and readiness) for health checks
-    protected static final int DEFAULT_HEALTHCHECK_DELAY = 15;
-    protected static final int DEFAULT_HEALTHCHECK_TIMEOUT = 5;
-
-    private static final Probe DEFAULT_HEALTHCHECK_OPTIONS = new ProbeBuilder()
-            .withInitialDelaySeconds(DEFAULT_HEALTHCHECK_DELAY)
-            .withTimeoutSeconds(DEFAULT_HEALTHCHECK_TIMEOUT)
-            .build();
 
     private String minInsyncReplicas = "1";
     private boolean sslEnabled;
@@ -169,9 +159,6 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
      */
     private CruiseControl(Reconciliation reconciliation, HasMetadata resource) {
         super(reconciliation, resource, CruiseControlResources.deploymentName(resource.getMetadata().getName()), COMPONENT_TYPE);
-
-        this.livenessProbeOptions = DEFAULT_HEALTHCHECK_OPTIONS;
-        this.readinessProbeOptions = DEFAULT_HEALTHCHECK_OPTIONS;
     }
 
     /**
@@ -213,15 +200,8 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
             // To avoid illegal storage configurations provided by the user,
             // we rely on the storage configuration provided by the KafkaAssemblyOperator
             result.capacity = new Capacity(reconciliation, kafkaCr.getSpec(), storage);
-
-            if (ccSpec.getReadinessProbe() != null) {
-                result.readinessProbeOptions = ccSpec.getReadinessProbe();
-            }
-
-            if (ccSpec.getLivenessProbe() != null) {
-                result.livenessProbeOptions = ccSpec.getLivenessProbe();
-            }
-
+            result.readinessProbeOptions = ProbeUtils.extractReadinessProbeOptionsOrDefault(ccSpec, ProbeUtils.DEFAULT_HEALTHCHECK_OPTIONS);
+            result.livenessProbeOptions = ProbeUtils.extractLivenessProbeOptionsOrDefault(ccSpec, ProbeUtils.DEFAULT_HEALTHCHECK_OPTIONS);
             result.gcLoggingEnabled = ccSpec.getJvmOptions() == null ? JvmOptions.DEFAULT_GC_LOGGING_ENABLED : ccSpec.getJvmOptions().isGcLoggingEnabled();
             result.jvmOptions = ccSpec.getJvmOptions();
             result.metrics = new MetricsModel(ccSpec);
@@ -381,8 +361,8 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
                 getEnvVars(),
                 getContainerPortList(),
                 getVolumeMounts(),
-                ProbeGenerator.defaultBuilder(livenessProbeOptions).withNewExec().withCommand("/opt/cruise-control/cruise_control_healthcheck.sh").endExec().build(),
-                ProbeGenerator.defaultBuilder(readinessProbeOptions).withNewExec().withCommand("/opt/cruise-control/cruise_control_healthcheck.sh").endExec().build(),
+                ProbeUtils.defaultBuilder(livenessProbeOptions).withNewExec().withCommand("/opt/cruise-control/cruise_control_healthcheck.sh").endExec().build(),
+                ProbeUtils.defaultBuilder(readinessProbeOptions).withNewExec().withCommand("/opt/cruise-control/cruise_control_healthcheck.sh").endExec().build(),
                 imagePullPolicy
         );
     }

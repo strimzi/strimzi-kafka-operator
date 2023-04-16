@@ -64,9 +64,7 @@ public abstract class AbstractModel {
      * Container configuration
      */
     protected ResourceRequirements resources;
-    protected String readinessPath;
     protected io.strimzi.api.kafka.model.Probe readinessProbeOptions;
-    protected String livenessPath;
     protected io.strimzi.api.kafka.model.Probe livenessProbeOptions;
 
     /**

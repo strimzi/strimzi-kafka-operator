@@ -21,8 +21,6 @@ import io.strimzi.api.kafka.model.EntityUserOperatorSpec;
 import io.strimzi.api.kafka.model.JvmOptions;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaResources;
-import io.strimzi.api.kafka.model.Probe;
-import io.strimzi.api.kafka.model.ProbeBuilder;
 import io.strimzi.api.kafka.model.template.ResourceTemplate;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.model.logging.LoggingModel;
@@ -69,9 +67,6 @@ public class EntityUserOperator extends AbstractModel implements SupportsLogging
     /* test */ static final String ENV_VAR_KRAFT_ENABLED = "STRIMZI_KRAFT_ENABLED";
     /* test */ static final String ENV_VAR_MAINTENANCE_TIME_WINDOWS = "STRIMZI_MAINTENANCE_TIME_WINDOWS";
 
-    private static final Probe DEFAULT_HEALTHCHECK_OPTIONS = new ProbeBuilder().withTimeoutSeconds(EntityUserOperatorSpec.DEFAULT_HEALTHCHECK_TIMEOUT)
-            .withInitialDelaySeconds(EntityUserOperatorSpec.DEFAULT_HEALTHCHECK_DELAY).build();
-
     // Volume name of the temporary volume used by the UO container
     // Because the container shares the pod with other containers, it needs to have unique name
     /*test*/ static final String USER_OPERATOR_TMP_DIRECTORY_DEFAULT_VOLUME_NAME = "strimzi-uo-tmp";
@@ -96,11 +91,6 @@ public class EntityUserOperator extends AbstractModel implements SupportsLogging
      */
     protected EntityUserOperator(Reconciliation reconciliation, HasMetadata resource) {
         super(reconciliation, resource, resource.getMetadata().getName() + NAME_SUFFIX, COMPONENT_TYPE);
-
-        this.readinessPath = "/";
-        this.livenessProbeOptions = DEFAULT_HEALTHCHECK_OPTIONS;
-        this.livenessPath = "/";
-        this.readinessProbeOptions = DEFAULT_HEALTHCHECK_OPTIONS;
 
         // create a default configuration
         this.kafkaBootstrapServers = KafkaResources.bootstrapServiceName(cluster) + ":" + EntityUserOperatorSpec.DEFAULT_BOOTSTRAP_SERVERS_PORT;
@@ -141,12 +131,8 @@ public class EntityUserOperator extends AbstractModel implements SupportsLogging
             result.gcLoggingEnabled = userOperatorSpec.getJvmOptions() == null ? JvmOptions.DEFAULT_GC_LOGGING_ENABLED : userOperatorSpec.getJvmOptions().isGcLoggingEnabled();
             result.jvmOptions = userOperatorSpec.getJvmOptions();
             result.resources = userOperatorSpec.getResources();
-            if (userOperatorSpec.getReadinessProbe() != null) {
-                result.readinessProbeOptions = userOperatorSpec.getReadinessProbe();
-            }
-            if (userOperatorSpec.getLivenessProbe() != null) {
-                result.livenessProbeOptions = userOperatorSpec.getLivenessProbe();
-            }
+            result.readinessProbeOptions = ProbeUtils.extractReadinessProbeOptionsOrDefault(userOperatorSpec, EntityOperator.DEFAULT_HEALTHCHECK_OPTIONS);
+            result.livenessProbeOptions = ProbeUtils.extractLivenessProbeOptionsOrDefault(userOperatorSpec, EntityOperator.DEFAULT_HEALTHCHECK_OPTIONS);
 
             if (kafkaAssembly.getSpec().getEntityOperator().getTemplate() != null)  {
                 result.templateRoleBinding = kafkaAssembly.getSpec().getEntityOperator().getTemplate().getUserOperatorRoleBinding();
@@ -190,8 +176,8 @@ public class EntityUserOperator extends AbstractModel implements SupportsLogging
                 getEnvVars(),
                 List.of(ContainerUtils.createContainerPort(HEALTHCHECK_PORT_NAME, HEALTHCHECK_PORT)),
                 getVolumeMounts(),
-                ProbeGenerator.httpProbe(livenessProbeOptions, livenessPath + "healthy", HEALTHCHECK_PORT_NAME),
-                ProbeGenerator.httpProbe(readinessProbeOptions, readinessPath + "ready", HEALTHCHECK_PORT_NAME),
+                ProbeUtils.httpProbe(livenessProbeOptions, "/healthy", HEALTHCHECK_PORT_NAME),
+                ProbeUtils.httpProbe(readinessProbeOptions, "/ready", HEALTHCHECK_PORT_NAME),
                 imagePullPolicy
         );
     }

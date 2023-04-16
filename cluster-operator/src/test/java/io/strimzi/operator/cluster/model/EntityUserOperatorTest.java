@@ -201,10 +201,10 @@ public class EntityUserOperatorTest {
         assertThat(entityUserOperator.watchedNamespace(), is(namespace));
         assertThat(entityUserOperator.getImage(), is("quay.io/strimzi/operator:latest"));
         assertThat(entityUserOperator.reconciliationIntervalMs, is(EntityUserOperatorSpec.DEFAULT_FULL_RECONCILIATION_INTERVAL_SECONDS * 1000));
-        assertThat(entityUserOperator.readinessProbeOptions.getInitialDelaySeconds(), is(EntityUserOperatorSpec.DEFAULT_HEALTHCHECK_DELAY));
-        assertThat(entityUserOperator.readinessProbeOptions.getTimeoutSeconds(), is(EntityUserOperatorSpec.DEFAULT_HEALTHCHECK_TIMEOUT));
-        assertThat(entityUserOperator.livenessProbeOptions.getInitialDelaySeconds(), is(EntityUserOperatorSpec.DEFAULT_HEALTHCHECK_DELAY));
-        assertThat(entityUserOperator.livenessProbeOptions.getTimeoutSeconds(), is(EntityUserOperatorSpec.DEFAULT_HEALTHCHECK_TIMEOUT));
+        assertThat(entityUserOperator.readinessProbeOptions.getInitialDelaySeconds(), is(10));
+        assertThat(entityUserOperator.readinessProbeOptions.getTimeoutSeconds(), is(5));
+        assertThat(entityUserOperator.livenessProbeOptions.getInitialDelaySeconds(), is(10));
+        assertThat(entityUserOperator.livenessProbeOptions.getTimeoutSeconds(), is(5));
         assertThat(entityUserOperator.kafkaBootstrapServers, is(KafkaResources.bootstrapServiceName(cluster) + ":" + EntityUserOperatorSpec.DEFAULT_BOOTSTRAP_SERVERS_PORT));
         assertThat(entityUserOperator.logging().getLogging(), is(nullValue()));
         assertThat(entityUserOperator.secretPrefix, is(EntityUserOperatorSpec.DEFAULT_SECRET_PREFIX));

@@ -32,15 +32,12 @@ import java.util.Map;
     "startupProbe", "livenessProbe", "readinessProbe",
     "resources", "topicMetadataMaxAttempts", "logging", "jvmOptions"})
 @EqualsAndHashCode
-public class EntityTopicOperatorSpec implements HasConfigurableLogging, UnknownPropertyPreserving, Serializable {
+public class EntityTopicOperatorSpec implements HasConfigurableLogging, HasLivenessProbe, HasReadinessProbe, HasStartupProbe, UnknownPropertyPreserving, Serializable {
 
     private static final long serialVersionUID = 1L;
 
     public static final int DEFAULT_REPLICAS = 1;
-    public static final int DEFAULT_HEALTHCHECK_DELAY = 10;
-    public static final int DEFAULT_HEALTHCHECK_TIMEOUT = 5;
     public static final int DEFAULT_ZOOKEEPER_PORT = 2181;
-    public static final int DEFAULT_BOOTSTRAP_SERVERS_PORT = 9091;
     public static final int DEFAULT_FULL_RECONCILIATION_INTERVAL_SECONDS = 120;
     public static final int DEFAULT_ZOOKEEPER_SESSION_TIMEOUT_SECONDS = 18;
     public static final int DEFAULT_TOPIC_METADATA_MAX_ATTEMPTS = 6;

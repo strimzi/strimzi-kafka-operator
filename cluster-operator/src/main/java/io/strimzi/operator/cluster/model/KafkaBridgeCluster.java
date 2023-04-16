@@ -33,8 +33,6 @@ import io.strimzi.api.kafka.model.KafkaBridgeHttpConfig;
 import io.strimzi.api.kafka.model.KafkaBridgeProducerSpec;
 import io.strimzi.api.kafka.model.KafkaBridgeResources;
 import io.strimzi.api.kafka.model.KafkaBridgeSpec;
-import io.strimzi.api.kafka.model.Probe;
-import io.strimzi.api.kafka.model.ProbeBuilder;
 import io.strimzi.api.kafka.model.Rack;
 import io.strimzi.api.kafka.model.authentication.KafkaClientAuthentication;
 import io.strimzi.api.kafka.model.template.ContainerTemplate;
@@ -84,12 +82,6 @@ public class KafkaBridgeCluster extends AbstractModel implements SupportsLogging
 
     // Configuration defaults
     protected static final int DEFAULT_REPLICAS = 1;
-    protected static final int DEFAULT_HEALTHCHECK_DELAY = 15;
-    protected static final int DEFAULT_HEALTHCHECK_TIMEOUT = 5;
-
-    private static final Probe DEFAULT_HEALTHCHECK_OPTIONS = new ProbeBuilder()
-            .withTimeoutSeconds(DEFAULT_HEALTHCHECK_TIMEOUT)
-            .withInitialDelaySeconds(DEFAULT_HEALTHCHECK_DELAY).build();
 
     // Cluster Operator environment variables for custom discovery labels and annotations
     protected static final String CO_ENV_VAR_CUSTOM_SERVICE_LABELS = "STRIMZI_CUSTOM_KAFKA_BRIDGE_SERVICE_LABELS";
@@ -172,10 +164,6 @@ public class KafkaBridgeCluster extends AbstractModel implements SupportsLogging
         super(reconciliation, resource, KafkaBridgeResources.deploymentName(resource.getMetadata().getName()), COMPONENT_TYPE);
 
         this.replicas = DEFAULT_REPLICAS;
-        this.readinessPath = "/ready";
-        this.livenessPath = "/healthy";
-        this.livenessProbeOptions = DEFAULT_HEALTHCHECK_OPTIONS;
-        this.readinessProbeOptions = DEFAULT_HEALTHCHECK_OPTIONS;
     }
 
     /**
@@ -212,14 +200,9 @@ public class KafkaBridgeCluster extends AbstractModel implements SupportsLogging
             initImage = System.getenv().getOrDefault(ClusterOperatorConfig.STRIMZI_DEFAULT_KAFKA_INIT_IMAGE, "quay.io/strimzi/operator:latest");
         }
         result.initImage = initImage;
-        if (kafkaBridge.getSpec().getLivenessProbe() != null) {
-            result.livenessProbeOptions = kafkaBridge.getSpec().getLivenessProbe();
-        }
 
-        if (kafkaBridge.getSpec().getReadinessProbe() != null) {
-            result.readinessProbeOptions = kafkaBridge.getSpec().getReadinessProbe();
-        }
-
+        result.readinessProbeOptions = ProbeUtils.extractReadinessProbeOptionsOrDefault(spec, ProbeUtils.DEFAULT_HEALTHCHECK_OPTIONS);
+        result.livenessProbeOptions = ProbeUtils.extractLivenessProbeOptionsOrDefault(spec, ProbeUtils.DEFAULT_HEALTHCHECK_OPTIONS);
         result.isMetricsEnabled = spec.getEnableMetrics();
 
         result.setTls(spec.getTls() != null ? spec.getTls() : null);
@@ -405,8 +388,8 @@ public class KafkaBridgeCluster extends AbstractModel implements SupportsLogging
                 getEnvVars(),
                 getContainerPortList(),
                 getVolumeMounts(),
-                ProbeGenerator.httpProbe(livenessProbeOptions, livenessPath, REST_API_PORT_NAME),
-                ProbeGenerator.httpProbe(readinessProbeOptions, readinessPath, REST_API_PORT_NAME),
+                ProbeUtils.httpProbe(livenessProbeOptions, "/healthy", REST_API_PORT_NAME),
+                ProbeUtils.httpProbe(readinessProbeOptions, "/ready", REST_API_PORT_NAME),
                 imagePullPolicy
         );
     }
