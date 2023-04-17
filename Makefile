@@ -144,7 +144,7 @@ shellcheck:
 release_files_check:
 	./.azure/scripts/release_files_check.sh
 
-spotbugs: $(SUBDIRS) systemtest_make
+spotbugs: $(SUBDIRS)
 
 docu_pushtowebsite:
 	./.azure/scripts/docu-push-to-website.sh

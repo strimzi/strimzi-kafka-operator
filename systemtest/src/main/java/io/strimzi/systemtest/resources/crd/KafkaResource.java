@@ -34,7 +34,6 @@ import java.util.function.Predicate;
 import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
-@SuppressFBWarnings("EC_UNRELATED_CLASS_AND_INTERFACE")
 public class KafkaResource implements ResourceType<Kafka> {
 
     private static final Logger LOGGER = LogManager.getLogger(KafkaResource.class);
@@ -73,7 +72,6 @@ public class KafkaResource implements ResourceType<Kafka> {
                 .parallel()
                 .filter(kt -> kt.getMetadata().getLabels().get(Labels.STRIMZI_CLUSTER_LABEL).equals(clusterName))
                 .map(kt -> KafkaTopicResource.kafkaTopicClient().inNamespace(namespaceName).withName(kt.getMetadata().getName()).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete())
-                .map(kt -> kt.equals(Boolean.TRUE))
                 // check that all topic was successfully deleted
                 .allMatch(result -> true);
         }
