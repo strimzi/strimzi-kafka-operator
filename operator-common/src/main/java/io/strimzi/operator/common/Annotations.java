@@ -80,6 +80,11 @@ public class Annotations {
     public static final String ANNO_STRIMZI_IO_PAUSE_RECONCILIATION = STRIMZI_DOMAIN + "pause-reconciliation";
 
     /**
+     * Annotation used to bypass the broker scale-down mechanism
+     */
+    public static final String ANNO_STRIMZI_IO_BYPASS_BROKER_SCALEDOWN_CHECK = STRIMZI_DOMAIN + "bypass-broker-scaledown-check";
+
+    /**
      * Annotation to trigger manually rolling updats
      */
     public static final String ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE = STRIMZI_DOMAIN + "manual-rolling-update";

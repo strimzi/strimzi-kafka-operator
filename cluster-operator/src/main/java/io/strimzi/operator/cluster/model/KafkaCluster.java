@@ -1716,6 +1716,15 @@ public class KafkaCluster extends AbstractStatefulModel implements SupportsMetri
     }
 
     /**
+     * Sets the number of replicas
+     *
+     * @param replicas  The number of replicas
+     */
+    public void setReplicas(int replicas) {
+        this.replicas = replicas;
+    }
+
+    /**
      * @return  JMX Model instance for configuring JMX access
      */
     public JmxModel jmx()   {
