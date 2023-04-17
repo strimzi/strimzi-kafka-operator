@@ -206,7 +206,7 @@ public class KafkaMirrorMaker2ClusterTest {
         KafkaMirrorMaker2Cluster kmm2 = KafkaMirrorMaker2Cluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, ResourceUtils.createEmptyKafkaMirrorMaker2(namespace, clusterName), VERSIONS);
 
         assertThat(kmm2.image, is(KafkaVersionTestUtils.DEFAULT_KAFKA_CONNECT_IMAGE));
-        assertThat(kmm2.getReplicas(), is(KafkaMirrorMaker2Cluster.DEFAULT_REPLICAS));
+        assertThat(kmm2.getReplicas(), is(3));
         assertThat(kmm2.readinessProbeOptions.getInitialDelaySeconds(), is(60));
         assertThat(kmm2.readinessProbeOptions.getTimeoutSeconds(), is(5));
         assertThat(kmm2.livenessProbeOptions.getInitialDelaySeconds(), is(60));

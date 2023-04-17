@@ -54,7 +54,8 @@ public class KafkaBridgeSpec extends Spec implements HasConfigurableLogging, Has
     private String clientRackInitImage;
     private Rack rack;
 
-    @Description("The number of pods in the `Deployment`.")
+    @Description("The number of pods in the `Deployment`.  " +
+            "Defaults to `1`.")
     @Minimum(0)
     @JsonProperty(defaultValue = "1")
     public int getReplicas() {

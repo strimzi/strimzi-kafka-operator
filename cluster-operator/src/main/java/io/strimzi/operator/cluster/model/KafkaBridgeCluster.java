@@ -80,9 +80,6 @@ public class KafkaBridgeCluster extends AbstractModel implements SupportsLogging
     private static final String LOG_AND_METRICS_CONFIG_VOLUME_NAME = "kafka-metrics-and-logging";
     private static final String LOG_AND_METRICS_CONFIG_VOLUME_MOUNT = "/opt/strimzi/custom-config/";
 
-    // Configuration defaults
-    protected static final int DEFAULT_REPLICAS = 1;
-
     // Cluster Operator environment variables for custom discovery labels and annotations
     protected static final String CO_ENV_VAR_CUSTOM_SERVICE_LABELS = "STRIMZI_CUSTOM_KAFKA_BRIDGE_SERVICE_LABELS";
     protected static final String CO_ENV_VAR_CUSTOM_SERVICE_ANNOTATIONS = "STRIMZI_CUSTOM_KAFKA_BRIDGE_SERVICE_ANNOTATIONS";
@@ -162,8 +159,6 @@ public class KafkaBridgeCluster extends AbstractModel implements SupportsLogging
      */
     private KafkaBridgeCluster(Reconciliation reconciliation, HasMetadata resource) {
         super(reconciliation, resource, KafkaBridgeResources.deploymentName(resource.getMetadata().getName()), COMPONENT_TYPE);
-
-        this.replicas = DEFAULT_REPLICAS;
     }
 
     /**

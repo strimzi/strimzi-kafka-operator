@@ -104,7 +104,6 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
     protected static final String LOG_AND_METRICS_CONFIG_VOLUME_MOUNT = "/opt/kafka/custom-config/";
 
     // Configuration defaults
-    /* test */ static final int DEFAULT_REPLICAS = 3;
     private static final Probe DEFAULT_HEALTHCHECK_OPTIONS = new ProbeBuilder().withInitialDelaySeconds(5).withInitialDelaySeconds(60).build();
 
     // Kafka Connect configuration keys (EnvVariables)
@@ -188,7 +187,6 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
 
         this.serviceName = KafkaConnectResources.serviceName(cluster);
         this.loggingAndMetricsConfigMapName = KafkaConnectResources.metricsAndLogConfigMapName(cluster);
-        this.replicas = DEFAULT_REPLICAS;
     }
 
     /**
@@ -221,7 +219,7 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
                                                                 KafkaConnectSpec spec,
                                                                 KafkaVersion.Lookup versions,
                                                                 C result) {
-        result.replicas = spec.getReplicas() != null && spec.getReplicas() >= 0 ? spec.getReplicas() : DEFAULT_REPLICAS;
+        result.replicas = spec.getReplicas();
         result.tracing = spec.getTracing();
 
         // Might already contain configuration from Mirror Maker 2 which extends Connect

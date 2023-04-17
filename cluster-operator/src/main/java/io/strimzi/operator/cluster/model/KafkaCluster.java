@@ -230,9 +230,6 @@ public class KafkaCluster extends AbstractStatefulModel implements SupportsMetri
     private ResourceTemplate templatePerBrokerIngress;
     private ContainerTemplate templateInitContainer;
 
-    // Configuration defaults
-    private static final int DEFAULT_REPLICAS = 3;
-
     private static final Map<String, String> DEFAULT_POD_LABELS = new HashMap<>();
     static {
         String value = System.getenv(CO_ENV_VAR_CUSTOM_KAFKA_POD_LABELS);
@@ -249,8 +246,6 @@ public class KafkaCluster extends AbstractStatefulModel implements SupportsMetri
      */
     private KafkaCluster(Reconciliation reconciliation, HasMetadata resource) {
         super(reconciliation, resource, KafkaResources.kafkaStatefulSetName(resource.getMetadata().getName()), COMPONENT_TYPE);
-
-        this.replicas = DEFAULT_REPLICAS;
 
         this.initImage = System.getenv().getOrDefault(ClusterOperatorConfig.STRIMZI_DEFAULT_KAFKA_INIT_IMAGE, "quay.io/strimzi/operator:latest");
     }
