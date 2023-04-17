@@ -81,9 +81,11 @@ public class LeaderElectionManagerConfig {
      */
     public static LeaderElectionManagerConfig buildFromExistingMap(Map<String, Object> map) {
 
-        map.keySet().retainAll(LeaderElectionManagerConfig.keyNames());
+        Map<String, Object> existingMap = new HashMap<>(map);
 
-        return new LeaderElectionManagerConfig(map);
+        existingMap.keySet().retainAll(LeaderElectionManagerConfig.keyNames());
+
+        return new LeaderElectionManagerConfig(existingMap);
 
     }
 
