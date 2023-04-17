@@ -220,7 +220,6 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
                                                                 KafkaVersion.Lookup versions,
                                                                 C result) {
         result.replicas = spec.getReplicas();
-        //result.replicas = spec.getReplicas() != null && spec.getReplicas() >= 0 ? spec.getReplicas() : DEFAULT_REPLICAS;
         result.tracing = spec.getTracing();
 
         // Might already contain configuration from Mirror Maker 2 which extends Connect
