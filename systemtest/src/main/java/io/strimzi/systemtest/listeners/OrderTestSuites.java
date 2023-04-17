@@ -4,6 +4,7 @@
  */
 package io.strimzi.systemtest.listeners;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.strimzi.systemtest.utils.StUtils;
 import org.junit.jupiter.api.ClassDescriptor;
 import org.junit.jupiter.api.ClassOrderer;
@@ -57,6 +58,7 @@ import java.util.Comparator;
  *  -&lt; io.strimzi.systemtest.metrics.JmxIsolatedST
  *
  */
+@SuppressFBWarnings("SIC_INNER_SHOULD_BE_STATIC")
 public class OrderTestSuites implements ClassOrderer {
 
     private class ClassDescriptorComparator implements Comparator<ClassDescriptor> {
@@ -77,9 +79,6 @@ public class OrderTestSuites implements ClassOrderer {
          * 1 if classDescriptor contains {@link io.strimzi.systemtest.annotations.IsolatedSuite} and thus is &gt; otherDescriptorName.
          */
         private int compareTo(ClassDescriptor classDescriptor, ClassDescriptor otherDescriptor) {
-            final String classDescriptorName = classDescriptor.getTestClass().getName();
-            final String otherDescriptorName = otherDescriptor.getTestClass().getName();
-
             if (StUtils.isIsolatedSuite(classDescriptor) && !StUtils.isIsolatedSuite(otherDescriptor)) {
                 return 1;
             } else if (!StUtils.isIsolatedSuite(classDescriptor) && StUtils.isIsolatedSuite(otherDescriptor)) {

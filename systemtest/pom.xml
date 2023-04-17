@@ -289,7 +289,6 @@
             <id>none</id>
             <properties>
                 <skipITs>true</skipITs>
-                <skipTests>false</skipTests>
             </properties>
             <activation>
                 <activeByDefault>true</activeByDefault>

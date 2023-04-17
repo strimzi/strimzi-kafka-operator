@@ -129,7 +129,7 @@ public class NetworkPoliciesIsolatedST extends AbstractST {
             .withMessageCount(testStorage.getMessageCount())
             .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
             .withTopicName(topic0)
-            .withUserName(testStorage.getUserName())
+            .withUsername(testStorage.getUsername())
             .build();
 
         resourceManager.createResource(extensionContext, kafkaClients.producerScramShaPlainStrimzi(), kafkaClients.consumerScramShaPlainStrimzi());
@@ -222,7 +222,7 @@ public class NetworkPoliciesIsolatedST extends AbstractST {
             .withMessageCount(testStorage.getMessageCount())
             .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(testStorage.getClusterName()))
             .withTopicName(topic0)
-            .withUserName(testStorage.getUserName())
+            .withUsername(testStorage.getUsername())
             .build();
 
         resourceManager.createResource(extensionContext, kafkaClients.producerScramShaTlsStrimzi(testStorage.getClusterName()), kafkaClients.consumerScramShaTlsStrimzi(testStorage.getClusterName()));

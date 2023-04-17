@@ -53,9 +53,9 @@ public class KafkaVersionsST extends AbstractST {
     void testKafkaWithVersion(final TestKafkaVersion testKafkaVersion, ExtensionContext extensionContext) {
         final TestStorage testStorage = new TestStorage(extensionContext);
 
-        final String kafkaUserRead = testStorage.getUserName() + "-read";
-        final String kafkaUserWrite = testStorage.getUserName() + "-write";
-        final String kafkaUserReadWriteTls = testStorage.getUserName() + "-read-write";
+        final String kafkaUserRead = testStorage.getUsername() + "-read";
+        final String kafkaUserWrite = testStorage.getUsername() + "-write";
+        final String kafkaUserReadWriteTls = testStorage.getUsername() + "-read-write";
         final String readConsumerGroup = ClientUtils.generateRandomConsumerGroup();
 
         LOGGER.info("Deploying Kafka with version: {}", testKafkaVersion.version());
@@ -161,7 +161,7 @@ public class KafkaVersionsST extends AbstractST {
             .withProducerName(testStorage.getProducerName())
             .withConsumerName(testStorage.getConsumerName())
             .withMessageCount(testStorage.getMessageCount())
-            .withUserName(kafkaUserWrite)
+            .withUsername(kafkaUserWrite)
             .withConsumerGroup(readConsumerGroup)
             .build();
 
@@ -169,7 +169,7 @@ public class KafkaVersionsST extends AbstractST {
         ClientUtils.waitForProducerClientSuccess(testStorage);
 
         kafkaClients = new KafkaClientsBuilder(kafkaClients)
-                .withUserName(kafkaUserRead)
+                .withUsername(kafkaUserRead)
                 .build();
 
         resourceManager.createResource(extensionContext, kafkaClients.consumerScramShaPlainStrimzi());
@@ -179,7 +179,7 @@ public class KafkaVersionsST extends AbstractST {
 
         kafkaClients = new KafkaClientsBuilder(kafkaClients)
             .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(testStorage.getClusterName()))
-            .withUserName(kafkaUserReadWriteTls)
+            .withUsername(kafkaUserReadWriteTls)
             .build();
 
         resourceManager.createResource(extensionContext,

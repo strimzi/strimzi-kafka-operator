@@ -127,7 +127,7 @@ public class PodSecurityProfilesIsolatedST extends AbstractST {
             .withProducerName(testStorage.getProducerName())
             .withConsumerName(testStorage.getConsumerName())
             .withNamespaceName(testStorage.getNamespaceName())
-            .withUserName(testStorage.getUserName())
+            .withUsername(testStorage.getUsername())
             .withPodSecurityPolicy(PodSecurityProfile.RESTRICTED)
             .build();
 
@@ -170,7 +170,7 @@ public class PodSecurityProfilesIsolatedST extends AbstractST {
             .withProducerName(testStorage.getProducerName())
             .withConsumerName(testStorage.getConsumerName())
             .withNamespaceName(testStorage.getNamespaceName())
-            .withUserName(testStorage.getUserName())
+            .withUsername(testStorage.getUsername())
             .withPodSecurityPolicy(PodSecurityProfile.RESTRICTED)
             .build();
 

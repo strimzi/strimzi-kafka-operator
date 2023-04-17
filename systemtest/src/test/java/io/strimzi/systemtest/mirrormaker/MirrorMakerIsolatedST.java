@@ -159,8 +159,8 @@ public class MirrorMakerIsolatedST extends AbstractST {
         String kafkaClusterSourceName = testStorage.getClusterName() + "-source";
         String kafkaClusterTargetName = testStorage.getClusterName() + "-target";
 
-        String kafkaSourceUserName = testStorage.getUserName() + "-source";
-        String kafkaTargetUserName = testStorage.getUserName() + "-target";
+        String kafkaSourceUserName = testStorage.getUsername() + "-source";
+        String kafkaTargetUserName = testStorage.getUsername() + "-target";
 
         // Deploy source kafka with tls listener and mutual tls auth
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(kafkaClusterSourceName, 1, 1)
@@ -213,7 +213,7 @@ public class MirrorMakerIsolatedST extends AbstractST {
             .withConsumerName(testStorage.getConsumerName())
             .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(kafkaClusterSourceName))
             .withNamespaceName(testStorage.getNamespaceName())
-            .withUserName(kafkaSourceUserName)
+            .withUsername(kafkaSourceUserName)
             .withTopicName(testStorage.getTopicName())
             .withMessageCount(testStorage.getMessageCount())
             .build();
@@ -253,7 +253,7 @@ public class MirrorMakerIsolatedST extends AbstractST {
 
         clients = new KafkaClientsBuilder(clients)
             .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(kafkaClusterTargetName))
-            .withUserName(kafkaTargetUserName)
+            .withUsername(kafkaTargetUserName)
             .build();
 
         resourceManager.createResource(extensionContext, clients.consumerTlsStrimzi(kafkaClusterTargetName));
@@ -272,8 +272,8 @@ public class MirrorMakerIsolatedST extends AbstractST {
         String kafkaClusterSourceName = testStorage.getClusterName() + "-source";
         String kafkaClusterTargetName = testStorage.getClusterName() + "-target";
 
-        String kafkaSourceUserName = testStorage.getUserName() + "-source";
-        String kafkaTargetUserName = testStorage.getUserName() + "-target";
+        String kafkaSourceUserName = testStorage.getUsername() + "-source";
+        String kafkaTargetUserName = testStorage.getUsername() + "-target";
 
         // Deploy source kafka with tls listener and SCRAM-SHA authentication
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(kafkaClusterSourceName, 1, 1)
@@ -337,7 +337,7 @@ public class MirrorMakerIsolatedST extends AbstractST {
             .withConsumerName(testStorage.getConsumerName())
             .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(kafkaClusterSourceName))
             .withNamespaceName(testStorage.getNamespaceName())
-            .withUserName(kafkaSourceUserName)
+            .withUsername(kafkaSourceUserName)
             .withTopicName(testStorage.getTopicName())
             .withMessageCount(testStorage.getMessageCount())
             .build();
@@ -371,7 +371,7 @@ public class MirrorMakerIsolatedST extends AbstractST {
 
         clients = new KafkaClientsBuilder(clients)
             .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(kafkaClusterTargetName))
-            .withUserName(kafkaTargetUserName)
+            .withUsername(kafkaTargetUserName)
             .build();
 
         resourceManager.createResource(extensionContext, clients.consumerScramShaTlsStrimzi(kafkaClusterTargetName));

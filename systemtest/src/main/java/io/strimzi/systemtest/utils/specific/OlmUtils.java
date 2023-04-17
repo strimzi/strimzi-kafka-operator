@@ -29,7 +29,7 @@ public class OlmUtils {
             () -> {
                 if (kubeClient().getNonApprovedInstallPlan(namespaceName) != null) {
                     InstallPlan installPlan = kubeClient().getNonApprovedInstallPlan(namespaceName);
-                    if (installPlan.getSpec().getClusterServiceVersionNames().get(0).toString().contains(csvName)) {
+                    if (installPlan.getSpec().getClusterServiceVersionNames().get(0).contains(csvName)) {
                         kubeClient().approveInstallPlan(namespaceName, installPlan.getMetadata().getName());
                         return true;
                     }

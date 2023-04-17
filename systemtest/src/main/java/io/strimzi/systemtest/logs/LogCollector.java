@@ -236,7 +236,7 @@ public class LogCollector {
                 try {
                     pod.getStatus().getContainerStatuses().forEach(
                             containerStatus -> scrapeAndCreateLogs(namespaceFile, podName, containerStatus, namespace));
-                } catch (Exception ex) {
+                } catch (RuntimeException ex) {
                     LOGGER.warn("Failed to collect logs from Pod {}/{}", namespace, podName);
                 }
             });
@@ -254,7 +254,7 @@ public class LogCollector {
                         // pods, which are shared between test cases (@BeforeAll, @AfterAll)
                         collectLogsForTestSuite(pod);
                     }
-                } catch (Exception ex) {
+                } catch (RuntimeException ex) {
                     LOGGER.warn("Failed to collect logs from Pod {}/{}", namespace, pod.getMetadata().getName());
                 }
             });
@@ -334,7 +334,7 @@ public class LogCollector {
             String log = kubeClient.getPodResource(namespace, podName).inContainer(containerStatus.getName()).getLog();
             // Write logs from containers to files
             writeFile(path + "/logs-pod-" + podName + "-container-" + containerStatus.getName() + ".log", log);
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             LOGGER.warn("Unable to collect log from pod: {} and container: {} - pod container is not initialized", podName, containerStatus.getName());
         }
 

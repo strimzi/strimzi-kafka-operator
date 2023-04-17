@@ -130,7 +130,7 @@ public class KafkaUserUtils {
                     LOGGER.warn("There are still {} users with prefix {}, which are not in {} state", listOfUsers.size(), usersPrefix, Ready.toString());
                     return false;
                 }
-            } catch (Exception e) {
+            } catch (RuntimeException e) {
                 LOGGER.warn("There are still users with prefix {}, which are not in {} state", usersPrefix, Ready.toString());
                 return false;
             }

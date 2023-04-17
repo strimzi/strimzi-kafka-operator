@@ -39,7 +39,7 @@ public class KafkaClients extends BaseClients {
     private int messageCount;
     private String consumerGroup;
     private long delayMs;
-    private String userName;
+    private String username;
     private String caCertSecretName;
     private String headers;
     private PodSecurityProfile podSecurityPolicy;
@@ -102,12 +102,12 @@ public class KafkaClients extends BaseClients {
         this.delayMs = delayMs;
     }
 
-    public String getUserName() {
-        return userName;
+    public String getUsername() {
+        return username;
     }
 
-    public void setUserName(String userName) {
-        this.userName = userName;
+    public void setUsername(String username) {
+        this.username = username;
     }
 
     public String getCaCertSecretName() {
@@ -418,11 +418,11 @@ public class KafkaClients extends BaseClients {
     }
 
     final protected void configureScramSha(SecurityProtocol securityProtocol) {
-        if (this.getUserName() == null || this.getUserName().isEmpty()) {
+        if (this.getUsername() == null || this.getUsername().isEmpty()) {
             throw new InvalidParameterException("User name for SCRAM-SHA is not set");
         }
 
-        final String saslJaasConfigEncrypted = ResourceManager.kubeClient().getSecret(this.getNamespaceName(), this.getUserName()).getData().get("sasl.jaas.config");
+        final String saslJaasConfigEncrypted = ResourceManager.kubeClient().getSecret(this.getNamespaceName(), this.getUsername()).getData().get("sasl.jaas.config");
         final String saslJaasConfigDecrypted = new String(Base64.getDecoder().decode(saslJaasConfigEncrypted), StandardCharsets.US_ASCII);
 
         this.setAdditionalConfig(this.getAdditionalConfig() +
@@ -439,7 +439,7 @@ public class KafkaClients extends BaseClients {
     }
 
     protected List<EnvVar> getTlsEnvVars() {
-        if (this.getUserName() == null || this.getUserName().isEmpty()) {
+        if (this.getUsername() == null || this.getUsername().isEmpty()) {
             throw new InvalidParameterException("User name for TLS is not set");
         }
 
@@ -447,7 +447,7 @@ public class KafkaClients extends BaseClients {
             .withName("USER_CRT")
             .withNewValueFrom()
                 .withNewSecretKeyRef()
-                    .withName(this.getUserName())
+                    .withName(this.getUsername())
                     .withKey("user.crt")
                 .endSecretKeyRef()
             .endValueFrom()
@@ -457,7 +457,7 @@ public class KafkaClients extends BaseClients {
             .withName("USER_KEY")
             .withNewValueFrom()
                 .withNewSecretKeyRef()
-                    .withName(this.getUserName())
+                    .withName(this.getUsername())
                     .withKey("user.key")
                 .endSecretKeyRef()
             .endValueFrom()

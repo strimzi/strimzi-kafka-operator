@@ -23,7 +23,8 @@ public class OlmConfiguration {
     private String olmOperatorDeploymentNamePrefix = Environment.OLM_OPERATOR_DEPLOYMENT_NAME;
     private String olmSourceName = Environment.OLM_SOURCE_NAME;
     private String olmSourceNamespace = Environment.OLM_SOURCE_NAMESPACE;
-    private String operatorVersion;
+    // Init value is needed due to UWF_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR
+    private String operatorVersion = "";
     private OlmInstallationStrategy olmInstallationStrategy;
     private String channelName;
     private List<EnvVar> envVars;

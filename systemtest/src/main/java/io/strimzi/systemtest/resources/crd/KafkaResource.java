@@ -4,6 +4,7 @@
  */
 package io.strimzi.systemtest.resources.crd;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.fabric8.kubernetes.api.model.DeletionPropagation;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
@@ -33,6 +34,7 @@ import java.util.function.Predicate;
 import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
+@SuppressFBWarnings("EC_UNRELATED_CLASS_AND_INTERFACE")
 public class KafkaResource implements ResourceType<Kafka> {
 
     private static final Logger LOGGER = LogManager.getLogger(KafkaResource.class);

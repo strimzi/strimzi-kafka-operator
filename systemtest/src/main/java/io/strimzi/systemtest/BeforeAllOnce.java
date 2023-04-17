@@ -19,6 +19,7 @@ import java.util.Collections;
  * Custom Extension which executes code only once before all tests are started and after all tests finished.
  * This is temporary solution until https://github.com/junit-team/junit5/issues/456 will not be released
  */
+@SuppressFBWarnings("SSD_DO_NOT_USE_INSTANCE_LOCK_ON_SHARED_STATIC_DATA")
 public class BeforeAllOnce implements BeforeAllCallback, ExtensionContext.Store.CloseableResource {
 
     private static SetupClusterOperator clusterOperator;
@@ -31,6 +32,7 @@ public class BeforeAllOnce implements BeforeAllCallback, ExtensionContext.Store.
      * Separate method with 'synchronized static' required for make sure procedure will be executed
      * only once across all simultaneously running threads
      */
+
     synchronized private static void systemSetup(ExtensionContext extensionContext) {
         // 'if' is used to make sure procedure will be executed only once, not before every class
 

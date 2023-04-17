@@ -174,9 +174,6 @@ docu_htmlnoheaderclean:
 docu_pdfclean:
 	rm -rf documentation/pdf
 
-systemtests:
-	./systemtest/scripts/run_tests.sh $(SYSTEMTEST_ARGS)
-
 helm_install: packaging/helm-charts/helm3
 
 crd_install: packaging/install
@@ -188,9 +185,6 @@ $(SUBDIRS):
 
 $(DOCKERDIRS):
 	$(MAKE) -C $@ $(MAKECMDGOALS)
-
-systemtest_make:
-	$(MAKE) -C systemtest $(MAKECMDGOALS)
 
 prerequisites_check:
 	SED=$(SED) ./tools/prerequisites-check.sh

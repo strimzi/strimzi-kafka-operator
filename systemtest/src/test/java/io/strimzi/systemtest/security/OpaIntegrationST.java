@@ -66,7 +66,7 @@ public class OpaIntegrationST extends AbstractST {
             .withMessageCount(testStorage.getMessageCount())
             .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(CLUSTER_NAME))
             .withTopicName(testStorage.getTopicName())
-            .withUserName(OPA_GOOD_USER)
+            .withUsername(OPA_GOOD_USER)
             .build();
 
         resourceManager.createResource(extensionContext, kafkaClients.producerTlsStrimzi(CLUSTER_NAME), kafkaClients.consumerTlsStrimzi(CLUSTER_NAME));
@@ -75,7 +75,7 @@ public class OpaIntegrationST extends AbstractST {
         LOGGER.info("Checking KafkaUser {} that is not able to send or receive messages to/from topic '{}'", OPA_BAD_USER, testStorage.getTopicName());
 
         kafkaClients = new KafkaClientsBuilder(kafkaClients)
-            .withUserName(OPA_BAD_USER)
+            .withUsername(OPA_BAD_USER)
             .build();
 
         resourceManager.createResource(extensionContext, kafkaClients.producerTlsStrimzi(CLUSTER_NAME), kafkaClients.consumerTlsStrimzi(CLUSTER_NAME));
@@ -100,7 +100,7 @@ public class OpaIntegrationST extends AbstractST {
             .withMessageCount(testStorage.getMessageCount())
             .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(CLUSTER_NAME))
             .withTopicName(testStorage.getTopicName())
-            .withUserName(OPA_SUPERUSER)
+            .withUsername(OPA_SUPERUSER)
             .build();
 
         resourceManager.createResource(extensionContext, kafkaClients.producerTlsStrimzi(CLUSTER_NAME), kafkaClients.consumerTlsStrimzi(CLUSTER_NAME));

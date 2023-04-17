@@ -260,7 +260,7 @@ class ConnectIsolatedST extends AbstractST {
             .endSpec()
             .build());
 
-        KafkaUser kafkaUser =  KafkaUserTemplates.scramShaUser(testStorage.getNamespaceName(), testStorage.getClusterName(), testStorage.getUserName()).build();
+        KafkaUser kafkaUser =  KafkaUserTemplates.scramShaUser(testStorage.getNamespaceName(), testStorage.getClusterName(), testStorage.getUsername()).build();
 
         resourceManager.createResource(extensionContext, kafkaUser);
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getTopicName()).build());
@@ -269,9 +269,9 @@ class ConnectIsolatedST extends AbstractST {
             .editSpec()
                 .withBootstrapServers(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
                 .withNewKafkaClientAuthenticationScramSha512()
-                    .withUsername(testStorage.getUserName())
+                    .withUsername(testStorage.getUsername())
                     .withPasswordSecret(new PasswordSecretSourceBuilder()
-                        .withSecretName(testStorage.getUserName())
+                        .withSecretName(testStorage.getUsername())
                         .withPassword("password")
                         .build())
                 .endKafkaClientAuthenticationScramSha512()
@@ -307,7 +307,7 @@ class ConnectIsolatedST extends AbstractST {
         KafkaClients kafkaClients = new KafkaClientsBuilder()
             .withTopicName(testStorage.getTopicName())
             .withMessageCount(testStorage.getMessageCount())
-            .withUserName(testStorage.getUserName())
+            .withUsername(testStorage.getUsername())
             .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
             .withProducerName(testStorage.getProducerName())
             .withConsumerName(testStorage.getConsumerName())
@@ -479,7 +479,7 @@ class ConnectIsolatedST extends AbstractST {
                 .withBootstrapServers(testStorage.getClusterName() + "-kafka-bootstrap:9093")
                 .withNewKafkaClientAuthenticationTls()
                     .withNewCertificateAndKey()
-                        .withSecretName(testStorage.getUserName())
+                        .withSecretName(testStorage.getUsername())
                         .withCertificate("user.crt")
                         .withKey("user.key")
                     .endCertificateAndKey()
@@ -508,7 +508,7 @@ class ConnectIsolatedST extends AbstractST {
         KafkaClients kafkaClients = new KafkaClientsBuilder()
             .withTopicName(testStorage.getTopicName())
             .withMessageCount(testStorage.getMessageCount())
-            .withUserName(testStorage.getUserName())
+            .withUsername(testStorage.getUsername())
             .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(testStorage.getClusterName()))
             .withProducerName(testStorage.getProducerName())
             .withConsumerName(testStorage.getConsumerName())
@@ -560,9 +560,9 @@ class ConnectIsolatedST extends AbstractST {
                 .endTls()
                 .withBootstrapServers(testStorage.getClusterName() + "-kafka-bootstrap:9093")
                 .withNewKafkaClientAuthenticationScramSha512()
-                    .withUsername(testStorage.getUserName())
+                    .withUsername(testStorage.getUsername())
                     .withNewPasswordSecret()
-                        .withSecretName(testStorage.getUserName())
+                        .withSecretName(testStorage.getUsername())
                         .withPassword("password")
                     .endPasswordSecret()
                 .endKafkaClientAuthenticationScramSha512()
@@ -592,7 +592,7 @@ class ConnectIsolatedST extends AbstractST {
             .withProducerName(testStorage.getProducerName())
             .withConsumerName(testStorage.getConsumerName())
             .withNamespaceName(testStorage.getNamespaceName())
-            .withUserName(testStorage.getUserName())
+            .withUsername(testStorage.getUsername())
             .build();
 
         resourceManager.createResource(extensionContext, kafkaClients.producerScramShaTlsStrimzi(testStorage.getClusterName()), kafkaClients.consumerScramShaTlsStrimzi(testStorage.getClusterName()));

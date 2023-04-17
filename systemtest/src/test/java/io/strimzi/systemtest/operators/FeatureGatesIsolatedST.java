@@ -131,7 +131,7 @@ public class FeatureGatesIsolatedST extends AbstractST {
                 .withProducerName(producerName)
                 .withConsumerName(consumerName)
                 .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(testStorage.getClusterName()))
-                .withUserName(testStorage.getUserName())
+                .withUsername(testStorage.getUsername())
                 .withTopicName(topicName)
                 .withMessageCount(messageCount)
                 .withDelayMs(500)
