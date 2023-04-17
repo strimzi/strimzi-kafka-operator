@@ -53,8 +53,8 @@ public class PreventBrokerScaleDownUtils {
 
             return result.compose(cannotScaleDown -> {
                 if (cannotScaleDown) {
-                    kafkaStatus.addCondition(StatusUtils.buildWarningCondition("ScaleDownException", "Can't Scale down since broker contains partition replicas. " +
-                            "Ignoring `replicas` setting in Kafka custom resource: " + kafka.getComponentName() + ". Current `spec.replicas` value is " + currentReplicas));
+                    kafkaStatus.addCondition(StatusUtils.buildWarningCondition("ScaleDownException", "Cannot Scale down since broker contains partition replicas." +
+                                    " The `spec.kafka.replicas` should be reverted back to " + currentReplicas + " directly in the Kafka resource"));
                     kafka.setReplicas(currentReplicas);
                 }
                 return Future.succeededFuture();
