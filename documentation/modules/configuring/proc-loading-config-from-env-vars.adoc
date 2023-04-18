@@ -6,24 +6,44 @@
 = Loading configuration values from environment variables
 
 [role="_abstract"]
-This procedure shows how to use the Environment Variables Configuration Provider plugin.
+Use the `EnvVarConfigProvider` to provide configuration properties as environment variables.
+Environment variables can contain values from config maps or secrets.
 
-In the procedure, environment variables provide configuration properties for a connector.
-A database password is specified as an environment variable.
+In this procedure, environment variables provide configuration properties for a connector to communicate with Amazon AWS.
+The connector must be able to read the `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`.
+The values of the environment variables are derived from a secret mounted into the Kafka Connect pod.
+
+NOTE: The names of user-defined environment variables cannot start with `KAFKA_` or `STRIMZI_`.
 
 .Prerequisites
 
-* A Kubernetes cluster is available.
 * A Kafka cluster is running.
 * The Cluster Operator is running.
+* You have a secret containing the connector configuration.
+
+.Example secret with values for environment variables
+[source,yaml,subs=attributes+]
+----
+apiVersion: v1
+kind: Secret
+metadata:
+  name: aws-creds
+type: Opaque
+data:
+  awsAccessKey: QUtJQVhYWFhYWFhYWFhYWFg=
+  awsSecretAccessKey: Ylhsd1lYTnpkMjl5WkE=
+----
 
 .Procedure
 
-. Specify the Environment Variables Configuration Provider in the Kafka Connect configuration.
+. Configure the `KafkaConnect` resource.
 +
-Define environment variables using the xref:type-ExternalConfiguration-reference[`externalConfiguration` property].
+--
+* Enable the `EnvVarConfigProvider`
+* Specify the environment variables using the `externalConfiguration` property.
+--
 +
-.Example Kafka Connect configuration to enable the Environment Variables Configuration Provider
+.Example Kafka Connect configuration to use external environment variables
 [source,yaml,subs="attributes+"]
 ----
 apiVersion: kafka.strimzi.io/v1beta2
@@ -41,24 +61,34 @@ spec:
   # ...
   externalConfiguration:
     env:
-      - name: DB_PASSWORD # <3>
+      - name: AWS_ACCESS_KEY_ID # <3>
         valueFrom:
           secretKeyRef:
-            name: db-creds # <4>
-            key: dbPassword # <5>
+            name: aws-creds # <4>
+            key: awsAccessKey # <5>
+      - name: AWS_SECRET_ACCESS_KEY
+        valueFrom:
+          secretKeyRef:
+            name: aws-creds
+            key: awsSecretAccessKey          
   # ...
 ----
 <1> The alias for the configuration provider is used to define other configuration parameters.
 The provider parameters use the alias from `config.providers`, taking the form `config.providers.${alias}.class`.
 <2> `EnvVarConfigProvider` provides values from environment variables.
-<3> The `DB_PASSWORD` environment variable takes a  password value from a secret.
-<4> The name of the secret containing the predefined password.
-<5> The key for the password stored inside the secret.
+<3> The environment variable takes a value from the secret.
+<4> The name of the secret containing the environment variable.
+<5> The name of the key stored in the secret.
++
+NOTE: The `secretKeyRef` property references keys in a secret.
+If you are using a config map instead of a secret, use the `configMapKeyRef` property.
 
 . Create or update the resource to enable the provider.
 +
 [source,shell,subs=+quotes]
-kubectl apply -f _<kafka_connect_configuration_file>_
+----
+kubectl apply -f <kafka_connect_configuration_file>
+----
 
 . Reference the environment variable in the connector configuration.
 +
@@ -74,7 +104,11 @@ metadata:
 spec:
   # ...
   config:
-    option: ${env:DB_PASSWORD}
+    option: ${env:AWS_ACCESS_KEY_ID}
+    option: ${env:AWS_SECRET_ACCESS_KEY}
     # ...
 # ...
 ----
++
+The placeholder structure is `env:<environment_variable_name>`.
+`EnvVarConfigProvider` reads and extracts the environment variable values from the mounted secret.

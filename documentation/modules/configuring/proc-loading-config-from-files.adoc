@@ -1,0 +1,116 @@
+// Module included in the following assemblies:
+//
+// configuring/assembly-external-config.adoc
+
+[id='proc-loading-config-from-files-{context}']
+= Loading configuration values from multiple files within a directory
+
+[role="_abstract"]
+Use the `DirectoryConfigProvider` to provide configuration properties from multiple files within a directory.
+Files can be config maps or secrets.
+
+In this procedure, a secret provides the TLS keystore and truststore user credentials for a connector.
+The credentials are in separate files.
+The secrets are mounted into the Kafka Connect pod as volumes. 
+Volumes are mounted on the path `/opt/kafka/external-configuration/<volume-name>`.
+
+.Prerequisites
+
+* A Kafka cluster is running.
+* The Cluster Operator is running.
+* You have a secret containing the user credentials.
+
+.Example secret with user credentials
+[source,yaml,subs="+quotes,attributes"]
+----
+apiVersion: v1
+kind: Secret
+metadata:
+  name: my-user
+  labels:
+    strimzi.io/kind: KafkaUser
+    strimzi.io/cluster: my-cluster
+type: Opaque
+data:
+  ca.crt: _<public_key>_ # Public key of the clients CA
+  user.crt: _<user_certificate>_ # Public key of the user
+  user.key: _<user_private_key>_ # Private key of the user
+  user.p12: _<store>_ # PKCS #12 store for user certificates and keys
+  user.password: _<password_for_store>_ # Protects the PKCS #12 store
+----
+
+The `my-user` secret provides the keystore credentials (`user.crt` and `user.key`) for the connector.
+
+The `<cluster_name>-cluster-ca-cert` secret generated when deploying the Kafka cluster provides the cluster CA certificate as truststore credentials (`ca.crt`).
+
+.Procedure
+
+. Configure the `KafkaConnect` resource.
++
+--
+* Enable the `DirectoryConfigProvider`
+* Specify the files using the `externalConfiguration` property.
+--
++
+.Example Kafka Connect configuration to use external property files
+[source,yaml,subs="attributes+"]
+----
+apiVersion: {KafkaConnectApiVersion}
+kind: KafkaConnect
+metadata:
+  name: my-connect
+spec:
+  # ...
+  config:
+    config.providers: directory # <1>
+    config.providers.directory.class: org.apache.kafka.common.config.provider.DirectoryConfigProvider # <2>
+  #...
+  externalConfiguration:
+    volumes: # <3>
+      - name: cluster-ca # <4>
+        secret:
+          secretName: my-cluster-cluster-ca-cert # <5>
+      - name: my-user
+        secret:
+          secretName: my-user # <6>
+----
+<1> The alias for the configuration provider is used to define other configuration parameters.
+<2> `DirectoryConfigProvider` provides values from files in a directory. The parameter uses the alias from `config.providers`, taking the form `config.providers.${alias}.class`.
+<3> The names of the volumes containing the secrets. 
+<4> The name of the secret for the cluster CA certificate to supply truststore configuration.
+<5> The name of the secret for the user to supply keystore configuration.
+
+. Create or update the resource to enable the provider.
++
+[source,shell,subs=+quotes]
+----
+kubectl apply -f <kafka_connect_configuration_file>
+----
+
+. Reference the file properties in the connector configuration as placeholders.
++
+.Example connector configuration referencing the files
+[source,yaml,subs="attributes+"]
+----
+apiVersion: {KafkaConnectorApiVersion}
+kind: KafkaConnector
+metadata:
+  name: my-source-connector
+  labels:
+    strimzi.io/cluster: my-connect-cluster
+spec:
+  class: io.debezium.connector.mysql.MySqlConnector
+  tasksMax: 2
+  config:
+    # ...
+    database.history.producer.security.protocol: SSL
+    database.history.producer.ssl.truststore.type: PEM
+    database.history.producer.ssl.truststore.certificates: "${directory:/opt/kafka/external-configuration/cluster-ca:ca.crt}"
+    database.history.producer.ssl.keystore.type: PEM
+    database.history.producer.ssl.keystore.certificate.chain: "${directory:/opt/kafka/external-configuration/my-user:user.crt}"
+    database.history.producer.ssl.keystore.key: "${directory:/opt/kafka/external-configuration/my-user:user.key}"
+    #...
+----
++
+The placeholder structure is `directory:<path>:<file_name>`.
+`DirectoryConfigProvider` reads and extracts the credentials from the mounted secrets.

@@ -252,7 +252,7 @@ To configure topic offset synchronization, this property must also be set for th
 <45> Environment variables are set for distributed tracing.
 <46> Distributed tracing is enabled for Jaeger.
 <47> xref:type-ExternalConfiguration-reference[External configuration] for a Kubernetes Secret mounted to Kafka MirrorMaker as an environment variable.
-You can also use _configuration provider plugins_ to xref:assembly-loading-config-with-providers-str[load configuration values from external sources].
+You can also use configuration provider plugins to load configuration values from external sources.
 
 . Create or update the resource:
 +

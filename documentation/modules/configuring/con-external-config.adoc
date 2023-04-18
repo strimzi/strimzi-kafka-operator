@@ -1,0 +1,66 @@
+// Module included in the following assemblies:
+//
+// configuring/assembly-external-config.adoc
+
+[id='con-loading-config-from-env-vars-{context}']
+= Enabling configuration providers
+
+[role="_abstract"]
+You can enable one or more configuration providers using the `config.providers` properties in the `spec` configuration of a component.
+
+.Example configuration to enable a configuration provider
+[source,yaml,subs="attributes+"]
+----
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaConnect
+metadata:
+  name: my-connect
+  annotations:
+    strimzi.io/use-connector-resources: "true"
+spec:
+  # ...
+  config:
+    # ...
+    config.providers: env
+    config.providers.env.class: io.strimzi.kafka.EnvVarConfigProvider
+  # ...
+----
+
+KubernetesSecretConfigProvider:: Loads configuration data from Kubernetes secrets. 
+You specify the name of the secret and the key within the secret where the configuration data is stored. 
+This provider is useful for storing sensitive configuration data like passwords or other user credentials.
+KubernetesConfigMapConfigProvider:: Loads configuration data from Kubernetes config maps. 
+You specify the name of the config map and the key within the config map where the configuration data is stored. 
+This provider is useful for storing non-sensitive configuration data.
+EnvVarConfigProvider:: Loads configuration data from environment variables. 
+You specify the name of the environment variable where the configuration data is stored. 
+This provider is useful for configuring applications running in containers, for example, to load certificates or JAAS configuration from environment variables mapped from secrets.
+FileConfigProvider:: Loads configuration data from a file. 
+You specify the path to the file where the configuration data is stored. 
+This provider is useful for loading configuration data from files that are mounted into containers.
+DirectoryConfigProvider:: Loads configuration data from files within a directory. 
+You specify the path to the directory where the configuration files are stored.
+This provider is useful for loading multiple configuration files and for organizing configuration data into separate files.
+
+To use `KubernetesSecretConfigProvider` and `KubernetesConfigMapConfigProvider`, which are part of the Kubernetes Configuration Provider plugin, you must set up access rights to the namespace that contains the configuration file.
+
+You can use the other providers without setting up access rights.
+You can supply connector configuration for Kafka Connect or MirrorMaker 2 in this way by doing the following:
+
+* Mount config maps or secrets into the Kafka Connect pod as environment variables or volumes
+* Enable `EnvVarConfigProvider`, `FileConfigProvider`, or `DirectoryConfigProvider` in the Kafka Connect or MirrorMaker 2 configuration
+* Pass connector configuration using the `externalConfiguration` property in the `spec` of the `KafkaConnect` or `KafkaMirrorMaker2` resource
+
+Using providers help prevent the passing of restricted information through the Kafka Connect REST interface.
+You can use this approach in the following scenarios:
+
+* Mounting environment variables with the values a connector uses to connect and communicate with a data source 
+* Mounting a properties file with values that are used to configure Kafka Connect connectors
+* Mounting files in a directory that contains values for the TLS truststore and keystore used by a connector
+
+NOTE: A restart is required when using a new `Secret` or `ConfigMap` for a connector, which can disrupt other connectors.
+
+[role="_additional-resources"]
+.Additional resources
+
+link:{BookURLConfiguring}#type-ExternalConfiguration-reference[`ExternalConfiguration` schema reference^]
