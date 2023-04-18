@@ -262,11 +262,10 @@ public class KafkaAssemblyOperatorPodSetTest {
                     assertThat(kr.kafkaPodNeedsRestart.apply(podFromPodSet(kafkaPodSet, "my-cluster-kafka-1")), is(RestartReasons.empty()));
                     assertThat(kr.kafkaPodNeedsRestart.apply(podFromPodSet(kafkaPodSet, "my-cluster-kafka-2")), is(RestartReasons.empty()));
 
-                    assertThat(cmReconciliationCaptor.getAllValues().size(), is(3));
-                    assertThat(cmReconciliationCaptor.getAllValues(), is(List.of("my-cluster-kafka-0", "my-cluster-kafka-1", "my-cluster-kafka-2")));
+                    assertThat(cmReconciliationCaptor.getAllValues().size(), is(4));
+                    assertThat(cmReconciliationCaptor.getAllValues(), is(List.of("my-cluster-kafka-0", "my-cluster-kafka-1", "my-cluster-kafka-2", "my-cluster-kafka-config")));
 
-                    assertThat(cmDeletionCaptor.getAllValues().size(), is(1));
-                    assertThat(cmDeletionCaptor.getAllValues().get(0), is("my-cluster-kafka-config"));
+                    assertThat(cmDeletionCaptor.getAllValues().size(), is(0));
 
                     async.flag();
                 })));
@@ -370,11 +369,10 @@ public class KafkaAssemblyOperatorPodSetTest {
                     assertThat(kr.kafkaPodNeedsRestart.apply(podFromPodSet(kafkaPodSet, "my-cluster-kafka-1")), is(RestartReasons.empty()));
                     assertThat(kr.kafkaPodNeedsRestart.apply(podFromPodSet(kafkaPodSet, "my-cluster-kafka-2")), is(RestartReasons.empty()));
 
-                    assertThat(cmReconciliationCaptor.getAllValues().size(), is(3));
-                    assertThat(cmReconciliationCaptor.getAllValues(), is(List.of("my-cluster-kafka-0", "my-cluster-kafka-1", "my-cluster-kafka-2")));
+                    assertThat(cmReconciliationCaptor.getAllValues().size(), is(4));
+                    assertThat(cmReconciliationCaptor.getAllValues(), is(List.of("my-cluster-kafka-0", "my-cluster-kafka-1", "my-cluster-kafka-2", "my-cluster-kafka-config")));
 
-                    assertThat(cmDeletionCaptor.getAllValues().size(), is(1));
-                    assertThat(cmDeletionCaptor.getAllValues().get(0), is("my-cluster-kafka-config"));
+                    assertThat(cmDeletionCaptor.getAllValues().size(), is(0));
 
                     async.flag();
                 })));
@@ -609,12 +607,11 @@ public class KafkaAssemblyOperatorPodSetTest {
                     assertThat(kr.maybeRollKafkaInvocations, is(1));
 
                     // CMs for all pods are reconciled
-                    assertThat(cmReconciliationCaptor.getAllValues().size(), is(3));
-                    assertThat(cmReconciliationCaptor.getAllValues(), is(List.of("my-cluster-kafka-0", "my-cluster-kafka-1", "my-cluster-kafka-2")));
+                    assertThat(cmReconciliationCaptor.getAllValues().size(), is(4));
+                    assertThat(cmReconciliationCaptor.getAllValues(), is(List.of("my-cluster-kafka-0", "my-cluster-kafka-1", "my-cluster-kafka-2", "my-cluster-kafka-config")));
 
                     // Only the shared CM is deleted
-                    assertThat(cmDeletionCaptor.getAllValues().size(), is(1));
-                    assertThat(cmDeletionCaptor.getAllValues().get(0), is("my-cluster-kafka-config"));
+                    assertThat(cmDeletionCaptor.getAllValues().size(), is(0));
 
                     async.flag();
                 })));
@@ -741,13 +738,13 @@ public class KafkaAssemblyOperatorPodSetTest {
                     // Still one maybe-roll invocation
                     assertThat(kr.maybeRollKafkaInvocations, is(1));
 
-                    // CMs for all remaining pods are reconciled
-                    assertThat(cmReconciliationCaptor.getAllValues().size(), is(3));
-                    assertThat(cmReconciliationCaptor.getAllValues(), is(List.of("my-cluster-kafka-0", "my-cluster-kafka-1", "my-cluster-kafka-2")));
+                    // CMs for all remaining pods + the old shared config CM are reconciled
+                    assertThat(cmReconciliationCaptor.getAllValues().size(), is(4));
+                    assertThat(cmReconciliationCaptor.getAllValues(), is(List.of("my-cluster-kafka-0", "my-cluster-kafka-1", "my-cluster-kafka-2", "my-cluster-kafka-config")));
 
-                    // The shared CM + the CMs for scaled down pods are deleted
-                    assertThat(cmDeletionCaptor.getAllValues().size(), is(3));
-                    assertThat(cmDeletionCaptor.getAllValues(), is(List.of("my-cluster-kafka-3", "my-cluster-kafka-4", "my-cluster-kafka-config")));
+                    // The  CMs for scaled down pods are deleted
+                    assertThat(cmDeletionCaptor.getAllValues().size(), is(2));
+                    assertThat(cmDeletionCaptor.getAllValues(), is(List.of("my-cluster-kafka-3", "my-cluster-kafka-4")));
 
                     async.flag();
                 })));

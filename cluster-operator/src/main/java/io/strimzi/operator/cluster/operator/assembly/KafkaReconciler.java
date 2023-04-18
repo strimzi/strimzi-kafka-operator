@@ -877,7 +877,11 @@ public class KafkaReconciler {
      * @return  Future which returns when the shared configuration config map is deleted
      */
     protected Future<Void> sharedKafkaConfigurationCleanup() {
-        return configMapOperator.deleteAsync(reconciliation, reconciliation.namespace(), KafkaResources.kafkaMetricsAndLogConfigMapName(reconciliation.name()), true);
+        // We use reconcile() instead of deleteAsync() because reconcile first checks if the deletion is needed.
+        // Deleting resource which likely does not exist would cause more load on the Kubernetes API then trying to get
+        // it first because of the watch if it was deleted etc.
+        return configMapOperator.reconcile(reconciliation, reconciliation.namespace(), KafkaResources.kafkaMetricsAndLogConfigMapName(reconciliation.name()), null)
+                .map((Void) null);
     }
 
     /**
