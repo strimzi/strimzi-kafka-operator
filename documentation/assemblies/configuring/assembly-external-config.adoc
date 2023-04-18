@@ -11,7 +11,7 @@ The providers operate independently of Strimzi.
 You can use them to load configuration data for all Kafka components, including producers and consumers.
 You reference the external source in the configuration of the component and provide access rights.
 The provider loads data without needing to restart the Kafka component or extracting files, even when referencing a new external source.
-Use providers, for example, to supply the credentials for Kafka Connect connector configuration.
+For example, use providers to supply the credentials for the Kafka Connect connector configuration.
 The configuration must include any access rights to the external source.
 
 include::../../modules/configuring/con-external-config.adoc[leveloffset=+1]

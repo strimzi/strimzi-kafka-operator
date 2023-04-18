@@ -11,14 +11,14 @@ Files can be config maps or secrets.
 
 In this procedure, a file provides configuration properties for a connector.
 A database name and password are specified as properties of a secret.
-The secret is mounted into the Kafka Connect pod as a volume. 
+The secret is mounted to the Kafka Connect pod as a volume. 
 Volumes are mounted on the path `/opt/kafka/external-configuration/<volume-name>`.
 
 .Prerequisites
 
 * A Kafka cluster is running.
 * The Cluster Operator is running.
-* A secret containing the connector configuration
+* You have a secret containing the connector configuration.
 
 .Example secret with database properties
 [source,yaml,subs=attributes+]

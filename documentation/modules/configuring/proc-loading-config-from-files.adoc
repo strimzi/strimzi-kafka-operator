@@ -9,7 +9,7 @@
 Use the `DirectoryConfigProvider` to provide configuration properties from multiple files within a directory.
 Files can be config maps or secrets.
 
-In this procedure, secret provide TLS keystore and truststore user credentials for a connector.
+In this procedure, a secret provides the TLS keystore and truststore user credentials for a connector.
 The credentials are in separate files.
 The secrets are mounted into the Kafka Connect pod as volumes. 
 Volumes are mounted on the path `/opt/kafka/external-configuration/<volume-name>`.
@@ -18,7 +18,7 @@ Volumes are mounted on the path `/opt/kafka/external-configuration/<volume-name>
 
 * A Kafka cluster is running.
 * The Cluster Operator is running.
-* A secret containing the user credentials
+* You have a secret containing the user credentials.
 
 .Example secret with user credentials
 [source,yaml,subs="+quotes,attributes"]

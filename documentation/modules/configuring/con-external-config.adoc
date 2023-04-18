@@ -51,7 +51,7 @@ You can supply connector configuration for Kafka Connect or MirrorMaker 2 in thi
 * Enable `EnvVarConfigProvider`, `FileConfigProvider`, or `DirectoryConfigProvider` in the Kafka Connect or MirrorMaker 2 configuration
 * Pass connector configuration using the `externalConfiguration` property in the `spec` of the `KafkaConnect` or `KafkaMirrorMaker2` resource
 
-Using providers helps to avoid passing restricted information through the Kafka Connect REST interface.
+Using providers help prevent the passing of restricted information through the Kafka Connect REST interface.
 You can use this approach in the following scenarios:
 
 * Mounting environment variables with the values a connector uses to connect and communicate with a data source 

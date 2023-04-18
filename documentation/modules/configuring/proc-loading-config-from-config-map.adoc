@@ -16,7 +16,7 @@ The config map is mounted into the Kafka Connect pod as a volume.
 
 * A Kafka cluster is running.
 * The Cluster Operator is running.
-* A config map containing the connector configuration
+* You have a config map containing the connector configuration.
 
 .Example config map with connector properties
 [source,yaml,subs=attributes+]

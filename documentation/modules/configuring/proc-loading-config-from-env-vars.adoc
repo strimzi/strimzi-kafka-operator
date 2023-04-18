@@ -19,7 +19,7 @@ NOTE: The names of user-defined environment variables cannot start with `KAFKA_`
 
 * A Kafka cluster is running.
 * The Cluster Operator is running.
-* A secret containing the connector configuration.
+* You have a secret containing the connector configuration.
 
 .Example secret with values for environment variables
 [source,yaml,subs=attributes+]
