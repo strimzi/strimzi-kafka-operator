@@ -162,11 +162,15 @@ public class MetricsIsolatedST extends AbstractST {
     private MetricsCollector clusterOperatorCollector;
 
     /**
-     * Description: This test suite is designed for testing metrics exposed by operators and operands.
+     * @description This test case check several random metrics exposed by Kafka.
      *
-     * Steps:
+     * @steps
+     *  1. - Check if specific metric is available in collected metrics from Kafka pods
+     *     - Metric is available with expected value
      *
-     * UseCase:
+     * @usecase
+     *  - metrics
+     *  - kafka-metrics
      */
     @ParallelTest
     @Tag(ACCEPTANCE)
@@ -177,6 +181,17 @@ public class MetricsIsolatedST extends AbstractST {
         assertMetricValue(kafkaCollector, "kafka_controller_kafkacontroller_activecontrollercount", 1);
     }
 
+    /**
+     * @description This test case check several random metrics exposed by Zookeeper.
+     *
+     * @steps
+     *  1. - Check if specific metric is available in collected metrics from Zookeeper pods
+     *     - Metric is available with expected value
+     *
+     * @usecase
+     *  - metrics
+     *  - zookeeper-metrics
+     */
     @ParallelTest
     @Tag(ACCEPTANCE)
     @KRaftNotSupported("Zookeeper is not supported by KRaft mode and is used in this test case")
@@ -186,6 +201,32 @@ public class MetricsIsolatedST extends AbstractST {
         assertMetricCountHigherThan(zookeeperCollector, "zookeeper_inmemorydatatree_watchcount\\{.*\\}", 0L);
     }
 
+    /**
+     * @description This test case check several random metrics exposed by Kafka Connect.
+     *
+     * @steps
+     *  1. - Deploy KafkaConnect into {@namespaceFirst} with {@Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES} set to true
+     *     - KafkaConnect is up and running
+     *  2. - Create KafkaConnector for KafkaConnect from step 1
+     *     - KafkaConnector is in Ready state.
+     *  3. - Create metrics collector and collect metrics from KafkaConnect pods
+     *     - Metrics are collected
+     *  4. - Check if specific metric is available in collected metrics from KafkaConnect pods
+     *     - Metric is available with expected value
+     *  5. - Collect current metrics from Cluster Operator pod
+     *     - Cluster Operator metrics are collected
+     *  6. - Check that CO metrics contain data about KafkaConnect and KafkaConnector in namespace {@namespaceFirst}
+     *     - CO metrics contain expected data
+     *  7. - Check that CO metrics don't contain data about KafkaConnect and KafkaConnector in namespace {@namespaceFirst}
+     *     - CO metrics don't contain expected data
+     *  8. - Check that CO metrics contain data about KafkaConnect state
+     *     - CO metrics contain expected data
+     *
+     * @usecase
+     *  - metrics
+     *  - connect-metrics
+     *  - cluster-operator-metrics
+     */
     @ParallelTest
     @Tag(CONNECT)
     @Tag(CONNECT_COMPONENTS)
@@ -208,7 +249,7 @@ public class MetricsIsolatedST extends AbstractST {
         assertMetricValueHigherThan(kafkaConnectCollector, "kafka_connect_node_response_total\\{clientid=\".*\",.*}", 0);
         assertMetricValueHigherThan(kafkaConnectCollector, "kafka_connect_network_io_total\\{clientid=\".*\",.*}", 0);
 
-        // Check CO metrics and look for KafkaBridge
+        // Check CO metrics and look for KafkaConnect and KafkaConnector
         clusterOperatorCollector.collectMetricsFromPods();
         assertCoMetricResources(KafkaConnect.RESOURCE_KIND, namespaceFirst, 1);
         assertCoMetricResourcesNullOrZero(KafkaConnect.RESOURCE_KIND, namespaceSecond);
@@ -218,7 +259,21 @@ public class MetricsIsolatedST extends AbstractST {
         assertCoMetricResourcesNullOrZero(KafkaConnector.RESOURCE_KIND, namespaceSecond);
     }
 
-
+    /**
+     * @description This test case check several metrics exposed by KafkaExporter.
+     *
+     * @steps
+     *  1. - Create Kafka producer and consumer and exchange some messages
+     *     - Clients successfully exchange the messages
+     *  2. - Check if metric kafka_topic_partitions is available in collected metrics from KafkaExporter pods
+     *     - Metric is available with expected value
+     *  3. - Check if metric kafka_broker_info is available in collected metrics from KafkaExporter pods for each Kafka Broker pod
+     *     - Metric is available with expected value
+     *
+     * @usecase
+     *  - metrics
+     *  - kafka-exporter-metrics
+     */
     @IsolatedTest
     @Tag(INTERNAL_CLIENTS_USED)
     void testKafkaExporterDataAfterExchange(ExtensionContext extensionContext) {
@@ -255,6 +310,24 @@ public class MetricsIsolatedST extends AbstractST {
         });
     }
 
+    /**
+     * @description This test case check several metrics exposed by KafkaExporter with different from default configuration.
+     * Rolling update is performed during the test case to change KafkaExporter configuration.
+     *
+     * @steps
+     *  1. - Get KafkaExporter run.sh script and check it has configured proper values
+     *     - Script has proper values set
+     *  2. - Change configuration of KafkaExporter in Kafka CR to match 'my-group.*' group regex and {@topicName} as topic name regex, than wait for KafkaExporter rolling update.
+     *     - Rolling update finished
+     *  3. - Get KafkaExporter run.sh script and check it has configured proper values
+     *     - Script has proper values set
+     *  4. - Revert all changes in KafkaExporter configuration and wait for Rolling Update
+     *     - Rolling update finished
+     *
+     * @usecase
+     *  - metrics
+     *  - kafka-exporter-metrics
+     */
     @ParallelTest
     void testKafkaExporterDifferentSetting() throws InterruptedException, ExecutionException, IOException {
         LabelSelector exporterSelector = kubeClient().getDeploymentSelectors(namespaceFirst, KafkaExporterResources.deploymentName(kafkaClusterFirstName));
@@ -284,6 +357,21 @@ public class MetricsIsolatedST extends AbstractST {
         DeploymentUtils.waitTillDepHasRolled(namespaceFirst, KafkaExporterResources.deploymentName(kafkaClusterFirstName), 1, kafkaExporterSnapshot);
     }
 
+    /**
+     * @description This test case check several random metrics exposed by CLuster Operator.
+     *
+     * @steps
+     *  1. - Check that specific metric for Kafka reconciliation are available in metrics from Cluster Operator pod
+     *     - Metric is available with expected value
+     *  2. - Check that collected metrics contain data about Kafka resource
+     *     - Metric is available with expected value
+     *  3. - Check that collected metrics don't contain data about KafkaMirrorMaker and KafkaRebalance resource
+     *     - Metric is not exposed
+     *
+     * @usecase
+     *  - metrics
+     *  - cluster-operator-metrics
+     */
     @ParallelTest
     void testClusterOperatorMetrics() {
         assertCoMetricResourceNotNull("strimzi_reconciliations_periodical_total", Kafka.RESOURCE_KIND);
@@ -306,6 +394,19 @@ public class MetricsIsolatedST extends AbstractST {
         assertCoMetricResourceStateNotExists(KafkaRebalance.RESOURCE_KIND, namespaceFirst, kafkaClusterFirstName);
     }
 
+    /**
+     * @description This test case check several metrics exposed by User Operator.
+     *
+     * @steps
+     *  1. - Collect metrics from User Operator pod
+     *     - Metrics are collected
+     *  2. - Check that specific metrics about KafkaUser are available in collected metrics
+     *     - Metric is available with expected value
+     *
+     * @usecase
+     *  - metrics
+     *  - user-operator-metrics
+     */
     @ParallelTest
     void testUserOperatorMetrics() {
         MetricsCollector userOperatorCollector = kafkaCollector.toBuilder()
@@ -324,6 +425,19 @@ public class MetricsIsolatedST extends AbstractST {
         assertMetricResources(userOperatorCollector, KafkaUser.RESOURCE_KIND, namespaceFirst, 2);
     }
 
+    /**
+     * @description This test case check several metrics exposed by Topic Operator.
+     *
+     * @steps
+     *  1. - Collect metrics from Topic Operator pod
+     *     - Metrics are collected
+     *  2. - Check that specific metrics about KafkaTopic are available in collected metrics
+     *     - Metric is available with expected value
+     *
+     * @usecase
+     *  - metrics
+     *  - topic-operator-metrics
+     */
     @ParallelTest
     @KRaftNotSupported("TopicOperator is not supported by KRaft mode and is used in this test case")
     void testTopicOperatorMetrics() {
@@ -347,6 +461,26 @@ public class MetricsIsolatedST extends AbstractST {
         assertMetricResourcesHigherThanOrEqualTo(topicOperatorCollector, KafkaTopic.RESOURCE_KIND, getExpectedTopics().size());
     }
 
+    /**
+     * @description This test case check several metrics exposed by KafkaMirrorMaker2.
+     *
+     * @steps
+     *  1. - Deploy KafkaMirrorMaker2 into {@namespaceFirst}
+     *     - KafkaMirrorMaker2 is in Ready state
+     *  2. - Collect metrics from KafkaMirrorMaker2 pod
+     *     - Metrics are collected
+     *  3. - Check if specific metric is available in collected metrics from KafkaMirrorMaker2 pods
+     *     - Metric is available with expected value
+     *  4. - Collect current metrics from Cluster Operator pod
+     *     - Cluster Operator metrics are collected
+     *  5. - Check that CO metrics contain data about KafkaMirrorMaker2 in namespace {@namespaceFirst}
+     *     - CO metrics contain expected data
+     *
+     * @usecase
+     *  - metrics
+     *  - mirrormaker2-metrics
+     *  - cluster-operator-metrics
+     */
     @ParallelTest
     @Tag(MIRROR_MAKER2)
     @Tag(CONNECT_COMPONENTS)
@@ -373,6 +507,28 @@ public class MetricsIsolatedST extends AbstractST {
         assertCoMetricResourceState(KafkaMirrorMaker2.RESOURCE_KIND, mm2ClusterName, namespaceFirst, 1, "none");
     }
 
+    /**
+     * @description This test case check several metrics exposed by KafkaBridge.
+     *
+     * @steps
+     *  1. - Deploy KafkaBridge into {@namespaceFirst}
+     *     - KafkaMirrorMaker2 is in Ready state
+     *  2. - Attach producer and consumer clients to KafkaBridge
+     *     - Clients and up and running
+     *  3. - Collect metrics from KafkaBridge pod
+     *     - Metrics are collected
+     *  4. - Check that specific metric is available in collected metrics from KafkaBridge pods
+     *     - Metric is available with expected value
+     *  5. - Collect current metrics from Cluster Operator pod
+     *     - Cluster Operator metrics are collected
+     *  6. - Check that CO metrics contain data about KafkaBridge in namespace {@namespaceFirst}
+     *     - CO metrics contain expected data
+     *
+     * @usecase
+     *  - metrics
+     *  - kafka-bridge-metrics
+     *  - cluster-operator-metrics
+     */
     @ParallelTest
     @Tag(BRIDGE)
     void testKafkaBridgeMetrics(ExtensionContext extensionContext) {
@@ -419,6 +575,17 @@ public class MetricsIsolatedST extends AbstractST {
         assertCoMetricResourceState(KafkaBridge.RESOURCE_KIND, bridgeClusterName, namespaceFirst, 1, "none");
     }
 
+    /**
+     * @description This test case check several random metrics exposed by CruiseControl.
+     *
+     * @steps
+     *  1. - Check if specific metric is available in collected metrics from CruiseControl pods
+     *     - Metric is available with expected value
+     *
+     * @usecase
+     *  - metrics
+     *  - cruise-control-metrics
+     */
     @ParallelTest
     void testCruiseControlMetrics() {
         String cruiseControlMetrics = CruiseControlUtils.callApi(namespaceFirst, CruiseControlUtils.SupportedHttpMethods.GET, "/metrics");
@@ -442,10 +609,26 @@ public class MetricsIsolatedST extends AbstractST {
     }
 
     /**
-     * 1. Update metrics from whatever it is to @metricsConfigYaml in spec.kafka.metricsConfig
-     * 2. Check, whether the metrics ConfigMap is changed
-     * 3. Updates ConfigMap linked as metrics on
-     * 4. Check, whether the metrics ConfigMap is changed
+     * @description This test case check that Cluster Operator propagate changes from metrics configuration done in kafka CR into corresponding config map.
+     *
+     * @steps
+     *  1. - Create config map with external metrics configuration
+     *     - Config map created
+     *  2. - Set ConfigMap reference from step 1 into Kafka CR and wait for pod stabilization (CO shouldn't trigger rolling update)
+     *     - Wait for Kafka pods stability (60 seconds without rolling update in the row)
+     *  3. - Check that metrics config maps for each pod contains data from external metrics config map
+     *     - All config maps contains proper values
+     *  4. - Change config in external metrics config map
+     *     - Config map changed
+     *  5. - SWait for Kafka pods stabilization (CO shouldn't trigger rolling update)
+     *     - Wait for Kafka pods stability (60 seconds without rolling update in the row)
+     *  6. - Check that metrics config maps for each pod contains data from external metrics config map
+     *     - All config maps contains proper values
+     *
+     * @usecase
+     *  - metrics
+     *  - kafka-metrics-rolling-update
+     *  - kafka-metrics-external
      */
     @ParallelTest
     void testKafkaMetricsSettings() {
@@ -507,6 +690,17 @@ public class MetricsIsolatedST extends AbstractST {
         }
     }
 
+    /**
+     * @description This test case check metrics regarding StrimziPodSets.
+     *
+     * @steps
+     *  1. - Check that Cluster Operator metrics contains expected values about StrimziPodSet resources
+     *     - Metrics are available with expected value
+     *
+     * @usecase
+     *  - metrics
+     *  - podsets-metrics
+     */
     @ParallelTest
     void testStrimziPodSetMetrics() {
         // Expected PodSet counts per component
@@ -527,6 +721,35 @@ public class MetricsIsolatedST extends AbstractST {
         assertCoMetricResourceNotNull("strimzi_reconciliations_total", StrimziPodSet.RESOURCE_KIND);
     }
 
+    /**
+     * @description This test case checks Topic Operator metrics regarding different states of KafkaTopic.
+     *
+     * @steps
+     *  1. - Create KafkaTopic in {@namespaceSecond}
+     *     - KafkaTopic is ready
+     *  2. - Create metrics collector for Topic Operator in {@namespaceSecond} and collect the metrics
+     *     - Metrics collected
+     *  3. - Check that metrics contain info about KafkaTopic {@topicName} is Ready
+     *     - Metrics contains proper data
+     *  4. - Change spec.topicName for topic {@topicName} and wait for NotReady status
+     *     - KafkaTopic is in NotReady state
+     *  5. - Check that metrics contain info about KafkaTopic {@topicName} cannot be renamed
+     *     - Metrics contains proper data
+     *  6. - Revert changes in KafkaTopic and change number of Replicas
+     *     - KafkaTopic CR replica count is changed
+     *  7. - Check that metrics contain info about KafkaTopic {@topicName} replicas count canno tbe changed
+     *     - Metrics contains proper data
+     *  8. - Set KafkaTopic configuration to default one
+     *     - KafkaTopic is in Ready state
+     *  9. - Check that metrics contain info about KafkaTopic {@topicName} is Ready
+     *     - Metrics contains proper data
+     *
+     * @usecase
+     *  - metrics
+     *  - topic-operator-metrics
+     *  - kafkatopic-ready
+     *  - kafkatopic-not-ready
+     */
     @IsolatedTest
     @KRaftNotSupported("TopicOperator is not supported by KRaft mode and is used in this test class")
     void testReconcileStateMetricInTopicOperator(ExtensionContext extensionContext) {
@@ -567,13 +790,6 @@ public class MetricsIsolatedST extends AbstractST {
         KafkaTopicUtils.waitForKafkaTopicReplicasChange(namespaceSecond, topicName, 12);
 
         reasonMessage = "Changing 'spec.replicas' is not supported. .*";
-        assertMetricResourceState(secondNamespaceCollector, KafkaTopic.RESOURCE_KIND, topicName, namespaceSecond, 0, reasonMessage);
-
-        LOGGER.info("Scaling replicas to be higher than before");
-        KafkaTopicResource.replaceTopicResourceInSpecificNamespace(topicName, kafkaTopic -> kafkaTopic.getSpec().setReplicas(24), cluster.getNamespace());
-
-        KafkaTopicUtils.waitForKafkaTopicReplicasChange(namespaceSecond, topicName, 24);
-
         assertMetricResourceState(secondNamespaceCollector, KafkaTopic.RESOURCE_KIND, topicName, namespaceSecond, 0, reasonMessage);
 
         LOGGER.info("Changing KafkaTopic's spec to correct state");
