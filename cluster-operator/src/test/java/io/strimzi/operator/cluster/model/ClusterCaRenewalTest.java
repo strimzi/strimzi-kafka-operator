@@ -606,17 +606,7 @@ public class ClusterCaRenewalTest {
         public int certGeneration() {
             return caGeneration;
         }
-
-        //@Override
-        //protected boolean hasCaCertGenerationChanged() {
-        //    return false;
-        //}
-        //
-        //@Override
-        //protected String caCertGenerationAnnotation() {
-        //    return null;
-        //}
-
+        
         public void setCertRenewed(boolean certRenewed) {
             isCertRenewed = certRenewed;
         }
