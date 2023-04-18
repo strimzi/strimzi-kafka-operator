@@ -314,6 +314,7 @@ public class ClusterCa extends Ca {
                     && secret != null && secret.getData() != null // Secret exists and has some data
                     && secretEntryExists(secret, podName, SecretEntry.CRT) // The secret has the public key for this pod
                     && secretEntryExists(secret, podName, SecretEntry.KEY) // The secret has the private key for this pod
+                    && !hasCaCertGenerationChanged(secret) // The generation on the Secret is the same as the CA has
             )   {
                 // A certificate for this node already exists, so we will try to reuse it
                 LOGGER.debugCr(reconciliation, "Certificate for node {} already exists", node);

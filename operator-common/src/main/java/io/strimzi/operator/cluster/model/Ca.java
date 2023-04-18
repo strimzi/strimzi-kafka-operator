@@ -43,7 +43,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -1052,9 +1051,7 @@ public abstract class Ca {
      */
     protected boolean hasCaCertGenerationChanged(Secret secret) {
         if (secret != null) {
-            String caCertGenerationAnno = Optional.ofNullable(secret.getMetadata().getAnnotations())
-                    .map(annotations -> annotations.get(caCertGenerationAnnotation()))
-                    .orElse(null);
+            String caCertGenerationAnno = Annotations.stringAnnotation(secret, caCertGenerationAnnotation(), null);
             int currentCaCertGeneration = certGeneration();
             LOGGER.debugOp("Secret {}/{} generation anno = {}, current CA generation = {}",
                     secret.getMetadata().getNamespace(), secret.getMetadata().getName(), caCertGenerationAnno, currentCaCertGeneration);
