@@ -106,7 +106,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(container_memory_usage_bytes{namespace=\"$kubernetes_namespace\",pod=~\"$strimzi_cluster_name-$kafka_broker\",container=\"kafka\"}) by (pod)",
+          "expr": "sum(container_memory_usage_bytes{namespace=\"$kubernetes_namespace\",pod=~\"$strimzi_cluster_name-$kraft_node\",container=\"kafka\"}) by (pod)",
           "format": "time_series",
           "hide": false,
           "intervalFactor": 1,
@@ -198,7 +198,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(rate(container_cpu_usage_seconds_total{namespace=\"$kubernetes_namespace\",pod=~\"$strimzi_cluster_name-$kafka_broker\",container=\"kafka\"}[5m])) by (pod)",
+          "expr": "sum(rate(container_cpu_usage_seconds_total{namespace=\"$kubernetes_namespace\",pod=~\"$strimzi_cluster_name-$kraft_node\",container=\"kafka\"}[5m])) by (pod)",
           "format": "time_series",
           "hide": false,
           "intervalFactor": 1,
@@ -382,7 +382,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(process_open_fds{namespace=\"$kubernetes_namespace\",kubernetes_pod_name=~\"$strimzi_cluster_name-$kafka_broker\",container=\"kafka\"}) by (kubernetes_pod_name)",
+          "expr": "sum(process_open_fds{namespace=\"$kubernetes_namespace\",kubernetes_pod_name=~\"$strimzi_cluster_name-$kraft_node\",container=\"kafka\"}) by (kubernetes_pod_name)",
           "format": "time_series",
           "hide": false,
           "intervalFactor": 1,
@@ -473,7 +473,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(jvm_memory_bytes_used{namespace=\"$kubernetes_namespace\",kubernetes_pod_name=~\"$strimzi_cluster_name-$kafka_broker\",strimzi_io_name=\"$strimzi_cluster_name-kafka\"}) by (kubernetes_pod_name)",
+          "expr": "sum(jvm_memory_bytes_used{namespace=\"$kubernetes_namespace\",kubernetes_pod_name=~\"$strimzi_cluster_name-$kraft_node\",strimzi_io_name=\"$strimzi_cluster_name-kafka\"}) by (kubernetes_pod_name)",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "{{kubernetes_pod_name}}",
@@ -563,7 +563,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(rate(jvm_gc_collection_seconds_sum{namespace=\"$kubernetes_namespace\",kubernetes_pod_name=~\"$strimzi_cluster_name-$kafka_broker\",strimzi_io_name=\"$strimzi_cluster_name-kafka\"}[5m])) by (kubernetes_pod_name)",
+          "expr": "sum(rate(jvm_gc_collection_seconds_sum{namespace=\"$kubernetes_namespace\",kubernetes_pod_name=~\"$strimzi_cluster_name-$kraft_node\",strimzi_io_name=\"$strimzi_cluster_name-kafka\"}[5m])) by (kubernetes_pod_name)",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "{{kubernetes_pod_name}}",
@@ -655,7 +655,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(rate(jvm_gc_collection_seconds_count{namespace=\"$kubernetes_namespace\",kubernetes_pod_name=~\"$strimzi_cluster_name-$kafka_broker\",strimzi_io_name=\"$strimzi_cluster_name-kafka\"}[5m])) by (kubernetes_pod_name)",
+          "expr": "sum(rate(jvm_gc_collection_seconds_count{namespace=\"$kubernetes_namespace\",kubernetes_pod_name=~\"$strimzi_cluster_name-$kraft_node\",strimzi_io_name=\"$strimzi_cluster_name-kafka\"}[5m])) by (kubernetes_pod_name)",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "{{kubernetes_pod_name}}",
@@ -746,7 +746,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(jvm_threads_current{namespace=\"$kubernetes_namespace\",kubernetes_pod_name=~\"$strimzi_cluster_name-$kafka_broker\",strimzi_io_name=\"$strimzi_cluster_name-kafka\"}) by (kubernetes_pod_name)",
+          "expr": "sum(jvm_threads_current{namespace=\"$kubernetes_namespace\",kubernetes_pod_name=~\"$strimzi_cluster_name-$kraft_node\",strimzi_io_name=\"$strimzi_cluster_name-kafka\"}) by (kubernetes_pod_name)",
           "format": "time_series",
           "intervalFactor": 1,
           "legendFormat": "{{kubernetes_pod_name}}",
@@ -841,7 +841,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(kafka_server_raftmetrics_append_records_rate{namespace=\"$kubernetes_namespace\",strimzi_io_cluster=\"$strimzi_cluster_name\",kubernetes_pod_name=~\"$strimzi_cluster_name-$kafka_broker\"}) by (kubernetes_pod_name)",
+          "expr": "sum(kafka_server_raftmetrics_append_records_rate{namespace=\"$kubernetes_namespace\",strimzi_io_cluster=\"$strimzi_cluster_name\",kubernetes_pod_name=~\"$strimzi_cluster_name-$kraft_node\"}) by (kubernetes_pod_name)",
           "format": "time_series",
           "hide": false,
           "instant": false,
@@ -939,7 +939,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(kafka_server_raftmetrics_fetch_records_rate{namespace=\"$kubernetes_namespace\",kubernetes_pod_name=~\"$strimzi_cluster_name-$kafka_broker\",strimzi_io_name=\"$strimzi_cluster_name-kafka\"}) by (kubernetes_pod_name)",
+          "expr": "sum(kafka_server_raftmetrics_fetch_records_rate{namespace=\"$kubernetes_namespace\",kubernetes_pod_name=~\"$strimzi_cluster_name-$kraft_node\",strimzi_io_name=\"$strimzi_cluster_name-kafka\"}) by (kubernetes_pod_name)",
           "format": "time_series",
           "interval": "",
           "intervalFactor": 1,
@@ -1037,7 +1037,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(kafka_server_raftmetrics_commit_latency_avg{namespace=\"$kubernetes_namespace\",strimzi_io_cluster=\"$strimzi_cluster_name\",kubernetes_pod_name=~\"$strimzi_cluster_name-$kafka_broker\"}) by (kubernetes_pod_name)",
+          "expr": "sum(kafka_server_raftmetrics_commit_latency_avg{namespace=\"$kubernetes_namespace\",strimzi_io_cluster=\"$strimzi_cluster_name\",kubernetes_pod_name=~\"$strimzi_cluster_name-$kraft_node\"}) by (kubernetes_pod_name)",
           "format": "time_series",
           "hide": false,
           "instant": false,
@@ -1134,7 +1134,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(kafka_server_raftmetrics_current_leader{namespace=\"$kubernetes_namespace\",strimzi_io_cluster=\"$strimzi_cluster_name\",kubernetes_pod_name=~\"$strimzi_cluster_name-$kafka_broker\"}) by (kubernetes_pod_name)",
+          "expr": "sum(kafka_server_raftmetrics_current_leader{namespace=\"$kubernetes_namespace\",strimzi_io_cluster=\"$strimzi_cluster_name\",kubernetes_pod_name=~\"$strimzi_cluster_name-$kraft_node\"}) by (kubernetes_pod_name)",
           "format": "time_series",
           "hide": false,
           "interval": "",
@@ -1230,7 +1230,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(kafka_server_raftmetrics_current_vote{namespace=\"$kubernetes_namespace\",strimzi_io_cluster=\"$strimzi_cluster_name\",kubernetes_pod_name=~\"$strimzi_cluster_name-$kafka_broker\"}) by (kubernetes_pod_name)",
+          "expr": "sum(kafka_server_raftmetrics_current_vote{namespace=\"$kubernetes_namespace\",strimzi_io_cluster=\"$strimzi_cluster_name\",kubernetes_pod_name=~\"$strimzi_cluster_name-$kraft_node\"}) by (kubernetes_pod_name)",
           "format": "time_series",
           "hide": false,
           "interval": "",
@@ -1326,7 +1326,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(kafka_server_raftmetrics_current_epoch{namespace=\"$kubernetes_namespace\",strimzi_io_cluster=\"$strimzi_cluster_name\",kubernetes_pod_name=~\"$strimzi_cluster_name-$kafka_broker\"}) by (kubernetes_pod_name)",
+          "expr": "sum(kafka_server_raftmetrics_current_epoch{namespace=\"$kubernetes_namespace\",strimzi_io_cluster=\"$strimzi_cluster_name\",kubernetes_pod_name=~\"$strimzi_cluster_name-$kraft_node\"}) by (kubernetes_pod_name)",
           "format": "time_series",
           "hide": false,
           "interval": "",
@@ -1422,7 +1422,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(irate(kafka_server_raftchannelmetrics_incoming_byte_total{namespace=\"$kubernetes_namespace\",strimzi_io_cluster=\"$strimzi_cluster_name\",kubernetes_pod_name=~\"$strimzi_cluster_name-$kafka_broker\"}[1m])) by (kubernetes_pod_name)",
+          "expr": "sum(irate(kafka_server_raftchannelmetrics_incoming_byte_total{namespace=\"$kubernetes_namespace\",strimzi_io_cluster=\"$strimzi_cluster_name\",kubernetes_pod_name=~\"$strimzi_cluster_name-$kraft_node\"}[1m])) by (kubernetes_pod_name)",
           "format": "time_series",
           "hide": false,
           "interval": "",
@@ -1517,7 +1517,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(irate(kafka_server_raftchannelmetrics_outgoing_byte_total{namespace=\"$kubernetes_namespace\",strimzi_io_cluster=\"$strimzi_cluster_name\",kubernetes_pod_name=~\"$strimzi_cluster_name-$kafka_broker\"}[1m])) by (kubernetes_pod_name)",
+          "expr": "sum(irate(kafka_server_raftchannelmetrics_outgoing_byte_total{namespace=\"$kubernetes_namespace\",strimzi_io_cluster=\"$strimzi_cluster_name\",kubernetes_pod_name=~\"$strimzi_cluster_name-$kraft_node\"}[1m])) by (kubernetes_pod_name)",
           "format": "time_series",
           "hide": false,
           "interval": "",
@@ -1612,7 +1612,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(irate(kafka_server_raftchannelmetrics_request_total{namespace=\"$kubernetes_namespace\",strimzi_io_cluster=\"$strimzi_cluster_name\",kubernetes_pod_name=~\"$strimzi_cluster_name-$kafka_broker\"}[1m])) by (kubernetes_pod_name)",
+          "expr": "sum(irate(kafka_server_raftchannelmetrics_request_total{namespace=\"$kubernetes_namespace\",strimzi_io_cluster=\"$strimzi_cluster_name\",kubernetes_pod_name=~\"$strimzi_cluster_name-$kraft_node\"}[1m])) by (kubernetes_pod_name)",
           "format": "time_series",
           "hide": false,
           "interval": "",
@@ -1708,7 +1708,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(irate(kafka_server_raftchannelmetrics_response_total{namespace=\"$kubernetes_namespace\",strimzi_io_cluster=\"$strimzi_cluster_name\",kubernetes_pod_name=~\"$strimzi_cluster_name-$kafka_broker\"}[1m])) by (kubernetes_pod_name)",
+          "expr": "sum(irate(kafka_server_raftchannelmetrics_response_total{namespace=\"$kubernetes_namespace\",strimzi_io_cluster=\"$strimzi_cluster_name\",kubernetes_pod_name=~\"$strimzi_cluster_name-$kraft_node\"}[1m])) by (kubernetes_pod_name)",
           "format": "time_series",
           "hide": false,
           "interval": "",
@@ -1803,7 +1803,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(kafka_server_raftmetrics_high_watermark{namespace=\"$kubernetes_namespace\",kubernetes_pod_name=~\"$strimzi_cluster_name-$kafka_broker\",strimzi_io_name=\"$strimzi_cluster_name-kafka\"}) by (kubernetes_pod_name)",
+          "expr": "sum(kafka_server_raftmetrics_high_watermark{namespace=\"$kubernetes_namespace\",kubernetes_pod_name=~\"$strimzi_cluster_name-$kraft_node\",strimzi_io_name=\"$strimzi_cluster_name-kafka\"}) by (kubernetes_pod_name)",
           "format": "time_series",
           "hide": false,
           "interval": "",
@@ -1898,7 +1898,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "expr": "sum(kafka_server_raftmetrics_log_end_offset{namespace=\"$kubernetes_namespace\",kubernetes_pod_name=~\"$strimzi_cluster_name-$kafka_broker\",strimzi_io_name=\"$strimzi_cluster_name-kafka\"}) by (kubernetes_pod_name)",
+          "expr": "sum(kafka_server_raftmetrics_log_end_offset{namespace=\"$kubernetes_namespace\",kubernetes_pod_name=~\"$strimzi_cluster_name-$kraft_node\",strimzi_io_name=\"$strimzi_cluster_name-kafka\"}) by (kubernetes_pod_name)",
           "format": "time_series",
           "hide": false,
           "interval": "",
@@ -2016,7 +2016,7 @@
         "includeAll": true,
         "label": "Broker",
         "multi": false,
-        "name": "kafka_broker",
+        "name": "kraft_node",
         "options": [],
         "query": "query_result(kafka_server_raftmetrics_current_leader{namespace=\"$kubernetes_namespace\",strimzi_io_cluster=\"$strimzi_cluster_name\"})",
         "refresh": 1,
