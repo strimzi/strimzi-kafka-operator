@@ -18,6 +18,9 @@ If you have a Kafka cluster with custom configuration that uses a password lengt
 If you have any users with passwords shorter than 32 characters, you need to regenerate a password with the required length.
 You can do that, for example, by deleting the user secret and waiting for the User Operator to create a new password with the appropriate length.
 
+IMPORTANT: If you are using FIPS-enabled Kubernetes clusters, you may experience higher memory consumption compared to regular Kubernetes clusters. 
+To avoid any issues, we suggest increasing the memory request to at least 512Mi.
+
 [role="_additional-resources"]
 .Additional resources
 
