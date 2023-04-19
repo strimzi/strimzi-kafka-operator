@@ -179,16 +179,10 @@ metadata:
                         "name":"my-topic",
                         "patternType":"literal"
                       },
-                      "operation":"Read",
-                      "host":"*"
-                  },
-                  {
-                      "resource":{
-                        "type":"topic",
-                        "name":"my-topic",
-                        "patternType":"literal"
-                      },
-                      "operation":"Describe",
+                      "operations": [
+                        "Describe",
+                        "Read"
+                      ],
                       "host":"*"
                   },
                   {
@@ -197,7 +191,9 @@ metadata:
                         "name":"my-group",
                         "patternType":"literal"
                       },
-                      "operation":"Read",
+                      "operations": [
+                        "Read"
+                      ],
                       "host":"*"
                   },
                   {
@@ -206,25 +202,11 @@ metadata:
                         "name":"my-topic",
                         "patternType":"literal"
                       },
-                      "operation":"Write",
-                      "host":"*"
-                  },
-                  {
-                      "resource":{
-                        "type":"topic",
-                        "name":"my-topic",
-                        "patternType":"literal"
-                      },
-                      "operation":"Create",
-                      "host":"*"
-                  },
-                  {
-                      "resource":{
-                        "type":"topic",
-                        "name":"my-topic",
-                        "patternType":"literal"
-                      },
-                      "operation":"Describe",
+                      "operations": [
+                        "Create",
+                        "Describe",
+                        "Write"
+                      ],
                       "host":"*"
                   }
                 ]
