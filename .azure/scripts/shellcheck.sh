@@ -10,7 +10,6 @@ docker-images/kafka-based/kafka/scripts/*.sh
 docker-images/kafka-based/kafka/cruise-control-scripts/*.sh
 docker-images/kafka-based/kafka/stunnel-scripts/*.sh
 docker-images/kafka-based/kafka/exporter-scripts/*.sh
-tools/olm-bundle/*.sh
 tools/log-dump/*.sh
 tools/*.sh"
 
