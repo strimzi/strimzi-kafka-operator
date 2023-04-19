@@ -25,7 +25,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class CrdGeneratorTest {
     @Test
     public void simpleTest() throws IOException {
-        CrdGenerator crdGenerator = new CrdGenerator(KubeVersion.V1_11_PLUS, ApiVersion.V1BETA1);
+        CrdGenerator crdGenerator = new CrdGenerator(KubeVersion.V1_16_PLUS, ApiVersion.V1);
         StringWriter w = new StringWriter();
         crdGenerator.generate(ExampleCrd.class, w);
         String s = w.toString();
