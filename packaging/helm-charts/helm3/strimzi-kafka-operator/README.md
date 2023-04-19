@@ -110,9 +110,9 @@ the documentation for more details.
 | `fullReconciliationIntervalMs`       | Full reconciliation interval in milliseconds | 120000                                            |
 | `operationTimeoutMs`                 | Operation timeout in milliseconds         | 300000                                               |
 | `operatorNamespaceLabels`            | Labels of the namespace where the operator runs | `nil`                                          |
-| `podSecurityContext`                 | Cluster Operator pod's security context    | `nil`                                               |
+| `podSecurityContext`                 | Cluster Operator pod's security context    | `{ "fsGroup": 65534, "runAsGroup": 65534, "runAsNonRoot": true, "runAsUser": 65534}` |
 | `priorityClassName`                  | Cluster Operator pod's priority class name | `nil`                                               |
-| `securityContext`                    | Cluster Operator container's security context |  `nil`                                           |
+| `securityContext`                    | Cluster Operator container's security context |  `{ "securityContext": { "allowPrivilegeEscalation": false, "capabilities": { "drop": [ "ALL" ] }, "seccompProfile": { "type": "RuntimeDefault" } } }` |
 | `rbac.create`                        | Whether to create RBAC related resources |  `yes`                                                |
 | `serviceAccountCreate`               | Whether to create a serviceaccount |  `yes`                                                      |
 | `serviceAccount`                     | Cluster Operator's service account |  `strimzi-cluster-operator`                                 |
