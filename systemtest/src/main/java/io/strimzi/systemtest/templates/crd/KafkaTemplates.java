@@ -34,7 +34,6 @@ public class KafkaTemplates {
     private static final String KAFKA_METRICS_CONFIG_REF_KEY = "kafka-metrics-config.yml";
     private static final String ZOOKEEPER_METRICS_CONFIG_REF_KEY = "zookeeper-metrics-config.yml";
 
-
     public static KafkaBuilder kafkaEphemeral(String name, int kafkaReplicas) {
         return kafkaEphemeral(name, kafkaReplicas, Math.min(kafkaReplicas, 3));
     }
