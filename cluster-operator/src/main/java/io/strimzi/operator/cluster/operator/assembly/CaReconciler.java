@@ -447,7 +447,7 @@ public class CaReconciler {
         return deploymentOperator.getAsync(reconciliation.namespace(), deploymentName)
                 .compose(dep -> {
                     if (dep != null) {
-                        LOGGER.infoCr(reconciliation, "Rolling Deployment {} to {}", deploymentName, reason);
+                        LOGGER.infoCr(reconciliation, "Rolling Deployment {}. Reasons: {}", deploymentName, reason);
                         return deploymentOperator.rollingUpdate(reconciliation, reconciliation.namespace(), deploymentName, operationTimeoutMs);
                     } else {
                         return Future.succeededFuture();

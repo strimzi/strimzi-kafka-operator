@@ -544,7 +544,7 @@ public class KafkaRoller {
                 needsReconfig = true;
             }
         } else if (needsRestart) {
-            LOGGER.infoCr(reconciliation, "Pod {} needs to be restarted. Reason: {}", nodeRef, reasonToRestartPod.getAllReasonNotes());
+            LOGGER.infoCr(reconciliation, "Pod {} needs to be restarted. Reasons: {}", nodeRef, reasonToRestartPod.getAllReasonNotes());
         }
 
         restartContext.needsRestart = needsRestart;

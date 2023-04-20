@@ -139,7 +139,7 @@ public class ZooKeeperRoller {
      * @return a Future which completes when the given (possibly recreated) pod is ready.
      */
     Future<Void> restartPod(Reconciliation reconciliation, String podName, List<String> reasons) {
-        LOGGER.infoCr(reconciliation, "Rolling pod {} due to {}", podName, reasons);
+        LOGGER.infoCr(reconciliation, "Rolling pod {}. Reasons: {}", podName, reasons);
         return podOperator.getAsync(reconciliation.namespace(), podName)
                 .compose(pod -> podOperator.restart(reconciliation, pod, operationTimeoutMs))
                 .compose(ignore -> {
