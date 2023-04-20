@@ -29,50 +29,32 @@ spec:
 
 Use the `config` properties to configure Kafka broker options as keys.
 
-Standard Apache Kafka configuration may be provided, restricted to those properties not managed directly by Strimzi.
-
-Configuration options that cannot be configured relate to:
-
-* Security (Encryption, Authentication, and Authorization)
-* Listener configuration
-* Broker ID configuration
-* Configuration of log data directories
-* Inter-broker communication
-* ZooKeeper connectivity
-
 The values can be one of the following JSON types:
 
 * String
 * Number
 * Boolean
 
-You can specify and configure the options listed in the {ApacheKafkaBrokerConfig} with the exception of those options that are managed directly by Strimzi.
-Specifically, all configuration options with keys equal to or starting with one of the following strings are forbidden:
+*Exceptions*
 
-* `listeners`
-* `advertised.`
-* `broker.`
-* `listener.`
-* `host.name`
-* `port`
-* `inter.broker.listener.name`
-* `sasl.`
-* `ssl.`
-* `security.`
-* `password.`
-* `principal.builder.class`
-* `log.dir`
-* `zookeeper.connect`
-* `zookeeper.set.acl`
-* `authorizer.`
-* `super.user`
+You can specify and configure the options listed in the {ApacheKafkaBrokerConfig}.
 
-When a forbidden option is present in the `config` property, it is ignored and a warning message is printed to the Cluster Operator log file.
-All other supported options are passed to Kafka.
+However, Strimzi takes care of configuring and managing options related to the following, which cannot be changed:
 
-There are exceptions to the forbidden options.
-For client connection using a specific _cipher suite_ for a TLS version, you can xref:con-common-configuration-ssl-reference[configure allowed `ssl` properties].
-You can also configure the `zookeeper.connection.timeout.ms` property to set the maximum time allowed for establishing a ZooKeeper connection.
+* Security (encryption, authentication, and authorization)
+* Listener configuration
+* Broker ID configuration
+* Configuration of log data directories
+* Inter-broker communication
+* ZooKeeper connectivity
+
+See the description of the `config` property for a list of prefixes for options you cannot change.
+
+If the `config` property contains an option that cannot be changed, it is disregarded, and a warning message is logged to the Cluster Operator log file.
+All other supported options are forwarded to Kafka, including two exceptions to the options configured by Strimzi:
+
+* Any `ssl` configuration for xref:con-common-configuration-ssl-reference[supported TLS versions and cipher suites]
+* Configuration for the `zookeeper.connection.timeout.ms` property to set the maximum time allowed for establishing a ZooKeeper connection
 
 .Example Kafka broker configuration
 [source,yaml,subs="attributes+"]
@@ -100,9 +82,6 @@ spec:
       socket.receive.buffer.bytes: 102400
       socket.request.max.bytes: 104857600
       group.initial.rebalance.delay.ms: 0
-      ssl.cipher.suites: TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
-      ssl.enabled.protocols: TLSv1.2
-      ssl.protocol: TLSv1.2
       zookeeper.connection.timeout.ms: 6000
     # ...
 ----

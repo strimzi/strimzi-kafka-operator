@@ -5,7 +5,9 @@
 [id='con-common-configuration-properties-{context}']
 == Common configuration properties
 
-Common configuration properties apply to more than one resource.
+[role="_abstract"]
+Use Common configuration properties to configure Strimzi custom resources.
+You add common configuration properties to a custom resource like any other supported configuration for that resource.
 
 [id='con-common-configuration-replicas-{context}']
 === `replicas`
@@ -35,7 +37,7 @@ If deployed by Strimzi but on different Kubernetes clusters, the list content de
 When using Kafka with a Kafka cluster not managed by Strimzi, you can specify the bootstrap servers list according to the configuration of the given cluster.
 
 [id='con-common-configuration-ssl-{context}']
-=== `ssl`
+=== `ssl` (supported TLS versions and cipher suites)
 
 You can incorporate SSL configuration and cipher suite specifications to further secure TLS-based communication between your client application and a Kafka cluster.
 In addition to the standard TLS configuration, you can specify a supported TLS version and enable cipher suites in the configuration for the Kafka broker.
