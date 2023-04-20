@@ -6,6 +6,7 @@
 * Allow multiple imagePullSecrets in the Strimzi Helm chart
 * Remove support for JMX Trans
 * Move feature gate `UseStrimziPodSets` to GA and remove support for StatefulSets
+* Add flag to load dashboards from helm chart
 
 ### Changes, deprecations and removals
 

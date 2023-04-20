@@ -29,6 +29,7 @@ cluster using the [Helm](https://helm.sh) package manager.
 * **Includes HTTP Kafka Bridge** - Allows clients to send and receive messages through an Apache Kafka® cluster via the HTTP protocol.
 * **Includes Cruise Control** - Automates the process of balancing partitions across an Apache Kafka® cluster.
 * **Prometheus monitoring** - Built-in support for monitoring using Prometheus.
+* **Grafana Dashboards** - Built-in support for loading Grafana® dashboards via the grafana_sidecar
 
 ### Upgrading your Clusters
 
@@ -210,6 +211,12 @@ the documentation for more details.
 | `mavenBuilder.image.tag`             | Override default Maven Builder image tag                   | `nil`                               |
 | `mavenBuilder.image.digest`          | Override Maven Builder image tag with digest               | `nil`                               |
 | `logConfiguration`                   | Override default `log4j.properties` content                | `nil`                               |
+| `dashboards.enable`                  | Generate configmaps containing the dashboards | `false`                                          |
+| `dashboards.label`                   | How should the dashboards be labeled for the sidecar | `grafana_dashboard`                       |
+| `dashboards.labelValue`              | What should the dashboards label value be for the sidecar | `"1"`                                |
+| `dashboards.extraLabels`             | Any additional labels you would like on the dashboards | `{}`                                    |
+| `dashboards.namespace`               | What namespace should the dashboards be loaded into | `Follows toplevel Namespace`               |
+| `dashboards.annotations`             | Any custom annotations (such as folder for the sidecar) | `{}`                                   |
 
 Specify each parameter using the `--set key=value[,key=value]` argument to `helm install`. For example,
 
