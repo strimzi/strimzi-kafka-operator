@@ -36,7 +36,7 @@ public class ClientsCa extends Ca {
                      int validityDays, int renewalDays, boolean generateCa, CertificateExpirationPolicy policy) {
         super(reconciliation, certManager, passwordGenerator,
                 "clients-ca", caCertSecretName,
-                forceRenewal(clientsCaCert, clientsCaKey, "clients-ca.key"), caSecretKeyName,
+                clientsCaCert, caSecretKeyName,
                 clientsCaKey, validityDays, renewalDays, generateCa, policy);
     }
 

@@ -6,7 +6,6 @@ package io.strimzi.operator.cluster.model;
 
 import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.Secret;
-import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.strimzi.api.kafka.model.CertificateExpirationPolicy;
 import io.strimzi.certs.CertAndKey;
 import io.strimzi.certs.CertManager;
@@ -183,19 +182,6 @@ public abstract class Ca {
     private final PasswordGenerator passwordGenerator;
     protected final Reconciliation reconciliation;
     private Clock clock;
-
-    /**
-     * Set the {@code strimzi.io/force-renew} annotation on the given {@code caCert} if the given {@code caKey} has
-     * the given {@code key}.
-     *
-     * This is used to force certificate renewal when upgrading from a Strimzi 0.6.0 Secret.
-     */
-    protected static Secret forceRenewal(Secret caCert, Secret caKey, String key) {
-        if (caCert != null && caKey != null && caKey.getData() != null && caKey.getData().containsKey(key)) {
-            caCert = new SecretBuilder(caCert).editMetadata().addToAnnotations(ANNO_STRIMZI_IO_FORCE_RENEW, "true").endMetadata().build();
-        }
-        return caCert;
-    }
 
     enum RenewalType {
         NOOP() {
