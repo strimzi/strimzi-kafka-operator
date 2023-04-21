@@ -1,4 +1,4 @@
-# CompletelyUnrelatedClass
+# ListenersST
 
 ## testSendMessagesPlainAnonymous
 
@@ -16,23 +16,4 @@
 **Use-cases:**
 
 * `message-transmission`
-
-
-## testRemoveMeAfterTheEnd
-
-**Description:** lorem ipsum
-
-**Steps:**
-
-| Step | Action | Result |
-| - | - | - |
-| 1.| lorem ipsum| lorem ipsum |
-| 2.| lorem ipsum| lorem ipsum |
-| 3.| lorem ipsum| lorem ipsum |
-| 4.| lorem ipsum| lorem ipsum |
-
-**Use-cases:**
-
-* `message-transmission`
-* `lorem-ipsum`
 

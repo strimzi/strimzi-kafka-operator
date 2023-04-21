@@ -1,4 +1,8 @@
-package io.strimzi.markdown;
+/*
+ * Copyright Strimzi authors.
+ * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
+ */
+package io.strimzi.systemtestdoc.markdown;
 
 import java.util.List;
 
@@ -15,7 +19,7 @@ public class TextList {
 
     public static String createUnorderedList(List<String> objects) {
         StringBuilder builder = new StringBuilder();
-        objects.forEach( object ->
+        objects.forEach(object ->
             builder.append("* " + object + "\n")
         );
 

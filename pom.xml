@@ -188,8 +188,8 @@
         <module>user-operator</module>
         <module>kafka-init</module>
         <module>certificate-manager</module>
-        <module>systemtest</module>
         <module>systemtest-doc</module>
+        <module>systemtest</module>
     </modules>
 
     <dependencyManagement>

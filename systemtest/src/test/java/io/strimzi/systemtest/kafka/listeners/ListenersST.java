@@ -44,6 +44,10 @@ import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.ServiceUtils;
+import io.strimzi.systemtestdoc.annotations.TestDoc;
+import io.strimzi.systemtestdoc.annotations.TestDoc.Desc;
+import io.strimzi.systemtestdoc.annotations.TestDoc.Step;
+import io.strimzi.systemtestdoc.annotations.TestDoc.Usecase;
 import io.vertx.core.json.JsonArray;
 import org.apache.kafka.common.security.auth.SecurityProtocol;
 import org.apache.logging.log4j.LogManager;
@@ -124,6 +128,18 @@ public class ListenersST extends AbstractST {
      */
     @ParallelNamespaceTest
     @Tag(INTERNAL_CLIENTS_USED)
+    @TestDoc(
+        description = @Desc("Test checking that we are able to do message exchange without auth"),
+        steps = {
+            @Step(value = "Deploy Kafka with 3 Kafka and 3 ZK pods and wait for readiness", expected = "Kafka cluster is deployed"),
+            @Step(value = "Deploy KafkaTopic inside the created Kafka cluster", expected = "KafkaTopic is deployed"),
+            @Step(value = "Using test-clients, do the message exchange", expected = "Messages are successfully sent and received"),
+            @Step(value = "Check that Kafka bootstrap service contains expected values", expected = "Kafka bootstrap service contains expected values")
+        },
+        usecases = {
+            @Usecase(id = "message-transmission")
+        }
+    )
     void testSendMessagesPlainAnonymous(ExtensionContext extensionContext) {
         final TestStorage testStorage = new TestStorage(extensionContext);
 
