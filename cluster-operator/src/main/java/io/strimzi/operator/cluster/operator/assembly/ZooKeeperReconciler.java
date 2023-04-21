@@ -725,7 +725,14 @@ public class ZooKeeperReconciler {
      */
     private Future<Void> maybeRollZooKeeper(Function<Pod, List<String>> podNeedsRestart, Secret clusterCaCertSecret, Secret coKeySecret) {
         return new ZooKeeperRoller(podOperator, zooLeaderFinder, operationTimeoutMs)
-                .maybeRollingUpdate(reconciliation, zk.getSelectorLabels(), podNeedsRestart, clusterCaCertSecret, coKeySecret);
+                .maybeRollingUpdate(
+                        reconciliation,
+                        currentReplicas > 0 && currentReplicas < zk.getReplicas() ? currentReplicas : zk.getReplicas(),
+                        zk.getSelectorLabels(),
+                        podNeedsRestart,
+                        clusterCaCertSecret,
+                        coKeySecret
+                );
     }
 
     /**
