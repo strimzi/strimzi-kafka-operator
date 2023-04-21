@@ -171,7 +171,7 @@ public class ReconcilerUtils {
         }
 
         if (restartReasons.shouldRestart()) {
-            LOGGER.debugCr(reconciliation, "Rolling pod {} due to {}",
+            LOGGER.debugCr(reconciliation, "Rolling Pod {} due to {}",
                     pod.getMetadata().getName(), restartReasons.getAllReasonNotes());
         }
 
