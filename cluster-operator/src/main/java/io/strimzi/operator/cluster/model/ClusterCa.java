@@ -93,7 +93,7 @@ public class ClusterCa extends Ca {
         super(reconciliation, certManager, passwordGenerator,
                 "cluster-ca",
                 AbstractModel.clusterCaCertSecretName(clusterName),
-                forceRenewal(clusterCaCert, clusterCaKey, "cluster-ca.key"),
+                clusterCaCert,
                 AbstractModel.clusterCaKeySecretName(clusterName),
                 clusterCaKey, validityDays, renewalDays, generateCa, policy);
         this.clusterName = clusterName;
