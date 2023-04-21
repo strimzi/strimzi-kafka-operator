@@ -113,6 +113,13 @@ public class MetricsUtils {
         assertThat(String.format("metric '%s' doesn't exist", metric), actualValue, notNullValue());
     }
 
+    public static void assertMetricValueNullOrZero(MetricsCollector collector, String metric) {
+        Pattern pattern = Pattern.compile(metric + " ([\\d.][^\\n]+)", Pattern.CASE_INSENSITIVE);
+        if (!collector.collectSpecificMetric(pattern).isEmpty()) {
+            assertThat(String.format("metric %s doesn't contain 0 value!", pattern), createPatternAndCollectWithoutWait(collector, pattern.toString()).stream().mapToDouble(i -> i).sum(), is(0.0));
+        }
+    }
+
     public static void assertMetricValue(MetricsCollector collector, String metric, int expectedValue) {
         ArrayList<Double> values = createPatternAndCollect(collector, metric);
         double actualValue = values.stream().mapToDouble(i -> i).sum();

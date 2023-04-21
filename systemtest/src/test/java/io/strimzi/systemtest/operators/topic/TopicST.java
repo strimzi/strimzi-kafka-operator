@@ -483,7 +483,7 @@ public class TopicST extends AbstractST {
      */
     @IsolatedTest
     @KRaftNotSupported("TopicOperator is not supported by KRaft mode and is used in this test class")
-    void  testKafkaTopicDifferentStates(ExtensionContext extensionContext) throws InterruptedException {
+    void testKafkaTopicDifferentStates(ExtensionContext extensionContext) throws InterruptedException {
         String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
         int initialReplicas = 1;
         int initialPartitions = 5;

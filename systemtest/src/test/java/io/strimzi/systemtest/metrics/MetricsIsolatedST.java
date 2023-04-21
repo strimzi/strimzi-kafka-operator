@@ -95,6 +95,7 @@ import static io.strimzi.systemtest.utils.specific.MetricsUtils.assertMetricValu
 import static io.strimzi.systemtest.utils.specific.MetricsUtils.assertMetricValueCount;
 import static io.strimzi.systemtest.utils.specific.MetricsUtils.assertMetricValueHigherThan;
 import static io.strimzi.systemtest.utils.specific.MetricsUtils.assertMetricValueNotNull;
+import static io.strimzi.systemtest.utils.specific.MetricsUtils.assertMetricValueNullOrZero;
 import static io.strimzi.systemtest.utils.specific.MetricsUtils.getExporterRunScript;
 import static io.strimzi.systemtest.utils.specific.MetricsUtils.getResourceMetricPattern;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
@@ -236,7 +237,7 @@ public class MetricsIsolatedST extends AbstractST {
     @ParallelTest
     @Tag(CONNECT)
     @Tag(CONNECT_COMPONENTS)
-    void testKafkaConnectMetrics(ExtensionContext extensionContext) {
+    void testKafkaConnectAndConnectorMetrics(ExtensionContext extensionContext) {
         resourceManager.createResource(extensionContext,
             KafkaConnectTemplates.kafkaConnectWithMetricsAndFileSinkPlugin(kafkaClusterFirstName, namespaceFirst, kafkaClusterFirstName, 1)
                 .editMetadata()
@@ -288,7 +289,7 @@ public class MetricsIsolatedST extends AbstractST {
      */
     @IsolatedTest
     @Tag(INTERNAL_CLIENTS_USED)
-    void testKafkaExporterDataAfterExchange(ExtensionContext extensionContext) {
+    void testKafkaExporterMetrics(ExtensionContext extensionContext) {
         final String producerName = "producer-" + new Random().nextInt(Integer.MAX_VALUE);
         final String consumerName = "consumer-" + new Random().nextInt(Integer.MAX_VALUE);
         final String kafkaStrimziPodSetName = KafkaResources.kafkaStatefulSetName(kafkaClusterFirstName);
@@ -329,11 +330,15 @@ public class MetricsIsolatedST extends AbstractST {
      * @steps
      *  1. - Get KafkaExporter run.sh script and check it has configured proper values
      *     - Script has proper values set
-     *  2. - Change configuration of KafkaExporter in Kafka CR to match 'my-group.*' group regex and {@topicName} as topic name regex, than wait for KafkaExporter rolling update.
+     *  2. - Check that KafkaExporter metrics contains info about consumer_offset topic
+     *     - Metrics contains proper data
+     *  3. - Change configuration of KafkaExporter in Kafka CR to match 'my-group.*' group regex and {@topicName} as topic name regex, than wait for KafkaExporter rolling update.
      *     - Rolling update finished
-     *  3. - Get KafkaExporter run.sh script and check it has configured proper values
+     *  4. - Get KafkaExporter run.sh script and check it has configured proper values
      *     - Script has proper values set
-     *  4. - Revert all changes in KafkaExporter configuration and wait for Rolling Update
+     *  5. - Check that KafkaExporter metrics don't contain info about consumer_offset topic
+     *     - Metrics contains proper data (consumer_offset is not in the metrics)
+     *  6. - Revert all changes in KafkaExporter configuration and wait for Rolling Update
      *     - Rolling update finished
      *
      * @usecase
@@ -342,10 +347,13 @@ public class MetricsIsolatedST extends AbstractST {
      */
     @ParallelTest
     void testKafkaExporterDifferentSetting() throws InterruptedException, ExecutionException, IOException {
+        String consumerOffsetsTopicName = "__consumer_offsets";
         LabelSelector exporterSelector = kubeClient().getDeploymentSelectors(namespaceFirst, KafkaExporterResources.deploymentName(kafkaClusterFirstName));
         String runScriptContent = getExporterRunScript(kubeClient().listPods(namespaceFirst, exporterSelector).get(0).getMetadata().getName(), namespaceFirst);
         assertThat("Exporter starting script has wrong setting than it's specified in CR", runScriptContent.contains("--group.filter=\".*\""));
         assertThat("Exporter starting script has wrong setting than it's specified in CR", runScriptContent.contains("--topic.filter=\".*\""));
+        // Check that metrics contains info about consumer_offsets
+        assertMetricValueNotNull(kafkaExporterCollector, "kafka_topic_partitions\\{topic=\"" + consumerOffsetsTopicName + "\"}");
 
         Map<String, String> kafkaExporterSnapshot = DeploymentUtils.depSnapshot(namespaceFirst, KafkaExporterResources.deploymentName(kafkaClusterFirstName));
 
@@ -359,6 +367,9 @@ public class MetricsIsolatedST extends AbstractST {
         runScriptContent = getExporterRunScript(kubeClient().listPods(namespaceFirst, exporterSelector).get(0).getMetadata().getName(), namespaceFirst);
         assertThat("Exporter starting script has wrong setting than it's specified in CR", runScriptContent.contains("--group.filter=\"my-group.*\""));
         assertThat("Exporter starting script has wrong setting than it's specified in CR", runScriptContent.contains("--topic.filter=\"" + topicName + "\""));
+
+        // Check that metrics don't contain info about consumer_offsets
+        assertMetricValueNullOrZero(kafkaExporterCollector, "kafka_topic_partitions\\{topic=\"" + consumerOffsetsTopicName + "\"}");
 
         LOGGER.info("Changing topic and group regexes back to default");
         KafkaResource.replaceKafkaResourceInSpecificNamespace(kafkaClusterFirstName, k -> {
@@ -389,13 +400,12 @@ public class MetricsIsolatedST extends AbstractST {
         // Expected PodSet counts per component
         int zooPodSetCount = Environment.isKRaftModeEnabled() ? 0 : 1;
         int kafkaPodSetCount = 1;
-        int connectAndMm2PodSetCount = Environment.isStableConnectIdentitiesEnabled() ? 2 : 0;
 
-        assertCoMetricResourceNotNull(zookeeperCollector, "strimzi_reconciliations_periodical_total", Kafka.RESOURCE_KIND);
-        assertCoMetricResourceNotNull(zookeeperCollector, "strimzi_reconciliations_duration_seconds_count", Kafka.RESOURCE_KIND);
-        assertCoMetricResourceNotNull(zookeeperCollector, "strimzi_reconciliations_duration_seconds_sum", Kafka.RESOURCE_KIND);
-        assertCoMetricResourceNotNull(zookeeperCollector, "strimzi_reconciliations_duration_seconds_max", Kafka.RESOURCE_KIND);
-        assertCoMetricResourceNotNull(zookeeperCollector, "strimzi_reconciliations_successful_total", Kafka.RESOURCE_KIND);
+        assertCoMetricResourceNotNull(clusterOperatorCollector, "strimzi_reconciliations_periodical_total", Kafka.RESOURCE_KIND);
+        assertCoMetricResourceNotNull(clusterOperatorCollector, "strimzi_reconciliations_duration_seconds_count", Kafka.RESOURCE_KIND);
+        assertCoMetricResourceNotNull(clusterOperatorCollector, "strimzi_reconciliations_duration_seconds_sum", Kafka.RESOURCE_KIND);
+        assertCoMetricResourceNotNull(clusterOperatorCollector, "strimzi_reconciliations_duration_seconds_max", Kafka.RESOURCE_KIND);
+        assertCoMetricResourceNotNull(clusterOperatorCollector, "strimzi_reconciliations_successful_total", Kafka.RESOURCE_KIND);
 
         assertCoMetricResources(clusterOperatorCollector, Kafka.RESOURCE_KIND, namespaceFirst, 1);
         assertCoMetricResources(clusterOperatorCollector, Kafka.RESOURCE_KIND, namespaceSecond, 1);
@@ -739,11 +749,6 @@ public class MetricsIsolatedST extends AbstractST {
 
         // Allow connections from clients to operators pods when NetworkPolicies are set to denied by default
         NetworkPolicyResource.allowNetworkPolicySettingsForClusterOperator(extensionContext, clusterOperator.getDeploymentNamespace());
-        NetworkPolicyResource.allowNetworkPolicySettingsForEntityOperator(extensionContext, kafkaClusterFirstName, namespaceFirst);
-        NetworkPolicyResource.allowNetworkPolicySettingsForEntityOperator(extensionContext, kafkaClusterSecondName, namespaceSecond);
-        // Allow connections from clients to KafkaExporter when NetworkPolicies are set to denied by default
-        NetworkPolicyResource.allowNetworkPolicySettingsForKafkaExporter(extensionContext, kafkaClusterFirstName, namespaceFirst);
-        NetworkPolicyResource.allowNetworkPolicySettingsForKafkaExporter(extensionContext, kafkaClusterSecondName, namespaceSecond);
 
         // wait some time for metrics to be stable - at least reconciliation interval + 10s
         LOGGER.info("Sleeping for {} to give operators and operands some time to stable the metrics values before collecting",
