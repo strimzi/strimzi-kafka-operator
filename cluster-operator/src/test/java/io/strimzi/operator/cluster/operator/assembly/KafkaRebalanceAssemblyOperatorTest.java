@@ -1378,7 +1378,8 @@ public class KafkaRebalanceAssemblyOperatorTest {
         mockRebalanceOps = supplier.kafkaRebalanceOperator;
         when(mockKafkaOps.getAsync(CLUSTER_NAMESPACE, CLUSTER_NAME)).thenReturn(Future.succeededFuture(kafka));
 
-        ClusterOperatorConfig config = new ClusterOperatorConfig.ClusterOperatorConfigBuilder(ResourceUtils.dummyClusterOperatorConfig(KafkaVersionTestUtils.getKafkaVersionLookup(), 120000), KafkaVersionTestUtils.getKafkaVersionLookup())
+        ClusterOperatorConfig config = new ClusterOperatorConfig.ClusterOperatorConfigBuilder(ResourceUtils.dummyClusterOperatorConfig(), KafkaVersionTestUtils.getKafkaVersionLookup())
+                .with(ClusterOperatorConfig.OPERATION_TIMEOUT_MS.key(), "120000")
                 .with(ClusterOperatorConfig.CUSTOM_RESOURCE_SELECTOR.key(), Map.of("selectorLabel", "value").entrySet().stream().map(e -> e.getKey() + "=" + e.getValue()).collect(Collectors.joining(","))).build();
 
         kcrao = new KafkaRebalanceAssemblyOperator(Vertx.vertx(), supplier, config);

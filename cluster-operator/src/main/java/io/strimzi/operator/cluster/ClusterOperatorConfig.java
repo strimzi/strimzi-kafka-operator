@@ -390,7 +390,6 @@ public class ClusterOperatorConfig {
         return FeatureGates::new;
     };
 
-
     static ConfigParameterParser<ImagePullPolicy> parseImagePullPolicy() {
         return imagePullPolicyEnvVar -> {
             ImagePullPolicy imagePullPolicy = null;

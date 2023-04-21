@@ -17,6 +17,8 @@ import io.strimzi.certs.CertAndKey;
 import io.strimzi.certs.OpenSslCertManager;
 import io.strimzi.certs.Subject;
 import io.strimzi.operator.cluster.ClusterOperator;
+import io.strimzi.operator.cluster.ClusterOperatorConfig;
+import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.AbstractModel;
 import io.strimzi.operator.cluster.model.Ca;
@@ -158,7 +160,8 @@ public class CaReconcilerTest {
 
         Promise<ArgumentCaptor<Secret>> reconcileCasComplete = Promise.promise();
 
-        new CaReconciler(reconciliation, kafka, ResourceUtils.dummyClusterOperatorConfig(1L), supplier, vertx, certManager, passwordGenerator)
+        new CaReconciler(reconciliation, kafka, new ClusterOperatorConfig.ClusterOperatorConfigBuilder(ResourceUtils.dummyClusterOperatorConfig(), KafkaVersionTestUtils.getKafkaVersionLookup()).with(ClusterOperatorConfig.OPERATION_TIMEOUT_MS.key(), "1").build(),
+                supplier, vertx, certManager, passwordGenerator)
                 .reconcile(clock)
                 .onComplete(ar -> {
                     // If succeeded return the argument captor object instead of the Reconciliation state
@@ -1259,7 +1262,8 @@ public class CaReconcilerTest {
 
         Checkpoint async = context.checkpoint();
 
-        new CaReconciler(reconciliation, kafka, ResourceUtils.dummyClusterOperatorConfig(1L), supplier, vertx, certManager, passwordGenerator)
+        new CaReconciler(reconciliation, kafka, new ClusterOperatorConfig.ClusterOperatorConfigBuilder(ResourceUtils.dummyClusterOperatorConfig(), KafkaVersionTestUtils.getKafkaVersionLookup()).with(ClusterOperatorConfig.OPERATION_TIMEOUT_MS.key(), "1").build(),
+                supplier, vertx, certManager, passwordGenerator)
                 .reconcile(Clock.systemUTC())
                 .onComplete(context.succeeding(c -> context.verify(() -> {
                     assertThat(clusterCaCert.getAllValues(), hasSize(1));
@@ -1343,7 +1347,8 @@ public class CaReconcilerTest {
 
         Checkpoint async = context.checkpoint();
 
-        new CaReconciler(reconciliation, kafka, ResourceUtils.dummyClusterOperatorConfig(1L), supplier, vertx, certManager, passwordGenerator)
+        new CaReconciler(reconciliation, kafka, new ClusterOperatorConfig.ClusterOperatorConfigBuilder(ResourceUtils.dummyClusterOperatorConfig(), KafkaVersionTestUtils.getKafkaVersionLookup()).with(ClusterOperatorConfig.OPERATION_TIMEOUT_MS.key(), "1").build(),
+                supplier, vertx, certManager, passwordGenerator)
                 .reconcile(Clock.systemUTC())
                 .onComplete(context.succeeding(c -> context.verify(() -> {
                     assertThat(clusterCaCert.getAllValues(), hasSize(1));
@@ -1421,7 +1426,8 @@ public class CaReconcilerTest {
 
         Checkpoint async = context.checkpoint();
 
-        new CaReconciler(reconciliation, kafka, ResourceUtils.dummyClusterOperatorConfig(1L), supplier, vertx, certManager, passwordGenerator)
+        new CaReconciler(reconciliation, kafka, new ClusterOperatorConfig.ClusterOperatorConfigBuilder(ResourceUtils.dummyClusterOperatorConfig(), KafkaVersionTestUtils.getKafkaVersionLookup()).with(ClusterOperatorConfig.OPERATION_TIMEOUT_MS.key(), "1").build(),
+                supplier, vertx, certManager, passwordGenerator)
                 .reconcile(Clock.systemUTC())
                 .onComplete(context.succeeding(c -> context.verify(() -> {
                     assertThat(clusterCaCert.getAllValues(), hasSize(1));

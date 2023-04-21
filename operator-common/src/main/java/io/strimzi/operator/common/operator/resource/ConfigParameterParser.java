@@ -75,7 +75,7 @@ public interface ConfigParameterParser<T> {
             try {
                 kafkaAdminClientConfiguration.load(new StringReader(configValue));
             } catch (IOException | IllegalArgumentException e) {
-                throw new InvalidConfigurationException("Failed to parse the configuration string", e);
+                throw new InvalidConfigurationException("Failed to parse the configuration string " + configValue);
             }
         }
 
@@ -85,11 +85,11 @@ public interface ConfigParameterParser<T> {
     /**
      * A Java Long
      */
-    ConfigParameterParser<Long> LONG = s -> {
+    ConfigParameterParser<Long> LONG = configValue -> {
         try {
-            return Long.parseLong(s);
+            return Long.parseLong(configValue);
         } catch (NumberFormatException e) {
-            throw new InvalidConfigurationException("Failed to parse. Value is not valid", e);
+            throw new InvalidConfigurationException("Failed to parse. Value " + configValue + " is not valid");
         }
     };
 
@@ -97,22 +97,22 @@ public interface ConfigParameterParser<T> {
     /**
      * A Java Duration
      */
-    ConfigParameterParser<Duration> DURATION = s -> {
+    ConfigParameterParser<Duration> DURATION = configValue -> {
         try {
-            return Duration.ofMillis(Long.parseLong(s));
+            return Duration.ofMillis(Long.parseLong(configValue));
         } catch (NumberFormatException e) {
-            throw new InvalidConfigurationException("Failed to parse. Value is not valid", e);
+            throw new InvalidConfigurationException("Failed to parse. Value " + configValue + " is not valid");
         }
     };
 
     /**
      * A Java Integer
      */
-    ConfigParameterParser<Integer> INTEGER = s -> {
+    ConfigParameterParser<Integer> INTEGER = configValue -> {
         try {
-            return Integer.parseInt(s);
+            return Integer.parseInt(configValue);
         } catch (NumberFormatException e) {
-            throw new InvalidConfigurationException("Failed to parse. Value is not valid", e);
+            throw new InvalidConfigurationException("Failed to parse. Value " + configValue + " is not valid", e);
         }
     };
 
@@ -123,8 +123,8 @@ public interface ConfigParameterParser<T> {
      * @return Positive number
      */
     static <T extends Number> ConfigParameterParser<T> strictlyPositive(ConfigParameterParser<T> parser) {
-        return s -> {
-            var value = parser.parse(s);
+        return configValue -> {
+            var value = parser.parse(configValue);
             if (value.longValue() <= 0) {
                 throw new InvalidConfigurationException("Failed to parse. Negative value is not supported for this configuration");
             }
@@ -135,11 +135,11 @@ public interface ConfigParameterParser<T> {
     /**
      * A Java Boolean
      */
-    ConfigParameterParser<Boolean> BOOLEAN = s -> {
-        if (s.equals("true") || s.equals("false")) {
-            return Boolean.parseBoolean(s);
+    ConfigParameterParser<Boolean> BOOLEAN = configValue -> {
+        if (configValue.equals("true") || configValue.equals("false")) {
+            return Boolean.parseBoolean(configValue);
         } else {
-            throw new InvalidConfigurationException("Failed to parse. Value is not valid");
+            throw new InvalidConfigurationException("Failed to parse. Value " + configValue + " is not valid");
         }
     };
 
@@ -150,7 +150,7 @@ public interface ConfigParameterParser<T> {
         try {
             return Labels.fromString(stringLabels);
         } catch (IllegalArgumentException e) {
-            throw new InvalidConfigurationException("Failed to parse. Value is not valid", e);
+            throw new InvalidConfigurationException("Failed to parse. Value " + stringLabels + " is not valid", e);
         }
     };
 

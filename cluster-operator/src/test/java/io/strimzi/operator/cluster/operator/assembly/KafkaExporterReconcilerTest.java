@@ -12,6 +12,7 @@ import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.strimzi.api.kafka.model.KafkaExporterResources;
 import io.strimzi.certs.OpenSslCertManager;
+import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.AbstractModel;
@@ -163,7 +164,8 @@ public class KafkaExporterReconcilerTest {
 
         KafkaExporterReconciler reconciler = new KafkaExporterReconciler(
                 Reconciliation.DUMMY_RECONCILIATION,
-                ResourceUtils.dummyClusterOperatorConfig(false),
+                new ClusterOperatorConfig.ClusterOperatorConfigBuilder(ResourceUtils.dummyClusterOperatorConfig(), KafkaVersionTestUtils.getKafkaVersionLookup())
+                        .with(ClusterOperatorConfig.NETWORK_POLICY_GENERATION.key(), "false").build(),
                 supplier,
                 kafka,
                 VERSIONS,
@@ -274,7 +276,8 @@ public class KafkaExporterReconcilerTest {
 
         KafkaExporterReconciler reconciler = new KafkaExporterReconciler(
                 Reconciliation.DUMMY_RECONCILIATION,
-                ResourceUtils.dummyClusterOperatorConfig(false),
+                new ClusterOperatorConfig.ClusterOperatorConfigBuilder(ResourceUtils.dummyClusterOperatorConfig(), KafkaVersionTestUtils.getKafkaVersionLookup())
+                        .with(ClusterOperatorConfig.NETWORK_POLICY_GENERATION.key(), "false").build(),
                 supplier,
                 kafka,
                 VERSIONS,

@@ -152,7 +152,7 @@ public class KafkaConnectorIT {
         );
 
         KafkaConnectAssemblyOperator operator = new KafkaConnectAssemblyOperator(vertx, pfa, ros,
-                ClusterOperatorConfig.buildFromMap(Collections.emptyMap(), KafkaVersionTestUtils.getKafkaVersionLookup()),
+                ClusterOperatorConfig.buildFromMap(Map.of(), KafkaVersionTestUtils.getKafkaVersionLookup()),
             connect -> new KafkaConnectApiImpl(vertx),
             connectCluster.getPort(2)
         ) { };
@@ -222,7 +222,7 @@ public class KafkaConnectorIT {
         );
 
         KafkaConnectAssemblyOperator operator = new KafkaConnectAssemblyOperator(vertx, pfa, ros,
-                ClusterOperatorConfig.buildFromMap(Collections.emptyMap(), KafkaVersionTestUtils.getKafkaVersionLookup()),
+                ClusterOperatorConfig.buildFromMap(Map.of(), KafkaVersionTestUtils.getKafkaVersionLookup()),
                 connect -> new KafkaConnectApiImpl(vertx),
                 connectCluster.getPort(2)
         ) { };
@@ -271,7 +271,7 @@ public class KafkaConnectorIT {
         );
 
         KafkaConnectAssemblyOperator operator = new KafkaConnectAssemblyOperator(vertx, pfa, ros,
-                ClusterOperatorConfig.buildFromMap(Collections.emptyMap(), KafkaVersionTestUtils.getKafkaVersionLookup()),
+                ClusterOperatorConfig.buildFromMap(Map.of(), KafkaVersionTestUtils.getKafkaVersionLookup()),
                 connect -> new KafkaConnectApiImpl(vertx),
                 connectCluster.getPort(2)
         ) { };
@@ -331,7 +331,7 @@ public class KafkaConnectorIT {
         );
 
         KafkaConnectAssemblyOperator operator = new KafkaConnectAssemblyOperator(vertx, pfa, ros,
-            ClusterOperatorConfig.buildFromMap(Collections.emptyMap(), KafkaVersionTestUtils.getKafkaVersionLookup()),
+            ClusterOperatorConfig.buildFromMap(Map.of(), KafkaVersionTestUtils.getKafkaVersionLookup()),
             connect -> new KafkaConnectApiImpl(vertx),
             connectCluster.getPort(2)
         ) { };
@@ -380,7 +380,7 @@ public class KafkaConnectorIT {
         );
 
         KafkaConnectAssemblyOperator operator = new KafkaConnectAssemblyOperator(vertx, pfa, ros,
-            ClusterOperatorConfig.buildFromMap(Collections.emptyMap(), KafkaVersionTestUtils.getKafkaVersionLookup()),
+            ClusterOperatorConfig.buildFromMap(Map.of(), KafkaVersionTestUtils.getKafkaVersionLookup()),
             connect -> new KafkaConnectApiImpl(vertx),
             connectCluster.getPort(2)
         ) { };

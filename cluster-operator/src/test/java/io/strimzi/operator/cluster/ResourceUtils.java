@@ -622,27 +622,10 @@ public class ResourceUtils {
         return ClusterOperatorConfig.buildFromMap(envVars, KafkaVersionTestUtils.getKafkaVersionLookup());
     }
 
-    public static ClusterOperatorConfig dummyClusterOperatorConfig(KafkaVersion.Lookup versions, long operationTimeoutMs) {
-        return new ClusterOperatorConfigBuilder(dummyClusterOperatorConfig(), versions)
-                .with(ClusterOperatorConfig.OPERATION_TIMEOUT_MS.key(), String.valueOf(operationTimeoutMs))
-                .build();
-    }
-
     public static ClusterOperatorConfig dummyClusterOperatorConfig(KafkaVersion.Lookup versions) {
         return new ClusterOperatorConfigBuilder(dummyClusterOperatorConfig(), versions)
                 .build();
     }
-
-    public static ClusterOperatorConfig dummyClusterOperatorConfig(long operationTimeoutMs) {
-        return new ClusterOperatorConfigBuilder(dummyClusterOperatorConfig(), KafkaVersionTestUtils.getKafkaVersionLookup())
-                .with(ClusterOperatorConfig.OPERATION_TIMEOUT_MS.key(), String.valueOf(operationTimeoutMs))
-                .build();
-    }
-
-    public static ClusterOperatorConfig dummyClusterOperatorConfig(boolean networkPolicyGeneration) {
-        return new ClusterOperatorConfigBuilder(dummyClusterOperatorConfig(), KafkaVersionTestUtils.getKafkaVersionLookup())
-                .with(ClusterOperatorConfig.NETWORK_POLICY_GENERATION.key(), String.valueOf(networkPolicyGeneration))
-                .build();    }
 
     public static ClusterOperatorConfig dummyClusterOperatorConfig(String featureGates) {
         return new ClusterOperatorConfigBuilder(dummyClusterOperatorConfig(), KafkaVersionTestUtils.getKafkaVersionLookup())
