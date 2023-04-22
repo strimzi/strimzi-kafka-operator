@@ -19,7 +19,7 @@ DOCKERDIRS=docker-images/base docker-images/operator docker-images/kafka-based d
 DOCKER_TARGETS=docker_build docker_push docker_tag docker_load docker_save docker_amend_manifest docker_push_manifest docker_delete_manifest
 JAVA_TARGETS=java_build java_install java_clean
 
-all: prerequisites_check $(SUBDIRS) $(DOCKERDIRS) crd_install helm_install shellcheck docu_versions docu_check
+all: prerequisites_check $(SUBDIRS) $(DOCKERDIRS) crd_install dashboard_install helm_install shellcheck docu_versions docu_check
 clean: prerequisites_check $(SUBDIRS) $(DOCKERDIRS) docu_clean
 $(DOCKER_TARGETS): prerequisites_check $(DOCKERDIRS)
 $(JAVA_TARGETS): prerequisites_check $(SUBDIRS)
@@ -180,6 +180,8 @@ systemtests:
 helm_install: packaging/helm-charts/helm3
 
 crd_install: packaging/install
+
+dashboard_install: packaging/examples
 
 $(SUBDIRS):
 	$(MAKE) -C $@ $(MAKECMDGOALS)
