@@ -374,8 +374,8 @@ public class CaReconciler {
     }
 
     /**
-     * If we need to roll the ZooKeeper cluster to roll out the trust to a new CA private key (i.e. when a CA private
-     * key is replaced), we need to know what the current number of ZooKeeper nodes is. Getting it from the Kafka custom
+     * If we need to roll the ZooKeeper cluster to roll out the trust to a new CA certificate when a CA private key is
+     * being replaced, we need to know what the current number of ZooKeeper nodes is. Getting it from the Kafka custom
      * resource might not be good enough if a scale-up /scale-down is happening at the same time. So we get the
      * StrimziPodSet and find out the correct number of ZooKeeper nodes from it.
      *
