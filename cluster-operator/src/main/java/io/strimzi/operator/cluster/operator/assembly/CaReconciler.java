@@ -374,8 +374,10 @@ public class CaReconciler {
     }
 
     /**
-     * Finds the number of current ZooKeeper replicas. We need to find the current number because if new trust should be
-     * rolled out while scaling event is happening, we have to roll out the trust only to the existing pods.
+     * If we need to roll the ZooKeeper cluster to roll out the trust to a new CA private key (i.e. when a CA private
+     * key is replaced), we need to know what the current number of ZooKeeper nodes is. Getting it from the Kafka custom
+     * resource might not be good enough if a scale-up /scale-down is happening at the same time. So we get the
+     * StrimziPodSet and find out the correct number of ZooKeeper nodes from it.
      *
      * @return  Current number of ZooKeeper replicas
      */
@@ -393,7 +395,7 @@ public class CaReconciler {
     }
 
     /**
-     * Checks whether the ZooKeeper cluster needs ot be rolled to trust the new private key. ZooKeeper uses only the
+     * Checks whether the ZooKeeper cluster needs ot be rolled to trust the new CA private key. ZooKeeper uses only the
      * Cluster CA and not the Clients CA. So the rolling happens only when Cluster CA private key changed.
      *
      * @param replicas              Current number of ZooKeeper replicas
