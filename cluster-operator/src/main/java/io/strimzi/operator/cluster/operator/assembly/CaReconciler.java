@@ -361,7 +361,8 @@ public class CaReconciler {
         }
 
         if (podRollReasons.shouldRestart()) {
-            return maybeRollZookeeper(podRollReasons)
+            return getZooKeeperReplicas()
+                    .compose(replicas -> maybeRollZookeeper(replicas, podRollReasons))
                     .compose(i -> getKafkaReplicas())
                     .compose(nodes -> rollKafkaBrokers(nodes, podRollReasons))
                     .compose(i -> maybeRollDeploymentIfExists(KafkaResources.entityOperatorDeploymentName(reconciliation.name()), podRollReasons))
@@ -372,8 +373,38 @@ public class CaReconciler {
         }
     }
 
-    // ZooKeeper is rolled only for new Cluster CA key
-    private Future<Void> maybeRollZookeeper(RestartReasons podRestartReasons) {
+    /**
+     * If we need to roll the ZooKeeper cluster to roll out the trust to a new CA certificate when a CA private key is
+     * being replaced, we need to know what the current number of ZooKeeper nodes is. Getting it from the Kafka custom
+     * resource might not be good enough if a scale-up /scale-down is happening at the same time. So we get the
+     * StrimziPodSet and find out the correct number of ZooKeeper nodes from it.
+     *
+     * @return  Current number of ZooKeeper replicas
+     */
+    private Future<Integer> getZooKeeperReplicas() {
+        return strimziPodSetOperator.getAsync(reconciliation.namespace(), KafkaResources.zookeeperStatefulSetName(reconciliation.name()))
+                .compose(podSet -> {
+                    if (podSet != null
+                            && podSet.getSpec() != null
+                            && podSet.getSpec().getPods() != null) {
+                        return Future.succeededFuture(podSet.getSpec().getPods().size());
+                    } else {
+                        return Future.succeededFuture(0);
+                    }
+                });
+    }
+
+    /**
+     * Checks whether the ZooKeeper cluster needs ot be rolled to trust the new CA private key. ZooKeeper uses only the
+     * Cluster CA and not the Clients CA. So the rolling happens only when Cluster CA private key changed.
+     *
+     * @param replicas              Current number of ZooKeeper replicas
+     * @param podRestartReasons     List of reasons to restart the pods
+     *
+     * @return  Future which completes when this step is done either by rolling the ZooKeeper cluster or by deciding
+     *          that no rolling is needed.
+     */
+    private Future<Void> maybeRollZookeeper(int replicas, RestartReasons podRestartReasons) {
         if (podRestartReasons.contains(RestartReason.CLUSTER_CA_CERT_KEY_REPLACED)) {
             Labels zkSelectorLabels = Labels.EMPTY
                     .withStrimziKind(reconciliation.kind())
@@ -386,7 +417,7 @@ public class CaReconciler {
                 return reason;
             };
             return new ZooKeeperRoller(podOperator, zookeeperLeaderFinder, operationTimeoutMs)
-                    .maybeRollingUpdate(reconciliation, zkSelectorLabels, rollZkPodAndLogReason, clusterCa.caCertSecret(), oldCoSecret);
+                    .maybeRollingUpdate(reconciliation, replicas, zkSelectorLabels, rollZkPodAndLogReason, clusterCa.caCertSecret(), oldCoSecret);
         } else {
             return Future.succeededFuture();
         }
