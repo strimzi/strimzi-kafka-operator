@@ -325,7 +325,7 @@ public class ClusterOperatorConfigTest {
         envVars.put(ClusterOperatorConfig.OPERATOR_NAMESPACE_LABELS.key(), "nsLabelKey1,nsLabelKey2");
 
         InvalidConfigurationException e = assertThrows(InvalidConfigurationException.class, () -> ClusterOperatorConfig.buildFromMap(envVars, KafkaVersionTestUtils.getKafkaVersionLookup()));
-        assertThat(e.getMessage(), containsString("Failed to parse. Value is not valid"));
+        assertThat(e.getMessage(), containsString("Failed to parse. Value nsLabelKey1,nsLabelKey2 is not valid"));
     }
 
     @Test
@@ -355,7 +355,7 @@ public class ClusterOperatorConfigTest {
         envVars.put(ClusterOperatorConfig.CUSTOM_RESOURCE_SELECTOR.key(), "nsLabelKey1,nsLabelKey2");
 
         InvalidConfigurationException e = assertThrows(InvalidConfigurationException.class, () -> ClusterOperatorConfig.buildFromMap(envVars, KafkaVersionTestUtils.getKafkaVersionLookup()));
-        assertThat(e.getMessage(), containsString("Failed to parse. Value is not valid"));
+        assertThat(e.getMessage(), containsString("Failed to parse. Value nsLabelKey1,nsLabelKey2 is not valid"));
     }
 
     @Test
