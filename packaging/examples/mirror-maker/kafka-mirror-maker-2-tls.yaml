@@ -5,19 +5,19 @@ metadata:
 spec:
   version: 3.4.0
   replicas: 1
-  connectCluster: "my-target-cluster"
+  connectCluster: "cluster-b" # Must be the target custer
   clusters:
-  - alias: "my-source-cluster"
-    bootstrapServers: my-source-cluster-kafka-bootstrap:9093
+  - alias: "cluster-a" # Source cluster
+    bootstrapServers: cluster-a-kafka-bootstrap:9093
     tls:
       trustedCertificates:
-        - secretName: my-source-cluster-cluster-ca-cert
+        - secretName: cluster-a-cluster-ca-cert
           certificate: ca.crt
-  - alias: "my-target-cluster"
-    bootstrapServers: my-target-cluster-kafka-bootstrap:9093
+  - alias: "cluster-b" # Target cluster
+    bootstrapServers: cluster-b-kafka-bootstrap:9093
     tls:
       trustedCertificates:
-        - secretName: my-target-cluster-cluster-ca-cert
+        - secretName: cluster-b-cluster-ca-cert
           certificate: ca.crt
     config:
       # -1 means it will use the default replication factor configured in the broker
@@ -25,17 +25,20 @@ spec:
       offset.storage.replication.factor: -1
       status.storage.replication.factor: -1
   mirrors:
-  - sourceCluster: "my-source-cluster"
-    targetCluster: "my-target-cluster"
+  - sourceCluster: "cluster-a"
+    targetCluster: "cluster-b"
     sourceConnector:
+      tasksMax: 1
       config:
         replication.factor: 1
         offset-syncs.topic.replication.factor: 1
         sync.topic.acls.enabled: "false"
     heartbeatConnector:
+      tasksMax: 1
       config:
         heartbeats.topic.replication.factor: 1
     checkpointConnector:
+      tasksMax: 1
       config:
         checkpoints.topic.replication.factor: 1
     topicsPattern: ".*"

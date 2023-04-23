@@ -6,16 +6,16 @@ spec:
   version: 3.4.0
   replicas: 1
   consumer:
-    bootstrapServers: my-source-cluster-kafka-bootstrap:9093
-    groupId: my-source-group-id
+    bootstrapServers: cluster-a-kafka-bootstrap:9093 # Source cluster
+    groupId: cluster-a-group-id
     tls:
       trustedCertificates:
-        - secretName: my-source-cluster-cluster-ca-cert
+        - secretName: cluster-a-cluster-ca-cert
           certificate: ca.crt
   producer:
-    bootstrapServers: my-target-cluster-kafka-bootstrap:9093
+    bootstrapServers: cluster-b-kafka-bootstrap:9093 # Target cluster
     tls:
       trustedCertificates:
-        - secretName: my-target-cluster-cluster-ca-cert
+        - secretName: cluster-b-cluster-ca-cert
           certificate: ca.crt
   include: ".*"

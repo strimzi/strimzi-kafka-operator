@@ -6,8 +6,8 @@ spec:
   version: 3.4.0
   replicas: 1
   consumer:
-    bootstrapServers: my-source-cluster-kafka-bootstrap:9092
-    groupId: my-source-group-id
+    bootstrapServers: cluster-a-kafka-bootstrap:9092 # Source cluster
+    groupId: cluster-a-group-id
   producer:
-    bootstrapServers: my-target-cluster-kafka-bootstrap:9092
+    bootstrapServers: cluster-b-kafka-bootstrap:9092 # Target cluster
   include: ".*"
