@@ -17,9 +17,9 @@ If you used the YAML installation files to install Strimzi, you can use the YAML
 If the previous version of Strimzi does not support the version of Kafka you are using,
 you can also downgrade Kafka as long as the log message format versions appended to messages match.
 
-WARNING: If you deployed Strimzi using another installation method, use a supported approach to downgrade Strimzi.
-Do not use the downgrade instructions provided here. 
-For example, if you installed Strimzi using the Operator Lifecycle Manager (OLM), you can downgrade by changing the deployment channel to an earlier version of Strimzi. 
+WARNING: The following downgrade instructions are only suitable if you installed Strimzi using the installation files. 
+If you used a different method like {OperatorHub}, refer to their downgrade instructions. 
+To ensure a successful downgrade process, it is essential to use a supported approach.
 
 //steps to downgrade the operators
 include::../../modules/upgrading/proc-downgrade-cluster-operator.adoc[leveloffset=+1]
