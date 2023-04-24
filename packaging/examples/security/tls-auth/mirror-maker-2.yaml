@@ -194,14 +194,14 @@ spec:
           - Read
           - Describe
       # MirrorHeartbeatConnector => needed only if the connector is enabled
-      - resource:
-          type: topic
-          name: heartbeats
-        operations:
-          - Read
-          - Describe
-          - Write
-          - Create
+      # - resource:
+      #     type: topic
+      #     name: heartbeats
+      #   operations:
+      #     - Read
+      #     - Create
+      #     - Describe
+      #     - Write
 ---
 
 apiVersion: kafka.strimzi.io/v1beta2
