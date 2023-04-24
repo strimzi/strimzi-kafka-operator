@@ -59,7 +59,6 @@ import io.strimzi.systemtest.utils.kubeUtils.controllers.ConfigMapUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PersistentVolumeClaimUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.ServiceUtils;
-
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.executor.ExecResult;
 import org.apache.logging.log4j.LogManager;
@@ -1053,10 +1052,10 @@ class KafkaST extends AbstractST {
     }
 
     @ParallelNamespaceTest
-//    @SuppressWarnings({"checkstyle:MethodLength"})
+    @KRaftNotSupported("JBOD is not supported by KRaft mode and is used in this test case.")
     @SuppressWarnings({"checkstyle:JavaNCSS", "checkstyle:NPathComplexity", "checkstyle:MethodLength"})
     @Tag(INTERNAL_CLIENTS_USED)
-    void testLabelsExistenceAndLabelsAddition(ExtensionContext extensionContext) {
+    void testLabelsExistenceAndManipulation(ExtensionContext extensionContext) {
         final TestStorage testStorage = new TestStorage(extensionContext);
         final int kafkaReplicas = 3;
 
@@ -1258,9 +1257,8 @@ class KafkaST extends AbstractST {
             resource.getSpec().getZookeeper().getTemplate().getPersistentVolumeClaim().getMetadata().setAnnotations(customSpecifiedLabelOrAnnotationPvc);
         }, testStorage.getNamespaceName());
 
-        if (!Environment.isKRaftModeEnabled()) {
-            RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getZookeeperSelector(), 1, zkPods);
-        }
+        LOGGER.info("Wait for rollout of zookeeper and kafka");
+        RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getZookeeperSelector(), 1, zkPods);
         RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getKafkaSelector(), 3, kafkaPods);
 
         LOGGER.info("---> PVC (both labels and annotation) <---");
@@ -1268,7 +1266,6 @@ class KafkaST extends AbstractST {
         LOGGER.info("Wait for changes in PVC labels and until kafka becomes ready");
         PersistentVolumeClaimUtils.waitUntilPVCLabelsChange(testStorage.getNamespaceName(), testStorage.getClusterName(), customSpecifiedLabelOrAnnotationPvc, pvcLabelOrAnnotationKey);
         PersistentVolumeClaimUtils.waitUntilPVCAnnotationChange(testStorage.getNamespaceName(), testStorage.getClusterName(), customSpecifiedLabelOrAnnotationPvc, pvcLabelOrAnnotationKey);
-//        KafkaUtils.waitForKafkaReady(testStorage.getNamespaceName(), testStorage.getClusterName()); // TODO remove
 
         pvcs = kubeClient(testStorage.getNamespaceName()).listPersistentVolumeClaims(testStorage.getNamespaceName(), testStorage.getClusterName()).stream().filter(
             persistentVolumeClaim -> persistentVolumeClaim.getMetadata().getName().contains(testStorage.getClusterName())).collect(Collectors.toList());
@@ -1318,8 +1315,7 @@ class KafkaST extends AbstractST {
             assertThat("Label exists in kafka pods", label.getValue().equals(podLabels.get(label.getKey())));
         }
 
-
-
+        LOGGER.info("Produce and Consume messages to make sure kafka cluster is not broken by labels and annotations manipulation");
         resourceManager.createResource(extensionContext,
             kafkaClients.producerStrimzi(),
             kafkaClients.consumerStrimzi()
@@ -1477,126 +1473,6 @@ class KafkaST extends AbstractST {
         }
 
         assertThat("Folder kafka-log0 doesn't contain 100 files", result, containsString(stringToMatch.toString()));
-    }
-
-
-    @ParallelNamespaceTest
-    @KRaftNotSupported("JBOD is not supported by KRaft mode and is used in this test case.")
-    void testLabelsAndAnnotationForPVC(ExtensionContext extensionContext) {
-        final String namespaceName = StUtils.getNamespaceBasedOnRbac(namespace, extensionContext);
-        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
-        final String labelAnnotationKey = "testKey";
-        final String firstValue = "testValue";
-        final String changedValue = "editedTestValue";
-
-        Map<String, String> pvcLabel = new HashMap<>();
-        pvcLabel.put(labelAnnotationKey, firstValue);
-        Map<String, String> pvcAnnotation = pvcLabel;
-
-        Map<String, String> statefulSetLabels = new HashMap<>();
-        statefulSetLabels.put("app.kubernetes.io/part-of", "some-app");
-        statefulSetLabels.put("app.kubernetes.io/managed-by", "some-app");
-
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(clusterName, 3, 1)
-            .editSpec()
-                .editKafka()
-                    .withNewTemplate()
-                        .withNewStatefulset()
-                            .withNewMetadata()
-                                .withLabels(statefulSetLabels)
-                            .endMetadata()
-                        .endStatefulset()
-                        .withNewPodSet()
-                            .withNewMetadata()
-                                .withLabels(statefulSetLabels)
-                            .endMetadata()
-                        .endPodSet()
-                        .withNewPersistentVolumeClaim()
-                            .withNewMetadata()
-                                .addToLabels(pvcLabel)
-                                .addToAnnotations(pvcAnnotation)
-                            .endMetadata()
-                        .endPersistentVolumeClaim()
-                    .endTemplate()
-                    .withStorage(new JbodStorageBuilder().withVolumes(
-                        new PersistentClaimStorageBuilder()
-                                .withDeleteClaim(false)
-                                .withId(0)
-                                .withSize("20Gi")
-                                .build(),
-                        new PersistentClaimStorageBuilder()
-                                .withDeleteClaim(true)
-                                .withId(1)
-                                .withSize("10Gi")
-                                .build())
-                        .build())
-                .endKafka()
-                .editZookeeper()
-                    .withNewTemplate()
-                        .withNewPersistentVolumeClaim()
-                            .withNewMetadata()
-                                .addToLabels(pvcLabel)
-                                .addToAnnotations(pvcAnnotation)
-                            .endMetadata()
-                        .endPersistentVolumeClaim()
-                    .endTemplate()
-                    .withNewPersistentClaimStorage()
-                        .withDeleteClaim(false)
-                        .withSize("3Gi")
-                    .endPersistentClaimStorage()
-                .endZookeeper()
-            .endSpec()
-            .build());
-
-        LOGGER.info("Check if Kubernetes labels are applied");
-
-        Map<String, String> actualStatefulSetLabels = StrimziPodSetUtils.getLabelsOfStrimziPodSet(namespaceName, KafkaResources.kafkaStatefulSetName(clusterName));
-
-        assertThat(actualStatefulSetLabels.get("app.kubernetes.io/part-of"), is("some-app"));
-        assertThat(actualStatefulSetLabels.get("app.kubernetes.io/managed-by"), is("some-app"));
-
-        LOGGER.info("Kubernetes labels are correctly set and present");
-
-        List<PersistentVolumeClaim> pvcs = kubeClient(namespaceName).listPersistentVolumeClaims(namespaceName, clusterName).stream().filter(
-            persistentVolumeClaim -> persistentVolumeClaim.getMetadata().getName().contains(clusterName)).collect(Collectors.toList());
-
-        assertThat(pvcs.size(), is(7));
-
-        for (PersistentVolumeClaim pvc : pvcs) {
-            LOGGER.info("Verifying that PVC label {} - {} = {}", pvc.getMetadata().getName(), firstValue, pvc.getMetadata().getLabels().get(labelAnnotationKey));
-
-            assertThat(firstValue, is(pvc.getMetadata().getLabels().get(labelAnnotationKey)));
-            assertThat(firstValue, is(pvc.getMetadata().getAnnotations().get(labelAnnotationKey)));
-        }
-
-        pvcLabel.put(labelAnnotationKey, changedValue);
-        pvcAnnotation.put(labelAnnotationKey, changedValue);
-
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, kafka -> {
-            LOGGER.info("Replacing kafka && zookeeper labels and annotations from {} to {}", labelAnnotationKey, changedValue);
-            kafka.getSpec().getKafka().getTemplate().getPersistentVolumeClaim().getMetadata().setLabels(pvcLabel);
-            kafka.getSpec().getKafka().getTemplate().getPersistentVolumeClaim().getMetadata().setAnnotations(pvcAnnotation);
-            kafka.getSpec().getZookeeper().getTemplate().getPersistentVolumeClaim().getMetadata().setLabels(pvcLabel);
-            kafka.getSpec().getZookeeper().getTemplate().getPersistentVolumeClaim().getMetadata().setAnnotations(pvcAnnotation);
-        }, namespaceName);
-
-        PersistentVolumeClaimUtils.waitUntilPVCLabelsChange(namespaceName, clusterName, pvcLabel, labelAnnotationKey);
-        PersistentVolumeClaimUtils.waitUntilPVCAnnotationChange(namespaceName, clusterName, pvcAnnotation, labelAnnotationKey);
-        KafkaUtils.waitForKafkaReady(namespaceName, clusterName);
-
-        pvcs = kubeClient(namespaceName).listPersistentVolumeClaims(namespaceName, clusterName).stream().filter(
-            persistentVolumeClaim -> persistentVolumeClaim.getMetadata().getName().contains(clusterName)).collect(Collectors.toList());
-
-        LOGGER.info(pvcs.toString());
-
-        assertThat(pvcs.size(), is(7));
-
-        for (PersistentVolumeClaim pvc : pvcs) {
-            LOGGER.info("Verifying replaced PVC label {} - {} = {}", pvc.getMetadata().getName(), firstValue, pvc.getMetadata().getLabels().get(labelAnnotationKey));
-
-            assertThat(pvc.getMetadata().getLabels().get(labelAnnotationKey), is(changedValue));
-            assertThat(pvc.getMetadata().getAnnotations().get(labelAnnotationKey), is(changedValue));
-        }
     }
 
     @ParallelNamespaceTest
