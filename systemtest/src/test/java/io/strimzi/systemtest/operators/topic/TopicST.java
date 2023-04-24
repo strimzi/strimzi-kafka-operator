@@ -42,7 +42,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hamcrest.CoreMatchers;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
@@ -296,31 +295,6 @@ public class TopicST extends AbstractST {
     }
 
     @ParallelTest
-    @Disabled("TopicOperator allows forbidden settings - https://github.com/strimzi/strimzi-kafka-operator/issues/6884")
-    void testTopicModificationOfReplicationFactor(ExtensionContext extensionContext) {
-        String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
-
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(KAFKA_CLUSTER_NAME, topicName, namespace)
-            .editSpec()
-                .withReplicas(3)
-            .endSpec()
-            .build());
-
-        KafkaTopicResource.replaceTopicResourceInSpecificNamespace(topicName, t -> t.getSpec().setReplicas(1), namespace);
-        KafkaTopicUtils.waitForKafkaTopicNotReady(namespace, topicName);
-
-        String exceptedMessage = "Changing 'spec.replicas' is not supported. This KafkaTopic's 'spec.replicas' should be reverted to 3 and then the replication should be changed directly in Kafka.";
-        assertThat(KafkaTopicResource.kafkaTopicClient().inNamespace(namespace).withName(topicName).get().getStatus().getConditions().get(0).getMessage().contains(exceptedMessage), is(true));
-
-        String topicCRDMessage = KafkaTopicResource.kafkaTopicClient().inNamespace(namespace).withName(topicName).get().getStatus().getConditions().get(0).getMessage();
-
-        assertThat(topicCRDMessage, containsString(exceptedMessage));
-
-        cmdKubeClient(namespace).deleteByName(KafkaTopic.RESOURCE_SINGULAR, topicName);
-        KafkaTopicUtils.waitForKafkaTopicDeletion(namespace, topicName);
-    }
-
-    @ParallelTest
     @Tag(INTERNAL_CLIENTS_USED)
     void testSendingMessagesToNonExistingTopic(ExtensionContext extensionContext) {
         final TestStorage testStorage = new TestStorage(extensionContext, namespace);
@@ -401,19 +375,19 @@ public class TopicST extends AbstractST {
     }
 
     @ParallelTest
-    @Disabled("TopicOperator allows forbidden settings - https://github.com/strimzi/strimzi-kafka-operator/issues/6884")
     void testCreateTopicAfterUnsupportedOperation(ExtensionContext extensionContext) {
         String topicName = "topic-with-replication-to-change";
         String newTopicName = "another-topic";
 
         KafkaTopic kafkaTopic = KafkaTopicTemplates.topic(KAFKA_CLUSTER_NAME, topicName, namespace)
-                .editSpec()
-                    .withReplicas(3)
-                    .withPartitions(3)
-                .endSpec()
-                .build();
+            .editSpec()
+                .withReplicas(3)
+                .withPartitions(3)
+            .endSpec()
+            .build();
 
         resourceManager.createResource(extensionContext, kafkaTopic);
+        KafkaTopicUtils.waitForKafkaTopicReady(namespace, topicName);
 
         KafkaTopicResource.replaceTopicResourceInSpecificNamespace(topicName, t -> {
             t.getSpec().setReplicas(1);
@@ -580,30 +554,30 @@ public class TopicST extends AbstractST {
 
     @ParallelTest
     @KRaftNotSupported("TopicOperator is not supported by KRaft mode and is used in this test class")
-    // The test should be merged with testKafkaTopicDifferentStates when the issue wull be fixed
-    @Disabled("TopicOperator allows forbidden settings - https://github.com/strimzi/strimzi-kafka-operator/issues/6884")
-    void testKafkaTopicChangingInSyncReplicasStatus(ExtensionContext extensionContext) throws InterruptedException {
+    void testKafkaTopicChangingMinInSyncReplicas(ExtensionContext extensionContext) throws InterruptedException {
         String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
 
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(KAFKA_CLUSTER_NAME, topicName, 5)
             .editMetadata()
-                .withNamespace(clusterOperator.getDeploymentNamespace())
+                .withNamespace(namespace)
             .endMetadata()
             .build());
+        KafkaTopicUtils.waitForKafkaTopicReady(namespace, topicName);
         String invalidValue = "x";
-        String reason = "InvalidRequestException";
-        String reasonMessage = "Invalid value %s for configuration min.insync.replicas";
+        String reason = "InvalidConfigurationException";
+        String reasonMessage = String.format("Invalid value %s for configuration min.insync.replicas", invalidValue);
 
         LOGGER.info("Changing min.insync.replicas to random char");
-        KafkaTopicResource.replaceTopicResourceInSpecificNamespace(topicName, kafkaTopic -> kafkaTopic.getSpec().getConfig().replace("min.insync.replicas", invalidValue), clusterOperator.getDeploymentNamespace());
-        KafkaTopicUtils.waitForKafkaTopicNotReady(cluster.getNamespace(), topicName);
-
+        KafkaTopicResource.replaceTopicResourceInSpecificNamespace(topicName,
+            kafkaTopic -> kafkaTopic.getSpec().getConfig().put("min.insync.replicas", invalidValue),
+            namespace);
+        KafkaTopicUtils.waitForKafkaTopicNotReady(namespace, topicName);
         assertKafkaTopicStatus(topicName, namespace, NotReady, reason, reasonMessage, 2);
 
         // Wait some time to check if error is still present in KafkaTopic status
         LOGGER.info("Wait {} ms for next reconciliation", topicOperatorReconciliationInterval);
         Thread.sleep(topicOperatorReconciliationInterval);
-        assertKafkaTopicStatus(topicName, namespace, NotReady, reason, reasonMessage, 3);
+        assertKafkaTopicStatus(topicName, namespace, NotReady, reason, reasonMessage, 2);
     }
 
     void assertKafkaTopicStatus(String topicName, String namespace, CustomResourceStatus status, int expectedObservedGeneration) {
