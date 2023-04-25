@@ -4,10 +4,10 @@ By default, the PDB allows only one pod to be unavailable at any given time.
 You can increase the number of unavailable pods allowed by changing the default value of the `maxUnavailable` property.
 
 `StrimziPodSet` custom resources manage pods using a custom controller that cannot use the `maxUnavailable` value directly.
-Instead, the `maxUnavailable` value is converted to a `minAvailable` value, which effectively serves the same purpose, as illustrated in the following examples:
+Instead, the `maxUnavailable` value is automatically converted to a `minAvailable` value when creating the PDB resource, which effectively serves the same purpose, as illustrated in the following examples:
 
 * If there are three broker pods and the `maxUnavailable` property is set to `1` in the `Kafka` resource, the `minAvailable` setting is `2`, allowing one pod to be unavailable. 
-* If there are zero broker pods and the `maxUnavailable` property is set to `0` (zero), the `minAvailable` setting is also `0` (zero), allowing zero pods to be unavailable.
+* If there are three broker pods and the `maxUnavailable` property is set to `0` (zero), the `minAvailable` setting is `3`, requiring all three broker pods to be available and allowing zero pods to be unavailable.
 
 .Example `PodDisruptionBudget` template configuration
 [source,yaml,subs=attributes+]

@@ -14,7 +14,7 @@ This is to prevent voluntary evictions of pods, and ensure that the Kafka or Zoo
 You do this by setting the `maxUnavailable` value to zero in the `Kafka` or `ZooKeeper` template. 
 `StrimziPodSet` custom resources manage Kafka and ZooKeeper pods using a custom controller that cannot use the `maxUnavailable` value directly.
 Instead, the `maxUnavailable` value is converted to a `minAvailable` value.
-If the `maxUnavailable` property is set to `0` (zero), the `minAvailable` setting is also `0` (zero), allowing zero pods to be unavailable.
+For example, if there are three broker pods and the `maxUnavailable` property is set to `0` (zero), the `minAvailable` setting is `3`, requiring all three broker pods to be available and allowing zero pods to be unavailable.
 
 .Prerequisites
 
@@ -72,7 +72,7 @@ spec:
 
 .Procedure
 
-. Configure a pod disruption budget (PDB) of `0` (zero) for your Kafka deployment using `template` settings in the `Kafka` resource.
+. Set `maxUnavailable` to `0` (zero) in the Kafka and ZooKeeper sections of the `Kafka` resource using `template` settings.
 +
 .Specifying a pod disruption budget
 [source,yaml,subs=attributes+]
@@ -96,7 +96,7 @@ spec:
   # ...
 ----
 +
-A PDB of zero prevents the automatic eviction of pods in case of planned disruptions,
+This setting prevents the automatic eviction of pods in case of planned disruptions,
 leaving the Strimzi Drain Cleaner and Cluster Operator to roll the pods on different worker nodes.
 +
 Add the same configuration for ZooKeeper if you want to use Strimzi Drain Cleaner to drain ZooKeeper nodes.
