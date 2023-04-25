@@ -5,7 +5,6 @@
 package io.strimzi.systemtest.kafka;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
-import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.Pod;
@@ -42,7 +41,6 @@ import io.strimzi.systemtest.cli.KafkaCmdClient;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
-import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
@@ -63,7 +61,6 @@ import io.strimzi.test.TestUtils;
 import io.strimzi.test.executor.ExecResult;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.hamcrest.CoreMatchers;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
@@ -76,7 +73,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 import static io.strimzi.api.kafka.model.KafkaResources.kafkaStatefulSetName;
@@ -87,17 +83,14 @@ import static io.strimzi.systemtest.Constants.LOADBALANCER_SUPPORTED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.systemtest.utils.StUtils.configMap2Properties;
 import static io.strimzi.systemtest.utils.StUtils.stringToProperties;
-import static io.strimzi.test.TestUtils.fromYamlString;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static java.util.Arrays.asList;
 import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.anyOf;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.emptyOrNullString;
-import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
@@ -560,72 +553,6 @@ class KafkaST extends AbstractST {
 
     @ParallelNamespaceTest
     @KRaftNotSupported("TopicOperator is not supported by KRaft mode and is used in this test class")
-    void testForTopicOperator(ExtensionContext extensionContext) throws InterruptedException {
-        final String namespaceName = StUtils.getNamespaceBasedOnRbac(namespace, extensionContext);
-        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
-        final String scraperName = mapWithScraperNames.get(extensionContext.getDisplayName());
-
-        resourceManager.createResource(extensionContext,
-            KafkaTemplates.kafkaEphemeral(clusterName, 3).build(),
-            ScraperTemplates.scraperPod(namespaceName, scraperName).build()
-        );
-
-        final String scraperPodName =  kubeClient().listPodsByPrefixInName(namespaceName, scraperName).get(0).getMetadata().getName();
-        final String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
-        final String cliTopicName = "topic-from-cli";
-
-        //Creating topics for testing
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(clusterName, topicName).build());
-
-        KafkaTopicUtils.waitForKafkaTopicReady(namespaceName, topicName);
-
-        assertThat(KafkaTopicResource.kafkaTopicClient().inNamespace(namespaceName).withName(topicName).get().getMetadata().getName(), is(topicName));
-        assertThat(KafkaCmdClient.listTopicsUsingPodCli(namespaceName, scraperPodName, KafkaResources.plainBootstrapAddress(clusterName)), hasItem(topicName));
-
-        KafkaCmdClient.createTopicUsingPodCli(namespaceName, scraperPodName, KafkaResources.plainBootstrapAddress(clusterName), cliTopicName, 1, 1);
-        assertThat(KafkaCmdClient.listTopicsUsingPodCli(namespaceName, scraperPodName, KafkaResources.plainBootstrapAddress(clusterName)), hasItems(topicName, cliTopicName));
-        assertThat(cmdKubeClient(namespaceName).list(KafkaTopic.RESOURCE_KIND), hasItems(cliTopicName, topicName));
-
-        //Updating first topic using pod CLI
-        KafkaCmdClient.updateTopicPartitionsCountUsingPodCli(namespaceName, scraperPodName, KafkaResources.plainBootstrapAddress(clusterName), topicName, 2);
-
-        KafkaUtils.waitForKafkaReady(namespaceName, clusterName);
-
-        assertThat(KafkaCmdClient.describeTopicUsingPodCli(namespaceName, scraperPodName, KafkaResources.plainBootstrapAddress(clusterName), topicName),
-                containsString("PartitionCount: 2"));
-        KafkaTopic testTopic = fromYamlString(cmdKubeClient(namespaceName).get(KafkaTopic.RESOURCE_KIND, topicName), KafkaTopic.class);
-        assertThat(testTopic, is(CoreMatchers.notNullValue()));
-        assertThat(testTopic.getSpec(), is(CoreMatchers.notNullValue()));
-        assertThat(testTopic.getSpec().getPartitions(), is(Integer.valueOf(2)));
-
-        //Updating second topic via KafkaTopic update
-        KafkaTopicResource.replaceTopicResourceInSpecificNamespace(cliTopicName, topic -> topic.getSpec().setPartitions(2), namespaceName);
-
-        KafkaUtils.waitForKafkaReady(namespaceName, clusterName);
-
-        assertThat(KafkaCmdClient.describeTopicUsingPodCli(namespaceName, scraperPodName, KafkaResources.plainBootstrapAddress(clusterName), cliTopicName),
-            containsString("PartitionCount: 2"));
-        testTopic = fromYamlString(cmdKubeClient(namespaceName).get(KafkaTopic.RESOURCE_KIND, cliTopicName), KafkaTopic.class);
-        assertThat(testTopic, is(CoreMatchers.notNullValue()));
-        assertThat(testTopic.getSpec(), is(CoreMatchers.notNullValue()));
-        assertThat(testTopic.getSpec().getPartitions(), is(Integer.valueOf(2)));
-
-        //Deleting first topic by deletion of CM
-        cmdKubeClient(namespaceName).deleteByName(KafkaTopic.RESOURCE_KIND, cliTopicName);
-
-        //Deleting another topic using pod CLI
-        KafkaCmdClient.deleteTopicUsingPodCli(namespaceName, scraperPodName, KafkaResources.plainBootstrapAddress(clusterName), topicName);
-        KafkaTopicUtils.waitForKafkaTopicDeletion(namespaceName, topicName);
-
-        //Checking all topics were deleted
-        Thread.sleep(Constants.TIMEOUT_TEARDOWN);
-        List<String> topics = KafkaCmdClient.listTopicsUsingPodCli(namespaceName, scraperPodName, KafkaResources.plainBootstrapAddress(clusterName));
-        assertThat(topics, not(hasItems(topicName)));
-        assertThat(topics, not(hasItems(cliTopicName)));
-    }
-
-    @ParallelNamespaceTest
-    @KRaftNotSupported("TopicOperator is not supported by KRaft mode and is used in this test class")
     void testRemoveTopicOperatorFromEntityOperator(ExtensionContext extensionContext) {
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(namespace, extensionContext);
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
@@ -1051,6 +978,27 @@ class KafkaST extends AbstractST {
         });
     }
 
+    /**
+     * @description This test case verifies the presence of expected Strimzi specific labels, also labels and annotations specified by user.
+     * Some of user-specified labels are later modified (new one is added, one is modified) which triggers rolling update after which
+     * all changes took place as expected.
+     *
+     * @steps
+     *  1. - Deploy Kafka with persistent storage and specify custom labels in CR metadata, and also other labels and annotation in PVC metadata
+     *     - Kafka is deployed with its default labels and all others specified by user.
+     *  2. - Deploy Producer and Consumer configured to produce and consume default number of messages, to make sure Kafka works as expected
+     *     - Producer and Consumer are able to produce and consume messages respectively.
+     *  3. - Modify configuration of Kafka CR with addition of new labels and modification of existing
+     *     - Kafka is rolling and new labels are present in Kafka CR, and managed resources
+     *  4. - Deploy Producer and Consumer configured to produce and consume default number of messages, to make sure Kafka works as expected
+     *     - Producer and Consumer are able to produce and consume messages respectively.
+     *
+     * @usecase
+     *  - annotations
+     *  - labels
+     *  - kafka-rolling-update
+     *  - persistent-storage
+     */
     @ParallelNamespaceTest
     @KRaftNotSupported("JBOD is not supported by KRaft mode and is used in this test case.")
     @SuppressWarnings({"checkstyle:JavaNCSS", "checkstyle:NPathComplexity", "checkstyle:MethodLength"})
@@ -1133,10 +1081,10 @@ class KafkaST extends AbstractST {
 
         LOGGER.info("---> PODS <---");
 
-        List<Pod> pods = kubeClient(testStorage.getNamespaceName()).listPodsByPrefixInName(testStorage.getNamespaceName(), testStorage.getClusterName());
+        List<Pod> pods = kubeClient().listPodsByPrefixInName(testStorage.getNamespaceName(), testStorage.getClusterName());
 
         for (Pod pod : pods) {
-            LOGGER.info("Getting labels from {} pod", pod.getMetadata().getName());
+            LOGGER.info("Verify labels of  Pod/{} namespace/{}", pod.getMetadata().getName(), pod.getMetadata().getNamespace());
             verifyAppLabels(pod.getMetadata().getLabels());
         }
 
@@ -1144,54 +1092,54 @@ class KafkaST extends AbstractST {
 
         Map<String, String> kafkaLabelsObtained = StrimziPodSetUtils.getLabelsOfStrimziPodSet(testStorage.getNamespaceName(), testStorage.getKafkaStatefulSetName());
 
-        LOGGER.info("Getting labels from Strimzi pod set of kafka resource");
+        LOGGER.info("Verify labels of StrimziPodSet of Kafka resource");
         verifyAppLabels(kafkaLabelsObtained);
 
         if (!Environment.isKRaftModeEnabled()) {
             Map<String, String> zooLabels = StrimziPodSetUtils.getLabelsOfStrimziPodSet(testStorage.getNamespaceName(), testStorage.getZookeeperStatefulSetName());
 
-            LOGGER.info("Getting labels from Strimzi pod set of zookeeper resource");
+            LOGGER.info("Verify labels of StrimziPodSet of Zookeeper resource");
             verifyAppLabels(zooLabels);
         }
 
         LOGGER.info("---> SERVICES <---");
 
-        List<Service> services = kubeClient(testStorage.getNamespaceName()).listServices(testStorage.getNamespaceName()).stream()
+        List<Service> services = kubeClient().listServices(testStorage.getNamespaceName()).stream()
             .filter(service -> service.getMetadata().getName().startsWith(testStorage.getClusterName()))
             .collect(Collectors.toList());
 
         for (Service service : services) {
-            LOGGER.info("Getting labels from {} service", service.getMetadata().getName());
+            LOGGER.info("Verify labels of service/{} namespace/{}", service.getMetadata().getName(), service.getMetadata().getNamespace());
             verifyAppLabels(service.getMetadata().getLabels());
         }
 
         LOGGER.info("---> SECRETS <---");
 
-        List<Secret> secrets = kubeClient(testStorage.getNamespaceName()).listSecrets(testStorage.getNamespaceName()).stream()
+        List<Secret> secrets = kubeClient().listSecrets(testStorage.getNamespaceName()).stream()
             .filter(secret -> secret.getMetadata().getName().startsWith(testStorage.getClusterName()) && secret.getType().equals("Opaque"))
             .collect(Collectors.toList());
 
         for (Secret secret : secrets) {
-            LOGGER.info("Getting labels from {} secret", secret.getMetadata().getName());
+            LOGGER.info("Verify labels of secret/{} namespace/{}", secret.getMetadata().getName(), secret.getMetadata().getNamespace());
             verifyAppLabelsForSecretsAndConfigMaps(secret.getMetadata().getLabels());
         }
 
         LOGGER.info("---> CONFIG MAPS <---");
 
-        List<ConfigMap> configMaps = kubeClient(testStorage.getNamespaceName()).listConfigMapsInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName());
+        List<ConfigMap> configMaps = kubeClient().listConfigMapsInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName());
 
         for (ConfigMap configMap : configMaps) {
-            LOGGER.info("Getting labels from {} config map", configMap.getMetadata().getName());
+            LOGGER.info("Verify labels of ConfigMap/{} namespace/{}", configMap.getMetadata().getName(), configMap.getMetadata().getNamespace());
             verifyAppLabelsForSecretsAndConfigMaps(configMap.getMetadata().getLabels());
         }
 
         LOGGER.info("---> PVC (both labels and annotation) <---");
 
-        List<PersistentVolumeClaim> pvcs = kubeClient(testStorage.getNamespaceName()).listPersistentVolumeClaims(testStorage.getNamespaceName(), testStorage.getClusterName()).stream().filter(
+        List<PersistentVolumeClaim> pvcs = kubeClient().listPersistentVolumeClaims(testStorage.getNamespaceName(), testStorage.getClusterName()).stream().filter(
             persistentVolumeClaim -> persistentVolumeClaim.getMetadata().getName().contains(testStorage.getClusterName())).collect(Collectors.toList());
 
         for (PersistentVolumeClaim pvc : pvcs) {
-            LOGGER.info("Getting labels from {} pvc", pvc.getMetadata().getName());
+            LOGGER.info("Verify labels of PVC/{} namespace/{}", pvc.getMetadata().getName(), pvc.getMetadata().getNamespace());
             verifyAppLabels(pvc.getMetadata().getLabels());
         }
 
@@ -1199,26 +1147,26 @@ class KafkaST extends AbstractST {
 
         LOGGER.info("---> STRIMZI POD SETS <---");
 
-        LOGGER.info("Waiting for kafka Strimzi pod set labels existence {}", customSpecifiedLabels);
+        LOGGER.info("Waiting for Kafka StrimziPodSet  labels existence {}", customSpecifiedLabels);
         StrimziPodSetUtils.waitForStrimziPodSetLabelsChange(testStorage.getNamespaceName(), testStorage.getKafkaStatefulSetName(), customSpecifiedLabels);
 
-        LOGGER.info("Getting labels from strimzi pod set set resource");
+        LOGGER.info("Getting labels from StrimziPodSet set resource");
         kafkaLabelsObtained = StrimziPodSetUtils.getLabelsOfStrimziPodSet(testStorage.getNamespaceName(), testStorage.getKafkaStatefulSetName());
 
-        LOGGER.info("Asserting presence of custom labels which should be available in kafka with labels {}", kafkaLabelsObtained);
+        LOGGER.info("Asserting presence of custom labels which should be available in Kafka with labels {}", kafkaLabelsObtained);
         for (Map.Entry<String, String> label : customSpecifiedLabels.entrySet()) {
             String customLabelKey = label.getKey();
             String customLabelValue = label.getValue();
-            assertThat("Label exists in strimzi pod set set with concrete value",
+            assertThat("Label exists in StrimziPodSet set with concrete value",
                 customLabelValue.equals(kafkaLabelsObtained.get(customLabelKey)));
         }
 
         LOGGER.info("---> PVC (both labels and annotation) <---");
         for (PersistentVolumeClaim pvc : pvcs) {
 
-            LOGGER.info("Asserting presence of custom label and annotation in pvc: {}", pvc.getMetadata().getName());
-            assertThat(pvcLabelOrAnnotationValue, is(pvc.getMetadata().getLabels().get(pvcLabelOrAnnotationKey)));
-            assertThat(pvcLabelOrAnnotationValue, is(pvc.getMetadata().getAnnotations().get(pvcLabelOrAnnotationKey)));
+            LOGGER.info("Asserting presence of custom label and annotation in PVC/{} namespace/{}", pvc.getMetadata().getName(), pvc.getMetadata().getNamespace());
+            assertThat(pvc.getMetadata().getLabels().get(pvcLabelOrAnnotationKey), is(pvcLabelOrAnnotationValue));
+            assertThat(pvc.getMetadata().getAnnotations().get(pvcLabelOrAnnotationKey), is(pvcLabelOrAnnotationValue));
         }
 
         resourceManager.createResource(extensionContext,
@@ -1227,9 +1175,9 @@ class KafkaST extends AbstractST {
         );
         ClientUtils.waitForClientsSuccess(testStorage);
 
-        LOGGER.info("--> Test Customer specific labels manipulation (add, update) of kafka CR and (update) PVC <--");
+        LOGGER.info("--> Test Customer specific labels manipulation (add, update) of Kafka CR and (update) PVC <--");
 
-        LOGGER.info("Take a snapshot of zoo and kafka pods in order to wait for their respawn after rollout");
+        LOGGER.info("Take a snapshot of Zookeeper and Kafka Pods in order to wait for their respawn after rollout");
         Map<String, String> zkPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getZookeeperSelector());
         Map<String, String> kafkaPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getKafkaSelector());
 
@@ -1239,14 +1187,14 @@ class KafkaST extends AbstractST {
         final String thirdKafkaLabelValue = "third-kafka-label-value";
         customSpecifiedLabels.replace(firstKafkaLabelKey, firstKafkaLabelValueModified);
         customSpecifiedLabels.put(thirdKafkaLabelKey, thirdKafkaLabelValue);
-        LOGGER.info("New values of labels which are to modify kafka CR after their replacement and addition of new one are following {}", customSpecifiedLabels);
+        LOGGER.info("New values of labels which are to modify Kafka CR after their replacement and addition of new one are following {}", customSpecifiedLabels);
 
         // key-value pair modification of user specified label in managed PVCs
         final String pvcLabelOrAnnotationValueModified = "pvc-label-value-modified";
         customSpecifiedLabelOrAnnotationPvc.replace(pvcLabelOrAnnotationKey, pvcLabelOrAnnotationValueModified);
-        LOGGER.info("New values of labels which are to modify label and annotation of PVC present in kafka CR, with following values {}", customSpecifiedLabelOrAnnotationPvc);
+        LOGGER.info("New values of labels which are to modify label and annotation of PVC present in Kafka CR, with following values {}", customSpecifiedLabelOrAnnotationPvc);
 
-        LOGGER.info("Edit kafka labels in Kafka CR,as well as labels, and annotations of PVCs");
+        LOGGER.info("Edit Kafka labels in Kafka CR,as well as labels, and annotations of PVCs");
         KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), resource -> {
             for (Map.Entry<String, String> label : customSpecifiedLabels.entrySet()) {
                 resource.getMetadata().getLabels().put(label.getKey(), label.getValue());
@@ -1257,22 +1205,22 @@ class KafkaST extends AbstractST {
             resource.getSpec().getZookeeper().getTemplate().getPersistentVolumeClaim().getMetadata().setAnnotations(customSpecifiedLabelOrAnnotationPvc);
         }, testStorage.getNamespaceName());
 
-        LOGGER.info("Wait for rollout of zookeeper and kafka");
+        LOGGER.info("Wait for rolling update of Zookeeper and Kafka");
         RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getZookeeperSelector(), 1, zkPods);
         RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getKafkaSelector(), 3, kafkaPods);
 
         LOGGER.info("---> PVC (both labels and annotation) <---");
 
-        LOGGER.info("Wait for changes in PVC labels and until kafka becomes ready");
+        LOGGER.info("Wait for changes in PVC labels and until Kafka becomes ready");
         PersistentVolumeClaimUtils.waitUntilPVCLabelsChange(testStorage.getNamespaceName(), testStorage.getClusterName(), customSpecifiedLabelOrAnnotationPvc, pvcLabelOrAnnotationKey);
         PersistentVolumeClaimUtils.waitUntilPVCAnnotationChange(testStorage.getNamespaceName(), testStorage.getClusterName(), customSpecifiedLabelOrAnnotationPvc, pvcLabelOrAnnotationKey);
 
-        pvcs = kubeClient(testStorage.getNamespaceName()).listPersistentVolumeClaims(testStorage.getNamespaceName(), testStorage.getClusterName()).stream().filter(
+        pvcs = kubeClient().listPersistentVolumeClaims(testStorage.getNamespaceName(), testStorage.getClusterName()).stream().filter(
             persistentVolumeClaim -> persistentVolumeClaim.getMetadata().getName().contains(testStorage.getClusterName())).collect(Collectors.toList());
         LOGGER.info(pvcs.toString());
 
         for (PersistentVolumeClaim pvc : pvcs) {
-            LOGGER.info("Verifying replaced PVC label {} - {} = {}, as both label and annotation", pvc.getMetadata().getName(), pvcLabelOrAnnotationKey, pvc.getMetadata().getLabels().get(pvcLabelOrAnnotationKey));
+            LOGGER.info("Verifying replaced PVC/{} label/{}={}, as both label and annotation", pvc.getMetadata().getName(), pvcLabelOrAnnotationKey, pvc.getMetadata().getLabels().get(pvcLabelOrAnnotationKey));
 
             assertThat(pvc.getMetadata().getLabels().get(pvcLabelOrAnnotationKey), is(pvcLabelOrAnnotationValueModified));
             assertThat(pvc.getMetadata().getAnnotations().get(pvcLabelOrAnnotationKey), is(pvcLabelOrAnnotationValueModified));
@@ -1280,11 +1228,11 @@ class KafkaST extends AbstractST {
 
         LOGGER.info("---> SERVICES <---");
 
-        LOGGER.info("Waiting for kafka service labels changed {}", customSpecifiedLabels);
+        LOGGER.info("Waiting for Kafka Service labels changed {}", customSpecifiedLabels);
         ServiceUtils.waitForServiceLabelsChange(testStorage.getNamespaceName(), KafkaResources.brokersServiceName(testStorage.getClusterName()), customSpecifiedLabels);
 
-        LOGGER.info("Verifying kafka labels via services");
-        Service service = kubeClient(testStorage.getNamespaceName()).getService(testStorage.getNamespaceName(), KafkaResources.brokersServiceName(testStorage.getClusterName()));
+        LOGGER.info("Verifying Kafka labels via Services");
+        Service service = kubeClient().getService(testStorage.getNamespaceName(), KafkaResources.brokersServiceName(testStorage.getClusterName()));
 
         verifyPresentLabels(customSpecifiedLabels, service.getMetadata().getLabels());
 
@@ -1302,20 +1250,20 @@ class KafkaST extends AbstractST {
 
         LOGGER.info("---> STRIMZI POD SETS <---");
 
-        LOGGER.info("Waiting for strimzi pod set labels changed {}", customSpecifiedLabels);
+        LOGGER.info("Waiting for StrimziPodSet labels changed {}", customSpecifiedLabels);
         StrimziPodSetUtils.waitForStrimziPodSetLabelsChange(testStorage.getNamespaceName(), testStorage.getKafkaStatefulSetName(), customSpecifiedLabels);
 
-        LOGGER.info("Verifying kafka labels via strimzi pod set");
+        LOGGER.info("Verifying Kafka labels via StrimziPodSet");
         verifyPresentLabels(customSpecifiedLabels, StrimziPodSetUtils.getLabelsOfStrimziPodSet(testStorage.getNamespaceName(), testStorage.getKafkaStatefulSetName()));
 
-        LOGGER.info("Verifying via kafka pods");
-        Map<String, String> podLabels = kubeClient(testStorage.getNamespaceName()).getPod(testStorage.getNamespaceName(), KafkaResources.kafkaPodName(testStorage.getClusterName(), 0)).getMetadata().getLabels();
+        LOGGER.info("Verifying via Kafka Pods");
+        Map<String, String> podLabels = kubeClient().getPod(testStorage.getNamespaceName(), KafkaResources.kafkaPodName(testStorage.getClusterName(), 0)).getMetadata().getLabels();
 
         for (Map.Entry<String, String> label : customSpecifiedLabels.entrySet()) {
-            assertThat("Label exists in kafka pods", label.getValue().equals(podLabels.get(label.getKey())));
+            assertThat("Label exists in Kafka Pods", label.getValue().equals(podLabels.get(label.getKey())));
         }
 
-        LOGGER.info("Produce and Consume messages to make sure kafka cluster is not broken by labels and annotations manipulation");
+        LOGGER.info("Produce and Consume messages to make sure Kafka cluster is not broken by labels and annotations manipulation");
         resourceManager.createResource(extensionContext,
             kafkaClients.producerStrimzi(),
             kafkaClients.consumerStrimzi()
@@ -1641,18 +1589,6 @@ class KafkaST extends AbstractST {
         for (Map.Entry<String, String> label : labels.entrySet()) {
             assertThat("Label exists with concrete value in HasMetadata(Services, CM, STS) resources",
                     label.getValue().equals(resourceLabels.get(label.getKey())));
-        }
-    }
-
-    void verifyNullLabels(Set<String> labelKeys, Map<String, String> labels) {
-        for (String labelKey : labelKeys) {
-            assertThat(labels.get(labelKey), nullValue());
-        }
-    }
-
-    void verifyNullLabels(Set<String> labelKeys, HasMetadata resources) {
-        for (String labelKey : labelKeys) {
-            assertThat(resources.getMetadata().getLabels().get(labelKey), nullValue());
         }
     }
 
