@@ -403,10 +403,17 @@ class CustomResourceStatusIsolatedST extends AbstractST {
             .endMetadata()
             .build());
         resourceManager.createResource(extensionContext, KafkaMirrorMaker2Templates.kafkaMirrorMaker2(mirrorMaker2Name, CUSTOM_RESOURCE_STATUS_CLUSTER_NAME, targetClusterName, 1, false)
-            .editMetadata()
-                .withNamespace(clusterOperator.getDeploymentNamespace())
-            .endMetadata()
-            .build());
+                .editMetadata()
+                    .withNamespace(clusterOperator.getDeploymentNamespace())
+                .endMetadata()
+                .editSpec()
+                    .editFirstMirror()
+                        .editOrNewHeartbeatConnector()
+                        .withConfig(Map.of("heartbeats.topic.replication.factor", "1"))
+                        .endHeartbeatConnector()
+                    .endMirror()
+                .endSpec()
+                .build());
         KafkaMirrorMaker2Utils.waitForKafkaMirrorMaker2Ready(clusterOperator.getDeploymentNamespace(), mirrorMaker2Name);
         KafkaMirrorMaker2Utils.waitForKafkaMirrorMaker2ConnectorReadiness(clusterOperator.getDeploymentNamespace(), mirrorMaker2Name);
         assertKafkaMirrorMaker2Status(1, mm2Url, mirrorMaker2Name);
