@@ -172,7 +172,7 @@ public class UserOperatorConfig {
      * @return         Configuration value w.r.t to the key
      */
     @SuppressWarnings("unchecked")
-    public  <T> T get(ConfigParameter<T> value) {
+    public <T> T get(ConfigParameter<T> value) {
         return (T) this.map.get(value.key());
     }
 
@@ -201,7 +201,7 @@ public class UserOperatorConfig {
      * @return  namespace in which the operator runs and creates resources
      */
     public String getNamespace() {
-        return (String) this.map.get(NAMESPACE.key());
+        return get(NAMESPACE);
     }
 
     /**
