@@ -57,11 +57,11 @@ public interface ConfigParameterParser<T> {
      * A semicolon-delimited list of strings.
      */
     ConfigParameterParser<List<String>> SEMICOLON_SEPARATED_LIST = configValue -> {
-        List<String> windows = null;
+        List<String> semicolonSeperatedList = null;
         if (configValue != null && !configValue.isEmpty()) {
-            windows = asList(configValue.split(";"));
+            semicolonSeperatedList = asList(configValue.split(";"));
         }
-        return windows;
+        return semicolonSeperatedList;
     };
 
     /**
@@ -92,7 +92,6 @@ public interface ConfigParameterParser<T> {
             throw new InvalidConfigurationException("Failed to parse. Value " + configValue + " is not valid");
         }
     };
-
 
     /**
      * A Java Duration
@@ -169,7 +168,6 @@ public interface ConfigParameterParser<T> {
         }
         return imagePullSecrets;
     };
-
 
     /**
      * Set of namespaces
