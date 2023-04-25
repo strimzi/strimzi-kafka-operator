@@ -246,6 +246,7 @@ public class MetricsCollector {
         if (values.isEmpty()) {
             TestUtils.waitFor(String.format("metrics contain pattern: %s", pattern.toString()), Constants.GLOBAL_POLL_INTERVAL_MEDIUM, Constants.GLOBAL_STATUS_TIMEOUT, () -> {
                 this.collectMetricsFromPods();
+                LOGGER.debug("Collected data: {}", collectedData);
                 ArrayList<Double> vals = this.collectSpecificMetric(pattern);
 
                 if (!vals.isEmpty()) {
@@ -264,7 +265,7 @@ public class MetricsCollector {
      * Collect metrics from specific pod
      * @return collected metrics
      */
-    private String collectMetrics(String metricsPodIp) throws InterruptedException, ExecutionException, IOException {
+    private String collectMetrics(String metricsPodIp, String podName) throws InterruptedException, ExecutionException, IOException {
         List<String> executableCommand = Arrays.asList(cmdKubeClient(namespaceName).toString(), "exec", scraperPodName,
             "-n", namespaceName,
             "--", "curl", metricsPodIp + ":" + metricsPort + metricsPath);
@@ -273,7 +274,7 @@ public class MetricsCollector {
         // 20 seconds should be enough for collect data from the pod
         int ret = exec.execute(null, executableCommand, 20_000);
 
-        LOGGER.info("Metrics collection for PodIp {} from Pod {} finished with return code: {}", metricsPodIp, scraperPodName, ret);
+        LOGGER.info("Metrics collection for Pod {}({}) from Pod {} finished with return code: {}", podName, metricsPodIp, scraperPodName, ret);
         return exec.out();
     }
 
@@ -307,7 +308,8 @@ public class MetricsCollector {
         Map<String, String> map = new HashMap<>();
         kubeClient(namespaceName).listPods(namespaceName, componentLabelSelector).forEach(p -> {
             try {
-                map.put(p.getMetadata().getName(), collectMetrics(p.getStatus().getPodIP()));
+                String podName = p.getMetadata().getName();
+                map.put(podName, collectMetrics(p.getStatus().getPodIP(), podName));
             } catch (InterruptedException | ExecutionException | IOException e) {
                 throw new RuntimeException(e);
             }

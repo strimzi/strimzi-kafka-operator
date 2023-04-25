@@ -14,7 +14,6 @@ import io.strimzi.api.kafka.model.KafkaConnectResources;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2Resources;
 import io.strimzi.api.kafka.model.KafkaResources;
-import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.connect.ConnectorPlugin;
 import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListener;
 import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBuilder;
@@ -26,7 +25,6 @@ import io.strimzi.api.kafka.model.status.KafkaConnectorStatus;
 import io.strimzi.api.kafka.model.status.KafkaMirrorMaker2Status;
 import io.strimzi.api.kafka.model.status.KafkaMirrorMakerStatus;
 import io.strimzi.api.kafka.model.status.KafkaStatus;
-import io.strimzi.api.kafka.model.status.KafkaTopicStatus;
 import io.strimzi.api.kafka.model.status.ListenerStatus;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.model.Labels;
@@ -35,7 +33,6 @@ import io.strimzi.systemtest.BeforeAllOnce;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.IsolatedSuite;
-import io.strimzi.systemtest.annotations.KRaftNotSupported;
 import io.strimzi.systemtest.kafkaclients.externalClients.ExternalKafkaClient;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.annotations.ParallelTest;
@@ -45,7 +42,6 @@ import io.strimzi.systemtest.resources.crd.KafkaConnectorResource;
 import io.strimzi.systemtest.resources.crd.KafkaMirrorMaker2Resource;
 import io.strimzi.systemtest.resources.crd.KafkaMirrorMakerResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
-import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.resources.crd.KafkaUserResource;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaBridgeTemplates;
@@ -62,7 +58,6 @@ import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectorUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaMirrorMaker2Utils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaMirrorMakerUtils;
-import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
@@ -71,7 +66,6 @@ import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
@@ -95,7 +89,6 @@ import static io.strimzi.systemtest.enums.CustomResourceStatus.NotReady;
 import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
 import static io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils.getKafkaSecretCertificates;
 import static io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils.getKafkaStatusCertificates;
-import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static java.util.Arrays.asList;
 import static org.hamcrest.CoreMatchers.hasItems;
@@ -108,7 +101,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 @IsolatedSuite
 class CustomResourceStatusIsolatedST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(CustomResourceStatusIsolatedST.class);
-    private static int topicOperatorReconciliationInterval;
+
     private static final String CUSTOM_RESOURCE_STATUS_CLUSTER_NAME = "custom-resource-status-cluster-name";
     private static final String EXAMPLE_TOPIC_NAME = "example-topic-name";
 
@@ -353,34 +346,6 @@ class CustomResourceStatusIsolatedST extends AbstractST {
     }
 
     @ParallelTest
-    @KRaftNotSupported("TopicOperator is not supported by KRaft mode and is used in this test class")
-    void testKafkaTopicStatus(ExtensionContext extensionContext) {
-        String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
-
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME, topicName, clusterOperator.getDeploymentNamespace()).build());
-
-        KafkaTopicUtils.waitForKafkaTopicReady(clusterOperator.getDeploymentNamespace(), topicName);
-        assertKafkaTopicStatus(1, topicName);
-    }
-
-    @ParallelTest
-    @KRaftNotSupported("TopicOperator is not supported by KRaft mode and is used in this test class")
-    void testKafkaTopicStatusNotReady(ExtensionContext extensionContext) {
-        String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
-
-        resourceManager.createResource(extensionContext, false, KafkaTopicTemplates.topic(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME, topicName, 1, 10, 10)
-            .editMetadata()
-                .withNamespace(clusterOperator.getDeploymentNamespace())
-            .endMetadata()
-            .build());
-        KafkaTopicUtils.waitForKafkaTopicNotReady(clusterOperator.getDeploymentNamespace(), topicName);
-        assertKafkaTopicStatus(1, topicName);
-
-        cmdKubeClient(clusterOperator.getDeploymentNamespace()).deleteByName(KafkaTopic.RESOURCE_KIND, topicName);
-        KafkaTopicUtils.waitForKafkaTopicDeletion(clusterOperator.getDeploymentNamespace(), topicName);
-    }
-
-    @ParallelTest
     void testKafkaStatusCertificate(ExtensionContext extensionContext) {
         String certs = getKafkaStatusCertificates(Constants.TLS_LISTENER_DEFAULT_NAME, clusterOperator.getDeploymentNamespace(), CUSTOM_RESOURCE_STATUS_CLUSTER_NAME);
         String secretCerts = getKafkaSecretCertificates(clusterOperator.getDeploymentNamespace(), CUSTOM_RESOURCE_STATUS_CLUSTER_NAME + "-cluster-ca-cert", "ca.crt");
@@ -450,57 +415,6 @@ class CustomResourceStatusIsolatedST extends AbstractST {
         DeploymentUtils.waitForDeploymentDeletion(clusterOperator.getDeploymentNamespace(), KafkaMirrorMaker2Resources.deploymentName(mirrorMaker2Name));
     }
 
-    @ParallelTest
-    @KRaftNotSupported("TopicOperator is not supported by KRaft mode and is used in this test class")
-    @Disabled("TopicOperator allows forbidden settings - https://github.com/strimzi/strimzi-kafka-operator/issues/6884")
-    void testKafkaTopicDecreaseStatus(ExtensionContext extensionContext) throws InterruptedException {
-        String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
-
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME, topicName, 5)
-            .editMetadata()
-                .withNamespace(clusterOperator.getDeploymentNamespace())
-            .endMetadata()
-            .build());
-        int decreaseTo = 1;
-
-        LOGGER.info("Decreasing number of partitions to {}", decreaseTo);
-        KafkaTopicResource.replaceTopicResourceInSpecificNamespace(topicName, kafkaTopic -> kafkaTopic.getSpec().setPartitions(decreaseTo), clusterOperator.getDeploymentNamespace());
-        KafkaTopicUtils.waitForKafkaTopicPartitionChange(clusterOperator.getDeploymentNamespace(), topicName, decreaseTo);
-        KafkaTopicUtils.waitForKafkaTopicNotReady(clusterOperator.getDeploymentNamespace(), topicName);
-
-        assertKafkaTopicDecreasePartitionsStatus(topicName);
-
-        // Wait some time to check if error is still present in KafkaTopic status
-        LOGGER.info("Wait {} ms for next reconciliation", topicOperatorReconciliationInterval);
-        Thread.sleep(topicOperatorReconciliationInterval);
-        assertKafkaTopicDecreasePartitionsStatus(topicName);
-    }
-
-    @ParallelTest
-    @KRaftNotSupported("TopicOperator is not supported by KRaft mode and is used in this test class")
-    @Disabled("TopicOperator allows forbidden settings - https://github.com/strimzi/strimzi-kafka-operator/issues/6884")
-    void testKafkaTopicChangingInSyncReplicasStatus(ExtensionContext extensionContext) throws InterruptedException {
-        String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
-
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME, topicName, 5)
-            .editMetadata()
-                .withNamespace(clusterOperator.getDeploymentNamespace())
-            .endMetadata()
-            .build());
-        String invalidValue = "x";
-
-        LOGGER.info("Changing min.insync.replicas to random char");
-        KafkaTopicResource.replaceTopicResourceInSpecificNamespace(topicName, kafkaTopic -> kafkaTopic.getSpec().getConfig().replace("min.insync.replicas", invalidValue), clusterOperator.getDeploymentNamespace());
-        KafkaTopicUtils.waitForKafkaTopicNotReady(cluster.getNamespace(), topicName);
-
-        assertKafkaTopicWrongMinInSyncReplicasStatus(topicName, invalidValue);
-
-        // Wait some time to check if error is still present in KafkaTopic status
-        LOGGER.info("Wait {} ms for next reconciliation", topicOperatorReconciliationInterval);
-        Thread.sleep(topicOperatorReconciliationInterval);
-        assertKafkaTopicWrongMinInSyncReplicasStatus(topicName, invalidValue);
-    }
-
     @BeforeAll
     void setup(ExtensionContext extensionContext) {
         clusterOperator.unInstall();
@@ -537,7 +451,6 @@ class CustomResourceStatusIsolatedST extends AbstractST {
             listeners = asList(plain, tls, nodePort);
         }
 
-
         KafkaBuilder kafkaBuilder = KafkaTemplates.kafkaEphemeral(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME, 1, 1)
             .editSpec()
                 .editKafka()
@@ -547,14 +460,6 @@ class CustomResourceStatusIsolatedST extends AbstractST {
 
         resourceManager.createResource(extensionContext, kafkaBuilder.build());
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME, TOPIC_NAME).build());
-
-        if (!Environment.isKRaftModeEnabled()) {
-            topicOperatorReconciliationInterval = KafkaResource.kafkaClient().inNamespace(clusterOperator.getDeploymentNamespace()).withName(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME).get()
-                    .getSpec().getEntityOperator().getTopicOperator().getReconciliationIntervalSeconds() * 1_000 * 2 + 5_000;
-        } else {
-            // TODO check this value
-            topicOperatorReconciliationInterval = 120_000;
-        }
     }
 
     void assertKafkaStatus(long expectedObservedGeneration, String internalAddress) {
@@ -640,32 +545,5 @@ class CustomResourceStatusIsolatedST extends AbstractST {
 
                 return formulaResult;
             });
-    }
-
-    void assertKafkaTopicStatus(long expectedObservedGeneration, String topicName) {
-        KafkaTopicStatus kafkaTopicStatus = KafkaTopicResource.kafkaTopicClient().inNamespace(clusterOperator.getDeploymentNamespace()).withName(topicName).get().getStatus();
-        assertThat("KafkaTopic status has incorrect Observed Generation", kafkaTopicStatus.getObservedGeneration(), is(expectedObservedGeneration));
-    }
-
-    void assertKafkaTopicDecreasePartitionsStatus(String topicName) {
-        KafkaTopicStatus kafkaTopicStatus = KafkaTopicResource.kafkaTopicClient().inNamespace(clusterOperator.getDeploymentNamespace()).withName(topicName).get().getStatus();
-
-        assertThat(kafkaTopicStatus.getConditions().stream()
-            .anyMatch(condition -> condition.getType().equals(NotReady.toString())), is(true));
-        assertThat(kafkaTopicStatus.getConditions().stream()
-            .anyMatch(condition -> condition.getReason().equals("PartitionDecreaseException")), is(true));
-        assertThat(kafkaTopicStatus.getConditions().stream()
-            .anyMatch(condition -> condition.getMessage().contains("Number of partitions cannot be decreased")), is(true));
-    }
-
-    void assertKafkaTopicWrongMinInSyncReplicasStatus(String topicName, String invalidValue) {
-        KafkaTopicStatus kafkaTopicStatus = KafkaTopicResource.kafkaTopicClient().inNamespace(clusterOperator.getDeploymentNamespace()).withName(topicName).get().getStatus();
-
-        assertThat(kafkaTopicStatus.getConditions().stream()
-            .anyMatch(condition -> condition.getType().equals(NotReady.toString())), is(true));
-        assertThat(kafkaTopicStatus.getConditions().stream()
-            .anyMatch(condition -> condition.getReason().equals("InvalidRequestException")), is(true));
-        assertThat(kafkaTopicStatus.getConditions().stream()
-            .anyMatch(condition -> condition.getMessage().contains(String.format("Invalid value %s for configuration min.insync.replicas", invalidValue))), is(true));
     }
 }
