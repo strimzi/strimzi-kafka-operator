@@ -5,14 +5,23 @@
 package io.strimzi.operator.common.operator.resource;
 
 
+import io.fabric8.kubernetes.api.model.LocalObjectReference;
+import io.fabric8.kubernetes.api.model.LocalObjectReferenceBuilder;
 import io.strimzi.operator.common.InvalidConfigurationException;
 import io.strimzi.operator.common.model.Labels;
 
 import java.io.IOException;
 import java.io.StringReader;
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.stream.Collectors;
 import java.util.Properties;
+
+import static java.util.Arrays.asList;
 
 /**
  * Abstraction for things which convert a single configuration parameter value from a String to some specific type.
@@ -48,11 +57,11 @@ public interface ConfigParameterParser<T> {
      * A semicolon-delimited list of strings.
      */
     ConfigParameterParser<List<String>> SEMICOLON_SEPARATED_LIST = configValue -> {
-        List<String> windows = null;
+        List<String> semicolonSeperatedList = null;
         if (configValue != null && !configValue.isEmpty()) {
-            windows = Arrays.asList(configValue.split(";"));
+            semicolonSeperatedList = asList(configValue.split(";"));
         }
-        return windows;
+        return semicolonSeperatedList;
     };
 
     /**
@@ -66,7 +75,7 @@ public interface ConfigParameterParser<T> {
             try {
                 kafkaAdminClientConfiguration.load(new StringReader(configValue));
             } catch (IOException | IllegalArgumentException e) {
-                throw new InvalidConfigurationException("Failed to parse the configuration string", e);
+                throw new InvalidConfigurationException("Failed to parse the configuration string " + configValue);
             }
         }
 
@@ -74,24 +83,35 @@ public interface ConfigParameterParser<T> {
     };
 
     /**
-     * A java Long
+     * A Java Long
      */
-    ConfigParameterParser<Long> LONG = s -> {
+    ConfigParameterParser<Long> LONG = configValue -> {
         try {
-            return Long.parseLong(s);
+            return Long.parseLong(configValue);
         } catch (NumberFormatException e) {
-            throw new InvalidConfigurationException("Failed to parse. Value is not valid", e);
+            throw new InvalidConfigurationException("Failed to parse. Value " + configValue + " is not valid");
+        }
+    };
+
+    /**
+     * A Java Duration
+     */
+    ConfigParameterParser<Duration> DURATION = configValue -> {
+        try {
+            return Duration.ofMillis(Long.parseLong(configValue));
+        } catch (NumberFormatException e) {
+            throw new InvalidConfigurationException("Failed to parse. Value " + configValue + " is not valid");
         }
     };
 
     /**
      * A Java Integer
      */
-    ConfigParameterParser<Integer> INTEGER = s -> {
+    ConfigParameterParser<Integer> INTEGER = configValue -> {
         try {
-            return Integer.parseInt(s);
+            return Integer.parseInt(configValue);
         } catch (NumberFormatException e) {
-            throw new InvalidConfigurationException("Failed to parse. Value is not valid", e);
+            throw new InvalidConfigurationException("Failed to parse. Value " + configValue + " is not valid", e);
         }
     };
 
@@ -102,8 +122,8 @@ public interface ConfigParameterParser<T> {
      * @return Positive number
      */
     static <T extends Number> ConfigParameterParser<T> strictlyPositive(ConfigParameterParser<T> parser) {
-        return s -> {
-            var value = parser.parse(s);
+        return configValue -> {
+            var value = parser.parse(configValue);
             if (value.longValue() <= 0) {
                 throw new InvalidConfigurationException("Failed to parse. Negative value is not supported for this configuration");
             }
@@ -114,11 +134,11 @@ public interface ConfigParameterParser<T> {
     /**
      * A Java Boolean
      */
-    ConfigParameterParser<Boolean> BOOLEAN = s -> {
-        if (s.equals("true") || s.equals("false")) {
-            return Boolean.parseBoolean(s);
+    ConfigParameterParser<Boolean> BOOLEAN = configValue -> {
+        if (configValue.equals("true") || configValue.equals("false")) {
+            return Boolean.parseBoolean(configValue);
         } else {
-            throw new InvalidConfigurationException("Failed to parse. Value is not valid");
+            throw new InvalidConfigurationException("Failed to parse. Value " + configValue + " is not valid");
         }
     };
 
@@ -129,8 +149,45 @@ public interface ConfigParameterParser<T> {
         try {
             return Labels.fromString(stringLabels);
         } catch (IllegalArgumentException e) {
-            throw new InvalidConfigurationException("Failed to parse. Value is not valid", e);
+            throw new InvalidConfigurationException("Failed to parse. Value " + stringLabels + " is not valid", e);
         }
+    };
+
+    /**
+     * A kubernetes LocalObjectReference list
+     */
+    ConfigParameterParser<List<LocalObjectReference>> LOCAL_OBJECT_REFERENCE_LIST = imagePullSecretList -> {
+        List<LocalObjectReference> imagePullSecrets = null;
+
+        if (imagePullSecretList != null && !imagePullSecretList.isEmpty()) {
+            if (imagePullSecretList.matches("(\\s*[a-z0-9.-]+\\s*,)*\\s*[a-z0-9.-]+\\s*")) {
+                imagePullSecrets = Arrays.stream(imagePullSecretList.trim().split("\\s*,+\\s*")).map(secret -> new LocalObjectReferenceBuilder().withName(secret).build()).collect(Collectors.toList());
+            } else {
+                throw new InvalidConfigurationException("Not a valid list of secret names");
+            }
+        }
+        return imagePullSecrets;
+    };
+
+    /**
+     * Set of namespaces
+     */
+    ConfigParameterParser<Set<String>> NAMESPACE_SET = namespacesList -> {
+        Set<String> namespaces;
+        if (namespacesList.equals("*")) {
+            namespaces = Collections.singleton(AbstractNamespacedResourceOperator.ANY_NAMESPACE);
+        } else {
+            if (namespacesList.trim().equals(AbstractNamespacedResourceOperator.ANY_NAMESPACE)) {
+                namespaces = Collections.singleton(AbstractNamespacedResourceOperator.ANY_NAMESPACE);
+            } else if (namespacesList.matches("(\\s*[a-z0-9.-]+\\s*,)*\\s*[a-z0-9.-]+\\s*")) {
+                namespaces = new HashSet<>(asList(namespacesList.trim().split("\\s*,+\\s*")));
+            } else {
+                throw new InvalidConfigurationException("Not a valid list of namespaces nor the 'any namespace' wildcard "
+                        + AbstractNamespacedResourceOperator.ANY_NAMESPACE);
+            }
+        }
+
+        return namespaces;
     };
 }
 

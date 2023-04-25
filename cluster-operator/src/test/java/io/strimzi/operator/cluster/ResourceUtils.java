@@ -47,6 +47,7 @@ import io.strimzi.api.kafka.model.storage.Storage;
 import io.strimzi.operator.cluster.model.Ca;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
+import io.strimzi.operator.cluster.ClusterOperatorConfig.ClusterOperatorConfigBuilder;
 import io.strimzi.operator.cluster.operator.resource.StatefulSetOperator;
 import io.strimzi.operator.cluster.operator.resource.ZookeeperLeaderFinder;
 import io.strimzi.operator.cluster.operator.resource.ZookeeperScaler;
@@ -101,13 +102,13 @@ import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.Collection;
-import java.util.List;
+import java.util.HashMap;
 import java.util.Map;
+import java.util.List;
 import java.util.Properties;
+import java.util.Collection;
 
 import static java.util.Collections.emptyMap;
-import static java.util.Collections.singleton;
 import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
 import static org.mockito.ArgumentMatchers.any;
@@ -614,52 +615,22 @@ public class ResourceUtils {
         return supplier;
     }
 
-    public static ClusterOperatorConfig dummyClusterOperatorConfig(KafkaVersion.Lookup versions, long operationTimeoutMs, String featureGates, boolean networkPolicyGeneration) {
-        return new ClusterOperatorConfig(
-                singleton("dummy"),
-                60_000,
-                operationTimeoutMs,
-                300_000,
-                false,
-                networkPolicyGeneration,
-                versions,
-                null,
-                null,
-                null,
-                null,
-                null,
-                featureGates,
-                10,
-                10_000,
-                30,
-                false,
-                1024,
-                "cluster-operator-name",
-                ClusterOperatorConfig.DEFAULT_POD_SECURITY_PROVIDER_CLASS, null);
-    }
+    public static ClusterOperatorConfig dummyClusterOperatorConfig() {
 
-    public static ClusterOperatorConfig dummyClusterOperatorConfig(KafkaVersion.Lookup versions, long operationTimeoutMs) {
-        return dummyClusterOperatorConfig(versions, operationTimeoutMs, "", true);
+        Map<String, String> envVars = new HashMap<>();
+
+        return ClusterOperatorConfig.buildFromMap(envVars, KafkaVersionTestUtils.getKafkaVersionLookup());
     }
 
     public static ClusterOperatorConfig dummyClusterOperatorConfig(KafkaVersion.Lookup versions) {
-        return dummyClusterOperatorConfig(versions, ClusterOperatorConfig.DEFAULT_OPERATION_TIMEOUT_MS, "", true);
-    }
-
-    public static ClusterOperatorConfig dummyClusterOperatorConfig(long operationTimeoutMs) {
-        return dummyClusterOperatorConfig(KafkaVersionTestUtils.getKafkaVersionLookup(), operationTimeoutMs, "", true);
-    }
-
-    public static ClusterOperatorConfig dummyClusterOperatorConfig() {
-        return dummyClusterOperatorConfig(KafkaVersionTestUtils.getKafkaVersionLookup(), ClusterOperatorConfig.DEFAULT_OPERATION_TIMEOUT_MS, "", true);
+        return new ClusterOperatorConfigBuilder(dummyClusterOperatorConfig(), versions)
+                .build();
     }
 
     public static ClusterOperatorConfig dummyClusterOperatorConfig(String featureGates) {
-        return dummyClusterOperatorConfig(KafkaVersionTestUtils.getKafkaVersionLookup(), ClusterOperatorConfig.DEFAULT_OPERATION_TIMEOUT_MS, featureGates, true);
-    }
-
-    public static ClusterOperatorConfig dummyClusterOperatorConfig(boolean networkPolicyGeneration) {
-        return dummyClusterOperatorConfig(KafkaVersionTestUtils.getKafkaVersionLookup(), ClusterOperatorConfig.DEFAULT_OPERATION_TIMEOUT_MS, "", networkPolicyGeneration);
+        return new ClusterOperatorConfigBuilder(dummyClusterOperatorConfig(), KafkaVersionTestUtils.getKafkaVersionLookup())
+                .with(ClusterOperatorConfig.FEATURE_GATES.key(), featureGates)
+                .build();
     }
 
     /**

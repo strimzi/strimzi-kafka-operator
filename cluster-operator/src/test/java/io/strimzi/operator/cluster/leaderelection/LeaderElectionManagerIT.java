@@ -12,7 +12,8 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import java.time.Duration;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -69,10 +70,16 @@ public class LeaderElectionManagerIT {
     }
 
     private LeaderElectionManager createLeaderElectionManager(String identity, Runnable startLeadershipCallback, Runnable stopLeadershipCallback)   {
+        Map<String, String> envVars = new HashMap<>();
+        envVars.put(LeaderElectionManagerConfig.ENV_VAR_LEADER_ELECTION_LEASE_NAME.key(), LEASE_NAME);
+        envVars.put(LeaderElectionManagerConfig.ENV_VAR_LEADER_ELECTION_LEASE_NAMESPACE.key(), NAMESPACE);
+        envVars.put(LeaderElectionManagerConfig.ENV_VAR_LEADER_ELECTION_IDENTITY.key(), identity);
+        envVars.put(LeaderElectionManagerConfig.ENV_VAR_LEADER_ELECTION_LEASE_DURATION_MS.key(), "1000");
+        envVars.put(LeaderElectionManagerConfig.ENV_VAR_LEADER_ELECTION_RENEW_DEADLINE_MS.key(), "800");
+        envVars.put(LeaderElectionManagerConfig.ENV_VAR_LEADER_ELECTION_RETRY_PERIOD_MS.key(), "200");
+
         return new LeaderElectionManager(
-                client, new LeaderElectionManagerConfig(LEASE_NAME, NAMESPACE, identity, Duration.ofMillis(1_000L), Duration.ofMillis(800L), Duration.ofMillis(200L)),
-                startLeadershipCallback,
-                stopLeadershipCallback,
+                client, LeaderElectionManagerConfig.fromMap(envVars), startLeadershipCallback, stopLeadershipCallback,
                 s -> {
                     // Do nothing
                 });

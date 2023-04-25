@@ -65,8 +65,8 @@ import java.net.URISyntaxException;
 import java.util.Collections;
 import java.util.Optional;
 import java.util.Map;
+import java.util.stream.Collectors;
 
-import static java.util.Collections.singleton;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
@@ -1378,27 +1378,9 @@ public class KafkaRebalanceAssemblyOperatorTest {
         mockRebalanceOps = supplier.kafkaRebalanceOperator;
         when(mockKafkaOps.getAsync(CLUSTER_NAMESPACE, CLUSTER_NAME)).thenReturn(Future.succeededFuture(kafka));
 
-        ClusterOperatorConfig config = new ClusterOperatorConfig(
-                singleton(CLUSTER_NAMESPACE),
-                60_000,
-                120_000,
-                300_000,
-                false,
-                true,
-                KafkaVersionTestUtils.getKafkaVersionLookup(),
-                null,
-                null,
-                null,
-                null,
-                Labels.fromMap(Map.of("selectorLabel", "value")),
-                "",
-                10,
-                10_000,
-                30,
-                false,
-                1024,
-                "cluster-operator-name",
-                ClusterOperatorConfig.DEFAULT_POD_SECURITY_PROVIDER_CLASS, null);
+        ClusterOperatorConfig config = new ClusterOperatorConfig.ClusterOperatorConfigBuilder(ResourceUtils.dummyClusterOperatorConfig(), KafkaVersionTestUtils.getKafkaVersionLookup())
+                .with(ClusterOperatorConfig.OPERATION_TIMEOUT_MS.key(), "120000")
+                .with(ClusterOperatorConfig.CUSTOM_RESOURCE_SELECTOR.key(), Map.of("selectorLabel", "value").entrySet().stream().map(e -> e.getKey() + "=" + e.getValue()).collect(Collectors.joining(","))).build();
 
         kcrao = new KafkaRebalanceAssemblyOperator(Vertx.vertx(), supplier, config);
 

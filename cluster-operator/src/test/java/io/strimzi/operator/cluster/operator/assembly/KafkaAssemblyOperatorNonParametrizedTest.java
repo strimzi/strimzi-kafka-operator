@@ -18,7 +18,6 @@ import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
-import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.resource.ClusterRoleBindingOperator;
 import io.strimzi.operator.common.operator.resource.CrdOperator;
 import io.strimzi.platform.KubernetesVersion;
@@ -36,8 +35,8 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 
 import java.util.Map;
+import java.util.stream.Collectors;
 
-import static java.util.Collections.singleton;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -82,7 +81,7 @@ public class KafkaAssemblyOperatorNonParametrizedTest {
         when(mockCrbOps.reconcile(any(), eq(KafkaResources.initContainerClusterRoleBindingName(NAME, NAMESPACE)), desiredCrb.capture())).thenReturn(Future.succeededFuture());
 
         KafkaAssemblyOperator op = new KafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(false, KubernetesVersion.MINIMAL_SUPPORTED_VERSION), certManager, passwordGenerator,
-                supplier, ResourceUtils.dummyClusterOperatorConfig(1L));
+                supplier, new ClusterOperatorConfig.ClusterOperatorConfigBuilder(ResourceUtils.dummyClusterOperatorConfig(), KafkaVersionTestUtils.getKafkaVersionLookup()).with(ClusterOperatorConfig.OPERATION_TIMEOUT_MS.key(), "1").build());
         Reconciliation reconciliation = new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, NAME);
 
         Checkpoint async = context.checkpoint();
@@ -125,27 +124,9 @@ public class KafkaAssemblyOperatorNonParametrizedTest {
         when(mockKafkaOps.get(eq(NAMESPACE), eq(NAME))).thenReturn(kafka);
         when(mockKafkaOps.updateStatusAsync(any(), any(Kafka.class))).thenReturn(Future.succeededFuture());
 
-        ClusterOperatorConfig config = new ClusterOperatorConfig(
-                singleton("dummy"),
-                60_000,
-                120_000,
-                300_000,
-                false,
-                true,
-                KafkaVersionTestUtils.getKafkaVersionLookup(),
-                null,
-                null,
-                null,
-                null,
-                Labels.fromMap(Map.of("selectorLabel", "value")),
-                "",
-                10,
-                10_000,
-                30,
-                false,
-                1024,
-                "cluster-operator-name",
-                ClusterOperatorConfig.DEFAULT_POD_SECURITY_PROVIDER_CLASS, null);
+        ClusterOperatorConfig config = new ClusterOperatorConfig.ClusterOperatorConfigBuilder(ResourceUtils.dummyClusterOperatorConfig(), KafkaVersionTestUtils.getKafkaVersionLookup())
+                .with(ClusterOperatorConfig.OPERATION_TIMEOUT_MS.key(), "120000")
+                .with(ClusterOperatorConfig.CUSTOM_RESOURCE_SELECTOR.key(), Map.of("selectorLabel", "value").entrySet().stream().map(e -> e.getKey() + "=" + e.getValue()).collect(Collectors.joining(","))).build();
 
         KafkaAssemblyOperator op = new KafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(false, KubernetesVersion.MINIMAL_SUPPORTED_VERSION), certManager, passwordGenerator,
                 supplier, config);

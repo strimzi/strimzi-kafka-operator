@@ -4,75 +4,53 @@
  */
 package io.strimzi.operator.cluster.leaderelection;
 
-import io.strimzi.operator.common.InvalidConfigurationException;
+import io.strimzi.operator.common.operator.resource.ConfigParameter;
 
 import java.time.Duration;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
+
+import static io.strimzi.operator.common.operator.resource.ConfigParameterParser.NON_EMPTY_STRING;
+import static io.strimzi.operator.common.operator.resource.ConfigParameterParser.DURATION;
 
 /**
  * Configuration class for the Leader Election Manager
  */
 public class LeaderElectionManagerConfig {
+
+    private static final Map<String, ConfigParameter<?>> CONFIG_VALUES = new HashMap<>();
+
     /**
      * Name of the Kubernetes Lease resource
      */
-    public final static String ENV_VAR_LEADER_ELECTION_LEASE_NAME = "STRIMZI_LEADER_ELECTION_LEASE_NAME";
+    public final static ConfigParameter<String> ENV_VAR_LEADER_ELECTION_LEASE_NAME = new ConfigParameter<>("STRIMZI_LEADER_ELECTION_LEASE_NAME", NON_EMPTY_STRING, null, CONFIG_VALUES);
 
     /**
      * Namespace of the Kubernetes Lease resource
      */
-    public final static String ENV_VAR_LEADER_ELECTION_LEASE_NAMESPACE = "STRIMZI_LEADER_ELECTION_LEASE_NAMESPACE";
+    public final static ConfigParameter<String>  ENV_VAR_LEADER_ELECTION_LEASE_NAMESPACE = new ConfigParameter<>("STRIMZI_LEADER_ELECTION_LEASE_NAMESPACE", NON_EMPTY_STRING, null, CONFIG_VALUES);
 
     /**
      * Identity of this operator for claiming the leadership
      */
-    public final static String ENV_VAR_LEADER_ELECTION_IDENTITY = "STRIMZI_LEADER_ELECTION_IDENTITY";
+    public final static ConfigParameter<String>  ENV_VAR_LEADER_ELECTION_IDENTITY = new ConfigParameter<>("STRIMZI_LEADER_ELECTION_IDENTITY", NON_EMPTY_STRING, null, CONFIG_VALUES);
 
     /**
      * Duration of the leadership
      */
-    public final static String ENV_VAR_LEADER_ELECTION_LEASE_DURATION_MS = "STRIMZI_LEADER_ELECTION_LEASE_DURATION_MS";
+    public final static ConfigParameter<Duration> ENV_VAR_LEADER_ELECTION_LEASE_DURATION_MS = new ConfigParameter<>("STRIMZI_LEADER_ELECTION_LEASE_DURATION_MS", DURATION, "15000", CONFIG_VALUES);
 
     /**
      * Hw often should the leadership be renewed
      */
-    public final static String ENV_VAR_LEADER_ELECTION_RENEW_DEADLINE_MS = "STRIMZI_LEADER_ELECTION_RENEW_DEADLINE_MS";
+    public final static ConfigParameter<Duration> ENV_VAR_LEADER_ELECTION_RENEW_DEADLINE_MS = new ConfigParameter<>("STRIMZI_LEADER_ELECTION_RENEW_DEADLINE_MS", DURATION, "10000", CONFIG_VALUES);
 
     /**
      * Retry period for accessing the Lease resource
      */
-    public final static String ENV_VAR_LEADER_ELECTION_RETRY_PERIOD_MS = "STRIMZI_LEADER_ELECTION_RETRY_PERIOD_MS";
-
-    // Default values
-    private final static Duration DEFAULT_STRIMZI_LEADER_ELECTION_LEASE_DURATION_MS = Duration.ofSeconds(15);
-    private final static Duration DEFAULT_STRIMZI_LEADER_ELECTION_RENEW_DEADLINE_MS = Duration.ofSeconds(10);
-    private final static Duration DEFAULT_STRIMZI_LEADER_ELECTION_RETRY_PERIOD_MS = Duration.ofSeconds(2);
-
-    private final String leaseName;
-    private final String namespace;
-    private final String identity;
-    private final Duration leaseDuration;
-    private final Duration renewDeadline;
-    private final Duration retryPeriod;
-
-    /**
-     * Constructs the LeaderElectionManagerConfig object
-     *
-     * @param leaseName     Name of the Kubernetes Lease resource
-     * @param namespace     Namespace of the Kubernetes Lease resource
-     * @param identity      Identity of this instance of the operator (should be unique: for example Pod name)
-     * @param leaseDuration Duration for which the acquired lease is valid
-     * @param renewDeadline Duration for which should the leader retry to maintain the leadership
-     * @param retryPeriod   How often does the leader update the lease lock
-     */
-    public LeaderElectionManagerConfig(String leaseName, String namespace, String identity, Duration leaseDuration, Duration renewDeadline, Duration retryPeriod) {
-        this.leaseName = leaseName;
-        this.namespace = namespace;
-        this.identity = identity;
-        this.leaseDuration = leaseDuration;
-        this.renewDeadline = renewDeadline;
-        this.retryPeriod = retryPeriod;
-    }
+    public final static ConfigParameter<Duration> ENV_VAR_LEADER_ELECTION_RETRY_PERIOD_MS = new ConfigParameter<>("STRIMZI_LEADER_ELECTION_RETRY_PERIOD_MS", DURATION, "2000", CONFIG_VALUES);
 
     /**
      * Creates the LeaderElectionManager configuration from Map with environment variables
@@ -81,84 +59,119 @@ public class LeaderElectionManagerConfig {
      *
      * @return  Instance of LeaderElectionManagerConfig
      */
+
     public static LeaderElectionManagerConfig fromMap(Map<String, String> map) {
-        String leaseName = map.get(ENV_VAR_LEADER_ELECTION_LEASE_NAME);
-        String namespace = map.get(ENV_VAR_LEADER_ELECTION_LEASE_NAMESPACE);
-        String identity = map.get(ENV_VAR_LEADER_ELECTION_IDENTITY);
 
-        if (leaseName == null || namespace == null || identity == null) {
-            // Required options are not provided
-            throw new InvalidConfigurationException("The " + ENV_VAR_LEADER_ELECTION_LEASE_NAME + ", " + ENV_VAR_LEADER_ELECTION_LEASE_NAMESPACE + " and " + ENV_VAR_LEADER_ELECTION_IDENTITY + " options are required and have to be set when leader election is enabled.");
-        }
+        Map<String, String> envMap = new HashMap<>(map);
 
-        Duration leaseDuration = parseDuration(map.get(ENV_VAR_LEADER_ELECTION_LEASE_DURATION_MS), DEFAULT_STRIMZI_LEADER_ELECTION_LEASE_DURATION_MS);
-        Duration renewDeadline = parseDuration(map.get(ENV_VAR_LEADER_ELECTION_RENEW_DEADLINE_MS), DEFAULT_STRIMZI_LEADER_ELECTION_RENEW_DEADLINE_MS);
-        Duration retryPeriod = parseDuration(map.get(ENV_VAR_LEADER_ELECTION_RETRY_PERIOD_MS), DEFAULT_STRIMZI_LEADER_ELECTION_RETRY_PERIOD_MS);
+        envMap.keySet().retainAll(LeaderElectionManagerConfig.keyNames());
 
-        return new LeaderElectionManagerConfig(leaseName, namespace, identity, leaseDuration, renewDeadline, retryPeriod);
+        Map<String, Object> generatedMap = ConfigParameter.define(envMap, CONFIG_VALUES);
+
+        return new LeaderElectionManagerConfig(generatedMap);
+
     }
 
-    private static Duration parseDuration(String durationValue, Duration defaultDuration) {
-        Duration duration = defaultDuration;
+    /**
+     * Creates the LeaderElectionManager configuration from existing map
+     *
+     * @param map   Map with environment variables
+     *
+     * @return  Instance of LeaderElectionManagerConfig
+     */
+    public static LeaderElectionManagerConfig buildFromExistingMap(Map<String, Object> map) {
 
-        if (durationValue != null) {
-            duration = Duration.ofMillis(Long.parseLong(durationValue));
-        }
+        Map<String, Object> existingMap = new HashMap<>(map);
 
-        return duration;
+        existingMap.keySet().retainAll(LeaderElectionManagerConfig.keyNames());
+
+        return new LeaderElectionManagerConfig(existingMap);
+
     }
+
+    private final Map<String, Object> map;
+
+    /**
+     * Constructor
+     *
+     * @param map Map containing configurations and their respective values
+     */
+
+    private LeaderElectionManagerConfig(Map<String, Object> map) {
+        this.map = map;
+    }
+
+    /**
+     * @return Set of configuration key/names
+     */
+    public static Set<String> keyNames() {
+        return Collections.unmodifiableSet(CONFIG_VALUES.keySet());
+    }
+
+    /**
+     * @return  Configuration values map
+     */
+    public static Map<String, ConfigParameter<?>> configValues() {
+        return Collections.unmodifiableMap(CONFIG_VALUES);
+    }
+
+    @SuppressWarnings("unchecked")
+    private  <T> T get(ConfigParameter<T> value) {
+        return (T) this.map.get(value.key());
+    }
+
 
     /**
      * @return  Returns the name of the Kubernetes Lease resource
      */
     public String getLeaseName() {
-        return leaseName;
+        return get(ENV_VAR_LEADER_ELECTION_LEASE_NAME);
     }
 
     /**
      * @return  Returns the namespace of the Kubernetes Lease resource
      */
     public String getNamespace() {
-        return namespace;
+        return get(ENV_VAR_LEADER_ELECTION_LEASE_NAMESPACE);
     }
 
     /**
      * @return  Returns the identity of this instance of the operator
      */
     public String getIdentity() {
-        return identity;
+        return get(ENV_VAR_LEADER_ELECTION_IDENTITY);
     }
 
     /**
      * @return  Returns the duration for which the acquired lease is valid
      */
     public Duration getLeaseDuration() {
-        return leaseDuration;
+        return get(ENV_VAR_LEADER_ELECTION_LEASE_DURATION_MS);
     }
 
     /**
      * @return  Returns the duration for which should the leader retry to maintain the leadership
      */
     public Duration getRenewDeadline() {
-        return renewDeadline;
+        return get(ENV_VAR_LEADER_ELECTION_RENEW_DEADLINE_MS);
     }
 
     /**
      * @return  Returns how often does the leader update the lease lock
      */
     public Duration getRetryPeriod() {
-        return retryPeriod;
+        return get(ENV_VAR_LEADER_ELECTION_RETRY_PERIOD_MS);
     }
 
     @Override
     public String toString() {
         return "LeaderElectionConfig{" +
-                "leaseName='" + leaseName + '\'' +
-                ", namespace='" + namespace + '\'' +
-                ", identity='" + identity + '\'' +
-                ", leaseDuration=" + leaseDuration +
-                ", renewDeadline=" + renewDeadline +
-                ", retryPeriod=" + retryPeriod +
+                "leaseName='" + getLeaseName() + '\'' +
+                ", namespace='" + getNamespace() + '\'' +
+                ", identity='" + getIdentity() + '\'' +
+                ", leaseDuration=" + getLeaseDuration() +
+                ", renewDeadline=" + getRenewDeadline() +
+                ", retryPeriod=" + getRetryPeriod() +
                 '}';
     }
 }
