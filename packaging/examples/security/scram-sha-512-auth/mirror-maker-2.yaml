@@ -202,14 +202,15 @@ spec:
           name: "*"
         operations:
           - Read
-      # MirrorHeartbeatConnector
-      - resource:
-          type: topic
-          name: heartbeats
-        operations:
-          - Create
-          - Describe
-          - Write
+      # MirrorHeartbeatConnector => needed only if the connector is enabled
+      # - resource:
+      #     type: topic
+      #     name: heartbeats
+      #   operations:
+      #     - Read
+      #     - Create
+      #     - Describe
+      #     - Write
 ---
 
 apiVersion: kafka.strimzi.io/v1beta2
@@ -259,10 +260,6 @@ spec:
           replication.factor: 1
           offset-syncs.topic.replication.factor: 1
           sync.topic.acls.enabled: "false"
-      heartbeatConnector:
-        tasksMax: 1
-        config:
-          heartbeats.topic.replication.factor: 1
       checkpointConnector:
         tasksMax: 1
         config:
