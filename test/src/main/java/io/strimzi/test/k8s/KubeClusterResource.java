@@ -399,4 +399,11 @@ public class KubeClusterResource {
     public static Map<CollectorElement, Set<String>> getMapWithSuiteNamespaces() {
         return MAP_WITH_SUITE_NAMESPACES;
     }
+
+    public boolean fipsEnabled() {
+        if (isOpenShift()) {
+            return kubeClient().getConfigMap("kube-system", "cluster-config-v1").getData().get("install-config").contains("fips: true");
+        }
+        return false;
+    }
 }

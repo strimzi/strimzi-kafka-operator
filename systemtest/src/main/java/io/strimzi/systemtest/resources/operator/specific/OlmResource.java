@@ -132,7 +132,7 @@ public class OlmResource implements SpecificResourceType {
             .build();
 
         // Change default values for Cluster Operator memory when RESOURCE_ALLOCATION_STRATEGY is not set to NOT_SHARED
-        if (Environment.isSharedMemory()) {
+        if (KubeClusterResource.getInstance().fipsEnabled()) {
             ResourceRequirements resourceRequirements = new ResourceRequirementsBuilder()
                 .withRequests(Map.of("memory", new Quantity(Constants.CO_REQUESTS_MEMORY), "cpu", new Quantity(Constants.CO_REQUESTS_CPU)))
                 .withLimits(Map.of("memory", new Quantity(Constants.CO_LIMITS_MEMORY), "cpu", new Quantity(Constants.CO_LIMITS_CPU)))

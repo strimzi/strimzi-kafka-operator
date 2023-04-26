@@ -14,11 +14,7 @@ import static io.strimzi.systemtest.resources.ResourceManager.kubeClient;
 public class FIPSNotSupportedCondition implements ExecutionCondition {
     @Override
     public ConditionEvaluationResult evaluateExecutionCondition(ExtensionContext extensionContext) {
-        boolean fipsEnabled = false;
-
-        if (KubeClusterResource.getInstance().isOpenShift()) {
-            fipsEnabled = kubeClient().getConfigMap("kube-system", "cluster-config-v1").getData().get("install-config").contains("fips: true");
-        }
+        boolean fipsEnabled = KubeClusterResource.getInstance().fipsEnabled();
 
         return fipsEnabled ? ConditionEvaluationResult.disabled("Test is disabled") : ConditionEvaluationResult.enabled("Test is enabled");
     }
