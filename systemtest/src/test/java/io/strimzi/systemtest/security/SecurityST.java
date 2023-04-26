@@ -454,6 +454,11 @@ class SecurityST extends AbstractST {
         }
 
         for (int i = 1; i <= expectedRolls; i++) {
+            // In case the first rolling update is finished, shut down cluster operator to see if the rolling update can be finished
+            if (i == 2) {
+                Pod coPod = kubeClient().listPodsByPrefixInName(clusterOperator.getDeploymentNamespace(), clusterOperator.getClusterOperatorName()).get(0);
+                kubeClient().deletePod(clusterOperator.getDeploymentNamespace(), coPod);
+            }
             if (!Environment.isKRaftModeEnabled()) {
                 if (zkShouldRoll) {
                     LOGGER.info("Wait for zk to rolling restart ({})...", i);
