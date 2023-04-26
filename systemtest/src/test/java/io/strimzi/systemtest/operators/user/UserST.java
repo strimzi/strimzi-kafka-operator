@@ -300,7 +300,7 @@ class UserST extends AbstractST {
             .withNamespaceName(testStorage.getNamespaceName())
             .withTopicName(testStorage.getTopicName())
             .withMessageCount(testStorage.getMessageCount())
-            .withUserName(secretPrefix + tlsUserName)
+            .withUsername(secretPrefix + tlsUserName)
             .build();
 
         LOGGER.info("Checking if TLS user is able to send messages");
@@ -309,7 +309,7 @@ class UserST extends AbstractST {
 
         clients = new KafkaClientsBuilder(clients)
             .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
-            .withUserName(secretPrefix + scramShaUserName)
+            .withUsername(secretPrefix + scramShaUserName)
             .build();
 
         LOGGER.info("Checking if SCRAM-SHA user is able to send messages");

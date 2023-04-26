@@ -235,7 +235,7 @@ public class MultipleListenersST extends AbstractST {
                         .withMessageCount(MESSAGE_COUNT)
                         .withProducerName(producerName)
                         .withConsumerName(consumerName)
-                        .withUserName(kafkaUsername)
+                        .withUsername(kafkaUsername)
                         .withNamespaceName(namespace)
                         .withBootstrapAddress(KafkaResources.bootstrapServiceName(clusterName) + ":" + listener.getPort())
                         .build();

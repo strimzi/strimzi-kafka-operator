@@ -80,7 +80,7 @@ class HttpBridgeScramShaST extends AbstractST {
             .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(httpBridgeScramShaClusterName))
             .withConsumerName(consumerName)
             .withNamespaceName(namespace)
-            .withUserName(USER_NAME)
+            .withUsername(USER_NAME)
             .build();
 
         resourceManager.createResource(extensionContext, kafkaClients.consumerScramShaTlsStrimzi(httpBridgeScramShaClusterName));
@@ -111,7 +111,7 @@ class HttpBridgeScramShaST extends AbstractST {
             .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(httpBridgeScramShaClusterName))
             .withProducerName(producerName)
             .withNamespaceName(namespace)
-            .withUserName(USER_NAME)
+            .withUsername(USER_NAME)
             .build();
 
         resourceManager.createResource(extensionContext, kafkaClients.producerScramShaTlsStrimzi(httpBridgeScramShaClusterName));

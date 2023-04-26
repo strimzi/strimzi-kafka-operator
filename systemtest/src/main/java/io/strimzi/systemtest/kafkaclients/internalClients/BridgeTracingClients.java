@@ -137,5 +137,4 @@ public class BridgeTracingClients extends BridgeClients {
                 .endSpec()
                 .build();
     }
-
 }

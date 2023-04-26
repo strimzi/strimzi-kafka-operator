@@ -19,7 +19,6 @@ import java.security.cert.X509Certificate;
 import java.security.spec.InvalidKeySpecException;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -100,7 +99,6 @@ public class SystemTestCertHolder {
     public String retrieveOldCertificateName(final Secret s, final String dataKey) {
         final X509Certificate caCert = SecretUtils.getCertificateFromSecret(s, dataKey);
         LocalDateTime localDateTime = LocalDateTime.ofInstant(caCert.getNotAfter().toInstant(), ZoneId.systemDefault());
-        final String localDateString = localDateTime.format(DateTimeFormatter.ISO_DATE);
 
         // old name
         return "ca-" + localDateTime.toString().replaceAll(":", "-") + "." + dataKey.split("\\.")[1];

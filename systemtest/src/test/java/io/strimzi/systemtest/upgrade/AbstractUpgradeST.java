@@ -586,7 +586,7 @@ public class AbstractUpgradeST extends AbstractST {
                 .withConsumerName(testStorage.getConsumerName())
                 .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(clusterName))
                 .withTopicName(testStorage.getTopicName())
-                .withUserName(userName)
+                .withUsername(userName)
                 .withMessageCount(500)
                 .withNamespaceName(testStorage.getNamespaceName())
                 .build();

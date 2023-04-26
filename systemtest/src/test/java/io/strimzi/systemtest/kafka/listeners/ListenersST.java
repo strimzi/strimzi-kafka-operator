@@ -191,7 +191,7 @@ public class ListenersST extends AbstractST {
             .withNamespaceName(testStorage.getNamespaceName())
             .withMessageCount(testStorage.getMessageCount())
             .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(testStorage.getClusterName()))
-            .withUserName(testStorage.getUserName())
+            .withUsername(testStorage.getUsername())
             .withTopicName(testStorage.getTopicName())
             .build();
 
@@ -238,15 +238,15 @@ public class ListenersST extends AbstractST {
         );
 
         String brokerPodLog = kubeClient(testStorage.getNamespaceName()).logsInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName() + "-kafka-0", "kafka");
-        Pattern p = Pattern.compile("^.*" + Pattern.quote(testStorage.getUserName()) + ".*$", Pattern.MULTILINE);
+        Pattern p = Pattern.compile("^.*" + Pattern.quote(testStorage.getUsername()) + ".*$", Pattern.MULTILINE);
         Matcher m = p.matcher(brokerPodLog);
         boolean found = false;
         while (m.find()) {
             found = true;
-            LOGGER.info("Broker pod log line about user {}: {}", testStorage.getUserName(), m.group());
+            LOGGER.info("Broker pod log line about user {}: {}", testStorage.getUsername(), m.group());
         }
         if (!found) {
-            LOGGER.warn("No broker pod log lines about user {}", testStorage.getUserName());
+            LOGGER.warn("No broker pod log lines about user {}", testStorage.getUsername());
             LOGGER.info("Broker pod log:\n----\n{}\n----\n", brokerPodLog);
         }
 
@@ -256,7 +256,7 @@ public class ListenersST extends AbstractST {
             .withNamespaceName(testStorage.getNamespaceName())
             .withMessageCount(testStorage.getMessageCount())
             .withBootstrapAddress(KafkaResources.bootstrapServiceName(testStorage.getClusterName()) + ":9095")
-            .withUserName(testStorage.getUserName())
+            .withUsername(testStorage.getUsername())
             .withTopicName(testStorage.getTopicName())
             .build();
 
@@ -317,7 +317,7 @@ public class ListenersST extends AbstractST {
             .withTopicName(testStorage.getTopicName())
             .withBootstrapAddress(KafkaResources.bootstrapServiceName(testStorage.getClusterName()) + ":9096")
             .withMessageCount(testStorage.getMessageCount())
-            .withUserName(testStorage.getUserName())
+            .withUsername(testStorage.getUsername())
             .withProducerName(testStorage.getProducerName())
             .withConsumerName(testStorage.getConsumerName())
             .build();
@@ -329,7 +329,7 @@ public class ListenersST extends AbstractST {
         ClientUtils.waitForClientsSuccess(testStorage);
 
         LOGGER.info("Checking if generated password has {} characters", passwordLength);
-        String password = kubeClient().namespace(testStorage.getNamespaceName()).getSecret(testStorage.getUserName()).getData().get("password");
+        String password = kubeClient().namespace(testStorage.getNamespaceName()).getSecret(testStorage.getUsername()).getData().get("password");
         String decodedPassword = new String(Base64.getDecoder().decode(password));
 
         assertEquals(decodedPassword.length(), passwordLength);
@@ -380,7 +380,7 @@ public class ListenersST extends AbstractST {
             .withTopicName(testStorage.getTopicName())
             .withBootstrapAddress(KafkaResources.bootstrapServiceName(testStorage.getClusterName()) + ":9122")
             .withMessageCount(testStorage.getMessageCount())
-            .withUserName(testStorage.getUserName())
+            .withUsername(testStorage.getUsername())
             .withProducerName(testStorage.getProducerName())
             .withConsumerName(testStorage.getConsumerName())
             .build();
@@ -693,7 +693,7 @@ public class ListenersST extends AbstractST {
                 .withTopicName(testStorage.getTopicName())
                 .withBootstrapAddress(KafkaUtils.bootstrapAddressFromStatus(clusterName, namespaceName, Constants.CLUSTER_IP_LISTENER_DEFAULT_NAME))
                 .withMessageCount(MESSAGE_COUNT)
-                .withUserName(testStorage.getUserName())
+                .withUsername(testStorage.getUsername())
                 .withProducerName(testStorage.getProducerName())
                 .withConsumerName(testStorage.getConsumerName())
                 .build();
@@ -733,7 +733,7 @@ public class ListenersST extends AbstractST {
                 .withTopicName(testStorage.getTopicName())
                 .withBootstrapAddress(KafkaUtils.bootstrapAddressFromStatus(testStorage.getClusterName(), testStorage.getNamespaceName(), Constants.CLUSTER_IP_LISTENER_DEFAULT_NAME))
                 .withMessageCount(testStorage.getMessageCount())
-                .withUserName(testStorage.getUserName())
+                .withUsername(testStorage.getUsername())
                 .withProducerName(testStorage.getProducerName())
                 .withConsumerName(testStorage.getConsumerName())
                 .build();
@@ -805,7 +805,7 @@ public class ListenersST extends AbstractST {
             .withTopicName(testStorage.getTopicName())
             .withNamespaceName(testStorage.getNamespaceName())
             .withClusterName(testStorage.getClusterName())
-            .withKafkaUsername(testStorage.getUserName())
+            .withKafkaUsername(testStorage.getUsername())
             .withMessageCount(testStorage.getMessageCount())
             .withCertificateAuthorityCertificateName(clusterCustomCertServer1)
             .withSecurityProtocol(SecurityProtocol.SSL)
@@ -822,7 +822,7 @@ public class ListenersST extends AbstractST {
             .withTopicName(testStorage.getTopicName())
             .withBootstrapAddress(KafkaResources.bootstrapServiceName(testStorage.getClusterName()) + ":9104")
             .withMessageCount(testStorage.getMessageCount())
-            .withUserName(testStorage.getUserName())
+            .withUsername(testStorage.getUsername())
             .withProducerName(testStorage.getProducerName())
             .withConsumerName(testStorage.getConsumerName())
             .withConsumerGroup("consumer-group-certs-1")
@@ -898,7 +898,7 @@ public class ListenersST extends AbstractST {
             .withTopicName(testStorage.getTopicName())
             .withNamespaceName(testStorage.getNamespaceName())
             .withClusterName(testStorage.getClusterName())
-            .withKafkaUsername(testStorage.getUserName())
+            .withKafkaUsername(testStorage.getUsername())
             .withMessageCount(testStorage.getMessageCount())
             .withCertificateAuthorityCertificateName(clusterCustomRootCA1)
             .withSecurityProtocol(SecurityProtocol.SSL)
@@ -915,7 +915,7 @@ public class ListenersST extends AbstractST {
             .withTopicName(testStorage.getTopicName())
             .withBootstrapAddress(KafkaResources.bootstrapServiceName(testStorage.getClusterName()) + ":9106")
             .withMessageCount(testStorage.getMessageCount())
-            .withUserName(testStorage.getUserName())
+            .withUsername(testStorage.getUsername())
             .withProducerName(testStorage.getProducerName())
             .withConsumerName(testStorage.getConsumerName())
             .withCaCertSecretName(clusterCustomCertChain1)
@@ -984,7 +984,7 @@ public class ListenersST extends AbstractST {
             .withTopicName(testStorage.getTopicName())
             .withNamespaceName(testStorage.getNamespaceName())
             .withClusterName(testStorage.getClusterName())
-            .withKafkaUsername(testStorage.getUserName())
+            .withKafkaUsername(testStorage.getUsername())
             .withMessageCount(testStorage.getMessageCount())
             .withCertificateAuthorityCertificateName(clusterCustomCertServer1)
             .withSecurityProtocol(SecurityProtocol.SSL)
@@ -1001,7 +1001,7 @@ public class ListenersST extends AbstractST {
             .withTopicName(testStorage.getTopicName())
             .withBootstrapAddress(KafkaResources.bootstrapServiceName(testStorage.getClusterName()) + ":9107")
             .withMessageCount(testStorage.getMessageCount())
-            .withUserName(testStorage.getUserName())
+            .withUsername(testStorage.getUsername())
             .withProducerName(testStorage.getProducerName())
             .withConsumerName(testStorage.getConsumerName())
             .withConsumerGroup("consumer-group-certs-3")
@@ -1074,7 +1074,7 @@ public class ListenersST extends AbstractST {
             .withTopicName(testStorage.getTopicName())
             .withNamespaceName(testStorage.getNamespaceName())
             .withClusterName(testStorage.getClusterName())
-            .withKafkaUsername(testStorage.getUserName())
+            .withKafkaUsername(testStorage.getUsername())
             .withMessageCount(testStorage.getMessageCount())
             .withCertificateAuthorityCertificateName(clusterCustomRootCA1)
             .withSecurityProtocol(SecurityProtocol.SSL)
@@ -1091,7 +1091,7 @@ public class ListenersST extends AbstractST {
             .withTopicName(testStorage.getTopicName())
             .withBootstrapAddress(KafkaResources.bootstrapServiceName(testStorage.getClusterName()) + ":9109")
             .withMessageCount(testStorage.getMessageCount())
-            .withUserName(testStorage.getUserName())
+            .withUsername(testStorage.getUsername())
             .withProducerName(testStorage.getProducerName())
             .withConsumerName(testStorage.getConsumerName())
             .withConsumerGroup("consumer-group-certs-4")
@@ -1167,7 +1167,7 @@ public class ListenersST extends AbstractST {
             .withTopicName(testStorage.getTopicName())
             .withNamespaceName(testStorage.getNamespaceName())
             .withClusterName(testStorage.getClusterName())
-            .withKafkaUsername(testStorage.getUserName())
+            .withKafkaUsername(testStorage.getUsername())
             .withMessageCount(testStorage.getMessageCount())
             .withCertificateAuthorityCertificateName(clusterCustomCertServer1)
             .withSecurityProtocol(SecurityProtocol.SSL)
@@ -1184,7 +1184,7 @@ public class ListenersST extends AbstractST {
             .withTopicName(testStorage.getTopicName())
             .withBootstrapAddress(KafkaResources.bootstrapServiceName(testStorage.getClusterName()) + ":9111")
             .withMessageCount(testStorage.getMessageCount())
-            .withUserName(testStorage.getUserName())
+            .withUsername(testStorage.getUsername())
             .withProducerName(testStorage.getProducerName())
             .withConsumerName(testStorage.getConsumerName())
             .withConsumerGroup("consumer-group-certs-5")
@@ -1262,7 +1262,7 @@ public class ListenersST extends AbstractST {
             .withTopicName(testStorage.getTopicName())
             .withNamespaceName(testStorage.getNamespaceName())
             .withClusterName(testStorage.getClusterName())
-            .withKafkaUsername(testStorage.getUserName())
+            .withKafkaUsername(testStorage.getUsername())
             .withMessageCount(testStorage.getMessageCount())
             .withCertificateAuthorityCertificateName(clusterCustomRootCA1)
             .withSecurityProtocol(SecurityProtocol.SSL)
@@ -1279,7 +1279,7 @@ public class ListenersST extends AbstractST {
             .withTopicName(testStorage.getTopicName())
             .withBootstrapAddress(KafkaResources.bootstrapServiceName(testStorage.getClusterName()) + ":9112")
             .withMessageCount(testStorage.getMessageCount())
-            .withUserName(testStorage.getUserName())
+            .withUsername(testStorage.getUsername())
             .withProducerName(testStorage.getProducerName())
             .withConsumerName(testStorage.getConsumerName())
             .withConsumerGroup("consumer-group-certs-6")
@@ -1350,7 +1350,7 @@ public class ListenersST extends AbstractST {
             .withTopicName(testStorage.getTopicName())
             .withNamespaceName(testStorage.getNamespaceName())
             .withClusterName(testStorage.getClusterName())
-            .withKafkaUsername(testStorage.getUserName())
+            .withKafkaUsername(testStorage.getUsername())
             .withMessageCount(testStorage.getMessageCount())
             .withSecurityProtocol(SecurityProtocol.SSL)
             .withCertificateAuthorityCertificateName(null)
@@ -1425,7 +1425,7 @@ public class ListenersST extends AbstractST {
             .withTopicName(testStorage.getTopicName())
             .withBootstrapAddress(KafkaResources.bootstrapServiceName(testStorage.getClusterName()) + ":9113")
             .withMessageCount(testStorage.getMessageCount())
-            .withUserName(testStorage.getUserName())
+            .withUsername(testStorage.getUsername())
             .withProducerName(testStorage.getProducerName())
             .withConsumerName(testStorage.getConsumerName())
             .withConsumerGroup("consumer-group-certs-6")
@@ -1611,7 +1611,7 @@ public class ListenersST extends AbstractST {
             .withTopicName(testStorage.getTopicName())
             .withNamespaceName(testStorage.getNamespaceName())
             .withClusterName(testStorage.getClusterName())
-            .withKafkaUsername(testStorage.getUserName())
+            .withKafkaUsername(testStorage.getUsername())
             .withMessageCount(testStorage.getMessageCount())
             .withSecurityProtocol(SecurityProtocol.SSL)
             .withListenerName(Constants.EXTERNAL_LISTENER_DEFAULT_NAME)
@@ -1686,7 +1686,7 @@ public class ListenersST extends AbstractST {
             .withTopicName(testStorage.getTopicName())
             .withBootstrapAddress(KafkaResources.bootstrapServiceName(testStorage.getClusterName()) + ":9115")
             .withMessageCount(testStorage.getMessageCount())
-            .withUserName(testStorage.getUserName())
+            .withUsername(testStorage.getUsername())
             .withProducerName(testStorage.getProducerName())
             .withConsumerName(testStorage.getConsumerName())
             .withConsumerGroup("consumer-group-certs-71")
@@ -1866,7 +1866,7 @@ public class ListenersST extends AbstractST {
             .withTopicName(testStorage.getTopicName())
             .withNamespaceName(testStorage.getNamespaceName())
             .withClusterName(testStorage.getClusterName())
-            .withKafkaUsername(testStorage.getUserName())
+            .withKafkaUsername(testStorage.getUsername())
             .withMessageCount(testStorage.getMessageCount())
             .withSecurityProtocol(SecurityProtocol.SSL)
             .withCertificateAuthorityCertificateName(null)
@@ -1944,7 +1944,7 @@ public class ListenersST extends AbstractST {
             .withTopicName(testStorage.getTopicName())
             .withBootstrapAddress(KafkaResources.bootstrapServiceName(testStorage.getClusterName()) + ":9117")
             .withMessageCount(testStorage.getMessageCount())
-            .withUserName(testStorage.getUserName())
+            .withUsername(testStorage.getUsername())
             .withProducerName(testStorage.getProducerName())
             .withConsumerName(testStorage.getConsumerName())
             .withCaCertSecretName(clusterCustomCertServer2)
@@ -2239,7 +2239,7 @@ public class ListenersST extends AbstractST {
             .endSpec()
             .build(),
             kafkaUser,
-            KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getUserName()).build()
+            KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getUsername()).build()
         );
 
         KafkaClients kafkaClients = new KafkaClientsBuilder()
@@ -2247,7 +2247,7 @@ public class ListenersST extends AbstractST {
             .withTopicName(testStorage.getTopicName())
             .withBootstrapAddress(KafkaResources.bootstrapServiceName(testStorage.getClusterName()) + ":9096")
             .withMessageCount(testStorage.getMessageCount())
-            .withUserName(testStorage.getUserName())
+            .withUsername(testStorage.getUsername())
             .withProducerName(testStorage.getProducerName())
             .withConsumerName(testStorage.getConsumerName())
             .build();
@@ -2265,7 +2265,7 @@ public class ListenersST extends AbstractST {
             .build();
 
         kubeClient().namespace(testStorage.getNamespaceName()).updateSecret(password);
-        SecretUtils.waitForUserPasswordChange(testStorage.getNamespaceName(), testStorage.getUserName(), secondEncodedPassword);
+        SecretUtils.waitForUserPasswordChange(testStorage.getNamespaceName(), testStorage.getUsername(), secondEncodedPassword);
 
         LOGGER.info("Receiving messages with new password");
 

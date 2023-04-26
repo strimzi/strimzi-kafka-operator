@@ -127,7 +127,7 @@ class AlternativeReconcileTriggersST extends AbstractST {
             .withTopicName(testStorage.getTopicName())
             .withMessageCount(MESSAGE_COUNT)
             .withNamespaceName(testStorage.getNamespaceName())
-            .withUserName(testStorage.getUserName())
+            .withUsername(testStorage.getUsername())
             .build();
 
         resourceManager.createResource(extensionContext, clients.producerTlsStrimzi(testStorage.getClusterName()));
@@ -387,7 +387,7 @@ class AlternativeReconcileTriggersST extends AbstractST {
             .withTopicName(testStorage.getTopicName())
             .withMessageCount(MESSAGE_COUNT)
             .withNamespaceName(testStorage.getNamespaceName())
-            .withUserName(testStorage.getUserName())
+            .withUsername(testStorage.getUsername())
             .build();
 
         resourceManager.createResource(extensionContext, clients.producerTlsStrimzi(testStorage.getClusterName()));

@@ -81,7 +81,7 @@ class HttpBridgeTlsST extends AbstractST {
             .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(httpBridgeTlsClusterName))
             .withConsumerName(consumerName)
             .withNamespaceName(namespace)
-            .withUserName(sharedKafkaUserName)
+            .withUsername(sharedKafkaUserName)
             .build();
 
         resourceManager.createResource(extensionContext, kafkaClients.consumerTlsStrimzi(httpBridgeTlsClusterName));
@@ -115,7 +115,7 @@ class HttpBridgeTlsST extends AbstractST {
             .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(httpBridgeTlsClusterName))
             .withProducerName(producerName)
             .withNamespaceName(namespace)
-            .withUserName(sharedKafkaUserName)
+            .withUsername(sharedKafkaUserName)
             .build();
 
         resourceManager.createResource(extensionContext, kafkaClients.producerTlsStrimzi(httpBridgeTlsClusterName));

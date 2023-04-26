@@ -160,7 +160,7 @@ class AllNamespaceIsolatedST extends AbstractNamespaceST {
             .withProducerName(testStorage.getProducerName())
             .withConsumerName(testStorage.getConsumerName())
             .withNamespaceName(THIRD_NAMESPACE)
-            .withUserName(USER_NAME)
+            .withUsername(USER_NAME)
             .build();
 
         resourceManager.createResource(extensionContext, kafkaClients.producerTlsStrimzi(MAIN_NAMESPACE_CLUSTER_NAME), kafkaClients.consumerTlsStrimzi(MAIN_NAMESPACE_CLUSTER_NAME));

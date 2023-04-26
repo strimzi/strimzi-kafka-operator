@@ -54,10 +54,10 @@ public class UserScalabilityIsolatedST extends AbstractST {
     void testCreateAndAlterBigAmountOfUsers(ExtensionContext extensionContext, final TestStorage testStorage, final UserAuthType authType) {
         int numberOfUsers = 1000;
 
-        List<KafkaUser> usersList = getListOfKafkaUsers(testStorage.getUserName(), numberOfUsers, authType);
+        List<KafkaUser> usersList = getListOfKafkaUsers(testStorage.getUsername(), numberOfUsers, authType);
 
-        createAllUsersInList(extensionContext, usersList, testStorage.getUserName());
-        alterAllUsersInList(extensionContext, usersList, testStorage.getUserName());
+        createAllUsersInList(extensionContext, usersList, testStorage.getUsername());
+        alterAllUsersInList(extensionContext, usersList, testStorage.getUsername());
     }
 
     private List<KafkaUser> getListOfKafkaUsers(final String userName, final int numberOfUsers, UserAuthType userAuthType) {

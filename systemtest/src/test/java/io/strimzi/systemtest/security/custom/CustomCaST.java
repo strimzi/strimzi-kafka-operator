@@ -320,7 +320,7 @@ public class CustomCaST extends AbstractST {
             .withConsumerName(testStorage.getClusterName())
             .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(testStorage.getClusterName()))
             .withTopicName(testStorage.getTopicName())
-            .withUserName(testStorage.getUserName())
+            .withUsername(testStorage.getUsername())
             .withMessageCount(testStorage.getMessageCount())
             .withDelayMs(10)
             .build();
@@ -389,7 +389,7 @@ public class CustomCaST extends AbstractST {
         final KafkaUser user = KafkaUserTemplates.tlsUser(testStorage).build();
         resourceManager.createResource(extensionContext, user);
         final X509Certificate userCert = SecretUtils.getCertificateFromSecret(kubeClient(testStorage.getNamespaceName()).getSecret(testStorage.getNamespaceName(),
-            testStorage.getUserName()), "user.crt");
+            testStorage.getUsername()), "user.crt");
         assertThat("Generated ClientsCA does not have expected test Subject: " + userCert.getIssuerDN(),
                 SystemTestCertManager.containsAllDN(userCert.getIssuerX500Principal().getName(), clientsCa.getSubjectDn()));
 
@@ -402,7 +402,7 @@ public class CustomCaST extends AbstractST {
             .withMessageCount(testStorage.getMessageCount())
             .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(testStorage.getClusterName()))
             .withTopicName(testStorage.getTopicName())
-            .withUserName(testStorage.getUserName())
+            .withUsername(testStorage.getUsername())
             .build();
 
         LOGGER.info("Checking produced and consumed messages via TLS");
@@ -584,7 +584,7 @@ public class CustomCaST extends AbstractST {
         final Date initialCertEndTime = cacert.getNotAfter();
 
         // Check initial kafkauser validity days
-        X509Certificate userCert = SecretUtils.getCertificateFromSecret(kubeClient(testStorage.getNamespaceName()).getSecret(testStorage.getNamespaceName(), testStorage.getUserName()), "user.crt");
+        X509Certificate userCert = SecretUtils.getCertificateFromSecret(kubeClient(testStorage.getNamespaceName()).getSecret(testStorage.getNamespaceName(), testStorage.getUsername()), "user.crt");
         final Date initialKafkaUserCertStartTime = userCert.getNotBefore();
         final Date initialKafkaUserCertEndTime = userCert.getNotAfter();
 
@@ -605,7 +605,7 @@ public class CustomCaST extends AbstractST {
         final Date changedCertStartTime = cacert.getNotBefore();
         final Date changedCertEndTime = cacert.getNotAfter();
 
-        userCert = SecretUtils.getCertificateFromSecret(kubeClient(testStorage.getNamespaceName()).getSecret(testStorage.getNamespaceName(), testStorage.getUserName()), "user.crt");
+        userCert = SecretUtils.getCertificateFromSecret(kubeClient(testStorage.getNamespaceName()).getSecret(testStorage.getNamespaceName(), testStorage.getUsername()), "user.crt");
         final Date changedKafkaUserCertStartTime = userCert.getNotBefore();
         final Date changedKafkaUserCertEndTime = userCert.getNotAfter();
 

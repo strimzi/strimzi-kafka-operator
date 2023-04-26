@@ -98,7 +98,7 @@ public class CustomAuthorizerST extends AbstractST {
             .withMessageCount(testStorage.getMessageCount())
             .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(CLUSTER_NAME))
             .withTopicName(testStorage.getTopicName())
-            .withUserName(kafkaUserWrite)
+            .withUsername(kafkaUserWrite)
             .withConsumerGroup(consumerGroupName)
             .build();
 
@@ -109,7 +109,7 @@ public class CustomAuthorizerST extends AbstractST {
         ClientUtils.waitForConsumerClientTimeout(testStorage);
 
         kafkaClients = new KafkaClientsBuilder(kafkaClients)
-            .withUserName(kafkaUserRead)
+            .withUsername(kafkaUserRead)
             .build();
 
         resourceManager.createResource(extensionContext, kafkaClients.consumerTlsStrimzi(CLUSTER_NAME));
@@ -152,7 +152,7 @@ public class CustomAuthorizerST extends AbstractST {
             .withMessageCount(testStorage.getMessageCount())
             .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(CLUSTER_NAME))
             .withTopicName(testStorage.getTopicName())
-            .withUserName(ADMIN)
+            .withUsername(ADMIN)
             .build();
 
         resourceManager.createResource(extensionContext, kafkaClients.producerTlsStrimzi(CLUSTER_NAME));

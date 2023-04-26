@@ -14,7 +14,7 @@ ifneq ($(RELEASE_VERSION),latest)
   GITHUB_VERSION = $(RELEASE_VERSION)
 endif
 
-SUBDIRS=kafka-agent mirror-maker-agent tracing-agent crd-annotations test crd-generator api mockkube certificate-manager operator-common config-model config-model-generator cluster-operator topic-operator user-operator kafka-init docker-images/artifacts packaging/helm-charts/helm3 packaging/install packaging/examples
+SUBDIRS=kafka-agent mirror-maker-agent tracing-agent crd-annotations test crd-generator api mockkube certificate-manager operator-common config-model config-model-generator cluster-operator topic-operator user-operator kafka-init systemtest docker-images/artifacts packaging/helm-charts/helm3 packaging/install packaging/examples
 DOCKERDIRS=docker-images/base docker-images/operator docker-images/kafka-based docker-images/maven-builder docker-images/kaniko-executor
 DOCKER_TARGETS=docker_build docker_push docker_tag docker_load docker_save docker_amend_manifest docker_push_manifest docker_delete_manifest
 JAVA_TARGETS=java_build java_install java_clean
@@ -144,7 +144,7 @@ shellcheck:
 release_files_check:
 	./.azure/scripts/release_files_check.sh
 
-spotbugs: $(SUBDIRS) systemtest_make
+spotbugs: $(SUBDIRS)
 
 docu_pushtowebsite:
 	./.azure/scripts/docu-push-to-website.sh
@@ -174,9 +174,6 @@ docu_htmlnoheaderclean:
 docu_pdfclean:
 	rm -rf documentation/pdf
 
-systemtests:
-	./systemtest/scripts/run_tests.sh $(SYSTEMTEST_ARGS)
-
 helm_install: packaging/helm-charts/helm3
 
 crd_install: packaging/install
@@ -188,9 +185,6 @@ $(SUBDIRS):
 
 $(DOCKERDIRS):
 	$(MAKE) -C $@ $(MAKECMDGOALS)
-
-systemtest_make:
-	$(MAKE) -C systemtest $(MAKECMDGOALS)
 
 prerequisites_check:
 	SED=$(SED) ./tools/prerequisites-check.sh
@@ -204,4 +198,4 @@ checksum_install:
 checksum_helm:
 	@$(FIND) ./helm-charts/ -type f -print0 | LC_ALL=C $(SORT) -z | $(XARGS) -0 $(SHA1SUM) | $(SHA1SUM)
 
-.PHONY: all $(SUBDIRS) $(DOCKERDIRS) $(DOCKER_TARGETS) systemtests docu_versions spotbugs docu_check prerequisites_check
+.PHONY: all $(SUBDIRS) $(DOCKERDIRS) $(DOCKER_TARGETS) docu_versions spotbugs docu_check prerequisites_check

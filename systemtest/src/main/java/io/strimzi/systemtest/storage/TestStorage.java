@@ -42,7 +42,7 @@ final public class TestStorage {
     private String producerName;
     private String consumerName;
     private String adminName;
-    private String userName;
+    private String username;
     private String eoDeploymentName;
     private String kafkaStatefulSetName;
     private String zkStatefulSetName;
@@ -70,7 +70,7 @@ final public class TestStorage {
         this.producerName = clusterName + "-" + PRODUCER;
         this.consumerName = clusterName  + "-" + CONSUMER;
         this.adminName = clusterName + "-" + ADMIN;
-        this.userName = clusterName + "-" + USER;
+        this.username = clusterName + "-" + USER;
         this.eoDeploymentName = KafkaResources.entityOperatorDeploymentName(clusterName);
         this.kafkaStatefulSetName = KafkaResources.kafkaStatefulSetName(clusterName);
         this.zkStatefulSetName = KafkaResources.zookeeperStatefulSetName(clusterName);
@@ -88,7 +88,7 @@ final public class TestStorage {
         extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.PRODUCER_KEY, this.producerName);
         extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.CONSUMER_KEY, this.consumerName);
         extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.ADMIN_KEY, this.adminName);
-        extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.USER_NAME_KEY, this.userName);
+        extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.USER_NAME_KEY, this.username);
         extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.ENTITY_OPERATOR_NAME_KEY, this.eoDeploymentName);
         extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.KAFKA_STATEFULSET_NAME_KEY, this.kafkaStatefulSetName);
         extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.ZOOKEEPER_STATEFULSET_NAME_KEY, this.zkStatefulSetName);
@@ -141,7 +141,7 @@ final public class TestStorage {
         return extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.ADMIN_KEY).toString();
     }
 
-    public String getUserName() {
+    public String getUsername() {
         return extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.USER_NAME_KEY).toString();
     }
 

@@ -212,7 +212,7 @@ public class HttpBridgeKafkaExternalListenersST extends AbstractST {
             .withNamespaceName(namespace)
             .withTopicName(topicName)
             .withMessageCount(MESSAGE_COUNT)
-            .withUserName(weirdUserName)
+            .withUsername(weirdUserName)
             // we disable ssl.endpoint.identification.algorithm for external listener (i.e., NodePort),
             // because TLS hostname verification is not supported on such listener type.
             .withAdditionalConfig("ssl.endpoint.identification.algorithm=\n")

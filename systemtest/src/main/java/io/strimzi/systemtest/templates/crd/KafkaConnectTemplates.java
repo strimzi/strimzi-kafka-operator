@@ -4,6 +4,7 @@
  */
 package io.strimzi.systemtest.templates.crd;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.strimzi.api.kafka.model.CertSecretSourceBuilder;
 import io.strimzi.api.kafka.model.KafkaConnect;
@@ -98,6 +99,7 @@ public class KafkaConnectTemplates {
      * @param replicas number of KafkaConnect replicas
      * @return KafkaConnect builder with File plugin
      */
+    @SuppressFBWarnings("DMI_RANDOM_USED_ONLY_ONCE")
     public static KafkaConnectBuilder kafkaConnectWithFilePlugin(String name, String namespaceName, String clusterName, int replicas, String pathToConnectConfig) {
         final Plugin fileSinkPlugin = new PluginBuilder()
             .withName("file-plugin")

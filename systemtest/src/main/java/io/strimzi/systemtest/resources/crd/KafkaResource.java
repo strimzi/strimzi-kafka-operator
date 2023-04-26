@@ -71,7 +71,6 @@ public class KafkaResource implements ResourceType<Kafka> {
                 .parallel()
                 .filter(kt -> kt.getMetadata().getLabels().get(Labels.STRIMZI_CLUSTER_LABEL).equals(clusterName))
                 .map(kt -> KafkaTopicResource.kafkaTopicClient().inNamespace(namespaceName).withName(kt.getMetadata().getName()).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete())
-                .map(kt -> kt.equals(Boolean.TRUE))
                 // check that all topic was successfully deleted
                 .allMatch(result -> true);
         }

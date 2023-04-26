@@ -221,7 +221,7 @@ public class ThrottlingQuotaST extends AbstractST {
 
         scraperPodName = kubeClient().listPodsByPrefixInName(sharedTestStorage.getNamespaceName(), sharedTestStorage.getScraperName()).get(0).getMetadata().getName();
 
-        resourceManager.createResource(extensionContext, KafkaUserTemplates.defaultUser(sharedTestStorage.getNamespaceName(), sharedTestStorage.getClusterName(), sharedTestStorage.getUserName())
+        resourceManager.createResource(extensionContext, KafkaUserTemplates.defaultUser(sharedTestStorage.getNamespaceName(), sharedTestStorage.getClusterName(), sharedTestStorage.getUsername())
             .editOrNewSpec()
                 .withNewQuotas()
                     .withControllerMutationRate(1.0)
@@ -233,6 +233,6 @@ public class ThrottlingQuotaST extends AbstractST {
         adminClientsBuilder = new KafkaAdminClientsBuilder()
             .withBootstrapAddress(KafkaResources.plainBootstrapAddress(sharedTestStorage.getClusterName()))
             .withNamespaceName(sharedTestStorage.getNamespaceName())
-            .withAdditionalConfig(KafkaAdminClients.getAdminClientScramConfig(sharedTestStorage.getNamespaceName(), sharedTestStorage.getUserName(), 240000));
+            .withAdditionalConfig(KafkaAdminClients.getAdminClientScramConfig(sharedTestStorage.getNamespaceName(), sharedTestStorage.getUsername(), 240000));
     }
 }

@@ -83,7 +83,6 @@ public class KafkaTopicScalabilityUtils {
 
     public static void modifyBigAmountOfTopics(String namespaceName, String topicPrefix, int numberOfTopics, KafkaTopicSpec topicSpec) {
         LOGGER.info("Modify {} topics via Kubernetes", numberOfTopics);
-        List<CompletableFuture<?>> topics = new ArrayList<>();
 
         for (int i = 0; i < numberOfTopics; i++) {
             String currentTopicName = topicPrefix + i;

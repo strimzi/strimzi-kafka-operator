@@ -75,6 +75,7 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
  * @code{rollbackToDefaultConfiguration()} method, which basically re-install Cluster Operator to the default values. In
  * case user wants to edit specific installation, one can use @code{defaultInstallation()}, which returns SetupClusterOperatorBuilder.
  */
+@SuppressFBWarnings("SSD_DO_NOT_USE_INSTANCE_LOCK_ON_SHARED_STATIC_DATA")
 public class SetupClusterOperator {
 
     private static final Logger LOGGER = LogManager.getLogger(SetupClusterOperator.class);
@@ -248,6 +249,7 @@ public class SetupClusterOperator {
         return this;
     }
 
+    @SuppressFBWarnings("ST_WRITE_TO_STATIC_FROM_INSTANCE_METHOD")
     public SetupClusterOperator runManualOlmInstallation(final String fromOlmChannelName, final String fromVersion) {
         if (isClusterOperatorNamespaceNotCreated()) {
             cluster.setNamespace(namespaceInstallTo);
@@ -591,7 +593,7 @@ public class SetupClusterOperator {
 
                 TestUtils.writeFile(tmpFile.getAbsolutePath(), tmpFileContent);
                 return tmpFile.getAbsolutePath();
-            } catch (Exception e) {
+            } catch (IOException e) {
                 throw new RuntimeException(e);
             }
         } else {
@@ -920,14 +922,14 @@ public class SetupClusterOperator {
     }
 
     public String prettyPrint() {
-        return String.format("extensionContext=%s\n" +
-                "clusterOperatorName=%s\n" +
-                "namespaceInstallTo=%s\n" +
-                "namespaceToWatch=%s\n" +
-                "bindingsNamespaces=%s\n" +
-                "operationTimeout=%s\n" +
-                "reconciliationInterval=%s\n" +
-                "clusterOperatorRBACType=%s\n" +
+        return String.format("extensionContext=%s%n" +
+                "clusterOperatorName=%s%n" +
+                "namespaceInstallTo=%s%n" +
+                "namespaceToWatch=%s%n" +
+                "bindingsNamespaces=%s%n" +
+                "operationTimeout=%s%n" +
+                "reconciliationInterval=%s%n" +
+                "clusterOperatorRBACType=%s%n" +
                 "%s%s%s%s", extensionContext,
                 clusterOperatorName,
                 namespaceInstallTo,
@@ -936,10 +938,10 @@ public class SetupClusterOperator {
                 operationTimeout,
                 reconciliationInterval,
                 clusterOperatorRBACType,
-                extraEnvVars.isEmpty() ? "" : ", extraEnvVars=" + extraEnvVars + "\n",
-                extraLabels.isEmpty() ? "" : "extraLabels=" + extraLabels + "\n",
-                testClassName == null ? "" : "testClassName='" + testClassName + '\'' + "\n",
-                testMethodName == null ? "" : "testMethodName='" + testMethodName + '\'' + "\n").trim();
+                extraEnvVars.isEmpty() ? "" : ", extraEnvVars=" + extraEnvVars + "%n",
+                extraLabels.isEmpty() ? "" : "extraLabels=" + extraLabels + "%n",
+                testClassName == null ? "" : "testClassName='" + testClassName + '\'' + "%n",
+                testMethodName == null ? "" : "testMethodName='" + testMethodName + '\'' + "%n").trim();
     }
 
     /**

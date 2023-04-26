@@ -4,6 +4,7 @@
  */
 package io.strimzi.systemtest.resources.operator.specific;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.fabric8.openshift.api.model.operatorhub.v1.OperatorGroup;
 import io.fabric8.openshift.api.model.operatorhub.v1.OperatorGroupBuilder;
 import io.fabric8.openshift.api.model.operatorhub.v1alpha1.Subscription;
@@ -47,6 +48,7 @@ public class OlmResource implements SpecificResourceType {
 
     }
 
+    @SuppressFBWarnings("ST_WRITE_TO_STATIC_FROM_INSTANCE_METHOD")
     public void create() {
         ResourceManager.STORED_RESOURCES.computeIfAbsent(olmConfiguration.getExtensionContext().getDisplayName(), k -> new Stack<>());
 

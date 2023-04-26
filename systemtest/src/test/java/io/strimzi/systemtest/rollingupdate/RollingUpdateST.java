@@ -100,7 +100,7 @@ class RollingUpdateST extends AbstractST {
             .withNamespaceName(testStorage.getNamespaceName())
             .withTopicName(testStorage.getTopicName())
             .withMessageCount(testStorage.getMessageCount())
-            .withUserName(testStorage.getUserName())
+            .withUsername(testStorage.getUsername())
             .build();
 
         resourceManager.createResource(extensionContext, clients.producerTlsStrimzi(testStorage.getClusterName()));
@@ -175,7 +175,7 @@ class RollingUpdateST extends AbstractST {
             .withNamespaceName(testStorage.getNamespaceName())
             .withTopicName(testStorage.getTopicName())
             .withMessageCount(testStorage.getMessageCount())
-            .withUserName(testStorage.getUserName())
+            .withUsername(testStorage.getUsername())
             .build();
 
         resourceManager.createResource(extensionContext, clients.producerTlsStrimzi(testStorage.getClusterName()));
@@ -280,7 +280,7 @@ class RollingUpdateST extends AbstractST {
             .withNamespaceName(testStorage.getNamespaceName())
             .withTopicName(testStorage.getTopicName())
             .withMessageCount(testStorage.getMessageCount())
-            .withUserName(testStorage.getUserName())
+            .withUsername(testStorage.getUsername())
             .withConsumerGroup(ClientUtils.generateRandomConsumerGroup())
             .build();
 
@@ -385,7 +385,7 @@ class RollingUpdateST extends AbstractST {
             .withNamespaceName(testStorage.getNamespaceName())
             .withTopicName(testStorage.getTopicName())
             .withMessageCount(testStorage.getMessageCount())
-            .withUserName(testStorage.getUserName())
+            .withUsername(testStorage.getUsername())
             .build();
 
         resourceManager.createResource(extensionContext, clients.producerTlsStrimzi(testStorage.getClusterName()), clients.consumerTlsStrimzi(testStorage.getClusterName()));

@@ -114,10 +114,10 @@ public class SetupKeycloak {
         Secret keycloakSecret = kubeClient().getSecret(namespaceName, KEYCLOAK_SECRET_NAME);
 
         String usernameEncoded = keycloakSecret.getData().get("username");
-        String username = new String(Base64.getDecoder().decode(usernameEncoded.getBytes()));
+        String username = new String(Base64.getDecoder().decode(usernameEncoded.getBytes(StandardCharsets.UTF_8)), StandardCharsets.UTF_8);
 
         String passwordEncoded = keycloakSecret.getData().get("password");
-        String password = new String(Base64.getDecoder().decode(passwordEncoded.getBytes()));
+        String password = new String(Base64.getDecoder().decode(passwordEncoded.getBytes(StandardCharsets.UTF_8)), StandardCharsets.UTF_8);
 
         return new KeycloakInstance(username, password, namespaceName);
     }
@@ -140,7 +140,7 @@ public class SetupKeycloak {
 
                 LOGGER.info("Realm successfully imported");
             } catch (IOException e) {
-                throw new RuntimeException(String.format("Unable to load file with path: %s due to exception: \n", path) + e);
+                throw new RuntimeException(String.format("Unable to load file with path: %s due to exception: %n", path) + e);
             }
         });
     }
