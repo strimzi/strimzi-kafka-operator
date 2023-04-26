@@ -112,7 +112,7 @@ class RollingUpdateST extends AbstractST {
             k.getSpec()
                 .getZookeeper()
                 .setResources(new ResourceRequirementsBuilder()
-                    .addToRequests("cpu", new Quantity("W"))
+                    .addToRequests("cpu", new Quantity("100000m"))
                     .build());
         }, testStorage.getNamespaceName());
 
