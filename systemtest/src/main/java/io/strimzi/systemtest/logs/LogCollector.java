@@ -143,6 +143,11 @@ public class LogCollector {
      */
     public synchronized void collect() {
         Set<String> namespaces = KubeClusterResource.getMapWithSuiteNamespaces().get(this.collectorElement);
+        // ensure that namespaces created in beforeAll are also collected
+        if (namespaces == null) {
+            CollectorElement classCollectorElement = new CollectorElement(this.collectorElement.getTestClassName(), "");
+            namespaces = KubeClusterResource.getMapWithSuiteNamespaces().get(classCollectorElement);
+        }
         // ensure that namespaces is never null
         namespaces = namespaces == null ? new HashSet<>() : namespaces;
         namespaces.add(clusterOperatorNamespace);
