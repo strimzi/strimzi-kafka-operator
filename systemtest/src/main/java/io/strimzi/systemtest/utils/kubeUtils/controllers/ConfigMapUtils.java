@@ -48,16 +48,4 @@ public class ConfigMapUtils {
         }
     }
 
-    public static void waitForConfigMapLabelsDeletion(String namespaceName, String configMapName, String... labelKeys) {
-        for (final String labelKey : labelKeys) {
-            LOGGER.info("Waiting for ConfigMap {}/{} label {} change to {}", namespaceName, configMapName, labelKey, null);
-            TestUtils.waitFor("Kafka configMap label" + labelKey + " change to " + null, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS,
-                DELETION_TIMEOUT, () -> {
-                    if (kubeClient(namespaceName).getConfigMap(namespaceName, configMapName).getMetadata().getLabels() != null)
-                        return kubeClient(namespaceName).getConfigMap(namespaceName, configMapName).getMetadata().getLabels().get(labelKey) == null;
-                    return false;
-                });
-            LOGGER.info("ConfigMap {}/{} label {} change to {}", namespaceName, configMapName, labelKey, null);
-        }
-    }
 }

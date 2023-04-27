@@ -15,6 +15,7 @@ import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
@@ -226,7 +227,7 @@ public class PodUtils {
         LOGGER.info("Pod {}/{} is present", namespaceName, podNamePrefix);
     }
 
-    public static void waitUntilPodLabelsDeletion(String namespaceName, String podName, String... labelKeys) {
+    public static void waitUntilPodLabelsDeletion(String namespaceName, String podName, Collection<String> labelKeys) {
         for (final String labelKey : labelKeys) {
             LOGGER.info("Waiting for Pod {}/{} label {} change to {}", namespaceName, podName, labelKey, null);
             TestUtils.waitFor("Pod label" + labelKey + " change to " + null, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS,
