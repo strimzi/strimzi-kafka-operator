@@ -226,7 +226,9 @@ public class Environment {
         String debugFormat = "{}: {}";
         LOGGER.info("Used environment variables:");
         LOGGER.info(debugFormat, "CONFIG", config);
-        VALUES.forEach((key, value) -> LOGGER.info(debugFormat, key, value));
+        VALUES.entrySet().stream()
+                .sorted(Map.Entry.comparingByKey())
+                .forEach(entry -> LOGGER.info(debugFormat, entry.getKey(), entry.getValue()));
     }
 
     public static boolean isOlmInstall() {
