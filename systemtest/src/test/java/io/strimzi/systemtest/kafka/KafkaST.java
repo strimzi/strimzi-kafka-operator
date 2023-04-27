@@ -826,14 +826,44 @@ class KafkaST extends AbstractST {
         assertThat(kafkaUserResource, containsString(Labels.STRIMZI_CLUSTER_LABEL + ": " + firstClusterName));
     }
 
+
+    /**
+     * @description This test case verifies correct storage of messages on disk, and their presence even after rolling update of all Kafka Pods. Test case
+     * also checks if offset topic related files are present.
+     *
+     * @steps
+     *  1. - Deploy persistent Kafka with corresponding configuration of offsets topic.
+     *     - Kafka is created with expected configuration.
+     *  2. - Create Kafka topic with corresponding configuration
+     *     - Kafka topic is created with expected configuration.
+     *  3. - Execute command to check presence of offsets topic related files.
+     *     - Files related to Offset topic are present.
+     *  4. - Produce default number of messages to already created topic.
+     *     - Produced messages are present.
+     *  4. - Perform rolling update on all Kafka Pods, in this case single broker.
+     *     - After rolling update is completed all messages are again present, as they were successfully stored on disk.
+     *
+     * @usecase
+     *  - data-storage
+     *  - kafka-configuration
+     */
     @ParallelNamespaceTest
     @Tag(INTERNAL_CLIENTS_USED)
     @KRaftNotSupported("TopicOperator is not supported by KRaft mode and is used in this test class")
-    void testMessagesAreStoredInDisk(ExtensionContext extensionContext) {
+    void testMessagesAreStoredInDiskAndConsumerOffsetFiles(ExtensionContext extensionContext) {
         final TestStorage testStorage = new TestStorage(extensionContext);
         final LabelSelector kafkaSelector = KafkaResource.getLabelSelector(testStorage.getClusterName(), testStorage.getKafkaStatefulSetName());
+        final Map<String, Object> kafkaConfig = new HashMap<>();
+        kafkaConfig.put("offsets.topic.replication.factor", "1");
+        kafkaConfig.put("offsets.topic.num.partitions", "100");
 
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), 1, 1).build());
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), 1, 1)
+            .editSpec()
+                .editKafka()
+                    .withConfig(kafkaConfig)
+                .endKafka()
+            .endSpec()
+            .build());
 
         Map<String, String> kafkaPodsSnapshot = PodUtils.podSnapshot(testStorage.getNamespaceName(), kafkaSelector);
 
@@ -871,6 +901,21 @@ class KafkaST extends AbstractST {
         );
         ClientUtils.waitForClientsSuccess(testStorage);
 
+        LOGGER.info("Verify presence of files created to store offsets topic");
+        String commandToGetFiles =  "cd /var/lib/kafka/data/kafka-log0/;" +
+            "ls -1 | sed -n \"s#__consumer_offsets-\\([0-9]*\\)#\\1#p\" | sort -V";
+        LOGGER.info("Executing command {} in {}", commandToGetFiles, KafkaResources.kafkaPodName(testStorage.getClusterName(), 0));
+        String result = cmdKubeClient(testStorage.getNamespaceName()).execInPod(KafkaResources.kafkaPodName(testStorage.getClusterName(), 0),
+            "/bin/bash", "-c", commandToGetFiles).out();
+
+        StringBuilder stringToMatch = new StringBuilder();
+
+        for (int i = 0; i < 100; i++) {
+            stringToMatch.append(i).append("\n");
+        }
+
+        assertThat("Folder kafka-log0 doesn't contain 100 files", result, containsString(stringToMatch.toString()));
+
         LOGGER.info("Executing command {} in {}", commandToGetDataFromTopic, KafkaResources.kafkaPodName(testStorage.getClusterName(), 0));
         topicData = cmdKubeClient(testStorage.getNamespaceName()).execInPod(KafkaResources.kafkaPodName(testStorage.getClusterName(), 0), "/bin/bash", "-c",
                 commandToGetDataFromTopic).out();
@@ -892,54 +937,6 @@ class KafkaST extends AbstractST {
                 commandToGetDataFromTopic).out();
 
         assertThat("Topic has no data", topicData, notNullValue());
-    }
-
-    @ParallelNamespaceTest
-    @Tag(INTERNAL_CLIENTS_USED)
-    void testConsumerOffsetFiles(ExtensionContext extensionContext) {
-        final TestStorage testStorage = new TestStorage(extensionContext);
-        final Map<String, Object> kafkaConfig = new HashMap<>();
-        kafkaConfig.put("offsets.topic.replication.factor", "3");
-        kafkaConfig.put("offsets.topic.num.partitions", "100");
-
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3, 1)
-            .editSpec()
-                .editKafka()
-                    .withConfig(kafkaConfig)
-                .endKafka()
-            .endSpec()
-            .build());
-
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getTopicName(), 3, 1).build());
-
-        KafkaClients kafkaClients = new KafkaClientsBuilder()
-            .withTopicName(testStorage.getTopicName())
-            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
-            .withNamespaceName(testStorage.getNamespaceName())
-            .withProducerName(testStorage.getProducerName())
-            .withConsumerName(testStorage.getConsumerName())
-            .withMessageCount(testStorage.getMessageCount())
-            .build();
-
-        resourceManager.createResource(extensionContext,
-            kafkaClients.producerStrimzi(),
-            kafkaClients.consumerStrimzi()
-        );
-        ClientUtils.waitForClientsSuccess(testStorage);
-
-        String commandToGetFiles =  "cd /var/lib/kafka/data/kafka-log0/;" +
-            "ls -1 | sed -n \"s#__consumer_offsets-\\([0-9]*\\)#\\1#p\" | sort -V";
-        LOGGER.info("Executing command {} in {}", commandToGetFiles, KafkaResources.kafkaPodName(testStorage.getClusterName(), 0));
-        String result = cmdKubeClient(testStorage.getNamespaceName()).execInPod(KafkaResources.kafkaPodName(testStorage.getClusterName(), 0),
-                "/bin/bash", "-c", commandToGetFiles).out();
-
-        StringBuilder stringToMatch = new StringBuilder();
-
-        for (int i = 0; i < 100; i++) {
-            stringToMatch.append(i).append("\n");
-        }
-
-        assertThat("Folder kafka-log0 doesn't contain 100 files", result, containsString(stringToMatch.toString()));
     }
 
     @ParallelNamespaceTest
