@@ -140,7 +140,7 @@ public class Environment {
     public static final String ST_FILE_PLUGIN_URL_ENV = "ST_FILE_SINK_PLUGIN_URL";
 
     /**
-     * CO Features gates variable
+     * Resource allocation strategy
      */
     public static final String RESOURCE_ALLOCATION_STRATEGY_ENV = "RESOURCE_ALLOCATION_STRATEGY";
 

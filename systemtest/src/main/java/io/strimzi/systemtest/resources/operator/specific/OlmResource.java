@@ -5,6 +5,9 @@
 package io.strimzi.systemtest.resources.operator.specific;
 
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+import io.fabric8.kubernetes.api.model.Quantity;
+import io.fabric8.kubernetes.api.model.ResourceRequirements;
+import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.fabric8.openshift.api.model.operatorhub.v1.OperatorGroup;
 import io.fabric8.openshift.api.model.operatorhub.v1.OperatorGroupBuilder;
 import io.fabric8.openshift.api.model.operatorhub.v1alpha1.Subscription;
@@ -126,6 +129,16 @@ public class OlmResource implements SpecificResourceType {
                 .endConfig()
             .endSpec()
             .build();
+
+        // Change default values for Cluster Operator memory when RESOURCE_ALLOCATION_STRATEGY is not set to NOT_SHARED
+        if (KubeClusterResource.getInstance().fipsEnabled()) {
+            ResourceRequirements resourceRequirements = new ResourceRequirementsBuilder()
+                .withRequests(Map.of("memory", new Quantity(Constants.CO_REQUESTS_MEMORY), "cpu", new Quantity(Constants.CO_REQUESTS_CPU)))
+                .withLimits(Map.of("memory", new Quantity(Constants.CO_LIMITS_MEMORY), "cpu", new Quantity(Constants.CO_LIMITS_CPU)))
+                .build();
+
+            subscription.getSpec().getConfig().setResources(resourceRequirements);
+        }
 
         ResourceManager.getInstance().createResource(olmConfiguration.getExtensionContext(), subscription);
     }

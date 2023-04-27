@@ -455,4 +455,12 @@ public interface Constants {
         ROLE, PATH_TO_LEASE_ROLE,
         ROLE_BINDING, PATH_TO_LEASE_ROLE_BINDING
     );
+
+    /**
+     * Cluster Operator resources config
+     */
+    String CO_REQUESTS_MEMORY = "512Mi";
+    String CO_REQUESTS_CPU = "200m";
+    String CO_LIMITS_MEMORY = "512Mi";
+    String CO_LIMITS_CPU = "1000m";
 }

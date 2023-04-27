@@ -30,11 +30,6 @@ public class HelmResource implements SpecificResourceType {
     public static final String HELM_CHART = TestUtils.USER_PATH + "/../packaging/helm-charts/helm3/strimzi-kafka-operator/";
     public static final String HELM_RELEASE_NAME = "strimzi-systemtests";
 
-    public static final String REQUESTS_MEMORY = "512Mi";
-    public static final String REQUESTS_CPU = "200m";
-    public static final String LIMITS_MEMORY = "512Mi";
-    public static final String LIMITS_CPU = "1000m";
-
     private String namespaceToWatch;
     private String namespaceInstallTo;
 
@@ -79,10 +74,10 @@ public class HelmResource implements SpecificResourceType {
 
         // Additional config
         values.put("image.imagePullPolicy", Environment.OPERATOR_IMAGE_PULL_POLICY);
-        values.put("resources.requests.memory", REQUESTS_MEMORY);
-        values.put("resources.requests.cpu", REQUESTS_CPU);
-        values.put("resources.limits.memory", LIMITS_MEMORY);
-        values.put("resources.limits.cpu", LIMITS_CPU);
+        values.put("resources.requests.memory", Constants.CO_REQUESTS_MEMORY);
+        values.put("resources.requests.cpu", Constants.CO_REQUESTS_CPU);
+        values.put("resources.limits.memory", Constants.CO_LIMITS_MEMORY);
+        values.put("resources.limits.cpu", Constants.CO_LIMITS_CPU);
         values.put("logLevelOverride", Environment.STRIMZI_LOG_LEVEL);
         values.put("fullReconciliationIntervalMs", Long.toString(reconciliationInterval));
         values.put("operationTimeoutMs", Long.toString(operationTimeout));
