@@ -136,6 +136,8 @@ function fetch_and_unpack_kafka_binaries {
             ./extract-jars.sh "$dist_dir/libs" "$unzipped_dir"
             ./find-colliding-classes.sh "$unzipped_dir" | awk '{print $1}' | $SORT | $UNIQ > "$ignorelist_file" || true
             rm -rf $unzipped_dir
+            # Add ignored 3rd party libraries
+            cat kafka-thirdparty-libs/${version_libs[$kafka_version]}/ignorelist >> $ignorelist_file
         fi
 
         # We extracted the files, so we just keep the archive and the ignorelist
