@@ -47,15 +47,13 @@ import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.RollingUpdateUtils;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
-import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
+import io.strimzi.systemtest.utils.kubeUtils.controllers.ConfigMapUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StrimziPodSetUtils;
-import io.strimzi.systemtest.utils.kubeUtils.controllers.ConfigMapUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PersistentVolumeClaimUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.ServiceUtils;
 import io.strimzi.test.TestUtils;
-import io.strimzi.test.executor.ExecResult;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.Tag;
@@ -68,7 +66,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Properties;
 import java.util.stream.Collectors;
 
 import static io.strimzi.api.kafka.model.KafkaResources.kafkaStatefulSetName;
@@ -76,8 +73,6 @@ import static io.strimzi.systemtest.Constants.CRUISE_CONTROL;
 import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.LOADBALANCER_SUPPORTED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
-import static io.strimzi.systemtest.utils.StUtils.configMap2Properties;
-import static io.strimzi.systemtest.utils.StUtils.stringToProperties;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static java.util.Arrays.asList;
@@ -427,6 +422,18 @@ class KafkaST extends AbstractST {
         assertThat(topics, not(hasItems("topic-without-labels")));
     }
 
+    /**
+     * @description This test case verifies that Kafka with persistent storage, and JBOD storage, PVCs set to delete true in one and false in another..
+     *
+     * @steps
+     *  1. - Deploy Kafka with persistent storage and JBOD storage with 2 volumes.
+     *     - Kafka is deployed, volumes are labeled and linked to Pods correctly.
+     *
+     * @usecase
+     *  - JBOD
+     *  - PVC
+     *  - volume
+     */
     @ParallelNamespaceTest
     @KRaftNotSupported("JBOD is not supported by KRaft mode and is used in this test case.")
     void testKafkaJBODDeleteClaimsTrueFalse(ExtensionContext extensionContext) {
@@ -450,107 +457,6 @@ class KafkaST extends AbstractST {
 
         LOGGER.info("Waiting for PVC deletion");
         PersistentVolumeClaimUtils.waitForJbodStorageDeletion(namespaceName, volumesCount, jbodStorage, clusterName);
-    }
-
-    @ParallelNamespaceTest
-    @KRaftNotSupported("JBOD is not supported by KRaft mode and is used in this test case.")
-    void testKafkaJBODDeleteClaimsTrue(ExtensionContext extensionContext) {
-        final String namespaceName = StUtils.getNamespaceBasedOnRbac(namespace, extensionContext);
-        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
-        final int kafkaReplicas = 2;
-        final String diskSizeGi = "10";
-
-        JbodStorage jbodStorage = new JbodStorageBuilder().withVolumes(
-            new PersistentClaimStorageBuilder().withDeleteClaim(true).withId(0).withSize(diskSizeGi + "Gi").build(),
-            new PersistentClaimStorageBuilder().withDeleteClaim(true).withId(1).withSize(diskSizeGi + "Gi").build()).build();
-
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaJBOD(clusterName, kafkaReplicas, jbodStorage).build());
-        // kafka cluster already deployed
-        verifyVolumeNamesAndLabels(namespaceName, clusterName, kafkaReplicas, 2, diskSizeGi);
-
-        final int volumesCount = kubeClient(namespaceName).listPersistentVolumeClaims(namespaceName, clusterName).size();
-
-        LOGGER.info("Deleting cluster");
-        cmdKubeClient(namespaceName).deleteByName("kafka", clusterName);
-
-        LOGGER.info("Waiting for PVC deletion");
-        PersistentVolumeClaimUtils.waitForJbodStorageDeletion(namespaceName, volumesCount, jbodStorage, clusterName);
-    }
-
-    @ParallelNamespaceTest
-    @KRaftNotSupported("JBOD is not supported by KRaft mode and is used in this test case.")
-    void testKafkaJBODDeleteClaimsFalse(ExtensionContext extensionContext) {
-        final String namespaceName = StUtils.getNamespaceBasedOnRbac(namespace, extensionContext);
-        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
-        final int kafkaReplicas = 2;
-        final String diskSizeGi = "10";
-
-        JbodStorage jbodStorage = new JbodStorageBuilder().withVolumes(
-            new PersistentClaimStorageBuilder().withDeleteClaim(false).withId(0).withSize(diskSizeGi + "Gi").build(),
-            new PersistentClaimStorageBuilder().withDeleteClaim(false).withId(1).withSize(diskSizeGi + "Gi").build()).build();
-
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaJBOD(clusterName, kafkaReplicas, jbodStorage).build());
-        // kafka cluster already deployed
-        verifyVolumeNamesAndLabels(namespaceName, clusterName, kafkaReplicas, 2, diskSizeGi);
-
-        int volumesCount = kubeClient(namespaceName).listPersistentVolumeClaims(namespaceName, clusterName).size();
-
-        LOGGER.info("Deleting cluster");
-        cmdKubeClient(namespaceName).deleteByName("kafka", clusterName);
-
-        LOGGER.info("Waiting for PVC deletion");
-        PersistentVolumeClaimUtils.waitForJbodStorageDeletion(namespaceName, volumesCount, jbodStorage, clusterName);
-    }
-
-    @ParallelNamespaceTest
-    @Tag(INTERNAL_CLIENTS_USED)
-    @KRaftNotSupported("JBOD is not supported by KRaft mode and is used in this test case.")
-    void testPersistentStorageSize(ExtensionContext extensionContext) {
-        final TestStorage testStorage = new TestStorage(extensionContext);
-
-        final String[] diskSizes = {"70Gi", "20Gi"};
-        final int kafkaRepl = 2;
-        final int diskCount = 2;
-
-        JbodStorage jbodStorage =  new JbodStorageBuilder()
-                .withVolumes(
-                        new PersistentClaimStorageBuilder().withDeleteClaim(false).withId(0).withSize(diskSizes[0]).build(),
-                        new PersistentClaimStorageBuilder().withDeleteClaim(false).withId(1).withSize(diskSizes[1]).build()
-                ).build();
-
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), kafkaRepl)
-            .editSpec()
-                .editKafka()
-                    .withStorage(jbodStorage)
-                .endKafka()
-                .editZookeeper().
-                    withReplicas(1)
-                .endZookeeper()
-            .endSpec()
-            .build());
-
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getTopicName()).build());
-
-        List<PersistentVolumeClaim> volumes = kubeClient(testStorage.getNamespaceName()).listPersistentVolumeClaims(testStorage.getNamespaceName(), testStorage.getClusterName()).stream().filter(
-            persistentVolumeClaim -> persistentVolumeClaim.getMetadata().getName().contains(testStorage.getClusterName())).collect(Collectors.toList());
-
-        checkStorageSizeForVolumes(volumes, diskSizes, kafkaRepl, diskCount);
-
-        KafkaClients kafkaClients = new KafkaClientsBuilder()
-            .withTopicName(testStorage.getTopicName())
-            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
-            .withNamespaceName(testStorage.getNamespaceName())
-            .withProducerName(testStorage.getProducerName())
-            .withConsumerName(testStorage.getConsumerName())
-            .withMessageCount(testStorage.getMessageCount())
-            .build();
-
-        resourceManager.createResource(extensionContext,
-            kafkaClients.producerStrimzi(),
-            kafkaClients.consumerStrimzi()
-        );
-
-        ClientUtils.waitForClientsSuccess(testStorage);
     }
 
     @ParallelNamespaceTest
@@ -1015,26 +921,16 @@ class KafkaST extends AbstractST {
             .withMessageCount(testStorage.getMessageCount())
             .build();
 
-        String commandToGetFiles =  "cd /var/lib/kafka/data/kafka-log0/;" +
-                "ls -1 | sed -n \"s#__consumer_offsets-\\([0-9]*\\)#\\1#p\" | sort -V";
-
-        LOGGER.info("Executing command {} in {}", commandToGetFiles, KafkaResources.kafkaPodName(testStorage.getClusterName(), 0));
-        String result = cmdKubeClient(testStorage.getNamespaceName()).execInPod(KafkaResources.kafkaPodName(testStorage.getClusterName(), 0),
-                "/bin/bash", "-c", commandToGetFiles).out();
-
-        // TODO / FIXME
-        //assertThat("Folder kafka-log0 has data in files:\n" + result, result.equals(""));
-
-        LOGGER.info("Result: \n" + result);
-
         resourceManager.createResource(extensionContext,
             kafkaClients.producerStrimzi(),
             kafkaClients.consumerStrimzi()
         );
         ClientUtils.waitForClientsSuccess(testStorage);
 
+        String commandToGetFiles =  "cd /var/lib/kafka/data/kafka-log0/;" +
+            "ls -1 | sed -n \"s#__consumer_offsets-\\([0-9]*\\)#\\1#p\" | sort -V";
         LOGGER.info("Executing command {} in {}", commandToGetFiles, KafkaResources.kafkaPodName(testStorage.getClusterName(), 0));
-        result = cmdKubeClient(testStorage.getNamespaceName()).execInPod(KafkaResources.kafkaPodName(testStorage.getClusterName(), 0),
+        String result = cmdKubeClient(testStorage.getNamespaceName()).execInPod(KafkaResources.kafkaPodName(testStorage.getClusterName(), 0),
                 "/bin/bash", "-c", commandToGetFiles).out();
 
         StringBuilder stringToMatch = new StringBuilder();
@@ -1121,48 +1017,6 @@ class KafkaST extends AbstractST {
             kafkaClients.consumerStrimzi()
         );
         ClientUtils.waitForClientsSuccess(testStorage);
-    }
-
-    protected void checkKafkaConfiguration(String namespaceName, String podNamePrefix, Map<String, Object> config, String clusterName) {
-        LOGGER.info("Checking kafka configuration");
-        List<Pod> pods = kubeClient(namespaceName).listPodsByPrefixInName(namespaceName, podNamePrefix);
-
-        for (String cmName : StUtils.getKafkaConfigurationConfigMaps(clusterName, pods.size())) {
-            Properties properties = configMap2Properties(kubeClient(namespaceName).getConfigMap(namespaceName, cmName));
-
-            for (Map.Entry<String, Object> property : config.entrySet()) {
-                String key = property.getKey();
-                Object val = property.getValue();
-
-                assertThat(properties.keySet().contains(key), is(true));
-                assertThat(properties.getProperty(key), is(val));
-            }
-        }
-
-        for (Pod pod: pods) {
-            ExecResult result = cmdKubeClient(namespaceName).execInPod(pod.getMetadata().getName(), "/bin/bash", "-c", "cat /tmp/strimzi.properties");
-            Properties execProperties = stringToProperties(result.out());
-
-            for (Map.Entry<String, Object> property : config.entrySet()) {
-                String key = property.getKey();
-                Object val = property.getValue();
-
-                assertThat(execProperties.keySet().contains(key), is(true));
-                assertThat(execProperties.getProperty(key), is(val));
-            }
-        }
-    }
-
-    void checkStorageSizeForVolumes(List<PersistentVolumeClaim> volumes, String[] diskSizes, int kafkaRepl, int diskCount) {
-        int k = 0;
-        for (int i = 0; i < kafkaRepl; i++) {
-            for (int j = 0; j < diskCount; j++) {
-                LOGGER.info("Checking volume {} and size of testStorage {}", volumes.get(k).getMetadata().getName(),
-                        volumes.get(k).getSpec().getResources().getRequests().get("storage"));
-                assertThat(volumes.get(k).getSpec().getResources().getRequests().get("storage"), is(new Quantity(diskSizes[i])));
-                k++;
-            }
-        }
     }
 
     void verifyVolumeNamesAndLabels(String namespaceName, String clusterName, int kafkaReplicas, int diskCountPerReplica, String diskSizeGi) {
