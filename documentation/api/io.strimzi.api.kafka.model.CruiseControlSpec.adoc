@@ -29,10 +29,29 @@ However, Strimzi takes care of configuring and managing options related to the f
 * Web server configuration
 * Self healing
 
-See the description of the `config` property for a list of prefixes for options you cannot change.
+Properties with the following prefixes cannot be set:
+
+* `bootstrap.servers`
+* `capacity.config.file`
+* `client.id`
+* `failed.brokers.zk.path`
+* `kafka.broker.failure.detection.enable`
+* `metric.reporter.sampler.bootstrap.servers`
+* `network.`
+* `request.reason.required`
+* `security.`
+* `self.healing.`
+* `ssl.`
+* `topic.config.provider.class`
+* `two.step.`
+* `webserver.accesslog.`
+* `webserver.api.urlprefix`
+* `webserver.http.`
+* `webserver.session.path`
+* `zookeeper.`
 
 If the `config` property contains an option that cannot be changed, it is disregarded, and a warning message is logged to the Cluster Operator log file.
-All other supported options are forwarded to Cruise Control, including two exceptions to the options configured by Strimzi:
+All other supported options are forwarded to Cruise Control, including the following exceptions to the options configured by Strimzi:
 
 * Any `ssl` configuration for xref:con-common-configuration-ssl-reference[supported TLS versions and cipher suites]
 * Configuration for `webserver` properties to enable Cross-Origin Resource Sharing (CORS)

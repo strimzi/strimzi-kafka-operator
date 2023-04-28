@@ -22,10 +22,26 @@ However, Strimzi takes care of configuring and managing options related to the f
 * Configuration of data directories
 * ZooKeeper cluster composition
 
-See the description of the `config` property for a list of prefixes for options you cannot change.
+Properties with the following prefixes cannot be set:
+
+* `4lw.commands.whitelist`
+* `authProvider`
+* `clientPort`
+* `dataDir`
+* `dataLogDir`
+* `quorum.auth`
+* `reconfigEnabled`
+* `requireClientAuthScheme`
+* `secureClientPort`
+* `server.`
+* `snapshot.trust.empty`
+* `standaloneEnabled`
+* `serverCnxnFactory`
+* `ssl.`
+* `sslQuorum`
 
 If the `config` property contains an option that cannot be changed, it is disregarded, and a warning message is logged to the Cluster Operator log file.
-All other supported options are forwarded to ZooKeeper, including the following exception to the options configured by Strimzi:
+All other supported options are forwarded to ZooKeeper, including the following exceptions to the options configured by Strimzi:
 
 * Any `ssl` configuration for xref:con-common-configuration-ssl-reference[supported TLS versions and cipher suites]
 

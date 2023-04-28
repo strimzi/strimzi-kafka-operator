@@ -48,13 +48,48 @@ However, Strimzi takes care of configuring and managing options related to the f
 * Inter-broker communication
 * ZooKeeper connectivity
 
-See the description of the `config` property for a list of prefixes for options you cannot change.
+Properties with the following prefixes cannot be set:
+
+* `advertised.`
+* `authorizer.`
+* `broker.`
+* `controller`
+* `cruise.control.metrics.reporter.bootstrap.`
+* `cruise.control.metrics.topic`
+* `host.name`
+* `inter.broker.listener.name`
+* `listener.`
+* `listeners.`
+* `log.dir`
+* `password.`
+* `port`
+* `process.roles`
+* `sasl.`
+* `security.`
+* `servers,node.id`
+* `ssl.`
+* `super.user`
+* `zookeeper.clientCnxnSocket`
+* `zookeeper.connect`
+* `zookeeper.set.acl`
+* `zookeeper.ssl`
 
 If the `config` property contains an option that cannot be changed, it is disregarded, and a warning message is logged to the Cluster Operator log file.
-All other supported options are forwarded to Kafka, including two exceptions to the options configured by Strimzi:
+All other supported options are forwarded to Kafka, including the following exceptions to the options configured by Strimzi:
 
 * Any `ssl` configuration for xref:con-common-configuration-ssl-reference[supported TLS versions and cipher suites]
 * Configuration for the `zookeeper.connection.timeout.ms` property to set the maximum time allowed for establishing a ZooKeeper connection
+* Cruise Control metrics properties: 
+** `cruise.control.metrics.topic.num.partitions`
+** `cruise.control.metrics.topic.replication.factor`
+** `cruise.control.metrics.topic.retention.ms`
+** `cruise.control.metrics.topic.auto.create.retries`
+** `cruise.control.metrics.topic.auto.create.timeout.ms`
+** `cruise.control.metrics.topic.min.insync.replicas`
+* Controller properties:
+** `controller.quorum.election.backoff.max.ms`
+** `controller.quorum.election.timeout.ms`
+** `controller.quorum.fetch.timeout.ms`
 
 .Example Kafka broker configuration
 [source,yaml,subs="attributes+"]

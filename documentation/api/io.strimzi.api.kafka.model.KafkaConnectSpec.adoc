@@ -32,10 +32,20 @@ However, Strimzi takes care of configuring and managing options related to the f
 * Listener and REST interface configuration
 * Plugin path configuration
 
-See the description of the `config` property for a list of prefixes for options you cannot change.
+Properties with the following prefixes cannot be set:
+
+* `bootstrap.servers`
+* `consumer.interceptor.classes`
+* `listeners.`
+* `plugin.path`
+* `producer.interceptor.classes`
+* `rest.`
+* `sasl.`
+* `security.`
+* `ssl.`
 
 If the `config` property contains an option that cannot be changed, it is disregarded, and a warning message is logged to the Cluster Operator log file.
-All other supported options are forwarded to Kafka Connect, including the following exception to the options configured by Strimzi:
+All other supported options are forwarded to Kafka Connect, including the following exceptions to the options configured by Strimzi:
 
 * Any `ssl` configuration for xref:con-common-configuration-ssl-reference[supported TLS versions and cipher suites]
 
