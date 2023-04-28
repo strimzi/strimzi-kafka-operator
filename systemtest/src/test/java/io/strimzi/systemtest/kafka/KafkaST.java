@@ -13,6 +13,7 @@ import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecurityContextBuilder;
 import io.fabric8.kubernetes.api.model.Service;
+import io.fabric8.kubernetes.api.model.Container;
 import io.strimzi.api.kafka.KafkaTopicList;
 import io.strimzi.api.kafka.model.EntityTopicOperatorSpec;
 import io.strimzi.api.kafka.model.EntityUserOperatorSpec;
@@ -304,6 +305,7 @@ class KafkaST extends AbstractST {
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3).build());
 
+        LOGGER.info("Remove User Operator from Entity Operator");
         KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, k -> k.getSpec().getEntityOperator().setUserOperator(null), namespaceName);
 
         if (!Environment.isKRaftModeEnabled()) {
@@ -312,7 +314,7 @@ class KafkaST extends AbstractST {
             PodUtils.waitUntilPodContainersCount(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName), 2);
 
             //Checking that UO was removed
-            kubeClient(namespaceName).listPodsByPrefixInName(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName)).forEach(pod -> {
+            kubeClient().listPodsByPrefixInName(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName)).forEach(pod -> {
                 pod.getSpec().getContainers().forEach(container -> {
                     assertThat(container.getName(), not(containsString("user-operator")));
                 });
@@ -321,20 +323,29 @@ class KafkaST extends AbstractST {
             DeploymentUtils.waitForDeploymentDeletion(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName));
         }
 
+        LOGGER.info("Recreate Entity Operator (with both User and Topic Operators)");
         KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, k -> k.getSpec().getEntityOperator().setUserOperator(new EntityUserOperatorSpec()), namespaceName);
         //Waiting when EO pod will be recreated with UO
         DeploymentUtils.waitForDeploymentAndPodsReady(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName), 1);
 
-        //Checking that UO was created
-        kubeClient(namespaceName).listPodsByPrefixInName(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName)).forEach(pod -> {
-            pod.getSpec().getContainers().forEach(container -> {
-                assertThat(container.getName(), anyOf(
-                        containsString("topic-operator"),
-                        containsString("user-operator"),
-                        containsString("tls-sidecar"))
-                );
-            });
-        });
+        PodUtils.waitUntilPodContainersCount(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName), 3);
+
+        // names of containers present in EO pod
+        List<String> entityOperatorContainerNames = kubeClient().listPodsByPrefixInName(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName))
+                .get(0).getSpec().getContainers()
+                .stream()
+                .map(Container::getName)
+                .toList();
+
+        assertThat("tls-sidecar container is not present in EO", entityOperatorContainerNames.stream().anyMatch(name -> name.contains("tls-sidecar")));
+        assertThat("user-operator container is not present in EO", entityOperatorContainerNames.stream().anyMatch(name -> name.contains("user-operator")));
+        assertThat("topic-operator container is not present in EO", entityOperatorContainerNames.stream().anyMatch(name -> name.contains("topic-operator")));
+
+        LOGGER.info("Remove Topic Operator from Entity Operator");
+        // TODO logic
+
+        LOGGER.info("Remove Entity Operator (with both User and Topic Operators)");
+        // TODO logic
 
         Instant endTime = Instant.now();
         long duration = Duration.between(startTime, endTime).toSeconds();
