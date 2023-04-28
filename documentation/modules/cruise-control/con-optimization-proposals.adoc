@@ -86,7 +86,7 @@ Approving an optimization proposal:: You approve the optimization proposal by se
 Cruise Control applies the proposal to the Kafka cluster and starts a cluster rebalance operation.
 Rejecting an optimization proposal:: If you choose not to approve an optimization proposal,
 you can xref:proc-generating-optimization-proposals-str[change the optimization goals] or xref:rebalance_tuning_options[update any of the rebalance performance tuning options], and then generate another proposal.
-You can use the `strimzi.io/refresh` annotation to generate a new optimization proposal for a `KafkaRebalance` resource.
+You can generate a new optimization proposal for a `KafkaRebalance` resource by setting the `strimzi.io/rebalance` annotation to `refresh`
 
 Use optimization proposals to assess the movements required for a rebalance.
 For example, a summary describes inter-broker and intra-broker movements.
