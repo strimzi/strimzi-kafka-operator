@@ -3,7 +3,7 @@ Configures a Kafka Bridge cluster.
 Configuration options relate to:
 
 * Kafka cluster bootstrap address
-* Security (Encryption, Authentication, and Authorization)
+* Security (encryption, authentication, and authorization)
 * Consumer configuration
 * Producer configuration
 * HTTP configuration
