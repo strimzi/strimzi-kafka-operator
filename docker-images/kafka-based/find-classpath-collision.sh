@@ -1,7 +1,7 @@
 #! /usr/bin/env bash
 image=$1 #strimzi/kafka:latest-kafka-2.2.1
 image_jar_dir=$2 #/opt/kafka/libs
-whilelist_file=$3
+ignorelist_file=$3
 DOCKER_CMD=${DOCKER_CMD:-docker}
 
 jars_dir=$(mktemp -d)
@@ -19,13 +19,13 @@ ${DOCKER_CMD} rm temp-container-name > /dev/null
 $(dirname $0)/../artifacts/extract-jars.sh "$jars_dir" "$classes_root"
 
 collisions=$($(dirname "$0")/../artifacts/find-colliding-classes.sh "$classes_root" | awk '{printf("%s\t%s\n",$1,$2);}' | \
-    grep -vFf "$whilelist_file")
+    grep -vFf "$ignorelist_file")
 
 if [ "$collisions" != "" ] ; then
   echo "ERROR: Different class files with same name from different jars found!"
   echo "$collisions"
   echo "(Ignoring jars from Kafka distribution containing different class files with same name:"
-  sed -e 's/^/  /' "$whilelist_file"
+  sed -e 's/^/  /' "$ignorelist_file"
   echo ")"
   echo "It's likely that either two third party jars are using different versions "
   echo "of a common (transitive) dependency or a single third party jar is using a"
