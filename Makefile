@@ -42,7 +42,6 @@ release_prepare:
 	rm -rf ./strimzi-$(RELEASE_VERSION)
 	rm -f ./strimzi-$(RELEASE_VERSION).tar.gz
 	rm -f ./strimzi-$(RELEASE_VERSION).zip
-	rm -f ./strimzi-kafka-operator-helm-2-chart-$(RELEASE_VERSION).tgz
 	rm -f ./strimzi-kafka-operator-helm-3-chart-$(RELEASE_VERSION).tgz
 	rm -f ./strimzi-topic-operator-$(RELEASE_VERSION).yaml
 	rm -f ./strimzi-cluster-operator-$(RELEASE_VERSION).yaml
