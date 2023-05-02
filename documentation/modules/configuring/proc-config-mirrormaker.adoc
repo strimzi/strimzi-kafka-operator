@@ -133,7 +133,7 @@ spec:
 <16> ADVANCED OPTION: xref:con-common-configuration-images-reference[Container image configuration], which is recommended only in special situations.
 <17> xref:assembly-customizing-kubernetes-resources-str[Template customization]. Here a pod is scheduled with anti-affinity, so the pod is not scheduled on nodes with the same hostname.
 <18> Environment variables are set for distributed tracing.
-<19> Distributed tracing is enabled for OpenTelemetry.
+<19> Distributed tracing is enabled by using OpenTelemetry.
 +
 WARNING: With the `abortOnSendFailure` property set to `false`, the producer attempts to send the next message in a topic. The original message might be lost, as there is no attempt to resend a failed message.
 

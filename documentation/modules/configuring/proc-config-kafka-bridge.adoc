@@ -123,7 +123,7 @@ By default, the Kafka Bridge connects to Kafka brokers without authentication.
 <13> Optional: xref:con-common-configuration-images-reference[Container image configuration], which is recommended only in special situations.
 <14> xref:assembly-customizing-kubernetes-resources-str[Template customization]. Here a pod is scheduled with anti-affinity, so the pod is not scheduled on nodes with the same hostname.
 <15> Environment variables are set for distributed tracing.
-<16> Distributed tracing is enabled for OpenTelemetry.
+<16> Distributed tracing is enabled by using OpenTelemetry.
 
 . Create or update the resource:
 +
