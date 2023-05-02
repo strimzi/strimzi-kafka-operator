@@ -237,8 +237,6 @@ public class TopicST extends AbstractST {
                 .endSpec()
                 .build());
 
-        assertThat(true, is(false));
-
         Properties properties = new Properties();
 
         properties.setProperty(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, KafkaResource.kafkaClient().inNamespace(namespace)
