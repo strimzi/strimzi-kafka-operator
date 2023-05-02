@@ -33,6 +33,7 @@ import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.templates.specific.ScraperTemplates;
 import io.strimzi.systemtest.utils.ClientUtils;
+import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.specific.TracingUtils;
 import io.strimzi.test.TestUtils;
@@ -572,6 +573,7 @@ public abstract class TracingAbstractST extends AbstractST {
     private void deployCertManager(ExtensionContext extensionContext) {
         // create namespace `cert-manager` and add it to stack, to collect logs from it
         cluster.createNamespace(CollectorElement.createCollectorElement(extensionContext.getRequiredTestClass().getName()), CERT_MANAGER_NAMESPACE);
+        StUtils.copyImagePullSecret(CERT_MANAGER_NAMESPACE);
 
         LOGGER.info("Deploying CertManager from {}", certManagerPath);
         // because we don't want to apply CertManager's file to specific namespace, passing the empty String will do the trick

@@ -702,6 +702,9 @@ public class MetricsIsolatedST extends AbstractST {
     void setupEnvironment(ExtensionContext extensionContext) throws Exception {
         clusterOperator.unInstall();
         cluster.createNamespaces(CollectorElement.createCollectorElement(this.getClass().getName()), clusterOperator.getDeploymentNamespace(), Arrays.asList(namespaceFirst, namespaceSecond));
+        // Copy pull secret into newly created namespaces
+        StUtils.copyImagePullSecret(namespaceFirst);
+        StUtils.copyImagePullSecret(namespaceSecond);
 
         clusterOperator = clusterOperator.defaultInstallation()
             .createInstallation()
