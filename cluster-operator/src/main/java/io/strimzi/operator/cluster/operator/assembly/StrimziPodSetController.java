@@ -34,6 +34,7 @@ import io.strimzi.operator.cluster.model.ModelUtils;
 import io.strimzi.operator.cluster.model.PodSetUtils;
 import io.strimzi.operator.cluster.model.StatusDiff;
 import io.strimzi.operator.cluster.operator.resource.PodRevision;
+import io.strimzi.operator.common.InformerUtils;
 import io.strimzi.operator.common.MetricsProvider;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
@@ -126,19 +127,19 @@ public class StrimziPodSetController implements Runnable {
 
         // Kafka, KafkaConnect and KafkaMirrorMaker2 informers and listers are used to get the CRs quickly.
         // This is needed for verification of the CR selector labels.
-        this.kafkaInformer = kafkaOperator.informer(watchedNamespace, (crSelectorLabels == null) ? Map.of() : crSelectorLabels.toMap());
+        this.kafkaInformer = kafkaOperator.informer(watchedNamespace, (crSelectorLabels == null) ? Map.of() : crSelectorLabels.toMap(), DEFAULT_RESYNC_PERIOD);
         this.kafkaLister = new Lister<>(kafkaInformer.getIndexer());
-        this.kafkaConnectInformer = kafkaConnectOperator.informer(watchedNamespace, (crSelectorLabels == null) ? Map.of() : crSelectorLabels.toMap());
+        this.kafkaConnectInformer = kafkaConnectOperator.informer(watchedNamespace, (crSelectorLabels == null) ? Map.of() : crSelectorLabels.toMap(), DEFAULT_RESYNC_PERIOD);
         this.kafkaConnectLister = new Lister<>(kafkaConnectInformer.getIndexer());
-        this.kafkaMirrorMaker2Informer = kafkaMirrorMaker2Operator.informer(watchedNamespace, (crSelectorLabels == null) ? Map.of() : crSelectorLabels.toMap());
+        this.kafkaMirrorMaker2Informer = kafkaMirrorMaker2Operator.informer(watchedNamespace, (crSelectorLabels == null) ? Map.of() : crSelectorLabels.toMap(), DEFAULT_RESYNC_PERIOD);
         this.kafkaMirrorMaker2Lister = new Lister<>(kafkaMirrorMaker2Informer.getIndexer());
 
         // StrimziPodSet informer and lister is used to get events about StrimziPodSet and get StrimziPodSet quickly
-        this.strimziPodSetInformer = strimziPodSetOperator.informer(watchedNamespace);
+        this.strimziPodSetInformer = strimziPodSetOperator.informer(watchedNamespace, DEFAULT_RESYNC_PERIOD);
         this.strimziPodSetLister = new Lister<>(strimziPodSetInformer.getIndexer());
 
         // Pod informer and lister is used to get events about pods and get pods quickly
-        this.podInformer = podOperator.informer(watchedNamespace, POD_LABEL_SELECTOR);
+        this.podInformer = podOperator.informer(watchedNamespace, POD_LABEL_SELECTOR, DEFAULT_RESYNC_PERIOD);
         this.podLister = new Lister<>(podInformer.getIndexer());
 
         this.controllerThread = new Thread(this, "StrimziPodSetController");
@@ -157,56 +158,25 @@ public class StrimziPodSetController implements Runnable {
     }
 
     protected void startController() {
-        strimziPodSetInformer.addEventHandlerWithResyncPeriod(new ResourceEventHandler<>() {
-            @Override
-            public void onAdd(StrimziPodSet podSet) {
-                if (matchesCrSelector(podSet)) {
-                    metrics.resourceCounter(podSet.getMetadata().getNamespace()).incrementAndGet();
-                }
+        strimziPodSetInformer.addEventHandler(new PodSetEventHandler());
+        strimziPodSetInformer.exceptionHandler((isStarted, throwable) -> InformerUtils.loggingExceptionHandler("StrimziPodSet", isStarted, throwable));
 
-                enqueueStrimziPodSet(podSet, "ADDED");
-            }
+        podInformer.addEventHandler(new PodEventHandler());
+        podInformer.exceptionHandler((isStarted, throwable) -> InformerUtils.loggingExceptionHandler("Pod", isStarted, throwable));
 
-            @Override
-            public void onUpdate(StrimziPodSet oldPodSet, StrimziPodSet newPodSet) {
-                enqueueStrimziPodSet(newPodSet, "MODIFIED");
-            }
+        kafkaInformer.exceptionHandler((isStarted, throwable) -> InformerUtils.loggingExceptionHandler("Kafka", isStarted, throwable));
+        kafkaConnectInformer.exceptionHandler((isStarted, throwable) -> InformerUtils.loggingExceptionHandler("KafkaConnect", isStarted, throwable));
+        kafkaMirrorMaker2Informer.exceptionHandler((isStarted, throwable) -> InformerUtils.loggingExceptionHandler("KafkaMirrorMaker2", isStarted, throwable));
 
-            @Override
-            public void onDelete(StrimziPodSet podSet, boolean deletedFinalStateUnknown) {
-                if (matchesCrSelector(podSet)) {
-                    metrics.resourceCounter(podSet.getMetadata().getNamespace()).decrementAndGet();
-                }
-
-                LOGGER.debugOp("StrimziPodSet {} in namespace {} was {}", podSet.getMetadata().getName(), podSet.getMetadata().getNamespace(), "DELETED");
-                // Nothing to do => garbage collection should take care of things
-            }
-        }, DEFAULT_RESYNC_PERIOD);
-
-        podInformer.addEventHandlerWithResyncPeriod(new ResourceEventHandler<>() {
-            @Override
-            public void onAdd(Pod pod) {
-                enqueuePod(pod, "ADDED");
-            }
-
-            @Override
-            public void onUpdate(Pod oldPod, Pod newPod) {
-                enqueuePod(newPod, "MODIFIED");
-            }
-
-            @Override
-            public void onDelete(Pod pod, boolean deletedFinalStateUnknown) {
-                enqueuePod(pod, "DELETED");
-            }
-        }, DEFAULT_RESYNC_PERIOD);
+        strimziPodSetInformer.start();
+        podInformer.start();
+        kafkaInformer.start();
+        kafkaConnectInformer.start();
+        kafkaMirrorMaker2Informer.start();
     }
 
     protected void stopController() {
-        podInformer.stop();
-        strimziPodSetInformer.stop();
-        kafkaInformer.stop();
-        kafkaConnectInformer.stop();
-        kafkaMirrorMaker2Informer.stop();
+        InformerUtils.stopAll(5_000L, strimziPodSetInformer, podInformer, kafkaInformer, kafkaConnectInformer, kafkaMirrorMaker2Informer);
     }
 
     /**
@@ -626,6 +596,55 @@ public class StrimziPodSetController implements Runnable {
             result = 31 * result + (name != null ? name.hashCode() : 0);
             result = 31 * result + (namespace != null ? namespace.hashCode() : 0);
             return result;
+        }
+    }
+
+    /**
+     * Event handler used in the StrimziPodSet informer which decides what to do with the incoming events.
+     */
+    private class PodSetEventHandler implements ResourceEventHandler<StrimziPodSet> {
+        @Override
+        public void onAdd(StrimziPodSet podSet) {
+            if (matchesCrSelector(podSet)) {
+                metrics.resourceCounter(podSet.getMetadata().getNamespace()).incrementAndGet();
+            }
+
+            enqueueStrimziPodSet(podSet, "ADDED");
+        }
+
+        @Override
+        public void onUpdate(StrimziPodSet oldPodSet, StrimziPodSet newPodSet) {
+            enqueueStrimziPodSet(newPodSet, "MODIFIED");
+        }
+
+        @Override
+        public void onDelete(StrimziPodSet podSet, boolean deletedFinalStateUnknown) {
+            if (matchesCrSelector(podSet)) {
+                metrics.resourceCounter(podSet.getMetadata().getNamespace()).decrementAndGet();
+            }
+
+            LOGGER.debugOp("StrimziPodSet {} in namespace {} was {}", podSet.getMetadata().getName(), podSet.getMetadata().getNamespace(), "DELETED");
+            // Nothing to do => garbage collection should take care of things
+        }
+    }
+
+    /**
+     * Event handler used in the Pod informer which decides what to do with the incoming events.
+     */
+    private class PodEventHandler implements ResourceEventHandler<Pod> {
+        @Override
+        public void onAdd(Pod pod) {
+            enqueuePod(pod, "ADDED");
+        }
+
+        @Override
+        public void onUpdate(Pod oldPod, Pod newPod) {
+            enqueuePod(newPod, "MODIFIED");
+        }
+
+        @Override
+        public void onDelete(Pod pod, boolean deletedFinalStateUnknown) {
+            enqueuePod(pod, "DELETED");
         }
     }
 }
