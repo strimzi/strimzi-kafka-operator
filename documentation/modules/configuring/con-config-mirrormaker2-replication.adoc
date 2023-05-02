@@ -3,7 +3,7 @@
 // assembly-config-mirrormaker2.adoc
 
 [id='con-mirrormaker-{context}']
-= MirrorMaker 2 data replication
+= Replicating data using MirrorMaker 2
 
 [role="_abstract"]
 Data replication across clusters supports scenarios that require:
@@ -69,13 +69,19 @@ Because the synchronization is time-based, any switchover by consumers to a pass
 
 NOTE: If you have an application written in Java, you can use the `RemoteClusterUtils.java` utility to synchronize offsets through the application. The utility fetches remote offsets for a consumer group from the `checkpoints` topic. 
 
-== Connectivity checks
+== Deciding when to use the heartbeat connector
 
-`MirrorHeartbeatConnector` emits _heartbeats_ to check connectivity between clusters.
+The heartbeat connector emits heartbeats to check connectivity between source and target Kafka clusters.
+An internal heartbeat topic is replicated from the source cluster, which means that the heartbeat connector must be connected to the source cluster. 
+A target cluster uses the heartbeat topic to perform the following checks:
 
-An internal `heartbeat` topic is replicated from the source cluster.
-Target clusters use the `heartbeat` topic to check the following:
+* Identify all source clusters it is mirroring data from
+* Check that the Kafka Connect worker managing connectivity between clusters is running
+* Verify that the source cluster is available
 
-* The connector managing connectivity between clusters is running
-* The source cluster is available
+You can use the heartbeat connector to monitor the liveness and latency of the mirroring process.
+This helps to make sure that the process is not stuck or has stopped for any reason. 
+However, using the heartbeat connector is not always necessary and can be left out of the MirrorMaker 2 configuration. 
+For example, if your deployment has low network latency or a small number of topics, you might prefer to monitor the mirroring process using log messages or other monitoring tools. 
+Heartbeats are enabled by default, but you can set the `emit.heartbeats.enabled` property of the heartbeat connector to `false` if you do not want to use them.
 
