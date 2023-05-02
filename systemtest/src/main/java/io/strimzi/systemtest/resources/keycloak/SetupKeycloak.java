@@ -148,12 +148,14 @@ public class SetupKeycloak {
     private static void deleteKeycloak(String namespaceName) {
         LOGGER.info("Deleting Keycloak in namespace {}", namespaceName);
         cmdKubeClient(namespaceName).delete(KEYCLOAK_INSTANCE_FILE_PATH);
+        kubeClient().deleteSecret(namespaceName, KEYCLOAK_SECRET_NAME);
         DeploymentUtils.waitForDeploymentDeletion(namespaceName, KEYCLOAK_DEPLOYMENT_NAME);
     }
 
     private static void deletePostgres(String namespaceName) {
         LOGGER.info("Deleting Postgres in namespace {}", namespaceName);
         cmdKubeClient(namespaceName).delete(POSTGRES_FILE_PATH);
+        kubeClient().deleteSecret(namespaceName, POSTGRES_SECRET_NAME);
         DeploymentUtils.waitForDeploymentDeletion(namespaceName, "postgres");
     }
 }
