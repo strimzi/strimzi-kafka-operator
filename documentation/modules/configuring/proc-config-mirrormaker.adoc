@@ -108,14 +108,12 @@ spec:
               topologyKey: "kubernetes.io/hostname"
     mirrorMakerContainer: # <18>
       env:
-        - name: JAEGER_SERVICE_NAME
-          value: my-jaeger-service
-        - name: JAEGER_AGENT_HOST
-          value: jaeger-agent-name
-        - name: JAEGER_AGENT_PORT
-          value: "6831"
+        - name: OTEL_SERVICE_NAME
+          value: my-otel-service
+        - name: OTEL_EXPORTER_OTLP_ENDPOINT
+          value: "http://otlp-host:4317"
   tracing: # <19>
-    type: jaeger
+    type: opentelemetry
 ----
 <1> xref:con-common-configuration-replicas-reference[The number of replica nodes].
 <2> xref:con-common-configuration-bootstrap-reference[Bootstrap servers] for consumer and producer.
@@ -135,7 +133,7 @@ spec:
 <16> ADVANCED OPTION: xref:con-common-configuration-images-reference[Container image configuration], which is recommended only in special situations.
 <17> xref:assembly-customizing-kubernetes-resources-str[Template customization]. Here a pod is scheduled with anti-affinity, so the pod is not scheduled on nodes with the same hostname.
 <18> Environment variables are set for distributed tracing.
-<19> Distributed tracing is enabled for Jaeger.
+<19> Distributed tracing is enabled by using OpenTelemetry.
 +
 WARNING: With the `abortOnSendFailure` property set to `false`, the producer attempts to send the next message in a topic. The original message might be lost, as there is no attempt to resend a failed message.
 
