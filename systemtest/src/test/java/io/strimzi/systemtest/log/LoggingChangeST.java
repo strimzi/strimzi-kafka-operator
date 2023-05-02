@@ -1397,6 +1397,9 @@ class LoggingChangeST extends AbstractST {
             .endSpec()
             .build();
 
+        LOGGER.info("Deploying network policies for KafkaConnect");
+        NetworkPolicyResource.deployNetworkPolicyForResource(extensionContext, connect, KafkaConnectResources.deploymentName(testStorage.getClusterName()));
+
         resourceManager.createResource(extensionContext,
             connect,
             ScraperTemplates.scraperPod(testStorage.getNamespaceName(), testStorage.getScraperName()).build(),
