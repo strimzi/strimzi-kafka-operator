@@ -178,14 +178,12 @@ spec:
               topologyKey: "kubernetes.io/hostname"
     connectContainer: # <43>
       env:
-        - name: JAEGER_SERVICE_NAME
-          value: my-jaeger-service
-        - name: JAEGER_AGENT_HOST
-          value: jaeger-agent-name
-        - name: JAEGER_AGENT_PORT
-          value: "6831"
+        - name: OTEL_SERVICE_NAME
+          value: my-otel-service
+        - name: OTEL_EXPORTER_OTLP_ENDPOINT
+          value: "http://otlp-host:4317"
   tracing:
-    type: jaeger # <44>
+    type: opentelemetry # <44>
   externalConfiguration: # <45>
     env:
       - name: AWS_ACCESS_KEY_ID
@@ -244,7 +242,7 @@ To configure topic offset synchronization, this property must also be set for th
 <41> SPECIALIZED OPTION: xref:type-Rack-reference[Rack awareness] configuration for the deployment. This is a specialized option intended for a deployment within the same location, not across regions. Use this option if you want connectors to consume from the closest replica rather than the leader replica. In certain cases, consuming from the closest replica can improve network utilization or reduce costs . The `topologyKey` must match a node label containing the rack ID. The example used in this configuration specifies a zone using the standard `{K8sZoneLabel}` label. To consume from the closest replica, enable the `RackAwareReplicaSelector`  in the Kafka broker configuration.
 <42> xref:assembly-customizing-kubernetes-resources-str[Template customization]. Here a pod is scheduled with anti-affinity, so the pod is not scheduled on nodes with the same hostname.
 <43> Environment variables are set for distributed tracing.
-<44> Distributed tracing is enabled for Jaeger.
+<44> Distributed tracing is enabled for OpenTelemetry.
 <45> xref:type-ExternalConfiguration-reference[External configuration] for a Kubernetes Secret mounted to Kafka MirrorMaker as an environment variable.
 You can also use configuration provider plugins to load configuration values from external sources.
 
