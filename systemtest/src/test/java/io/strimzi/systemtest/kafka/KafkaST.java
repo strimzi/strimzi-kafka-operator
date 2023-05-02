@@ -80,7 +80,6 @@ import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static java.util.Arrays.asList;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.anyOf;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.emptyOrNullString;
 import static org.hamcrest.Matchers.hasItems;
@@ -295,11 +294,9 @@ class KafkaST extends AbstractST {
      *  - user-operator
      */
     @ParallelNamespaceTest
-    void testRemoveUserOperatorFromEntityOperator(ExtensionContext extensionContext) {
-        final TestStorage testStorage = new TestStorage(extensionContext);
+    void testRemoveComponentsFromEntityOperator(ExtensionContext extensionContext) {
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(namespace, extensionContext);
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
-        final int reconciliationSec = 10;
 
         Instant startTime = Instant.now();
 
@@ -375,46 +372,6 @@ class KafkaST extends AbstractST {
         // both TO and UO are unset, which means EO should not be deployed
         LOGGER.info("Wait for deletion of Entity Operator Pod");
         PodUtils.waitUntilPodStabilityReplicasCount(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName), 0);
-
-        Instant endTime = Instant.now();
-        long duration = Duration.between(startTime, endTime).toSeconds();
-        assertNoCoErrorsLogged(namespaceName, duration);
-    }
-
-    @ParallelNamespaceTest
-    @KRaftNotSupported("EntityOperator is not supported by KRaft mode and is used in this test class")
-    void testRemoveUserAndTopicOperatorsFromEntityOperator(ExtensionContext extensionContext) {
-        final String namespaceName = StUtils.getNamespaceBasedOnRbac(namespace, extensionContext);
-        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
-
-        Instant startTime = Instant.now();
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3).build());
-
-        String eoDeploymentName = KafkaResources.entityOperatorDeploymentName(clusterName);
-
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, k -> {
-            k.getSpec().getEntityOperator().setTopicOperator(null);
-            k.getSpec().getEntityOperator().setUserOperator(null);
-        }, namespaceName);
-
-        PodUtils.waitUntilPodStabilityReplicasCount(namespaceName, eoDeploymentName, 0);
-
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, k -> {
-            k.getSpec().getEntityOperator().setTopicOperator(new EntityTopicOperatorSpec());
-            k.getSpec().getEntityOperator().setUserOperator(new EntityUserOperatorSpec());
-        }, namespaceName);
-        DeploymentUtils.waitForDeploymentReady(namespaceName, eoDeploymentName);
-
-        //Checking that EO was created
-        kubeClient().listPodsByPrefixInName(namespaceName, eoDeploymentName).forEach(pod -> {
-            pod.getSpec().getContainers().forEach(container -> {
-                assertThat(container.getName(), anyOf(
-                    containsString("topic-operator"),
-                    containsString("user-operator"),
-                    containsString("tls-sidecar"))
-                );
-            });
-        });
 
         Instant endTime = Instant.now();
         long duration = Duration.between(startTime, endTime).toSeconds();
