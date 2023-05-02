@@ -105,6 +105,7 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
+import static org.junit.jupiter.api.Assumptions.assumeFalse;
 
 /**
  * @description This test suite is designed for testing metrics exposed by operators and operands.
@@ -700,6 +701,8 @@ public class MetricsIsolatedST extends AbstractST {
 
     @BeforeAll
     void setupEnvironment(ExtensionContext extensionContext) throws Exception {
+        // Metrics tests are not designed to run with namespace RBAC scope.
+        assumeFalse(Environment.isNamespaceRbacScope());
         clusterOperator.unInstall();
         cluster.createNamespaces(CollectorElement.createCollectorElement(this.getClass().getName()), clusterOperator.getDeploymentNamespace(), Arrays.asList(namespaceFirst, namespaceSecond));
         // Copy pull secret into newly created namespaces
