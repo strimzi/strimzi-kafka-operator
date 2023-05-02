@@ -59,7 +59,7 @@ public class OlmConfiguration {
     }
 
     public void setOperatorVersion(String operatorVersion) {
-        this.operatorVersion = operatorVersion.isEmpty() ? Environment.OLM_OPERATOR_LATEST_RELEASE_VERSION : operatorVersion;
+        this.operatorVersion = operatorVersion != null && operatorVersion.isEmpty() ? Environment.OLM_OPERATOR_LATEST_RELEASE_VERSION : operatorVersion;
     }
 
     public String getOperatorVersion() {
