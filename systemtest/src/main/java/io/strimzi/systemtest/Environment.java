@@ -145,6 +145,12 @@ public class Environment {
     public static final String RESOURCE_ALLOCATION_STRATEGY_ENV = "RESOURCE_ALLOCATION_STRATEGY";
 
     /**
+     * User specific registry for Connect build
+     */
+    public static final String CONNECT_BUILD_REGISTRY_ENV = "CONNECT_BUILD_REGISTRY";
+    public static final String CONNECT_BUILD_REGISTRY_SECRET_ENV = "CONNECT_BUILD_REGISTRY_SECRET";
+
+    /**
      * Defaults
      */
     public static final String STRIMZI_ORG_DEFAULT = "strimzi";
@@ -220,6 +226,9 @@ public class Environment {
     // Connect build related variables
     public static final String ST_FILE_PLUGIN_URL = getOrDefault(ST_FILE_PLUGIN_URL_ENV, ST_FILE_PLUGIN_URL_DEFAULT);
 
+    public static final String CONNECT_BUILD_REGISTRY = getOrDefault(CONNECT_BUILD_REGISTRY_ENV, "");
+    public static final String CONNECT_BUILD_REGISTRY_SECRET = getOrDefault(CONNECT_BUILD_REGISTRY_SECRET_ENV, "");
+
     private Environment() { }
 
     static {
@@ -286,6 +295,14 @@ public class Environment {
             } else {
                 return service.getSpec().getClusterIP() + ":" + service.getSpec().getPorts().stream().filter(servicePort -> servicePort.getName().equals("http")).findFirst().orElseThrow().getPort();
             }
+        }
+    }
+
+    public static String getImageOutputRegistry(String namespace, String imageName, String tag) {
+        if (!Environment.CONNECT_BUILD_REGISTRY.isEmpty()) {
+            return Environment.CONNECT_BUILD_REGISTRY + "/" + imageName + ":" + tag;
+        } else {
+            return getImageOutputRegistry() + "/" + namespace + "/" + imageName + ":" + tag;
         }
     }
 

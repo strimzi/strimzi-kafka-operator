@@ -64,7 +64,7 @@ class HelmChartIsolatedST extends AbstractST {
 
         LOGGER.info("Creating resources before the test class");
         cluster.createNamespace(CollectorElement.createCollectorElement(extensionContext.getRequiredTestClass().getName()), clusterOperator.getDeploymentNamespace());
-        StUtils.copyImagePullSecret(clusterOperator.getDeploymentNamespace());
+        StUtils.copyImagePullSecrets(clusterOperator.getDeploymentNamespace());
         // Helm CO created
         helmResource.create(extensionContext);
     }

@@ -96,8 +96,6 @@ class ConnectBuilderIsolatedST extends AbstractST {
     private static final String PLUGIN_WITH_OTHER_TYPE_NAME = "plugin-with-other-type";
     private static final String PLUGIN_WITH_MAVEN_NAME = "connector-from-maven";
 
-    private String outputRegistry = "";
-
     private static final Plugin PLUGIN_WITH_TAR_AND_JAR = new PluginBuilder()
         .withName(PLUGIN_WITH_TAR_AND_JAR_NAME)
         .withArtifacts(
@@ -165,9 +163,7 @@ class ConnectBuilderIsolatedST extends AbstractST {
             .editOrNewSpec()
                 .withNewBuild()
                     .withPlugins(pluginWithWrongChecksum)
-                    .withNewDockerOutput()
-                        .withImage(imageName)
-                    .endDockerOutput()
+                    .withDockerOutput(KafkaConnectTemplates.dockerOutput(imageName))
                 .endBuild()
             .endSpec()
             .build());
@@ -233,9 +229,7 @@ class ConnectBuilderIsolatedST extends AbstractST {
                 .addToConfig("value.converter", "org.apache.kafka.connect.storage.StringConverter")
                 .withNewBuild()
                     .withPlugins(PLUGIN_WITH_TAR_AND_JAR, PLUGIN_WITH_ZIP)
-                    .withNewDockerOutput()
-                        .withImage(imageName)
-                    .endDockerOutput()
+                    .withDockerOutput(KafkaConnectTemplates.dockerOutput(imageName))
                 .endBuild()
                 .withNewInlineLogging()
                     .addToLoggers("connect.root.logger.level", "INFO")
@@ -344,9 +338,7 @@ class ConnectBuilderIsolatedST extends AbstractST {
                 .addToConfig("value.converter", "org.apache.kafka.connect.storage.StringConverter")
                 .withNewBuild()
                     .withPlugins(PLUGIN_WITH_TAR_AND_JAR)
-                    .withNewDockerOutput()
-                        .withImage(imageName)
-                    .endDockerOutput()
+                    .withDockerOutput(KafkaConnectTemplates.dockerOutput(imageName))
                 .endBuild()
                 .withNewInlineLogging()
                     .addToLoggers("connect.root.logger.level", "INFO")
@@ -430,9 +422,7 @@ class ConnectBuilderIsolatedST extends AbstractST {
                 .addToConfig("value.converter", "org.apache.kafka.connect.storage.StringConverter")
                     .withNewBuild()
                         .withPlugins(PLUGIN_WITH_OTHER_TYPE)
-                        .withNewDockerOutput()
-                            .withImage(imageName)
-                        .endDockerOutput()
+                        .withDockerOutput(KafkaConnectTemplates.dockerOutput(imageName))
                 .endBuild()
             .endSpec()
             .build());
@@ -490,9 +480,7 @@ class ConnectBuilderIsolatedST extends AbstractST {
                     .addToConfig("value.converter", "org.apache.kafka.connect.storage.StringConverter")
                     .withNewBuild()
                         .withPlugins(PLUGIN_WITH_MAVEN_TYPE)
-                        .withNewDockerOutput()
-                            .withImage(imageName)
-                        .endDockerOutput()
+                        .withDockerOutput(KafkaConnectTemplates.dockerOutput(imageName))
                     .endBuild()
                 .endSpec()
                 .build());
@@ -527,7 +515,8 @@ class ConnectBuilderIsolatedST extends AbstractST {
 
     private String getImageNameForTestCase() {
         int randomNum = new Random().nextInt(Integer.MAX_VALUE);
-        return outputRegistry + "/connect-build-" + randomNum + ":latest";
+        return Environment.getImageOutputRegistry(clusterOperator.getDeploymentNamespace(), Constants.ST_CONNECT_BUILD_IMAGE_NAME, String.valueOf(randomNum));
+
     }
 
     @BeforeAll
@@ -537,8 +526,6 @@ class ConnectBuilderIsolatedST extends AbstractST {
             .withOperationTimeout(Constants.CO_OPERATION_TIMEOUT_SHORT)
             .createInstallation()
             .runInstallation();
-
-        outputRegistry = Environment.getImageOutputRegistry() + "/" +  clusterOperator.getDeploymentNamespace();
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterOperator.getDeploymentNamespace(), 3).build());
     }

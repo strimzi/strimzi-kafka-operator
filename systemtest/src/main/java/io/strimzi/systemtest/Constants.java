@@ -463,4 +463,9 @@ public interface Constants {
     String CO_REQUESTS_CPU = "200m";
     String CO_LIMITS_MEMORY = "512Mi";
     String CO_LIMITS_CPU = "1000m";
+
+    /**
+     * Connect build image name
+     */
+    String ST_CONNECT_BUILD_IMAGE_NAME = "strimzi-sts-connect-build";
 }

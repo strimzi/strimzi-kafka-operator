@@ -11,6 +11,8 @@ import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnectBuilder;
 import io.strimzi.api.kafka.model.KafkaConnectResources;
 import io.strimzi.api.kafka.model.KafkaResources;
+import io.strimzi.api.kafka.model.connect.build.DockerOutput;
+import io.strimzi.api.kafka.model.connect.build.DockerOutputBuilder;
 import io.strimzi.api.kafka.model.connect.build.JarArtifactBuilder;
 import io.strimzi.api.kafka.model.connect.build.Plugin;
 import io.strimzi.api.kafka.model.connect.build.PluginBuilder;
@@ -20,7 +22,6 @@ import io.strimzi.test.TestUtils;
 
 import java.util.Random;
 
-import static io.strimzi.operator.common.Util.hashStub;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 public class KafkaConnectTemplates {
@@ -110,17 +111,25 @@ public class KafkaConnectTemplates {
             )
             .build();
 
-        final String imageName = Environment.getImageOutputRegistry() + "/" + namespaceName + "/connect-" + hashStub(String.valueOf(new Random().nextInt(Integer.MAX_VALUE))) + ":latest";
+        final String imageFullPath = Environment.getImageOutputRegistry(namespaceName, Constants.ST_CONNECT_BUILD_IMAGE_NAME, String.valueOf(new Random().nextInt(Integer.MAX_VALUE)));
 
-        return kafkaConnect(name, namespaceName, clusterName, replicas, pathToConnectConfig)
+        KafkaConnectBuilder kafkaConnectBuilder = kafkaConnect(name, namespaceName, clusterName, replicas, pathToConnectConfig)
             .editOrNewSpec()
                 .editOrNewBuild()
                     .withPlugins(fileSinkPlugin)
-                    .withNewDockerOutput()
-                        .withImage(imageName)
-                    .endDockerOutput()
+                    .withDockerOutput(dockerOutput(imageFullPath))
                 .endBuild()
             .endSpec();
+
+        return kafkaConnectBuilder;
+    }
+
+    public static DockerOutput dockerOutput(String imageName) {
+        DockerOutputBuilder dockerOutputBuilder = new DockerOutputBuilder().withImage(imageName);
+        if (Environment.CONNECT_BUILD_REGISTRY_SECRET != null && !Environment.CONNECT_BUILD_REGISTRY_SECRET.isEmpty()) {
+            dockerOutputBuilder.withPushSecret(Environment.CONNECT_BUILD_REGISTRY_SECRET);
+        }
+        return dockerOutputBuilder.build();
     }
 
     private static KafkaConnect getKafkaConnectFromYaml(String yamlPath) {

@@ -18,7 +18,6 @@ import io.strimzi.api.kafka.model.connect.build.JarArtifactBuilder;
 import io.strimzi.api.kafka.model.connect.build.Plugin;
 import io.strimzi.api.kafka.model.connect.build.PluginBuilder;
 import io.strimzi.operator.common.Annotations;
-import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
@@ -529,7 +528,7 @@ public class AbstractUpgradeST extends AbstractST {
                     )
                     .build();
 
-                final String imageName = Environment.getImageOutputRegistry() + "/" + testStorage.getNamespaceName() + "/connect-" + Util.hashStub(String.valueOf(new Random().nextInt(Integer.MAX_VALUE))) + ":latest";
+                final String imageFullPath = Environment.getImageOutputRegistry(testStorage.getNamespaceName(), io.strimzi.systemtest.Constants.ST_CONNECT_BUILD_IMAGE_NAME, String.valueOf(new Random().nextInt(Integer.MAX_VALUE)));
 
                 KafkaConnect kafkaConnect = new KafkaConnectBuilder(TestUtils.configFromYaml(kafkaConnectYaml, KafkaConnect.class))
                     .editMetadata()
@@ -539,9 +538,7 @@ public class AbstractUpgradeST extends AbstractST {
                     .editSpec()
                         .editOrNewBuild()
                             .withPlugins(fileSinkPlugin)
-                            .withNewDockerOutput()
-                                .withImage(imageName)
-                            .endDockerOutput()
+                            .withDockerOutput(KafkaConnectTemplates.dockerOutput(imageFullPath))
                         .endBuild()
                         .addToConfig("key.converter.schemas.enable", false)
                         .addToConfig("value.converter.schemas.enable", false)

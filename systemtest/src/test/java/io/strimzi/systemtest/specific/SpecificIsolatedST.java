@@ -258,7 +258,7 @@ public class SpecificIsolatedST extends AbstractST {
         clusterOperator.unInstall();
         // create namespace, where we will be able to deploy Custom Resources
         cluster.createNamespace(CollectorElement.createCollectorElement(extensionContext.getRequiredTestClass().getName(), extensionContext.getRequiredTestMethod().getName()), namespaceWhereCreationOfCustomResourcesIsApproved);
-        StUtils.copyImagePullSecret(namespaceWhereCreationOfCustomResourcesIsApproved);
+        StUtils.copyImagePullSecrets(namespaceWhereCreationOfCustomResourcesIsApproved);
         clusterOperator = clusterOperator.defaultInstallation()
             .withWatchingNamespaces(Constants.WATCH_ALL_NAMESPACES)
             // use our pre-defined Roles

@@ -99,7 +99,7 @@ public class MultipleClusterOperatorsIsolatedST extends AbstractST {
         deployCOInNamespace(extensionContext, SECOND_CO_NAME, SECOND_NAMESPACE, Collections.singletonList(SECOND_CO_SELECTOR_ENV), true);
 
         cluster.createNamespace(DEFAULT_NAMESPACE);
-        StUtils.copyImagePullSecret(DEFAULT_NAMESPACE);
+        StUtils.copyImagePullSecrets(DEFAULT_NAMESPACE);
         cluster.setNamespace(DEFAULT_NAMESPACE);
 
         LOGGER.info("Deploying Kafka without CR selector");

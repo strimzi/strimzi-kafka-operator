@@ -135,7 +135,7 @@ public class OauthAbstractST extends AbstractST {
         // (f.e., our `infra-namespace`)
         if (kubeClient().getNamespace(clusterOperator.getDeploymentNamespace()) == null) {
             cluster.createNamespace(CollectorElement.createCollectorElement(extensionContext.getRequiredTestClass().getName()), clusterOperator.getDeploymentNamespace());
-            StUtils.copyImagePullSecret(clusterOperator.getDeploymentNamespace());
+            StUtils.copyImagePullSecrets(clusterOperator.getDeploymentNamespace());
         }
 
         SetupKeycloak.deployKeycloakOperator(extensionContext, clusterOperator.getDeploymentNamespace(), namespace);
