@@ -1397,14 +1397,15 @@ class LoggingChangeST extends AbstractST {
             .endSpec()
             .build();
 
-        LOGGER.info("Deploying network policies for KafkaConnect");
-        NetworkPolicyResource.deployNetworkPolicyForResource(extensionContext, connect, KafkaConnectResources.deploymentName(testStorage.getClusterName()));
-
         resourceManager.createResource(extensionContext,
             connect,
             ScraperTemplates.scraperPod(testStorage.getNamespaceName(), testStorage.getScraperName()).build(),
             KafkaConnectorTemplates.defaultKafkaConnector(testStorage.getClusterName(), testStorage.getClusterName(), 1).build()
         );
+
+        LOGGER.info("Deploying network policies for KafkaConnect");
+        NetworkPolicyResource.deployNetworkPolicyForResource(extensionContext, connect, KafkaConnectResources.deploymentName(testStorage.getClusterName()));
+
 
         String connectorClassName = "org.apache.kafka.connect.file.FileStreamSourceConnector";
         final String scraperPodName = PodUtils.getPodsByPrefixInNameWithDynamicWait(testStorage.getNamespaceName(), testStorage.getScraperName()).get(0).getMetadata().getName();
