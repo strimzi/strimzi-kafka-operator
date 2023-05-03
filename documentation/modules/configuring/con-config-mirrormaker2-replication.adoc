@@ -79,7 +79,8 @@ The `heartbeat` topic is located on the target cluster, which allows it to do th
 * Verify the liveness and latency of the mirroring process
 
 This helps to make sure that the process is not stuck or has stopped for any reason. 
+You enable the heartbeat connector by including its configuration in the MirrorMaker 2 deployment configuration.
 However, using the heartbeat connector is not always necessary and can be left out of the MirrorMaker 2 configuration. 
 For example, if your deployment has low network latency or a small number of topics, you might prefer to monitor the mirroring process using log messages or other monitoring tools. 
-Heartbeats are enabled by default, but you can set the `emit.heartbeats.enabled` property of the heartbeat connector to `false` if you do not want to use them.
+If heartbeats are enabled, you can set the `emit.heartbeats.enabled` property of the heartbeat connector to `false` if you do not want to use them.
 
