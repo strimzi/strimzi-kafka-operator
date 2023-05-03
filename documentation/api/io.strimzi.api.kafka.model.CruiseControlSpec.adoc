@@ -151,13 +151,13 @@ spec:
 [id='property-cruise-control-broker-capacity-{context}']
 === brokerCapacity
 
-Cruise Control uses capacity limits to determine if optimization goals for resource distribution are being broken.
+Cruise Control uses capacity limits to determine if optimization goals for resource capacity limits are being broken.
 There are four goals of this type:
 
-* `DiskUsageDistributionGoal`            - Disk utilization distribution
-* `CpuUsageDistributionGoal`             - CPU utilization distribution
-* `NetworkInboundUsageDistributionGoal`  - Network inbound utilization distribution
-* `NetworkOutboundUsageDistributionGoal` - Network outbound utilization distribution
+* `DiskCapacityGoal`            - Disk utilization capacity
+* `CpuCapacityGoal`             - CPU utilization capacity
+* `NetworkInboundCapacityGoal`  - Network inbound utilization capacity
+* `NetworkOutboundCapacityGoal` - Network outbound utilization capacity
 
 You specify capacity limits for Kafka broker resources in the `brokerCapacity` property in `Kafka.spec.cruiseControl` .
 They are enabled by default and you can change their default values.
