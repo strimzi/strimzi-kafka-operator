@@ -143,6 +143,11 @@ public class LogCollector {
      */
     public synchronized void collect() {
         Set<String> namespaces = KubeClusterResource.getMapWithSuiteNamespaces().get(this.collectorElement);
+        // ensure that namespaces created in beforeAll are also collected
+        if (namespaces == null) {
+            CollectorElement classCollectorElement = new CollectorElement(this.collectorElement.getTestClassName(), "");
+            namespaces = KubeClusterResource.getMapWithSuiteNamespaces().get(classCollectorElement);
+        }
         // ensure that namespaces is never null
         namespaces = namespaces == null ? new HashSet<>() : namespaces;
         namespaces.add(clusterOperatorNamespace);
@@ -312,21 +317,21 @@ public class LogCollector {
     }
 
     private void collectOperatorGroups(String namespace) {
-        LOGGER.info("Collecting operatorGroups");
-        String nodes = cmdKubeClient(namespace).exec(false, Level.DEBUG, "get", "operatorGroups", "-o", "yaml").out();
-        writeFile(namespaceFile + "/operator-groups.log", nodes);
+        LOGGER.info("Collecting operatorGroups in Namespace {}", namespace);
+        String operatorGroups = cmdKubeClient(namespace).exec(false, Level.DEBUG, "get", "operatorGroups", "-o", "yaml", "-n", namespaceFile.getName()).out();
+        writeFile(namespaceFile + "/operator-groups.log", operatorGroups);
     }
 
     private void collectSubscriptions(String namespace) {
-        LOGGER.info("Collecting subscriptions");
-        String nodes = cmdKubeClient(namespace).exec(false, Level.DEBUG, "get", "subscriptions", "-o", "yaml").out();
-        writeFile(namespaceFile + "/subscriptions.log", nodes);
+        LOGGER.info("Collecting subscriptions in Namespace {}", namespace);
+        String subscriptions = cmdKubeClient(namespace).exec(false, Level.DEBUG, "get", "subscriptions", "-o", "yaml", "-n", namespaceFile.getName()).out();
+        writeFile(namespaceFile + "/subscriptions.log", subscriptions);
     }
 
     private void collectClusterServiceVersions(String namespace) {
-        LOGGER.info("Collecting clusterServiceVersions");
-        String nodes = cmdKubeClient(namespace).exec(false, Level.DEBUG, "get", "clusterServiceVersions", "-o", "yaml").out();
-        writeFile(namespaceFile + "/cluster-service-versions.log", nodes);
+        LOGGER.info("Collecting clusterServiceVersions in Namespace {}", namespace);
+        String clusterServiceVersions = cmdKubeClient(namespace).exec(false, Level.DEBUG, "get", "clusterServiceVersions", "-o", "yaml", "-n", namespaceFile.getName()).out();
+        writeFile(namespaceFile + "/cluster-service-versions.log", clusterServiceVersions);
     }
 
     private void scrapeAndCreateLogs(File path, String podName, ContainerStatus containerStatus, String namespace) {
