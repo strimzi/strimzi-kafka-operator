@@ -147,7 +147,7 @@ public class Environment {
     /**
      * User specific registry for Connect build
      */
-    public static final String CONNECT_BUILD_REGISTRY_ENV = "CONNECT_BUILD_REGISTRY";
+    public static final String CONNECT_BUILD_IMAGE_PATH_ENV = "CONNECT_BUILD_IMAGE_PATH";
     public static final String CONNECT_BUILD_REGISTRY_SECRET_ENV = "CONNECT_BUILD_REGISTRY_SECRET";
 
     /**
@@ -226,7 +226,7 @@ public class Environment {
     // Connect build related variables
     public static final String ST_FILE_PLUGIN_URL = getOrDefault(ST_FILE_PLUGIN_URL_ENV, ST_FILE_PLUGIN_URL_DEFAULT);
 
-    public static final String CONNECT_BUILD_REGISTRY = getOrDefault(CONNECT_BUILD_REGISTRY_ENV, "");
+    public static final String CONNECT_BUILD_IMAGE_PATH = getOrDefault(CONNECT_BUILD_IMAGE_PATH_ENV, "");
     public static final String CONNECT_BUILD_REGISTRY_SECRET = getOrDefault(CONNECT_BUILD_REGISTRY_SECRET_ENV, "");
 
     private Environment() { }
@@ -299,8 +299,8 @@ public class Environment {
     }
 
     public static String getImageOutputRegistry(String namespace, String imageName, String tag) {
-        if (!Environment.CONNECT_BUILD_REGISTRY.isEmpty()) {
-            return Environment.CONNECT_BUILD_REGISTRY + "/" + imageName + ":" + tag;
+        if (!Environment.CONNECT_BUILD_IMAGE_PATH.isEmpty()) {
+            return Environment.CONNECT_BUILD_IMAGE_PATH + ":" + tag;
         } else {
             return getImageOutputRegistry() + "/" + namespace + "/" + imageName + ":" + tag;
         }

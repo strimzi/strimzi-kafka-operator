@@ -377,7 +377,7 @@ All environment variables are defined in [Environment](systemtest/src/main/java/
 | DEFAULT_TO_DENY_NETWORK_POLICIES       | Determines how will be network policies set - to deny-all (true) or allow-all (false)                                                                 | true                                |
 | STRIMZI_EXEC_MAX_LOG_OUTPUT_CHARACTERS | Set maximum count of characters printed from [Executor](test/src/main/java/io/strimzi/test/executor/Exec.java) stdout and stderr                      | 20000                               |
 | CLUSTER_OPERATOR_INSTALL_TYPE          | Specify how the CO will be deployed. `OLM` option will install operator via OLM, and you just need to set other `OLM` env variables.                  | bundle                              |
-| CONNECT_BUILD_REGISTRY                 | Specify the registry together with org used by KafkaConnect build. For example `quay.io/strimzi`                                                      | empty                               |
+| CONNECT_BUILD_IMAGE_PATH               | Specify the registry together with org used by KafkaConnect build. For example `quay.io/strimzi/custom-connect-build`                                 | empty                               |
 | CONNECT_BUILD_REGISTRY_SECRET          | Specify the registry secret used by KafkaConnect build. It has to be k8s secret deployed in `default` namespace and systemtests will handle the rest. | empty                               |
 
 If you want to use your images with a different tag or from a separate repository, you can use `DOCKER_REGISTRY`, `DOCKER_ORG` and `DOCKER_TAG` environment variables.
@@ -394,8 +394,8 @@ If you want to use private registries, before executing the tests, you have to c
 `SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET` with the container registry credentials to be able to pull images. Note that a secret has to be created in the `default` namespace.
 
 For tests that use `KafkaConnect` build feature, users can use their own registry to where the result image will be pushed.
-The config is specified by two env variables: `CONNECT_BUILD_REGISTRY` and `CONNECT_BUILD_REGISTRY_SECRET`.
-`CONNECT_BUILD_REGISTRY` has to be in format `<REGISTRY>/<ORGANIZATION>`. 
+The config is specified by two env variables: `CONNECT_BUILD_IMAGE_PATH` and `CONNECT_BUILD_REGISTRY_SECRET`.
+`CONNECT_BUILD_IMAGE_PATH` has to be in format `<REGISTRY>/<ORGANIZATION>/<IMAGE_NAME>`. 
 In case the registry needs authorization, users can specify push-secret by `CONNECT_BUILD_REGISTRY_SECRET`.
 Secret name should reference to k8s secret in `default` namespace.
 In case any of the env vars are not specified, default Minikube or OpenShift registries will be used.
