@@ -343,6 +343,14 @@ public class LogCollector {
             LOGGER.warn("Unable to collect log from pod: {} and container: {} - pod container is not initialized", podName, containerStatus.getName());
         }
 
+        // Collect logs from previous version of the container
+        try {
+            String terminatedLog = kubeClient.getPodResource(namespace, podName).inContainer(containerStatus.getName()).terminated().getLog();
+            writeFile(path + "/logs-pod-" + podName + "-container-" + containerStatus.getName() + ".terminated.log", terminatedLog);
+        } catch (RuntimeException e) {
+            // For most of the pods it will fail as it doesn't have restarted container, so we just want to skip the exception
+        }
+
         // Describe all pods
         String describe = cmdKubeClient(namespace).describe("pod", podName);
         writeFile(path + "/describe-pod-" + podName + "-container-" + containerStatus.getName() + ".log", describe);
