@@ -268,7 +268,7 @@ public class MetricsIsolatedST extends AbstractST {
 
         if (Environment.isStableConnectIdentitiesEnabled()) {
             // check StrimziPodSet metrics in CO
-            assertMetricCountHigherThan(clusterOperatorCollector, getResourceMetricPattern(StrimziPodSet.RESOURCE_KIND, namespaceFirst), 1);
+            assertMetricValueHigherThan(clusterOperatorCollector, getResourceMetricPattern(StrimziPodSet.RESOURCE_KIND, namespaceFirst), 1);
             assertCoMetricResources(clusterOperatorCollector, StrimziPodSet.RESOURCE_KIND, namespaceSecond, 1);
         }
     }
@@ -512,7 +512,7 @@ public class MetricsIsolatedST extends AbstractST {
 
         if (Environment.isStableConnectIdentitiesEnabled()) {
             // check StrimziPodSet metrics in CO
-            assertMetricCountHigherThan(clusterOperatorCollector, getResourceMetricPattern(StrimziPodSet.RESOURCE_KIND, namespaceFirst), 1);
+            assertMetricValueHigherThan(clusterOperatorCollector, getResourceMetricPattern(StrimziPodSet.RESOURCE_KIND, namespaceFirst), 1);
         }
     }
 
