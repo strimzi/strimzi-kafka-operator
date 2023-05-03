@@ -351,32 +351,34 @@ Loading of system configuration has the following priority order:
 
 All environment variables are defined in [Environment](systemtest/src/main/java/io/strimzi/systemtest/Environment.java) class:
 
-| Name                                   | Description                                                                                                                          | Default                                        |
-|:---------------------------------------|:-------------------------------------------------------------------------------------------------------------------------------------|:-----------------------------------------------|
-| DOCKER_ORG                             | Specify the organization/repo containing the image used in system tests                                                              | strimzi                                        |
-| DOCKER_TAG                             | Specify the image tags used in system tests                                                                                          | latest                                         |
-| DOCKER_REGISTRY                        | Specify the docker registry used in system tests                                                                                     | quay.io                                        |
-| BRIDGE_IMAGE                           | Specify the Kafka bridge image used in system tests                                                                                  | quay.io/strimzi/kafka-bridge:latest            |
-| TEST_LOG_DIR                           | Directory for storing logs collected during the tests                                                                                | ../systemtest/target/logs/                     |
-| ST_KAFKA_VERSION                       | Kafka version used in images during the system tests                                                                                 | 2.3.0                                          |
-| STRIMZI_LOG_LEVEL                      | Log level for the cluster operator                                                                                                   | DEBUG                                          |
-| STRIMZI_COMPONENTS_LOG_LEVEL           | Log level for the components                                                                                                         | INFO                                           |
-| KUBERNETES_DOMAIN                      | Cluster domain                                                                                                                       | .nip.io                                        |
-| TEST_CLUSTER_CONTEXT                   | context which will be used to reach the cluster*                                                                                     | currently active Kubernetes context            |
-| TEST_CLUSTER_USER                      | Default user which will be used for command-line admin operations                                                                    | developer                                      |
-| SKIP_TEARDOWN                          | Variable for skip teardown phase for more debug if needed                                                                            | false                                          |
-| OPERATOR_IMAGE_PULL_POLICY             | Image Pull Policy for Operator image                                                                                                 | Always                                         |
-| COMPONENTS_IMAGE_PULL_POLICY           | Image Pull Policy for Kafka, Bridge, etc.                                                                                            | IfNotPresent                                   |
-| STRIMZI_TEST_LOG_LEVEL                 | Log level for system tests                                                                                                           | INFO                                           |
-| STRIMZI_TEST_ROOT_LOG_LEVEL            | Root Log level for system tests                                                                                                      | DEBUG                                          |
-| STRIMZI_RBAC_SCOPE                     | Set to 'CLUSTER' or 'NAMESPACE' to deploy the operator with ClusterRole or Roles, respectively                                       | cluster                                        |
-| OLM_OPERATOR_NAME                      | Operator name in manifests CSV                                                                                                       | strimzi                                        |
-| OLM_SOURCE_NAME                        | CatalogSource name which contains desired operator                                                                                   | strimzi-source                                 |
-| OLM_APP_BUNDLE_PREFIX                  | CSV bundle name                                                                                                                      | strimzi                                        |
-| OLM_OPERATOR_VERSION                   | Version of the operator which will be installed                                                                                      | v0.16.2                                        |
-| DEFAULT_TO_DENY_NETWORK_POLICIES       | Determines how will be network policies set - to deny-all (true) or allow-all (false)                                                | true                                           |
-| STRIMZI_EXEC_MAX_LOG_OUTPUT_CHARACTERS | Set maximum count of characters printed from [Executor](test/src/main/java/io/strimzi/test/executor/Exec.java) stdout and stderr     | 20000                                          |
-| CLUSTER_OPERATOR_INSTALL_TYPE          | Specify how the CO will be deployed. `OLM` option will install operator via OLM, and you just need to set other `OLM` env variables. | bundle                                         |
+| Name                                   | Description                                                                                                                                           | Default                             |
+|:---------------------------------------|:------------------------------------------------------------------------------------------------------------------------------------------------------|:------------------------------------|
+| DOCKER_ORG                             | Specify the organization/repo containing the image used in system tests                                                                               | strimzi                             |
+| DOCKER_TAG                             | Specify the image tags used in system tests                                                                                                           | latest                              |
+| DOCKER_REGISTRY                        | Specify the docker registry used in system tests                                                                                                      | quay.io                             |
+| BRIDGE_IMAGE                           | Specify the Kafka bridge image used in system tests                                                                                                   | quay.io/strimzi/kafka-bridge:latest |
+| TEST_LOG_DIR                           | Directory for storing logs collected during the tests                                                                                                 | ../systemtest/target/logs/          |
+| ST_KAFKA_VERSION                       | Kafka version used in images during the system tests                                                                                                  | 2.3.0                               |
+| STRIMZI_LOG_LEVEL                      | Log level for the cluster operator                                                                                                                    | DEBUG                               |
+| STRIMZI_COMPONENTS_LOG_LEVEL           | Log level for the components                                                                                                                          | INFO                                |
+| KUBERNETES_DOMAIN                      | Cluster domain                                                                                                                                        | .nip.io                             |
+| TEST_CLUSTER_CONTEXT                   | context which will be used to reach the cluster*                                                                                                      | currently active Kubernetes context |
+| TEST_CLUSTER_USER                      | Default user which will be used for command-line admin operations                                                                                     | developer                           |
+| SKIP_TEARDOWN                          | Variable for skip teardown phase for more debug if needed                                                                                             | false                               |
+| OPERATOR_IMAGE_PULL_POLICY             | Image Pull Policy for Operator image                                                                                                                  | Always                              |
+| COMPONENTS_IMAGE_PULL_POLICY           | Image Pull Policy for Kafka, Bridge, etc.                                                                                                             | IfNotPresent                        |
+| STRIMZI_TEST_LOG_LEVEL                 | Log level for system tests                                                                                                                            | INFO                                |
+| STRIMZI_TEST_ROOT_LOG_LEVEL            | Root Log level for system tests                                                                                                                       | DEBUG                               |
+| STRIMZI_RBAC_SCOPE                     | Set to 'CLUSTER' or 'NAMESPACE' to deploy the operator with ClusterRole or Roles, respectively                                                        | cluster                             |
+| OLM_OPERATOR_NAME                      | Operator name in manifests CSV                                                                                                                        | strimzi                             |
+| OLM_SOURCE_NAME                        | CatalogSource name which contains desired operator                                                                                                    | strimzi-source                      |
+| OLM_APP_BUNDLE_PREFIX                  | CSV bundle name                                                                                                                                       | strimzi                             |
+| OLM_OPERATOR_VERSION                   | Version of the operator which will be installed                                                                                                       | v0.16.2                             |
+| DEFAULT_TO_DENY_NETWORK_POLICIES       | Determines how will be network policies set - to deny-all (true) or allow-all (false)                                                                 | true                                |
+| STRIMZI_EXEC_MAX_LOG_OUTPUT_CHARACTERS | Set maximum count of characters printed from [Executor](test/src/main/java/io/strimzi/test/executor/Exec.java) stdout and stderr                      | 20000                               |
+| CLUSTER_OPERATOR_INSTALL_TYPE          | Specify how the CO will be deployed. `OLM` option will install operator via OLM, and you just need to set other `OLM` env variables.                  | bundle                              |
+| CONNECT_BUILD_REGISTRY                 | Specify the registry together with org used by KafkaConnect build. For example `quay.io/strimzi`                                                      | empty                               |
+| CONNECT_BUILD_REGISTRY_SECRET          | Specify the registry secret used by KafkaConnect build. It has to be k8s secret deployed in `default` namespace and systemtests will handle the rest. | empty                               |
 
 If you want to use your images with a different tag or from a separate repository, you can use `DOCKER_REGISTRY`, `DOCKER_ORG` and `DOCKER_TAG` environment variables.
 
@@ -390,6 +392,13 @@ To set the custom Kafka version in system tests, you need to set the Environment
 
 If you want to use private registries, before executing the tests, you have to create a secret and then specify the name of the created secret in the env variable called
 `SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET` with the container registry credentials to be able to pull images. Note that a secret has to be created in the `default` namespace.
+
+For tests that use `KafkaConnect` build feature, users can use their own registry to where the result image will be pushed.
+The config is specified by two env variables: `CONNECT_BUILD_REGISTRY` and `CONNECT_BUILD_REGISTRY_SECRET`.
+`CONNECT_BUILD_REGISTRY` has to be in format `<REGISTRY>/<ORGANIZATION>`. 
+In case the registry needs authorization, users can specify push-secret by `CONNECT_BUILD_REGISTRY_SECRET`.
+Secret name should reference to k8s secret in `default` namespace.
+In case any of the env vars are not specified, default Minikube or OpenShift registries will be used.
 
 ##### Cluster Operator Log level
 
