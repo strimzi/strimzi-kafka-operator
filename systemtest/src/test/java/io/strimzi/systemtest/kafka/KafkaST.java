@@ -26,6 +26,7 @@ import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBui
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.api.kafka.model.storage.JbodStorage;
 import io.strimzi.api.kafka.model.storage.JbodStorageBuilder;
+import io.strimzi.api.kafka.model.storage.PersistentClaimStorage;
 import io.strimzi.api.kafka.model.storage.PersistentClaimStorageBuilder;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
@@ -423,16 +424,25 @@ class KafkaST extends AbstractST {
     }
 
     /**
-     * @description This test case verifies that Kafka with persistent storage, and JBOD storage, PVCs set to delete true in one and false in another..
+     * @description This test case verifies that Kafka with persistent storage, and JBOD storage, property 'delete claim' of JBOD storage.
      *
      * @steps
-     *  1. - Deploy Kafka with persistent storage and JBOD storage with 2 volumes.
+     *  1. - Deploy Kafka with persistent storage and JBOD storage with 2 volumes, both of these are configured to delete their Persistent Volume Claims on Kafka cluster un-provision.
      *     - Kafka is deployed, volumes are labeled and linked to Pods correctly.
+     *  2. - Verify that labels in Persistent Volume Claims are set correctly.
+     *     - Persistent Volume Claims do contain expected labels and values.
+     *  2. - Modify Kafka Custom Resource, specifically 'delete claim' property of its first Kafka Volume.
+     *     - Kafka CR is successfully modified, annotation of according Persistent Volume Claim is changed afterwards by Cluster Operator.
+     *  3. - Delete Kafka cluster.
+     *     - Kafka cluster and its components are deleted, including Persistent Volume Claim of Volume with 'delete claim' property set to true.
+     *  4. - Verify remaining Persistent Volume Claims.
+     *     - Persistent Volume Claim referenced by volume of formerly deleted Kafka Custom Resource with property 'delete claim' set to true is still present.
      *
      * @usecase
      *  - JBOD
      *  - PVC
      *  - volume
+     *  - annotations
      */
     @ParallelNamespaceTest
     @KRaftNotSupported("JBOD is not supported by KRaft mode and is used in this test case.")
@@ -442,21 +452,44 @@ class KafkaST extends AbstractST {
         final int kafkaReplicas = 2;
         final String diskSizeGi = "10";
 
-        JbodStorage jbodStorage = new JbodStorageBuilder().withVolumes(
-            new PersistentClaimStorageBuilder().withDeleteClaim(false).withId(0).withSize(diskSizeGi + "Gi").build(),
-            new PersistentClaimStorageBuilder().withDeleteClaim(true).withId(1).withSize(diskSizeGi + "Gi").build()).build();
+        //Volume Storages (original and modified)
+        PersistentClaimStorage idZeroVolumeOriginal = new PersistentClaimStorageBuilder().withDeleteClaim(true).withId(0).withSize(diskSizeGi + "Gi").build();
+        PersistentClaimStorage idOneVolumeOriginal = new PersistentClaimStorageBuilder().withDeleteClaim(true).withId(1).withSize(diskSizeGi + "Gi").build();
+        PersistentClaimStorage idZeroVolumeModified = new PersistentClaimStorageBuilder().withDeleteClaim(false).withId(0).withSize(diskSizeGi + "Gi").build();
+
+        JbodStorage jbodStorage = new JbodStorageBuilder().withVolumes(idZeroVolumeOriginal, idOneVolumeOriginal).build();
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaJBOD(clusterName, kafkaReplicas, jbodStorage).build());
         // kafka cluster already deployed
         verifyVolumeNamesAndLabels(namespaceName, clusterName, kafkaReplicas, 2, diskSizeGi);
 
-        final int volumesCount = kubeClient(namespaceName).listPersistentVolumeClaims(namespaceName, clusterName).size();
+        //change value of first PVC to delete its claim once Kafka is deleted.
+        LOGGER.info("Update Volume with id=0 in Kafka CR by setting 'Delete Claim' property to false.");
 
-        LOGGER.info("Deleting cluster");
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, resource -> {
+            LOGGER.debug(resource.getMetadata().getName());
+            JbodStorage jBODVolumeStorage = (JbodStorage) resource.getSpec().getKafka().getStorage();
+            jBODVolumeStorage.setVolumes(List.of(idZeroVolumeModified, idOneVolumeOriginal));
+        }, namespaceName);
+
+        TestUtils.waitFor("Wait for change of Annotation of PVCs according to changes in 'delete claim' property of Kafka's JBOD storage", Duration.ofSeconds(2).toMillis(), Constants.SAFETY_RECONCILIATION_INTERVAL,
+            () -> kubeClient().listPersistentVolumeClaims(namespaceName, clusterName).stream()
+                .filter(pvc -> pvc.getMetadata().getName().startsWith("data-0") && pvc.getMetadata().getName().contains("-kafka"))
+                .allMatch(volume -> "false".equals(volume.getMetadata().getAnnotations().get("strimzi.io/delete-claim")))
+        );
+
+        final int volumesCount = kubeClient().listPersistentVolumeClaims(namespaceName, clusterName).size();
+
+        LOGGER.info("Delete cluster Kafka/{} Namespace/{}", clusterName, namespaceName);
         cmdKubeClient(namespaceName).deleteByName("kafka", clusterName);
 
-        LOGGER.info("Waiting for PVC deletion");
-        PersistentVolumeClaimUtils.waitForJbodStorageDeletion(namespaceName, volumesCount, jbodStorage, clusterName);
+        LOGGER.info("Wait for PVCs deletion");
+        PersistentVolumeClaimUtils.waitForJbodStorageDeletion(namespaceName, volumesCount, clusterName, idZeroVolumeModified, idOneVolumeOriginal);
+
+        LOGGER.info("Verify that PVC which are supposed to remain, really persist even after Kafka cluster un-deployment");
+        List<String> remainingPVCNames =  kubeClient().listPersistentVolumeClaims(namespaceName, clusterName).stream().map(e -> e.getMetadata().getName()).toList();
+        assertThat("Kafka broker with id 0 does not preserve its JBOD storage's PVC", remainingPVCNames.stream().anyMatch(e -> e.startsWith("data-0") && e.contains("-kafka-0")));
+        assertThat("Kafka broker with id 1 does not preserve its JBOD storage's PVC", remainingPVCNames.stream().anyMatch(e -> e.startsWith("data-0") && e.contains("-kafka-1")));
     }
 
     @ParallelNamespaceTest
@@ -840,7 +873,7 @@ class KafkaST extends AbstractST {
      *     - Files related to Offset topic are present.
      *  4. - Produce default number of messages to already created topic.
      *     - Produced messages are present.
-     *  4. - Perform rolling update on all Kafka Pods, in this case single broker.
+     *  5. - Perform rolling update on all Kafka Pods, in this case single broker.
      *     - After rolling update is completed all messages are again present, as they were successfully stored on disk.
      *
      * @usecase
@@ -850,7 +883,7 @@ class KafkaST extends AbstractST {
     @ParallelNamespaceTest
     @Tag(INTERNAL_CLIENTS_USED)
     @KRaftNotSupported("TopicOperator is not supported by KRaft mode and is used in this test class")
-    void testMessagesAreStoredInDiskAndConsumerOffsetFiles(ExtensionContext extensionContext) {
+    void testMessagesAndConsumerOffsetFilesOnDisk(ExtensionContext extensionContext) {
         final TestStorage testStorage = new TestStorage(extensionContext);
         final LabelSelector kafkaSelector = KafkaResource.getLabelSelector(testStorage.getClusterName(), testStorage.getKafkaStatefulSetName());
         final Map<String, Object> kafkaConfig = new HashMap<>();
