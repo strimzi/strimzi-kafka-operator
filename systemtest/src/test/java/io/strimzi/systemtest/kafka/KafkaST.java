@@ -472,7 +472,7 @@ class KafkaST extends AbstractST {
             jBODVolumeStorage.setVolumes(List.of(idZeroVolumeModified, idOneVolumeOriginal));
         }, namespaceName);
 
-        TestUtils.waitFor("Wait for change of Annotation of PVCs according to changes in 'delete claim' property of Kafka's JBOD storage", Duration.ofSeconds(2).toMillis(), Constants.SAFETY_RECONCILIATION_INTERVAL,
+        TestUtils.waitFor("Wait for change of Annotation of PVCs according to changes in 'delete claim' property of Kafka's JBOD storage", Constants.GLOBAL_POLL_INTERVAL, Constants.SAFETY_RECONCILIATION_INTERVAL,
             () -> kubeClient().listPersistentVolumeClaims(namespaceName, clusterName).stream()
                 .filter(pvc -> pvc.getMetadata().getName().startsWith("data-0") && pvc.getMetadata().getName().contains("-kafka"))
                 .allMatch(volume -> "false".equals(volume.getMetadata().getAnnotations().get("strimzi.io/delete-claim")))
@@ -935,19 +935,11 @@ class KafkaST extends AbstractST {
         ClientUtils.waitForClientsSuccess(testStorage);
 
         LOGGER.info("Verify presence of files created to store offsets topic");
-        String commandToGetFiles =  "cd /var/lib/kafka/data/kafka-log0/;" +
-            "ls -1 | sed -n \"s#__consumer_offsets-\\([0-9]*\\)#\\1#p\" | sort -V";
-        LOGGER.info("Executing command {} in {}", commandToGetFiles, KafkaResources.kafkaPodName(testStorage.getClusterName(), 0));
+        String commandToGetFiles = "cd /var/lib/kafka/data/kafka-log0/; ls -l | grep __consumer_offsets | wc -l";
         String result = cmdKubeClient(testStorage.getNamespaceName()).execInPod(KafkaResources.kafkaPodName(testStorage.getClusterName(), 0),
             "/bin/bash", "-c", commandToGetFiles).out();
 
-        StringBuilder stringToMatch = new StringBuilder();
-
-        for (int i = 0; i < 100; i++) {
-            stringToMatch.append(i).append("\n");
-        }
-
-        assertThat("Folder kafka-log0 doesn't contain 100 files", result, containsString(stringToMatch.toString()));
+        assertThat("Folder kafka-log0 doesn't contain 100 files related to storing consumer offsets", Integer.parseInt(result.trim()) == 100);
 
         LOGGER.info("Executing command {} in {}", commandToGetDataFromTopic, KafkaResources.kafkaPodName(testStorage.getClusterName(), 0));
         topicData = cmdKubeClient(testStorage.getNamespaceName()).execInPod(KafkaResources.kafkaPodName(testStorage.getClusterName(), 0), "/bin/bash", "-c",
