@@ -113,7 +113,8 @@ public abstract class AbstractScalableNamespacedResourceOperator<C extends Kuber
                         while (nextReplicas > scaleTo) {
                             nextReplicas--;
                             LOGGER.infoCr(reconciliation, "Scaling down from {} to {}", nextReplicas + 1, nextReplicas);
-                            resource(namespace, name).scale(nextReplicas, true);
+                            // When scaling to 0, we cannot wait for it because of https://github.com/fabric8io/kubernetes-client/issues/5102
+                            resource(namespace, name).scale(nextReplicas, nextReplicas != 0);
                         }
                     }
                     future.complete(nextReplicas);
