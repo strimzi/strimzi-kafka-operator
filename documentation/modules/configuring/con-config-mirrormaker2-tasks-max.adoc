@@ -28,7 +28,7 @@ When setting a maximum number of tasks, consider the number of partitions and th
 If the infrastructure supports the processing overhead, increasing the number of tasks can improve throughput and latency.
 For example, adding more tasks reduces the time taken to poll the source cluster when there is a high number of partitions or consumer groups.  
 
-Increasing the number of tasks for the checkpoint connector is useful when you have a large number of partitions.
+Increasing the number of tasks for the source connector is useful when you have a large number of partitions.
 
 .Increasing the number of tasks for the source connector
 [source,yaml,subs="+quotes,attributes"]
