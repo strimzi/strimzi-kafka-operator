@@ -28,18 +28,11 @@ import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
-import org.apache.kafka.clients.admin.Admin;
-import org.apache.kafka.clients.admin.AlterConfigOp;
-import org.apache.kafka.clients.admin.AlterConfigsResult;
-import org.apache.kafka.clients.admin.Config;
-import org.apache.kafka.clients.admin.DescribeClusterResult;
-import org.apache.kafka.common.KafkaException;
-import org.apache.kafka.common.KafkaFuture;
-import org.apache.kafka.common.Node;
-import org.apache.kafka.common.config.ConfigException;
-import org.apache.kafka.common.config.ConfigResource;
-import org.apache.kafka.common.errors.SslAuthenticationException;
-
+import io.vertx.core.buffer.Buffer;
+import io.vertx.core.http.HttpClientOptions;
+import io.vertx.core.http.HttpMethod;
+import io.vertx.core.net.PemKeyCertOptions;
+import io.vertx.core.net.PemTrustOptions;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
@@ -62,6 +55,17 @@ import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import org.apache.kafka.clients.admin.Admin;
+import org.apache.kafka.clients.admin.AlterConfigOp;
+import org.apache.kafka.clients.admin.AlterConfigsResult;
+import org.apache.kafka.clients.admin.Config;
+import org.apache.kafka.clients.admin.DescribeClusterResult;
+import org.apache.kafka.common.KafkaException;
+import org.apache.kafka.common.KafkaFuture;
+import org.apache.kafka.common.Node;
+import org.apache.kafka.common.config.ConfigException;
+import org.apache.kafka.common.config.ConfigResource;
+import org.apache.kafka.common.errors.SslAuthenticationException;
 
 import static java.util.Collections.singletonList;
 
@@ -126,6 +130,11 @@ public class KafkaRoller {
     private final Reconciliation reconciliation;
     private final boolean allowReconfiguration;
     private Admin allClient;
+    private static final String BROKER_STATE_REST_PATH = "/v1/broker-state";
+    private static final int BROKER_STATE_HTTPS_PORT = 8443;
+    private static final int BROKER_RECOVERY_STATE = 2;
+    private PemTrustOptions pto;
+    private PemKeyCertOptions pkco;
 
     /**
      * Constructor
@@ -171,6 +180,14 @@ public class KafkaRoller {
         this.kafkaVersion = kafkaVersion;
         this.reconciliation = reconciliation;
         this.allowReconfiguration = allowReconfiguration;
+        if (clusterCaCertSecret != null) {
+            this.pto = new PemTrustOptions().addCertValue(Buffer.buffer(Util.decodeFromSecret(clusterCaCertSecret, "ca.crt")));
+        }
+        if  (coKeySecret != null) {
+            this.pkco = new PemKeyCertOptions()
+                    .addCertValue(Buffer.buffer(Util.decodeFromSecret(coKeySecret, "cluster-operator.crt")))
+                    .addKeyValue(Buffer.buffer(Util.decodeFromSecret(coKeySecret, "cluster-operator.key")));
+        }
     }
 
     /**
@@ -186,6 +203,69 @@ public class KafkaRoller {
 
     private final ConcurrentHashMap<String, RestartContext> podToContext = new ConcurrentHashMap<>();
     private Function<Pod, RestartReasons> podNeedsRestart;
+
+    private HttpClientOptions getHttpClientOptions() {
+        return new HttpClientOptions()
+                .setLogActivity(true)
+                .setVerifyHost(true)
+                .setSsl(true)
+                .setVerifyHost(true)
+                .setPemTrustOptions(pto)
+                .setKeyCertOptions(pkco);
+    }
+
+    protected <T> Future<Map<String, Object>> doGet(String host) {
+        LOGGER.debugCr(reconciliation, "Making GET request to {}", BROKER_STATE_REST_PATH);
+        return HttpClientUtils.withHttpClient(vertx, getHttpClientOptions(), (httpClient, result) ->
+                httpClient.request(HttpMethod.GET, BROKER_STATE_HTTPS_PORT, host, BROKER_STATE_REST_PATH, request -> {
+                    if (request.succeeded()) {
+                        request.result().setFollowRedirects(true)
+                        .putHeader("Accept", "application/json");
+                        request.result().send(response -> {
+                            if (response.succeeded()) {
+                                if (response.result().statusCode() == 200) {
+                                    response.result().bodyHandler(body -> {
+                                        var jsonBody = body.toJsonObject().getMap();
+                                        result.complete(jsonBody);
+                                    });
+                                } else {
+                                    result.fail(new RuntimeException("Unexpected HTTP status code: " + response.result().statusCode()));
+                                }
+                            } else {
+                                result.tryFail(response.cause());
+                            }
+                        });
+                    } else {
+                        result.tryFail(request.cause());
+                    }
+                }));
+    }
+
+    private int getBrokerState(String podName) {
+        int brokerstate = -1;
+        String host = DnsNameGenerator.podDnsName(namespace, KafkaResources.brokersServiceName(cluster), podName);
+        CompletableFuture<Map<String, Object>> completableFuture = new CompletableFuture<>();
+
+        Future<Map<String, Object>> getFuture = doGet(host);
+        getFuture.onComplete(future -> {
+            if (future.succeeded()) {
+                completableFuture.complete(future.result());
+            } else {
+                completableFuture.completeExceptionally(future.cause());
+            }
+        });
+
+        try {
+            var result = completableFuture.get(3, TimeUnit.SECONDS);
+            brokerstate = (int) result.get("brokerState");
+            if (brokerstate == BROKER_RECOVERY_STATE && result.containsKey("recoveryState")) {
+                LOGGER.infoCr(reconciliation, podName + " is in log recovery. The current recovery state: " + result.get("recoveryState"));
+            }
+        } catch (TimeoutException | InterruptedException | ExecutionException e) {
+            LOGGER.warnCr(reconciliation, "Failed to get broker state", e);
+        }
+        return brokerstate;
+    }
 
     /**
      * If allClient has not been initialized yet, does exactly that
@@ -371,6 +451,9 @@ public class KafkaRoller {
                 await(isReady(pod), operationTimeoutMs, TimeUnit.MILLISECONDS, e -> new RuntimeException(e));
             } catch (Exception e)   {
                 if (e.getCause() instanceof TimeoutException) {
+                    if (getBrokerState(pod.getMetadata().getName()) == (BROKER_RECOVERY_STATE)) {
+                        throw new UnforceableProblem("Pod " + nodeRef.podName() + " is not ready because the broker is performing log recovery.", e.getCause());
+                    }
                     LOGGER.warnCr(reconciliation, "Pod {} is not ready. We will check if KafkaRoller can do anything about it.", nodeRef.podName());
                 } else {
                     LOGGER.warnCr(reconciliation, "Failed to wait for the readiness of the pod {}. We will proceed and check if it needs to be rolled.", nodeRef.podName(), e.getCause());
@@ -382,14 +465,17 @@ public class KafkaRoller {
 
         try {
             checkReconfigurability(nodeRef, pod, restartContext);
-            if (restartContext.forceRestart || restartContext.needsRestart || restartContext.needsReconfig) {
-                if (!restartContext.forceRestart && deferController(nodeRef, restartContext)) {
+            if (restartContext.forceRestart) {
+                LOGGER.debugCr(reconciliation, "Pod {} can be rolled now", nodeRef);
+                restartAndAwaitReadiness(pod, operationTimeoutMs, TimeUnit.MILLISECONDS, restartContext);
+            } else if (restartContext.needsRestart || restartContext.needsReconfig) {
+                if (deferController(nodeRef, restartContext)) {
                     LOGGER.debugCr(reconciliation, "Pod {} is controller and there are other pods to verify. Non-controller pods will be verified first.", nodeRef);
                     throw new ForceableProblem("Pod " + nodeRef.podName() + " is controller and there are other pods to verify. Non-controller pods will be verified first");
                 } else {
-                    if (restartContext.forceRestart || canRoll(nodeRef, 60_000, TimeUnit.MILLISECONDS, false, restartContext)) {
+                    if (canRoll(nodeRef, 60_000, TimeUnit.MILLISECONDS, false, restartContext)) {
                         // Check for rollability before trying a dynamic update so that if the dynamic update fails we can go to a full restart
-                        if (restartContext.forceRestart || !maybeDynamicUpdateBrokerConfig(nodeRef, restartContext)) {
+                        if (!maybeDynamicUpdateBrokerConfig(nodeRef, restartContext)) {
                             LOGGER.debugCr(reconciliation, "Pod {} can be rolled now", nodeRef);
                             restartAndAwaitReadiness(pod, operationTimeoutMs, TimeUnit.MILLISECONDS, restartContext);
                         } else {

@@ -18,8 +18,8 @@ import io.strimzi.operator.common.BackOff;
 import io.strimzi.operator.common.DefaultAdminClientProvider;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.operator.resource.PodOperator;
-import io.strimzi.operator.common.operator.resource.TimeoutException;
 import io.vertx.core.Future;
+import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
@@ -43,12 +43,15 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
@@ -66,7 +69,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(VertxExtension.class)
@@ -501,6 +506,86 @@ public class KafkaRollerTest {
             KafkaRoller.ForceableProblem.class, "Pod c-kafka-2 is controller and there are other pods to verify. Non-controller pods will be verified first",
             // We expect all non-controller pods to be rolled
             asList(0, 1, 4));
+    }
+
+    @Test
+     public void testBrokerInRecoveryState(VertxTestContext testContext) throws InterruptedException {
+        PodOperator podOps = mockPodOps(podId ->
+                (podId == 0) ? failedFuture(new TimeoutException("Timeout")) : succeededFuture()
+        );
+
+        TestingKafkaRoller kafkaRoller = spy(new TestingKafkaRoller(null, null, addPodNames(REPLICAS),
+                podOps,
+                noException(), null, noException(), noException(), noException(),
+                brokerId -> succeededFuture(true),
+                false, null, false, 1));
+
+        doAnswer(invocation -> {
+            Promise<Map<String, Object>> result = Promise.promise();
+            Map<String, Object> response = new HashMap<>();
+            response.put("brokerState", 2);
+            Map<String, Object> recoveryProgress = new HashMap<>();
+            recoveryProgress.put("remainingLogsToRecover", 10);
+            recoveryProgress.put("remainingSegmentsToRecover", 100);
+            response.put("recoveryState", recoveryProgress);
+            result.complete(response);
+            return result;
+        }).when(kafkaRoller).doGet(any());
+
+        doFailingRollingRestart(testContext, kafkaRoller,
+                asList(0, 1, 2, 3, 4),
+                KafkaRoller.UnforceableProblem.class, "Pod c-kafka-0 is not ready because the broker is performing log recovery.",
+                asList(2, 3, 4, 1));
+    }
+
+    @Test
+    public void testBrokerInRunningState(VertxTestContext testContext) throws InterruptedException {
+        PodOperator podOps = mockPodOps(podId ->
+                (podId == 0) ? failedFuture(new TimeoutException("Timeout")) : succeededFuture()
+        );
+
+        TestingKafkaRoller kafkaRoller = spy(new TestingKafkaRoller(null, null, addPodNames(REPLICAS),
+                podOps,
+                noException(), null, noException(), noException(), noException(),
+                brokerId -> succeededFuture(true),
+                false, null, false, 1));
+
+        doAnswer(invocation -> {
+            Promise<Map<String, Object>> result = Promise.promise();
+            Map<String, Object> response = new HashMap<>();
+            response.put("brokerState", 3);
+            result.complete(response);
+            return result;
+        }).when(kafkaRoller).doGet(any());
+
+        doFailingRollingRestart(testContext, kafkaRoller,
+                asList(0, 1, 2, 3, 4),
+                KafkaRoller.FatalProblem.class, "Error while waiting for restarted pod c-kafka-0 to become ready",
+                asList(0));
+    }
+
+    @Test
+    public void testFailGettingBrokerState(VertxTestContext testContext) throws InterruptedException {
+        PodOperator podOps = mockPodOps(podId ->
+                (podId == 0) ? failedFuture(new TimeoutException("Timeout")) : succeededFuture()
+        );
+
+        TestingKafkaRoller kafkaRoller = spy(new TestingKafkaRoller(null, null, addPodNames(REPLICAS),
+                podOps,
+                noException(), null, noException(), noException(), noException(),
+                brokerId -> succeededFuture(true),
+                false, null, false, 1));
+
+        doAnswer(invocation -> {
+            Promise<Map<String, Object>> result = Promise.promise();
+            result.fail(new RuntimeException("Unexpected HTTP status code: " + 500));
+            return result;
+        }).when(kafkaRoller).doGet(any());
+
+        doFailingRollingRestart(testContext, kafkaRoller,
+                asList(0),
+                KafkaRoller.FatalProblem.class, "Error while waiting for restarted pod c-kafka-0 to become ready",
+                asList(0));
     }
 
     private TestingKafkaRoller rollerWithControllers(PodOperator podOps, int... controllers) {
