@@ -14,21 +14,19 @@ import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecurityContextBuilder;
 import io.fabric8.kubernetes.api.model.Service;
 import io.strimzi.api.kafka.KafkaTopicList;
-import io.strimzi.api.kafka.model.EntityOperatorSpec;
 import io.strimzi.api.kafka.model.EntityTopicOperatorSpec;
 import io.strimzi.api.kafka.model.EntityUserOperatorSpec;
 import io.strimzi.api.kafka.model.Kafka;
-import io.strimzi.api.kafka.model.KafkaClusterSpec;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.SystemProperty;
 import io.strimzi.api.kafka.model.SystemPropertyBuilder;
-import io.strimzi.api.kafka.model.ZookeeperClusterSpec;
 import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListener;
 import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.api.kafka.model.storage.JbodStorage;
 import io.strimzi.api.kafka.model.storage.JbodStorageBuilder;
+import io.strimzi.api.kafka.model.storage.PersistentClaimStorage;
 import io.strimzi.api.kafka.model.storage.PersistentClaimStorageBuilder;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
@@ -50,15 +48,13 @@ import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.RollingUpdateUtils;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
-import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
+import io.strimzi.systemtest.utils.kubeUtils.controllers.ConfigMapUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StrimziPodSetUtils;
-import io.strimzi.systemtest.utils.kubeUtils.controllers.ConfigMapUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PersistentVolumeClaimUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.ServiceUtils;
 import io.strimzi.test.TestUtils;
-import io.strimzi.test.executor.ExecResult;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.Tag;
@@ -68,21 +64,16 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Properties;
 import java.util.stream.Collectors;
 
 import static io.strimzi.api.kafka.model.KafkaResources.kafkaStatefulSetName;
-import static io.strimzi.api.kafka.model.KafkaResources.zookeeperStatefulSetName;
 import static io.strimzi.systemtest.Constants.CRUISE_CONTROL;
 import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.LOADBALANCER_SUPPORTED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
-import static io.strimzi.systemtest.utils.StUtils.configMap2Properties;
-import static io.strimzi.systemtest.utils.StUtils.stringToProperties;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static java.util.Arrays.asList;
@@ -103,316 +94,6 @@ class KafkaST extends AbstractST {
     private static final String OPENSHIFT_CLUSTER_NAME = "openshift-my-cluster";
 
     private final String namespace = testSuiteNamespaceManager.getMapOfAdditionalNamespaces().get(KafkaST.class.getSimpleName()).stream().findFirst().get();
-
-    @ParallelNamespaceTest
-    @SuppressWarnings({"checkstyle:MethodLength", "checkstyle:JavaNCSS"})
-    void testCustomAndUpdatedValues(ExtensionContext extensionContext) {
-        final String namespaceName = StUtils.getNamespaceBasedOnRbac(namespace, extensionContext);
-        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
-        final LabelSelector kafkaSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.kafkaStatefulSetName(clusterName));
-        final LabelSelector zkSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.zookeeperStatefulSetName(clusterName));
-
-        LinkedHashMap<String, String> envVarGeneral = new LinkedHashMap<>();
-        envVarGeneral.put("TEST_ENV_1", "test.env.one");
-        envVarGeneral.put("TEST_ENV_2", "test.env.two");
-        LinkedHashMap<String, String> envVarUpdated = new LinkedHashMap<>();
-        envVarUpdated.put("TEST_ENV_2", "updated.test.env.two");
-        envVarUpdated.put("TEST_ENV_3", "test.env.three");
-
-        // Kafka Broker config
-        Map<String, Object> kafkaConfig = new HashMap<>();
-        kafkaConfig.put("offsets.topic.replication.factor", "1");
-        kafkaConfig.put("transaction.state.log.replication.factor", "1");
-        kafkaConfig.put("default.replication.factor", "1");
-
-        Map<String, Object> updatedKafkaConfig = new HashMap<>();
-        updatedKafkaConfig.put("offsets.topic.replication.factor", "3");
-        updatedKafkaConfig.put("transaction.state.log.replication.factor", "3");
-        updatedKafkaConfig.put("default.replication.factor", "3");
-
-        // Zookeeper Config
-        Map<String, Object> zookeeperConfig = new HashMap<>();
-        zookeeperConfig.put("tickTime", "2000");
-        zookeeperConfig.put("initLimit", "5");
-        zookeeperConfig.put("syncLimit", "2");
-        zookeeperConfig.put("autopurge.purgeInterval", "1");
-
-        Map<String, Object> updatedZookeeperConfig = new HashMap<>();
-        updatedZookeeperConfig.put("tickTime", "2500");
-        updatedZookeeperConfig.put("initLimit", "3");
-        updatedZookeeperConfig.put("syncLimit", "5");
-
-        final int initialDelaySeconds = 30;
-        final int timeoutSeconds = 10;
-        final int updatedInitialDelaySeconds = 31;
-        final int updatedTimeoutSeconds = 11;
-        final int periodSeconds = 10;
-        final int successThreshold = 1;
-        final int failureThreshold = 3;
-        final int updatedPeriodSeconds = 5;
-        final int updatedFailureThreshold = 1;
-
-        Kafka kafka = KafkaTemplates.kafkaPersistent(clusterName, 3)
-            .editSpec()
-                .editKafka()
-                    .withNewReadinessProbe()
-                        .withInitialDelaySeconds(initialDelaySeconds)
-                        .withTimeoutSeconds(timeoutSeconds)
-                        .withPeriodSeconds(periodSeconds)
-                        .withSuccessThreshold(successThreshold)
-                        .withFailureThreshold(failureThreshold)
-                    .endReadinessProbe()
-                    .withNewLivenessProbe()
-                        .withInitialDelaySeconds(initialDelaySeconds)
-                        .withTimeoutSeconds(timeoutSeconds)
-                        .withPeriodSeconds(periodSeconds)
-                        .withSuccessThreshold(successThreshold)
-                        .withFailureThreshold(failureThreshold)
-                    .endLivenessProbe()
-                    .withConfig(kafkaConfig)
-                    .withNewTemplate()
-                        .withNewKafkaContainer()
-                            .withEnv(StUtils.createContainerEnvVarsFromMap(envVarGeneral))
-                        .endKafkaContainer()
-                    .endTemplate()
-                .endKafka()
-                .editZookeeper()
-                    .withReplicas(3)
-                    .withNewReadinessProbe()
-                       .withInitialDelaySeconds(initialDelaySeconds)
-                        .withTimeoutSeconds(timeoutSeconds)
-                    .endReadinessProbe()
-                        .withNewLivenessProbe()
-                        .withInitialDelaySeconds(initialDelaySeconds)
-                        .withTimeoutSeconds(timeoutSeconds)
-                    .endLivenessProbe()
-                    .withConfig(zookeeperConfig)
-                    .withNewTemplate()
-                        .withNewZookeeperContainer()
-                            .withEnv(StUtils.createContainerEnvVarsFromMap(envVarGeneral))
-                        .endZookeeperContainer()
-                    .endTemplate()
-                .endZookeeper()
-                .editEntityOperator()
-                    .withNewTemplate()
-                        .withNewTopicOperatorContainer()
-                            .withEnv(StUtils.createContainerEnvVarsFromMap(envVarGeneral))
-                        .endTopicOperatorContainer()
-                        .withNewUserOperatorContainer()
-                            .withEnv(StUtils.createContainerEnvVarsFromMap(envVarGeneral))
-                        .endUserOperatorContainer()
-                        .withNewTlsSidecarContainer()
-                            .withEnv(StUtils.createContainerEnvVarsFromMap(envVarGeneral))
-                        .endTlsSidecarContainer()
-                    .endTemplate()
-                    .editUserOperator()
-                        .withNewReadinessProbe()
-                            .withInitialDelaySeconds(initialDelaySeconds)
-                            .withTimeoutSeconds(timeoutSeconds)
-                            .withPeriodSeconds(periodSeconds)
-                            .withSuccessThreshold(successThreshold)
-                            .withFailureThreshold(failureThreshold)
-                        .endReadinessProbe()
-                            .withNewLivenessProbe()
-                            .withInitialDelaySeconds(initialDelaySeconds)
-                            .withTimeoutSeconds(timeoutSeconds)
-                            .withPeriodSeconds(periodSeconds)
-                            .withSuccessThreshold(successThreshold)
-                            .withFailureThreshold(failureThreshold)
-                        .endLivenessProbe()
-                    .endUserOperator()
-                    .editTopicOperator()
-                        .withNewReadinessProbe()
-                            .withInitialDelaySeconds(initialDelaySeconds)
-                            .withTimeoutSeconds(timeoutSeconds)
-                            .withPeriodSeconds(periodSeconds)
-                            .withSuccessThreshold(successThreshold)
-                            .withFailureThreshold(failureThreshold)
-                        .endReadinessProbe()
-                        .withNewLivenessProbe()
-                            .withInitialDelaySeconds(initialDelaySeconds)
-                            .withTimeoutSeconds(timeoutSeconds)
-                            .withPeriodSeconds(periodSeconds)
-                            .withSuccessThreshold(successThreshold)
-                            .withFailureThreshold(failureThreshold)
-                        .endLivenessProbe()
-                    .endTopicOperator()
-                    .withNewTlsSidecar()
-                        .withNewReadinessProbe()
-                            .withInitialDelaySeconds(initialDelaySeconds)
-                            .withTimeoutSeconds(timeoutSeconds)
-                            .withPeriodSeconds(periodSeconds)
-                            .withSuccessThreshold(successThreshold)
-                            .withFailureThreshold(failureThreshold)
-                        .endReadinessProbe()
-                        .withNewLivenessProbe()
-                            .withInitialDelaySeconds(initialDelaySeconds)
-                            .withTimeoutSeconds(timeoutSeconds)
-                            .withPeriodSeconds(periodSeconds)
-                            .withSuccessThreshold(successThreshold)
-                            .withFailureThreshold(failureThreshold)
-                        .endLivenessProbe()
-                    .endTlsSidecar()
-                .endEntityOperator()
-                .endSpec()
-            .build();
-
-        if (Environment.isKRaftModeEnabled()) {
-            kafka.getSpec().getEntityOperator().setTopicOperator(null);
-            kafka.getSpec().getEntityOperator().getTemplate().setTopicOperatorContainer(null);
-        }
-
-        resourceManager.createResource(extensionContext, kafka);
-
-        final Map<String, String> kafkaSnapshot = PodUtils.podSnapshot(namespaceName, kafkaSelector);
-        final Map<String, String> zkSnapshot = PodUtils.podSnapshot(namespaceName, zkSelector);
-        final Map<String, String> eoPod = DeploymentUtils.depSnapshot(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName));
-
-        LOGGER.info("Verify values before update");
-        checkReadinessLivenessProbe(namespaceName, kafkaStatefulSetName(clusterName), "kafka", initialDelaySeconds, timeoutSeconds,
-                periodSeconds, successThreshold, failureThreshold);
-        checkKafkaConfiguration(namespaceName, kafkaStatefulSetName(clusterName), kafkaConfig, clusterName);
-        checkSpecificVariablesInContainer(namespaceName, kafkaStatefulSetName(clusterName), "kafka", envVarGeneral);
-
-        for (String cmName : StUtils.getKafkaConfigurationConfigMaps(clusterName, 3)) {
-            String kafkaConfiguration = kubeClient().getConfigMap(namespaceName, cmName).getData().get("server.config");
-            assertThat(kafkaConfiguration, containsString("offsets.topic.replication.factor=1"));
-            assertThat(kafkaConfiguration, containsString("transaction.state.log.replication.factor=1"));
-            assertThat(kafkaConfiguration, containsString("default.replication.factor=1"));
-        }
-
-        String kafkaConfigurationFromPod = cmdKubeClient(namespaceName).execInPod(KafkaResources.kafkaPodName(clusterName, 0), "cat", "/tmp/strimzi.properties").out();
-        assertThat(kafkaConfigurationFromPod, containsString("offsets.topic.replication.factor=1"));
-        assertThat(kafkaConfigurationFromPod, containsString("transaction.state.log.replication.factor=1"));
-        assertThat(kafkaConfigurationFromPod, containsString("default.replication.factor=1"));
-
-        if (!Environment.isKRaftModeEnabled()) {
-            LOGGER.info("Testing Zookeepers");
-            checkReadinessLivenessProbe(namespaceName, zookeeperStatefulSetName(clusterName), "zookeeper", initialDelaySeconds, timeoutSeconds,
-                    periodSeconds, successThreshold, failureThreshold);
-            checkComponentConfiguration(namespaceName, zookeeperStatefulSetName(clusterName), "zookeeper", "ZOOKEEPER_CONFIGURATION", zookeeperConfig);
-            checkSpecificVariablesInContainer(namespaceName, zookeeperStatefulSetName(clusterName), "zookeeper", envVarGeneral);
-        }
-
-        LOGGER.info("Checking configuration of TO and UO");
-        if (!Environment.isKRaftModeEnabled()) {
-            checkReadinessLivenessProbe(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName), "topic-operator", initialDelaySeconds, timeoutSeconds,
-                    periodSeconds, successThreshold, failureThreshold);
-            checkSpecificVariablesInContainer(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName), "topic-operator", envVarGeneral);
-
-            checkReadinessLivenessProbe(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName), "tls-sidecar", initialDelaySeconds, timeoutSeconds,
-                    periodSeconds, successThreshold, failureThreshold);
-            checkSpecificVariablesInContainer(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName), "tls-sidecar", envVarGeneral);
-        }
-
-        checkReadinessLivenessProbe(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName), "user-operator", initialDelaySeconds, timeoutSeconds,
-                periodSeconds, successThreshold, failureThreshold);
-        checkSpecificVariablesInContainer(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName), "user-operator", envVarGeneral);
-
-        LOGGER.info("Updating configuration of Kafka cluster");
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, k -> {
-            KafkaClusterSpec kafkaClusterSpec = k.getSpec().getKafka();
-            kafkaClusterSpec.getLivenessProbe().setInitialDelaySeconds(updatedInitialDelaySeconds);
-            kafkaClusterSpec.getReadinessProbe().setInitialDelaySeconds(updatedInitialDelaySeconds);
-            kafkaClusterSpec.getLivenessProbe().setTimeoutSeconds(updatedTimeoutSeconds);
-            kafkaClusterSpec.getReadinessProbe().setTimeoutSeconds(updatedTimeoutSeconds);
-            kafkaClusterSpec.getLivenessProbe().setPeriodSeconds(updatedPeriodSeconds);
-            kafkaClusterSpec.getReadinessProbe().setPeriodSeconds(updatedPeriodSeconds);
-            kafkaClusterSpec.getLivenessProbe().setFailureThreshold(updatedFailureThreshold);
-            kafkaClusterSpec.getReadinessProbe().setFailureThreshold(updatedFailureThreshold);
-            kafkaClusterSpec.setConfig(updatedKafkaConfig);
-            kafkaClusterSpec.getTemplate().getKafkaContainer().setEnv(StUtils.createContainerEnvVarsFromMap(envVarUpdated));
-            ZookeeperClusterSpec zookeeperClusterSpec = k.getSpec().getZookeeper();
-            zookeeperClusterSpec.getLivenessProbe().setInitialDelaySeconds(updatedInitialDelaySeconds);
-            zookeeperClusterSpec.getReadinessProbe().setInitialDelaySeconds(updatedInitialDelaySeconds);
-            zookeeperClusterSpec.getLivenessProbe().setTimeoutSeconds(updatedTimeoutSeconds);
-            zookeeperClusterSpec.getReadinessProbe().setTimeoutSeconds(updatedTimeoutSeconds);
-            zookeeperClusterSpec.getLivenessProbe().setPeriodSeconds(updatedPeriodSeconds);
-            zookeeperClusterSpec.getReadinessProbe().setPeriodSeconds(updatedPeriodSeconds);
-            zookeeperClusterSpec.getLivenessProbe().setFailureThreshold(updatedFailureThreshold);
-            zookeeperClusterSpec.getReadinessProbe().setFailureThreshold(updatedFailureThreshold);
-            zookeeperClusterSpec.setConfig(updatedZookeeperConfig);
-            zookeeperClusterSpec.getTemplate().getZookeeperContainer().setEnv(StUtils.createContainerEnvVarsFromMap(envVarUpdated));
-
-            // Configuring TO and UO to use new values for InitialDelaySeconds and TimeoutSeconds
-            EntityOperatorSpec entityOperatorSpec = k.getSpec().getEntityOperator();
-            entityOperatorSpec.getUserOperator().getLivenessProbe().setInitialDelaySeconds(updatedInitialDelaySeconds);
-            entityOperatorSpec.getUserOperator().getReadinessProbe().setInitialDelaySeconds(updatedInitialDelaySeconds);
-            entityOperatorSpec.getUserOperator().getLivenessProbe().setTimeoutSeconds(updatedTimeoutSeconds);
-            entityOperatorSpec.getUserOperator().getReadinessProbe().setTimeoutSeconds(updatedTimeoutSeconds);
-            entityOperatorSpec.getUserOperator().getLivenessProbe().setPeriodSeconds(updatedPeriodSeconds);
-            entityOperatorSpec.getUserOperator().getReadinessProbe().setPeriodSeconds(updatedPeriodSeconds);
-            entityOperatorSpec.getUserOperator().getLivenessProbe().setFailureThreshold(updatedFailureThreshold);
-            entityOperatorSpec.getUserOperator().getReadinessProbe().setFailureThreshold(updatedFailureThreshold);
-            entityOperatorSpec.getTlsSidecar().getLivenessProbe().setInitialDelaySeconds(updatedInitialDelaySeconds);
-            entityOperatorSpec.getTlsSidecar().getReadinessProbe().setInitialDelaySeconds(updatedInitialDelaySeconds);
-            entityOperatorSpec.getTlsSidecar().getLivenessProbe().setTimeoutSeconds(updatedTimeoutSeconds);
-            entityOperatorSpec.getTlsSidecar().getReadinessProbe().setTimeoutSeconds(updatedTimeoutSeconds);
-            entityOperatorSpec.getTlsSidecar().getLivenessProbe().setPeriodSeconds(updatedPeriodSeconds);
-            entityOperatorSpec.getTlsSidecar().getReadinessProbe().setPeriodSeconds(updatedPeriodSeconds);
-            entityOperatorSpec.getTlsSidecar().getLivenessProbe().setFailureThreshold(updatedFailureThreshold);
-            entityOperatorSpec.getTlsSidecar().getReadinessProbe().setFailureThreshold(updatedFailureThreshold);
-            entityOperatorSpec.getTemplate().getUserOperatorContainer().setEnv(StUtils.createContainerEnvVarsFromMap(envVarUpdated));
-            entityOperatorSpec.getTemplate().getTlsSidecarContainer().setEnv(StUtils.createContainerEnvVarsFromMap(envVarUpdated));
-            if (!Environment.isKRaftModeEnabled()) {
-                entityOperatorSpec.getTopicOperator().getLivenessProbe().setInitialDelaySeconds(updatedInitialDelaySeconds);
-                entityOperatorSpec.getTopicOperator().getReadinessProbe().setInitialDelaySeconds(updatedInitialDelaySeconds);
-                entityOperatorSpec.getTopicOperator().getLivenessProbe().setTimeoutSeconds(updatedTimeoutSeconds);
-                entityOperatorSpec.getTopicOperator().getReadinessProbe().setTimeoutSeconds(updatedTimeoutSeconds);
-                entityOperatorSpec.getTopicOperator().getLivenessProbe().setPeriodSeconds(updatedPeriodSeconds);
-                entityOperatorSpec.getTopicOperator().getReadinessProbe().setPeriodSeconds(updatedPeriodSeconds);
-                entityOperatorSpec.getTopicOperator().getLivenessProbe().setFailureThreshold(updatedFailureThreshold);
-                entityOperatorSpec.getTopicOperator().getReadinessProbe().setFailureThreshold(updatedFailureThreshold);
-                entityOperatorSpec.getTemplate().getTopicOperatorContainer().setEnv(StUtils.createContainerEnvVarsFromMap(envVarUpdated));
-            }
-        }, namespaceName);
-
-        if (!Environment.isKRaftModeEnabled()) {
-            RollingUpdateUtils.waitTillComponentHasRolled(namespaceName, zkSelector, 3, zkSnapshot);
-        }
-        RollingUpdateUtils.waitTillComponentHasRolled(namespaceName, kafkaSelector, 3, kafkaSnapshot);
-        DeploymentUtils.waitTillDepHasRolled(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName), 1, eoPod);
-        KafkaUtils.waitForKafkaReady(namespaceName, clusterName);
-
-        LOGGER.info("Verify values after update");
-        checkReadinessLivenessProbe(namespaceName, kafkaStatefulSetName(clusterName), "kafka", updatedInitialDelaySeconds, updatedTimeoutSeconds,
-                updatedPeriodSeconds, successThreshold, updatedFailureThreshold);
-        checkKafkaConfiguration(namespaceName, kafkaStatefulSetName(clusterName), updatedKafkaConfig, clusterName);
-        checkSpecificVariablesInContainer(namespaceName, kafkaStatefulSetName(clusterName), "kafka", envVarUpdated);
-
-        for (String cmName : StUtils.getKafkaConfigurationConfigMaps(clusterName, 3)) {
-            String kafkaConfiguration = kubeClient(namespaceName).getConfigMap(namespaceName, cmName).getData().get("server.config");
-            assertThat(kafkaConfiguration, containsString("offsets.topic.replication.factor=3"));
-            assertThat(kafkaConfiguration, containsString("transaction.state.log.replication.factor=3"));
-            assertThat(kafkaConfiguration, containsString("default.replication.factor=3"));
-        }
-
-        kafkaConfigurationFromPod = cmdKubeClient(namespaceName).execInPod(KafkaResources.kafkaPodName(clusterName, 0), "cat", "/tmp/strimzi.properties").out();
-        assertThat(kafkaConfigurationFromPod, containsString("offsets.topic.replication.factor=3"));
-        assertThat(kafkaConfigurationFromPod, containsString("transaction.state.log.replication.factor=3"));
-        assertThat(kafkaConfigurationFromPod, containsString("default.replication.factor=3"));
-
-        if (!Environment.isKRaftModeEnabled()) {
-            LOGGER.info("Testing Zookeepers");
-            checkReadinessLivenessProbe(namespaceName, zookeeperStatefulSetName(clusterName), "zookeeper", updatedInitialDelaySeconds, updatedTimeoutSeconds,
-                    updatedPeriodSeconds, successThreshold, updatedFailureThreshold);
-            checkComponentConfiguration(namespaceName, zookeeperStatefulSetName(clusterName), "zookeeper", "ZOOKEEPER_CONFIGURATION", updatedZookeeperConfig);
-            checkSpecificVariablesInContainer(namespaceName, zookeeperStatefulSetName(clusterName), "zookeeper", envVarUpdated);
-
-            LOGGER.info("Getting entity operator to check configuration of TO and UO");
-            checkReadinessLivenessProbe(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName), "topic-operator", updatedInitialDelaySeconds, updatedTimeoutSeconds,
-                    updatedPeriodSeconds, successThreshold, updatedFailureThreshold);
-            checkSpecificVariablesInContainer(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName), "topic-operator", envVarUpdated);
-
-            checkReadinessLivenessProbe(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName), "tls-sidecar", updatedInitialDelaySeconds, updatedTimeoutSeconds,
-                    updatedPeriodSeconds, successThreshold, updatedFailureThreshold);
-            checkSpecificVariablesInContainer(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName), "tls-sidecar", envVarUpdated);
-        }
-
-        checkReadinessLivenessProbe(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName), "user-operator", updatedInitialDelaySeconds, updatedTimeoutSeconds,
-                updatedPeriodSeconds, successThreshold, updatedFailureThreshold);
-        checkSpecificVariablesInContainer(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName), "user-operator", envVarUpdated);
-    }
 
     @ParallelNamespaceTest
     @KRaftNotSupported("EntityOperator is not supported by KRaft mode and is used in this test class")
@@ -595,6 +276,23 @@ class KafkaST extends AbstractST {
         });
     }
 
+    /**
+     * @description This test case verifies the correct deployment of Entity Operator, i.e., including both User Operator and Topic Operator.
+     * Entity Operator is firstly modified to exclude User Operator, afterwards it is modified to default configuration, which includes User Operator.
+     *
+     * @steps
+     *  1. - Deploy Kafka with default configuration.
+     *     - Kafka is deployed, entity operator comprises both TopicOperator and User Operator.
+     *  2. - Remove User Operator from the Kafka Custom Resource specification.
+     *     - Entity Operator is redeployed without the User Operator, no other action take place inside the given Kafka cluster.
+     *  3. - Modify configuration of the Kafka Custom Resource by specifying default Entity Operator.
+     *     - Entity Operator is redeployed, comprising User Operator as well.
+     *
+     * @usecase
+     *  - entity-operator
+     *  - topic-operator
+     *  - user-operator
+     */
     @ParallelNamespaceTest
     void testRemoveUserOperatorFromEntityOperator(ExtensionContext extensionContext) {
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(namespace, extensionContext);
@@ -684,85 +382,6 @@ class KafkaST extends AbstractST {
     }
 
     @ParallelNamespaceTest
-    void testEntityOperatorWithoutTopicOperator(ExtensionContext extensionContext) {
-        final String namespaceName = StUtils.getNamespaceBasedOnRbac(namespace, extensionContext);
-        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
-
-        LOGGER.info("Deploying Kafka cluster without TO in EO");
-
-        Instant startTime = Instant.now();
-
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3)
-            .editSpec()
-                .withNewEntityOperator()
-                    .withNewUserOperator()
-                    .endUserOperator()
-                .endEntityOperator()
-            .endSpec()
-            .build());
-
-        Instant endTime = Instant.now();
-        long duration = Duration.between(startTime, endTime).toSeconds();
-        assertNoCoErrorsLogged(namespaceName, duration);
-
-        //Checking that TO was not deployed
-        kubeClient(namespaceName).listPodsByPrefixInName(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName)).forEach(pod -> {
-            pod.getSpec().getContainers().forEach(container -> {
-                assertThat(container.getName(), not(containsString("topic-operator")));
-            });
-        });
-    }
-
-    @ParallelNamespaceTest
-    void testEntityOperatorWithoutUserOperator(ExtensionContext extensionContext) {
-        final String namespaceName = StUtils.getNamespaceBasedOnRbac(namespace, extensionContext);
-        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
-
-        LOGGER.info("Deploying Kafka cluster without UO in EO");
-        Instant startTime = Instant.now();
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3)
-            .editSpec()
-                .withNewEntityOperator()
-                    .withNewTopicOperator()
-                    .endTopicOperator()
-                .endEntityOperator()
-            .endSpec()
-            .build());
-
-        Instant endTime = Instant.now();
-        long duration = Duration.between(startTime, endTime).toSeconds();
-        assertNoCoErrorsLogged(namespaceName, duration);
-
-        //Checking that UO was not deployed
-        kubeClient(namespaceName).listPodsByPrefixInName(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName)).forEach(pod -> {
-            pod.getSpec().getContainers().forEach(container -> {
-                assertThat(container.getName(), not(containsString("user-operator")));
-            });
-        });
-    }
-
-    @ParallelNamespaceTest
-    void testEntityOperatorWithoutUserAndTopicOperators(ExtensionContext extensionContext) {
-        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
-
-        LOGGER.info("Deploying Kafka cluster without UO and TO in EO");
-        Instant startTime = Instant.now();
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3)
-            .editSpec()
-                .withNewEntityOperator()
-                .endEntityOperator()
-            .endSpec()
-            .build());
-
-        Instant endTime = Instant.now();
-        long duration = Duration.between(startTime, endTime).toSeconds();
-        assertNoCoErrorsLogged(clusterOperator.getDeploymentNamespace(), duration);
-
-        //Checking that EO was not deployed
-        assertThat("EO should not be deployed", kubeClient().listPodsByPrefixInName(KafkaResources.entityOperatorDeploymentName(clusterName)).size(), is(0));
-    }
-
-    @ParallelNamespaceTest
     @KRaftNotSupported("TopicOperator is not supported by KRaft mode and is used in this test class")
     void testTopicWithoutLabels(ExtensionContext extensionContext) {
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(namespace, extensionContext);
@@ -804,6 +423,27 @@ class KafkaST extends AbstractST {
         assertThat(topics, not(hasItems("topic-without-labels")));
     }
 
+    /**
+     * @description This test case verifies that Kafka with persistent storage, and JBOD storage, property 'delete claim' of JBOD storage.
+     *
+     * @steps
+     *  1. - Deploy Kafka with persistent storage and JBOD storage with 2 volumes, both of these are configured to delete their Persistent Volume Claims on Kafka cluster un-provision.
+     *     - Kafka is deployed, volumes are labeled and linked to Pods correctly.
+     *  2. - Verify that labels in Persistent Volume Claims are set correctly.
+     *     - Persistent Volume Claims do contain expected labels and values.
+     *  2. - Modify Kafka Custom Resource, specifically 'delete claim' property of its first Kafka Volume.
+     *     - Kafka CR is successfully modified, annotation of according Persistent Volume Claim is changed afterwards by Cluster Operator.
+     *  3. - Delete Kafka cluster.
+     *     - Kafka cluster and its components are deleted, including Persistent Volume Claim of Volume with 'delete claim' property set to true.
+     *  4. - Verify remaining Persistent Volume Claims.
+     *     - Persistent Volume Claim referenced by volume of formerly deleted Kafka Custom Resource with property 'delete claim' set to true is still present.
+     *
+     * @usecase
+     *  - JBOD
+     *  - PVC
+     *  - volume
+     *  - annotations
+     */
     @ParallelNamespaceTest
     @KRaftNotSupported("JBOD is not supported by KRaft mode and is used in this test case.")
     void testKafkaJBODDeleteClaimsTrueFalse(ExtensionContext extensionContext) {
@@ -812,122 +452,44 @@ class KafkaST extends AbstractST {
         final int kafkaReplicas = 2;
         final String diskSizeGi = "10";
 
-        JbodStorage jbodStorage = new JbodStorageBuilder().withVolumes(
-            new PersistentClaimStorageBuilder().withDeleteClaim(false).withId(0).withSize(diskSizeGi + "Gi").build(),
-            new PersistentClaimStorageBuilder().withDeleteClaim(true).withId(1).withSize(diskSizeGi + "Gi").build()).build();
+        //Volume Storages (original and modified)
+        PersistentClaimStorage idZeroVolumeOriginal = new PersistentClaimStorageBuilder().withDeleteClaim(true).withId(0).withSize(diskSizeGi + "Gi").build();
+        PersistentClaimStorage idOneVolumeOriginal = new PersistentClaimStorageBuilder().withDeleteClaim(true).withId(1).withSize(diskSizeGi + "Gi").build();
+        PersistentClaimStorage idZeroVolumeModified = new PersistentClaimStorageBuilder().withDeleteClaim(false).withId(0).withSize(diskSizeGi + "Gi").build();
+
+        JbodStorage jbodStorage = new JbodStorageBuilder().withVolumes(idZeroVolumeOriginal, idOneVolumeOriginal).build();
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaJBOD(clusterName, kafkaReplicas, jbodStorage).build());
         // kafka cluster already deployed
         verifyVolumeNamesAndLabels(namespaceName, clusterName, kafkaReplicas, 2, diskSizeGi);
 
-        final int volumesCount = kubeClient(namespaceName).listPersistentVolumeClaims(namespaceName, clusterName).size();
+        //change value of first PVC to delete its claim once Kafka is deleted.
+        LOGGER.info("Update Volume with id=0 in Kafka CR by setting 'Delete Claim' property to false.");
 
-        LOGGER.info("Deleting cluster");
-        cmdKubeClient(namespaceName).deleteByName("kafka", clusterName);
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, resource -> {
+            LOGGER.debug(resource.getMetadata().getName());
+            JbodStorage jBODVolumeStorage = (JbodStorage) resource.getSpec().getKafka().getStorage();
+            jBODVolumeStorage.setVolumes(List.of(idZeroVolumeModified, idOneVolumeOriginal));
+        }, namespaceName);
 
-        LOGGER.info("Waiting for PVC deletion");
-        PersistentVolumeClaimUtils.waitForJbodStorageDeletion(namespaceName, volumesCount, jbodStorage, clusterName);
-    }
-
-    @ParallelNamespaceTest
-    @KRaftNotSupported("JBOD is not supported by KRaft mode and is used in this test case.")
-    void testKafkaJBODDeleteClaimsTrue(ExtensionContext extensionContext) {
-        final String namespaceName = StUtils.getNamespaceBasedOnRbac(namespace, extensionContext);
-        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
-        final int kafkaReplicas = 2;
-        final String diskSizeGi = "10";
-
-        JbodStorage jbodStorage = new JbodStorageBuilder().withVolumes(
-            new PersistentClaimStorageBuilder().withDeleteClaim(true).withId(0).withSize(diskSizeGi + "Gi").build(),
-            new PersistentClaimStorageBuilder().withDeleteClaim(true).withId(1).withSize(diskSizeGi + "Gi").build()).build();
-
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaJBOD(clusterName, kafkaReplicas, jbodStorage).build());
-        // kafka cluster already deployed
-        verifyVolumeNamesAndLabels(namespaceName, clusterName, kafkaReplicas, 2, diskSizeGi);
-
-        final int volumesCount = kubeClient(namespaceName).listPersistentVolumeClaims(namespaceName, clusterName).size();
-
-        LOGGER.info("Deleting cluster");
-        cmdKubeClient(namespaceName).deleteByName("kafka", clusterName);
-
-        LOGGER.info("Waiting for PVC deletion");
-        PersistentVolumeClaimUtils.waitForJbodStorageDeletion(namespaceName, volumesCount, jbodStorage, clusterName);
-    }
-
-    @ParallelNamespaceTest
-    @KRaftNotSupported("JBOD is not supported by KRaft mode and is used in this test case.")
-    void testKafkaJBODDeleteClaimsFalse(ExtensionContext extensionContext) {
-        final String namespaceName = StUtils.getNamespaceBasedOnRbac(namespace, extensionContext);
-        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
-        final int kafkaReplicas = 2;
-        final String diskSizeGi = "10";
-
-        JbodStorage jbodStorage = new JbodStorageBuilder().withVolumes(
-            new PersistentClaimStorageBuilder().withDeleteClaim(false).withId(0).withSize(diskSizeGi + "Gi").build(),
-            new PersistentClaimStorageBuilder().withDeleteClaim(false).withId(1).withSize(diskSizeGi + "Gi").build()).build();
-
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaJBOD(clusterName, kafkaReplicas, jbodStorage).build());
-        // kafka cluster already deployed
-        verifyVolumeNamesAndLabels(namespaceName, clusterName, kafkaReplicas, 2, diskSizeGi);
-
-        int volumesCount = kubeClient(namespaceName).listPersistentVolumeClaims(namespaceName, clusterName).size();
-
-        LOGGER.info("Deleting cluster");
-        cmdKubeClient(namespaceName).deleteByName("kafka", clusterName);
-
-        LOGGER.info("Waiting for PVC deletion");
-        PersistentVolumeClaimUtils.waitForJbodStorageDeletion(namespaceName, volumesCount, jbodStorage, clusterName);
-    }
-
-    @ParallelNamespaceTest
-    @Tag(INTERNAL_CLIENTS_USED)
-    @KRaftNotSupported("JBOD is not supported by KRaft mode and is used in this test case.")
-    void testPersistentStorageSize(ExtensionContext extensionContext) {
-        final TestStorage testStorage = new TestStorage(extensionContext);
-
-        final String[] diskSizes = {"70Gi", "20Gi"};
-        final int kafkaRepl = 2;
-        final int diskCount = 2;
-
-        JbodStorage jbodStorage =  new JbodStorageBuilder()
-                .withVolumes(
-                        new PersistentClaimStorageBuilder().withDeleteClaim(false).withId(0).withSize(diskSizes[0]).build(),
-                        new PersistentClaimStorageBuilder().withDeleteClaim(false).withId(1).withSize(diskSizes[1]).build()
-                ).build();
-
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), kafkaRepl)
-            .editSpec()
-                .editKafka()
-                    .withStorage(jbodStorage)
-                .endKafka()
-                .editZookeeper().
-                    withReplicas(1)
-                .endZookeeper()
-            .endSpec()
-            .build());
-
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getTopicName()).build());
-
-        List<PersistentVolumeClaim> volumes = kubeClient(testStorage.getNamespaceName()).listPersistentVolumeClaims(testStorage.getNamespaceName(), testStorage.getClusterName()).stream().filter(
-            persistentVolumeClaim -> persistentVolumeClaim.getMetadata().getName().contains(testStorage.getClusterName())).collect(Collectors.toList());
-
-        checkStorageSizeForVolumes(volumes, diskSizes, kafkaRepl, diskCount);
-
-        KafkaClients kafkaClients = new KafkaClientsBuilder()
-            .withTopicName(testStorage.getTopicName())
-            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
-            .withNamespaceName(testStorage.getNamespaceName())
-            .withProducerName(testStorage.getProducerName())
-            .withConsumerName(testStorage.getConsumerName())
-            .withMessageCount(testStorage.getMessageCount())
-            .build();
-
-        resourceManager.createResource(extensionContext,
-            kafkaClients.producerStrimzi(),
-            kafkaClients.consumerStrimzi()
+        TestUtils.waitFor("Wait for change of Annotation of PVCs according to changes in 'delete claim' property of Kafka's JBOD storage", Constants.GLOBAL_POLL_INTERVAL, Constants.SAFETY_RECONCILIATION_INTERVAL,
+            () -> kubeClient().listPersistentVolumeClaims(namespaceName, clusterName).stream()
+                .filter(pvc -> pvc.getMetadata().getName().startsWith("data-0") && pvc.getMetadata().getName().contains("-kafka"))
+                .allMatch(volume -> "false".equals(volume.getMetadata().getAnnotations().get("strimzi.io/delete-claim")))
         );
 
-        ClientUtils.waitForClientsSuccess(testStorage);
+        final int volumesCount = kubeClient().listPersistentVolumeClaims(namespaceName, clusterName).size();
+
+        LOGGER.info("Delete cluster Kafka/{} Namespace/{}", clusterName, namespaceName);
+        cmdKubeClient(namespaceName).deleteByName("kafka", clusterName);
+
+        LOGGER.info("Wait for PVCs deletion");
+        PersistentVolumeClaimUtils.waitForJbodStorageDeletion(namespaceName, volumesCount, clusterName, idZeroVolumeModified, idOneVolumeOriginal);
+
+        LOGGER.info("Verify that PVC which are supposed to remain, really persist even after Kafka cluster un-deployment");
+        List<String> remainingPVCNames =  kubeClient().listPersistentVolumeClaims(namespaceName, clusterName).stream().map(e -> e.getMetadata().getName()).toList();
+        assertThat("Kafka broker with id 0 does not preserve its JBOD storage's PVC", remainingPVCNames.stream().anyMatch(e -> e.startsWith("data-0") && e.contains("-kafka-0")));
+        assertThat("Kafka broker with id 1 does not preserve its JBOD storage's PVC", remainingPVCNames.stream().anyMatch(e -> e.startsWith("data-0") && e.contains("-kafka-1")));
     }
 
     @ParallelNamespaceTest
@@ -1297,14 +859,44 @@ class KafkaST extends AbstractST {
         assertThat(kafkaUserResource, containsString(Labels.STRIMZI_CLUSTER_LABEL + ": " + firstClusterName));
     }
 
+
+    /**
+     * @description This test case verifies correct storage of messages on disk, and their presence even after rolling update of all Kafka Pods. Test case
+     * also checks if offset topic related files are present.
+     *
+     * @steps
+     *  1. - Deploy persistent Kafka with corresponding configuration of offsets topic.
+     *     - Kafka is created with expected configuration.
+     *  2. - Create Kafka topic with corresponding configuration
+     *     - Kafka topic is created with expected configuration.
+     *  3. - Execute command to check presence of offsets topic related files.
+     *     - Files related to Offset topic are present.
+     *  4. - Produce default number of messages to already created topic.
+     *     - Produced messages are present.
+     *  5. - Perform rolling update on all Kafka Pods, in this case single broker.
+     *     - After rolling update is completed all messages are again present, as they were successfully stored on disk.
+     *
+     * @usecase
+     *  - data-storage
+     *  - kafka-configuration
+     */
     @ParallelNamespaceTest
     @Tag(INTERNAL_CLIENTS_USED)
     @KRaftNotSupported("TopicOperator is not supported by KRaft mode and is used in this test class")
-    void testMessagesAreStoredInDisk(ExtensionContext extensionContext) {
+    void testMessagesAndConsumerOffsetFilesOnDisk(ExtensionContext extensionContext) {
         final TestStorage testStorage = new TestStorage(extensionContext);
         final LabelSelector kafkaSelector = KafkaResource.getLabelSelector(testStorage.getClusterName(), testStorage.getKafkaStatefulSetName());
+        final Map<String, Object> kafkaConfig = new HashMap<>();
+        kafkaConfig.put("offsets.topic.replication.factor", "1");
+        kafkaConfig.put("offsets.topic.num.partitions", "100");
 
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), 1, 1).build());
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), 1, 1)
+            .editSpec()
+                .editKafka()
+                    .withConfig(kafkaConfig)
+                .endKafka()
+            .endSpec()
+            .build());
 
         Map<String, String> kafkaPodsSnapshot = PodUtils.podSnapshot(testStorage.getNamespaceName(), kafkaSelector);
 
@@ -1342,6 +934,13 @@ class KafkaST extends AbstractST {
         );
         ClientUtils.waitForClientsSuccess(testStorage);
 
+        LOGGER.info("Verify presence of files created to store offsets topic");
+        String commandToGetFiles = "cd /var/lib/kafka/data/kafka-log0/; ls -l | grep __consumer_offsets | wc -l";
+        String result = cmdKubeClient(testStorage.getNamespaceName()).execInPod(KafkaResources.kafkaPodName(testStorage.getClusterName(), 0),
+            "/bin/bash", "-c", commandToGetFiles).out();
+
+        assertThat("Folder kafka-log0 doesn't contain 100 files related to storing consumer offsets", Integer.parseInt(result.trim()) == 100);
+
         LOGGER.info("Executing command {} in {}", commandToGetDataFromTopic, KafkaResources.kafkaPodName(testStorage.getClusterName(), 0));
         topicData = cmdKubeClient(testStorage.getNamespaceName()).execInPod(KafkaResources.kafkaPodName(testStorage.getClusterName(), 0), "/bin/bash", "-c",
                 commandToGetDataFromTopic).out();
@@ -1363,64 +962,6 @@ class KafkaST extends AbstractST {
                 commandToGetDataFromTopic).out();
 
         assertThat("Topic has no data", topicData, notNullValue());
-    }
-
-    @ParallelNamespaceTest
-    @Tag(INTERNAL_CLIENTS_USED)
-    void testConsumerOffsetFiles(ExtensionContext extensionContext) {
-        final TestStorage testStorage = new TestStorage(extensionContext);
-        final Map<String, Object> kafkaConfig = new HashMap<>();
-        kafkaConfig.put("offsets.topic.replication.factor", "3");
-        kafkaConfig.put("offsets.topic.num.partitions", "100");
-
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3, 1)
-            .editSpec()
-                .editKafka()
-                    .withConfig(kafkaConfig)
-                .endKafka()
-            .endSpec()
-            .build());
-
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getTopicName(), 3, 1).build());
-
-        KafkaClients kafkaClients = new KafkaClientsBuilder()
-            .withTopicName(testStorage.getTopicName())
-            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
-            .withNamespaceName(testStorage.getNamespaceName())
-            .withProducerName(testStorage.getProducerName())
-            .withConsumerName(testStorage.getConsumerName())
-            .withMessageCount(testStorage.getMessageCount())
-            .build();
-
-        String commandToGetFiles =  "cd /var/lib/kafka/data/kafka-log0/;" +
-                "ls -1 | sed -n \"s#__consumer_offsets-\\([0-9]*\\)#\\1#p\" | sort -V";
-
-        LOGGER.info("Executing command {} in {}", commandToGetFiles, KafkaResources.kafkaPodName(testStorage.getClusterName(), 0));
-        String result = cmdKubeClient(testStorage.getNamespaceName()).execInPod(KafkaResources.kafkaPodName(testStorage.getClusterName(), 0),
-                "/bin/bash", "-c", commandToGetFiles).out();
-
-        // TODO / FIXME
-        //assertThat("Folder kafka-log0 has data in files:\n" + result, result.equals(""));
-
-        LOGGER.info("Result: \n" + result);
-
-        resourceManager.createResource(extensionContext,
-            kafkaClients.producerStrimzi(),
-            kafkaClients.consumerStrimzi()
-        );
-        ClientUtils.waitForClientsSuccess(testStorage);
-
-        LOGGER.info("Executing command {} in {}", commandToGetFiles, KafkaResources.kafkaPodName(testStorage.getClusterName(), 0));
-        result = cmdKubeClient(testStorage.getNamespaceName()).execInPod(KafkaResources.kafkaPodName(testStorage.getClusterName(), 0),
-                "/bin/bash", "-c", commandToGetFiles).out();
-
-        StringBuilder stringToMatch = new StringBuilder();
-
-        for (int i = 0; i < 100; i++) {
-            stringToMatch.append(i).append("\n");
-        }
-
-        assertThat("Folder kafka-log0 doesn't contain 100 files", result, containsString(stringToMatch.toString()));
     }
 
     @ParallelNamespaceTest
@@ -1498,48 +1039,6 @@ class KafkaST extends AbstractST {
             kafkaClients.consumerStrimzi()
         );
         ClientUtils.waitForClientsSuccess(testStorage);
-    }
-
-    protected void checkKafkaConfiguration(String namespaceName, String podNamePrefix, Map<String, Object> config, String clusterName) {
-        LOGGER.info("Checking kafka configuration");
-        List<Pod> pods = kubeClient(namespaceName).listPodsByPrefixInName(namespaceName, podNamePrefix);
-
-        for (String cmName : StUtils.getKafkaConfigurationConfigMaps(clusterName, pods.size())) {
-            Properties properties = configMap2Properties(kubeClient(namespaceName).getConfigMap(namespaceName, cmName));
-
-            for (Map.Entry<String, Object> property : config.entrySet()) {
-                String key = property.getKey();
-                Object val = property.getValue();
-
-                assertThat(properties.keySet().contains(key), is(true));
-                assertThat(properties.getProperty(key), is(val));
-            }
-        }
-
-        for (Pod pod: pods) {
-            ExecResult result = cmdKubeClient(namespaceName).execInPod(pod.getMetadata().getName(), "/bin/bash", "-c", "cat /tmp/strimzi.properties");
-            Properties execProperties = stringToProperties(result.out());
-
-            for (Map.Entry<String, Object> property : config.entrySet()) {
-                String key = property.getKey();
-                Object val = property.getValue();
-
-                assertThat(execProperties.keySet().contains(key), is(true));
-                assertThat(execProperties.getProperty(key), is(val));
-            }
-        }
-    }
-
-    void checkStorageSizeForVolumes(List<PersistentVolumeClaim> volumes, String[] diskSizes, int kafkaRepl, int diskCount) {
-        int k = 0;
-        for (int i = 0; i < kafkaRepl; i++) {
-            for (int j = 0; j < diskCount; j++) {
-                LOGGER.info("Checking volume {} and size of testStorage {}", volumes.get(k).getMetadata().getName(),
-                        volumes.get(k).getSpec().getResources().getRequests().get("storage"));
-                assertThat(volumes.get(k).getSpec().getResources().getRequests().get("storage"), is(new Quantity(diskSizes[i])));
-                k++;
-            }
-        }
     }
 
     void verifyVolumeNamesAndLabels(String namespaceName, String clusterName, int kafkaReplicas, int diskCountPerReplica, String diskSizeGi) {

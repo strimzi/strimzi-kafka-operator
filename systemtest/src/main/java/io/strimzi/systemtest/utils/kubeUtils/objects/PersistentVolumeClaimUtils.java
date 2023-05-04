@@ -4,8 +4,8 @@
  */
 package io.strimzi.systemtest.utils.kubeUtils.objects;
 
-import io.strimzi.api.kafka.model.storage.JbodStorage;
 import io.strimzi.api.kafka.model.storage.PersistentClaimStorage;
+import io.strimzi.api.kafka.model.storage.SingleVolumeStorage;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.resources.ResourceOperation;
 import io.strimzi.systemtest.storage.TestStorage;
@@ -15,6 +15,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.time.Duration;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -89,8 +90,8 @@ public class PersistentVolumeClaimUtils {
         );
     }
 
-    public static void waitForJbodStorageDeletion(String namespaceName, int volumesCount, JbodStorage jbodStorage, String clusterName) {
-        int numberOfPVCWhichShouldBeDeleted = jbodStorage.getVolumes().stream().filter(
+    public static void waitForJbodStorageDeletion(String namespaceName, int volumesCount, String clusterName, SingleVolumeStorage... volumes) {
+        int numberOfPVCWhichShouldBeDeleted = Arrays.stream(volumes).filter(
             singleVolumeStorage -> ((PersistentClaimStorage) singleVolumeStorage).isDeleteClaim()
         ).collect(Collectors.toList()).size();
 
