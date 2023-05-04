@@ -79,8 +79,7 @@ The `heartbeat` topic is located on the target cluster, which allows it to do th
 * Verify the liveness and latency of the mirroring process
 
 This helps to make sure that the process is not stuck or has stopped for any reason. 
-You enable the heartbeat connector by including its configuration in the MirrorMaker 2 deployment configuration.
-However, using the heartbeat connector is not always necessary and can be left out of the MirrorMaker 2 configuration. 
+While the heartbeat connector can be a valuable tool for monitoring the mirroring processes between Kafka clusters, it's not always necessary to use it. 
 For example, if your deployment has low network latency or a small number of topics, you might prefer to monitor the mirroring process using log messages or other monitoring tools. 
-If heartbeats are enabled, you can set the `emit.heartbeats.enabled` property of the heartbeat connector to `false` if you do not want to use them.
+If you decide not to use the heartbeat connector, simply omit it from your MirrorMaker 2 configuration.
 
