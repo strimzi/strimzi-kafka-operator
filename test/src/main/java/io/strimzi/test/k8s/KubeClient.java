@@ -8,6 +8,7 @@ import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.DeletionPropagation;
 import io.fabric8.kubernetes.api.model.Event;
 import io.fabric8.kubernetes.api.model.LabelSelector;
+import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
 import io.fabric8.kubernetes.api.model.Namespace;
 import io.fabric8.kubernetes.api.model.NamespaceBuilder;
 import io.fabric8.kubernetes.api.model.Node;
@@ -917,7 +918,7 @@ public class KubeClient {
      * @return cluster operator pod name
      */
     public String getClusterOperatorPodName(final String namespaceName) {
-        LabelSelector selector = kubeClient(namespaceName).getDeploymentSelectors(namespaceName, "strimzi-cluster-operator");
+        LabelSelector selector = new LabelSelectorBuilder().withMatchLabels(Map.of("strimzi.io/kind", "cluster-operator")).build();
         return kubeClient(namespaceName).listPods(namespaceName, selector).get(0).getMetadata().getName();
     }
 
