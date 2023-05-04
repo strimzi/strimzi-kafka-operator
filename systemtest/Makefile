@@ -8,4 +8,4 @@ clean: java_clean
 
 include ../Makefile.maven
 
-.PHONY: build clean
+.PHONY: build clean release
