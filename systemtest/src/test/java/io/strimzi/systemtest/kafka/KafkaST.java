@@ -35,7 +35,6 @@ import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.KRaftNotSupported;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.annotations.ParallelSuite;
-import io.strimzi.systemtest.cli.KafkaCmdClient;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
@@ -43,11 +42,9 @@ import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaUserTemplates;
-import io.strimzi.systemtest.templates.specific.ScraperTemplates;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.RollingUpdateUtils;
 import io.strimzi.systemtest.utils.StUtils;
-import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.ConfigMapUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StrimziPodSetUtils;
@@ -82,7 +79,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.anyOf;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.emptyOrNullString;
-import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 
@@ -379,48 +375,6 @@ class KafkaST extends AbstractST {
         Instant endTime = Instant.now();
         long duration = Duration.between(startTime, endTime).toSeconds();
         assertNoCoErrorsLogged(namespaceName, duration);
-    }
-
-    @ParallelNamespaceTest
-    @KRaftNotSupported("TopicOperator is not supported by KRaft mode and is used in this test class")
-    void testTopicWithoutLabels(ExtensionContext extensionContext) {
-        final String namespaceName = StUtils.getNamespaceBasedOnRbac(namespace, extensionContext);
-        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
-        final String scraperName = mapWithScraperNames.get(extensionContext.getDisplayName());
-
-        // Negative scenario: creating topic without any labels and make sure that TO can't handle this topic
-        resourceManager.createResource(extensionContext,
-            KafkaTemplates.kafkaEphemeral(clusterName, 3).build(),
-            ScraperTemplates.scraperPod(namespaceName, scraperName).build()
-        );
-
-        final String scraperPodName =  kubeClient().listPodsByPrefixInName(namespaceName, scraperName).get(0).getMetadata().getName();
-
-        // Creating topic without any label
-        resourceManager.createResource(extensionContext, false, KafkaTopicTemplates.topic(clusterName, "topic-without-labels", 1, 1, 1)
-            .editMetadata()
-                .withLabels(null)
-            .endMetadata()
-            .build()
-        );
-
-        // Checking that resource was created
-        assertThat(cmdKubeClient(namespaceName).list("kafkatopic"), hasItems("topic-without-labels"));
-        // Checking that TO didn't handle new topic and zk pods don't contain new topic
-        assertThat(KafkaCmdClient.listTopicsUsingPodCli(namespaceName, scraperPodName, KafkaResources.plainBootstrapAddress(clusterName)), not(hasItems("topic-without-labels")));
-
-        // Checking TO logs
-        String tOPodName = cmdKubeClient(namespaceName).listResourcesByLabel("pod", Labels.STRIMZI_NAME_LABEL + "=" + clusterName + "-entity-operator").get(0);
-        String tOlogs = kubeClient(namespaceName).logsInSpecificNamespace(namespaceName, tOPodName, "topic-operator");
-        assertThat(tOlogs, not(containsString("Created topic 'topic-without-labels'")));
-
-        //Deleting topic
-        cmdKubeClient(namespaceName).deleteByName("kafkatopic", "topic-without-labels");
-        KafkaTopicUtils.waitForKafkaTopicDeletion(namespaceName,  "topic-without-labels");
-
-        //Checking all topics were deleted
-        List<String> topics = KafkaCmdClient.listTopicsUsingPodCli(namespaceName, scraperPodName, KafkaResources.plainBootstrapAddress(clusterName));
-        assertThat(topics, not(hasItems("topic-without-labels")));
     }
 
     /**

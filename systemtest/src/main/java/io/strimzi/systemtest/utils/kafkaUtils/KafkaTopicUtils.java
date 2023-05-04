@@ -4,6 +4,7 @@
  */
 package io.strimzi.systemtest.utils.kafkaUtils;
 
+import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.cli.KafkaCmdClient;
@@ -23,6 +24,9 @@ import java.util.stream.Collectors;
 import static io.strimzi.systemtest.enums.CustomResourceStatus.NotReady;
 import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.hasItems;
+import static org.hamcrest.Matchers.not;
 
 public class KafkaTopicUtils {
 
@@ -218,5 +222,32 @@ public class KafkaTopicUtils {
                     return e.getMessage().contains("Not Found") || e.getMessage().contains("the server doesn't have a resource type");
                 }
             });
+    }
+
+    /**
+     * Verifies that {@code absentTopicName} topic remains absent in {@code clusterName} Kafka cluster residing in {@code namespaceName},
+     * by querying the cluster using kafka scripts from {@code queryingPodName} Pod.
+     * @param namespaceName Namespace name
+     * @param queryingPodName  the name of the pod to query Kafka topics from
+     * @param clusterName name of Kafka cluster
+     * @param absentTopicName name of Kafka topic which should not be created.
+     * @throws AssertionError in case topic is created
+     */
+    public static void verifyUnchangedTopicAbsence(String namespaceName, String queryingPodName, String clusterName, String absentTopicName) {
+
+        long poolInterval = Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS; // repeat every second
+        long duration = Constants.RECONCILIATION_INTERVAL; // repeat for ~30sec
+        long startTime = System.currentTimeMillis();
+        long endTime = startTime + duration;
+        LOGGER.info("Verify absence of topic '{}' in listed kafka topics for next {} seconds in Namespace/{}", absentTopicName, duration / 1000, namespaceName);
+
+        while (System.currentTimeMillis() < endTime) {
+            assertThat(KafkaCmdClient.listTopicsUsingPodCli(namespaceName, queryingPodName, KafkaResources.plainBootstrapAddress(clusterName)), not(hasItems(absentTopicName)));
+            try {
+                Thread.sleep(poolInterval);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
     }
 }
