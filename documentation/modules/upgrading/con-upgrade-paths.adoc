@@ -6,31 +6,33 @@
 = Strimzi upgrade paths
 
 [role="_abstract"]
-Two Strimzi upgrade paths are possible.
+Two upgrade paths are available for Strimzi.
 
 Incremental upgrade::
-Upgrading Strimzi from the previous minor version to version {ProductVersion}.
+An incremental upgrade involves upgrading Strimzi from the previous minor version to version {ProductVersion}.
 
 Multi-version upgrade::
-Upgrading Strimzi from an old version to version {ProductVersion} within a single upgrade (skipping one or more intermediate versions).
-+
-For example, upgrading from Strimzi 0.24.0 directly to Strimzi {ProductVersion}.
-+
-NOTE: A multi-version Strimzi upgrade might still support the current version of a Kafka deployment.
+A multi-version upgrade involves upgrading an older version of Strimzi to version {ProductVersion} within a single upgrade, skipping one or more intermediate versions. 
+For example, upgrading directly from Strimzi 0.24.0 to Strimzi {ProductVersion} is possible. 
 
 [id='con-upgrade-paths-kafka-versions-{context}']
-== Supported Kafka versions
+== Support for Kafka versions when upgrading
 
-Decide which Kafka version to upgrade to before starting the Strimzi upgrade process.
+When upgrading Strimzi, it is important to ensure compatibility with the Kafka version being used.
+
+Only use a Kafka version that is supported by your version of Strimzi when upgrading. 
+You can upgrade to a higher supported Kafka version, and in some cases, you can also downgrade to an earlier supported Kafka version.
+
+Multi-version upgrades are possible even if the supported Kafka versions differ between the old and new versions. However, if you attempt to upgrade to a new Strimzi version that does not support the current Kafka version, xref:con-upgrade-cluster-operator-unsupported-kafka-str[an error indicating that the Kafka version is not supported is generated]. 
+In this case, you can upgrade the Kafka version as part of the Strimzi upgrade by changing the `spec.kafka.version` in the `Kafka` custom resource to the supported version for the new Strimzi version.
+
+[NOTE]
+====
 You can review supported Kafka versions in the link:https://strimzi.io/downloads/[Supported versions^] table.
 
 * The *Operators* column lists all released Strimzi versions (the Strimzi version is often called the "Operator version").
-
 * The *Kafka versions* column lists the supported Kafka versions for each Strimzi version.
-
-You can only use a Kafka version supported by the version of Strimzi you are using.
-You can upgrade to a higher Kafka version as long as it is supported by your version of Strimzi.
-In some cases, you can also downgrade to a previous supported Kafka version.
+====
 
 [id='con-upgrade-paths-earlier-versions-{context}']
 == Upgrading from a Strimzi version earlier than 0.22
