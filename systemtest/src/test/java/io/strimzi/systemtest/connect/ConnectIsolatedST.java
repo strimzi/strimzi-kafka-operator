@@ -746,7 +746,7 @@ class ConnectIsolatedST extends AbstractST {
 
         LOGGER.info("Check if actual env variable {} has different value than {}", usedVariable, "test.value");
         assertThat(
-                StUtils.checkEnvVarInPod(namespaceName, kubeClient(namespaceName).listPodsByPrefixInName(KafkaConnectResources.deploymentName(clusterName)).get(0).getMetadata().getName(), usedVariable),
+                StUtils.checkEnvVarInPod(namespaceName, kubeClient().listPodsByPrefixInName(namespaceName, KafkaConnectResources.deploymentName(clusterName)).get(0).getMetadata().getName(), usedVariable),
                 is(not("test.value"))
         );
 
@@ -1133,8 +1133,12 @@ class ConnectIsolatedST extends AbstractST {
 
         LOGGER.info("Check taskMax on Connect pods API");
         for (Pod pod : connectPods) {
-            JsonObject json = new JsonObject(KafkaConnectorUtils.getConnectorSpecFromConnectAPI(namespaceName, pod.getMetadata().getName(), clusterName));
-            assertThat(Integer.parseInt(json.getJsonObject("config").getString("tasks.max")), is(scaleTo));
+            LOGGER.info("Checking taskMax over API for pod {}/{}", pod.getMetadata().getNamespace(), pod.getMetadata().getName());
+            TestUtils.waitFor(String.format("pod's %s API return tasksMax=%s", pod.getMetadata().getName(), scaleTo),
+                Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT_SHORT, () -> {
+                    JsonObject json = new JsonObject(KafkaConnectorUtils.getConnectorSpecFromConnectAPI(namespaceName, pod.getMetadata().getName(), clusterName));
+                    return Integer.parseInt(json.getJsonObject("config").getString("tasks.max")) == scaleTo;
+                });
         }
     }
 
