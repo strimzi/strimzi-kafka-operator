@@ -57,7 +57,7 @@ spec:
     # ...
     config:
       autopurge.snapRetainCount: 3
-      autopurge.purgeInterval: 1
+      autopurge.purgeInterval: 2
     # ...
 ----
 
