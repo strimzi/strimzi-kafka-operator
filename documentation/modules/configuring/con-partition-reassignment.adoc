@@ -56,8 +56,8 @@ Very large reassignments should be broken down into a number of smaller reassign
 The `kafka-reassign-partitions.sh` tool uses a reassignment JSON file that specifies the topics to reassign.
 You can generate a reassignment JSON file or create a file manually if you want to move specific partitions.
 
-A basic reassignment JSON file has the structure shown in the following example, which describes three partitions belonging to two Kafka topics. 
-Each partition is being reassigned to a new set of replicas, which are identified by their broker IDs.
+A basic reassignment JSON file has the structure presented in the following example, which describes three partitions belonging to two Kafka topics. 
+Each partition is reassigned to a new set of replicas, which are identified by their broker IDs.
 The `version`, `topic`, `partition`, and `replicas` properties are all required. 
 
 .Example partition reassignment JSON file structure
