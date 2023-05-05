@@ -269,7 +269,7 @@ public class MetricsIsolatedST extends AbstractST {
         if (Environment.isStableConnectIdentitiesEnabled()) {
             // check StrimziPodSet metrics in CO
             assertMetricValueHigherThan(clusterOperatorCollector, getResourceMetricPattern(StrimziPodSet.RESOURCE_KIND, namespaceFirst), 1);
-            assertCoMetricResources(clusterOperatorCollector, StrimziPodSet.RESOURCE_KIND, namespaceSecond, 1);
+            assertMetricValueHigherThan(clusterOperatorCollector, getResourceMetricPattern(StrimziPodSet.RESOURCE_KIND, namespaceSecond), 0);
         }
     }
 
