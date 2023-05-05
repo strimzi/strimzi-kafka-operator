@@ -20,7 +20,6 @@ import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -37,7 +36,6 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.ContainerNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
@@ -47,8 +45,6 @@ import io.fabric8.kubernetes.client.CustomResource;
 import io.strimzi.api.annotations.ApiVersion;
 import io.strimzi.api.annotations.KubeVersion;
 import io.strimzi.api.annotations.VersionRange;
-import io.strimzi.crdgenerator.annotations.Alternation;
-import io.strimzi.crdgenerator.annotations.Alternative;
 import io.strimzi.crdgenerator.annotations.Crd;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.Example;
@@ -197,7 +193,7 @@ class CrdGenerator {
         }
     }
 
-    Reporter reporter = new DefaultReporter();
+    Reporter reporter;
 
     public void warn(String s) {
         reporter.warn(s);
@@ -275,14 +271,14 @@ class CrdGenerator {
     }
 
     /**
-     * @param targetKubeVersions The targetted version(s) of Kubernetes.
+     * @param targetKubeVersions The targeted version(s) of Kubernetes.
      * @param crdApiVersion The version of the CRD API for which to generate the CRD.
      * @param mapper The object mapper.
      * @param labels The labels to add to the CRD.
      * @param reporter The error reporter.
      * @param apiVersions The API versions to generate (allows selecting a subset of those in the @Crd annotation).
      * @param storageVersion If not null, override the storageVersion to the given value.
-     * @param servedVersions If not null, override the serverd versions according to the given range.
+     * @param servedVersions If not null, override the served versions according to the given range.
      * @param conversionStrategy The conversion strategy.
      * @param describeVersions The range of API versions for which descriptions should be added
      */
@@ -345,38 +341,17 @@ class CrdGenerator {
     @SuppressWarnings("NPathComplexity")
     private ObjectNode buildSpec(ApiVersion crdApiVersion,
                                  Crd.Spec crd, Class<? extends CustomResource> crdClass) {
-        checkKubeVersionsSupportCrdVersion(crdApiVersion);
         ObjectNode result = nf.objectNode();
         result.put("group", crd.group());
 
         ArrayNode versions = nf.arrayNode();
-
-        // Kube apiserver with CRD v1beta1 is picky about only using per-version subresources, schemas and printercolumns
-        // if they actually differ across the versions. If they're the same, it insists these things are
-        // declared top level
-        // With CRD v1 they have to be per-version :face-with-rolling-eyes:
         Map<ApiVersion, ObjectNode> subresources = buildSubresources(crd);
-        boolean perVersionSubResources = needsPerVersion("subresources", subresources);
         Map<ApiVersion, ObjectNode> schemas = buildSchemas(crd, crdClass);
-        boolean perVersionSchemas = needsPerVersion("schemas", schemas);
         Map<ApiVersion, ArrayNode> printerColumns = buildPrinterColumns(crd);
-        boolean perVersionPrinterColumns = needsPerVersion("additionalPrinterColumns", printerColumns);
 
         result.set("names", buildNames(crd.names()));
         result.put("scope", crd.scope());
 
-        if (!perVersionPrinterColumns) {
-            ArrayNode cols = printerColumns.values().iterator().next();
-            if (!cols.isEmpty()) {
-                result.set("additionalPrinterColumns", cols);
-            }
-        }
-        if (!perVersionSubResources) {
-            ObjectNode subresource = subresources.values().iterator().next();
-            if (!subresource.isEmpty()) {
-                result.set("subresources", subresource);
-            }
-        }
         if (conversionStrategy instanceof WebhookConversionStrategy) {
             // "Webhook": must be None if spec.preserveUnknownFields is true
             result.put("preserveUnknownFields", false);
@@ -393,22 +368,21 @@ class CrdGenerator {
             versionNode.put("served", servedVersion != null ? servedVersion.contains(crApiVersion) : version.served());
             versionNode.put("storage", storageVersion != null ? crApiVersion.equals(storageVersion) : version.storage());
 
-            if (perVersionSubResources) {
-                ObjectNode subresourcesForVersion = subresources.get(crApiVersion);
-                if (!subresourcesForVersion.isEmpty()) {
-                    versionNode.set("subresources", subresourcesForVersion);
-                }
+            // Subresources
+            ObjectNode subresourcesForVersion = subresources.get(crApiVersion);
+            if (!subresourcesForVersion.isEmpty()) {
+                versionNode.set("subresources", subresourcesForVersion);
             }
-            if (perVersionPrinterColumns) {
-                ArrayNode cols = printerColumns.get(crApiVersion);
-                if (!cols.isEmpty()) {
-                    versionNode.set("additionalPrinterColumns", cols);
-                }
+
+            // Printer columns
+            ArrayNode cols = printerColumns.get(crApiVersion);
+            if (!cols.isEmpty()) {
+                versionNode.set("additionalPrinterColumns", cols);
             }
-            if (perVersionSchemas) {
-                versionNode.set("schema", schemas.get(crApiVersion));
-            }
+
+            versionNode.set("schema", schemas.get(crApiVersion));
         }
+
         result.set("versions", versions);
 
         if (crdApiVersion.compareTo(V1) < 0
@@ -421,10 +395,6 @@ class CrdGenerator {
                     .orElseThrow());
         }
 
-        if (!perVersionSchemas) {
-            result.set("validation", schemas.values().iterator().next());
-        }
-
         return result;
     }
 
@@ -433,12 +403,11 @@ class CrdGenerator {
         if (conversionStrategy instanceof NoneConversionStrategy) {
             conversion.put("strategy", "None");
         } else if (conversionStrategy instanceof WebhookConversionStrategy) {
-            boolean v1Beta1CrdApi = crdApiVersion.compareTo(V1) < 0;
             conversion.put("strategy", "Webhook");
             WebhookConversionStrategy webhookStrategy = (WebhookConversionStrategy) conversionStrategy;
-            ObjectNode webhook = conversion.putObject(v1Beta1CrdApi ? "webhookClientConfig" : "webhook");
-            (v1Beta1CrdApi ? conversion : webhook).putArray("conversionReviewVersions").add("v1").add("v1beta1");
-            ObjectNode webhookClientConfig = (v1Beta1CrdApi ? conversion : webhook).putObject(v1Beta1CrdApi ? "webhookClientConfig" : "clientConfig");
+            ObjectNode webhook = conversion.putObject("webhook");
+            webhook.putArray("conversionReviewVersions").add("v1").add("v1beta1");
+            ObjectNode webhookClientConfig = webhook.putObject("clientConfig");
             webhookClientConfig.put("caBundle", webhookStrategy.caBundle);
             if (webhookStrategy.isUrl()) {
                 webhookClientConfig.put("url", webhookStrategy.url);
@@ -492,41 +461,6 @@ class CrdGenerator {
                 version -> buildAdditionalPrinterColumns(crd, version)));
     }
 
-    private boolean needsPerVersion(String property, Map<ApiVersion, ? extends ContainerNode<?>> subresources) {
-        if (crdApiVersion.compareTo(V1) >= 0) {
-            return true;
-        }
-        HashSet<? extends ContainerNode<?>> set = new HashSet<>(subresources.values());
-        int distinct = set.size();
-        boolean perVersionSubResources;
-        if (KubeVersion.supportsSchemaPerVersion(targetKubeVersions)) {
-            perVersionSubResources = distinct > 1;
-        } else {
-            if (distinct > 1) {
-                err("The " + property + " are per-version, but that's not supported " +
-                        "by at least one Kubernetes version in " + targetKubeVersions);
-            }
-            perVersionSubResources = false;
-        }
-        return perVersionSubResources;
-    }
-
-    /**
-     * Prevent things like v1 CRD API on kube &lt; 1.16, or v1beta1 on kube &gt; 2.21
-     * @param crdApiVersion The version of the CRD API being generated.
-     */
-    private void checkKubeVersionsSupportCrdVersion(ApiVersion crdApiVersion) {
-        if (!targetKubeVersions.lower().supportsCrdApiVersion(crdApiVersion)) {
-            err("Kubernetes version " + targetKubeVersions.lower() +
-                    " doesn't support CustomResourceDefinition API at " + crdApiVersion);
-        }
-        if (targetKubeVersions.upper() != null &&
-                !targetKubeVersions.upper().supportsCrdApiVersion(crdApiVersion)) {
-            err("Kubernetes version " + targetKubeVersions.upper() +
-                    " doesn't support CustomResourceDefinition API at " + crdApiVersion);
-        }
-    }
-
     private ObjectNode buildSubresources(Crd.Spec crd, ApiVersion crApiVersion) {
         ObjectNode subresources = nf.objectNode();
         if (crd.subresources().status().length != 0) {
@@ -562,9 +496,6 @@ class CrdGenerator {
     private ObjectNode buildScale(Crd.Spec crd, ApiVersion crApiVersion) {
         ObjectNode scaleNode;
         Crd.Spec.Subresources.Scale[] scales = crd.subresources().scale();
-        if (scales.length > 1 && !KubeVersion.supportsSchemaPerVersion(targetKubeVersions)) {
-            err("Multiple scales specified but " + targetKubeVersions.lower() + " doesn't support schema per version");
-        }
         List<Crd.Spec.Subresources.Scale> filteredScales = Arrays.stream(scales)
                 .filter(sc -> ApiVersion.parseRange(sc.apiVersion()).contains(crApiVersion))
                 .collect(Collectors.toList());
@@ -578,7 +509,7 @@ class CrdGenerator {
             if (!scale.labelSelectorPath().isEmpty()) {
                 scaleNode.put("labelSelectorPath", scale.labelSelectorPath());
             }
-        } else if (filteredScales.size() > 1 && KubeVersion.supportsSchemaPerVersion(targetKubeVersions))  {
+        } else if (filteredScales.size() > 1)  {
             throw new RuntimeException("Each custom resource definition can have only one scale sub-resource.");
         } else {
             scaleNode = null;
@@ -638,15 +569,15 @@ class CrdGenerator {
         ObjectNode result = nf.objectNode();
         // OpenShift Origin 3.10-rc0 doesn't like the `type: object` in schema root
         boolean noTopLevelTypeProperty = targetKubeVersions.intersects(KubeVersion.parseRange("1.11-1.15"));
-        result.set("openAPIV3Schema", buildObjectSchema(crApiVersion, crdClass, crdClass, crdApiVersion.compareTo(V1) >= 0 || !noTopLevelTypeProperty, description));
+        result.set("openAPIV3Schema", buildObjectSchema(crApiVersion, crdClass, crdApiVersion.compareTo(V1) >= 0 || !noTopLevelTypeProperty, description));
         return result;
     }
 
-    private ObjectNode buildObjectSchema(ApiVersion crApiVersion, AnnotatedElement annotatedElement, Class<?> crdClass, boolean description) {
-        return buildObjectSchema(crApiVersion, annotatedElement, crdClass, true, description);
+    private ObjectNode buildObjectSchema(ApiVersion crApiVersion, Class<?> crdClass, boolean description) {
+        return buildObjectSchema(crApiVersion, crdClass, true, description);
     }
 
-    private ObjectNode buildObjectSchema(ApiVersion crApiVersion, AnnotatedElement annotatedElement, Class<?> crdClass, boolean printType, boolean description) {
+    private ObjectNode buildObjectSchema(ApiVersion crApiVersion, Class<?> crdClass, boolean printType, boolean description) {
         ObjectNode result = nf.objectNode();
         buildObjectSchema(crApiVersion, result, crdClass, printType, description);
         return result;
@@ -810,35 +741,9 @@ class CrdGenerator {
     private ObjectNode buildSchemaProperties(ApiVersion crApiVersion, Class<?> crdClass, boolean description) {
         ObjectNode properties = nf.objectNode();
         for (Property property : unionOfSubclassProperties(crApiVersion, crdClass)) {
-            if (property.getType().getType().isAnnotationPresent(Alternation.class)) {
-                List<Property> alternatives = property.getAlternatives(crApiVersion, targetKubeVersions);
-                if (alternatives.size() == 1) {
-                    properties.set(property.getName(), buildSchema(crApiVersion, alternatives.get(0), description));
-                } else if (alternatives.size() == 0) {
-                    err("Class " + property.getType().getType().getName() + " is annotated with " +
-                            "@" + Alternation.class.getSimpleName() + " but has no " +
-                            "@" + Alternative.class.getSimpleName() + "-annotated properties");
-                } else {
-                    // TODO strictly speaking this is completely wrong if multiple versions aren't supported
-                    buildMultiTypeProperty(crApiVersion, properties, property, alternatives, description);
-                }
-            } else {
-                buildProperty(crApiVersion, properties, property, description);
-            }
+            buildProperty(crApiVersion, properties, property, description);
         }
         return properties;
-    }
-
-    private void buildMultiTypeProperty(ApiVersion crApiVersion, ObjectNode properties, Property property, List<Property> alternatives, boolean description) {
-        ArrayNode oneOfAlternatives = nf.arrayNode(alternatives.size());
-
-        for (Property alternative : alternatives)   {
-            oneOfAlternatives.add(buildSchema(crApiVersion, alternative, description));
-        }
-
-        ObjectNode oneOf = nf.objectNode();
-        oneOf.set("oneOf", oneOfAlternatives);
-        properties.set(property.getName(), oneOf);
     }
 
     private void buildProperty(ApiVersion crdApiVersion, ObjectNode properties, Property property, boolean description) {
@@ -862,7 +767,7 @@ class CrdGenerator {
         } else if (returnType.isArray() || List.class.equals(returnType)) {
             schema = buildArraySchema(crApiVersion, property, property.getType(), description);
         } else {
-            schema = buildObjectSchema(crApiVersion, property, returnType, description);
+            schema = buildObjectSchema(crApiVersion, returnType, description);
         }
 
         if (description) {
@@ -974,15 +879,6 @@ class CrdGenerator {
             result.set("enum", stringArray(Property.subtypeNames(property.getDeclaringClass())));
         }
 
-        // The deprecated field cannot be set in Kube OpenAPI v3 schema. But we should keep this code for future when it might be possible.
-        /*Deprecated deprecated = property.getAnnotation(Deprecated.class);
-        if (deprecated == null) {
-            deprecated = property.getType().getType().getAnnotation(Deprecated.class);
-        }
-        if (deprecated != null) {
-            result.put("deprecated", true);
-        }*/
-
         return result;
     }
 
@@ -1002,9 +898,6 @@ class CrdGenerator {
     private <T> void checkDisjointVersions(AnnotatedElement annotated, T[] wrapperAnnotation, Class<T> annotationClass) {
         long count = Arrays.stream(wrapperAnnotation)
                 .map(element -> apiVersion(element, annotationClass)).count();
-        if (count > 1 && !KubeVersion.supportsSchemaPerVersion(targetKubeVersions)) {
-            err("Target kubernetes versions " + targetKubeVersions + " don't support schema-per-version, but multiple versions present on " + annotated);
-        }
 
         long distinctCount = Arrays.stream(wrapperAnnotation)
                 .map(element -> apiVersion(element, annotationClass)).distinct().count();
@@ -1024,15 +917,12 @@ class CrdGenerator {
                 });
     }
 
-    @SuppressWarnings("unchecked")
     private static <T> VersionRange<ApiVersion> apiVersion(T element, Class<T> annotationClass) {
         try {
             Method apiVersionsMethod = annotationClass.getDeclaredMethod("apiVersions");
             String apiVersions = (String) apiVersionsMethod.invoke(element);
             return ApiVersion.parseRange(apiVersions);
-        } catch (ReflectiveOperationException e) {
-            throw new RuntimeException(e);
-        } catch (ClassCastException e) {
+        } catch (ReflectiveOperationException | ClassCastException e) {
             throw new RuntimeException(e);
         }
     }
@@ -1083,7 +973,7 @@ class CrdGenerator {
 
     static class CommandOptions {
         private boolean yaml = false;
-        private LinkedHashMap<String, String> labels = new LinkedHashMap<>();
+        private final LinkedHashMap<String, String> labels = new LinkedHashMap<>();
         VersionRange<KubeVersion> targetKubeVersions = null;
         ApiVersion crdApiVersion = null;
         List<ApiVersion> apiVersions = null;
@@ -1237,10 +1127,10 @@ class CrdGenerator {
                 }
             }
             if (targetKubeVersions == null) {
-                targetKubeVersions = KubeVersion.parseRange("1.11+");
+                targetKubeVersions = KubeVersion.V1_16_PLUS;
             }
             if (crdApiVersion == null) {
-                crdApiVersion = ApiVersion.V1BETA1;
+                crdApiVersion = ApiVersion.V1;
             }
             if (conversionServiceName != null) {
                 conversionStrategy = new WebhookConversionStrategy(conversionServiceName, conversionServiceNamespace, conversionServicePath, conversionServicePort, conversionServiceCaBundle);
