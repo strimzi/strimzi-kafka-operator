@@ -92,7 +92,7 @@ spec:
       loggers:
         zookeeper.root.logger: "INFO"
         org.apache.zookeeper.server.SyncRequestProcessor: "TRACE"
-        org.apache.zookeeper.zookeeper.server.ZooKeeperServer: "DEBUG"
+        org.apache.zookeeper.server.ZooKeeperServer: "DEBUG"
     # ...
 ----
 
