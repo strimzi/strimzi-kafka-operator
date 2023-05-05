@@ -22,7 +22,7 @@ When upgrading Strimzi, it is important to ensure compatibility with the Kafka v
 
 Multi-version upgrades are possible even if the supported Kafka versions differ between the old and new versions. 
 However, if you attempt to upgrade to a new Strimzi version that does not support the current Kafka version, xref:con-upgrade-cluster-operator-unsupported-kafka-str[an error indicating that the Kafka version is not supported is generated]. 
-In this case, you can upgrade the Kafka version as part of the Strimzi upgrade by changing the `spec.kafka.version` in the `Kafka` custom resource to the supported version for the new Strimzi version.
+In this case, you must upgrade the Kafka version as part of the Strimzi upgrade by changing the `spec.kafka.version` in the `Kafka` custom resource to the supported version for the new Strimzi version.
 
 [NOTE]
 ====
