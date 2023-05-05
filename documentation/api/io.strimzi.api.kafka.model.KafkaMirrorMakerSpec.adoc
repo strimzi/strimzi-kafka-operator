@@ -45,6 +45,8 @@ spec:
     type: inline
     loggers:
       mirrormaker.root.logger: "INFO"
+      org.apache.kafka.clients.consumer.ConsumerConfig: "TRACE"
+      org.apache.kafka.clients.producer.ProducerConfig: "DEBUG"
   # ...
 ----
 

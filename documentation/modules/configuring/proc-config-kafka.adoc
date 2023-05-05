@@ -158,7 +158,7 @@ spec:
       logging: # <29>
         type: inline
         loggers:
-          rootLogger.level: "INFO"
+          rootLogger.level: INFO
       resources:
         requests:
           memory: 512Mi

@@ -76,7 +76,7 @@ spec:
     logging: # <7>
         type: inline
         loggers:
-          rootLogger.level: "INFO"
+          rootLogger.level: INFO
     template: # <8>
       pod:
         metadata:

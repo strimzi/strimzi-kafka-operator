@@ -234,7 +234,7 @@ spec:
 For more information, refer to the xref:type-BrokerCapacity-reference[BrokerCapacity schema reference].
 
 [id='property-cruise-control-logging-{context}']
-=== Logging configuration
+=== `logging`
 
 Cruise Control has its own configurable logger:
 
@@ -260,7 +260,9 @@ spec:
     logging:
       type: inline
       loggers:
-        rootLogger.level: "INFO"
+        rootLogger.level: INFO
+        com.linkedin.kafka.cruisecontrol.executor.Executor: TRACE
+        com.linkedin.kafka.cruisecontrol.analyzer.GoalOptimizer: DEBUG
     # ...
 ----
 

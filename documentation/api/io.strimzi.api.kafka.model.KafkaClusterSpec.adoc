@@ -192,6 +192,8 @@ spec:
       type: inline
       loggers:
         kafka.root.logger.level: "INFO"
+        kafka.log.LogCleaner: "TRACE"
+        org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule: "DEBUG"
   # ...
 ----
 

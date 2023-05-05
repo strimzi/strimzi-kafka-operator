@@ -91,6 +91,8 @@ spec:
       type: inline
       loggers:
         zookeeper.root.logger: "INFO"
+        org.apache.zookeeper.server.SyncRequestProcessor: "TRACE"
+        org.apache.zookeeper.zookeeper.server.ZooKeeperServer: "DEBUG"
     # ...
 ----
 

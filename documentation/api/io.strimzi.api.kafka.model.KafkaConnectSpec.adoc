@@ -114,6 +114,8 @@ spec:
     type: inline
     loggers:
       connect.root.logger.level: "INFO"
+      org.apache.kafka.connect.runtime.distributed.DistributedHerder: "TRACE"
+      org.apache.kafka.connect.transforms: "DEBUG"
   # ...
 ----
 
