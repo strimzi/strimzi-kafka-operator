@@ -395,7 +395,11 @@ If you want to use private registries, before executing the tests, you have to c
 
 For tests that use `KafkaConnect` build feature, users can use their own registry to where the result image will be pushed.
 The config is specified by two env variables: `CONNECT_BUILD_IMAGE_PATH` and `CONNECT_BUILD_REGISTRY_SECRET`.
-`CONNECT_BUILD_IMAGE_PATH` has to be in format `<REGISTRY>/<ORGANIZATION>/<IMAGE_NAME>`. 
+`CONNECT_BUILD_IMAGE_PATH` has to be in format `<REGISTRY>/<ORGANIZATION>/<IMAGE_NAME>`.
+The image format has to be without floating tag.
+This is needed because our tests can be executed in parallel so each connect build needs unique tag.
+The tag is generated and appended by tests during the execution.
+
 In case the registry needs authorization, users can specify push-secret by `CONNECT_BUILD_REGISTRY_SECRET`.
 Secret name should reference to k8s secret in `default` namespace.
 In case any of the env vars are not specified, default Minikube or OpenShift registries will be used.
