@@ -7,7 +7,6 @@ package io.strimzi.operator.cluster.leaderelection;
 import io.fabric8.kubernetes.api.model.coordination.v1.Lease;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.server.mock.EnableKubernetesMockClient;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
@@ -19,7 +18,6 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-@Disabled // Disabled because of https://github.com/strimzi/strimzi-kafka-operator/issues/8268
 @EnableKubernetesMockClient(crud = true)
 public class LeaderElectionManagerMockTest {
     private final static String NAMESPACE = "my-le-namespace";
@@ -54,10 +52,10 @@ public class LeaderElectionManagerMockTest {
         le2Leader.await();
         assertThat(getLease().getSpec().getHolderIdentity(), is("le-2"));
 
-        // Stop the second member => the leadership in the lease resource will stay as it was
+        // Stop the second member => the leadership should be released
         le2.stop();
         le2NotLeader.await();
-        assertThat(getLease().getSpec().getHolderIdentity(), anyOf(is("le-2"), nullValue()));
+        assertThat(getLease().getSpec().getHolderIdentity(), anyOf(is(""), nullValue()));
     }
 
     private LeaderElectionManager createLeaderElectionManager(String identity, Runnable startLeadershipCallback, Runnable stopLeadershipCallback)   {
