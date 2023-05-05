@@ -379,7 +379,7 @@ public class ConnectBuildOperator {
                                 && build.getStatus().getOutput().getTo().getImageDigest() != null) {
                             String digest = "@" + build.getStatus().getOutput().getTo().getImageDigest();
                             String image = build.getStatus().getOutputDockerImageReference();
-                            String tag = image.substring(image.lastIndexOf(":"));
+                            String tag = image.lastIndexOf(":") != -1 ? image.substring(image.lastIndexOf(":")) : "latest";
 
                             String imageWithDigest = image.replace(tag, digest);
 
