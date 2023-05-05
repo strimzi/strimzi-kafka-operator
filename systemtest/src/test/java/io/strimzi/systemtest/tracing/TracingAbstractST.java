@@ -12,7 +12,6 @@ import io.strimzi.api.kafka.model.connect.build.JarArtifactBuilder;
 import io.strimzi.api.kafka.model.connect.build.PluginBuilder;
 import io.strimzi.api.kafka.model.tracing.Tracing;
 import io.strimzi.operator.common.Annotations;
-import io.strimzi.operator.common.Util;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
@@ -321,7 +320,7 @@ public abstract class TracingAbstractST extends AbstractST {
         // Current implementation of Jaeger deployment and test parallelism does not allow to run this test with STRIMZI_RBAC_SCOPE=NAMESPACE`
         assumeFalse(Environment.isNamespaceRbacScope());
 
-        final String imageName = Environment.getImageOutputRegistry() + "/" + storageMap.get(extensionContext).getNamespaceName() + "/connect-" + Util.hashStub(String.valueOf(new Random().nextInt(Integer.MAX_VALUE))) + ":latest";
+        final String imageFullPath = Environment.getImageOutputRegistry(storageMap.get(extensionContext).getNamespaceName(), Constants.ST_CONNECT_BUILD_IMAGE_NAME, String.valueOf(new Random().nextInt(Integer.MAX_VALUE)));
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(storageMap.get(extensionContext).getClusterName(), 3, 1).build());
 
@@ -389,17 +388,15 @@ public abstract class TracingAbstractST extends AbstractST {
                 // we need to set this for correct usage of the File plugin - because we need new spec, the kafkaConnectWithFilePlugin
                 // method cannot be used
                 .editOrNewBuild()
-                .withPlugins(new PluginBuilder()
-                    .withName("file-plugin")
-                    .withArtifacts(
-                        new JarArtifactBuilder()
-                            .withUrl(Environment.ST_FILE_PLUGIN_URL)
-                            .build()
-                    )
-                    .build())
-                .withNewDockerOutput()
-                .withImage(imageName)
-                .endDockerOutput()
+                    .withPlugins(new PluginBuilder()
+                        .withName("file-plugin")
+                        .withArtifacts(
+                            new JarArtifactBuilder()
+                                .withUrl(Environment.ST_FILE_PLUGIN_URL)
+                                .build()
+                        )
+                        .build())
+                    .withDockerOutput(KafkaConnectTemplates.dockerOutput(imageFullPath))
                 .endBuild()
             .endSpec()
             .build());
@@ -573,7 +570,7 @@ public abstract class TracingAbstractST extends AbstractST {
     private void deployCertManager(ExtensionContext extensionContext) {
         // create namespace `cert-manager` and add it to stack, to collect logs from it
         cluster.createNamespace(CollectorElement.createCollectorElement(extensionContext.getRequiredTestClass().getName()), CERT_MANAGER_NAMESPACE);
-        StUtils.copyImagePullSecret(CERT_MANAGER_NAMESPACE);
+        StUtils.copyImagePullSecrets(CERT_MANAGER_NAMESPACE);
 
         LOGGER.info("Deploying CertManager from {}", certManagerPath);
         // because we don't want to apply CertManager's file to specific namespace, passing the empty String will do the trick

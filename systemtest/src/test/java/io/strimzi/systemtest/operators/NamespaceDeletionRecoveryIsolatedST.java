@@ -265,7 +265,7 @@ class NamespaceDeletionRecoveryIsolatedST extends AbstractST {
 
         // Recreate namespace
         cluster.createNamespace(clusterOperator.getDeploymentNamespace());
-        StUtils.copyImagePullSecret(clusterOperator.getDeploymentNamespace());
+        StUtils.copyImagePullSecrets(clusterOperator.getDeploymentNamespace());
     }
 
     @BeforeAll

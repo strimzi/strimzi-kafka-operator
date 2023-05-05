@@ -36,7 +36,6 @@ import io.strimzi.api.kafka.model.status.KafkaConnectStatus;
 import io.strimzi.api.kafka.model.status.KafkaConnectorStatus;
 import io.strimzi.api.kafka.model.template.DeploymentStrategy;
 import io.strimzi.operator.common.Annotations;
-import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
@@ -607,7 +606,7 @@ class ConnectIsolatedST extends AbstractST {
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3).build());
 
-        String imageName = Environment.getImageOutputRegistry() + "/" + testStorage.getNamespaceName() + "/connect-" + Util.hashStub(String.valueOf(new Random().nextInt(Integer.MAX_VALUE))) + ":latest";
+        final String imageFullPath = Environment.getImageOutputRegistry(testStorage.getNamespaceName(), Constants.ST_CONNECT_BUILD_IMAGE_NAME, String.valueOf(new Random().nextInt(Integer.MAX_VALUE)));
 
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getTopicName()).build());
 
@@ -631,9 +630,7 @@ class ConnectIsolatedST extends AbstractST {
                 .addToConfig("value.converter", "org.apache.kafka.connect.storage.StringConverter")
                 .withNewBuild()
                     .withPlugins(echoSinkPlugin)
-                    .withNewDockerOutput()
-                        .withImage(imageName)
-                    .endDockerOutput()
+                    .withDockerOutput(KafkaConnectTemplates.dockerOutput(imageFullPath))
                 .endBuild()
             .endSpec()
             .build();
@@ -749,7 +746,7 @@ class ConnectIsolatedST extends AbstractST {
 
         LOGGER.info("Check if actual env variable {} has different value than {}", usedVariable, "test.value");
         assertThat(
-                StUtils.checkEnvVarInPod(namespaceName, kubeClient(namespaceName).listPodsByPrefixInName(KafkaConnectResources.deploymentName(clusterName)).get(0).getMetadata().getName(), usedVariable),
+                StUtils.checkEnvVarInPod(namespaceName, kubeClient().listPodsByPrefixInName(namespaceName, KafkaConnectResources.deploymentName(clusterName)).get(0).getMetadata().getName(), usedVariable),
                 is(not("test.value"))
         );
 
@@ -1136,8 +1133,12 @@ class ConnectIsolatedST extends AbstractST {
 
         LOGGER.info("Check taskMax on Connect pods API");
         for (Pod pod : connectPods) {
-            JsonObject json = new JsonObject(KafkaConnectorUtils.getConnectorSpecFromConnectAPI(namespaceName, pod.getMetadata().getName(), clusterName));
-            assertThat(Integer.parseInt(json.getJsonObject("config").getString("tasks.max")), is(scaleTo));
+            LOGGER.info("Checking taskMax over API for pod {}/{}", pod.getMetadata().getNamespace(), pod.getMetadata().getName());
+            TestUtils.waitFor(String.format("pod's %s API return tasksMax=%s", pod.getMetadata().getName(), scaleTo),
+                Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT_SHORT, () -> {
+                    JsonObject json = new JsonObject(KafkaConnectorUtils.getConnectorSpecFromConnectAPI(namespaceName, pod.getMetadata().getName(), clusterName));
+                    return Integer.parseInt(json.getJsonObject("config").getString("tasks.max")) == scaleTo;
+                });
         }
     }
 

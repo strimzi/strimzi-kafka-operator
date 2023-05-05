@@ -89,7 +89,7 @@ public class StrimziDowngradeIsolatedST extends AbstractUpgradeST {
     @BeforeEach
     void setupEnvironment() {
         cluster.createNamespace(clusterOperator.getDeploymentNamespace());
-        StUtils.copyImagePullSecret(clusterOperator.getDeploymentNamespace());
+        StUtils.copyImagePullSecrets(clusterOperator.getDeploymentNamespace());
     }
 
     @AfterEach
