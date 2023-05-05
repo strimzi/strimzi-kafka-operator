@@ -15,6 +15,7 @@ import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -226,25 +227,26 @@ public class KafkaTopicUtils {
 
     /**
      * Verifies that {@code absentTopicName} topic remains absent in {@code clusterName} Kafka cluster residing in {@code namespaceName},
+     * for two times {@code topicOperatorReconciliationSeconds} duration (in seconds) of Topic Operator reconciliation time,
      * by querying the cluster using kafka scripts from {@code queryingPodName} Pod.
      * @param namespaceName Namespace name
      * @param queryingPodName  the name of the pod to query Kafka topics from
      * @param clusterName name of Kafka cluster
-     * @param absentTopicName name of Kafka topic which should not be created.
+     * @param absentTopicName name of Kafka topic which should not be created
+     * @param topicOperatorReconciliationSeconds interval in seconds for Topic Operator to reconcile
      * @throws AssertionError in case topic is created
      */
-    public static void verifyUnchangedTopicAbsence(String namespaceName, String queryingPodName, String clusterName, String absentTopicName) {
+    public static void verifyUnchangedTopicAbsence(String namespaceName, String queryingPodName, String clusterName, String absentTopicName, int topicOperatorReconciliationSeconds) {
 
-        long poolInterval = Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS; // repeat every second
-        long duration = Constants.RECONCILIATION_INTERVAL; // repeat for ~30sec
-        long startTime = System.currentTimeMillis();
-        long endTime = startTime + duration;
-        LOGGER.info("Verify absence of topic '{}' in listed kafka topics for next {} seconds in Namespace/{}", absentTopicName, duration / 1000, namespaceName);
+        long reconciliationDuration = Duration.ofSeconds(topicOperatorReconciliationSeconds).toMillis();
+        long endTime = System.currentTimeMillis() + 2 * reconciliationDuration;
+
+        LOGGER.info("Verify absence of topic '{}' in listed kafka topics for next {} seconds in Namespace/{}", absentTopicName, reconciliationDuration / 1000, namespaceName);
 
         while (System.currentTimeMillis() < endTime) {
             assertThat(KafkaCmdClient.listTopicsUsingPodCli(namespaceName, queryingPodName, KafkaResources.plainBootstrapAddress(clusterName)), not(hasItems(absentTopicName)));
             try {
-                Thread.sleep(poolInterval);
+                Thread.sleep(Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }

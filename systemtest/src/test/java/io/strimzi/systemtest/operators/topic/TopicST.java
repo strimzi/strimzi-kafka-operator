@@ -613,6 +613,7 @@ public class TopicST extends AbstractST {
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         final String scraperName = mapWithScraperNames.get(extensionContext.getDisplayName());
         final String kafkaTopicName = "topic-without-labels";
+        final int topicOperatorReconciliationSeconds = 10;
 
         // Negative scenario: creating topic without any labels and make sure that TO can't handle this topic
         resourceManager.createResource(extensionContext,
@@ -621,7 +622,7 @@ public class TopicST extends AbstractST {
                 .editSpec()
                     .editEntityOperator()
                         .editTopicOperator()
-                            .withReconciliationIntervalSeconds(10)
+                            .withReconciliationIntervalSeconds(topicOperatorReconciliationSeconds)
                         .endTopicOperator()
                     .endEntityOperator()
                 .endSpec().build()
@@ -641,7 +642,7 @@ public class TopicST extends AbstractST {
         assertThat(cmdKubeClient(namespaceName).list("kafkatopic"), hasItems(kafkaTopicName));
 
         // Checking that TO didn't handle new topic and zk pods don't contain new topic
-        KafkaTopicUtils.verifyUnchangedTopicAbsence(namespaceName, scraperPodName, clusterName, kafkaTopicName);
+        KafkaTopicUtils.verifyUnchangedTopicAbsence(namespaceName, scraperPodName, clusterName, kafkaTopicName, topicOperatorReconciliationSeconds);
 
         // Checking TO logs
         String tOPodName = cmdKubeClient(namespaceName).listResourcesByLabel("pod", Labels.STRIMZI_NAME_LABEL + "=" + clusterName + "-entity-operator").get(0);
