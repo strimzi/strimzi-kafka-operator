@@ -196,7 +196,7 @@ spec:
           name: "*"
         operations:
           - Read
-          - Decribe
+          - Describe
       - resource: # Needed for every topic which is mirrored
           type: topic
           name: "*"
