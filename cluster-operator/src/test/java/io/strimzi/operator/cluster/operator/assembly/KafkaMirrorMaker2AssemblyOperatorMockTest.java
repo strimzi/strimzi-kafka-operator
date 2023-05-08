@@ -164,7 +164,7 @@ public class KafkaMirrorMaker2AssemblyOperatorMockTest {
 
         Checkpoint async = context.checkpoint();
         createMirrorMaker2Cluster(context, mock, false)
-            .onComplete(context.succeedingThenComplete())
+            .onComplete(context.succeeding(i -> { }))
             .compose(i -> {
                 LOGGER.info("Reconciling again -> update");
                 return kco.reconcile(new Reconciliation("test-trigger", KafkaMirrorMaker2.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME));
