@@ -413,12 +413,12 @@ public abstract class AbstractNamespacedResourceOperator<C extends KubernetesCli
      * informer returned by this method is not running and has to be started by the code using it.
      *
      * @param namespace         Namespace on which to inform
-     * @param resyncInterval    The interval in which the resyncInterval of the informer should happen in milliseconds
+     * @param resyncIntervalMs  The interval in which the resync of the informer should happen in milliseconds
      *
      * @return          Informer instance
      */
-    public SharedIndexInformer<T> informer(String namespace, long resyncInterval)   {
-        return runnableInformer(applyNamespace(namespace), resyncInterval);
+    public SharedIndexInformer<T> informer(String namespace, long resyncIntervalMs)   {
+        return runnableInformer(applyNamespace(namespace), resyncIntervalMs);
     }
 
     /**
@@ -428,12 +428,12 @@ public abstract class AbstractNamespacedResourceOperator<C extends KubernetesCli
      *
      * @param namespace         Namespace on which to inform
      * @param selectorLabels    Selector which should be matched by the resources
-     * @param resyncInterval    The interval in which the resyncInterval of the informer should happen in milliseconds
+     * @param resyncIntervalMs  The interval in which the resync of the informer should happen in milliseconds
      *
      * @return                  Informer instance
      */
-    public SharedIndexInformer<T> informer(String namespace, Map<String, String> selectorLabels, long resyncInterval)   {
-        return runnableInformer(applyNamespace(namespace).withLabels(selectorLabels), resyncInterval);
+    public SharedIndexInformer<T> informer(String namespace, Map<String, String> selectorLabels, long resyncIntervalMs)   {
+        return runnableInformer(applyNamespace(namespace).withLabels(selectorLabels), resyncIntervalMs);
     }
 
     /**
@@ -443,24 +443,24 @@ public abstract class AbstractNamespacedResourceOperator<C extends KubernetesCli
      *
      * @param namespace         Namespace on which to inform
      * @param labelSelector     Labels Selector which should be matched by the resources
-     * @param resyncInterval    The interval in which the resyncInterval of the informer should happen in milliseconds
+     * @param resyncIntervalMs  The interval in which the resync of the informer should happen in milliseconds
      *
      * @return                  Informer instance
      */
-    public SharedIndexInformer<T> informer(String namespace, LabelSelector labelSelector, long resyncInterval)   {
-        return runnableInformer(applyNamespace(namespace).withLabelSelector(labelSelector), resyncInterval);
+    public SharedIndexInformer<T> informer(String namespace, LabelSelector labelSelector, long resyncIntervalMs)   {
+        return runnableInformer(applyNamespace(namespace).withLabelSelector(labelSelector), resyncIntervalMs);
     }
 
     /**
      * Creates a runnable informer. Runnable informer is not running yet and need to be started by the code using it.
      *
      * @param informable        Instance of the Informable interface for creating informers
-     * @param resyncInterval    The interval in which the resyncInterval of the informer should happen in milliseconds
+     * @param resyncIntervalMs  The interval in which the resync of the informer should happen in milliseconds
      *
      * @return  Runnable informer
      */
-    private SharedIndexInformer<T> runnableInformer(Informable<T> informable, long resyncInterval)  {
-        return informable.runnableInformer(resyncInterval);
+    private SharedIndexInformer<T> runnableInformer(Informable<T> informable, long resyncIntervalMs)  {
+        return informable.runnableInformer(resyncIntervalMs);
     }
 
     /**

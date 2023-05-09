@@ -26,7 +26,7 @@ public class InformerUtils {
      * @return  Boolean indicating whether the informer should retry or not.
      */
     public static boolean loggingExceptionHandler(String type, boolean isStarted, Throwable throwable) {
-        LOGGER.warnOp("Caught exception in the " + type + " informer which is " + (isStarted ? "started" : "not started"), throwable);
+        LOGGER.errorOp("Caught exception in the " + type + " informer which is " + (isStarted ? "started" : "not started"), throwable);
         // We always want the informer to retry => we just want to log the error
         return true;
     }
@@ -35,10 +35,10 @@ public class InformerUtils {
      * Synchronously stops one or more informers. It will stop them and then wait for the specified timeout for them to
      * actually stop.
      *
-     * @param timeoutMillis     Timeout in milliseconds for how long we will wait for each informer to stop
-     * @param informers         Informers which should be stopped.
+     * @param timeoutMs     Timeout in milliseconds for how long we will wait for each informer to stop
+     * @param informers     Informers which should be stopped.
      */
-    public static void stopAll(long timeoutMillis, SharedIndexInformer<?>... informers) {
+    public static void stopAll(long timeoutMs, SharedIndexInformer<?>... informers) {
         LOGGER.infoOp("Stopping informers");
         for (SharedIndexInformer<?> informer : informers)    {
             informer.stop();
@@ -46,11 +46,11 @@ public class InformerUtils {
 
         try {
             for (SharedIndexInformer<?> informer : informers)    {
-                informer.stopped().toCompletableFuture().get(timeoutMillis, TimeUnit.MILLISECONDS);
+                informer.stopped().toCompletableFuture().get(timeoutMs, TimeUnit.MILLISECONDS);
             }
         } catch (InterruptedException | TimeoutException | ExecutionException e) {
             // We just log the error as we are anyway shutting down
-            LOGGER.warnOp("Interrupted while waiting for the informers to stop", e);
+            LOGGER.warnOp("Failed to wait for the informers to stop", e);
         }
     }
 }

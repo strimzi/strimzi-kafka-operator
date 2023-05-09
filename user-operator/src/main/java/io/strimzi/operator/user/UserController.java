@@ -44,7 +44,7 @@ import java.util.concurrent.TimeoutException;
 public class UserController {
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(UserController.class);
     private static final String RESOURCE_KIND = "KafkaUser";
-    private static final long DEFAULT_RESYNC_PERIOD = 5 * 60 * 1_000L; // 5 minutes by default
+    private static final long DEFAULT_RESYNC_PERIOD_MS = 5 * 60 * 1_000L; // 5 minutes by default
 
     private final KafkaUserOperator userOperator;
     private final ControllerMetricsHolder metrics;
@@ -93,11 +93,11 @@ public class UserController {
         this.workQueue = new ControllerQueue(config.getWorkQueueSize(), this.metrics);
 
         // Secret informer and lister is used to get events about Secrets and get Secrets quickly
-        this.secretInformer = client.secrets().inNamespace(watchedNamespace).withLabels(secretSelector).runnableInformer(DEFAULT_RESYNC_PERIOD);
+        this.secretInformer = client.secrets().inNamespace(watchedNamespace).withLabels(secretSelector).runnableInformer(DEFAULT_RESYNC_PERIOD_MS);
         Lister<Secret> secretLister = new Lister<>(secretInformer.getIndexer());
 
         // KafkaUser informer and lister is used to get events about Users and get Users quickly
-        this.userInformer = Crds.kafkaUserOperation(client).inNamespace(watchedNamespace).withLabels(userSelector).runnableInformer(DEFAULT_RESYNC_PERIOD);
+        this.userInformer = Crds.kafkaUserOperation(client).inNamespace(watchedNamespace).withLabels(userSelector).runnableInformer(DEFAULT_RESYNC_PERIOD_MS);
         Lister<KafkaUser> userLister = new Lister<>(userInformer.getIndexer());
 
         // Creates the scheduled executor service used for periodical reconciliations and progress warnings

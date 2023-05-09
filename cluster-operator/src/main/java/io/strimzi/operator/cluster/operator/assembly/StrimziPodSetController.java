@@ -62,7 +62,7 @@ import java.util.stream.Collectors;
 public class StrimziPodSetController implements Runnable {
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(StrimziPodSetController.class);
 
-    private static final long DEFAULT_RESYNC_PERIOD = 5 * 60 * 1_000L; // 5 minutes by default
+    private static final long DEFAULT_RESYNC_PERIOD_MS = 5 * 60 * 1_000L; // 5 minutes by default
     private static final LabelSelector POD_LABEL_SELECTOR = new LabelSelectorBuilder()
             .withMatchExpressions(new LabelSelectorRequirement(Labels.STRIMZI_KIND_LABEL, "Exists", null))
             .build();
@@ -127,19 +127,19 @@ public class StrimziPodSetController implements Runnable {
 
         // Kafka, KafkaConnect and KafkaMirrorMaker2 informers and listers are used to get the CRs quickly.
         // This is needed for verification of the CR selector labels.
-        this.kafkaInformer = kafkaOperator.informer(watchedNamespace, (crSelectorLabels == null) ? Map.of() : crSelectorLabels.toMap(), DEFAULT_RESYNC_PERIOD);
+        this.kafkaInformer = kafkaOperator.informer(watchedNamespace, (crSelectorLabels == null) ? Map.of() : crSelectorLabels.toMap(), DEFAULT_RESYNC_PERIOD_MS);
         this.kafkaLister = new Lister<>(kafkaInformer.getIndexer());
-        this.kafkaConnectInformer = kafkaConnectOperator.informer(watchedNamespace, (crSelectorLabels == null) ? Map.of() : crSelectorLabels.toMap(), DEFAULT_RESYNC_PERIOD);
+        this.kafkaConnectInformer = kafkaConnectOperator.informer(watchedNamespace, (crSelectorLabels == null) ? Map.of() : crSelectorLabels.toMap(), DEFAULT_RESYNC_PERIOD_MS);
         this.kafkaConnectLister = new Lister<>(kafkaConnectInformer.getIndexer());
-        this.kafkaMirrorMaker2Informer = kafkaMirrorMaker2Operator.informer(watchedNamespace, (crSelectorLabels == null) ? Map.of() : crSelectorLabels.toMap(), DEFAULT_RESYNC_PERIOD);
+        this.kafkaMirrorMaker2Informer = kafkaMirrorMaker2Operator.informer(watchedNamespace, (crSelectorLabels == null) ? Map.of() : crSelectorLabels.toMap(), DEFAULT_RESYNC_PERIOD_MS);
         this.kafkaMirrorMaker2Lister = new Lister<>(kafkaMirrorMaker2Informer.getIndexer());
 
         // StrimziPodSet informer and lister is used to get events about StrimziPodSet and get StrimziPodSet quickly
-        this.strimziPodSetInformer = strimziPodSetOperator.informer(watchedNamespace, DEFAULT_RESYNC_PERIOD);
+        this.strimziPodSetInformer = strimziPodSetOperator.informer(watchedNamespace, DEFAULT_RESYNC_PERIOD_MS);
         this.strimziPodSetLister = new Lister<>(strimziPodSetInformer.getIndexer());
 
         // Pod informer and lister is used to get events about pods and get pods quickly
-        this.podInformer = podOperator.informer(watchedNamespace, POD_LABEL_SELECTOR, DEFAULT_RESYNC_PERIOD);
+        this.podInformer = podOperator.informer(watchedNamespace, POD_LABEL_SELECTOR, DEFAULT_RESYNC_PERIOD_MS);
         this.podLister = new Lister<>(podInformer.getIndexer());
 
         this.controllerThread = new Thread(this, "StrimziPodSetController");
