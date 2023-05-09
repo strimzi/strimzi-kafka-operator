@@ -53,82 +53,92 @@ Very large reassignments should be broken down into a number of smaller reassign
 
 == Specifying topics in a partition reassignment JSON file
 
-The tool uses a reassignment JSON file that specifies the topics to reassign.
+The `kafka-reassign-partitions.sh` tool uses a reassignment JSON file that specifies the topics to reassign.
 You can generate a reassignment JSON file or create a file manually if you want to move specific partitions.
 
-The reassignment JSON file has the following structure:
+A basic reassignment JSON file has the structure presented in the following example, which describes three partitions belonging to two Kafka topics. 
+Each partition is reassigned to a new set of replicas, which are identified by their broker IDs.
+The `version`, `topic`, `partition`, and `replicas` properties are all required. 
 
+.Example partition reassignment JSON file structure
 [source,subs=+quotes]
 ----
 {
-  "version": 1,
-  "partitions": [
-    _<PartitionObjects>_
-  ]
-}
-----
-
-Where _<PartitionObjects>_ is a comma-separated list of objects like:
-
-[source,subs=+quotes]
-----
-{
-  "topic": _<TopicName>_,
-  "partition": _<Partition>_,
-  "replicas": [ _<AssignedBrokerIds>_ ]
-}
-----
-
-The following is an example reassignment JSON file that assigns partition `4` of topic `topic-a` to brokers `2`, `4` and `7`, and partition `2` of topic `topic-b` to brokers `1`, `5` and `7`:
-
-.Example partition reassignment file
-[source,json]
-----
-{
-  "version": 1,
-  "partitions": [
+  "version": 1, # <1>
+  "partitions": [ # <2>
     {
-      "topic": "topic-a",
-      "partition": 4,
-      "replicas": [2,4,7]
+      "topic": "example-topic-1", # <3>
+      "partition": 0, # <4>
+      "replicas": [1, 2, 3] # <5>
     },
     {
-      "topic": "topic-b",
-      "partition": 2,
-      "replicas": [1,5,7]
+      "topic": "example-topic-1",
+      "partition": 1,
+      "replicas": [2, 3, 4]
+    },
+    {
+      "topic": "example-topic-2",
+      "partition": 0,
+      "replicas": [3, 4, 5]
     }
   ]
 }
 ----
+<1> The version of the reassignment JSON file format. Currently, only version 1 is supported, so this should always be 1.
+<2> An array that specifies the partitions to be reassigned. 
+<3> The name of the Kafka topic that the partition belongs to.
+<4> The ID of the partition being reassigned.
+<5> An ordered array of the IDs of the brokers that should be assigned as replicas for this partition. The first broker in the list is the leader replica.
 
-Partitions not included in the JSON are not changed.
+NOTE: Partitions not included in the JSON are not changed.
 
-== Reassigning partitions between JBOD volumes
+If you specify only topics using a `topics` array, the partition reassignment tool reassigns all the partitions belonging to the specified topics.
 
-When using JBOD storage in your Kafka cluster, you can choose to reassign the partitions between specific volumes and their log directories (each volume has a single log directory).
-To reassign a partition to a specific volume, add the `log_dirs` option to _<PartitionObjects>_ in the reassignment JSON file.
-
+.Example reassignment JSON file structure for reassigning all partitions for a topic
 [source,subs=+quotes]
 ----
 {
-  "topic": _<TopicName>_,
-  "partition": _<Partition>_,
-  "replicas": [ _<AssignedBrokerIds>_ ],
-  "log_dirs": [ _<AssignedLogDirs>_ ]
+  "version": 1,
+  "topics": [
+    { "topic": "my-topic"}
+  ]
 }
 ----
 
-The `log_dirs` object should contain the same number of log directories as the number of replicas specified in the `replicas` object.
-The value should be either an absolute path to the log directory, or the `any` keyword.
+== Reassigning partitions between JBOD volumes
 
-.Example partition reassignment file specifying log directories
+When using JBOD storage in your Kafka cluster, you can reassign the partitions between specific volumes and their log directories (each volume has a single log directory).
+
+To reassign a partition to a specific volume, add `log_dirs` values for each partition in the reassignment JSON file.
+Each `log_dirs` array contains the same number of entries as the `replicas` array, since each replica should be assigned to a specific log directory.
+The `log_dirs` array contains either an absolute path to a log directory or the special value `any`. 
+The `any` value indicates that Kafka can choose any available log directory for that replica, which can be useful when reassigning partitions between JBOD volumes.
+
+.Example reassignment JSON file structure with log directories
 [source,subs=+quotes]
 ----
 {
-      "topic": "topic-a",
-      "partition": 4,
-      "replicas": [2,4,7].
-      "log_dirs": [ "/var/lib/kafka/data-0/kafka-log2", "/var/lib/kafka/data-0/kafka-log4", "/var/lib/kafka/data-0/kafka-log7" ]
+  "version": 1,
+  "partitions": [
+    {
+      "topic": "example-topic-1",
+      "partition": 0,
+      "replicas": [1, 2, 3]
+      "log_dirs": ["/var/lib/kafka/data-0/kafka-log1", "any", "/var/lib/kafka/data-1/kafka-log2"]
+    },
+    {
+      "topic": "example-topic-1",
+      "partition": 1,
+      "replicas": [2, 3, 4]
+      "log_dirs": ["any",  "/var/lib/kafka/data-2/kafka-log3", "/var/lib/kafka/data-3/kafka-log4"]
+    },
+    {
+      "topic": "example-topic-2",
+      "partition": 0,
+      "replicas": [3, 4, 5]
+      "log_dirs": ["/var/lib/kafka/data-4/kafka-log5", "any",  "/var/lib/kafka/data-5/kafka-log6"]
+    }
+  ]
 }
 ----
 
