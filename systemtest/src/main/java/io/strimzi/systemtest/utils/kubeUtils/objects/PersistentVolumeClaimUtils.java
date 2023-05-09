@@ -15,7 +15,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.time.Duration;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -90,8 +89,8 @@ public class PersistentVolumeClaimUtils {
         );
     }
 
-    public static void waitForJbodStorageDeletion(String namespaceName, int volumesCount, String clusterName, SingleVolumeStorage... volumes) {
-        int numberOfPVCWhichShouldBeDeleted = Arrays.stream(volumes).filter(
+    public static void waitForJbodStorageDeletion(String namespaceName, int volumesCount, String clusterName, List<SingleVolumeStorage> volumes) {
+        int numberOfPVCWhichShouldBeDeleted = volumes.stream().filter(
             singleVolumeStorage -> ((PersistentClaimStorage) singleVolumeStorage).isDeleteClaim()
         ).collect(Collectors.toList()).size();
 

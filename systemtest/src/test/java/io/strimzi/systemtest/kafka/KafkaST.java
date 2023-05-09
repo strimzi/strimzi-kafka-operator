@@ -13,8 +13,8 @@ import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecurityContextBuilder;
 import io.fabric8.kubernetes.api.model.Service;
+import io.fabric8.kubernetes.api.model.Container;
 import io.strimzi.api.kafka.KafkaTopicList;
-import io.strimzi.api.kafka.model.EntityTopicOperatorSpec;
 import io.strimzi.api.kafka.model.EntityUserOperatorSpec;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaResources;
@@ -60,8 +60,6 @@ import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
-import java.time.Duration;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -79,7 +77,6 @@ import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static java.util.Arrays.asList;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.anyOf;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.emptyOrNullString;
 import static org.hamcrest.Matchers.hasItems;
@@ -232,78 +229,38 @@ class KafkaST extends AbstractST {
         DeploymentUtils.waitForNoRollingUpdate(namespaceName, eoDepName, eoPods);
     }
 
-    @ParallelNamespaceTest
-    @KRaftNotSupported("TopicOperator is not supported by KRaft mode and is used in this test class")
-    void testRemoveTopicOperatorFromEntityOperator(ExtensionContext extensionContext) {
-        final String namespaceName = StUtils.getNamespaceBasedOnRbac(namespace, extensionContext);
-        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
-
-        LOGGER.info("Deploying Kafka cluster {}", clusterName);
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3).build());
-        String eoPodName = kubeClient(namespaceName).listPodsByPrefixInName(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName))
-            .get(0).getMetadata().getName();
-
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, k -> k.getSpec().getEntityOperator().setTopicOperator(null), namespaceName);
-        //Waiting when EO pod will be recreated without TO
-        PodUtils.deletePodWithWait(namespaceName, eoPodName);
-        DeploymentUtils.waitForDeploymentAndPodsReady(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName), 1);
-        PodUtils.waitUntilPodContainersCount(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName), 1);
-
-        //Checking that TO was removed
-        kubeClient(namespaceName).listPodsByPrefixInName(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName)).forEach(pod -> {
-            pod.getSpec().getContainers().forEach(container -> {
-                assertThat(container.getName(), not(containsString("topic-operator")));
-            });
-        });
-
-        eoPodName = kubeClient(namespaceName).listPodsByPrefixInName(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName))
-                .get(0).getMetadata().getName();
-
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, k -> k.getSpec().getEntityOperator().setTopicOperator(new EntityTopicOperatorSpec()), namespaceName);
-        //Waiting when EO pod will be recreated with TO
-        PodUtils.deletePodWithWait(namespaceName, eoPodName);
-        DeploymentUtils.waitForDeploymentAndPodsReady(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName), 1);
-
-        //Checking that TO was created
-        kubeClient(namespaceName).listPodsByPrefixInName(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName)).forEach(pod -> {
-            pod.getSpec().getContainers().forEach(container -> {
-                assertThat(container.getName(), anyOf(
-                    containsString("topic-operator"),
-                    containsString("user-operator"),
-                    containsString("tls-sidecar"))
-                );
-            });
-        });
-    }
-
     /**
      * @description This test case verifies the correct deployment of Entity Operator, i.e., including both User Operator and Topic Operator.
      * Entity Operator is firstly modified to exclude User Operator, afterwards it is modified to default configuration, which includes User Operator.
+     * The next step is removal of Topic Operator itself and finally, also removing User Operator, with Topic Operator being already removed.
      *
      * @steps
-     *  1. - Deploy Kafka with default configuration.
-     *     - Kafka is deployed, entity operator comprises both TopicOperator and User Operator.
-     *  2. - Remove User Operator from the Kafka Custom Resource specification.
-     *     - Entity Operator is redeployed without the User Operator, no other action take place inside the given Kafka cluster.
-     *  3. - Modify configuration of the Kafka Custom Resource by specifying default Entity Operator.
-     *     - Entity Operator is redeployed, comprising User Operator as well.
+     *  1. - Deploy Kafka with Entity Operator set.
+     *     - Kafka is deployed, and Entity Operator consist of both Topic and User Operators
+     *  2. - Remove User Operator from the Kafka specification
+     *     - User Operator container is deleted
+     *  3. - Set User Operator back in the Kafka specification
+     *     - User Operator container is recreated
+     *  4. - Remove Topic Operator from the Kafka specification
+     *     - Topic Operator container is removed Entity Operator
+     *  5. - Remove User Operator from the Kafka specification
+     *     - Entity Operator Pod is removed, as there are no other containers present.
      *
      * @usecase
-     *  - entity-operator
-     *  - topic-operator
-     *  - user-operator
+     *  - Entity Operator
+     *  - Topic Operator
+     *  - User Operator
      */
     @ParallelNamespaceTest
-    void testRemoveUserOperatorFromEntityOperator(ExtensionContext extensionContext) {
+    void testRemoveComponentsFromEntityOperator(ExtensionContext extensionContext) {
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(namespace, extensionContext);
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
-
-        Instant startTime = Instant.now();
 
         LOGGER.info("Deploying Kafka cluster {}", clusterName);
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3).build());
 
+        LOGGER.info("Remove User Operator from Entity Operator");
         KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, k -> k.getSpec().getEntityOperator().setUserOperator(null), namespaceName);
 
         if (!Environment.isKRaftModeEnabled()) {
@@ -312,7 +269,7 @@ class KafkaST extends AbstractST {
             PodUtils.waitUntilPodContainersCount(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName), 2);
 
             //Checking that UO was removed
-            kubeClient(namespaceName).listPodsByPrefixInName(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName)).forEach(pod -> {
+            kubeClient().listPodsByPrefixInName(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName)).forEach(pod -> {
                 pod.getSpec().getContainers().forEach(container -> {
                     assertThat(container.getName(), not(containsString("user-operator")));
                 });
@@ -321,64 +278,51 @@ class KafkaST extends AbstractST {
             DeploymentUtils.waitForDeploymentDeletion(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName));
         }
 
+        LOGGER.info("Recreate User Operator");
         KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, k -> k.getSpec().getEntityOperator().setUserOperator(new EntityUserOperatorSpec()), namespaceName);
         //Waiting when EO pod will be recreated with UO
         DeploymentUtils.waitForDeploymentAndPodsReady(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName), 1);
 
-        //Checking that UO was created
-        kubeClient(namespaceName).listPodsByPrefixInName(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName)).forEach(pod -> {
-            pod.getSpec().getContainers().forEach(container -> {
-                assertThat(container.getName(), anyOf(
-                        containsString("topic-operator"),
-                        containsString("user-operator"),
-                        containsString("tls-sidecar"))
-                );
+        int expectedEOContainerCount = Environment.isKRaftModeEnabled() ? 1 : 3;
+        PodUtils.waitUntilPodContainersCount(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName), expectedEOContainerCount);
+
+        LOGGER.info("Verify that Entity operator and all its component are correctly recreated");
+        // names of containers present in EO pod
+        List<String> entityOperatorContainerNames = kubeClient().listPodsByPrefixInName(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName))
+                .get(0).getSpec().getContainers()
+                .stream()
+                .map(Container::getName)
+                .toList();
+
+        assertThat("user-operator container is not present in EO", entityOperatorContainerNames.stream().anyMatch(name -> name.contains("user-operator")));
+
+        // kraft does not support Topic Operator, therefore removal and recreation of User Operator is all to be tested with kraft enabled, rest of test is without kraft
+        if (!Environment.isKRaftModeEnabled()) {
+            assertThat("tls-sidecar container is not present in EO", entityOperatorContainerNames.stream().anyMatch(name -> name.contains("tls-sidecar")));
+            assertThat("topic-operator container is not present in EO", entityOperatorContainerNames.stream().anyMatch(name -> name.contains("topic-operator")));
+
+            LOGGER.info("Remove Topic Operator from Entity Operator");
+            KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, k -> k.getSpec().getEntityOperator().setTopicOperator(null), namespaceName);
+            DeploymentUtils.waitForDeploymentAndPodsReady(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName), 1);
+            PodUtils.waitUntilPodContainersCount(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName), 1);
+
+            //Checking that TO was removed
+            LOGGER.info("Verify that Topic Operator container is no longer present in Entity Operator Pod");
+            kubeClient().listPodsByPrefixInName(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName)).forEach(pod -> {
+                pod.getSpec().getContainers().forEach(container -> {
+                    assertThat(container.getName(), not(containsString("topic-operator")));
+                });
             });
-        });
 
-        Instant endTime = Instant.now();
-        long duration = Duration.between(startTime, endTime).toSeconds();
-        assertNoCoErrorsLogged(namespaceName, duration);
-    }
+            LOGGER.info("Remove User Operator, after removed Topic Operator");
+            KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, k -> {
+                k.getSpec().getEntityOperator().setUserOperator(null);
+            }, namespaceName);
 
-    @ParallelNamespaceTest
-    @KRaftNotSupported("EntityOperator is not supported by KRaft mode and is used in this test class")
-    void testRemoveUserAndTopicOperatorsFromEntityOperator(ExtensionContext extensionContext) {
-        final String namespaceName = StUtils.getNamespaceBasedOnRbac(namespace, extensionContext);
-        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
-
-        Instant startTime = Instant.now();
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3).build());
-
-        String eoDeploymentName = KafkaResources.entityOperatorDeploymentName(clusterName);
-
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, k -> {
-            k.getSpec().getEntityOperator().setTopicOperator(null);
-            k.getSpec().getEntityOperator().setUserOperator(null);
-        }, namespaceName);
-
-        PodUtils.waitUntilPodStabilityReplicasCount(namespaceName, eoDeploymentName, 0);
-
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, k -> {
-            k.getSpec().getEntityOperator().setTopicOperator(new EntityTopicOperatorSpec());
-            k.getSpec().getEntityOperator().setUserOperator(new EntityUserOperatorSpec());
-        }, namespaceName);
-        DeploymentUtils.waitForDeploymentReady(namespaceName, eoDeploymentName);
-
-        //Checking that EO was created
-        kubeClient().listPodsByPrefixInName(namespaceName, eoDeploymentName).forEach(pod -> {
-            pod.getSpec().getContainers().forEach(container -> {
-                assertThat(container.getName(), anyOf(
-                    containsString("topic-operator"),
-                    containsString("user-operator"),
-                    containsString("tls-sidecar"))
-                );
-            });
-        });
-
-        Instant endTime = Instant.now();
-        long duration = Duration.between(startTime, endTime).toSeconds();
-        assertNoCoErrorsLogged(namespaceName, duration);
+            // both TO and UO are unset, which means EO should not be deployed
+            LOGGER.info("Wait for deletion of Entity Operator Pod");
+            PodUtils.waitUntilPodStabilityReplicasCount(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName), 0);
+        }
     }
 
     @ParallelNamespaceTest
@@ -484,7 +428,7 @@ class KafkaST extends AbstractST {
         cmdKubeClient(namespaceName).deleteByName("kafka", clusterName);
 
         LOGGER.info("Wait for PVCs deletion");
-        PersistentVolumeClaimUtils.waitForJbodStorageDeletion(namespaceName, volumesCount, clusterName, idZeroVolumeModified, idOneVolumeOriginal);
+        PersistentVolumeClaimUtils.waitForJbodStorageDeletion(namespaceName, volumesCount, clusterName, List.of(idZeroVolumeModified, idOneVolumeOriginal));
 
         LOGGER.info("Verify that PVC which are supposed to remain, really persist even after Kafka cluster un-deployment");
         List<String> remainingPVCNames =  kubeClient().listPersistentVolumeClaims(namespaceName, clusterName).stream().map(e -> e.getMetadata().getName()).toList();
