@@ -36,7 +36,7 @@ public abstract class TopicStoreTestBase {
 
         // Create the topic
         store.create(topic)
-            .onComplete(context.succeedingThenComplete())
+            .onComplete(context.succeeding(i -> { }))
 
             // Read the topic
             .compose(v -> store.read(new TopicName(topicName)))
@@ -63,7 +63,7 @@ public abstract class TopicStoreTestBase {
         failedCreateCompleted.future()
                 // update my_topic
                 .compose(v -> store.update(updatedTopic))
-            .onComplete(context.succeedingThenComplete())
+            .onComplete(context.succeeding(i -> { }))
 
             // re-read it and assert equal
             .compose(v -> store.read(new TopicName(topicName)))
@@ -77,7 +77,7 @@ public abstract class TopicStoreTestBase {
 
                 // delete it
                 .compose(v -> store.delete(updatedTopic.getTopicName()))
-                .onComplete(context.succeedingThenComplete())
+                .onComplete(context.succeeding(i -> { }))
 
                 // assert we can't read it again
                 .compose(v -> store.read(new TopicName(topicName)))

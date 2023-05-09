@@ -159,7 +159,7 @@ public class KafkaConnectAssemblyOperatorMockTest {
 
         Checkpoint async = context.checkpoint();
         createConnectCluster(context, mock, false)
-            .onComplete(context.succeedingThenComplete())
+            .onComplete(context.succeeding(i -> { }))
             .compose(v -> {
                 LOGGER.info("Reconciling again -> update");
                 return kco.reconcile(new Reconciliation("test-trigger", KafkaConnect.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME));
@@ -187,7 +187,7 @@ public class KafkaConnectAssemblyOperatorMockTest {
 
         Checkpoint async = context.checkpoint();
         createConnectCluster(context, mock, true)
-                .onComplete(context.succeedingThenComplete())
+                .onComplete(context.succeeding(i -> { }))
                 .compose(v -> {
                     LOGGER.info("Reconciling again -> update");
                     return kco.reconcile(new Reconciliation("test-trigger", KafkaConnect.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME));

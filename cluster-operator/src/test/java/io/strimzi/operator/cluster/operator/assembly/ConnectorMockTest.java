@@ -188,7 +188,7 @@ public class ConnectorMockTest {
         Checkpoint async = testContext.checkpoint();
         // Fail test if watcher closes for any reason
         kafkaConnectOperator.createWatch(NAMESPACE, e -> testContext.failNow(e))
-            .onComplete(testContext.succeedingThenComplete())
+            .onComplete(testContext.succeeding(i -> { }))
             .compose(watch -> {
                 connectWatch = watch;
                 return AbstractConnectOperator.createConnectorWatch(kafkaConnectOperator, NAMESPACE, null);
