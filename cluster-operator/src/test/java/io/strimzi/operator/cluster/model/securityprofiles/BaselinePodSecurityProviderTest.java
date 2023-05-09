@@ -15,7 +15,7 @@ import io.strimzi.api.kafka.model.template.ContainerTemplate;
 import io.strimzi.api.kafka.model.template.ContainerTemplateBuilder;
 import io.strimzi.api.kafka.model.template.PodTemplate;
 import io.strimzi.api.kafka.model.template.PodTemplateBuilder;
-import io.strimzi.operator.PlatformFeaturesAvailability;
+import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.platform.KubernetesVersion;
 import io.strimzi.platform.PlatformFeatures;
 import io.strimzi.plugin.security.profiles.PodSecurityProvider;

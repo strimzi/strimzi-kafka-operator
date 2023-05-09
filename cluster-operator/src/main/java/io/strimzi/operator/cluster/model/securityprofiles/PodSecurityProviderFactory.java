@@ -4,7 +4,7 @@
  */
 package io.strimzi.operator.cluster.model.securityprofiles;
 
-import io.strimzi.operator.PlatformFeaturesAvailability;
+import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.operator.common.InvalidConfigurationException;
 import io.strimzi.platform.KubernetesVersion;
 import io.strimzi.platform.PlatformFeatures;
