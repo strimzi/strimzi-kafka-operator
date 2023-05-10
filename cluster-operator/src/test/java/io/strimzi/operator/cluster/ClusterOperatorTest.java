@@ -41,6 +41,7 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.lessThanOrEqualTo;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -142,7 +143,7 @@ public class ClusterOperatorTest {
                 }).when(mockWatch).close();
                 return mockWatch;
             });
-            when(mockNamespacedCms.inform()).thenAnswer(i -> {
+            when(mockNamespacedCms.runnableInformer(anyLong())).thenAnswer(i -> {
                 numInformers.getAndIncrement();
                 return mockCmInformer;
             });
@@ -155,7 +156,7 @@ public class ClusterOperatorTest {
             SharedIndexInformer mockPodInformer = mock(SharedIndexInformer.class);
             MixedOperation mockNamespacedPods = mock(MixedOperation.class);
             when(mockPodInformer.getIndexer()).thenReturn(mockPodIndexer);
-            when(mockNamespacedPods.inform()).thenAnswer(i -> {
+            when(mockNamespacedPods.runnableInformer(anyLong())).thenAnswer(i -> {
                 numInformers.getAndIncrement();
                 return mockPodInformer;
             });
@@ -235,7 +236,7 @@ public class ClusterOperatorTest {
             }).when(mockWatch).close();
             return mockWatch;
         });
-        when(mockFilteredCms.inform()).thenAnswer(i -> {
+        when(mockFilteredCms.runnableInformer(anyLong())).thenAnswer(i -> {
             numInformers.getAndIncrement();
             return mockCmInformer;
         });
@@ -251,7 +252,7 @@ public class ClusterOperatorTest {
         when(mockFilteredPods.withLabelSelector(any(LabelSelector.class))).thenReturn(mockFilteredPods);
         when(mockPods.inAnyNamespace()).thenReturn(mockFilteredPods);
         when(mockPodInformer.getIndexer()).thenReturn(mockPodIndexer);
-        when(mockFilteredPods.inform()).thenAnswer(i -> {
+        when(mockFilteredPods.runnableInformer(anyLong())).thenAnswer(i -> {
             numInformers.getAndIncrement();
             return mockPodInformer;
         });
