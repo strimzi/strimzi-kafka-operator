@@ -24,7 +24,7 @@ import io.strimzi.operator.cluster.model.logging.LoggingUtils;
 import io.strimzi.operator.cluster.model.metrics.MetricsModel;
 import io.strimzi.operator.common.operator.resource.StrimziPodSetOperator;
 import io.strimzi.platform.KubernetesVersion;
-import io.strimzi.operator.PlatformFeaturesAvailability;
+import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.KafkaMirrorMaker2Cluster;

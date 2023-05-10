@@ -21,7 +21,7 @@ import io.strimzi.api.kafka.model.status.ListenerAddress;
 import io.strimzi.api.kafka.model.status.ListenerAddressBuilder;
 import io.strimzi.api.kafka.model.status.ListenerStatus;
 import io.strimzi.api.kafka.model.storage.Storage;
-import io.strimzi.operator.PlatformFeaturesAvailability;
+import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.model.Ca;
 import io.strimzi.operator.cluster.model.CertUtils;

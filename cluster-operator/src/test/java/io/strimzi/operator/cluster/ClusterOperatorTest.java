@@ -12,7 +12,6 @@ import io.fabric8.kubernetes.client.dsl.AnyNamespaceOperation;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.informers.SharedIndexInformer;
 import io.fabric8.kubernetes.client.informers.cache.Indexer;
-import io.strimzi.operator.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.model.securityprofiles.PodSecurityProviderFactory;
 import io.strimzi.platform.KubernetesVersion;
 import io.vertx.core.Vertx;
