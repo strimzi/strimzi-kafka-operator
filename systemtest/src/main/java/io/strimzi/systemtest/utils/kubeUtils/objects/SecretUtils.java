@@ -178,7 +178,7 @@ public class SecretUtils {
 
         LOGGER.info("Waiting for Secret {}/{} to be deleted", namespace, secretName);
         TestUtils.waitFor(String.format("Deletion of Secret %s#%s", namespace, secretName), Constants.GLOBAL_POLL_INTERVAL, DELETION_TIMEOUT,
-            () -> kubeClient().getSecret(secretName) == null);
+            () -> kubeClient().getSecret(namespace, secretName) == null);
 
         LOGGER.info("Secret {}/{} successfully deleted", namespace, secretName);
     }

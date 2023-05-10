@@ -61,7 +61,6 @@ import static io.strimzi.systemtest.Constants.SANITY;
 import static io.strimzi.systemtest.resources.ResourceManager.kubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.anEmptyMap;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
@@ -278,7 +277,8 @@ public class CruiseControlST extends AbstractST {
         LOGGER.info("Check for default CruiseControl replicaMovementStrategy in pod configuration file.");
         Map<String, Object> actualStrategies = KafkaResource.kafkaClient().inNamespace(namespaceName)
             .withName(clusterName).get().getSpec().getCruiseControl().getConfig();
-        assertThat(actualStrategies, anEmptyMap());
+        // Check that config contains only configurations for max.active.user.tasks
+        assertThat(actualStrategies.size(), is(1));
 
         String ccConfFileContent = cmdKubeClient(namespaceName).execInPodContainer(ccPodName, Constants.CRUISE_CONTROL_CONTAINER_NAME, "cat", Constants.CRUISE_CONTROL_CONFIGURATION_FILE_PATH).out();
         assertThat(ccConfFileContent, not(containsString(replicaMovementStrategies)));
