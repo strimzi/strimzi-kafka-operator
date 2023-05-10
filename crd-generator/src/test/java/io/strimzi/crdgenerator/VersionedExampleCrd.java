@@ -35,14 +35,14 @@ import io.strimzi.crdgenerator.annotations.PresentInVersions;
             scale = {
                 @Crd.Spec.Subresources.Scale(
                     apiVersion = "v1",
-                    labelSelectorPath = "v1.dsdvc",
-                    specReplicasPath = "v1.dcsdvsv",
-                    statusReplicasPath = "v1.sdvsdvs"),
+                    labelSelectorPath = ".spec.v1.dsdvc",
+                    specReplicasPath = ".spec.v1.dcsdvsv",
+                    statusReplicasPath = ".status.v1.sdvsdvs"),
                 @Crd.Spec.Subresources.Scale(
                     apiVersion = "v2",
-                    labelSelectorPath = "v2.ssdv",
-                    specReplicasPath = "v2.dcsdvsv",
-                    statusReplicasPath = "v2.sdvsdvs")
+                    labelSelectorPath = ".spec.v2.ssdv",
+                    specReplicasPath = ".spec.v2.dcsdvsv",
+                    statusReplicasPath = ".status.v2.sdvsdvs")
             }
         ),
         additionalPrinterColumns = {
@@ -89,8 +89,6 @@ public class VersionedExampleCrd<T, U extends Number, V extends U> extends Custo
     @PresentInVersions("v2+")
     public String added;
 
-    public VersionedMapOrList typeChange;
-
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -100,12 +98,11 @@ public class VersionedExampleCrd<T, U extends Number, V extends U> extends Custo
                 someOtherInt == that.someOtherInt &&
                 Objects.equals(ignored, that.ignored) &&
                 Objects.equals(removed, that.removed) &&
-                Objects.equals(added, that.added) &&
-                Objects.equals(typeChange, that.typeChange);
+                Objects.equals(added, that.added);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(ignored, someInt, someOtherInt, removed, added, typeChange);
+        return Objects.hash(ignored, someInt, someOtherInt, removed, added);
     }
 }
