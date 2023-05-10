@@ -170,6 +170,8 @@ public class UserController {
             }
         });
 
+        // Can't stop the informers before the controller, because the controllers depend on the indexers, which depend
+        // on the informers. So stopping the informers first would break the controller and cause errors.
         InformerUtils.stopAll(5_000L, userInformer, secretInformer);
     }
 

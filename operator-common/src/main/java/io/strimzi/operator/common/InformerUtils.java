@@ -32,8 +32,8 @@ public class InformerUtils {
     }
 
     /**
-     * Synchronously stops one or more informers. It will stop them and then wait for the specified timeout for them to
-     * actually stop.
+     * Synchronously stops one or more informers. It will stop them and then wait for up to the specified timeout for
+     * each of them to actually stop.
      *
      * @param timeoutMs     Timeout in milliseconds for how long we will wait for each informer to stop
      * @param informers     Informers which should be stopped.
