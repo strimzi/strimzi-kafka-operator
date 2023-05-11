@@ -12,18 +12,14 @@ import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.specific.BridgeUtils;
 import io.strimzi.test.TestUtils;
-import io.strimzi.test.k8s.KubeClusterResource;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.io.File;
-import java.io.InputStream;
 import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Stack;
-
-import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 
 public class HelmResource implements SpecificResourceType {
 
@@ -101,13 +97,8 @@ public class HelmResource implements SpecificResourceType {
         }
 
         Path pathToChart = new File(HELM_CHART).toPath();
-        String oldNamespace = KubeClusterResource.getInstance().setNamespace("kube-system");
-        InputStream helmAccountAsStream = HelmResource.class.getClassLoader().getResourceAsStream("helm/helm-service-account.yaml");
-        String helmServiceAccount = TestUtils.readResource(helmAccountAsStream);
-        cmdKubeClient().applyContent(helmServiceAccount);
-        KubeClusterResource.getInstance().setNamespace(oldNamespace);
         ResourceManager.helmClient().install(pathToChart, HELM_RELEASE_NAME, values);
-        DeploymentUtils.waitForDeploymentReady(oldNamespace, ResourceManager.getCoDeploymentName());
+        DeploymentUtils.waitForDeploymentReady(namespaceInstallTo, ResourceManager.getCoDeploymentName());
     }
 
     /**
