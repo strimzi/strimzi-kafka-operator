@@ -1,7 +1,7 @@
 apiVersion: kafka.strimzi.io/v1beta2
 kind: Kafka
 metadata:
-  name: my-source-cluster
+  name: cluster-a
 spec:
   kafka:
     version: 3.4.0
@@ -43,7 +43,7 @@ spec:
 apiVersion: kafka.strimzi.io/v1beta2
 kind: Kafka
 metadata:
-  name: my-target-cluster
+  name: cluster-b
 spec:
   kafka:
     version: 3.4.0
@@ -84,9 +84,9 @@ spec:
 apiVersion: kafka.strimzi.io/v1beta2
 kind: KafkaUser
 metadata:
-  name: my-source-user
+  name: cluster-a-user
   labels:
-    strimzi.io/cluster: my-source-cluster
+    strimzi.io/cluster: cluster-a
 spec:
   authentication:
     type: tls
@@ -96,7 +96,7 @@ spec:
       # MirrorSourceConnector
       - resource: # Not needed if offset-syncs.topic.location=target
           type: topic
-          name: mm2-offset-syncs.my-target-cluster.internal
+          name: mm2-offset-syncs.cluster-b.internal
         operations:
           - Read
           - DescribeConfigs
@@ -123,9 +123,9 @@ spec:
 apiVersion: kafka.strimzi.io/v1beta2
 kind: KafkaUser
 metadata:
-  name: my-target-user
+  name: cluster-b-user
   labels:
-    strimzi.io/cluster: my-target-cluster
+    strimzi.io/cluster: cluster-b
 spec:
   authentication:
     type: tls
@@ -182,7 +182,7 @@ spec:
           - Describe
       - resource:
           type: topic
-          name: my-source-cluster.checkpoints.internal
+          name: cluster-a.checkpoints.internal
         operations:
           - Describe
           - Write
@@ -193,15 +193,15 @@ spec:
         operations:
           - Read
           - Describe
-      # MirrorHeartbeatConnector
-      - resource:
-          type: topic
-          name: heartbeats
-        operations:
-          - Read
-          - Describe
-          - Write
-          - Create
+      # MirrorHeartbeatConnector => needed only if the connector is enabled
+      # - resource:
+      #     type: topic
+      #     name: heartbeats
+      #   operations:
+      #     - Read
+      #     - Create
+      #     - Describe
+      #     - Write
 ---
 
 apiVersion: kafka.strimzi.io/v1beta2
@@ -211,30 +211,30 @@ metadata:
 spec:
   version: 3.4.0
   replicas: 1
-  connectCluster: "my-target-cluster"
+  connectCluster: "cluster-b" # Must be the target custer
   clusters:
-    - alias: "my-source-cluster"
-      bootstrapServers: my-source-cluster-kafka-bootstrap:9093
+    - alias: "cluster-a"  # Source cluster
+      bootstrapServers: cluster-a-kafka-bootstrap:9093
       tls:
         trustedCertificates:
-          - secretName: my-source-cluster-cluster-ca-cert
+          - secretName: cluster-a-cluster-ca-cert
             certificate: ca.crt
       authentication:
         type: tls
         certificateAndKey:
-          secretName: my-source-user
+          secretName: cluster-a-user
           certificate: user.crt
           key: user.key
-    - alias: "my-target-cluster"
-      bootstrapServers: my-target-cluster-kafka-bootstrap:9093
+    - alias: "cluster-b" # Target cluster
+      bootstrapServers: cluster-b-kafka-bootstrap:9093
       tls:
         trustedCertificates:
-          - secretName: my-target-cluster-cluster-ca-cert
+          - secretName: cluster-b-cluster-ca-cert
             certificate: ca.crt
       authentication:
         type: tls
         certificateAndKey:
-          secretName: my-target-user
+          secretName: cluster-b-user
           certificate: user.crt
           key: user.key
       config:
@@ -243,17 +243,16 @@ spec:
         offset.storage.replication.factor: -1
         status.storage.replication.factor: -1
   mirrors:
-    - sourceCluster: "my-source-cluster"
-      targetCluster: "my-target-cluster"
+    - sourceCluster: "cluster-a"
+      targetCluster: "cluster-b"
       sourceConnector:
+        tasksMax: 1
         config:
           replication.factor: 1
           offset-syncs.topic.replication.factor: 1
           sync.topic.acls.enabled: "false"
-      heartbeatConnector:
-        config:
-          heartbeats.topic.replication.factor: 1
       checkpointConnector:
+        tasksMax: 1
         config:
           checkpoints.topic.replication.factor: 1
           sync.group.offsets.enabled: "true"

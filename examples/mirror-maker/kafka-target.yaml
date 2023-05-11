@@ -1,7 +1,7 @@
 apiVersion: kafka.strimzi.io/v1beta2
 kind: Kafka
 metadata:
-  name: my-target-cluster
+  name: cluster-b
 spec:
   kafka:
     version: 3.4.0
@@ -25,10 +25,10 @@ spec:
     storage:
       type: jbod
       volumes:
-      - id: 0
-        type: persistent-claim
-        size: 100Gi
-        deleteClaim: false
+        - id: 0
+          type: persistent-claim
+          size: 100Gi
+          deleteClaim: false
   zookeeper:
     replicas: 1
     storage:
