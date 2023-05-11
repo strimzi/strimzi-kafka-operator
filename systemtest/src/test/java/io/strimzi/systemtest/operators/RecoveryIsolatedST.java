@@ -79,8 +79,7 @@ class RecoveryIsolatedST extends AbstractST {
         String kafkaName = KafkaResources.kafkaStatefulSetName(sharedClusterName);
         String kafkaUid = StrimziPodSetUtils.getStrimziPodSetUID(clusterOperator.getDeploymentNamespace(), kafkaName);
 
-        // When scaling to 0, we cannot wait for it because of https://github.com/fabric8io/kubernetes-client/issues/5102
-        kubeClient().getClient().apps().deployments().inNamespace(clusterOperator.getDeploymentNamespace()).withName(Constants.STRIMZI_DEPLOYMENT_NAME).scale(0, false);
+        kubeClient().getClient().apps().deployments().inNamespace(clusterOperator.getDeploymentNamespace()).withName(Constants.STRIMZI_DEPLOYMENT_NAME).scale(0, true);
         StrimziPodSetUtils.deleteStrimziPodSet(clusterOperator.getDeploymentNamespace(), kafkaName);
 
         PodUtils.waitForPodsWithPrefixDeletion(kafkaName);
@@ -98,8 +97,7 @@ class RecoveryIsolatedST extends AbstractST {
         String zookeeperName = KafkaResources.zookeeperStatefulSetName(sharedClusterName);
         String zookeeperUid = StrimziPodSetUtils.getStrimziPodSetUID(clusterOperator.getDeploymentNamespace(), zookeeperName);
 
-        // When scaling to 0, we cannot wait for it because of https://github.com/fabric8io/kubernetes-client/issues/5102
-        kubeClient().getClient().apps().deployments().inNamespace(clusterOperator.getDeploymentNamespace()).withName(Constants.STRIMZI_DEPLOYMENT_NAME).scale(0, false);
+        kubeClient().getClient().apps().deployments().inNamespace(clusterOperator.getDeploymentNamespace()).withName(Constants.STRIMZI_DEPLOYMENT_NAME).scale(0, true);
         StrimziPodSetUtils.deleteStrimziPodSet(clusterOperator.getDeploymentNamespace(), zookeeperName);
 
         PodUtils.waitForPodsWithPrefixDeletion(zookeeperName);
