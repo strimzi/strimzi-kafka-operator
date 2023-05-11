@@ -10,10 +10,12 @@ import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.api.kafka.model.status.KafkaTopicStatus;
+import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.annotations.KRaftNotSupported;
+import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.annotations.ParallelSuite;
 import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.cli.KafkaCmdClient;
@@ -46,6 +48,7 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
@@ -61,11 +64,14 @@ import static io.strimzi.systemtest.utils.specific.MetricsUtils.assertMetricReso
 import static io.strimzi.systemtest.utils.specific.MetricsUtils.assertMetricResourceState;
 import static io.strimzi.systemtest.utils.specific.MetricsUtils.assertMetricResourcesHigherThanOrEqualTo;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
+import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static java.util.Collections.singletonList;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -578,6 +584,78 @@ public class TopicST extends AbstractST {
         LOGGER.info("Wait {} ms for next reconciliation", topicOperatorReconciliationInterval);
         Thread.sleep(topicOperatorReconciliationInterval);
         assertKafkaTopicStatus(topicName, namespace, NotReady, reason, reasonMessage, 2);
+    }
+
+    /**
+     * @description This test case checks that Kafka cluster will not act upon KafkaTopic Custom Resources
+     * which are not of its concern, i.e., KafkaTopic Custom Resources are not labeled accordingly.
+     *
+     * @steps
+     *  1. - Deploy Kafka with short reconciliation time configured on Topic Operator
+     *     - Kafka is deployed
+     *  2. - Create KafkaTopic Custom Resource without any labels provided
+     *     - KafkaTopic Custom resource is created
+     *  3. - Verify that Kafka topic specified by created KafkaTopic is not created
+     *     - Given kafka topic is not present inside Kafka cluster
+     *  4. - Delete given KafkaTopic Custom Resource
+     *     - KafkaTopic Custom Resource is deleted
+     *
+     * @testcase
+     *  - topic-operator
+     *  - kafka-topic
+     *  - labels
+     */
+    @ParallelNamespaceTest
+    @KRaftNotSupported("TopicOperator is not supported by KRaft mode and is used in this test class")
+    void testTopicWithoutLabels(ExtensionContext extensionContext) {
+        final TestStorage testStorage = new TestStorage(extensionContext);
+        final String namespaceName = testStorage.getNamespaceName();
+        final String clusterName = testStorage.getClusterName();
+        final String scraperName = testStorage.getScraperName();
+        final String kafkaTopicName = testStorage.getTargetTopicName();
+        final int topicOperatorReconciliationSeconds = 10;
+
+        // Negative scenario: creating topic without any labels and make sure that TO can't handle this topic
+        resourceManager.createResource(extensionContext,
+            ScraperTemplates.scraperPod(namespaceName, scraperName).build(),
+            KafkaTemplates.kafkaEphemeral(clusterName, 3)
+                .editSpec()
+                    .editEntityOperator()
+                        .editTopicOperator()
+                            .withReconciliationIntervalSeconds(topicOperatorReconciliationSeconds)
+                        .endTopicOperator()
+                    .endEntityOperator()
+                .endSpec().build()
+        );
+
+        final String scraperPodName =  kubeClient().listPodsByPrefixInName(namespaceName, scraperName).get(0).getMetadata().getName();
+
+        LOGGER.info("Create KafkaTopic/{} in Namespace/{} without any label", kafkaTopicName, namespaceName);
+        resourceManager.createResource(extensionContext, false, KafkaTopicTemplates.topic(clusterName, kafkaTopicName, 1, 1, 1)
+            .editMetadata()
+                .withLabels(null)
+            .endMetadata().build()
+        );
+
+        // Checking that resource was created
+        LOGGER.info("Verify presence of KafkaTopic/{} in Namespace/{}", kafkaTopicName, namespaceName);
+        assertThat(cmdKubeClient(namespaceName).list("kafkatopic"), hasItems(kafkaTopicName));
+
+        // Checking that TO didn't handle new topic and zk pods don't contain new topic
+        KafkaTopicUtils.verifyUnchangedTopicAbsence(namespaceName, scraperPodName, clusterName, kafkaTopicName, topicOperatorReconciliationSeconds);
+
+        // Checking TO logs
+        String tOPodName = cmdKubeClient(namespaceName).listResourcesByLabel("pod", Labels.STRIMZI_NAME_LABEL + "=" + clusterName + "-entity-operator").get(0);
+        String tOlogs = kubeClient(namespaceName).logsInSpecificNamespace(namespaceName, tOPodName, "topic-operator");
+        assertThat(tOlogs, not(containsString(String.format("Created topic '%s'", kafkaTopicName))));
+
+        //Deleting topic
+        cmdKubeClient(namespaceName).deleteByName("kafkatopic", kafkaTopicName);
+        KafkaTopicUtils.waitForKafkaTopicDeletion(namespaceName,  kafkaTopicName);
+
+        //Checking kafka topic really is not present inside Kafka cluster
+        List<String> topics = KafkaCmdClient.listTopicsUsingPodCli(namespaceName, scraperPodName, KafkaResources.plainBootstrapAddress(clusterName));
+        assertThat(topics, not(hasItems(kafkaTopicName)));
     }
 
     void assertKafkaTopicStatus(String topicName, String namespace, CustomResourceStatus status, int expectedObservedGeneration) {
