@@ -229,6 +229,7 @@ public class KafkaTopicUtils {
      * Verifies that {@code absentTopicName} topic remains absent in {@code clusterName} Kafka cluster residing in {@code namespaceName},
      * for two times {@code topicOperatorReconciliationSeconds} duration (in seconds) of Topic Operator reconciliation time,
      * by querying the cluster using kafka scripts from {@code queryingPodName} Pod.
+     *
      * @param namespaceName Namespace name
      * @param queryingPodName  the name of the pod to query Kafka topics from
      * @param clusterName name of Kafka cluster
