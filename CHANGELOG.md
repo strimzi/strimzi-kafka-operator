@@ -2,11 +2,11 @@
 
 ## 0.35.0
 
-* Redesigned the `UserOperatorConfig` to make it more efficient and flexible
+* Redesigned the Cluster and User Operator configuration to make it more efficient and flexible
 * Allow multiple imagePullSecrets in the Strimzi Helm chart
 * Remove support for JMX Trans
 * Move feature gate `UseStrimziPodSets` to GA and remove support for StatefulSets
-* Add flag to load dashboards from helm chart
+* Add flag to load Grafana dashboards from Helm Chart
 
 ### Changes, deprecations and removals
 
