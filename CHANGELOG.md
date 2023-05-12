@@ -1,5 +1,8 @@
 # CHANGELOG
 
+## 0.36.0
+
+
 ## 0.35.0
 
 * Redesigned the Cluster and User Operator configuration to make it more efficient and flexible
