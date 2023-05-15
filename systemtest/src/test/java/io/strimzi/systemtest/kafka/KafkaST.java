@@ -64,7 +64,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import static io.strimzi.api.kafka.model.KafkaResources.kafkaStatefulSetName;
 import static io.strimzi.systemtest.Constants.CRUISE_CONTROL;
 import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.LOADBALANCER_SUPPORTED;
@@ -88,6 +87,25 @@ class KafkaST extends AbstractST {
 
     private final String namespace = testSuiteNamespaceManager.getMapOfAdditionalNamespaces().get(KafkaST.class.getSimpleName()).stream().findFirst().get();
 
+
+    /**
+     * @description This test case verifies that Pod's resources (limits and requests), custom JVM configurations, and expected Java configuration
+     * are propagated correctly to Pods, containers, and processes.
+     *
+     * @steps
+     *  1. - Deploy Kafka and its components with custom specifications, including specifying resources and JVM configuration
+     *     - Kafka and its components (Zookeeper, Entity Operator) are deployed
+     *  2. - For each of components (Kafka, Zookeeper, Topic Operator, User Operator), verify specified configuration of JVM, resources, and also environment variables.
+     *     - Each of the components has requests and limits assigned correctly, JVM, and environment variables configured according to the specification.
+     *  3. - Wait for a time to observe that none of initiated components needed Rolling Update.
+     *     - All of Kafka components remained in stable state.
+     *
+     * @usecase
+     *  - JVM
+     *  - configuration
+     *  - resources
+     *  - environment variables
+     */
     @ParallelNamespaceTest
     @KRaftNotSupported("EntityOperator is not supported by KRaft mode and is used in this test class")
     void testJvmAndResources(ExtensionContext extensionContext) {
@@ -165,23 +183,25 @@ class KafkaST extends AbstractST {
             .endSpec()
             .build());
 
-        // Make snapshots for Kafka cluster to meke sure that there is no rolling update after CO reconciliation
-        final String zkStsName = KafkaResources.zookeeperStatefulSetName(clusterName);
-        final String kafkaStsName = kafkaStatefulSetName(clusterName);
+        // Make snapshots for Kafka cluster to make sure that there is no rolling update after CO reconciliation
         final String eoDepName = KafkaResources.entityOperatorDeploymentName(clusterName);
         final Map<String, String> zkPods = PodUtils.podSnapshot(namespaceName, zkSelector);
         final Map<String, String> kafkaPods = PodUtils.podSnapshot(namespaceName, kafkaSelector);
         final Map<String, String> eoPods = DeploymentUtils.depSnapshot(namespaceName, eoDepName);
 
+        LOGGER.info("Verify resources and JVM configuration of Kafka broker Pod");
         assertResources(namespaceName, KafkaResources.kafkaPodName(clusterName, 0), "kafka",
                 "1536Mi", "1", "1Gi", "50m");
         assertExpectedJavaOpts(namespaceName, KafkaResources.kafkaPodName(clusterName, 0), "kafka",
                 "-Xmx1g", "-Xms512m", "-XX:+UseG1GC");
 
+        LOGGER.info("Verify resources and JVM configuration of Zookeeper broker Pod");
         assertResources(namespaceName, KafkaResources.zookeeperPodName(clusterName, 0), "zookeeper",
                 "1G", "500m", "500M", "25m");
         assertExpectedJavaOpts(namespaceName, KafkaResources.zookeeperPodName(clusterName, 0), "zookeeper",
                 "-Xmx1G", "-Xms512M", "-XX:+UseG1GC");
+
+        LOGGER.info("Verify resources, JVM configuration, and environment variables of Entity Operator's components");
 
         Optional<Pod> pod = kubeClient(namespaceName).listPods(namespaceName)
                 .stream().filter(p -> p.getMetadata().getName().startsWith(KafkaResources.entityOperatorDeploymentName(clusterName)))
@@ -757,7 +777,6 @@ class KafkaST extends AbstractST {
         assertThat(kafkaUserResource, containsString(Labels.STRIMZI_CLUSTER_LABEL + ": " + firstClusterName));
     }
 
-
     /**
      * @description This test case verifies correct storage of messages on disk, and their presence even after rolling update of all Kafka Pods. Test case
      * also checks if offset topic related files are present.
@@ -862,6 +881,21 @@ class KafkaST extends AbstractST {
         assertThat("Topic has no data", topicData, notNullValue());
     }
 
+    /**
+     * @description This test case verifies that Kafka (with all its components, including Zookeeper, Entity Operator, Kafka Exporter, Cruise Control) configured with
+     * 'withReadOnlyRootFilesystem' can be deployed and also works correctly.
+     *
+     * @steps
+     *  1. - Deploy persistent Kafka with 3 Kafka and Zookeeper replicas, Entity Operator, Cruise Controller, and Kafka Exporter. Each component has configuration 'withReadOnlyRootFilesystem' set to true.
+     *     - Kafka and its components are deployed.
+     *  2. - Create Kafka producer and consumer.
+     *     - Kafka clients are successfully created.
+     *  3. - Produce and consume messages using created clients.
+     *     - Messages are successfully send and received.
+     *
+     * @usecase
+     *  - root-file-system
+     */
     @ParallelNamespaceTest
     @Tag(INTERNAL_CLIENTS_USED)
     @Tag(CRUISE_CONTROL)
@@ -917,7 +951,9 @@ class KafkaST extends AbstractST {
                 .endSpec()
                 .build();
 
-        kafka.getSpec().getEntityOperator().getTemplate().setTopicOperatorContainer(null);
+        if (Environment.isKRaftModeEnabled()) {
+            kafka.getSpec().getEntityOperator().getTemplate().setTopicOperatorContainer(null);
+        }
 
         resourceManager.createResource(extensionContext, kafka);
 
