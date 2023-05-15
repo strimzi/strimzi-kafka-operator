@@ -29,9 +29,15 @@ spec:
       {{- end }}
     spec:
       serviceAccountName: {{ .Values.serviceAccount }}
-      {{- if .Values.image.imagePullSecrets }}
+      {{- /* imagePullSecrets is allowed to be for backwards compatibility */ -}}
+      {{- if kindIs "string" .Values.image.imagePullSecrets }}
       imagePullSecrets:
         - name: {{ .Values.image.imagePullSecrets }}
+      {{- else if kindIs "slice" .Values.image.imagePullSecrets }}
+      imagePullSecrets:
+        {{- with .Values.image.imagePullSecrets }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
       {{- end }}
       {{- with .Values.podSecurityContext }}
       securityContext: {{ toYaml . | nindent 8 }}
@@ -91,8 +97,6 @@ spec:
               value: {{ template "strimzi.image" (set . "key" "kafkaInit") }}
             - name: STRIMZI_DEFAULT_KAFKA_BRIDGE_IMAGE
               value: {{ template "strimzi.image" (set . "key" "kafkaBridge") }}
-            - name: STRIMZI_DEFAULT_JMXTRANS_IMAGE
-              value: {{ template "strimzi.image" (set . "key" "jmxTrans") }}
             - name: STRIMZI_DEFAULT_KANIKO_EXECUTOR_IMAGE
               value: {{ template "strimzi.image" (set . "key" "kanikoExecutor") }}
             - name: STRIMZI_DEFAULT_MAVEN_BUILDER
@@ -101,9 +105,13 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.namespace
-            {{- if .Values.image.imagePullSecrets }}
+            {{- /* imagePullSecrets is allowed to be for backwards compatibility */ -}}
+            {{- if kindIs "string" .Values.image.imagePullSecrets }}
             - name: STRIMZI_IMAGE_PULL_SECRETS
               value: {{ .Values.image.imagePullSecrets }}
+            {{- else if kindIs "slice" .Values.image.imagePullSecrets }}
+            - name: STRIMZI_IMAGE_PULL_SECRETS
+              value: {{ template "strimzi.listPluck" (dict "list" .Values.image.imagePullSecrets "key" "name") }}
             {{- end }}
             {{- if .Values.image.operatorNamespaceLabels }}
             - name: STRIMZI_OPERATOR_NAMESPACE_LABELS

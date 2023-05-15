@@ -66,7 +66,6 @@ The release process should normally look like this:
         Verify the added data and the digest and if they are correct, copy it to `charts/index.yaml` on the website. 
 
 14. _(only for GA, not for RCs)_ On the `main` git branch of the repository:
-    * Copy the `packaging/helm-charts/index.yaml` from the `release` branch to `main`
     * Update the `ProductVersion` variable in `documentation/using/shared/attributes.adoc`
     * Update the `install`, `examples` and `helm-chart` directories in the `main` branch with the newly released files
     * Update the checksums for released files in `.checksums`
