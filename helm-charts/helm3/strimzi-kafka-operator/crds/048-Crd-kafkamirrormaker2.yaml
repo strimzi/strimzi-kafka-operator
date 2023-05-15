@@ -32,7 +32,7 @@ spec:
           labelSelectorPath: .status.labelSelector
       additionalPrinterColumns:
         - name: Desired replicas
-          description: The desired number of Kafka MirrorMaker 2.0 replicas
+          description: The desired number of Kafka MirrorMaker 2 replicas
           jsonPath: .spec.replicas
           type: integer
         - name: Ready
@@ -51,7 +51,7 @@ spec:
                   description: "The Kafka Connect version. Defaults to {DefaultKafkaVersion}. Consult the user documentation to understand the process required to upgrade or downgrade the version."
                 replicas:
                   type: integer
-                  description: The number of pods in the Kafka Connect group.
+                  description: The number of pods in the Kafka Connect group. Defaults to `3`.
                 image:
                   type: string
                   description: The docker image for the pods.
@@ -88,7 +88,7 @@ spec:
                                 - certificate
                                 - secretName
                             description: Trusted certificates for TLS connection.
-                        description: TLS configuration for connecting MirrorMaker 2.0 connectors to a cluster.
+                        description: TLS configuration for connecting MirrorMaker 2 connectors to a cluster.
                       authentication:
                         type: object
                         properties:
@@ -230,7 +230,7 @@ spec:
                       config:
                         x-kubernetes-preserve-unknown-fields: true
                         type: object
-                        description: "The MirrorMaker 2.0 cluster config. Properties with the following prefixes cannot be set: ssl., sasl., security., listeners, plugin.path, rest., bootstrap.servers, consumer.interceptor.classes, producer.interceptor.classes (with the exception of: ssl.endpoint.identification.algorithm, ssl.cipher.suites, ssl.protocol, ssl.enabled.protocols)."
+                        description: "The MirrorMaker 2 cluster config. Properties with the following prefixes cannot be set: ssl., sasl., security., listeners, plugin.path, rest., bootstrap.servers, consumer.interceptor.classes, producer.interceptor.classes (with the exception of: ssl.endpoint.identification.algorithm, ssl.cipher.suites, ssl.protocol, ssl.enabled.protocols)."
                     required:
                       - alias
                       - bootstrapServers
@@ -242,10 +242,10 @@ spec:
                     properties:
                       sourceCluster:
                         type: string
-                        description: The alias of the source cluster used by the Kafka MirrorMaker 2.0 connectors. The alias must match a cluster in the list at `spec.clusters`.
+                        description: The alias of the source cluster used by the Kafka MirrorMaker 2 connectors. The alias must match a cluster in the list at `spec.clusters`.
                       targetCluster:
                         type: string
-                        description: The alias of the target cluster used by the Kafka MirrorMaker 2.0 connectors. The alias must match a cluster in the list at `spec.clusters`.
+                        description: The alias of the target cluster used by the Kafka MirrorMaker 2 connectors. The alias must match a cluster in the list at `spec.clusters`.
                       sourceConnector:
                         type: object
                         properties:
@@ -267,7 +267,7 @@ spec:
                           pause:
                             type: boolean
                             description: Whether the connector should be paused. Defaults to false.
-                        description: The specification of the Kafka MirrorMaker 2.0 source connector.
+                        description: The specification of the Kafka MirrorMaker 2 source connector.
                       heartbeatConnector:
                         type: object
                         properties:
@@ -289,7 +289,7 @@ spec:
                           pause:
                             type: boolean
                             description: Whether the connector should be paused. Defaults to false.
-                        description: The specification of the Kafka MirrorMaker 2.0 heartbeat connector.
+                        description: The specification of the Kafka MirrorMaker 2 heartbeat connector.
                       checkpointConnector:
                         type: object
                         properties:
@@ -311,7 +311,7 @@ spec:
                           pause:
                             type: boolean
                             description: Whether the connector should be paused. Defaults to false.
-                        description: The specification of the Kafka MirrorMaker 2.0 checkpoint connector.
+                        description: The specification of the Kafka MirrorMaker 2 checkpoint connector.
                       topicsPattern:
                         type: string
                         description: "A regular expression matching the topics to be mirrored, for example, \"topic1\\|topic2\\|topic3\". Comma-separated lists are also supported."
@@ -333,10 +333,17 @@ spec:
                     required:
                       - sourceCluster
                       - targetCluster
-                  description: Configuration of the MirrorMaker 2.0 connectors.
+                  description: Configuration of the MirrorMaker 2 connectors.
                 resources:
                   type: object
                   properties:
+                    claims:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          name:
+                            type: string
                     limits:
                       x-kubernetes-preserve-unknown-fields: true
                       type: object
@@ -477,7 +484,7 @@ spec:
                     topologyKey:
                       type: string
                       example: topology.kubernetes.io/zone
-                      description: "A key that matches labels assigned to the Kubernetes cluster nodes. The value of the label is used to set a broker's `broker.rack` config, and the `client.rack` config for Kafka Connect or MirrorMaker 2.0."
+                      description: "A key that matches labels assigned to the Kubernetes cluster nodes. The value of the label is used to set a broker's `broker.rack` config, and the `client.rack` config for Kafka Connect or MirrorMaker 2."
                   required:
                     - topologyKey
                   description: Configuration of the node label which will be used as the `client.rack` consumer configuration.
@@ -505,11 +512,11 @@ spec:
                             labels:
                               x-kubernetes-preserve-unknown-fields: true
                               type: object
-                              description: "Labels added to the resource template. Can be applied to different resources such as `StatefulSets`, `Deployments`, `Pods`, and `Services`."
+                              description: Labels added to the Kubernetes resource.
                             annotations:
                               x-kubernetes-preserve-unknown-fields: true
                               type: object
-                              description: "Annotations added to the resource template. Can be applied to different resources such as `StatefulSets`, `Deployments`, `Pods`, and `Services`."
+                              description: Annotations added to the Kubernetes resource.
                           description: Metadata applied to the resource.
                         deploymentStrategy:
                           type: string
@@ -527,11 +534,11 @@ spec:
                             labels:
                               x-kubernetes-preserve-unknown-fields: true
                               type: object
-                              description: "Labels added to the resource template. Can be applied to different resources such as `StatefulSets`, `Deployments`, `Pods`, and `Services`."
+                              description: Labels added to the Kubernetes resource.
                             annotations:
                               x-kubernetes-preserve-unknown-fields: true
                               type: object
-                              description: "Annotations added to the resource template. Can be applied to different resources such as `StatefulSets`, `Deployments`, `Pods`, and `Services`."
+                              description: Annotations added to the Kubernetes resource.
                           description: Metadata applied to the resource.
                       description: Template for Kafka Connect `StrimziPodSet` resource.
                     pod:
@@ -543,11 +550,11 @@ spec:
                             labels:
                               x-kubernetes-preserve-unknown-fields: true
                               type: object
-                              description: "Labels added to the resource template. Can be applied to different resources such as `StatefulSets`, `Deployments`, `Pods`, and `Services`."
+                              description: Labels added to the Kubernetes resource.
                             annotations:
                               x-kubernetes-preserve-unknown-fields: true
                               type: object
-                              description: "Annotations added to the resource template. Can be applied to different resources such as `StatefulSets`, `Deployments`, `Pods`, and `Services`."
+                              description: Annotations added to the Kubernetes resource.
                           description: Metadata applied to the resource.
                         imagePullSecrets:
                           type: array
@@ -998,11 +1005,11 @@ spec:
                             labels:
                               x-kubernetes-preserve-unknown-fields: true
                               type: object
-                              description: "Labels added to the resource template. Can be applied to different resources such as `StatefulSets`, `Deployments`, `Pods`, and `Services`."
+                              description: Labels added to the Kubernetes resource.
                             annotations:
                               x-kubernetes-preserve-unknown-fields: true
                               type: object
-                              description: "Annotations added to the resource template. Can be applied to different resources such as `StatefulSets`, `Deployments`, `Pods`, and `Services`."
+                              description: Annotations added to the Kubernetes resource.
                           description: Metadata applied to the resource.
                         ipFamilyPolicy:
                           type: string
@@ -1029,11 +1036,11 @@ spec:
                             labels:
                               x-kubernetes-preserve-unknown-fields: true
                               type: object
-                              description: "Labels added to the resource template. Can be applied to different resources such as `StatefulSets`, `Deployments`, `Pods`, and `Services`."
+                              description: Labels added to the Kubernetes resource.
                             annotations:
                               x-kubernetes-preserve-unknown-fields: true
                               type: object
-                              description: "Annotations added to the resource template. Can be applied to different resources such as `StatefulSets`, `Deployments`, `Pods`, and `Services`."
+                              description: Annotations added to the Kubernetes resource.
                           description: Metadata applied to the resource.
                         ipFamilyPolicy:
                           type: string
@@ -1208,11 +1215,11 @@ spec:
                             labels:
                               x-kubernetes-preserve-unknown-fields: true
                               type: object
-                              description: "Labels added to the resource template. Can be applied to different resources such as `StatefulSets`, `Deployments`, `Pods`, and `Services`."
+                              description: Labels added to the Kubernetes resource.
                             annotations:
                               x-kubernetes-preserve-unknown-fields: true
                               type: object
-                              description: "Annotations added to the resource template. Can be applied to different resources such as `StatefulSets`, `Deployments`, `Pods`, and `Services`."
+                              description: Annotations added to the Kubernetes resource.
                           description: Metadata to apply to the `PodDisruptionBudgetTemplate` resource.
                         maxUnavailable:
                           type: integer
@@ -1228,11 +1235,11 @@ spec:
                             labels:
                               x-kubernetes-preserve-unknown-fields: true
                               type: object
-                              description: "Labels added to the resource template. Can be applied to different resources such as `StatefulSets`, `Deployments`, `Pods`, and `Services`."
+                              description: Labels added to the Kubernetes resource.
                             annotations:
                               x-kubernetes-preserve-unknown-fields: true
                               type: object
-                              description: "Annotations added to the resource template. Can be applied to different resources such as `StatefulSets`, `Deployments`, `Pods`, and `Services`."
+                              description: Annotations added to the Kubernetes resource.
                           description: Metadata applied to the resource.
                       description: Template for the Kafka Connect service account.
                     clusterRoleBinding:
@@ -1244,11 +1251,11 @@ spec:
                             labels:
                               x-kubernetes-preserve-unknown-fields: true
                               type: object
-                              description: "Labels added to the resource template. Can be applied to different resources such as `StatefulSets`, `Deployments`, `Pods`, and `Services`."
+                              description: Labels added to the Kubernetes resource.
                             annotations:
                               x-kubernetes-preserve-unknown-fields: true
                               type: object
-                              description: "Annotations added to the resource template. Can be applied to different resources such as `StatefulSets`, `Deployments`, `Pods`, and `Services`."
+                              description: Annotations added to the Kubernetes resource.
                           description: Metadata applied to the resource.
                       description: Template for the Kafka Connect ClusterRoleBinding.
                     buildPod:
@@ -1260,11 +1267,11 @@ spec:
                             labels:
                               x-kubernetes-preserve-unknown-fields: true
                               type: object
-                              description: "Labels added to the resource template. Can be applied to different resources such as `StatefulSets`, `Deployments`, `Pods`, and `Services`."
+                              description: Labels added to the Kubernetes resource.
                             annotations:
                               x-kubernetes-preserve-unknown-fields: true
                               type: object
-                              description: "Annotations added to the resource template. Can be applied to different resources such as `StatefulSets`, `Deployments`, `Pods`, and `Services`."
+                              description: Annotations added to the Kubernetes resource.
                           description: Metadata applied to the resource.
                         imagePullSecrets:
                           type: array
@@ -1789,11 +1796,11 @@ spec:
                             labels:
                               x-kubernetes-preserve-unknown-fields: true
                               type: object
-                              description: "Labels added to the resource template. Can be applied to different resources such as `StatefulSets`, `Deployments`, `Pods`, and `Services`."
+                              description: Labels added to the Kubernetes resource.
                             annotations:
                               x-kubernetes-preserve-unknown-fields: true
                               type: object
-                              description: "Annotations added to the resource template. Can be applied to different resources such as `StatefulSets`, `Deployments`, `Pods`, and `Services`."
+                              description: Annotations added to the Kubernetes resource.
                           description: Metadata to apply to the `PodDisruptionBudgetTemplate` resource.
                         pullSecret:
                           type: string
@@ -1808,11 +1815,11 @@ spec:
                             labels:
                               x-kubernetes-preserve-unknown-fields: true
                               type: object
-                              description: "Labels added to the resource template. Can be applied to different resources such as `StatefulSets`, `Deployments`, `Pods`, and `Services`."
+                              description: Labels added to the Kubernetes resource.
                             annotations:
                               x-kubernetes-preserve-unknown-fields: true
                               type: object
-                              description: "Annotations added to the resource template. Can be applied to different resources such as `StatefulSets`, `Deployments`, `Pods`, and `Services`."
+                              description: Annotations added to the Kubernetes resource.
                           description: Metadata applied to the resource.
                       description: Template for the Kafka Connect Build service account.
                     jmxSecret:
@@ -1824,11 +1831,11 @@ spec:
                             labels:
                               x-kubernetes-preserve-unknown-fields: true
                               type: object
-                              description: "Labels added to the resource template. Can be applied to different resources such as `StatefulSets`, `Deployments`, `Pods`, and `Services`."
+                              description: Labels added to the Kubernetes resource.
                             annotations:
                               x-kubernetes-preserve-unknown-fields: true
                               type: object
-                              description: "Annotations added to the resource template. Can be applied to different resources such as `StatefulSets`, `Deployments`, `Pods`, and `Services`."
+                              description: Annotations added to the Kubernetes resource.
                           description: Metadata applied to the resource.
                       description: Template for Secret of the Kafka Connect Cluster JMX authentication.
                   description: "Template for Kafka Connect and Kafka Mirror Maker 2 resources. The template allows users to specify how the `Deployment`, `Pods` and `Service` are generated."
@@ -1953,7 +1960,7 @@ spec:
                   description: Metrics configuration.
               required:
                 - connectCluster
-              description: The specification of the Kafka MirrorMaker 2.0 cluster.
+              description: The specification of the Kafka MirrorMaker 2 cluster.
             status:
               type: object
               properties:
@@ -1998,7 +2005,7 @@ spec:
                       lastRestartTimestamp:
                         type: string
                         description: The last time the automatic restart was attempted. The required format is 'yyyy-MM-ddTHH:mm:ssZ' in the UTC time zone.
-                  description: List of MirrorMaker 2.0 connector auto restart statuses.
+                  description: List of MirrorMaker 2 connector auto restart statuses.
                 connectorPlugins:
                   type: array
                   items:
@@ -2019,11 +2026,11 @@ spec:
                   items:
                     x-kubernetes-preserve-unknown-fields: true
                     type: object
-                  description: "List of MirrorMaker 2.0 connector statuses, as reported by the Kafka Connect REST API."
+                  description: "List of MirrorMaker 2 connector statuses, as reported by the Kafka Connect REST API."
                 labelSelector:
                   type: string
                   description: Label selector for pods providing this resource.
                 replicas:
                   type: integer
                   description: The current number of pods being used to provide this resource.
-              description: The status of the Kafka MirrorMaker 2.0 cluster.
+              description: The status of the Kafka MirrorMaker 2 cluster.

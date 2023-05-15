@@ -54,7 +54,7 @@ spec:
                 replicas:
                   type: integer
                   minimum: 0
-                  description: The number of pods in the `Deployment`.
+                  description: The number of pods in the `Deployment`.  Defaults to `1`.
                 image:
                   type: string
                   description: The docker image for the pods.
@@ -270,6 +270,13 @@ spec:
                 resources:
                   type: object
                   properties:
+                    claims:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          name:
+                            type: string
                     limits:
                       x-kubernetes-preserve-unknown-fields: true
                       type: object
@@ -347,7 +354,7 @@ spec:
                     topologyKey:
                       type: string
                       example: topology.kubernetes.io/zone
-                      description: "A key that matches labels assigned to the Kubernetes cluster nodes. The value of the label is used to set a broker's `broker.rack` config, and the `client.rack` config for Kafka Connect or MirrorMaker 2.0."
+                      description: "A key that matches labels assigned to the Kubernetes cluster nodes. The value of the label is used to set a broker's `broker.rack` config, and the `client.rack` config for Kafka Connect or MirrorMaker 2."
                   required:
                     - topologyKey
                   description: Configuration of the node label which will be used as the client.rack consumer configuration.
@@ -414,11 +421,11 @@ spec:
                             labels:
                               x-kubernetes-preserve-unknown-fields: true
                               type: object
-                              description: "Labels added to the resource template. Can be applied to different resources such as `StatefulSets`, `Deployments`, `Pods`, and `Services`."
+                              description: Labels added to the Kubernetes resource.
                             annotations:
                               x-kubernetes-preserve-unknown-fields: true
                               type: object
-                              description: "Annotations added to the resource template. Can be applied to different resources such as `StatefulSets`, `Deployments`, `Pods`, and `Services`."
+                              description: Annotations added to the Kubernetes resource.
                           description: Metadata applied to the resource.
                         deploymentStrategy:
                           type: string
@@ -436,11 +443,11 @@ spec:
                             labels:
                               x-kubernetes-preserve-unknown-fields: true
                               type: object
-                              description: "Labels added to the resource template. Can be applied to different resources such as `StatefulSets`, `Deployments`, `Pods`, and `Services`."
+                              description: Labels added to the Kubernetes resource.
                             annotations:
                               x-kubernetes-preserve-unknown-fields: true
                               type: object
-                              description: "Annotations added to the resource template. Can be applied to different resources such as `StatefulSets`, `Deployments`, `Pods`, and `Services`."
+                              description: Annotations added to the Kubernetes resource.
                           description: Metadata applied to the resource.
                         imagePullSecrets:
                           type: array
@@ -891,11 +898,11 @@ spec:
                             labels:
                               x-kubernetes-preserve-unknown-fields: true
                               type: object
-                              description: "Labels added to the resource template. Can be applied to different resources such as `StatefulSets`, `Deployments`, `Pods`, and `Services`."
+                              description: Labels added to the Kubernetes resource.
                             annotations:
                               x-kubernetes-preserve-unknown-fields: true
                               type: object
-                              description: "Annotations added to the resource template. Can be applied to different resources such as `StatefulSets`, `Deployments`, `Pods`, and `Services`."
+                              description: Annotations added to the Kubernetes resource.
                           description: Metadata applied to the resource.
                         ipFamilyPolicy:
                           type: string
@@ -922,11 +929,11 @@ spec:
                             labels:
                               x-kubernetes-preserve-unknown-fields: true
                               type: object
-                              description: "Labels added to the resource template. Can be applied to different resources such as `StatefulSets`, `Deployments`, `Pods`, and `Services`."
+                              description: Labels added to the Kubernetes resource.
                             annotations:
                               x-kubernetes-preserve-unknown-fields: true
                               type: object
-                              description: "Annotations added to the resource template. Can be applied to different resources such as `StatefulSets`, `Deployments`, `Pods`, and `Services`."
+                              description: Annotations added to the Kubernetes resource.
                           description: Metadata to apply to the `PodDisruptionBudgetTemplate` resource.
                         maxUnavailable:
                           type: integer
@@ -1016,11 +1023,11 @@ spec:
                             labels:
                               x-kubernetes-preserve-unknown-fields: true
                               type: object
-                              description: "Labels added to the resource template. Can be applied to different resources such as `StatefulSets`, `Deployments`, `Pods`, and `Services`."
+                              description: Labels added to the Kubernetes resource.
                             annotations:
                               x-kubernetes-preserve-unknown-fields: true
                               type: object
-                              description: "Annotations added to the resource template. Can be applied to different resources such as `StatefulSets`, `Deployments`, `Pods`, and `Services`."
+                              description: Annotations added to the Kubernetes resource.
                           description: Metadata applied to the resource.
                       description: Template for the Kafka Bridge ClusterRoleBinding.
                     serviceAccount:
@@ -1032,11 +1039,11 @@ spec:
                             labels:
                               x-kubernetes-preserve-unknown-fields: true
                               type: object
-                              description: "Labels added to the resource template. Can be applied to different resources such as `StatefulSets`, `Deployments`, `Pods`, and `Services`."
+                              description: Labels added to the Kubernetes resource.
                             annotations:
                               x-kubernetes-preserve-unknown-fields: true
                               type: object
-                              description: "Annotations added to the resource template. Can be applied to different resources such as `StatefulSets`, `Deployments`, `Pods`, and `Services`."
+                              description: Annotations added to the Kubernetes resource.
                           description: Metadata applied to the resource.
                       description: Template for the Kafka Bridge service account.
                     initContainer:
