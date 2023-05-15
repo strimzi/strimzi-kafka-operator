@@ -16,6 +16,8 @@ If a ConfigMap is used, you set `logging.valueFrom.configMapKeyRef.name` propert
 For more information about log levels, see {ApacheLoggers}.
 
 Here we see examples of `inline` and `external` logging.
+The `inline` logging specifies the root logger level.
+You can also set log levels for specific classes or loggers by adding them to the loggers property.
 
 .Inline logging
 [source,yaml,subs="+quotes,attributes"]
@@ -38,10 +40,11 @@ spec:
         type: inline
         loggers:
           rootLogger.level: INFO
-          io.strimzi.operator.topic.ZkTopicStore: TRACE
-          io.strimzi.operator.topic.TopicOperator: DEBUG
   # ...
 ----
+
+NOTE: When investigating an issue with the operator, it's usually sufficient to change the `rootLogger` to `DEBUG` to get more detailed logs. 
+However, keep in mind that setting the log level to `DEBUG` may result in a large amount of log output and may have performance implications.
 
 .External logging
 [source,yaml,subs="+quotes,attributes"]

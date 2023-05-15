@@ -154,7 +154,7 @@ If the configured image is not compatible with Strimzi images, it might not work
 [id='property-kafka-logging-{context}']
 === `logging`
 
-Kafka has its own configurable loggers:
+Kafka has its own configurable loggers, which include the following:
 
 * `log4j.logger.org.I0Itec.zkclient.ZkClient`
 * `log4j.logger.org.apache.zookeeper`
@@ -178,6 +178,8 @@ If a ConfigMap is used, you set `logging.valueFrom.configMapKeyRef.name` propert
 For more information about log levels, see {ApacheLoggers}.
 
 Here we see examples of `inline` and `external` logging.
+The `inline` logging specifies the root logger level.
+You can also set log levels for specific classes or loggers by adding them to the loggers property.
 
 .Inline logging
 [source,yaml,subs="+quotes,attributes"]
@@ -192,10 +194,15 @@ spec:
       type: inline
       loggers:
         kafka.root.logger.level: "INFO"
-        kafka.log.LogCleaner: "TRACE"
-        org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule: "DEBUG"
+        log4j.logger.kafka.coordinator.transaction: "DEBUG"
+        log4j.logger.kafka.log.LogCleanerManager: "DEBUG"
+        log4j.logger.kafka.request.logger: "DEBUG"
+        log4j.logger.io.strimzi.kafka.oauth: "DEBUG"
+        log4j.logger.org.openpolicyagents.kafka.OpaAuthorizer: "TRACE"
   # ...
 ----
+
+NOTE: Setting a log level to `DEBUG` may result in a large amount of log output and may have performance implications.
 
 .External logging
 [source,yaml,subs="+quotes,attributes"]
