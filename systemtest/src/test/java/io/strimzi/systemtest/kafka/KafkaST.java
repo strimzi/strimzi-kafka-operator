@@ -41,7 +41,6 @@ import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
-import io.strimzi.systemtest.templates.crd.KafkaUserTemplates;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.RollingUpdateUtils;
 import io.strimzi.systemtest.utils.StUtils;
@@ -749,32 +748,6 @@ class KafkaST extends AbstractST {
             kafkaClients.consumerStrimzi()
         );
         ClientUtils.waitForClientsSuccess(testStorage);
-    }
-
-    @ParallelNamespaceTest
-    void testUOListeningOnlyUsersInSameCluster(ExtensionContext extensionContext) {
-        final String namespaceName = StUtils.getNamespaceBasedOnRbac(namespace, extensionContext);
-        final String userName = mapWithTestUsers.get(extensionContext.getDisplayName());
-        final String firstClusterName = "my-cluster-1";
-        final String secondClusterName = "my-cluster-2";
-
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(firstClusterName, 3, 1).build());
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(secondClusterName, 3, 1).build());
-        resourceManager.createResource(extensionContext, KafkaUserTemplates.tlsUser(namespaceName, firstClusterName, userName).build());
-
-        LOGGER.info("Verifying that KafkaUser {} in cluster {} is created", userName, firstClusterName);
-        String entityOperatorPodName = kubeClient(namespaceName).listPodNamesInSpecificNamespace(namespaceName, Labels.STRIMZI_NAME_LABEL, KafkaResources.entityOperatorDeploymentName(firstClusterName)).get(0);
-        String uOLogs = kubeClient(namespaceName).logsInSpecificNamespace(namespaceName, entityOperatorPodName, "user-operator");
-        assertThat(uOLogs, containsString("KafkaUser " + userName + " in namespace " + namespaceName + " was ADDED"));
-
-        LOGGER.info("Verifying that KafkaUser {} in cluster {} is not created", userName, secondClusterName);
-        entityOperatorPodName = kubeClient(namespaceName).listPodNamesInSpecificNamespace(namespaceName, Labels.STRIMZI_NAME_LABEL, KafkaResources.entityOperatorDeploymentName(secondClusterName)).get(0);
-        uOLogs = kubeClient(namespaceName).logsInSpecificNamespace(namespaceName, entityOperatorPodName, "user-operator");
-        assertThat(uOLogs, not(containsString("KafkaUser " + userName + " in namespace " + namespaceName + " was ADDED")));
-
-        LOGGER.info("Verifying that KafkaUser belongs to {} cluster", firstClusterName);
-        String kafkaUserResource = cmdKubeClient(namespaceName).getResourceAsYaml("kafkauser", userName);
-        assertThat(kafkaUserResource, containsString(Labels.STRIMZI_CLUSTER_LABEL + ": " + firstClusterName));
     }
 
     /**
