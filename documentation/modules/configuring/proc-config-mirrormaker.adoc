@@ -76,7 +76,7 @@ spec:
   logging: # <12>
     type: inline
     loggers:
-      mirrormaker.root.logger: "INFO"
+      mirrormaker.root.logger: INFO
   readinessProbe: # <13>
     initialDelaySeconds: 15
     timeoutSeconds: 5

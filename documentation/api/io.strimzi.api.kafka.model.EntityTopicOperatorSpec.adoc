@@ -40,6 +40,8 @@ spec:
         type: inline
         loggers:
           rootLogger.level: INFO
+          logger.io.strimzi.operator.topic.ZkTopicStore: TRACE
+          logger.io.strimzi.operator.topic.TopicOperator: DEBUG
   # ...
 ----
 

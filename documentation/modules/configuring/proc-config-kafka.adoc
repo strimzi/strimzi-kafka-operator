@@ -60,7 +60,7 @@ spec:
     logging: # <3>
       type: inline
       loggers:
-        kafka.root.logger.level: "INFO"
+        kafka.root.logger.level: INFO
     resources: # <4>
       requests:
         memory: 64Gi
@@ -127,7 +127,7 @@ spec:
     logging: # <26>
       type: inline
       loggers:
-        zookeeper.root.logger: "INFO"
+        zookeeper.root.logger: INFO
     resources:
       requests:
         memory: 8Gi

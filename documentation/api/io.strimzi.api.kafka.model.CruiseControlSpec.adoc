@@ -264,6 +264,8 @@ spec:
       type: inline
       loggers:
         rootLogger.level: INFO
+        logger.com.linkedin.kafka.cruisecontrol.executor.Executor: TRACE
+        logger.com.linkedin.kafka.cruisecontrol.analyzer.GoalOptimizer: DEBUG
     # ...
 ----
 

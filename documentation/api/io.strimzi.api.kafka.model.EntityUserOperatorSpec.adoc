@@ -40,6 +40,8 @@ spec:
         type: inline
         loggers:
           rootLogger.level: INFO
+          logger.io.strimzi.operator.user.UserController: TRACE
+          logger.io.strimzi.operator.user.HealthCheckAndMetricsServer: DEBUG
   # ...
 ----
 
