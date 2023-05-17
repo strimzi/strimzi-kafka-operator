@@ -52,8 +52,7 @@ public class InternalServiceTemplate implements HasMetadataTemplate, Serializabl
             "`SingleStack` is for a single IP family. " +
             "`PreferDualStack` is for two IP families on dual-stack configured clusters or a single IP family on single-stack clusters. " +
             "`RequireDualStack` fails unless there are two IP families on dual-stack configured clusters. " +
-            "If unspecified, Kubernetes will choose the default value based on the service type. " +
-            "Available on Kubernetes 1.20 and newer.")
+            "If unspecified, Kubernetes will choose the default value based on the service type.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     @PresentInVersions("v1beta2+")
     public IpFamilyPolicy getIpFamilyPolicy() {
@@ -66,8 +65,7 @@ public class InternalServiceTemplate implements HasMetadataTemplate, Serializabl
 
     @Description("Specifies the IP Families used by the service. " +
             "Available options are `IPv4` and `IPv6. " +
-            "If unspecified, Kubernetes will choose the default value based on the `ipFamilyPolicy` setting. " +
-            "Available on Kubernetes 1.20 and newer.")
+            "If unspecified, Kubernetes will choose the default value based on the `ipFamilyPolicy` setting.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     @PresentInVersions("v1beta2+")
     public List<IpFamily> getIpFamilies() {

@@ -49,8 +49,8 @@ public class PlatformFeaturesAvailabilityTest {
         String version = """
                 {
                   "major": "1",
-                  "minor": "20",
-                  "gitVersion": "v1.20.1",
+                  "minor": "21",
+                  "gitVersion": "v1.21.1",
                   "gitCommit": "c4d752765b3bbac2237bf87cf0b1c2e307844666",
                   "gitTreeState": "clean",
                   "buildDate": "2020-12-18T12:00:47Z",
@@ -66,7 +66,7 @@ public class PlatformFeaturesAvailabilityTest {
         Checkpoint a = context.checkpoint();
 
         PlatformFeaturesAvailability.create(vertx, client).onComplete(context.succeeding(pfa -> context.verify(() -> {
-            assertThat("Versions are not equal", pfa.getKubernetesVersion(), is(KubernetesVersion.V1_20));
+            assertThat("Versions are not equal", pfa.getKubernetesVersion(), is(KubernetesVersion.V1_21));
             a.flag();
         })));
     }
@@ -76,8 +76,8 @@ public class PlatformFeaturesAvailabilityTest {
         String version = """
                 {
                   "major": "1",
-                  "minor": "20",
-                  "gitVersion": "v1.20.1",
+                  "minor": "21",
+                  "gitVersion": "v1.21.1",
                   "gitCommit": "c4d752765b3bbac2237bf87cf0b1c2e307844666",
                   "gitTreeState": "clean",
                   "buildDate": "2020-12-18T12:09:25Z",
@@ -93,7 +93,7 @@ public class PlatformFeaturesAvailabilityTest {
         Checkpoint async = context.checkpoint();
 
         PlatformFeaturesAvailability.create(vertx, client).onComplete(context.succeeding(pfa -> context.verify(() -> {
-            assertThat("Versions are not equal", pfa.getKubernetesVersion(), is(KubernetesVersion.V1_20));
+            assertThat("Versions are not equal", pfa.getKubernetesVersion(), is(KubernetesVersion.V1_21));
             async.flag();
         })));
     }

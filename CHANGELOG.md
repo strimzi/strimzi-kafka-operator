@@ -2,6 +2,10 @@
 
 ## 0.36.0
 
+### Changes, deprecations and removals
+
+* **From Strimzi 0.36.0 on, we support only Kubernetes 1.21 and newer.**
+  Kubernetes 1.19 and 1.20 are not supported anymore.
 
 ## 0.35.0
 

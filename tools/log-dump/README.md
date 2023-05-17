@@ -7,7 +7,7 @@ Moreover, when dealing with internal topics, you have to identify which partitio
 ## Requirements
 
 - bash 5+ (GNU)
-- kubectl 1.19+ (K8s CLI)
+- kubectl 1.21+ (K8s CLI)
 - yq 4.6+ (YAML processor)
 - jshell (JDK 9+)
 
