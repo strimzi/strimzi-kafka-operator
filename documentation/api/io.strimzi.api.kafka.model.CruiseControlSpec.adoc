@@ -264,10 +264,16 @@ spec:
       type: inline
       loggers:
         rootLogger.level: INFO
-        logger.com.linkedin.kafka.cruisecontrol.executor.Executor: TRACE
-        logger.com.linkedin.kafka.cruisecontrol.analyzer.GoalOptimizer: DEBUG
+        logger.exec.name: com.linkedin.kafka.cruisecontrol.executor.Executor # <1>
+        logger.exec.level: TRACE # <2>
+        logger.go.name: com.linkedin.kafka.cruisecontrol.analyzer.GoalOptimizer # <3>
+        logger.go.level: DEBUG # <4>
     # ...
 ----
+<1> Creates a logger for the Cruise Control `Executor` class.
+<2> Sets the logging level for the `Executor` class.
+<3> Creates a logger for the Cruise Control `GoalOptimizer` class.
+<4> Sets the logging level for the `GoalOptimizer` class.
 
 NOTE: When investigating an issue with Cruise Control, it's usually sufficient to change the `rootLogger` to `DEBUG` to get more detailed logs. However, keep in mind that setting the log level to `DEBUG` may result in a large amount of log output and may have performance implications.
 
