@@ -220,4 +220,25 @@ public class SecretUtils {
                 .withNamespace(toNamespace)
             .endMetadata();
     }
+
+    /**
+     * Method which waits for {@code secretName} Secret in {@code namespace} namespace to have
+     * label with {@code labelKey} key and {@code labelValue} value.
+     *
+     * @param namespace name of namespace
+     * @param secretName name of Secret
+     * @param labelKey label key
+     * @param labelValue label value
+     */
+    public static void waitForSpecificLabelKeyValue(String secretName, String namespace, String labelKey, String labelValue) {
+        LOGGER.info("Wait for Secret: {}/{} (Corresponding to KafkaUser) to have expected label: {}={}", namespace, secretName, labelKey, labelValue);
+        TestUtils.waitFor("Wait for the Secret {}: {}/{} to exist while also having label to corresponding Kafka cluster", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
+            () -> kubeClient().listSecrets(namespace)
+                .stream()
+                .anyMatch(secret -> secretName.equals(secret.getMetadata().getName())
+                    && secret.getMetadata().getLabels().containsKey(Labels.STRIMZI_CLUSTER_LABEL)
+                    && secret.getMetadata().getLabels().get(Labels.STRIMZI_CLUSTER_LABEL).equals(labelValue)
+                )
+        );
+    }
 }

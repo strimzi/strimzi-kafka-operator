@@ -445,22 +445,9 @@ class UserST extends AbstractST {
         String kafkaUserResource = cmdKubeClient(namespace).getResourceAsYaml("kafkauser", testStorage.getUsername());
         assertThat(kafkaUserResource, containsString(Labels.STRIMZI_CLUSTER_LABEL + ": " + userListeningClusterName));
 
-        LOGGER.info("Verifying that Secret corresponding to KafkaUser: {}/{} has expected label: {}={}", namespace, testStorage.getUsername(), Labels.STRIMZI_CLUSTER_LABEL, userListeningClusterName);
-        TestUtils.waitFor("Wait for the Secret {}: {}/{} to exist while also having label to corresponding Kafka cluster", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
-            () -> kubeClient().listSecrets(namespace)
-                    .stream()
-                    .anyMatch(secret -> testStorage.getUsername().equals(secret.getMetadata().getName())
-                        && secret.getMetadata().getLabels().containsKey(Labels.STRIMZI_CLUSTER_LABEL)
-                        && secret.getMetadata().getLabels().get(Labels.STRIMZI_CLUSTER_LABEL).equals(userListeningClusterName)
-                    )
-        );
+        SecretUtils.waitForSpecificLabelKeyValue(testStorage.getUsername(), namespace, Labels.STRIMZI_CLUSTER_LABEL, userListeningClusterName);
 
-        LOGGER.info("Verifying KafkaUser: {}/{} is mapped into Kafka resource user in Kafka: {}/{}", namespace, testStorage.getUsername(), namespace, userListeningClusterName);
-        TestUtils.waitFor("Wait for the KafkaUser CR mapping into a Kafka user resource", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
-            () -> {
-                String getUserResult = KafkaCmdClient.describeUserUsingPodCli(namespace, scraperPodName, KafkaResources.plainBootstrapAddress(userListeningClusterName), "CN=" + testStorage.getUsername());
-                return getUserResult.contains(testStorage.getUsername());
-            });
+        KafkaUserUtils.waitForKafkaUserMappingIntoKafkaResource(namespace, testStorage.getUsername(), userListeningClusterName, scraperPodName);
 
         LOGGER.info("Verifying KafkaUser: {}/{} is not present in Kafka ecosystem in Kafka/{}", namespace, testStorage.getUsername(), userIgnoringClusterName);
         String getUserResult = KafkaCmdClient.describeUserUsingPodCli(namespace, scraperPodName, KafkaResources.plainBootstrapAddress(userIgnoringClusterName), "CN=" + testStorage.getUsername());
