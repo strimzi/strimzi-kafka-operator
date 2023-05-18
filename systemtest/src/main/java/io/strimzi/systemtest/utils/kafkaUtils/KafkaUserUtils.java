@@ -7,9 +7,11 @@ package io.strimzi.systemtest.utils.kafkaUtils;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
+import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.KafkaUserSpec;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.cli.KafkaCmdClient;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.ResourceOperation;
 import io.strimzi.systemtest.resources.crd.KafkaUserResource;
@@ -165,5 +167,23 @@ public class KafkaUserUtils {
             return true;
         }, () -> LOGGER.error("Failed to wait for readiness state of these users: {}",
                 KafkaUserResource.kafkaUserClient().inNamespace(namespaceName).list().getItems().stream().filter(kafkaUser -> kafkaUser.getMetadata().getName().startsWith(usersPrefix)).toList()));
+    }
+
+    /**
+     * Method which waits for {@code userName} KafkaUser custom resource to be mapped into kafka resource 'user' in {@code clusterName}
+     * Kafka Cluster residing in {@code namespace} namespace, by usage of scripts executed from {@code scraperPodName} Pod.
+     *
+     * @param namespace name of namespace, where all used resources (Kafka Cluster, KafkaUser, scraping Pod) should reside
+     * @param userName prefix of KafkaUsers for which KafkaUserSpec will be checked
+     * @param clusterName Kafka Cluster name
+     * @param scraperPodName name of the Pod used to execute kafka scripts in order to verify presence of kafka 'user' resource
+     */
+    public static void waitForKafkaUserMappingIntoKafkaResource(String namespace, String userName, String clusterName, String scraperPodName) {
+        LOGGER.info("Wait for KafkaUser: {}/{} to be mapped into Kafka resource user in Kafka: {}/{}", namespace, userName, namespace, clusterName);
+        TestUtils.waitFor("Wait for the KafkaUser CR mapping into a Kafka user resource", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
+            () -> {
+                String getUserResult = KafkaCmdClient.describeUserUsingPodCli(namespace, scraperPodName, KafkaResources.plainBootstrapAddress(clusterName), "CN=" + userName);
+                return getUserResult.contains(userName);
+            });
     }
 }
