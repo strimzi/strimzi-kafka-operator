@@ -441,10 +441,10 @@ public class Session extends AbstractVerticle {
                          .requestHandler(request -> {
                              switch (request.path()) {
                                  case "/healthy":
-                                     request.response().setStatusCode(tos.isAlive() ? 200 : 500).end();
+                                     request.response().setStatusCode(tos.isAlive() ? 204 : 500).end();
                                      break;
                                  case "/ready":
-                                     request.response().setStatusCode(tos.isReady() ? 200 : 500).end();
+                                     request.response().setStatusCode(tos.isReady() ? 204 : 500).end();
                                      break;
                                  case "/metrics":
                                      request.response().setStatusCode(200).end(metricsRegistry.scrape());

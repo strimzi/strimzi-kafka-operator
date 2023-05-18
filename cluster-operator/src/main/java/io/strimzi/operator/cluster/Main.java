@@ -326,9 +326,9 @@ public class Main {
         vertx.createHttpServer()
                 .requestHandler(request -> {
                     if (request.path().equals("/healthy")) {
-                        request.response().setStatusCode(200).end();
+                        request.response().setStatusCode(204).end();
                     } else if (request.path().equals("/ready")) {
-                        request.response().setStatusCode(200).end();
+                        request.response().setStatusCode(204).end();
                     } else if (request.path().equals("/metrics")) {
                         PrometheusMeterRegistry metrics = (PrometheusMeterRegistry) metricsProvider.meterRegistry();
                         request.response().setStatusCode(200)
