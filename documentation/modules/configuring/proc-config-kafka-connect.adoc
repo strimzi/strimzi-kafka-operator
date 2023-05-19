@@ -118,7 +118,7 @@ spec:
   logging: # <13>
     type: inline
     loggers:
-      log4j.rootLogger: "INFO"
+      log4j.rootLogger: INFO
   readinessProbe: # <14>
     initialDelaySeconds: 15
     timeoutSeconds: 5

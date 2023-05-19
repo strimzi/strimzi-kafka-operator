@@ -234,7 +234,7 @@ spec:
 For more information, refer to the xref:type-BrokerCapacity-reference[BrokerCapacity schema reference].
 
 [id='property-cruise-control-logging-{context}']
-=== Logging configuration
+=== `logging`
 
 Cruise Control has its own configurable logger:
 
@@ -246,7 +246,10 @@ Use the `logging` property to configure loggers and logger levels.
 
 You can set the log levels by specifying the logger and level directly (inline) or use a custom (external) ConfigMap.
 If a ConfigMap is used, you set `logging.valueFrom.configMapKeyRef.name` property to the name of the ConfigMap containing the external logging configuration. Inside the ConfigMap, the logging configuration is described using `log4j.properties`. Both `logging.valueFrom.configMapKeyRef.name` and `logging.valueFrom.configMapKeyRef.key` properties are mandatory. A ConfigMap using the exact logging configuration specified is created with the custom resource when the Cluster Operator is running, then recreated after each reconciliation. If you do not specify a custom ConfigMap, default logging settings are used. If a specific logger value is not set, upper-level logger settings are inherited for that logger.
+
 Here we see examples of `inline` and `external` logging.
+The `inline` logging specifies the root logger level.
+You can also set log levels for specific classes or loggers by adding them to the loggers property.
 
 .Inline logging
 [source,yaml,subs="+quotes,attributes"]
@@ -260,9 +263,19 @@ spec:
     logging:
       type: inline
       loggers:
-        rootLogger.level: "INFO"
+        rootLogger.level: INFO
+        logger.exec.name: com.linkedin.kafka.cruisecontrol.executor.Executor # <1>
+        logger.exec.level: TRACE # <2>
+        logger.go.name: com.linkedin.kafka.cruisecontrol.analyzer.GoalOptimizer # <3>
+        logger.go.level: DEBUG # <4>
     # ...
 ----
+<1> Creates a logger for the Cruise Control `Executor` class.
+<2> Sets the logging level for the `Executor` class.
+<3> Creates a logger for the Cruise Control `GoalOptimizer` class.
+<4> Sets the logging level for the `GoalOptimizer` class.
+
+NOTE: When investigating an issue with Cruise Control, it's usually sufficient to change the `rootLogger` to `DEBUG` to get more detailed logs. However, keep in mind that setting the log level to `DEBUG` may result in a large amount of log output and may have performance implications.
 
 .External logging
 [source,yaml,subs="+quotes,attributes"]

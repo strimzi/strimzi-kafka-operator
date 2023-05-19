@@ -150,7 +150,7 @@ spec:
   logging: # <37>
     type: inline
     loggers:
-      connect.root.logger.level: "INFO"
+      connect.root.logger.level: INFO
   readinessProbe: # <38>
     initialDelaySeconds: 15
     timeoutSeconds: 5
