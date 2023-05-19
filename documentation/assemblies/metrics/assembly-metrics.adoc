@@ -21,7 +21,7 @@ To facilitate metrics integration, Strimzi provides example Prometheus rules and
 You can customize the example Grafana dashboards to suit your specific deployment requirements.
 You can use rules to define conditions that trigger notifications based on specific metrics.
 
-Depending on your monitoringrequirements, you can do the following:
+Depending on your monitoring requirements, you can do the following:
 
 * xref:assembly-metrics-setup-{context}[Set up and deploy Prometheus to expose metrics]
 * xref:proc-metrics-kafka-deploy-options-{context}[Deploy Kafka Exporter to provide additional metrics]
