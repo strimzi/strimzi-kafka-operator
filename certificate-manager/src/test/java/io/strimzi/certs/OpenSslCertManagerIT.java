@@ -301,7 +301,8 @@ public class OpenSslCertManagerIT {
                 .withCommonName("MyCommonName")
                 .withOrganizationName("MyOrganization")
                 .addDnsName("example1.com")
-                .addDnsName("example2.com").build();
+                .addDnsName("example2.com")
+                .addDnsName("example3.com.").build();
 
         File cert = Files.createTempFile("crt-", ".crt").toFile();
 
