@@ -47,7 +47,7 @@
     flakyEnvVariable: none
     reason: Test is working on all environment used by QE.
   featureGatesBefore: ""
-  featureGatesAfter: "-UseStrimziPodSets"
+  featureGatesAfter: ""
 - fromVersion: HEAD
   toVersion: 0.35.0
   fromExamples: HEAD
