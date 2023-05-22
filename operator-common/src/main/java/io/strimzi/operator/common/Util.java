@@ -42,8 +42,6 @@ import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.security.Provider;
-import java.security.Security;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.text.ParseException;
@@ -311,7 +309,6 @@ public class Util {
      * Logs environment variables into the regular log file.
      */
     public static void printEnvInfo() {
-        // Log the environment variables
         Map<String, String> env = new HashMap<>(System.getenv());
         StringBuilder sb = new StringBuilder();
 
@@ -320,15 +317,10 @@ public class Util {
         }
 
         LOGGER.infoOp("Using config:\n" + sb);
-
-        // Log the default security provider
-        for (Provider provider : Security.getProviders()) {
-            LOGGER.infoOp("Found security provider: " + provider.getInfo());
-        }
     }
 
     /**
-     * Gets environment variable, checks if it contains a password and in case it does it mask the output. It expects
+     * Gets environment variable, checks if it contains a password and in case it does it masks the output. It expects
      * environment variables with passwords to contain `PASSWORD` in their name.
      *
      * @param key   Name of the environment variable
@@ -532,7 +524,7 @@ public class Util {
     }
 
     /**
-     * Gets the first 8 characters from an SHA-1 hash of the provided String
+     * Gets the first 8 characters from a SHA-1 hash of the provided String
      *
      * @param   toBeHashed  String for which the hash will be returned
      *
@@ -543,7 +535,7 @@ public class Util {
     }
 
     /**
-     * Gets the first 8 characters from an SHA-1 hash of the provided byte array
+     * Gets the first 8 characters from a SHA-1 hash of the provided byte array
      *
      * @param   toBeHashed  Byte array for which the hash will be returned
      * @return              First 8 characters of the SHA-1 hash
@@ -554,7 +546,7 @@ public class Util {
     }
 
     /**
-     * Get an SHA-1 hash of the provided byte array
+     * Get a SHA-1 hash of the provided byte array
      *
      * @param toBeHashed    Byte array for which the hash will be returned
      * @return              SHA-1 hash

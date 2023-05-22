@@ -20,10 +20,10 @@ public class KafkaVersionTestUtils {
 
     private static final Set<String> SUPPORTED_VERSIONS = new KafkaVersion.Lookup(Collections.emptyMap(), Collections.emptyMap(), Collections.emptyMap(), Collections.emptyMap()).supportedVersions();
 
-    public static final String LATEST_KAFKA_VERSION = "3.4.0";
+    public static final String LATEST_KAFKA_VERSION = "3.4.1";
     public static final String LATEST_FORMAT_VERSION = "3.4";
     public static final String LATEST_PROTOCOL_VERSION = "3.4";
-    public static final String LATEST_ZOOKEEPER_VERSION = "3.6.3";
+    public static final String LATEST_ZOOKEEPER_VERSION = "3.6.4";
     public static final String LATEST_CHECKSUM = "ABCD1234";
     public static final String LATEST_THIRD_PARTY_VERSION = "3.4.x";
     public static final String LATEST_KAFKA_IMAGE = KAFKA_IMAGE_STR + LATEST_KAFKA_VERSION;
