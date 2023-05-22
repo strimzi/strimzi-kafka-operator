@@ -37,6 +37,9 @@ public class KafkaCrdIT extends AbstractCrdIT {
 
     @Test
     void testKafkaWithExtraProperty() {
+        // oc tool does not fail with extra properties, it shows only a warning. So this test does not pass on OpenShift
+        assumeKube();
+
         Throwable exception = assertThrows(
             KubeClusterException.class,
             () -> createDeleteCustomResource("Kafka-with-extra-property.yaml"));
