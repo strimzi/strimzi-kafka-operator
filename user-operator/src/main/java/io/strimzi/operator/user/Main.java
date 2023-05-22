@@ -22,6 +22,7 @@ import io.strimzi.operator.common.MetricsProvider;
 import io.strimzi.operator.common.MicrometerMetricsProvider;
 import io.strimzi.operator.common.OperatorKubernetesClientBuilder;
 import io.strimzi.operator.common.Util;
+import io.strimzi.operator.common.http.HealthCheckAndMetricsServer;
 import io.strimzi.operator.user.operator.DisabledScramCredentialsOperator;
 import io.strimzi.operator.user.operator.DisabledSimpleAclOperator;
 import io.strimzi.operator.user.operator.KafkaUserOperator;
@@ -99,7 +100,7 @@ public class Main {
         );
 
         // Create the health check and metrics server
-        HealthCheckAndMetricsServer healthCheckAndMetricsServer = new HealthCheckAndMetricsServer(controller, metricsProvider);
+        HealthCheckAndMetricsServer healthCheckAndMetricsServer = new HealthCheckAndMetricsServer(controller, controller, metricsProvider);
 
         // Start health check server, KafkaUser operator and the controller
         healthCheckAndMetricsServer.start();
