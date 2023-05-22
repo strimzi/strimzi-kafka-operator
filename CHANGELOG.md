@@ -2,6 +2,7 @@
 
 ## 0.36.0
 
+* Add support for Apache Kafka 3.5.0 and remove support for 3.3.1 and 3.3.2
 * Update Kafka Exporter to [1.7.0](https://github.com/danielqsj/kafka_exporter/releases/tag/v1.7.0)
 
 ### Changes, deprecations and removals
