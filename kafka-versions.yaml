@@ -245,4 +245,13 @@
   zookeeper: 3.6.3
   third-party-libs: 3.4.x
   supported: true
+  default: false
+- version: 3.4.1
+  format: 3.4
+  protocol: 3.4
+  url: https://home.apache.org/~showuon/kafka-3.4.1-rc1/kafka_2.13-3.4.1.tgz
+  checksum: 9F34B4EB0C62D90B68BCEC368CDB4BE9745B3ED263218F604A30C122FA67047CC3AD054334307D13FA25140D6F2D789445F8B183CE5E78BB47ED7659EE864CAC
+  zookeeper: 3.6.4
+  third-party-libs: 3.4.x
+  supported: true
   default: true
