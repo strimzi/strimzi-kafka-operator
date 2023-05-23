@@ -14,12 +14,12 @@ Additionally, you can collect metrics specific to `oauth` authentication and `op
 Similarly, you can enable metrics for `oauth` authentication in custom resources such as `KafkaBridge`, `KafkaConnect`, `KafkaMirrorMaker`, and `KafkaMirrorMaker2`.
 
 You can use Prometheus and Grafana to monitor Strimzi.
-Prometheus consumes key metrics from the running pods in your cluster when configured with Prometheus rules. 
+Prometheus consumes metrics from the running pods in your cluster when configured with Prometheus rules. 
 Grafana visualizes these metrics on dashboards, providing an intuitive interface for monitoring. 
 
 To facilitate metrics integration, Strimzi provides example Prometheus rules and Grafana dashboards for Strimzi components. 
 You can customize the example Grafana dashboards to suit your specific deployment requirements.
-You can use rules to define conditions that trigger notifications based on specific metrics.
+You can use rules to define conditions that trigger alerts based on specific metrics.
 
 Depending on your monitoring requirements, you can do the following:
 
