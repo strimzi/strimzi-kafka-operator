@@ -1,0 +1,11 @@
+jobs:
+  - job: tests
+    trigger: pull_request
+    identifier: "acceptance"
+    targets:
+      - strimzi
+    skip_build: true
+    fmf_url: "https://github.com/kornys/strimzi-kafka-operator/"
+    fmf_ref: tft-integration
+
+
