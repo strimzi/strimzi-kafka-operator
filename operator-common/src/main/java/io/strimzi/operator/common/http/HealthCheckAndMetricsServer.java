@@ -8,6 +8,7 @@ import io.micrometer.prometheus.PrometheusMeterRegistry;
 import io.strimzi.operator.common.MetricsProvider;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.handler.AbstractHandler;
@@ -51,11 +52,11 @@ public class HealthCheckAndMetricsServer {
      * @param readiness         Callback used for the readiness check.
      * @param metricsProvider   Metrics provider for integrating Prometheus metrics.
      */
-    /*test*/ HealthCheckAndMetricsServer(int port, Liveness liveness, Readiness readiness, MetricsProvider metricsProvider) {
+    public HealthCheckAndMetricsServer(int port, Liveness liveness, Readiness readiness, MetricsProvider metricsProvider) {
         this.liveness = liveness;
         this.readiness = readiness;
         // If the metrics provider is Prometheus based, we integrate it into the webserver
-        this.prometheusMeterRegistry = metricsProvider.meterRegistry() instanceof PrometheusMeterRegistry ? (PrometheusMeterRegistry) metricsProvider.meterRegistry() : null;
+        this.prometheusMeterRegistry = metricsProvider != null && metricsProvider.meterRegistry() instanceof PrometheusMeterRegistry ? (PrometheusMeterRegistry) metricsProvider.meterRegistry() : null;
 
         // Set up the Jetty webserver
         server = new Server(port);
@@ -63,29 +64,26 @@ public class HealthCheckAndMetricsServer {
         // Configure Handlers
         ContextHandlerCollection contexts = new ContextHandlerCollection();
 
-        ContextHandler metricsContext = new ContextHandler();
-        metricsContext.setContextPath("/metrics");
-        metricsContext.setHandler(new MetricsHandler());
-        metricsContext.setAllowNullPathInfo(true);
-        contexts.addHandler(metricsContext);
+        contexts.addHandler(contextHandler("/metrics", new MetricsHandler()));
 
         if (liveness != null) {
-            ContextHandler healthyContext = new ContextHandler();
-            healthyContext.setContextPath("/healthy");
-            healthyContext.setHandler(new HealthyHandler());
-            healthyContext.setAllowNullPathInfo(true);
-            contexts.addHandler(healthyContext);
+            contexts.addHandler(contextHandler("/healthy", new HealthyHandler()));
         }
 
         if (readiness != null) {
-            ContextHandler readyContext = new ContextHandler();
-            readyContext.setContextPath("/ready");
-            readyContext.setHandler(new ReadyHandler());
-            readyContext.setAllowNullPathInfo(true);
-            contexts.addHandler(readyContext);
+            contexts.addHandler(contextHandler("/ready", new ReadyHandler()));
         }
 
         server.setHandler(contexts);
+    }
+
+    private static ContextHandler contextHandler(String path, Handler handler) {
+        LOGGER.debug("Configuring path {} with handler {}", path, handler);
+        ContextHandler metricsContext = new ContextHandler();
+        metricsContext.setContextPath(path);
+        metricsContext.setHandler(handler);
+        metricsContext.setAllowNullPathInfo(true);
+        return metricsContext;
     }
 
     /**
@@ -127,7 +125,7 @@ public class HealthCheckAndMetricsServer {
                 response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
                 response.getWriter().println("{\"status\": \"not-ok\"}");
             }
-
+            LOGGER.debug("Responding {} to GET /healthy", response.getStatus());
             baseRequest.setHandled(true);
         }
     }
@@ -146,8 +144,9 @@ public class HealthCheckAndMetricsServer {
             } else {
                 response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
                 response.getWriter().println("{\"status\": \"not-ok\"}");
-            }
 
+            }
+            LOGGER.debug("Responding {} to GET /ready", response.getStatus());
             baseRequest.setHandled(true);
         }
     }
