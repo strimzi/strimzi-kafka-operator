@@ -2,6 +2,8 @@
 
 ## 0.36.0
 
+* Update Kafka Exporter to [1.7.0](https://github.com/danielqsj/kafka_exporter/releases/tag/v1.7.0)
+
 ### Changes, deprecations and removals
 
 * **From Strimzi 0.36.0 on, we support only Kubernetes 1.21 and newer.**
