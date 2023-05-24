@@ -12,6 +12,7 @@ import io.fabric8.openshift.api.model.operatorhub.v1.OperatorGroup;
 import io.fabric8.openshift.api.model.operatorhub.v1.OperatorGroupBuilder;
 import io.fabric8.openshift.api.model.operatorhub.v1alpha1.Subscription;
 import io.fabric8.openshift.api.model.operatorhub.v1alpha1.SubscriptionBuilder;
+import io.fabric8.openshift.client.OpenShiftClient;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.enums.OlmInstallationStrategy;
 import io.strimzi.systemtest.resources.ResourceItem;
@@ -111,6 +112,27 @@ public class OlmResource implements SpecificResourceType {
      */
 
     private void createAndModifySubscription() {
+        Subscription subscription = prepareSubscription(olmConfiguration);
+
+        ResourceManager.getInstance().createResource(olmConfiguration.getExtensionContext(), subscription);
+    }
+    public void updateSubscription(OlmConfiguration olmConfiguration) {
+        this.olmConfiguration = olmConfiguration;
+        // add CSV resource to the end of the stack -> to be deleted after the subscription and operator group
+        ResourceManager.STORED_RESOURCES
+            .get(olmConfiguration.getExtensionContext().getDisplayName())
+            .add(ResourceManager.STORED_RESOURCES
+                    .get(olmConfiguration.getExtensionContext().getDisplayName()).size(),
+                new ResourceItem(this::deleteCSV));
+        Subscription subscription = prepareSubscription(this.olmConfiguration);
+        // This is just a workaround until we implement update in ResourceManager
+        ResourceManager.kubeClient().getClient().adapt(OpenShiftClient.class).operatorHub().subscriptions()
+                .inNamespace(subscription.getMetadata().getNamespace())
+                .resource(subscription)
+                .patch();
+    }
+
+    public Subscription prepareSubscription(OlmConfiguration olmConfiguration) {
         Subscription subscription = new SubscriptionBuilder()
             .editOrNewMetadata()
                 .withName("strimzi-sub")
@@ -133,24 +155,14 @@ public class OlmResource implements SpecificResourceType {
         // Change default values for Cluster Operator memory when RESOURCE_ALLOCATION_STRATEGY is not set to NOT_SHARED
         if (KubeClusterResource.getInstance().fipsEnabled()) {
             ResourceRequirements resourceRequirements = new ResourceRequirementsBuilder()
-                .withRequests(Map.of("memory", new Quantity(Constants.CO_REQUESTS_MEMORY), "cpu", new Quantity(Constants.CO_REQUESTS_CPU)))
-                .withLimits(Map.of("memory", new Quantity(Constants.CO_LIMITS_MEMORY), "cpu", new Quantity(Constants.CO_LIMITS_CPU)))
-                .build();
+                    .withRequests(Map.of("memory", new Quantity(Constants.CO_REQUESTS_MEMORY), "cpu", new Quantity(Constants.CO_REQUESTS_CPU)))
+                    .withLimits(Map.of("memory", new Quantity(Constants.CO_LIMITS_MEMORY), "cpu", new Quantity(Constants.CO_LIMITS_CPU)))
+                    .build();
 
             subscription.getSpec().getConfig().setResources(resourceRequirements);
         }
 
-        ResourceManager.getInstance().createResource(olmConfiguration.getExtensionContext(), subscription);
-    }
-    public void updateSubscription(OlmConfiguration olmConfiguration) {
-        this.olmConfiguration = olmConfiguration;
-        // add CSV resource to the end of the stack -> to be deleted after the subscription and operator group
-        ResourceManager.STORED_RESOURCES
-            .get(olmConfiguration.getExtensionContext().getDisplayName())
-            .add(ResourceManager.STORED_RESOURCES
-                    .get(olmConfiguration.getExtensionContext().getDisplayName()).size(),
-                new ResourceItem(this::deleteCSV));
-        createAndModifySubscription();
+        return subscription;
     }
 
     /**
