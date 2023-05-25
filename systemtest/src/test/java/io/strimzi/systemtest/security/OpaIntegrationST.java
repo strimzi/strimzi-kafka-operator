@@ -31,12 +31,14 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.io.IOException;
 
+import static io.strimzi.systemtest.Constants.ARM_UNSUPPORTED;
 import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 
 @Tag(REGRESSION)
 @Tag(INTERNAL_CLIENTS_USED)
+@Tag(ARM_UNSUPPORTED)
 @ParallelSuite
 public class OpaIntegrationST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(OpaIntegrationST.class);
