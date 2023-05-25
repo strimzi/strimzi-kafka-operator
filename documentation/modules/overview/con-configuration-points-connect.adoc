@@ -208,7 +208,7 @@ spec:
 <6> Location of the external data file. In this example, we're configuring the `FileStreamSourceConnector` to read from the `/opt/kafka/LICENSE` file.
 <7> Kafka topic to publish the source data to.
 
-NOTE: You can link:{BookURLConfiguring}#assembly-loading-config-with-providers-str[load confidential configuration values for a connector^] from Kubernetes Secrets or ConfigMaps.
+NOTE: You can link:{BookURLDeploying}#assembly-loading-config-with-providers-str[load confidential configuration values for a connector^] from external sources, such as Kubernetes Secrets or ConfigMaps.
 
 [discrete]
 == Kafka Connect API
@@ -254,4 +254,4 @@ Use advisedly as the connection is insecure.
 * link:{BookURLDeploying}#creating-new-image-from-base-str[Creating a Docker image from the Kafka Connect base image^]
 * link:{BookURLConfiguring}#type-Build-reference[Build schema reference^]
 * link:{BookURLDeploying}#kafkaconnector-configs[Source and sink connector configuration options^]
-* link:{BookURLConfiguring}#assembly-loading-config-with-providers-str[Loading configuration values from external sources^]
+* link:{BookURLDeploying}#assembly-loading-config-with-providers-str[Loading configuration values from external sources^]

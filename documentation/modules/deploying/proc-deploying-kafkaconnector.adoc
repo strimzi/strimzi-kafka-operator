@@ -26,7 +26,7 @@ You can use your own connectors or try the examples provided by Strimzi.
 Up until Apache Kafka 3.1.0, example file connector plugins were included with Apache Kafka. 
 Starting from the 3.1.1 and 3.2.0 releases of Apache Kafka, the examples need to be xref:using-kafka-connect-with-plug-ins-str[added to the plugin path as any other connector]. 
 
-Strimzi provides an xref:deploy-examples-{context}[example `KafkaConnector` configuration file] (`examples/connect/source-connector.yaml`) for the example file connector plugins, which creates the following connector instances as `KafkaConnector` resources:
+Strimzi provides an xref:config-examples-{context}[example `KafkaConnector` configuration file] (`examples/connect/source-connector.yaml`) for the example file connector plugins, which creates the following connector instances as `KafkaConnector` resources:
 
 * A `FileStreamSourceConnector` instance that reads each line from the Kafka license file (the source) and writes the data as messages to a single Kafka topic.
 * A `FileStreamSinkConnector` instance that reads messages from the Kafka topic and writes the messages to a temporary file (the sink).

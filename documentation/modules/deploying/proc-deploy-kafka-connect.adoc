@@ -12,7 +12,7 @@ A Kafka Connect cluster deployment is implemented with a configurable number of 
 
 The deployment uses a YAML file to provide the specification to create a `KafkaConnect` resource.
 
-Strimzi provides xref:deploy-examples-{context}[example configuration files].
+Strimzi provides xref:config-examples-{context}[example configuration files].
 In this procedure, we use the following example file:
 
 * `examples/connect/kafka-connect.yaml`

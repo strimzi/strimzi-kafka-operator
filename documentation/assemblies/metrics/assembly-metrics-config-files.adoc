@@ -8,7 +8,7 @@
 = Example metrics files
 
 [role="_abstract"]
-You can find example Grafana dashboards and other metrics configuration files in the xref:deploy-examples-{context}[example configuration files] provided by Strimzi.
+You can find example Grafana dashboards and other metrics configuration files in the xref:config-examples-{context}[example configuration files] provided by Strimzi.
 
 .Example metrics files provided with Strimzi
 [source]

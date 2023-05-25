@@ -15,7 +15,7 @@ As a result, the `KafkaMirrorMaker` custom resource which is used to deploy Kafk
 The `KafkaMirrorMaker` resource will be removed from Strimzi when we adopt Apache Kafka 4.0.0.
 As a replacement, use the `KafkaMirrorMaker2` custom resource with the link:{BookURLConfiguring}#unidirectional_replication_activepassive[`IdentityReplicationPolicy`].
 
-Strimzi provides xref:deploy-examples-{context}[example configuration files].
+Strimzi provides xref:config-examples-{context}[example configuration files].
 In this procedure, we use the following example files:
 
 * `examples/mirror-maker/kafka-mirror-maker.yaml`

@@ -236,5 +236,5 @@ You can use these metrics to gauge whether or not you need to tune your configur
 [role="_additional-resources"]
 .Additional resources
 
-* xref:assembly-metrics-setup-{context}[]
+* xref:assembly-metrics-{context}[]
 * xref:using-kafka-connect-with-plug-ins-{context}[]
