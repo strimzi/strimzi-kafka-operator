@@ -363,6 +363,11 @@ public interface Constants {
      */
     String ROUTE = "route";
 
+    /**
+     * Tag for tests, without ARM,AARCH64 support
+     */
+    String ARM64_UNSUPPORTED = "arm64unsupported";
+
     String ISOLATED_TEST = "isolatedtest";
     String PARALLEL_TEST = "paralleltest";
     /**

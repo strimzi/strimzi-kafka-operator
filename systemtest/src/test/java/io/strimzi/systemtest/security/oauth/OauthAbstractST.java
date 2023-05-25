@@ -32,6 +32,7 @@ import java.util.stream.Collectors;
 import java.util.HashMap;
 import java.util.Map;
 
+import static io.strimzi.systemtest.Constants.ARM64_UNSUPPORTED;
 import static io.strimzi.systemtest.Constants.OAUTH;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 
@@ -40,6 +41,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 @Tag(OAUTH)
 @Tag(REGRESSION)
+@Tag(ARM64_UNSUPPORTED)
 public class OauthAbstractST extends AbstractST {
 
     protected static final Logger LOGGER = LogManager.getLogger(OauthAbstractST.class);

@@ -51,6 +51,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static io.strimzi.systemtest.Constants.ARM64_UNSUPPORTED;
 import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.OAUTH;
 import static io.strimzi.systemtest.Constants.REGRESSION;
@@ -59,6 +60,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 @Tag(OAUTH)
 @Tag(REGRESSION)
 @Tag(INTERNAL_CLIENTS_USED)
+@Tag(ARM64_UNSUPPORTED)
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @IsolatedSuite
 @KRaftNotSupported("OAuth is not supported by KRaft mode and is used in this test case")
