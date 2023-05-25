@@ -161,3 +161,16 @@ The following table describes connector properties and the connectors you config
 |✓
 
 |===
+
+== Aligning the configuration of MirrorMaker 2 connectors
+
+To ensure that MirrorMaker 2 connectors work properly, make sure to align certain configuration settings across connectors.
+Specifically, ensure that the following properties have the same value across all applicable connectors:
+
+* `replication.policy.class`
+* `replication.policy.separator`
+* `offset-syncs.topic.location`
+* `topic.filter.class`
+
+For example, the value for `replication.policy.class` must be the same for the source, checkpoint, and heart connectors.
+Mismatched or missing settings can lead to issues with data replication or offset syncing, so it's essential to keep all relevant connectors configured with the same settings.

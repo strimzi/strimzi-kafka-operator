@@ -132,6 +132,8 @@ spec:
         enabled: true
       config:
         heartbeats.topic.replication.factor: 1 # <29>
+        replication.policy.separator: "."
+        replication.policy.class: "org.apache.kafka.connect.mirror.IdentityReplicationPolicy"
     checkpointConnector: # <30>
       autoRestart:
         enabled: true
@@ -141,6 +143,7 @@ spec:
         sync.group.offsets.enabled: true # <33>
         sync.group.offsets.interval.seconds: 60 # <34>
         emit.checkpoints.interval.seconds: 60 # <35>
+        replication.policy.separator: "."
         replication.policy.class: "org.apache.kafka.connect.mirror.IdentityReplicationPolicy"
     topicsPattern: "topic1|topic2|topic3" # <36>
     groupsPattern: "group1|group2|group3" # <37>
