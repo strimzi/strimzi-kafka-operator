@@ -60,7 +60,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
-import static io.strimzi.systemtest.Constants.ARM_UNSUPPORTED;
+import static io.strimzi.systemtest.Constants.ARM64_UNSUPPORTED;
 import static io.strimzi.systemtest.Constants.BRIDGE;
 import static io.strimzi.systemtest.Constants.CONNECT;
 import static io.strimzi.systemtest.Constants.CONNECT_COMPONENTS;
@@ -79,7 +79,7 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
 @Tag(OAUTH)
 @Tag(REGRESSION)
-@Tag(ARM_UNSUPPORTED)
+@Tag(ARM64_UNSUPPORTED)
 @IsolatedSuite
 @FIPSNotSupported("Keycloak is not customized to run on FIPS env - https://github.com/strimzi/strimzi-kafka-operator/issues/8331")
 public class OauthPlainIsolatedST extends OauthAbstractST {

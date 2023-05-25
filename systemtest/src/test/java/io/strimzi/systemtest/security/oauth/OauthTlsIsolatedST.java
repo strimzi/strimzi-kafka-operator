@@ -48,7 +48,7 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
 import static io.strimzi.systemtest.Constants.ACCEPTANCE;
-import static io.strimzi.systemtest.Constants.ARM_UNSUPPORTED;
+import static io.strimzi.systemtest.Constants.ARM64_UNSUPPORTED;
 import static io.strimzi.systemtest.Constants.BRIDGE;
 import static io.strimzi.systemtest.Constants.CONNECT;
 import static io.strimzi.systemtest.Constants.CONNECT_COMPONENTS;
@@ -66,7 +66,7 @@ import static org.junit.jupiter.api.Assumptions.assumeFalse;
 @Tag(OAUTH)
 @Tag(REGRESSION)
 @Tag(ACCEPTANCE)
-@Tag(ARM_UNSUPPORTED)
+@Tag(ARM64_UNSUPPORTED)
 @IsolatedSuite
 @KRaftNotSupported("OAuth is not supported by KRaft mode and is used in this test case")
 @FIPSNotSupported("Keycloak is not customized to run on FIPS env - https://github.com/strimzi/strimzi-kafka-operator/issues/8331")
