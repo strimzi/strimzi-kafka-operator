@@ -28,7 +28,10 @@ public class IpAndDnsValidation {
                 "[a-zA-Z\\d]|" +
                 // followed by more labels of same
                 "[a-zA-Z\\d][a-zA-Z\\d\\-]{0,61}[a-zA-Z\\d])";
-        DNS_NAME = Pattern.compile("^" + dnsLabel + "(\\." + dnsLabel + ")*");
+        // a trailing dot that can be used to force FQDN resolutions, reducing
+        // the internal DNS server load (kube-dns pods) and application latency
+        String trailingDot = "\\.?";
+        DNS_NAME = Pattern.compile("^" + dnsLabel + "(\\." + dnsLabel + ")*" + trailingDot);
     }
 
     // Pattern used to normalize the segments of the IPv6 address
