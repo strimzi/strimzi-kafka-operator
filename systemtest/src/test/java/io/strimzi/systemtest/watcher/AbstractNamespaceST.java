@@ -6,16 +6,17 @@ package io.strimzi.systemtest.watcher;
 
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
+import io.strimzi.api.kafka.model.CruiseControlSpec;
 import io.strimzi.api.kafka.model.KafkaConnect;
+import io.strimzi.api.kafka.model.KafkaExporterSpec;
 import io.strimzi.api.kafka.model.KafkaResources;
-import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
-import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.annotations.KRaftNotSupported;
+import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.cli.KafkaCmdClient;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
@@ -30,11 +31,8 @@ import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaUserTemplates;
 import io.strimzi.systemtest.templates.specific.ScraperTemplates;
 import io.strimzi.systemtest.utils.ClientUtils;
-import io.strimzi.systemtest.utils.kafkaUtils.KafkaBridgeUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectorUtils;
-import io.strimzi.systemtest.utils.kafkaUtils.KafkaMirrorMaker2Utils;
-import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.annotations.IsolatedSuite;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -73,7 +71,7 @@ public abstract class AbstractNamespaceST extends AbstractST {
     // name of kafka cluster which is to be created before any of these tests
     static final String PRIMARY_KAFKA_NAME = "primary-kafka";
 
-    static String scraperPodName = null;
+    static String scraperPodName = "";
 
     /**
      * @description This test case verifies that Kafka (including components Cruise Control and Exporter) deployed in namespace different from one where Cluster Operator
@@ -88,12 +86,12 @@ public abstract class AbstractNamespaceST extends AbstractST {
      *  - cluster-operator-watcher
      *  - kafka
      */
-    @IsolatedTest
+    @ParallelTest
     final void testDeployKafkaWithOperandsInNamespaceDifferentFromCO() {
-        LOGGER.info("Verifying that Kafka: {}/{} ,its Kafka Exporter and Cruise Control are in ready state", MAIN_TEST_NAMESPACE, PRIMARY_KAFKA_NAME);
-        KafkaUtils.waitForKafkaReady(MAIN_TEST_NAMESPACE, PRIMARY_KAFKA_NAME);
+        LOGGER.info("Verifying that Kafka: {}/{} ,and its component (Kafka Exporter and Cruise Control) are deployed correctly", MAIN_TEST_NAMESPACE, PRIMARY_KAFKA_NAME);
         assertThat("Cruise Control deployment is not ready", kubeClient().getDeploymentStatus(MAIN_TEST_NAMESPACE, PRIMARY_KAFKA_NAME + "-cruise-control"));
         assertThat("Kafka Exporter deployment is not ready", kubeClient().getDeploymentStatus(MAIN_TEST_NAMESPACE, PRIMARY_KAFKA_NAME + "-kafka-exporter"));
+        assertThat("Kafka Exporter deployment is not ready", kubeClient().getDeploymentStatus(MAIN_TEST_NAMESPACE, PRIMARY_KAFKA_NAME + "-entity-operator"));
     }
 
     /**
@@ -109,10 +107,10 @@ public abstract class AbstractNamespaceST extends AbstractST {
      *  - cluster-operator-watcher
      *  - bridge
      */
-    @IsolatedTest
+    @ParallelTest
     final void testKafkaBridgeInDifferentNamespaceFromCO(ExtensionContext extensionContext) {
-        TestStorage testStorage = new TestStorage(extensionContext, MAIN_TEST_NAMESPACE);
-        String bridgeName = testStorage.getClusterName() + "-bridge";
+        final TestStorage testStorage = new TestStorage(extensionContext, MAIN_TEST_NAMESPACE);
+        final String bridgeName = testStorage.getClusterName() + "-bridge";
 
         LOGGER.info("Creating KafkaBridge: {}/{} in namespace different from Cluster Operator's", MAIN_TEST_NAMESPACE, bridgeName);
         resourceManager.createResource(extensionContext, KafkaBridgeTemplates.kafkaBridge(bridgeName,
@@ -122,9 +120,6 @@ public abstract class AbstractNamespaceST extends AbstractST {
             .endMetadata()
             .build()
         );
-
-        LOGGER.info("Verifying KafkaBridge: {}/{} transition into ready state", MAIN_TEST_NAMESPACE, bridgeName);
-        KafkaBridgeUtils.waitForKafkaBridgeReady(testStorage.getNamespaceName(), bridgeName);
     }
 
     /**
@@ -141,13 +136,14 @@ public abstract class AbstractNamespaceST extends AbstractST {
      *  - namespaces
      *  - topic-operator-watcher
      */
-    @IsolatedTest
+    @ParallelTest
     @KRaftNotSupported("TopicOperator is not supported by KRaft mode and is used in this test case")
     final void testTopicOperatorWatchingOtherNamespace(ExtensionContext extensionContext) {
 
         LOGGER.info("Topic Operator in Kafka: {}/{} watches KafkaTopics in (different) Namespace: {}", MAIN_TEST_NAMESPACE, PRIMARY_KAFKA_NAME, PRIMARY_KAFKA_WATCHED_NAMESPACE);
 
-        String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
+
+        final String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
         LOGGER.info("Verifying that KafkaTopic: {}/{} does not exist before test", PRIMARY_KAFKA_WATCHED_NAMESPACE, topicName);
         List<String> topics = KafkaCmdClient.listTopicsUsingPodCli(MAIN_TEST_NAMESPACE, scraperPodName, KafkaResources.plainBootstrapAddress(PRIMARY_KAFKA_NAME));
         assertThat(topics, not(hasItems(topicName)));
@@ -156,30 +152,6 @@ public abstract class AbstractNamespaceST extends AbstractST {
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(PRIMARY_KAFKA_NAME, topicName, PRIMARY_KAFKA_WATCHED_NAMESPACE).build());
         topics = KafkaCmdClient.listTopicsUsingPodCli(MAIN_TEST_NAMESPACE, scraperPodName, KafkaResources.plainBootstrapAddress(PRIMARY_KAFKA_NAME));
         assertThat(topics, hasItems(topicName));
-    }
-
-    // TODO would remove as redundant in favour of testUserInDifferentNamespace -> testUserOperatorWithUserWatchedInSeparatedNamespace
-    /**
-     * @description This test case verifies that User Operator configured to watch other namespace than the one it is deployed in still watches and acts upon
-     * custom resources correctly.
-     *
-     * @steps
-     *  1. - As part of setup Kafka Cluster is deployed in main namespace, with the User Operator configured to watch other namespace.
-     *     - Kafka and its components are deployed and ready.
-     *  2. - KafkaUser custom resource is created in namespace watched by Topic Operator.
-     *     - Topic Operator acts upon KafkaUser custom resource which is transitioned into ready state.
-     *
-     * @usecase
-     *  - namespaces
-     *  - user-operator-watcher
-     */
-    @IsolatedTest
-    final void testUOWatchingOtherNamespace(ExtensionContext extensionContext) {
-        final TestStorage testStorage = new TestStorage(extensionContext);
-
-        LOGGER.info("Creating KafkaUser: {}/{} in namespace different from on Kafka Cluster or Cluster Operator are located in", PRIMARY_KAFKA_WATCHED_NAMESPACE, testStorage.getUsername());
-        resourceManager.createResource(extensionContext, KafkaUserTemplates.tlsUser(PRIMARY_KAFKA_WATCHED_NAMESPACE, PRIMARY_KAFKA_NAME, testStorage.getUsername()).build());
-        LOGGER.info("KafkaUser: {}/{} was successfully created", PRIMARY_KAFKA_WATCHED_NAMESPACE, testStorage.getUsername());
     }
 
     /**
@@ -198,13 +170,12 @@ public abstract class AbstractNamespaceST extends AbstractST {
      *  - namespaces
      *  - user-operator-watcher
      */
-    @IsolatedTest
+    @ParallelTest
     final void testUserInNamespaceDifferentFromUserOperator(ExtensionContext extensionContext) {
         final TestStorage testStorage = new TestStorage(extensionContext, MAIN_TEST_NAMESPACE);
 
         LOGGER.info("Creating KafkaUser: {}/{} residing in separated namespace, which is watched by Kafka located in Namespace: {}", PRIMARY_KAFKA_WATCHED_NAMESPACE, testStorage.getUsername(), MAIN_TEST_NAMESPACE);
-        KafkaUser user = KafkaUserTemplates.tlsUser(PRIMARY_KAFKA_WATCHED_NAMESPACE, PRIMARY_KAFKA_NAME, testStorage.getUsername()).build();
-        resourceManager.createResource(extensionContext, user);
+        resourceManager.createResource(extensionContext, KafkaUserTemplates.tlsUser(PRIMARY_KAFKA_WATCHED_NAMESPACE, PRIMARY_KAFKA_NAME, testStorage.getUsername()).build());
 
         Condition kafkaCondition = KafkaUserResource.kafkaUserClient().inNamespace(PRIMARY_KAFKA_WATCHED_NAMESPACE).withName(testStorage.getUsername())
             .get().getStatus().getConditions().get(0);
@@ -255,21 +226,18 @@ public abstract class AbstractNamespaceST extends AbstractST {
      *  - cluster-operator-watcher
      *  - mirror-maker-2
      */
-    @IsolatedTest
+    @ParallelTest
     @Tag(MIRROR_MAKER2)
     final void testDeployMirrorMaker2InNamespaceDifferentFromCO(ExtensionContext extensionContext) {
         LOGGER.info("Deploying KafkaMirrorMaker in different namespace than CO");
-        TestStorage testStorage = new TestStorage(extensionContext);
+        final TestStorage testStorage = new TestStorage(extensionContext);
         final String mirrorMakerName = testStorage.getClusterName() + "-mirror-maker-2";
-        final String targetKafkaName = testStorage.getClusterName() + "-target";
 
-        LOGGER.info("Target Kafka Cluster: {} and consequently Mirror Maker 2: {} will be created in Namespace: {}", targetKafkaName, mirrorMakerName, MAIN_TEST_NAMESPACE);
-        cluster.setNamespace(MAIN_TEST_NAMESPACE);
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(targetKafkaName, 1, 1).build());
-        resourceManager.createResource(extensionContext, KafkaMirrorMaker2Templates.kafkaMirrorMaker2(mirrorMakerName, targetKafkaName, PRIMARY_KAFKA_NAME, 1, false).build());
+        LOGGER.info("Target Kafka Cluster: {} and consequently Mirror Maker 2: {} will be created in Namespace: {}", testStorage.getTargetClusterName(), mirrorMakerName, MAIN_TEST_NAMESPACE);
+        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getTargetClusterName(), 1, 1).build());
+        resourceManager.createResource(extensionContext, KafkaMirrorMaker2Templates.kafkaMirrorMaker2(mirrorMakerName, testStorage.getTargetClusterName(), PRIMARY_KAFKA_NAME, 1, false).build());
 
-        LOGGER.info("Waiting for creation KafkaMirrorMaker2: {}/{}", MAIN_TEST_NAMESPACE, mirrorMakerName);
-        KafkaMirrorMaker2Utils.waitForKafkaMirrorMaker2Ready(MAIN_TEST_NAMESPACE, mirrorMakerName);
+        LOGGER.info("KafkaMirrorMaker2: {}/{} created and ready", MAIN_TEST_NAMESPACE, mirrorMakerName);
     }
 
 
@@ -292,7 +260,7 @@ public abstract class AbstractNamespaceST extends AbstractST {
      *  - connect
      *  - connector-operator
      */
-    @IsolatedTest
+    @ParallelTest
     @Tag(CONNECT)
     @Tag(CONNECTOR_OPERATOR)
     @Tag(CONNECT_COMPONENTS)
@@ -332,7 +300,11 @@ public abstract class AbstractNamespaceST extends AbstractST {
         connectorConfig.put("key.converter", "org.apache.kafka.connect.storage.StringConverter");
         connectorConfig.put("value.converter", "org.apache.kafka.connect.storage.StringConverter");
 
+        LOGGER.info("Creating KafkaConnector: {}/{}", testStorage.getNamespaceName(), clusterName);
         resourceManager.createResource(extensionContext, KafkaConnectorTemplates.kafkaConnector(clusterName)
+            .editMetadata()
+                .withNamespace(testStorage.getNamespaceName())
+            .endMetadata()
             .editSpec()
                 .withClassName("org.apache.kafka.connect.file.FileStreamSinkConnector")
                 .withConfig(connectorConfig)
@@ -340,7 +312,8 @@ public abstract class AbstractNamespaceST extends AbstractST {
             .build());
         KafkaConnectorUtils.waitForConnectorReady(testStorage.getNamespaceName(), clusterName);
 
-        String kafkaConnectPodName = kubeClient().listPods(clusterName, Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND).get(0).getMetadata().getName();
+        String kafkaConnectPodName = kubeClient(testStorage.getNamespaceName()).listPods(clusterName, Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND).get(0).getMetadata().getName();
+        LOGGER.info("Kafka Connect Pod: {}/{}", testStorage.getNamespaceName(), kafkaConnectPodName);
         KafkaConnectUtils.waitUntilKafkaConnectRestApiIsAvailable(testStorage.getNamespaceName(), kafkaConnectPodName);
 
         KafkaClients kafkaClients = new KafkaClientsBuilder()
@@ -363,20 +336,21 @@ public abstract class AbstractNamespaceST extends AbstractST {
      *
      * @param extensionContext extension context to create kafka cluster accordingly.
      */
-    protected void deployAdditionalGenericResourcesForAbstractNamespaceST(ExtensionContext extensionContext) {
+    final protected void deployAdditionalGenericResourcesForAbstractNamespaceST(ExtensionContext extensionContext) {
 
         LOGGER.info("Deploy additional Kafka Cluster and Scraper in Namespace: {}", MAIN_TEST_NAMESPACE);
 
         final String scraperName = PRIMARY_KAFKA_NAME + "-" + Constants.SCRAPER_NAME;
 
-        String previousNamespace = cluster.setNamespace(MAIN_TEST_NAMESPACE);
+        cluster.setNamespace(MAIN_TEST_NAMESPACE);
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(PRIMARY_KAFKA_NAME, 3)
+            .editMetadata()
+                .withNamespace(MAIN_TEST_NAMESPACE)
+            .endMetadata()
             .editSpec()
-                .editOrNewKafkaExporter()
-                .endKafkaExporter()
-                .editOrNewCruiseControl()
-                .endCruiseControl()
+                .withCruiseControl(new CruiseControlSpec())
+                .withKafkaExporter(new KafkaExporterSpec())
                 .editEntityOperator()
                     .editTopicOperator()
                         .withWatchedNamespace(PRIMARY_KAFKA_WATCHED_NAMESPACE)
@@ -391,8 +365,6 @@ public abstract class AbstractNamespaceST extends AbstractST {
         );
 
         scraperPodName = kubeClient().listPodsByPrefixInName(MAIN_TEST_NAMESPACE, scraperName).get(0).getMetadata().getName();
-
-        cluster.setNamespace(previousNamespace);
 
     }
 }

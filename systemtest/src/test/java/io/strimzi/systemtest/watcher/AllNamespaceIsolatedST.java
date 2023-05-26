@@ -7,6 +7,7 @@ package io.strimzi.systemtest.watcher;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.IsolatedSuite;
+import io.strimzi.test.logs.CollectorElement;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
@@ -28,9 +29,11 @@ class AllNamespaceIsolatedST extends AbstractNamespaceST {
         LOGGER.info("Creating Cluster Operator which will watch over all namespaces");
 
         clusterOperator.unInstall();
+
+        cluster.createNamespaces(CollectorElement.createCollectorElement(this.getClass().getName()), clusterOperator.getDeploymentNamespace(), Arrays.asList(PRIMARY_KAFKA_WATCHED_NAMESPACE, MAIN_TEST_NAMESPACE));
+
         clusterOperator = clusterOperator.defaultInstallation()
             .withWatchingNamespaces(Constants.WATCH_ALL_NAMESPACES)
-            .withBindingsNamespaces(Arrays.asList(clusterOperator.getDeploymentNamespace(), PRIMARY_KAFKA_WATCHED_NAMESPACE, MAIN_TEST_NAMESPACE))
             .createInstallation()
             .runInstallation();
     }
