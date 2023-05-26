@@ -175,4 +175,4 @@ Specifically, ensure that the following properties have the same value across al
 * `topic.filter.class`
 
 For example, the value for `replication.policy.class` must be the same for the source, checkpoint, and heartbeat connectors.
-Mismatched or missing settings can lead to issues with data replication or offset syncing, so it's essential to keep all relevant connectors configured with the same settings.
+Mismatched or missing settings cause issues with data replication or offset syncing, so it's essential to keep all relevant connectors configured with the same settings.
