@@ -46,7 +46,7 @@ The `UseStrimziPodSets` feature gate has moved to GA, which means it is now perm
 Support for `StatefulSets` has been removed and Strimzi is now always using `StrimziPodSets` to manage Kafka and ZooKeeper pods.
 
 IMPORTANT: With the `UseStrimziPodSets` feature gate permanently enabled, it is no longer possible to downgrade directly from Strimzi 0.35 and newer to Strimzi 0.27 or earlier.
-You have to first downgrade through one of the Strimzi versions in-between, disable the `USeStrimziPodSets` feature gate, and then downgrade to Strimzi 0.27 or earlier.
+You have to first downgrade through one of the Strimzi versions in-between, disable the `UseStrimziPodSets` feature gate, and then downgrade to Strimzi 0.27 or earlier.
 
 [id='ref-operator-use-kraft-feature-gate-{context}']
 == (Preview) UseKRaft feature gate

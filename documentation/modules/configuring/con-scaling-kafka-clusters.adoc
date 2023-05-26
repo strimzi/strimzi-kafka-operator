@@ -33,7 +33,7 @@ spec:
   kafka:
     replicas: 3
     # ...
-  config: <18>
+  config:
       # ...
       default.replication.factor: 3
       min.insync.replicas: 2  
