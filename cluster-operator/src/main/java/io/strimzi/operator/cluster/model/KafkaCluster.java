@@ -128,7 +128,10 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
     protected static final String REPLICATION_PORT_NAME = "tcp-replication";
     protected static final int KAFKA_AGENT_PORT = 8443;
     protected static final String KAFKA_AGENT_PORT_NAME = "tcp-kafkaagent";
-    protected static final int CONTROLPLANE_PORT = 9090;
+    /**
+     * Port number used for controller
+     */
+    public static final int CONTROLPLANE_PORT = 9090;
     protected static final String CONTROLPLANE_PORT_NAME = "tcp-ctrlplane"; // port name is up to 15 characters
 
     /**
