@@ -229,6 +229,9 @@ If maintenance time windows are configured, the Cluster Operator will roll the p
 
 .  Remove any old certificates from the secret configuration to ensure that the cluster no longer trusts the outdated certificates.
 +
+[source,shell,subs="+quotes"]
+kubectl edit secret _<ca_certificate_secret_name>_
++
 .Example secret configuration with the old certificate removed
 [source,yaml,subs=attributes+]
 ----
