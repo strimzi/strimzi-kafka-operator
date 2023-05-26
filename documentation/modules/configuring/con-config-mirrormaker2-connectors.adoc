@@ -25,12 +25,14 @@ The following table describes connector properties and the connectors you config
 |✓
 |✓
 
-|replication.policy.class:: Policy to define the remote topic naming convention. Default is `org.apache.kafka.connect.mirror.DefaultReplicationPolicy`.
+|replication.policy.class:: Policy to define the remote topic naming convention. Default is `org.apache.kafka.connect.mirror.DefaultReplicationPolicy`. 
 |✓
 |✓
 |✓
 
-|replication.policy.separator:: The separator used for topic naming in the target cluster. Default is `.` (dot).
+|replication.policy.separator:: The separator used for topic naming in the target cluster. By default, the separator is set to a dot (.). 
+Separator configuration is only applicable to the `DefaultReplicationPolicy` replication policy class, which defines remote topic names.
+The `IdentityReplicationPolicy` class does not use the property as topics retain their original names.
 |✓
 |✓
 |✓
@@ -172,5 +174,5 @@ Specifically, ensure that the following properties have the same value across al
 * `offset-syncs.topic.location`
 * `topic.filter.class`
 
-For example, the value for `replication.policy.class` must be the same for the source, checkpoint, and heart connectors.
+For example, the value for `replication.policy.class` must be the same for the source, checkpoint, and heartbeat connectors.
 Mismatched or missing settings can lead to issues with data replication or offset syncing, so it's essential to keep all relevant connectors configured with the same settings.
