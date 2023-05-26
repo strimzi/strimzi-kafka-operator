@@ -382,20 +382,16 @@ the commit if errors are detected:
 ./tools/git-hooks/checkstyle-pre-commit
 ```
 
-## Building container images for other platforms with Docker `buildx`
+## Building container images for other platforms
 
-Docker supports building images for different platforms using the `docker buildx` command. If you want to use it to
-build Strimzi images, you can just set the environment variable `DOCKER_BUILDX` to `buildx`, set the environment
-variable `DOCKER_BUILD_ARGS` to pass additional build options such as the platform and run the build. For example
-following can be used to build Strimzi images for Linux on Arm64 / AArch64:
+Docker and Podman supports building images for different platforms.
+If you want to build Strimzi images for other platforms, you can set the environment variable `DOCKER_PLATFORM`
+to pass additional build options and run the build.
+For example, following can be used to build Strimzi images for Linux on Arm64 / AArch64:
 
 ```
-export DOCKER_BUILDX=buildx
-export DOCKER_BUILD_ARGS="--platform linux/amd64 --load"
-make all
+DOCKER_PLATFORM="--platform linux/arm64" make all
 ```
-
-_Note: Strimzi currently does not officially support any other platforms then Linux on `amd64`._
 
 ## Adding support for new Kafka versions
 

@@ -6,7 +6,8 @@ ARG KAFKA_DIST_DIR
 ARG KAFKA_VERSION
 ARG THIRD_PARTY_LIBS
 ARG strimzi_version
-ARG TARGETPLATFORM
+ARG TARGETOS
+ARG TARGETARCH
 
 RUN microdnf --setopt=install_weak_deps=0 --setopt=tsflags=nodocs install gettext nmap-ncat stunnel net-tools unzip hostname findutils tar \
     && microdnf clean all
@@ -36,21 +37,21 @@ ENV KAFKA_EXPORTER_CHECKSUM_PPC64LE="48ebb8e4879ea4320cd0a25cea76d38bff4664ef75a
 ENV KAFKA_EXPORTER_CHECKSUM_S390X="7a80e10d08ebeeccb968c2c58db7886d1778eb1e9ea5130f88ef7379d8018499b9fef79ae416b7a312b165fd76fd3680bed984041cb8be9ec198f694ab37b5ff kafka_exporter-${KAFKA_EXPORTER_VERSION}.linux-s390x.tar.gz"
 
 RUN set -ex; \
-    if [[ ${TARGETPLATFORM} = "linux/arm64" ]]; then \
+    if [[ "${TARGETOS}/${TARGETARCH}" = "linux/arm64" ]]; then \
         curl -LO https://github.com/danielqsj/kafka_exporter/releases/download/v${KAFKA_EXPORTER_VERSION}/kafka_exporter-${KAFKA_EXPORTER_VERSION}.linux-arm64.tar.gz; \
         echo $KAFKA_EXPORTER_CHECKSUM_ARM64 > kafka_exporter-${KAFKA_EXPORTER_VERSION}.linux-arm64.tar.gz.sha512; \
         sha512sum --check kafka_exporter-${KAFKA_EXPORTER_VERSION}.linux-arm64.tar.gz.sha512; \
         mkdir $KAFKA_EXPORTER_HOME; \
         tar xvfz kafka_exporter-${KAFKA_EXPORTER_VERSION}.linux-arm64.tar.gz -C $KAFKA_EXPORTER_HOME --strip-components=1; \
         rm -f kafka_exporter-${KAFKA_EXPORTER_VERSION}.linux-arm64.tar.gz*; \
-    elif [[ ${TARGETPLATFORM} = "linux/ppc64le" ]]; then \
+    elif [[ "${TARGETOS}/${TARGETARCH}" = "linux/ppc64le" ]]; then \
         curl -LO https://github.com/danielqsj/kafka_exporter/releases/download/v${KAFKA_EXPORTER_VERSION}/kafka_exporter-${KAFKA_EXPORTER_VERSION}.linux-ppc64le.tar.gz; \
         echo $KAFKA_EXPORTER_CHECKSUM_PPC64LE > kafka_exporter-${KAFKA_EXPORTER_VERSION}.linux-ppc64le.tar.gz.sha512; \
         sha512sum --check kafka_exporter-${KAFKA_EXPORTER_VERSION}.linux-ppc64le.tar.gz.sha512; \
         mkdir $KAFKA_EXPORTER_HOME; \
         tar xvfz kafka_exporter-${KAFKA_EXPORTER_VERSION}.linux-ppc64le.tar.gz -C $KAFKA_EXPORTER_HOME --strip-components=1; \
         rm -f kafka_exporter-${KAFKA_EXPORTER_VERSION}.linux-ppc64le.tar.gz*; \
-    elif [[ ${TARGETPLATFORM} = "linux/s390x" ]]; then \
+    elif [[ "${TARGETOS}/${TARGETARCH}" = "linux/s390x" ]]; then \
         curl -LO https://github.com/danielqsj/kafka_exporter/releases/download/v${KAFKA_EXPORTER_VERSION}/kafka_exporter-${KAFKA_EXPORTER_VERSION}.linux-s390x.tar.gz; \
         echo $KAFKA_EXPORTER_CHECKSUM_S390X > kafka_exporter-${KAFKA_EXPORTER_VERSION}.linux-s390x.tar.gz.sha512; \
         sha512sum --check kafka_exporter-${KAFKA_EXPORTER_VERSION}.linux-s390x.tar.gz.sha512; \
