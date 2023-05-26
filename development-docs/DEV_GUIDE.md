@@ -393,15 +393,6 @@ For example, following can be used to build Strimzi images for Linux on Arm64 / 
 DOCKER_PLATFORM="--platform linux/arm64" make all
 ```
 
-Docker also supports building images for different platforms using the `docker buildx` command. If you want to use this
-command, please set both `DOCKER_BUILDX` and `DOCKER_BUILD_ARGS` environment variables like this:
-
-```
-export DOCKER_BUILDX=buildx
-export DOCKER_BUILD_ARGS="--platform linux/amd64 --load"
-make all
-```
-
 ## Adding support for new Kafka versions
 
 Following steps are needed to add support for new Kafka releases:
