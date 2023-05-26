@@ -227,7 +227,9 @@ When the rolling update is complete, the Cluster Operator will start a new one t
 +
 If maintenance time windows are configured, the Cluster Operator will roll the pods at the first reconciliation within the next maintenance time window.
 
-.  Remove any old certificates from the secret configuration to ensure that the cluster no longer trusts the outdated certificates.
+. Wait until the rolling updates to move to the new CA certificate are complete.
+
+.  Remove any outdated certificates from the secret configuration to ensure that the cluster no longer trusts them.
 +
 [source,shell,subs="+quotes"]
 kubectl edit secret _<ca_certificate_secret_name>_
