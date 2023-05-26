@@ -178,7 +178,7 @@ public class SecretUtils {
 
         LOGGER.info("Waiting for Secret {}/{} to be deleted", namespace, secretName);
         TestUtils.waitFor(String.format("Deletion of Secret %s#%s", namespace, secretName), Constants.GLOBAL_POLL_INTERVAL, DELETION_TIMEOUT,
-            () -> kubeClient().getSecret(secretName) == null);
+            () -> kubeClient().getSecret(namespace, secretName) == null);
 
         LOGGER.info("Secret {}/{} successfully deleted", namespace, secretName);
     }
@@ -219,5 +219,26 @@ public class SecretUtils {
                 .withName(secretName)
                 .withNamespace(toNamespace)
             .endMetadata();
+    }
+
+    /**
+     * Method which waits for {@code secretName} Secret in {@code namespace} namespace to have
+     * label with {@code labelKey} key and {@code labelValue} value.
+     *
+     * @param namespace name of namespace
+     * @param secretName name of Secret
+     * @param labelKey label key
+     * @param labelValue label value
+     */
+    public static void waitForSpecificLabelKeyValue(String secretName, String namespace, String labelKey, String labelValue) {
+        LOGGER.info("Wait for Secret: {}/{} (Corresponding to KafkaUser) to have expected label: {}={}", namespace, secretName, labelKey, labelValue);
+        TestUtils.waitFor("Wait for the Secret {}: {}/{} to exist while also having label to corresponding Kafka cluster", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
+            () -> kubeClient().listSecrets(namespace)
+                .stream()
+                .anyMatch(secret -> secretName.equals(secret.getMetadata().getName())
+                    && secret.getMetadata().getLabels().containsKey(Labels.STRIMZI_CLUSTER_LABEL)
+                    && secret.getMetadata().getLabels().get(Labels.STRIMZI_CLUSTER_LABEL).equals(labelValue)
+                )
+        );
     }
 }

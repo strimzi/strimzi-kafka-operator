@@ -2,7 +2,7 @@
  * Copyright Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.strimzi.operator;
+package io.strimzi.operator.cluster;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -46,17 +46,18 @@ public class PlatformFeaturesAvailabilityTest {
 
     @Test
     public void testVersionDetectionOpenShift(Vertx vertx, VertxTestContext context) throws InterruptedException, ExecutionException {
-        String version = "{\n" +
-                "  \"major\": \"1\",\n" +
-                "  \"minor\": \"20\",\n" +
-                "  \"gitVersion\": \"v1.20.1\",\n" +
-                "  \"gitCommit\": \"c4d752765b3bbac2237bf87cf0b1c2e307844666\",\n" +
-                "  \"gitTreeState\": \"clean\",\n" +
-                "  \"buildDate\": \"2020-12-18T12:00:47Z\",\n" +
-                "  \"goVersion\": \"go1.15.5\",\n" +
-                "  \"compiler\": \"gc\",\n" +
-                "  \"platform\": \"linux/amd64\"\n" +
-                "}";
+        String version = """
+                {
+                  "major": "1",
+                  "minor": "21",
+                  "gitVersion": "v1.21.1",
+                  "gitCommit": "c4d752765b3bbac2237bf87cf0b1c2e307844666",
+                  "gitTreeState": "clean",
+                  "buildDate": "2020-12-18T12:00:47Z",
+                  "goVersion": "go1.15.5",
+                  "compiler": "gc",
+                  "platform": "linux/amd64"
+                }""";
 
         startMockApi(vertx, version, Collections.emptyList());
 
@@ -65,24 +66,25 @@ public class PlatformFeaturesAvailabilityTest {
         Checkpoint a = context.checkpoint();
 
         PlatformFeaturesAvailability.create(vertx, client).onComplete(context.succeeding(pfa -> context.verify(() -> {
-            assertThat("Versions are not equal", pfa.getKubernetesVersion(), is(KubernetesVersion.V1_20));
+            assertThat("Versions are not equal", pfa.getKubernetesVersion(), is(KubernetesVersion.V1_21));
             a.flag();
         })));
     }
 
     @Test
     public void testVersionDetectionMinikube(Vertx vertx, VertxTestContext context) throws InterruptedException, ExecutionException {
-        String version = "{\n" +
-                "  \"major\": \"1\",\n" +
-                "  \"minor\": \"20\",\n" +
-                "  \"gitVersion\": \"v1.20.1\",\n" +
-                "  \"gitCommit\": \"c4d752765b3bbac2237bf87cf0b1c2e307844666\",\n" +
-                "  \"gitTreeState\": \"clean\",\n" +
-                "  \"buildDate\": \"2020-12-18T12:09:25Z\",\n" +
-                "  \"goVersion\": \"go1.15.5\",\n" +
-                "  \"compiler\": \"gc\",\n" +
-                "  \"platform\": \"linux/amd64\"\n" +
-                "}";
+        String version = """
+                {
+                  "major": "1",
+                  "minor": "21",
+                  "gitVersion": "v1.21.1",
+                  "gitCommit": "c4d752765b3bbac2237bf87cf0b1c2e307844666",
+                  "gitTreeState": "clean",
+                  "buildDate": "2020-12-18T12:09:25Z",
+                  "goVersion": "go1.15.5",
+                  "compiler": "gc",
+                  "platform": "linux/amd64"
+                }""";
 
         startMockApi(vertx, version, Collections.emptyList());
 
@@ -91,7 +93,7 @@ public class PlatformFeaturesAvailabilityTest {
         Checkpoint async = context.checkpoint();
 
         PlatformFeaturesAvailability.create(vertx, client).onComplete(context.succeeding(pfa -> context.verify(() -> {
-            assertThat("Versions are not equal", pfa.getKubernetesVersion(), is(KubernetesVersion.V1_20));
+            assertThat("Versions are not equal", pfa.getKubernetesVersion(), is(KubernetesVersion.V1_21));
             async.flag();
         })));
     }
@@ -176,15 +178,39 @@ public class PlatformFeaturesAvailabilityTest {
 
     @Test
     public void versionInfoFromMap(VertxTestContext context) throws ParseException {
-        String version =  "major=1\n" +
-                "minor=16\n" +
-                "gitVersion=v1.16.2\n" +
-                "gitCommit=c97fe5036ef3df2967d086711e6c0c405941e14b\n" +
-                "gitTreeState=clean\n" +
-                "buildDate=2019-10-15T19:09:08Z\n" +
-                "goVersion=go1.12.10\n" +
-                "compiler=gc\n" +
-                "platform=linux/amd64";
+        String version = """
+                major=1
+                minor=16
+                gitVersion=v1.16.2
+                gitCommit=c97fe5036ef3df2967d086711e6c0c405941e14b
+                gitTreeState=clean
+                buildDate=2019-10-15T19:09:08Z
+                goVersion=go1.12.10
+                compiler=gc
+                platform=linux/amd64""";
+
+        VersionInfo vi = PlatformFeaturesAvailability.parseVersionInfo(version);
+
+        context.verify(() -> {
+            assertThat(vi.getMajor(), is("1"));
+            assertThat(vi.getMinor(), is("16"));
+        });
+        context.completeNow();
+    }
+
+    @Test
+    public void versionInfoFromMapUnknownFieldIsIgnored(VertxTestContext context) throws ParseException {
+        String version = """
+                major=1
+                minor=16
+                gitVersion=v1.16.2
+                gitCommit=c97fe5036ef3df2967d086711e6c0c405941e14b
+                gitTreeState=clean
+                buildDate=2019-10-15T19:09:08Z
+                goVersion=go1.12.10
+                compiler=gc
+                platform=linux/amd64
+                unknownKey=someValue""";
 
         VersionInfo vi = PlatformFeaturesAvailability.parseVersionInfo(version);
 
@@ -223,17 +249,18 @@ public class PlatformFeaturesAvailabilityTest {
     }
 
     void startMockApi(Vertx vertx, List<APIGroup> apis) throws InterruptedException, ExecutionException {
-        String version = "{\n" +
-                "  \"major\": \"1\",\n" +
-                "  \"minor\": \"16\",\n" +
-                "  \"gitVersion\": \"v1.9.1+a0ce1bc657\",\n" +
-                "  \"gitCommit\": \"a0ce1bc\",\n" +
-                "  \"gitTreeState\": \"clean\",\n" +
-                "  \"buildDate\": \"2018-06-24T01:54:00Z\",\n" +
-                "  \"goVersion\": \"go1.9\",\n" +
-                "  \"compiler\": \"gc\",\n" +
-                "  \"platform\": \"linux/amd64\"\n" +
-                "}";
+        String version = """
+                {
+                  "major": "1",
+                  "minor": "16",
+                  "gitVersion": "v1.9.1+a0ce1bc657",
+                  "gitCommit": "a0ce1bc",
+                  "gitTreeState": "clean",
+                  "buildDate": "2018-06-24T01:54:00Z",
+                  "goVersion": "go1.9",
+                  "compiler": "gc",
+                  "platform": "linux/amd64"
+                }""";
 
         startMockApi(vertx, version, apis);
     }

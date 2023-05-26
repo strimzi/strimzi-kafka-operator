@@ -29,6 +29,7 @@ cluster using the [Helm](https://helm.sh) package manager.
 * **Includes HTTP Kafka Bridge** - Allows clients to send and receive messages through an Apache Kafka® cluster via the HTTP protocol.
 * **Includes Cruise Control** - Automates the process of balancing partitions across an Apache Kafka® cluster.
 * **Prometheus monitoring** - Built-in support for monitoring using Prometheus.
+* **Grafana Dashboards** - Built-in support for loading Grafana® dashboards via the grafana_sidecar
 
 ### Upgrading your Clusters
 
@@ -99,14 +100,14 @@ the documentation for more details.
 | `watchAnyNamespace`                  | Watch the whole Kubernetes cluster (all namespaces) | `false`                                    |
 | `defaultImageRegistry`               | Default image registry for all the images | `quay.io`                                            |
 | `defaultImageRepository`             | Default image registry for all the images | `strimzi`                                            |
-| `defaultImageTag`                    | Default image tag for all the images except Kafka Bridge | `0.34.0`                              |
+| `defaultImageTag`                    | Default image tag for all the images except Kafka Bridge | `0.35.0`                              |
 | `image.registry`                     | Override default Cluster Operator image registry  | `nil`                                        |
 | `image.repository`                   | Override default Cluster Operator image repository  | `nil`                                      |
 | `image.name`                         | Cluster Operator image name               | `cluster-operator`                                   |
 | `image.tag`                          | Override default Cluster Operator image tag       | `nil`                                        |
 | `image.digest`                       | Override Cluster Operator image tag with digest     | `nil`                                      |
 | `image.imagePullPolicy`              | Image pull policy for all pods deployed by Cluster Operator       | `IfNotPresent`               |
-| `image.imagePullSecrets`             | Docker registry pull secret               | `nil`                                                |
+| `image.imagePullSecrets`             | List of Docker registry pull secrets               | `[]`                                                |
 | `fullReconciliationIntervalMs`       | Full reconciliation interval in milliseconds | 120000                                            |
 | `operationTimeoutMs`                 | Operation timeout in milliseconds         | 300000                                               |
 | `operatorNamespaceLabels`            | Labels of the namespace where the operator runs | `nil`                                          |
@@ -117,11 +118,6 @@ the documentation for more details.
 | `serviceAccountCreate`               | Whether to create a serviceaccount |  `yes`                                                      |
 | `serviceAccount`                     | Cluster Operator's service account |  `strimzi-cluster-operator`                                 |
 | `extraEnvs`                          | Extra environment variables for the Cluster operator container | `[]`                            |
-| `jmxtrans.image.registry`            | Override default JmxTrans image registry                   | `nil`                               |
-| `jmxtrans.image.repository`          | Override default JmxTrans image repository                 | `nil`                               |
-| `jmxtrans.image.name`                | JmxTrans image name                       | `jmxtrans`                                           |
-| `jmxtrans.image.tag`                 | Override default JmxTrans image tag prefix                 | `nil`                               |
-| `jmxtrans.image.digest`              | Override JmxTrans image tag with digest                    | `nil`                               |
 | `kafka.image.registry`               | Override default Kafka image registry                      | `nil`                               |
 | `kafka.image.repository`             | Override default Kafka image repository                    | `nil`                               |
 | `kafka.image.name`                   | Kafka image name                          | `kafka`                                              |
@@ -215,6 +211,12 @@ the documentation for more details.
 | `mavenBuilder.image.tag`             | Override default Maven Builder image tag                   | `nil`                               |
 | `mavenBuilder.image.digest`          | Override Maven Builder image tag with digest               | `nil`                               |
 | `logConfiguration`                   | Override default `log4j.properties` content                | `nil`                               |
+| `dashboards.enable`                  | Generate configmaps containing the dashboards | `false`                                          |
+| `dashboards.label`                   | How should the dashboards be labeled for the sidecar | `grafana_dashboard`                       |
+| `dashboards.labelValue`              | What should the dashboards label value be for the sidecar | `"1"`                                |
+| `dashboards.extraLabels`             | Any additional labels you would like on the dashboards | `{}`                                    |
+| `dashboards.namespace`               | What namespace should the dashboards be loaded into | `Follows toplevel Namespace`               |
+| `dashboards.annotations`             | Any custom annotations (such as folder for the sidecar) | `{}`                                   |
 
 Specify each parameter using the `--set key=value[,key=value]` argument to `helm install`. For example,
 

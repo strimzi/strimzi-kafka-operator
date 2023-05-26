@@ -9,8 +9,6 @@
 
 
 |{KubeApiReferenceBase}#affinity-v1-core[Affinity]
-|alternatives            1.2+<.<a|
-|string array or map
 |arrayOfBoundTypeVar     1.2+<.<a|
 |xref:type-Number-{context}[`Number`] array
 |arrayOfBoundTypeVar2    1.2+<.<a|
@@ -29,6 +27,8 @@
 |boolean
 |customisedEnum          1.2+<.<a|
 |string (one of [one, two])
+|either                  1.2+<.<a|
+|string
 |fieldProperty           1.2+<.<a|Example of field property.
 |string
 |intProperty             1.2+<.<a|An example int property.
@@ -73,6 +73,8 @@
 |string (one of [BAR, FOO])
 |objectProperty          1.2+<.<a|
 |xref:type-ObjectProperty-{context}[`ObjectProperty`]
+|or                      1.2+<.<a|
+|string
 |polymorphicProperty     1.2+<.<a| The type depends on the value of the `polymorphicProperty.discrim` property within the given object, which must be one of [left, right].
 |xref:type-PolymorphicLeft-{context}[`PolymorphicLeft`], xref:type-PolymorphicRight-{context}[`PolymorphicRight`]
 |rawList                 1.2+<.<a|
@@ -83,8 +85,6 @@
 |object
 |stringProperty          1.2+<.<a|
 |string
-|typedAlternatives       1.2+<.<a|
-|xref:type-Type2-{context}[`Type2`] or xref:type-Type1-{context}[`Type1`]
 |====
 
 [id='type-Number-{context}']
@@ -149,35 +149,6 @@ It must have the value `right` for the type `PolymorphicRight`.
 |discrim         1.2+<.<a|
 |string
 |rightProperty   1.2+<.<a|when descrim=right, the right-hand property.
-|string
-|====
-
-[id='type-Type2-{context}']
-# `Type2` schema reference
-
-Used in: xref:type-ExampleCrd-{context}[`ExampleCrd`]
-
-
-[options="header"]
-|====
-|Property     |Description
-|key2  1.2+<.<a|
-|string
-|====
-
-[id='type-Type1-{context}']
-# `Type1` schema reference
-
-*The type `Type1` has been deprecated.*
-Please use xref:type-Type2-{context}[`Type2`] instead.
-
-Used in: xref:type-ExampleCrd-{context}[`ExampleCrd`]
-
-
-[options="header"]
-|====
-|Property     |Description
-|key1  1.2+<.<a|
 |string
 |====
 

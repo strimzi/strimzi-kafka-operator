@@ -12,7 +12,7 @@ import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.openshift.api.model.Build;
 import io.strimzi.api.kafka.model.KafkaConnectResources;
 import io.strimzi.api.kafka.model.connect.build.Output;
-import io.strimzi.operator.PlatformFeaturesAvailability;
+import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.model.ImagePullPolicy;
 import io.strimzi.operator.cluster.model.KafkaConnectBuild;
@@ -379,7 +379,7 @@ public class ConnectBuildOperator {
                                 && build.getStatus().getOutput().getTo().getImageDigest() != null) {
                             String digest = "@" + build.getStatus().getOutput().getTo().getImageDigest();
                             String image = build.getStatus().getOutputDockerImageReference();
-                            String tag = image.substring(image.lastIndexOf(":"));
+                            String tag = image.lastIndexOf(":") != -1 ? image.substring(image.lastIndexOf(":")) : "latest";
 
                             String imageWithDigest = image.replace(tag, digest);
 

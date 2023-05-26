@@ -37,6 +37,9 @@ public class KafkaMirrorMakerCrdIT extends AbstractCrdIT {
 
     @Test
     void testKafkaMirrorMakerWithExtraProperty() {
+        // oc tool does not fail with extra properties, it shows only a warning. So this test does not pass on OpenShift
+        assumeKube();
+
         Throwable exception = assertThrows(
             KubeClusterException.class,
             () -> createDeleteCustomResource("KafkaMirrorMaker-with-extra-property.yaml"));

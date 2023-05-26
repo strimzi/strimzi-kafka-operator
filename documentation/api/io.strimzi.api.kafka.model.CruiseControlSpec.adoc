@@ -10,32 +10,52 @@ Configuration options relate to:
 
 Use the `config` properties to configure Cruise Control options as keys.
 
-Standard Cruise Control configuration may be provided, restricted to those properties not managed directly by Strimzi.
-
-Configuration options that cannot be configured relate to the following:
-
-* Security (Encryption, Authentication, and Authorization)
-* Connection to the Kafka cluster
-* Client ID configuration
-* ZooKeeper connectivity
-* Web server configuration
-* Self healing
-
 The values can be one of the following JSON types:
 
 * String
 * Number
 * Boolean
 
-You can specify and configure the options listed in the {CruiseControlConfigDocs} with the exception of those options that are managed directly by Strimzi.
-See the description of the `config` property for a list of forbidden prefixes.
+*Exceptions*
 
-When a forbidden option is present in the `config` property, it is ignored and a warning message is printed to the Cluster Operator log file.
-All other supported options are passed to Cruise Control.
+You can specify and configure the options listed in the {CruiseControlConfigDocs}.
 
-There are exceptions to the forbidden options.
-For client connection using a specific _cipher suite_ for a TLS version, you can xref:con-common-configuration-ssl-reference[configure allowed `ssl` properties].
-You can also configure `webserver` properties to enable Cross-Origin Resource Sharing (CORS).
+However, Strimzi takes care of configuring and managing options related to the following, which cannot be changed:
+
+* Security (encryption, authentication, and authorization)
+* Connection to the Kafka cluster
+* Client ID configuration
+* ZooKeeper connectivity
+* Web server configuration
+* Self healing
+
+Properties with the following prefixes cannot be set:
+
+* `bootstrap.servers`
+* `capacity.config.file`
+* `client.id`
+* `failed.brokers.zk.path`
+* `kafka.broker.failure.detection.enable`
+* `metric.reporter.sampler.bootstrap.servers`
+* `network.`
+* `request.reason.required`
+* `security.`
+* `self.healing.`
+* `ssl.`
+* `topic.config.provider.class`
+* `two.step.`
+* `webserver.accesslog.`
+* `webserver.api.urlprefix`
+* `webserver.http.`
+* `webserver.session.path`
+* `zookeeper.`
+
+If the `config` property contains an option that cannot be changed, it is disregarded, and a warning message is logged to the Cluster Operator log file.
+All other supported options are forwarded to Cruise Control, including the following exceptions to the options configured by Strimzi:
+
+* Any `ssl` configuration for xref:con-common-configuration-ssl-reference[supported TLS versions and cipher suites]
+* Configuration for `webserver` properties to enable Cross-Origin Resource Sharing (CORS)
+
 
 .Example Cruise Control configuration
 [source,yaml,subs="attributes+"]
@@ -131,13 +151,13 @@ spec:
 [id='property-cruise-control-broker-capacity-{context}']
 === brokerCapacity
 
-Cruise Control uses capacity limits to determine if optimization goals for resource distribution are being broken.
+Cruise Control uses capacity limits to determine if optimization goals for resource capacity limits are being broken.
 There are four goals of this type:
 
-* `DiskUsageDistributionGoal`            - Disk utilization distribution
-* `CpuUsageDistributionGoal`             - CPU utilization distribution
-* `NetworkInboundUsageDistributionGoal`  - Network inbound utilization distribution
-* `NetworkOutboundUsageDistributionGoal` - Network outbound utilization distribution
+* `DiskCapacityGoal`            - Disk utilization capacity
+* `CpuCapacityGoal`             - CPU utilization capacity
+* `NetworkInboundCapacityGoal`  - Network inbound utilization capacity
+* `NetworkOutboundCapacityGoal` - Network outbound utilization capacity
 
 You specify capacity limits for Kafka broker resources in the `brokerCapacity` property in `Kafka.spec.cruiseControl` .
 They are enabled by default and you can change their default values.
@@ -214,7 +234,7 @@ spec:
 For more information, refer to the xref:type-BrokerCapacity-reference[BrokerCapacity schema reference].
 
 [id='property-cruise-control-logging-{context}']
-=== Logging configuration
+=== `logging`
 
 Cruise Control has its own configurable logger:
 
@@ -226,7 +246,10 @@ Use the `logging` property to configure loggers and logger levels.
 
 You can set the log levels by specifying the logger and level directly (inline) or use a custom (external) ConfigMap.
 If a ConfigMap is used, you set `logging.valueFrom.configMapKeyRef.name` property to the name of the ConfigMap containing the external logging configuration. Inside the ConfigMap, the logging configuration is described using `log4j.properties`. Both `logging.valueFrom.configMapKeyRef.name` and `logging.valueFrom.configMapKeyRef.key` properties are mandatory. A ConfigMap using the exact logging configuration specified is created with the custom resource when the Cluster Operator is running, then recreated after each reconciliation. If you do not specify a custom ConfigMap, default logging settings are used. If a specific logger value is not set, upper-level logger settings are inherited for that logger.
+
 Here we see examples of `inline` and `external` logging.
+The `inline` logging specifies the root logger level.
+You can also set log levels for specific classes or loggers by adding them to the loggers property.
 
 .Inline logging
 [source,yaml,subs="+quotes,attributes"]
@@ -240,9 +263,19 @@ spec:
     logging:
       type: inline
       loggers:
-        rootLogger.level: "INFO"
+        rootLogger.level: INFO
+        logger.exec.name: com.linkedin.kafka.cruisecontrol.executor.Executor # <1>
+        logger.exec.level: TRACE # <2>
+        logger.go.name: com.linkedin.kafka.cruisecontrol.analyzer.GoalOptimizer # <3>
+        logger.go.level: DEBUG # <4>
     # ...
 ----
+<1> Creates a logger for the Cruise Control `Executor` class.
+<2> Sets the logging level for the `Executor` class.
+<3> Creates a logger for the Cruise Control `GoalOptimizer` class.
+<4> Sets the logging level for the `GoalOptimizer` class.
+
+NOTE: When investigating an issue with Cruise Control, it's usually sufficient to change the `rootLogger` to `DEBUG` to get more detailed logs. However, keep in mind that setting the log level to `DEBUG` may result in a large amount of log output and may have performance implications.
 
 .External logging
 [source,yaml,subs="+quotes,attributes"]

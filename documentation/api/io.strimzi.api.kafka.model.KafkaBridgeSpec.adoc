@@ -3,16 +3,17 @@ Configures a Kafka Bridge cluster.
 Configuration options relate to:
 
 * Kafka cluster bootstrap address
-* Security (Encryption, Authentication, and Authorization)
+* Security (encryption, authentication, and authorization)
 * Consumer configuration
 * Producer configuration
 * HTTP configuration
 
 [id='property-kafka-bridge-logging-{context}']
 === `logging`
+
 Kafka Bridge has its own configurable loggers:
 
-* `logger.bridge`
+* `rootLogger.level`
 * `logger.__<operation-id>__`
 
 You can replace `_<operation-id>_` in the `logger.__<operation-id>__` logger to set log levels for specific operations:
@@ -76,10 +77,10 @@ spec:
   logging:
     type: inline
     loggers:
-      logger.bridge.level: "INFO"
+      rootLogger.level: INFO
       # enabling DEBUG just for send operation
       logger.send.name: "http.openapi.operation.send"
-      logger.send.level: "DEBUG"
+      logger.send.level: DEBUG
   # ...
 ----
 

@@ -9,7 +9,6 @@ import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.io.StringWriter;
-import java.net.URISyntaxException;
 
 import static io.strimzi.crdgenerator.DocGenerator.classInherits;
 import static java.util.Collections.singletonList;
@@ -19,9 +18,8 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class DocGeneratorTest {
-
     @Test
-    public void simpleTest() throws IOException, ClassNotFoundException, URISyntaxException {
+    public void simpleTest() throws IOException, ClassNotFoundException {
         assertThat(classInherits(Class.forName("io.strimzi.crdgenerator.KubeLinker"), Linker.class), is(notNullValue()));
         StringWriter w = new StringWriter();
         DocGenerator crdGenerator = new DocGenerator(ApiVersion.V1, 1, singletonList(ExampleCrd.class), w, new KubeLinker("{KubeApiReferenceBase}"));

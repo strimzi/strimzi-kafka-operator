@@ -18,7 +18,7 @@ If the previous version of Strimzi does not support the version of Kafka you are
 you can also downgrade Kafka as long as the log message format versions appended to messages match.
 
 WARNING: The following downgrade instructions are only suitable if you installed Strimzi using the installation files. 
-If you used a different method like {OperatorHub}, refer to their downgrade instructions. 
+If you installed Strimzi using another method, like {OperatorHub}, downgrade may not be supported by that method unless specified in their documentation. 
 To ensure a successful downgrade process, it is essential to use a supported approach.
 
 //steps to downgrade the operators

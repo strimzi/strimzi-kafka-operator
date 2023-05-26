@@ -8,6 +8,14 @@
 [role="_abstract"] 
 Deploy the Strimzi Drain Cleaner to the Kubernetes cluster where the Cluster Operator and Kafka cluster are running.
 
+Strimzi sets a default `PodDisruptionBudget` (PDB) that allows only one Kafka or ZooKeeper pod to be unavailable at any given time.
+To use the Drain Cleaner for planned maintenance or upgrades, you must set a PDB of zero.
+This is to prevent voluntary evictions of pods, and ensure that the Kafka or ZooKeeper cluster remains available.
+You do this by setting the `maxUnavailable` value to zero in the `Kafka` or `ZooKeeper` template. 
+`StrimziPodSet` custom resources manage Kafka and ZooKeeper pods using a custom controller that cannot use the `maxUnavailable` value directly.
+Instead, the `maxUnavailable` value is converted to a `minAvailable` value.
+For example, if there are three broker pods and the `maxUnavailable` property is set to `0` (zero), the `minAvailable` setting is `3`, requiring all three broker pods to be available and allowing zero pods to be unavailable.
+
 .Prerequisites
 
 * You have xref:drain-cleaner-prereqs-str[downloaded the Strimzi Drain Cleaner deployment files].
@@ -64,7 +72,7 @@ spec:
 
 .Procedure
 
-. Configure a pod disruption budget of `0` (zero) for your Kafka deployment using `template` settings in the `Kafka` resource.
+. Set `maxUnavailable` to `0` (zero) in the Kafka and ZooKeeper sections of the `Kafka` resource using `template` settings.
 +
 .Specifying a pod disruption budget
 [source,yaml,subs=attributes+]
@@ -88,8 +96,8 @@ spec:
   # ...
 ----
 +
-Reducing the maximum pod disruption budget to zero prevents Kubernetes from automatically evicting the pods in case of voluntary disruptions,
-leaving the Strimzi Drain Cleaner and Strimzi Cluster Operator to roll the pod which will be scheduled by Kubernetes on a different worker node.
+This setting prevents the automatic eviction of pods in case of planned disruptions,
+leaving the Strimzi Drain Cleaner and Cluster Operator to roll the pods on different worker nodes.
 +
 Add the same configuration for ZooKeeper if you want to use Strimzi Drain Cleaner to drain ZooKeeper nodes.
 

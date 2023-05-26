@@ -33,7 +33,9 @@ You can set the log levels by specifying the logger and level directly (inline) 
 If a ConfigMap is used, you set `logging.valueFrom.configMapKeyRef.name` property to the name of the ConfigMap containing the external logging configuration. Inside the ConfigMap, the logging configuration is described using `log4j.properties`. Both `logging.valueFrom.configMapKeyRef.name` and `logging.valueFrom.configMapKeyRef.key` properties are mandatory. A ConfigMap using the exact logging configuration specified is created with the custom resource when the Cluster Operator is running, then recreated after each reconciliation. If you do not specify a custom ConfigMap, default logging settings are used. If a specific logger value is not set, upper-level logger settings are inherited for that logger.
 For more information about log levels, see {ApacheLoggers}.
 
-Here we see examples of `inline` and `external` logging:
+Here we see examples of `inline` and `external` logging.
+The `inline` logging specifies the root logger level.
+You can also set log levels for specific classes or loggers by adding them to the loggers property.
 
 [source,yaml,subs="+quotes,attributes"]
 ----
@@ -44,9 +46,13 @@ spec:
   logging:
     type: inline
     loggers:
-      mirrormaker.root.logger: "INFO"
+      mirrormaker.root.logger: INFO
+      log4j.logger.org.apache.kafka.clients.NetworkClient: TRACE
+      log4j.logger.org.apache.kafka.common.network.Selector: DEBUG
   # ...
 ----
+
+NOTE: Setting a log level to `DEBUG` may result in a large amount of log output and may have performance implications.
 
 [source,yaml,subs="+quotes,attributes"]
 ----

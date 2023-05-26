@@ -26,6 +26,7 @@ import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.templates.specific.ScraperTemplates;
 import io.strimzi.systemtest.utils.ClientUtils;
+import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.NamespaceUtils;
@@ -264,6 +265,7 @@ class NamespaceDeletionRecoveryIsolatedST extends AbstractST {
 
         // Recreate namespace
         cluster.createNamespace(clusterOperator.getDeploymentNamespace());
+        StUtils.copyImagePullSecrets(clusterOperator.getDeploymentNamespace());
     }
 
     @BeforeAll

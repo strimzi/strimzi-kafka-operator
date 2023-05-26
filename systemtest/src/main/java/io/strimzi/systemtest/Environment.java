@@ -145,6 +145,12 @@ public class Environment {
     public static final String RESOURCE_ALLOCATION_STRATEGY_ENV = "RESOURCE_ALLOCATION_STRATEGY";
 
     /**
+     * User specific registry for Connect build
+     */
+    public static final String CONNECT_BUILD_IMAGE_PATH_ENV = "CONNECT_BUILD_IMAGE_PATH";
+    public static final String CONNECT_BUILD_REGISTRY_SECRET_ENV = "CONNECT_BUILD_REGISTRY_SECRET";
+
+    /**
      * Defaults
      */
     public static final String STRIMZI_ORG_DEFAULT = "strimzi";
@@ -209,7 +215,7 @@ public class Environment {
     public static final String OLM_SOURCE_NAME = getOrDefault(OLM_SOURCE_NAME_ENV, OLM_SOURCE_NAME_DEFAULT);
     public static final String OLM_SOURCE_NAMESPACE = getOrDefault(OLM_SOURCE_NAMESPACE_ENV, OpenShift.OLM_SOURCE_NAMESPACE);
     public static final String OLM_APP_BUNDLE_PREFIX = getOrDefault(OLM_APP_BUNDLE_PREFIX_ENV, OLM_APP_BUNDLE_PREFIX_DEFAULT);
-    public static final String OLM_OPERATOR_LATEST_RELEASE_VERSION = getOrDefault(OLM_OPERATOR_VERSION_ENV, "0.34.0");
+    public static final String OLM_OPERATOR_LATEST_RELEASE_VERSION = getOrDefault(OLM_OPERATOR_VERSION_ENV, "0.35.0");
     // NetworkPolicy variable
     public static final boolean DEFAULT_TO_DENY_NETWORK_POLICIES = getOrDefault(DEFAULT_TO_DENY_NETWORK_POLICIES_ENV, Boolean::parseBoolean, DEFAULT_TO_DENY_NETWORK_POLICIES_DEFAULT);
     // ClusterOperator installation type variable
@@ -220,13 +226,18 @@ public class Environment {
     // Connect build related variables
     public static final String ST_FILE_PLUGIN_URL = getOrDefault(ST_FILE_PLUGIN_URL_ENV, ST_FILE_PLUGIN_URL_DEFAULT);
 
+    public static final String CONNECT_BUILD_IMAGE_PATH = getOrDefault(CONNECT_BUILD_IMAGE_PATH_ENV, "");
+    public static final String CONNECT_BUILD_REGISTRY_SECRET = getOrDefault(CONNECT_BUILD_REGISTRY_SECRET_ENV, "");
+
     private Environment() { }
 
     static {
         String debugFormat = "{}: {}";
         LOGGER.info("Used environment variables:");
         LOGGER.info(debugFormat, "CONFIG", config);
-        VALUES.forEach((key, value) -> LOGGER.info(debugFormat, key, value));
+        VALUES.entrySet().stream()
+                .sorted(Map.Entry.comparingByKey())
+                .forEach(entry -> LOGGER.info(debugFormat, entry.getKey(), entry.getValue()));
     }
 
     public static boolean isOlmInstall() {
@@ -284,6 +295,14 @@ public class Environment {
             } else {
                 return service.getSpec().getClusterIP() + ":" + service.getSpec().getPorts().stream().filter(servicePort -> servicePort.getName().equals("http")).findFirst().orElseThrow().getPort();
             }
+        }
+    }
+
+    public static String getImageOutputRegistry(String namespace, String imageName, String tag) {
+        if (!Environment.CONNECT_BUILD_IMAGE_PATH.isEmpty()) {
+            return Environment.CONNECT_BUILD_IMAGE_PATH + ":" + tag;
+        } else {
+            return getImageOutputRegistry() + "/" + namespace + "/" + imageName + ":" + tag;
         }
     }
 

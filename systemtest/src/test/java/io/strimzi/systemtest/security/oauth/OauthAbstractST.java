@@ -15,6 +15,7 @@ import io.strimzi.systemtest.enums.DefaultNetworkPolicy;
 import io.strimzi.systemtest.keycloak.KeycloakInstance;
 import io.strimzi.systemtest.resources.keycloak.SetupKeycloak;
 import io.strimzi.systemtest.templates.kubernetes.NetworkPolicyTemplates;
+import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.JobUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
 import io.strimzi.test.logs.CollectorElement;
@@ -31,6 +32,7 @@ import java.util.stream.Collectors;
 import java.util.HashMap;
 import java.util.Map;
 
+import static io.strimzi.systemtest.Constants.ARM64_UNSUPPORTED;
 import static io.strimzi.systemtest.Constants.OAUTH;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 
@@ -39,6 +41,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 @Tag(OAUTH)
 @Tag(REGRESSION)
+@Tag(ARM64_UNSUPPORTED)
 public class OauthAbstractST extends AbstractST {
 
     protected static final Logger LOGGER = LogManager.getLogger(OauthAbstractST.class);
@@ -134,6 +137,7 @@ public class OauthAbstractST extends AbstractST {
         // (f.e., our `infra-namespace`)
         if (kubeClient().getNamespace(clusterOperator.getDeploymentNamespace()) == null) {
             cluster.createNamespace(CollectorElement.createCollectorElement(extensionContext.getRequiredTestClass().getName()), clusterOperator.getDeploymentNamespace());
+            StUtils.copyImagePullSecrets(clusterOperator.getDeploymentNamespace());
         }
 
         SetupKeycloak.deployKeycloakOperator(extensionContext, clusterOperator.getDeploymentNamespace(), namespace);

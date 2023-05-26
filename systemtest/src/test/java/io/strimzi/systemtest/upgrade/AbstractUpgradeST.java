@@ -18,7 +18,6 @@ import io.strimzi.api.kafka.model.connect.build.JarArtifactBuilder;
 import io.strimzi.api.kafka.model.connect.build.Plugin;
 import io.strimzi.api.kafka.model.connect.build.PluginBuilder;
 import io.strimzi.operator.common.Annotations;
-import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
@@ -52,6 +51,7 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -529,7 +529,7 @@ public class AbstractUpgradeST extends AbstractST {
                     )
                     .build();
 
-                final String imageName = Environment.getImageOutputRegistry() + "/" + testStorage.getNamespaceName() + "/connect-" + Util.hashStub(String.valueOf(new Random().nextInt(Integer.MAX_VALUE))) + ":latest";
+                final String imageFullPath = Environment.getImageOutputRegistry(testStorage.getNamespaceName(), io.strimzi.systemtest.Constants.ST_CONNECT_BUILD_IMAGE_NAME, String.valueOf(new Random().nextInt(Integer.MAX_VALUE)));
 
                 KafkaConnect kafkaConnect = new KafkaConnectBuilder(TestUtils.configFromYaml(kafkaConnectYaml, KafkaConnect.class))
                     .editMetadata()
@@ -539,9 +539,7 @@ public class AbstractUpgradeST extends AbstractST {
                     .editSpec()
                         .editOrNewBuild()
                             .withPlugins(fileSinkPlugin)
-                            .withNewDockerOutput()
-                                .withImage(imageName)
-                            .endDockerOutput()
+                            .withDockerOutput(KafkaConnectTemplates.dockerOutput(imageFullPath))
                         .endBuild()
                         .addToConfig("key.converter.schemas.enable", false)
                         .addToConfig("value.converter.schemas.enable", false)
@@ -599,7 +597,7 @@ public class AbstractUpgradeST extends AbstractST {
         logPodImages(clusterName);
 
         // Verify FileSink KafkaConnector before upgrade
-        String connectorPodName = kubeClient().listPodsByPrefixInName(testStorage.getNamespaceName(), clusterName + "-connect").get(0).getMetadata().getName();
+        String connectorPodName = kubeClient().listPods(testStorage.getNamespaceName(), Collections.singletonMap(Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND)).get(0).getMetadata().getName();
         KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(testStorage.getNamespaceName(), connectorPodName, DEFAULT_SINK_FILE_PATH, "\"Hello-world - 499\"");
 
         // Upgrade CO to HEAD and wait for readiness of ClusterOperator
@@ -616,7 +614,7 @@ public class AbstractUpgradeST extends AbstractST {
         // Verify that Producer finish successfully
         ClientUtils.waitForProducerClientSuccess(testStorage);
         // Verify FileSink KafkaConnector
-        connectorPodName = kubeClient().listPodsByPrefixInName(testStorage.getNamespaceName(), clusterName + "-connect").get(0).getMetadata().getName();
+        connectorPodName = kubeClient().listPods(testStorage.getNamespaceName(), Collections.singletonMap(Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND)).get(0).getMetadata().getName();
         KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(testStorage.getNamespaceName(), connectorPodName, DEFAULT_SINK_FILE_PATH, "\"Hello-world - 499\"");
 
         // Verify that pods are stable

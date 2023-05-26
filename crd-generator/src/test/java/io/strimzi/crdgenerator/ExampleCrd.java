@@ -126,11 +126,9 @@ public class ExampleCrd<T, U extends Number, V extends U> extends CustomResource
 
     public List<Map<String, Object>> listOfMaps;
 
-    private String either;
-    private String or;
+    public String either;
 
-    private MapOrList alternatives;
-    private Type1OrType2 typedAlternatives;
+    public String or;
 
     @Description("Example of complex type.")
     public static class ObjectProperty {
@@ -303,21 +301,5 @@ public class ExampleCrd<T, U extends Number, V extends U> extends CustomResource
 
     public void setAffinity(Affinity affinity) {
         this.affinity = affinity;
-    }
-
-    public MapOrList getAlternatives() {
-        return alternatives;
-    }
-
-    public void setAlternatives(MapOrList alternatives) {
-        this.alternatives = alternatives;
-    }
-
-    public Type1OrType2 getTypedAlternatives() {
-        return typedAlternatives;
-    }
-
-    public void setTypedAlternatives(Type1OrType2 alternatives) {
-        this.typedAlternatives = alternatives;
     }
 }

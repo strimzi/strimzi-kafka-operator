@@ -36,56 +36,56 @@ kind: KafkaBridge
 metadata:
   name: my-bridge
 spec:
-  replicas: 3 <1>
-  bootstrapServers: _<cluster_name>_-cluster-kafka-bootstrap:9092 <2>
-  tls: <3>
+  replicas: 3 # <1>
+  bootstrapServers: _<cluster_name>_-cluster-kafka-bootstrap:9092 # <2>
+  tls: # <3>
     trustedCertificates:
       - secretName: my-cluster-cluster-cert
         certificate: ca.crt
       - secretName: my-cluster-cluster-cert
         certificate: ca2.crt
-  authentication: <4>
+  authentication: # <4>
     type: tls
     certificateAndKey:
       secretName: my-secret
       certificate: public.crt
       key: private.key
-  http: <5>
+  http: # <5>
     port: 8080
-    cors: <6>
+    cors: # <6>
       allowedOrigins: "https://strimzi.io"
       allowedMethods: "GET,POST,PUT,DELETE,OPTIONS,PATCH"
-  consumer: <7>
+  consumer: # <7>
     config:
       auto.offset.reset: earliest
-  producer: <8>
+  producer: # <8>
     config:
       delivery.timeout.ms: 300000
-  resources: <9>
+  resources: # <9>
     requests:
       cpu: "1"
       memory: 2Gi
     limits:
       cpu: "2"
       memory: 2Gi
-  logging: <10>
+  logging: # <10>
     type: inline
     loggers:
-      logger.bridge.level: "INFO"
+      logger.bridge.level: INFO
       # enabling DEBUG just for send operation
       logger.send.name: "http.openapi.operation.send"
-      logger.send.level: "DEBUG"
-  jvmOptions: <11>
+      logger.send.level: DEBUG
+  jvmOptions: # <11>
     "-Xmx": "1g"
     "-Xms": "1g"
-  readinessProbe: <12>
+  readinessProbe: # <12>
     initialDelaySeconds: 15
     timeoutSeconds: 5
   livenessProbe:
     initialDelaySeconds: 15
     timeoutSeconds: 5
-  image: my-org/my-image:latest <13>
-  template: <14>
+  image: my-org/my-image:latest # <13>
+  template: # <14>
     pod:
       affinity:
         podAntiAffinity:
@@ -98,14 +98,14 @@ spec:
                       - postgresql
                       - mongodb
               topologyKey: "kubernetes.io/hostname"
-    bridgeContainer: <15>
+    bridgeContainer: # <15>
       env:
-        - name: JAEGER_SERVICE_NAME
-          value: my-jaeger-service
-        - name: JAEGER_AGENT_HOST
-          value: jaeger-agent-name
-        - name: JAEGER_AGENT_PORT
-          value: "6831"
+        - name: OTEL_SERVICE_NAME
+          value: my-otel-service
+        - name: OTEL_EXPORTER_OTLP_ENDPOINT
+          value: "http://otlp-host:4317"
+  tracing:
+    type: opentelemetry # <16>
 ----
 <1> xref:con-common-configuration-replicas-reference[The number of replica nodes].
 <2> xref:con-common-configuration-bootstrap-reference[Bootstrap server] for connection to the target Kafka cluster. Use the name of the Kafka cluster as the _<cluster_name>_.
@@ -123,6 +123,7 @@ By default, the Kafka Bridge connects to Kafka brokers without authentication.
 <13> Optional: xref:con-common-configuration-images-reference[Container image configuration], which is recommended only in special situations.
 <14> xref:assembly-customizing-kubernetes-resources-str[Template customization]. Here a pod is scheduled with anti-affinity, so the pod is not scheduled on nodes with the same hostname.
 <15> Environment variables are set for distributed tracing.
+<16> Distributed tracing is enabled by using OpenTelemetry.
 
 . Create or update the resource:
 +

@@ -49,6 +49,10 @@ public class IpAndDnsValidationTest {
 
         assertThat(IpAndDnsValidation.isValidDnsNameOrWildcard("example:com"), is(false));
         assertThat(IpAndDnsValidation.isValidDnsNameOrWildcard("veryveryveryveryveryveryveryveryveryveryveryveryveryveryveryveryveryverylongexample.com"), is(false));
+
+        assertThat(IpAndDnsValidation.isValidDnsNameOrWildcard("example.com."), is(true));
+        assertThat(IpAndDnsValidation.isValidDnsNameOrWildcard("example.com.."), is(false));
+        assertThat(IpAndDnsValidation.isValidDnsNameOrWildcard("*.example.com."), is(true));
     }
 
     @Test

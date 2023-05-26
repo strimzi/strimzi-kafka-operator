@@ -245,6 +245,7 @@ public class NetworkPoliciesIsolatedST extends AbstractST {
 
         String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
+        clusterOperator.unInstall();
         clusterOperator = new SetupClusterOperator.SetupClusterOperatorBuilder()
             .withExtensionContext(BeforeAllOnce.getSharedExtensionContext())
             .withNamespace(clusterOperator.getDeploymentNamespace())

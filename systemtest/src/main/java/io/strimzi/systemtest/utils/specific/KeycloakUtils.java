@@ -25,7 +25,7 @@ public class KeycloakUtils {
      * @return user token
      */
     public static String getToken(String namespaceName, String baseURI, String userName, String password) {
-        String coPodName = kubeClient(namespaceName).getClusterOperatorPodName();
+        String coPodName = kubeClient().getClusterOperatorPodName(namespaceName);
         return new JsonObject(
             cmdKubeClient(namespaceName).execInPod(
                 coPodName,

@@ -82,15 +82,15 @@ public class ZooKeeperRoller {
                             final boolean ready = podOperator.isReady(namespace, pod.getMetadata().getName());
                             ZookeeperPodContext podContext = new ZookeeperPodContext(podName, restartReasons, true, ready);
                             if (restartReasons != null && !restartReasons.isEmpty())    {
-                                LOGGER.infoCr(reconciliation, "Pod {} should be rolled due to {}", podContext.getPodName(), restartReasons);
+                                LOGGER.debugCr(reconciliation, "Pod {} should be rolled due to {}", podContext.getPodName(), restartReasons);
                             } else {
-                                LOGGER.infoCr(reconciliation, "Pod {} does not need to be rolled", podContext.getPodName());
+                                LOGGER.debugCr(reconciliation, "Pod {} does not need to be rolled", podContext.getPodName());
                             }
                             clusterRollContext.add(podContext);
                         } else {
                             // Pod does not exist, but we still add it to the roll context because we should not roll
                             // any other pods before it is ready
-                            LOGGER.infoCr(reconciliation, "Pod {} does not exist and cannot be rolled", podName);
+                            LOGGER.debugCr(reconciliation, "Pod {} does not exist and cannot be rolled", podName);
                             ZookeeperPodContext podContext = new ZookeeperPodContext(podName, null, false, false);
                             clusterRollContext.add(podContext);
                         }

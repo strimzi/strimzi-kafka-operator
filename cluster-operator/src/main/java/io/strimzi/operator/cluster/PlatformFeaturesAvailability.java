@@ -2,7 +2,7 @@
  * Copyright Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.strimzi.operator;
+package io.strimzi.operator.cluster;
 
 import io.fabric8.kubernetes.api.model.APIGroup;
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -20,7 +20,7 @@ import java.text.ParseException;
 import java.util.Map;
 
 /**
- * Gives a info about certain features availability regarding to kubernetes version
+ * Provides info about certain features availability and Kubernetes version in the Kubernetes cluster
  */
 public class PlatformFeaturesAvailability implements PlatformFeatures {
     private static final Logger LOGGER = LogManager.getLogger(PlatformFeaturesAvailability.class.getName());
@@ -67,7 +67,7 @@ public class PlatformFeaturesAvailability implements PlatformFeatures {
 
     /**
      * Gets the Kubernetes VersionInfo. It either used from the /version endpoint or from the STRIMZI_KUBERNETES_VERSION
-     * environment variable. If defined, the environment variable will take the precedence. Otherwise the API server
+     * environment variable. If defined, the environment variable will take the precedence. Otherwise, the API server
      * endpoint will be used.
      *
      * And example of the STRIMZI_KUBERNETES_VERSION environment variable in Cluster Operator deployment:
@@ -111,27 +111,22 @@ public class PlatformFeaturesAvailability implements PlatformFeatures {
     static VersionInfo parseVersionInfo(String str) throws ParseException {
         Map<String, String> map = Util.parseMap(str);
         VersionInfo.Builder vib = new VersionInfo.Builder();
+
         for (Map.Entry<String, String> entry: map.entrySet()) {
-            if (entry.getKey().equals("major")) {
-                vib.withMajor(map.get(entry.getKey()));
-            } else if (entry.getKey().equals("minor")) {
-                vib.withMinor(map.get(entry.getKey()));
-            } else if (entry.getKey().equals("gitVersion")) {
-                vib.withGitVersion(map.get(entry.getKey()));
-            } else if (entry.getKey().equals("gitCommit")) {
-                vib.withGitCommit(map.get(entry.getKey()));
-            } else if (entry.getKey().equals("gitTreeState")) {
-                vib.withGitTreeState(map.get(entry.getKey()));
-            } else if (entry.getKey().equals("buildDate")) {
-                vib.withBuildDate(map.get(entry.getKey()));
-            } else if (entry.getKey().equals("goVersion")) {
-                vib.withGoVersion(map.get(entry.getKey()));
-            } else if (entry.getKey().equals("compiler")) {
-                vib.withCompiler(map.get(entry.getKey()));
-            } else if (entry.getKey().equals("platform")) {
-                vib.withPlatform(map.get(entry.getKey()));
+            switch (entry.getKey()) {
+                case "major" -> vib.withMajor(map.get(entry.getKey()));
+                case "minor" -> vib.withMinor(map.get(entry.getKey()));
+                case "gitVersion" -> vib.withGitVersion(map.get(entry.getKey()));
+                case "gitCommit" -> vib.withGitCommit(map.get(entry.getKey()));
+                case "gitTreeState" -> vib.withGitTreeState(map.get(entry.getKey()));
+                case "buildDate" -> vib.withBuildDate(map.get(entry.getKey()));
+                case "goVersion" -> vib.withGoVersion(map.get(entry.getKey()));
+                case "compiler" -> vib.withCompiler(map.get(entry.getKey()));
+                case "platform" -> vib.withPlatform(map.get(entry.getKey()));
+                default -> LOGGER.warn("Unknown key {} found", entry.getKey());
             }
         }
+
         return vib.build();
     }
 

@@ -16,19 +16,9 @@ import static java.lang.Short.parseShort;
  */
 public class KubeVersion implements Comparable<KubeVersion> {
     /**
-     * Kubernetes 1.11.x
-     */
-    public static final KubeVersion V1_11 = new KubeVersion((short) 1, (short) 11);
-
-    /**
      * Kubernetes 1.16.x
      */
     public static final KubeVersion V1_16 = new KubeVersion((short) 1, (short) 16);
-
-    /**
-     * Kubernetes range for Kube 1.11 and newer
-     */
-    public static final VersionRange<KubeVersion> V1_11_PLUS = KubeVersion.parseRange("1.11+");
 
     /**
      * Kubernetes range for Kube 1.16 and newer
@@ -96,42 +86,5 @@ public class KubeVersion implements Comparable<KubeVersion> {
     @Override
     public String toString() {
         return major + "." + minor;
-    }
-
-    /**
-     * Indicates whether this Kubernetes version support CRDs with schema per version
-     *
-     * @return  True if schema-oer version is supported in CRDs in this Kubernetes versions. False otherwise.
-     */
-    public boolean supportsSchemaPerVersion() {
-        return this.compareTo(V1_16) >= 0;
-    }
-
-    /**
-     * Checks whether all Kubernetes versions in this version range supports schemas per version in CRDs
-     *
-     * @param versionRange  The version range which should be checked
-     *
-     * @return  True if all Kubernetes versions in the range support schemas per version in the CRDs. False otherwise.
-     */
-    public static boolean supportsSchemaPerVersion(VersionRange<KubeVersion> versionRange) {
-        if (versionRange.isEmpty() || versionRange.isAll()) {
-            return false;
-        } else {
-            return versionRange.lower().supportsSchemaPerVersion()
-                    && (versionRange.upper() == null
-                    || versionRange.upper().supportsSchemaPerVersion());
-        }
-    }
-
-    /**
-     * Does this version of Kubernetes support the given API version of CustomResourceDefinition?
-     *
-     * @param crdApiVersion The CustomResourceDefinition API version
-     *
-     * @return Whether this version of Kube has support
-     */
-    public boolean supportsCrdApiVersion(ApiVersion crdApiVersion) {
-        return crdApiVersion.equals(ApiVersion.V1) ? this.compareTo(V1_16) >= 0 : this.compareTo(V1_11) >= 0;
     }
 }

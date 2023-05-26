@@ -16,9 +16,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
-
 public class ZkTopicStoreTest extends TopicStoreTestBase {
     private static Vertx vertx;
     private EmbeddedZooKeeper zkServer;
@@ -35,16 +32,16 @@ public class ZkTopicStoreTest extends TopicStoreTestBase {
     }
 
     @BeforeEach
-    public void setup() throws Exception {
+    public void setup(VertxTestContext context) throws Exception {
         zkServer = new EmbeddedZooKeeper();
         zkClient = Zk.createSync(vertx, zkServer.getZkConnectString(), 60_000, 10_000);
-        // wait some time for the topic store initialization before moving on with tests
-        CompletableFuture future = new CompletableFuture();
-        vertx.runOnContext(v -> {
-            ZkTopicStore store = new ZkTopicStore(zkClient, "/strimzi/topics");
-            future.complete(store);
-        });
-        store = (TopicStore) future.get(60, TimeUnit.SECONDS);
+        String topicsPath = "/strimzi/topics";
+        this.store = new ZkTopicStore(zkClient, topicsPath);
+        // wait for topic store initialization before moving ahead with test execution
+        zkClient.watchChildren(topicsPath, context.succeeding(watchResult -> {
+            zkClient.unwatchChildren(topicsPath);
+            context.completeNow();
+        }));
     }
 
     @AfterEach

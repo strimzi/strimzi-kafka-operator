@@ -12,9 +12,9 @@ The release process should normally look like this:
 
 1. Create a release branch
 2. On the `main` git branch of the repository:
-  * Update the versions to the next SNAPSHOT version using the `next_version` `make` target. For example to update the next version to `0.6.0-SNAPSHOT` run: `make NEXT_VERSION=0.6.0-SNAPSHOT next_version`.
-  * Update the product version in `attributes.adoc` to the next version
-  * Add a header for the new release to the `CHANGELOG.md` file
+   * Update the versions to the next SNAPSHOT version using the `next_version` `make` target. For example to update the next version to `0.6.0-SNAPSHOT` run: `make NEXT_VERSION=0.6.0-SNAPSHOT next_version`.
+   * Update the product version in `attributes.adoc` to the next version
+   * Add a header for the new release to the `CHANGELOG.md` file
 
 3. Run `make clean`
 4. Export the desired version into the environment variable `RELEASE_VERSION`
@@ -42,28 +42,38 @@ The release process should normally look like this:
 12. Create a GitHub tag and release based on the release branch. Attach the release artifacts and docs as downloaded from the Azure pipelines.
     * For RCs, the tag should be named with the RC suffix, e.g. `0.6.0-rc1`
 13. _(only for GA, not for RCs)_ Update the website
-  * Update the `_redirects` file to make sure the `/install/latest` redirect points to the new release.
-  * Update the `_data/releases.yaml` file to add new release
-  * Update the documentation: 
-    * Create new directories `docs/operators/<new-version>` and `docs/operators/<new-version>/full` in the website repository
-    * Copy files from the operators repository `documentation/htmlnoheader` to `docs/operators/<new-version>` in the website repository
-    * Copy files from the operators repository `documentation/html` to `docs/operators/<new-version>/full` in the website repository
-    * Create new files `contributing.md`, `deploying.md`, `overview.md`, `quickstart.md`, and `using.md` in `docs/operators/<new-version>` - the content of these files should be the same as for older versions, so you can copy them and update the version number.
-    * Delete the old HTML files and images from `docs/operators/latest` and `docs/operators/latest/full` (keep the `*.md` files) 
-    * Copy files from the operators repository `documentation/htmlnoheader` to `docs/operators/latest` in the website repository
-    * Copy files from the operators repository `documentation/html` to `docs/operators/latest/full` in the website repository
-  * Update the Helm Chart repository file by copying `helm-charts/helm3/index.yaml` in the operators GitHub repository to `charts/index.yaml` in the website GitHub repository.
+    * Update the `_redirects` file to make sure the `/install/latest` redirect points to the new release.
+    * Update the `_data/releases.yaml` file to add new release
+    * Update the documentation: 
+      * Create new directories `docs/operators/<new-version>` and `docs/operators/<new-version>/full` in the website repository
+      * Copy files from the operators repository `documentation/htmlnoheader` to `docs/operators/<new-version>` in the website repository
+      * Copy files from the operators repository `documentation/html` to `docs/operators/<new-version>/full` in the website repository
+      * Create new files `contributing.md`, `deploying.md`, `overview.md`, `quickstart.md`, and `using.md` in `docs/operators/<new-version>` - the content of these files should be the same as for older versions, so you can copy them and update the version number.
+      * Delete the old HTML files and images from `docs/operators/latest` and `docs/operators/latest/full` (keep the `*.md` files) 
+      * Copy files from the operators repository `documentation/htmlnoheader` to `docs/operators/latest` in the website repository
+      * Copy files from the operators repository `documentation/html` to `docs/operators/latest/full` in the website repository
+    * Add the Helm Chart repository `index.yaml` on our website:
+      * Download the release artifacts from the CI pipeline and unpack them
+      * Use the `helm` command to add the new version to the `index.yaml` file:
+        ```
+        helm repo index <PATH_TO_THE_DIRECTORY_WITH_THE_ARTIFCATS> --merge <PATH_TO_THE_INDEX_YAML> --url <URL_OF_THE_GITHUB_RELEASE_PAGE>
+        ```
+        For example, for Strimzi 0.34.0 release, if you unpacked the release artifacts to `./strimzi-0.34.0-rc1/` and have the Strimzi website checkout in `strimzi.github.io/`, you would run:
+        ```
+        helm repo index ./strimzi-0.34.0/ --merge ./strimzi.github.io/charts/index.yaml --url https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.34.0/
+        ```
+      * The updated `index.yaml` will be generated in the directory with the artifacts.
+        Verify the added data and the digest and if they are correct, copy it to `charts/index.yaml` on the website. 
 
-12. _(only for GA, not for RCs)_ On the `main` git branch of the repository:
-  * Copy the `packaging/helm-charts/index.yaml` from the `release` branch to `main`
-  * Update the `ProductVersion` variable in `documentation/using/shared/attributes.adoc`
-  * Update the `install`, `examples` and `helm-chart` directories in the `main` branch with the newly released files
-  * Update the checksums for released files in `.checksums`
+14. _(only for GA, not for RCs)_ On the `main` git branch of the repository:
+    * Update the `ProductVersion` variable in `documentation/using/shared/attributes.adoc`
+    * Update the `install`, `examples` and `helm-chart` directories in the `main` branch with the newly released files
+    * Update the checksums for released files in `.checksums`
 
-13. _(only for GA, not for RCs)_ The maven artifacts (`api` module) will be automatically staged from Azure during the tag build. It has to be releases from [Sonatype](https://oss.sonatype.org/#stagingRepositories) to get to the main Maven repositories.
-14. _(only for GA, not for RCs)_ Update the Strimzi manifest files in Operator Hub [community operators](https://github.com/operator-framework/community-operators) repository and submit a pull request upstream. *Note*: Instructions for this step need updating.
-15. _(only for GA, not for RCs)_ Add the new version to the `systemtest/src/test/resources/upgrade/BundleUpgrade.yaml` file for the upgrade tests
-16. _(only for GA, not for RCs)_ Add the new version to the `systemtest/src/test/resources/upgrade/BundleDowngrade.yaml` file and remove the old one for the downgrade tests
+15. _(only for GA, not for RCs)_ The maven artifacts (`api` module) will be automatically staged from Azure during the tag build. It has to be releases from [Sonatype](https://oss.sonatype.org/#stagingRepositories) to get to the main Maven repositories.
+16. _(only for GA, not for RCs)_ Update the Strimzi manifest files in Operator Hub [community operators](https://github.com/operator-framework/community-operators) repository and submit a pull request upstream. *Note*: Instructions for this step need updating.
+17. _(only for GA, not for RCs)_ Add the new version to the `systemtest/src/test/resources/upgrade/BundleUpgrade.yaml` file for the upgrade tests
+18. _(only for GA, not for RCs)_ Add the new version to the `systemtest/src/test/resources/upgrade/BundleDowngrade.yaml` file and remove the old one for the downgrade tests
 
 ## Updating Kafka Bridge version
 

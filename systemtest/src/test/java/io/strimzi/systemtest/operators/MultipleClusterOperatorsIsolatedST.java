@@ -33,6 +33,7 @@ import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.templates.kubernetes.ClusterRoleBindingTemplates;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.RollingUpdateUtils;
+import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaRebalanceUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
@@ -98,6 +99,7 @@ public class MultipleClusterOperatorsIsolatedST extends AbstractST {
         deployCOInNamespace(extensionContext, SECOND_CO_NAME, SECOND_NAMESPACE, Collections.singletonList(SECOND_CO_SELECTOR_ENV), true);
 
         cluster.createNamespace(DEFAULT_NAMESPACE);
+        StUtils.copyImagePullSecrets(DEFAULT_NAMESPACE);
         cluster.setNamespace(DEFAULT_NAMESPACE);
 
         LOGGER.info("Deploying Kafka without CR selector");

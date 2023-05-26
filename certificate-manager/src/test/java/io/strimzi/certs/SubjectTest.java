@@ -77,8 +77,10 @@ public class SubjectTest {
     public void testDnsValidation() {
         new Subject.Builder().addDnsName("example.com");
         new Subject.Builder().addDnsName("*.example.com");
-        assertThrows(IllegalArgumentException.class, () -> new Subject.Builder().addDnsName("foo.*.example.come"));
+        new Subject.Builder().addDnsName("example.io.");
+        assertThrows(IllegalArgumentException.class, () -> new Subject.Builder().addDnsName("foo.*.example.com"));
         assertThrows(IllegalArgumentException.class, () -> new Subject.Builder().addDnsName("54t8g#'/.l"));
+        assertThrows(IllegalArgumentException.class, () -> new Subject.Builder().addDnsName("example.io.."));
     }
 
     @Test

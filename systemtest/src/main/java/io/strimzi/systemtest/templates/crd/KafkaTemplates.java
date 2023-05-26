@@ -118,7 +118,14 @@ public class KafkaTemplates {
 
     public static KafkaBuilder kafkaWithCruiseControl(String name, int kafkaReplicas, int zookeeperReplicas) {
         Kafka kafka = getKafkaFromYaml(Constants.PATH_TO_KAFKA_CRUISE_CONTROL_CONFIG);
-        return defaultKafka(kafka, name, kafkaReplicas, zookeeperReplicas);
+
+        return defaultKafka(kafka, name, kafkaReplicas, zookeeperReplicas)
+                .editSpec()
+                    .editCruiseControl()
+                        // Extend active users tasks as we
+                        .addToConfig("max.active.user.tasks", 10)
+                    .endCruiseControl()
+                .endSpec();
     }
 
     public static KafkaBuilder kafkaWithMetricsAndCruiseControlWithMetrics(String name, String namespaceName, int kafkaReplicas, int zookeeperReplicas) {
@@ -166,6 +173,8 @@ public class KafkaTemplates {
                 .endKafkaExporter()
                 .withNewCruiseControl()
                     .withMetricsConfig(jmxPrometheusExporterMetrics)
+                    // Extend active users tasks as we
+                    .addToConfig("max.active.user.tasks", 10)
                 .endCruiseControl()
                 .editKafka()
                     .withNewJmxPrometheusExporterMetricsConfig()

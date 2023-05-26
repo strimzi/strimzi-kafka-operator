@@ -5,7 +5,7 @@
     <groupId>io.strimzi</groupId>
     <artifactId>strimzi</artifactId>
     <packaging>pom</packaging>
-    <version>0.35.0-SNAPSHOT</version>
+    <version>0.36.0-SNAPSHOT</version>
 
     <licenses>
         <license>
@@ -67,6 +67,24 @@
             <organization>CN Group</organization>
             <organizationUrl>https://www.cngroup.dk/</organizationUrl>
         </developer>
+        <developer>
+            <name>Paul Mellor</name>
+            <email>pmellor@redhat.com</email>
+            <organization>Red Hat</organization>
+            <organizationUrl>https://www.redhat.com</organizationUrl>
+        </developer>
+        <developer>
+            <name>Lukáš Král</name>
+            <email>l.kral@outlook.com</email>
+            <organization>Red Hat</organization>
+            <organizationUrl>https://www.redhat.com</organizationUrl>
+        </developer>
+        <developer>
+            <name>Maroš Orsák</name>
+            <email>maros.orsak159@gmail.com</email>
+            <organization>Red Hat</organization>
+            <organizationUrl>https://www.redhat.com</organizationUrl>
+        </developer>
     </developers>
 
     <properties>
@@ -103,9 +121,9 @@
         <lombok.version>1.18.24</lombok.version>
 
         <!-- Runtime dependencies -->
-        <fabric8.kubernetes-client.version>6.5.1</fabric8.kubernetes-client.version>
-        <fabric8.openshift-client.version>6.5.1</fabric8.openshift-client.version>
-        <fabric8.kubernetes-model.version>6.5.1</fabric8.kubernetes-model.version>
+        <fabric8.kubernetes-client.version>6.6.1</fabric8.kubernetes-client.version>
+        <fabric8.openshift-client.version>6.6.1</fabric8.openshift-client.version>
+        <fabric8.kubernetes-model.version>6.6.1</fabric8.kubernetes-model.version>
         <fabric8.zjsonpatch.version>0.3.0</fabric8.zjsonpatch.version>
         <fasterxml.jackson-core.version>2.14.2</fasterxml.jackson-core.version>
         <fasterxml.jackson-databind.version>2.14.2</fasterxml.jackson-databind.version>

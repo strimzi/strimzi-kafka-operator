@@ -1961,6 +1961,10 @@ public class ListenersST extends AbstractST {
         resourceManager.createResource(extensionContext, kafkaClients.consumerTlsStrimzi(testStorage.getClusterName()));
         ClientUtils.waitForConsumerClientSuccess(testStorage);
 
+        // Delete already existing secrets
+        SecretUtils.deleteSecretWithWait(clusterCustomCertServer1, testStorage.getNamespaceName());
+        SecretUtils.deleteSecretWithWait(clusterCustomCertServer2, testStorage.getNamespaceName());
+        // Create secrets with new values (update)
         SecretUtils.createCustomSecret(clusterCustomCertServer1, testStorage.getClusterName(), testStorage.getNamespaceName(), strimziCertAndKey2);
         SecretUtils.createCustomSecret(clusterCustomCertServer2, testStorage.getClusterName(), testStorage.getNamespaceName(), strimziCertAndKey1);
 

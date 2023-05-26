@@ -105,6 +105,7 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
+import static org.junit.jupiter.api.Assumptions.assumeFalse;
 
 /**
  * @description This test suite is designed for testing metrics exposed by operators and operands.
@@ -267,8 +268,8 @@ public class MetricsIsolatedST extends AbstractST {
 
         if (Environment.isStableConnectIdentitiesEnabled()) {
             // check StrimziPodSet metrics in CO
-            assertMetricCountHigherThan(clusterOperatorCollector, getResourceMetricPattern(StrimziPodSet.RESOURCE_KIND, namespaceFirst), 1);
-            assertCoMetricResources(clusterOperatorCollector, StrimziPodSet.RESOURCE_KIND, namespaceSecond, 1);
+            assertMetricValueHigherThan(clusterOperatorCollector, getResourceMetricPattern(StrimziPodSet.RESOURCE_KIND, namespaceFirst), 1);
+            assertMetricValueHigherThan(clusterOperatorCollector, getResourceMetricPattern(StrimziPodSet.RESOURCE_KIND, namespaceSecond), 0);
         }
     }
 
@@ -511,7 +512,7 @@ public class MetricsIsolatedST extends AbstractST {
 
         if (Environment.isStableConnectIdentitiesEnabled()) {
             // check StrimziPodSet metrics in CO
-            assertMetricCountHigherThan(clusterOperatorCollector, getResourceMetricPattern(StrimziPodSet.RESOURCE_KIND, namespaceFirst), 1);
+            assertMetricValueHigherThan(clusterOperatorCollector, getResourceMetricPattern(StrimziPodSet.RESOURCE_KIND, namespaceFirst), 1);
         }
     }
 
@@ -700,8 +701,13 @@ public class MetricsIsolatedST extends AbstractST {
 
     @BeforeAll
     void setupEnvironment(ExtensionContext extensionContext) throws Exception {
+        // Metrics tests are not designed to run with namespace RBAC scope.
+        assumeFalse(Environment.isNamespaceRbacScope());
         clusterOperator.unInstall();
         cluster.createNamespaces(CollectorElement.createCollectorElement(this.getClass().getName()), clusterOperator.getDeploymentNamespace(), Arrays.asList(namespaceFirst, namespaceSecond));
+        // Copy pull secret into newly created namespaces
+        StUtils.copyImagePullSecrets(namespaceFirst);
+        StUtils.copyImagePullSecrets(namespaceSecond);
 
         clusterOperator = clusterOperator.defaultInstallation()
             .createInstallation()

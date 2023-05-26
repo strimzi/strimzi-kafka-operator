@@ -147,5 +147,4 @@ A `LocalHost` profile uses a profile defined in a file on the node.
 
 * {K8sSecurityContext} on Kubernetes
 * {K8sSecurityStandards} on Kubernetes (including profile descriptions)
-* xref:type-ContainerTemplate-reference[]
 

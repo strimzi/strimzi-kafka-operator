@@ -14,7 +14,7 @@ import io.strimzi.api.kafka.model.KafkaConnectBuilder;
 import io.strimzi.api.kafka.model.KafkaConnectResources;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.platform.KubernetesVersion;
-import io.strimzi.operator.PlatformFeaturesAvailability;
+import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
@@ -159,7 +159,7 @@ public class KafkaConnectAssemblyOperatorMockTest {
 
         Checkpoint async = context.checkpoint();
         createConnectCluster(context, mock, false)
-            .onComplete(context.succeedingThenComplete())
+            .onComplete(context.succeeding(i -> { }))
             .compose(v -> {
                 LOGGER.info("Reconciling again -> update");
                 return kco.reconcile(new Reconciliation("test-trigger", KafkaConnect.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME));
@@ -187,7 +187,7 @@ public class KafkaConnectAssemblyOperatorMockTest {
 
         Checkpoint async = context.checkpoint();
         createConnectCluster(context, mock, true)
-                .onComplete(context.succeedingThenComplete())
+                .onComplete(context.succeeding(i -> { }))
                 .compose(v -> {
                     LOGGER.info("Reconciling again -> update");
                     return kco.reconcile(new Reconciliation("test-trigger", KafkaConnect.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME));

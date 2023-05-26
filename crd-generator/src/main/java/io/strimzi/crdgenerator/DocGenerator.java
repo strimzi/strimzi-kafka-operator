@@ -9,8 +9,6 @@ import io.fabric8.kubernetes.client.CustomResource;
 import io.strimzi.api.annotations.ApiVersion;
 import io.strimzi.api.annotations.DeprecatedProperty;
 import io.strimzi.api.annotations.DeprecatedType;
-import io.strimzi.api.annotations.VersionRange;
-import io.strimzi.crdgenerator.annotations.Alternation;
 import io.strimzi.crdgenerator.annotations.Crd;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.DescriptionFile;
@@ -20,11 +18,9 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
-import java.io.StringWriter;
 import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -55,9 +51,9 @@ class DocGenerator {
     private final Appendable out;
     private final ApiVersion crApiVersion;
 
-    private Set<Class<?>> documentedTypes = new HashSet<>();
-    private HashMap<Class<?>, Set<Class<?>>> usedIn;
-    private Linker linker;
+    private final Set<Class<?>> documentedTypes = new HashSet<>();
+    private final HashMap<Class<?>, Set<Class<?>>> usedIn;
+    private final Linker linker;
     private int numErrors = 0;
 
     public DocGenerator(ApiVersion crApiVersion, int headerDepth, Iterable<Class<? extends CustomResource>> crdClasses, Appendable out, Linker linker) {
@@ -71,7 +67,7 @@ class DocGenerator {
         }
     }
 
-    private void appendAnchor(Crd crd, Class<?> anchor) throws IOException {
+    private void appendAnchor(Class<?> anchor) throws IOException {
         out.append("[id='").append(anchor(anchor)).append("']").append(NL);
     }
 
@@ -79,7 +75,7 @@ class DocGenerator {
         return "type-" + anchor.getSimpleName() + "-{context}";
     }
 
-    private void appendHeading(Crd crd, String name) throws IOException {
+    private void appendHeading(String name) throws IOException {
         appendRepeated('#', headerDepth);
         out.append(' ');
         out.append(name);
@@ -97,11 +93,7 @@ class DocGenerator {
                 continue;
             }
 
-            if (property.getType().getType().isAnnotationPresent(Alternation.class)) {
-                memorableProperties.addAll(property.getAlternatives(crApiVersion, VersionRange.all()));
-            } else {
-                memorableProperties.add(property);
-            }
+            memorableProperties.add(property);
         }
 
         for (Property property : memorableProperties) {
@@ -131,14 +123,14 @@ class DocGenerator {
 
     public void generate(Class<? extends CustomResource> crdClass) throws IOException {
         Crd crd = crdClass.getAnnotation(Crd.class);
-        appendAnchor(crd, crdClass);
-        appendHeading(crd, "`" + crd.spec().names().kind() + "`");
+        appendAnchor(crdClass);
+        appendHeading("`" + crd.spec().names().kind() + "`");
         appendCommonTypeDoc(crd, crdClass);
     }
 
     private void appendedNestedTypeDoc(Crd crd, Class<?> cls) throws IOException {
-        appendAnchor(crd, cls);
-        appendHeading(crd, "`" + cls.getSimpleName() + "`");
+        appendAnchor(cls);
+        appendHeading("`" + cls.getSimpleName() + "`");
         appendCommonTypeDoc(crd, cls);
     }
 
@@ -181,31 +173,20 @@ class DocGenerator {
             String externalUrl = linker != null && kubeLink != null ? linker.link(kubeLink) : null;
             addExternalUrl(property, kubeLink, externalUrl);
 
-            // Get the OneOfType alternatives
-            List<Property> alternatives = property.getAlternatives(crApiVersion, VersionRange.all());
-
             // Add the types to the `types` array to also generate the docs for the type itself
-            if (alternatives.size() > 0) {
-                addTypesFromAlternatives(alternatives, types);
-            } else {
-                Class<?> documentedType = propertyType.isArray() ? propertyType.arrayBase() : propertyType.getType();
+            Class<?> documentedType = propertyType.isArray() ? propertyType.arrayBase() : propertyType.getType();
 
-                if (externalUrl == null
-                        && !Schema.isJsonScalarType(documentedType)
-                        && !documentedType.equals(Map.class)
-                        && !documentedType.equals(Object.class)) {
-                    types.add(documentedType);
-                }
+            if (externalUrl == null
+                    && !Schema.isJsonScalarType(documentedType)
+                    && !documentedType.equals(Map.class)
+                    && !documentedType.equals(Object.class)) {
+                types.add(documentedType);
             }
 
             // TODO Minimum?, Maximum?, Pattern?
 
             // Add the property type description
-            if (alternatives.size() > 0) {
-                appendPropertyTypeWithAlternatives(crd, alternatives);
-            } else {
-                appendPropertyType(crd, out, propertyType, externalUrl);
-            }
+            appendPropertyType(crd, out, propertyType, externalUrl);
         }
         out.append("|====").append(NL).append(NL);
 
@@ -217,7 +198,7 @@ class DocGenerator {
      *
      * @param property  The property which will be checked for deprecation
      *
-     * @throws IOException
+     * @throws IOException  Throws IOException when appending to the output fails
      */
     private void addDeprecationWarning(Property property) throws IOException {
         DeprecatedProperty strimziDeprecated = property.getAnnotation(DeprecatedProperty.class);
@@ -240,7 +221,7 @@ class DocGenerator {
      * @param cls   The Class (type) which is being documented
      * @param property  The property for which the description should be added
      *
-     * @throws IOException
+     * @throws IOException  Throws IOException when appending to the output fails
      */
     private void addDescription(Class<?> cls, Property property) throws IOException {
         Description description = property.getAnnotation(Description.class);
@@ -261,7 +242,7 @@ class DocGenerator {
      * @param kubeLink  The value of the KubeLink annotation or null if not set
      * @param externalUrl   The URL to the Kubernetes documentation
      *
-     * @throws IOException
+     * @throws IOException  Throws IOException when appending to the output fails
      */
     private void addExternalUrl(Property property, KubeLink kubeLink, String externalUrl) throws IOException {
         if (externalUrl != null) {
@@ -271,24 +252,6 @@ class DocGenerator {
             out.append(" The type depends on the value of the `").append(property.getName()).append(".").append(discriminator(property.getType().getType()))
                     .append("` property within the given object, which must be one of ")
                     .append(subtypeNames(property.getType().getType()).toString()).append(".");
-        }
-    }
-
-    /**
-     * Adds all the alternative types for having them later documented
-     *
-     * @param alternatives  Alternative properties
-     * @param types     The list of types which will be later documented
-     */
-    private void addTypesFromAlternatives(List<Property> alternatives, LinkedHashSet<Class<?>> types) {
-        for (Property property : alternatives) {
-            Class<?> documentedType = property.getType().isArray() ? property.getType().arrayBase() : property.getType().getType();
-
-            if (!Schema.isJsonScalarType(documentedType)
-                    && !documentedType.equals(Map.class)
-                    && !documentedType.equals(Object.class)) {
-                types.add(documentedType);
-            }
         }
     }
 
@@ -388,20 +351,6 @@ class DocGenerator {
         out.append(NL);
     }
 
-    private void appendPropertyTypeWithAlternatives(Crd crd, List<Property> alternatives) throws IOException {
-        List<String> alternativeTypes = new ArrayList<>(alternatives.size());
-        for (Property prop : alternatives) {
-            StringWriter writer = new StringWriter();
-            appendPropertyType(crd, writer, prop.getType(), null);
-            String alternativeType = writer.toString();
-            alternativeTypes.add(alternativeType.trim().substring(1));
-        }
-
-        out.append(NL).append("|");
-        out.append(String.join(" or ", alternativeTypes));
-        out.append(NL);
-    }
-
     private void appendTypeDeprecation(Crd crd, Class<?> cls) throws IOException {
         DeprecatedType deprecatedType = cls.getAnnotation(DeprecatedType.class);
         Deprecated langDeprecated = cls.getAnnotation(Deprecated.class);
@@ -459,8 +408,8 @@ class DocGenerator {
     }
 
     private void appendUsedIn(Crd crd, Class<?> cls) throws IOException {
-        List<Class<?>> usedIn = this.usedIn.getOrDefault(cls, emptySet()).stream().collect(Collectors.toCollection(() -> new ArrayList<>()));
-        Collections.sort(usedIn, Comparator.comparing(c -> c.getSimpleName().toLowerCase(Locale.ENGLISH)));
+        List<Class<?>> usedIn = new ArrayList<>(this.usedIn.getOrDefault(cls, emptySet()));
+        usedIn.sort(Comparator.comparing(c -> c.getSimpleName().toLowerCase(Locale.ENGLISH)));
         if (!usedIn.isEmpty()) {
             out.append("Used in: ");
             boolean first = true;
@@ -547,7 +496,8 @@ class DocGenerator {
         Linker linker = null;
         File out = null;
         List<Class<? extends CustomResource>> classes = new ArrayList<>();
-        outer: for (int i = 0; i < args.length; i++) {
+
+        for (int i = 0; i < args.length; i++) {
             String arg = args[i];
             if (arg.startsWith("-")) {
                 if ("--linker".equals(arg)) {
@@ -569,12 +519,12 @@ class DocGenerator {
                 if (out == null) {
                     out = new File(arg);
                 } else {
-                    String className = arg;
-                    Class<? extends CustomResource> cls = classInherits(Class.forName(className), CustomResource.class);
+                    // If we have fallen in the else branch here, the arg has to be a class name
+                    Class<? extends CustomResource> cls = classInherits(Class.forName(arg), CustomResource.class);
                     if (cls != null) {
                         classes.add(cls);
                     } else {
-                        System.err.println(className + " is not a subclass of " + CustomResource.class.getName());
+                        System.err.println(arg + " is not a subclass of " + CustomResource.class.getName());
                     }
                 }
             }

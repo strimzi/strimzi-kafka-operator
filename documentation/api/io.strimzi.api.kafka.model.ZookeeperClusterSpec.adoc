@@ -5,37 +5,45 @@ Configures a ZooKeeper cluster.
 
 Use the `config` properties to configure ZooKeeper options as keys.
 
-Standard Apache ZooKeeper configuration may be provided, restricted to those properties not managed directly by Strimzi.
-
-Configuration options that cannot be configured relate to:
-
-* Security (Encryption, Authentication, and Authorization)
-* Listener configuration
-* Configuration of data directories
-* ZooKeeper cluster composition
-
 The values can be one of the following JSON types:
 
 * String
 * Number
 * Boolean
 
-You can specify and configure the options listed in the {ApacheZookeeperConfig} with the exception of those managed directly by Strimzi.
-Specifically, all configuration options with keys equal to or starting with one of the following strings are forbidden:
+*Exceptions*
 
-* `server.`
+You can specify and configure the options listed in the {ApacheZookeeperConfig}.
+
+However, Strimzi takes care of configuring and managing options related to the following, which cannot be changed:
+
+* Security (encryption, authentication, and authorization)
+* Listener configuration
+* Configuration of data directories
+* ZooKeeper cluster composition
+
+Properties with the following prefixes cannot be set:
+
+* `4lw.commands.whitelist`
+* `authProvider`
+* `clientPort`
 * `dataDir`
 * `dataLogDir`
-* `clientPort`
-* `authProvider`
 * `quorum.auth`
+* `reconfigEnabled`
 * `requireClientAuthScheme`
+* `secureClientPort`
+* `server.`
+* `snapshot.trust.empty`
+* `standaloneEnabled`
+* `serverCnxnFactory`
+* `ssl.`
+* `sslQuorum`
 
-When a forbidden option is present in the `config` property, it is ignored and a warning message is printed to the Cluster Operator log file.
-All other supported options are passed to ZooKeeper.
+If the `config` property contains an option that cannot be changed, it is disregarded, and a warning message is logged to the Cluster Operator log file.
+All other supported options are forwarded to ZooKeeper, including the following exceptions to the options configured by Strimzi:
 
-There are exceptions to the forbidden options.
-For client connection using a specific _cipher suite_ for a TLS version, you can xref:con-common-configuration-ssl-reference[configure allowed `ssl` properties].
+* Any `ssl` configuration for xref:con-common-configuration-ssl-reference[supported TLS versions and cipher suites]
 
 .Example ZooKeeper configuration
 [source,yaml,subs="attributes+"]
@@ -49,10 +57,7 @@ spec:
     # ...
     config:
       autopurge.snapRetainCount: 3
-      autopurge.purgeInterval: 1
-      ssl.cipher.suites: TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
-      ssl.enabled.protocols: TLSv1.2
-      ssl.protocol: TLSv1.2
+      autopurge.purgeInterval: 2
     # ...
 ----
 
@@ -72,6 +77,8 @@ If a ConfigMap is used, you set `logging.valueFrom.configMapKeyRef.name` propert
 For more information about log levels, see {ApacheLoggers}.
 
 Here we see examples of `inline` and `external` logging.
+The `inline` logging specifies the root logger level.
+You can also set log levels for specific classes or loggers by adding them to the loggers property.
 
 .Inline logging
 [source,yaml,subs="+quotes,attributes"]
@@ -85,9 +92,14 @@ spec:
     logging:
       type: inline
       loggers:
-        zookeeper.root.logger: "INFO"
+        zookeeper.root.logger: INFO
+        log4j.logger.org.apache.zookeeper.server.FinalRequestProcessor: TRACE
+        log4j.logger.org.apache.zookeeper.server.ZooKeeperServer: DEBUG
     # ...
 ----
+
+NOTE: Setting a log level to `DEBUG` may result in a large amount of log output and may have performance implications.
+
 
 .External logging
 [source,yaml,subs="+quotes,attributes"]

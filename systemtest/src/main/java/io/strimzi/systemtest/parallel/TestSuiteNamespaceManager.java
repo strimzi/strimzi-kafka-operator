@@ -138,9 +138,7 @@ public class TestSuiteNamespaceManager {
                 if (ExecutionListener.hasSuiteParallelOrIsolatedTest(extensionContext)) {
                     KubeClusterResource.getInstance().createNamespace(CollectorElement.createCollectorElement(testSuite), namespaceName);
                     NetworkPolicyResource.applyDefaultNetworkPolicySettings(extensionContext, Collections.singletonList(namespaceName));
-                    if (Environment.SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET != null && !Environment.SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET.isEmpty()) {
-                        StUtils.copyImagePullSecret(namespaceName);
-                    }
+                    StUtils.copyImagePullSecrets(namespaceName);
                 } else {
                     LOGGER.info("We are not gonna create additional namespace: {}, because test suite: {} does not " +
                         "contains @ParallelTest or @IsolatedTest.", namespaceName, requiredClassName);
@@ -172,9 +170,7 @@ public class TestSuiteNamespaceManager {
 
                 KubeClusterResource.getInstance().createNamespace(CollectorElement.createCollectorElement(extensionContext.getRequiredTestClass().getName(), extensionContext.getRequiredTestMethod().getName()), namespaceTestCase);
                 NetworkPolicyResource.applyDefaultNetworkPolicySettings(extensionContext, Collections.singletonList(namespaceTestCase));
-                if (Environment.SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET != null && !Environment.SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET.isEmpty()) {
-                    StUtils.copyImagePullSecret(namespaceTestCase);
-                }
+                StUtils.copyImagePullSecrets(namespaceTestCase);
             }
         }
     }

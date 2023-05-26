@@ -28,7 +28,7 @@ import io.strimzi.api.kafka.model.connect.ConnectorPluginBuilder;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.api.kafka.model.status.Status;
 import io.strimzi.platform.KubernetesVersion;
-import io.strimzi.operator.PlatformFeaturesAvailability;
+import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
@@ -188,7 +188,7 @@ public class ConnectorMockTest {
         Checkpoint async = testContext.checkpoint();
         // Fail test if watcher closes for any reason
         kafkaConnectOperator.createWatch(NAMESPACE, e -> testContext.failNow(e))
-            .onComplete(testContext.succeedingThenComplete())
+            .onComplete(testContext.succeeding(i -> { }))
             .compose(watch -> {
                 connectWatch = watch;
                 return AbstractConnectOperator.createConnectorWatch(kafkaConnectOperator, NAMESPACE, null);

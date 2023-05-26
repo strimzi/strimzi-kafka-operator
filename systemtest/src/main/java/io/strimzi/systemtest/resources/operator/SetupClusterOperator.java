@@ -255,6 +255,7 @@ public class SetupClusterOperator {
             cluster.setNamespace(namespaceInstallTo);
             cluster.createNamespaces(CollectorElement.createCollectorElement(testClassName, testMethodName), namespaceInstallTo, bindingsNamespaces);
             extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.PREPARE_OPERATOR_ENV_KEY + namespaceInstallTo, false);
+            StUtils.copyImagePullSecrets(namespaceInstallTo);
         }
 
         OlmConfiguration olmConfiguration = new OlmConfigurationBuilder()
@@ -381,9 +382,7 @@ public class SetupClusterOperator {
             cluster.setNamespace(namespaceInstallTo);
             cluster.createNamespaces(CollectorElement.createCollectorElement(testClassName, testMethodName), namespaceInstallTo, bindingsNamespaces);
             extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.PREPARE_OPERATOR_ENV_KEY + namespaceInstallTo, false);
-            if (Environment.SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET != null && !Environment.SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET.isEmpty()) {
-                StUtils.copyImagePullSecret(namespaceInstallTo);
-            }
+            StUtils.copyImagePullSecrets(namespaceInstallTo);
         } else {
             LOGGER.info("Environment for ClusterOperator was already prepared! Going to install it now.");
         }

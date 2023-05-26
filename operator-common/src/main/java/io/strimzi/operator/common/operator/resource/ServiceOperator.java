@@ -37,7 +37,6 @@ public class ServiceOperator extends AbstractNamespacedResourceOperator<Kubernet
                     "|/spec/sessionAffinity" +
                     "|/spec/clusterIP" +
                     "|/spec/clusterIPs" +
-                    "|/spec/ipFamily" + // Legacy field from Kube 1.19 and earlier. We just ignore it, it is not configurable.
                     "|/spec/ipFamilies" + // Immutable field
                     "|/spec/internalTrafficPolicy" + // Set by Kubernetes to Cluster as default (not configurable through Strimzi as it does nto seem to make much sense for us, so we ignore it)
                     "|/status)$");

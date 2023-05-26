@@ -16,7 +16,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.TreeMap;
-import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonAnySetter;
@@ -28,9 +27,6 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.strimzi.api.annotations.ApiVersion;
-import io.strimzi.api.annotations.KubeVersion;
-import io.strimzi.api.annotations.VersionRange;
-import io.strimzi.crdgenerator.annotations.Alternative;
 import io.strimzi.crdgenerator.annotations.PresentInVersions;
 
 import static java.util.Collections.emptyList;
@@ -41,9 +37,9 @@ class Property implements AnnotatedElement {
     private final String name;
     private final Class<?> owner;
 
-    private AnnotatedElement a;
-    private Member m;
-    private PropertyType type;
+    private final AnnotatedElement a;
+    private final Member m;
+    private final PropertyType type;
 
     public Property(Method method) {
         name = propertyName(method);
@@ -150,18 +146,18 @@ class Property implements AnnotatedElement {
     }
 
     private static boolean hasAnyGetter(Method method) {
-        Annotation annotation = findAnnotation(JsonAnyGetter.class, method, method.getDeclaringClass());
-        return annotation != null && ((JsonAnyGetter) annotation).enabled();
+        JsonAnyGetter annotation = findAnnotation(JsonAnyGetter.class, method, method.getDeclaringClass());
+        return annotation != null && annotation.enabled();
     }
 
     private static boolean hasAnySetter(Method method) {
-        Annotation annotation = findAnnotation(JsonAnySetter.class, method, method.getDeclaringClass());
-        return annotation != null && ((JsonAnySetter) annotation).enabled();
+        JsonAnySetter annotation = findAnnotation(JsonAnySetter.class, method, method.getDeclaringClass());
+        return annotation != null && annotation.enabled();
     }
 
     private static boolean hasJsonIgnore(Method method) {
-        Annotation annotation = findAnnotation(JsonIgnore.class, method, method.getDeclaringClass());
-        return annotation != null && ((JsonIgnore) annotation).value();
+        JsonIgnore annotation = findAnnotation(JsonIgnore.class, method, method.getDeclaringClass());
+        return annotation != null && annotation.value();
     }
 
     private static <A extends Annotation> A findAnnotation(Class<A> annotationClass, Method method, Class<?> c) {
@@ -210,22 +206,23 @@ class Property implements AnnotatedElement {
 
     static Map<String, Property> sortedProperties(String[] order, TreeMap<String, Property> unordered) {
         Map<String, Property> result;
+
         if (order != null) {
             LinkedHashMap<String, Property> ordered = new LinkedHashMap<>(unordered.size());
-            if (order.length > 0) {
-                for (String propertyName : order) {
-                    Property property = unordered.remove(propertyName);
-                    if (property != null) {
-                        ordered.put(propertyName, property);
-                    }
+            for (String propertyName : order) {
+                Property property = unordered.remove(propertyName);
+                if (property != null) {
+                    ordered.put(propertyName, property);
                 }
             }
+
             // The rest in alphabetic order, irrespective of unordered.alphabetic
             ordered.putAll(unordered);
             result = ordered;
         } else {
             result = unordered;
         }
+
         return unmodifiableMap(result);
     }
 
@@ -315,23 +312,6 @@ class Property implements AnnotatedElement {
 
     boolean isDiscriminator() {
         return getName().equals(discriminator(m.getDeclaringClass()));
-    }
-
-    /**
-     * @param crApiVersion The API version of the CR being generated, or null if we're generating
-     *                     a schema for a kube version which doesn't support multiple versions.
-     * @param kubeVersions
-     * @return
-     */
-    List<Property> getAlternatives(ApiVersion crApiVersion, VersionRange<KubeVersion> kubeVersions) {
-        List<Property> alternatives =
-                Property.properties(crApiVersion, getType().getType()).values().stream()
-                        .filter(p -> {
-                            Alternative annotation = p.getAnnotation(Alternative.class);
-                            return crApiVersion == null || (annotation != null && ApiVersion.parseRange(annotation.apiVersion()).contains(crApiVersion));
-                        })
-                        .collect(Collectors.toList());
-        return alternatives;
     }
 
     @Override

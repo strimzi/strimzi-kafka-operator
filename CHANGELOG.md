@@ -1,12 +1,21 @@
 # CHANGELOG
 
+## 0.36.0
+
+* Update Kafka Exporter to [1.7.0](https://github.com/danielqsj/kafka_exporter/releases/tag/v1.7.0)
+
+### Changes, deprecations and removals
+
+* **From Strimzi 0.36.0 on, we support only Kubernetes 1.21 and newer.**
+  Kubernetes 1.19 and 1.20 are not supported anymore.
+
 ## 0.35.0
 
-* Redesigned the `UserOperatorConfig` to make it more efficient and flexible
+* Redesigned the Cluster and User Operator configuration to make it more efficient and flexible
 * Allow multiple imagePullSecrets in the Strimzi Helm chart
 * Remove support for JMX Trans
 * Move feature gate `UseStrimziPodSets` to GA and remove support for StatefulSets
-* Add flag to load dashboards from helm chart
+* Add flag to load Grafana dashboards from Helm Chart
 
 ### Changes, deprecations and removals
 

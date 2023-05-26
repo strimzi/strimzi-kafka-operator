@@ -11,6 +11,7 @@ import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.Watcher;
 import io.fabric8.kubernetes.client.dsl.FilterWatchListDeletable;
+import io.fabric8.kubernetes.client.dsl.Informable;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.dsl.base.PatchContext;
@@ -49,7 +50,7 @@ public abstract class AbstractNamespacedResourceOperator<C extends KubernetesCli
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(AbstractNamespacedResourceOperator.class);
 
     /**
-     * Marker for indication "all namesapces" => this is used for example when creating watches to create a cluster
+     * Marker for indication "all namespaces" => this is used for example when creating watches to create a cluster
      * wide watch.
      */
     public final static String ANY_NAMESPACE = "*";
@@ -193,7 +194,7 @@ public abstract class AbstractNamespacedResourceOperator<C extends KubernetesCli
      * @param reconciliation The reconciliation
      * @param namespace Namespace of the resource which should be deleted
      * @param name Name of the resource which should be deleted
-     * @param cascading Defines whether the delete should be cascading or not (e.g. whether a STS deletion should delete pods etc.)
+     * @param cascading Defines whether the deletion should be cascading or not (e.g. whether an STS deletion should delete pods etc.)
      *
      * @return A future which will be completed on the context thread
      *         once the resource has been deleted.
@@ -250,7 +251,7 @@ public abstract class AbstractNamespacedResourceOperator<C extends KubernetesCli
     }
 
     /**
-     * Method for patching or replacing a resource. By default is using JSON-type patch. Overriding this method can be
+     * Method for patching or replacing a resource. By default, is using JSON-type patch. Overriding this method can be
      * used to use replace instead of patch or different patch strategies.
      *
      * @param namespace     Namespace of the resource
@@ -408,52 +409,58 @@ public abstract class AbstractNamespacedResourceOperator<C extends KubernetesCli
     }
 
     /**
-     * Creates the informer for given resource type to inform on all instances in given namespace (or cluster-wide).
+     * Creates the informer for given resource type to inform on all instances in given namespace (or cluster-wide). The
+     * informer returned by this method is not running and has to be started by the code using it.
      *
-     * @param namespace Namespace on which to inform
+     * @param namespace         Namespace on which to inform
+     * @param resyncIntervalMs  The interval in which the resync of the informer should happen in milliseconds
      *
      * @return          Informer instance
      */
-    public SharedIndexInformer<T> informer(String namespace)   {
-        if (ANY_NAMESPACE.equals(namespace))    {
-            return operation().inAnyNamespace().inform();
-        } else {
-            return operation().inNamespace(namespace).inform();
-        }
+    public SharedIndexInformer<T> informer(String namespace, long resyncIntervalMs)   {
+        return runnableInformer(applyNamespace(namespace), resyncIntervalMs);
     }
 
     /**
      * Creates the informer for given resource type to inform on all instances in given namespace (or cluster-wide)
-     * matching the selector.
+     * matching the selector. The informer returned by this method is not running and has to be started by the code
+     * using it.
      *
      * @param namespace         Namespace on which to inform
      * @param selectorLabels    Selector which should be matched by the resources
+     * @param resyncIntervalMs  The interval in which the resync of the informer should happen in milliseconds
      *
      * @return                  Informer instance
      */
-    public SharedIndexInformer<T> informer(String namespace, Map<String, String> selectorLabels)   {
-        if (ANY_NAMESPACE.equals(namespace))    {
-            return operation().inAnyNamespace().withLabels(selectorLabels).inform();
-        } else {
-            return operation().inNamespace(namespace).withLabels(selectorLabels).inform();
-        }
+    public SharedIndexInformer<T> informer(String namespace, Map<String, String> selectorLabels, long resyncIntervalMs)   {
+        return runnableInformer(applyNamespace(namespace).withLabels(selectorLabels), resyncIntervalMs);
     }
 
     /**
      * Creates the informer for given resource type to inform on all instances in given namespace (or cluster-wide)
-     * matching the selector.
+     * matching the selector. The informer returned by this method is not running and has to be started by the code
+     * using it.
      *
      * @param namespace         Namespace on which to inform
      * @param labelSelector     Labels Selector which should be matched by the resources
+     * @param resyncIntervalMs  The interval in which the resync of the informer should happen in milliseconds
      *
      * @return                  Informer instance
      */
-    public SharedIndexInformer<T> informer(String namespace, LabelSelector labelSelector)   {
-        if (ANY_NAMESPACE.equals(namespace))    {
-            return operation().inAnyNamespace().withLabelSelector(labelSelector).inform();
-        } else {
-            return operation().inNamespace(namespace).withLabelSelector(labelSelector).inform();
-        }
+    public SharedIndexInformer<T> informer(String namespace, LabelSelector labelSelector, long resyncIntervalMs)   {
+        return runnableInformer(applyNamespace(namespace).withLabelSelector(labelSelector), resyncIntervalMs);
+    }
+
+    /**
+     * Creates a runnable informer. Runnable informer is not running yet and need to be started by the code using it.
+     *
+     * @param informable        Instance of the Informable interface for creating informers
+     * @param resyncIntervalMs  The interval in which the resync of the informer should happen in milliseconds
+     *
+     * @return  Runnable informer
+     */
+    private SharedIndexInformer<T> runnableInformer(Informable<T> informable, long resyncIntervalMs)  {
+        return informable.runnableInformer(resyncIntervalMs);
     }
 
     /**

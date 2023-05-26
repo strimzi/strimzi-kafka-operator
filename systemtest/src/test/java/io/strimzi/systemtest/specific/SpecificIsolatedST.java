@@ -23,6 +23,7 @@ import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.kubernetes.ClusterRoleBindingTemplates;
 import io.strimzi.systemtest.utils.ClientUtils;
+import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.annotations.IsolatedSuite;
 import io.strimzi.test.TestUtils;
@@ -257,6 +258,7 @@ public class SpecificIsolatedST extends AbstractST {
         clusterOperator.unInstall();
         // create namespace, where we will be able to deploy Custom Resources
         cluster.createNamespace(CollectorElement.createCollectorElement(extensionContext.getRequiredTestClass().getName(), extensionContext.getRequiredTestMethod().getName()), namespaceWhereCreationOfCustomResourcesIsApproved);
+        StUtils.copyImagePullSecrets(namespaceWhereCreationOfCustomResourcesIsApproved);
         clusterOperator = clusterOperator.defaultInstallation()
             .withWatchingNamespaces(Constants.WATCH_ALL_NAMESPACES)
             // use our pre-defined Roles

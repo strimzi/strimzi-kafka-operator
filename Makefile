@@ -23,7 +23,7 @@ all: prerequisites_check $(SUBDIRS) $(DOCKERDIRS) crd_install dashboard_install 
 clean: prerequisites_check $(SUBDIRS) $(DOCKERDIRS) docu_clean
 $(DOCKER_TARGETS): prerequisites_check $(DOCKERDIRS)
 $(JAVA_TARGETS): prerequisites_check $(SUBDIRS)
-release: release_prepare release_version release_helm_version release_maven $(SUBDIRS) release_docu release_single_file release_pkg release_helm_repo docu_clean
+release: release_prepare release_version release_helm_version release_maven $(SUBDIRS) release_docu release_single_file release_pkg docu_clean
 
 next_version:
 	echo $(shell echo $(NEXT_VERSION) | tr a-z A-Z) > release.version
@@ -42,7 +42,6 @@ release_prepare:
 	rm -rf ./strimzi-$(RELEASE_VERSION)
 	rm -f ./strimzi-$(RELEASE_VERSION).tar.gz
 	rm -f ./strimzi-$(RELEASE_VERSION).zip
-	rm -f ./strimzi-kafka-operator-helm-2-chart-$(RELEASE_VERSION).tgz
 	rm -f ./strimzi-kafka-operator-helm-3-chart-$(RELEASE_VERSION).tgz
 	rm -f ./strimzi-topic-operator-$(RELEASE_VERSION).yaml
 	rm -f ./strimzi-cluster-operator-$(RELEASE_VERSION).yaml
@@ -86,12 +85,6 @@ release_helm_version:
 	$(SED) -i 's/\(defaultImageTag[^\n]*| \)`.*`/\1`$(RELEASE_VERSION)`/g' $$CHART_PATH/README.md; \
 	$(SED) -i '/name: kafka-bridge/{n;s/\(tag: \).*/\1$(BRIDGE_VERSION)/g}' $$CHART_PATH/values.yaml; \
 	$(SED) -i 's/\(kafkaBridge.image\.tag[^\n]*| \)`.*`/\1`$(BRIDGE_VERSION)`/g' $$CHART_PATH/README.md
-
-release_helm_repo:
-	echo "Updating Helm Repository index.yaml"
-	helm repo index ./ --url https://github.com/strimzi/strimzi-kafka-operator/releases/download/$(RELEASE_VERSION)/ --merge ./packaging/helm-charts/index.yaml
-	$(CP) ./index.yaml ./packaging/helm-charts/index.yaml
-	rm ./index.yaml
 
 release_single_file:
 	$(FIND) ./strimzi-$(RELEASE_VERSION)/install/cluster-operator/ -type f -exec cat {} \; -exec printf "\n---\n" \; > strimzi-cluster-operator-$(RELEASE_VERSION).yaml

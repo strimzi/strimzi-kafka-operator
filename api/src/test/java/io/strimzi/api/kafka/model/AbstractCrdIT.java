@@ -5,8 +5,6 @@
 package io.strimzi.api.kafka.model;
 
 import io.fabric8.kubernetes.client.CustomResource;
-import io.fabric8.kubernetes.client.KubernetesClientBuilder;
-import io.fabric8.kubernetes.client.VersionInfo;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.interfaces.TestSeparator;
 import io.strimzi.test.k8s.KubeClusterResource;
@@ -21,17 +19,15 @@ import static org.hamcrest.CoreMatchers.containsStringIgnoringCase;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assumptions.assumeTrue;
+import static org.junit.jupiter.api.Assumptions.assumeFalse;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public abstract class AbstractCrdIT implements TestSeparator {
 
     protected KubeClusterResource cluster = KubeClusterResource.getInstance();
 
-    protected void assumeKube1_16Plus() {
-        VersionInfo version = new KubernetesClientBuilder().build().getKubernetesVersion();
-        assumeTrue("1".equals(version.getMajor())
-                && Integer.parseInt(version.getMinor().split("\\D")[0]) >= 16);
+    protected void assumeKube() {
+        assumeFalse(KubeClusterResource.getInstance().isOpenShift());
     }
 
     private <T extends CustomResource> T loadResource(Class<T> resourceClass, String resource) {

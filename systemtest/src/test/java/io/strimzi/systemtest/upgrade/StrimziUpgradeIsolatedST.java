@@ -196,6 +196,7 @@ public class StrimziUpgradeIsolatedST extends AbstractUpgradeST {
     @BeforeEach
     void setupEnvironment() {
         cluster.createNamespace(clusterOperator.getDeploymentNamespace());
+        StUtils.copyImagePullSecrets(clusterOperator.getDeploymentNamespace());
     }
 
     protected void afterEachMayOverride(ExtensionContext extensionContext) throws Exception {

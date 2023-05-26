@@ -27,6 +27,8 @@ For more information, see link:{BookURLDeploying}#proc-renewing-ca-certs-manuall
 
 //procedure to configure Kafka
 include::../../modules/configuring/proc-config-kafka.adoc[leveloffset=+1]
+//zookeeper's default configuration
+include::../../modules/configuring/con-zookeeper-default-config.adoc[leveloffset=+2]
 //entity operator config
 include::assembly-kafka-entity-operator.adoc[leveloffset=+1]
 //storage considerations
