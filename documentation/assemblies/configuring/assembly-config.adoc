@@ -10,8 +10,8 @@ Configure and manage a Strimzi deployment to your precise needs using Strimzi cu
 Strimzi provides example custom resources with each release, allowing you to configure and create instances of supported Kafka components.
 Fine-tune your deployment by configuring custom resources to include additional features according to your specific requirements. 
 For specific areas of configuration, namely metrics, logging, and external configuration for Kafka Connect connectors, you can also use `ConfigMap` resources.
-By using a `ConfigMap` resource to incorporate configuration, you centralize maintenance and enable reuse across different components. 
-You can also use configuration providers to load configuration from external sources.
+By using a `ConfigMap` resource to incorporate configuration, you centralize maintenance. 
+You can also use configuration providers to load configuration from external sources, which we recommend for supplying the credentials for Kafka Connect connector configuration.
 
 Use custom resources to configure and create instances of the following components:
 
