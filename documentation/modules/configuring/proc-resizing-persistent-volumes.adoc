@@ -6,8 +6,9 @@
 = Resizing persistent volumes
 
 [role="_abstract"]
-You can provision increased storage capacity by increasing the size of the persistent volumes used by an existing Strimzi cluster.
-Resizing persistent volumes is supported in clusters that use either a single persistent volume or multiple persistent volumes in a JBOD storage configuration.
+Persistent volumes used by a Strimzi cluster can be resized without any risk of data loss. 
+This capability allows for expanding storage capacity by increasing the size of existing persistent volumes. 
+Resizing is supported in clusters with either a single persistent volume or multiple persistent volumes configured in JBOD storage.
 
 NOTE: You can increase but not decrease the size of persistent volumes.
 Decreasing the size of persistent volumes is not currently supported in Kubernetes.
