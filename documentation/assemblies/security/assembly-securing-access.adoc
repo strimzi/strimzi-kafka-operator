@@ -17,6 +17,7 @@ A secure connection between Kafka brokers and clients can encompass the followin
 
 The authentication and authorization mechanisms specified for a client must match those specified for the Kafka brokers.
 Strimzi operators automate the configuration process and create the certificates required for authentication.
+The Cluster Operator automatically sets up TLS certificates for data encryption and authentication within your cluster.
 
 //Config options for securing Kafka
 include::assembly-securing-kafka-brokers.adoc[leveloffset=+1]

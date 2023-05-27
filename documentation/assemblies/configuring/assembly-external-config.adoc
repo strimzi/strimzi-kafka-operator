@@ -1,6 +1,6 @@
 // This assembly is included in the following assemblies:
 //
-// configuring/configuring.adoc
+// assembly-config.adoc
 
 [id='assembly-loading-config-with-providers-{context}']
 = Loading configuration values from external sources

@@ -83,4 +83,4 @@ The example MirrorMaker 2 Grafana dashboard provided with Strimzi shows the foll
 [role="_additional-resources"]
 .Additional resources
 
-* link:{BookURLDeploying}#assembly-metrics-setup-{context}[Grafana dashboards^]
+* link:{BookURLDeploying}#assembly-metrics-{context}[Introducing metrics^]

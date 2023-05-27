@@ -15,7 +15,7 @@ The list of grants (permissions) is fetched from the Keycloak server as the firs
 The list is refreshed in the background so that changes to the grants are detected.
 Grants are cached and enforced locally on the Kafka broker for each user session to provide fast authorization decisions.
 
-Strimzi provides xref:deploy-examples-{context}[example configuration files].
+Strimzi provides xref:config-examples-{context}[example configuration files].
 These include the following example files for setting up Keycloak:
 
 `kafka-ephemeral-oauth-single-keycloak-authz.yaml`:: An example `Kafka` custom resource configured for OAuth 2.0 token-based authorization using Keycloak.

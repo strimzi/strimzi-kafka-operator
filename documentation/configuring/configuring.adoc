@@ -6,8 +6,6 @@ include::shared/attributes.adoc[]
 [id="configuring-book_{context}"]
 = Configuring Strimzi
 
-include::assemblies/configuring/assembly-overview.adoc[leveloffset=+1]
-
 include::assemblies/configuring/assembly-deployment-configuration.adoc[leveloffset=+1]
 
 [id='api_reference-{context}']

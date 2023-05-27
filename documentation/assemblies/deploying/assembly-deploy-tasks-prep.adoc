@@ -5,14 +5,16 @@
 [id="deploy-tasks-prereqs_{context}"]
 = Preparing for your Strimzi deployment
 
-This section shows how you prepare for a Strimzi deployment, describing:
+[role="_abstract"]
+Prepare for a deployment of Strimzi by completing any necessary pre-deployment tasks. 
+Take the necessary preparatory steps according to your specific requirements, such as the following:
 
-* xref:deploy-prereqs-{context}[The prerequisites you need before you can deploy Strimzi]
-* xref:downloads-{context}[How to download the Strimzi release artifacts to use in your deployment]
-* xref:container-images-{context}[How to push the Strimzi container images into you own registry (if required)]
-* xref:adding-users-the-strimzi-admin-role-{context}[How to set up _admin_ roles for configuration of custom resources used in deployment]
+* xref:deploy-prereqs-{context}[Ensuring you have the necessary prerequisites before deploying Strimzi]
+* xref:downloads-{context}[Downloading the Strimzi release artifacts to facilitate your deployment]
+* xref:container-images-{context}[Pushing the Strimzi container images into your own registry (if required)]
+* xref:adding-users-the-strimzi-admin-role-{context}[Setting up admin roles to enable configuration of custom resources used in the deployment]
 ifdef::InstallationAppendix[]
-* xref:deploy-kubernetes-{context}[_Minikube_ as an alternative deployment option to Kubernetes]
+* xref:deploy-kubernetes-{context}[Considering _Minikube_ as an alternative deployment option to Kubernetes]
 endif::InstallationAppendix[]
 
 NOTE: To run the commands in this guide, your cluster user must have the rights to manage role-based access control (RBAC) and CRDs.
@@ -21,8 +23,6 @@ NOTE: To run the commands in this guide, your cluster user must have the rights 
 include::../../modules/deploying/con-deploy-prereqs.adoc[leveloffset=+1]
 //How to access release artifacts
 include::../../modules/deploying/con-deploy-product-downloads.adoc[leveloffset=+1]
-//How to access examples
-include::../../modules/deploying/con-deploy-examples.adoc[leveloffset=+1]
 //Container images
 include::../../modules/deploying/con-deploy-container-images.adoc[leveloffset=+1]
 //Designating administrators to manage the install process

@@ -5,4 +5,4 @@ Volumes and environment variables are configured in the `externalConfiguration` 
 
 When applied, the environment variables and volumes are available for use when developing your connectors.
 
-For more information, see link:{BookURLDeploying}#assembly-loading-config-with-providers-{context}[Loading configuration values from external sources^].
+For more information, see link:{BookURLDeploying}#assembly-loading-config-with-providers-str[Loading configuration values from external sources^].

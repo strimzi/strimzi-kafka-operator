@@ -1,0 +1,45 @@
+// This assembly is included in the following assemblies:
+//
+// configuring/configuring.adoc
+
+[id='overview-{context}']
+= Configuring a deployment
+
+[role="_abstract"]
+Configure and manage a Strimzi deployment to your precise needs using Strimzi custom resources.
+Strimzi provides example custom resources with each release, allowing you to configure and create instances of supported Kafka components.
+Fine-tune your deployment by configuring custom resources to include additional features according to your specific requirements. 
+For specific areas of configuration, namely metrics, logging, and external configuration for Kafka Connect connectors, you can also use `ConfigMap` resources.
+By using a `ConfigMap` resource to incorporate configuration, you centralize maintenance. 
+You can also use configuration providers to load configuration from external sources, which we recommend for supplying the credentials for Kafka Connect connector configuration.
+
+Use custom resources to configure and create instances of the following components:
+
+* Kafka clusters
+* Kafka Connect clusters
+* Kafka MirrorMaker
+* Kafka Bridge
+* Cruise Control
+
+You can also use custom resource configuration to manage your instances or modify your deployment to introduce additional features.
+This might include configuration that supports the following:
+
+* Securing client access to Kafka brokers
+* Accessing Kafka brokers from outside the cluster
+* Creating topics
+* Creating users (clients)
+* Controlling feature gates
+* Changing logging frequency
+* Allocating resource limits and requests
+* Introducing features, such as Strimzi Drain Cleaner, Cruise Control, or distributed tracing.
+
+The link:{BookURLConfiguring}[Custom resource API reference^] describes the properties you can use in your configuration.
+
+//How to access examples
+include::../../modules/configuring/con-config-examples.adoc[leveloffset=+1]
+//configuring resources
+include::../../modules/configuring/con-config-resources.adoc[leveloffset=+1]
+//load configuration from configmaps for certain types of data
+include::../../modules/configuring/con-configuration-points-configmaps.adoc[leveloffset=+1]
+//Load configuration from external sources for all Kafka components
+include::assembly-external-config.adoc[leveloffset=+1]

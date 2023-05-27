@@ -7,7 +7,7 @@
 
 include::../../modules/cruise-control/con-cruise-control-description.adoc[leveloffset=+1]
 
-NOTE: Strimzi provides xref:deploy-examples-{context}[example configuration files for Cruise Control].
+NOTE: Strimzi provides xref:config-examples-{context}[example configuration files for Cruise Control].
 
 include::../../modules/cruise-control/con-cruise-control-overview.adoc[leveloffset=+1]
 
