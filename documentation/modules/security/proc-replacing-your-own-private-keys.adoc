@@ -69,10 +69,10 @@ The following example shows a secret for a cluster CA certificate that's associa
 apiVersion: v1
 kind: Secret
 data:
-  ca.crt: LS0tLS1CRUdJTiBDRVJUSUZJQ0F... <1>
+  ca.crt: LS0tLS1CRUdJTiBDRVJUSUZJQ0F... # <1>
 metadata:
   annotations:
-    strimzi.io/ca-cert-generation: "0" <2>
+    strimzi.io/ca-cert-generation: "0" # <2>
   labels:
     strimzi.io/cluster: my-cluster
     strimzi.io/kind: Kafka
@@ -86,7 +86,7 @@ type: Opaque
 .. Rename the current CA certificate to retain it.
 +
 Rename the current `ca.crt` property under `data` as `ca-__<date>__.crt`, where _<date>_ is the certificate expiry date in the format _YEAR-MONTH-DAYTHOUR-MINUTE-SECONDZ_.
-For example `ca-2022-01-26T17-32-00Z.crt:`.
+For example `ca-2023-01-26T17-32-00Z.crt:`.
 Leave the value for the property as it is to retain the current CA certificate.
 
 .. Encode your new CA certificate into base64.
@@ -117,11 +117,11 @@ The `strimzi.io/ca-cert-generation` has to be incremented on each CA certificate
 apiVersion: v1
 kind: Secret
 data:
-  ca.crt: GCa6LS3RTHeKFiFDGBOUDYFAZ0F... <1>
-  ca-2022-01-26T17-32-00Z.crt: LS0tLS1CRUdJTiBDRVJUSUZJQ0F... <2>
+  ca.crt: GCa6LS3RTHeKFiFDGBOUDYFAZ0F... # <1>
+  ca-2023-01-26T17-32-00Z.crt: LS0tLS1CRUdJTiBDRVJUSUZJQ0F... # <2>
 metadata:
   annotations:
-    strimzi.io/ca-cert-generation: "1" <3>
+    strimzi.io/ca-cert-generation: "1" # <3>
   labels:
     strimzi.io/cluster: my-cluster
     strimzi.io/kind: Kafka
@@ -150,10 +150,10 @@ The following example shows a secret for a cluster CA key that's associated with
 apiVersion: v1
 kind: Secret
 data:
-  ca.key: SA1cKF1GFDzOIiPOIUQBHDNFGDFS... <1>
+  ca.key: SA1cKF1GFDzOIiPOIUQBHDNFGDFS... # <1>
 metadata:
   annotations:
-    strimzi.io/ca-key-generation: "0" <2>
+    strimzi.io/ca-key-generation: "0" # <2>
   labels:
     strimzi.io/cluster: my-cluster
     strimzi.io/kind: Kafka
@@ -192,10 +192,10 @@ The `strimzi.io/ca-key-generation` has to be incremented on each CA certificate 
 apiVersion: v1
 kind: Secret
 data:
-  ca.key: AB0cKF1GFDzOIiPOIUQWERZJQ0F... <1>
+  ca.key: AB0cKF1GFDzOIiPOIUQWERZJQ0F... # <1>
 metadata:
   annotations:
-    strimzi.io/ca-key-generation: "1" <2>
+    strimzi.io/ca-key-generation: "1" # <2>
   labels:
     strimzi.io/cluster: my-cluster
     strimzi.io/kind: Kafka
@@ -221,8 +221,37 @@ You can also do the same by removing the `pause-reconciliation` annotation.
 ----
 kubectl annotate Kafka _<name_of_custom_resource>_ strimzi.io/pause-reconciliation-
 ----
-
++
 On the next reconciliation, the Cluster Operator performs a rolling update of ZooKeeper, Kafka, and other components to trust the new CA certificate.
 When the rolling update is complete, the Cluster Operator will start a new one to generate new server certificates signed by the new CA key.
-
++
 If maintenance time windows are configured, the Cluster Operator will roll the pods at the first reconciliation within the next maintenance time window.
+
+. Wait until the rolling updates to move to the new CA certificate are complete.
+
+.  Remove any outdated certificates from the secret configuration to ensure that the cluster no longer trusts them.
++
+[source,shell,subs="+quotes"]
+kubectl edit secret _<ca_certificate_secret_name>_
++
+.Example secret configuration with the old certificate removed
+[source,yaml,subs=attributes+]
+----
+apiVersion: v1
+kind: Secret
+data:
+  ca.crt: GCa6LS3RTHeKFiFDGBOUDYFAZ0F...
+metadata:
+  annotations:
+    strimzi.io/ca-cert-generation: "1"
+  labels:
+    strimzi.io/cluster: my-cluster
+    strimzi.io/kind: Kafka
+  name: my-cluster-cluster-ca-cert
+  #...
+type: Opaque
+----
+
+. Start a manual rolling update of your cluster to pick up the changes made to the secret configuration.
++
+See xref:assembly-rolling-updates-str[].
