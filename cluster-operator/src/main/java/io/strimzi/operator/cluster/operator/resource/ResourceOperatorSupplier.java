@@ -37,7 +37,6 @@ import io.strimzi.operator.common.operator.resource.IngressOperator;
 import io.strimzi.operator.common.operator.resource.NetworkPolicyOperator;
 import io.strimzi.operator.common.operator.resource.NodeOperator;
 import io.strimzi.operator.common.operator.resource.PodDisruptionBudgetOperator;
-import io.strimzi.operator.common.operator.resource.PodDisruptionBudgetV1Beta1Operator;
 import io.strimzi.operator.common.operator.resource.PodOperator;
 import io.strimzi.operator.common.operator.resource.PvcOperator;
 import io.strimzi.operator.common.operator.resource.RoleBindingOperator;
@@ -166,10 +165,6 @@ public class ResourceOperatorSupplier {
      */
     public final PodDisruptionBudgetOperator podDisruptionBudgetOperator;
 
-    /**
-     * PDB v1beta1 operator
-     */
-    public final PodDisruptionBudgetV1Beta1Operator podDisruptionBudgetV1Beta1Operator;
 
     /**
      * Pod operator
@@ -306,7 +301,6 @@ public class ResourceOperatorSupplier {
                 new ClusterRoleBindingOperator(vertx, client),
                 new NetworkPolicyOperator(vertx, client),
                 new PodDisruptionBudgetOperator(vertx, client),
-                new PodDisruptionBudgetV1Beta1Operator(vertx, client),
                 new PodOperator(vertx, client),
                 new IngressOperator(vertx, client),
                 pfa.hasBuilds() ? new BuildConfigOperator(vertx, client.adapt(OpenShiftClient.class)) : null,
@@ -381,7 +375,6 @@ public class ResourceOperatorSupplier {
                                     ClusterRoleBindingOperator clusterRoleBindingOperator,
                                     NetworkPolicyOperator networkPolicyOperator,
                                     PodDisruptionBudgetOperator podDisruptionBudgetOperator,
-                                    PodDisruptionBudgetV1Beta1Operator podDisruptionBudgetV1Beta1Operator,
                                     PodOperator podOperations,
                                     IngressOperator ingressOperations,
                                     BuildConfigOperator buildConfigOperations,
@@ -415,7 +408,6 @@ public class ResourceOperatorSupplier {
         this.clusterRoleBindingOperator = clusterRoleBindingOperator;
         this.networkPolicyOperator = networkPolicyOperator;
         this.podDisruptionBudgetOperator = podDisruptionBudgetOperator;
-        this.podDisruptionBudgetV1Beta1Operator = podDisruptionBudgetV1Beta1Operator;
         this.kafkaOperator = kafkaOperator;
         this.podOperations = podOperations;
         this.ingressOperations = ingressOperations;

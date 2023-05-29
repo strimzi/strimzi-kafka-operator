@@ -782,20 +782,6 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
         }
     }
 
-    /**
-     * Generates the PodDisruptionBudgetV1Beta1
-     *
-     * @param stableIdentities  Indicates whether the StableConnectIdentities (use of StrimziPodSets) feature gate is enabled or not
-     *
-     * @return The pod disruption budget V1Beta1.
-     */
-    public io.fabric8.kubernetes.api.model.policy.v1beta1.PodDisruptionBudget generatePodDisruptionBudgetV1Beta1(boolean stableIdentities) {
-        if (stableIdentities) {
-            return PodDisruptionBudgetUtils.createCustomControllerPodDisruptionBudgetV1Beta1(componentName, namespace, labels, ownerReference, templatePodDisruptionBudget, replicas);
-        } else {
-            return PodDisruptionBudgetUtils.createPodDisruptionBudgetV1Beta1(componentName, namespace, labels, ownerReference, templatePodDisruptionBudget);
-        }
-    }
 
     /**
      * @return  Name of the ClusterRoleBinding for the Connect init container
