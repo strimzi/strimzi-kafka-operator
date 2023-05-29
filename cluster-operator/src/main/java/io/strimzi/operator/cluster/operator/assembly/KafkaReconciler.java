@@ -245,7 +245,6 @@ public class KafkaReconciler {
                 .compose(i -> brokerConfigurationConfigMaps())
                 .compose(i -> jmxSecret())
                 .compose(i -> podDisruptionBudget())
-                .compose(i -> podDisruptionBudgetV1Beta1())
                 .compose(i -> migrateFromStatefulSetToPodSet())
                 .compose(i -> podSet())
                 .compose(i -> rollingUpdate())
@@ -682,15 +681,7 @@ public class KafkaReconciler {
      *
      * @return  Completes when the PDB was successfully created or updated
      */
-    protected Future<Void> podDisruptionBudgetV1Beta1() {
-        if (pfa.hasPodDisruptionBudgetV1()) {
-            return Future.succeededFuture();
-        } else {
-            return podDisruptionBudgetV1Beta1Operator
-                    .reconcile(reconciliation, reconciliation.namespace(), KafkaResources.kafkaStatefulSetName(reconciliation.name()), kafka.generatePodDisruptionBudgetV1Beta1())
-                    .map((Void) null);
-        }
-    }
+
 
     /**
      * Prepares annotations for Kafka pods within a StrimziPodSet which are known only in the KafkaAssemblyOperator level.
