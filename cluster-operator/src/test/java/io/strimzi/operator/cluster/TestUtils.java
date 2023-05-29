@@ -59,6 +59,7 @@ public class TestUtils {
 
     /**
      * If present, adds the HTTP/HTTPS proxy environment variables to the list.
+     * This helps when running behind a proxy, which requires having these env vars set.
      *
      * @param envVars List of environment variables.
      */
