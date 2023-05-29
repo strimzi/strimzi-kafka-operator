@@ -9,9 +9,11 @@ import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.ConfigMapKeySelectorBuilder;
 import io.fabric8.kubernetes.api.model.Container;
 import io.fabric8.kubernetes.api.model.EnvVar;
+import io.fabric8.kubernetes.api.model.EnvVarBuilder;
 import io.strimzi.api.kafka.model.JmxPrometheusExporterMetrics;
 import io.strimzi.api.kafka.model.JmxPrometheusExporterMetricsBuilder;
 
+import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -53,5 +55,31 @@ public class TestUtils {
                 Collectors.toMap(EnvVar::getName, EnvVar::getValue,
                         // On duplicates, last-in wins
                         (u, v) -> v));
+    }
+
+    /**
+     * If present, adds the HTTP/HTTPS proxy environment variables to the list.
+     *
+     * @param envVars List of environment variables.
+     */
+    public static void maybeAddHttpProxyEnvVars(List<EnvVar> envVars) {
+        if (System.getenv(ClusterOperatorConfig.HTTP_PROXY) != null) {
+            envVars.add(new EnvVarBuilder()
+                .withName(ClusterOperatorConfig.HTTP_PROXY)
+                .withValue(System.getenv(ClusterOperatorConfig.NO_PROXY))
+                .build());
+        }
+        if (System.getenv(ClusterOperatorConfig.HTTPS_PROXY) != null) {
+            envVars.add(new EnvVarBuilder()
+                .withName(ClusterOperatorConfig.HTTPS_PROXY)
+                .withValue(System.getenv(ClusterOperatorConfig.HTTPS_PROXY))
+                .build());
+        }
+        if (System.getenv(ClusterOperatorConfig.NO_PROXY) != null) {
+            envVars.add(new EnvVarBuilder()
+                .withName(ClusterOperatorConfig.NO_PROXY)
+                .withValue(System.getenv(ClusterOperatorConfig.NO_PROXY))
+                .build());
+        }
     }
 }

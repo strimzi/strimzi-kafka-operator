@@ -143,7 +143,7 @@ public class EntityUserOperatorTest {
         expected.add(new EnvVarBuilder().withName(EntityUserOperator.ENV_VAR_SECRET_PREFIX).withValue(secretPrefix).build());
         expected.add(new EnvVarBuilder().withName(EntityUserOperator.ENV_VAR_ACLS_ADMIN_API_SUPPORTED).withValue(String.valueOf(false)).build());
         expected.add(new EnvVarBuilder().withName(EntityUserOperator.ENV_VAR_KRAFT_ENABLED).withValue(String.valueOf(true)).build());
-
+        io.strimzi.operator.cluster.TestUtils.maybeAddHttpProxyEnvVars(expected);
         return expected;
     }
 
