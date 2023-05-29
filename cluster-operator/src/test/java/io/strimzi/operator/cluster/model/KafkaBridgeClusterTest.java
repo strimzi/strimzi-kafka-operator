@@ -76,6 +76,7 @@ import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.hamcrest.Matchers.hasSize;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -128,7 +129,6 @@ public class KafkaBridgeClusterTest {
     }
 
     protected List<EnvVar> getExpectedEnvVars() {
-
         List<EnvVar> expected = new ArrayList<>();
         expected.add(new EnvVarBuilder().withName(KafkaBridgeCluster.ENV_VAR_KAFKA_BRIDGE_METRICS_ENABLED).withValue(String.valueOf(true)).build());
         expected.add(new EnvVarBuilder().withName(KafkaBridgeCluster.ENV_VAR_STRIMZI_GC_LOG_ENABLED).withValue(String.valueOf(JvmOptions.DEFAULT_GC_LOGGING_ENABLED)).build());
@@ -140,6 +140,7 @@ public class KafkaBridgeClusterTest {
         expected.add(new EnvVarBuilder().withName(KafkaBridgeCluster.ENV_VAR_KAFKA_BRIDGE_HTTP_HOST).withValue(KafkaBridgeHttpConfig.HTTP_DEFAULT_HOST).build());
         expected.add(new EnvVarBuilder().withName(KafkaBridgeCluster.ENV_VAR_KAFKA_BRIDGE_HTTP_PORT).withValue(String.valueOf(KafkaBridgeHttpConfig.HTTP_DEFAULT_PORT)).build());
         expected.add(new EnvVarBuilder().withName(KafkaBridgeCluster.ENV_VAR_KAFKA_BRIDGE_CORS_ENABLED).withValue(String.valueOf(false)).build());
+        io.strimzi.operator.cluster.TestUtils.maybeAddHttpProxyEnvVars(expected);
         return expected;
     }
 
@@ -833,7 +834,7 @@ public class KafkaBridgeClusterTest {
         assertThat(first.isPresent(), is(true));
         final Container container = first.get();
         assertThat(container.getImage(), is(expectedInitImage));
-        assertThat(container.getEnv(), hasSize(3));
+        assertThat(container.getEnv().size(), greaterThanOrEqualTo(3));
         final List<EnvVar> initEnv = container.getEnv();
         assertThat(initEnv.stream().filter(var -> AbstractModel.ENV_VAR_KAFKA_INIT_RACK_TOPOLOGY_KEY.equals(var.getName())).findFirst().orElseThrow().getValue(), is(
                 "topology-key"));

@@ -128,6 +128,7 @@ public class EntityTopicOperatorTest {
         expected.add(new EnvVarBuilder().withName(EntityTopicOperator.ENV_VAR_STRIMZI_GC_LOG_ENABLED).withValue(Boolean.toString(JvmOptions.DEFAULT_GC_LOGGING_ENABLED)).build());
         expected.add(new EnvVarBuilder().withName(EntityTopicOperator.ENV_VAR_STRIMZI_JAVA_OPTS).withValue("-Xms128m").build());
         expected.add(new EnvVarBuilder().withName(EntityTopicOperator.ENV_VAR_STRIMZI_JAVA_SYSTEM_PROPERTIES).withValue("-Djavax.net.debug=verbose -Dsomething.else=42").build());
+        io.strimzi.operator.cluster.TestUtils.maybeAddHttpProxyEnvVars(expected);
         return expected;
     }
 
