@@ -2,12 +2,13 @@
  * Copyright Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.strimzi.operator.user;
+package io.strimzi.operator.common.http;
 
 import io.micrometer.prometheus.PrometheusMeterRegistry;
 import io.strimzi.operator.common.MetricsProvider;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.handler.AbstractHandler;
@@ -26,53 +27,63 @@ public class HealthCheckAndMetricsServer {
     private static final int HEALTH_CHECK_PORT = 8081;
 
     private final Server server;
-    private final UserController controller;
+    private final Liveness liveness;
+
+    private final Readiness readiness;
     private final PrometheusMeterRegistry prometheusMeterRegistry;
 
     /**
      * Constructs the health check and metrics webserver. This constructor will use the default port 8081.
      *
-     * @param controller        UserController instance which is used for the health checks
-     * @param metricsProvider   Metrics provider for integrating Prometheus metrics
+     * @param liveness          Callback used for the health check.
+     * @param readiness         Callback used for the readiness check.
+     * @param metricsProvider   Metrics provider for integrating Prometheus metrics.
      */
-    public HealthCheckAndMetricsServer(UserController controller, MetricsProvider metricsProvider) {
-        this(HEALTH_CHECK_PORT, controller, metricsProvider);
+    public HealthCheckAndMetricsServer(Liveness liveness, Readiness readiness, MetricsProvider metricsProvider) {
+        this(HEALTH_CHECK_PORT, liveness, readiness, metricsProvider);
     }
 
     /**
      * Constructs the health check and metrics webserver. This constructor has a configurable port and is designed to be
      * used in tests.
      *
-     * @param port              Port number which should be used by the web server
-     * @param controller        UserController instance which is used for the health checks
-     * @param metricsProvider   Metrics provider for integrating Prometheus metrics
+     * @param port              Port number which should be used by the web server.
+     * @param liveness          Callback used for the health check.
+     * @param readiness         Callback used for the readiness check.
+     * @param metricsProvider   Metrics provider for integrating Prometheus metrics.
      */
-    /*test*/ HealthCheckAndMetricsServer(int port, UserController controller, MetricsProvider metricsProvider) {
-        this.controller = controller;
+    public HealthCheckAndMetricsServer(int port, Liveness liveness, Readiness readiness, MetricsProvider metricsProvider) {
+        this.liveness = liveness;
+        this.readiness = readiness;
         // If the metrics provider is Prometheus based, we integrate it into the webserver
-        this.prometheusMeterRegistry = metricsProvider.meterRegistry() instanceof PrometheusMeterRegistry ? (PrometheusMeterRegistry) metricsProvider.meterRegistry() : null;
+        this.prometheusMeterRegistry = metricsProvider != null && metricsProvider.meterRegistry() instanceof PrometheusMeterRegistry ? (PrometheusMeterRegistry) metricsProvider.meterRegistry() : null;
 
         // Set up the Jetty webserver
         server = new Server(port);
 
         // Configure Handlers
-        ContextHandler healthyContext = new ContextHandler();
-        healthyContext.setContextPath("/healthy");
-        healthyContext.setHandler(new HealthyHandler());
-        healthyContext.setAllowNullPathInfo(true);
+        ContextHandlerCollection contexts = new ContextHandlerCollection();
 
-        ContextHandler readyContext = new ContextHandler();
-        readyContext.setContextPath("/ready");
-        readyContext.setHandler(new ReadyHandler());
-        readyContext.setAllowNullPathInfo(true);
+        contexts.addHandler(contextHandler("/metrics", new MetricsHandler()));
 
-        ContextHandler metricsContext = new ContextHandler();
-        metricsContext.setContextPath("/metrics");
-        metricsContext.setHandler(new MetricsHandler());
-        metricsContext.setAllowNullPathInfo(true);
+        if (liveness != null) {
+            contexts.addHandler(contextHandler("/healthy", new HealthyHandler()));
+        }
 
-        ContextHandlerCollection contexts = new ContextHandlerCollection(healthyContext, readyContext, metricsContext);
+        if (readiness != null) {
+            contexts.addHandler(contextHandler("/ready", new ReadyHandler()));
+        }
+
         server.setHandler(contexts);
+    }
+
+    private static ContextHandler contextHandler(String path, Handler handler) {
+        LOGGER.debug("Configuring path {} with handler {}", path, handler);
+        ContextHandler metricsContext = new ContextHandler();
+        metricsContext.setContextPath(path);
+        metricsContext.setHandler(handler);
+        metricsContext.setAllowNullPathInfo(true);
+        return metricsContext;
     }
 
     /**
@@ -102,19 +113,19 @@ public class HealthCheckAndMetricsServer {
     /**
      * Handler responsible for the liveness check
      */
-    public class HealthyHandler extends AbstractHandler {
+    class HealthyHandler extends AbstractHandler {
         @Override
         public void handle(String target, Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws IOException {
             response.setContentType("application/json");
 
-            if (controller.isAlive()) {
+            if (liveness.isAlive()) {
                 response.setStatus(HttpServletResponse.SC_OK);
                 response.getWriter().println("{\"status\": \"ok\"}");
             } else {
                 response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
                 response.getWriter().println("{\"status\": \"not-ok\"}");
             }
-
+            LOGGER.debug("Responding {} to GET /healthy", response.getStatus());
             baseRequest.setHandled(true);
         }
     }
@@ -122,19 +133,20 @@ public class HealthCheckAndMetricsServer {
     /**
      * Handler responsible for the readiness check
      */
-    public class ReadyHandler extends AbstractHandler {
+    class ReadyHandler extends AbstractHandler {
         @Override
         public void handle(String target, Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws IOException {
             response.setContentType("application/json");
 
-            if (controller.isReady()) {
+            if (readiness.isReady()) {
                 response.setStatus(HttpServletResponse.SC_OK);
                 response.getWriter().println("{\"status\": \"ok\"}");
             } else {
                 response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
                 response.getWriter().println("{\"status\": \"not-ok\"}");
-            }
 
+            }
+            LOGGER.debug("Responding {} to GET /ready", response.getStatus());
             baseRequest.setHandled(true);
         }
     }
@@ -142,7 +154,7 @@ public class HealthCheckAndMetricsServer {
     /**
      * Handler responsible for the metrics
      */
-    public class MetricsHandler extends AbstractHandler {
+    class MetricsHandler extends AbstractHandler {
         @Override
         public void handle(String target, Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws IOException {
             response.setContentType("text/plain");

@@ -19,6 +19,8 @@ import io.strimzi.operator.common.controller.AbstractControllerLoop;
 import io.strimzi.operator.common.controller.ControllerQueue;
 import io.strimzi.operator.common.controller.ReconciliationLockManager;
 import io.strimzi.operator.common.controller.SimplifiedReconciliation;
+import io.strimzi.operator.common.http.Liveness;
+import io.strimzi.operator.common.http.Readiness;
 import io.strimzi.operator.common.metrics.ControllerMetricsHolder;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.NamespaceAndName;
@@ -41,7 +43,7 @@ import java.util.concurrent.TimeoutException;
  * Kubernetes events and triggering the periodical reconciliations. The actual processing of the events is done by the
  * controller loop class.
  */
-public class UserController {
+public class UserController implements Liveness, Readiness {
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(UserController.class);
     private static final String RESOURCE_KIND = "KafkaUser";
     private static final long DEFAULT_RESYNC_PERIOD_MS = 5 * 60 * 1_000L; // 5 minutes by default
@@ -215,6 +217,7 @@ public class UserController {
      *
      * @return  True when the controller is ready, false otherwise
      */
+    @Override
     public boolean isReady()    {
         boolean ready = true;
 
@@ -231,6 +234,7 @@ public class UserController {
      *
      * @return  True when the controller thread is alice, false otherwise
      */
+    @Override
     public boolean isAlive()    {
         boolean ready = true;
 
