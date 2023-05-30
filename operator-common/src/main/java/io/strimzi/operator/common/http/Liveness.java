@@ -11,7 +11,7 @@ package io.strimzi.operator.common.http;
 public interface Liveness {
 
     /**
-     * Indicates whether the controller is alive or not.
+     * Indicates whether the application is alive or not.
      * What counts as "alive" depends on the application.
      * For example, in an operator it might be simply that all controller threads are alive, or
      * it might be that they've returned to their outer loop within some timeout.

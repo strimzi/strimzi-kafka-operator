@@ -11,7 +11,7 @@ package io.strimzi.operator.common.http;
 public interface Readiness {
 
     /**
-     * Indicates whether the controller is ready.
+     * Indicates whether the application is ready.
      * What counts as "ready" depends on the application.
      * For example, in an operator it might be that all controller threads are running.
      * This method is invoked on the HTTP request handling thread so excessive blocking should be avoided.
