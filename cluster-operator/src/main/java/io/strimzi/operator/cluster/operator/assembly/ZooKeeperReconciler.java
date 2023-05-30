@@ -141,7 +141,7 @@ public class ZooKeeperReconciler {
         this.reconciliation = reconciliation;
         this.vertx = vertx;
         this.operationTimeoutMs = config.getOperationTimeoutMs();
-        this.zk = ZookeeperCluster.fromCrd(reconciliation, kafkaAssembly, config.versions(), oldStorage, currentReplicas);
+        this.zk = ZookeeperCluster.fromCrd(reconciliation, kafkaAssembly, config.versions(), oldStorage, currentReplicas, supplier.sharedEnvironmentProvider);
         this.versionChange = versionChange;
         this.currentReplicas = currentReplicas;
         this.clusterCa = clusterCa;

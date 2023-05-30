@@ -46,6 +46,7 @@ import io.strimzi.operator.cluster.model.securityprofiles.PodSecurityProviderCon
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.MetricsAndLogging;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.SharedEnvironmentProvider;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.resource.StatusUtils;
@@ -154,9 +155,10 @@ public class ZookeeperCluster extends AbstractModel implements SupportsMetrics, 
      *
      * @param reconciliation The reconciliation
      * @param resource Kubernetes resource with metadata containing the namespace and cluster name
+     * @param sharedEnvironmentProvider Shared environment provider
      */
-    private ZookeeperCluster(Reconciliation reconciliation, HasMetadata resource) {
-        super(reconciliation, resource, KafkaResources.zookeeperStatefulSetName(resource.getMetadata().getName()), COMPONENT_TYPE);
+    private ZookeeperCluster(Reconciliation reconciliation, HasMetadata resource, SharedEnvironmentProvider sharedEnvironmentProvider) {
+        super(reconciliation, resource, KafkaResources.zookeeperStatefulSetName(resource.getMetadata().getName()), COMPONENT_TYPE, sharedEnvironmentProvider);
 
         this.image = null;
         this.isSnapshotCheckEnabled = DEFAULT_ZOOKEEPER_SNAPSHOT_CHECK_ENABLED;
@@ -168,11 +170,12 @@ public class ZookeeperCluster extends AbstractModel implements SupportsMetrics, 
      * @param reconciliation    Reconciliation marker
      * @param kafkaAssembly     The Kafka CR
      * @param versions          Supported Kafka versions
+     * @param sharedEnvironmentProvider Shared environment provider
      *
      * @return  New instance of the ZooKeeper cluster model
      */
-    public static ZookeeperCluster fromCrd(Reconciliation reconciliation, Kafka kafkaAssembly, KafkaVersion.Lookup versions) {
-        return fromCrd(reconciliation, kafkaAssembly, versions, null, 0);
+    public static ZookeeperCluster fromCrd(Reconciliation reconciliation, Kafka kafkaAssembly, KafkaVersion.Lookup versions, SharedEnvironmentProvider sharedEnvironmentProvider) {
+        return fromCrd(reconciliation, kafkaAssembly, versions, null, 0, sharedEnvironmentProvider);
     }
 
     /**
@@ -183,12 +186,13 @@ public class ZookeeperCluster extends AbstractModel implements SupportsMetrics, 
      * @param versions          Supported Kafka versions
      * @param oldStorage        Old storage configuration (based on the actual Kubernetes cluster)
      * @param oldReplicas       Current number of replicas (based on the actual Kubernetes cluster)
+     * @param sharedEnvironmentProvider Shared environment provider
      *
      * @return  New instance of the ZooKeeper cluster model
      */
     @SuppressWarnings({"checkstyle:MethodLength", "checkstyle:CyclomaticComplexity", "checkstyle:NPathComplexity"})
-    public static ZookeeperCluster fromCrd(Reconciliation reconciliation, Kafka kafkaAssembly, KafkaVersion.Lookup versions, Storage oldStorage, int oldReplicas) {
-        ZookeeperCluster result = new ZookeeperCluster(reconciliation, kafkaAssembly);
+    public static ZookeeperCluster fromCrd(Reconciliation reconciliation, Kafka kafkaAssembly, KafkaVersion.Lookup versions, Storage oldStorage, int oldReplicas, SharedEnvironmentProvider sharedEnvironmentProvider) {
+        ZookeeperCluster result = new ZookeeperCluster(reconciliation, kafkaAssembly, sharedEnvironmentProvider);
         ZookeeperClusterSpec zookeeperClusterSpec = kafkaAssembly.getSpec().getZookeeper();
 
         int replicas = zookeeperClusterSpec.getReplicas();
@@ -499,7 +503,7 @@ public class ZookeeperCluster extends AbstractModel implements SupportsMetrics, 
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_ZOOKEEPER_CONFIGURATION, configuration.getConfiguration()));
 
         // Add shared environment variables used for all containers
-        varList.addAll(ContainerUtils.requiredEnvVars());
+        varList.addAll(sharedEnvironmentProvider.variables());
 
         ContainerUtils.addContainerEnvsToExistingEnvs(reconciliation, varList, templateContainer);
 

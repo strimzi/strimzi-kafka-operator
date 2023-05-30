@@ -18,7 +18,9 @@ import io.strimzi.operator.cluster.model.logging.SupportsLogging;
 import io.strimzi.operator.cluster.model.metrics.MetricsModel;
 import io.strimzi.operator.cluster.model.metrics.SupportsMetrics;
 import io.strimzi.operator.common.MetricsAndLogging;
+import io.strimzi.operator.common.MockSharedEnvironmentProvider;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.SharedEnvironmentProvider;
 import io.strimzi.operator.common.operator.resource.ConfigMapOperator;
 import io.vertx.core.Future;
 import io.vertx.junit5.Checkpoint;
@@ -43,6 +45,8 @@ import static org.mockito.Mockito.when;
 
 @ExtendWith(VertxExtension.class)
 public class MetricsAndLoggingUtilsTest {
+    private static final SharedEnvironmentProvider SHARED_ENV_PROVIDER = new MockSharedEnvironmentProvider();
+
     @Test
     public void testNoMetricsAndNoExternalLogging(VertxTestContext context)   {
         LoggingModel logging = new LoggingModel(new KafkaConnectSpec(), "KafkaConnectCluster", false, true);
@@ -158,13 +162,15 @@ public class MetricsAndLoggingUtilsTest {
 
     private static class ModelWithoutMetricsAndLogging extends AbstractModel   {
         public ModelWithoutMetricsAndLogging(HasMetadata resource) {
-            super(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, resource.getMetadata().getName() + "-model-app", "model-app");
+            super(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()),
+                resource, resource.getMetadata().getName() + "-model-app", "model-app", SHARED_ENV_PROVIDER);
         }
     }
 
     private static class ModelWithMetricsAndLogging extends AbstractModel implements SupportsMetrics, SupportsLogging {
         public ModelWithMetricsAndLogging(HasMetadata resource) {
-            super(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, resource.getMetadata().getName() + "-model-app", "model-app");
+            super(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()),
+                resource, resource.getMetadata().getName() + "-model-app", "model-app", SHARED_ENV_PROVIDER);
         }
 
         @Override

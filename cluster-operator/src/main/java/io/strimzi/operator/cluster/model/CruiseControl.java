@@ -44,6 +44,7 @@ import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControl
 import io.strimzi.operator.common.MetricsAndLogging;
 import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.SharedEnvironmentProvider;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
 
@@ -157,9 +158,10 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
      *
      * @param reconciliation The reconciliation
      * @param resource  Kubernetes resource with metadata containing the namespace and cluster name
+     * @param sharedEnvironmentProvider Shared environment provider
      */
-    private CruiseControl(Reconciliation reconciliation, HasMetadata resource) {
-        super(reconciliation, resource, CruiseControlResources.deploymentName(resource.getMetadata().getName()), COMPONENT_TYPE);
+    private CruiseControl(Reconciliation reconciliation, HasMetadata resource, SharedEnvironmentProvider sharedEnvironmentProvider) {
+        super(reconciliation, resource, CruiseControlResources.deploymentName(resource.getMetadata().getName()), COMPONENT_TYPE, sharedEnvironmentProvider);
     }
 
     /**
@@ -172,6 +174,7 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
      * @param kafkaNodes                List of the nodes which are part of the Kafka cluster
      * @param kafkaStorage              A map with storage configuration used by the Kafka cluster and its node pools
      * @param kafkaResources            A map with resource configuration used by the Kafka cluster and its node pools
+     * @param sharedEnvironmentProvider Shared environment provider
      *
      * @return                  Instance of the Cruise Control model
      */
@@ -182,13 +185,14 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
             KafkaVersion.Lookup versions,
             Set<NodeRef> kafkaNodes,
             Map<String, Storage> kafkaStorage,
-            Map<String, ResourceRequirements> kafkaResources
+            Map<String, ResourceRequirements> kafkaResources,
+            SharedEnvironmentProvider sharedEnvironmentProvider
     ) {
         CruiseControlSpec ccSpec = kafkaCr.getSpec().getCruiseControl();
         KafkaClusterSpec kafkaClusterSpec = kafkaCr.getSpec().getKafka();
 
         if (ccSpec != null) {
-            CruiseControl result = new CruiseControl(reconciliation, kafkaCr);
+            CruiseControl result = new CruiseControl(reconciliation, kafkaCr, sharedEnvironmentProvider);
 
             String image = ccSpec.getImage();
             if (image == null) {
@@ -401,7 +405,7 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
         }
 
         // Add shared environment variables used for all containers
-        varList.addAll(ContainerUtils.requiredEnvVars());
+        varList.addAll(sharedEnvironmentProvider.variables());
 
         ContainerUtils.addContainerEnvsToExistingEnvs(reconciliation, varList, templateContainer);
 

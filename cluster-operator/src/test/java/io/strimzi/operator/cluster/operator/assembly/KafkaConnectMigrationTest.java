@@ -8,10 +8,12 @@ import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnectBuilder;
 import io.strimzi.api.kafka.model.StrimziPodSet;
 import io.strimzi.api.kafka.model.template.DeploymentStrategy;
+import io.strimzi.operator.common.MockSharedEnvironmentProvider;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.model.KafkaConnectCluster;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.SharedEnvironmentProvider;
 import io.strimzi.operator.common.operator.resource.DeploymentOperator;
 import io.strimzi.operator.common.operator.resource.PodOperator;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
@@ -42,6 +44,7 @@ public class KafkaConnectMigrationTest {
     private final static String NAMESPACE = "my-namespace";
     private static final KafkaVersion.Lookup VERSIONS = KafkaVersionTestUtils.getKafkaVersionLookup();
     private static final Reconciliation RECONCILIATION = new Reconciliation("test", "KafkaConnect", NAMESPACE, NAME);
+    private static final SharedEnvironmentProvider SHARED_ENV_PROVIDER = new MockSharedEnvironmentProvider();
 
     private static final KafkaConnect CONNECT = new KafkaConnectBuilder()
             .withNewMetadata()
@@ -52,7 +55,7 @@ public class KafkaConnectMigrationTest {
             .endSpec()
             .build();
 
-    private static final KafkaConnectCluster CLUSTER = KafkaConnectCluster.fromCrd(RECONCILIATION, CONNECT, VERSIONS);
+    private static final KafkaConnectCluster CLUSTER = KafkaConnectCluster.fromCrd(RECONCILIATION, CONNECT, VERSIONS, SHARED_ENV_PROVIDER);
 
     @Test
     public void testNoMigrationToPodSets(VertxTestContext context)  {
@@ -159,7 +162,7 @@ public class KafkaConnectMigrationTest {
                     .endTemplate()
                 .endSpec()
                 .build();
-        KafkaConnectCluster cluster = KafkaConnectCluster.fromCrd(RECONCILIATION, connect, VERSIONS);
+        KafkaConnectCluster cluster = KafkaConnectCluster.fromCrd(RECONCILIATION, connect, VERSIONS, SHARED_ENV_PROVIDER);
 
         KafkaConnectMigration migration = new KafkaConnectMigration(
                 RECONCILIATION,
@@ -300,7 +303,7 @@ public class KafkaConnectMigrationTest {
                     .endTemplate()
                 .endSpec()
                 .build();
-        KafkaConnectCluster cluster = KafkaConnectCluster.fromCrd(RECONCILIATION, connect, VERSIONS);
+        KafkaConnectCluster cluster = KafkaConnectCluster.fromCrd(RECONCILIATION, connect, VERSIONS, SHARED_ENV_PROVIDER);
 
         KafkaConnectMigration migration = new KafkaConnectMigration(
                 RECONCILIATION,

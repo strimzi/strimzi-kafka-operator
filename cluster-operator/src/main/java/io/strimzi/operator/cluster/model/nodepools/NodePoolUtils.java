@@ -12,6 +12,7 @@ import io.strimzi.operator.cluster.model.InvalidResourceException;
 import io.strimzi.operator.cluster.model.KafkaPool;
 import io.strimzi.operator.cluster.model.ModelUtils;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.SharedEnvironmentProvider;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -32,6 +33,7 @@ public class NodePoolUtils {
      * @param currentPods       Map with current pods, where the key is the name of the controller resource
      *                          (e.g. my-cluster-pool-a) and the value is a list with Pod names
      * @param useKRaft          Flag indicating if KRaft is enabled
+     * @param sharedEnvironmentProvider Shared environment provider
      *
      * @return  List of KafkaPool instances belonging to given Kafka cluster
      */
@@ -41,7 +43,8 @@ public class NodePoolUtils {
             List<KafkaNodePool> nodePools,
             Map<String, Storage> oldStorage,
             Map<String, List<String>> currentPods,
-            boolean useKRaft
+            boolean useKRaft,
+            SharedEnvironmentProvider sharedEnvironmentProvider
     )    {
         // We create the Kafka pool resources
         List<KafkaPool> pools = new ArrayList<>();
@@ -72,7 +75,8 @@ public class NodePoolUtils {
                             virtualNodePool,
                             assignor.assignmentForPool(virtualNodePool.getMetadata().getName()),
                             oldStorage.get(virtualNodePoolComponentName),
-                            ModelUtils.createOwnerReference(kafka, false)
+                            ModelUtils.createOwnerReference(kafka, false),
+                            sharedEnvironmentProvider
                     )
             );
         } else {
@@ -90,7 +94,8 @@ public class NodePoolUtils {
                                 nodePool,
                                 assignor.assignmentForPool(nodePool.getMetadata().getName()),
                                 oldStorage.get(KafkaPool.componentName(kafka, nodePool)),
-                                ModelUtils.createOwnerReference(nodePool, false)
+                                ModelUtils.createOwnerReference(nodePool, false),
+                                sharedEnvironmentProvider
                         )
                 );
             }

@@ -18,11 +18,8 @@ import io.fabric8.kubernetes.api.model.SecurityContext;
 import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.strimzi.api.kafka.model.ContainerEnvVar;
 import io.strimzi.api.kafka.model.template.ContainerTemplate;
-import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.common.Reconciliation;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
@@ -32,37 +29,6 @@ import java.util.Set;
  * Shared methods for working with Containers
  */
 public class ContainerUtils {
-    /**
-     * Configure statically defined environment variables which are passed to all operands.
-     * This includes HTTP/HTTPS Proxy env vars or the FIPS_MODE.
-     */
-    private static final List<EnvVar> STATIC_ENV_VARS;
-    static {
-        List<EnvVar> envVars = new ArrayList<>();
-
-        if (System.getenv(ClusterOperatorConfig.HTTP_PROXY) != null)    {
-            envVars.add(createEnvVar(ClusterOperatorConfig.HTTP_PROXY, System.getenv(ClusterOperatorConfig.HTTP_PROXY)));
-        }
-
-        if (System.getenv(ClusterOperatorConfig.HTTPS_PROXY) != null)    {
-            envVars.add(createEnvVar(ClusterOperatorConfig.HTTPS_PROXY, System.getenv(ClusterOperatorConfig.HTTPS_PROXY)));
-        }
-
-        if (System.getenv(ClusterOperatorConfig.NO_PROXY) != null)    {
-            envVars.add(createEnvVar(ClusterOperatorConfig.NO_PROXY, System.getenv(ClusterOperatorConfig.NO_PROXY)));
-        }
-
-        if (System.getenv(ClusterOperatorConfig.FIPS_MODE) != null)    {
-            envVars.add(createEnvVar(ClusterOperatorConfig.FIPS_MODE, System.getenv(ClusterOperatorConfig.FIPS_MODE)));
-        }
-
-        if (envVars.size() > 0) {
-            STATIC_ENV_VARS = Collections.unmodifiableList(envVars);
-        } else {
-            STATIC_ENV_VARS = List.of();
-        }
-    }
-
     /**
      * Creates a container
      *
@@ -306,15 +272,5 @@ public class ContainerUtils {
      */
     public static List<Container> listOrNull(Container container)   {
         return container != null ? List.of(container) : null;
-    }
-
-    /**
-     * Returns a lit of environment variables which are required by all containers. These contain things such as FIPS
-     * configurations or HTTP Proxy configurations.
-     *
-     * @return  List of required environment variables for all containers
-     */
-    public static List<EnvVar> requiredEnvVars() {
-        return STATIC_ENV_VARS;
     }
 }

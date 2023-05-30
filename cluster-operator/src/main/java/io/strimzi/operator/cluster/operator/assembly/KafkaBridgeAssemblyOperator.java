@@ -26,6 +26,7 @@ import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationException;
+import io.strimzi.operator.common.SharedEnvironmentProvider;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.operator.resource.DeploymentOperator;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
@@ -47,6 +48,7 @@ public class KafkaBridgeAssemblyOperator extends AbstractAssemblyOperator<Kubern
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(KafkaBridgeAssemblyOperator.class.getName());
 
     private final DeploymentOperator deploymentOperations;
+    private final SharedEnvironmentProvider sharedEnvironmentProvider;
 
     /**
      * @param vertx The Vertx instance
@@ -62,6 +64,7 @@ public class KafkaBridgeAssemblyOperator extends AbstractAssemblyOperator<Kubern
                                        ClusterOperatorConfig config) {
         super(vertx, pfa, KafkaBridge.RESOURCE_KIND, certManager, passwordGenerator, supplier.kafkaBridgeOperator, supplier, config);
         this.deploymentOperations = supplier.deploymentOperations;
+        this.sharedEnvironmentProvider = supplier.sharedEnvironmentProvider;
     }
 
     @Override
@@ -72,7 +75,7 @@ public class KafkaBridgeAssemblyOperator extends AbstractAssemblyOperator<Kubern
         KafkaBridgeCluster bridge;
 
         try {
-            bridge = KafkaBridgeCluster.fromCrd(reconciliation, assemblyResource);
+            bridge = KafkaBridgeCluster.fromCrd(reconciliation, assemblyResource, sharedEnvironmentProvider);
         } catch (Exception e) {
             LOGGER.warnCr(reconciliation, e);
             StatusUtils.setStatusConditionAndObservedGeneration(assemblyResource, kafkaBridgeStatus, Future.failedFuture(e));

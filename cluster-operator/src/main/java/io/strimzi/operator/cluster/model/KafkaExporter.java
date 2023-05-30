@@ -29,6 +29,7 @@ import io.strimzi.operator.cluster.model.metrics.MetricsModel;
 import io.strimzi.operator.cluster.model.securityprofiles.ContainerSecurityProviderContextImpl;
 import io.strimzi.operator.cluster.model.securityprofiles.PodSecurityProviderContextImpl;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.SharedEnvironmentProvider;
 import io.strimzi.operator.common.Util;
 
 import java.util.ArrayList;
@@ -86,9 +87,10 @@ public class KafkaExporter extends AbstractModel {
      *
      * @param reconciliation The reconciliation
      * @param resource Kubernetes resource with metadata containing the namespace and cluster name
+     * @param sharedEnvironmentProvider Shared environment provider
      */
-    protected KafkaExporter(Reconciliation reconciliation, HasMetadata resource) {
-        super(reconciliation, resource, KafkaExporterResources.deploymentName(resource.getMetadata().getName()), COMPONENT_TYPE);
+    protected KafkaExporter(Reconciliation reconciliation, HasMetadata resource, SharedEnvironmentProvider sharedEnvironmentProvider) {
+        super(reconciliation, resource, KafkaExporterResources.deploymentName(resource.getMetadata().getName()), COMPONENT_TYPE, sharedEnvironmentProvider);
 
         this.saramaLoggingEnabled = false;
     }
@@ -99,14 +101,14 @@ public class KafkaExporter extends AbstractModel {
      * @param reconciliation    Reconciliation marker for logging
      * @param kafkaAssembly     The Kafka CR
      * @param versions          The list of supported Kafka versions
-     *
+     * @param sharedEnvironmentProvider Shared environment provider
      * @return                  KafkaExporter model object when Kafka Exporter is enabled or null if it is disabled.
      */
-    public static KafkaExporter fromCrd(Reconciliation reconciliation, Kafka kafkaAssembly, KafkaVersion.Lookup versions) {
+    public static KafkaExporter fromCrd(Reconciliation reconciliation, Kafka kafkaAssembly, KafkaVersion.Lookup versions, SharedEnvironmentProvider sharedEnvironmentProvider) {
         KafkaExporterSpec spec = kafkaAssembly.getSpec().getKafkaExporter();
 
         if (spec != null) {
-            KafkaExporter result = new KafkaExporter(reconciliation, kafkaAssembly);
+            KafkaExporter result = new KafkaExporter(reconciliation, kafkaAssembly, sharedEnvironmentProvider);
 
             result.resources = spec.getResources();
             result.readinessProbeOptions = ProbeUtils.extractReadinessProbeOptionsOrDefault(spec, DEFAULT_HEALTHCHECK_OPTIONS);
@@ -212,7 +214,7 @@ public class KafkaExporter extends AbstractModel {
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_EXPORTER_ENABLE_SARAMA, String.valueOf(saramaLoggingEnabled)));
 
         // Add shared environment variables used for all containers
-        varList.addAll(ContainerUtils.requiredEnvVars());
+        varList.addAll(sharedEnvironmentProvider.variables());
 
         ContainerUtils.addContainerEnvsToExistingEnvs(reconciliation, varList, templateContainer);
 

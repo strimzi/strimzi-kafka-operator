@@ -27,7 +27,9 @@ import io.strimzi.operator.cluster.operator.resource.events.KubernetesRestartEve
 import io.strimzi.operator.common.AdminClientProvider;
 import io.strimzi.operator.common.BackOff;
 import io.strimzi.operator.common.DefaultAdminClientProvider;
+import io.strimzi.operator.common.DefaultSharedEnvironmentProvider;
 import io.strimzi.operator.common.MetricsProvider;
+import io.strimzi.operator.common.SharedEnvironmentProvider;
 import io.strimzi.operator.common.operator.resource.BuildConfigOperator;
 import io.strimzi.operator.common.operator.resource.BuildOperator;
 import io.strimzi.operator.common.operator.resource.ClusterRoleBindingOperator;
@@ -229,6 +231,11 @@ public class ResourceOperatorSupplier {
     public final KubernetesRestartEventPublisher restartEventsPublisher;
 
     /**
+     * Shared environment provider
+     */
+    public final SharedEnvironmentProvider sharedEnvironmentProvider;
+
+    /**
      * Constructor
      *
      * @param vertx                 Vert.x instance
@@ -327,7 +334,8 @@ public class ResourceOperatorSupplier {
                 metricsProvider,
                 adminClientProvider,
                 zlf,
-                restartEventPublisher);
+                restartEventPublisher,
+                new DefaultSharedEnvironmentProvider());
     }
 
     /**
@@ -367,6 +375,7 @@ public class ResourceOperatorSupplier {
      * @param adminClientProvider                   Kafka Admin client provider
      * @param zookeeperLeaderFinder                 ZooKeeper Leader Finder
      * @param restartEventsPublisher                Kubernetes Events publisher
+     * @param sharedEnvironmentProvider                 Shared environment provider
      */
     @SuppressWarnings({"checkstyle:ParameterNumber"})
     public ResourceOperatorSupplier(ServiceOperator serviceOperations,
@@ -402,7 +411,8 @@ public class ResourceOperatorSupplier {
                                     MetricsProvider metricsProvider,
                                     AdminClientProvider adminClientProvider,
                                     ZookeeperLeaderFinder zookeeperLeaderFinder,
-                                    KubernetesRestartEventPublisher restartEventsPublisher) {
+                                    KubernetesRestartEventPublisher restartEventsPublisher,
+                                    SharedEnvironmentProvider sharedEnvironmentProvider) {
         this.serviceOperations = serviceOperations;
         this.routeOperations = routeOperations;
         this.imageStreamOperations = imageStreamOperations;
@@ -437,5 +447,6 @@ public class ResourceOperatorSupplier {
         this.adminClientProvider = adminClientProvider;
         this.zookeeperLeaderFinder = zookeeperLeaderFinder;
         this.restartEventsPublisher = restartEventsPublisher;
+        this.sharedEnvironmentProvider = sharedEnvironmentProvider;
     }
 }

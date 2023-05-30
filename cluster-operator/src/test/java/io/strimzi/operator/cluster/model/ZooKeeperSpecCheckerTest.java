@@ -8,9 +8,11 @@ import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.api.kafka.model.storage.EphemeralStorage;
+import io.strimzi.operator.common.MockSharedEnvironmentProvider;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.SharedEnvironmentProvider;
 import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
@@ -24,6 +26,7 @@ import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
 
 public class ZooKeeperSpecCheckerTest {
+    private static final SharedEnvironmentProvider SHARED_ENV_PROVIDER = new MockSharedEnvironmentProvider();
     private static final String NAMESPACE = "ns";
     private static final String NAME = "foo";
     private static final String IMAGE = "image";
@@ -32,7 +35,7 @@ public class ZooKeeperSpecCheckerTest {
 
     private ZooKeeperSpecChecker generateChecker(Kafka kafka) {
         KafkaVersion.Lookup versions = KafkaVersionTestUtils.getKafkaVersionLookup();
-        ZookeeperCluster zkCluster = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, versions);
+        ZookeeperCluster zkCluster = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, versions, SHARED_ENV_PROVIDER);
         return new ZooKeeperSpecChecker(zkCluster);
     }
 

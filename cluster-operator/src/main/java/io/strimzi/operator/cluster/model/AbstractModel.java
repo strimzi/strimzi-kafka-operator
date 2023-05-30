@@ -15,6 +15,7 @@ import io.strimzi.api.kafka.model.template.ResourceTemplate;
 import io.strimzi.operator.cluster.model.securityprofiles.PodSecurityProviderFactory;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
+import io.strimzi.operator.common.SharedEnvironmentProvider;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.plugin.security.profiles.PodSecurityProvider;
 
@@ -79,6 +80,11 @@ public abstract class AbstractModel {
     protected ContainerTemplate templateContainer;
 
     /**
+     * SharedEnvironmentProvider
+     */
+    protected SharedEnvironmentProvider sharedEnvironmentProvider;
+
+    /**
      * Constructor
      *
      * @param reconciliation    The reconciliation marker
@@ -87,14 +93,16 @@ public abstract class AbstractModel {
      * @param componentName     Name of the Strimzi component usually consisting from the cluster name and component type
      * @param labels            Labels used for this component
      * @param ownerReference    Owner reference used for this component
+     * @param sharedEnvironmentProvider Shared environment provider
      */
-    protected AbstractModel(Reconciliation reconciliation, String cluster, String namespace, String componentName, Labels labels, OwnerReference ownerReference) {
+    protected AbstractModel(Reconciliation reconciliation, String cluster, String namespace, String componentName, Labels labels, OwnerReference ownerReference, SharedEnvironmentProvider sharedEnvironmentProvider) {
         this.reconciliation = reconciliation;
         this.cluster = cluster;
         this.namespace = namespace;
         this.componentName = componentName;
         this.labels = labels;
         this.ownerReference = ownerReference;
+        this.sharedEnvironmentProvider = sharedEnvironmentProvider;
     }
 
     /**
@@ -104,15 +112,17 @@ public abstract class AbstractModel {
      * @param resource          Custom resource with metadata containing the namespace and cluster name
      * @param componentName     Name of the Strimzi component usually consisting from the cluster name and component type
      * @param componentType     Type of the component that the extending class is deploying (e.g. Kafka, ZooKeeper etc. )
+     * @param sharedEnvironmentProvider Shared environment provider
      */
-    protected AbstractModel(Reconciliation reconciliation, HasMetadata resource, String componentName, String componentType) {
+    protected AbstractModel(Reconciliation reconciliation, HasMetadata resource, String componentName, String componentType, SharedEnvironmentProvider sharedEnvironmentProvider) {
         this(
                 reconciliation,
                 resource.getMetadata().getName(),
                 resource.getMetadata().getNamespace(),
                 componentName,
                 Labels.generateDefaultLabels(resource, componentName, componentType, STRIMZI_CLUSTER_OPERATOR_NAME),
-                ModelUtils.createOwnerReference(resource, false)
+                ModelUtils.createOwnerReference(resource, false),
+                sharedEnvironmentProvider
         );
     }
 

@@ -23,6 +23,7 @@ import io.strimzi.api.kafka.model.connect.build.TgzArtifact;
 import io.strimzi.api.kafka.model.connect.build.ZipArtifact;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.common.InvalidConfigurationException;
+import io.strimzi.operator.common.SharedEnvironmentProvider;
 import io.strimzi.operator.common.Util;
 
 /**
@@ -34,14 +35,6 @@ public class KafkaConnectDockerfile {
     private static final String BASE_PLUGIN_PATH = "/opt/kafka/plugins/";
     private static final String ROOT_USER = "root:root";
     private static final String NON_PRIVILEGED_USER = "1001";
-
-    private static final String ENV_VAR_HTTP_PROXY = "HTTP_PROXY";
-    private static final String ENV_VAR_HTTPS_PROXY = "HTTPS_PROXY";
-    private static final String ENV_VAR_NO_PROXY = "NO_PROXY";
-
-    private static final String HTTP_PROXY = System.getenv(ClusterOperatorConfig.HTTP_PROXY);
-    private static final String HTTPS_PROXY = System.getenv(ClusterOperatorConfig.HTTPS_PROXY);
-    private static final String NO_PROXY = System.getenv(ClusterOperatorConfig.NO_PROXY);
 
     private final String dockerfile;
 
@@ -117,8 +110,11 @@ public class KafkaConnectDockerfile {
      *
      * @param fromImage     Image which should be used as a base image in the FROM statement
      * @param connectBuild  The Build definition from the API
+     * @param sharedEnvironmentProvider  sharedEnvironmentProvider instance
      */
-    public KafkaConnectDockerfile(String fromImage, Build connectBuild) {
+    public KafkaConnectDockerfile(String fromImage,
+                                  Build connectBuild,
+                                  SharedEnvironmentProvider sharedEnvironmentProvider) {
         this.mavenBuilder = System.getenv().getOrDefault(ClusterOperatorConfig.STRIMZI_DEFAULT_MAVEN_BUILDER, DEFAULT_MAVEN_IMAGE);
         StringWriter stringWriter = new StringWriter();
         PrintWriter writer = new PrintWriter(stringWriter);
@@ -127,7 +123,7 @@ public class KafkaConnectDockerfile {
         connectorPluginsPreStage(writer, connectBuild.getPlugins());
         from(writer, fromImage); // Create FROM statement
         user(writer, ROOT_USER); // Switch to root user to be able to add plugins
-        proxy(writer); // Configures proxy environment variables
+        proxy(writer, sharedEnvironmentProvider); // Configures proxy environment variables
         connectorPlugins(writer, connectBuild.getPlugins());
         user(writer, NON_PRIVILEGED_USER); // Switch back to the regular unprivileged user
 
@@ -198,20 +194,24 @@ public class KafkaConnectDockerfile {
      * Generates proxy arguments if set in the operator
      *
      * @param writer        Writer for printing the Docker commands
+     * @param sharedEnvironmentProvider  sharedEnvironmentProvider instance
      */
-    private void proxy(PrintWriter writer) {
-        if (HTTP_PROXY != null) {
-            writer.println(String.format("ARG %s=%s", ENV_VAR_HTTP_PROXY.toLowerCase(Locale.ENGLISH), HTTP_PROXY));
+    private void proxy(PrintWriter writer, SharedEnvironmentProvider sharedEnvironmentProvider) {
+        String httpProxyValue = sharedEnvironmentProvider.value(ClusterOperatorConfig.HTTP_PROXY);
+        if (httpProxyValue != null) {
+            writer.println(String.format("ARG %s=%s", ClusterOperatorConfig.HTTP_PROXY.toLowerCase(Locale.ENGLISH), httpProxyValue));
             writer.println();
         }
 
-        if (HTTPS_PROXY != null) {
-            writer.println(String.format("ARG %s=%s", ENV_VAR_HTTPS_PROXY.toLowerCase(Locale.ENGLISH), HTTPS_PROXY));
+        String httpsProxyValue = sharedEnvironmentProvider.value(ClusterOperatorConfig.HTTPS_PROXY);
+        if (httpsProxyValue != null) {
+            writer.println(String.format("ARG %s=%s", ClusterOperatorConfig.HTTPS_PROXY.toLowerCase(Locale.ENGLISH), httpsProxyValue));
             writer.println();
         }
 
-        if (NO_PROXY != null) {
-            writer.println(String.format("ARG %s=%s", ENV_VAR_NO_PROXY.toLowerCase(Locale.ENGLISH), NO_PROXY));
+        String noProxyValue = sharedEnvironmentProvider.value(ClusterOperatorConfig.NO_PROXY);
+        if (noProxyValue != null) {
+            writer.println(String.format("ARG %s=%s", ClusterOperatorConfig.NO_PROXY.toLowerCase(Locale.ENGLISH), noProxyValue));
             writer.println();
         }
     }

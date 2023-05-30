@@ -79,6 +79,7 @@ import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControl
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.MetricsAndLogging;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.SharedEnvironmentProvider;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
 import io.vertx.core.json.JsonArray;
@@ -254,9 +255,10 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
      *
      * @param reconciliation The reconciliation
      * @param resource Kubernetes resource with metadata containing the namespace and cluster name
+     * @param sharedEnvironmentProvider Shared environment provider
      */
-    private KafkaCluster(Reconciliation reconciliation, HasMetadata resource) {
-        super(reconciliation, resource, KafkaResources.kafkaStatefulSetName(resource.getMetadata().getName()), COMPONENT_TYPE);
+    private KafkaCluster(Reconciliation reconciliation, HasMetadata resource, SharedEnvironmentProvider sharedEnvironmentProvider) {
+        super(reconciliation, resource, KafkaResources.kafkaStatefulSetName(resource.getMetadata().getName()), COMPONENT_TYPE, sharedEnvironmentProvider);
 
         this.initImage = System.getenv().getOrDefault(ClusterOperatorConfig.STRIMZI_DEFAULT_KAFKA_INIT_IMAGE, "quay.io/strimzi/operator:latest");
     }
@@ -269,14 +271,15 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
      * @param pools             Set of node pools used by this cluster
      * @param versions          Supported Kafka versions
      * @param useKRaft          Flag indicating if KRaft is enabled
+     * @param sharedEnvironmentProvider Shared environment provider
      *
      * @return  Kafka cluster instance
      */
-    public static KafkaCluster fromCrd(Reconciliation reconciliation, Kafka kafka, List<KafkaPool> pools, KafkaVersion.Lookup versions, boolean useKRaft) {
+    public static KafkaCluster fromCrd(Reconciliation reconciliation, Kafka kafka, List<KafkaPool> pools, KafkaVersion.Lookup versions, boolean useKRaft, SharedEnvironmentProvider sharedEnvironmentProvider) {
         KafkaSpec kafkaSpec = kafka.getSpec();
         KafkaClusterSpec kafkaClusterSpec = kafkaSpec.getKafka();
 
-        KafkaCluster result = new KafkaCluster(reconciliation, kafka);
+        KafkaCluster result = new KafkaCluster(reconciliation, kafka, sharedEnvironmentProvider);
 
         result.nodePools = pools;
 
@@ -1394,7 +1397,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
         }
 
         // Add shared environment variables used for all containers
-        varList.addAll(ContainerUtils.requiredEnvVars());
+        varList.addAll(sharedEnvironmentProvider.variables());
 
         ContainerUtils.addContainerEnvsToExistingEnvs(reconciliation, varList, pool.templateInitContainer);
 
@@ -1479,7 +1482,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
         varList.addAll(jmx.envVars());
 
         // Add shared environment variables used for all containers
-        varList.addAll(ContainerUtils.requiredEnvVars());
+        varList.addAll(sharedEnvironmentProvider.variables());
 
         // Add user defined environment variables to the Kafka broker containers
         ContainerUtils.addContainerEnvsToExistingEnvs(reconciliation, varList, pool.templateContainer);

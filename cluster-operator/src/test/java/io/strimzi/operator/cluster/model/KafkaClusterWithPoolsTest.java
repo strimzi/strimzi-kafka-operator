@@ -30,7 +30,9 @@ import io.strimzi.api.kafka.model.storage.Storage;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.model.nodepools.NodeIdAssignment;
 import io.strimzi.operator.common.MetricsAndLogging;
+import io.strimzi.operator.common.MockSharedEnvironmentProvider;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.SharedEnvironmentProvider;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -46,6 +48,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 public class KafkaClusterWithPoolsTest {
     private static final KafkaVersion.Lookup VERSIONS = KafkaVersionTestUtils.getKafkaVersionLookup();
+    private static final SharedEnvironmentProvider SHARED_ENV_PROVIDER = new MockSharedEnvironmentProvider();
     private final static String NAMESPACE = "my-namespace";
     private final static String CLUSTER_NAME = "my-cluster";
     private final static Kafka KAFKA = new KafkaBuilder()
@@ -91,7 +94,8 @@ public class KafkaClusterWithPoolsTest {
             POOL_A,
             new NodeIdAssignment(Set.of(0, 1, 2), Set.of(0, 1, 2), Set.of(), Set.of()),
             null,
-            OWNER_REFERENCE
+            OWNER_REFERENCE,
+            SHARED_ENV_PROVIDER
     );
     private final static KafkaNodePool POOL_B = new KafkaNodePoolBuilder()
             .withNewMetadata()
@@ -113,7 +117,8 @@ public class KafkaClusterWithPoolsTest {
             POOL_B,
             new NodeIdAssignment(Set.of(10, 11), Set.of(10, 11), Set.of(), Set.of()),
             null,
-            OWNER_REFERENCE
+            OWNER_REFERENCE,
+            SHARED_ENV_PROVIDER
     );
 
     @Test
@@ -123,7 +128,8 @@ public class KafkaClusterWithPoolsTest {
                 KAFKA,
                 List.of(KAFKA_POOL_A, KAFKA_POOL_B),
                 VERSIONS,
-                false
+                false,
+                SHARED_ENV_PROVIDER
         );
 
         Set<NodeRef> nodes = kc.nodes();
@@ -181,7 +187,8 @@ public class KafkaClusterWithPoolsTest {
                 KAFKA,
                 List.of(KAFKA_POOL_A, KAFKA_POOL_B),
                 VERSIONS,
-                false
+                false,
+                SHARED_ENV_PROVIDER
         );
 
         assertThat(kc.generatePerPodServices().size(), is(0));
@@ -204,7 +211,8 @@ public class KafkaClusterWithPoolsTest {
                 kafka,
                 List.of(KAFKA_POOL_A, KAFKA_POOL_B),
                 VERSIONS,
-                false
+                false,
+                SHARED_ENV_PROVIDER
         );
 
         List<Service> services = kc.generatePerPodServices();
@@ -227,7 +235,8 @@ public class KafkaClusterWithPoolsTest {
                 kafka,
                 List.of(KAFKA_POOL_A, KAFKA_POOL_B),
                 VERSIONS,
-                false
+                false,
+                SHARED_ENV_PROVIDER
         );
 
         List<Service> services = kc.generatePerPodServices();
@@ -265,7 +274,8 @@ public class KafkaClusterWithPoolsTest {
                 kafka,
                 List.of(KAFKA_POOL_A, KAFKA_POOL_B),
                 VERSIONS,
-                false
+                false,
+                SHARED_ENV_PROVIDER
         );
 
         List<Service> services = kc.generatePerPodServices();
@@ -292,7 +302,8 @@ public class KafkaClusterWithPoolsTest {
                 kafka,
                 List.of(KAFKA_POOL_A, KAFKA_POOL_B),
                 VERSIONS,
-                false
+                false,
+                SHARED_ENV_PROVIDER
         );
 
         List<Service> services = kc.generatePerPodServices();
@@ -311,7 +322,8 @@ public class KafkaClusterWithPoolsTest {
                 KAFKA,
                 List.of(KAFKA_POOL_A, KAFKA_POOL_B),
                 VERSIONS,
-                false
+                false,
+                SHARED_ENV_PROVIDER
         );
 
         PodDisruptionBudget pdb = kc.generatePodDisruptionBudget();
@@ -325,7 +337,8 @@ public class KafkaClusterWithPoolsTest {
                 KAFKA,
                 List.of(KAFKA_POOL_A, KAFKA_POOL_B),
                 VERSIONS,
-                false
+                false,
+                SHARED_ENV_PROVIDER
         );
 
         List<StrimziPodSet> podSets = kc.generatePodSets(false, null, null, i -> Map.of());
@@ -354,7 +367,8 @@ public class KafkaClusterWithPoolsTest {
                 poolA,
                 new NodeIdAssignment(Set.of(0, 1, 2), Set.of(0, 1, 2), Set.of(), Set.of()),
                 null,
-                OWNER_REFERENCE
+                OWNER_REFERENCE,
+                SHARED_ENV_PROVIDER
         );
 
         KafkaNodePool poolB = new KafkaNodePoolBuilder(POOL_B)
@@ -368,7 +382,8 @@ public class KafkaClusterWithPoolsTest {
                 poolB,
                 new NodeIdAssignment(Set.of(10, 11), Set.of(10, 11), Set.of(), Set.of()),
                 null,
-                OWNER_REFERENCE
+                OWNER_REFERENCE,
+                SHARED_ENV_PROVIDER
         );
 
         Map<Integer, Map<String, String>> advertisedHostnames = Map.of(
@@ -385,7 +400,8 @@ public class KafkaClusterWithPoolsTest {
                 KAFKA,
                 List.of(kafkaPoolA, kafkaPoolB),
                 VERSIONS,
-                true
+                true,
+                SHARED_ENV_PROVIDER
         );
 
         String configuration = kc.generatePerBrokerBrokerConfiguration(2, Map.of(), Map.of());
@@ -420,7 +436,8 @@ public class KafkaClusterWithPoolsTest {
                 KAFKA,
                 List.of(KAFKA_POOL_A, KAFKA_POOL_B),
                 VERSIONS,
-                false
+                false,
+                SHARED_ENV_PROVIDER
         );
 
         Map<String, Storage> storage = kc.getStorageByPoolName();
