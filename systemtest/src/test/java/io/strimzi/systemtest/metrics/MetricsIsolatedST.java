@@ -361,6 +361,8 @@ public class MetricsIsolatedST extends AbstractST {
         KafkaResource.replaceKafkaResourceInSpecificNamespace(kafkaClusterFirstName, k -> {
             k.getSpec().getKafkaExporter().setGroupRegex("my-group.*");
             k.getSpec().getKafkaExporter().setTopicRegex(topicName);
+            k.getSpec().getKafkaExporter().setGroupExcludeRegex("my-group.*");
+            k.getSpec().getKafkaExporter().setTopicExcludeRegex(topicName);
         }, namespaceFirst);
 
         kafkaExporterSnapshot = DeploymentUtils.waitTillDepHasRolled(namespaceFirst, KafkaExporterResources.deploymentName(kafkaClusterFirstName), 1, kafkaExporterSnapshot);
@@ -376,6 +378,8 @@ public class MetricsIsolatedST extends AbstractST {
         KafkaResource.replaceKafkaResourceInSpecificNamespace(kafkaClusterFirstName, k -> {
             k.getSpec().getKafkaExporter().setGroupRegex(".*");
             k.getSpec().getKafkaExporter().setTopicRegex(".*");
+            k.getSpec().getKafkaExporter().setGroupExcludeRegex("^$");
+            k.getSpec().getKafkaExporter().setTopicExcludeRegex("^$");
         }, namespaceFirst);
 
         DeploymentUtils.waitTillDepHasRolled(namespaceFirst, KafkaExporterResources.deploymentName(kafkaClusterFirstName), 1, kafkaExporterSnapshot);

@@ -88,11 +88,15 @@ public class KafkaExporterTest {
     private final String keImage = "my-exporter-image";
     private final String groupRegex = "my-group-.*";
     private final String topicRegex = "my-topic-.*";
+    private final String groupExcludeRegex = "my-group-exclude-.*";
+    private final String topicExcludeRegex = "my-topic-exclude-.*";
 
     private final KafkaExporterSpec exporterOperator = new KafkaExporterSpecBuilder()
             .withLogging(exporterOperatorLogging)
             .withGroupRegex(groupRegex)
             .withTopicRegex(topicRegex)
+            .withGroupExcludeRegex(groupExcludeRegex)
+            .withTopicExcludeRegex(topicExcludeRegex)
             .withImage(keImage)
             .withEnableSaramaLogging(true)
             .withNewTemplate()
@@ -123,6 +127,8 @@ public class KafkaExporterTest {
         expected.add(new EnvVarBuilder().withName(KafkaExporter.ENV_VAR_KAFKA_EXPORTER_KAFKA_VERSION).withValue(version).build());
         expected.add(new EnvVarBuilder().withName(KafkaExporter.ENV_VAR_KAFKA_EXPORTER_GROUP_REGEX).withValue(groupRegex).build());
         expected.add(new EnvVarBuilder().withName(KafkaExporter.ENV_VAR_KAFKA_EXPORTER_TOPIC_REGEX).withValue(topicRegex).build());
+        expected.add(new EnvVarBuilder().withName(KafkaExporter.ENV_VAR_KAFKA_EXPORTER_GROUP_EXCLUDE_REGEX).withValue(groupExcludeRegex).build());
+        expected.add(new EnvVarBuilder().withName(KafkaExporter.ENV_VAR_KAFKA_EXPORTER_TOPIC_EXCLUDE_REGEX).withValue(topicExcludeRegex).build());
         expected.add(new EnvVarBuilder().withName(KafkaExporter.ENV_VAR_KAFKA_EXPORTER_KAFKA_SERVER).withValue("foo-kafka-bootstrap:" + KafkaCluster.REPLICATION_PORT).build());
         expected.add(new EnvVarBuilder().withName(KafkaExporter.ENV_VAR_KAFKA_EXPORTER_ENABLE_SARAMA).withValue("true").build());
         io.strimzi.operator.cluster.TestUtils.maybeAddHttpProxyEnvVars(expected);
@@ -139,6 +145,8 @@ public class KafkaExporterTest {
         assertThat(ke.exporterLogging, is("info"));
         assertThat(ke.groupRegex, is(".*"));
         assertThat(ke.topicRegex, is(".*"));
+        assertThat(ke.groupExcludeRegex, is("^$"));
+        assertThat(ke.topicExcludeRegex, is("^$"));
         assertThat(ke.saramaLoggingEnabled, is(false));
     }
 
@@ -150,6 +158,8 @@ public class KafkaExporterTest {
         assertThat(ke.exporterLogging, is("debug"));
         assertThat(ke.groupRegex, is("my-group-.*"));
         assertThat(ke.topicRegex, is("my-topic-.*"));
+        assertThat(ke.groupExcludeRegex, is("my-group-exclude-.*"));
+        assertThat(ke.topicExcludeRegex, is("my-topic-exclude-.*"));
         assertThat(ke.saramaLoggingEnabled, is(true));
     }
 
@@ -253,6 +263,8 @@ public class KafkaExporterTest {
                 .withLogging(exporterOperatorLogging)
                 .withGroupRegex(groupRegex)
                 .withTopicRegex(topicRegex)
+                .withGroupExcludeRegex(groupExcludeRegex)
+                .withTopicExcludeRegex(topicExcludeRegex)
                 .withImage(keImage)
                 .withNewTemplate()
                     .withNewContainer()
@@ -289,6 +301,8 @@ public class KafkaExporterTest {
                 .withLogging(exporterOperatorLogging)
                 .withGroupRegex(groupRegex)
                 .withTopicRegex(topicRegex)
+                .withGroupExcludeRegex(groupExcludeRegex)
+                .withTopicExcludeRegex(topicExcludeRegex)
                 .withImage(keImage)
                 .withNewTemplate()
                     .withNewContainer()
