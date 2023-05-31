@@ -7,6 +7,7 @@ package io.strimzi.systemtest.watcher;
 import io.strimzi.systemtest.BeforeAllOnce;
 import io.strimzi.systemtest.annotations.IsolatedSuite;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
+import io.strimzi.test.logs.CollectorElement;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
@@ -28,11 +29,13 @@ class MultipleNamespaceIsolatedST extends AbstractNamespaceST {
         LOGGER.info("Creating Cluster Operator which will watch over multiple namespaces");
 
         clusterOperator.unInstall();
+
+        cluster.createNamespaces(CollectorElement.createCollectorElement(this.getClass().getName()), clusterOperator.getDeploymentNamespace(), Arrays.asList(PRIMARY_KAFKA_WATCHED_NAMESPACE, MAIN_TEST_NAMESPACE));
+
         clusterOperator = new SetupClusterOperator.SetupClusterOperatorBuilder()
             .withExtensionContext(BeforeAllOnce.getSharedExtensionContext())
             .withNamespace(INFRA_NAMESPACE)
             .withWatchingNamespaces(String.join(",", INFRA_NAMESPACE, PRIMARY_KAFKA_WATCHED_NAMESPACE, MAIN_TEST_NAMESPACE))
-            .withBindingsNamespaces(Arrays.asList(clusterOperator.getDeploymentNamespace(), PRIMARY_KAFKA_WATCHED_NAMESPACE, MAIN_TEST_NAMESPACE))
             .createInstallation()
             .runInstallation();
     }
