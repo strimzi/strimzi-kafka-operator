@@ -877,7 +877,6 @@ public class KafkaRebalanceAssemblyOperator
                                             }
                                         })
                                         .onFailure(e -> {
-                                            System.out.println(e.getMessage() + "hi");
                                             LOGGER.errorCr(reconciliation, "Cruise Control getting rebalance proposal failed: " + e.getMessage());
                                             vertx.cancelTimer(t);
                                             p.fail(e.getCause());

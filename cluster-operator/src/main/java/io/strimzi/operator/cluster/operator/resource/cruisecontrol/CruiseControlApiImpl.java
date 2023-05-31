@@ -213,12 +213,12 @@ public class CruiseControlApiImpl implements CruiseControlApi {
                                 } else {
                                     // If there was any other kind of error propagate this to the operator
                                     result.fail(new CruiseControlRestException(new Exception(errorMessage.substring(errorMessage.indexOf(":") + 3, errorMessage.indexOf(":", errorMessage.indexOf("Exception")))),
-                                            "Error for request:" + host + ":" + port + path + ". Server returned: " +
+                                            "Error for request: " + host + ":" + port + path + ". Server returned: " +
                                                     errorMessage));
                                 }
                             } else {
                                 result.fail(new CruiseControlRestException(
-                                        "Error for request: " + host + ":" + port + path + " . Server returned: " +
+                                        "Error for request: " + host + ":" + port + path + ". Server returned: " +
                                                 json.toString()));
                             }
                         });
