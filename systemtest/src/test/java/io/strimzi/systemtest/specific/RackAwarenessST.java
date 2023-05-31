@@ -22,11 +22,16 @@ import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.annotations.ParallelSuite;
 import static io.strimzi.systemtest.resources.ResourceManager.kubeClient;
+
+import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
+import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaConnectTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaMirrorMaker2Templates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
+import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
+import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StrimziPodSetUtils;
@@ -151,6 +156,7 @@ class RackAwarenessST extends AbstractST {
         TestStorage testStorage = storageMap.get(extensionContext);
         String kafkaClusterSourceName = testStorage.getClusterName() + "-source";
         String kafkaClusterTargetName = testStorage.getClusterName() + "-target";
+        String sourceMirroredTopicName = kafkaClusterSourceName + "." + testStorage.getTopicName();
 
         resourceManager.createResource(extensionContext,
                 KafkaTemplates.kafkaEphemeral(kafkaClusterSourceName, 1, 1).build());
@@ -161,10 +167,15 @@ class RackAwarenessST extends AbstractST {
                 KafkaMirrorMaker2Templates.kafkaMirrorMaker2(testStorage.getClusterName(), kafkaClusterTargetName, kafkaClusterSourceName, 1, false)
                         .editSpec()
                             .withNewRack(TOPOLOGY_KEY)
+                            .editFirstMirror()
+                                .editSourceConnector()
+                                    .addToConfig("refresh.topics.interval.seconds", "1")
+                                .endSourceConnector()
+                            .endMirror()
                         .endSpec()
                         .build());
 
-        LOGGER.info("MirrorMaker2 cluster deployed successfully");
+        LOGGER.info("MirrorMaker2: {}/{} cluster deployed successfully", testStorage.getNamespaceName(), testStorage.getClusterName());
         String deployName = KafkaMirrorMaker2Resources.deploymentName(testStorage.getClusterName());
         String podName = PodUtils.getPodNameByPrefix(testStorage.getNamespaceName(), deployName);
         Pod pod = kubeClient().getPod(testStorage.getNamespaceName(), podName);
@@ -183,6 +194,30 @@ class RackAwarenessST extends AbstractST {
         String hostname = podNodeName.contains(".") ? podNodeName.substring(0, podNodeName.indexOf(".")) : podNodeName;
         String commandOut = cmdKubeClient(testStorage.getNamespaceName()).execInPod(podName, "/bin/bash", "-c", "cat /tmp/strimzi-connect.properties | grep consumer.client.rack").out().trim();
         assertThat(commandOut.equals("consumer.client.rack=" + hostname), is(true));
+
+        // Mirroring messages by: Producing to the Source Kafka Cluster and consuming them from mirrored KafkaTopic in target Kafka Cluster.
+
+        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(kafkaClusterSourceName, testStorage.getTopicName(), 3).build());
+
+        LOGGER.info("Producing messages into the source Kafka: {}/{}, topic: {}", testStorage.getNamespaceName(), kafkaClusterSourceName, testStorage.getTopicName());
+        KafkaClients clients = new KafkaClientsBuilder()
+            .withProducerName(testStorage.getProducerName())
+            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(kafkaClusterSourceName))
+            .withNamespaceName(testStorage.getNamespaceName())
+            .withTopicName(testStorage.getTopicName())
+            .withMessageCount(testStorage.getMessageCount())
+            .build();
+        resourceManager.createResource(extensionContext, clients.producerStrimzi());
+        ClientUtils.waitForProducerClientSuccess(testStorage);
+
+        LOGGER.info("Consuming messages in the target Kafka: {}/{} mirrored topic: {}", testStorage.getNamespaceName(), kafkaClusterTargetName, sourceMirroredTopicName);
+        clients = new KafkaClientsBuilder(clients)
+            .withTopicName(sourceMirroredTopicName)
+            .withConsumerName(testStorage.getConsumerName())
+            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(kafkaClusterTargetName))
+            .build();
+        resourceManager.createResource(extensionContext, clients.consumerStrimzi());
+        ClientUtils.waitForConsumerClientSuccess(testStorage);
     }
 
     @BeforeEach
