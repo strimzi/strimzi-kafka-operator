@@ -782,7 +782,6 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
         }
     }
 
-
     /**
      * @return  Name of the ClusterRoleBinding for the Connect init container
      */

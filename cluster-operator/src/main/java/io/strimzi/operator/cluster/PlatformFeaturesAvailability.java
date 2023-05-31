@@ -239,15 +239,6 @@ public class PlatformFeaturesAvailability implements PlatformFeatures {
         return hasBuilds() && hasImages();
     }
 
-    /**
-     * Returns true when the Kubernetes cluster has V1 version of the PodDisruptionBudget resource (Kubernetes 1.21 and newer)
-     *
-     * @return True when PodDisruptionBudget V1 is supported. False otherwise.
-     */
-    public boolean hasPodDisruptionBudgetV1() {
-        return this.kubernetesVersion.compareTo(KubernetesVersion.V1_21) >= 0;
-    }
-
     @Override
     public String toString() {
         return "PlatformFeaturesAvailability(" +

@@ -549,7 +549,6 @@ public class ZookeeperCluster extends AbstractStatefulModel implements SupportsM
         return PodDisruptionBudgetUtils.createCustomControllerPodDisruptionBudget(componentName, namespace, labels, ownerReference, templatePodDisruptionBudget, replicas);
     }
 
-
     /**
      * Generates a configuration ConfigMap with metrics and logging configurations and node count.
      *

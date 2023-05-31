@@ -453,22 +453,9 @@ public class ZooKeeperReconciler {
      * @return  Completes when the PDB was successfully created or updated
      */
     protected Future<Void> podDisruptionBudget() {
-        if (!pfa.hasPodDisruptionBudgetV1()) {
-            return Future.succeededFuture();
-        } else {
-            return podDisruptionBudgetOperator
-                    .reconcile(reconciliation, reconciliation.namespace(), KafkaResources.zookeeperStatefulSetName(reconciliation.name()), zk.generatePodDisruptionBudget())
-                    .map((Void) null);
-        }
-    }
-
-    /**
-     * Manages the PodDisruptionBudgets on Kubernetes clusters which support only v1beta1 version of PDBs
-     *
-     * @return  Completes when the PDB was successfully created or updated
-     */
-    protected Future<Void> podDisruptionBudgetV1() {
-        return Future.succeededFuture();
+        return podDisruptionBudgetOperator
+                .reconcile(reconciliation, reconciliation.namespace(), KafkaResources.zookeeperStatefulSetName(reconciliation.name()), zk.generatePodDisruptionBudget())
+                .map((Void) null);
     }
 
     /**
