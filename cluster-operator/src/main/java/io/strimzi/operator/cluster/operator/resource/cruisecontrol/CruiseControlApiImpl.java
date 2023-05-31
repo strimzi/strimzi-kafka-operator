@@ -200,24 +200,25 @@ public class CruiseControlApiImpl implements CruiseControlApi {
                             String userTaskID = response.result().getHeader(CC_REST_API_USER_ID_HEADER);
                             JsonObject json = buffer.toJsonObject();
                             if (json.containsKey(CC_REST_API_ERROR_KEY)) {
+                                String errorMessage = json.getString(CC_REST_API_ERROR_KEY);
                                 // If there was a client side error, check whether it was due to not enough data being available ...
-                                if (json.getString(CC_REST_API_ERROR_KEY).contains("NotEnoughValidWindowsException")) {
+                                if (errorMessage.contains("NotEnoughValidWindowsException")) {
                                     CruiseControlRebalanceResponse ccResponse = new CruiseControlRebalanceResponse(userTaskID, json);
                                     ccResponse.setNotEnoughDataForProposal(true);
                                     result.complete(ccResponse);
                                 // ... or one or more brokers doesn't exist on a add/remove brokers rebalance request
-                                } else if (json.getString(CC_REST_API_ERROR_KEY).contains("IllegalArgumentException") &&
-                                            json.getString(CC_REST_API_ERROR_KEY).contains("does not exist.")) {
+                                } else if (errorMessage.contains("IllegalArgumentException") &&
+                                            errorMessage.contains("does not exist.")) {
                                     result.fail(new IllegalArgumentException("Some/all brokers specified don't exist"));
                                 } else {
                                     // If there was any other kind of error propagate this to the operator
-                                    result.fail(new CruiseControlRestException(
-                                            "Error for request: " + host + ":" + port + path + ". Server returned: " +
-                                                    json.getString(CC_REST_API_ERROR_KEY)));
+                                    result.fail(new CruiseControlRestException(new Exception(errorMessage.substring(errorMessage.indexOf(":") + 3, errorMessage.indexOf(":", errorMessage.indexOf("Exception")))),
+                                            "Error for request:" + host + ":" + port + path + ". Server returned: " +
+                                                    errorMessage));
                                 }
                             } else {
                                 result.fail(new CruiseControlRestException(
-                                        "Error for request: " + host + ":" + port + path + ". Server returned: " +
+                                        "Error for request: " + host + ":" + port + path + " . Server returned: " +
                                                 json.toString()));
                             }
                         });
