@@ -179,6 +179,10 @@ public class KafkaRebalanceAssemblyOperator
         this.secretOperations = supplier.secretOperations;
     }
 
+    protected long rebalancePollingTimerDelay() {
+        return REBALANCE_POLLING_TIMER_MS;
+    }
+
     /**
      * Provides an implementation of the Cruise Control API client
      *
@@ -843,7 +847,7 @@ public class KafkaRebalanceAssemblyOperator
         Promise<MapAndStatus<ConfigMap, KafkaRebalanceStatus>> p = Promise.promise();
         if (rebalanceAnnotation == KafkaRebalanceAnnotation.none) {
             LOGGER.debugCr(reconciliation, "Starting Cruise Control rebalance proposal request timer");
-            vertx.setPeriodic(REBALANCE_POLLING_TIMER_MS, t ->
+            vertx.setPeriodic(rebalancePollingTimerDelay(), t ->
                 kafkaRebalanceOperator.getAsync(kafkaRebalance.getMetadata().getNamespace(), kafkaRebalance.getMetadata().getName())
                     .onSuccess(currentKafkaRebalance -> {
                         // Checking that the resource was not deleted between periodic polls
@@ -975,7 +979,7 @@ public class KafkaRebalanceAssemblyOperator
             LOGGER.infoCr(reconciliation, "Starting Cruise Control rebalance user task status timer");
             String sessionId = kafkaRebalance.getStatus().getSessionId();
             AtomicInteger ccApiErrorCount = new AtomicInteger();
-            vertx.setPeriodic(REBALANCE_POLLING_TIMER_MS, t -> {
+            vertx.setPeriodic(rebalancePollingTimerDelay(), t -> {
                 // Check that we have not already failed to contact the API beyond the allowed number of times.
                 if (ccApiErrorCount.get() >= MAX_API_RETRIES) {
                     vertx.cancelTimer(t);

@@ -169,6 +169,11 @@ public class KafkaRebalanceAssemblyOperatorTest {
             public CruiseControlApi cruiseControlClientProvider(Secret ccSecret, Secret ccApiSecret, boolean apiAuthEnabled, boolean apiSslEnabled) {
                 return new CruiseControlApiImpl(vertx, 1, ccSecret, ccApiSecret, true, true);
             }
+
+            @Override
+            protected long rebalancePollingTimerDelay() {
+                return 100;
+            }
         };
 
         mockRebalanceOps = supplier.kafkaRebalanceOperator;
