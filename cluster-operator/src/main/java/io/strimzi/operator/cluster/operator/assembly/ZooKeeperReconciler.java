@@ -469,7 +469,7 @@ public class ZooKeeperReconciler {
      */
     protected Future<Void> podDisruptionBudgetV1() {
         return Future.succeededFuture();
-        }
+    }
 
     /**
      * Helps with the migration from StatefulSets to StrimziPodSets when the cluster is switching between them. When the

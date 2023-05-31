@@ -339,7 +339,6 @@ public class ResourceOperatorSupplier {
      * @param clusterRoleBindingOperator            Cluster Role Binding operator
      * @param networkPolicyOperator                 Network Policy operator
      * @param podDisruptionBudgetOperator           Pod Disruption Budget operator
-     * @param podDisruptionBudgetV1Beta1Operator    Pod Disruption Budget v1beta1 operator
      * @param podOperations                         Pod operator
      * @param ingressOperations                     Ingress operator
      * @param buildConfigOperations                 Build Config operator

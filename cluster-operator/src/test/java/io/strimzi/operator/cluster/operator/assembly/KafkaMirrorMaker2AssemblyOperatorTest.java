@@ -40,7 +40,6 @@ import io.strimzi.operator.common.operator.resource.CrdOperator;
 import io.strimzi.operator.common.operator.resource.DeploymentOperator;
 import io.strimzi.operator.common.operator.resource.NetworkPolicyOperator;
 import io.strimzi.operator.common.operator.resource.PodDisruptionBudgetOperator;
-import io.strimzi.operator.common.operator.resource.PodDisruptionBudgetV1Beta1Operator;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.strimzi.operator.common.operator.resource.SecretOperator;
 import io.strimzi.operator.common.operator.resource.ServiceOperator;
@@ -1020,7 +1019,6 @@ public class KafkaMirrorMaker2AssemblyOperatorTest {
         DeploymentOperator mockDcOps = supplier.deploymentOperations;
         StrimziPodSetOperator mockPodSetOps = supplier.strimziPodSetOperator;
         PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
-        PodDisruptionBudgetV1Beta1Operator mockPdbOpsV1Beta1 = supplier.podDisruptionBudgetV1Beta1Operator;
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
         ServiceOperator mockServiceOps = supplier.serviceOperations;
         NetworkPolicyOperator mockNetPolOps = supplier.networkPolicyOperator;
@@ -1050,7 +1048,6 @@ public class KafkaMirrorMaker2AssemblyOperatorTest {
         when(mockPdbOps.reconcile(any(), anyString(), any(), pdbCaptor.capture())).thenReturn(Future.succeededFuture());
 
         ArgumentCaptor<io.fabric8.kubernetes.api.model.policy.v1beta1.PodDisruptionBudget> pdbV1Beta1Captor = ArgumentCaptor.forClass(io.fabric8.kubernetes.api.model.policy.v1beta1.PodDisruptionBudget.class);
-        when(mockPdbOpsV1Beta1.reconcile(any(), anyString(), any(), pdbV1Beta1Captor.capture())).thenReturn(Future.succeededFuture());
 
         ArgumentCaptor<KafkaMirrorMaker2> mirrorMaker2Captor = ArgumentCaptor.forClass(KafkaMirrorMaker2.class);
         when(mockMirrorMaker2Ops.updateStatusAsync(any(), mirrorMaker2Captor.capture())).thenReturn(Future.succeededFuture());

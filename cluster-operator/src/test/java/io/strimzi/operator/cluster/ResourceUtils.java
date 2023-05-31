@@ -70,7 +70,6 @@ import io.strimzi.operator.common.operator.resource.IngressOperator;
 import io.strimzi.operator.common.operator.resource.NetworkPolicyOperator;
 import io.strimzi.operator.common.operator.resource.NodeOperator;
 import io.strimzi.operator.common.operator.resource.PodDisruptionBudgetOperator;
-import io.strimzi.operator.common.operator.resource.PodDisruptionBudgetV1Beta1Operator;
 import io.strimzi.operator.common.operator.resource.PodOperator;
 import io.strimzi.operator.common.operator.resource.PvcOperator;
 import io.strimzi.operator.common.operator.resource.RoleBindingOperator;
@@ -559,7 +558,6 @@ public class ResourceUtils {
                 mock(ClusterRoleBindingOperator.class),
                 mock(NetworkPolicyOperator.class),
                 mock(PodDisruptionBudgetOperator.class),
-                mock(PodDisruptionBudgetV1Beta1Operator.class),
                 mock(PodOperator.class),
                 mock(IngressOperator.class),
                 mock(BuildConfigOperator.class),

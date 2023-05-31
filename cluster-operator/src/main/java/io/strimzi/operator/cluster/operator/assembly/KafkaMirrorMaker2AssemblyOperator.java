@@ -190,7 +190,6 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
                 })
                 .compose(i -> ReconcilerUtils.reconcileJmxSecret(reconciliation, secretOperations, mirrorMaker2Cluster))
                 .compose(i -> pfa.hasPodDisruptionBudgetV1() ? podDisruptionBudgetOperator.reconcile(reconciliation, namespace, mirrorMaker2Cluster.getComponentName(), mirrorMaker2Cluster.generatePodDisruptionBudget(stableIdentities)) : Future.succeededFuture())
-                .compose(i -> !pfa.hasPodDisruptionBudgetV1() ? podDisruptionBudgetV1Beta1Operator.reconcile(reconciliation, namespace, mirrorMaker2Cluster.getComponentName(), mirrorMaker2Cluster.generatePodDisruptionBudgetV1Beta1(stableIdentities)) : Future.succeededFuture())
                 .compose(i -> generateAuthHash(namespace, kafkaMirrorMaker2.getSpec()))
                 .compose(hash -> {
                     podAnnotations.put(Annotations.ANNO_STRIMZI_AUTH_HASH, Integer.toString(hash));

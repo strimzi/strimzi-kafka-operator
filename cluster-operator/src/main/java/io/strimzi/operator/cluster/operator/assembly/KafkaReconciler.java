@@ -667,7 +667,7 @@ public class KafkaReconciler {
         return podDisruptionBudgetOperator
                     .reconcile(reconciliation, reconciliation.namespace(), KafkaResources.kafkaStatefulSetName(reconciliation.name()), kafka.generatePodDisruptionBudget())
                     .map((Void) null);
-        }
+    }
 
     /**
      * Prepares annotations for Kafka pods within a StrimziPodSet which are known only in the KafkaAssemblyOperator level.
