@@ -550,15 +550,6 @@ public class ZookeeperCluster extends AbstractStatefulModel implements SupportsM
     }
 
     /**
-     * Generates the PodDisruptionBudget V1Beta1.
-     *
-     * @return The PodDisruptionBudget V1Beta1.
-     */
-    public io.fabric8.kubernetes.api.model.policy.v1beta1.PodDisruptionBudget generatePodDisruptionBudgetV1Beta1() {
-        return PodDisruptionBudgetUtils.createCustomControllerPodDisruptionBudgetV1Beta1(componentName, namespace, labels, ownerReference, templatePodDisruptionBudget, replicas);
-    }
-
-    /**
      * Generates a configuration ConfigMap with metrics and logging configurations and node count.
      *
      * @param metricsAndLogging    The ConfigMaps with original logging and metrics configurations.

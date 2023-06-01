@@ -616,10 +616,6 @@ public class KafkaClusterTest {
         assertThat(pdb.getMetadata().getLabels().entrySet().containsAll(pdbLabels.entrySet()), is(true));
         assertThat(pdb.getMetadata().getAnnotations().entrySet().containsAll(pdbAnnotations.entrySet()), is(true));
 
-        // Check PodDisruptionBudget V1Beta1
-        io.fabric8.kubernetes.api.model.policy.v1beta1.PodDisruptionBudget pdbV1Beta1 = kc.generatePodDisruptionBudgetV1Beta1();
-        assertThat(pdbV1Beta1.getMetadata().getLabels().entrySet().containsAll(pdbLabels.entrySet()), is(true));
-        assertThat(pdbV1Beta1.getMetadata().getAnnotations().entrySet().containsAll(pdbAnnotations.entrySet()), is(true));
 
         // Check ClusterRoleBinding
         ClusterRoleBinding crb = kc.generateClusterRoleBinding("namespace");
@@ -2599,12 +2595,6 @@ public class KafkaClusterTest {
         assertThat(pdb.getSpec().getMaxUnavailable(), is(nullValue()));
         assertThat(pdb.getSpec().getMinAvailable().getIntVal(), is(2));
         assertThat(pdb.getSpec().getSelector().getMatchLabels(), is(kc.getSelectorLabels().toMap()));
-
-        io.fabric8.kubernetes.api.model.policy.v1beta1.PodDisruptionBudget pdbV1Beta1 = kc.generatePodDisruptionBudgetV1Beta1();
-        assertThat(pdbV1Beta1.getMetadata().getName(), is(KafkaResources.kafkaStatefulSetName(CLUSTER)));
-        assertThat(pdbV1Beta1.getSpec().getMaxUnavailable(), is(nullValue()));
-        assertThat(pdbV1Beta1.getSpec().getMinAvailable().getIntVal(), is(2));
-        assertThat(pdbV1Beta1.getSpec().getSelector().getMatchLabels(), is(kc.getSelectorLabels().toMap()));
     }
 
     @ParallelTest

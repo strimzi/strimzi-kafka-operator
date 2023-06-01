@@ -24,7 +24,6 @@ import io.strimzi.operator.common.operator.resource.AbstractWatchableStatusedNam
 import io.strimzi.operator.common.operator.resource.ClusterRoleBindingOperator;
 import io.strimzi.operator.common.operator.resource.ConfigMapOperator;
 import io.strimzi.operator.common.operator.resource.PodDisruptionBudgetOperator;
-import io.strimzi.operator.common.operator.resource.PodDisruptionBudgetV1Beta1Operator;
 import io.strimzi.operator.common.operator.resource.SecretOperator;
 import io.strimzi.operator.common.operator.resource.ServiceAccountOperator;
 import io.strimzi.operator.common.operator.resource.ServiceOperator;
@@ -50,7 +49,6 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
     protected final CertManager certManager;
     protected final PasswordGenerator passwordGenerator;
     protected final PodDisruptionBudgetOperator podDisruptionBudgetOperator;
-    protected final PodDisruptionBudgetV1Beta1Operator podDisruptionBudgetV1Beta1Operator;
     protected final ServiceOperator serviceOperations;
     protected final ConfigMapOperator configMapOperations;
     protected final ClusterRoleBindingOperator clusterRoleBindingOperations;
@@ -81,7 +79,6 @@ public abstract class AbstractAssemblyOperator<C extends KubernetesClient, T ext
         this.passwordGenerator = passwordGenerator;
         this.secretOperations = supplier.secretOperations;
         this.podDisruptionBudgetOperator = supplier.podDisruptionBudgetOperator;
-        this.podDisruptionBudgetV1Beta1Operator = supplier.podDisruptionBudgetV1Beta1Operator;
         this.configMapOperations = supplier.configMapOperations;
         this.serviceOperations = supplier.serviceOperations;
         this.clusterRoleBindingOperations = supplier.clusterRoleBindingOperator;

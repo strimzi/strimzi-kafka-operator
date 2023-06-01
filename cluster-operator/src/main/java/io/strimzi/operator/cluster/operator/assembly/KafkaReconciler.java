@@ -57,7 +57,6 @@ import io.strimzi.operator.common.operator.resource.IngressOperator;
 import io.strimzi.operator.common.operator.resource.NetworkPolicyOperator;
 import io.strimzi.operator.common.operator.resource.NodeOperator;
 import io.strimzi.operator.common.operator.resource.PodDisruptionBudgetOperator;
-import io.strimzi.operator.common.operator.resource.PodDisruptionBudgetV1Beta1Operator;
 import io.strimzi.operator.common.operator.resource.PodOperator;
 import io.strimzi.operator.common.operator.resource.PvcOperator;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
@@ -123,7 +122,6 @@ public class KafkaReconciler {
     private final ConfigMapOperator configMapOperator;
     private final NetworkPolicyOperator networkPolicyOperator;
     private final PodDisruptionBudgetOperator podDisruptionBudgetOperator;
-    private final PodDisruptionBudgetV1Beta1Operator podDisruptionBudgetV1Beta1Operator;
     private final PodOperator podOperator;
     private final ClusterRoleBindingOperator clusterRoleBindingOperator;
     /* test */ final RouteOperator routeOperator;
@@ -210,7 +208,6 @@ public class KafkaReconciler {
         this.configMapOperator = supplier.configMapOperations;
         this.networkPolicyOperator = supplier.networkPolicyOperator;
         this.podDisruptionBudgetOperator = supplier.podDisruptionBudgetOperator;
-        this.podDisruptionBudgetV1Beta1Operator = supplier.podDisruptionBudgetV1Beta1Operator;
         this.podOperator = supplier.podOperations;
         this.clusterRoleBindingOperator = supplier.clusterRoleBindingOperator;
         this.routeOperator = supplier.routeOperations;
@@ -245,7 +242,6 @@ public class KafkaReconciler {
                 .compose(i -> brokerConfigurationConfigMaps())
                 .compose(i -> jmxSecret())
                 .compose(i -> podDisruptionBudget())
-                .compose(i -> podDisruptionBudgetV1Beta1())
                 .compose(i -> migrateFromStatefulSetToPodSet())
                 .compose(i -> podSet())
                 .compose(i -> rollingUpdate())
@@ -668,28 +664,9 @@ public class KafkaReconciler {
      * @return  Completes when the PDB was successfully created or updated
      */
     protected Future<Void> podDisruptionBudget() {
-        if (!pfa.hasPodDisruptionBudgetV1()) {
-            return Future.succeededFuture();
-        } else {
-            return podDisruptionBudgetOperator
+        return podDisruptionBudgetOperator
                     .reconcile(reconciliation, reconciliation.namespace(), KafkaResources.kafkaStatefulSetName(reconciliation.name()), kafka.generatePodDisruptionBudget())
                     .map((Void) null);
-        }
-    }
-
-    /**
-     * Manages the PodDisruptionBudgets on Kubernetes clusters which support only v1beta1 version of PDBs
-     *
-     * @return  Completes when the PDB was successfully created or updated
-     */
-    protected Future<Void> podDisruptionBudgetV1Beta1() {
-        if (pfa.hasPodDisruptionBudgetV1()) {
-            return Future.succeededFuture();
-        } else {
-            return podDisruptionBudgetV1Beta1Operator
-                    .reconcile(reconciliation, reconciliation.namespace(), KafkaResources.kafkaStatefulSetName(reconciliation.name()), kafka.generatePodDisruptionBudgetV1Beta1())
-                    .map((Void) null);
-        }
     }
 
     /**
