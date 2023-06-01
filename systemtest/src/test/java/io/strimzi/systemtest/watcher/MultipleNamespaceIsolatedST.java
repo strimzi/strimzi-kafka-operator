@@ -36,6 +36,7 @@ class MultipleNamespaceIsolatedST extends AbstractNamespaceST {
             .withExtensionContext(BeforeAllOnce.getSharedExtensionContext())
             .withNamespace(INFRA_NAMESPACE)
             .withWatchingNamespaces(String.join(",", INFRA_NAMESPACE, PRIMARY_KAFKA_WATCHED_NAMESPACE, MAIN_TEST_NAMESPACE))
+            .withBindingsNamespaces(Arrays.asList(INFRA_NAMESPACE, PRIMARY_KAFKA_WATCHED_NAMESPACE, MAIN_TEST_NAMESPACE))
             .createInstallation()
             .runInstallation();
     }
