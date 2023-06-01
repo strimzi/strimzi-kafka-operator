@@ -8,13 +8,10 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import io.strimzi.operator.common.operator.resource.ClusterRoleOperator;
 import io.strimzi.test.k8s.cluster.KubeCluster;
-import io.vertx.core.Vertx;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -29,18 +26,8 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
 @ExtendWith(VertxExtension.class)
 public class MainIT {
-    private static Vertx vertx;
+
     private KubernetesClient client;
-
-    @BeforeAll
-    public static void before() {
-        vertx = Vertx.vertx();
-    }
-
-    @AfterAll
-    public static void after() {
-        vertx.close();
-    }
 
     @BeforeEach
     public void createClient() {
@@ -64,10 +51,10 @@ public class MainIT {
 
         ClusterOperatorConfig config = ClusterOperatorConfig.buildFromMap(envVars, KafkaVersionTestUtils.getKafkaVersionLookup());
 
-        ClusterRoleOperator cro = new ClusterRoleOperator(vertx, client);
+        ClusterRoleOperator cro = new ClusterRoleOperator(client);
 
         Checkpoint a = context.checkpoint();
-        Main.maybeCreateClusterRoles(vertx, config, client)
+        Main.maybeCreateClusterRoles(config, client)
             .onComplete(context.succeeding(v -> context.verify(() -> {
                 assertThat(cro.get("strimzi-cluster-operator-namespaced"), is(notNullValue()));
                 assertThat(cro.get("strimzi-cluster-operator-global"), is(notNullValue()));

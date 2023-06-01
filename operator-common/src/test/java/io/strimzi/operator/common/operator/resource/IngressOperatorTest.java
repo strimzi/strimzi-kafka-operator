@@ -13,7 +13,6 @@ import io.fabric8.kubernetes.client.V1NetworkAPIGroupDSL;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.NetworkAPIGroupDSL;
 import io.fabric8.kubernetes.client.dsl.Resource;
-import io.vertx.core.Vertx;
 import org.junit.jupiter.api.Test;
 
 import static java.util.Collections.singletonMap;
@@ -65,8 +64,8 @@ public class IngressOperatorTest extends AbstractNamespacedResourceOperatorTest<
     }
 
     @Override
-    protected AbstractNamespacedResourceOperator<KubernetesClient, Ingress, IngressList, Resource<Ingress>> createResourceOperations(Vertx vertx, KubernetesClient mockClient) {
-        return new IngressOperator(vertx, mockClient);
+    protected AbstractNamespacedResourceOperator<KubernetesClient, Ingress, IngressList, Resource<Ingress>> createResourceOperations(KubernetesClient mockClient) {
+        return new IngressOperator(mockClient);
     }
 
     @Test
@@ -95,7 +94,7 @@ public class IngressOperatorTest extends AbstractNamespacedResourceOperatorTest<
                 .endSpec()
                 .build();
 
-        IngressOperator op = new IngressOperator(vertx, client);
+        IngressOperator op = new IngressOperator(client);
         op.patchIngressClassName(current, desired);
 
         assertThat(desired.getSpec().getIngressClassName(), is(current.getSpec().getIngressClassName()));

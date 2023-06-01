@@ -26,6 +26,7 @@ import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControl
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.MockCruiseControl;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.StrimziFuture;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.resource.ConfigMapOperator;
 import io.strimzi.operator.common.operator.resource.CrdOperator;
@@ -178,9 +179,9 @@ public class KafkaRebalanceStateMachineTest {
                 KafkaRebalance,
                 KafkaRebalanceList> mockRebalanceOps = supplier.kafkaRebalanceOperator;
 
-        when(mockCmOps.getAsync(CLUSTER_NAMESPACE, RESOURCE_NAME)).thenReturn(Future.succeededFuture(new ConfigMap()));
+        when(mockCmOps.getAsync(CLUSTER_NAMESPACE, RESOURCE_NAME)).thenReturn(StrimziFuture.completedFuture(new ConfigMap()));
         when(mockRebalanceOps.get(CLUSTER_NAMESPACE, RESOURCE_NAME)).thenReturn(kcRebalance);
-        when(mockRebalanceOps.getAsync(CLUSTER_NAMESPACE, RESOURCE_NAME)).thenReturn(Future.succeededFuture(kcRebalance));
+        when(mockRebalanceOps.getAsync(CLUSTER_NAMESPACE, RESOURCE_NAME)).thenReturn(StrimziFuture.completedFuture(kcRebalance));
 
         return kcrao.computeNextStatus(recon, HOST, client, kcRebalance, currentState, initialAnnotation, rbOptions)
                 .compose(result -> {

@@ -40,6 +40,7 @@ import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.StrimziFuture;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.OrderedProperties;
@@ -138,38 +139,38 @@ public class KafkaConnectAssemblyOperatorTest {
         SecretOperator mockSecretOps = supplier.secretOperations;
         CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList> mockConnectorOps = supplier.kafkaConnectorOperator;
 
-        when(mockConnectorOps.listAsync(anyString(), any(Optional.class))).thenReturn(Future.succeededFuture(emptyList()));
+        when(mockConnectorOps.listAsync(anyString(), any(Optional.class))).thenReturn(StrimziFuture.completedFuture(emptyList()));
         when(mockConnectOps.get(kc.getMetadata().getNamespace(), kc.getMetadata().getName())).thenReturn(kc);
-        when(mockConnectOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(kc));
+        when(mockConnectOps.getAsync(anyString(), anyString())).thenReturn(StrimziFuture.completedFuture(kc));
 
         ArgumentCaptor<Service> serviceCaptor = ArgumentCaptor.forClass(Service.class);
-        when(mockServiceOps.reconcile(any(), anyString(), anyString(), serviceCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockServiceOps.reconcile(any(), anyString(), anyString(), serviceCaptor.capture())).thenReturn(StrimziFuture.completedFuture(null));
 
         ArgumentCaptor<Deployment> dcCaptor = ArgumentCaptor.forClass(Deployment.class);
-        when(mockDcOps.reconcile(any(), anyString(), anyString(), dcCaptor.capture())).thenReturn(Future.succeededFuture());
-        when(mockDcOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture());
-        when(mockDcOps.scaleUp(any(), anyString(), anyString(), anyInt(), anyLong())).thenReturn(Future.succeededFuture(42));
-        when(mockDcOps.scaleDown(any(), anyString(), anyString(), anyInt(), anyLong())).thenReturn(Future.succeededFuture(42));
-        when(mockDcOps.readiness(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
-        when(mockDcOps.waitForObserved(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+        when(mockDcOps.reconcile(any(), anyString(), anyString(), dcCaptor.capture())).thenReturn(StrimziFuture.completedFuture(null));
+        when(mockDcOps.getAsync(anyString(), anyString())).thenReturn(StrimziFuture.completedFuture(null));
+        when(mockDcOps.scaleUp(any(), anyString(), anyString(), anyInt(), anyLong())).thenReturn(StrimziFuture.completedFuture(42));
+        when(mockDcOps.scaleDown(any(), anyString(), anyString(), anyInt(), anyLong())).thenReturn(StrimziFuture.completedFuture(42));
+        when(mockDcOps.readiness(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(StrimziFuture.completedFuture(null));
+        when(mockDcOps.waitForObserved(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(StrimziFuture.completedFuture(null));
 
-        when(mockPodSetOps.getAsync(any(), any())).thenReturn(Future.succeededFuture());
+        when(mockPodSetOps.getAsync(any(), any())).thenReturn(StrimziFuture.completedFuture(null));
 
-        when(mockCmOps.reconcile(any(), anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new ConfigMap())));
-        when(mockSecretOps.reconcile(any(), anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
-        when(mockSecretOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture());
+        when(mockCmOps.reconcile(any(), anyString(), any(), any())).thenReturn(StrimziFuture.completedFuture(ReconcileResult.created(new ConfigMap())));
+        when(mockSecretOps.reconcile(any(), anyString(), anyString(), any())).thenReturn(StrimziFuture.completedFuture(null));
+        when(mockSecretOps.getAsync(anyString(), anyString())).thenReturn(StrimziFuture.completedFuture(null));
 
-        when(mockPodOps.reconcile(any(), eq(kc.getMetadata().getNamespace()), eq(KafkaConnectResources.buildPodName(kc.getMetadata().getName())), eq(null))).thenReturn(Future.succeededFuture(ReconcileResult.noop(null)));
+        when(mockPodOps.reconcile(any(), eq(kc.getMetadata().getNamespace()), eq(KafkaConnectResources.buildPodName(kc.getMetadata().getName())), eq(null))).thenReturn(StrimziFuture.completedFuture(ReconcileResult.noop(null)));
 
-        when(mockBcOps.reconcile(any(), eq(kc.getMetadata().getNamespace()), eq(KafkaConnectResources.buildConfigName(kc.getMetadata().getName())), eq(null))).thenReturn(Future.succeededFuture(ReconcileResult.noop(null)));
+        when(mockBcOps.reconcile(any(), eq(kc.getMetadata().getNamespace()), eq(KafkaConnectResources.buildConfigName(kc.getMetadata().getName())), eq(null))).thenReturn(StrimziFuture.completedFuture(ReconcileResult.noop(null)));
 
         ArgumentCaptor<NetworkPolicy> npCaptor = ArgumentCaptor.forClass(NetworkPolicy.class);
-        when(mockNetPolOps.reconcile(any(), eq(kc.getMetadata().getNamespace()), eq(KafkaConnectResources.deploymentName(kc.getMetadata().getName())), npCaptor.capture())).thenReturn(Future.succeededFuture(ReconcileResult.created(new NetworkPolicy())));
+        when(mockNetPolOps.reconcile(any(), eq(kc.getMetadata().getNamespace()), eq(KafkaConnectResources.deploymentName(kc.getMetadata().getName())), npCaptor.capture())).thenReturn(StrimziFuture.completedFuture(ReconcileResult.created(new NetworkPolicy())));
 
         ArgumentCaptor<PodDisruptionBudget> pdbCaptor = ArgumentCaptor.forClass(PodDisruptionBudget.class);
-        when(mockPdbOps.reconcile(any(), anyString(), any(), pdbCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockPdbOps.reconcile(any(), anyString(), any(), pdbCaptor.capture())).thenReturn(StrimziFuture.completedFuture(null));
         ArgumentCaptor<KafkaConnect> connectCaptor = ArgumentCaptor.forClass(KafkaConnect.class);
-        when(mockConnectOps.updateStatusAsync(any(), connectCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockConnectOps.updateStatusAsync(any(), connectCaptor.capture())).thenReturn(StrimziFuture.completedFuture(null));
 
         KafkaConnectApi mockConnectClient = mock(KafkaConnectApi.class);
         when(mockConnectClient.list(any(), anyString(), anyInt())).thenReturn(Future.succeededFuture(emptyList()));
@@ -283,44 +284,44 @@ public class KafkaConnectAssemblyOperatorTest {
 
         KafkaConnect kc = ResourceUtils.createEmptyKafkaConnect(kcNamespace, kcName);
         KafkaConnectCluster connect = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kc, VERSIONS);
-        when(mockConnectorOps.listAsync(anyString(), any(Optional.class))).thenReturn(Future.succeededFuture(emptyList()));
+        when(mockConnectorOps.listAsync(anyString(), any(Optional.class))).thenReturn(StrimziFuture.completedFuture(emptyList()));
         when(mockConnectOps.get(kcNamespace, kcName)).thenReturn(kc);
-        when(mockConnectOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(kc));
-        when(mockConnectOps.updateStatusAsync(any(), any(KafkaConnect.class))).thenReturn(Future.succeededFuture());
+        when(mockConnectOps.getAsync(anyString(), anyString())).thenReturn(StrimziFuture.completedFuture(kc));
+        when(mockConnectOps.updateStatusAsync(any(), any(KafkaConnect.class))).thenReturn(StrimziFuture.completedFuture(null));
         when(mockServiceOps.get(kcNamespace, connect.getComponentName())).thenReturn(connect.generateService());
-        when(mockDcOps.getAsync(kcNamespace, connect.getComponentName())).thenReturn(Future.succeededFuture(connect.generateDeployment(3, null, Map.of(), true, null, null, null)));
-        when(mockDcOps.readiness(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
-        when(mockDcOps.waitForObserved(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
-        when(mockSecretOps.reconcile(any(), anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
+        when(mockDcOps.getAsync(kcNamespace, connect.getComponentName())).thenReturn(StrimziFuture.completedFuture(connect.generateDeployment(3, null, Map.of(), true, null, null, null)));
+        when(mockDcOps.readiness(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(StrimziFuture.completedFuture(null));
+        when(mockDcOps.waitForObserved(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(StrimziFuture.completedFuture(null));
+        when(mockSecretOps.reconcile(any(), anyString(), anyString(), any())).thenReturn(StrimziFuture.completedFuture(null));
 
-        when(mockPodSetOps.getAsync(any(), any())).thenReturn(Future.succeededFuture());
+        when(mockPodSetOps.getAsync(any(), any())).thenReturn(StrimziFuture.completedFuture(null));
 
         ArgumentCaptor<String> serviceNameCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<Service> serviceCaptor = ArgumentCaptor.forClass(Service.class);
-        when(mockServiceOps.reconcile(any(), eq(kcNamespace), serviceNameCaptor.capture(), serviceCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockServiceOps.reconcile(any(), eq(kcNamespace), serviceNameCaptor.capture(), serviceCaptor.capture())).thenReturn(StrimziFuture.completedFuture(null));
 
         ArgumentCaptor<String> dcNameCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<Deployment> dcCaptor = ArgumentCaptor.forClass(Deployment.class);
-        when(mockDcOps.reconcile(any(), eq(kcNamespace), dcNameCaptor.capture(), dcCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockDcOps.reconcile(any(), eq(kcNamespace), dcNameCaptor.capture(), dcCaptor.capture())).thenReturn(StrimziFuture.completedFuture(null));
 
         ArgumentCaptor<String> dcScaleUpNameCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<Integer> dcScaleUpReplicasCaptor = ArgumentCaptor.forClass(Integer.class);
-        when(mockDcOps.scaleUp(any(), eq(kcNamespace), dcScaleUpNameCaptor.capture(), dcScaleUpReplicasCaptor.capture(), anyLong())).thenReturn(Future.succeededFuture());
+        when(mockDcOps.scaleUp(any(), eq(kcNamespace), dcScaleUpNameCaptor.capture(), dcScaleUpReplicasCaptor.capture(), anyLong())).thenReturn(StrimziFuture.completedFuture(null));
 
         ArgumentCaptor<String> dcScaleDownNameCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<Integer> dcScaleDownReplicasCaptor = ArgumentCaptor.forClass(Integer.class);
-        when(mockDcOps.scaleDown(any(), eq(kcNamespace), dcScaleDownNameCaptor.capture(), dcScaleDownReplicasCaptor.capture(), anyLong())).thenReturn(Future.succeededFuture());
+        when(mockDcOps.scaleDown(any(), eq(kcNamespace), dcScaleDownNameCaptor.capture(), dcScaleDownReplicasCaptor.capture(), anyLong())).thenReturn(StrimziFuture.completedFuture(null));
 
-        when(mockCmOps.reconcile(any(), anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new ConfigMap())));
+        when(mockCmOps.reconcile(any(), anyString(), any(), any())).thenReturn(StrimziFuture.completedFuture(ReconcileResult.created(new ConfigMap())));
 
-        when(mockNetPolOps.reconcile(any(), eq(kc.getMetadata().getNamespace()), eq(KafkaConnectResources.deploymentName(kc.getMetadata().getName())), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new NetworkPolicy())));
+        when(mockNetPolOps.reconcile(any(), eq(kc.getMetadata().getNamespace()), eq(KafkaConnectResources.deploymentName(kc.getMetadata().getName())), any())).thenReturn(StrimziFuture.completedFuture(ReconcileResult.created(new NetworkPolicy())));
 
-        when(mockPodOps.reconcile(any(), eq(kc.getMetadata().getNamespace()), eq(KafkaConnectResources.buildPodName(kc.getMetadata().getName())), eq(null))).thenReturn(Future.succeededFuture(ReconcileResult.noop(null)));
+        when(mockPodOps.reconcile(any(), eq(kc.getMetadata().getNamespace()), eq(KafkaConnectResources.buildPodName(kc.getMetadata().getName())), eq(null))).thenReturn(StrimziFuture.completedFuture(ReconcileResult.noop(null)));
 
-        when(mockBcOps.reconcile(any(), eq(kc.getMetadata().getNamespace()), eq(KafkaConnectResources.buildConfigName(kc.getMetadata().getName())), eq(null))).thenReturn(Future.succeededFuture(ReconcileResult.noop(null)));
+        when(mockBcOps.reconcile(any(), eq(kc.getMetadata().getNamespace()), eq(KafkaConnectResources.buildConfigName(kc.getMetadata().getName())), eq(null))).thenReturn(StrimziFuture.completedFuture(ReconcileResult.noop(null)));
 
         ArgumentCaptor<PodDisruptionBudget> pdbCaptor = ArgumentCaptor.forClass(PodDisruptionBudget.class);
-        when(mockPdbOps.reconcile(any(), anyString(), any(), pdbCaptor.capture())).thenReturn(Future.succeededFuture());        
+        when(mockPdbOps.reconcile(any(), anyString(), any(), pdbCaptor.capture())).thenReturn(StrimziFuture.completedFuture(null));
         KafkaConnectApi mockConnectClient = mock(KafkaConnectApi.class);
         when(mockConnectClient.list(any(), anyString(), anyInt())).thenReturn(Future.succeededFuture(emptyList()));
 
@@ -382,44 +383,44 @@ public class KafkaConnectAssemblyOperatorTest {
         KafkaConnect kc = ResourceUtils.createEmptyKafkaConnect(kcNamespace, kcName);
         KafkaConnectCluster connect = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kc, VERSIONS);
         kc.getSpec().setImage("some/different:image"); // Change the image to generate some diff
-        when(mockConnectorOps.listAsync(anyString(), any(Optional.class))).thenReturn(Future.succeededFuture(emptyList()));
+        when(mockConnectorOps.listAsync(anyString(), any(Optional.class))).thenReturn(StrimziFuture.completedFuture(emptyList()));
         when(mockConnectOps.get(kcNamespace, kcName)).thenReturn(kc);
-        when(mockConnectOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(kc));
-        when(mockConnectOps.updateStatusAsync(any(), any(KafkaConnect.class))).thenReturn(Future.succeededFuture());
+        when(mockConnectOps.getAsync(anyString(), anyString())).thenReturn(StrimziFuture.completedFuture(kc));
+        when(mockConnectOps.updateStatusAsync(any(), any(KafkaConnect.class))).thenReturn(StrimziFuture.completedFuture(null));
         when(mockServiceOps.get(kcNamespace, connect.getComponentName())).thenReturn(connect.generateService());
-        when(mockDcOps.getAsync(kcNamespace, connect.getComponentName())).thenReturn(Future.succeededFuture(connect.generateDeployment(3, null, Map.of(), true, null, null, null)));
-        when(mockDcOps.readiness(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
-        when(mockDcOps.waitForObserved(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
-        when(mockSecretOps.reconcile(any(), anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
+        when(mockDcOps.getAsync(kcNamespace, connect.getComponentName())).thenReturn(StrimziFuture.completedFuture(connect.generateDeployment(3, null, Map.of(), true, null, null, null)));
+        when(mockDcOps.readiness(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(StrimziFuture.completedFuture(null));
+        when(mockDcOps.waitForObserved(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(StrimziFuture.completedFuture(null));
+        when(mockSecretOps.reconcile(any(), anyString(), anyString(), any())).thenReturn(StrimziFuture.completedFuture(null));
 
-        when(mockPodSetOps.getAsync(any(), any())).thenReturn(Future.succeededFuture());
+        when(mockPodSetOps.getAsync(any(), any())).thenReturn(StrimziFuture.completedFuture(null));
 
         ArgumentCaptor<String> serviceNameCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<Service> serviceCaptor = ArgumentCaptor.forClass(Service.class);
-        when(mockServiceOps.reconcile(any(), eq(kcNamespace), serviceNameCaptor.capture(), serviceCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockServiceOps.reconcile(any(), eq(kcNamespace), serviceNameCaptor.capture(), serviceCaptor.capture())).thenReturn(StrimziFuture.completedFuture(null));
 
         ArgumentCaptor<String> dcNameCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<Deployment> dcCaptor = ArgumentCaptor.forClass(Deployment.class);
-        when(mockDcOps.reconcile(any(), eq(kcNamespace), dcNameCaptor.capture(), dcCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockDcOps.reconcile(any(), eq(kcNamespace), dcNameCaptor.capture(), dcCaptor.capture())).thenReturn(StrimziFuture.completedFuture(null));
 
         ArgumentCaptor<String> dcScaleUpNameCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<Integer> dcScaleUpReplicasCaptor = ArgumentCaptor.forClass(Integer.class);
-        when(mockDcOps.scaleUp(any(), eq(kcNamespace), dcScaleUpNameCaptor.capture(), dcScaleUpReplicasCaptor.capture(), anyLong())).thenReturn(Future.succeededFuture());
+        when(mockDcOps.scaleUp(any(), eq(kcNamespace), dcScaleUpNameCaptor.capture(), dcScaleUpReplicasCaptor.capture(), anyLong())).thenReturn(StrimziFuture.completedFuture(null));
 
         ArgumentCaptor<String> dcScaleDownNameCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<Integer> dcScaleDownReplicasCaptor = ArgumentCaptor.forClass(Integer.class);
-        when(mockDcOps.scaleDown(any(), eq(kcNamespace), dcScaleDownNameCaptor.capture(), dcScaleDownReplicasCaptor.capture(), anyLong())).thenReturn(Future.succeededFuture());
+        when(mockDcOps.scaleDown(any(), eq(kcNamespace), dcScaleDownNameCaptor.capture(), dcScaleDownReplicasCaptor.capture(), anyLong())).thenReturn(StrimziFuture.completedFuture(null));
 
-        when(mockCmOps.reconcile(any(), anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new ConfigMap())));
+        when(mockCmOps.reconcile(any(), anyString(), any(), any())).thenReturn(StrimziFuture.completedFuture(ReconcileResult.created(new ConfigMap())));
 
-        when(mockNetPolOps.reconcile(any(), eq(kc.getMetadata().getNamespace()), eq(KafkaConnectResources.deploymentName(kc.getMetadata().getName())), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new NetworkPolicy())));
+        when(mockNetPolOps.reconcile(any(), eq(kc.getMetadata().getNamespace()), eq(KafkaConnectResources.deploymentName(kc.getMetadata().getName())), any())).thenReturn(StrimziFuture.completedFuture(ReconcileResult.created(new NetworkPolicy())));
 
-        when(mockPodOps.reconcile(any(), eq(kc.getMetadata().getNamespace()), eq(KafkaConnectResources.buildPodName(kc.getMetadata().getName())), eq(null))).thenReturn(Future.succeededFuture(ReconcileResult.noop(null)));
+        when(mockPodOps.reconcile(any(), eq(kc.getMetadata().getNamespace()), eq(KafkaConnectResources.buildPodName(kc.getMetadata().getName())), eq(null))).thenReturn(StrimziFuture.completedFuture(ReconcileResult.noop(null)));
 
-        when(mockBcOps.reconcile(any(), eq(kc.getMetadata().getNamespace()), eq(KafkaConnectResources.buildConfigName(kc.getMetadata().getName())), eq(null))).thenReturn(Future.succeededFuture(ReconcileResult.noop(null)));
+        when(mockBcOps.reconcile(any(), eq(kc.getMetadata().getNamespace()), eq(KafkaConnectResources.buildConfigName(kc.getMetadata().getName())), eq(null))).thenReturn(StrimziFuture.completedFuture(ReconcileResult.noop(null)));
 
         ArgumentCaptor<PodDisruptionBudget> pdbCaptor = ArgumentCaptor.forClass(PodDisruptionBudget.class);
-        when(mockPdbOps.reconcile(any(), anyString(), any(), pdbCaptor.capture())).thenReturn(Future.succeededFuture());  
+        when(mockPdbOps.reconcile(any(), anyString(), any(), pdbCaptor.capture())).thenReturn(StrimziFuture.completedFuture(null));
         // Mock CM get
         when(mockConnectOps.get(kcNamespace, kcName)).thenReturn(kc);
         ConfigMap metricsCm = new ConfigMapBuilder().withNewMetadata()
@@ -443,7 +444,7 @@ public class KafkaConnectAssemblyOperatorTest {
         Set<String> metricsCms = TestUtils.set();
         doAnswer(invocation -> {
             metricsCms.add(invocation.getArgument(1));
-            return Future.succeededFuture();
+            return StrimziFuture.completedFuture(null);
         }).when(mockCmOps).reconcile(any(), eq(kcNamespace), anyString(), any());
 
         KafkaConnectApi mockConnectClient = mock(KafkaConnectApi.class);
@@ -526,40 +527,40 @@ public class KafkaConnectAssemblyOperatorTest {
         kc.getSpec().setImage("some/different:image"); // Change the image to generate some diff
 
         when(mockConnectOps.get(kcNamespace, kcName)).thenReturn(kc);
-        when(mockConnectOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(kc));
-        when(mockConnectOps.updateStatusAsync(any(), any(KafkaConnect.class))).thenReturn(Future.succeededFuture());
+        when(mockConnectOps.getAsync(anyString(), anyString())).thenReturn(StrimziFuture.completedFuture(kc));
+        when(mockConnectOps.updateStatusAsync(any(), any(KafkaConnect.class))).thenReturn(StrimziFuture.completedFuture(null));
         when(mockServiceOps.get(kcNamespace, connect.getComponentName())).thenReturn(connect.generateService());
-        when(mockDcOps.getAsync(kcNamespace, connect.getComponentName())).thenReturn(Future.succeededFuture(connect.generateDeployment(3, null, Map.of(), true, null, null, null)));
-        when(mockDcOps.readiness(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
-        when(mockDcOps.waitForObserved(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
-        when(mockSecretOps.reconcile(any(), anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
+        when(mockDcOps.getAsync(kcNamespace, connect.getComponentName())).thenReturn(StrimziFuture.completedFuture(connect.generateDeployment(3, null, Map.of(), true, null, null, null)));
+        when(mockDcOps.readiness(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(StrimziFuture.completedFuture(null));
+        when(mockDcOps.waitForObserved(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(StrimziFuture.completedFuture(null));
+        when(mockSecretOps.reconcile(any(), anyString(), anyString(), any())).thenReturn(StrimziFuture.completedFuture(null));
 
-        when(mockPodSetOps.getAsync(any(), any())).thenReturn(Future.succeededFuture());
+        when(mockPodSetOps.getAsync(any(), any())).thenReturn(StrimziFuture.completedFuture(null));
 
         ArgumentCaptor<String> serviceNamespaceCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<String> serviceNameCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<Service> serviceCaptor = ArgumentCaptor.forClass(Service.class);
-        when(mockServiceOps.reconcile(any(), serviceNamespaceCaptor.capture(), serviceNameCaptor.capture(), serviceCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockServiceOps.reconcile(any(), serviceNamespaceCaptor.capture(), serviceNameCaptor.capture(), serviceCaptor.capture())).thenReturn(StrimziFuture.completedFuture(null));
 
         ArgumentCaptor<String> dcNamespaceCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<String> dcNameCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<Deployment> dcCaptor = ArgumentCaptor.forClass(Deployment.class);
-        when(mockDcOps.reconcile(any(), dcNamespaceCaptor.capture(), dcNameCaptor.capture(), dcCaptor.capture())).thenReturn(Future.failedFuture("Failed"));
+        when(mockDcOps.reconcile(any(), dcNamespaceCaptor.capture(), dcNameCaptor.capture(), dcCaptor.capture())).thenReturn(StrimziFuture.failedFuture("Failed"));
 
         ArgumentCaptor<String> dcScaleUpNamespaceCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<String> dcScaleUpNameCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<Integer> dcScaleUpReplicasCaptor = ArgumentCaptor.forClass(Integer.class);
-        when(mockDcOps.scaleUp(any(), dcScaleUpNamespaceCaptor.capture(), dcScaleUpNameCaptor.capture(), dcScaleUpReplicasCaptor.capture(), anyLong())).thenReturn(Future.succeededFuture());
+        when(mockDcOps.scaleUp(any(), dcScaleUpNamespaceCaptor.capture(), dcScaleUpNameCaptor.capture(), dcScaleUpReplicasCaptor.capture(), anyLong())).thenReturn(StrimziFuture.completedFuture(null));
 
         ArgumentCaptor<String> dcScaleDownNamespaceCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<String> dcScaleDownNameCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<Integer> dcScaleDownReplicasCaptor = ArgumentCaptor.forClass(Integer.class);
-        when(mockDcOps.scaleDown(any(), dcScaleDownNamespaceCaptor.capture(), dcScaleDownNameCaptor.capture(), dcScaleDownReplicasCaptor.capture(), anyLong())).thenReturn(Future.succeededFuture());
+        when(mockDcOps.scaleDown(any(), dcScaleDownNamespaceCaptor.capture(), dcScaleDownNameCaptor.capture(), dcScaleDownReplicasCaptor.capture(), anyLong())).thenReturn(StrimziFuture.completedFuture(null));
 
-        when(mockNetPolOps.reconcile(any(), eq(kc.getMetadata().getNamespace()), eq(KafkaConnectResources.deploymentName(kc.getMetadata().getName())), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new NetworkPolicy())));
-        when(mockConnectOps.reconcile(any(), anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new KafkaConnect())));
-        when(mockCmOps.reconcile(any(), anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new ConfigMap())));
-        when(mockPdbOps.reconcile(any(), anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new PodDisruptionBudget())));
+        when(mockNetPolOps.reconcile(any(), eq(kc.getMetadata().getNamespace()), eq(KafkaConnectResources.deploymentName(kc.getMetadata().getName())), any())).thenReturn(StrimziFuture.completedFuture(ReconcileResult.created(new NetworkPolicy())));
+        when(mockConnectOps.reconcile(any(), anyString(), any(), any())).thenReturn(StrimziFuture.completedFuture(ReconcileResult.created(new KafkaConnect())));
+        when(mockCmOps.reconcile(any(), anyString(), any(), any())).thenReturn(StrimziFuture.completedFuture(ReconcileResult.created(new ConfigMap())));
+        when(mockPdbOps.reconcile(any(), anyString(), any(), any())).thenReturn(StrimziFuture.completedFuture(ReconcileResult.created(new PodDisruptionBudget())));
 
         KafkaConnectAssemblyOperator ops = new KafkaConnectAssemblyOperator(vertx, new PlatformFeaturesAvailability(true, kubernetesVersion),
                 supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS));
@@ -593,34 +594,34 @@ public class KafkaConnectAssemblyOperatorTest {
         KafkaConnectCluster connect = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kc, VERSIONS);
         kc.getSpec().setReplicas(scaleTo); // Change replicas to create ScaleUp
 
-        when(mockConnectorOps.listAsync(anyString(), any(Optional.class))).thenReturn(Future.succeededFuture(emptyList()));
+        when(mockConnectorOps.listAsync(anyString(), any(Optional.class))).thenReturn(StrimziFuture.completedFuture(emptyList()));
         when(mockConnectOps.get(kcNamespace, kcName)).thenReturn(kc);
-        when(mockConnectOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(kc));
-        when(mockConnectOps.updateStatusAsync(any(), any(KafkaConnect.class))).thenReturn(Future.succeededFuture());
+        when(mockConnectOps.getAsync(anyString(), anyString())).thenReturn(StrimziFuture.completedFuture(kc));
+        when(mockConnectOps.updateStatusAsync(any(), any(KafkaConnect.class))).thenReturn(StrimziFuture.completedFuture(null));
         when(mockServiceOps.get(kcNamespace, connect.getComponentName())).thenReturn(connect.generateService());
-        when(mockDcOps.getAsync(kcNamespace, connect.getComponentName())).thenReturn(Future.succeededFuture(connect.generateDeployment(3, null, Map.of(), true, null, null, null)));
-        when(mockDcOps.readiness(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
-        when(mockDcOps.waitForObserved(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
-        when(mockSecretOps.reconcile(any(), anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
+        when(mockDcOps.getAsync(kcNamespace, connect.getComponentName())).thenReturn(StrimziFuture.completedFuture(connect.generateDeployment(3, null, Map.of(), true, null, null, null)));
+        when(mockDcOps.readiness(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(StrimziFuture.completedFuture(null));
+        when(mockDcOps.waitForObserved(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(StrimziFuture.completedFuture(null));
+        when(mockSecretOps.reconcile(any(), anyString(), anyString(), any())).thenReturn(StrimziFuture.completedFuture(null));
 
-        when(mockPodSetOps.getAsync(any(), any())).thenReturn(Future.succeededFuture());
+        when(mockPodSetOps.getAsync(any(), any())).thenReturn(StrimziFuture.completedFuture(null));
 
-        when(mockServiceOps.reconcile(any(), eq(kcNamespace), any(), any())).thenReturn(Future.succeededFuture());
+        when(mockServiceOps.reconcile(any(), eq(kcNamespace), any(), any())).thenReturn(StrimziFuture.completedFuture(null));
 
-        when(mockDcOps.reconcile(any(), eq(kcNamespace), any(), any())).thenReturn(Future.succeededFuture());
+        when(mockDcOps.reconcile(any(), eq(kcNamespace), any(), any())).thenReturn(StrimziFuture.completedFuture(null));
 
-        doAnswer(i -> Future.succeededFuture(scaleTo))
+        doAnswer(i -> StrimziFuture.completedFuture(scaleTo))
                 .when(mockDcOps).scaleUp(any(), eq(kcNamespace), eq(connect.getComponentName()), eq(scaleTo), anyLong());
 
-        doAnswer(i -> Future.succeededFuture(scaleTo))
+        doAnswer(i -> StrimziFuture.completedFuture(scaleTo))
                 .when(mockDcOps).scaleDown(any(), eq(kcNamespace), eq(connect.getComponentName()), eq(scaleTo), anyLong());
 
-        when(mockNetPolOps.reconcile(any(), eq(kc.getMetadata().getNamespace()), eq(KafkaConnectResources.deploymentName(kc.getMetadata().getName())), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new NetworkPolicy())));
-        when(mockPodOps.reconcile(any(), eq(kc.getMetadata().getNamespace()), eq(KafkaConnectResources.buildPodName(kc.getMetadata().getName())), eq(null))).thenReturn(Future.succeededFuture(ReconcileResult.noop(null)));
-        when(mockBcOps.reconcile(any(), eq(kc.getMetadata().getNamespace()), eq(KafkaConnectResources.buildConfigName(kc.getMetadata().getName())), eq(null))).thenReturn(Future.succeededFuture(ReconcileResult.noop(null)));
-        when(mockConnectOps.reconcile(any(), anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new KafkaConnect())));
-        when(mockCmOps.reconcile(any(), anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new ConfigMap())));
-        when(mockPdbOps.reconcile(any(), anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new PodDisruptionBudget())));
+        when(mockNetPolOps.reconcile(any(), eq(kc.getMetadata().getNamespace()), eq(KafkaConnectResources.deploymentName(kc.getMetadata().getName())), any())).thenReturn(StrimziFuture.completedFuture(ReconcileResult.created(new NetworkPolicy())));
+        when(mockPodOps.reconcile(any(), eq(kc.getMetadata().getNamespace()), eq(KafkaConnectResources.buildPodName(kc.getMetadata().getName())), eq(null))).thenReturn(StrimziFuture.completedFuture(ReconcileResult.noop(null)));
+        when(mockBcOps.reconcile(any(), eq(kc.getMetadata().getNamespace()), eq(KafkaConnectResources.buildConfigName(kc.getMetadata().getName())), eq(null))).thenReturn(StrimziFuture.completedFuture(ReconcileResult.noop(null)));
+        when(mockConnectOps.reconcile(any(), anyString(), any(), any())).thenReturn(StrimziFuture.completedFuture(ReconcileResult.created(new KafkaConnect())));
+        when(mockCmOps.reconcile(any(), anyString(), any(), any())).thenReturn(StrimziFuture.completedFuture(ReconcileResult.created(new ConfigMap())));
+        when(mockPdbOps.reconcile(any(), anyString(), any(), any())).thenReturn(StrimziFuture.completedFuture(ReconcileResult.created(new PodDisruptionBudget())));
 
         KafkaConnectApi mockConnectClient = mock(KafkaConnectApi.class);
         when(mockConnectClient.list(any(), anyString(), anyInt())).thenReturn(Future.succeededFuture(emptyList()));
@@ -669,34 +670,34 @@ public class KafkaConnectAssemblyOperatorTest {
         KafkaConnectCluster connect = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kc, VERSIONS);
         kc.getSpec().setReplicas(scaleTo); // Change replicas to create ScaleDown
 
-        when(mockConnectorOps.listAsync(anyString(), any(Optional.class))).thenReturn(Future.succeededFuture(emptyList()));
+        when(mockConnectorOps.listAsync(anyString(), any(Optional.class))).thenReturn(StrimziFuture.completedFuture(emptyList()));
         when(mockConnectOps.get(kcNamespace, kcName)).thenReturn(kc);
-        when(mockConnectOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(kc));
-        when(mockConnectOps.updateStatusAsync(any(), any(KafkaConnect.class))).thenReturn(Future.succeededFuture());
+        when(mockConnectOps.getAsync(anyString(), anyString())).thenReturn(StrimziFuture.completedFuture(kc));
+        when(mockConnectOps.updateStatusAsync(any(), any(KafkaConnect.class))).thenReturn(StrimziFuture.completedFuture(null));
         when(mockServiceOps.get(kcNamespace, connect.getComponentName())).thenReturn(connect.generateService());
-        when(mockDcOps.getAsync(kcNamespace, connect.getComponentName())).thenReturn(Future.succeededFuture(connect.generateDeployment(3, null, Map.of(), true, null, null, null)));
-        when(mockDcOps.readiness(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
-        when(mockDcOps.waitForObserved(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
-        when(mockSecretOps.reconcile(any(), anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
+        when(mockDcOps.getAsync(kcNamespace, connect.getComponentName())).thenReturn(StrimziFuture.completedFuture(connect.generateDeployment(3, null, Map.of(), true, null, null, null)));
+        when(mockDcOps.readiness(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(StrimziFuture.completedFuture(null));
+        when(mockDcOps.waitForObserved(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(StrimziFuture.completedFuture(null));
+        when(mockSecretOps.reconcile(any(), anyString(), anyString(), any())).thenReturn(StrimziFuture.completedFuture(null));
 
-        when(mockPodSetOps.getAsync(any(), any())).thenReturn(Future.succeededFuture());
+        when(mockPodSetOps.getAsync(any(), any())).thenReturn(StrimziFuture.completedFuture(null));
 
-        when(mockServiceOps.reconcile(any(), eq(kcNamespace), any(), any())).thenReturn(Future.succeededFuture());
+        when(mockServiceOps.reconcile(any(), eq(kcNamespace), any(), any())).thenReturn(StrimziFuture.completedFuture(null));
 
-        when(mockDcOps.reconcile(any(), eq(kcNamespace), any(), any())).thenReturn(Future.succeededFuture());
+        when(mockDcOps.reconcile(any(), eq(kcNamespace), any(), any())).thenReturn(StrimziFuture.completedFuture(null));
 
-        doAnswer(i -> Future.succeededFuture(scaleTo))
+        doAnswer(i -> StrimziFuture.completedFuture(scaleTo))
                 .when(mockDcOps).scaleUp(any(), eq(kcNamespace), eq(connect.getComponentName()), eq(scaleTo), anyLong());
 
-        doAnswer(i -> Future.succeededFuture(scaleTo))
+        doAnswer(i -> StrimziFuture.completedFuture(scaleTo))
                 .when(mockDcOps).scaleDown(any(), eq(kcNamespace), eq(connect.getComponentName()), eq(scaleTo), anyLong());
 
-        when(mockNetPolOps.reconcile(any(), eq(kc.getMetadata().getNamespace()), eq(KafkaConnectResources.deploymentName(kc.getMetadata().getName())), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new NetworkPolicy())));
-        when(mockPodOps.reconcile(any(), eq(kc.getMetadata().getNamespace()), eq(KafkaConnectResources.buildPodName(kc.getMetadata().getName())), eq(null))).thenReturn(Future.succeededFuture(ReconcileResult.noop(null)));
-        when(mockBcOps.reconcile(any(), eq(kc.getMetadata().getNamespace()), eq(KafkaConnectResources.buildConfigName(kc.getMetadata().getName())), eq(null))).thenReturn(Future.succeededFuture(ReconcileResult.noop(null)));
-        when(mockConnectOps.reconcile(any(), anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new KafkaConnect())));
-        when(mockCmOps.reconcile(any(), anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new ConfigMap())));
-        when(mockPdbOps.reconcile(any(), anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new PodDisruptionBudget())));
+        when(mockNetPolOps.reconcile(any(), eq(kc.getMetadata().getNamespace()), eq(KafkaConnectResources.deploymentName(kc.getMetadata().getName())), any())).thenReturn(StrimziFuture.completedFuture(ReconcileResult.created(new NetworkPolicy())));
+        when(mockPodOps.reconcile(any(), eq(kc.getMetadata().getNamespace()), eq(KafkaConnectResources.buildPodName(kc.getMetadata().getName())), eq(null))).thenReturn(StrimziFuture.completedFuture(ReconcileResult.noop(null)));
+        when(mockBcOps.reconcile(any(), eq(kc.getMetadata().getNamespace()), eq(KafkaConnectResources.buildConfigName(kc.getMetadata().getName())), eq(null))).thenReturn(StrimziFuture.completedFuture(ReconcileResult.noop(null)));
+        when(mockConnectOps.reconcile(any(), anyString(), any(), any())).thenReturn(StrimziFuture.completedFuture(ReconcileResult.created(new KafkaConnect())));
+        when(mockCmOps.reconcile(any(), anyString(), any(), any())).thenReturn(StrimziFuture.completedFuture(ReconcileResult.created(new ConfigMap())));
+        when(mockPdbOps.reconcile(any(), anyString(), any(), any())).thenReturn(StrimziFuture.completedFuture(ReconcileResult.created(new PodDisruptionBudget())));
 
         KafkaConnectApi mockConnectClient = mock(KafkaConnectApi.class);
         when(mockConnectClient.list(any(), anyString(), anyInt())).thenReturn(Future.succeededFuture(emptyList()));
@@ -736,12 +737,12 @@ public class KafkaConnectAssemblyOperatorTest {
         PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
         NetworkPolicyOperator mockNetPolOps = supplier.networkPolicyOperator;
 
-        when(mockConnectorOps.listAsync(any(), any(Optional.class))).thenReturn(Future.succeededFuture(List.of()));
+        when(mockConnectorOps.listAsync(any(), any(Optional.class))).thenReturn(StrimziFuture.completedFuture(List.of()));
         String kcNamespace = "test";
 
         KafkaConnect foo = ResourceUtils.createEmptyKafkaConnect(kcNamespace, "foo");
         KafkaConnect bar = ResourceUtils.createEmptyKafkaConnect(kcNamespace, "bar");
-        when(mockConnectOps.listAsync(eq(kcNamespace), any(Optional.class))).thenReturn(Future.succeededFuture(asList(foo, bar)));
+        when(mockConnectOps.listAsync(eq(kcNamespace), any(Optional.class))).thenReturn(StrimziFuture.completedFuture(asList(foo, bar)));
         // when requested ConfigMap for a specific Kafka Connect cluster
         when(mockConnectOps.get(eq(kcNamespace), eq("foo"))).thenReturn(foo);
         when(mockConnectOps.get(eq(kcNamespace), eq("bar"))).thenReturn(bar);
@@ -756,14 +757,14 @@ public class KafkaConnectAssemblyOperatorTest {
         when(mockDcOps.list(eq(kcNamespace), eq(barLabels))).thenReturn(
                 List.of(KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, bar, VERSIONS).generateDeployment(3, null, Map.of(), true, null, null, null))
         );
-        when(mockDcOps.readiness(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
-        when(mockDcOps.waitForObserved(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+        when(mockDcOps.readiness(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(StrimziFuture.completedFuture(null));
+        when(mockDcOps.waitForObserved(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(StrimziFuture.completedFuture(null));
 
-        when(mockPodSetOps.getAsync(any(), any())).thenReturn(Future.succeededFuture());
+        when(mockPodSetOps.getAsync(any(), any())).thenReturn(StrimziFuture.completedFuture(null));
 
-        when(mockNetPolOps.reconcile(any(), eq(kcNamespace), eq(KafkaConnectResources.deploymentName(bar.getMetadata().getName())), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new NetworkPolicy())));
-        when(mockSecretOps.reconcile(any(), eq(kcNamespace), any(), any())).thenReturn(Future.succeededFuture());
-        when(mockPdbOps.reconcile(any(), eq(kcNamespace), any(), any())).thenReturn(Future.succeededFuture());
+        when(mockNetPolOps.reconcile(any(), eq(kcNamespace), eq(KafkaConnectResources.deploymentName(bar.getMetadata().getName())), any())).thenReturn(StrimziFuture.completedFuture(ReconcileResult.created(new NetworkPolicy())));
+        when(mockSecretOps.reconcile(any(), eq(kcNamespace), any(), any())).thenReturn(StrimziFuture.completedFuture(null));
+        when(mockPdbOps.reconcile(any(), eq(kcNamespace), any(), any())).thenReturn(StrimziFuture.completedFuture(null));
 
         Set<String> createdOrUpdated = new CopyOnWriteArraySet<>();
 
@@ -809,25 +810,25 @@ public class KafkaConnectAssemblyOperatorTest {
         KafkaConnectCluster connect = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kc, VERSIONS);
 
         when(mockConnectOps.get(kcNamespace, kcName)).thenReturn(kc);
-        when(mockConnectOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(kc));
-        when(mockServiceOps.reconcile(any(), anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
-        when(mockDcOps.reconcile(any(), anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
-        when(mockDcOps.getAsync(kcNamespace, connect.getComponentName())).thenReturn(Future.succeededFuture(connect.generateDeployment(3, null, Map.of(), true, null, null, null)));
-        when(mockDcOps.scaleUp(any(), anyString(), anyString(), anyInt(), anyLong())).thenReturn(Future.succeededFuture(42));
-        when(mockDcOps.scaleDown(any(), anyString(), anyString(), anyInt(), anyLong())).thenReturn(Future.failedFuture(failureMsg));
-        when(mockDcOps.readiness(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
-        when(mockDcOps.waitForObserved(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
-        when(mockCmOps.reconcile(any(), anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new ConfigMap())));
+        when(mockConnectOps.getAsync(anyString(), anyString())).thenReturn(StrimziFuture.completedFuture(kc));
+        when(mockServiceOps.reconcile(any(), anyString(), anyString(), any())).thenReturn(StrimziFuture.completedFuture(null));
+        when(mockDcOps.reconcile(any(), anyString(), anyString(), any())).thenReturn(StrimziFuture.completedFuture(null));
+        when(mockDcOps.getAsync(kcNamespace, connect.getComponentName())).thenReturn(StrimziFuture.completedFuture(connect.generateDeployment(3, null, Map.of(), true, null, null, null)));
+        when(mockDcOps.scaleUp(any(), anyString(), anyString(), anyInt(), anyLong())).thenReturn(StrimziFuture.completedFuture(42));
+        when(mockDcOps.scaleDown(any(), anyString(), anyString(), anyInt(), anyLong())).thenReturn(StrimziFuture.failedFuture(failureMsg));
+        when(mockDcOps.readiness(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(StrimziFuture.completedFuture(null));
+        when(mockDcOps.waitForObserved(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(StrimziFuture.completedFuture(null));
+        when(mockCmOps.reconcile(any(), anyString(), any(), any())).thenReturn(StrimziFuture.completedFuture(ReconcileResult.created(new ConfigMap())));
         when(mockNetPolOps.reconcile(any(), eq(kc.getMetadata().getNamespace()), eq(KafkaConnectResources.deploymentName(kc.getMetadata().getName())), any()))
-            .thenReturn(Future.succeededFuture(ReconcileResult.created(new NetworkPolicy())));
-        when(mockPodOps.reconcile(any(), eq(kc.getMetadata().getNamespace()), eq(KafkaConnectResources.buildPodName(kc.getMetadata().getName())), eq(null))).thenReturn(Future.succeededFuture(ReconcileResult.noop(null)));
-        when(mockBcOps.reconcile(any(), eq(kc.getMetadata().getNamespace()), eq(KafkaConnectResources.buildConfigName(kc.getMetadata().getName())), eq(null))).thenReturn(Future.succeededFuture(ReconcileResult.noop(null)));
-        when(mockPdbOps.reconcile(any(), anyString(), any(), any())).thenReturn(Future.succeededFuture());
-        when(mockSecretOps.reconcile(any(), anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
-        when(mockPodSetOps.getAsync(any(), any())).thenReturn(Future.succeededFuture());
+            .thenReturn(StrimziFuture.completedFuture(ReconcileResult.created(new NetworkPolicy())));
+        when(mockPodOps.reconcile(any(), eq(kc.getMetadata().getNamespace()), eq(KafkaConnectResources.buildPodName(kc.getMetadata().getName())), eq(null))).thenReturn(StrimziFuture.completedFuture(ReconcileResult.noop(null)));
+        when(mockBcOps.reconcile(any(), eq(kc.getMetadata().getNamespace()), eq(KafkaConnectResources.buildConfigName(kc.getMetadata().getName())), eq(null))).thenReturn(StrimziFuture.completedFuture(ReconcileResult.noop(null)));
+        when(mockPdbOps.reconcile(any(), anyString(), any(), any())).thenReturn(StrimziFuture.completedFuture(null));
+        when(mockSecretOps.reconcile(any(), anyString(), anyString(), any())).thenReturn(StrimziFuture.completedFuture(null));
+        when(mockPodSetOps.getAsync(any(), any())).thenReturn(StrimziFuture.completedFuture(null));
 
         ArgumentCaptor<KafkaConnect> connectCaptor = ArgumentCaptor.forClass(KafkaConnect.class);
-        when(mockConnectOps.updateStatusAsync(any(), connectCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockConnectOps.updateStatusAsync(any(), connectCaptor.capture())).thenReturn(StrimziFuture.completedFuture(null));
 
         KafkaConnectAssemblyOperator ops = new KafkaConnectAssemblyOperator(vertx, new PlatformFeaturesAvailability(true, kubernetesVersion),
                 supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS));
@@ -868,25 +869,25 @@ public class KafkaConnectAssemblyOperatorTest {
         KafkaConnectCluster connect = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kc, VERSIONS);
 
         when(mockConnectOps.get(kcNamespace, kcName)).thenReturn(kc);
-        when(mockConnectOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(kc));
-        when(mockConnectOps.updateStatusAsync(any(), any(KafkaConnect.class))).thenReturn(Future.succeededFuture());
+        when(mockConnectOps.getAsync(anyString(), anyString())).thenReturn(StrimziFuture.completedFuture(kc));
+        when(mockConnectOps.updateStatusAsync(any(), any(KafkaConnect.class))).thenReturn(StrimziFuture.completedFuture(null));
         when(mockServiceOps.get(kcNamespace, connect.getComponentName())).thenReturn(connect.generateService());
-        when(mockDcOps.getAsync(any(), any())).thenReturn(Future.succeededFuture());
-        when(mockDcOps.readiness(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
-        when(mockDcOps.waitForObserved(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
-        when(mockSecretOps.reconcile(any(), anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
+        when(mockDcOps.getAsync(any(), any())).thenReturn(StrimziFuture.completedFuture(null));
+        when(mockDcOps.readiness(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(StrimziFuture.completedFuture(null));
+        when(mockDcOps.waitForObserved(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(StrimziFuture.completedFuture(null));
+        when(mockSecretOps.reconcile(any(), anyString(), anyString(), any())).thenReturn(StrimziFuture.completedFuture(null));
 
-        when(mockPodSetOps.getAsync(any(), any())).thenReturn(Future.succeededFuture());
+        when(mockPodSetOps.getAsync(any(), any())).thenReturn(StrimziFuture.completedFuture(null));
 
-        when(mockCrbOps.reconcile(any(), any(), any())).thenReturn(Future.failedFuture("Message: Forbidden!"));
-        when(mockServiceOps.reconcile(any(), any(), any(), any())).thenReturn(Future.succeededFuture());
-        when(mockDcOps.reconcile(any(), any(), any(), any())).thenReturn(Future.succeededFuture());
-        when(mockDcOps.scaleUp(any(), any(), any(), anyInt(), anyLong())).thenReturn(Future.succeededFuture());
-        when(mockDcOps.scaleDown(any(), any(), any(), anyInt(), anyLong())).thenReturn(Future.succeededFuture());
-        when(mockNetPolOps.reconcile(any(), eq(kc.getMetadata().getNamespace()), eq(KafkaConnectResources.deploymentName(kc.getMetadata().getName())), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new NetworkPolicy())));
-        when(mockConnectOps.reconcile(any(), anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new KafkaConnect())));
-        when(mockCmOps.reconcile(any(), anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new ConfigMap())));
-        when(mockPdbOps.reconcile(any(), anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new PodDisruptionBudget())));
+        when(mockCrbOps.reconcile(any(), any(), any())).thenReturn(StrimziFuture.failedFuture("Message: Forbidden!"));
+        when(mockServiceOps.reconcile(any(), any(), any(), any())).thenReturn(StrimziFuture.completedFuture(null));
+        when(mockDcOps.reconcile(any(), any(), any(), any())).thenReturn(StrimziFuture.completedFuture(null));
+        when(mockDcOps.scaleUp(any(), any(), any(), anyInt(), anyLong())).thenReturn(StrimziFuture.completedFuture(null));
+        when(mockDcOps.scaleDown(any(), any(), any(), anyInt(), anyLong())).thenReturn(StrimziFuture.completedFuture(null));
+        when(mockNetPolOps.reconcile(any(), eq(kc.getMetadata().getNamespace()), eq(KafkaConnectResources.deploymentName(kc.getMetadata().getName())), any())).thenReturn(StrimziFuture.completedFuture(ReconcileResult.created(new NetworkPolicy())));
+        when(mockConnectOps.reconcile(any(), anyString(), any(), any())).thenReturn(StrimziFuture.completedFuture(ReconcileResult.created(new KafkaConnect())));
+        when(mockCmOps.reconcile(any(), anyString(), any(), any())).thenReturn(StrimziFuture.completedFuture(ReconcileResult.created(new ConfigMap())));
+        when(mockPdbOps.reconcile(any(), anyString(), any(), any())).thenReturn(StrimziFuture.completedFuture(ReconcileResult.created(new PodDisruptionBudget())));
 
         KafkaConnectAssemblyOperator ops = new KafkaConnectAssemblyOperator(vertx, new PlatformFeaturesAvailability(true, kubernetesVersion),
                 supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS));
@@ -921,27 +922,27 @@ public class KafkaConnectAssemblyOperatorTest {
         KafkaConnectCluster connect = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kc, VERSIONS);
 
         when(mockConnectOps.get(kcNamespace, kcName)).thenReturn(kc);
-        when(mockConnectOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(kc));
-        when(mockConnectOps.updateStatusAsync(any(), any(KafkaConnect.class))).thenReturn(Future.succeededFuture());
+        when(mockConnectOps.getAsync(anyString(), anyString())).thenReturn(StrimziFuture.completedFuture(kc));
+        when(mockConnectOps.updateStatusAsync(any(), any(KafkaConnect.class))).thenReturn(StrimziFuture.completedFuture(null));
         when(mockServiceOps.get(kcNamespace, connect.getComponentName())).thenReturn(connect.generateService());
-        when(mockDcOps.getAsync(kcNamespace, connect.getComponentName())).thenReturn(Future.succeededFuture(connect.generateDeployment(3, null, Map.of(), true, null, null, null)));
-        when(mockDcOps.readiness(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
-        when(mockDcOps.waitForObserved(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
-        when(mockSecretOps.reconcile(any(), anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
+        when(mockDcOps.getAsync(kcNamespace, connect.getComponentName())).thenReturn(StrimziFuture.completedFuture(connect.generateDeployment(3, null, Map.of(), true, null, null, null)));
+        when(mockDcOps.readiness(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(StrimziFuture.completedFuture(null));
+        when(mockDcOps.waitForObserved(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(StrimziFuture.completedFuture(null));
+        when(mockSecretOps.reconcile(any(), anyString(), anyString(), any())).thenReturn(StrimziFuture.completedFuture(null));
 
-        when(mockPodSetOps.getAsync(any(), any())).thenReturn(Future.succeededFuture());
+        when(mockPodSetOps.getAsync(any(), any())).thenReturn(StrimziFuture.completedFuture(null));
 
-        when(mockCrbOps.reconcile(any(), any(), any())).thenReturn(Future.failedFuture("Message: Forbidden!"));
-        when(mockServiceOps.reconcile(any(), any(), any(), any())).thenReturn(Future.succeededFuture());
-        when(mockDcOps.reconcile(any(), any(), any(), any())).thenReturn(Future.succeededFuture());
-        when(mockDcOps.scaleUp(any(), any(), any(), anyInt(), anyLong())).thenReturn(Future.succeededFuture());
-        when(mockDcOps.scaleDown(any(), any(), any(), anyInt(), anyLong())).thenReturn(Future.succeededFuture());
-        when(mockNetPolOps.reconcile(any(), eq(kc.getMetadata().getNamespace()), eq(KafkaConnectResources.deploymentName(kc.getMetadata().getName())), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new NetworkPolicy())));
-        when(mockPodOps.reconcile(any(), eq(kc.getMetadata().getNamespace()), eq(KafkaConnectResources.buildPodName(kc.getMetadata().getName())), eq(null))).thenReturn(Future.succeededFuture(ReconcileResult.noop(null)));
-        when(mockBcOps.reconcile(any(), eq(kc.getMetadata().getNamespace()), eq(KafkaConnectResources.buildConfigName(kc.getMetadata().getName())), eq(null))).thenReturn(Future.succeededFuture(ReconcileResult.noop(null)));
-        when(mockConnectOps.reconcile(any(), anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new KafkaConnect())));
-        when(mockCmOps.reconcile(any(), anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new ConfigMap())));
-        when(mockPdbOps.reconcile(any(), anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new PodDisruptionBudget())));
+        when(mockCrbOps.reconcile(any(), any(), any())).thenReturn(StrimziFuture.failedFuture("Message: Forbidden!"));
+        when(mockServiceOps.reconcile(any(), any(), any(), any())).thenReturn(StrimziFuture.completedFuture(null));
+        when(mockDcOps.reconcile(any(), any(), any(), any())).thenReturn(StrimziFuture.completedFuture(null));
+        when(mockDcOps.scaleUp(any(), any(), any(), anyInt(), anyLong())).thenReturn(StrimziFuture.completedFuture(null));
+        when(mockDcOps.scaleDown(any(), any(), any(), anyInt(), anyLong())).thenReturn(StrimziFuture.completedFuture(null));
+        when(mockNetPolOps.reconcile(any(), eq(kc.getMetadata().getNamespace()), eq(KafkaConnectResources.deploymentName(kc.getMetadata().getName())), any())).thenReturn(StrimziFuture.completedFuture(ReconcileResult.created(new NetworkPolicy())));
+        when(mockPodOps.reconcile(any(), eq(kc.getMetadata().getNamespace()), eq(KafkaConnectResources.buildPodName(kc.getMetadata().getName())), eq(null))).thenReturn(StrimziFuture.completedFuture(ReconcileResult.noop(null)));
+        when(mockBcOps.reconcile(any(), eq(kc.getMetadata().getNamespace()), eq(KafkaConnectResources.buildConfigName(kc.getMetadata().getName())), eq(null))).thenReturn(StrimziFuture.completedFuture(ReconcileResult.noop(null)));
+        when(mockConnectOps.reconcile(any(), anyString(), any(), any())).thenReturn(StrimziFuture.completedFuture(ReconcileResult.created(new KafkaConnect())));
+        when(mockCmOps.reconcile(any(), anyString(), any(), any())).thenReturn(StrimziFuture.completedFuture(ReconcileResult.created(new ConfigMap())));
+        when(mockPdbOps.reconcile(any(), anyString(), any(), any())).thenReturn(StrimziFuture.completedFuture(ReconcileResult.created(new PodDisruptionBudget())));
 
         KafkaConnectAssemblyOperator ops = new KafkaConnectAssemblyOperator(vertx, new PlatformFeaturesAvailability(true, kubernetesVersion),
                 supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS));
@@ -960,10 +961,10 @@ public class KafkaConnectAssemblyOperatorTest {
 
         ClusterRoleBindingOperator mockCrbOps = supplier.clusterRoleBindingOperator;
         ArgumentCaptor<ClusterRoleBinding> desiredCrb = ArgumentCaptor.forClass(ClusterRoleBinding.class);
-        when(mockCrbOps.reconcile(any(), eq(KafkaConnectResources.initContainerClusterRoleBindingName(kcName, kcNamespace)), desiredCrb.capture())).thenReturn(Future.succeededFuture());
+        when(mockCrbOps.reconcile(any(), eq(KafkaConnectResources.initContainerClusterRoleBindingName(kcName, kcNamespace)), desiredCrb.capture())).thenReturn(StrimziFuture.completedFuture(null));
 
         CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList> mockCntrOps = supplier.kafkaConnectorOperator;
-        when(mockCntrOps.listAsync(any(), any(Labels.class))).thenReturn(Future.succeededFuture(emptyList()));
+        when(mockCntrOps.listAsync(any(), any(Labels.class))).thenReturn(StrimziFuture.completedFuture(emptyList()));
 
         KafkaConnectAssemblyOperator op = new KafkaConnectAssemblyOperator(vertx, new PlatformFeaturesAvailability(true, kubernetesVersion),
                 supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS));
@@ -1134,7 +1135,7 @@ public class KafkaConnectAssemblyOperatorTest {
                 .build();
 
         CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList> connectorOperator = supplier.kafkaConnectorOperator;
-        when(connectorOperator.getAsync("my-namespace", "my-connector")).thenReturn(Future.succeededFuture(connector));
+        when(connectorOperator.getAsync("my-namespace", "my-connector")).thenReturn(StrimziFuture.completedFuture(connector));
 
         KafkaConnectAssemblyOperator op = new KafkaConnectAssemblyOperator(vertx, new PlatformFeaturesAvailability(true, kubernetesVersion),
                 supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS));
@@ -1177,7 +1178,7 @@ public class KafkaConnectAssemblyOperatorTest {
                 .build();
 
         CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList> connectorOperator = supplier.kafkaConnectorOperator;
-        when(connectorOperator.getAsync("my-namespace", "my-connector")).thenReturn(Future.succeededFuture(connector));
+        when(connectorOperator.getAsync("my-namespace", "my-connector")).thenReturn(StrimziFuture.completedFuture(connector));
 
         KafkaConnectAssemblyOperator op = new KafkaConnectAssemblyOperator(vertx, new PlatformFeaturesAvailability(true, kubernetesVersion),
                 supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS));
@@ -1226,7 +1227,7 @@ public class KafkaConnectAssemblyOperatorTest {
                 .build();
 
         CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList> connectorOperator = supplier.kafkaConnectorOperator;
-        when(connectorOperator.getAsync("my-namespace", "my-connector")).thenReturn(Future.succeededFuture(connector));
+        when(connectorOperator.getAsync("my-namespace", "my-connector")).thenReturn(StrimziFuture.completedFuture(connector));
 
         KafkaConnectAssemblyOperator op = new KafkaConnectAssemblyOperator(vertx, new PlatformFeaturesAvailability(true, kubernetesVersion),
                 supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS));
@@ -1275,7 +1276,7 @@ public class KafkaConnectAssemblyOperatorTest {
                 .build();
 
         CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList> connectorOperator = supplier.kafkaConnectorOperator;
-        when(connectorOperator.getAsync("my-namespace", "my-connector")).thenReturn(Future.succeededFuture(connector));
+        when(connectorOperator.getAsync("my-namespace", "my-connector")).thenReturn(StrimziFuture.completedFuture(connector));
 
         KafkaConnectAssemblyOperator op = new KafkaConnectAssemblyOperator(vertx, new PlatformFeaturesAvailability(true, kubernetesVersion),
                 supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS));
@@ -1324,7 +1325,7 @@ public class KafkaConnectAssemblyOperatorTest {
                 .build();
 
         CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList> connectorOperator = supplier.kafkaConnectorOperator;
-        when(connectorOperator.getAsync("my-namespace", "my-connector")).thenReturn(Future.succeededFuture(connector));
+        when(connectorOperator.getAsync("my-namespace", "my-connector")).thenReturn(StrimziFuture.completedFuture(connector));
 
         KafkaConnectAssemblyOperator op = new KafkaConnectAssemblyOperator(vertx, new PlatformFeaturesAvailability(true, kubernetesVersion),
                 supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS));
@@ -1370,7 +1371,7 @@ public class KafkaConnectAssemblyOperatorTest {
                 .build();
 
         CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList> connectorOperator = supplier.kafkaConnectorOperator;
-        when(connectorOperator.getAsync("my-namespace", "my-connector")).thenReturn(Future.succeededFuture(connector));
+        when(connectorOperator.getAsync("my-namespace", "my-connector")).thenReturn(StrimziFuture.completedFuture(connector));
 
         KafkaConnectAssemblyOperator op = new KafkaConnectAssemblyOperator(vertx, new PlatformFeaturesAvailability(true, kubernetesVersion),
                 supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS));
@@ -1421,25 +1422,25 @@ public class KafkaConnectAssemblyOperatorTest {
 
         KafkaConnectCluster connect = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kc, VERSIONS);
         when(mockConnectOps.get(kcNamespace, kcName)).thenReturn(kc);
-        when(mockConnectOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(kc));
+        when(mockConnectOps.getAsync(anyString(), anyString())).thenReturn(StrimziFuture.completedFuture(kc));
         ArgumentCaptor<KafkaConnect> connectCaptor = ArgumentCaptor.forClass(KafkaConnect.class);
-        when(mockConnectOps.updateStatusAsync(any(), connectCaptor.capture())).thenReturn(Future.succeededFuture());
-        when(mockDcOps.reconcile(any(), anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
+        when(mockConnectOps.updateStatusAsync(any(), connectCaptor.capture())).thenReturn(StrimziFuture.completedFuture(null));
+        when(mockDcOps.reconcile(any(), anyString(), anyString(), any())).thenReturn(StrimziFuture.completedFuture(null));
         when(mockDcOps.getAsync(kcNamespace, connect.getComponentName())).thenReturn(
-            Future.succeededFuture(connect.generateDeployment(3, null, Map.of(), true, null, null, null)));
-        when(mockDcOps.scaleUp(any(), anyString(), anyString(), anyInt(), anyLong())).thenReturn(Future.succeededFuture(42));
-        when(mockDcOps.scaleDown(any(), anyString(), anyString(), anyInt(), anyLong())).thenReturn(Future.failedFuture(failureMsg));
-        when(mockDcOps.readiness(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
-        when(mockDcOps.waitForObserved(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
-        when(mockPodSetOps.getAsync(any(), any())).thenReturn(Future.succeededFuture());
+            StrimziFuture.completedFuture(connect.generateDeployment(3, null, Map.of(), true, null, null, null)));
+        when(mockDcOps.scaleUp(any(), anyString(), anyString(), anyInt(), anyLong())).thenReturn(StrimziFuture.completedFuture(42));
+        when(mockDcOps.scaleDown(any(), anyString(), anyString(), anyInt(), anyLong())).thenReturn(StrimziFuture.failedFuture(failureMsg));
+        when(mockDcOps.readiness(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(StrimziFuture.completedFuture(null));
+        when(mockDcOps.waitForObserved(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(StrimziFuture.completedFuture(null));
+        when(mockPodSetOps.getAsync(any(), any())).thenReturn(StrimziFuture.completedFuture(null));
         when(mockNetPolOps.reconcile(any(), eq(kc.getMetadata().getNamespace()), eq(KafkaConnectResources.deploymentName(kc.getMetadata().getName())), any()))
-            .thenReturn(Future.succeededFuture(ReconcileResult.created(new NetworkPolicy())));
+            .thenReturn(StrimziFuture.completedFuture(ReconcileResult.created(new NetworkPolicy())));
         when(mockPodOps.reconcile(any(), eq(kc.getMetadata().getNamespace()), eq(KafkaConnectResources.buildPodName(kc.getMetadata().getName())), eq(null)))
-            .thenReturn(Future.succeededFuture(ReconcileResult.noop(null)));
+            .thenReturn(StrimziFuture.completedFuture(ReconcileResult.noop(null)));
         when(mockBcOps.reconcile(any(), eq(kc.getMetadata().getNamespace()), eq(KafkaConnectResources.buildConfigName(kc.getMetadata().getName())), eq(null)))
-            .thenReturn(Future.succeededFuture(ReconcileResult.noop(null)));
-        when(mockBcOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture());
-        when(mockIsOps.getAsync(kcNamespace, kcName)).thenReturn(Future.succeededFuture());
+            .thenReturn(StrimziFuture.completedFuture(ReconcileResult.noop(null)));
+        when(mockBcOps.getAsync(anyString(), anyString())).thenReturn(StrimziFuture.completedFuture(null));
+        when(mockIsOps.getAsync(kcNamespace, kcName)).thenReturn(StrimziFuture.completedFuture(null));
 
         KafkaConnectAssemblyOperator ops = new KafkaConnectAssemblyOperator(vertx, new PlatformFeaturesAvailability(true, kubernetesVersion),
                 supplier, ResourceUtils.dummyClusterOperatorConfig(VERSIONS));

@@ -13,8 +13,6 @@ import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.Util;
 import io.strimzi.test.k8s.KubeClusterResource;
 import io.strimzi.test.k8s.cluster.KubeCluster;
-import io.vertx.core.Vertx;
-import io.vertx.core.WorkerExecutor;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
@@ -35,6 +33,7 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 /**
  * The main purpose of the Integration Tests for the operators is to test them against a real Kubernetes cluster.
@@ -49,9 +48,7 @@ public abstract class AbstractNamespacedResourceOperatorIT<C extends KubernetesC
         R extends Resource<T>> {
     protected static final Logger LOGGER = LogManager.getLogger(AbstractNamespacedResourceOperatorIT.class);
     public static final String RESOURCE_NAME = "my-test-resource";
-    private static WorkerExecutor sharedWorkerExecutor;
     protected String resourceName;
-    protected static Vertx vertx;
     protected static KubernetesClient client;
     protected static String namespace = "resource-operator-it-namespace";
 
@@ -68,8 +65,6 @@ public abstract class AbstractNamespacedResourceOperatorIT<C extends KubernetesC
         cluster.setNamespace(namespace);
 
         assertDoesNotThrow(() -> KubeCluster.bootstrap(), "Could not bootstrap server");
-        vertx = Vertx.vertx();
-        sharedWorkerExecutor = vertx.createSharedWorkerExecutor("kubernetes-ops-pool");
         client = new KubernetesClientBuilder().build();
 
         if (cluster.getNamespace() != null && System.getenv("SKIP_TEARDOWN") == null) {
@@ -85,8 +80,6 @@ public abstract class AbstractNamespacedResourceOperatorIT<C extends KubernetesC
 
     @AfterAll
     public static void after() {
-        sharedWorkerExecutor.close();
-        vertx.close();
         if (kubeClient().getNamespace(namespace) != null && System.getenv("SKIP_TEARDOWN") == null) {
             LOGGER.warn("Deleting namespace {} after tests run", namespace);
             kubeClient().deleteNamespace(namespace);
@@ -108,32 +101,35 @@ public abstract class AbstractNamespacedResourceOperatorIT<C extends KubernetesC
         T modResource = getModified();
 
         op.reconcile(Reconciliation.DUMMY_RECONCILIATION, namespace, resourceName, newResource)
-            .onComplete(context.succeeding(rrCreated -> {
+            .whenComplete((rrCreated, err) -> {
+                assertNull(err);
                 T created = op.get(namespace, resourceName);
 
                 context.verify(() -> assertThat(created, is(notNullValue())));
                 assertResources(context, newResource, created);
-            }))
-            .compose(rr -> op.reconcile(Reconciliation.DUMMY_RECONCILIATION, namespace, resourceName, modResource))
-            .onComplete(context.succeeding(rrModified -> {
+            })
+            .thenCompose(rr -> op.reconcile(Reconciliation.DUMMY_RECONCILIATION, namespace, resourceName, modResource))
+            .whenComplete((rrModified, err) -> {
+                assertNull(err);
                 T modified = op.get(namespace, resourceName);
 
                 context.verify(() -> assertThat(modified, is(notNullValue())));
                 assertResources(context, modResource, modified);
-            }))
-            .compose(rr -> op.reconcile(Reconciliation.DUMMY_RECONCILIATION, namespace, resourceName, null))
-            .onComplete(context.succeeding(rrDeleted -> {
+            })
+            .thenCompose(rr -> op.reconcile(Reconciliation.DUMMY_RECONCILIATION, namespace, resourceName, null))
+            .whenComplete((rrDeleted, err) -> {
+                assertNull(err);
                 // it seems the resource is cached for some time so we need wait for it to be null
                 context.verify(() -> {
-                        Util.waitFor(Reconciliation.DUMMY_RECONCILIATION, vertx, "resource deletion " + resourceName, "deleted", 1000,
+                        Util.waitFor(Reconciliation.DUMMY_RECONCILIATION, "resource deletion " + resourceName, "deleted", 1000,
                                 30_000, () -> op.get(namespace, resourceName) == null)
-                                .onComplete(del -> {
+                                .whenComplete((del, delErr) -> {
                                     assertThat(op.get(namespace, resourceName), is(nullValue()));
                                     async.flag();
                                 });
                     }
                 );
-            }));
+            });
     }
 
     protected String getResourceName(String name) {

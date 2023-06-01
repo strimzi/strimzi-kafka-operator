@@ -14,13 +14,10 @@ import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.operator.common.Reconciliation;
-import io.vertx.core.Vertx;
-import io.vertx.core.WorkerExecutor;
+import io.strimzi.operator.common.Util;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
@@ -30,6 +27,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.instanceOf;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
@@ -45,20 +43,6 @@ public abstract class AbstractNonNamespacedResourceOperatorTest<C extends Kubern
         L extends KubernetesResourceList<T>,
         R extends Resource<T>> {
     public static final String RESOURCE_NAME = "my-resource";
-    protected static Vertx vertx;
-    private static WorkerExecutor sharedWorkerExecutor;
-
-    @BeforeAll
-    public static void before() {
-        vertx = Vertx.vertx();
-        sharedWorkerExecutor = vertx.createSharedWorkerExecutor("kubernetes-ops-pool");
-    }
-
-    @AfterAll
-    public static void after() {
-        sharedWorkerExecutor.close();
-        vertx.close();
-    }
 
     /**
      * The type of kubernetes client to be mocked
@@ -87,13 +71,12 @@ public abstract class AbstractNonNamespacedResourceOperatorTest<C extends Kubern
     protected abstract void mocker(C mockClient, MixedOperation op);
 
     /** Create the subclass of ResourceOperation to be tested */
-    protected abstract AbstractNonNamespacedResourceOperator<C, T, L, R> createResourceOperations(
-            Vertx vertx, C mockClient);
+    protected abstract AbstractNonNamespacedResourceOperator<C, T, L, R> createResourceOperations(C mockClient);
 
     /** Create the subclass of ResourceOperation to be tested with mocked readiness checks*/
     protected AbstractNonNamespacedResourceOperator<C, T, L, R> createResourceOperationsWithMockedReadiness(
-            Vertx vertx, C mockClient)    {
-        return createResourceOperations(vertx, mockClient);
+            C mockClient)    {
+        return createResourceOperations(mockClient);
     }
 
     @Test
@@ -114,17 +97,18 @@ public abstract class AbstractNonNamespacedResourceOperatorTest<C extends Kubern
         C mockClient = mock(clientType());
         mocker(mockClient, mockCms);
 
-        AbstractNonNamespacedResourceOperator<C, T, L, R> op = createResourceOperations(vertx, mockClient);
+        AbstractNonNamespacedResourceOperator<C, T, L, R> op = createResourceOperations(mockClient);
 
         Checkpoint async = context.checkpoint();
         op.createOrUpdate(Reconciliation.DUMMY_RECONCILIATION, modifiedResource())
-                .onComplete(context.succeeding(ar -> {
+                .whenComplete((rr, e) -> {
+                    assertNull(e);
                     verify(mockResource).get();
                     verify(mockResource).patch(any(), (T) any());
                     verify(mockResource, never()).create();
                     verify(mockResource, never()).create();
                     async.flag();
-                }));
+                });
     }
 
     @Test
@@ -144,17 +128,18 @@ public abstract class AbstractNonNamespacedResourceOperatorTest<C extends Kubern
         C mockClient = mock(clientType());
         mocker(mockClient, mockCms);
 
-        AbstractNonNamespacedResourceOperator<C, T, L, R> op = createResourceOperations(vertx, mockClient);
+        AbstractNonNamespacedResourceOperator<C, T, L, R> op = createResourceOperations(mockClient);
 
         Checkpoint async = context.checkpoint();
         op.createOrUpdate(Reconciliation.DUMMY_RECONCILIATION, resource())
-                .onComplete(context.succeeding(ar -> {
+                .whenComplete((rr, e) -> {
+                    assertNull(e);
                     verify(mockResource).get();
                     verify(mockResource, never()).patch(any(), any());
                     verify(mockResource, never()).create();
                     verify(mockResource, never()).create();
                     async.flag();
-                }));
+                });
     }
 
     @Test
@@ -174,13 +159,13 @@ public abstract class AbstractNonNamespacedResourceOperatorTest<C extends Kubern
         C mockClient = mock(clientType());
         mocker(mockClient, mockCms);
 
-        AbstractNonNamespacedResourceOperator<C, T, L, R> op = createResourceOperations(vertx, mockClient);
+        AbstractNonNamespacedResourceOperator<C, T, L, R> op = createResourceOperations(mockClient);
 
         Checkpoint async = context.checkpoint();
-        op.createOrUpdate(Reconciliation.DUMMY_RECONCILIATION, resource).onComplete(context.failing(e -> {
-            context.verify(() -> assertThat(e, is(ex)));
+        op.createOrUpdate(Reconciliation.DUMMY_RECONCILIATION, resource).whenComplete((rr, e) -> {
+            context.verify(() -> assertThat(Util.unwrap(e), is(ex)));
             async.flag();
-        }));
+        });
     }
 
     @Test
@@ -200,15 +185,15 @@ public abstract class AbstractNonNamespacedResourceOperatorTest<C extends Kubern
         C mockClient = mock(clientType());
         mocker(mockClient, mockCms);
 
-        AbstractNonNamespacedResourceOperator<C, T, L, R> op = createResourceOperationsWithMockedReadiness(
-                vertx, mockClient);
+        AbstractNonNamespacedResourceOperator<C, T, L, R> op = createResourceOperationsWithMockedReadiness(mockClient);
 
         Checkpoint async = context.checkpoint();
-        op.createOrUpdate(Reconciliation.DUMMY_RECONCILIATION, resource).onComplete(context.succeeding(rr -> {
+        op.createOrUpdate(Reconciliation.DUMMY_RECONCILIATION, resource).whenComplete((rr, e) -> {
+            assertNull(e);
             verify(mockResource).get();
             verify(mockResource).create();
             async.flag();
-        }));
+        });
     }
 
     @Test
@@ -230,13 +215,13 @@ public abstract class AbstractNonNamespacedResourceOperatorTest<C extends Kubern
         C mockClient = mock(clientType());
         mocker(mockClient, mockCms);
 
-        AbstractNonNamespacedResourceOperator<C, T, L, R> op = createResourceOperations(vertx, mockClient);
+        AbstractNonNamespacedResourceOperator<C, T, L, R> op = createResourceOperations(mockClient);
 
         Checkpoint async = context.checkpoint();
-        op.createOrUpdate(Reconciliation.DUMMY_RECONCILIATION, resource).onComplete(context.failing(e -> {
-            context.verify(() -> assertThat(e, is(ex)));
+        op.createOrUpdate(Reconciliation.DUMMY_RECONCILIATION, resource).whenComplete((rr, e) -> {
+            context.verify(() -> assertThat(Util.unwrap(e), is(ex)));
             async.flag();
-        }));
+        });
     }
 
     @Test
@@ -253,14 +238,15 @@ public abstract class AbstractNonNamespacedResourceOperatorTest<C extends Kubern
         C mockClient = mock(clientType());
         mocker(mockClient, mockCms);
 
-        AbstractNonNamespacedResourceOperator<C, T, L, R> op = createResourceOperations(vertx, mockClient);
+        AbstractNonNamespacedResourceOperator<C, T, L, R> op = createResourceOperations(mockClient);
 
         Checkpoint async = context.checkpoint();
-        op.reconcile(Reconciliation.DUMMY_RECONCILIATION, resource.getMetadata().getName(), null).onComplete(context.succeeding(rrDeleted -> {
+        op.reconcile(Reconciliation.DUMMY_RECONCILIATION, resource.getMetadata().getName(), null).whenComplete((rr, e) -> {
+            assertNull(e);
             verify(mockResource).get();
             verify(mockResource, never()).delete();
             async.flag();
-        }));
+        });
     }
 
     @Test
@@ -289,14 +275,15 @@ public abstract class AbstractNonNamespacedResourceOperatorTest<C extends Kubern
         C mockClient = mock(clientType());
         mocker(mockClient, mockCms);
 
-        AbstractNonNamespacedResourceOperator<C, T, L, R> op = createResourceOperations(vertx, mockClient);
+        AbstractNonNamespacedResourceOperator<C, T, L, R> op = createResourceOperations(mockClient);
 
         Checkpoint async = context.checkpoint();
-        op.reconcile(Reconciliation.DUMMY_RECONCILIATION, resource.getMetadata().getName(), null).onComplete(context.succeeding(rrDeleted -> {
+        op.reconcile(Reconciliation.DUMMY_RECONCILIATION, resource.getMetadata().getName(), null).whenComplete((rr, e) -> {
+            assertNull(e);
             verify(mockResource).delete();
             context.verify(() -> assertThat("Watch was not closed", watchWasClosed.get(), is(true)));
             async.flag();
-        }));
+        });
     }
 
     @Test
@@ -323,15 +310,17 @@ public abstract class AbstractNonNamespacedResourceOperatorTest<C extends Kubern
         C mockClient = mock(clientType());
         mocker(mockClient, mockCms);
 
-        AbstractNonNamespacedResourceOperator<C, T, L, R> op = createResourceOperations(vertx, mockClient);
+        AbstractNonNamespacedResourceOperator<C, T, L, R> op = createResourceOperations(mockClient);
 
         Checkpoint async = context.checkpoint();
-        op.reconcile(Reconciliation.DUMMY_RECONCILIATION, resource.getMetadata().getName(), null).onComplete(context.failing(e -> context.verify(() -> {
-            assertThat(e, instanceOf(TimeoutException.class));
-            verify(mockResource).delete();
-            assertThat("Watch was not closed", watchWasClosed.get(), is(true));
-            async.flag();
-        })));
+        op.reconcile(Reconciliation.DUMMY_RECONCILIATION, resource.getMetadata().getName(), null).whenComplete((rr, e) -> {
+            context.verify(() -> {
+                assertThat(Util.unwrap(e), instanceOf(TimeoutException.class));
+                verify(mockResource).delete();
+                assertThat("Watch was not closed", watchWasClosed.get(), is(true));
+                async.flag();
+            });
+        });
     }
 
     @Test
@@ -360,14 +349,15 @@ public abstract class AbstractNonNamespacedResourceOperatorTest<C extends Kubern
         C mockClient = mock(clientType());
         mocker(mockClient, mockCms);
 
-        AbstractNonNamespacedResourceOperator<C, T, L, R> op = createResourceOperations(vertx, mockClient);
+        AbstractNonNamespacedResourceOperator<C, T, L, R> op = createResourceOperations(mockClient);
 
         Checkpoint async = context.checkpoint();
-        op.reconcile(Reconciliation.DUMMY_RECONCILIATION, resource.getMetadata().getName(), null).onComplete(context.succeeding(rrDeleted -> {
+        op.reconcile(Reconciliation.DUMMY_RECONCILIATION, resource.getMetadata().getName(), null).whenComplete((rr, e) -> {
+            assertNull(e);
             verify(mockResource).delete();
             context.verify(() -> assertThat("Watch was not closed", watchWasClosed.get(), is(true)));
             async.flag();
-        }));
+        });
     }
 
     @Test
@@ -397,14 +387,16 @@ public abstract class AbstractNonNamespacedResourceOperatorTest<C extends Kubern
         C mockClient = mock(clientType());
         mocker(mockClient, mockCms);
 
-        AbstractNonNamespacedResourceOperator<C, T, L, R> op = createResourceOperations(vertx, mockClient);
+        AbstractNonNamespacedResourceOperator<C, T, L, R> op = createResourceOperations(mockClient);
 
         Checkpoint async = context.checkpoint();
-        op.reconcile(Reconciliation.DUMMY_RECONCILIATION, resource.getMetadata().getName(), null).onComplete(context.failing(e -> context.verify(() -> {
-            assertThat(e, is(ex));
-            assertThat("Watch was not closed", watchWasClosed.get(), is(true));
-            async.flag();
-        })));
+        op.reconcile(Reconciliation.DUMMY_RECONCILIATION, resource.getMetadata().getName(), null).whenComplete((rr, e) -> {
+            context.verify(() -> {
+                assertThat(Util.unwrap(e), is(ex));
+                assertThat("Watch was not closed", watchWasClosed.get(), is(true));
+                async.flag();
+            });
+        });
     }
 
     @Test
@@ -426,13 +418,13 @@ public abstract class AbstractNonNamespacedResourceOperatorTest<C extends Kubern
         C mockClient = mock(clientType());
         mocker(mockClient, mockCms);
 
-        AbstractNonNamespacedResourceOperator<C, T, L, R> op = createResourceOperations(vertx, mockClient);
+        AbstractNonNamespacedResourceOperator<C, T, L, R> op = createResourceOperations(mockClient);
 
         Checkpoint async = context.checkpoint();
-        op.reconcile(Reconciliation.DUMMY_RECONCILIATION, resource.getMetadata().getName(), null).onComplete(context.failing(e -> {
-            context.verify(() -> assertThat(e, is(ex)));
+        op.reconcile(Reconciliation.DUMMY_RECONCILIATION, resource.getMetadata().getName(), null).whenComplete((rr, e) -> {
+            context.verify(() -> assertThat(Util.unwrap(e), is(ex)));
             async.flag();
-        }));
+        });
     }
 
 
@@ -462,14 +454,15 @@ public abstract class AbstractNonNamespacedResourceOperatorTest<C extends Kubern
         C mockClient = mock(clientType());
         mocker(mockClient, mockCms);
 
-        AbstractNonNamespacedResourceOperator<C, T, L, R> op = createResourceOperations(vertx, mockClient);
+        AbstractNonNamespacedResourceOperator<C, T, L, R> op = createResourceOperations(mockClient);
 
         Checkpoint async = context.checkpoint();
-        op.reconcile(Reconciliation.DUMMY_RECONCILIATION, resource.getMetadata().getName(), null).onComplete(context.succeeding(rrDeleted -> {
+        op.reconcile(Reconciliation.DUMMY_RECONCILIATION, resource.getMetadata().getName(), null).whenComplete((rr, e) -> {
+            assertNull(e);
             verify(mockResource).delete();
             context.verify(() -> assertThat("Watch was not closed", watchWasClosed.get(), is(true)));
             async.flag();
-        }));
+        });
     }
 
     // This tests the pre-check which should stop the self-closing-watch in case the resource is deleted before the
@@ -509,14 +502,15 @@ public abstract class AbstractNonNamespacedResourceOperatorTest<C extends Kubern
         C mockClient = mock(clientType());
         mocker(mockClient, mockCms);
 
-        AbstractNonNamespacedResourceOperator<C, T, L, R> op = createResourceOperations(vertx, mockClient);
+        AbstractNonNamespacedResourceOperator<C, T, L, R> op = createResourceOperations(mockClient);
 
         Checkpoint async = context.checkpoint();
-        op.reconcile(Reconciliation.DUMMY_RECONCILIATION, resource.getMetadata().getName(), null).onComplete(context.succeeding(rrDeleted -> {
+        op.reconcile(Reconciliation.DUMMY_RECONCILIATION, resource.getMetadata().getName(), null).whenComplete((rr, e) -> {
+            assertNull(e);
             verify(mockResource).delete();
             context.verify(() -> assertThat("Watch was not closed", watchWasClosed.get(), is(true)));
             async.flag();
-        }));
+        });
     }
 }
 

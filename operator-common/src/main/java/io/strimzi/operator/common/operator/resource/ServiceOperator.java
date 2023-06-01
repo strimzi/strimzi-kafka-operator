@@ -6,6 +6,11 @@ package io.strimzi.operator.common.operator.resource;
 
 import static io.strimzi.operator.common.Annotations.LOADBALANCER_ANNOTATION_IGNORELIST;
 
+import java.util.Map;
+import java.util.function.Function;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.ServiceList;
 import io.fabric8.kubernetes.api.model.ServicePort;
@@ -14,14 +19,8 @@ import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.ServiceResource;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
+import io.strimzi.operator.common.StrimziFuture;
 import io.strimzi.operator.common.Util;
-import io.vertx.core.Future;
-import io.vertx.core.Vertx;
-
-import java.util.Map;
-import java.util.function.Function;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 /**
  * Operations for {@code Service}s.
@@ -45,12 +44,11 @@ public class ServiceOperator extends AbstractNamespacedResourceOperator<Kubernet
     /**
      * Constructor
      *
-     * @param vertx The Vertx instance
      * @param client The Kubernetes client
      */
-    public ServiceOperator(Vertx vertx, KubernetesClient client) {
-        super(vertx, client, "Service");
-        this.endpointOperations = new EndpointOperator(vertx, client);
+    public ServiceOperator(KubernetesClient client) {
+        super(client, "Service");
+        this.endpointOperations = new EndpointOperator(client);
     }
 
     @Override
@@ -82,7 +80,7 @@ public class ServiceOperator extends AbstractNamespacedResourceOperator<Kubernet
      * @return  Future with reconciliation result
      */
     @Override
-    protected Future<ReconcileResult<Service>> internalUpdate(Reconciliation reconciliation, String namespace, String name, Service current, Service desired) {
+    protected StrimziFuture<ReconcileResult<Service>> internalUpdate(Reconciliation reconciliation, String namespace, String name, Service current, Service desired) {
         try {
             if (current.getSpec() != null && desired.getSpec() != null) {
                 if (("NodePort".equals(current.getSpec().getType()) && "NodePort".equals(desired.getSpec().getType()))
@@ -98,7 +96,7 @@ public class ServiceOperator extends AbstractNamespacedResourceOperator<Kubernet
             return super.internalUpdate(reconciliation, namespace, name, current, desired);
         } catch (Exception e) {
             LOGGER.errorCr(reconciliation, "Caught exception while patching {} {} in namespace {}", resourceKind, name, namespace, e);
-            return Future.failedFuture(e);
+            return StrimziFuture.failedFuture(e);
         }
     }
 
@@ -191,7 +189,7 @@ public class ServiceOperator extends AbstractNamespacedResourceOperator<Kubernet
      *
      * @return Future with result of the reconciliation
      */
-    protected Future<ReconcileResult<Service>> internalDelete(Reconciliation reconciliation, String namespace, String name) {
+    protected StrimziFuture<ReconcileResult<Service>> internalDelete(Reconciliation reconciliation, String namespace, String name) {
         return internalDelete(reconciliation, namespace, name, true);
     }
 
@@ -206,7 +204,7 @@ public class ServiceOperator extends AbstractNamespacedResourceOperator<Kubernet
      *
      * @return  Future which completes when the endpoint is ready
      */
-    public Future<Void> endpointReadiness(Reconciliation reconciliation, String namespace, String name, long pollInterval, long operationTimeoutMs) {
+    public StrimziFuture<Void> endpointReadiness(Reconciliation reconciliation, String namespace, String name, long pollInterval, long operationTimeoutMs) {
         return endpointOperations.readiness(reconciliation, namespace, name, pollInterval, operationTimeoutMs);
     }
 
@@ -220,7 +218,7 @@ public class ServiceOperator extends AbstractNamespacedResourceOperator<Kubernet
      * @param timeoutMs     Timeout
      * @return A future that succeeds when the Service has an assigned address.
      */
-    public Future<Void> hasIngressAddress(Reconciliation reconciliation, String namespace, String name, long pollIntervalMs, long timeoutMs) {
+    public StrimziFuture<Void> hasIngressAddress(Reconciliation reconciliation, String namespace, String name, long pollIntervalMs, long timeoutMs) {
         return waitFor(reconciliation, namespace, name, "addressable", pollIntervalMs, timeoutMs, this::isIngressAddressReady);
     }
 
@@ -254,7 +252,7 @@ public class ServiceOperator extends AbstractNamespacedResourceOperator<Kubernet
      * @param timeoutMs     Timeout
      * @return A future that succeeds when the Service has an assigned node port
      */
-    public Future<Void> hasNodePort(Reconciliation reconciliation, String namespace, String name, long pollIntervalMs, long timeoutMs) {
+    public StrimziFuture<Void> hasNodePort(Reconciliation reconciliation, String namespace, String name, long pollIntervalMs, long timeoutMs) {
         return waitFor(reconciliation, namespace, name, pollIntervalMs, timeoutMs, this::isNodePortReady);
     }
 

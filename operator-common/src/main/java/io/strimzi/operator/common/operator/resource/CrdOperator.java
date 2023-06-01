@@ -4,6 +4,8 @@
  */
 package io.strimzi.operator.common.operator.resource;
 
+import java.util.concurrent.CompletionStage;
+
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.fabric8.kubernetes.api.model.DefaultKubernetesResourceList;
 import io.fabric8.kubernetes.api.model.DeletionPropagation;
@@ -15,11 +17,8 @@ import io.fabric8.kubernetes.client.dsl.base.PatchContext;
 import io.fabric8.kubernetes.client.dsl.base.PatchType;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
+import io.strimzi.operator.common.StrimziFuture;
 import io.strimzi.operator.common.Util;
-import io.vertx.core.CompositeFuture;
-import io.vertx.core.Future;
-import io.vertx.core.Promise;
-import io.vertx.core.Vertx;
 
 /**
  * Operator for managing CRD resources
@@ -31,7 +30,7 @@ import io.vertx.core.Vertx;
 @SuppressFBWarnings(value = "RCN_REDUNDANT_NULLCHECK_OF_NONNULL_VALUE",
         justification = "Erroneous on Java 11: https://github.com/spotbugs/spotbugs/issues/756")
 public class CrdOperator<C extends KubernetesClient,
-            T extends CustomResource,
+            T extends CustomResource<?, ?>,
             L extends DefaultKubernetesResourceList<T>>
         extends AbstractWatchableStatusedNamespacedResourceOperator<C, T, L, Resource<T>> {
 
@@ -42,14 +41,13 @@ public class CrdOperator<C extends KubernetesClient,
 
     /**
      * Constructor
-     * @param vertx The Vertx instance
      * @param client The Kubernetes client
      * @param cls The class of the CR
      * @param listCls The class of the list.
      * @param kind The Kind of the CR for which this operator should be used
      */
-    public CrdOperator(Vertx vertx, C client, Class<T> cls, Class<L> listCls, String kind) {
-        super(vertx, client, kind);
+    public CrdOperator(C client, Class<T> cls, Class<L> listCls, String kind) {
+        super(client, kind);
         this.cls = cls;
         this.listCls = listCls;
     }
@@ -71,19 +69,20 @@ public class CrdOperator<C extends KubernetesClient,
      *         once the resource has been deleted.
      */
     @Override
-    protected Future<ReconcileResult<T>> internalDelete(Reconciliation reconciliation, String namespace, String name, boolean cascading) {
+    protected StrimziFuture<ReconcileResult<T>> internalDelete(Reconciliation reconciliation, String namespace, String name, boolean cascading) {
         Resource<T> resourceOp = operation().inNamespace(namespace).withName(name);
 
-        Future<Void> watchForDeleteFuture = Util.waitFor(reconciliation, vertx,
+        CompletionStage<Void> watchForDeleteFuture = Util.waitFor(reconciliation,
             String.format("%s resource %s", resourceKind, name),
             "deleted",
             1_000,
             deleteTimeoutMs(),
             () -> resourceOp.get() != null);
 
-        Future<Void> deleteFuture = resourceSupport.deleteAsync(resourceOp.withPropagationPolicy(cascading ? DeletionPropagation.FOREGROUND : DeletionPropagation.ORPHAN).withGracePeriod(-1L));
+        CompletionStage<Void> deleteFuture = resourceSupport.deleteAsync(resourceOp.withPropagationPolicy(cascading ? DeletionPropagation.FOREGROUND : DeletionPropagation.ORPHAN).withGracePeriod(-1L));
 
-        return CompositeFuture.join(watchForDeleteFuture, deleteFuture).map(ReconcileResult.deleted());
+        return StrimziFuture.allOf(watchForDeleteFuture, deleteFuture)
+            .thenApply(nothing -> ReconcileResult.deleted());
     }
 
     /**
@@ -94,23 +93,24 @@ public class CrdOperator<C extends KubernetesClient,
      *
      * @return  Future which completes when the resource is patched
      */
-    public Future<T> patchAsync(Reconciliation reconciliation, T resource) {
-        Promise<T> blockingPromise = Promise.promise();
+    public StrimziFuture<T> patchAsync(Reconciliation reconciliation, T resource) {
+        StrimziFuture<T> blockingPromise = new StrimziFuture<>();
 
-        vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(future -> {
+        StrimziFuture.runAsync(() -> {
             String namespace = resource.getMetadata().getNamespace();
             String name = resource.getMetadata().getName();
+
             try {
                 T result = operation().inNamespace(namespace).withName(name).patch(PatchContext.of(PatchType.JSON), resource);
                 LOGGER.debugCr(reconciliation, "{} {} in namespace {} has been patched", resourceKind, name, namespace);
-                future.complete(result);
+                blockingPromise.complete(result);
             } catch (Exception e) {
                 LOGGER.debugCr(reconciliation, "Caught exception while patching {} {} in namespace {}", resourceKind, name, namespace, e);
-                future.fail(e);
+                blockingPromise.completeExceptionally(e);
             }
-        }, true, blockingPromise);
+        });
 
-        return blockingPromise.future();
+        return blockingPromise;
     }
 
     /**
@@ -121,23 +121,23 @@ public class CrdOperator<C extends KubernetesClient,
      *
      * @return  Future which completes when the status is patched
      */
-    public Future<T> updateStatusAsync(Reconciliation reconciliation, T resource) {
-        Promise<T> blockingPromise = Promise.promise();
+    public StrimziFuture<T> updateStatusAsync(Reconciliation reconciliation, T resource) {
+        StrimziFuture<T> blockingPromise = new StrimziFuture<>();
 
-        vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(future -> {
+        StrimziFuture.runAsync(() -> {
             String namespace = resource.getMetadata().getNamespace();
             String name = resource.getMetadata().getName();
 
             try {
                 T result = operation().inNamespace(namespace).resource(resource).updateStatus();
                 LOGGER.infoCr(reconciliation, "Status of {} {} in namespace {} has been updated", resourceKind, name, namespace);
-                future.complete(result);
+                blockingPromise.complete(result);
             } catch (Exception e) {
                 LOGGER.debugCr(reconciliation, "Caught exception while updating status of {} {} in namespace {}", resourceKind, name, namespace, e);
-                future.fail(e);
+                blockingPromise.completeExceptionally(e);
             }
-        }, true, blockingPromise);
+        });
 
-        return blockingPromise.future();
+        return blockingPromise;
     }
 }

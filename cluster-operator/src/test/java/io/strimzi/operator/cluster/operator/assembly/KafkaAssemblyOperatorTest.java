@@ -66,6 +66,7 @@ import io.strimzi.operator.cluster.operator.resource.StatefulSetOperator;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.StrimziFuture;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.MockCertManager;
 import io.strimzi.operator.common.operator.resource.ConfigMapOperator;
@@ -393,13 +394,13 @@ public class KafkaAssemblyOperatorTest {
         String kafkaName = kafka.getMetadata().getName();
         String kafkaNamespace = kafka.getMetadata().getNamespace();
         when(mockKafkaOps.get(kafkaNamespace, kafkaName)).thenReturn(null);
-        when(mockKafkaOps.getAsync(eq(kafkaNamespace), eq(kafkaName))).thenReturn(Future.succeededFuture(kafka));
-        when(mockKafkaOps.updateStatusAsync(any(), any(Kafka.class))).thenReturn(Future.succeededFuture());
+        when(mockKafkaOps.getAsync(eq(kafkaNamespace), eq(kafkaName))).thenReturn(StrimziFuture.completedFuture(kafka));
+        when(mockKafkaOps.updateStatusAsync(any(), any(Kafka.class))).thenReturn(StrimziFuture.completedFuture(null));
 
         // Mock PodSets
         AtomicReference<StrimziPodSet> podSetRef = new AtomicReference<>();
         ArgumentCaptor<StrimziPodSet> spsCaptor = ArgumentCaptor.forClass(StrimziPodSet.class);
-        when(mockPodSetOps.reconcile(any(), eq(kafkaNamespace), eq(KafkaResources.zookeeperStatefulSetName(kafkaName)), spsCaptor.capture())).thenReturn(Future.succeededFuture(ReconcileResult.created(new StrimziPodSet())));
+        when(mockPodSetOps.reconcile(any(), eq(kafkaNamespace), eq(KafkaResources.zookeeperStatefulSetName(kafkaName)), spsCaptor.capture())).thenReturn(StrimziFuture.completedFuture(ReconcileResult.created(new StrimziPodSet())));
         when(mockPodSetOps.reconcile(any(), eq(kafkaNamespace), eq(KafkaResources.kafkaStatefulSetName(kafkaName)), spsCaptor.capture())).thenAnswer(i -> {
             StrimziPodSet sps = new StrimziPodSetBuilder()
                     .withNewMetadata()
@@ -412,19 +413,19 @@ public class KafkaAssemblyOperatorTest {
                     .endSpec()
                     .build();
             podSetRef.set(sps);
-            return Future.succeededFuture(ReconcileResult.created(sps));
+            return StrimziFuture.completedFuture(ReconcileResult.created(sps));
         });
-        when(mockPodSetOps.getAsync(eq(kafkaNamespace), eq(KafkaResources.zookeeperStatefulSetName(kafkaName)))).thenReturn(Future.succeededFuture());
-        when(mockPodSetOps.getAsync(eq(kafkaNamespace), eq(KafkaResources.kafkaStatefulSetName(kafkaName)))).thenAnswer(i -> Future.succeededFuture(podSetRef.get()));
+        when(mockPodSetOps.getAsync(eq(kafkaNamespace), eq(KafkaResources.zookeeperStatefulSetName(kafkaName)))).thenReturn(StrimziFuture.completedFuture(null));
+        when(mockPodSetOps.getAsync(eq(kafkaNamespace), eq(KafkaResources.kafkaStatefulSetName(kafkaName)))).thenAnswer(i -> StrimziFuture.completedFuture(podSetRef.get()));
 
         // Mock StatefulSets
-        when(mockStsOps.getAsync(any(), any())).thenReturn(Future.succeededFuture(null));
+        when(mockStsOps.getAsync(any(), any())).thenReturn(StrimziFuture.completedFuture(null));
 
         ArgumentCaptor<Service> serviceCaptor = ArgumentCaptor.forClass(Service.class);
         ArgumentCaptor<NetworkPolicy> policyCaptor = ArgumentCaptor.forClass(NetworkPolicy.class);
         ArgumentCaptor<PodDisruptionBudget> pdbCaptor = ArgumentCaptor.forClass(PodDisruptionBudget.class);
-        when(mockPolicyOps.reconcile(any(), anyString(), anyString(), policyCaptor.capture())).thenReturn(Future.succeededFuture(ReconcileResult.created(new NetworkPolicy())));
-        when(mockPdbOps.reconcile(any(), anyString(), anyString(), pdbCaptor.capture())).thenReturn(Future.succeededFuture(ReconcileResult.created(new PodDisruptionBudget())));
+        when(mockPolicyOps.reconcile(any(), anyString(), anyString(), policyCaptor.capture())).thenReturn(StrimziFuture.completedFuture(ReconcileResult.created(new NetworkPolicy())));
+        when(mockPdbOps.reconcile(any(), anyString(), anyString(), pdbCaptor.capture())).thenReturn(StrimziFuture.completedFuture(ReconcileResult.created(new PodDisruptionBudget())));
 
         // Service mocks
         Set<Service> createdServices = new HashSet<>();
@@ -437,7 +438,7 @@ public class KafkaAssemblyOperatorTest {
 
         // Delegate the batchReconcile call to the real method which calls the other mocked methods. This allows us to better test the exact behavior.
         when(mockServiceOps.batchReconcile(any(), eq(kafkaNamespace), any(), any())).thenCallRealMethod();
-        when(mockServiceOps.get(eq(kafkaNamespace), anyString())).thenAnswer(i -> Future.succeededFuture(expectedServicesMap.get(i.<String>getArgument(1))));
+        when(mockServiceOps.get(eq(kafkaNamespace), anyString())).thenAnswer(i -> StrimziFuture.completedFuture(expectedServicesMap.get(i.<String>getArgument(1))));
         when(mockServiceOps.getAsync(eq(kafkaNamespace), anyString())).thenAnswer(i -> {
             Service svc = expectedServicesMap.get(i.<String>getArgument(1));
 
@@ -445,18 +446,18 @@ public class KafkaAssemblyOperatorTest {
                 svc.getSpec().getPorts().get(0).setNodePort(32000);
             }
 
-            return Future.succeededFuture(svc);
+            return StrimziFuture.completedFuture(svc);
         });
-        when(mockServiceOps.reconcile(any(), anyString(), anyString(), serviceCaptor.capture())).thenReturn(Future.succeededFuture(ReconcileResult.created(new Service())));
-        when(mockServiceOps.endpointReadiness(any(), anyString(), any(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
-        when(mockServiceOps.listAsync(eq(kafkaNamespace), any(Labels.class))).thenReturn(Future.succeededFuture(emptyList()));
+        when(mockServiceOps.reconcile(any(), anyString(), anyString(), serviceCaptor.capture())).thenReturn(StrimziFuture.completedFuture(ReconcileResult.created(new Service())));
+        when(mockServiceOps.endpointReadiness(any(), anyString(), any(), anyLong(), anyLong())).thenReturn(StrimziFuture.completedFuture(null));
+        when(mockServiceOps.listAsync(eq(kafkaNamespace), any(Labels.class))).thenReturn(StrimziFuture.completedFuture(emptyList()));
 
         // Ingress mocks
 
         // Delegate the batchReconcile call to the real method which calls the other mocked methods. This allows us to better test the exact behavior.
         when(mockIngressOps.batchReconcile(any(), eq(kafkaNamespace), any(), any())).thenCallRealMethod();
         when(mockIngressOps.listAsync(eq(kafkaNamespace), any(Labels.class))).thenReturn(
-                Future.succeededFuture(emptyList())
+                StrimziFuture.completedFuture(emptyList())
         );
 
         // Route Mocks
@@ -468,7 +469,7 @@ public class KafkaAssemblyOperatorTest {
 
             // Delegate the batchReconcile call to the real method which calls the other mocked methods. This allows us to better test the exact behavior.
             when(mockRouteOps.batchReconcile(any(), eq(kafkaNamespace), any(), any())).thenCallRealMethod();
-            when(mockRouteOps.get(eq(kafkaNamespace), anyString())).thenAnswer(i -> Future.succeededFuture(expectedRoutesMap.get(i.<String>getArgument(1))));
+            when(mockRouteOps.get(eq(kafkaNamespace), anyString())).thenAnswer(i -> StrimziFuture.completedFuture(expectedRoutesMap.get(i.<String>getArgument(1))));
             when(mockRouteOps.getAsync(eq(kafkaNamespace), anyString())).thenAnswer(i -> {
                 Route rt = expectedRoutesMap.get(i.<String>getArgument(1));
 
@@ -482,19 +483,19 @@ public class KafkaAssemblyOperatorTest {
                     rt.setStatus(st);
                 }
 
-                return Future.succeededFuture(rt);
+                return StrimziFuture.completedFuture(rt);
             });
             when(mockRouteOps.listAsync(eq(kafkaNamespace), any(Labels.class))).thenReturn(
-                    Future.succeededFuture(emptyList())
+                    StrimziFuture.completedFuture(emptyList())
             );
         }
 
         // Mock pod readiness
-        when(mockPodOps.readiness(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
-        when(mockPodOps.listAsync(anyString(), any(Labels.class))).thenReturn(Future.succeededFuture(emptyList()));
+        when(mockPodOps.readiness(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(StrimziFuture.completedFuture(null));
+        when(mockPodOps.listAsync(anyString(), any(Labels.class))).thenReturn(StrimziFuture.completedFuture(emptyList()));
 
         // Mock node ops
-        when(mockNodeOps.listAsync(any(Labels.class))).thenReturn(Future.succeededFuture(emptyList()));
+        when(mockNodeOps.listAsync(any(Labels.class))).thenReturn(StrimziFuture.completedFuture(emptyList()));
 
         Map<String, PersistentVolumeClaim> zkPvcs = createPvcs(kafkaNamespace, zookeeperCluster.getStorage(), zookeeperCluster.getReplicas(),
             (replica, storageId) -> VolumeUtils.DATA_VOLUME_NAME + "-" + KafkaResources.zookeeperPodName(kafkaName, replica));
@@ -520,20 +521,20 @@ public class KafkaAssemblyOperatorTest {
                 .thenAnswer(invocation -> {
                     String pvcName = invocation.getArgument(1);
                     if (pvcName.contains(zookeeperCluster.getComponentName())) {
-                        return Future.succeededFuture(zkPvcs.get(pvcName));
+                        return StrimziFuture.completedFuture(zkPvcs.get(pvcName));
                     } else if (pvcName.contains(kafkaCluster.getComponentName())) {
-                        return Future.succeededFuture(kafkaPvcs.get(pvcName));
+                        return StrimziFuture.completedFuture(kafkaPvcs.get(pvcName));
                     }
-                    return Future.succeededFuture(null);
+                    return StrimziFuture.completedFuture(null);
                 });
 
         when(mockPvcOps.listAsync(eq(kafkaNamespace), ArgumentMatchers.any(Labels.class)))
-                .thenAnswer(invocation -> Future.succeededFuture(Collections.EMPTY_LIST));
+                .thenAnswer(invocation -> StrimziFuture.completedFuture(Collections.EMPTY_LIST));
 
         Set<String> expectedPvcs = new HashSet<>(zkPvcs.keySet());
         expectedPvcs.addAll(kafkaPvcs.keySet());
         ArgumentCaptor<PersistentVolumeClaim> pvcCaptor = ArgumentCaptor.forClass(PersistentVolumeClaim.class);
-        when(mockPvcOps.reconcile(any(), anyString(), anyString(), pvcCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockPvcOps.reconcile(any(), anyString(), anyString(), pvcCaptor.capture())).thenReturn(StrimziFuture.completedFuture(null));
 
         Set<String> expectedSecrets = set(
                 KafkaResources.clientsCaKeySecretName(kafkaName),
@@ -567,16 +568,16 @@ public class KafkaAssemblyOperatorTest {
                     context.verify(() -> assertThat(metrics, is(true)));
                 }
             }
-            return Future.succeededFuture(desired != null ? ReconcileResult.created(desired) : ReconcileResult.deleted());
+            return StrimziFuture.completedFuture(desired != null ? ReconcileResult.created(desired) : ReconcileResult.deleted());
         });
         when(mockDepOps.getAsync(anyString(), anyString())).thenReturn(
-                Future.succeededFuture()
+                StrimziFuture.completedFuture(null)
         );
         when(mockDepOps.waitForObserved(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(
-                Future.succeededFuture()
+                StrimziFuture.completedFuture(null)
         );
         when(mockDepOps.readiness(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(
-                Future.succeededFuture()
+                StrimziFuture.completedFuture(null)
         );
 
         Map<String, Secret> secretsMap = secrets.stream().collect(Collectors.toMap(s -> s.getMetadata().getName(), s -> s));
@@ -585,13 +586,13 @@ public class KafkaAssemblyOperatorTest {
                 new ArrayList<>(secretsMap.values())
         );
         when(mockSecretOps.getAsync(anyString(), any())).thenAnswer(i ->
-                Future.succeededFuture(secretsMap.get(i.<String>getArgument(1)))
+                StrimziFuture.completedFuture(secretsMap.get(i.<String>getArgument(1)))
         );
         when(mockSecretOps.getAsync(kafkaNamespace, KafkaResources.clusterCaCertificateSecretName(kafkaName))).thenAnswer(i ->
-                Future.succeededFuture(secretsMap.get(i.<String>getArgument(1)))
+                StrimziFuture.completedFuture(secretsMap.get(i.<String>getArgument(1)))
         );
         when(mockSecretOps.getAsync(kafkaNamespace, ClusterOperator.secretName(kafkaName))).thenAnswer(i ->
-                Future.succeededFuture(secretsMap.get(i.<String>getArgument(1)))
+                StrimziFuture.completedFuture(secretsMap.get(i.<String>getArgument(1)))
         );
 
         when(mockSecretOps.reconcile(any(), anyString(), anyString(), any())).thenAnswer(invocation -> {
@@ -599,26 +600,26 @@ public class KafkaAssemblyOperatorTest {
             if (desired != null) {
                 secretsMap.put(desired.getMetadata().getName(), desired);
             }
-            return Future.succeededFuture(ReconcileResult.created(new Secret()));
+            return StrimziFuture.completedFuture(ReconcileResult.created(new Secret()));
         });
 
         ArgumentCaptor<ConfigMap> metricsCaptor = ArgumentCaptor.forClass(ConfigMap.class);
         ArgumentCaptor<String> metricsNameCaptor = ArgumentCaptor.forClass(String.class);
-        when(mockCmOps.reconcile(any(), anyString(), metricsNameCaptor.capture(), metricsCaptor.capture())).thenReturn(Future.succeededFuture(ReconcileResult.created(new ConfigMap())));
+        when(mockCmOps.reconcile(any(), anyString(), metricsNameCaptor.capture(), metricsCaptor.capture())).thenReturn(StrimziFuture.completedFuture(ReconcileResult.created(new ConfigMap())));
 
         ArgumentCaptor<ConfigMap> logCaptor = ArgumentCaptor.forClass(ConfigMap.class);
         ArgumentCaptor<String> logNameCaptor = ArgumentCaptor.forClass(String.class);
-        when(mockCmOps.reconcile(any(), anyString(), logNameCaptor.capture(), logCaptor.capture())).thenReturn(Future.succeededFuture(ReconcileResult.created(new ConfigMap())));
+        when(mockCmOps.reconcile(any(), anyString(), logNameCaptor.capture(), logCaptor.capture())).thenReturn(StrimziFuture.completedFuture(ReconcileResult.created(new ConfigMap())));
 
-        when(mockCmOps.getAsync(kafkaNamespace, metricsCMName)).thenReturn(Future.succeededFuture(metricsCM));
-        when(mockCmOps.getAsync(kafkaNamespace, differentMetricsCMName)).thenReturn(Future.succeededFuture(metricsCM));
-        when(mockCmOps.listAsync(kafkaNamespace, kafkaCluster.getSelectorLabels())).thenReturn(Future.succeededFuture(List.of()));
-        when(mockCmOps.deleteAsync(any(), any(), any(), anyBoolean())).thenReturn(Future.succeededFuture());
+        when(mockCmOps.getAsync(kafkaNamespace, metricsCMName)).thenReturn(StrimziFuture.completedFuture(metricsCM));
+        when(mockCmOps.getAsync(kafkaNamespace, differentMetricsCMName)).thenReturn(StrimziFuture.completedFuture(metricsCM));
+        when(mockCmOps.listAsync(kafkaNamespace, kafkaCluster.getSelectorLabels())).thenReturn(StrimziFuture.completedFuture(List.of()));
+        when(mockCmOps.deleteAsync(any(), any(), any(), anyBoolean())).thenReturn(StrimziFuture.completedFuture(null));
 
         ArgumentCaptor<Route> routeCaptor = ArgumentCaptor.forClass(Route.class);
         ArgumentCaptor<String> routeNameCaptor = ArgumentCaptor.forClass(String.class);
         if (openShift) {
-            when(mockRouteOps.reconcile(any(), eq(kafkaNamespace), routeNameCaptor.capture(), routeCaptor.capture())).thenReturn(Future.succeededFuture(ReconcileResult.created(new Route())));
+            when(mockRouteOps.reconcile(any(), eq(kafkaNamespace), routeNameCaptor.capture(), routeCaptor.capture())).thenReturn(StrimziFuture.completedFuture(ReconcileResult.created(new Route())));
         }
 
         KafkaAssemblyOperator ops = new KafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(openShift, kubernetesVersion),
@@ -895,30 +896,30 @@ public class KafkaAssemblyOperatorTest {
                 .thenAnswer(invocation -> {
                     String pvcName = invocation.getArgument(1);
                     if (pvcName.contains(originalZookeeperCluster.getComponentName())) {
-                        return Future.succeededFuture(zkPvcs.get(pvcName));
+                        return StrimziFuture.completedFuture(zkPvcs.get(pvcName));
                     } else if (pvcName.contains(originalKafkaCluster.getComponentName())) {
-                        return Future.succeededFuture(kafkaPvcs.get(pvcName));
+                        return StrimziFuture.completedFuture(kafkaPvcs.get(pvcName));
                     }
-                    return Future.succeededFuture(null);
+                    return StrimziFuture.completedFuture(null);
                 });
 
         when(mockPvcOps.listAsync(eq(clusterNamespace), ArgumentMatchers.any(Labels.class)))
                 .thenAnswer(invocation -> {
                     Labels labels = invocation.getArgument(1);
                     if (labels.toMap().get(Labels.STRIMZI_NAME_LABEL).contains("kafka")) {
-                        return Future.succeededFuture(new ArrayList<>(kafkaPvcs.values()));
+                        return StrimziFuture.completedFuture(new ArrayList<>(kafkaPvcs.values()));
                     } else if (labels.toMap().get(Labels.STRIMZI_NAME_LABEL).contains("zookeeper")) {
-                        return Future.succeededFuture(new ArrayList<>(zkPvcs.values()));
+                        return StrimziFuture.completedFuture(new ArrayList<>(zkPvcs.values()));
                     }
-                    return Future.succeededFuture(Collections.EMPTY_LIST);
+                    return StrimziFuture.completedFuture(Collections.EMPTY_LIST);
                 });
 
-        when(mockPvcOps.reconcile(any(), anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
+        when(mockPvcOps.reconcile(any(), anyString(), anyString(), any())).thenReturn(StrimziFuture.completedFuture(null));
 
         // Mock Kafka CR get
         when(mockKafkaOps.get(clusterNamespace, clusterName)).thenReturn(updatedAssembly);
-        when(mockKafkaOps.getAsync(eq(clusterNamespace), eq(clusterName))).thenReturn(Future.succeededFuture(updatedAssembly));
-        when(mockKafkaOps.updateStatusAsync(any(), any(Kafka.class))).thenReturn(Future.succeededFuture());
+        when(mockKafkaOps.getAsync(eq(clusterNamespace), eq(clusterName))).thenReturn(StrimziFuture.completedFuture(updatedAssembly));
+        when(mockKafkaOps.updateStatusAsync(any(), any(Kafka.class))).thenReturn(StrimziFuture.completedFuture(null));
 
         ConfigMap zkMetricsCm = new ConfigMapBuilder().withNewMetadata()
                 .withName(KafkaResources.zookeeperMetricsAndLogConfigMapName(clusterName))
@@ -945,18 +946,18 @@ public class KafkaAssemblyOperatorTest {
                         updatedZookeeperCluster.logging().loggingConfiguration(Reconciliation.DUMMY_RECONCILIATION, null)))
                 .build();
         when(mockCmOps.get(clusterNamespace, KafkaResources.zookeeperMetricsAndLogConfigMapName(clusterName))).thenReturn(zklogsCm);
-        when(mockCmOps.getAsync(clusterNamespace, metricsCMName)).thenReturn(Future.succeededFuture(metricsCM));
-        when(mockCmOps.getAsync(clusterNamespace, differentMetricsCMName)).thenReturn(Future.succeededFuture(metricsCM));
-        when(mockCmOps.listAsync(clusterNamespace, updatedKafkaCluster.getSelectorLabels())).thenReturn(Future.succeededFuture(List.of()));
-        when(mockCmOps.deleteAsync(any(), any(), any(), anyBoolean())).thenReturn(Future.succeededFuture());
+        when(mockCmOps.getAsync(clusterNamespace, metricsCMName)).thenReturn(StrimziFuture.completedFuture(metricsCM));
+        when(mockCmOps.getAsync(clusterNamespace, differentMetricsCMName)).thenReturn(StrimziFuture.completedFuture(metricsCM));
+        when(mockCmOps.listAsync(clusterNamespace, updatedKafkaCluster.getSelectorLabels())).thenReturn(StrimziFuture.completedFuture(List.of()));
+        when(mockCmOps.deleteAsync(any(), any(), any(), anyBoolean())).thenReturn(StrimziFuture.completedFuture(null));
 
         // Mock pod ops
-        when(mockPodOps.readiness(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
-        when(mockPodOps.listAsync(anyString(), any(Labels.class))).thenReturn(Future.succeededFuture(emptyList()));
-        when(mockPodOps.waitFor(any(), eq(clusterNamespace), anyString(), eq("to be deleted"), anyLong(), anyLong(), any())).thenReturn(Future.succeededFuture()); // Needed fot scale-down
+        when(mockPodOps.readiness(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(StrimziFuture.completedFuture(null));
+        when(mockPodOps.listAsync(anyString(), any(Labels.class))).thenReturn(StrimziFuture.completedFuture(emptyList()));
+        when(mockPodOps.waitFor(any(), eq(clusterNamespace), anyString(), eq("to be deleted"), anyLong(), anyLong(), any())).thenReturn(StrimziFuture.completedFuture(null)); // Needed fot scale-down
 
         // Mock node ops
-        when(mockNodeOps.listAsync(any(Labels.class))).thenReturn(Future.succeededFuture(emptyList()));
+        when(mockNodeOps.listAsync(any(Labels.class))).thenReturn(StrimziFuture.completedFuture(emptyList()));
 
         // Mock Service gets
         Set<Service> expectedServices = new HashSet<>();
@@ -970,9 +971,9 @@ public class KafkaAssemblyOperatorTest {
         // Delegate the batchReconcile call to the real method which calls the other mocked methods. This allows us to better test the exact behavior.
         when(mockServiceOps.batchReconcile(any(), eq(clusterNamespace), any(), any())).thenCallRealMethod();
         when(mockServiceOps.endpointReadiness(any(), eq(clusterNamespace), any(), anyLong(), anyLong())).thenReturn(
-                Future.succeededFuture()
+                StrimziFuture.completedFuture(null)
         );
-        when(mockServiceOps.get(eq(clusterNamespace), anyString())).thenAnswer(i -> Future.succeededFuture(expectedServicesMap.get(i.<String>getArgument(1))));
+        when(mockServiceOps.get(eq(clusterNamespace), anyString())).thenAnswer(i -> StrimziFuture.completedFuture(expectedServicesMap.get(i.<String>getArgument(1))));
         when(mockServiceOps.getAsync(eq(clusterNamespace), anyString())).thenAnswer(i -> {
             Service svc = expectedServicesMap.get(i.<String>getArgument(1));
 
@@ -980,16 +981,16 @@ public class KafkaAssemblyOperatorTest {
                 svc.getSpec().getPorts().get(0).setNodePort(32000);
             }
 
-            return Future.succeededFuture(svc);
+            return StrimziFuture.completedFuture(svc);
         });
         when(mockServiceOps.listAsync(eq(clusterNamespace), any(Labels.class))).thenReturn(
-                Future.succeededFuture(asList(
+                StrimziFuture.completedFuture(asList(
                         originalKafkaCluster.generateService(),
                         originalKafkaCluster.generateHeadlessService()
                 ))
         );
         when(mockServiceOps.hasNodePort(any(), eq(clusterNamespace), any(), anyLong(), anyLong())).thenReturn(
-                Future.succeededFuture()
+                StrimziFuture.completedFuture(null)
         );
 
         // Ingress mocks
@@ -997,7 +998,7 @@ public class KafkaAssemblyOperatorTest {
         // Delegate the batchReconcile call to the real method which calls the other mocked methods. This allows us to better test the exact behavior.
         when(mockIngressOps.batchReconcile(any(), eq(clusterNamespace), any(), any())).thenCallRealMethod();
         when(mockIngressOps.listAsync(eq(clusterNamespace), any(Labels.class))).thenReturn(
-                Future.succeededFuture(emptyList())
+                StrimziFuture.completedFuture(emptyList())
         );
 
         // Route Mocks
@@ -1010,7 +1011,7 @@ public class KafkaAssemblyOperatorTest {
 
             // Delegate the batchReconcile call to the real method which calls the other mocked methods. This allows us to better test the exact behavior.
             when(mockRouteOps.batchReconcile(any(), eq(clusterNamespace), any(), any())).thenCallRealMethod();
-            when(mockRouteOps.get(eq(clusterNamespace), anyString())).thenAnswer(i -> Future.succeededFuture(expectedRoutesMap.get(i.<String>getArgument(1))));
+            when(mockRouteOps.get(eq(clusterNamespace), anyString())).thenAnswer(i -> StrimziFuture.completedFuture(expectedRoutesMap.get(i.<String>getArgument(1))));
             when(mockRouteOps.getAsync(eq(clusterNamespace), anyString())).thenAnswer(i -> {
                 Route rt = expectedRoutesMap.get(i.<String>getArgument(1));
 
@@ -1024,13 +1025,13 @@ public class KafkaAssemblyOperatorTest {
                     rt.setStatus(st);
                 }
 
-                return Future.succeededFuture(rt);
+                return StrimziFuture.completedFuture(rt);
             });
             when(mockRouteOps.listAsync(eq(clusterNamespace), any(Labels.class))).thenReturn(
-                    Future.succeededFuture(emptyList())
+                    StrimziFuture.completedFuture(emptyList())
             );
             when(mockRouteOps.hasAddress(any(), eq(clusterNamespace), any(), anyLong(), anyLong())).thenReturn(
-                    Future.succeededFuture()
+                    StrimziFuture.completedFuture(null)
             );
         }
 
@@ -1039,29 +1040,29 @@ public class KafkaAssemblyOperatorTest {
                 emptyList()
         );
         when(mockSecretOps.getAsync(clusterNamespace, KafkaResources.kafkaJmxSecretName(clusterName))).thenReturn(
-                Future.succeededFuture(originalKafkaCluster.jmx().jmxSecret(null))
+                StrimziFuture.completedFuture(originalKafkaCluster.jmx().jmxSecret(null))
         );
         when(mockSecretOps.getAsync(clusterNamespace, KafkaResources.zookeeperJmxSecretName(clusterName))).thenReturn(
-                Future.succeededFuture(originalZookeeperCluster.jmx().jmxSecret(null))
+                StrimziFuture.completedFuture(originalZookeeperCluster.jmx().jmxSecret(null))
         );
         when(mockSecretOps.getAsync(clusterNamespace, KafkaResources.zookeeperSecretName(clusterName))).thenReturn(
-                Future.succeededFuture()
+                StrimziFuture.completedFuture(null)
         );
 
         when(mockSecretOps.getAsync(clusterNamespace, KafkaResources.entityTopicOperatorSecretName(clusterName))).thenReturn(
-                Future.succeededFuture()
+                StrimziFuture.completedFuture(null)
         );
         when(mockSecretOps.getAsync(clusterNamespace, KafkaExporterResources.secretName(clusterName))).thenReturn(
-                Future.succeededFuture()
+                StrimziFuture.completedFuture(null)
         );
         when(mockSecretOps.getAsync(clusterNamespace, KafkaResources.clusterCaCertificateSecretName(clusterName))).thenReturn(
-                Future.succeededFuture(new Secret())
+                StrimziFuture.completedFuture(new Secret())
         );
         when(mockSecretOps.getAsync(clusterNamespace, ClusterOperator.secretName(clusterName))).thenReturn(
-                Future.succeededFuture(new Secret())
+                StrimziFuture.completedFuture(new Secret())
         );
         when(mockSecretOps.getAsync(clusterNamespace, CruiseControlResources.secretName(clusterName))).thenReturn(
-                Future.succeededFuture()
+                StrimziFuture.completedFuture(null)
         );
 
         // Mock NetworkPolicy get
@@ -1078,22 +1079,22 @@ public class KafkaAssemblyOperatorTest {
         when(mockPodSetOps.reconcile(any(), eq(clusterNamespace), eq(KafkaResources.zookeeperStatefulSetName(clusterName)), any())).thenAnswer(invocation -> {
             StrimziPodSet sps = invocation.getArgument(3, StrimziPodSet.class);
             zooPodSetRef.set(sps);
-            return Future.succeededFuture(ReconcileResult.patched(sps));
+            return StrimziFuture.completedFuture(ReconcileResult.patched(sps));
         });
-        when(mockPodSetOps.getAsync(eq(clusterNamespace), eq(KafkaResources.zookeeperStatefulSetName(clusterName)))).thenReturn(Future.succeededFuture(zooPodSetRef.get()));
+        when(mockPodSetOps.getAsync(eq(clusterNamespace), eq(KafkaResources.zookeeperStatefulSetName(clusterName)))).thenReturn(StrimziFuture.completedFuture(zooPodSetRef.get()));
 
         AtomicReference<StrimziPodSet> kafkaPodSetRef = new AtomicReference<>();
         kafkaPodSetRef.set(originalKafkaCluster.generatePodSet(originalKafkaCluster.getReplicas(), openShift, null, null, (p) -> Map.of()));
         when(mockPodSetOps.reconcile(any(), eq(clusterNamespace), eq(KafkaResources.kafkaStatefulSetName(clusterName)), any())).thenAnswer(invocation -> {
             StrimziPodSet sps = invocation.getArgument(3, StrimziPodSet.class);
             kafkaPodSetRef.set(sps);
-            return Future.succeededFuture(ReconcileResult.patched(sps));
+            return StrimziFuture.completedFuture(ReconcileResult.patched(sps));
         });
-        when(mockPodSetOps.getAsync(eq(clusterNamespace), eq(KafkaResources.kafkaStatefulSetName(clusterName)))).thenReturn(Future.succeededFuture(kafkaPodSetRef.get()));
+        when(mockPodSetOps.getAsync(eq(clusterNamespace), eq(KafkaResources.kafkaStatefulSetName(clusterName)))).thenReturn(StrimziFuture.completedFuture(kafkaPodSetRef.get()));
 
         // Mock StatefulSet get
-        when(mockStsOps.getAsync(eq(clusterNamespace), eq(KafkaResources.zookeeperStatefulSetName(clusterName)))).thenReturn(Future.succeededFuture());
-        when(mockStsOps.getAsync(eq(clusterNamespace), eq(KafkaResources.kafkaStatefulSetName(clusterName)))).thenReturn(Future.succeededFuture());
+        when(mockStsOps.getAsync(eq(clusterNamespace), eq(KafkaResources.zookeeperStatefulSetName(clusterName)))).thenReturn(StrimziFuture.completedFuture(null));
+        when(mockStsOps.getAsync(eq(clusterNamespace), eq(KafkaResources.kafkaStatefulSetName(clusterName)))).thenReturn(StrimziFuture.completedFuture(null));
 
         // Mock Deployment get
         if (originalEntityOperator != null) {
@@ -1101,13 +1102,13 @@ public class KafkaAssemblyOperatorTest {
                     originalEntityOperator.generateDeployment(true, null, null)
             );
             when(mockDepOps.getAsync(clusterNamespace, KafkaResources.entityOperatorDeploymentName(clusterName))).thenReturn(
-                    Future.succeededFuture(originalEntityOperator.generateDeployment(true, null, null))
+                    StrimziFuture.completedFuture(originalEntityOperator.generateDeployment(true, null, null))
             );
             when(mockDepOps.waitForObserved(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(
-                    Future.succeededFuture()
+                    StrimziFuture.completedFuture(null)
             );
             when(mockDepOps.readiness(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(
-                    Future.succeededFuture()
+                    StrimziFuture.completedFuture(null)
             );
         }
 
@@ -1116,13 +1117,13 @@ public class KafkaAssemblyOperatorTest {
                     originalCruiseControl.generateDeployment(true, null, null)
             );
             when(mockDepOps.getAsync(clusterNamespace, KafkaResources.entityOperatorDeploymentName(clusterName))).thenReturn(
-                    Future.succeededFuture(originalCruiseControl.generateDeployment(true, null, null))
+                    StrimziFuture.completedFuture(originalCruiseControl.generateDeployment(true, null, null))
             );
             when(mockDepOps.waitForObserved(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(
-                    Future.succeededFuture()
+                    StrimziFuture.completedFuture(null)
             );
             when(mockDepOps.readiness(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(
-                    Future.succeededFuture()
+                    StrimziFuture.completedFuture(null)
             );
         }
 
@@ -1131,13 +1132,13 @@ public class KafkaAssemblyOperatorTest {
                     originalKafkaExporter.generateDeployment(true, null, null)
             );
             when(mockDepOps.getAsync(clusterNamespace, KafkaExporterResources.deploymentName(clusterName))).thenReturn(
-                    Future.succeededFuture(originalKafkaExporter.generateDeployment(true, null, null))
+                    StrimziFuture.completedFuture(originalKafkaExporter.generateDeployment(true, null, null))
             );
             when(mockDepOps.waitForObserved(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(
-                    Future.succeededFuture()
+                    StrimziFuture.completedFuture(null)
             );
             when(mockDepOps.readiness(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(
-                    Future.succeededFuture()
+                    StrimziFuture.completedFuture(null)
             );
         }
 
@@ -1145,30 +1146,30 @@ public class KafkaAssemblyOperatorTest {
         Set<String> metricsCms = set();
         doAnswer(invocation -> {
             metricsCms.add(invocation.getArgument(1));
-            return Future.succeededFuture();
+            return StrimziFuture.completedFuture(null);
         }).when(mockCmOps).reconcile(any(), eq(clusterNamespace), any(), any());
 
         Set<String> logCms = set();
         doAnswer(invocation -> {
             logCms.add(invocation.getArgument(1));
-            return Future.succeededFuture();
+            return StrimziFuture.completedFuture(null);
         }).when(mockCmOps).reconcile(any(), eq(clusterNamespace), any(), any());
 
         // Mock Service patch (both service and headless service
         ArgumentCaptor<String> patchedServicesCaptor = ArgumentCaptor.forClass(String.class);
-        when(mockServiceOps.reconcile(any(), eq(clusterNamespace), patchedServicesCaptor.capture(), any())).thenReturn(Future.succeededFuture());
+        when(mockServiceOps.reconcile(any(), eq(clusterNamespace), patchedServicesCaptor.capture(), any())).thenReturn(StrimziFuture.completedFuture(null));
         // Mock Secrets patch
-        when(mockSecretOps.reconcile(any(), eq(clusterNamespace), any(), any())).thenReturn(Future.succeededFuture());
+        when(mockSecretOps.reconcile(any(), eq(clusterNamespace), any(), any())).thenReturn(StrimziFuture.completedFuture(null));
 
         // Mock NetworkPolicy patch
-        when(mockPolicyOps.reconcile(any(), eq(clusterNamespace), any(), any())).thenReturn(Future.succeededFuture());
+        when(mockPolicyOps.reconcile(any(), eq(clusterNamespace), any(), any())).thenReturn(StrimziFuture.completedFuture(null));
 
         // Mock PodDisruptionBudget patch
-        when(mockPdbOps.reconcile(any(), eq(clusterNamespace), any(), any())).thenReturn(Future.succeededFuture());
+        when(mockPdbOps.reconcile(any(), eq(clusterNamespace), any(), any())).thenReturn(StrimziFuture.completedFuture(null));
 
         // Mock Deployment patch
         ArgumentCaptor<String> depCaptor = ArgumentCaptor.forClass(String.class);
-        when(mockDepOps.reconcile(any(), anyString(), depCaptor.capture(), any())).thenReturn(Future.succeededFuture());
+        when(mockDepOps.reconcile(any(), anyString(), depCaptor.capture(), any())).thenReturn(StrimziFuture.completedFuture(null));
 
         KafkaAssemblyOperator ops = new KafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(openShift, kubernetesVersion),
                 certManager,
@@ -1210,14 +1211,14 @@ public class KafkaAssemblyOperatorTest {
         Kafka foo = getKafkaAssembly("foo");
         Kafka bar = getKafkaAssembly("bar");
         when(mockKafkaOps.listAsync(eq(kafkaNamespace), any(Optional.class))).thenReturn(
-            Future.succeededFuture(asList(foo, bar))
+                StrimziFuture.completedFuture(asList(foo, bar))
         );
         // when requested Custom Resource for a specific Kafka cluster
         when(mockKafkaOps.get(eq(kafkaNamespace), eq("foo"))).thenReturn(foo);
         when(mockKafkaOps.get(eq(kafkaNamespace), eq("bar"))).thenReturn(bar);
-        when(mockKafkaOps.getAsync(eq(kafkaNamespace), eq("foo"))).thenReturn(Future.succeededFuture(foo));
-        when(mockKafkaOps.getAsync(eq(kafkaNamespace), eq("bar"))).thenReturn(Future.succeededFuture(bar));
-        when(mockKafkaOps.updateStatusAsync(any(), any(Kafka.class))).thenReturn(Future.succeededFuture());
+        when(mockKafkaOps.getAsync(eq(kafkaNamespace), eq("foo"))).thenReturn(StrimziFuture.completedFuture(foo));
+        when(mockKafkaOps.getAsync(eq(kafkaNamespace), eq("bar"))).thenReturn(StrimziFuture.completedFuture(bar));
+        when(mockKafkaOps.updateStatusAsync(any(), any(Kafka.class))).thenReturn(StrimziFuture.completedFuture(null));
 
         KafkaAssemblyOperator ops = new KafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(openShift, kubernetesVersion),
                 certManager,
@@ -1260,14 +1261,14 @@ public class KafkaAssemblyOperatorTest {
         Kafka bar = getKafkaAssembly("bar");
         bar.getMetadata().setNamespace("namespace2");
         when(mockKafkaOps.listAsync(eq("*"), any(Optional.class))).thenReturn(
-                Future.succeededFuture(asList(foo, bar))
+                StrimziFuture.completedFuture(asList(foo, bar))
         );
         // when requested Custom Resource for a specific Kafka cluster
         when(mockKafkaOps.get(eq("namespace1"), eq("foo"))).thenReturn(foo);
         when(mockKafkaOps.get(eq("namespace2"), eq("bar"))).thenReturn(bar);
-        when(mockKafkaOps.getAsync(eq("namespace1"), eq("foo"))).thenReturn(Future.succeededFuture(foo));
-        when(mockKafkaOps.getAsync(eq("namespace2"), eq("bar"))).thenReturn(Future.succeededFuture(bar));
-        when(mockKafkaOps.updateStatusAsync(any(), any(Kafka.class))).thenReturn(Future.succeededFuture());
+        when(mockKafkaOps.getAsync(eq("namespace1"), eq("foo"))).thenReturn(StrimziFuture.completedFuture(foo));
+        when(mockKafkaOps.getAsync(eq("namespace2"), eq("bar"))).thenReturn(StrimziFuture.completedFuture(bar));
+        when(mockKafkaOps.updateStatusAsync(any(), any(Kafka.class))).thenReturn(StrimziFuture.completedFuture(null));
 
         Checkpoint fooAsync = context.checkpoint();
         Checkpoint barAsync = context.checkpoint();

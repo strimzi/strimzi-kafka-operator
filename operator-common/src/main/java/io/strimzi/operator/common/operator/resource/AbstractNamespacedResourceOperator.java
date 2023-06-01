@@ -19,17 +19,15 @@ import io.fabric8.kubernetes.client.dsl.base.PatchType;
 import io.fabric8.kubernetes.client.informers.SharedIndexInformer;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
+import io.strimzi.operator.common.StrimziFuture;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
-import io.vertx.core.CompositeFuture;
-import io.vertx.core.Future;
-import io.vertx.core.Promise;
-import io.vertx.core.Vertx;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.CompletionStage;
 import java.util.function.BiPredicate;
 import java.util.stream.Collectors;
 
@@ -57,12 +55,11 @@ public abstract class AbstractNamespacedResourceOperator<C extends KubernetesCli
 
     /**
      * Constructor.
-     * @param vertx The vertx instance.
      * @param client The kubernetes client.
      * @param resourceKind The mind of Kubernetes resource (used for logging).
      */
-    public AbstractNamespacedResourceOperator(Vertx vertx, C client, String resourceKind) {
-        super(vertx, client, resourceKind);
+    public AbstractNamespacedResourceOperator(C client, String resourceKind) {
+        super(client, resourceKind);
     }
 
     protected abstract MixedOperation<T, L, R> operation();
@@ -75,7 +72,7 @@ public abstract class AbstractNamespacedResourceOperator<C extends KubernetesCli
      * @param resource The resource to create.
      * @return A future which completes with the outcome.
      */
-    public Future<ReconcileResult<T>> createOrUpdate(Reconciliation reconciliation, T resource) {
+    public StrimziFuture<ReconcileResult<T>> createOrUpdate(Reconciliation reconciliation, T resource) {
         if (resource == null) {
             throw new NullPointerException();
         }
@@ -91,41 +88,35 @@ public abstract class AbstractNamespacedResourceOperator<C extends KubernetesCli
      * @param desired The desired state of the resource.
      * @return A future which completes when the resource has been updated.
      */
-    public Future<ReconcileResult<T>> reconcile(Reconciliation reconciliation, String namespace, String name, T desired) {
+    public StrimziFuture<ReconcileResult<T>> reconcile(Reconciliation reconciliation, String namespace, String name, T desired) {
         if (desired != null && !namespace.equals(desired.getMetadata().getNamespace())) {
-            return Future.failedFuture("Given namespace " + namespace + " incompatible with desired namespace " + desired.getMetadata().getNamespace());
+            return StrimziFuture.failedFuture(new IllegalArgumentException("Given namespace " + namespace + " incompatible with desired namespace " + desired.getMetadata().getNamespace()));
         } else if (desired != null && !name.equals(desired.getMetadata().getName())) {
-            return Future.failedFuture("Given name " + name + " incompatible with desired name " + desired.getMetadata().getName());
+            return StrimziFuture.failedFuture(new IllegalArgumentException("Given name " + name + " incompatible with desired name " + desired.getMetadata().getName()));
         }
 
-        Promise<ReconcileResult<T>> promise = Promise.promise();
-        vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
-            future -> {
-                T current = operation().inNamespace(namespace).withName(name).get();
+        return StrimziFuture
+            .supplyAsync(() -> operation().inNamespace(namespace).withName(name).get())
+            .thenCompose(current -> {
                 if (desired != null) {
                     if (current == null) {
                         LOGGER.debugCr(reconciliation, "{} {}/{} does not exist, creating it", resourceKind, namespace, name);
-                        internalCreate(reconciliation, namespace, name, desired).onComplete(future);
+                        return internalCreate(reconciliation, namespace, name, desired);
                     } else {
                         LOGGER.debugCr(reconciliation, "{} {}/{} already exists, updating it", resourceKind, namespace, name);
-                        internalUpdate(reconciliation, namespace, name, current, desired).onComplete(future);
+                        return internalUpdate(reconciliation, namespace, name, current, desired);
                     }
                 } else {
                     if (current != null) {
                         // Deletion is desired
                         LOGGER.debugCr(reconciliation, "{} {}/{} exist, deleting it", resourceKind, namespace, name);
-                        internalDelete(reconciliation, namespace, name).onComplete(future);
+                        return internalDelete(reconciliation, namespace, name);
                     } else {
                         LOGGER.debugCr(reconciliation, "{} {}/{} does not exist, noop", resourceKind, namespace, name);
-                        future.complete(ReconcileResult.noop(null));
+                        return StrimziFuture.completedFuture(ReconcileResult.noop(null));
                     }
                 }
-
-            },
-            false,
-            promise
-        );
-        return promise.future();
+            });
     }
 
     /**
@@ -142,11 +133,10 @@ public abstract class AbstractNamespacedResourceOperator<C extends KubernetesCli
      *
      * @return  Future which completes when the lists are reconciled
      */
-    public Future<Void> batchReconcile(Reconciliation reconciliation, String namespace, List<T> desired, Labels selector)  {
+    public StrimziFuture<Void> batchReconcile(Reconciliation reconciliation, String namespace, List<T> desired, Labels selector)  {
         return listAsync(namespace, selector)
-                .compose(current -> {
-                    @SuppressWarnings({ "rawtypes" }) // Has to use Raw type because of the CompositeFuture
-                    List<Future> futures = new ArrayList<>(desired.size());
+                .thenCompose(current -> {
+                    List<CompletionStage<?>> futures = new ArrayList<>(desired.size());
                     List<String> currentNames = current.stream().map(ingress -> ingress.getMetadata().getName()).collect(Collectors.toList());
 
                     LOGGER.debugCr(reconciliation, "Reconciling existing {} resources {} against the desired {} resources", resourceKind, currentNames, resourceKind);
@@ -165,9 +155,7 @@ public abstract class AbstractNamespacedResourceOperator<C extends KubernetesCli
                         futures.add(reconcile(reconciliation, namespace, name, null));
                     }
 
-                    return CompositeFuture
-                            .join(futures)
-                            .map((Void) null);
+                    return StrimziFuture.allOf(futures);
                 });
     }
 
@@ -182,7 +170,7 @@ public abstract class AbstractNamespacedResourceOperator<C extends KubernetesCli
      * @return A future which will be completed on the context thread
      *         once the resource has been deleted.
      */
-    protected Future<ReconcileResult<T>> internalDelete(Reconciliation reconciliation, String namespace, String name) {
+    protected StrimziFuture<ReconcileResult<T>> internalDelete(Reconciliation reconciliation, String namespace, String name) {
         return internalDelete(reconciliation, namespace, name, true);
     }
 
@@ -199,10 +187,10 @@ public abstract class AbstractNamespacedResourceOperator<C extends KubernetesCli
      * @return A future which will be completed on the context thread
      *         once the resource has been deleted.
      */
-    protected Future<ReconcileResult<T>> internalDelete(Reconciliation reconciliation, String namespace, String name, boolean cascading) {
+    protected StrimziFuture<ReconcileResult<T>> internalDelete(Reconciliation reconciliation, String namespace, String name, boolean cascading) {
         R resourceOp = operation().inNamespace(namespace).withName(name);
 
-        Future<ReconcileResult<T>> watchForDeleteFuture = resourceSupport.selfClosingWatch(
+        CompletionStage<ReconcileResult<T>> watchForDeleteFuture = resourceSupport.selfClosingWatch(
             reconciliation,
             resourceOp,
             resourceOp,
@@ -225,28 +213,31 @@ public abstract class AbstractNamespacedResourceOperator<C extends KubernetesCli
                 }
             });
 
-        Future<Void> deleteFuture = resourceSupport.deleteAsync(resourceOp.withPropagationPolicy(cascading ? DeletionPropagation.FOREGROUND : DeletionPropagation.ORPHAN).withGracePeriod(-1L));
+        CompletionStage<Void> deleteFuture = resourceSupport.deleteAsync(resourceOp.withPropagationPolicy(cascading ? DeletionPropagation.FOREGROUND : DeletionPropagation.ORPHAN).withGracePeriod(-1L));
 
-        return CompositeFuture.join(watchForDeleteFuture, deleteFuture).map(ReconcileResult.deleted());
+        return StrimziFuture.allOf(
+                watchForDeleteFuture.toCompletableFuture(),
+                deleteFuture.toCompletableFuture())
+            .thenApply(nothing -> ReconcileResult.<T>deleted());
     }
 
     /**
      * Patches the resource with the given namespace and name to match the given desired resource
      * and completes the given future accordingly.
      */
-    protected Future<ReconcileResult<T>> internalUpdate(Reconciliation reconciliation, String namespace, String name, T current, T desired) {
+    protected StrimziFuture<ReconcileResult<T>> internalUpdate(Reconciliation reconciliation, String namespace, String name, T current, T desired) {
         if (needsPatching(reconciliation, name, current, desired))  {
             try {
                 T result = patchOrReplace(namespace, name, desired);
                 LOGGER.debugCr(reconciliation, "{} {} in namespace {} has been patched", resourceKind, name, namespace);
-                return Future.succeededFuture(wasChanged(current, result) ? ReconcileResult.patched(result) : ReconcileResult.noop(result));
+                return StrimziFuture.completedFuture(wasChanged(current, result) ? ReconcileResult.patched(result) : ReconcileResult.noop(result));
             } catch (Exception e) {
                 LOGGER.debugCr(reconciliation, "Caught exception while patching {} {} in namespace {}", resourceKind, name, namespace, e);
-                return Future.failedFuture(e);
+                return StrimziFuture.failedFuture(e);
             }
         } else {
             LOGGER.debugCr(reconciliation, "{} {} in namespace {} did not changed and doesn't need patching", resourceKind, name, namespace);
-            return Future.succeededFuture(ReconcileResult.noop(current));
+            return StrimziFuture.completedFuture(ReconcileResult.noop(current));
         }
     }
 
@@ -268,14 +259,14 @@ public abstract class AbstractNamespacedResourceOperator<C extends KubernetesCli
      * Creates a resource with the given namespace and name with the given desired state
      * and completes the given future accordingly.
      */
-    protected Future<ReconcileResult<T>> internalCreate(Reconciliation reconciliation, String namespace, String name, T desired) {
+    protected StrimziFuture<ReconcileResult<T>> internalCreate(Reconciliation reconciliation, String namespace, String name, T desired) {
         try {
             ReconcileResult<T> result = ReconcileResult.created(operation().inNamespace(namespace).resource(desired).create());
             LOGGER.debugCr(reconciliation, "{} {} in namespace {} has been created", resourceKind, name, namespace);
-            return Future.succeededFuture(result);
+            return StrimziFuture.completedFuture(result);
         } catch (Exception e) {
             LOGGER.debugCr(reconciliation, "Caught exception while creating {} {} in namespace {}", resourceKind, name, namespace, e);
-            return Future.failedFuture(e);
+            return StrimziFuture.failedFuture(e);
         }
     }
 
@@ -298,7 +289,7 @@ public abstract class AbstractNamespacedResourceOperator<C extends KubernetesCli
      * @param name The name.
      * @return A Future for the result.
      */
-    public Future<T> getAsync(String namespace, String name) {
+    public StrimziFuture<T> getAsync(String namespace, String name) {
         if (name == null || name.isEmpty()) {
             throw new IllegalArgumentException(namespace + "/" + resourceKind + " with an empty name cannot be configured. Please provide a name.");
         }
@@ -338,7 +329,7 @@ public abstract class AbstractNamespacedResourceOperator<C extends KubernetesCli
      * @param selector The selector.
      * @return A Future with a list of matching resources.
      */
-    public Future<List<T>> listAsync(String namespace, Labels selector) {
+    public StrimziFuture<List<T>> listAsync(String namespace, Labels selector) {
         return listAsync(applySelector(applyNamespace(namespace), selector));
     }
 
@@ -350,7 +341,7 @@ public abstract class AbstractNamespacedResourceOperator<C extends KubernetesCli
      *
      * @return A Future with a list of matching resources.
      */
-    public Future<List<T>> listAsync(String namespace, Optional<LabelSelector> selector) {
+    public StrimziFuture<List<T>> listAsync(String namespace, Optional<LabelSelector> selector) {
         return listAsync(applySelector(applyNamespace(namespace), selector));
     }
 
@@ -367,7 +358,7 @@ public abstract class AbstractNamespacedResourceOperator<C extends KubernetesCli
      * @return A future that completes when the resource identified by the given {@code namespace} and {@code name}
      * is ready.
      */
-    public Future<Void> waitFor(Reconciliation reconciliation, String namespace, String name, long pollIntervalMs, final long timeoutMs, BiPredicate<String, String> predicate) {
+    public StrimziFuture<Void> waitFor(Reconciliation reconciliation, String namespace, String name, long pollIntervalMs, final long timeoutMs, BiPredicate<String, String> predicate) {
         return waitFor(reconciliation, namespace, name, "ready", pollIntervalMs, timeoutMs, predicate);
     }
 
@@ -385,8 +376,8 @@ public abstract class AbstractNamespacedResourceOperator<C extends KubernetesCli
      * @return A future that completes when the resource identified by the given {@code namespace} and {@code name}
      * is ready.
      */
-    public Future<Void> waitFor(Reconciliation reconciliation, String namespace, String name, String logState, long pollIntervalMs, final long timeoutMs, BiPredicate<String, String> predicate) {
-        return Util.waitFor(reconciliation, vertx,
+    public StrimziFuture<Void> waitFor(Reconciliation reconciliation, String namespace, String name, String logState, long pollIntervalMs, final long timeoutMs, BiPredicate<String, String> predicate) {
+        return Util.waitFor(reconciliation,
             String.format("%s resource %s in namespace %s", resourceKind, name, namespace),
             logState,
             pollIntervalMs,
@@ -404,8 +395,8 @@ public abstract class AbstractNamespacedResourceOperator<C extends KubernetesCli
      *
      * @return                  A Future with True if the deletion succeeded and False when it failed.
      */
-    public Future<Void> deleteAsync(Reconciliation reconciliation, String namespace, String name, boolean cascading) {
-        return internalDelete(reconciliation, namespace, name, cascading).map((Void) null);
+    public StrimziFuture<Void> deleteAsync(Reconciliation reconciliation, String namespace, String name, boolean cascading) {
+        return internalDelete(reconciliation, namespace, name, cascading).<Void>thenApply(ignored -> null);
     }
 
     /**

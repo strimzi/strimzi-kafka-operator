@@ -12,7 +12,6 @@ import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
-import io.vertx.core.Vertx;
 import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
@@ -61,8 +60,8 @@ public class PvcOperatorTest extends AbstractNamespacedResourceOperatorTest<Kube
     }
 
     @Override
-    protected PvcOperator createResourceOperations(Vertx vertx, KubernetesClient mockClient) {
-        return new PvcOperator(vertx, mockClient);
+    protected PvcOperator createResourceOperations(KubernetesClient mockClient) {
+        return new PvcOperator(mockClient);
     }
 
     @Test
@@ -95,7 +94,7 @@ public class PvcOperatorTest extends AbstractNamespacedResourceOperatorTest<Kube
                 .endSpec()
                 .build();
 
-        PvcOperator op = createResourceOperations(vertx, mock(KubernetesClient.class));
+        PvcOperator op = createResourceOperations(mock(KubernetesClient.class));
         op.revertImmutableChanges(current, desired);
 
         assertThat(current.getSpec().getStorageClassName(), is(desired.getSpec().getStorageClassName()));

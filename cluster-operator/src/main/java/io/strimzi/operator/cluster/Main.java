@@ -87,7 +87,7 @@ public class Main {
         MetricsProvider metricsProvider = new MicrometerMetricsProvider();
         KubernetesClient client = new OperatorKubernetesClientBuilder("strimzi-cluster-operator", strimziVersion).build();
 
-        maybeCreateClusterRoles(vertx, config, client)
+        maybeCreateClusterRoles(config, client)
                 .compose(i -> startHealthServer(vertx, metricsProvider))
                 .compose(i -> leaderElection(client, config))
                 .compose(i -> createPlatformFeaturesAvailability(vertx, client))
@@ -250,18 +250,17 @@ public class Main {
     /**
      * If enabled in the configuration, it creates the cluster roles used by the operator
      *
-     * @param vertx             Vertx instance
      * @param config            Cluster Operator configuration
      * @param client            Kubernetes client instance
      *
      * @return  Future which completes when the Cluster Roles are created
      *                  (or - if their creation is not enabled - it just completes without doing anything).
      */
-    /*test*/ static Future<Void> maybeCreateClusterRoles(Vertx vertx, ClusterOperatorConfig config, KubernetesClient client)  {
+    /*test*/ static Future<Void> maybeCreateClusterRoles(ClusterOperatorConfig config, KubernetesClient client)  {
         if (config.isCreateClusterRoles()) {
             @SuppressWarnings({ "rawtypes" })
             List<Future> futures = new ArrayList<>();
-            ClusterRoleOperator cro = new ClusterRoleOperator(vertx, client);
+            ClusterRoleOperator cro = new ClusterRoleOperator(client);
 
             Map<String, String> clusterRoles = new HashMap<>(6);
             clusterRoles.put("strimzi-cluster-operator-namespaced", "020-ClusterRole-strimzi-cluster-operator-role.yaml");

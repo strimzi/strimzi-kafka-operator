@@ -13,6 +13,7 @@ import io.strimzi.operator.cluster.ClusterOperator;
 import io.strimzi.operator.cluster.model.Ca;
 import io.strimzi.operator.common.BackOff;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.StrimziFuture;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.resource.SecretOperator;
 import io.vertx.core.Future;
@@ -245,7 +246,7 @@ public class ZookeeperLeaderFinderTest {
 
         Mockito.reset(mock);
         when(mock.getAsync(eq(NAMESPACE), eq(KafkaResources.clusterCaCertificateSecretName(CLUSTER))))
-            .thenReturn(Future.succeededFuture(
+            .thenReturn(StrimziFuture.completedFuture(
                     new SecretBuilder()
                             .withNewMetadata()
                                 .withName(KafkaResources.clusterCaCertificateSecretName(CLUSTER))
@@ -280,7 +281,7 @@ public class ZookeeperLeaderFinderTest {
         ZookeeperLeaderFinder finder = new ZookeeperLeaderFinder(vertx, this::backoff);
 
         when(mock.getAsync(eq(NAMESPACE), eq(KafkaResources.clusterCaCertificateSecretName(CLUSTER))))
-                .thenReturn(Future.succeededFuture(
+                .thenReturn(StrimziFuture.completedFuture(
                         new SecretBuilder()
                                 .withNewMetadata()
                                 .withName(KafkaResources.clusterCaCertificateSecretName(CLUSTER))

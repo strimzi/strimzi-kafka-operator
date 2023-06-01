@@ -13,8 +13,7 @@ import io.fabric8.openshift.api.model.BuildRequest;
 import io.fabric8.openshift.client.OpenShiftClient;
 import io.fabric8.openshift.client.dsl.BuildConfigResource;
 import io.strimzi.operator.common.Reconciliation;
-import io.vertx.core.Future;
-import io.vertx.core.Vertx;
+import io.strimzi.operator.common.StrimziFuture;
 
 /**
  * Operations for {@code BuildConfig}s.
@@ -22,11 +21,10 @@ import io.vertx.core.Vertx;
 public class BuildConfigOperator extends AbstractNamespacedResourceOperator<OpenShiftClient, BuildConfig, BuildConfigList, BuildConfigResource<BuildConfig, Void, Build>> {
     /**
      * Constructor
-     * @param vertx The Vertx instance
      * @param client The OpenShift client
      */
-    public BuildConfigOperator(Vertx vertx, OpenShiftClient client) {
-        super(vertx, client, "BuildConfig");
+    public BuildConfigOperator(OpenShiftClient client) {
+        super(client, "BuildConfig");
     }
 
     @Override
@@ -35,7 +33,7 @@ public class BuildConfigOperator extends AbstractNamespacedResourceOperator<Open
     }
 
     @Override
-    protected Future<ReconcileResult<BuildConfig>> internalUpdate(Reconciliation reconciliation, String namespace, String name, BuildConfig current, BuildConfig desired) {
+    protected StrimziFuture<ReconcileResult<BuildConfig>> internalUpdate(Reconciliation reconciliation, String namespace, String name, BuildConfig current, BuildConfig desired) {
         desired.getSpec().setTriggers(current.getSpec().getTriggers());
         // Cascading needs to be set to false to make sure the Builds are not deleted during reconciliation
         return super.internalUpdate(reconciliation, namespace, name, current, desired);
@@ -55,11 +53,11 @@ public class BuildConfigOperator extends AbstractNamespacedResourceOperator<Open
      * @return A future which will be completed on the context thread once the resource has been deleted.
      */
     @Override
-    protected Future<ReconcileResult<BuildConfig>> internalDelete(Reconciliation reconciliation, String namespace, String name, boolean cascading) {
+    protected StrimziFuture<ReconcileResult<BuildConfig>> internalDelete(Reconciliation reconciliation, String namespace, String name, boolean cascading) {
         BuildConfigResource<BuildConfig, Void, Build> resourceOp = operation().inNamespace(namespace).withName(name);
 
         return resourceSupport.deleteAsync(resourceOp.withPropagationPolicy(cascading ? DeletionPropagation.FOREGROUND : DeletionPropagation.ORPHAN).withGracePeriod(-1L))
-                .map(ReconcileResult.deleted());
+                .thenApply(nothing -> ReconcileResult.deleted());
     }
 
     /**
@@ -70,13 +68,13 @@ public class BuildConfigOperator extends AbstractNamespacedResourceOperator<Open
      * @param buildRequest  BuildRequest requesting the build
      * @return              The Build which was created
      */
-    public Future<Build> startBuild(String namespace, String name, BuildRequest buildRequest)   {
+    public StrimziFuture<Build> startBuild(String namespace, String name, BuildRequest buildRequest)   {
         return resourceSupport.executeBlocking(
             blockingFuture -> {
                 try {
                     blockingFuture.complete(operation().inNamespace(namespace).withName(name).instantiate(buildRequest));
                 } catch (Throwable t) {
-                    blockingFuture.fail(t);
+                    blockingFuture.completeExceptionally(t);
                 }
             });
     }

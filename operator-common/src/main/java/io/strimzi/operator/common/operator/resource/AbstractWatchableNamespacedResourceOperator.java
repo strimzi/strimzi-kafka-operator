@@ -4,6 +4,8 @@
  */
 package io.strimzi.operator.common.operator.resource;
 
+import java.util.Optional;
+
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.api.model.LabelSelector;
@@ -12,9 +14,6 @@ import io.fabric8.kubernetes.client.Watch;
 import io.fabric8.kubernetes.client.Watcher;
 import io.fabric8.kubernetes.client.dsl.FilterWatchListDeletable;
 import io.fabric8.kubernetes.client.dsl.Resource;
-import io.vertx.core.Vertx;
-
-import java.util.Optional;
 
 /**
  * Abstract class for resources which can be watched.
@@ -33,12 +32,11 @@ public abstract class AbstractWatchableNamespacedResourceOperator<
     /**
      * Constructor.
      *
-     * @param vertx        The vertx instance.
      * @param client       The kubernetes client.
      * @param resourceKind The mind of Kubernetes resource (used for logging).
      */
-    public AbstractWatchableNamespacedResourceOperator(Vertx vertx, C client, String resourceKind) {
-        super(vertx, client, resourceKind);
+    public AbstractWatchableNamespacedResourceOperator(C client, String resourceKind) {
+        super(client, resourceKind);
     }
 
     protected Watch watchInAnyNamespace(Watcher<T> watcher) {

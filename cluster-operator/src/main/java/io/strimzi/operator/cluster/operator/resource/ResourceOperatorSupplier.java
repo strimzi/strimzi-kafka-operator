@@ -77,7 +77,7 @@ public class ResourceOperatorSupplier {
 
     /**
      * StatefulSet operator
-     */    
+     */
     public final StatefulSetOperator stsOperations;
 
     /**
@@ -232,8 +232,7 @@ public class ResourceOperatorSupplier {
      * @param operatorName          Name of this operator instance
      */
     public ResourceOperatorSupplier(Vertx vertx, KubernetesClient client, MetricsProvider metricsProvider, PlatformFeaturesAvailability pfa, long operationTimeoutMs, String operatorName) {
-        this(vertx,
-                client,
+        this(client,
                 new ZookeeperLeaderFinder(vertx,
                         // Retry up to 3 times (4 attempts), with overall max delay of 35000ms
                         () -> new BackOff(5_000, 2, 4)),
@@ -266,8 +265,7 @@ public class ResourceOperatorSupplier {
                                     MetricsProvider metricsProvider,
                                     PlatformFeaturesAvailability pfa,
                                     long operationTimeoutMs) {
-        this(vertx,
-                client,
+        this(client,
                 zlf,
                 adminClientProvider,
                 zkScalerProvider,
@@ -278,8 +276,7 @@ public class ResourceOperatorSupplier {
         );
     }
 
-    private ResourceOperatorSupplier(Vertx vertx,
-                                    KubernetesClient client,
+    private ResourceOperatorSupplier(KubernetesClient client,
                                     ZookeeperLeaderFinder zlf,
                                     AdminClientProvider adminClientProvider,
                                     ZookeeperScalerProvider zkScalerProvider,
@@ -287,34 +284,34 @@ public class ResourceOperatorSupplier {
                                     PlatformFeaturesAvailability pfa,
                                     long operationTimeoutMs,
                                     KubernetesRestartEventPublisher restartEventPublisher) {
-        this(new ServiceOperator(vertx, client),
-                pfa.hasRoutes() ? new RouteOperator(vertx, client.adapt(OpenShiftClient.class)) : null,
-                pfa.hasImages() ? new ImageStreamOperator(vertx, client.adapt(OpenShiftClient.class)) : null,
-                new StatefulSetOperator(vertx, client, operationTimeoutMs),
-                new ConfigMapOperator(vertx, client),
-                new SecretOperator(vertx, client),
-                new PvcOperator(vertx, client),
-                new DeploymentOperator(vertx, client),
-                new ServiceAccountOperator(vertx, client),
-                new RoleBindingOperator(vertx, client),
-                new RoleOperator(vertx, client),
-                new ClusterRoleBindingOperator(vertx, client),
-                new NetworkPolicyOperator(vertx, client),
-                new PodDisruptionBudgetOperator(vertx, client),
-                new PodOperator(vertx, client),
-                new IngressOperator(vertx, client),
-                pfa.hasBuilds() ? new BuildConfigOperator(vertx, client.adapt(OpenShiftClient.class)) : null,
-                pfa.hasBuilds() ? new BuildOperator(vertx, client.adapt(OpenShiftClient.class)) : null,
-                new CrdOperator<>(vertx, client, Kafka.class, KafkaList.class, Kafka.RESOURCE_KIND),
-                new CrdOperator<>(vertx, client, KafkaConnect.class, KafkaConnectList.class, KafkaConnect.RESOURCE_KIND),
-                new CrdOperator<>(vertx, client, KafkaMirrorMaker.class, KafkaMirrorMakerList.class, KafkaMirrorMaker.RESOURCE_KIND),
-                new CrdOperator<>(vertx, client, KafkaBridge.class, KafkaBridgeList.class, KafkaBridge.RESOURCE_KIND),
-                new CrdOperator<>(vertx, client, KafkaConnector.class, KafkaConnectorList.class, KafkaConnector.RESOURCE_KIND),
-                new CrdOperator<>(vertx, client, KafkaMirrorMaker2.class, KafkaMirrorMaker2List.class, KafkaMirrorMaker2.RESOURCE_KIND),
-                new CrdOperator<>(vertx, client, KafkaRebalance.class, KafkaRebalanceList.class, KafkaRebalance.RESOURCE_KIND),
-                new StrimziPodSetOperator(vertx, client, operationTimeoutMs),
-                new StorageClassOperator(vertx, client),
-                new NodeOperator(vertx, client),
+        this(new ServiceOperator(client),
+                pfa.hasRoutes() ? new RouteOperator(client.adapt(OpenShiftClient.class)) : null,
+                pfa.hasImages() ? new ImageStreamOperator(client.adapt(OpenShiftClient.class)) : null,
+                new StatefulSetOperator(client, operationTimeoutMs),
+                new ConfigMapOperator(client),
+                new SecretOperator(client),
+                new PvcOperator(client),
+                new DeploymentOperator(client),
+                new ServiceAccountOperator(client),
+                new RoleBindingOperator(client),
+                new RoleOperator(client),
+                new ClusterRoleBindingOperator(client),
+                new NetworkPolicyOperator(client),
+                new PodDisruptionBudgetOperator(client),
+                new PodOperator(client),
+                new IngressOperator(client),
+                pfa.hasBuilds() ? new BuildConfigOperator(client.adapt(OpenShiftClient.class)) : null,
+                pfa.hasBuilds() ? new BuildOperator(client.adapt(OpenShiftClient.class)) : null,
+                new CrdOperator<>(client, Kafka.class, KafkaList.class, Kafka.RESOURCE_KIND),
+                new CrdOperator<>(client, KafkaConnect.class, KafkaConnectList.class, KafkaConnect.RESOURCE_KIND),
+                new CrdOperator<>(client, KafkaMirrorMaker.class, KafkaMirrorMakerList.class, KafkaMirrorMaker.RESOURCE_KIND),
+                new CrdOperator<>(client, KafkaBridge.class, KafkaBridgeList.class, KafkaBridge.RESOURCE_KIND),
+                new CrdOperator<>(client, KafkaConnector.class, KafkaConnectorList.class, KafkaConnector.RESOURCE_KIND),
+                new CrdOperator<>(client, KafkaMirrorMaker2.class, KafkaMirrorMaker2List.class, KafkaMirrorMaker2.RESOURCE_KIND),
+                new CrdOperator<>(client, KafkaRebalance.class, KafkaRebalanceList.class, KafkaRebalance.RESOURCE_KIND),
+                new StrimziPodSetOperator(client, operationTimeoutMs),
+                new StorageClassOperator(client),
+                new NodeOperator(client),
                 zkScalerProvider,
                 metricsProvider,
                 adminClientProvider,

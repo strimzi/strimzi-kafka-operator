@@ -10,7 +10,6 @@ import io.fabric8.openshift.api.model.ImageStream;
 import io.fabric8.openshift.api.model.ImageStreamBuilder;
 import io.fabric8.openshift.api.model.ImageStreamList;
 import io.fabric8.openshift.client.OpenShiftClient;
-import io.vertx.core.Vertx;
 
 import static org.mockito.Mockito.when;
 
@@ -53,8 +52,8 @@ public class ImageStreamOperatorTest extends AbstractNamespacedResourceOperatorT
     }
 
     @Override
-    protected AbstractNamespacedResourceOperator<OpenShiftClient, ImageStream, ImageStreamList, Resource<ImageStream>> createResourceOperations(Vertx vertx, OpenShiftClient mockClient) {
-        return new ImageStreamOperator(vertx, mockClient);
+    protected AbstractNamespacedResourceOperator<OpenShiftClient, ImageStream, ImageStreamList, Resource<ImageStream>> createResourceOperations(OpenShiftClient mockClient) {
+        return new ImageStreamOperator(mockClient);
     }
 
 }

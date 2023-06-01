@@ -12,9 +12,8 @@ import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.RollableScalableResource;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.StrimziFuture;
 import io.strimzi.operator.common.model.Labels;
-import io.vertx.core.Future;
-import io.vertx.core.Vertx;
 
 /**
  * Operations for {@code Deployment}s.
@@ -26,22 +25,20 @@ public class DeploymentOperator extends AbstractScalableNamespacedResourceOperat
     /**
      * Constructor
      *
-     * @param vertx The Vertx instance
      * @param client The Kubernetes client
      */
-    public DeploymentOperator(Vertx vertx, KubernetesClient client) {
-        this(vertx, client, new PodOperator(vertx, client));
+    public DeploymentOperator(KubernetesClient client) {
+        this(client, new PodOperator(client));
     }
 
     /**
      * Constructor
      *
-     * @param vertx             Vert.x instance
      * @param client            Kubernetes client
      * @param podOperations     Pod Operator for managing pods
      */
-    public DeploymentOperator(Vertx vertx, KubernetesClient client, PodOperator podOperations) {
-        super(vertx, client, "Deployment");
+    public DeploymentOperator(KubernetesClient client, PodOperator podOperations) {
+        super(client, "Deployment");
         this.podOperations = podOperations;
     }
 
@@ -70,10 +67,10 @@ public class DeploymentOperator extends AbstractScalableNamespacedResourceOperat
      * @param operationTimeoutMs The timeout
      * @return A future which completes when all the pods in the deployment have been restarted.
      */
-    public Future<Void> rollingUpdate(Reconciliation reconciliation, String namespace, String name, long operationTimeoutMs) {
+    public StrimziFuture<Void> rollingUpdate(Reconciliation reconciliation, String namespace, String name, long operationTimeoutMs) {
         return getAsync(namespace, name)
-                .compose(deployment -> deletePod(reconciliation, namespace, name))
-                .compose(ignored -> readiness(reconciliation, namespace, name, 1_000, operationTimeoutMs));
+                .thenCompose(deployment -> deletePod(reconciliation, namespace, name))
+                .thenCompose(ignored -> readiness(reconciliation, namespace, name, 1_000, operationTimeoutMs));
     }
 
     /**
@@ -83,14 +80,14 @@ public class DeploymentOperator extends AbstractScalableNamespacedResourceOperat
      * @param name The name of the pod.
      * @return A Future which will complete once all the pods has been deleted.
      */
-    public Future<ReconcileResult<Pod>> deletePod(Reconciliation reconciliation, String namespace, String name) {
+    public StrimziFuture<ReconcileResult<Pod>> deletePod(Reconciliation reconciliation, String namespace, String name) {
         Labels labels = Labels.EMPTY.withStrimziName(name);
         String podName = podOperations.list(namespace, labels).get(0).getMetadata().getName();
         return podOperations.reconcile(reconciliation, namespace, podName, null);
     }
 
     @Override
-    protected Future<ReconcileResult<Deployment>> internalUpdate(Reconciliation reconciliation, String namespace, String name, Deployment current, Deployment desired) {
+    protected StrimziFuture<ReconcileResult<Deployment>> internalUpdate(Reconciliation reconciliation, String namespace, String name, Deployment current, Deployment desired) {
         String k8sRev = Annotations.annotations(current).get(Annotations.ANNO_DEP_KUBE_IO_REVISION);
         Annotations.annotations(desired).put(Annotations.ANNO_DEP_KUBE_IO_REVISION, k8sRev);
         return super.internalUpdate(reconciliation, namespace, name, current, desired);
@@ -108,7 +105,7 @@ public class DeploymentOperator extends AbstractScalableNamespacedResourceOperat
      * @return  A future which completes when the observed generation of the deployment matches the
      * generation sequence number of the desired state.
      */
-    public Future<Void> waitForObserved(Reconciliation reconciliation, String namespace, String name, long pollIntervalMs, long timeoutMs) {
+    public StrimziFuture<Void> waitForObserved(Reconciliation reconciliation, String namespace, String name, long pollIntervalMs, long timeoutMs) {
         return waitFor(reconciliation, namespace, name, "observed", pollIntervalMs, timeoutMs, this::isObserved);
     }
 

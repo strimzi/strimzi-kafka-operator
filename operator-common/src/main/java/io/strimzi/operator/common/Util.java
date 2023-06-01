@@ -22,9 +22,10 @@ import io.strimzi.operator.common.operator.resource.SecretOperator;
 import io.strimzi.operator.common.operator.resource.TimeoutException;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
-import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
+import io.vertx.core.impl.NoStackTraceThrowable;
+
 import org.apache.kafka.common.KafkaFuture;
 import org.apache.kafka.common.config.ConfigResource;
 import org.quartz.CronExpression;
@@ -58,6 +59,10 @@ import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.TimeZone;
 import java.util.TreeMap;
+import java.util.concurrent.CompletionException;
+import java.util.concurrent.CompletionStage;
+import java.util.concurrent.TimeUnit;
+import java.util.function.BiConsumer;
 import java.util.function.BooleanSupplier;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
@@ -100,10 +105,59 @@ public class Util {
     }
 
     /**
+     * Converts a standard Java {@link CompletionStage} to a Vert.x {@link Future}.
+     *
+     * @param <T>   type of the asynchronous result
+     * @param stage {@link CompletionStage} to convert
+     * @return a Vert.x {@link Future} with the result or error of the
+     *         {@link CompletionStage}
+     */
+    public static <T> Future<T> toFuture(CompletionStage<T> stage) {
+        Promise<T> promise = Promise.promise();
+        stage.whenComplete(unwrap((value, error) -> {
+            if (error != null) {
+                promise.fail(error);
+            } else {
+                promise.complete(value);
+            }
+        }));
+        return promise.future();
+    }
+
+    /**
+     * Wrap the given action with a BiConsumer that {@link #unwrap(Throwable)
+     * unwrap}s the error, if any. This method is meant to wrap the action typically
+     * passed to {@link CompletionStage#whenComplete(BiConsumer)}.
+     *
+     * @param <T>    type of the asynchronous result
+     * @param action action to be wrapped, expecting the cause of any
+     *               {@link CompletionException} as its second argument
+     * @return a BiConsumer to delegate to the provided action
+     */
+    public static <T> BiConsumer<T, Throwable> unwrap(BiConsumer<T, Throwable> action) {
+        return (result, error) -> action.accept(result, unwrap(error));
+    }
+
+    /**
+     * Returns the cause when the given Throwable is a {@link CompletionException}.
+     * Otherwise the error is returned unchanged.
+     *
+     * @param error any Throwable
+     * @return the cause when error is a {@link CompletionException}, else the same
+     *         Throwable
+     */
+    public static Throwable unwrap(Throwable error) {
+        if (error instanceof CompletionException wrapped) {
+            return wrapped.getCause();
+        }
+        return error;
+    }
+
+    /**
      * Invoke the given {@code completed} supplier on a pooled thread approximately every {@code pollIntervalMs}
      * milliseconds until it returns true or {@code timeoutMs} milliseconds have elapsed.
      * @param reconciliation The reconciliation
-     * @param vertx The vertx instance.
+     * @param vertx The vertx instance (not used).
      * @param logContext A string used for context in logging.
      * @param logState The state we are waiting for use in log messages
      * @param pollIntervalMs The poll interval in milliseconds.
@@ -119,7 +173,7 @@ public class Util {
      * Invoke the given {@code completed} supplier on a pooled thread approximately every {@code pollIntervalMs}
      * milliseconds until it returns true or {@code timeoutMs} milliseconds have elapsed.
      * @param reconciliation The reconciliation
-     * @param vertx The vertx instance.
+     * @param vertx The vertx instance (not used).
      * @param logContext A string used for context in logging.
      * @param logState The state we are waiting for use in log messages
      * @param pollIntervalMs The poll interval in milliseconds.
@@ -131,55 +185,86 @@ public class Util {
      */
     public static Future<Void> waitFor(Reconciliation reconciliation, Vertx vertx, String logContext, String logState, long pollIntervalMs, long timeoutMs, BooleanSupplier completed,
                                        Predicate<Throwable> failOnError) {
-        Promise<Void> promise = Promise.promise();
+        return waitFor(reconciliation, logContext, logState, pollIntervalMs, timeoutMs, completed, failOnError);
+    }
+
+    /**
+     * Invoke the given {@code completed} supplier on a pooled thread approximately every {@code pollIntervalMs}
+     * milliseconds until it returns true or {@code timeoutMs} milliseconds have elapsed.
+     * @param reconciliation The reconciliation
+     * @param logContext A string used for context in logging.
+     * @param logState The state we are waiting for use in log messages
+     * @param pollIntervalMs The poll interval in milliseconds.
+     * @param timeoutMs The timeout, in milliseconds.
+     * @param completed Determines when the wait is complete by returning true.
+     * @return A future that completes when the given {@code completed} indicates readiness.
+     */
+    public static StrimziFuture<Void> waitFor(Reconciliation reconciliation, String logContext, String logState, long pollIntervalMs, long timeoutMs, BooleanSupplier completed) {
+        return waitFor(reconciliation, logContext, logState, pollIntervalMs, timeoutMs, completed, error -> false);
+    }
+
+    /**
+     * Invoke the given {@code completed} supplier on a pooled thread approximately every {@code pollIntervalMs}
+     * milliseconds until it returns true or {@code timeoutMs} milliseconds have elapsed.
+     * @param reconciliation The reconciliation
+     * @param logContext A string used for context in logging.
+     * @param logState The state we are waiting for use in log messages
+     * @param pollIntervalMs The poll interval in milliseconds.
+     * @param timeoutMs The timeout, in milliseconds.
+     * @param completed Determines when the wait is complete by returning true.
+     * @param failOnError Determine whether a given error thrown by {@code completed},
+     *                    should result in the immediate completion of the returned Future.
+     * @return A future that completes when the given {@code completed} indicates readiness.
+     */
+    public static StrimziFuture<Void> waitFor(Reconciliation reconciliation, String logContext, String logState, long pollIntervalMs, long timeoutMs, BooleanSupplier completed,
+                Predicate<Throwable> failOnError) {
+
+        StrimziFuture<Void> promise = new StrimziFuture<>();
         LOGGER.debugCr(reconciliation, "Waiting for {} to get {}", logContext, logState);
         long deadline = System.currentTimeMillis() + timeoutMs;
-        Handler<Long> handler = new Handler<>() {
+
+        Runnable task = new Runnable() {
             @Override
-            public void handle(Long timerId) {
-                vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
-                    future -> {
-                        try {
-                            if (completed.getAsBoolean())   {
-                                future.complete();
-                            } else {
-                                LOGGER.traceCr(reconciliation, "{} is not {}", logContext, logState);
-                                future.fail("Not " + logState + " yet");
-                            }
-                        } catch (Throwable e) {
-                            LOGGER.warnCr(reconciliation, "Caught exception while waiting for {} to get {}", logContext, logState, e);
-                            future.fail(e);
-                        }
-                    },
-                    true,
-                    res -> {
-                        if (res.succeeded()) {
-                            LOGGER.debugCr(reconciliation, "{} is {}", logContext, logState);
-                            promise.complete();
-                        } else {
-                            if (failOnError.test(res.cause())) {
-                                promise.fail(res.cause());
-                            } else {
-                                long timeLeft = deadline - System.currentTimeMillis();
-                                if (timeLeft <= 0) {
-                                    String exceptionMessage = String.format("Exceeded timeout of %dms while waiting for %s to be %s", timeoutMs, logContext, logState);
-                                    LOGGER.errorCr(reconciliation, exceptionMessage);
-                                    promise.fail(new TimeoutException(exceptionMessage));
-                                } else {
-                                    // Schedule ourselves to run again
-                                    vertx.setTimer(Math.min(pollIntervalMs, timeLeft), this);
-                                }
-                            }
-                        }
+            public void run() {
+                Throwable failure = null;
+
+                try {
+                    if (!completed.getAsBoolean()) {
+                        LOGGER.traceCr(reconciliation, "{} is not {}", logContext, logState);
+                        failure = new NoStackTraceThrowable("Not " + logState + " yet");
                     }
-                );
+                } catch (Throwable e) {
+                    LOGGER.warnCr(reconciliation, "Caught exception while waiting for {} to get {}", logContext, logState, e);
+                    failure = e;
+                }
+
+                if (failure == null) {
+                    LOGGER.debugCr(reconciliation, "{} is {}", logContext, logState);
+                    promise.complete(null);
+                } else if (failOnError.test(failure)) {
+                    promise.completeExceptionally(failure);
+                } else {
+                    long timeLeft = deadline - System.currentTimeMillis();
+
+                    if (timeLeft <= 0) {
+                        String exceptionMessage = String.format(
+                                "Exceeded timeout of %dms while waiting for %s to be %s", timeoutMs, logContext,
+                                logState);
+                        LOGGER.errorCr(reconciliation, exceptionMessage);
+                        promise.completeExceptionally(new TimeoutException(exceptionMessage));
+                    } else {
+                        // Schedule ourselves to run again
+                        StrimziFuture.delayedExecutor(Math.min(pollIntervalMs, timeLeft), TimeUnit.MILLISECONDS)
+                            .execute(this);
+                    }
+                }
             }
         };
 
         // Call the handler ourselves the first time
-        handler.handle(null);
+        task.run();
 
-        return promise.future();
+        return promise;
     }
 
     /**

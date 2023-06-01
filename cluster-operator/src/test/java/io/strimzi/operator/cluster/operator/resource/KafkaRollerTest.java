@@ -17,6 +17,7 @@ import io.strimzi.operator.common.AdminClientProvider;
 import io.strimzi.operator.common.BackOff;
 import io.strimzi.operator.common.DefaultAdminClientProvider;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.StrimziFuture;
 import io.strimzi.operator.common.operator.resource.PodOperator;
 import io.strimzi.operator.common.operator.resource.TimeoutException;
 import io.vertx.core.Future;
@@ -48,13 +49,15 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import static io.vertx.core.Future.failedFuture;
 import static io.vertx.core.Future.succeededFuture;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
@@ -109,9 +112,16 @@ public class KafkaRollerTest {
         return podId -> null;
     }
 
+    private static CompletionStage<Integer> completionStage(int podId, int failValue) {
+        if (podId == failValue) {
+            return StrimziFuture.failedFuture(new TimeoutException("Timeout"));
+        }
+        return StrimziFuture.completedFuture(podId);
+    }
+
     @Test
     public void testRollWithNoController(VertxTestContext testContext) {
-        PodOperator podOps = mockPodOps(podId -> succeededFuture());
+        PodOperator podOps = mockPodOps(StrimziFuture::completedFuture);
         TestingKafkaRoller kafkaRoller = rollerWithControllers(podOps, -1);
         doSuccessfulRollingRestart(testContext, kafkaRoller,
                 asList(0, 1, 2, 3, 4),
@@ -120,7 +130,7 @@ public class KafkaRollerTest {
 
     @Test
     public void testRollTcpProbe(VertxTestContext testContext) {
-        PodOperator podOps = mockPodOps(podId -> succeededFuture());
+        PodOperator podOps = mockPodOps(StrimziFuture::completedFuture);
         AdminClientProvider mock = givenControllerFutureFailsWithTimeout();
         TestingKafkaRoller kafkaRoller = new TestingKafkaRoller(null, null, addPodNames(KafkaRollerTest.REPLICAS), podOps,
                 noException(), null, noException(), noException(), noException(),
@@ -155,7 +165,7 @@ public class KafkaRollerTest {
 
     @Test
     public void testRollWithPod2AsController(VertxTestContext testContext) {
-        PodOperator podOps = mockPodOps(podId -> succeededFuture());
+        PodOperator podOps = mockPodOps(StrimziFuture::completedFuture);
         TestingKafkaRoller kafkaRoller = rollerWithControllers(podOps, 2);
         doSuccessfulRollingRestart(testContext, kafkaRoller,
                 asList(0, 1, 2, 3, 4),
@@ -164,7 +174,7 @@ public class KafkaRollerTest {
 
     @Test
     public void tesRollWithtAControllerChange(VertxTestContext testContext) {
-        PodOperator podOps = mockPodOps(podId -> succeededFuture());
+        PodOperator podOps = mockPodOps(StrimziFuture::completedFuture);
         TestingKafkaRoller kafkaRoller = rollerWithControllers(podOps, 0, 1);
         doSuccessfulRollingRestart(testContext, kafkaRoller,
                 asList(0, 1, 2, 3, 4),
@@ -173,9 +183,7 @@ public class KafkaRollerTest {
 
     @Test
     public void pod0NotReadyAfterRolling(VertxTestContext testContext) throws InterruptedException {
-        PodOperator podOps = mockPodOps(podId ->
-            podId == 0 ? failedFuture(new TimeoutException("Timeout")) : succeededFuture()
-        );
+        PodOperator podOps = mockPodOps(podId -> completionStage(podId, 0));
         TestingKafkaRoller kafkaRoller = rollerWithControllers(podOps, 2);
         // What does/did the ZK algo do?
         doFailingRollingRestart(testContext, kafkaRoller,
@@ -187,9 +195,7 @@ public class KafkaRollerTest {
 
     @Test
     public void pod1NotReadyAfterRolling(VertxTestContext testContext) throws InterruptedException {
-        PodOperator podOps = mockPodOps(podId ->
-                podId == 1 ? failedFuture(new TimeoutException("Timeout")) : succeededFuture()
-        );
+        PodOperator podOps = mockPodOps(podId -> completionStage(podId, 1));
         TestingKafkaRoller kafkaRoller = rollerWithControllers(podOps, 2);
         // On the first reconciliation we expect it to abort when it gets to pod 1
         doFailingRollingRestart(testContext, kafkaRoller,
@@ -207,9 +213,7 @@ public class KafkaRollerTest {
 
     @Test
     public void pod3NotReadyAfterRolling(VertxTestContext testContext) throws InterruptedException {
-        PodOperator podOps = mockPodOps(podId ->
-                podId == 3 ? failedFuture(new TimeoutException("Timeout")) : succeededFuture()
-        );
+        PodOperator podOps = mockPodOps(podId -> completionStage(podId, 3));
         TestingKafkaRoller kafkaRoller = rollerWithControllers(podOps, 2);
         // On the first reconciliation we expect it to abort when it gets to pod 3 (but not 2, which is controller)
         doFailingRollingRestart(testContext, kafkaRoller,
@@ -227,9 +231,7 @@ public class KafkaRollerTest {
 
     @Test
     public void controllerNotReadyAfterRolling(VertxTestContext testContext) throws InterruptedException {
-        PodOperator podOps = mockPodOps(podId ->
-                podId == 2 ? failedFuture(new TimeoutException("Timeout")) : succeededFuture()
-        );
+        PodOperator podOps = mockPodOps(podId -> completionStage(podId, 2));
         TestingKafkaRoller kafkaRoller = rollerWithControllers(podOps, 2);
         // On the first reconciliation we expect it to fail when rolling the controller (i.e. as rolling all the rest)
         doFailingRollingRestart(testContext, kafkaRoller,
@@ -268,7 +270,7 @@ public class KafkaRollerTest {
 
     @Test
     public void testRollWithDisconnectedPodNames(VertxTestContext testContext) {
-        PodOperator podOps = mockPodOps(podId -> succeededFuture());
+        PodOperator podOps = mockPodOps(StrimziFuture::completedFuture);
         TestingKafkaRoller kafkaRoller = new TestingKafkaRoller(null, null, addDisconnectedPodNames(REPLICAS), podOps,
                 bootstrapBrokers -> bootstrapBrokers != null && bootstrapBrokers.stream().map(node -> node.nodeId()).toList().equals(singletonList(1)) ? new RuntimeException("Test Exception") : null,
                 null, noException(), noException(), noException(),
@@ -284,7 +286,7 @@ public class KafkaRollerTest {
 
     @Test
     public void testRollHandlesErrorWhenOpeningAdminClient(VertxTestContext testContext) {
-        PodOperator podOps = mockPodOps(podId -> succeededFuture());
+        PodOperator podOps = mockPodOps(StrimziFuture::completedFuture);
         TestingKafkaRoller kafkaRoller = new TestingKafkaRoller(null, null, addPodNames(REPLICAS), podOps,
             bootstrapBrokers -> bootstrapBrokers != null && bootstrapBrokers.stream().map(node -> node.nodeId()).toList().equals(singletonList(1)) ? new RuntimeException("Test Exception") : null,
             null, noException(), noException(), noException(),
@@ -301,7 +303,7 @@ public class KafkaRollerTest {
     public void testRollHandlesErrorWhenGettingControllerFromNonController(VertxTestContext testContext) {
         int controller = 2;
         int nonController = 1;
-        PodOperator podOps = mockPodOps(podId -> succeededFuture());
+        PodOperator podOps = mockPodOps(StrimziFuture::completedFuture);
         TestingKafkaRoller kafkaRoller = new TestingKafkaRoller(null, null, addPodNames(REPLICAS), podOps,
                 noException(), null,
             podId -> podId == nonController ? new RuntimeException("Test Exception") : null, noException(), noException(),
@@ -317,7 +319,7 @@ public class KafkaRollerTest {
     @Test
     public void testRollHandlesErrorWhenGettingControllerFromController(VertxTestContext testContext) {
         int controller = 2;
-        PodOperator podOps = mockPodOps(podId -> succeededFuture());
+        PodOperator podOps = mockPodOps(StrimziFuture::completedFuture);
         TestingKafkaRoller kafkaRoller = new TestingKafkaRoller(null, null, addPodNames(REPLICAS), podOps,
             noException(), null,
             podId -> podId == controller ? new RuntimeException("Test Exception") : null, noException(), noException(),
@@ -332,7 +334,7 @@ public class KafkaRollerTest {
 
     @Test
     public void testRollHandlesErrorWhenClosingAdminClient(VertxTestContext testContext) {
-        PodOperator podOps = mockPodOps(podId -> succeededFuture());
+        PodOperator podOps = mockPodOps(StrimziFuture::completedFuture);
         TestingKafkaRoller kafkaRoller = new TestingKafkaRoller(null, null, addPodNames(REPLICAS), podOps,
             noException(),
             new RuntimeException("Test Exception"), noException(), noException(), noException(),
@@ -347,7 +349,7 @@ public class KafkaRollerTest {
 
     @Test
     public void testNonControllerNotInitiallyRollable(VertxTestContext testContext) {
-        PodOperator podOps = mockPodOps(podId -> succeededFuture());
+        PodOperator podOps = mockPodOps(StrimziFuture::completedFuture);
         AtomicInteger count = new AtomicInteger(3);
         TestingKafkaRoller kafkaRoller = new TestingKafkaRoller(null, null, addPodNames(REPLICAS), podOps,
                 noException(), null, noException(), noException(), noException(),
@@ -362,7 +364,7 @@ public class KafkaRollerTest {
 
     @Test
     public void testControllerNotInitiallyRollable(VertxTestContext testContext) {
-        PodOperator podOps = mockPodOps(podId -> succeededFuture());
+        PodOperator podOps = mockPodOps(StrimziFuture::completedFuture);
         AtomicInteger count = new AtomicInteger(2);
         TestingKafkaRoller kafkaRoller = new TestingKafkaRoller(null, null, addPodNames(REPLICAS), podOps,
                 noException(), null, noException(), noException(), noException(),
@@ -383,7 +385,7 @@ public class KafkaRollerTest {
 
     @Test
     public void testNonControllerNeverRollable(VertxTestContext testContext) throws InterruptedException {
-        PodOperator podOps = mockPodOps(podId -> succeededFuture());
+        PodOperator podOps = mockPodOps(StrimziFuture::completedFuture);
         TestingKafkaRoller kafkaRoller = new TestingKafkaRoller(null, null, addPodNames(REPLICAS), podOps,
                 noException(), null, noException(), noException(), noException(),
             brokerId ->
@@ -410,7 +412,7 @@ public class KafkaRollerTest {
 
     @Test
     public void testControllerNeverRollable(VertxTestContext testContext) throws InterruptedException {
-        PodOperator podOps = mockPodOps(podId -> succeededFuture());
+        PodOperator podOps = mockPodOps(StrimziFuture::completedFuture);
         TestingKafkaRoller kafkaRoller = new TestingKafkaRoller(null, null, addPodNames(REPLICAS),
                 podOps,
                 noException(), null, noException(), noException(), noException(),
@@ -438,7 +440,7 @@ public class KafkaRollerTest {
 
     @Test
     public void testRollHandlesErrorWhenGettingConfigFromNonController(VertxTestContext testContext) {
-        PodOperator podOps = mockPodOps(podId -> succeededFuture());
+        PodOperator podOps = mockPodOps(StrimziFuture::completedFuture);
         TestingKafkaRoller kafkaRoller = new TestingKafkaRoller(null, null, addPodNames(REPLICAS), podOps,
                 noException(), null,
                 noException(), noException(), podId -> podId == 1 ? new KafkaRoller.ForceableProblem("could not get config exception") : null,
@@ -452,7 +454,7 @@ public class KafkaRollerTest {
     @Test
     public void testRollHandlesErrorWhenGettingConfigFromController(VertxTestContext testContext) {
         int controller = 2;
-        PodOperator podOps = mockPodOps(podId -> succeededFuture());
+        PodOperator podOps = mockPodOps(StrimziFuture::completedFuture);
         TestingKafkaRoller kafkaRoller = new TestingKafkaRoller(null, null, addPodNames(REPLICAS), podOps,
             noException(), null,
             noException(), noException(), podId -> podId == controller ? new KafkaRoller.ForceableProblem("could not get config exception") : null,
@@ -465,7 +467,7 @@ public class KafkaRollerTest {
 
     @Test
     public void testRollHandlesErrorWhenAlteringConfig(VertxTestContext testContext) {
-        PodOperator podOps = mockPodOps(podId -> succeededFuture());
+        PodOperator podOps = mockPodOps(StrimziFuture::completedFuture);
         TestingKafkaRoller kafkaRoller = new TestingKafkaRoller(null, null, addPodNames(REPLICAS), podOps,
                 noException(), null,
                 noException(), podId -> new KafkaRoller.ForceableProblem("could not get alter exception"), noException(),
@@ -478,7 +480,7 @@ public class KafkaRollerTest {
 
     @Test
     public void testSuccessfulAlteringConfigNotRoll(VertxTestContext testContext) {
-        PodOperator podOps = mockPodOps(podId -> succeededFuture());
+        PodOperator podOps = mockPodOps(StrimziFuture::completedFuture);
         TestingKafkaRoller kafkaRoller = new TestingKafkaRoller(null, null, addPodNames(REPLICAS), podOps,
                 noException(), null,
                 noException(), noException(), noException(),
@@ -490,7 +492,7 @@ public class KafkaRollerTest {
 
     @Test
     public void testControllerAndOneMoreNeverRollable(VertxTestContext testContext) throws InterruptedException {
-        PodOperator podOps = mockPodOps(podId -> succeededFuture());
+        PodOperator podOps = mockPodOps(StrimziFuture::completedFuture);
         TestingKafkaRoller kafkaRoller = new TestingKafkaRoller(null, null, addPodNames(REPLICAS),
             podOps,
             noException(), null, noException(), noException(), noException(),
@@ -591,7 +593,7 @@ public class KafkaRollerTest {
         restarted = new ArrayList<>();
     }
 
-    private PodOperator mockPodOps(Function<Integer, Future<Void>> readiness) {
+    private PodOperator mockPodOps(Function<Integer, CompletionStage<Integer>> readiness) {
         PodOperator podOps = mock(PodOperator.class);
         when(podOps.get(any(), any())).thenAnswer(
                 invocation -> new PodBuilder()
@@ -608,15 +610,15 @@ public class KafkaRollerTest {
 
         when(podOps.isReady(anyString(), anyString())).thenAnswer(invocationOnMock ->  {
             String podName = invocationOnMock.getArgument(1);
-            Future<Void> ready = readiness.apply(podName2Number(podName));
-            if (ready.succeeded()) {
+            CompletableFuture<Integer> ready = readiness.apply(podName2Number(podName)).toCompletableFuture();
+            try {
+                ready.join();
                 return true;
-            } else {
-                if (ready.cause() instanceof TimeoutException) {
+            } catch (CompletionException e) {
+                if (e.getCause() instanceof TimeoutException) {
                     return false;
-                } else {
-                    throw ready.cause();
                 }
+                throw e.getCause();
             }
         });
         return podOps;

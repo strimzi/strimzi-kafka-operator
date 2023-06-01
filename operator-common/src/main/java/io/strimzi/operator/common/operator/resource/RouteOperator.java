@@ -10,8 +10,7 @@ import io.fabric8.openshift.api.model.Route;
 import io.fabric8.openshift.api.model.RouteList;
 import io.fabric8.openshift.client.OpenShiftClient;
 import io.strimzi.operator.common.Reconciliation;
-import io.vertx.core.Future;
-import io.vertx.core.Vertx;
+import io.strimzi.operator.common.StrimziFuture;
 
 /**
  * Operations for {@code Route}s.
@@ -19,11 +18,10 @@ import io.vertx.core.Vertx;
 public class RouteOperator extends AbstractNamespacedResourceOperator<OpenShiftClient, Route, RouteList, Resource<Route>> {
     /**
      * Constructor
-     * @param vertx The Vertx instance
      * @param client The OpenShift client
      */
-    public RouteOperator(Vertx vertx, OpenShiftClient client) {
-        super(vertx, client, "Route");
+    public RouteOperator(OpenShiftClient client) {
+        super(client, "Route");
     }
 
     @Override
@@ -41,7 +39,7 @@ public class RouteOperator extends AbstractNamespacedResourceOperator<OpenShiftC
      * @param timeoutMs     Timeout.
      * @return A future that succeeds when the Route has an assigned address.
      */
-    public Future<Void> hasAddress(Reconciliation reconciliation, String namespace, String name, long pollIntervalMs, long timeoutMs) {
+    public StrimziFuture<Void> hasAddress(Reconciliation reconciliation, String namespace, String name, long pollIntervalMs, long timeoutMs) {
         return waitFor(reconciliation, namespace, name, "addressable", pollIntervalMs, timeoutMs, this::isAddressReady);
     }
 

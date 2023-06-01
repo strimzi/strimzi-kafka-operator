@@ -12,11 +12,11 @@ import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.model.KafkaConnectCluster;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.StrimziFuture;
 import io.strimzi.operator.common.operator.resource.DeploymentOperator;
 import io.strimzi.operator.common.operator.resource.PodOperator;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.strimzi.operator.common.operator.resource.StrimziPodSetOperator;
-import io.vertx.core.Future;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
@@ -386,41 +386,41 @@ public class KafkaConnectMigrationTest {
         // Deployments
         when(mockDepOps.reconcile(any(), eq(NAMESPACE), eq(COMPONENT_NAME), any())).thenAnswer(i -> {
             events.add("DEP-RECONCILE-" + i.getArgument(2));
-            return Future.succeededFuture();
+            return StrimziFuture.completedFuture(null);
         });
         when(mockDepOps.scaleDown(any(), eq(NAMESPACE), eq(COMPONENT_NAME), anyInt(), anyLong())).thenAnswer(i -> {
             events.add("DEP-SCALE-DOWN-TO-" + i.getArgument(3));
-            return Future.succeededFuture();
+            return StrimziFuture.completedFuture(null);
         });
         when(mockDepOps.scaleUp(any(), eq(NAMESPACE), eq(COMPONENT_NAME), anyInt(), anyLong())).thenAnswer(i -> {
             events.add("DEP-SCALE-UP-TO-" + i.getArgument(3));
-            return Future.succeededFuture();
+            return StrimziFuture.completedFuture(null);
         });
-        when(mockDepOps.waitForObserved(any(), eq(NAMESPACE), eq(COMPONENT_NAME), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+        when(mockDepOps.waitForObserved(any(), eq(NAMESPACE), eq(COMPONENT_NAME), anyLong(), anyLong())).thenReturn(StrimziFuture.completedFuture());
         when(mockDepOps.readiness(any(), eq(NAMESPACE), eq(COMPONENT_NAME), anyLong(), anyLong())).thenAnswer(i -> {
             events.add("DEP-READINESS-" + i.getArgument(2));
-            return Future.succeededFuture();
+            return StrimziFuture.completedFuture(null);
         });
         when(mockDepOps.deleteAsync(any(), eq(NAMESPACE), eq(COMPONENT_NAME), anyBoolean())).thenAnswer(i -> {
             events.add("DEP-DELETE-" + i.getArgument(2));
-            return Future.succeededFuture();
+            return StrimziFuture.completedFuture(null);
         });
 
         // PodSets
         when(mockPodSetOps.reconcile(any(), eq(NAMESPACE), eq(COMPONENT_NAME), any())).thenAnswer(i -> {
             StrimziPodSet podSet = i.getArgument(3);
             events.add("POD-SET-RECONCILE-TO-" + podSet.getSpec().getPods().size());
-            return Future.succeededFuture(ReconcileResult.patched(podSet));
+            return StrimziFuture.completedFuture(ReconcileResult.patched(podSet));
         });
         when(mockPodSetOps.deleteAsync(any(), eq(NAMESPACE), eq(COMPONENT_NAME), anyBoolean())).thenAnswer(i -> {
             events.add("POD-SET-DELETE-" + i.getArgument(2));
-            return Future.succeededFuture();
+            return StrimziFuture.completedFuture(null);
         });
 
         // Pods
         when(mockPodOps.readiness(any(), eq(NAMESPACE), any(), anyLong(), anyLong())).thenAnswer(i -> {
             events.add("POD-READINESS-" + i.getArgument(2));
-            return Future.succeededFuture();
+            return StrimziFuture.completedFuture(null);
         });
 
         return events;

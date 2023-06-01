@@ -13,9 +13,8 @@ import io.fabric8.kubernetes.client.dsl.FilterWatchListDeletable;
 import io.fabric8.kubernetes.client.dsl.Listable;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.StrimziFuture;
 import io.strimzi.operator.common.model.Labels;
-import io.vertx.core.Future;
-import io.vertx.core.Vertx;
 
 import java.util.List;
 import java.util.Objects;
@@ -40,20 +39,17 @@ public abstract class AbstractResourceOperator<C extends KubernetesClient,
      */
     private static final long DEFAULT_TIMEOUT_MS = 300_000;
 
-    protected final Vertx vertx;
     protected final C client;
     protected final String resourceKind;
     protected final ResourceSupport resourceSupport;
 
     /**
      * Constructor.
-     * @param vertx The vertx instance.
      * @param client The kubernetes client.
      * @param resourceKind The mind of Kubernetes resource (used for logging).
      */
-    public AbstractResourceOperator(Vertx vertx, C client, String resourceKind) {
-        this.vertx = vertx;
-        this.resourceSupport = new ResourceSupport(vertx);
+    public AbstractResourceOperator(C client, String resourceKind) {
+        this.resourceSupport = new ResourceSupport();
         this.client = client;
         this.resourceKind = resourceKind;
     }
@@ -171,7 +167,7 @@ public abstract class AbstractResourceOperator<C extends KubernetesClient,
      *
      * @return  Future with the list of resources
      */
-    protected Future<List<T>> listAsync(Listable<L> listable) {
+    protected StrimziFuture<List<T>> listAsync(Listable<L> listable) {
         return resourceSupport.listAsync(listable);
     }
 }

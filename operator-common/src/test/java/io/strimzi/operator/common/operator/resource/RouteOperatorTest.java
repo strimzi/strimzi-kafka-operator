@@ -10,7 +10,6 @@ import io.fabric8.openshift.api.model.Route;
 import io.fabric8.openshift.api.model.RouteBuilder;
 import io.fabric8.openshift.api.model.RouteList;
 import io.fabric8.openshift.client.OpenShiftClient;
-import io.vertx.core.Vertx;
 
 import static org.mockito.Mockito.when;
 
@@ -52,7 +51,7 @@ public class RouteOperatorTest extends AbstractNamespacedResourceOperatorTest<Op
     }
 
     @Override
-    protected AbstractNamespacedResourceOperator<OpenShiftClient, Route, RouteList, Resource<Route>> createResourceOperations(Vertx vertx, OpenShiftClient mockClient) {
-        return new RouteOperator(vertx, mockClient);
+    protected AbstractNamespacedResourceOperator<OpenShiftClient, Route, RouteList, Resource<Route>> createResourceOperations(OpenShiftClient mockClient) {
+        return new RouteOperator(mockClient);
     }
 }

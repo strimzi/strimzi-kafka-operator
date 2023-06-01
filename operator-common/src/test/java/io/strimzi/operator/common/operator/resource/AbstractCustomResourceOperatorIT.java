@@ -12,11 +12,10 @@ import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.api.kafka.model.status.ConditionBuilder;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.Util;
+import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.KubeClusterResource;
 import io.strimzi.test.k8s.cluster.KubeCluster;
-import io.vertx.core.Promise;
-import io.vertx.core.Vertx;
-import io.vertx.core.WorkerExecutor;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
@@ -29,6 +28,7 @@ import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.util.Random;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
@@ -37,6 +37,7 @@ import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 /**
  * The main purpose of the Integration Tests for the operators is to test them against a real Kubernetes cluster.
@@ -49,8 +50,7 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 // Methods must be non-static as they make a non-static call to getCrd()
 // to correctly set up the test environment before the tests.
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-@SuppressWarnings("rawtypes")
-public abstract class AbstractCustomResourceOperatorIT<C extends KubernetesClient, T extends CustomResource, L extends DefaultKubernetesResourceList<T>> {
+public abstract class AbstractCustomResourceOperatorIT<C extends KubernetesClient, T extends CustomResource<?, ?>, L extends DefaultKubernetesResourceList<T>> {
     protected static final Logger LOGGER = LogManager.getLogger(AbstractCustomResourceOperatorIT.class);
     protected static final String RESOURCE_NAME = "my-test-resource";
     protected static final Condition READY_CONDITION = new ConditionBuilder()
@@ -58,9 +58,7 @@ public abstract class AbstractCustomResourceOperatorIT<C extends KubernetesClien
             .withStatus("True")
             .build();
 
-    protected static Vertx vertx;
     protected static KubernetesClient client;
-    private WorkerExecutor sharedWorkerExecutor;
 
     protected abstract CrdOperator<C, T, L> operator();
     protected abstract String getCrd();
@@ -78,8 +76,6 @@ public abstract class AbstractCustomResourceOperatorIT<C extends KubernetesClien
         cluster.setNamespace(namespace);
 
         assertDoesNotThrow(KubeCluster::bootstrap, "Could not bootstrap server");
-        vertx = Vertx.vertx();
-        sharedWorkerExecutor = vertx.createSharedWorkerExecutor("kubernetes-ops-pool");
         client = new KubernetesClientBuilder().build();
 
         if (cluster.getNamespace() != null && System.getenv("SKIP_TEARDOWN") == null) {
@@ -100,9 +96,6 @@ public abstract class AbstractCustomResourceOperatorIT<C extends KubernetesClien
 
     @AfterAll
     public void after() {
-        sharedWorkerExecutor.close();
-        vertx.close();
-
         String namespace = getNamespace();
         if (kubeClient().getNamespace(namespace) != null && System.getenv("SKIP_TEARDOWN") == null) {
             LOGGER.warn("Deleting namespace {} after tests run", namespace);
@@ -121,24 +114,30 @@ public abstract class AbstractCustomResourceOperatorIT<C extends KubernetesClien
 
         LOGGER.info("Creating resource");
         op.reconcile(Reconciliation.DUMMY_RECONCILIATION, namespace, resourceName, getResource(resourceName))
-                .onComplete(context.succeeding(i -> { }))
+                .whenComplete((rrCreated, e) -> context.verify(() -> assertNull(e)))
 
-                .compose(rrCreated -> {
+                .thenCompose(rrCreated -> {
                     T newStatus = getResourceWithNewReadyStatus(rrCreated.resource());
 
                     LOGGER.info("Updating resource status");
                     return op.updateStatusAsync(Reconciliation.DUMMY_RECONCILIATION, newStatus);
                 })
-                .onComplete(context.succeeding(i -> { }))
+                .whenComplete((rrModified, e) -> context.verify(() -> assertNull(e)))
 
-                .compose(rrModified -> op.getAsync(namespace, resourceName))
-                .onComplete(context.succeeding(modifiedCustomResource -> context.verify(() -> assertReady(context, modifiedCustomResource))))
+                .thenCompose(rrModified -> op.getAsync(namespace, resourceName))
+                .whenComplete((rrModified, e) -> context.verify(() -> {
+                    assertNull(e);
+                    assertReady(context, rrModified);
+                }))
 
-                .compose(rrModified -> {
+                .thenCompose(rrModified -> {
                     LOGGER.info("Deleting resource");
                     return op.reconcile(Reconciliation.DUMMY_RECONCILIATION, namespace, resourceName, null);
                 })
-                .onComplete(context.succeeding(rrDeleted ->  async.flag()));
+                .whenComplete((rrDeleted, e) -> context.verify(() -> {
+                    assertNull(e);
+                    async.flag();
+                }));
     }
 
     /**
@@ -158,27 +157,27 @@ public abstract class AbstractCustomResourceOperatorIT<C extends KubernetesClien
 
         LOGGER.info("Creating resource");
         op.reconcile(Reconciliation.DUMMY_RECONCILIATION, namespace, resourceName, getResource(resourceName))
-                .onComplete(context.succeeding(i -> { }))
+                .whenComplete((rr, e) -> context.verify(() -> assertNull(e)))
 
-                .compose(rr -> {
+                .thenCompose(rr -> {
                     LOGGER.info("Saving resource with status change prior to deletion");
                     newStatus.set(getResourceWithNewReadyStatus(op.get(namespace, resourceName)));
                     LOGGER.info("Deleting resource");
                     return op.deleteAsync(Reconciliation.DUMMY_RECONCILIATION, namespace, resourceName, false);
                 })
-                .onComplete(context.succeeding(i -> { }))
-                .compose(i -> {
+                .whenComplete((i, e) -> context.verify(() -> assertNull(e)))
+                .thenCompose(i -> {
                     LOGGER.info("Wait for confirmed deletion");
                     return op.waitFor(Reconciliation.DUMMY_RECONCILIATION, namespace, resourceName, 100L, 10_000L, (n, ns) -> operator().get(namespace, resourceName) == null);
                 })
-                .compose(i -> {
+                .thenCompose(i -> {
                     LOGGER.info("Updating resource with new status - should fail");
                     return op.updateStatusAsync(Reconciliation.DUMMY_RECONCILIATION, newStatus.get());
                 })
-                .onComplete(context.failing(e -> context.verify(() -> {
-                    assertThat(e, instanceOf(KubernetesClientException.class));
+                .whenComplete((i, e) -> context.verify(() -> {
+                    assertThat(Util.unwrap(e), instanceOf(KubernetesClientException.class));
                     async.flag();
-                })));
+                }));
     }
 
     /**
@@ -194,12 +193,12 @@ public abstract class AbstractCustomResourceOperatorIT<C extends KubernetesClien
 
         CrdOperator<C, T, L> op = operator();
 
-        Promise<Void> updateStatus = Promise.promise();
+        CompletableFuture<Void> updateStatus = new CompletableFuture<>();
 
         LOGGER.info("Creating resource");
         op.reconcile(Reconciliation.DUMMY_RECONCILIATION, namespace, resourceName, getResource(resourceName))
-                .onComplete(context.succeeding(i -> { }))
-                .compose(rrCreated -> {
+                .whenComplete((rr, e) -> assertNull(e))
+                .thenCompose(rrCreated -> {
                     T updated = getResourceWithModifications(rrCreated.resource());
                     T newStatus = getResourceWithNewReadyStatus(rrCreated.resource());
 
@@ -209,24 +208,27 @@ public abstract class AbstractCustomResourceOperatorIT<C extends KubernetesClien
                     LOGGER.info("Updating resource status after underlying resource has changed");
                     return op.updateStatusAsync(Reconciliation.DUMMY_RECONCILIATION, newStatus);
                 })
-                .onComplete(context.failing(e -> context.verify(() -> {
-                    LOGGER.info("Failed as expected");
-                    assertThat(e, instanceOf(KubernetesClientException.class));
-                    assertThat(((KubernetesClientException) e).getCode(), is(409));
-                    updateStatus.complete();
-                })));
+                .whenComplete((i, e) -> context.verify(() -> TestUtils.unwrap(e).ifPresentOrElse(
+                        cause -> {
+                            LOGGER.info("Failed as expected");
+                            assertThat(cause, instanceOf(KubernetesClientException.class));
+                            assertThat(((KubernetesClientException) cause).getCode(), is(409));
+                            updateStatus.complete(null);
+                        },
+                        () -> context.failNow("Expected an exception, but nothing was thrown"))));
 
         updateStatus
-                .future()
-                .compose(v -> {
+                .thenCompose(v -> {
                     LOGGER.info("Deleting resource");
                     return op.reconcile(Reconciliation.DUMMY_RECONCILIATION, namespace, resourceName, null);
                 })
-                .onComplete(context.succeeding(v -> async.flag()));
+                .whenComplete((rr, e) -> context.verify(() -> {
+                    assertNull(e);
+                    async.flag();
+                }));
     }
 
     protected String getResourceName(String name) {
         return name + "-" + new Random().nextInt(Integer.MAX_VALUE);
     }
 }
-

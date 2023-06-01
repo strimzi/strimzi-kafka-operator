@@ -29,8 +29,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
 
 import static io.strimzi.operator.common.Util.matchesSelector;
 import static io.strimzi.operator.common.Util.parseMap;
@@ -246,10 +244,10 @@ public class UtilTest {
                 .build();
 
         SecretOperator secretOps = mock(SecretOperator.class);
-        when(secretOps.getAsync(eq(namespace), eq("top-secret-at"))).thenReturn(Future.succeededFuture(secret));
-        when(secretOps.getAsync(eq(namespace), eq("top-secret-rt"))).thenReturn(Future.succeededFuture(secret));
-        when(secretOps.getAsync(eq(namespace), eq("top-secret-cs"))).thenReturn(Future.succeededFuture(secret));
-        when(secretOps.getAsync(eq(namespace), eq("css-secret"))).thenReturn(Future.succeededFuture(secret));
+        when(secretOps.getAsync(eq(namespace), eq("top-secret-at"))).thenReturn(StrimziFuture.completedFuture(secret));
+        when(secretOps.getAsync(eq(namespace), eq("top-secret-rt"))).thenReturn(StrimziFuture.completedFuture(secret));
+        when(secretOps.getAsync(eq(namespace), eq("top-secret-cs"))).thenReturn(StrimziFuture.completedFuture(secret));
+        when(secretOps.getAsync(eq(namespace), eq("css-secret"))).thenReturn(StrimziFuture.completedFuture(secret));
         Future<Integer> res = Util.authTlsHash(secretOps, "ns", kcu, singletonList(css));
         res.onComplete(v -> {
             assertThat(v.succeeded(), is(true));
@@ -292,10 +290,10 @@ public class UtilTest {
                 .build();
 
         SecretOperator secretOps = mock(SecretOperator.class);
-        when(secretOps.getAsync(eq(namespace), eq("top-secret-at"))).thenReturn(Future.succeededFuture(secret));
-        when(secretOps.getAsync(eq(namespace), eq("top-secret-rt"))).thenReturn(Future.succeededFuture(secret));
-        when(secretOps.getAsync(eq(namespace), eq("top-secret-cs"))).thenReturn(Future.succeededFuture(null));
-        when(secretOps.getAsync(eq(namespace), eq("css-secret"))).thenReturn(Future.succeededFuture(secret));
+        when(secretOps.getAsync(eq(namespace), eq("top-secret-at"))).thenReturn(StrimziFuture.completedFuture(secret));
+        when(secretOps.getAsync(eq(namespace), eq("top-secret-rt"))).thenReturn(StrimziFuture.completedFuture(secret));
+        when(secretOps.getAsync(eq(namespace), eq("top-secret-cs"))).thenReturn(StrimziFuture.completedFuture(null));
+        when(secretOps.getAsync(eq(namespace), eq("css-secret"))).thenReturn(StrimziFuture.completedFuture(secret));
         Future<Integer> res = Util.authTlsHash(secretOps, "ns", kcu, singletonList(css));
         res.onComplete(v -> {
             assertThat(v.succeeded(), is(false));
@@ -310,8 +308,8 @@ public class UtilTest {
         data.put("passwordKey", "my-password");
         Secret secret = new Secret();
         secret.setData(data);
-        CompletionStage<Secret> cf = CompletableFuture.supplyAsync(() ->  secret);         
-        when(secretOpertator.getAsync(anyString(), anyString())).thenReturn(Future.fromCompletionStage(cf));
+        StrimziFuture<Secret> cf = StrimziFuture.supplyAsync(() ->  secret);
+        when(secretOpertator.getAsync(anyString(), anyString())).thenReturn(cf);
         KafkaClientAuthenticationScramSha512 auth = new KafkaClientAuthenticationScramSha512();
         PasswordSecretSource passwordSecretSource = new PasswordSecretSource();
         passwordSecretSource.setSecretName("my-secret");
@@ -319,9 +317,9 @@ public class UtilTest {
         auth.setPasswordSecret(passwordSecretSource);
         Future<Integer> result = Util.authTlsHash(secretOpertator, "anyNamespace", auth, List.of());
         result.onComplete(handler -> {
-            assertTrue(handler.failed()); 
+            assertTrue(handler.failed());
             assertEquals("Items with key(s) [password1] are missing in Secret my-secret", handler.cause().getMessage());
-        });        
+        });
     }
 
     @Test
@@ -331,8 +329,8 @@ public class UtilTest {
         data.put("passwordKey", "my-password");
         Secret secret = new Secret();
         secret.setData(data);
-        CompletionStage<Secret> cf = CompletableFuture.supplyAsync(() ->  secret);         
-        when(secretOpertator.getAsync(anyString(), anyString())).thenReturn(Future.fromCompletionStage(cf));
+        StrimziFuture<Secret> cf = StrimziFuture.supplyAsync(() ->  secret);
+        when(secretOpertator.getAsync(anyString(), anyString())).thenReturn(cf);
         KafkaClientAuthenticationScramSha512 auth = new KafkaClientAuthenticationScramSha512();
         PasswordSecretSource passwordSecretSource = new PasswordSecretSource();
         passwordSecretSource.setSecretName("my-secret");
@@ -340,9 +338,9 @@ public class UtilTest {
         auth.setPasswordSecret(passwordSecretSource);
         Future<Integer> result = Util.authTlsHash(secretOpertator, "anyNamespace", auth, List.of());
         result.onComplete(handler -> {
-            assertTrue(handler.succeeded()); 
+            assertTrue(handler.succeeded());
             assertEquals("my-password".hashCode(), handler.result());
-        });        
+        });
     }
 
     @Test
@@ -352,8 +350,8 @@ public class UtilTest {
         data.put("passwordKey", "my-password");
         Secret secret = new Secret();
         secret.setData(data);
-        CompletionStage<Secret> cf = CompletableFuture.supplyAsync(() ->  secret);         
-        when(secretOpertator.getAsync(anyString(), anyString())).thenReturn(Future.fromCompletionStage(cf));
+        StrimziFuture<Secret> cf = StrimziFuture.supplyAsync(() ->  secret);
+        when(secretOpertator.getAsync(anyString(), anyString())).thenReturn(cf);
         KafkaClientAuthenticationPlain auth = new KafkaClientAuthenticationPlain();
         PasswordSecretSource passwordSecretSource = new PasswordSecretSource();
         passwordSecretSource.setSecretName("my-secret");
@@ -361,9 +359,9 @@ public class UtilTest {
         auth.setPasswordSecret(passwordSecretSource);
         Future<Integer> result = Util.authTlsHash(secretOpertator, "anyNamespace", auth, List.of());
         result.onComplete(handler -> {
-            assertTrue(handler.failed()); 
+            assertTrue(handler.failed());
             assertEquals("Items with key(s) [password1] are missing in Secret my-secret", handler.cause().getMessage());
-        });        
+        });
     }
 
     @Test
@@ -373,8 +371,8 @@ public class UtilTest {
         data.put("passwordKey", "my-password");
         Secret secret = new Secret();
         secret.setData(data);
-        CompletionStage<Secret> cf = CompletableFuture.supplyAsync(() ->  secret);         
-        when(secretOpertator.getAsync(anyString(), anyString())).thenReturn(Future.fromCompletionStage(cf));
+        StrimziFuture<Secret> cf = StrimziFuture.supplyAsync(() ->  secret);
+        when(secretOpertator.getAsync(anyString(), anyString())).thenReturn(cf);
         KafkaClientAuthenticationPlain auth = new KafkaClientAuthenticationPlain();
         PasswordSecretSource passwordSecretSource = new PasswordSecretSource();
         passwordSecretSource.setSecretName("my-secret");
@@ -382,9 +380,9 @@ public class UtilTest {
         auth.setPasswordSecret(passwordSecretSource);
         Future<Integer> result = Util.authTlsHash(secretOpertator, "anyNamespace", auth, List.of());
         result.onComplete(handler -> {
-            assertTrue(handler.succeeded()); 
+            assertTrue(handler.succeeded());
             assertEquals("my-password".hashCode(), handler.result());
-        });        
+        });
     }
 
     @Test
@@ -401,7 +399,7 @@ public class UtilTest {
                 .build();
 
         SecretOperator secretOps = mock(SecretOperator.class);
-        when(secretOps.getAsync(eq(namespace), eq(secretName))).thenReturn(Future.succeededFuture(secret));
+        when(secretOps.getAsync(eq(namespace), eq(secretName))).thenReturn(StrimziFuture.completedFuture(secret));
 
         Util.getValidatedSecret(secretOps, namespace, secretName, "key1", "key2")
                 .onComplete(r -> {
@@ -416,7 +414,7 @@ public class UtilTest {
         String secretName = "my-secret";
 
         SecretOperator secretOps = mock(SecretOperator.class);
-        when(secretOps.getAsync(eq(namespace), eq(secretName))).thenReturn(Future.succeededFuture(null));
+        when(secretOps.getAsync(eq(namespace), eq(secretName))).thenReturn(StrimziFuture.completedFuture(null));
 
         Util.getValidatedSecret(secretOps, namespace, secretName, "key1", "key2")
                 .onComplete(r -> {
@@ -439,7 +437,7 @@ public class UtilTest {
                 .build();
 
         SecretOperator secretOps = mock(SecretOperator.class);
-        when(secretOps.getAsync(eq(namespace), eq(secretName))).thenReturn(Future.succeededFuture(secret));
+        when(secretOps.getAsync(eq(namespace), eq(secretName))).thenReturn(StrimziFuture.completedFuture(secret));
 
         Util.getValidatedSecret(secretOps, namespace, secretName, "key1", "key4", "key5")
                 .onComplete(r -> {

@@ -28,6 +28,7 @@ import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.StrimziFuture;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.MockCertManager;
 import io.strimzi.operator.common.operator.resource.ConfigMapOperator;
@@ -122,22 +123,22 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
         KafkaMirrorMaker kmm = ResourceUtils.createKafkaMirrorMaker(kmmNamespace, kmmName, image, producer, consumer, include);
 
         when(mockMirrorOps.get(kmmNamespace, kmmName)).thenReturn(kmm);
-        when(mockMirrorOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(kmm));
+        when(mockMirrorOps.getAsync(anyString(), anyString())).thenReturn(StrimziFuture.completedFuture(kmm));
 
         ArgumentCaptor<Deployment> dcCaptor = ArgumentCaptor.forClass(Deployment.class);
-        when(mockDcOps.reconcile(any(), anyString(), anyString(), dcCaptor.capture())).thenReturn(Future.succeededFuture());
-        when(mockDcOps.scaleUp(any(), anyString(), anyString(), anyInt(), anyLong())).thenReturn(Future.succeededFuture(42));
-        when(mockDcOps.scaleDown(any(), anyString(), anyString(), anyInt(), anyLong())).thenReturn(Future.succeededFuture(42));
-        when(mockDcOps.readiness(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
-        when(mockDcOps.waitForObserved(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+        when(mockDcOps.reconcile(any(), anyString(), anyString(), dcCaptor.capture())).thenReturn(StrimziFuture.completedFuture(null));
+        when(mockDcOps.scaleUp(any(), anyString(), anyString(), anyInt(), anyLong())).thenReturn(StrimziFuture.completedFuture(42));
+        when(mockDcOps.scaleDown(any(), anyString(), anyString(), anyInt(), anyLong())).thenReturn(StrimziFuture.completedFuture(42));
+        when(mockDcOps.readiness(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(StrimziFuture.completedFuture(null));
+        when(mockDcOps.waitForObserved(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(StrimziFuture.completedFuture(null));
 
         ArgumentCaptor<PodDisruptionBudget> pdbCaptor = ArgumentCaptor.forClass(PodDisruptionBudget.class);
-        when(mockPdbOps.reconcile(any(), anyString(), any(), pdbCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockPdbOps.reconcile(any(), anyString(), any(), pdbCaptor.capture())).thenReturn(StrimziFuture.completedFuture(null));
 
         ArgumentCaptor<KafkaMirrorMaker> statusCaptor = ArgumentCaptor.forClass(KafkaMirrorMaker.class);
-        when(mockMirrorOps.updateStatusAsync(any(), statusCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockMirrorOps.updateStatusAsync(any(), statusCaptor.capture())).thenReturn(StrimziFuture.completedFuture(null));
 
-        when(mockCmOps.reconcile(any(), anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new ConfigMap())));
+        when(mockCmOps.reconcile(any(), anyString(), any(), any())).thenReturn(StrimziFuture.completedFuture(ReconcileResult.created(new ConfigMap())));
         KafkaMirrorMakerAssemblyOperator ops = new KafkaMirrorMakerAssemblyOperator(vertx,
                 new PlatformFeaturesAvailability(true, kubernetesVersion),
                 new MockCertManager(), new PasswordGenerator(10, "a", "a"),
@@ -212,28 +213,28 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
         KafkaMirrorMakerCluster mirror = KafkaMirrorMakerCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kmm,
                 VERSIONS);
         when(mockMirrorOps.get(kmmNamespace, kmmName)).thenReturn(kmm);
-        when(mockMirrorOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(kmm));
-        when(mockMirrorOps.updateStatusAsync(any(), any(KafkaMirrorMaker.class))).thenReturn(Future.succeededFuture());
+        when(mockMirrorOps.getAsync(anyString(), anyString())).thenReturn(StrimziFuture.completedFuture(kmm));
+        when(mockMirrorOps.updateStatusAsync(any(), any(KafkaMirrorMaker.class))).thenReturn(StrimziFuture.completedFuture(null));
         when(mockDcOps.get(kmmNamespace, mirror.getComponentName())).thenReturn(mirror.generateDeployment(new HashMap<String, String>(), true, null, null));
-        when(mockDcOps.waitForObserved(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+        when(mockDcOps.waitForObserved(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(StrimziFuture.completedFuture(null));
 
         ArgumentCaptor<String> dcNameCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<Deployment> dcCaptor = ArgumentCaptor.forClass(Deployment.class);
-        when(mockDcOps.reconcile(any(), eq(kmmNamespace), dcNameCaptor.capture(), dcCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockDcOps.reconcile(any(), eq(kmmNamespace), dcNameCaptor.capture(), dcCaptor.capture())).thenReturn(StrimziFuture.completedFuture(null));
 
         ArgumentCaptor<String> dcScaleUpNameCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<Integer> dcScaleUpReplicasCaptor = ArgumentCaptor.forClass(Integer.class);
-        when(mockDcOps.scaleUp(any(), eq(kmmNamespace), dcScaleUpNameCaptor.capture(), dcScaleUpReplicasCaptor.capture(), anyLong())).thenReturn(Future.succeededFuture());
+        when(mockDcOps.scaleUp(any(), eq(kmmNamespace), dcScaleUpNameCaptor.capture(), dcScaleUpReplicasCaptor.capture(), anyLong())).thenReturn(StrimziFuture.completedFuture(null));
 
         ArgumentCaptor<String> dcScaleDownNameCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<Integer> dcScaleDownReplicasCaptor = ArgumentCaptor.forClass(Integer.class);
-        when(mockDcOps.scaleDown(any(), eq(kmmNamespace), dcScaleDownNameCaptor.capture(), dcScaleDownReplicasCaptor.capture(), anyLong())).thenReturn(Future.succeededFuture());
-        when(mockDcOps.readiness(any(), eq(kmmNamespace), eq(mirror.getComponentName()), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+        when(mockDcOps.scaleDown(any(), eq(kmmNamespace), dcScaleDownNameCaptor.capture(), dcScaleDownReplicasCaptor.capture(), anyLong())).thenReturn(StrimziFuture.completedFuture(null));
+        when(mockDcOps.readiness(any(), eq(kmmNamespace), eq(mirror.getComponentName()), anyLong(), anyLong())).thenReturn(StrimziFuture.completedFuture(null));
 
         ArgumentCaptor<PodDisruptionBudget> pdbCaptor = ArgumentCaptor.forClass(PodDisruptionBudget.class);
-        when(mockPdbOps.reconcile(any(), anyString(), any(), pdbCaptor.capture())).thenReturn(Future.succeededFuture());
-        
-        when(mockCmOps.reconcile(any(), anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new ConfigMap())));
+        when(mockPdbOps.reconcile(any(), anyString(), any(), pdbCaptor.capture())).thenReturn(StrimziFuture.completedFuture(null));
+
+        when(mockCmOps.reconcile(any(), anyString(), any(), any())).thenReturn(StrimziFuture.completedFuture(ReconcileResult.created(new ConfigMap())));
         KafkaMirrorMakerAssemblyOperator ops = new KafkaMirrorMakerAssemblyOperator(vertx,
                 new PlatformFeaturesAvailability(true, kubernetesVersion),
                 new MockCertManager(), new PasswordGenerator(10, "a", "a"),
@@ -289,27 +290,27 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
         kmm.getSpec().setImage("some/different:image"); // Change the image to generate some diff
 
         when(mockMirrorOps.get(kmmNamespace, kmmName)).thenReturn(kmm);
-        when(mockMirrorOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(kmm));
-        when(mockMirrorOps.updateStatusAsync(any(), any(KafkaMirrorMaker.class))).thenReturn(Future.succeededFuture());
+        when(mockMirrorOps.getAsync(anyString(), anyString())).thenReturn(StrimziFuture.completedFuture(kmm));
+        when(mockMirrorOps.updateStatusAsync(any(), any(KafkaMirrorMaker.class))).thenReturn(StrimziFuture.completedFuture(null));
         when(mockDcOps.get(kmmNamespace, mirror.getComponentName())).thenReturn(mirror.generateDeployment(new HashMap<>(), true, null, null));
-        when(mockDcOps.readiness(any(), eq(kmmNamespace), eq(mirror.getComponentName()), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
-        when(mockDcOps.waitForObserved(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+        when(mockDcOps.readiness(any(), eq(kmmNamespace), eq(mirror.getComponentName()), anyLong(), anyLong())).thenReturn(StrimziFuture.completedFuture(null));
+        when(mockDcOps.waitForObserved(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(StrimziFuture.completedFuture(null));
 
         ArgumentCaptor<String> dcNameCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<Deployment> dcCaptor = ArgumentCaptor.forClass(Deployment.class);
-        when(mockDcOps.reconcile(any(), eq(kmmNamespace), dcNameCaptor.capture(), dcCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockDcOps.reconcile(any(), eq(kmmNamespace), dcNameCaptor.capture(), dcCaptor.capture())).thenReturn(StrimziFuture.completedFuture(null));
 
         ArgumentCaptor<String> dcScaleUpNameCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<Integer> dcScaleUpReplicasCaptor = ArgumentCaptor.forClass(Integer.class);
-        when(mockDcOps.scaleUp(any(), eq(kmmNamespace), dcScaleUpNameCaptor.capture(), dcScaleUpReplicasCaptor.capture(), anyLong())).thenReturn(Future.succeededFuture());
+        when(mockDcOps.scaleUp(any(), eq(kmmNamespace), dcScaleUpNameCaptor.capture(), dcScaleUpReplicasCaptor.capture(), anyLong())).thenReturn(StrimziFuture.completedFuture(null));
 
         ArgumentCaptor<String> dcScaleDownNameCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<Integer> dcScaleDownReplicasCaptor = ArgumentCaptor.forClass(Integer.class);
-        when(mockDcOps.scaleDown(any(), eq(kmmNamespace), dcScaleDownNameCaptor.capture(), dcScaleDownReplicasCaptor.capture(), anyLong())).thenReturn(Future.succeededFuture());
+        when(mockDcOps.scaleDown(any(), eq(kmmNamespace), dcScaleDownNameCaptor.capture(), dcScaleDownReplicasCaptor.capture(), anyLong())).thenReturn(StrimziFuture.completedFuture(null));
 
         ArgumentCaptor<PodDisruptionBudget> pdbCaptor = ArgumentCaptor.forClass(PodDisruptionBudget.class);
-        when(mockPdbOps.reconcile(any(), anyString(), any(), pdbCaptor.capture())).thenReturn(Future.succeededFuture());
-        when(mockCmOps.reconcile(any(), anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new ConfigMap())));
+        when(mockPdbOps.reconcile(any(), anyString(), any(), pdbCaptor.capture())).thenReturn(StrimziFuture.completedFuture(null));
+        when(mockCmOps.reconcile(any(), anyString(), any(), any())).thenReturn(StrimziFuture.completedFuture(ReconcileResult.created(new ConfigMap())));
 
         // Mock CM get
         when(mockMirrorOps.get(kmmNamespace, kmmName)).thenReturn(kmm);
@@ -334,7 +335,7 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
         Set<String> metricsCms = TestUtils.set();
         doAnswer(invocation -> {
             metricsCms.add(invocation.getArgument(1));
-            return Future.succeededFuture();
+            return StrimziFuture.completedFuture(null);
         }).when(mockCmOps).reconcile(any(), eq(kmmNamespace), anyString(), any());
 
         KafkaMirrorMakerAssemblyOperator ops = new KafkaMirrorMakerAssemblyOperator(vertx,
@@ -404,30 +405,30 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
 
         when(mockMirrorOps.get(kmmNamespace, kmmName)).thenReturn(kmm);
         when(mockDcOps.get(kmmNamespace, mirror.getComponentName())).thenReturn(mirror.generateDeployment(new HashMap<>(), true, null, null));
-        when(mockDcOps.readiness(any(), eq(kmmNamespace), eq(mirror.getComponentName()), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
-        when(mockDcOps.waitForObserved(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+        when(mockDcOps.readiness(any(), eq(kmmNamespace), eq(mirror.getComponentName()), anyLong(), anyLong())).thenReturn(StrimziFuture.completedFuture(null));
+        when(mockDcOps.waitForObserved(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(StrimziFuture.completedFuture(null));
 
         ArgumentCaptor<String> dcNamespaceCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<String> dcNameCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<Deployment> dcCaptor = ArgumentCaptor.forClass(Deployment.class);
-        when(mockDcOps.reconcile(any(), dcNamespaceCaptor.capture(), dcNameCaptor.capture(), dcCaptor.capture())).thenReturn(Future.failedFuture("Failed"));
+        when(mockDcOps.reconcile(any(), dcNamespaceCaptor.capture(), dcNameCaptor.capture(), dcCaptor.capture())).thenReturn(StrimziFuture.failedFuture("Failed"));
 
         ArgumentCaptor<String> dcScaleUpNamespaceCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<String> dcScaleUpNameCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<Integer> dcScaleUpReplicasCaptor = ArgumentCaptor.forClass(Integer.class);
-        when(mockDcOps.scaleUp(any(), dcScaleUpNamespaceCaptor.capture(), dcScaleUpNameCaptor.capture(), dcScaleUpReplicasCaptor.capture(), anyLong())).thenReturn(Future.succeededFuture());
+        when(mockDcOps.scaleUp(any(), dcScaleUpNamespaceCaptor.capture(), dcScaleUpNameCaptor.capture(), dcScaleUpReplicasCaptor.capture(), anyLong())).thenReturn(StrimziFuture.completedFuture(null));
 
         ArgumentCaptor<String> dcScaleDownNamespaceCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<String> dcScaleDownNameCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<Integer> dcScaleDownReplicasCaptor = ArgumentCaptor.forClass(Integer.class);
-        when(mockDcOps.scaleDown(any(), dcScaleDownNamespaceCaptor.capture(), dcScaleDownNameCaptor.capture(), dcScaleDownReplicasCaptor.capture(), anyLong())).thenReturn(Future.succeededFuture());
+        when(mockDcOps.scaleDown(any(), dcScaleDownNamespaceCaptor.capture(), dcScaleDownNameCaptor.capture(), dcScaleDownReplicasCaptor.capture(), anyLong())).thenReturn(StrimziFuture.completedFuture(null));
 
-        when(mockPdbOps.reconcile(any(), anyString(), any(), any())).thenReturn(Future.succeededFuture());
+        when(mockPdbOps.reconcile(any(), anyString(), any(), any())).thenReturn(StrimziFuture.completedFuture(null));
 
-        when(mockMirrorOps.reconcile(any(), anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new KafkaMirrorMaker())));
-        when(mockMirrorOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(kmm));
-        when(mockMirrorOps.updateStatusAsync(any(), any(KafkaMirrorMaker.class))).thenReturn(Future.succeededFuture());
-        when(mockCmOps.reconcile(any(), anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new ConfigMap())));
+        when(mockMirrorOps.reconcile(any(), anyString(), any(), any())).thenReturn(StrimziFuture.completedFuture(ReconcileResult.created(new KafkaMirrorMaker())));
+        when(mockMirrorOps.getAsync(anyString(), anyString())).thenReturn(StrimziFuture.completedFuture(kmm));
+        when(mockMirrorOps.updateStatusAsync(any(), any(KafkaMirrorMaker.class))).thenReturn(StrimziFuture.completedFuture(null));
+        when(mockCmOps.reconcile(any(), anyString(), any(), any())).thenReturn(StrimziFuture.completedFuture(ReconcileResult.created(new ConfigMap())));
 
         KafkaMirrorMakerAssemblyOperator ops = new KafkaMirrorMakerAssemblyOperator(vertx,
                 new PlatformFeaturesAvailability(true, kubernetesVersion),
@@ -470,22 +471,22 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
 
         when(mockMirrorOps.get(kmmNamespace, kmmName)).thenReturn(kmm);
         when(mockDcOps.get(kmmNamespace, mirror.getComponentName())).thenReturn(mirror.generateDeployment(new HashMap<>(), true, null, null));
-        when(mockDcOps.readiness(any(), eq(kmmNamespace), eq(mirror.getComponentName()), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
-        when(mockDcOps.reconcile(any(), eq(kmmNamespace), any(), any())).thenReturn(Future.succeededFuture());
-        when(mockDcOps.waitForObserved(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+        when(mockDcOps.readiness(any(), eq(kmmNamespace), eq(mirror.getComponentName()), anyLong(), anyLong())).thenReturn(StrimziFuture.completedFuture(null));
+        when(mockDcOps.reconcile(any(), eq(kmmNamespace), any(), any())).thenReturn(StrimziFuture.completedFuture(null));
+        when(mockDcOps.waitForObserved(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(StrimziFuture.completedFuture(null));
 
-        doAnswer(i -> Future.succeededFuture(scaleTo))
+        doAnswer(i -> StrimziFuture.completedFuture(scaleTo))
                 .when(mockDcOps).scaleUp(any(), eq(kmmNamespace), eq(mirror.getComponentName()), eq(scaleTo), anyLong());
 
-        doAnswer(i -> Future.succeededFuture(scaleTo))
+        doAnswer(i -> StrimziFuture.completedFuture(scaleTo))
                 .when(mockDcOps).scaleDown(any(), eq(kmmNamespace), eq(mirror.getComponentName()), eq(scaleTo), anyLong());
 
-        when(mockMirrorOps.reconcile(any(), anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new KafkaMirrorMaker())));
-        when(mockMirrorOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(kmm));
-        when(mockMirrorOps.updateStatusAsync(any(), any(KafkaMirrorMaker.class))).thenReturn(Future.succeededFuture());
-        when(mockCmOps.reconcile(any(), anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new ConfigMap())));
+        when(mockMirrorOps.reconcile(any(), anyString(), any(), any())).thenReturn(StrimziFuture.completedFuture(ReconcileResult.created(new KafkaMirrorMaker())));
+        when(mockMirrorOps.getAsync(anyString(), anyString())).thenReturn(StrimziFuture.completedFuture(kmm));
+        when(mockMirrorOps.updateStatusAsync(any(), any(KafkaMirrorMaker.class))).thenReturn(StrimziFuture.completedFuture(null));
+        when(mockCmOps.reconcile(any(), anyString(), any(), any())).thenReturn(StrimziFuture.completedFuture(ReconcileResult.created(new ConfigMap())));
 
-        when(mockPdbOps.reconcile(any(), anyString(), any(), any())).thenReturn(Future.succeededFuture());
+        when(mockPdbOps.reconcile(any(), anyString(), any(), any())).thenReturn(StrimziFuture.completedFuture(null));
         KafkaMirrorMakerAssemblyOperator ops = new KafkaMirrorMakerAssemblyOperator(vertx,
                 new PlatformFeaturesAvailability(true, kubernetesVersion),
                 new MockCertManager(), new PasswordGenerator(10, "a", "a"),
@@ -529,23 +530,23 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
         kmm.getSpec().setReplicas(scaleTo); // Change replicas to create ScaleDown
 
         when(mockMirrorOps.get(kmmNamespace, kmmName)).thenReturn(kmm);
-        when(mockMirrorOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(kmm));
-        when(mockMirrorOps.updateStatusAsync(any(), any(KafkaMirrorMaker.class))).thenReturn(Future.succeededFuture());
+        when(mockMirrorOps.getAsync(anyString(), anyString())).thenReturn(StrimziFuture.completedFuture(kmm));
+        when(mockMirrorOps.updateStatusAsync(any(), any(KafkaMirrorMaker.class))).thenReturn(StrimziFuture.completedFuture(null));
         when(mockDcOps.get(kmmNamespace, mirror.getComponentName())).thenReturn(mirror.generateDeployment(new HashMap<>(), true, null, null));
-        when(mockDcOps.readiness(any(), eq(kmmNamespace), eq(mirror.getComponentName()), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
-        when(mockDcOps.waitForObserved(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
-        when(mockDcOps.reconcile(any(), eq(kmmNamespace), any(), any())).thenReturn(Future.succeededFuture());
+        when(mockDcOps.readiness(any(), eq(kmmNamespace), eq(mirror.getComponentName()), anyLong(), anyLong())).thenReturn(StrimziFuture.completedFuture(null));
+        when(mockDcOps.waitForObserved(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(StrimziFuture.completedFuture(null));
+        when(mockDcOps.reconcile(any(), eq(kmmNamespace), any(), any())).thenReturn(StrimziFuture.completedFuture(null));
 
-        doAnswer(i -> Future.succeededFuture(scaleTo))
+        doAnswer(i -> StrimziFuture.completedFuture(scaleTo))
                 .when(mockDcOps).scaleUp(any(), eq(kmmNamespace), eq(mirror.getComponentName()), eq(scaleTo), anyLong());
 
-        doAnswer(i -> Future.succeededFuture(scaleTo))
+        doAnswer(i -> StrimziFuture.completedFuture(scaleTo))
                 .when(mockDcOps).scaleDown(any(), eq(kmmNamespace), eq(mirror.getComponentName()), eq(scaleTo), anyLong());
 
-        when(mockMirrorOps.reconcile(any(), anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new KafkaMirrorMaker())));
-        when(mockCmOps.reconcile(any(), anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new ConfigMap())));
+        when(mockMirrorOps.reconcile(any(), anyString(), any(), any())).thenReturn(StrimziFuture.completedFuture(ReconcileResult.created(new KafkaMirrorMaker())));
+        when(mockCmOps.reconcile(any(), anyString(), any(), any())).thenReturn(StrimziFuture.completedFuture(ReconcileResult.created(new ConfigMap())));
 
-        when(mockPdbOps.reconcile(any(), anyString(), any(), any())).thenReturn(Future.succeededFuture());
+        when(mockPdbOps.reconcile(any(), anyString(), any(), any())).thenReturn(StrimziFuture.completedFuture(null));
 
         KafkaMirrorMakerAssemblyOperator ops = new KafkaMirrorMakerAssemblyOperator(vertx,
                 new PlatformFeaturesAvailability(true, kubernetesVersion),
@@ -583,11 +584,11 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
         KafkaMirrorMaker foo = ResourceUtils.createKafkaMirrorMaker(kmmNamespace, "foo", image, producer, consumer, include);
         KafkaMirrorMaker bar = ResourceUtils.createKafkaMirrorMaker(kmmNamespace, "bar", image, producer, consumer, include);
 
-        when(mockMirrorOps.listAsync(eq(kmmNamespace), any(Optional.class))).thenReturn(Future.succeededFuture(asList(foo, bar)));
+        when(mockMirrorOps.listAsync(eq(kmmNamespace), any(Optional.class))).thenReturn(StrimziFuture.completedFuture(asList(foo, bar)));
         // when requested ConfigMap for a specific Kafka Mirror Maker cluster
         when(mockMirrorOps.get(eq(kmmNamespace), eq("foo"))).thenReturn(foo);
         when(mockMirrorOps.get(eq(kmmNamespace), eq("bar"))).thenReturn(bar);
-        when(mockMirrorOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture());
+        when(mockMirrorOps.getAsync(anyString(), anyString())).thenReturn(StrimziFuture.completedFuture(null));
 
         // providing the list of ALL Deployments for all the Kafka Mirror Maker clusters
         Labels newLabels = Labels.forStrimziKind(KafkaMirrorMaker.RESOURCE_KIND);
@@ -601,10 +602,10 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
                 asList(KafkaMirrorMakerCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, bar,
                         VERSIONS).generateDeployment(new HashMap<>(), true, null, null))
         );
-        when(mockDcOps.readiness(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
-        when(mockDcOps.waitForObserved(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+        when(mockDcOps.readiness(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(StrimziFuture.completedFuture(null));
+        when(mockDcOps.waitForObserved(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(StrimziFuture.completedFuture(null));
 
-        when(mockSecretOps.reconcile(any(), eq(kmmNamespace), any(), any())).thenReturn(Future.succeededFuture());
+        when(mockSecretOps.reconcile(any(), eq(kmmNamespace), any(), any())).thenReturn(StrimziFuture.completedFuture(null));
 
         Set<String> createdOrUpdated = new CopyOnWriteArraySet<>();
 
@@ -658,18 +659,18 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
         KafkaMirrorMaker kmm = ResourceUtils.createKafkaMirrorMaker(kmmNamespace, kmmName, image, producer, consumer, include);
 
         when(mockMirrorOps.get(kmmNamespace, kmmName)).thenReturn(kmm);
-        when(mockMirrorOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(kmm));
-        when(mockDcOps.reconcile(any(), anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
-        when(mockDcOps.scaleUp(any(), anyString(), anyString(), anyInt(), anyLong())).thenReturn(Future.failedFuture(failureMsg));
-        when(mockDcOps.scaleDown(any(), anyString(), anyString(), anyInt(), anyLong())).thenReturn(Future.succeededFuture(42));
-        when(mockDcOps.readiness(any(), eq(kmmNamespace), eq(kmmName), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
-        when(mockDcOps.waitForObserved(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
-        when(mockPdbOps.reconcile(any(), anyString(), any(), any())).thenReturn(Future.succeededFuture());
+        when(mockMirrorOps.getAsync(anyString(), anyString())).thenReturn(StrimziFuture.completedFuture(kmm));
+        when(mockDcOps.reconcile(any(), anyString(), anyString(), any())).thenReturn(StrimziFuture.completedFuture(null));
+        when(mockDcOps.scaleUp(any(), anyString(), anyString(), anyInt(), anyLong())).thenReturn(StrimziFuture.failedFuture(failureMsg));
+        when(mockDcOps.scaleDown(any(), anyString(), anyString(), anyInt(), anyLong())).thenReturn(StrimziFuture.completedFuture(42));
+        when(mockDcOps.readiness(any(), eq(kmmNamespace), eq(kmmName), anyLong(), anyLong())).thenReturn(StrimziFuture.completedFuture(null));
+        when(mockDcOps.waitForObserved(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(StrimziFuture.completedFuture(null));
+        when(mockPdbOps.reconcile(any(), anyString(), any(), any())).thenReturn(StrimziFuture.completedFuture(null));
 
         ArgumentCaptor<KafkaMirrorMaker> statusCaptor = ArgumentCaptor.forClass(KafkaMirrorMaker.class);
-        when(mockMirrorOps.updateStatusAsync(any(), statusCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockMirrorOps.updateStatusAsync(any(), statusCaptor.capture())).thenReturn(StrimziFuture.completedFuture(null));
 
-        when(mockCmOps.reconcile(any(), anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new ConfigMap())));
+        when(mockCmOps.reconcile(any(), anyString(), any(), any())).thenReturn(StrimziFuture.completedFuture(ReconcileResult.created(new ConfigMap())));
         KafkaMirrorMakerAssemblyOperator ops = new KafkaMirrorMakerAssemblyOperator(vertx,
                 new PlatformFeaturesAvailability(true, kubernetesVersion),
                 new MockCertManager(), new PasswordGenerator(10, "a", "a"),
@@ -712,16 +713,16 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
         KafkaMirrorMaker kmm = ResourceUtils.createKafkaMirrorMaker(kmmNamespace, kmmName, image, 0, producer, consumer, include);
 
         when(mockMirrorOps.get(kmmNamespace, kmmName)).thenReturn(kmm);
-        when(mockMirrorOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(kmm));
-        when(mockDcOps.reconcile(any(), anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
-        when(mockDcOps.scaleUp(any(), anyString(), anyString(), anyInt(), anyLong())).thenReturn(Future.succeededFuture(42));
-        when(mockDcOps.scaleDown(any(), anyString(), anyString(), anyInt(), anyLong())).thenReturn(Future.succeededFuture(42));
-        when(mockDcOps.waitForObserved(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
-        when(mockPdbOps.reconcile(any(), anyString(), any(), any())).thenReturn(Future.succeededFuture());
-        when(mockCmOps.reconcile(any(), anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new ConfigMap())));
+        when(mockMirrorOps.getAsync(anyString(), anyString())).thenReturn(StrimziFuture.completedFuture(kmm));
+        when(mockDcOps.reconcile(any(), anyString(), anyString(), any())).thenReturn(StrimziFuture.completedFuture(null));
+        when(mockDcOps.scaleUp(any(), anyString(), anyString(), anyInt(), anyLong())).thenReturn(StrimziFuture.completedFuture(42));
+        when(mockDcOps.scaleDown(any(), anyString(), anyString(), anyInt(), anyLong())).thenReturn(StrimziFuture.completedFuture(42));
+        when(mockDcOps.waitForObserved(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(StrimziFuture.completedFuture(null));
+        when(mockPdbOps.reconcile(any(), anyString(), any(), any())).thenReturn(StrimziFuture.completedFuture(null));
+        when(mockCmOps.reconcile(any(), anyString(), any(), any())).thenReturn(StrimziFuture.completedFuture(ReconcileResult.created(new ConfigMap())));
 
         ArgumentCaptor<KafkaMirrorMaker> mirrorMakerCaptor = ArgumentCaptor.forClass(KafkaMirrorMaker.class);
-        when(mockMirrorOps.updateStatusAsync(any(), mirrorMakerCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockMirrorOps.updateStatusAsync(any(), mirrorMakerCaptor.capture())).thenReturn(StrimziFuture.completedFuture(null));
 
         KafkaMirrorMakerAssemblyOperator ops = new KafkaMirrorMakerAssemblyOperator(vertx,
                 new PlatformFeaturesAvailability(true, kubernetesVersion),

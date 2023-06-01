@@ -9,7 +9,6 @@ import io.fabric8.kubernetes.api.model.SecretList;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
-import io.vertx.core.Vertx;
 
 /**
  * Operations for {@code Secret}s.
@@ -18,11 +17,10 @@ public class SecretOperator extends AbstractNamespacedResourceOperator<Kubernete
 
     /**
      * Constructor
-     * @param vertx The Vertx instance
      * @param client The Kubernetes client
      */
-    public SecretOperator(Vertx vertx, KubernetesClient client) {
-        super(vertx, client, "Secret");
+    public SecretOperator(KubernetesClient client) {
+        super(client, "Secret");
     }
 
     @Override

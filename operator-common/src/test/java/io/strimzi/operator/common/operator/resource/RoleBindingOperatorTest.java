@@ -15,7 +15,6 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.RbacAPIGroupDSL;
 import io.fabric8.kubernetes.client.dsl.Resource;
-import io.vertx.core.Vertx;
 
 import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
@@ -82,7 +81,7 @@ public class RoleBindingOperatorTest extends AbstractNamespacedResourceOperatorT
 
     @Override
     protected AbstractNamespacedResourceOperator<KubernetesClient, RoleBinding, RoleBindingList,
-                Resource<RoleBinding>> createResourceOperations(Vertx vertx, KubernetesClient mockClient) {
-        return new RoleBindingOperator(vertx, mockClient);
+                Resource<RoleBinding>> createResourceOperations(KubernetesClient mockClient) {
+        return new RoleBindingOperator(mockClient);
     }
 }

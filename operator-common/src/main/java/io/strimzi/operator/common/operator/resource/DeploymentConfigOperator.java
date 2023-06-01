@@ -11,8 +11,7 @@ import io.fabric8.openshift.api.model.DeploymentConfigList;
 import io.fabric8.openshift.client.OpenShiftClient;
 import io.fabric8.openshift.client.dsl.DeployableScalableResource;
 import io.strimzi.operator.common.Reconciliation;
-import io.vertx.core.Future;
-import io.vertx.core.Vertx;
+import io.strimzi.operator.common.StrimziFuture;
 
 /**
  * Operations for {@code DeploymentConfigs}s.
@@ -21,11 +20,10 @@ public class DeploymentConfigOperator extends AbstractScalableNamespacedResource
         DeploymentConfigList, DeployableScalableResource<DeploymentConfig>> {
     /**
      * Constructor
-     * @param vertx The Vertx instance
      * @param client The Kubernetes client
      */
-    public DeploymentConfigOperator(Vertx vertx, OpenShiftClient client) {
-        super(vertx, client, "DeploymentConfig");
+    public DeploymentConfigOperator(OpenShiftClient client) {
+        super(client, "DeploymentConfig");
     }
 
     @Override
@@ -44,7 +42,7 @@ public class DeploymentConfigOperator extends AbstractScalableNamespacedResource
     }
 
     @Override
-    protected Future<ReconcileResult<DeploymentConfig>> internalUpdate(Reconciliation reconciliation, String namespace, String name, DeploymentConfig current, DeploymentConfig desired) {
+    protected StrimziFuture<ReconcileResult<DeploymentConfig>> internalUpdate(Reconciliation reconciliation, String namespace, String name, DeploymentConfig current, DeploymentConfig desired) {
         desired.getSpec().getTemplate().getSpec().getContainers().get(0).setImage(current.getSpec().getTemplate().getSpec().getContainers().get(0).getImage());
         return super.internalUpdate(reconciliation, namespace, name, current, desired);
     }
@@ -61,7 +59,7 @@ public class DeploymentConfigOperator extends AbstractScalableNamespacedResource
      * @return  A future which completes when the observed generation of the deployment configuration matches the
      * generation sequence number of the desired state.
      */
-    public Future<Void> waitForObserved(Reconciliation reconciliation, String namespace, String name, long pollIntervalMs, long timeoutMs) {
+    public StrimziFuture<Void> waitForObserved(Reconciliation reconciliation, String namespace, String name, long pollIntervalMs, long timeoutMs) {
         return waitFor(reconciliation, namespace, name, "observed", pollIntervalMs, timeoutMs, this::isObserved);
     }
 
@@ -119,7 +117,7 @@ public class DeploymentConfigOperator extends AbstractScalableNamespacedResource
     public boolean isReady(String namespace, String name) {
         DeployableScalableResource<DeploymentConfig> resourceOp = operation().inNamespace(namespace).withName(name);
         DeploymentConfig resource = resourceOp.get();
-        
+
         if (resource != null)   {
             return resourceOp.isReady();
         } else {

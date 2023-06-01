@@ -58,6 +58,7 @@ import io.strimzi.operator.common.BackOff;
 import io.strimzi.operator.common.MetricsProvider;
 import io.strimzi.operator.common.MicrometerMetricsProvider;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.StrimziFuture;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.resource.BuildConfigOperator;
 import io.strimzi.operator.common.operator.resource.BuildOperator;
@@ -578,15 +579,15 @@ public class ResourceUtils {
                 mock(ZookeeperLeaderFinder.class),
                 mock(KubernetesRestartEventPublisher.class));
 
-        when(supplier.secretOperations.getAsync(any(), any())).thenReturn(Future.succeededFuture());
-        when(supplier.serviceAccountOperations.reconcile(any(), anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
-        when(supplier.roleBindingOperations.reconcile(any(), anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
-        when(supplier.roleOperations.reconcile(any(), anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
-        when(supplier.clusterRoleBindingOperator.reconcile(any(), anyString(), any())).thenReturn(Future.succeededFuture());
+        when(supplier.secretOperations.getAsync(any(), any())).thenReturn(StrimziFuture.completedFuture(null));
+        when(supplier.serviceAccountOperations.reconcile(any(), anyString(), anyString(), any())).thenReturn(StrimziFuture.completedFuture(null));
+        when(supplier.roleBindingOperations.reconcile(any(), anyString(), anyString(), any())).thenReturn(StrimziFuture.completedFuture(null));
+        when(supplier.roleOperations.reconcile(any(), anyString(), anyString(), any())).thenReturn(StrimziFuture.completedFuture(null));
+        when(supplier.clusterRoleBindingOperator.reconcile(any(), anyString(), any())).thenReturn(StrimziFuture.completedFuture(null));
 
         if (openShift) {
-            when(supplier.routeOperations.reconcile(any(), anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
-            when(supplier.routeOperations.hasAddress(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+            when(supplier.routeOperations.reconcile(any(), anyString(), anyString(), any())).thenReturn(StrimziFuture.completedFuture(null));
+            when(supplier.routeOperations.hasAddress(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(StrimziFuture.completedFuture(null));
             when(supplier.routeOperations.get(anyString(), anyString())).thenAnswer(i -> new RouteBuilder()
                     .withNewStatus()
                     .addNewIngress()
@@ -596,8 +597,8 @@ public class ResourceUtils {
                     .build());
         }
 
-        when(supplier.serviceOperations.hasIngressAddress(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
-        when(supplier.serviceOperations.hasNodePort(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+        when(supplier.serviceOperations.hasIngressAddress(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(StrimziFuture.completedFuture(null));
+        when(supplier.serviceOperations.hasNodePort(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(StrimziFuture.completedFuture(null));
         when(supplier.serviceOperations.get(anyString(), anyString())).thenAnswer(i ->
              new ServiceBuilder()
                     .withNewStatus()

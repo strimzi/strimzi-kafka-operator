@@ -27,6 +27,7 @@ import io.strimzi.operator.cluster.model.ModelUtils;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.StrimziFuture;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.resource.DeploymentOperator;
 import io.strimzi.operator.common.operator.resource.PodOperator;
@@ -144,17 +145,17 @@ public class CaReconcilerTest {
             }).collect(Collectors.toList());
         });
         ArgumentCaptor<Secret> c = ArgumentCaptor.forClass(Secret.class);
-        when(secretOps.reconcile(any(), eq(NAMESPACE), eq(AbstractModel.clusterCaCertSecretName(NAME)), c.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.noop(i.getArgument(0))));
-        when(secretOps.reconcile(any(), eq(NAMESPACE), eq(AbstractModel.clusterCaKeySecretName(NAME)), c.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.noop(i.getArgument(0))));
-        when(secretOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.clientsCaCertificateSecretName(NAME)), c.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.noop(i.getArgument(0))));
-        when(secretOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.clientsCaKeySecretName(NAME)), c.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.noop(i.getArgument(0))));
-        when(secretOps.reconcile(any(), eq(NAMESPACE), eq(ClusterOperator.secretName(NAME)), any())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.created(i.getArgument(0))));
+        when(secretOps.reconcile(any(), eq(NAMESPACE), eq(AbstractModel.clusterCaCertSecretName(NAME)), c.capture())).thenAnswer(i -> StrimziFuture.completedFuture(ReconcileResult.noop(i.getArgument(0))));
+        when(secretOps.reconcile(any(), eq(NAMESPACE), eq(AbstractModel.clusterCaKeySecretName(NAME)), c.capture())).thenAnswer(i -> StrimziFuture.completedFuture(ReconcileResult.noop(i.getArgument(0))));
+        when(secretOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.clientsCaCertificateSecretName(NAME)), c.capture())).thenAnswer(i -> StrimziFuture.completedFuture(ReconcileResult.noop(i.getArgument(0))));
+        when(secretOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.clientsCaKeySecretName(NAME)), c.capture())).thenAnswer(i -> StrimziFuture.completedFuture(ReconcileResult.noop(i.getArgument(0))));
+        when(secretOps.reconcile(any(), eq(NAMESPACE), eq(ClusterOperator.secretName(NAME)), any())).thenAnswer(i -> StrimziFuture.completedFuture(ReconcileResult.created(i.getArgument(0))));
 
-        when(deploymentOps.getAsync(eq(NAMESPACE), any())).thenReturn(Future.succeededFuture());
+        when(deploymentOps.getAsync(eq(NAMESPACE), any())).thenReturn(StrimziFuture.completedFuture());
 
-        when(spsOps.getAsync(eq(NAMESPACE), any())).thenReturn(Future.succeededFuture());
+        when(spsOps.getAsync(eq(NAMESPACE), any())).thenReturn(StrimziFuture.completedFuture(null));
 
-        when(podOps.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(Future.succeededFuture(List.of()));
+        when(podOps.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(StrimziFuture.completedFuture(List.of()));
 
         Reconciliation reconciliation = new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, NAME);
 
@@ -1250,13 +1251,13 @@ public class CaReconcilerTest {
         ArgumentCaptor<Secret> clusterCaKey = ArgumentCaptor.forClass(Secret.class);
         ArgumentCaptor<Secret> clientsCaCert = ArgumentCaptor.forClass(Secret.class);
         ArgumentCaptor<Secret> clientsCaKey = ArgumentCaptor.forClass(Secret.class);
-        when(secretOps.reconcile(any(), eq(NAMESPACE), eq(AbstractModel.clusterCaCertSecretName(NAME)), clusterCaCert.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.created(i.getArgument(0))));
-        when(secretOps.reconcile(any(), eq(NAMESPACE), eq(AbstractModel.clusterCaKeySecretName(NAME)), clusterCaKey.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.created(i.getArgument(0))));
-        when(secretOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.clientsCaCertificateSecretName(NAME)), clientsCaCert.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.created(i.getArgument(0))));
-        when(secretOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.clientsCaKeySecretName(NAME)), clientsCaKey.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.created(i.getArgument(0))));
-        when(secretOps.reconcile(any(), eq(NAMESPACE), eq(ClusterOperator.secretName(NAME)), any())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.created(i.getArgument(0))));
+        when(secretOps.reconcile(any(), eq(NAMESPACE), eq(AbstractModel.clusterCaCertSecretName(NAME)), clusterCaCert.capture())).thenAnswer(i -> StrimziFuture.completedFuture(ReconcileResult.created(i.getArgument(0))));
+        when(secretOps.reconcile(any(), eq(NAMESPACE), eq(AbstractModel.clusterCaKeySecretName(NAME)), clusterCaKey.capture())).thenAnswer(i -> StrimziFuture.completedFuture(ReconcileResult.created(i.getArgument(0))));
+        when(secretOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.clientsCaCertificateSecretName(NAME)), clientsCaCert.capture())).thenAnswer(i -> StrimziFuture.completedFuture(ReconcileResult.created(i.getArgument(0))));
+        when(secretOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.clientsCaKeySecretName(NAME)), clientsCaKey.capture())).thenAnswer(i -> StrimziFuture.completedFuture(ReconcileResult.created(i.getArgument(0))));
+        when(secretOps.reconcile(any(), eq(NAMESPACE), eq(ClusterOperator.secretName(NAME)), any())).thenAnswer(i -> StrimziFuture.completedFuture(ReconcileResult.created(i.getArgument(0))));
 
-        when(podOps.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(Future.succeededFuture(List.of()));
+        when(podOps.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(StrimziFuture.completedFuture(List.of()));
 
         Reconciliation reconciliation = new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, NAME);
 
@@ -1335,13 +1336,13 @@ public class CaReconcilerTest {
         ArgumentCaptor<Secret> clusterCaKey = ArgumentCaptor.forClass(Secret.class);
         ArgumentCaptor<Secret> clientsCaCert = ArgumentCaptor.forClass(Secret.class);
         ArgumentCaptor<Secret> clientsCaKey = ArgumentCaptor.forClass(Secret.class);
-        when(secretOps.reconcile(any(), eq(NAMESPACE), eq(AbstractModel.clusterCaCertSecretName(NAME)), clusterCaCert.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.created(i.getArgument(0))));
-        when(secretOps.reconcile(any(), eq(NAMESPACE), eq(AbstractModel.clusterCaKeySecretName(NAME)), clusterCaKey.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.created(i.getArgument(0))));
-        when(secretOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.clientsCaCertificateSecretName(NAME)), clientsCaCert.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.created(i.getArgument(0))));
-        when(secretOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.clientsCaKeySecretName(NAME)), clientsCaKey.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.created(i.getArgument(0))));
-        when(secretOps.reconcile(any(), eq(NAMESPACE), eq(ClusterOperator.secretName(NAME)), any())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.created(i.getArgument(0))));
+        when(secretOps.reconcile(any(), eq(NAMESPACE), eq(AbstractModel.clusterCaCertSecretName(NAME)), clusterCaCert.capture())).thenAnswer(i -> StrimziFuture.completedFuture(ReconcileResult.created(i.getArgument(0))));
+        when(secretOps.reconcile(any(), eq(NAMESPACE), eq(AbstractModel.clusterCaKeySecretName(NAME)), clusterCaKey.capture())).thenAnswer(i -> StrimziFuture.completedFuture(ReconcileResult.created(i.getArgument(0))));
+        when(secretOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.clientsCaCertificateSecretName(NAME)), clientsCaCert.capture())).thenAnswer(i -> StrimziFuture.completedFuture(ReconcileResult.created(i.getArgument(0))));
+        when(secretOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.clientsCaKeySecretName(NAME)), clientsCaKey.capture())).thenAnswer(i -> StrimziFuture.completedFuture(ReconcileResult.created(i.getArgument(0))));
+        when(secretOps.reconcile(any(), eq(NAMESPACE), eq(ClusterOperator.secretName(NAME)), any())).thenAnswer(i -> StrimziFuture.completedFuture(ReconcileResult.created(i.getArgument(0))));
 
-        when(podOps.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(Future.succeededFuture(List.of()));
+        when(podOps.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(StrimziFuture.completedFuture(List.of()));
 
         Reconciliation reconciliation = new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, NAME);
 
@@ -1414,13 +1415,13 @@ public class CaReconcilerTest {
         ArgumentCaptor<Secret> clusterCaKey = ArgumentCaptor.forClass(Secret.class);
         ArgumentCaptor<Secret> clientsCaCert = ArgumentCaptor.forClass(Secret.class);
         ArgumentCaptor<Secret> clientsCaKey = ArgumentCaptor.forClass(Secret.class);
-        when(secretOps.reconcile(any(), eq(NAMESPACE), eq(AbstractModel.clusterCaCertSecretName(NAME)), clusterCaCert.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.created(i.getArgument(0))));
-        when(secretOps.reconcile(any(), eq(NAMESPACE), eq(AbstractModel.clusterCaKeySecretName(NAME)), clusterCaKey.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.created(i.getArgument(0))));
-        when(secretOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.clientsCaCertificateSecretName(NAME)), clientsCaCert.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.created(i.getArgument(0))));
-        when(secretOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.clientsCaKeySecretName(NAME)), clientsCaKey.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.created(i.getArgument(0))));
-        when(secretOps.reconcile(any(), eq(NAMESPACE), eq(ClusterOperator.secretName(NAME)), any())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.created(i.getArgument(0))));
+        when(secretOps.reconcile(any(), eq(NAMESPACE), eq(AbstractModel.clusterCaCertSecretName(NAME)), clusterCaCert.capture())).thenAnswer(i -> StrimziFuture.completedFuture(ReconcileResult.created(i.getArgument(0))));
+        when(secretOps.reconcile(any(), eq(NAMESPACE), eq(AbstractModel.clusterCaKeySecretName(NAME)), clusterCaKey.capture())).thenAnswer(i -> StrimziFuture.completedFuture(ReconcileResult.created(i.getArgument(0))));
+        when(secretOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.clientsCaCertificateSecretName(NAME)), clientsCaCert.capture())).thenAnswer(i -> StrimziFuture.completedFuture(ReconcileResult.created(i.getArgument(0))));
+        when(secretOps.reconcile(any(), eq(NAMESPACE), eq(KafkaResources.clientsCaKeySecretName(NAME)), clientsCaKey.capture())).thenAnswer(i -> StrimziFuture.completedFuture(ReconcileResult.created(i.getArgument(0))));
+        when(secretOps.reconcile(any(), eq(NAMESPACE), eq(ClusterOperator.secretName(NAME)), any())).thenAnswer(i -> StrimziFuture.completedFuture(ReconcileResult.created(i.getArgument(0))));
 
-        when(podOps.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(Future.succeededFuture(List.of()));
+        when(podOps.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(StrimziFuture.completedFuture(List.of()));
 
         Reconciliation reconciliation = new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, NAME);
 

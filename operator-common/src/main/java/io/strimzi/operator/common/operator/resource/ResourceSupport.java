@@ -4,6 +4,15 @@
  */
 package io.strimzi.operator.common.operator.resource;
 
+import java.io.Closeable;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
+import java.util.concurrent.TimeUnit;
+import java.util.function.BiFunction;
+import java.util.function.Consumer;
+import java.util.function.Function;
+
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.api.model.ListOptionsBuilder;
@@ -16,34 +25,14 @@ import io.fabric8.kubernetes.client.dsl.Listable;
 import io.fabric8.kubernetes.client.dsl.Watchable;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
-import io.vertx.core.AsyncResult;
-import io.vertx.core.CompositeFuture;
-import io.vertx.core.Future;
-import io.vertx.core.Promise;
-import io.vertx.core.Handler;
-import io.vertx.core.Vertx;
-
-import java.io.Closeable;
-import java.util.List;
-import java.util.function.BiFunction;
-import java.util.function.Function;
+import io.strimzi.operator.common.StrimziFuture;
+import io.strimzi.operator.common.Util;
 
 /**
  * Utility method for working with Kubernetes resources
  */
 public class ResourceSupport {
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(ResourceSupport.class);
-
-    private final Vertx vertx;
-
-    /**
-     * Constructor
-     *
-     * @param vertx     Vertx instance
-     */
-    ResourceSupport(Vertx vertx) {
-        this.vertx = vertx;
-    }
 
     /**
      * Asynchronously close the given {@code closeable} on a worker thread,
@@ -52,24 +41,22 @@ public class ResourceSupport {
      * @param closeable The closeable
      * @return The Future
      */
-    public Future<Void> closeOnWorkerThread(Closeable closeable) {
-        return executeBlocking(
-            blockingFuture -> {
-                try {
-                    LOGGER.debugOp("Closing {}", closeable);
-                    closeable.close();
-                    blockingFuture.complete();
-                } catch (Throwable t) {
-                    blockingFuture.fail(t);
-                }
-            });
+    public StrimziFuture<Void> closeOnWorkerThread(Closeable closeable) {
+        return executeBlocking(blockingFuture -> {
+            try {
+                LOGGER.debugOp("Closing {}", closeable);
+                closeable.close();
+                blockingFuture.complete(null);
+            } catch (Throwable t) {
+                blockingFuture.completeExceptionally(t);
+            }
+        });
     }
 
-    <T> Future<T> executeBlocking(Handler<Promise<T>> blockingCodeHandler) {
-        Promise<T> result = Promise.promise();
-        vertx.createSharedWorkerExecutor("kubernetes-ops-pool")
-                .executeBlocking(blockingCodeHandler, true, result);
-        return result.future();
+    <T> StrimziFuture<T> executeBlocking(Consumer<CompletableFuture<T>> blockingCodeHandler) {
+        StrimziFuture<T> result = new StrimziFuture<>();
+        StrimziFuture.completedFuture(result).thenAcceptAsync(blockingCodeHandler);
+        return result;
     }
 
     /**
@@ -82,14 +69,13 @@ public class ResourceSupport {
      * @param secondary The secondary failure.
      * @return The cause.
      */
-    private Throwable collectCauses(AsyncResult<?> primary,
-                            AsyncResult<?> secondary) {
-        Throwable cause = primary.cause();
+    private Throwable collectCauses(Throwable primary, Throwable secondary) {
+        Throwable cause = primary;
         if (cause == null) {
-            cause = secondary.cause();
+            cause = secondary;
         } else {
-            if (secondary.failed()) {
-                cause.addSuppressed(secondary.cause());
+            if (secondary != null) {
+                cause.addSuppressed(secondary);
             }
         }
         return cause;
@@ -128,7 +114,7 @@ public class ResourceSupport {
      * @return A Futures which completes when the {@code watchFn} returns non-null
      * in response to some Kubenetes even on the watched resource(s).
      */
-    <T, U> Future<U> selfClosingWatch(Reconciliation reconciliation,
+    <T, U> StrimziFuture<U> selfClosingWatch(Reconciliation reconciliation,
                                       Watchable<T> watchable,
                                       Gettable<T> gettable,
                                       long operationTimeoutMs,
@@ -137,36 +123,41 @@ public class ResourceSupport {
                                       Function<T, U> preCheckFn) {
 
         return new Watcher<T>() {
-            private final Promise<Watch> watchPromise;
-            private final Promise<U> donePromise;
-            private final Promise<U> resultPromise;
-            private final long timerId;
+            private final CompletableFuture<Watch> watchPromise;
+            private final CompletableFuture<U> donePromise;
+            private final StrimziFuture<U> resultPromise;
 
             /* init */
             {
-                this.watchPromise = Promise.promise();
-                this.donePromise = Promise.promise();
-                this.resultPromise = Promise.promise();
-                this.timerId = vertx.setTimer(operationTimeoutMs,
-                    ignored -> donePromise.tryFail(new TimeoutException("\"" + watchFnDescription + "\" timed out after " + operationTimeoutMs + "ms")));
-                CompositeFuture.join(watchPromise.future(), donePromise.future()).onComplete(joinResult -> {
-                    Future<Void> closeFuture;
-                    if (watchPromise.future().succeeded()) {
-                        closeFuture = closeOnWorkerThread(watchPromise.future().result());
+                this.watchPromise = new StrimziFuture<>();
+                this.donePromise = new StrimziFuture<U>().orTimeout(operationTimeoutMs, TimeUnit.MILLISECONDS);
+                this.resultPromise = new StrimziFuture<>();
+
+                StrimziFuture.allOf(watchPromise, donePromise).whenComplete((nothing, thrown) -> {
+                    CompletionStage<Void> closeFuture;
+
+                    if (succeeded(watchPromise)) {
+                        closeFuture = closeOnWorkerThread(watchPromise.join());
                     } else {
-                        closeFuture = Future.succeededFuture();
+                        closeFuture = StrimziFuture.completedFuture();
                     }
 
-                    closeFuture.onComplete(closeResult ->
-                        vertx.runOnContext(ignored2 -> {
-                            LOGGER.debugCr(reconciliation, "Completing watch future");
-                            if (joinResult.succeeded() && closeResult.succeeded()) {
-                                resultPromise.complete(joinResult.result().resultAt(1));
+                    closeFuture.whenComplete((closeResult, closeThrown) -> {
+                        LOGGER.debugCr(reconciliation, "Completing watch future");
+                        if (thrown == null && closeThrown == null) {
+                            resultPromise.complete(donePromise.join());
+                        } else {
+                            Throwable primary;
+
+                            if (Util.unwrap(thrown) instanceof java.util.concurrent.TimeoutException) {
+                                primary = new TimeoutException("\"" + watchFnDescription + "\" timed out after " + operationTimeoutMs + "ms");
                             } else {
-                                resultPromise.fail(collectCauses(joinResult, closeResult));
+                                primary = thrown;
                             }
+
+                            resultPromise.completeExceptionally(collectCauses(primary, closeThrown));
                         }
-                    ));
+                    });
                 });
 
                 try {
@@ -178,40 +169,35 @@ public class ResourceSupport {
                     U apply = preCheckFn.apply(gettable.get());
                     if (apply != null) {
                         LOGGER.debugCr(reconciliation, "Pre-check is already complete, no need to wait for the watch: {}", watchFnDescription);
-                        donePromise.tryComplete(apply);
-                        vertx.cancelTimer(timerId);
+                        donePromise.complete(apply);
                     } else {
                         LOGGER.debugCr(reconciliation, "Pre-check is not complete yet, let's wait for the watch: {}", watchFnDescription);
                     }
 
                     watchPromise.complete(watch);
                 } catch (Throwable t) {
-                    watchPromise.fail(t);
+                    watchPromise.completeExceptionally(t);
                 }
             }
 
             @Override
             public void eventReceived(Action action, T resource) {
-                vertx.executeBlocking(
-                    f -> {
-                        try {
-                            U apply = watchFn.apply(action, resource);
-                            if (apply != null) {
-                                LOGGER.debugCr(reconciliation, "Satisfied: {}", watchFnDescription);
-                                f.tryComplete(apply);
-                                vertx.cancelTimer(timerId);
-                            } else {
-                                LOGGER.debugCr(reconciliation, "Not yet satisfied: {}", watchFnDescription);
-                            }
-                        } catch (Throwable t) {
-                            if (!f.tryFail(t)) {
-                                LOGGER.debugCr(reconciliation, "Ignoring exception thrown while " +
-                                        "evaluating watch {} because the future was already completed", watchFnDescription, t);
-                            }
+                StrimziFuture.runAsync(() -> {
+                    try {
+                        U apply = watchFn.apply(action, resource);
+                        if (apply != null) {
+                            LOGGER.debugCr(reconciliation, "Satisfied: {}", watchFnDescription);
+                            donePromise.complete(apply);
+                        } else {
+                            LOGGER.debugCr(reconciliation, "Not yet satisfied: {}", watchFnDescription);
                         }
-                    },
-                    true,
-                        donePromise);
+                    } catch (Throwable t) {
+                        if (!donePromise.completeExceptionally(t)) {
+                            LOGGER.debugCr(reconciliation, "Ignoring exception thrown while " +
+                                    "evaluating watch {} because the future was already completed", watchFnDescription, t);
+                        }
+                    }
+                });
             }
 
             @Override
@@ -219,7 +205,11 @@ public class ResourceSupport {
 
             }
 
-        }.resultPromise.future();
+        }.resultPromise;
+    }
+
+    static boolean succeeded(CompletableFuture<?> future) {
+        return future.isDone() && !future.isCompletedExceptionally();
     }
 
     /**
@@ -231,7 +221,7 @@ public class ResourceSupport {
      * @param resource The resource(s) to delete.
      * @return A Future which completes on the context thread.
      */
-    Future<Void> deleteAsync(Deletable resource) {
+    StrimziFuture<Void> deleteAsync(Deletable resource) {
         return executeBlocking(
             blockingFuture -> {
                 try {
@@ -239,9 +229,9 @@ public class ResourceSupport {
                     // In both cases we return success since the end-result has been achieved
                     // Throws an exception for other errors
                     resource.delete();
-                    blockingFuture.complete();
+                    blockingFuture.complete(null);
                 } catch (Throwable t) {
-                    blockingFuture.fail(t);
+                    blockingFuture.completeExceptionally(t);
                 }
             });
     }
@@ -252,13 +242,13 @@ public class ResourceSupport {
      * @param resource The resource(s) to get.
      * @return A Future which completes on the context thread.
      */
-    <T> Future<T> getAsync(Gettable<T> resource) {
+    <T> StrimziFuture<T> getAsync(Gettable<T> resource) {
         return executeBlocking(
             blockingFuture -> {
                 try {
                     blockingFuture.complete(resource.get());
                 } catch (Throwable t) {
-                    blockingFuture.fail(t);
+                    blockingFuture.completeExceptionally(t);
                 }
             });
     }
@@ -269,13 +259,13 @@ public class ResourceSupport {
      * @param resource The resources to list.
      * @return A Future which completes on the context thread.
      */
-    <T extends HasMetadata, L extends KubernetesResourceList<T>> Future<List<T>> listAsync(Listable<L> resource) {
+    <T extends HasMetadata, L extends KubernetesResourceList<T>> StrimziFuture<List<T>> listAsync(Listable<L> resource) {
         return executeBlocking(
             blockingFuture -> {
                 try {
                     blockingFuture.complete(resource.list(new ListOptionsBuilder().withResourceVersion("0").build()).getItems());
                 } catch (Throwable t) {
-                    blockingFuture.fail(t);
+                    blockingFuture.completeExceptionally(t);
                 }
             });
     }

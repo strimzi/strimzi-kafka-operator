@@ -10,7 +10,6 @@ import io.fabric8.kubernetes.api.model.ConfigMapList;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
-import io.vertx.core.Vertx;
 
 import static java.util.Collections.singletonMap;
 import static org.mockito.Mockito.when;
@@ -18,13 +17,13 @@ import static org.mockito.Mockito.when;
 public class ConfigMapOperatorTest extends AbstractNamespacedResourceOperatorTest<KubernetesClient, ConfigMap, ConfigMapList, Resource<ConfigMap>> {
 
     @Override
-    protected void  mocker(KubernetesClient mockClient, MixedOperation mockCms) {
+    protected void mocker(KubernetesClient mockClient, MixedOperation mockCms) {
         when(mockClient.configMaps()).thenReturn(mockCms);
     }
 
     @Override
-    protected AbstractNamespacedResourceOperator<KubernetesClient, ConfigMap, ConfigMapList, Resource<ConfigMap>> createResourceOperations(Vertx vertx, KubernetesClient mockClient) {
-        return new ConfigMapOperator(vertx, mockClient);
+    protected AbstractNamespacedResourceOperator<KubernetesClient, ConfigMap, ConfigMapList, Resource<ConfigMap>> createResourceOperations(KubernetesClient mockClient) {
+        return new ConfigMapOperator(mockClient);
     }
 
     @Override

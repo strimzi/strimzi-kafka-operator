@@ -23,12 +23,13 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 @ExtendWith(VertxExtension.class)
 public class ServiceAccountOperatorIT extends AbstractNamespacedResourceOperatorIT<KubernetesClient, ServiceAccount, ServiceAccountList, Resource<ServiceAccount>> {
     @Override
     protected AbstractNamespacedResourceOperator<KubernetesClient, ServiceAccount, ServiceAccountList, Resource<ServiceAccount>> operator() {
-        return new ServiceAccountOperator(vertx, client);
+        return new ServiceAccountOperator(client);
     }
 
     @Override
@@ -57,36 +58,39 @@ public class ServiceAccountOperatorIT extends AbstractNamespacedResourceOperator
     @Override
     public void testCreateModifyDelete(VertxTestContext context)    {
         Checkpoint async = context.checkpoint();
-        ServiceAccountOperator op = new ServiceAccountOperator(vertx, client);
+        ServiceAccountOperator op = new ServiceAccountOperator(client);
 
         ServiceAccount newResource = getOriginal();
         ServiceAccount modResource = getModified();
 
         op.reconcile(Reconciliation.DUMMY_RECONCILIATION, namespace, resourceName, newResource)
-                .onComplete(context.succeeding(rrCreated -> {
+                .whenComplete((rrCreated, e) -> {
+                    assertNull(e);
                     ServiceAccount created = op.get(namespace, resourceName);
 
                     context.verify(() -> assertThat(created, Matchers.is(notNullValue())));
                     assertResources(context, newResource, created);
-                }))
-                .compose(rr -> op.reconcile(Reconciliation.DUMMY_RECONCILIATION, namespace, resourceName, modResource))
-                .onComplete(context.succeeding(rrModified -> {
+                })
+                .thenCompose(rr -> op.reconcile(Reconciliation.DUMMY_RECONCILIATION, namespace, resourceName, modResource))
+                .whenComplete((rrModified, e) -> {
+                    assertNull(e);
                     ServiceAccount modified = op.get(namespace, resourceName);
 
                     context.verify(() -> assertThat(modified, Matchers.is(notNullValue())));
                     assertResources(context, modResource, modified);
-                }))
-                .compose(rr -> op.reconcile(Reconciliation.DUMMY_RECONCILIATION, namespace, resourceName, null))
-                .onComplete(context.succeeding(rrDeleted -> {
+                })
+                .thenCompose(rr -> op.reconcile(Reconciliation.DUMMY_RECONCILIATION, namespace, resourceName, null))
+                .whenComplete((rrDeleted, e) -> {
+                    assertNull(e);
                     // it seems the resource is cached for some time so we need wait for it to be null
-                    context.verify(() -> Util.waitFor(Reconciliation.DUMMY_RECONCILIATION, vertx, "resource deletion " + resourceName, "deleted", 1000,
+                    context.verify(() -> Util.waitFor(Reconciliation.DUMMY_RECONCILIATION, "resource deletion " + resourceName, "deleted", 1000,
                             30_000, () -> op.get(namespace, resourceName) == null)
-                            .onComplete(del -> {
+                            .whenComplete((nothing, e1) -> {
                                 assertThat(op.get(namespace, resourceName), Matchers.is(nullValue()));
                                 async.flag();
                             })
                     );
-                }));
+                });
     }
 
     @Override

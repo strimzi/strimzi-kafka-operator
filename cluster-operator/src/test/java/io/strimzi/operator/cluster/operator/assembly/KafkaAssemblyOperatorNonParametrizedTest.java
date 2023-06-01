@@ -18,10 +18,10 @@ import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.StrimziFuture;
 import io.strimzi.operator.common.operator.resource.ClusterRoleBindingOperator;
 import io.strimzi.operator.common.operator.resource.CrdOperator;
 import io.strimzi.platform.KubernetesVersion;
-import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.core.WorkerExecutor;
 import io.vertx.junit5.Checkpoint;
@@ -78,7 +78,7 @@ public class KafkaAssemblyOperatorNonParametrizedTest {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
         ClusterRoleBindingOperator mockCrbOps = supplier.clusterRoleBindingOperator;
         ArgumentCaptor<ClusterRoleBinding> desiredCrb = ArgumentCaptor.forClass(ClusterRoleBinding.class);
-        when(mockCrbOps.reconcile(any(), eq(KafkaResources.initContainerClusterRoleBindingName(NAME, NAMESPACE)), desiredCrb.capture())).thenReturn(Future.succeededFuture());
+        when(mockCrbOps.reconcile(any(), eq(KafkaResources.initContainerClusterRoleBindingName(NAME, NAMESPACE)), desiredCrb.capture())).thenReturn(StrimziFuture.completedFuture(null));
 
         KafkaAssemblyOperator op = new KafkaAssemblyOperator(vertx, new PlatformFeaturesAvailability(false, KubernetesVersion.MINIMAL_SUPPORTED_VERSION), certManager, passwordGenerator,
                 supplier, new ClusterOperatorConfig.ClusterOperatorConfigBuilder(ResourceUtils.dummyClusterOperatorConfig(), KafkaVersionTestUtils.getKafkaVersionLookup()).with(ClusterOperatorConfig.OPERATION_TIMEOUT_MS.key(), "1").build());
@@ -120,9 +120,9 @@ public class KafkaAssemblyOperatorNonParametrizedTest {
 
         // Mock the CRD Operator for Kafka resources
         CrdOperator<KubernetesClient, Kafka, KafkaList> mockKafkaOps = supplier.kafkaOperator;
-        when(mockKafkaOps.getAsync(eq(NAMESPACE), eq(NAME))).thenReturn(Future.succeededFuture(kafka));
+        when(mockKafkaOps.getAsync(eq(NAMESPACE), eq(NAME))).thenReturn(StrimziFuture.completedFuture(kafka));
         when(mockKafkaOps.get(eq(NAMESPACE), eq(NAME))).thenReturn(kafka);
-        when(mockKafkaOps.updateStatusAsync(any(), any(Kafka.class))).thenReturn(Future.succeededFuture());
+        when(mockKafkaOps.updateStatusAsync(any(), any(Kafka.class))).thenReturn(StrimziFuture.completedFuture(null));
 
         ClusterOperatorConfig config = new ClusterOperatorConfig.ClusterOperatorConfigBuilder(ResourceUtils.dummyClusterOperatorConfig(), KafkaVersionTestUtils.getKafkaVersionLookup())
                 .with(ClusterOperatorConfig.OPERATION_TIMEOUT_MS.key(), "120000")

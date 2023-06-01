@@ -11,7 +11,6 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.RbacAPIGroupDSL;
 import io.fabric8.kubernetes.client.dsl.Resource;
-import io.vertx.core.Vertx;
 
 import static java.util.Collections.singletonMap;
 import static org.mockito.Mockito.mock;
@@ -29,9 +28,8 @@ public class ClusterRoleOperatorTest extends AbstractNonNamespacedResourceOperat
 
     @Override
     protected AbstractNonNamespacedResourceOperator<KubernetesClient, ClusterRole, ClusterRoleList,
-            Resource<ClusterRole>> createResourceOperations(
-                    Vertx vertx, KubernetesClient mockClient) {
-        return new ClusterRoleOperator(vertx, mockClient) {
+            Resource<ClusterRole>> createResourceOperations(KubernetesClient mockClient) {
+        return new ClusterRoleOperator(mockClient) {
             @Override
             protected long deleteTimeoutMs() {
                 return 100;

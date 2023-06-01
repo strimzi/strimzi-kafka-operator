@@ -9,7 +9,6 @@ import io.fabric8.kubernetes.api.model.rbac.RoleList;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
-import io.vertx.core.Vertx;
 
 /**
  * Operator for managing Roles
@@ -21,11 +20,10 @@ public class RoleOperator extends AbstractNamespacedResourceOperator<
         Resource<Role>> {
     /**
      * Constructor
-     * @param vertx The Vertx instance
      * @param client The Kubernetes client
      */
-    public RoleOperator(Vertx vertx, KubernetesClient client) {
-        super(vertx, client, "Role");
+    public RoleOperator(KubernetesClient client) {
+        super(client, "Role");
     }
 
     @Override

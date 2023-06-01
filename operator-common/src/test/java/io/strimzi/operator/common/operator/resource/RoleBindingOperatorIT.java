@@ -27,7 +27,7 @@ public class RoleBindingOperatorIT extends AbstractNamespacedResourceOperatorIT<
 
     @Override
     protected AbstractNamespacedResourceOperator<KubernetesClient, RoleBinding, RoleBindingList, Resource<RoleBinding>> operator() {
-        return new RoleBindingOperator(vertx, client);
+        return new RoleBindingOperator(client);
     }
 
     @Override

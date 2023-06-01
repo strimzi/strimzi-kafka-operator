@@ -11,7 +11,6 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.PodResource;
 import io.fabric8.kubernetes.client.dsl.Resource;
-import io.vertx.core.Vertx;
 
 import static org.mockito.Mockito.when;
 
@@ -55,7 +54,7 @@ public class PodOperatorTest extends
     }
 
     @Override
-    protected PodOperator createResourceOperations(Vertx vertx, KubernetesClient mockClient) {
-        return new PodOperator(vertx, mockClient);
+    protected PodOperator createResourceOperations(KubernetesClient mockClient) {
+        return new PodOperator(mockClient);
     }
 }

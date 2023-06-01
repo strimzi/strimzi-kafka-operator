@@ -49,7 +49,7 @@ public class K8sImpl implements K8s {
     public K8sImpl(Vertx vertx, KubernetesClient client, Labels labels, String namespace) {
         this.vertx = vertx;
         this.client = client;
-        this.crdOperator = new CrdOperator<>(vertx, client, KafkaTopic.class, KafkaTopicList.class, KafkaTopic.RESOURCE_KIND);
+        this.crdOperator = new CrdOperator<>(client, KafkaTopic.class, KafkaTopicList.class, KafkaTopic.RESOURCE_KIND);
         this.labels = labels;
         this.namespace = namespace;
     }

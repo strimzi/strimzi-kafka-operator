@@ -13,10 +13,10 @@ import io.strimzi.api.kafka.model.KafkaClusterSpecBuilder;
 import io.strimzi.operator.cluster.model.jmx.JmxModel;
 import io.strimzi.operator.cluster.model.jmx.SupportsJmx;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.StrimziFuture;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.strimzi.operator.common.operator.resource.SecretOperator;
-import io.vertx.core.Future;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
@@ -69,7 +69,7 @@ public class ReconcilerUtilsTest {
         JmxModel jmx = new JmxModel(NAMESPACE, NAME, LABELS, OWNER_REFERENCE, spec);
 
         SecretOperator mockSecretOps = mock(SecretOperator.class);
-        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(NAME))).thenReturn(Future.succeededFuture());
+        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(NAME))).thenReturn(StrimziFuture.completedFuture(null));
 
         Checkpoint async = context.checkpoint();
         ReconcilerUtils.reconcileJmxSecret(Reconciliation.DUMMY_RECONCILIATION, mockSecretOps, new MockJmxCluster(jmx))
@@ -86,12 +86,12 @@ public class ReconcilerUtilsTest {
         JmxModel jmx = new JmxModel(NAMESPACE, NAME, LABELS, OWNER_REFERENCE, spec);
 
         SecretOperator mockSecretOps = mock(SecretOperator.class);
-        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(NAME))).thenReturn(Future.succeededFuture(EXISTING_JMX_SECRET));
+        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(NAME))).thenReturn(StrimziFuture.completedFuture(EXISTING_JMX_SECRET));
         when(mockSecretOps.reconcile(any(), any(), any(), any())).thenAnswer(i -> {
             if (i.getArgument(3) == null) {
-                return Future.succeededFuture(ReconcileResult.deleted());
+                return StrimziFuture.completedFuture(ReconcileResult.deleted());
             } else {
-                return Future.succeededFuture(ReconcileResult.patched(i.getArgument(3)));
+                return StrimziFuture.completedFuture(ReconcileResult.patched(i.getArgument(3)));
             }
         });
 
@@ -110,7 +110,7 @@ public class ReconcilerUtilsTest {
         JmxModel jmx = new JmxModel(NAMESPACE, NAME, LABELS, OWNER_REFERENCE, spec);
 
         SecretOperator mockSecretOps = mock(SecretOperator.class);
-        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(NAME))).thenReturn(Future.succeededFuture());
+        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(NAME))).thenReturn(StrimziFuture.completedFuture(null));
 
         Checkpoint async = context.checkpoint();
         ReconcilerUtils.reconcileJmxSecret(Reconciliation.DUMMY_RECONCILIATION, mockSecretOps, new MockJmxCluster(jmx))
@@ -127,12 +127,12 @@ public class ReconcilerUtilsTest {
         JmxModel jmx = new JmxModel(NAMESPACE, NAME, LABELS, OWNER_REFERENCE, spec);
 
         SecretOperator mockSecretOps = mock(SecretOperator.class);
-        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(NAME))).thenReturn(Future.succeededFuture(EXISTING_JMX_SECRET));
+        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(NAME))).thenReturn(StrimziFuture.completedFuture(EXISTING_JMX_SECRET));
         when(mockSecretOps.reconcile(any(), any(), any(), any())).thenAnswer(i -> {
             if (i.getArgument(3) == null) {
-                return Future.succeededFuture(ReconcileResult.deleted());
+                return StrimziFuture.completedFuture(ReconcileResult.deleted());
             } else {
-                return Future.succeededFuture(ReconcileResult.patched(i.getArgument(3)));
+                return StrimziFuture.completedFuture(ReconcileResult.patched(i.getArgument(3)));
             }
         });
 
@@ -156,9 +156,9 @@ public class ReconcilerUtilsTest {
         JmxModel jmx = new JmxModel(NAMESPACE, NAME, LABELS, OWNER_REFERENCE, spec);
 
         SecretOperator mockSecretOps = mock(SecretOperator.class);
-        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(NAME))).thenReturn(Future.succeededFuture());
+        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(NAME))).thenReturn(StrimziFuture.completedFuture(null));
         ArgumentCaptor<Secret> secretCaptor = ArgumentCaptor.forClass(Secret.class);
-        when(mockSecretOps.reconcile(any(), any(), any(), secretCaptor.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.created(i.getArgument(3))));
+        when(mockSecretOps.reconcile(any(), any(), any(), secretCaptor.capture())).thenAnswer(i -> StrimziFuture.completedFuture(ReconcileResult.created(i.getArgument(3))));
 
         Checkpoint async = context.checkpoint();
         ReconcilerUtils.reconcileJmxSecret(Reconciliation.DUMMY_RECONCILIATION, mockSecretOps, new MockJmxCluster(jmx))
@@ -191,9 +191,9 @@ public class ReconcilerUtilsTest {
         JmxModel jmx = new JmxModel(NAMESPACE, NAME, LABELS, OWNER_REFERENCE, spec);
 
         SecretOperator mockSecretOps = mock(SecretOperator.class);
-        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(NAME))).thenReturn(Future.succeededFuture(EXISTING_JMX_SECRET));
+        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(NAME))).thenReturn(StrimziFuture.completedFuture(EXISTING_JMX_SECRET));
         ArgumentCaptor<Secret> secretCaptor = ArgumentCaptor.forClass(Secret.class);
-        when(mockSecretOps.reconcile(any(), any(), any(), secretCaptor.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.patched(i.getArgument(3))));
+        when(mockSecretOps.reconcile(any(), any(), any(), secretCaptor.capture())).thenAnswer(i -> StrimziFuture.completedFuture(ReconcileResult.patched(i.getArgument(3))));
 
         Checkpoint async = context.checkpoint();
         ReconcilerUtils.reconcileJmxSecret(Reconciliation.DUMMY_RECONCILIATION, mockSecretOps, new MockJmxCluster(jmx))

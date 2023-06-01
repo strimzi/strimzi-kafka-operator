@@ -28,6 +28,7 @@ import io.strimzi.operator.cluster.model.PodSetUtils;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.StrimziFuture;
 import io.strimzi.operator.common.operator.MockCertManager;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.strimzi.operator.common.operator.resource.SecretOperator;
@@ -137,7 +138,7 @@ public class KafkaReconcilerUpgradeDowngradeTest {
         // Mock StrimziPodSet operations
         StrimziPodSetOperator mockSpsOps = supplier.strimziPodSetOperator;
         ArgumentCaptor<StrimziPodSet> spsCaptor = ArgumentCaptor.forClass(StrimziPodSet.class);
-        when(mockSpsOps.reconcile(any(), any(), any(), spsCaptor.capture())).thenReturn(Future.succeededFuture(ReconcileResult.patched(new StrimziPodSet())));
+        when(mockSpsOps.reconcile(any(), any(), any(), spsCaptor.capture())).thenReturn(StrimziFuture.completedFuture(ReconcileResult.patched(new StrimziPodSet())));
 
         // Mock Secret gets
         SecretOperator mockSecretOps = supplier.secretOperations;
@@ -180,7 +181,7 @@ public class KafkaReconcilerUpgradeDowngradeTest {
         // Mock StrimziPodSet operations
         StrimziPodSetOperator mockSpsOps = supplier.strimziPodSetOperator;
         ArgumentCaptor<StrimziPodSet> spsCaptor = ArgumentCaptor.forClass(StrimziPodSet.class);
-        when(mockSpsOps.reconcile(any(), any(), any(), spsCaptor.capture())).thenReturn(Future.succeededFuture(ReconcileResult.patched(new StrimziPodSet())));
+        when(mockSpsOps.reconcile(any(), any(), any(), spsCaptor.capture())).thenReturn(StrimziFuture.completedFuture(ReconcileResult.patched(new StrimziPodSet())));
 
         // Mock Secret gets
         SecretOperator mockSecretOps = supplier.secretOperations;
@@ -233,7 +234,7 @@ public class KafkaReconcilerUpgradeDowngradeTest {
         // Mock StrimziPodSet operations
         StrimziPodSetOperator mockSpsOps = supplier.strimziPodSetOperator;
         ArgumentCaptor<StrimziPodSet> spsCaptor = ArgumentCaptor.forClass(StrimziPodSet.class);
-        when(mockSpsOps.reconcile(any(), any(), any(), spsCaptor.capture())).thenReturn(Future.succeededFuture(ReconcileResult.patched(new StrimziPodSet())));
+        when(mockSpsOps.reconcile(any(), any(), any(), spsCaptor.capture())).thenReturn(StrimziFuture.completedFuture(ReconcileResult.patched(new StrimziPodSet())));
 
         // Mock Secret gets
         SecretOperator mockSecretOps = supplier.secretOperations;

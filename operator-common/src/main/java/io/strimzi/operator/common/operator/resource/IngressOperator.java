@@ -10,8 +10,7 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.operator.common.Reconciliation;
-import io.vertx.core.Future;
-import io.vertx.core.Vertx;
+import io.strimzi.operator.common.StrimziFuture;
 
 /**
  * Operations for {@code Ingress}es.
@@ -20,11 +19,10 @@ public class IngressOperator extends AbstractNamespacedResourceOperator<Kubernet
 
     /**
      * Constructor
-     * @param vertx The Vertx instance
      * @param client The Kubernetes client
      */
-    public IngressOperator(Vertx vertx, KubernetesClient client) {
-        super(vertx, client, "Ingress");
+    public IngressOperator(KubernetesClient client) {
+        super(client, "Ingress");
     }
 
     @Override
@@ -57,7 +55,7 @@ public class IngressOperator extends AbstractNamespacedResourceOperator<Kubernet
      * @return  Future with reconciliation result
      */
     @Override
-    protected Future<ReconcileResult<Ingress>> internalUpdate(Reconciliation reconciliation, String namespace, String name, Ingress current, Ingress desired) {
+    protected StrimziFuture<ReconcileResult<Ingress>> internalUpdate(Reconciliation reconciliation, String namespace, String name, Ingress current, Ingress desired) {
         patchIngressClassName(current, desired);
 
         return super.internalUpdate(reconciliation, namespace, name, current, desired);
@@ -88,7 +86,7 @@ public class IngressOperator extends AbstractNamespacedResourceOperator<Kubernet
      * @param timeoutMs     Timeout
      * @return A future that succeeds when the Service has an assigned address.
      */
-    public Future<Void> hasIngressAddress(Reconciliation reconciliation, String namespace, String name, long pollIntervalMs, long timeoutMs) {
+    public StrimziFuture<Void> hasIngressAddress(Reconciliation reconciliation, String namespace, String name, long pollIntervalMs, long timeoutMs) {
         return waitFor(reconciliation, namespace, name, "addressable", pollIntervalMs, timeoutMs, this::isIngressAddressReady);
     }
 

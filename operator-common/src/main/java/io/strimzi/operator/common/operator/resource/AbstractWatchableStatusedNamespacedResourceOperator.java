@@ -9,8 +9,7 @@ import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.operator.common.Reconciliation;
-import io.vertx.core.Future;
-import io.vertx.core.Vertx;
+import io.strimzi.operator.common.StrimziFuture;
 
 /**
  * Class used for managing Kubernetes resources which can be watched and have Status. This is used by the assembly
@@ -30,12 +29,11 @@ public abstract class AbstractWatchableStatusedNamespacedResourceOperator<
     /**
      * Constructor.
      *
-     * @param vertx        The vertx instance.
      * @param client       The kubernetes client.
      * @param resourceKind The mind of Kubernetes resource (used for logging).
      */
-    public AbstractWatchableStatusedNamespacedResourceOperator(Vertx vertx, C client, String resourceKind) {
-        super(vertx, client, resourceKind);
+    public AbstractWatchableStatusedNamespacedResourceOperator(C client, String resourceKind) {
+        super(client, resourceKind);
     }
 
     /**
@@ -45,5 +43,5 @@ public abstract class AbstractWatchableStatusedNamespacedResourceOperator<
      * @param resource  Resource with the status which should be updated in the Kube API server
      * @return          Future with the updated resource
      */
-    public abstract Future<T> updateStatusAsync(Reconciliation reconciliation, T resource);
+    public abstract StrimziFuture<T> updateStatusAsync(Reconciliation reconciliation, T resource);
 }

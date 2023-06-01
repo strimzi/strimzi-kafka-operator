@@ -51,6 +51,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.StringTokenizer;
+import java.util.concurrent.CompletionException;
 import java.util.function.BooleanSupplier;
 import java.util.function.Function;
 
@@ -444,5 +445,12 @@ public final class TestUtils {
         } catch (IOException e) {
             throw new RuntimeException("Failed to find free port", e);
         }
+    }
+
+    public static Optional<Throwable> unwrap(Throwable error) {
+        if (error instanceof CompletionException) {
+            return Optional.of(((CompletionException) error).getCause());
+        }
+        return Optional.ofNullable(error);
     }
 }

@@ -32,7 +32,7 @@ public class RoleOperatorIT extends AbstractNamespacedResourceOperatorIT<
                 Role,
                 RoleList,
                 Resource<Role>> operator() {
-        return new RoleOperator(vertx, client);
+        return new RoleOperator(client);
     }
 
     @Override

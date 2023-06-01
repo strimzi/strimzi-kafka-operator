@@ -4,6 +4,11 @@
  */
 package io.strimzi.operator.common.operator.resource;
 
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
+import static org.mockito.Mockito.when;
+
+import org.junit.jupiter.api.Test;
+
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.openshift.api.model.Build;
 import io.fabric8.openshift.api.model.BuildConfig;
@@ -12,12 +17,7 @@ import io.fabric8.openshift.api.model.BuildConfigList;
 import io.fabric8.openshift.api.model.BuildTriggerPolicy;
 import io.fabric8.openshift.client.OpenShiftClient;
 import io.fabric8.openshift.client.dsl.BuildConfigResource;
-import io.vertx.core.Vertx;
 import io.vertx.junit5.VertxTestContext;
-import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assumptions.assumeTrue;
-import static org.mockito.Mockito.when;
 
 public class BuildConfigOperatorTest extends AbstractNamespacedResourceOperatorTest<OpenShiftClient, BuildConfig,
         BuildConfigList, BuildConfigResource<BuildConfig, Void, Build>> {
@@ -28,8 +28,8 @@ public class BuildConfigOperatorTest extends AbstractNamespacedResourceOperatorT
     }
 
     @Override
-    protected BuildConfigOperator createResourceOperations(Vertx vertx, OpenShiftClient mockClient) {
-        return new BuildConfigOperator(vertx, mockClient);
+    protected BuildConfigOperator createResourceOperations(OpenShiftClient mockClient) {
+        return new BuildConfigOperator(mockClient);
     }
 
     @Override

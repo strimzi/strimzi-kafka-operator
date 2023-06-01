@@ -4,6 +4,9 @@
  */
 package io.strimzi.operator.common.operator.resource;
 
+import java.util.Map;
+import java.util.Objects;
+
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapList;
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -11,11 +14,7 @@ import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
-import io.vertx.core.Future;
-import io.vertx.core.Vertx;
-
-import java.util.Map;
-import java.util.Objects;
+import io.strimzi.operator.common.StrimziFuture;
 
 /**
  * Operations for {@code ConfigMap}s.
@@ -27,11 +26,10 @@ public class ConfigMapOperator extends AbstractNamespacedResourceOperator<Kubern
     /**
      * Constructor
      *
-     * @param vertx The Vertx instance
      * @param client The Kubernetes client
      */
-    public ConfigMapOperator(Vertx vertx, KubernetesClient client) {
-        super(vertx, client, "ConfigMap");
+    public ConfigMapOperator(KubernetesClient client) {
+        super(client, "ConfigMap");
     }
 
     @Override
@@ -40,7 +38,7 @@ public class ConfigMapOperator extends AbstractNamespacedResourceOperator<Kubern
     }
 
     @Override
-    protected Future<ReconcileResult<ConfigMap>> internalUpdate(Reconciliation reconciliation, String namespace, String name, ConfigMap current, ConfigMap desired) {
+    protected StrimziFuture<ReconcileResult<ConfigMap>> internalUpdate(Reconciliation reconciliation, String namespace, String name, ConfigMap current, ConfigMap desired) {
         try {
             if (compareObjects(current.getData(), desired.getData())
                     && compareObjects(current.getMetadata().getName(), desired.getMetadata().getName())
@@ -50,18 +48,18 @@ public class ConfigMapOperator extends AbstractNamespacedResourceOperator<Kubern
                 // Checking some metadata. We cannot check entire metadata object because it contains
                 // timestamps which would cause restarting loop
                 LOGGER.debugCr(reconciliation, "{} {} in namespace {} has not been patched because resources are equal", resourceKind, name, namespace);
-                return Future.succeededFuture(ReconcileResult.noop(current));
+                return StrimziFuture.completedFuture(ReconcileResult.noop(current));
             } else {
                 return super.internalUpdate(reconciliation, namespace, name, current, desired);
             }
         } catch (Exception e) {
             LOGGER.errorCr(reconciliation, "Caught exception while patching {} {} in namespace {}", resourceKind, name, namespace, e);
-            return Future.failedFuture(e);
+            return StrimziFuture.failedFuture(e);
         }
     }
 
     private boolean compareObjects(Object a, Object b) {
-        if (a == null && b instanceof Map && ((Map) b).size() == 0)
+        if (a == null && b instanceof Map<?, ?> bMap && bMap.size() == 0)
             return true;
         return !(a instanceof Map ^ b instanceof Map) && Objects.equals(a, b);
     }

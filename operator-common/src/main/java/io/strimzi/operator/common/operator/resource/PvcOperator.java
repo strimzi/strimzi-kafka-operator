@@ -4,6 +4,8 @@
  */
 package io.strimzi.operator.common.operator.resource;
 
+import java.util.regex.Pattern;
+
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaimList;
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -11,10 +13,7 @@ import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
-import io.vertx.core.Future;
-import io.vertx.core.Vertx;
-
-import java.util.regex.Pattern;
+import io.strimzi.operator.common.StrimziFuture;
 
 /**
  * Operations for {@code PersistentVolumeClaim}s.
@@ -34,11 +33,10 @@ public class PvcOperator extends AbstractNamespacedResourceOperator<KubernetesCl
 
     /**
      * Constructor
-     * @param vertx The Vertx instance
      * @param client The Kubernetes client
      */
-    public PvcOperator(Vertx vertx, KubernetesClient client) {
-        super(vertx, client, "PersistentVolumeClaim");
+    public PvcOperator(KubernetesClient client) {
+        super(client, "PersistentVolumeClaim");
     }
 
     @Override
@@ -69,7 +67,7 @@ public class PvcOperator extends AbstractNamespacedResourceOperator<KubernetesCl
      * @return  Future with reconciliation result
      */
     @Override
-    protected Future<ReconcileResult<PersistentVolumeClaim>> internalUpdate(Reconciliation reconciliation, String namespace, String name, PersistentVolumeClaim current, PersistentVolumeClaim desired) {
+    protected StrimziFuture<ReconcileResult<PersistentVolumeClaim>> internalUpdate(Reconciliation reconciliation, String namespace, String name, PersistentVolumeClaim current, PersistentVolumeClaim desired) {
         try {
             if (current.getSpec() != null && desired.getSpec() != null)   {
                 revertImmutableChanges(current, desired);
@@ -78,7 +76,7 @@ public class PvcOperator extends AbstractNamespacedResourceOperator<KubernetesCl
             return super.internalUpdate(reconciliation, namespace, name, current, desired);
         } catch (Exception e) {
             LOGGER.errorCr(reconciliation, "Caught exception while patching {} {} in namespace {}", resourceKind, name, namespace, e);
-            return Future.failedFuture(e);
+            return StrimziFuture.failedFuture(e);
         }
     }
 

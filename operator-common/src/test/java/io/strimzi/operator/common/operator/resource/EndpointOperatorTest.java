@@ -10,7 +10,6 @@ import io.fabric8.kubernetes.api.model.EndpointsList;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
-import io.vertx.core.Vertx;
 
 import static org.mockito.Mockito.when;
 
@@ -53,7 +52,7 @@ public class EndpointOperatorTest extends AbstractReadyResourceOperatorTest<Kube
     }
 
     @Override
-    protected EndpointOperator createResourceOperations(Vertx vertx, KubernetesClient mockClient) {
-        return new EndpointOperator(vertx, mockClient);
+    protected EndpointOperator createResourceOperations(KubernetesClient mockClient) {
+        return new EndpointOperator(mockClient);
     }
 }

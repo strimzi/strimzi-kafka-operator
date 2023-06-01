@@ -13,7 +13,6 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.RbacAPIGroupDSL;
 import io.fabric8.kubernetes.client.dsl.Resource;
-import io.vertx.core.Vertx;
 
 import static java.util.Collections.singletonMap;
 import static org.mockito.Mockito.mock;
@@ -72,7 +71,7 @@ public class RoleOperatorTest extends AbstractNamespacedResourceOperatorTest<
     }
 
     @Override
-    protected AbstractNamespacedResourceOperator<KubernetesClient, Role, RoleList, Resource<Role>> createResourceOperations(Vertx vertx, KubernetesClient mockClient) {
-        return new RoleOperator(vertx, mockClient);
+    protected AbstractNamespacedResourceOperator<KubernetesClient, Role, RoleList, Resource<Role>> createResourceOperations(KubernetesClient mockClient) {
+        return new RoleOperator(mockClient);
     }
 }

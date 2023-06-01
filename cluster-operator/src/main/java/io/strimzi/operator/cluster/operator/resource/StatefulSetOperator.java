@@ -14,17 +14,15 @@ import io.fabric8.kubernetes.client.dsl.RollableScalableResource;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
+import io.strimzi.operator.common.StrimziFuture;
 import io.strimzi.operator.common.operator.resource.AbstractScalableNamespacedResourceOperator;
 import io.strimzi.operator.common.operator.resource.PodOperator;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
-import io.vertx.core.CompositeFuture;
-import io.vertx.core.Future;
-import io.vertx.core.Promise;
-import io.vertx.core.Vertx;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletionStage;
 
 /**
  * Operations for {@code StatefulSets}s
@@ -39,22 +37,20 @@ public class StatefulSetOperator extends AbstractScalableNamespacedResourceOpera
 
     /**
      * Constructor
-     * @param vertx The Vertx instance.
      * @param client The Kubernetes client.
      * @param operationTimeoutMs The timeout.
      */
-    public StatefulSetOperator(Vertx vertx, KubernetesClient client, long operationTimeoutMs) {
-        this(vertx, client, operationTimeoutMs, new PodOperator(vertx, client));
+    public StatefulSetOperator(KubernetesClient client, long operationTimeoutMs) {
+        this(client, operationTimeoutMs, new PodOperator(client));
     }
 
     /**
-     * @param vertx The Vertx instance.
      * @param client The Kubernetes client.
      * @param operationTimeoutMs The timeout.
      * @param podOperator The pod operator.
      */
-    public StatefulSetOperator(Vertx vertx, KubernetesClient client, long operationTimeoutMs, PodOperator podOperator) {
-        super(vertx, client, "StatefulSet");
+    public StatefulSetOperator(KubernetesClient client, long operationTimeoutMs, PodOperator podOperator) {
+        super(client, "StatefulSet");
         this.podOperations = podOperator;
         this.operationTimeoutMs = operationTimeoutMs;
     }
@@ -156,36 +152,32 @@ public class StatefulSetOperator extends AbstractScalableNamespacedResourceOpera
     }
 
     @Override
-    protected Future<ReconcileResult<StatefulSet>> internalCreate(Reconciliation reconciliation, String namespace, String name, StatefulSet desired) {
+    protected StrimziFuture<ReconcileResult<StatefulSet>> internalCreate(Reconciliation reconciliation, String namespace, String name, StatefulSet desired) {
         // Create the STS...
-        Promise<ReconcileResult<StatefulSet>> result = Promise.promise();
         setGeneration(desired, INIT_GENERATION);
-        Future<ReconcileResult<StatefulSet>> crt = super.internalCreate(reconciliation, namespace, name, desired);
+        StrimziFuture<ReconcileResult<StatefulSet>> crt = super.internalCreate(reconciliation, namespace, name, desired);
 
-        if (crt.failed()) {
+        if (crt.isCompletedExceptionally()) {
             return crt;
         }
-        // ... then wait for the STS to be ready...
-        crt.compose(res -> readiness(reconciliation, namespace, desired.getMetadata().getName(), 1_000, operationTimeoutMs).map(res))
-        // ... then wait for all the pods to be ready
-            .compose(res -> podReadiness(reconciliation, namespace, desired, 1_000, operationTimeoutMs).map(res))
-            .onComplete(result);
 
-        return result.future();
+        // ... then wait for the STS to be ready...
+        return crt.thenCompose(res -> readiness(reconciliation, namespace, desired.getMetadata().getName(), 1_000, operationTimeoutMs).thenApply(nothing -> res))
+                // ... then wait for all the pods to be ready
+            .thenCompose(res -> podReadiness(reconciliation, namespace, desired, 1_000, operationTimeoutMs).thenApply(nothing -> res));
     }
 
     /**
      * Returns a future that completes when all the pods [0...replicas-1] in the given statefulSet are ready.
      */
-    protected Future<?> podReadiness(Reconciliation reconciliation, String namespace, StatefulSet desired, long pollInterval, long operationTimeoutMs) {
+    protected StrimziFuture<?> podReadiness(Reconciliation reconciliation, String namespace, StatefulSet desired, long pollInterval, long operationTimeoutMs) {
         final int replicas = desired.getSpec().getReplicas();
-        @SuppressWarnings({ "rawtypes" }) // Has to use Raw type because of the CompositeFuture
-        List<Future> waitPodResult = new ArrayList<>(replicas);
+        List<CompletionStage<?>> waitPodResult = new ArrayList<>(replicas);
         for (int i = 0; i < replicas; i++) {
             String podName = getPodName(desired, i);
             waitPodResult.add(podOperations.readiness(reconciliation, namespace, podName, pollInterval, operationTimeoutMs));
         }
-        return CompositeFuture.join(waitPodResult);
+        return StrimziFuture.allOf(waitPodResult);
     }
 
     /**
@@ -194,7 +186,7 @@ public class StatefulSetOperator extends AbstractScalableNamespacedResourceOpera
      * {@inheritDoc}
      */
     @Override
-    protected Future<ReconcileResult<StatefulSet>> internalUpdate(Reconciliation reconciliation, String namespace, String name, StatefulSet current, StatefulSet desired) {
+    protected StrimziFuture<ReconcileResult<StatefulSet>> internalUpdate(Reconciliation reconciliation, String namespace, String name, StatefulSet current, StatefulSet desired) {
         StatefulSetDiff diff = new StatefulSetDiff(reconciliation, current, desired);
 
         if (shouldIncrementGeneration(reconciliation, diff)) {
@@ -230,34 +222,34 @@ public class StatefulSetOperator extends AbstractScalableNamespacedResourceOpera
      *
      * @return Future with result of the reconciliation
      */
-    protected Future<ReconcileResult<StatefulSet>> internalReplace(Reconciliation reconciliation, String namespace, String name, StatefulSet current, StatefulSet desired, boolean cascading) {
+    protected StrimziFuture<ReconcileResult<StatefulSet>> internalReplace(Reconciliation reconciliation, String namespace, String name, StatefulSet current, StatefulSet desired, boolean cascading) {
         try {
-            Promise<ReconcileResult<StatefulSet>> promise = Promise.promise();
+            StrimziFuture<ReconcileResult<StatefulSet>> promise = new StrimziFuture<>();
 
             long pollingIntervalMs = 1_000;
 
             operation().inNamespace(namespace).withName(name).withPropagationPolicy(cascading ? DeletionPropagation.FOREGROUND : DeletionPropagation.ORPHAN).withGracePeriod(-1L).delete();
 
-            Future<Void> deletedFut = waitFor(reconciliation, namespace, name, "deleted", pollingIntervalMs, operationTimeoutMs, (ignore1, ignore2) -> {
+            CompletionStage<Void> deletedFut = waitFor(reconciliation, namespace, name, "deleted", pollingIntervalMs, operationTimeoutMs, (ignore1, ignore2) -> {
                 StatefulSet sts = get(namespace, name);
                 LOGGER.traceCr(reconciliation, "Checking if {} {} in namespace {} has been deleted", resourceKind, name, namespace);
                 return sts == null;
             });
 
-            deletedFut.onComplete(res -> {
-                if (res.succeeded())    {
+            deletedFut.whenComplete((res, err) -> {
+                if (err == null)    {
                     StatefulSet result = operation().inNamespace(namespace).resource(desired).create();
                     LOGGER.debugCr(reconciliation, "{} {} in namespace {} has been replaced", resourceKind, name, namespace);
                     promise.complete(wasChanged(current, result) ? ReconcileResult.patched(result) : ReconcileResult.noop(result));
                 } else {
-                    promise.fail(res.cause());
+                    promise.completeExceptionally(err);
                 }
             });
 
-            return promise.future();
+            return promise;
         } catch (Exception e) {
             LOGGER.debugCr(reconciliation, "Caught exception while replacing {} {} in namespace {}", resourceKind, name, namespace, e);
-            return Future.failedFuture(e);
+            return StrimziFuture.failedFuture(e);
         }
     }
 }

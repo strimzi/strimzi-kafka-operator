@@ -9,8 +9,7 @@ import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.operator.common.Reconciliation;
-import io.vertx.core.Future;
-import io.vertx.core.Vertx;
+import io.strimzi.operator.common.StrimziFuture;
 
 /**
  * Specializes {@link AbstractNamespacedResourceOperator} for resources which also have a notion
@@ -30,12 +29,11 @@ public abstract class AbstractReadyNamespacedResourceOperator<C extends Kubernet
     /**
      * Constructor.
      *
-     * @param vertx        The vertx instance.
      * @param client       The kubernetes client.
      * @param resourceKind The mind of Kubernetes resource (used for logging).
      */
-    public AbstractReadyNamespacedResourceOperator(Vertx vertx, C client, String resourceKind) {
-        super(vertx, client, resourceKind);
+    public AbstractReadyNamespacedResourceOperator(C client, String resourceKind) {
+        super(client, resourceKind);
     }
 
     /**
@@ -49,7 +47,7 @@ public abstract class AbstractReadyNamespacedResourceOperator<C extends Kubernet
      *
      * @return  A future which completes when the resource is ready or times out
      */
-    public Future<Void> readiness(Reconciliation reconciliation, String namespace, String name, long pollIntervalMs, long timeoutMs) {
+    public StrimziFuture<Void> readiness(Reconciliation reconciliation, String namespace, String name, long pollIntervalMs, long timeoutMs) {
         return waitFor(reconciliation, namespace, name, pollIntervalMs, timeoutMs, this::isReady);
     }
 

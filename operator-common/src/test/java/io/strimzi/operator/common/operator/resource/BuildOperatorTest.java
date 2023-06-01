@@ -4,15 +4,14 @@
  */
 package io.strimzi.operator.common.operator.resource;
 
+import static org.mockito.Mockito.when;
+
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.openshift.api.model.Build;
 import io.fabric8.openshift.api.model.BuildBuilder;
 import io.fabric8.openshift.api.model.BuildList;
 import io.fabric8.openshift.client.OpenShiftClient;
 import io.fabric8.openshift.client.dsl.BuildResource;
-import io.vertx.core.Vertx;
-
-import static org.mockito.Mockito.when;
 
 public class BuildOperatorTest extends AbstractNamespacedResourceOperatorTest<OpenShiftClient, Build, BuildList, BuildResource> {
 
@@ -22,8 +21,8 @@ public class BuildOperatorTest extends AbstractNamespacedResourceOperatorTest<Op
     }
 
     @Override
-    protected BuildOperator createResourceOperations(Vertx vertx, OpenShiftClient mockClient) {
-        return new BuildOperator(vertx, mockClient);
+    protected BuildOperator createResourceOperations(OpenShiftClient mockClient) {
+        return new BuildOperator(mockClient);
     }
 
     @Override

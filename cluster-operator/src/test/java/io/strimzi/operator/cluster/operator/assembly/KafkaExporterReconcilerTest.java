@@ -21,12 +21,12 @@ import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.StrimziFuture;
 import io.strimzi.operator.common.operator.MockCertManager;
 import io.strimzi.operator.common.operator.resource.DeploymentOperator;
 import io.strimzi.operator.common.operator.resource.NetworkPolicyOperator;
 import io.strimzi.operator.common.operator.resource.SecretOperator;
 import io.strimzi.operator.common.operator.resource.ServiceAccountOperator;
-import io.vertx.core.Future;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
@@ -73,21 +73,21 @@ public class KafkaExporterReconcilerTest {
 
         ServiceAccountOperator mockSaOps = supplier.serviceAccountOperations;
         ArgumentCaptor<ServiceAccount> saCaptor = ArgumentCaptor.forClass(ServiceAccount.class);
-        when(mockSaOps.reconcile(any(), eq(NAMESPACE), eq(KafkaExporterResources.deploymentName(NAME)), saCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockSaOps.reconcile(any(), eq(NAMESPACE), eq(KafkaExporterResources.deploymentName(NAME)), saCaptor.capture())).thenReturn(StrimziFuture.completedFuture(null));
 
         SecretOperator mockSecretOps = supplier.secretOperations;
         ArgumentCaptor<Secret> secretCaptor = ArgumentCaptor.forClass(Secret.class);
-        when(mockSecretOps.reconcile(any(), eq(NAMESPACE), eq(KafkaExporterResources.secretName(NAME)), secretCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockSecretOps.reconcile(any(), eq(NAMESPACE), eq(KafkaExporterResources.secretName(NAME)), secretCaptor.capture())).thenReturn(StrimziFuture.completedFuture(null));
 
         NetworkPolicyOperator mockNetPolicyOps = supplier.networkPolicyOperator;
         ArgumentCaptor<NetworkPolicy> netPolicyCaptor = ArgumentCaptor.forClass(NetworkPolicy.class);
-        when(mockNetPolicyOps.reconcile(any(), eq(NAMESPACE), eq(KafkaExporterResources.deploymentName(NAME)), netPolicyCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockNetPolicyOps.reconcile(any(), eq(NAMESPACE), eq(KafkaExporterResources.deploymentName(NAME)), netPolicyCaptor.capture())).thenReturn(StrimziFuture.completedFuture(null));
 
         DeploymentOperator mockDepOps = supplier.deploymentOperations;
         ArgumentCaptor<Deployment> depCaptor = ArgumentCaptor.forClass(Deployment.class);
-        when(mockDepOps.reconcile(any(), eq(NAMESPACE), eq(KafkaExporterResources.deploymentName(NAME)), depCaptor.capture())).thenReturn(Future.succeededFuture());
-        when(mockDepOps.waitForObserved(any(), eq(NAMESPACE), eq(KafkaExporterResources.deploymentName(NAME)), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
-        when(mockDepOps.readiness(any(), eq(NAMESPACE), eq(KafkaExporterResources.deploymentName(NAME)), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+        when(mockDepOps.reconcile(any(), eq(NAMESPACE), eq(KafkaExporterResources.deploymentName(NAME)), depCaptor.capture())).thenReturn(StrimziFuture.completedFuture(null));
+        when(mockDepOps.waitForObserved(any(), eq(NAMESPACE), eq(KafkaExporterResources.deploymentName(NAME)), anyLong(), anyLong())).thenReturn(StrimziFuture.completedFuture(null));
+        when(mockDepOps.readiness(any(), eq(NAMESPACE), eq(KafkaExporterResources.deploymentName(NAME)), anyLong(), anyLong())).thenReturn(StrimziFuture.completedFuture(null));
 
         Kafka kafka = new KafkaBuilder(ResourceUtils.createKafka(NAMESPACE, NAME, 3, "foo", 120, 30))
                 .editSpec()
@@ -140,20 +140,20 @@ public class KafkaExporterReconcilerTest {
 
         ServiceAccountOperator mockSaOps = supplier.serviceAccountOperations;
         ArgumentCaptor<ServiceAccount> saCaptor = ArgumentCaptor.forClass(ServiceAccount.class);
-        when(mockSaOps.reconcile(any(), eq(NAMESPACE), eq(KafkaExporterResources.deploymentName(NAME)), saCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockSaOps.reconcile(any(), eq(NAMESPACE), eq(KafkaExporterResources.deploymentName(NAME)), saCaptor.capture())).thenReturn(StrimziFuture.completedFuture(null));
 
         SecretOperator mockSecretOps = supplier.secretOperations;
         ArgumentCaptor<Secret> secretCaptor = ArgumentCaptor.forClass(Secret.class);
-        when(mockSecretOps.reconcile(any(), eq(NAMESPACE), eq(KafkaExporterResources.secretName(NAME)), secretCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockSecretOps.reconcile(any(), eq(NAMESPACE), eq(KafkaExporterResources.secretName(NAME)), secretCaptor.capture())).thenReturn(StrimziFuture.completedFuture(null));
 
         NetworkPolicyOperator mockNetPolicyOps = supplier.networkPolicyOperator;
-        when(mockNetPolicyOps.reconcile(any(), eq(NAMESPACE), eq(KafkaExporterResources.deploymentName(NAME)), any())).thenReturn(Future.succeededFuture());
+        when(mockNetPolicyOps.reconcile(any(), eq(NAMESPACE), eq(KafkaExporterResources.deploymentName(NAME)), any())).thenReturn(StrimziFuture.completedFuture(null));
 
         DeploymentOperator mockDepOps = supplier.deploymentOperations;
         ArgumentCaptor<Deployment> depCaptor = ArgumentCaptor.forClass(Deployment.class);
-        when(mockDepOps.reconcile(any(), eq(NAMESPACE), eq(KafkaExporterResources.deploymentName(NAME)), depCaptor.capture())).thenReturn(Future.succeededFuture());
-        when(mockDepOps.waitForObserved(any(), eq(NAMESPACE), eq(KafkaExporterResources.deploymentName(NAME)), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
-        when(mockDepOps.readiness(any(), eq(NAMESPACE), eq(KafkaExporterResources.deploymentName(NAME)), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+        when(mockDepOps.reconcile(any(), eq(NAMESPACE), eq(KafkaExporterResources.deploymentName(NAME)), depCaptor.capture())).thenReturn(StrimziFuture.completedFuture(null));
+        when(mockDepOps.waitForObserved(any(), eq(NAMESPACE), eq(KafkaExporterResources.deploymentName(NAME)), anyLong(), anyLong())).thenReturn(StrimziFuture.completedFuture(null));
+        when(mockDepOps.readiness(any(), eq(NAMESPACE), eq(KafkaExporterResources.deploymentName(NAME)), anyLong(), anyLong())).thenReturn(StrimziFuture.completedFuture(null));
 
         Kafka kafka = new KafkaBuilder(ResourceUtils.createKafka(NAMESPACE, NAME, 3, "foo", 120, 30))
                 .editSpec()
@@ -200,21 +200,21 @@ public class KafkaExporterReconcilerTest {
 
         ServiceAccountOperator mockSaOps = supplier.serviceAccountOperations;
         ArgumentCaptor<ServiceAccount> saCaptor = ArgumentCaptor.forClass(ServiceAccount.class);
-        when(mockSaOps.reconcile(any(), eq(NAMESPACE), eq(KafkaExporterResources.deploymentName(NAME)), saCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockSaOps.reconcile(any(), eq(NAMESPACE), eq(KafkaExporterResources.deploymentName(NAME)), saCaptor.capture())).thenReturn(StrimziFuture.completedFuture(null));
 
         SecretOperator mockSecretOps = supplier.secretOperations;
         ArgumentCaptor<Secret> secretCaptor = ArgumentCaptor.forClass(Secret.class);
-        when(mockSecretOps.reconcile(any(), eq(NAMESPACE), eq(KafkaExporterResources.secretName(NAME)), secretCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockSecretOps.reconcile(any(), eq(NAMESPACE), eq(KafkaExporterResources.secretName(NAME)), secretCaptor.capture())).thenReturn(StrimziFuture.completedFuture(null));
 
         NetworkPolicyOperator mockNetPolicyOps = supplier.networkPolicyOperator;
         ArgumentCaptor<NetworkPolicy> netPolicyCaptor = ArgumentCaptor.forClass(NetworkPolicy.class);
-        when(mockNetPolicyOps.reconcile(any(), eq(NAMESPACE), eq(KafkaExporterResources.deploymentName(NAME)), netPolicyCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockNetPolicyOps.reconcile(any(), eq(NAMESPACE), eq(KafkaExporterResources.deploymentName(NAME)), netPolicyCaptor.capture())).thenReturn(StrimziFuture.completedFuture(null));
 
         DeploymentOperator mockDepOps = supplier.deploymentOperations;
         ArgumentCaptor<Deployment> depCaptor = ArgumentCaptor.forClass(Deployment.class);
-        when(mockDepOps.reconcile(any(), eq(NAMESPACE), eq(KafkaExporterResources.deploymentName(NAME)), depCaptor.capture())).thenReturn(Future.succeededFuture());
-        when(mockDepOps.waitForObserved(any(), eq(NAMESPACE), eq(KafkaExporterResources.deploymentName(NAME)), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
-        when(mockDepOps.readiness(any(), eq(NAMESPACE), eq(KafkaExporterResources.deploymentName(NAME)), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+        when(mockDepOps.reconcile(any(), eq(NAMESPACE), eq(KafkaExporterResources.deploymentName(NAME)), depCaptor.capture())).thenReturn(StrimziFuture.completedFuture(null));
+        when(mockDepOps.waitForObserved(any(), eq(NAMESPACE), eq(KafkaExporterResources.deploymentName(NAME)), anyLong(), anyLong())).thenReturn(StrimziFuture.completedFuture(null));
+        when(mockDepOps.readiness(any(), eq(NAMESPACE), eq(KafkaExporterResources.deploymentName(NAME)), anyLong(), anyLong())).thenReturn(StrimziFuture.completedFuture(null));
 
         Kafka kafka = ResourceUtils.createKafka(NAMESPACE, NAME, 3, "foo", 120, 30);
 
@@ -257,20 +257,20 @@ public class KafkaExporterReconcilerTest {
 
         ServiceAccountOperator mockSaOps = supplier.serviceAccountOperations;
         ArgumentCaptor<ServiceAccount> saCaptor = ArgumentCaptor.forClass(ServiceAccount.class);
-        when(mockSaOps.reconcile(any(), eq(NAMESPACE), eq(KafkaExporterResources.deploymentName(NAME)), saCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockSaOps.reconcile(any(), eq(NAMESPACE), eq(KafkaExporterResources.deploymentName(NAME)), saCaptor.capture())).thenReturn(StrimziFuture.completedFuture(null));
 
         SecretOperator mockSecretOps = supplier.secretOperations;
         ArgumentCaptor<Secret> secretCaptor = ArgumentCaptor.forClass(Secret.class);
-        when(mockSecretOps.reconcile(any(), eq(NAMESPACE), eq(KafkaExporterResources.secretName(NAME)), secretCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockSecretOps.reconcile(any(), eq(NAMESPACE), eq(KafkaExporterResources.secretName(NAME)), secretCaptor.capture())).thenReturn(StrimziFuture.completedFuture(null));
 
         NetworkPolicyOperator mockNetPolicyOps = supplier.networkPolicyOperator;
-        when(mockNetPolicyOps.reconcile(any(), eq(NAMESPACE), eq(KafkaExporterResources.deploymentName(NAME)), any())).thenReturn(Future.succeededFuture());
+        when(mockNetPolicyOps.reconcile(any(), eq(NAMESPACE), eq(KafkaExporterResources.deploymentName(NAME)), any())).thenReturn(StrimziFuture.completedFuture(null));
 
         DeploymentOperator mockDepOps = supplier.deploymentOperations;
         ArgumentCaptor<Deployment> depCaptor = ArgumentCaptor.forClass(Deployment.class);
-        when(mockDepOps.reconcile(any(), eq(NAMESPACE), eq(KafkaExporterResources.deploymentName(NAME)), depCaptor.capture())).thenReturn(Future.succeededFuture());
-        when(mockDepOps.waitForObserved(any(), eq(NAMESPACE), eq(KafkaExporterResources.deploymentName(NAME)), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
-        when(mockDepOps.readiness(any(), eq(NAMESPACE), eq(KafkaExporterResources.deploymentName(NAME)), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+        when(mockDepOps.reconcile(any(), eq(NAMESPACE), eq(KafkaExporterResources.deploymentName(NAME)), depCaptor.capture())).thenReturn(StrimziFuture.completedFuture(null));
+        when(mockDepOps.waitForObserved(any(), eq(NAMESPACE), eq(KafkaExporterResources.deploymentName(NAME)), anyLong(), anyLong())).thenReturn(StrimziFuture.completedFuture(null));
+        when(mockDepOps.readiness(any(), eq(NAMESPACE), eq(KafkaExporterResources.deploymentName(NAME)), anyLong(), anyLong())).thenReturn(StrimziFuture.completedFuture(null));
 
         Kafka kafka = ResourceUtils.createKafka(NAMESPACE, NAME, 3, "foo", 120, 30);
 

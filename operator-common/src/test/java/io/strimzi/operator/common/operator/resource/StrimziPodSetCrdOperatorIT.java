@@ -16,8 +16,8 @@ import io.strimzi.api.kafka.StrimziPodSetList;
 import io.strimzi.api.kafka.model.StrimziPodSet;
 import io.strimzi.api.kafka.model.StrimziPodSetBuilder;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.Util;
 import io.strimzi.test.TestUtils;
-import io.vertx.core.Promise;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
@@ -28,11 +28,13 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 /**
  * The main purpose of the Integration Tests for the operators is to test them against a real Kubernetes cluster.
@@ -48,7 +50,7 @@ public class StrimziPodSetCrdOperatorIT extends AbstractCustomResourceOperatorIT
 
     @Override
     protected StrimziPodSetOperator operator() {
-        return new StrimziPodSetOperator(vertx, client, 10_000L);
+        return new StrimziPodSetOperator(client, 10_000L);
     }
 
     @Override
@@ -150,7 +152,7 @@ public class StrimziPodSetCrdOperatorIT extends AbstractCustomResourceOperatorIT
     private void readinessHelper(StrimziPodSetOperator op, String namespace, String resourceName)  {
         LOGGER.info("Setup helper to update readiness");
         op.waitFor(Reconciliation.DUMMY_RECONCILIATION, namespace, resourceName, 100L, 10_000L, (n, ns) -> operator().get(namespace, resourceName) != null)
-                .compose(i -> {
+                .thenCompose(i -> {
                     LOGGER.info("Updating readiness in helper");
                     return op.updateStatusAsync(Reconciliation.DUMMY_RECONCILIATION, getResource(resourceName));
                 });
@@ -163,14 +165,14 @@ public class StrimziPodSetCrdOperatorIT extends AbstractCustomResourceOperatorIT
         String namespace = getNamespace();
 
         // We create custom operator here to use small timout
-        StrimziPodSetOperator op = new StrimziPodSetOperator(vertx, client, 100L);
+        StrimziPodSetOperator op = new StrimziPodSetOperator(client, 100L);
 
         LOGGER.info("Creating resource");
         op.reconcile(Reconciliation.DUMMY_RECONCILIATION, namespace, resourceName, getResource(resourceName))
-                .onComplete(context.failing(e -> context.verify(() -> {
-                    assertThat(e, instanceOf(TimeoutException.class));
+                .whenComplete((rr, e) -> {
+                    context.verify(() -> assertThat(Util.unwrap(e), instanceOf(TimeoutException.class)));
                     async.flag();
-                })));
+                });
     }
 
     @Test
@@ -184,12 +186,15 @@ public class StrimziPodSetCrdOperatorIT extends AbstractCustomResourceOperatorIT
 
         LOGGER.info("Creating resource");
         op.reconcile(Reconciliation.DUMMY_RECONCILIATION, namespace, resourceName, getResource(resourceName))
-                .onComplete(context.succeeding(i -> { }))
-                .compose(rrModified -> {
+                .whenComplete((rrModified, e) -> assertNull(e))
+                .thenCompose(rrModified -> {
                     LOGGER.info("Deleting resource");
                     return op.reconcile(Reconciliation.DUMMY_RECONCILIATION, namespace, resourceName, null);
                 })
-                .onComplete(context.succeeding(rrDeleted ->  async.flag()));
+                .whenComplete((rrDeleted, e) -> {
+                    assertNull(e);
+                    async.flag();
+                });
     }
 
     @Test
@@ -203,25 +208,29 @@ public class StrimziPodSetCrdOperatorIT extends AbstractCustomResourceOperatorIT
 
         LOGGER.info("Creating resource");
         op.reconcile(Reconciliation.DUMMY_RECONCILIATION, namespace, resourceName, getResource(resourceName))
-                .onComplete(context.succeeding(i -> { }))
-                .compose(i -> op.getAsync(namespace, resourceName)) // We need to get it again because of the faked readiness which would cause 409 error
-                .onComplete(context.succeeding(i -> { }))
-                .compose(resource -> {
-                    StrimziPodSet newStatus = getResourceWithNewReadyStatus(resource);
+                .whenComplete((rr, e) -> assertNull(e))
+                .thenCompose(i -> op.getAsync(namespace, resourceName)) // We need to get it again because of the faked readiness which would cause 409 error
+                .whenComplete((podSet, e) -> assertNull(e))
+                .thenCompose(podSet -> {
+                    StrimziPodSet newStatus = getResourceWithNewReadyStatus(podSet);
 
                     LOGGER.info("Updating resource status");
                     return op.updateStatusAsync(Reconciliation.DUMMY_RECONCILIATION, newStatus);
                 })
-                .onComplete(context.succeeding(i -> { }))
-
-                .compose(rrModified -> op.getAsync(namespace, resourceName))
-                .onComplete(context.succeeding(modifiedCustomResource -> context.verify(() -> assertReady(context, modifiedCustomResource))))
-
-                .compose(rrModified -> {
+                .whenComplete((podSet, e) -> assertNull(e))
+                .thenCompose(podSet -> op.getAsync(namespace, resourceName))
+                .whenComplete((podSet, e) -> {
+                    assertNull(e);
+                    context.verify(() -> assertReady(context, podSet));
+                })
+                .thenCompose(podSet -> {
                     LOGGER.info("Deleting resource");
                     return op.reconcile(Reconciliation.DUMMY_RECONCILIATION, namespace, resourceName, null);
                 })
-                .onComplete(context.succeeding(rrDeleted ->  async.flag()));
+                .whenComplete((podsetDeleted, e) -> {
+                    assertNull(e);
+                    async.flag();
+                });
     }
 
     /**
@@ -242,27 +251,29 @@ public class StrimziPodSetCrdOperatorIT extends AbstractCustomResourceOperatorIT
 
         LOGGER.info("Creating resource");
         op.reconcile(Reconciliation.DUMMY_RECONCILIATION, namespace, resourceName, getResource(resourceName))
-                .onComplete(context.succeeding(i -> { }))
+                .whenComplete((rr, e) -> assertNull(e))
 
-                .compose(rr -> {
+                .thenCompose(rr -> {
                     LOGGER.info("Saving resource with status change prior to deletion");
                     newStatus.set(getResourceWithNewReadyStatus(op.get(namespace, resourceName)));
                     LOGGER.info("Deleting resource");
                     return op.reconcile(Reconciliation.DUMMY_RECONCILIATION, namespace, resourceName, null);
                 })
-                .onComplete(context.succeeding(i -> { }))
-                .compose(i -> {
+                .whenComplete((rr, e) -> assertNull(e))
+                .thenCompose(i -> {
                     LOGGER.info("Wait for confirmed deletion");
                     return op.waitFor(Reconciliation.DUMMY_RECONCILIATION, namespace, resourceName, 100L, 10_000L, (n, ns) -> operator().get(namespace, resourceName) == null);
                 })
-                .compose(i -> {
+                .thenCompose(i -> {
                     LOGGER.info("Updating resource with new status - should fail");
                     return op.updateStatusAsync(Reconciliation.DUMMY_RECONCILIATION, newStatus.get());
                 })
-                .onComplete(context.failing(e -> context.verify(() -> {
-                    assertThat(e, instanceOf(KubernetesClientException.class));
-                    async.flag();
-                })));
+                .whenComplete((rr, e) -> {
+                    context.verify(() -> {
+                        assertThat(Util.unwrap(e), instanceOf(KubernetesClientException.class));
+                        async.flag();
+                    });
+                });
     }
 
     /**
@@ -278,13 +289,13 @@ public class StrimziPodSetCrdOperatorIT extends AbstractCustomResourceOperatorIT
 
         StrimziPodSetOperator op = operator();
 
-        Promise<Void> updateStatus = Promise.promise();
+        CompletableFuture<Void> updateStatus = new CompletableFuture<>();
         readinessHelper(op, namespace, resourceName); // Required to be able to create the resource
 
         LOGGER.info("Creating resource");
         op.reconcile(Reconciliation.DUMMY_RECONCILIATION, namespace, resourceName, getResource(resourceName))
-                .onComplete(context.succeeding(i -> { }))
-                .compose(rrCreated -> {
+                .whenComplete((rr, e) -> assertNull(e))
+                .thenCompose(rrCreated -> {
                     StrimziPodSet updated = getResourceWithModifications(rrCreated.resource());
                     StrimziPodSet newStatus = getResourceWithNewReadyStatus(rrCreated.resource());
 
@@ -294,18 +305,23 @@ public class StrimziPodSetCrdOperatorIT extends AbstractCustomResourceOperatorIT
                     LOGGER.info("Updating resource status after underlying resource has changed");
                     return op.updateStatusAsync(Reconciliation.DUMMY_RECONCILIATION, newStatus);
                 })
-                .onComplete(context.failing(e -> context.verify(() -> {
-                    LOGGER.info("Failed as expected");
-                    assertThat(e, instanceOf(KubernetesClientException.class));
-                    assertThat(((KubernetesClientException) e).getCode(), Matchers.is(409));
-                    updateStatus.complete();
-                })));
+                .whenComplete((rr, e) -> context.verify(() -> TestUtils.unwrap(e).ifPresentOrElse(
+                        cause -> {
+                            LOGGER.info("Failed as expected");
+                            assertThat(cause, instanceOf(KubernetesClientException.class));
+                            assertThat(((KubernetesClientException) cause).getCode(), Matchers.is(409));
+                            updateStatus.complete(null);
+                        },
+                        () -> context.failNow("Expected an exception, but nothing was thrown"))));
 
-        updateStatus.future()
-                .compose(v -> {
+        updateStatus
+                .thenCompose(v -> {
                     LOGGER.info("Deleting resource");
                     return op.reconcile(Reconciliation.DUMMY_RECONCILIATION, namespace, resourceName, null);
                 })
-                .onComplete(context.succeeding(v -> async.flag()));
+                .whenComplete((rr, e) -> {
+                    assertNull(e);
+                    async.flag();
+                });
     }
 }

@@ -30,8 +30,8 @@ public class KafkaMirrorMakerCrdOperatorIT extends AbstractCustomResourceOperato
     protected static final Logger LOGGER = LogManager.getLogger(KafkaMirrorMakerCrdOperatorIT.class);
 
     @Override
-    protected CrdOperator operator() {
-        return new CrdOperator(vertx, client, KafkaMirrorMaker.class, KafkaMirrorMakerList.class, KafkaMirrorMaker.RESOURCE_KIND);
+    protected CrdOperator<KubernetesClient, KafkaMirrorMaker, KafkaMirrorMakerList> operator() {
+        return new CrdOperator<>(client, KafkaMirrorMaker.class, KafkaMirrorMakerList.class, KafkaMirrorMaker.RESOURCE_KIND);
     }
 
     @Override

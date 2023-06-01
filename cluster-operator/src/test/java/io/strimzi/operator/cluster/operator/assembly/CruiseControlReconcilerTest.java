@@ -25,6 +25,7 @@ import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.StrimziFuture;
 import io.strimzi.operator.common.operator.MockCertManager;
 import io.strimzi.operator.common.operator.resource.ConfigMapOperator;
 import io.strimzi.operator.common.operator.resource.DeploymentOperator;
@@ -32,7 +33,6 @@ import io.strimzi.operator.common.operator.resource.NetworkPolicyOperator;
 import io.strimzi.operator.common.operator.resource.SecretOperator;
 import io.strimzi.operator.common.operator.resource.ServiceAccountOperator;
 import io.strimzi.operator.common.operator.resource.ServiceOperator;
-import io.vertx.core.Future;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
@@ -74,25 +74,25 @@ public class CruiseControlReconcilerTest {
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
 
         ArgumentCaptor<ServiceAccount> saCaptor = ArgumentCaptor.forClass(ServiceAccount.class);
-        when(mockSaOps.reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.serviceAccountName(NAME)), saCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockSaOps.reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.serviceAccountName(NAME)), saCaptor.capture())).thenReturn(StrimziFuture.completedFuture(null));
 
         ArgumentCaptor<Secret> secretCaptor = ArgumentCaptor.forClass(Secret.class);
-        when(mockSecretOps.reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.secretName(NAME)), secretCaptor.capture())).thenReturn(Future.succeededFuture());
-        when(mockSecretOps.reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.apiSecretName(NAME)), secretCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockSecretOps.reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.secretName(NAME)), secretCaptor.capture())).thenReturn(StrimziFuture.completedFuture(null));
+        when(mockSecretOps.reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.apiSecretName(NAME)), secretCaptor.capture())).thenReturn(StrimziFuture.completedFuture(null));
 
         ArgumentCaptor<Service> serviceCaptor = ArgumentCaptor.forClass(Service.class);
-        when(mockServiceOps.reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.serviceName(NAME)), serviceCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockServiceOps.reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.serviceName(NAME)), serviceCaptor.capture())).thenReturn(StrimziFuture.completedFuture(null));
 
         ArgumentCaptor<NetworkPolicy> netPolicyCaptor = ArgumentCaptor.forClass(NetworkPolicy.class);
-        when(mockNetPolicyOps.reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.networkPolicyName(NAME)), netPolicyCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockNetPolicyOps.reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.networkPolicyName(NAME)), netPolicyCaptor.capture())).thenReturn(StrimziFuture.completedFuture(null));
 
         ArgumentCaptor<ConfigMap> cmCaptor = ArgumentCaptor.forClass(ConfigMap.class);
-        when(mockCmOps.reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.logAndMetricsConfigMapName(NAME)), cmCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockCmOps.reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.logAndMetricsConfigMapName(NAME)), cmCaptor.capture())).thenReturn(StrimziFuture.completedFuture(null));
 
         ArgumentCaptor<Deployment> depCaptor = ArgumentCaptor.forClass(Deployment.class);
-        when(mockDepOps.reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.deploymentName(NAME)), depCaptor.capture())).thenReturn(Future.succeededFuture());
-        when(mockDepOps.waitForObserved(any(), eq(NAMESPACE), eq(CruiseControlResources.deploymentName(NAME)), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
-        when(mockDepOps.readiness(any(), eq(NAMESPACE), eq(CruiseControlResources.deploymentName(NAME)), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+        when(mockDepOps.reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.deploymentName(NAME)), depCaptor.capture())).thenReturn(StrimziFuture.completedFuture(null));
+        when(mockDepOps.waitForObserved(any(), eq(NAMESPACE), eq(CruiseControlResources.deploymentName(NAME)), anyLong(), anyLong())).thenReturn(StrimziFuture.completedFuture(null));
+        when(mockDepOps.readiness(any(), eq(NAMESPACE), eq(CruiseControlResources.deploymentName(NAME)), anyLong(), anyLong())).thenReturn(StrimziFuture.completedFuture(null));
 
         Kafka kafka = new KafkaBuilder(ResourceUtils.createKafka(NAMESPACE, NAME, 3, "foo", 120, 30))
                 .editSpec()
@@ -156,25 +156,25 @@ public class CruiseControlReconcilerTest {
         ConfigMapOperator mockCmOps = supplier.configMapOperations;
 
         ArgumentCaptor<ServiceAccount> saCaptor = ArgumentCaptor.forClass(ServiceAccount.class);
-        when(mockSaOps.reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.serviceAccountName(NAME)), saCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockSaOps.reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.serviceAccountName(NAME)), saCaptor.capture())).thenReturn(StrimziFuture.completedFuture(null));
 
         ArgumentCaptor<Secret> secretCaptor = ArgumentCaptor.forClass(Secret.class);
-        when(mockSecretOps.reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.secretName(NAME)), secretCaptor.capture())).thenReturn(Future.succeededFuture());
-        when(mockSecretOps.reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.apiSecretName(NAME)), secretCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockSecretOps.reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.secretName(NAME)), secretCaptor.capture())).thenReturn(StrimziFuture.completedFuture(null));
+        when(mockSecretOps.reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.apiSecretName(NAME)), secretCaptor.capture())).thenReturn(StrimziFuture.completedFuture(null));
 
         ArgumentCaptor<Service> serviceCaptor = ArgumentCaptor.forClass(Service.class);
-        when(mockServiceOps.reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.serviceName(NAME)), serviceCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockServiceOps.reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.serviceName(NAME)), serviceCaptor.capture())).thenReturn(StrimziFuture.completedFuture(null));
 
         ArgumentCaptor<NetworkPolicy> netPolicyCaptor = ArgumentCaptor.forClass(NetworkPolicy.class);
-        when(mockNetPolicyOps.reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.networkPolicyName(NAME)), netPolicyCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockNetPolicyOps.reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.networkPolicyName(NAME)), netPolicyCaptor.capture())).thenReturn(StrimziFuture.completedFuture(null));
 
         ArgumentCaptor<ConfigMap> cmCaptor = ArgumentCaptor.forClass(ConfigMap.class);
-        when(mockCmOps.reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.logAndMetricsConfigMapName(NAME)), cmCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockCmOps.reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.logAndMetricsConfigMapName(NAME)), cmCaptor.capture())).thenReturn(StrimziFuture.completedFuture(null));
 
         ArgumentCaptor<Deployment> depCaptor = ArgumentCaptor.forClass(Deployment.class);
-        when(mockDepOps.reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.deploymentName(NAME)), depCaptor.capture())).thenReturn(Future.succeededFuture());
-        when(mockDepOps.waitForObserved(any(), eq(NAMESPACE), eq(CruiseControlResources.deploymentName(NAME)), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
-        when(mockDepOps.readiness(any(), eq(NAMESPACE), eq(CruiseControlResources.deploymentName(NAME)), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+        when(mockDepOps.reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.deploymentName(NAME)), depCaptor.capture())).thenReturn(StrimziFuture.completedFuture(null));
+        when(mockDepOps.waitForObserved(any(), eq(NAMESPACE), eq(CruiseControlResources.deploymentName(NAME)), anyLong(), anyLong())).thenReturn(StrimziFuture.completedFuture(null));
+        when(mockDepOps.readiness(any(), eq(NAMESPACE), eq(CruiseControlResources.deploymentName(NAME)), anyLong(), anyLong())).thenReturn(StrimziFuture.completedFuture(null));
 
         Kafka kafka = ResourceUtils.createKafka(NAMESPACE, NAME, 3, "foo", 120, 30);
 

@@ -17,7 +17,6 @@ import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.operator.common.Reconciliation;
-import io.vertx.core.Vertx;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxTestContext;
 import org.junit.jupiter.api.Test;
@@ -31,6 +30,7 @@ import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.matches;
 import static org.mockito.Mockito.mock;
@@ -80,8 +80,8 @@ public class ServiceAccountOperatorTest extends AbstractNamespacedResourceOperat
     }
 
     @Override
-    protected AbstractNamespacedResourceOperator<KubernetesClient, ServiceAccount, ServiceAccountList, Resource<ServiceAccount>> createResourceOperations(Vertx vertx, KubernetesClient mockClient) {
-        return new ServiceAccountOperator(vertx, mockClient);
+    protected AbstractNamespacedResourceOperator<KubernetesClient, ServiceAccount, ServiceAccountList, Resource<ServiceAccount>> createResourceOperations(KubernetesClient mockClient) {
+        return new ServiceAccountOperator(mockClient);
     }
 
     @Override
@@ -107,18 +107,19 @@ public class ServiceAccountOperatorTest extends AbstractNamespacedResourceOperat
         KubernetesClient mockClient = mock(clientType());
         mocker(mockClient, mockCms);
 
-        ServiceAccountOperator op = new ServiceAccountOperator(vertx, mockClient);
+        ServiceAccountOperator op = new ServiceAccountOperator(mockClient);
 
         Checkpoint async = context.checkpoint();
         op.createOrUpdate(Reconciliation.DUMMY_RECONCILIATION, resource)
-            .onComplete(context.succeeding(rr -> {
+            .whenComplete((rr, e) -> {
+                assertNull(e);
                 context.verify(() -> assertThat(rr, instanceOf(ReconcileResult.Noop.class)));
                 verify(mockResource).get();
                 verify(mockResource, never()).patch(any(), any());
                 verify(mockResource, never()).create();
                 verify(mockResource, never()).create();
                 async.flag();
-            }));
+            });
     }
 
     @Test
@@ -166,11 +167,12 @@ public class ServiceAccountOperatorTest extends AbstractNamespacedResourceOperat
         KubernetesClient mockClient = mock(clientType());
         mocker(mockClient, mockCms);
 
-        ServiceAccountOperator op = new ServiceAccountOperator(vertx, mockClient);
+        ServiceAccountOperator op = new ServiceAccountOperator(mockClient);
 
         Checkpoint async = context.checkpoint();
         op.reconcile(Reconciliation.DUMMY_RECONCILIATION, NAMESPACE, RESOURCE_NAME, desired)
-                .onComplete(context.succeeding(rr -> {
+                .whenComplete((rr, e) -> {
+                    assertNull(e);
                     verify(mockResource, times(1)).patch(any(), any(ServiceAccount.class));
 
                     assertThat(saCaptor.getValue(), is(notNullValue()));
@@ -182,6 +184,6 @@ public class ServiceAccountOperatorTest extends AbstractNamespacedResourceOperat
                     assertThat(saCaptor.getValue().getMetadata().getAnnotations().get("aKey"), is("aValue"));
 
                     async.flag();
-                }));
+                });
     }
 }

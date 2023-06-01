@@ -10,13 +10,11 @@ import io.fabric8.kubernetes.api.model.SecretList;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
-import io.vertx.core.Vertx;
 
 import static java.util.Collections.singletonMap;
 import static org.mockito.Mockito.when;
 
 public class SecretOperatorTest extends AbstractNamespacedResourceOperatorTest<KubernetesClient, Secret, SecretList, Resource<Secret>> {
-
 
     @Override
     protected Class<KubernetesClient> clientType() {
@@ -53,7 +51,7 @@ public class SecretOperatorTest extends AbstractNamespacedResourceOperatorTest<K
     }
 
     @Override
-    protected AbstractNamespacedResourceOperator<KubernetesClient, Secret, SecretList, Resource<Secret>> createResourceOperations(Vertx vertx, KubernetesClient mockClient) {
-        return new SecretOperator(vertx, mockClient);
+    protected AbstractNamespacedResourceOperator<KubernetesClient, Secret, SecretList, Resource<Secret>> createResourceOperations(KubernetesClient mockClient) {
+        return new SecretOperator(mockClient);
     }
 }

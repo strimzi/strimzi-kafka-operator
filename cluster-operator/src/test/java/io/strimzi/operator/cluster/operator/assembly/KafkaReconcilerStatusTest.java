@@ -35,6 +35,7 @@ import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
+import io.strimzi.operator.common.StrimziFuture;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.MockCertManager;
 import io.strimzi.operator.common.operator.resource.NodeOperator;
@@ -152,8 +153,8 @@ public class KafkaReconcilerStatusTest {
         // Mock the secrets needed for Kafka client
         SecretOperator mockSecretOps = supplier.secretOperations;
         Secret secret = new Secret();
-        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(KafkaResources.clusterCaCertificateSecretName(CLUSTER_NAME)))).thenReturn(Future.succeededFuture(secret));
-        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(ClusterOperator.secretName(CLUSTER_NAME)))).thenReturn(Future.succeededFuture(secret));
+        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(KafkaResources.clusterCaCertificateSecretName(CLUSTER_NAME)))).thenReturn(StrimziFuture.completedFuture(secret));
+        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(ClusterOperator.secretName(CLUSTER_NAME)))).thenReturn(StrimziFuture.completedFuture(secret));
 
         // Run the test
         KafkaReconciler reconciler = new MockKafkaReconcilerStatusTasks(
@@ -187,8 +188,8 @@ public class KafkaReconcilerStatusTest {
         // Mock the secrets needed for Kafka client
         SecretOperator mockSecretOps = supplier.secretOperations;
         Secret secret = new Secret();
-        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(KafkaResources.clusterCaCertificateSecretName(CLUSTER_NAME)))).thenReturn(Future.succeededFuture(secret));
-        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(ClusterOperator.secretName(CLUSTER_NAME)))).thenReturn(Future.succeededFuture(secret));
+        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(KafkaResources.clusterCaCertificateSecretName(CLUSTER_NAME)))).thenReturn(StrimziFuture.completedFuture(secret));
+        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(ClusterOperator.secretName(CLUSTER_NAME)))).thenReturn(StrimziFuture.completedFuture(secret));
 
         // Run the test
         KafkaReconciler reconciler = new MockKafkaReconcilerStatusTasks(
@@ -234,8 +235,8 @@ public class KafkaReconcilerStatusTest {
         // Mock the secrets needed for Kafka client
         SecretOperator mockSecretOps = supplier.secretOperations;
         Secret secret = new Secret();
-        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(KafkaResources.clusterCaCertificateSecretName(CLUSTER_NAME)))).thenReturn(Future.succeededFuture(secret));
-        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(ClusterOperator.secretName(CLUSTER_NAME)))).thenReturn(Future.succeededFuture(secret));
+        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(KafkaResources.clusterCaCertificateSecretName(CLUSTER_NAME)))).thenReturn(StrimziFuture.completedFuture(secret));
+        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(ClusterOperator.secretName(CLUSTER_NAME)))).thenReturn(StrimziFuture.completedFuture(secret));
 
         // Mock Kafka broker pods
         Pod pod0 = new PodBuilder()
@@ -271,11 +272,11 @@ public class KafkaReconcilerStatusTest {
         pods.add(pod2);
 
         PodOperator mockPodOps = supplier.podOperations;
-        when(mockPodOps.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(Future.succeededFuture(pods));
+        when(mockPodOps.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(StrimziFuture.completedFuture(pods));
 
         // Mock Kubernetes worker nodes
         NodeOperator mockNodeOps = supplier.nodeOperator;
-        when(mockNodeOps.listAsync(any(Labels.class))).thenReturn(Future.succeededFuture(kubernetesWorkerNodes()));
+        when(mockNodeOps.listAsync(any(Labels.class))).thenReturn(StrimziFuture.completedFuture(kubernetesWorkerNodes()));
 
         // Run the test
         KafkaReconciler reconciler = new MockKafkaReconcilerStatusTasks(
@@ -339,8 +340,8 @@ public class KafkaReconcilerStatusTest {
         // Mock the secrets needed for Kafka client
         SecretOperator mockSecretOps = supplier.secretOperations;
         Secret secret = new Secret();
-        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(KafkaResources.clusterCaCertificateSecretName(CLUSTER_NAME)))).thenReturn(Future.succeededFuture(secret));
-        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(ClusterOperator.secretName(CLUSTER_NAME)))).thenReturn(Future.succeededFuture(secret));
+        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(KafkaResources.clusterCaCertificateSecretName(CLUSTER_NAME)))).thenReturn(StrimziFuture.completedFuture(secret));
+        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(ClusterOperator.secretName(CLUSTER_NAME)))).thenReturn(StrimziFuture.completedFuture(secret));
 
         // Mock Kafka broker pods
         Pod pod0 = new PodBuilder()
@@ -376,11 +377,11 @@ public class KafkaReconcilerStatusTest {
         pods.add(pod2);
 
         PodOperator mockPodOps = supplier.podOperations;
-        when(mockPodOps.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(Future.succeededFuture(pods));
+        when(mockPodOps.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(StrimziFuture.completedFuture(pods));
 
         // Mock Kubernetes worker nodes
         NodeOperator mockNodeOps = supplier.nodeOperator;
-        when(mockNodeOps.listAsync(any(Labels.class))).thenReturn(Future.succeededFuture(kubernetesWorkerNodes()));
+        when(mockNodeOps.listAsync(any(Labels.class))).thenReturn(StrimziFuture.completedFuture(kubernetesWorkerNodes()));
 
         // Run the test
         KafkaReconciler reconciler = new MockKafkaReconcilerStatusTasks(
@@ -434,8 +435,8 @@ public class KafkaReconcilerStatusTest {
         // Mock the secrets needed for Kafka client
         SecretOperator mockSecretOps = supplier.secretOperations;
         Secret secret = new Secret();
-        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(KafkaResources.clusterCaCertificateSecretName(CLUSTER_NAME)))).thenReturn(Future.succeededFuture(secret));
-        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(ClusterOperator.secretName(CLUSTER_NAME)))).thenReturn(Future.succeededFuture(secret));
+        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(KafkaResources.clusterCaCertificateSecretName(CLUSTER_NAME)))).thenReturn(StrimziFuture.completedFuture(secret));
+        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(ClusterOperator.secretName(CLUSTER_NAME)))).thenReturn(StrimziFuture.completedFuture(secret));
 
         // Mock Kafka broker pods
         Pod pod0 = new PodBuilder()
@@ -471,11 +472,11 @@ public class KafkaReconcilerStatusTest {
         pods.add(pod2);
 
         PodOperator mockPodOps = supplier.podOperations;
-        when(mockPodOps.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(Future.succeededFuture(pods));
+        when(mockPodOps.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(StrimziFuture.completedFuture(pods));
 
         // Mock Kubernetes worker nodes
         NodeOperator mockNodeOps = supplier.nodeOperator;
-        when(mockNodeOps.listAsync(any(Labels.class))).thenReturn(Future.succeededFuture(kubernetesWorkerNodes()));
+        when(mockNodeOps.listAsync(any(Labels.class))).thenReturn(StrimziFuture.completedFuture(kubernetesWorkerNodes()));
 
         // Run the test
         KafkaReconciler reconciler = new MockKafkaReconcilerStatusTasks(
@@ -526,8 +527,8 @@ public class KafkaReconcilerStatusTest {
         // Mock the secrets needed for Kafka client
         SecretOperator mockSecretOps = supplier.secretOperations;
         Secret secret = new Secret();
-        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(KafkaResources.clusterCaCertificateSecretName(CLUSTER_NAME)))).thenReturn(Future.succeededFuture(secret));
-        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(ClusterOperator.secretName(CLUSTER_NAME)))).thenReturn(Future.succeededFuture(secret));
+        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(KafkaResources.clusterCaCertificateSecretName(CLUSTER_NAME)))).thenReturn(StrimziFuture.completedFuture(secret));
+        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(ClusterOperator.secretName(CLUSTER_NAME)))).thenReturn(StrimziFuture.completedFuture(secret));
 
         // Mock Kafka broker pods
         Pod pod0 = new PodBuilder()
@@ -563,11 +564,11 @@ public class KafkaReconcilerStatusTest {
         pods.add(pod2);
 
         PodOperator mockPodOps = supplier.podOperations;
-        when(mockPodOps.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(Future.succeededFuture(pods));
+        when(mockPodOps.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(StrimziFuture.completedFuture(pods));
 
         // Mock Kubernetes worker nodes
         NodeOperator mockNodeOps = supplier.nodeOperator;
-        when(mockNodeOps.listAsync(any(Labels.class))).thenReturn(Future.succeededFuture(kubernetesWorkerNodes()));
+        when(mockNodeOps.listAsync(any(Labels.class))).thenReturn(StrimziFuture.completedFuture(kubernetesWorkerNodes()));
 
         // Run the test
         KafkaReconciler reconciler = new MockKafkaReconcilerStatusTasks(
@@ -615,8 +616,8 @@ public class KafkaReconcilerStatusTest {
         // Mock the secrets needed for Kafka client
         SecretOperator mockSecretOps = supplier.secretOperations;
         Secret secret = new Secret();
-        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(KafkaResources.clusterCaCertificateSecretName(CLUSTER_NAME)))).thenReturn(Future.succeededFuture(secret));
-        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(ClusterOperator.secretName(CLUSTER_NAME)))).thenReturn(Future.succeededFuture(secret));
+        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(KafkaResources.clusterCaCertificateSecretName(CLUSTER_NAME)))).thenReturn(StrimziFuture.completedFuture(secret));
+        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(ClusterOperator.secretName(CLUSTER_NAME)))).thenReturn(StrimziFuture.completedFuture(secret));
 
         // Mock Kafka broker pods
         Pod pod0 = new PodBuilder()
@@ -652,11 +653,11 @@ public class KafkaReconcilerStatusTest {
         pods.add(pod2);
 
         PodOperator mockPodOps = supplier.podOperations;
-        when(mockPodOps.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(Future.succeededFuture(pods));
+        when(mockPodOps.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(StrimziFuture.completedFuture(pods));
 
         // Mock Kubernetes worker nodes
         NodeOperator mockNodeOps = supplier.nodeOperator;
-        when(mockNodeOps.listAsync(any(Labels.class))).thenReturn(Future.succeededFuture(kubernetesWorkerNodes()));
+        when(mockNodeOps.listAsync(any(Labels.class))).thenReturn(StrimziFuture.completedFuture(kubernetesWorkerNodes()));
 
         // Run the test
         KafkaReconciler reconciler = new MockKafkaReconcilerStatusTasks(

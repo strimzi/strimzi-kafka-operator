@@ -23,13 +23,13 @@ import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.dsl.RollableScalableResource;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.StrimziFuture;
+import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.operator.resource.AbstractNamespacedResourceOperatorTest;
 import io.strimzi.operator.common.operator.resource.AbstractScalableNamespacedResourceOperator;
 import io.strimzi.operator.common.operator.resource.PodOperator;
 import io.strimzi.operator.common.operator.resource.PvcOperator;
 import io.strimzi.operator.common.operator.resource.ScalableResourceOperatorTest;
-import io.vertx.core.Future;
-import io.vertx.core.Vertx;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxTestContext;
 import org.junit.jupiter.api.Test;
@@ -44,6 +44,7 @@ import java.util.function.BiPredicate;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -110,8 +111,8 @@ public class StatefulSetOperatorTest extends ScalableResourceOperatorTest<Kubern
     }
 
     @Override
-    protected StatefulSetOperator createResourceOperations(Vertx vertx, KubernetesClient mockClient) {
-        return new StatefulSetOperator(vertx, mockClient, 60_000L) {
+    protected StatefulSetOperator createResourceOperations(KubernetesClient mockClient) {
+        return new StatefulSetOperator(mockClient, 60_000L) {
             @Override
             protected boolean shouldIncrementGeneration(Reconciliation reconciliation, StatefulSetDiff diff) {
                 return false;
@@ -120,11 +121,11 @@ public class StatefulSetOperatorTest extends ScalableResourceOperatorTest<Kubern
     }
 
     @Override
-    protected StatefulSetOperator createResourceOperationsWithMockedReadiness(Vertx vertx, KubernetesClient mockClient) {
-        return new StatefulSetOperator(vertx, mockClient, 60_000L) {
+    protected StatefulSetOperator createResourceOperationsWithMockedReadiness(KubernetesClient mockClient) {
+        return new StatefulSetOperator(mockClient, 60_000L) {
             @Override
-            public Future<Void> readiness(Reconciliation reconciliation, String namespace, String name, long pollIntervalMs, long timeoutMs) {
-                return Future.succeededFuture();
+            public StrimziFuture<Void> readiness(Reconciliation reconciliation, String namespace, String name, long pollIntervalMs, long timeoutMs) {
+                return StrimziFuture.completedFuture(null);
             }
 
             @Override
@@ -133,8 +134,8 @@ public class StatefulSetOperatorTest extends ScalableResourceOperatorTest<Kubern
             }
 
             @Override
-            protected Future<?> podReadiness(Reconciliation reconciliation, String namespace, StatefulSet desired, long pollInterval, long operationTimeoutMs) {
-                return Future.succeededFuture();
+            protected StrimziFuture<?> podReadiness(Reconciliation reconciliation, String namespace, StatefulSet desired, long pollInterval, long operationTimeoutMs) {
+                return StrimziFuture.completedFuture(null);
             }
         };
     }
@@ -210,13 +211,13 @@ public class StatefulSetOperatorTest extends ScalableResourceOperatorTest<Kubern
         when(mockResource.create()).thenReturn(sts1);
 
         PodOperator podOperator = mock(PodOperator.class);
-        when(podOperator.waitFor(any(), anyString(), anyString(), anyLong(), anyLong(), any(BiPredicate.class))).thenReturn(Future.succeededFuture());
-        when(podOperator.readiness(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
-        when(podOperator.reconcile(any(), anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
-        when(podOperator.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(new PodBuilder().withNewMetadata().withName("my-pod-0").endMetadata().build()));
+        when(podOperator.waitFor(any(), anyString(), anyString(), anyLong(), anyLong(), any(BiPredicate.class))).thenReturn(StrimziFuture.completedFuture(null));
+        when(podOperator.readiness(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(StrimziFuture.completedFuture(null));
+        when(podOperator.reconcile(any(), anyString(), anyString(), any())).thenReturn(StrimziFuture.completedFuture(null));
+        when(podOperator.getAsync(anyString(), anyString())).thenReturn(StrimziFuture.completedFuture(new PodBuilder().withNewMetadata().withName("my-pod-0").endMetadata().build()));
 
         PvcOperator pvcOperator = mock(PvcOperator.class);
-        when(pvcOperator.reconcile(any(), anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
+        when(pvcOperator.reconcile(any(), anyString(), anyString(), any())).thenReturn(StrimziFuture.completedFuture(null));
 
         NonNamespaceOperation mockNameable = mock(NonNamespaceOperation.class);
         when(mockNameable.withName(matches(RESOURCE_NAME))).thenReturn(mockResource);
@@ -228,24 +229,26 @@ public class StatefulSetOperatorTest extends ScalableResourceOperatorTest<Kubern
         KubernetesClient mockClient = mock(KubernetesClient.class);
         mocker(mockClient, mockCms);
 
-        StatefulSetOperator op = new StatefulSetOperator(AbstractNamespacedResourceOperatorTest.vertx, mockClient, 5_000L, podOperator) {
+        StatefulSetOperator op = new StatefulSetOperator(mockClient, 5_000L, podOperator) {
             @Override
             protected boolean shouldIncrementGeneration(Reconciliation reconciliation, StatefulSetDiff diff) {
                 return true;
             }
 
             @Override
-            public Future<Void> waitFor(Reconciliation reconciliation, String namespace, String name, String logState, long pollIntervalMs, final long timeoutMs, BiPredicate<String, String> predicate) {
-                return Future.succeededFuture();
+            public StrimziFuture<Void> waitFor(Reconciliation reconciliation, String namespace, String name, String logState, long pollIntervalMs, final long timeoutMs, BiPredicate<String, String> predicate) {
+                return StrimziFuture.completedFuture(null);
             }
         };
 
         Checkpoint async = context.checkpoint();
         op.reconcile(new Reconciliation("test", "kind", "namespace", "name"), sts1.getMetadata().getNamespace(), sts1.getMetadata().getName(), sts2)
-            .onComplete(context.succeeding(rrState -> {
-                verify(mockDeletable).delete();
-                async.flag();
-            }));
+            .whenComplete((rrState, err) -> {
+                context.verify(() -> {
+                    verify(mockDeletable).delete();
+                    async.flag();
+                });
+            });
     }
 
     @Test
@@ -274,7 +277,7 @@ public class StatefulSetOperatorTest extends ScalableResourceOperatorTest<Kubern
         KubernetesClient mockClient = mock(KubernetesClient.class);
         mocker(mockClient, mockCms);
 
-        StatefulSetOperator op = new StatefulSetOperator(AbstractNamespacedResourceOperatorTest.vertx, mockClient, 5_000L, podOperator) {
+        StatefulSetOperator op = new StatefulSetOperator(mockClient, 5_000L, podOperator) {
             @Override
             protected boolean shouldIncrementGeneration(Reconciliation reconciliation, StatefulSetDiff diff) {
                 return true;
@@ -283,10 +286,12 @@ public class StatefulSetOperatorTest extends ScalableResourceOperatorTest<Kubern
 
         Checkpoint async = context.checkpoint();
         op.deleteAsync(new Reconciliation("test", "kind", "namespace", "name"), NAMESPACE, RESOURCE_NAME, true)
-            .onComplete(context.succeeding(v -> context.verify(() -> {
-                assertThat(cascadingCaptor.getValue(), is(DeletionPropagation.FOREGROUND));
-                async.flag();
-            })));
+            .whenComplete((rrState, err) -> {
+                context.verify(() -> {
+                    assertThat(cascadingCaptor.getValue(), is(DeletionPropagation.FOREGROUND));
+                    async.flag();
+                });
+            });
     }
 
     @Test
@@ -314,7 +319,7 @@ public class StatefulSetOperatorTest extends ScalableResourceOperatorTest<Kubern
         KubernetesClient mockClient = mock(KubernetesClient.class);
         mocker(mockClient, mockCms);
 
-        StatefulSetOperator op = new StatefulSetOperator(AbstractNamespacedResourceOperatorTest.vertx, mockClient, 5_000L, podOperator) {
+        StatefulSetOperator op = new StatefulSetOperator(mockClient, 5_000L, podOperator) {
             @Override
             protected boolean shouldIncrementGeneration(Reconciliation reconciliation, StatefulSetDiff diff) {
                 return true;
@@ -323,10 +328,12 @@ public class StatefulSetOperatorTest extends ScalableResourceOperatorTest<Kubern
 
         Checkpoint a = context.checkpoint();
         op.deleteAsync(new Reconciliation("test", "kind", "namespace", "name"), NAMESPACE, RESOURCE_NAME, false)
-            .onComplete(context.succeeding(v -> context.verify(() -> {
-                assertThat(cascadingCaptor.getValue(), is(DeletionPropagation.ORPHAN));
-                a.flag();
-            })));
+            .whenComplete((rrState, err) -> {
+                context.verify(() -> {
+                    assertThat(cascadingCaptor.getValue(), is(DeletionPropagation.ORPHAN));
+                    a.flag();
+                });
+            });
     }
 
     @Test
@@ -348,7 +355,7 @@ public class StatefulSetOperatorTest extends ScalableResourceOperatorTest<Kubern
         KubernetesClient mockClient = mock(KubernetesClient.class);
         mocker(mockClient, mockCms);
 
-        StatefulSetOperator op = new StatefulSetOperator(AbstractNamespacedResourceOperatorTest.vertx, mockClient, 5_000L, podOperator) {
+        StatefulSetOperator op = new StatefulSetOperator(mockClient, 5_000L, podOperator) {
             @Override
             protected boolean shouldIncrementGeneration(Reconciliation reconciliation, StatefulSetDiff diff) {
                 return true;
@@ -357,7 +364,12 @@ public class StatefulSetOperatorTest extends ScalableResourceOperatorTest<Kubern
 
         Checkpoint a = context.checkpoint();
         op.deleteAsync(new Reconciliation("test", "kind", "namespace", "name"), NAMESPACE, RESOURCE_NAME, false)
-            .onComplete(context.failing(e -> a.flag()));
+            .whenComplete((rrState, err) -> {
+                context.verify(() -> {
+                    assertNotNull(err);
+                    a.flag();
+                });
+            });
     }
 
     @Test
@@ -383,7 +395,7 @@ public class StatefulSetOperatorTest extends ScalableResourceOperatorTest<Kubern
         KubernetesClient mockClient = mock(KubernetesClient.class);
         mocker(mockClient, mockCms);
 
-        StatefulSetOperator op = new StatefulSetOperator(AbstractNamespacedResourceOperatorTest.vertx, mockClient, 5_000L, podOperator) {
+        StatefulSetOperator op = new StatefulSetOperator(mockClient, 5_000L, podOperator) {
             @Override
             protected boolean shouldIncrementGeneration(Reconciliation reconciliation, StatefulSetDiff diff) {
                 return true;
@@ -392,11 +404,13 @@ public class StatefulSetOperatorTest extends ScalableResourceOperatorTest<Kubern
 
         Checkpoint async = context.checkpoint();
         op.deleteAsync(new Reconciliation("test", "kind", "namespace", "name"), NAMESPACE, RESOURCE_NAME, false)
-            .onComplete(context.failing(e -> context.verify(() -> {
-                assertThat(e, instanceOf(MockitoException.class));
-                assertThat(e.getMessage(), is("Something failed"));
-                async.flag();
-            })));
+            .whenComplete(Util.unwrap((rrState, e) -> {
+                context.verify(() -> {
+                    assertThat(e, instanceOf(MockitoException.class));
+                    assertThat(e.getMessage(), is("Something failed"));
+                    async.flag();
+                });
+            }));
     }
 
     @Override

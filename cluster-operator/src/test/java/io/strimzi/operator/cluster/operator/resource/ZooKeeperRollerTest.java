@@ -8,6 +8,7 @@ import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.PodBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.StrimziFuture;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.resource.PodOperator;
 import io.vertx.core.Future;
@@ -62,7 +63,7 @@ public class ZooKeeperRollerTest {
     @Test
     public void testAllPodsAreRolled(VertxTestContext context)  {
         PodOperator podOperator = mock(PodOperator.class);
-        when(podOperator.listAsync(any(), any(Labels.class))).thenReturn(Future.succeededFuture(PODS));
+        when(podOperator.listAsync(any(), any(Labels.class))).thenReturn(StrimziFuture.completedFuture(PODS));
 
         ZookeeperLeaderFinder leaderFinder = mock(ZookeeperLeaderFinder.class);
         when(leaderFinder.findZookeeperLeader(any(), any(), any(), any())).thenReturn(Future.succeededFuture(ZookeeperLeaderFinder.UNKNOWN_LEADER));
@@ -90,8 +91,8 @@ public class ZooKeeperRollerTest {
         when(podOperator.isReady(any(), eq(followerPodReady))).thenReturn(true);
         when(podOperator.isReady(any(), eq(followerPodNonReady))).thenReturn(false);
         when(podOperator.isReady(any(), eq(leaderPodReady))).thenReturn(true);
-        when(podOperator.listAsync(any(), any(Labels.class))).thenReturn(Future.succeededFuture(PODS));
-        when(podOperator.readiness(any(), any(), any(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+        when(podOperator.listAsync(any(), any(Labels.class))).thenReturn(StrimziFuture.completedFuture(PODS));
+        when(podOperator.readiness(any(), any(), any(), anyLong(), anyLong())).thenReturn(StrimziFuture.completedFuture(null));
 
         ZookeeperLeaderFinder leaderFinder = mock(ZookeeperLeaderFinder.class);
         when(leaderFinder.findZookeeperLeader(any(), any(), any(), any())).thenReturn(Future.succeededFuture(leaderPodReady));
@@ -124,8 +125,8 @@ public class ZooKeeperRollerTest {
         when(podOperator.isReady(any(), eq(followerPodNeedsRestart))).thenReturn(true);
         when(podOperator.isReady(any(), eq(followerPodNonReady))).thenReturn(false);
         when(podOperator.isReady(any(), eq(leaderPodNeedsRestart))).thenReturn(true);
-        when(podOperator.listAsync(any(), any(Labels.class))).thenReturn(Future.succeededFuture(PODS));
-        when(podOperator.readiness(any(), any(), any(), anyLong(), anyLong())).thenReturn(Future.failedFuture("failure"));
+        when(podOperator.listAsync(any(), any(Labels.class))).thenReturn(StrimziFuture.completedFuture(PODS));
+        when(podOperator.readiness(any(), any(), any(), anyLong(), anyLong())).thenReturn(StrimziFuture.failedFuture("failure"));
 
 
         ZookeeperLeaderFinder leaderFinder = mock(ZookeeperLeaderFinder.class);
@@ -157,8 +158,8 @@ public class ZooKeeperRollerTest {
         when(podOperator.isReady(any(), eq(followerPod2NeedsRestart))).thenReturn(true);
         when(podOperator.isReady(any(), eq(followerPod1NeedsRestart))).thenReturn(true);
         when(podOperator.isReady(any(), eq(leaderPodNeedsRestartNonReady))).thenReturn(false);
-        when(podOperator.listAsync(any(), any(Labels.class))).thenReturn(Future.succeededFuture(PODS));
-        when(podOperator.readiness(any(), any(), eq(leaderPodNeedsRestartNonReady), anyLong(), anyLong())).thenReturn(Future.failedFuture("failure"));
+        when(podOperator.listAsync(any(), any(Labels.class))).thenReturn(StrimziFuture.completedFuture(PODS));
+        when(podOperator.readiness(any(), any(), eq(leaderPodNeedsRestartNonReady), anyLong(), anyLong())).thenReturn(StrimziFuture.failedFuture("failure"));
 
         ZookeeperLeaderFinder leaderFinder = mock(ZookeeperLeaderFinder.class);
         when(leaderFinder.findZookeeperLeader(any(), any(), any(), any())).thenReturn(Future.succeededFuture(leaderPodNeedsRestartNonReady));
@@ -175,7 +176,7 @@ public class ZooKeeperRollerTest {
     @Test
     public void testNoPodsAreRolled(VertxTestContext context)  {
         PodOperator podOperator = mock(PodOperator.class);
-        when(podOperator.listAsync(any(), any(Labels.class))).thenReturn(Future.succeededFuture(PODS));
+        when(podOperator.listAsync(any(), any(Labels.class))).thenReturn(StrimziFuture.completedFuture(PODS));
 
         ZookeeperLeaderFinder leaderFinder = mock(ZookeeperLeaderFinder.class);
         when(leaderFinder.findZookeeperLeader(any(), any(), any(), any())).thenReturn(Future.succeededFuture(ZookeeperLeaderFinder.UNKNOWN_LEADER));
@@ -193,8 +194,8 @@ public class ZooKeeperRollerTest {
     @Test
     public void testLeaderIsLast(VertxTestContext context)  {
         PodOperator podOperator = mock(PodOperator.class);
-        when(podOperator.listAsync(any(), any(Labels.class))).thenReturn(Future.succeededFuture(PODS));
-        when(podOperator.readiness(any(), any(), any(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+        when(podOperator.listAsync(any(), any(Labels.class))).thenReturn(StrimziFuture.completedFuture(PODS));
+        when(podOperator.readiness(any(), any(), any(), anyLong(), anyLong())).thenReturn(StrimziFuture.completedFuture(null));
 
         ZookeeperLeaderFinder leaderFinder = mock(ZookeeperLeaderFinder.class);
         when(leaderFinder.findZookeeperLeader(any(), any(), any(), any())).thenReturn(Future.succeededFuture("name-zookeeper-1"));
@@ -215,8 +216,8 @@ public class ZooKeeperRollerTest {
     @Test
     public void testOnlySomePodsAreRolled(VertxTestContext context)  {
         PodOperator podOperator = mock(PodOperator.class);
-        when(podOperator.listAsync(any(), any(Labels.class))).thenReturn(Future.succeededFuture(PODS));
-        when(podOperator.readiness(any(), any(), any(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+        when(podOperator.listAsync(any(), any(Labels.class))).thenReturn(StrimziFuture.completedFuture(PODS));
+        when(podOperator.readiness(any(), any(), any(), anyLong(), anyLong())).thenReturn(StrimziFuture.completedFuture(null));
 
         ZookeeperLeaderFinder leaderFinder = mock(ZookeeperLeaderFinder.class);
         when(leaderFinder.findZookeeperLeader(any(), any(), any(), any())).thenReturn(Future.succeededFuture(ZookeeperLeaderFinder.UNKNOWN_LEADER));

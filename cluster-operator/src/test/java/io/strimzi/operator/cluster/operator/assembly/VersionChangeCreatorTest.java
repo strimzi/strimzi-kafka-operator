@@ -23,10 +23,10 @@ import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.StatefulSetOperator;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.StrimziFuture;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.resource.PodOperator;
 import io.strimzi.operator.common.operator.resource.StrimziPodSetOperator;
-import io.vertx.core.Future;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
@@ -1115,13 +1115,13 @@ public class VersionChangeCreatorTest {
         ResourceOperatorSupplier ros = ResourceUtils.supplierWithMocks(false);
 
         StatefulSetOperator stsOps = ros.stsOperations;
-        when(stsOps.getAsync(any(), any())).thenReturn(Future.succeededFuture(sts));
+        when(stsOps.getAsync(any(), any())).thenReturn(StrimziFuture.completedFuture(sts));
 
         StrimziPodSetOperator spsOps = ros.strimziPodSetOperator;
-        when(spsOps.getAsync(any(), any())).thenReturn(Future.succeededFuture(sps));
+        when(spsOps.getAsync(any(), any())).thenReturn(StrimziFuture.completedFuture(sps));
 
         PodOperator podOps = ros.podOperations;
-        when(podOps.listAsync(any(), any(Labels.class))).thenReturn(Future.succeededFuture(pods));
+        when(podOps.listAsync(any(), any(Labels.class))).thenReturn(StrimziFuture.completedFuture(pods));
 
         return ros;
     }

@@ -4,6 +4,23 @@
  */
 package io.strimzi.operator.common;
 
+import static java.util.Collections.emptyMap;
+import static java.util.Collections.singletonMap;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.greaterThan;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
+
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.client.CustomResource;
@@ -27,22 +44,6 @@ import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import io.vertx.micrometer.MicrometerMetricsOptions;
 import io.vertx.micrometer.VertxPrometheusOptions;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.concurrent.TimeUnit;
-
-import static java.util.Collections.emptyMap;
-import static java.util.Collections.singletonMap;
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.greaterThan;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @ExtendWith(VertxExtension.class)
 @Group("strimzi")
@@ -281,7 +282,7 @@ public class OperatorMetricsTest {
     public void testDeleteCountsReconcile(VertxTestContext context)  {
         MetricsProvider metricsProvider = createCleanMetricsProvider();
 
-        AbstractWatchableStatusedNamespacedResourceOperator resourceOperator = new AbstractWatchableStatusedNamespacedResourceOperator(vertx, null, "TestResource") {
+        AbstractWatchableStatusedNamespacedResourceOperator resourceOperator = new AbstractWatchableStatusedNamespacedResourceOperator(null, "TestResource") {
             @Override
             protected MixedOperation operation() {
                 return null;
@@ -293,7 +294,7 @@ public class OperatorMetricsTest {
             }
 
             @Override
-            public Future updateStatusAsync(Reconciliation reconciliation, HasMetadata resource) {
+            public StrimziFuture updateStatusAsync(Reconciliation reconciliation, HasMetadata resource) {
                 return null;
             }
         };
@@ -490,9 +491,9 @@ public class OperatorMetricsTest {
     }
 
     protected AbstractWatchableStatusedNamespacedResourceOperator resourceOperatorWithExistingResource(Labels selectorLabels)    {
-        return new AbstractWatchableStatusedNamespacedResourceOperator(vertx, null, "TestResource") {
+        return new AbstractWatchableStatusedNamespacedResourceOperator(null, "TestResource") {
             @Override
-            public Future updateStatusAsync(Reconciliation reconciliation, HasMetadata resource) {
+            public StrimziFuture updateStatusAsync(Reconciliation reconciliation, HasMetadata resource) {
                 return null;
             }
 
@@ -524,10 +525,10 @@ public class OperatorMetricsTest {
     }
 
     private AbstractWatchableStatusedNamespacedResourceOperator resourceOperatorWithExistingPausedResource() {
-        return new AbstractWatchableStatusedNamespacedResourceOperator(vertx, null, "TestResource") {
+        return new AbstractWatchableStatusedNamespacedResourceOperator(null, "TestResource") {
             @Override
-            public Future updateStatusAsync(Reconciliation reconciliation, HasMetadata resource) {
-                return Future.succeededFuture();
+            public StrimziFuture updateStatusAsync(Reconciliation reconciliation, HasMetadata resource) {
+                return StrimziFuture.completedFuture();
             }
 
             @Override
@@ -546,13 +547,13 @@ public class OperatorMetricsTest {
             }
 
             @Override
-            public Future getAsync(String namespace, String name) {
+            public StrimziFuture getAsync(String namespace, String name) {
                 Foo foo = new Foo();
                 ObjectMeta md = new ObjectMeta();
                 md.setAnnotations(singletonMap("strimzi.io/pause-reconciliation", "true"));
                 foo.setMetadata(md);
 
-                return Future.succeededFuture(foo);
+                return StrimziFuture.completedFuture(foo);
             }
         };
     }

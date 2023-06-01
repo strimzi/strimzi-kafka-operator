@@ -12,12 +12,9 @@ import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.Util;
 import io.strimzi.test.k8s.cluster.KubeCluster;
-import io.vertx.core.Vertx;
-import io.vertx.core.WorkerExecutor;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -30,6 +27,7 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 /**
  * The main purpose of the Integration Tests for the operators is to test them against a real Kubernetes cluster.
@@ -43,28 +41,18 @@ public abstract class AbstractNonNamespacedResourceOperatorIT<C extends Kubernet
         L extends KubernetesResourceList<T>,
         R extends Resource<T>> {
     public static final String RESOURCE_NAME = "my-resource";
-    private static WorkerExecutor sharedWorkerExecutor;
     protected String resourceName;
-    protected static Vertx vertx;
     protected static KubernetesClient client;
 
     @BeforeAll
     public static void before() {
         assertDoesNotThrow(() -> KubeCluster.bootstrap(), "Could not bootstrap server");
-        vertx = Vertx.vertx();
-        sharedWorkerExecutor = vertx.createSharedWorkerExecutor("kubernetes-ops-pool");
         client = new KubernetesClientBuilder().build();
     }
 
     @BeforeEach
     public void renameResource() {
         resourceName = getResourceName(RESOURCE_NAME);
-    }
-
-    @AfterAll
-    public static void after() {
-        sharedWorkerExecutor.close();
-        vertx.close();
     }
 
     abstract AbstractNonNamespacedResourceOperator<C, T, L, R> operator();
@@ -81,32 +69,41 @@ public abstract class AbstractNonNamespacedResourceOperatorIT<C extends Kubernet
         T modResource = getModified();
 
         op.reconcile(Reconciliation.DUMMY_RECONCILIATION, resourceName, newResource)
-            .onComplete(context.succeeding(rrCreate -> context.verify(() -> {
-                T created = op.get(resourceName);
-
-                assertThat("Failed to get created Resource", created, is(notNullValue()));
-                assertResources(context, newResource, created);
-            })))
-            .compose(rr -> op.reconcile(Reconciliation.DUMMY_RECONCILIATION, resourceName, modResource))
-            .onComplete(context.succeeding(rrModified -> context.verify(() -> {
-                T modified = (T) op.get(resourceName);
-
-                assertThat("Failed to get modified Resource", modified, is(notNullValue()));
-                assertResources(context, modResource, modified);
-            })))
-            .compose(rr -> op.reconcile(Reconciliation.DUMMY_RECONCILIATION, resourceName, null))
-            .onComplete(context.succeeding(rrDelete -> context.verify(() -> {
-                // it seems the resource is cached for some time so we need wait for it to be null
+            .whenComplete((rrCreate, err) -> {
+                assertNull(err);
                 context.verify(() -> {
-                        Util.waitFor(Reconciliation.DUMMY_RECONCILIATION, vertx, "resource deletion " + resourceName, "deleted", 1000,
-                                30_000, () -> op.get(resourceName) == null)
-                                .onComplete(del -> {
-                                    assertThat(op.get(resourceName), is(nullValue()));
-                                    async.flag();
-                                });
-                    }
-                );
-            })));
+                    T created = op.get(resourceName);
+
+                    assertThat("Failed to get created Resource", created, is(notNullValue()));
+                    assertResources(context, newResource, created);
+                });
+            })
+            .thenCompose(rr -> op.reconcile(Reconciliation.DUMMY_RECONCILIATION, resourceName, modResource))
+            .whenComplete((rrModified, err) -> {
+                assertNull(err);
+                context.verify(() -> {
+                    T modified = (T) op.get(resourceName);
+
+                    assertThat("Failed to get modified Resource", modified, is(notNullValue()));
+                    assertResources(context, modResource, modified);
+                });
+            })
+            .thenCompose(rr -> op.reconcile(Reconciliation.DUMMY_RECONCILIATION, resourceName, null))
+            .whenComplete((rrDelete, err) -> {
+                assertNull(err);
+                context.verify(() -> {
+                    // it seems the resource is cached for some time so we need wait for it to be null
+                    context.verify(() -> {
+                            Util.waitFor(Reconciliation.DUMMY_RECONCILIATION, "resource deletion " + resourceName, "deleted", 1000,
+                                    30_000, () -> op.get(resourceName) == null)
+                                    .whenComplete((del, delErr) -> {
+                                        assertThat(op.get(resourceName), is(nullValue()));
+                                        async.flag();
+                                    });
+                        }
+                    );
+                });
+            });
     }
 
     protected String getResourceName(String name) {

@@ -54,11 +54,11 @@ class AbstractOperatorTest {
 
     @Test
     /**
-     * Verifies that the lock is released by a call to `releaseLockAndTimer`. 
+     * Verifies that the lock is released by a call to `releaseLockAndTimer`.
      * The call is made through a chain of futures ending with `eventually` after a normal/successful execution of the `Callable`
      */
     void testWithLockCallableSuccessfulReleasesLock(VertxTestContext context) throws Exception {
-        var resourceOperator = new DefaultWatchableStatusedResourceOperator<>(vertx, null, "TestResource");
+        var resourceOperator = new DefaultWatchableStatusedResourceOperator<>(null, "TestResource");
         @SuppressWarnings({ "unchecked", "rawtypes" })
         var target = new DefaultOperator(vertx, "Test", resourceOperator, new MicrometerMetricsProvider(), null);
         Reconciliation reconciliation = new Reconciliation("test", "TestResource", "my-namespace", "my-resource");
@@ -87,11 +87,11 @@ class AbstractOperatorTest {
 
     @Test
     /**
-     * Verifies that the lock is released by a call to `releaseLockAndTimer`. 
+     * Verifies that the lock is released by a call to `releaseLockAndTimer`.
      * The call is made through a chain of futures ending with `eventually` after a failed execution via a handled exception in the `Callable`.
      */
     void testWithLockCallableHandledExceptionReleasesLock(VertxTestContext context) throws Exception {
-        var resourceOperator = new DefaultWatchableStatusedResourceOperator<>(vertx, null, "TestResource");
+        var resourceOperator = new DefaultWatchableStatusedResourceOperator<>(null, "TestResource");
         @SuppressWarnings({ "unchecked", "rawtypes" })
         var target = new DefaultOperator(vertx, "Test", resourceOperator, new MicrometerMetricsProvider(), null);
         Reconciliation reconciliation = new Reconciliation("test", "TestResource", "my-namespace", "my-resource");
@@ -126,7 +126,7 @@ class AbstractOperatorTest {
      * The call is made through a chain of futures ending with `eventually` after a failed execution via an unhandled exception in the `Callable`.
      */
     void testWithLockCallableUnhandledExceptionReleasesLock(VertxTestContext context) throws Exception {
-        var resourceOperator = new DefaultWatchableStatusedResourceOperator<>(vertx, null, "TestResource");
+        var resourceOperator = new DefaultWatchableStatusedResourceOperator<>(null, "TestResource");
         @SuppressWarnings({ "unchecked", "rawtypes" })
         var target = new DefaultOperator(vertx, "Test", resourceOperator, new MicrometerMetricsProvider(), null);
         Reconciliation reconciliation = new Reconciliation("test", "TestResource", "my-namespace", "my-resource");
@@ -159,12 +159,12 @@ class AbstractOperatorTest {
 
     @Test
     /**
-     * Verifies that lock is released by call to `releaseLockAndTimer`. 
-     * The call is made through a chain of futures ending with `eventually` after a failed execution via an unhandled exception in the `Callable`, 
+     * Verifies that lock is released by call to `releaseLockAndTimer`.
+     * The call is made through a chain of futures ending with `eventually` after a failed execution via an unhandled exception in the `Callable`,
      * followed by an unhandled exception occurring in the `onFailure` handler.
      */
     void testWithLockFailHandlerUnhandledExceptionReleasesLock(VertxTestContext context) throws Exception {
-        var resourceOperator = new DefaultWatchableStatusedResourceOperator<>(vertx, null, "TestResource");
+        var resourceOperator = new DefaultWatchableStatusedResourceOperator<>(null, "TestResource");
         @SuppressWarnings({ "unchecked", "rawtypes" })
         var target = new DefaultOperator(vertx, "Test", resourceOperator, new MicrometerMetricsProvider(), null);
         Reconciliation reconciliation = new Reconciliation("test", "TestResource", "my-namespace", "my-resource");
@@ -252,12 +252,12 @@ class AbstractOperatorTest {
             R extends Resource<T>>
                 extends AbstractWatchableStatusedNamespacedResourceOperator<C, T, L, R> {
 
-        public DefaultWatchableStatusedResourceOperator(Vertx vertx, C client, String resourceKind) {
-            super(vertx, client, resourceKind);
+        public DefaultWatchableStatusedResourceOperator(C client, String resourceKind) {
+            super(client, resourceKind);
         }
 
         @Override
-        public Future<T> updateStatusAsync(Reconciliation reconciliation, T resource) {
+        public StrimziFuture<T> updateStatusAsync(Reconciliation reconciliation, T resource) {
             return null;
         }
 

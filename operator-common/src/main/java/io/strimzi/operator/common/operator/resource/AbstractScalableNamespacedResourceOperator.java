@@ -11,9 +11,7 @@ import io.fabric8.kubernetes.client.dsl.ScalableResource;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
-import io.vertx.core.Future;
-import io.vertx.core.Promise;
-import io.vertx.core.Vertx;
+import io.strimzi.operator.common.StrimziFuture;
 
 /**
  * An {@link AbstractNamespacedResourceOperator} that can be scaled up and down in addition to the usual operations.
@@ -42,12 +40,11 @@ public abstract class AbstractScalableNamespacedResourceOperator<C extends Kuber
 
     /**
      * Constructor
-     * @param vertx The Vertx instance
      * @param client The Kubernetes client
      * @param resourceKind The kind of resource.
      */
-    public AbstractScalableNamespacedResourceOperator(Vertx vertx, C client, String resourceKind) {
-        super(vertx, client, resourceKind);
+    public AbstractScalableNamespacedResourceOperator(C client, String resourceKind) {
+        super(client, resourceKind);
     }
 
     private R resource(String namespace, String name) {
@@ -69,27 +66,25 @@ public abstract class AbstractScalableNamespacedResourceOperator<C extends Kuber
      *         {@code scaleTo} then this value will be the original scale. The value will be null if the resource didn't
      *         exist (hence no scaling occurred).
      */
-    public Future<Integer> scaleUp(Reconciliation reconciliation, String namespace, String name, int scaleTo, long timeoutMs) {
-        Promise<Integer> promise = Promise.promise();
-        vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
-            future -> {
-                try {
-                    Integer currentScale = currentScale(namespace, name);
-                    if (currentScale != null && currentScale < scaleTo) {
-                        LOGGER.infoCr(reconciliation, "Scaling up to {} replicas", scaleTo);
-                        resource(namespace, name).withTimeoutInMillis(timeoutMs).scale(scaleTo);
-                        currentScale = scaleTo;
-                    }
-                    future.complete(currentScale);
-                } catch (Exception e) {
-                    LOGGER.errorCr(reconciliation, "Caught exception while scaling up", e);
-                    future.fail(e);
+    public StrimziFuture<Integer> scaleUp(Reconciliation reconciliation, String namespace, String name, int scaleTo, long timeoutMs) {
+        StrimziFuture<Integer> promise = new StrimziFuture<>();
+
+        StrimziFuture.runAsync(() -> {
+            try {
+                Integer currentScale = currentScale(namespace, name);
+                if (currentScale != null && currentScale < scaleTo) {
+                    LOGGER.infoCr(reconciliation, "Scaling up to {} replicas", scaleTo);
+                    resource(namespace, name).withTimeoutInMillis(timeoutMs).scale(scaleTo);
+                    currentScale = scaleTo;
                 }
-            },
-            false,
-            promise
-        );
-        return promise.future();
+                promise.complete(currentScale);
+            } catch (Exception e) {
+                LOGGER.errorCr(reconciliation, "Caught exception while scaling up", e);
+                promise.completeExceptionally(e);
+            }
+        });
+
+        return promise;
     }
 
     protected abstract Integer currentScale(String namespace, String name);
@@ -109,28 +104,26 @@ public abstract class AbstractScalableNamespacedResourceOperator<C extends Kuber
      *         {@code scaleTo} then this value will be the original scale. The value will be null if the resource
      *         didn't exist (hence no scaling occurred).
      */
-    public Future<Integer> scaleDown(Reconciliation reconciliation, String namespace, String name, int scaleTo, long timeoutMs) {
-        Promise<Integer> promise = Promise.promise();
-        vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
-            future -> {
-                try {
-                    Integer nextReplicas = currentScale(namespace, name);
-                    if (nextReplicas != null) {
-                        while (nextReplicas > scaleTo) {
-                            nextReplicas--;
-                            LOGGER.infoCr(reconciliation, "Scaling down from {} to {}", nextReplicas + 1, nextReplicas);
-                            resource(namespace, name).withTimeoutInMillis(timeoutMs).scale(nextReplicas);
-                        }
+    public StrimziFuture<Integer> scaleDown(Reconciliation reconciliation, String namespace, String name, int scaleTo, long timeoutMs) {
+        StrimziFuture<Integer> promise = new StrimziFuture<>();
+
+        StrimziFuture.runAsync(() -> {
+            try {
+                Integer nextReplicas = currentScale(namespace, name);
+                if (nextReplicas != null) {
+                    while (nextReplicas > scaleTo) {
+                        nextReplicas--;
+                        LOGGER.infoCr(reconciliation, "Scaling down from {} to {}", nextReplicas + 1, nextReplicas);
+                        resource(namespace, name).withTimeoutInMillis(timeoutMs).scale(nextReplicas);
                     }
-                    future.complete(nextReplicas);
-                } catch (Exception e) {
-                    LOGGER.errorCr(reconciliation, "Caught exception while scaling down", e);
-                    future.fail(e);
                 }
-            },
-            false,
-            promise
-        );
-        return promise.future();
+                promise.complete(nextReplicas);
+            } catch (Exception e) {
+                LOGGER.errorCr(reconciliation, "Caught exception while scaling up", e);
+                promise.completeExceptionally(e);
+            }
+        });
+
+        return promise;
     }
 }

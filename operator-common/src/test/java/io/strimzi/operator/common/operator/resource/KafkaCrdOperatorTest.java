@@ -15,10 +15,11 @@ import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBui
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.api.kafka.model.status.ConditionBuilder;
 import io.strimzi.operator.common.Reconciliation;
-import io.vertx.core.Vertx;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxTestContext;
 import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 import java.io.IOException;
 
@@ -93,8 +94,8 @@ public class KafkaCrdOperatorTest extends AbstractNamespacedResourceOperatorTest
     }
 
     @Override
-    protected CrdOperator createResourceOperations(Vertx vertx, KubernetesClient mockClient) {
-        return new CrdOperator(vertx, mockClient, Kafka.class, KafkaList.class, Kafka.RESOURCE_KIND);
+    protected CrdOperator<KubernetesClient, Kafka, KafkaList> createResourceOperations(KubernetesClient mockClient) {
+        return new CrdOperator<>(mockClient, Kafka.class, KafkaList.class, Kafka.RESOURCE_KIND);
     }
 
     @Test
@@ -115,9 +116,12 @@ public class KafkaCrdOperatorTest extends AbstractNamespacedResourceOperatorTest
 
         Checkpoint async = context.checkpoint();
 
-        createResourceOperations(vertx, mockClient)
+        createResourceOperations(mockClient)
             .updateStatusAsync(Reconciliation.DUMMY_RECONCILIATION, resource())
-            .onComplete(context.succeeding(kafka -> async.flag()));
+            .whenComplete((kafka, e) -> {
+                assertNull(e);
+                async.flag();
+            });
     }
 
     @Override

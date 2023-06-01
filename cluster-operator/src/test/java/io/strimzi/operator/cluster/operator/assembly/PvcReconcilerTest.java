@@ -15,9 +15,9 @@ import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.StrimziFuture;
 import io.strimzi.operator.common.operator.resource.PvcOperator;
 import io.strimzi.operator.common.operator.resource.StorageClassOperator;
-import io.vertx.core.Future;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
@@ -71,13 +71,13 @@ public class PvcReconcilerTest {
 
         // Mock the PVC Operator
         PvcOperator mockPvcOps = supplier.pvcOperations;
-        when(mockPvcOps.getAsync(eq(NAMESPACE), ArgumentMatchers.startsWith("data-"))).thenReturn(Future.succeededFuture());
+        when(mockPvcOps.getAsync(eq(NAMESPACE), ArgumentMatchers.startsWith("data-"))).thenReturn(StrimziFuture.completedFuture(null));
         ArgumentCaptor<PersistentVolumeClaim> pvcCaptor = ArgumentCaptor.forClass(PersistentVolumeClaim.class);
-        when(mockPvcOps.reconcile(any(), anyString(), anyString(), pvcCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockPvcOps.reconcile(any(), anyString(), anyString(), pvcCaptor.capture())).thenReturn(StrimziFuture.completedFuture(null));
 
         // Mock the StorageClass Operator
         StorageClassOperator mockSco = supplier.storageClassOperations;
-        when(mockSco.getAsync(eq(STORAGE_CLASS_NAME))).thenReturn(Future.succeededFuture(RESIZABLE_STORAGE_CLASS));
+        when(mockSco.getAsync(eq(STORAGE_CLASS_NAME))).thenReturn(StrimziFuture.completedFuture(RESIZABLE_STORAGE_CLASS));
 
         // Reconcile the PVCs
         PvcReconciler reconciler = new PvcReconciler(
@@ -116,14 +116,14 @@ public class PvcReconcilerTest {
         when(mockPvcOps.getAsync(eq(NAMESPACE), ArgumentMatchers.startsWith("data-")))
                 .thenAnswer(invocation -> {
                     String pvcName = invocation.getArgument(1);
-                    return Future.succeededFuture(pvcs.stream().filter(pvc -> pvcName.equals(pvc.getMetadata().getName())).findFirst().orElse(null));
+                    return StrimziFuture.completedFuture(pvcs.stream().filter(pvc -> pvcName.equals(pvc.getMetadata().getName())).findFirst().orElse(null));
                 });
         ArgumentCaptor<PersistentVolumeClaim> pvcCaptor = ArgumentCaptor.forClass(PersistentVolumeClaim.class);
-        when(mockPvcOps.reconcile(any(), anyString(), anyString(), pvcCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockPvcOps.reconcile(any(), anyString(), anyString(), pvcCaptor.capture())).thenReturn(StrimziFuture.completedFuture(null));
 
         // Mock the StorageClass Operator
         StorageClassOperator mockSco = supplier.storageClassOperations;
-        when(mockSco.getAsync(eq(STORAGE_CLASS_NAME))).thenReturn(Future.succeededFuture(RESIZABLE_STORAGE_CLASS));
+        when(mockSco.getAsync(eq(STORAGE_CLASS_NAME))).thenReturn(StrimziFuture.completedFuture(RESIZABLE_STORAGE_CLASS));
 
         // Reconcile the PVCs
         PvcReconciler reconciler = new PvcReconciler(
@@ -177,17 +177,17 @@ public class PvcReconcilerTest {
                                 .endStatus()
                                 .build();
 
-                        return Future.succeededFuture(pvcWithStatus);
+                        return StrimziFuture.completedFuture(pvcWithStatus);
                     } else {
-                        return Future.succeededFuture();
+                        return StrimziFuture.completedFuture(null);
                     }
                 });
         ArgumentCaptor<PersistentVolumeClaim> pvcCaptor = ArgumentCaptor.forClass(PersistentVolumeClaim.class);
-        when(mockPvcOps.reconcile(any(), anyString(), anyString(), pvcCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockPvcOps.reconcile(any(), anyString(), anyString(), pvcCaptor.capture())).thenReturn(StrimziFuture.completedFuture(null));
 
         // Mock the StorageClass Operator
         StorageClassOperator mockSco = supplier.storageClassOperations;
-        when(mockSco.getAsync(eq(STORAGE_CLASS_NAME))).thenReturn(Future.succeededFuture(RESIZABLE_STORAGE_CLASS));
+        when(mockSco.getAsync(eq(STORAGE_CLASS_NAME))).thenReturn(StrimziFuture.completedFuture(RESIZABLE_STORAGE_CLASS));
 
         // Reconcile the PVCs
         PvcReconciler reconciler = new PvcReconciler(
@@ -242,17 +242,17 @@ public class PvcReconcilerTest {
                                 .endStatus()
                                 .build();
 
-                        return Future.succeededFuture(pvcWithStatus);
+                        return StrimziFuture.completedFuture(pvcWithStatus);
                     } else {
-                        return Future.succeededFuture();
+                        return StrimziFuture.completedFuture(null);
                     }
                 });
         ArgumentCaptor<PersistentVolumeClaim> pvcCaptor = ArgumentCaptor.forClass(PersistentVolumeClaim.class);
-        when(mockPvcOps.reconcile(any(), anyString(), anyString(), pvcCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockPvcOps.reconcile(any(), anyString(), anyString(), pvcCaptor.capture())).thenReturn(StrimziFuture.completedFuture(null));
 
         // Mock the StorageClass Operator
         StorageClassOperator mockSco = supplier.storageClassOperations;
-        when(mockSco.getAsync(eq(STORAGE_CLASS_NAME))).thenReturn(Future.succeededFuture(RESIZABLE_STORAGE_CLASS));
+        when(mockSco.getAsync(eq(STORAGE_CLASS_NAME))).thenReturn(StrimziFuture.completedFuture(RESIZABLE_STORAGE_CLASS));
 
         // Reconcile the PVCs
         PvcReconciler reconciler = new PvcReconciler(
@@ -302,17 +302,17 @@ public class PvcReconcilerTest {
                                 .endStatus()
                                 .build();
 
-                        return Future.succeededFuture(pvcWithStatus);
+                        return StrimziFuture.completedFuture(pvcWithStatus);
                     } else {
-                        return Future.succeededFuture();
+                        return StrimziFuture.completedFuture(null);
                     }
                 });
         ArgumentCaptor<PersistentVolumeClaim> pvcCaptor = ArgumentCaptor.forClass(PersistentVolumeClaim.class);
-        when(mockPvcOps.reconcile(any(), anyString(), anyString(), pvcCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockPvcOps.reconcile(any(), anyString(), anyString(), pvcCaptor.capture())).thenReturn(StrimziFuture.completedFuture(null));
 
         // Mock the StorageClass Operator
         StorageClassOperator mockSco = supplier.storageClassOperations;
-        when(mockSco.getAsync(eq(STORAGE_CLASS_NAME))).thenReturn(Future.succeededFuture(NONRESIZABLE_STORAGE_CLASS));
+        when(mockSco.getAsync(eq(STORAGE_CLASS_NAME))).thenReturn(StrimziFuture.completedFuture(NONRESIZABLE_STORAGE_CLASS));
 
         // Reconcile the PVCs
         PvcReconciler reconciler = new PvcReconciler(
@@ -364,17 +364,17 @@ public class PvcReconcilerTest {
                                 .endStatus()
                                 .build();
 
-                        return Future.succeededFuture(pvcWithStatus);
+                        return StrimziFuture.completedFuture(pvcWithStatus);
                     } else {
-                        return Future.succeededFuture();
+                        return StrimziFuture.completedFuture(null);
                     }
                 });
         ArgumentCaptor<PersistentVolumeClaim> pvcCaptor = ArgumentCaptor.forClass(PersistentVolumeClaim.class);
-        when(mockPvcOps.reconcile(any(), anyString(), anyString(), pvcCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockPvcOps.reconcile(any(), anyString(), anyString(), pvcCaptor.capture())).thenReturn(StrimziFuture.completedFuture(null));
 
         // Mock the StorageClass Operator
         StorageClassOperator mockSco = supplier.storageClassOperations;
-        when(mockSco.getAsync(eq(STORAGE_CLASS_NAME))).thenReturn(Future.succeededFuture(RESIZABLE_STORAGE_CLASS));
+        when(mockSco.getAsync(eq(STORAGE_CLASS_NAME))).thenReturn(StrimziFuture.completedFuture(RESIZABLE_STORAGE_CLASS));
 
         // Reconcile the PVCs
         PvcReconciler reconciler = new PvcReconciler(
@@ -426,17 +426,17 @@ public class PvcReconcilerTest {
                                 .endStatus()
                                 .build();
 
-                        return Future.succeededFuture(pvcWithStatus);
+                        return StrimziFuture.completedFuture(pvcWithStatus);
                     } else {
-                        return Future.succeededFuture();
+                        return StrimziFuture.completedFuture(null);
                     }
                 });
         ArgumentCaptor<PersistentVolumeClaim> pvcCaptor = ArgumentCaptor.forClass(PersistentVolumeClaim.class);
-        when(mockPvcOps.reconcile(any(), anyString(), anyString(), pvcCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockPvcOps.reconcile(any(), anyString(), anyString(), pvcCaptor.capture())).thenReturn(StrimziFuture.completedFuture(null));
 
         // Mock the StorageClass Operator
         StorageClassOperator mockSco = supplier.storageClassOperations;
-        when(mockSco.getAsync(eq(STORAGE_CLASS_NAME))).thenReturn(Future.succeededFuture(RESIZABLE_STORAGE_CLASS));
+        when(mockSco.getAsync(eq(STORAGE_CLASS_NAME))).thenReturn(StrimziFuture.completedFuture(RESIZABLE_STORAGE_CLASS));
 
         // Reconcile the PVCs
         PvcReconciler reconciler = new PvcReconciler(
@@ -485,17 +485,17 @@ public class PvcReconcilerTest {
                                 .endStatus()
                                 .build();
 
-                        return Future.succeededFuture(pvcWithStatus);
+                        return StrimziFuture.completedFuture(pvcWithStatus);
                     } else {
-                        return Future.succeededFuture();
+                        return StrimziFuture.completedFuture(null);
                     }
                 });
         ArgumentCaptor<PersistentVolumeClaim> pvcCaptor = ArgumentCaptor.forClass(PersistentVolumeClaim.class);
-        when(mockPvcOps.reconcile(any(), anyString(), anyString(), pvcCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockPvcOps.reconcile(any(), anyString(), anyString(), pvcCaptor.capture())).thenReturn(StrimziFuture.completedFuture(null));
 
         // Mock the StorageClass Operator
         StorageClassOperator mockSco = supplier.storageClassOperations;
-        when(mockSco.getAsync(eq(STORAGE_CLASS_NAME))).thenReturn(Future.succeededFuture(RESIZABLE_STORAGE_CLASS));
+        when(mockSco.getAsync(eq(STORAGE_CLASS_NAME))).thenReturn(StrimziFuture.completedFuture(RESIZABLE_STORAGE_CLASS));
 
         // Reconcile the PVCs
         PvcReconciler reconciler = new PvcReconciler(
@@ -556,11 +556,11 @@ public class PvcReconcilerTest {
         when(mockPvcOps.getAsync(eq(NAMESPACE), ArgumentMatchers.startsWith("data-")))
                 .thenAnswer(invocation -> {
                     String pvcName = invocation.getArgument(1);
-                    return Future.succeededFuture(pvcs.stream().filter(pvc -> pvcName.equals(pvc.getMetadata().getName())).findFirst().orElse(null));
+                    return StrimziFuture.completedFuture(pvcs.stream().filter(pvc -> pvcName.equals(pvc.getMetadata().getName())).findFirst().orElse(null));
                 });
         ArgumentCaptor<String> pvcNameCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<PersistentVolumeClaim> pvcCaptor = ArgumentCaptor.forClass(PersistentVolumeClaim.class);
-        when(mockPvcOps.reconcile(any(), anyString(), pvcNameCaptor.capture(), pvcCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockPvcOps.reconcile(any(), anyString(), pvcNameCaptor.capture(), pvcCaptor.capture())).thenReturn(StrimziFuture.completedFuture(null));
 
         // Reconcile the PVCs
         PvcReconciler reconciler = new PvcReconciler(

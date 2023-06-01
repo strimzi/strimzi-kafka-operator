@@ -10,8 +10,7 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.operator.common.Reconciliation;
-import io.vertx.core.Future;
-import io.vertx.core.Vertx;
+import io.strimzi.operator.common.StrimziFuture;
 
 /**
  * Operator for managing Service Accounts
@@ -19,11 +18,10 @@ import io.vertx.core.Vertx;
 public class ServiceAccountOperator extends AbstractNamespacedResourceOperator<KubernetesClient, ServiceAccount, ServiceAccountList, Resource<ServiceAccount>> {
     /**
      * Constructor
-     * @param vertx The Vertx instance
      * @param client The Kubernetes client
      */
-    public ServiceAccountOperator(Vertx vertx, KubernetesClient client) {
-        super(vertx, client, "ServiceAccount");
+    public ServiceAccountOperator(KubernetesClient client) {
+        super(client, "ServiceAccount");
     }
 
     @Override
@@ -32,7 +30,7 @@ public class ServiceAccountOperator extends AbstractNamespacedResourceOperator<K
     }
 
     @Override
-    protected Future<ReconcileResult<ServiceAccount>> internalUpdate(Reconciliation reconciliation, String namespace, String name, ServiceAccount current, ServiceAccount desired) {
+    protected StrimziFuture<ReconcileResult<ServiceAccount>> internalUpdate(Reconciliation reconciliation, String namespace, String name, ServiceAccount current, ServiceAccount desired) {
         if (desired.getSecrets() == null || desired.getSecrets().isEmpty())    {
             desired.setSecrets(current.getSecrets());
         }

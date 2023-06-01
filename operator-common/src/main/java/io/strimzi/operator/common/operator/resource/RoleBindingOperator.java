@@ -9,7 +9,6 @@ import io.fabric8.kubernetes.api.model.rbac.RoleBindingList;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
-import io.vertx.core.Vertx;
 
 /**
  * Operator for managing Role Bindings
@@ -19,11 +18,10 @@ public class RoleBindingOperator extends AbstractNamespacedResourceOperator<Kube
         Resource<RoleBinding>> {
     /**
      * Constructor
-     * @param vertx The Vertx instance
      * @param client The Kubernetes client
      */
-    public RoleBindingOperator(Vertx vertx, KubernetesClient client) {
-        super(vertx, client, "RoleBinding");
+    public RoleBindingOperator(KubernetesClient client) {
+        super(client, "RoleBinding");
     }
 
     @Override

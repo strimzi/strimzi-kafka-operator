@@ -4,14 +4,13 @@
  */
 package io.strimzi.operator.common.operator.resource;
 
+import java.util.regex.Pattern;
+
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyList;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
-import io.vertx.core.Vertx;
-
-import java.util.regex.Pattern;
 
 /**
  * Operator for managing network policies
@@ -29,11 +28,10 @@ public class NetworkPolicyOperator extends AbstractNamespacedResourceOperator<Ku
     /**
      * Constructs the Network Policy Operator
      *
-     * @param vertx     Vert.x instance
      * @param client    Kubernetes client
      */
-    public NetworkPolicyOperator(Vertx vertx, KubernetesClient client) {
-        super(vertx, client, "NetworkPolicy");
+    public NetworkPolicyOperator(KubernetesClient client) {
+        super(client, "NetworkPolicy");
     }
 
     @Override

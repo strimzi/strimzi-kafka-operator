@@ -29,8 +29,8 @@ public class KafkaUserCrdOperatorIT extends AbstractCustomResourceOperatorIT<Kub
     protected static final Logger LOGGER = LogManager.getLogger(KafkaUserCrdOperatorIT.class);
 
     @Override
-    protected CrdOperator operator() {
-        return new CrdOperator(vertx, client, KafkaUser.class, KafkaUserList.class, KafkaUser.RESOURCE_KIND);
+    protected CrdOperator<KubernetesClient, KafkaUser, KafkaUserList> operator() {
+        return new CrdOperator<>(client, KafkaUser.class, KafkaUserList.class, KafkaUser.RESOURCE_KIND);
     }
 
     @Override

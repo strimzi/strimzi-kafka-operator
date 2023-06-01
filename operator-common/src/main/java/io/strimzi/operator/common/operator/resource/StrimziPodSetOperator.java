@@ -8,8 +8,7 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.api.kafka.StrimziPodSetList;
 import io.strimzi.api.kafka.model.StrimziPodSet;
 import io.strimzi.operator.common.Reconciliation;
-import io.vertx.core.Future;
-import io.vertx.core.Vertx;
+import io.strimzi.operator.common.StrimziFuture;
 
 /**
  * Operator for {@code StrimziPodSet}s
@@ -20,12 +19,11 @@ public class StrimziPodSetOperator extends CrdOperator<KubernetesClient, Strimzi
     /**
      * Constructs the StrimziPodSet operator
      *
-     * @param vertx                 The Vertx instance.
      * @param client                The Kubernetes client.
      * @param operationTimeoutMs    The timeout.
      */
-    public StrimziPodSetOperator(Vertx vertx, KubernetesClient client, long operationTimeoutMs) {
-        super(vertx, client, StrimziPodSet.class, StrimziPodSetList.class, StrimziPodSet.RESOURCE_KIND);
+    public StrimziPodSetOperator(KubernetesClient client, long operationTimeoutMs) {
+        super(client, StrimziPodSet.class, StrimziPodSetList.class, StrimziPodSet.RESOURCE_KIND);
         this.operationTimeoutMs = operationTimeoutMs;
     }
 
@@ -40,17 +38,17 @@ public class StrimziPodSetOperator extends CrdOperator<KubernetesClient, Strimzi
      * @return  Reconciliation result with the created StrimziPodSet
      */
     @Override
-    protected Future<ReconcileResult<StrimziPodSet>> internalCreate(Reconciliation reconciliation, String namespace, String name, StrimziPodSet desired) {
-        Future<ReconcileResult<StrimziPodSet>> create = super.internalCreate(reconciliation, namespace, name, desired);
+    protected StrimziFuture<ReconcileResult<StrimziPodSet>> internalCreate(Reconciliation reconciliation, String namespace, String name, StrimziPodSet desired) {
+        StrimziFuture<ReconcileResult<StrimziPodSet>> create = super.internalCreate(reconciliation, namespace, name, desired);
 
         // If it failed, we return immediately ...
-        if (create.failed()) {
+        if (create.isCompletedExceptionally()) {
             return create;
         }
 
         // ... if it created, we wait for the PodSet / its pods to become ready and once they do, we return the original reconciliation result.
-        return create.compose(i -> waitFor(reconciliation, namespace, name, "ready", 1_000L, operationTimeoutMs, this::isReady))
-                .map(create.result());
+        return create.thenCompose(i -> waitFor(reconciliation, namespace, name, "ready", 1_000L, operationTimeoutMs, this::isReady))
+                .thenApply(nothing -> create.join());
     }
 
     /**
@@ -77,7 +75,7 @@ public class StrimziPodSetOperator extends CrdOperator<KubernetesClient, Strimzi
      *
      * @return  A future which completes when the resource is ready or times out
      */
-    public Future<Void> readiness(Reconciliation reconciliation, String namespace, String name, long pollIntervalMs, long timeoutMs) {
+    public StrimziFuture<Void> readiness(Reconciliation reconciliation, String namespace, String name, long pollIntervalMs, long timeoutMs) {
         return waitFor(reconciliation, namespace, name, pollIntervalMs, timeoutMs, this::isReady);
     }
 
