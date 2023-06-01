@@ -5,7 +5,6 @@
 package io.strimzi.operator.topic;
 
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.strimzi.api.kafka.Crds;
 import io.strimzi.operator.common.OperatorKubernetesClientBuilder;
 import io.strimzi.operator.common.ShutdownHook;
 import io.vertx.core.Vertx;
@@ -53,7 +52,6 @@ public class Main {
     private void deploy(Config config) {
         final String strimziVersion = Main.class.getPackage().getImplementationVersion();
         KubernetesClient kubeClient = new OperatorKubernetesClientBuilder("strimzi-topic-operator", strimziVersion).build();
-        Crds.registerCustomKinds();
         VertxOptions options = new VertxOptions().setMetricsOptions(
                 new MicrometerMetricsOptions()
                         .setPrometheusOptions(new VertxPrometheusOptions().setEnabled(true))

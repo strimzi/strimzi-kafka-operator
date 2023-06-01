@@ -5,21 +5,14 @@
 package io.strimzi.test.mockkube2;
 
 import io.fabric8.kubernetes.api.model.DefaultKubernetesResourceList;
-import io.fabric8.kubernetes.api.model.KubernetesResource;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
-import io.fabric8.kubernetes.internal.KubernetesDeserializer;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaConnect;
-import io.strimzi.api.kafka.model.KafkaConnector;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2;
-import io.strimzi.api.kafka.model.KafkaRebalance;
-import io.strimzi.api.kafka.model.KafkaTopic;
-import io.strimzi.api.kafka.model.KafkaUser;
-import io.strimzi.api.kafka.model.StrimziPodSet;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.mockkube2.controllers.AbstractMockController;
 import io.strimzi.test.mockkube2.controllers.MockDeploymentController;
@@ -65,14 +58,9 @@ public class MockKube2 {
      * Registers Custom Resource definition in the mock Kubernetes cluster. This registers it for deserialization, but
      * also creates the CRD in the Kubernetes server.
      *
-     * @param apiVersion    API version of the Custom Resource
-     * @param kind          Kind of the Custom Resource
-     * @param crdClass      Class with the Custom Resource model
-     * @param crdPath       Path to the YAML with the CRD definition
+     * @param crdPath   Path to the YAML with the CRD definition
      */
-    private void registerCrd(String apiVersion, String kind, Class<? extends KubernetesResource> crdClass, String crdPath)  {
-        KubernetesDeserializer.registerCustomKind(apiVersion, kind, crdClass);
-
+    private void registerCrd(String crdPath)  {
         client.apiextensions().v1()
                 .customResourceDefinitions()
                 .load(crdPath)
@@ -151,7 +139,7 @@ public class MockKube2 {
          * @return  MockKube builder instance
          */
         public MockKube2Builder withKafkaCrd()  {
-            mock.registerCrd("kafka.strimzi.io/v1beta2", "Kafka", Kafka.class, TestUtils.CRD_KAFKA);
+            mock.registerCrd(TestUtils.CRD_KAFKA);
             return this;
         }
 
@@ -161,7 +149,7 @@ public class MockKube2 {
          * @return  MockKube builder instance
          */
         public MockKube2Builder withKafkaTopicCrd()  {
-            mock.registerCrd("kafka.strimzi.io/v1beta2", "KafkaTopic", KafkaTopic.class, TestUtils.CRD_TOPIC);
+            mock.registerCrd(TestUtils.CRD_TOPIC);
             return this;
         }
 
@@ -171,7 +159,7 @@ public class MockKube2 {
          * @return  MockKube builder instance
          */
         public MockKube2Builder withKafkaUserCrd()  {
-            mock.registerCrd("kafka.strimzi.io/v1beta2", "KafkaUser", KafkaUser.class, TestUtils.CRD_KAFKA_USER);
+            mock.registerCrd(TestUtils.CRD_KAFKA_USER);
             return this;
         }
 
@@ -181,7 +169,7 @@ public class MockKube2 {
          * @return  MockKube builder instance
          */
         public MockKube2Builder withKafkaConnectCrd()  {
-            mock.registerCrd("kafka.strimzi.io/v1beta2", "KafkaConnect", KafkaConnect.class, TestUtils.CRD_KAFKA_CONNECT);
+            mock.registerCrd(TestUtils.CRD_KAFKA_CONNECT);
             return this;
         }
 
@@ -191,7 +179,7 @@ public class MockKube2 {
          * @return  MockKube builder instance
          */
         public MockKube2Builder withKafkaConnectorCrd()  {
-            mock.registerCrd("kafka.strimzi.io/v1beta2", "KafkaConnector", KafkaConnector.class, TestUtils.CRD_KAFKA_CONNECTOR);
+            mock.registerCrd(TestUtils.CRD_KAFKA_CONNECTOR);
             return this;
         }
 
@@ -201,7 +189,7 @@ public class MockKube2 {
          * @return  MockKube builder instance
          */
         public MockKube2Builder withKafkaMirrorMaker2Crd()  {
-            mock.registerCrd("kafka.strimzi.io/v1beta2", "KafkaMirrorMaker2", KafkaMirrorMaker2.class, TestUtils.CRD_KAFKA_MIRROR_MAKER_2);
+            mock.registerCrd(TestUtils.CRD_KAFKA_MIRROR_MAKER_2);
             return this;
         }
 
@@ -211,7 +199,7 @@ public class MockKube2 {
          * @return  MockKube builder instance
          */
         public MockKube2Builder withKafkaRebalanceCrd()  {
-            mock.registerCrd("kafka.strimzi.io/v1beta2", "KafkaRebalance", KafkaRebalance.class, TestUtils.CRD_KAFKA_REBALANCE);
+            mock.registerCrd(TestUtils.CRD_KAFKA_REBALANCE);
             return this;
         }
 
@@ -221,7 +209,7 @@ public class MockKube2 {
          * @return  MockKube builder instance
          */
         public MockKube2Builder withStrimziPodSetCrd()  {
-            mock.registerCrd("core.strimzi.io/v1beta2", "StrimziPodSet", StrimziPodSet.class, TestUtils.CRD_STRIMZI_POD_SET);
+            mock.registerCrd(TestUtils.CRD_STRIMZI_POD_SET);
             return this;
         }
 
