@@ -530,7 +530,7 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
         // Mock deployment
         DeploymentOperator mockDepOps = supplier.deploymentOperations;
         when(mockDepOps.getAsync(eq(NAMESPACE), eq(COMPONENT_NAME))).thenReturn(Future.succeededFuture(deployment));
-        when(mockDepOps.scaleDown(any(), eq(NAMESPACE), eq(COMPONENT_NAME), anyInt())).thenReturn(Future.succeededFuture());
+        when(mockDepOps.scaleDown(any(), eq(NAMESPACE), eq(COMPONENT_NAME), anyInt(), anyLong())).thenReturn(Future.succeededFuture());
         when(mockDepOps.waitForObserved(any(), eq(NAMESPACE), eq(COMPONENT_NAME), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
         when(mockDepOps.readiness(any(), eq(NAMESPACE), eq(COMPONENT_NAME), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
         when(mockDepOps.deleteAsync(any(), eq(NAMESPACE), eq(COMPONENT_NAME), anyBoolean())).thenReturn(Future.succeededFuture());
@@ -597,7 +597,7 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
                 .onComplete(context.succeeding(v -> context.verify(() -> {
                     // Check migration happened
                     verify(mockDepOps, times(1)).deleteAsync(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), eq(true));
-                    verify(mockDepOps, times(2)).scaleDown(any(), eq(NAMESPACE), eq(COMPONENT_NAME), anyInt());
+                    verify(mockDepOps, times(2)).scaleDown(any(), eq(NAMESPACE), eq(COMPONENT_NAME), anyInt(), anyLong());
 
                     // Verify PodSets
                     List<StrimziPodSet> capturesPodSets = podSetCaptor.getAllValues();

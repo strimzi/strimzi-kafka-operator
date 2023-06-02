@@ -56,17 +56,20 @@ public abstract class AbstractScalableNamespacedResourceOperator<C extends Kuber
 
     /**
      * Asynchronously scale up the resource given by {@code namespace} and {@code name} to have the scale given by
-     * {@code scaleTo}, returning a future for the outcome.
-     * If the resource does not exist, or has a current scale &gt;= the given {@code scaleTo}, then complete successfully.
-     * @param reconciliation The reconciliation
-     * @param namespace The namespace of the resource to scale.
-     * @param name The name of the resource to scale.
-     * @param scaleTo The desired scale.
-     * @return A future whose value is the scale after the operation.
-     * If the scale was initially &gt; the given {@code scaleTo} then this value will be the original scale,
-     * The value will be null if the resource didn't exist (hence no scaling occurred).
+     * {@code scaleTo}, returning a future for the outcome. If the resource does not exist, or has a current
+     * scale &gt;= the given {@code scaleTo}, then complete successfully.
+     *
+     * @param reconciliation    The reconciliation
+     * @param namespace         The namespace of the resource to scale.
+     * @param name              The name of the resource to scale.
+     * @param scaleTo           The desired scale.
+     * @param timeoutMs         The timeout how long wait for the scaling to happen
+     *
+     * @return A future whose value is the scale after the operation. If the scale was initially &gt; the given
+     *         {@code scaleTo} then this value will be the original scale. The value will be null if the resource didn't
+     *         exist (hence no scaling occurred).
      */
-    public Future<Integer> scaleUp(Reconciliation reconciliation, String namespace, String name, int scaleTo) {
+    public Future<Integer> scaleUp(Reconciliation reconciliation, String namespace, String name, int scaleTo, long timeoutMs) {
         Promise<Integer> promise = Promise.promise();
         vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
             future -> {
@@ -74,7 +77,7 @@ public abstract class AbstractScalableNamespacedResourceOperator<C extends Kuber
                     Integer currentScale = currentScale(namespace, name);
                     if (currentScale != null && currentScale < scaleTo) {
                         LOGGER.infoCr(reconciliation, "Scaling up to {} replicas", scaleTo);
-                        resource(namespace, name).scale(scaleTo, true);
+                        resource(namespace, name).withTimeoutInMillis(timeoutMs).scale(scaleTo);
                         currentScale = scaleTo;
                     }
                     future.complete(currentScale);
@@ -93,17 +96,20 @@ public abstract class AbstractScalableNamespacedResourceOperator<C extends Kuber
 
     /**
      * Asynchronously scale down the resource given by {@code namespace} and {@code name} to have the scale given by
-     * {@code scaleTo}, returning a future for the outcome.
-     * If the resource does not exists, is has a current scale &lt;= the given {@code scaleTo} then complete successfully.
-     * @param reconciliation The reconciliation
-     * @param namespace The namespace of the resource to scale.
-     * @param name The name of the resource to scale.
-     * @param scaleTo The desired scale.
-     * @return A future whose value is the scale after the operation.
-     * If the scale was initially &lt; the given {@code scaleTo} then this value will be the original scale,
-     * The value will be null if the resource didn't exist (hence no scaling occurred).
+     * {@code scaleTo}, returning a future for the outcome. If the resource does not exists, is has a current
+     * scale &lt;= the given {@code scaleTo} then complete successfully.
+     *
+     * @param reconciliation    The reconciliation
+     * @param namespace         The namespace of the resource to scale.
+     * @param name              The name of the resource to scale.
+     * @param scaleTo           The desired scale.
+     * @param timeoutMs         The timeout how long wait for the scaling to happen
+     *
+     * @return A future whose value is the scale after the operation. If the scale was initially &lt; the given
+     *         {@code scaleTo} then this value will be the original scale. The value will be null if the resource
+     *         didn't exist (hence no scaling occurred).
      */
-    public Future<Integer> scaleDown(Reconciliation reconciliation, String namespace, String name, int scaleTo) {
+    public Future<Integer> scaleDown(Reconciliation reconciliation, String namespace, String name, int scaleTo, long timeoutMs) {
         Promise<Integer> promise = Promise.promise();
         vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
             future -> {
@@ -113,7 +119,7 @@ public abstract class AbstractScalableNamespacedResourceOperator<C extends Kuber
                         while (nextReplicas > scaleTo) {
                             nextReplicas--;
                             LOGGER.infoCr(reconciliation, "Scaling down from {} to {}", nextReplicas + 1, nextReplicas);
-                            resource(namespace, name).scale(nextReplicas, true);
+                            resource(namespace, name).withTimeoutInMillis(timeoutMs).scale(nextReplicas);
                         }
                     }
                     future.complete(nextReplicas);

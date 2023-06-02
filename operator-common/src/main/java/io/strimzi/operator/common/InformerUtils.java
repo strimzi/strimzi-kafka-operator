@@ -32,6 +32,27 @@ public class InformerUtils {
     }
 
     /**
+     * Watches for informers to not stop unless we are shutting down the controller. If it stops unexpectedly, we will
+     * terminate the operator.
+     *
+     * @param type      Type of the informer
+     * @param reason    Reason why the informer stopped
+     * @param stopping  Flag indicating if the controller shutdown is in progress (in which case the informer is expected to stop)
+     */
+    public static void stoppedInformerHandler(String type, Throwable reason, boolean stopping) {
+        if (!stopping) {
+            // the informer is not being stopped, so this is unexpected!
+            if (reason != null) {
+                LOGGER.errorOp("{} informer stopped unexpectedly", type, reason);
+            } else {
+                LOGGER.errorOp("{} informer stopped unexpectedly without a reason", type);
+            }
+        } else {
+            LOGGER.infoOp("{} informer stopped", type);
+        }
+    }
+
+    /**
      * Synchronously stops one or more informers. It will stop them and then wait for up to the specified timeout for
      * each of them to actually stop.
      *
