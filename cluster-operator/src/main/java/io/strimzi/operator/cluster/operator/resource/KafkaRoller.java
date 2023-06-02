@@ -135,6 +135,9 @@ public class KafkaRoller {
     private static final int BROKER_RECOVERY_STATE = 2;
     private PemTrustOptions pto;
     private PemKeyCertOptions pkco;
+    private static final String CLUSTER_CA_CERT_SECRET_KEY = "ca.crt";
+    private static final String CO_KEY_SECRET_KEY = "cluster-operator.key";
+    private static final String CO_KEY_CERT_SECRET_KEY = "cluster-operator.crt";
 
     /**
      * Constructor
@@ -180,13 +183,13 @@ public class KafkaRoller {
         this.kafkaVersion = kafkaVersion;
         this.reconciliation = reconciliation;
         this.allowReconfiguration = allowReconfiguration;
-        if (clusterCaCertSecret != null) {
-            this.pto = new PemTrustOptions().addCertValue(Buffer.buffer(Util.decodeFromSecret(clusterCaCertSecret, "ca.crt")));
+        if (clusterCaCertSecret != null && clusterCaCertSecret.getData().containsKey(CLUSTER_CA_CERT_SECRET_KEY)) {
+            this.pto = new PemTrustOptions().addCertValue(Buffer.buffer(Util.decodeFromSecret(clusterCaCertSecret, CLUSTER_CA_CERT_SECRET_KEY)));
         }
-        if  (coKeySecret != null) {
+        if  (coKeySecret != null && coKeySecret.getData().containsKey(CO_KEY_SECRET_KEY) && coKeySecret.getData().containsKey(CO_KEY_CERT_SECRET_KEY)) {
             this.pkco = new PemKeyCertOptions()
-                    .addCertValue(Buffer.buffer(Util.decodeFromSecret(coKeySecret, "cluster-operator.crt")))
-                    .addKeyValue(Buffer.buffer(Util.decodeFromSecret(coKeySecret, "cluster-operator.key")));
+                    .addCertValue(Buffer.buffer(Util.decodeFromSecret(coKeySecret, CO_KEY_CERT_SECRET_KEY)))
+                    .addKeyValue(Buffer.buffer(Util.decodeFromSecret(coKeySecret, CO_KEY_SECRET_KEY)));
         }
     }
 
@@ -951,3 +954,4 @@ public class KafkaRoller {
             });
     }
 }
+
