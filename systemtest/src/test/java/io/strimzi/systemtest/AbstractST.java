@@ -69,11 +69,6 @@ import static org.junit.jupiter.api.Assertions.fail;
 @ExtendWith({TestExecutionWatcher.class, BeforeAllOnce.class})
 @DisplayNameGeneration(IndicativeSentences.class)
 public abstract class AbstractST implements TestSeparator {
-
-    static {
-        Crds.registerCustomKinds();
-    }
-
     public static final List<String> LB_FINALIZERS;
     static {
         LB_FINALIZERS = Environment.LB_FINALIZERS ? List.of(Constants.LOAD_BALANCER_CLEANUP) : null;

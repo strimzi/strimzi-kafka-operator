@@ -267,9 +267,9 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
                                              KafkaMirrorMaker2Cluster mirrorMaker2Cluster,
                                              Map<String, String> podAnnotations,
                                              boolean hasZeroReplicas)  {
-        return deploymentOperations.scaleDown(reconciliation, reconciliation.namespace(), mirrorMaker2Cluster.getComponentName(), mirrorMaker2Cluster.getReplicas())
+        return deploymentOperations.scaleDown(reconciliation, reconciliation.namespace(), mirrorMaker2Cluster.getComponentName(), mirrorMaker2Cluster.getReplicas(), operationTimeoutMs)
                 .compose(i -> deploymentOperations.reconcile(reconciliation, reconciliation.namespace(), mirrorMaker2Cluster.getComponentName(), mirrorMaker2Cluster.generateDeployment(mirrorMaker2Cluster.getReplicas(), null, podAnnotations, pfa.isOpenshift(), imagePullPolicy, imagePullSecrets, null)))
-                .compose(i -> deploymentOperations.scaleUp(reconciliation, reconciliation.namespace(), mirrorMaker2Cluster.getComponentName(), mirrorMaker2Cluster.getReplicas()))
+                .compose(i -> deploymentOperations.scaleUp(reconciliation, reconciliation.namespace(), mirrorMaker2Cluster.getComponentName(), mirrorMaker2Cluster.getReplicas(), operationTimeoutMs))
                 .compose(i -> deploymentOperations.waitForObserved(reconciliation, reconciliation.namespace(), mirrorMaker2Cluster.getComponentName(), 1_000, operationTimeoutMs))
                 .compose(i -> hasZeroReplicas ? Future.succeededFuture() : deploymentOperations.readiness(reconciliation, reconciliation.namespace(), mirrorMaker2Cluster.getComponentName(), 1_000, operationTimeoutMs));
     }

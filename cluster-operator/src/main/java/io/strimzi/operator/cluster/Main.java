@@ -8,7 +8,6 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRole;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.micrometer.prometheus.PrometheusMeterRegistry;
-import io.strimzi.api.kafka.Crds;
 import io.strimzi.certs.OpenSslCertManager;
 import io.strimzi.operator.cluster.leaderelection.LeaderElectionManager;
 import io.strimzi.operator.cluster.model.securityprofiles.PodSecurityProviderFactory;
@@ -59,14 +58,6 @@ public class Main {
     private static final Logger LOGGER = LogManager.getLogger(Main.class.getName());
 
     private static final int HEALTH_SERVER_PORT = 8080;
-
-    static {
-        try {
-            Crds.registerCustomKinds();
-        } catch (Error | RuntimeException t) {
-            t.printStackTrace();
-        }
-    }
 
     /**
      * The main method used to run the Cluster Operator

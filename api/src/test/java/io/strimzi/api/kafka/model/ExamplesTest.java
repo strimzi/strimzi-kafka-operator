@@ -5,15 +5,11 @@
 package io.strimzi.api.kafka.model;
 
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import io.fabric8.kubernetes.api.model.KubernetesResource;
 import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinitionSpec;
-import io.strimzi.api.kafka.Crds;
+import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import io.strimzi.test.TestUtils;
 import org.junit.jupiter.api.Test;
 
@@ -25,8 +21,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Stack;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.fail;
@@ -37,13 +31,6 @@ import static org.junit.jupiter.api.Assertions.fail;
  * {@code ../packaging/examples} directory are valid.
  */
 public class ExamplesTest {
-
-    static {
-        Crds.registerCustomKinds();
-    }
-
-    private static final Pattern PARAMETER_PATTERN = Pattern.compile("\\$\\{\\{(.+?)\\}?\\}");
-
     /**
      * Recurse through the examples directory looking for resources of the right type
      * and validating them.
@@ -72,13 +59,7 @@ public class ExamplesTest {
         try {
             ObjectMapper mapper = new YAMLMapper();
             final String content = TestUtils.readFile(f);
-            JsonNode rootNode = mapper.readTree(content);
-            String resourceKind = getKind(rootNode);
-            if ("Template".equals(resourceKind)) {
-                validateTemplate(rootNode);
-            } else {
-                validate(content);
-            }
+            validate(content);
         } catch (Exception | AssertionError e) {
             throw new AssertionError("Invalid example yaml in " + f.getPath() + ": " + e.getMessage(), e);
         }
@@ -89,7 +70,7 @@ public class ExamplesTest {
         // This uses a custom deserializer which knows about all the built-in
         // k8s and os kinds, plus the custom kinds registered via Crds
         // But the custom deserializer always allows unknown properties
-        KubernetesResource resource = TestUtils.fromYamlString(content, KubernetesResource.class, false);
+        KubernetesResource resource = new KubernetesClientBuilder().build().getKubernetesSerialization().convertValue(content, KubernetesResource.class);
         recurseForAdditionalProperties(new Stack(), resource);
     }
 
@@ -143,49 +124,5 @@ public class ExamplesTest {
                 && hasGetterName
                 && !Modifier.isStatic(method.getModifiers())
                 && !method.getReturnType().equals(void.class);
-    }
-
-    private void validateTemplate(JsonNode rootNode) throws JsonProcessingException {
-        JsonNode parameters = rootNode.get("parameters");
-        Map<String, Object> params = new HashMap<>();
-        for (JsonNode parameter : parameters) {
-            String name = parameter.get("name").asText();
-            Object value;
-            JsonNode valueNode = parameter.get("value");
-            switch (valueNode.getNodeType()) {
-                case NULL:
-                    value = null;
-                    break;
-                case NUMBER:
-                case BOOLEAN:
-                    value = valueNode.toString();
-                    break;
-                case STRING:
-                    value = valueNode.asText();
-                    break;
-                default:
-                    throw new RuntimeException("Unsupported JSON type " + valueNode.getNodeType());
-            }
-            params.put(name, value);
-        }
-        for (JsonNode object : rootNode.get("objects")) {
-            String s = new YAMLMapper().enable(YAMLGenerator.Feature.MINIMIZE_QUOTES).enable(SerializationFeature.INDENT_OUTPUT).writeValueAsString(object);
-            Matcher matcher = PARAMETER_PATTERN.matcher(s);
-            StringBuilder sb = new StringBuilder();
-            int last = 0;
-            while (matcher.find()) {
-                sb.append(s, last, matcher.start());
-                String paramName = matcher.group(1);
-                sb.append(params.get(paramName));
-                last = matcher.end();
-            }
-            sb.append(s.substring(last));
-            String yamlContent = sb.toString();
-            validate(yamlContent);
-        }
-    }
-
-    private String getKind(JsonNode rootNode) {
-        return rootNode.get("kind").asText();
     }
 }

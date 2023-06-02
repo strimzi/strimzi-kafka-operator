@@ -14,7 +14,6 @@ import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
-import io.fabric8.kubernetes.internal.KubernetesDeserializer;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBridge;
 import io.strimzi.api.kafka.model.KafkaConnect;
@@ -51,17 +50,6 @@ public class Crds {
     };
 
     private Crds() {
-    }
-
-    /**
-     * Register custom resource kinds with {@link KubernetesDeserializer} so Fabric8 knows how to deserialize them.
-     */
-    public static void registerCustomKinds() {
-        for (Class<? extends CustomResource> crdClass : CRDS) {
-            for (String version : apiVersions(crdClass)) {
-                KubernetesDeserializer.registerCustomKind(version, kind(crdClass), crdClass);
-            }
-        }
     }
 
     @SuppressWarnings({"checkstyle:JavaNCSS"})

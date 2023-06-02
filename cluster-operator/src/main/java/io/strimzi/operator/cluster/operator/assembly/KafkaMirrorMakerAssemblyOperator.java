@@ -100,7 +100,7 @@ public class KafkaMirrorMakerAssemblyOperator extends AbstractAssemblyOperator<K
 
         LOGGER.debugCr(reconciliation, "Updating Kafka Mirror Maker cluster");
         mirrorMakerServiceAccount(reconciliation, namespace, mirror)
-                .compose(i -> deploymentOperations.scaleDown(reconciliation, namespace, mirror.getComponentName(), mirror.getReplicas()))
+                .compose(i -> deploymentOperations.scaleDown(reconciliation, namespace, mirror.getComponentName(), mirror.getReplicas(), operationTimeoutMs))
                 .compose(i -> MetricsAndLoggingUtils.metricsAndLogging(reconciliation, configMapOperations, mirror.logging(), mirror.metrics()))
                 .compose(metricsAndLoggingCm -> {
                     ConfigMap logAndMetricsConfigMap = mirror.generateMetricsAndLogConfigMap(metricsAndLoggingCm);
@@ -118,7 +118,7 @@ public class KafkaMirrorMakerAssemblyOperator extends AbstractAssemblyOperator<K
                     return Future.succeededFuture();
                 })
                 .compose(i -> deploymentOperations.reconcile(reconciliation, namespace, mirror.getComponentName(), mirror.generateDeployment(annotations, pfa.isOpenshift(), imagePullPolicy, imagePullSecrets)))
-                .compose(i -> deploymentOperations.scaleUp(reconciliation, namespace, mirror.getComponentName(), mirror.getReplicas()))
+                .compose(i -> deploymentOperations.scaleUp(reconciliation, namespace, mirror.getComponentName(), mirror.getReplicas(), operationTimeoutMs))
                 .compose(i -> deploymentOperations.waitForObserved(reconciliation, namespace, mirror.getComponentName(), 1_000, operationTimeoutMs))
                 .compose(i -> mirrorHasZeroReplicas ? Future.succeededFuture() : deploymentOperations.readiness(reconciliation, namespace, mirror.getComponentName(), 1_000, operationTimeoutMs))
                 .onComplete(reconciliationResult -> {

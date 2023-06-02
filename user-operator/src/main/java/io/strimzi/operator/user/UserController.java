@@ -232,13 +232,16 @@ public class UserController {
      * @return  True when the controller thread is alice, false otherwise
      */
     public boolean isAlive()    {
-        boolean ready = true;
+        boolean alive = true;
 
         for (UserControllerLoop t : threadPool) {
-            ready &= t.isAlive();
+            alive &= t.isAlive();
         }
 
-        return ready;
+        alive &= userInformer.isRunning();
+        alive &= secretInformer.isRunning();
+
+        return alive;
     }
 
     /**

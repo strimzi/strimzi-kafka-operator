@@ -388,11 +388,11 @@ public class KafkaConnectMigrationTest {
             events.add("DEP-RECONCILE-" + i.getArgument(2));
             return Future.succeededFuture();
         });
-        when(mockDepOps.scaleDown(any(), eq(NAMESPACE), eq(COMPONENT_NAME), anyInt())).thenAnswer(i -> {
+        when(mockDepOps.scaleDown(any(), eq(NAMESPACE), eq(COMPONENT_NAME), anyInt(), anyLong())).thenAnswer(i -> {
             events.add("DEP-SCALE-DOWN-TO-" + i.getArgument(3));
             return Future.succeededFuture();
         });
-        when(mockDepOps.scaleUp(any(), eq(NAMESPACE), eq(COMPONENT_NAME), anyInt())).thenAnswer(i -> {
+        when(mockDepOps.scaleUp(any(), eq(NAMESPACE), eq(COMPONENT_NAME), anyInt(), anyLong())).thenAnswer(i -> {
             events.add("DEP-SCALE-UP-TO-" + i.getArgument(3));
             return Future.succeededFuture();
         });
