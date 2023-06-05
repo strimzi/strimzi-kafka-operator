@@ -344,6 +344,14 @@
         </profile>
 
         <profile>
+            <id>upgrade</id>
+            <properties>
+                <skipTests>false</skipTests>
+                <groups>upgrade</groups>
+            </properties>
+        </profile>
+
+        <profile>
             <id>operators</id>
             <properties>
                 <skipTests>false</skipTests>
@@ -544,5 +552,18 @@
                 </groups>
             </properties>
         </profile>
+
+        <profile>
+            <id>olm_acceptance</id>
+            <properties>
+                <skipTests>false</skipTests>
+                <groups>
+                    acceptance,
+                    olm,
+                    olmupgrade
+                </groups>
+            </properties>
+        </profile>
+
     </profiles>
 </project>
