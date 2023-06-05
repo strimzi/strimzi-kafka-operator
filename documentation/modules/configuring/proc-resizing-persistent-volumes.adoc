@@ -10,7 +10,7 @@ Persistent volumes used by a cluster can be resized without any risk of data los
 Following a configuration update to change the size of the storage, Strimzi instructs the storage infrastructure to make the change. 
 Storage expansion is supported in Strimzi clusters that use a single persistent volume per-broker or multiple persistent volumes per-broker that use JBOD storage. 
 
-NOTE: Storage reduction is only possible with JBOD, and only after moving all partitions to other volumes within the same broker (intra-broker) or to other brokers within the same cluster (intra-cluster).
+NOTE: Storage reduction is only possible with JBOD. You can remove a disk after moving all partitions on the disk to other volumes within the same broker (intra-broker) or to other brokers within the same cluster (intra-cluster).
 
 .Prerequisites
 
