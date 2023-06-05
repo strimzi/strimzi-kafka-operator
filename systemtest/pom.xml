@@ -554,7 +554,7 @@
         </profile>
 
         <profile>
-            <id>olm_acceptance</id>
+            <id>olm_acceptance_upgrade</id>
             <properties>
                 <skipTests>false</skipTests>
                 <groups>
