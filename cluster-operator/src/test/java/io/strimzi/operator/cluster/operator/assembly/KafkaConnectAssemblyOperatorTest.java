@@ -323,7 +323,7 @@ public class KafkaConnectAssemblyOperatorTest {
         when(mockBcOps.reconcile(any(), eq(kc.getMetadata().getNamespace()), eq(KafkaConnectResources.buildConfigName(kc.getMetadata().getName())), eq(null))).thenReturn(Future.succeededFuture(ReconcileResult.noop(null)));
 
         ArgumentCaptor<PodDisruptionBudget> pdbCaptor = ArgumentCaptor.forClass(PodDisruptionBudget.class);
-        when(mockPdbOps.reconcile(any(), anyString(), any(), pdbCaptor.capture())).thenReturn(Future.succeededFuture());        
+        when(mockPdbOps.reconcile(any(), anyString(), any(), pdbCaptor.capture())).thenReturn(Future.succeededFuture());
         KafkaConnectApi mockConnectClient = mock(KafkaConnectApi.class);
         when(mockConnectClient.list(any(), anyString(), anyInt())).thenReturn(Future.succeededFuture(emptyList()));
 
@@ -422,7 +422,7 @@ public class KafkaConnectAssemblyOperatorTest {
         when(mockBcOps.reconcile(any(), eq(kc.getMetadata().getNamespace()), eq(KafkaConnectResources.buildConfigName(kc.getMetadata().getName())), eq(null))).thenReturn(Future.succeededFuture(ReconcileResult.noop(null)));
 
         ArgumentCaptor<PodDisruptionBudget> pdbCaptor = ArgumentCaptor.forClass(PodDisruptionBudget.class);
-        when(mockPdbOps.reconcile(any(), anyString(), any(), pdbCaptor.capture())).thenReturn(Future.succeededFuture());  
+        when(mockPdbOps.reconcile(any(), anyString(), any(), pdbCaptor.capture())).thenReturn(Future.succeededFuture());
         // Mock CM get
         when(mockConnectOps.get(kcNamespace, kcName)).thenReturn(kc);
         ConfigMap metricsCm = new ConfigMapBuilder().withNewMetadata()
@@ -748,6 +748,8 @@ public class KafkaConnectAssemblyOperatorTest {
         // when requested ConfigMap for a specific Kafka Connect cluster
         when(mockConnectOps.get(eq(kcNamespace), eq("foo"))).thenReturn(foo);
         when(mockConnectOps.get(eq(kcNamespace), eq("bar"))).thenReturn(bar);
+        when(mockConnectOps.getAsync(eq(kcNamespace), eq("foo"))).thenReturn(Future.succeededFuture(foo));
+        when(mockConnectOps.getAsync(eq(kcNamespace), eq("bar"))).thenReturn(Future.succeededFuture(bar));
 
         // providing the list of ALL Deployments for all the Kafka Connect clusters
         Labels newLabels = Labels.forStrimziKind(KafkaConnect.RESOURCE_KIND);

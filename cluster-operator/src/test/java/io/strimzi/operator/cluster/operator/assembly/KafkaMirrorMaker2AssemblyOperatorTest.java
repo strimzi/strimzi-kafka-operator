@@ -621,6 +621,8 @@ public class KafkaMirrorMaker2AssemblyOperatorTest {
         // when requested ConfigMap for a specific Kafka MirrorMaker 2 cluster
         when(mockMirrorMaker2Ops.get(eq(kmm2Namespace), eq("foo"))).thenReturn(foo);
         when(mockMirrorMaker2Ops.get(eq(kmm2Namespace), eq("bar"))).thenReturn(bar);
+        when(mockMirrorMaker2Ops.getAsync(eq(kmm2Namespace), eq("foo"))).thenReturn(Future.succeededFuture(foo));
+        when(mockMirrorMaker2Ops.getAsync(eq(kmm2Namespace), eq("bar"))).thenReturn(Future.succeededFuture(bar));
 
         // providing the list of ALL Deployments for all the Kafka MirrorMaker 2 clusters
         Labels newLabels = Labels.forStrimziKind(KafkaMirrorMaker2.RESOURCE_KIND);
@@ -932,7 +934,7 @@ public class KafkaMirrorMaker2AssemblyOperatorTest {
         KafkaMirrorMaker2 kmm2 = ResourceUtils.createEmptyKafkaMirrorMaker2(targetNamespace, kmm2Name);
         ArgumentCaptor<KafkaMirrorMaker2> mirrorMaker2Captor = createMirrorMaker2CaptorMock(targetNamespace, kmm2Name, kmm2, supplier);
         KafkaConnectApi mockConnectClient = createConnectClientMock();
-        
+
         KafkaMirrorMaker2ClusterSpec sourceCluster =
             new KafkaMirrorMaker2ClusterSpecBuilder(true)
                 .withAlias(sourceClusterAlias)
@@ -982,7 +984,7 @@ public class KafkaMirrorMaker2AssemblyOperatorTest {
         KafkaMirrorMaker2 kmm2 = ResourceUtils.createEmptyKafkaMirrorMaker2(targetNamespace, kmm2Name);
         ArgumentCaptor<KafkaMirrorMaker2> mirrorMaker2Captor = createMirrorMaker2CaptorMock(targetNamespace, kmm2Name, kmm2, supplier);
         KafkaConnectApi mockConnectClient = createConnectClientMock();
-        
+
         KafkaMirrorMaker2ClusterSpec sourceCluster =
             new KafkaMirrorMaker2ClusterSpecBuilder(true)
                 .withAlias(sourceClusterAlias)

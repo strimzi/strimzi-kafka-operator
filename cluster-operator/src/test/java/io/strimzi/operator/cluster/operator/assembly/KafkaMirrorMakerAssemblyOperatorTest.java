@@ -582,7 +582,8 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
         // when requested ConfigMap for a specific Kafka Mirror Maker cluster
         when(mockMirrorOps.get(eq(kmmNamespace), eq("foo"))).thenReturn(foo);
         when(mockMirrorOps.get(eq(kmmNamespace), eq("bar"))).thenReturn(bar);
-        when(mockMirrorOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture());
+        when(mockMirrorOps.getAsync(anyString(), eq("foo"))).thenReturn(Future.succeededFuture(foo));
+        when(mockMirrorOps.getAsync(anyString(), eq("bar"))).thenReturn(Future.succeededFuture(bar));
 
         // providing the list of ALL Deployments for all the Kafka Mirror Maker clusters
         Labels newLabels = Labels.forStrimziKind(KafkaMirrorMaker.RESOURCE_KIND);

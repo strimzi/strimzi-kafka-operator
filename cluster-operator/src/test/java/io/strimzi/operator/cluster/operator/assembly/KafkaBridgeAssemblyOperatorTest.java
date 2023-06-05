@@ -602,6 +602,8 @@ public class KafkaBridgeAssemblyOperatorTest {
         // when requested ConfigMap for a specific Kafka Bridge cluster
         when(mockBridgeOps.get(eq(kbNamespace), eq("foo"))).thenReturn(foo);
         when(mockBridgeOps.get(eq(kbNamespace), eq("bar"))).thenReturn(bar);
+        when(mockBridgeOps.getAsync(eq(kbNamespace), eq("foo"))).thenReturn(Future.succeededFuture(foo));
+        when(mockBridgeOps.getAsync(eq(kbNamespace), eq("bar"))).thenReturn(Future.succeededFuture(bar));
 
         // providing the list of ALL Deployments for all the Kafka Bridge clusters
         Labels newLabels = Labels.forStrimziKind(KafkaBridge.RESOURCE_KIND);
