@@ -2,7 +2,7 @@
 
 This document gives a detailed breakdown of the testing processes using testing farm service.
 
-## Pre-requisites
+## Pre-requisites  
 
 * Python >=3.9
 * TMT command line tool (optional) - for lint and check tmt formatted test plans and tests
