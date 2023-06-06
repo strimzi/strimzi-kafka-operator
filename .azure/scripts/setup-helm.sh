@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -x
 
-HELM3_VERSION=${TEST_HELM3_VERSION:-'v3.12.0'}
+TEST_HELM3_VERSION=${TEST_HELM3_VERSION:-'v3.12.0'}
 
 function install_helm3 {
     export HELM_INSTALL_DIR=/usr/bin
@@ -11,7 +11,7 @@ function install_helm3 {
     chmod 700 get_helm.sh
 
     echo "Installing helm 3..."
-    sudo ./get_helm.sh --version "${HELM3_VERSION}"
+    sudo ./get_helm.sh --version "${TEST_HELM3_VERSION}"
 
     echo "Verifying the installation of helm binary..."
     # run a proper helm command instead of, for example, "which helm", to verify that we can call the binary
