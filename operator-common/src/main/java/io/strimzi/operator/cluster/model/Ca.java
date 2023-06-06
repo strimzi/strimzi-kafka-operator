@@ -175,6 +175,11 @@ public abstract class Ca {
     public static final String ANNO_STRIMZI_IO_CLIENTS_CA_CERT_GENERATION = Annotations.STRIMZI_DOMAIN + "clients-ca-cert-generation";
 
     /**
+     * Annotation for tracking the Cluster CA key generation used by Kubernetes resources
+     */
+    public static final String ANNO_STRIMZI_IO_CLUSTER_CA_KEY_GENERATION = Annotations.STRIMZI_DOMAIN + "cluster-ca-key-generation";
+
+    /**
      * Initial generation used for the CAs
      */
     public static final int INIT_GENERATION = 0;

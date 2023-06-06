@@ -183,6 +183,9 @@ public class KafkaExporterReconciler {
             int caCertGeneration = ModelUtils.caCertGeneration(this.clusterCa);
             Annotations.annotations(deployment.getSpec().getTemplate()).put(
                     Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, String.valueOf(caCertGeneration));
+            int caKeyGeneration = ModelUtils.caKeyGeneration(clusterCa);
+            Annotations.annotations(deployment.getSpec().getTemplate()).put(
+                    Ca.ANNO_STRIMZI_IO_CLUSTER_CA_KEY_GENERATION, String.valueOf(caKeyGeneration));
 
             return deploymentOperator
                     .reconcile(reconciliation, reconciliation.namespace(), KafkaExporterResources.deploymentName(reconciliation.name()), deployment)
