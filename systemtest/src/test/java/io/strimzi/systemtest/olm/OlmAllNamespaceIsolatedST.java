@@ -13,18 +13,17 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
-import java.util.Collections;
-
 import static io.strimzi.systemtest.Constants.BRIDGE;
 import static io.strimzi.systemtest.Constants.CONNECT;
 import static io.strimzi.systemtest.Constants.MIRROR_MAKER;
 import static io.strimzi.systemtest.Constants.MIRROR_MAKER2;
 import static io.strimzi.systemtest.Constants.OLM;
+import static io.strimzi.systemtest.Constants.WATCH_ALL_NAMESPACES;
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @Tag(OLM)
 @IsolatedSuite
-public class SingleNamespaceIsolatedST extends OlmAbstractST {
+public class OlmAllNamespaceIsolatedST extends OlmAbstractST {
 
     public static final String NAMESPACE = "olm-namespace";
 
@@ -85,13 +84,12 @@ public class SingleNamespaceIsolatedST extends OlmAbstractST {
         // delete shared ClusterOperator
         clusterOperator.unInstall();
         clusterOperator = clusterOperator.defaultInstallation()
-            .withNamespace(NAMESPACE)
-            .withWatchingNamespaces(NAMESPACE)
-            .withBindingsNamespaces(Collections.singletonList(NAMESPACE))
+            .withNamespace(cluster.getDefaultOlmNamespace())
+            .withWatchingNamespaces(WATCH_ALL_NAMESPACES)
             .createInstallation()
             // run always OLM installation
             .runOlmInstallation();
 
-        cluster.setNamespace(NAMESPACE);
+        cluster.setNamespace(clusterOperator.getDeploymentNamespace());
     }
 }
