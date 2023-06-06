@@ -41,7 +41,7 @@ adjust:
 /regression-components:
   summary: Run regression strimzi test suite
   component: [strimzi, kafka, regression, components]
-  duration: 8h
+  duration: 12h
   tier: 2
   environment+:
     TEST_PROFILE: components
