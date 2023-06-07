@@ -319,7 +319,7 @@ public class KafkaRollerIsolatedST extends AbstractST {
                 .withPod(pt)
                 .build();
 
-        }resourceManager.createResourceWithoutWait(extensionContext, false, KafkaTemplates.kafkaEphemeral(clusterName, 3, 3)
+        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3, 3)
             .editSpec()
                 .editKafka()
                     .withTemplate(kct)

@@ -126,7 +126,7 @@ with tree nodes it can be simply done by following code:
 final int numberOfKafkaBrokers = 3;
 final int numberOfZooKeeperNodes = 1;
 
-resourceManager.createResource(extensionContext, 
+resourceManager.createResourceWithWait(extensionContext, 
     // using KafkaTemplate class for pre-defined values
     KafkaTemplates.kafkaEphemeral(
         clusterName,
@@ -143,7 +143,7 @@ Example of setup shared resources in scope of the test suite:
 @BeforeAll
 void setUp(ExtensionContext extensionContext) {
     // create resources without wait to deploy them simultaneously
-    resourceManager.createResource(extensionContext,false, // <- false, deploy all resources asynchronously
+    resourceManager.createResourceWithoutWait(extensionContext, // we do not wait for readiness and therefore deploy all resources asynchronously
     // kafka with cruise control and metrics
     KafkaTemplates.kafkaWithMetricsAndCruiseControlWithMetrics(...).build(),
     KafkaTemplates.kafkaWithMetrics(...).build(),

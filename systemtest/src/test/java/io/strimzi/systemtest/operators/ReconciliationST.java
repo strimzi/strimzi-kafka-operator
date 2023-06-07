@@ -106,7 +106,7 @@ public class ReconciliationST extends AbstractST {
             kc -> kc.getMetadata().getAnnotations().replace(Annotations.ANNO_STRIMZI_IO_PAUSE_RECONCILIATION, "true", "false"), namespaceName);
         RollingUpdateUtils.waitForComponentAndPodsReady(namespaceName, labelSelector, 1);
 
-        resourceManager.createResource(extensionContext, KafkaConnectorTemplates.kafkaConnector(clusterName).build());
+        resourceManager.createResourceWithWait(extensionContext, KafkaConnectorTemplates.kafkaConnector(clusterName).build());
 
         String connectPodName = kubeClient(namespaceName).listPods(clusterName, Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND).get(0).getMetadata().getName();
         String connectorSpec = KafkaConnectorUtils.getConnectorSpecFromConnectAPI(namespaceName, connectPodName, clusterName);

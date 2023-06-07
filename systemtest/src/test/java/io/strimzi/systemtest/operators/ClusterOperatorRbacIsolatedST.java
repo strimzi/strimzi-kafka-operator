@@ -89,7 +89,7 @@ public class ClusterOperatorRbacIsolatedST extends AbstractST {
         String rackKey = "rack-key";
 
         LOGGER.info("Deploying Kafka: {}, which should not be deployed and error should be present in CR status message", clusterName);
-        }resourceManager.createResourceWithoutWait(extensionContext, false, KafkaTemplates.kafkaEphemeral(clusterName, 3, 3)
+        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3, 3)
             .editOrNewSpec()
                 .editOrNewKafka()
                     .withNewRack()
@@ -104,7 +104,7 @@ public class ClusterOperatorRbacIsolatedST extends AbstractST {
         assertThat(kafkaStatusCondition, is(notNullValue()));
         assertTrue(kafkaStatusCondition.getMessage().contains("Configured service account doesn't have access."));
 
-        }resourceManager.createResourceWithoutWait(extensionContext, false, KafkaConnectTemplates.kafkaConnect(clusterName, clusterOperator.getDeploymentNamespace(), clusterName, 1)
+        resourceManager.createResourceWithWait(extensionContext, KafkaConnectTemplates.kafkaConnect(clusterName, clusterOperator.getDeploymentNamespace(), clusterName, 1)
             .editSpec()
                 .withNewRack(rackKey)
             .endSpec()

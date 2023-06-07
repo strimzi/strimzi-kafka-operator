@@ -222,7 +222,7 @@ public class PodSecurityProfilesIsolatedST extends AbstractST {
         // unrestricted capabilities (container "..." must set securityContext.capabilities.drop=["ALL"]),
         // runAsNonRoot != true (pod or container "..." must set securityContext.runAsNonRoot=true),
         // seccompProfile (pod or container "..." must set securityContext.seccompProfile.type to "RuntimeDefault" or "Localhost")
-        }resourceManager.createResourceWithoutWait(extensionContext, false, kafkaClients.producerStrimzi());
+        resourceManager.createResourceWithWait(extensionContext, kafkaClients.producerStrimzi());
         ClientUtils.waitForProducerClientTimeout(testStorage);
     }
 

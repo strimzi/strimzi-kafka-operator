@@ -604,7 +604,7 @@ class LogSettingST extends AbstractST {
             .build());
 
 //         deploying second Kafka here because of MM and MM2 tests
-        }resourceManager.createResourceWithoutWait(extensionContext, false, KafkaTemplates.kafkaPersistent(GC_LOGGING_SET_NAME, 1, 1)
+        resourceManager.createResourceWithoutWait(extensionContext, KafkaTemplates.kafkaPersistent(GC_LOGGING_SET_NAME, 1, 1)
             .editMetadata()
                 .withNamespace(clusterOperator.getDeploymentNamespace())
             .endMetadata()

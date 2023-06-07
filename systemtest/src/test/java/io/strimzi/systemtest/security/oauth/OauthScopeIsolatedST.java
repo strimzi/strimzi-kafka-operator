@@ -64,7 +64,7 @@ public class OauthScopeIsolatedST extends OauthAbstractST {
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
         // SCOPE TESTING
-        }resourceManager.createResourceWithoutWait(extensionContext, false, KafkaConnectTemplates.kafkaConnect(clusterName, clusterName, 1)
+        resourceManager.createResourceWithoutWait(extensionContext, KafkaConnectTemplates.kafkaConnect(clusterName, clusterName, 1)
             .editMetadata()
                 .withNamespace(clusterOperator.getDeploymentNamespace())
             .endMetadata()
