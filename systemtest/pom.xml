@@ -365,6 +365,7 @@
                     !security/**/*ST,
                     !rollingupdate/**/*ST,
                     !watcher/**/*ST,
+                    !rollingupdate/**/*ST,
                     !tracing/**/*ST
                 </it.test>
             </properties>
@@ -384,6 +385,7 @@
                     security/**/*ST,
                     rollingupdate/**/*ST,
                     watcher/**/*ST,
+                    rollingupdate/**/*ST,
                     tracing/**/*ST
                 </it.test>
             </properties>
