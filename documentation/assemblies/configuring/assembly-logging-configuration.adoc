@@ -53,18 +53,18 @@ For more information on configuring logging for specific Kafka components or ope
 
 .Kafka component logging
 
-* xref:property-kafka-logging-reference[Kafka logging]
-* xref:property-zookeeper-logging-reference[ZooKeeper logging]
-* xref:property-kafka-connect-logging-reference[Kafka Connect and Mirror Maker 2.0 logging]
-* xref:property-mm-loggers-reference[MirrorMaker logging]
-* xref:property-kafka-bridge-logging-reference[Kafka Bridge logging]
-* xref:property-cruise-control-logging-reference[Cruise Control logging]
+* link:{BookURLConfiguring}#property-kafka-logging-reference[Kafka logging^]
+* link:{BookURLConfiguring}#property-zookeeper-logging-reference[ZooKeeper logging^]
+* link:{BookURLConfiguring}#property-kafka-connect-logging-reference[Kafka Connect and Mirror Maker 2.0 logging^]
+* link:{BookURLConfiguring}#property-mm-loggers-reference[MirrorMaker logging^]
+* link:{BookURLConfiguring}#property-kafka-bridge-logging-reference[Kafka Bridge logging^]
+* link:{BookURLConfiguring}#property-cruise-control-logging-reference[Cruise Control logging^]
 
 .Operator logging
 
-* link:{BookURLDeploying}#ref-operator-cluster-logging-configmap-str[Cluster Operator logging^]
-* xref:property-topic-operator-logging-reference[Topic Operator logging]
-* xref:property-user-operator-logging-reference[User Operator logging]
+* xref:ref-operator-cluster-logging-configmap-str[Cluster Operator logging]
+* link:{BookURLConfiguring}#property-topic-operator-logging-reference[Topic Operator logging^]
+* link:{BookURLConfiguring}#property-user-operator-logging-reference[User Operator logging^]
 
 include::../../modules/configuring/proc-creating-configmap.adoc[leveloffset=+1]
 include::../../modules/configuring/proc-creating-logging-filters.adoc[leveloffset=+1]

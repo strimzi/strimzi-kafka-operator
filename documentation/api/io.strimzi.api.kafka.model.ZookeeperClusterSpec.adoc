@@ -1,7 +1,7 @@
 Configures a ZooKeeper cluster.
 
 [id='property-zookeeper-config-{context}']
-=== `config`
+= `config`
 
 Use the `config` properties to configure ZooKeeper options as keys.
 
@@ -62,7 +62,7 @@ spec:
 ----
 
 [id='property-zookeeper-logging-{context}']
-=== `logging`
+= `logging`
 
 ZooKeeper has a configurable logger:
 

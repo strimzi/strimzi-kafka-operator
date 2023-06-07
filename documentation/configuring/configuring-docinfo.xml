@@ -9,6 +9,7 @@
 <subtitle>For Use with Strimzi</subtitle>
 <release>{ProductVersion}</release>
 <abstract>
-<para>This guide describes how to configure and manage Strimzi.</para>
+<para>This guide describes the configuration properties available for Strimzi custom resources.
+Use the properties to fine-tune your Apache Kafka clusters and related resources.</para>
 </abstract>
 <xi:include href="Common_Content/Legal_Notice.xml" xmlns:xi="http://www.w3.org/2001/XInclude" />

@@ -47,7 +47,7 @@ spec:
 ----
 
 [id='property-generic-listeners-{context}']
-=== `listeners`
+= `listeners`
 You configure Kafka broker listeners using the `listeners` property in the `Kafka` resource.
 Listeners are defined as an array.
 
@@ -68,7 +68,7 @@ Allowed port numbers are 9092 and higher with the exception of ports 9404 and 99
 By specifying a unique name and port for each listener,
 you can configure multiple listeners.
 
-=== `type`
+= `type`
 
 The type is set as `internal`,
 or for external listeners, as `route`, `loadbalancer`, `nodeport`, `ingress` or `cluster-ip`.
@@ -243,7 +243,7 @@ spec:
 ----
 
 [id='property-listener-port-{context}']
-=== `port`
+= `port`
 
 The port number is the port used in the Kafka cluster, which might not be the same port used for access by a client.
 
@@ -261,7 +261,7 @@ kubectl get kafka _<kafka_cluster_name>_ -o=jsonpath='{.status.listeners[?(@.nam
 NOTE: Listeners cannot be configured to use the ports set aside for interbroker communication (9090 and 9091) and metrics (9404).
 
 [id='property-listener-tls-{context}']
-=== `tls`
+= `tls`
 
 The TLS property is required.
 
@@ -270,7 +270,7 @@ To enable it, set the `tls` property to `true`.
 
 For `route` and `ingress` type listeners, TLS encryption must be enabled.
 
-=== `authentication`
+= `authentication`
 
 Authentication for the listener can be specified as:
 
@@ -280,7 +280,7 @@ Authentication for the listener can be specified as:
 * xref:type-KafkaListenerAuthenticationCustom-reference[Custom (`custom`)]
 
 [id='configuration-listener-network-policy-{context}']
-=== `networkPolicyPeers`
+= `networkPolicyPeers`
 
 Use `networkPolicyPeers` to configure network policies that restrict access to a listener at the network level.
 The following example shows a `networkPolicyPeers` configuration for a `plain` and a `tls` listener.
@@ -293,7 +293,7 @@ The application pods must be running in the same namespace as the Kafka broker.
 
 The syntax of the `networkPolicyPeers` property is the same as the `from` property in `NetworkPolicy` resources.
 
-.Exanmple network policy configuration
+.Example network policy configuration
 [source,yaml,subs="attributes+"]
 ----
 listeners:

@@ -22,9 +22,9 @@ The storage type is configured in the `type` field.
 
 Refer to the schema reference for more information on storage configuration properties:
 
-* xref:type-EphemeralStorage-reference[`EphemeralStorage` schema reference]
-* xref:type-PersistentClaimStorage-reference[`PersistentClaimStorage` schema reference]
-* xref:type-JbodStorage-reference[`JbodStorage` schema reference]
+* link:{BookURLConfiguring}#type-EphemeralStorage-reference[`EphemeralStorage` schema reference^]
+* link:{BookURLConfiguring}#type-PersistentClaimStorage-reference[`PersistentClaimStorage` schema reference^]
+* link:{BookURLConfiguring}#type-JbodStorage-reference[`JbodStorage` schema reference^]
 
 WARNING: The storage type cannot be changed after a Kafka cluster is deployed.
 

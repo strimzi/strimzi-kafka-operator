@@ -9,7 +9,7 @@
 Configure a Kafka MirrorMaker deployment using the `KafkaMirrorMaker` resource.
 KafkaMirrorMaker replicates data between Kafka clusters.
 
-xref:type-KafkaMirrorMaker-reference[] describes the full schema of the `KafkaMirrorMaker` resource.
+For a deeper understanding of the Kafka MirrorMaker cluster configuration options, refer to the link:{BookURLConfiguring}[Strimzi Custom Resource API Reference^].
 
 You can use Strimzi with MirrorMaker or xref:assembly-mirrormaker-str[MirrorMaker 2].
 MirrorMaker 2 is the latest version, and offers a more efficient way to mirror data between Kafka clusters.

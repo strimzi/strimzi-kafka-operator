@@ -6,7 +6,7 @@ Configuration options relate to:
 * Capacity limits for resource distribution goals
 
 [id='property-cruise-control-config-{context}']
-=== `config`
+= `config`
 
 Use the `config` properties to configure Cruise Control options as keys.
 
@@ -85,7 +85,7 @@ spec:
 ----
 
 [id='property-cruise-control-config-cors-{context}']
-=== Cross-Origin Resource Sharing (CORS)
+= Cross-Origin Resource Sharing (CORS)
 
 Cross-Origin Resource Sharing (CORS) is a HTTP mechanism for controlling access to REST APIs.
 Restrictions can be on access methods or originating URLs of client applications.
@@ -121,7 +121,7 @@ spec:
 <2> Specifies permitted origins for the `Access-Control-Allow-Origin` HTTP response header. You can use a wildcard or specify a single origin as a URL. If you use a wildcard, a response is returned following requests from any origin.
 <3> Exposes specified header names for the `Access-Control-Expose-Headers` HTTP response header. Applications in permitted origins can read responses with the specified headers.
 
-=== Cruise Control REST API security
+= Cruise Control REST API security
 
 The Cruise Control REST API is secured with HTTP Basic authentication and SSL to protect the cluster against potentially destructive Cruise Control operations, such as decommissioning Kafka brokers.
 We recommend that Cruise Control in Strimzi is **only used with these settings enabled**.
@@ -149,7 +149,7 @@ spec:
 
 
 [id='property-cruise-control-broker-capacity-{context}']
-=== brokerCapacity
+= brokerCapacity
 
 Cruise Control uses capacity limits to determine if optimization goals for resource capacity limits are being broken.
 There are four goals of this type:
@@ -194,7 +194,7 @@ spec:
 ----
 
 [id='property-cruise-control-capacity-overrides-{context}']
-=== Capacity overrides
+= Capacity overrides
 
 Brokers might be running on nodes with heterogeneous network or CPU resources.
 If that's the case, specify `overrides` that set the network capacity and CPU limits for each broker.
@@ -234,7 +234,7 @@ spec:
 For more information, refer to the xref:type-BrokerCapacity-reference[BrokerCapacity schema reference].
 
 [id='property-cruise-control-logging-{context}']
-=== `logging`
+= `logging`
 
 Cruise Control has its own configurable logger:
 

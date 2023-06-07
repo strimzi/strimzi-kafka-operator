@@ -9,12 +9,12 @@ and the set following properties.
 IMPORTANT: The custom authorizer must implement the `org.apache.kafka.server.authorizer.Authorizer` interface, and support configuration of `super.users` using the super.users configuration property.
 
 [id='property-custom-authorization-authorizerclass-{context}']
-=== `authorizerClass`
+= `authorizerClass`
 (Required) Java class that implements the `org.apache.kafka.server.authorizer.Authorizer` interface to support custom ACLs.
 
 
 [id='property-custom-authorization-superusers-{context}']
-=== `superUsers`
+= `superUsers`
 A list of user principals treated as super users, so that they are always allowed without querying ACL rules.
 
 You can add configuration for initializing the custom authorizer using `Kafka.spec.kafka.config`.
