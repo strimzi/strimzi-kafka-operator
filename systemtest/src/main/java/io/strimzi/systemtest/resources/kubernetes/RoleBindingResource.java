@@ -50,7 +50,7 @@ public class RoleBindingResource implements ResourceType<RoleBinding> {
                 extensionContext.getDisplayName(), yamlPath, namespace);
         RoleBinding roleBinding = getRoleBindingFromYaml(yamlPath);
 
-        ResourceManager.getInstance().createResource(extensionContext, new RoleBindingBuilder(roleBinding)
+        ResourceManager.getInstance().createResourceWithWait(extensionContext, new RoleBindingBuilder(roleBinding)
             .editMetadata()
                 .withNamespace(clientNamespace)
             .endMetadata()

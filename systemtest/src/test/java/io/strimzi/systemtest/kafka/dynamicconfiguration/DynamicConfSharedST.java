@@ -225,7 +225,7 @@ public class DynamicConfSharedST extends AbstractST {
         String sharedScraperName = dynamicConfigurationSharedClusterName + "-shared";
 
         LOGGER.info("Deploying shared Kafka across all test cases!");
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(dynamicConfigurationSharedClusterName, 3)
+        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaPersistent(dynamicConfigurationSharedClusterName, 3)
             .editMetadata()
                 .withNamespace(clusterOperator.getDeploymentNamespace())
             .endMetadata()

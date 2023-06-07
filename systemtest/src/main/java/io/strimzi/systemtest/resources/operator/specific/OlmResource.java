@@ -104,7 +104,7 @@ public class OlmResource implements SpecificResourceType {
             .endSpec()
             .build();
 
-        ResourceManager.getInstance().createResource(olmConfiguration.getExtensionContext(), operatorGroup);
+        ResourceManager.getInstance().createResourceWithWait(olmConfiguration.getExtensionContext(), operatorGroup);
     }
 
     /**
@@ -114,7 +114,7 @@ public class OlmResource implements SpecificResourceType {
     private void createAndModifySubscription() {
         Subscription subscription = prepareSubscription(olmConfiguration);
 
-        ResourceManager.getInstance().createResource(olmConfiguration.getExtensionContext(), subscription);
+        ResourceManager.getInstance().createResourceWithWait(olmConfiguration.getExtensionContext(), subscription);
     }
     public void updateSubscription(OlmConfiguration olmConfiguration) {
         this.olmConfiguration = olmConfiguration;

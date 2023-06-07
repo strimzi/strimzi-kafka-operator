@@ -49,7 +49,7 @@ public class RoleResource implements ResourceType<Role> {
         LOGGER.info("Creating Role: {}/{}", namespace, yamlPath);
         Role role = getRoleFromYaml(yamlPath);
 
-        ResourceManager.getInstance().createResource(extensionContext, new RoleBuilder(role)
+        ResourceManager.getInstance().createResourceWithWait(extensionContext, new RoleBuilder(role)
             .editMetadata()
                 .withNamespace(namespace)
             .endMetadata()

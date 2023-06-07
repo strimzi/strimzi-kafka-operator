@@ -77,7 +77,7 @@ public class ThrottlingQuotaST extends AbstractST {
 
         LOGGER.info("Creating {} Topics with {} partitions, we should hit the quota", numOfTopics, numOfPartitions);
 
-        resourceManager.createResource(extensionContext, createTopicJob.defaultAdmin());
+        resourceManager.createResourceWithWait(extensionContext, createTopicJob.defaultAdmin());
         ClientUtils.waitForClientContainsMessage(createAdminName, testStorage.getNamespaceName(), THROTTLING_ERROR_MSG);
 
         KafkaTopicUtils.deleteAllKafkaTopicsByPrefixWithWait(testStorage.getNamespaceName(), testStorage.getTopicName());
@@ -93,7 +93,7 @@ public class ThrottlingQuotaST extends AbstractST {
 
         LOGGER.info("Creating {} Topics with {} partitions, the quota should not be exceeded", numOfTopics, numOfPartitions);
 
-        resourceManager.createResource(extensionContext, createTopicJob.defaultAdmin());
+        resourceManager.createResourceWithWait(extensionContext, createTopicJob.defaultAdmin());
         ClientUtils.waitForClientContainsMessage(createAdminName, testStorage.getNamespaceName(), "All topics created");
 
         KafkaAdminClients listTopicJob = new KafkaAdminClientsBuilder(createTopicJob)
@@ -103,7 +103,7 @@ public class ThrottlingQuotaST extends AbstractST {
             .build();
 
         LOGGER.info("Listing Topics after creation");
-        resourceManager.createResource(extensionContext, listTopicJob.defaultAdmin());
+        resourceManager.createResourceWithWait(extensionContext, listTopicJob.defaultAdmin());
         ClientUtils.waitForClientContainsMessage(listAdminName, testStorage.getNamespaceName(), testStorage.getTopicName() + "-" + (numOfTopics - 1));
 
         int partitionAlter = 25;
@@ -117,7 +117,7 @@ public class ThrottlingQuotaST extends AbstractST {
         LOGGER.info("Altering {} Topics - setting partitions to {} - we should hit the quota", numOfTopics, partitionAlter);
 
         // because we are not hitting the quota, this should pass without a problem
-        resourceManager.createResource(extensionContext, alterTopicsJob.defaultAdmin());
+        resourceManager.createResourceWithWait(extensionContext, alterTopicsJob.defaultAdmin());
         ClientUtils.waitForClientContainsMessage(alterAdminName, testStorage.getNamespaceName(), THROTTLING_ERROR_MSG);
 
         // we need to set higher partitions - for case when we altered some topics before hitting the quota to 25 partitions
@@ -136,7 +136,7 @@ public class ThrottlingQuotaST extends AbstractST {
                 .build();
 
             LOGGER.info("Altering {} Topics with offset {} - setting partitions to {} - we should not hit the quota", numOfTopicsIter, numOfTopicsIter * i, partitionAlter);
-            resourceManager.createResource(extensionContext, alterTopicsJob.defaultAdmin());
+            resourceManager.createResourceWithWait(extensionContext, alterTopicsJob.defaultAdmin());
             ClientUtils.waitForClientContainsMessage(alterAdminName, testStorage.getNamespaceName(), "All topics altered");
         }
 
@@ -149,7 +149,7 @@ public class ThrottlingQuotaST extends AbstractST {
             .build();
 
         LOGGER.info("Deleting first {} Topics, we will not hit the quota", numOfTopicsIter);
-        resourceManager.createResource(extensionContext, deleteTopicsJob.defaultAdmin());
+        resourceManager.createResourceWithWait(extensionContext, deleteTopicsJob.defaultAdmin());
         ClientUtils.waitForClientContainsMessage(deleteAdminName, testStorage.getNamespaceName(), "Successfully removed all " + numOfTopicsIter);
 
         int remainingTopics = numOfTopics - numOfTopicsIter;
@@ -160,7 +160,7 @@ public class ThrottlingQuotaST extends AbstractST {
             .build();
 
         LOGGER.info("Trying to remove all remaining {} Topics with offset of {} - we should hit the quota", remainingTopics, numOfTopicsIter);
-        resourceManager.createResource(extensionContext, deleteTopicsJob.defaultAdmin());
+        resourceManager.createResourceWithWait(extensionContext, deleteTopicsJob.defaultAdmin());
         ClientUtils.waitForClientContainsMessage(deleteAdminName, testStorage.getNamespaceName(), THROTTLING_ERROR_MSG);
 
         LOGGER.info("Because we hit quota, removing the remaining Topics through console");
@@ -170,7 +170,7 @@ public class ThrottlingQuotaST extends AbstractST {
             testStorage.getTopicName(), plainBootstrapName, scraperPodName, createTopicJob.getAdditionalConfig());
 
         // List topics after deletion
-        resourceManager.createResource(extensionContext, listTopicJob.defaultAdmin());
+        resourceManager.createResourceWithWait(extensionContext, listTopicJob.defaultAdmin());
         ClientUtils.waitForClientSuccess(listAdminName, testStorage.getNamespaceName(), 0, false);
 
         String listPodName = PodUtils.getPodNameByPrefix(testStorage.getNamespaceName(), listAdminName);
@@ -191,7 +191,7 @@ public class ThrottlingQuotaST extends AbstractST {
 
         // Deploy kafka with ScramSHA512
         LOGGER.info("Deploying shared Kafka across all test cases in {} Namespace", sharedTestStorage.getNamespaceName());
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(sharedTestStorage.getClusterName(), 3)
+        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(sharedTestStorage.getClusterName(), 3)
             .editMetadata()
                 .withNamespace(sharedTestStorage.getNamespaceName())
             .endMetadata()
@@ -222,7 +222,7 @@ public class ThrottlingQuotaST extends AbstractST {
 
         scraperPodName = kubeClient().listPodsByPrefixInName(sharedTestStorage.getNamespaceName(), sharedTestStorage.getScraperName()).get(0).getMetadata().getName();
 
-        resourceManager.createResource(extensionContext, KafkaUserTemplates.defaultUser(sharedTestStorage.getNamespaceName(), sharedTestStorage.getClusterName(), sharedTestStorage.getUsername())
+        resourceManager.createResourceWithWait(extensionContext, KafkaUserTemplates.defaultUser(sharedTestStorage.getNamespaceName(), sharedTestStorage.getClusterName(), sharedTestStorage.getUsername())
             .editOrNewSpec()
                 .withNewQuotas()
                     .withControllerMutationRate(1.0)

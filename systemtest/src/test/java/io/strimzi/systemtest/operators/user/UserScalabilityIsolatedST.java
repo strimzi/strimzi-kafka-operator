@@ -96,7 +96,7 @@ public class UserScalabilityIsolatedST extends AbstractST {
     private void createAllUsersInList(ExtensionContext extensionContext, List<KafkaUser> listOfUsers, String usersPrefix) {
         LOGGER.info("Creating {} KafkaUsers", listOfUsers.size());
 
-        resourceManager.createResource(extensionContext, false, listOfUsers.toArray(new KafkaUser[listOfUsers.size()]));
+        }resourceManager.createResourceWithoutWait(extensionContext, false, listOfUsers.toArray(new KafkaUser[listOfUsers.size()]));
         KafkaUserUtils.waitForAllUsersWithPrefixReady(clusterOperator.getDeploymentNamespace(), usersPrefix);
     }
 

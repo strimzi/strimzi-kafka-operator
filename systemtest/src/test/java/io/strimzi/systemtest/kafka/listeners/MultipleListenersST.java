@@ -160,7 +160,7 @@ public class MultipleListenersST extends AbstractST {
         LOGGER.info("These are listeners to be verified: {}", listeners);
 
         // exercise phase
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3)
+        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3)
             .editMetadata()
                 .withNamespace(clusterOperator.getDeploymentNamespace())
             .endMetadata()
@@ -176,14 +176,14 @@ public class MultipleListenersST extends AbstractST {
             String kafkaUsername = KafkaUserUtils.generateRandomNameOfKafkaUser();
             KafkaUser kafkaUserInstance = KafkaUserTemplates.tlsUser(clusterOperator.getDeploymentNamespace(), clusterName, kafkaUsername).build();
 
-            resourceManager.createResource(extensionContext, kafkaUserInstance);
+            resourceManager.createResourceWithWait(extensionContext, kafkaUserInstance);
 
             for (GenericKafkaListener listener : listeners) {
                 final String producerName = "producer-" + new Random().nextInt(Integer.MAX_VALUE);
                 final String consumerName = "consumer-" + new Random().nextInt(Integer.MAX_VALUE);
 
                 String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
-                resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(clusterName, topicName, clusterOperator.getDeploymentNamespace()).build());
+                resourceManager.createResourceWithWait(extensionContext, KafkaTopicTemplates.topic(clusterName, topicName, clusterOperator.getDeploymentNamespace()).build());
 
                 boolean isTlsEnabled = listener.isTls();
 
@@ -239,12 +239,12 @@ public class MultipleListenersST extends AbstractST {
 
                     if (isTlsEnabled) {
                         // verify phase
-                        resourceManager.createResource(extensionContext,
+                        resourceManager.createResourceWithWait(extensionContext,
                             kafkaClients.producerTlsStrimzi(clusterName),
                             kafkaClients.consumerTlsStrimzi(clusterName)
                         );
                     } else {
-                        resourceManager.createResource(extensionContext,
+                        resourceManager.createResourceWithWait(extensionContext,
                             kafkaClients.producerStrimzi(),
                             kafkaClients.consumerStrimzi()
                         );

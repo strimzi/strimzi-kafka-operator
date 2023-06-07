@@ -201,7 +201,7 @@ class LoggingChangeST extends AbstractST {
         kubeClient().createConfigMapInNamespace(namespaceName, configMapZookeeper);
         kubeClient().updateConfigMapInNamespace(clusterOperator.getDeploymentNamespace(), configMapCO);
 
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(clusterName, 3, 3)
+        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaPersistent(clusterName, 3, 3)
             .editOrNewSpec()
                 .editKafka()
                     //.withLogging(new ExternalLoggingBuilder().withName(configMapKafkaName).build())
@@ -266,7 +266,7 @@ class LoggingChangeST extends AbstractST {
         InlineLogging ilOff = new InlineLogging();
         ilOff.setLoggers(Collections.singletonMap("rootLogger.level", "OFF"));
 
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(clusterName, 1, 1)
+        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaPersistent(clusterName, 1, 1)
             .editSpec()
                 .editEntityOperator()
                     .editTopicOperator()
@@ -466,7 +466,7 @@ class LoggingChangeST extends AbstractST {
         ilOff.setLoggers(loggers);
 
         // create resources async
-        resourceManager.createResource(extensionContext, false,
+        }resourceManager.createResourceWithoutWait(extensionContext, false,
             KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), 1, 1).build(),
             ScraperTemplates.scraperPod(testStorage.getNamespaceName(), testStorage.getScraperName()).build(),
             KafkaBridgeTemplates.kafkaBridge(testStorage.getClusterName(), KafkaResources.tlsBootstrapAddress(testStorage.getClusterName()), 1)
@@ -688,7 +688,7 @@ class LoggingChangeST extends AbstractST {
             .endMetadata()
             .build();
 
-        resourceManager.createResource(extensionContext, false,
+        }resourceManager.createResourceWithoutWait(extensionContext, false,
             KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3).build(),
             connect,
             ScraperTemplates.scraperPod(testStorage.getNamespaceName(), testStorage.getScraperName()).build()
