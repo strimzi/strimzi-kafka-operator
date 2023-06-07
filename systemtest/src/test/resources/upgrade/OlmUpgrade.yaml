@@ -5,9 +5,16 @@
 #  fromUrl: String - url, from which examples are downloaded
 #  fromKafkaVersionsUrl: String - url, from which is kafka-versions.yaml file downloaded
 #  --- Structure ---
+#
+#  --- Prerequisites ---
+#  The Operator Hub contains only the already released versions of Strimzi Cluster Operator - those that are available
+#  at https://github.com/strimzi/strimzi-kafka-operator/releases/ .
+#  For running OLM upgrade tests, you need to build a custom catalog with images from the main branch and load it in your
+#  Kubernetes cluster.
+#  --- Prerequisites ---
 
-fromVersion: 0.34.0
-fromOlmChannelName: strimzi-0.34.x
-fromExamples: strimzi-0.34.0
-fromUrl: https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.34.0/strimzi-0.34.0.zip
-fromKafkaVersionsUrl: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/0.34.0/kafka-versions.yaml
+fromVersion: 0.35.0
+fromOlmChannelName: strimzi-0.35.x
+fromExamples: strimzi-0.35.0
+fromUrl: https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.35.0/strimzi-0.35.0.zip
+fromKafkaVersionsUrl: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/0.35.0/kafka-versions.yaml
