@@ -86,6 +86,7 @@ import static java.util.Arrays.asList;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @Tag(REGRESSION)
@@ -2281,7 +2282,7 @@ public class ListenersST extends AbstractST {
 
     @Tag(NODEPORT_SUPPORTED)
     @ParallelNamespaceTest
-    void testAdvertisedHostNamesAppearsInBrokerCerts(ExtensionContext extensionContext) throws CertificateException {
+    void testAdvertisedHostNamesAppearsInBrokerCerts(ExtensionContext extensionContext) throws CertificateException, CertificateException {
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(clusterOperator.getDeploymentNamespace(), extensionContext);
 

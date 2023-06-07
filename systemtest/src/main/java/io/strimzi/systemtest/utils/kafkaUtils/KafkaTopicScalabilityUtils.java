@@ -34,7 +34,7 @@ public class KafkaTopicScalabilityUtils {
 
         for (int i = 0; i < numberOfTopics; i++) {
             String currentTopicName = topicPrefix + i;
-            ResourceManager.getInstance().createResourceWithWait(extensionContext, false, KafkaTopicTemplates.topic(
+            ResourceManager.getInstance().createResourceWithoutWait(extensionContext, KafkaTopicTemplates.topic(
                             clusterName, currentTopicName, numberOfPartitions, numberOfReplicas, minInSyncReplicas, namespaceName).build());
         }
     }
