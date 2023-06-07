@@ -4,12 +4,15 @@
  */
 package io.strimzi.operator.common.operator.resource;
 
-import io.fabric8.kubernetes.api.model.policy.v1beta1.PodDisruptionBudget;
-import io.fabric8.kubernetes.api.model.policy.v1beta1.PodDisruptionBudgetList;
+//import io.fabric8.kubernetes.api.model.policy.v1beta1.PodDisruptionBudget;
+//import io.fabric8.kubernetes.api.model.policy.v1beta1.PodDisruptionBudgetList;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.vertx.core.Vertx;
+import io.fabric8.kubernetes.api.model.policy.v1.PodDisruptionBudget;
+import io.fabric8.kubernetes.api.model.policy.v1.PodDisruptionBudgetList;
+
 
 public class PodDisruptionBudgetOperator extends AbstractResourceOperator<KubernetesClient, PodDisruptionBudget, PodDisruptionBudgetList, Resource<PodDisruptionBudget>> {
 
@@ -19,6 +22,6 @@ public class PodDisruptionBudgetOperator extends AbstractResourceOperator<Kubern
 
     @Override
     protected MixedOperation<PodDisruptionBudget, PodDisruptionBudgetList, Resource<PodDisruptionBudget>> operation() {
-        return client.policy().v1beta1().podDisruptionBudget();
+        return client.policy().v1().podDisruptionBudget();
     }
 }

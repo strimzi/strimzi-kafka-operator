@@ -106,7 +106,7 @@ public class KafkaMirrorMakerAssemblyOperator extends AbstractAssemblyOperator<K
                     annotations.put(Annotations.STRIMZI_LOGGING_ANNOTATION, logAndMetricsConfigMap.getData().get(mirror.ANCILLARY_CM_KEY_LOG_CONFIG));
                     return configMapOperations.reconcile(reconciliation, namespace, mirror.getAncillaryConfigMapName(), logAndMetricsConfigMap);
                 })
-                .compose(i -> podDisruptionBudgetOperator.reconcile(reconciliation, namespace, mirror.getName(), mirror.generatePodDisruptionBudget()))
+                //.compose(i -> podDisruptionBudgetOperator.reconcile(reconciliation, namespace, mirror.getName(), mirror.generatePodDisruptionBudget()))
                 .compose(i -> CompositeFuture.join(Util.authTlsHash(secretOperations, namespace, authConsumer, trustedCertificatesConsumer),
                         Util.authTlsHash(secretOperations, namespace, authProducer, trustedCertificatesProducer)))
                 .compose(hashFut -> {

@@ -172,7 +172,7 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
                     return configMapOperations.reconcile(reconciliation, namespace, mirrorMaker2Cluster.getAncillaryConfigMapName(), logAndMetricsConfigMap);
                 })
                 .compose(i -> kafkaConnectJmxSecret(reconciliation, namespace, mirrorMaker2Cluster.getName(), mirrorMaker2Cluster))
-                .compose(i -> podDisruptionBudgetOperator.reconcile(reconciliation, namespace, mirrorMaker2Cluster.getName(), mirrorMaker2Cluster.generatePodDisruptionBudget()))
+                //.compose(i -> podDisruptionBudgetOperator.reconcile(reconciliation, namespace, mirrorMaker2Cluster.getName(), mirrorMaker2Cluster.generatePodDisruptionBudget()))
                 .compose(i -> kafkaMirrorMaker2.getSpec().getClusters() == null ? Future.succeededFuture() : CompositeFuture.join(kafkaMirrorMaker2.getSpec().getClusters().stream().map(cluster ->
                     Util.authTlsHash(secretOperations, namespace, cluster.getAuthentication(), cluster.getTls() == null ? Collections.emptyList() : cluster.getTls().getTrustedCertificates())).collect(Collectors.toList())))
                 .compose(hashesFut -> {

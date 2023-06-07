@@ -163,7 +163,7 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
                     return configMapOperations.reconcile(reconciliation, namespace, connect.getAncillaryConfigMapName(), logAndMetricsConfigMap);
                 })
                 .compose(i -> kafkaConnectJmxSecret(reconciliation, namespace, kafkaConnect.getMetadata().getName(), connect))
-                .compose(i -> podDisruptionBudgetOperator.reconcile(reconciliation, namespace, connect.getName(), connect.generatePodDisruptionBudget()))
+                //.compose(i -> podDisruptionBudgetOperator.reconcile(reconciliation, namespace, connect.getName(), connect.generatePodDisruptionBudget()))
                 .compose(i -> Util.authTlsHash(secretOperations, namespace, auth, trustedCertificates))
                 .compose(hash -> {
                     if (buildState.desiredBuildRevision != null) {

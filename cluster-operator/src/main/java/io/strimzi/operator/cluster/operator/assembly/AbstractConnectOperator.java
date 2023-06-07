@@ -56,7 +56,7 @@ import io.strimzi.operator.common.model.ValidationVisitor;
 import io.strimzi.operator.common.operator.resource.ClusterRoleBindingOperator;
 import io.strimzi.operator.common.operator.resource.ConfigMapOperator;
 import io.strimzi.operator.common.operator.resource.CrdOperator;
-import io.strimzi.operator.common.operator.resource.PodDisruptionBudgetOperator;
+//import io.strimzi.operator.common.operator.resource.PodDisruptionBudgetOperator;
 import io.strimzi.operator.common.operator.resource.ServiceAccountOperator;
 import io.strimzi.operator.common.operator.resource.ServiceOperator;
 import io.strimzi.operator.common.operator.resource.StatusUtils;
@@ -103,7 +103,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
     protected final ClusterRoleBindingOperator clusterRoleBindingOperations;
     protected final ServiceOperator serviceOperations;
     protected final SecretOperator secretOperations;
-    protected final PodDisruptionBudgetOperator podDisruptionBudgetOperator;
+    //protected final PodDisruptionBudgetOperator podDisruptionBudgetOperator;
     protected final List<LocalObjectReference> imagePullSecrets;
     protected final long operationTimeoutMs;
     protected final String operatorNamespace;
@@ -131,7 +131,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
         this.serviceOperations = supplier.serviceOperations;
         this.secretOperations = supplier.secretOperations;
         this.serviceAccountOperations = supplier.serviceAccountOperations;
-        this.podDisruptionBudgetOperator = supplier.podDisruptionBudgetOperator;
+        //this.podDisruptionBudgetOperator = supplier.podDisruptionBudgetOperator;
         this.imagePullPolicy = config.getImagePullPolicy();
         this.imagePullSecrets = config.getImagePullSecrets();
         this.operationTimeoutMs = config.getOperationTimeoutMs();
