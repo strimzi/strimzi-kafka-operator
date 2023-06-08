@@ -13,8 +13,8 @@
 #  Kubernetes cluster.
 #  --- Prerequisites ---
 
-fromVersion: 0.35.0
+fromVersion: 0.35.1
 fromOlmChannelName: strimzi-0.35.x
-fromExamples: strimzi-0.35.0
-fromUrl: https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.35.0/strimzi-0.35.0.zip
-fromKafkaVersionsUrl: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/0.35.0/kafka-versions.yaml
+fromExamples: strimzi-0.35.1
+fromUrl: https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.35.1/strimzi-0.35.1.zip
+fromKafkaVersionsUrl: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/0.35.1/kafka-versions.yaml
