@@ -97,26 +97,39 @@ public abstract class AbstractNamespacedResourceOperator<C extends KubernetesCli
 
         return StrimziFuture
             .supplyAsync(() -> operation().inNamespace(namespace).withName(name).get())
-            .thenCompose(current -> {
-                if (desired != null) {
-                    if (current == null) {
-                        LOGGER.debugCr(reconciliation, "{} {}/{} does not exist, creating it", resourceKind, namespace, name);
-                        return internalCreate(reconciliation, namespace, name, desired);
-                    } else {
-                        LOGGER.debugCr(reconciliation, "{} {}/{} already exists, updating it", resourceKind, namespace, name);
-                        return internalUpdate(reconciliation, namespace, name, current, desired);
-                    }
-                } else {
-                    if (current != null) {
-                        // Deletion is desired
-                        LOGGER.debugCr(reconciliation, "{} {}/{} exist, deleting it", resourceKind, namespace, name);
-                        return internalDelete(reconciliation, namespace, name);
-                    } else {
-                        LOGGER.debugCr(reconciliation, "{} {}/{} does not exist, noop", resourceKind, namespace, name);
-                        return StrimziFuture.completedFuture(ReconcileResult.noop(null));
-                    }
-                }
-            });
+            .thenCompose(current -> reconcile(reconciliation, namespace, name, current, desired));
+    }
+
+    /**
+     * Asynchronously reconciles the given current resource to match the given
+     * desired resource, returning a future for the result.
+     *
+     * @param reconciliation Reconciliation object
+     * @param namespace      The namespace of the resource to reconcile
+     * @param name           The name of the resource to reconcile
+     * @param current        The current state of the resource.
+     * @param desired        The desired state of the resource.
+     * @return A future which completes when the resource has been updated.
+     */
+    public StrimziFuture<ReconcileResult<T>> reconcile(Reconciliation reconciliation, String namespace, String name, T current, T desired) {
+        if (desired != null) {
+            if (current == null) {
+                LOGGER.debugCr(reconciliation, "{} {}/{} does not exist, creating it", resourceKind, namespace, name);
+                return internalCreate(reconciliation, namespace, name, desired);
+            } else {
+                LOGGER.debugCr(reconciliation, "{} {}/{} already exists, updating it", resourceKind, namespace, name);
+                return internalUpdate(reconciliation, namespace, name, current, desired);
+            }
+        } else {
+            if (current != null) {
+                // Deletion is desired
+                LOGGER.debugCr(reconciliation, "{} {}/{} exist, deleting it", resourceKind, namespace, name);
+                return internalDelete(reconciliation, namespace, name);
+            } else {
+                LOGGER.debugCr(reconciliation, "{} {}/{} does not exist, noop", resourceKind, namespace, name);
+                return StrimziFuture.completedFuture(ReconcileResult.noop(null));
+            }
+        }
     }
 
     /**

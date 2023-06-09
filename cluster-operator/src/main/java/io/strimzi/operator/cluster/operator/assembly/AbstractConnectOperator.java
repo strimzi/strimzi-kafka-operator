@@ -966,7 +966,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
         conditions.addAll(unknownAndDeprecatedConditions);
 
         if (!Annotations.isReconciliationPausedWithAnnotation(connector)) {
-            StatusUtils.setStatusConditionAndObservedGeneration(connector, status, error != null ? Future.failedFuture(error) : connectorReadiness);
+            StatusUtils.setStatusConditionAndObservedGeneration(connector, status, error != null ? error : connectorReadiness.cause());
             status.setConnectorStatus(statusResult);
             status.setTasksMax(getActualTaskCount(connector, statusResult));
             status.setTopics(topics);
