@@ -4,6 +4,8 @@
  */
 package io.strimzi.operator.topic.v2;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
+
 /**
  * Used to wrap {@code InterruptedException} within methods that do not declare it in their {@code throws} clause.
  */
@@ -16,6 +18,7 @@ public class UncheckedInterruptedException extends RuntimeException {
         super(cause);
     }
 
+    @SuppressFBWarnings("BC_UNCONFIRMED_CAST_OF_RETURN_VALUE")
     @Override
     public synchronized InterruptedException getCause() {
         return (InterruptedException) super.getCause();

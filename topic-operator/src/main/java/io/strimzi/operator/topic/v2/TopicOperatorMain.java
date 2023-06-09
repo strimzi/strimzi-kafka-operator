@@ -92,7 +92,7 @@ public class TopicOperatorMain implements Liveness, Readiness {
         var h = shutdownHook;
         // Call run (not start()) on the thread so that shutdown() is executed
         // on this thread.
-        h.run();
+        shutdown();
         // stop() is _not_ called from the shutdown hook, so calling
         // removeShutdownHook() should not cause IAE.
         Runtime.getRuntime().removeShutdownHook(h);
@@ -143,7 +143,11 @@ public class TopicOperatorMain implements Liveness, Readiness {
 
     @Override
     public boolean isAlive() {
-        if (!informer.isRunning()) {
+        boolean running;
+        synchronized (this) {
+            running = informer.isRunning();
+        }
+        if (!running) {
             LOGGER.infoOp("isAlive returning false because informer is not running");
             return false;
         } else {
@@ -153,7 +157,11 @@ public class TopicOperatorMain implements Liveness, Readiness {
 
     @Override
     public boolean isReady() {
-        if (!informer.isRunning()) {
+        boolean running;
+        synchronized (this) {
+            running = informer.isRunning();
+        }
+        if (!running) {
             LOGGER.infoOp("isReady returning false because informer is not running");
             return false;
         } else {

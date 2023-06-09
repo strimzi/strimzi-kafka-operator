@@ -7,7 +7,6 @@ package io.strimzi.operator.topic.v2;
 import io.fabric8.kubernetes.client.informers.ResourceEventHandler;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.operator.common.ReconciliationLogger;
-import io.strimzi.operator.common.controller.SimplifiedReconciliation;
 
 class TopicOperatorEventHandler implements ResourceEventHandler<KafkaTopic> {
 
@@ -21,8 +20,6 @@ class TopicOperatorEventHandler implements ResourceEventHandler<KafkaTopic> {
 
     @Override
     public void onAdd(KafkaTopic obj) {
-        SimplifiedReconciliation reconciliation = new SimplifiedReconciliation("KafkaTopic", obj.getMetadata().getNamespace(),
-                obj.getMetadata().getName(), "add");
         LOGGER.debugOp("Informed of add {}", obj);
         queue.offer(new TopicUpsert(System.nanoTime(), obj.getMetadata().getNamespace(),
                 obj.getMetadata().getName(),
@@ -32,8 +29,6 @@ class TopicOperatorEventHandler implements ResourceEventHandler<KafkaTopic> {
     @Override
     public void onUpdate(KafkaTopic oldObj, KafkaTopic newObj) {
         String trigger = oldObj.equals(newObj) ? "resync" : "update";
-        SimplifiedReconciliation reconciliation = new SimplifiedReconciliation("KafkaTopic", newObj.getMetadata().getNamespace(),
-                newObj.getMetadata().getName(), trigger);
         LOGGER.debugOp("Informed of {} {}", trigger, newObj);
         queue.offer(new TopicUpsert(System.nanoTime(), newObj.getMetadata().getNamespace(),
                 newObj.getMetadata().getName(),
@@ -43,8 +38,6 @@ class TopicOperatorEventHandler implements ResourceEventHandler<KafkaTopic> {
 
     @Override
     public void onDelete(KafkaTopic obj, boolean deletedFinalStateUnknown) {
-        SimplifiedReconciliation reconciliation = new SimplifiedReconciliation("KafkaTopic", obj.getMetadata().getNamespace(),
-                obj.getMetadata().getName(), "delete");
         LOGGER.debugOp("Informed of delete {}", obj);
         queue.offer(new TopicDelete(System.nanoTime(), obj));
     }

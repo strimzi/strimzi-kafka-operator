@@ -23,6 +23,10 @@
             <artifactId>api</artifactId>
         </dependency>
         <dependency>
+            <groupId>com.github.spotbugs</groupId>
+            <artifactId>spotbugs-annotations</artifactId>
+        </dependency>
+        <dependency>
             <groupId>io.kroxylicious.testing</groupId>
             <artifactId>testing-api</artifactId>
             <version>0.3.0</version>
