@@ -57,3 +57,22 @@ testing-farm request --compose Fedora-Rawhide \
  --plan smoke \
  --arch aarch64,x86_64
 ```
+
+## Packit-as-a-service for PR check
+
+[Packit-as-a-service](https://github.com/marketplace/packit-as-a-service) is a github application
+for running testing-farm jobs from PR requested by command. Definition of the jobs is stored in
+[.packit.yaml](../../.packit.yaml). Packit can be triggered from the PR by comment, but only members of strimzi
+organization are able to run tests.
+
+### Usage
+
+Run all jobs for PR
+```
+/packit test
+```
+
+Run selected jobs by label
+```
+/packit test --labels upgrade,kraft-operators
+```
