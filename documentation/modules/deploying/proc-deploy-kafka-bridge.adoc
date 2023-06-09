@@ -54,5 +54,5 @@ The deployment is successful when the `STATUS` shows as `Running`.
 [role="_additional-resources"]
 .Additional resources
 
-* link:{BookURLConfiguring}#assembly-config-kafka-bridge-str[Kafka Bridge cluster configuration^]
+* xref:assembly-config-kafka-bridge-str[Kafka Bridge cluster configuration]
 * link:{BookURLBridge}[Using the Strimzi Kafka Bridge^]

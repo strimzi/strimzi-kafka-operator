@@ -3,14 +3,14 @@
 // configuring/configuring.adoc
 
 [id='con-common-configuration-properties-{context}']
-== Common configuration properties
+= Common configuration properties
 
 [role="_abstract"]
 Use Common configuration properties to configure Strimzi custom resources.
 You add common configuration properties to a custom resource like any other supported configuration for that resource.
 
 [id='con-common-configuration-replicas-{context}']
-=== `replicas`
+== `replicas`
 
 Use the `replicas` property to configure replicas.
 
@@ -24,7 +24,7 @@ When the node where the component is deployed crashes, Kubernetes will automatic
 However, running Kafka components with multiple replicas can provide faster failover times as the other nodes will be up and running.
 
 [id='con-common-configuration-bootstrap-{context}']
-=== `bootstrapServers`
+== `bootstrapServers`
 
 Use the `bootstrapServers` property to configure a list of bootstrap servers.
 
@@ -37,7 +37,7 @@ If deployed by Strimzi but on different Kubernetes clusters, the list content de
 When using Kafka with a Kafka cluster not managed by Strimzi, you can specify the bootstrap servers list according to the configuration of the given cluster.
 
 [id='con-common-configuration-ssl-{context}']
-=== `ssl` (supported TLS versions and cipher suites)
+== `ssl` (supported TLS versions and cipher suites)
 
 You can incorporate SSL configuration and cipher suite specifications to further secure TLS-based communication between your client application and a Kafka cluster.
 In addition to the standard TLS configuration, you can specify a supported TLS version and enable cipher suites in the configuration for the Kafka broker.
@@ -74,7 +74,7 @@ config:
 <4> Hostname verification is enabled by setting to `HTTPS`. An empty string disables the verification.
 
 [id='con-common-configuration-trusted-certificates-{context}']
-=== `trustedCertificates`
+== `trustedCertificates`
 
 Having set `tls` to configure TLS encryption, use the `trustedCertificates` property to provide a list of secrets with key names under which the certificates are stored in X.509 format.
 
@@ -111,7 +111,7 @@ tls:
 For information on configuring mTLS authentication, see the xref:type-KafkaClientAuthenticationTls-reference[`KafkaClientAuthenticationTls` schema reference].
 
 [id='con-common-configuration-resources-{context}']
-=== `resources`
+== `resources`
 
 Configure resource _requests_ and _limits_ to control resources for Strimzi containers.
 You can specify requests and limits for `memory` and `cpu` resources.
@@ -237,7 +237,7 @@ For more information on CPU specification, see {K8sMeaningOfCpu}.
 --
 
 [id='con-common-configuration-images-{context}']
-=== `image`
+== `image`
 
 Use the `image` property to configure the container image used by the component.
 
@@ -332,7 +332,7 @@ spec:
 ----
 
 [id='con-common-configuration-healthchecks-{context}']
-=== `livenessProbe` and `readinessProbe` healthchecks
+== `livenessProbe` and `readinessProbe` healthchecks
 
 Use the `livenessProbe` and `readinessProbe` properties to configure healthcheck probes supported in Strimzi.
 
@@ -365,7 +365,7 @@ livenessProbe:
 For more information about the `livenessProbe` and `readinessProbe` options, see the xref:type-Probe-reference[Probe schema reference].
 
 [id='con-common-configuration-prometheus-{context}']
-=== `metricsConfig`
+== `metricsConfig`
 
 Use the `metricsConfig` property to enable and configure Prometheus metrics.
 
@@ -425,7 +425,7 @@ When the `metricsConfig` (or deprecated `metrics`) property is not defined in th
 For more information about setting up and deploying Prometheus and Grafana, see link:{BookURLDeploying}#assembly-metrics-str[Introducing Metrics to Kafka^].
 
 [id='con-common-configuration-jvm-{context}']
-=== `jvmOptions`
+== `jvmOptions`
 
 The following Strimzi components run inside a Java Virtual Machine (JVM):
 
@@ -577,7 +577,7 @@ jvmOptions:
 For more information about the `jvmOptions`, see the xref:type-JvmOptions-reference[`JvmOptions` schema reference].
 
 [id='con-common-configuration-garbage-collection-{context}']
-=== Garbage collector logging
+== Garbage collector logging
 
 The `jvmOptions` property also allows you to enable and disable garbage collector (GC) logging.
 GC logging is disabled by default.

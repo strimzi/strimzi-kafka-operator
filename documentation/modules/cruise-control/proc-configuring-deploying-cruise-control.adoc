@@ -16,7 +16,7 @@ If brokers are running on nodes with heterogeneous network resources, you can us
 
 If an empty object (`{}`) is used for the `cruiseControl` configuration, all properties use their default values.
 
-For more information on the configuration options for Cruise Control, see the link:{BookURLConfiguring}[Custom resource API reference^].
+For more information on the configuration options for Cruise Control, see the link:{BookURLConfiguring}[Strimzi Custom Resource API Reference^].
 
 .Prerequisites
 

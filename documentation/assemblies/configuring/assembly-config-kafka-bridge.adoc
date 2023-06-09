@@ -9,7 +9,7 @@
 Configure a Kafka Bridge deployment using the `KafkaBridge` resource.
 Kafka Bridge provides an API for integrating HTTP-based clients with a Kafka cluster.
 
-xref:type-KafkaBridge-reference[] describes the full schema of the `KafkaBridge` resource.
+For a deeper understanding of the Kafka Bridge cluster configuration options, refer to the link:{BookURLConfiguring}[Strimzi Custom Resource API Reference^].
 
 //procedure to configure Kafka Bridge
 include::../../modules/configuring/proc-config-kafka-bridge.adoc[leveloffset=+1]

@@ -67,7 +67,7 @@ If you are using ConfigMaps that are managed externally, use configuration provi
 
 == Naming custom ConfigMaps 
 
-Strimzi link:{BookURLConfiguring}#ref-list-of-kafka-cluster-resources-str[creates its own ConfigMaps and other resources] when it is deployed to Kubernetes. 
+Strimzi xref:ref-list-of-kafka-cluster-resources-str[creates its own ConfigMaps and other resources] when it is deployed to Kubernetes. 
 The ConfigMaps contain data necessary for running components.  
 The ConfigMaps created by Strimzi must not be edited. 
 
@@ -75,8 +75,8 @@ Make sure that any custom ConfigMaps you create do not have the same name as the
 
 [role="_additional-resources"]
 .Additional resources
-* link:{BookURLConfiguring}#ref-list-of-kafka-cluster-resources-str[List of Kafka cluster resources^] (including ConfigMaps)
-* link:{BookURLConfiguring}#external-logging_str[Logging configuration^]
+* xref:ref-list-of-kafka-cluster-resources-str[List of Kafka cluster resources] (including ConfigMaps)
+* xref:external-logging_str[Logging configuration]
 * link:{BookURLConfiguring}#con-common-configuration-prometheus-reference[`metricsConfig`^]
 * link:{BookURLConfiguring}#type-ExternalConfiguration-reference[`ExternalConfiguration` schema reference^]
 * xref:assembly-loading-config-with-providers-{context}[Loading configuration values from external sources^]

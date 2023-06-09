@@ -47,7 +47,7 @@ For example, the _Deploying and Upgrading Strimzi_ guide has a chapter called _V
 .Documentation folder descriptions
 [source,options="nowrap",subs="+quotes"]
 ----
-api/                          # Property descriptions for the Custom Resource API Reference section of the Configuring Strimzi guide
+api/                          # Property descriptions for the Strimzi Custom Resource API Reference section of the Configuring Strimzi guide
 contributing/                 # Documentation contributor guide (this book)
 deploying/                    # Deploying Strimzi
 overview/                     # Strimzi Overview guide
@@ -83,13 +83,13 @@ Upgrade instructions are provided for Strimzi and Kafka upgrades.
 The _Configuring Strimzi_ guide provides configuration instructions for Kafka components, and instructions for using Strimzi Operators.
 The majority of the content relates to how you might want to modify your deployment and introduce additional features, such as Cruise Control or distributed tracing.
 
-=== Custom Resource API Reference
+=== Strimzi Custom Resource API Reference
 
-The _Configuring Strimzi_ guide (documentation/configuring/configuring.adoc) also contains a _Custom Resource API Reference_ that describes the configuration properties for custom resources.
+The _Configuring Strimzi_ guide (documentation/configuring/configuring.adoc) also contains a _Strimzi Custom Resource API Reference_ that describes the configuration properties for custom resources.
 
-The _Custom Resource API Reference_ is built from two files.
+The _Strimzi Custom Resource API Reference_ is built from two files.
 
-.Custom Resource API Reference files
+.Strimzi Custom Resource API Reference files
 [source,asciidoc,options="nowrap"]
 ----
 \include::modules/con-common-configuration-properties.adoc[leveloffset=+1]
@@ -137,7 +137,7 @@ The description file requires the same name as the related Java package.
 /include::../api/io.strimzi.api.kafka.model.KafkaUserQuotas.adoc[leveloffset=+1]
 ----
 
-If you change anything in the `api` module of the Java code, you must rebuild the _Custom Resource API Reference_ using a xref:make-tooling[make command].
+If you change anything in the `api` module of the Java code, you must rebuild the _Strimzi Custom Resource API Reference_ using a xref:make-tooling[make command].
 
 == Kafka Bridge documentation
 

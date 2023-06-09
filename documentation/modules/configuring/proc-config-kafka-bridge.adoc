@@ -15,13 +15,7 @@ A Kafka Bridge instance has its own state which is not shared with another insta
 
 .Prerequisites
 
-* A Kubernetes cluster
 * A running Cluster Operator
-
-See the _Deploying and Upgrading Strimzi_ guide for instructions on running a:
-
-* link:{BookURLDeploying}#cluster-operator-str[Cluster Operator^]
-* link:{BookURLDeploying}#deploying-kafka-cluster-str[Kafka cluster^]
 
 .Procedure
 
@@ -107,21 +101,21 @@ spec:
   tracing:
     type: opentelemetry # <16>
 ----
-<1> xref:con-common-configuration-replicas-reference[The number of replica nodes].
-<2> xref:con-common-configuration-bootstrap-reference[Bootstrap server] for connection to the target Kafka cluster. Use the name of the Kafka cluster as the _<cluster_name>_.
-<3> xref:con-common-configuration-trusted-certificates-reference[TLS encryption] with key names under which TLS certificates are stored in X.509 format for the source Kafka cluster. If certificates are stored in the same secret, it can be listed multiple times.
-<4> Authentication for the Kafka Bridge cluster, specified as xref:type-KafkaClientAuthenticationTls-reference[mTLS], xref:type-KafkaClientAuthenticationOAuth-reference[token-based OAuth], SASL-based xref:type-KafkaClientAuthenticationScramSha256-reference[SCRAM-SHA-256]/xref:type-KafkaClientAuthenticationScramSha512-reference[SCRAM-SHA-512], or xref:type-KafkaClientAuthenticationPlain-reference[PLAIN].
+<1> The number of replica nodes.
+<2> Bootstrap server for connection to the target Kafka cluster. Use the name of the Kafka cluster as the _<cluster_name>_.
+<3> TLS encryption with key names under which TLS certificates are stored in X.509 format for the source Kafka cluster. If certificates are stored in the same secret, it can be listed multiple times.
+<4> Authentication for the Kafka Bridge cluster, specified as mTLS, token-based OAuth, SASL-based SCRAM-SHA-256/SCRAM-SHA-512, or PLAIN.
 By default, the Kafka Bridge connects to Kafka brokers without authentication.
-<5> xref:type-KafkaBridgeHttpConfig-reference[HTTP access] to Kafka brokers.
-<6> xref:type-KafkaBridgeHttpConfig-reference[CORS access] specifying selected resources and access methods. Additional HTTP headers in requests describe the origins that are permitted access to the Kafka cluster.
-<7> xref:type-KafkaBridgeConsumerSpec-reference[Consumer configuration] options.
-<8> xref:type-KafkaBridgeProducerSpec-reference[Producer configuration] options.
-<9> Requests for reservation of xref:con-common-configuration-resources-reference[supported resources], currently `cpu` and `memory`, and limits to specify the maximum resources that can be consumed.
-<10> Specified xref:property-kafka-bridge-logging-reference[Kafka Bridge loggers and log levels] added directly (`inline`) or indirectly (`external`) through a ConfigMap. A custom ConfigMap must be placed under the `log4j.properties` or `log4j2.properties` key. For the Kafka Bridge loggers, you can set the log level to INFO, ERROR, WARN, TRACE, DEBUG, FATAL or OFF.
-<11> xref:con-common-configuration-jvm-reference[JVM configuration options] to optimize performance for the Virtual Machine (VM) running the Kafka Bridge.
-<12> xref:con-common-configuration-healthchecks-reference[Healthchecks] to know when to restart a container (liveness) and when a container can accept traffic (readiness).
-<13> Optional: xref:con-common-configuration-images-reference[Container image configuration], which is recommended only in special situations.
-<14> xref:assembly-customizing-kubernetes-resources-str[Template customization]. Here a pod is scheduled with anti-affinity, so the pod is not scheduled on nodes with the same hostname.
+<5> HTTP access to Kafka brokers.
+<6> CORS access specifying selected resources and access methods. Additional HTTP headers in requests describe the origins that are permitted access to the Kafka cluster.
+<7> Consumer configuration options.
+<8> Producer configuration options.
+<9> Requests for reservation of supported resources, currently `cpu` and `memory`, and limits to specify the maximum resources that can be consumed.
+<10> Specified Kafka Bridge loggers and log levels added directly (`inline`) or indirectly (`external`) through a ConfigMap. A custom ConfigMap must be placed under the `log4j.properties` or `log4j2.properties` key. For the Kafka Bridge loggers, you can set the log level to INFO, ERROR, WARN, TRACE, DEBUG, FATAL or OFF.
+<11> JVM configuration options to optimize performance for the Virtual Machine (VM) running the Kafka Bridge.
+<12> Healthchecks to know when to restart a container (liveness) and when a container can accept traffic (readiness).
+<13> Optional: Container image configuration, which is recommended only in special situations.
+<14> Template customization. Here a pod is scheduled with anti-affinity, so the pod is not scheduled on nodes with the same hostname.
 <15> Environment variables are set for distributed tracing.
 <16> Distributed tracing is enabled by using OpenTelemetry.
 
@@ -134,4 +128,4 @@ kubectl apply -f _KAFKA-BRIDGE-CONFIG-FILE_
 .Additional resources
 
 * link:{BookURLBridge}[Using the Strimzi Kafka Bridge^]
-* link:{BookURLDeploying}#assembly-distributed-tracing-str[Introducing distributed tracing^]
+* xref:assembly-distributed-tracing-str[Introducing distributed tracing]

@@ -4,10 +4,10 @@ SASL PLAIN authentication mechanism requires a username and password.
 WARNING: The SASL PLAIN mechanism will transfer the username and password across the network in cleartext.
 Only use SASL PLAIN authentication if TLS encryption is enabled.
 
-=== `username`
+= `username`
 Specify the username in the `username` property.
 
-=== `passwordSecret`
+= `passwordSecret`
 In the `passwordSecret` property, specify a link to a `Secret` containing the password.
 
 You can use the secrets created by the User Operator.

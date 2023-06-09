@@ -33,10 +33,15 @@ This might include configuration that supports the following:
 * Allocating resource limits and requests
 * Introducing features, such as Strimzi Drain Cleaner, Cruise Control, or distributed tracing.
 
-The link:{BookURLConfiguring}[Custom resource API reference^] describes the properties you can use in your configuration.
+The link:{BookURLConfiguring}[Strimzi Custom Resource API Reference^] describes the properties you can use in your configuration.
 
 //How to access examples
 include::../../modules/configuring/con-config-examples.adoc[leveloffset=+1]
+
+//configuration of compoments
+include::../../assemblies/configuring/assembly-deployment-configuration.adoc[leveloffset=+1]
+
+
 //configuring resources
 include::../../modules/configuring/con-config-resources.adoc[leveloffset=+1]
 //load configuration from configmaps for certain types of data

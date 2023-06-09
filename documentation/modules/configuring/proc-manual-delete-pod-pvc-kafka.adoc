@@ -14,10 +14,7 @@ The following procedure should only be performed if you have encountered storage
 
 .Prerequisites
 
-See the _Deploying and Upgrading Strimzi_ guide for instructions on running a:
-
-* link:{BookURLDeploying}#cluster-operator-str[Cluster Operator^]
-* link:{BookURLDeploying}#deploying-kafka-cluster-str[Kafka cluster^]
+* A running Cluster Operator
 
 .Procedure
 

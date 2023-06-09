@@ -18,15 +18,15 @@ Default `120`.
 
 `image`::
 The `image` property can be used to configure the container image which will be used.
-For more details about configuring custom container images, see xref:con-common-configuration-images-reference[].
+To learn more, refer to the information provided on link:{BookURLConfiguring}#con-common-configuration-images-reference[configuring the `image` property`^].
 
 `resources`::
 The `resources` property configures the amount of resources allocated to the User Operator.
-For more details about resource request and limit configuration, see xref:con-common-configuration-resources-reference[].
+To learn more, refer to the information provided on link:{BookURLConfiguring}#con-common-configuration-resources-reference[setting appropriate requests and limits^].
 
 `logging`::
 The `logging` property configures the logging of the User Operator.
-For more details, see xref:property-topic-operator-logging-reference[].
+To learn more, refer to the information provided on link:{BookURLConfiguring}#property-user-operator-logging-reference[User Operator logging^].
 
 `secretPrefix`::
 The `secretPrefix` property adds a prefix to the name of all Secrets created from the KafkaUser resource. For example, `secretPrefix: kafka-` would prefix all Secret names with `kafka-`. So a KafkaUser named `my-user` would create a Secret named `kafka-my-user`.

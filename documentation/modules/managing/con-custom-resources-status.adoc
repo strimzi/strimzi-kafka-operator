@@ -10,7 +10,7 @@ Status properties provide status information for certain custom resources.
 
 The following table lists the custom resources that provide status information (when deployed) and the schemas that define the status properties.
 
-For more information on the schemas, see the link:{BookURLConfiguring}[Custom resource API reference^].
+For more information on the schemas, see the link:{BookURLConfiguring}[Strimzi Custom Resource API Reference^].
 
 .Custom resources that provide status information
 [cols="3*",options="header",stripes="none",separator=¦]
