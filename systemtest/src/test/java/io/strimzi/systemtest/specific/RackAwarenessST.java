@@ -37,7 +37,6 @@ import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
-import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StrimziPodSetUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
@@ -197,7 +196,6 @@ class RackAwarenessST extends AbstractST {
 
         LOGGER.info("KafkaConnect cluster deployed successfully");
         String deployName = KafkaConnectResources.deploymentName(testStorage.getClusterName());
-        DeploymentUtils.waitForDeploymentReady(testStorage.getNamespaceName(), deployName);
         String podName = PodUtils.getPodNameByPrefix(testStorage.getNamespaceName(), deployName);
         Pod pod = kubeClient().getPod(testStorage.getNamespaceName(), podName);
 
