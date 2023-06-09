@@ -6,5 +6,9 @@ include::shared/attributes.adoc[]
 [id="configuring-book_{context}"]
 = Strimzi Custom Resource API Reference
 
+//introduces the schema reference
+include::modules/configuring/con-schema-overview.adoc[leveloffset=+1]
+//properties common to more than one custom resource
 include::modules/con-common-configuration-properties.adoc[leveloffset=+1]
+//content built from @Description annotations in the Java files
 include::modules/appendix_crds.adoc[leveloffset=+1]
