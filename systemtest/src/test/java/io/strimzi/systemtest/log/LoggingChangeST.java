@@ -466,7 +466,7 @@ class LoggingChangeST extends AbstractST {
         ilOff.setLoggers(loggers);
 
         // create resources async
-        resourceManager.createResourceWithWait(extensionContext,
+        resourceManager.createResourceWithoutWait(extensionContext,
             KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), 1, 1).build(),
             ScraperTemplates.scraperPod(testStorage.getNamespaceName(), testStorage.getScraperName()).build(),
             KafkaBridgeTemplates.kafkaBridge(testStorage.getClusterName(), KafkaResources.tlsBootstrapAddress(testStorage.getClusterName()), 1)
@@ -688,7 +688,7 @@ class LoggingChangeST extends AbstractST {
             .endMetadata()
             .build();
 
-        resourceManager.createResourceWithWait(extensionContext,
+        resourceManager.createResourceWithoutWait(extensionContext,
             KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3).build(),
             connect,
             ScraperTemplates.scraperPod(testStorage.getNamespaceName(), testStorage.getScraperName()).build()
