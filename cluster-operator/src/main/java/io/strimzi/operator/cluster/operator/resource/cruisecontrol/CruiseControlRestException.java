@@ -16,5 +16,4 @@ public class CruiseControlRestException extends RuntimeException {
     public CruiseControlRestException(String message) {
         super(message);
     }
-
 }
