@@ -1,13 +1,5 @@
 {
   "__inputs": [
-    {
-      "name": "DS_PROMETHEUS",
-      "label": "Prometheus",
-      "description": "",
-      "type": "datasource",
-      "pluginId": "prometheus",
-      "pluginName": "Prometheus"
-    }
   ],
   "__requires": [
     {
@@ -76,7 +68,7 @@
         "rgba(237, 129, 40, 0.89)",
         "#d44a3a"
       ],
-      "datasource": "",
+      "datasource": "${DS_PROMETHEUS}",
       "format": "none",
       "gauge": {
         "maxValue": 100,
@@ -159,7 +151,7 @@
         "rgba(237, 129, 40, 0.89)",
         "#d44a3a"
       ],
-      "datasource": "",
+      "datasource": "${DS_PROMETHEUS}",
       "format": "none",
       "gauge": {
         "maxValue": 100,
@@ -242,7 +234,7 @@
         "rgba(237, 129, 40, 0.89)",
         "#d44a3a"
       ],
-      "datasource": "",
+      "datasource": "${DS_PROMETHEUS}",
       "format": "none",
       "gauge": {
         "maxValue": 100,
@@ -325,7 +317,7 @@
         "rgba(237, 129, 40, 0.89)",
         "#d44a3a"
       ],
-      "datasource": "",
+      "datasource": "${DS_PROMETHEUS}",
       "format": "none",
       "gauge": {
         "maxValue": 100,
@@ -408,7 +400,7 @@
         "rgba(237, 129, 40, 0.89)",
         "#d44a3a"
       ],
-      "datasource": "",
+      "datasource": "${DS_PROMETHEUS}",
       "format": "none",
       "gauge": {
         "maxValue": 100,
@@ -491,7 +483,7 @@
         "rgba(237, 129, 40, 0.89)",
         "#d44a3a"
       ],
-      "datasource": "",
+      "datasource": "${DS_PROMETHEUS}",
       "format": "none",
       "gauge": {
         "maxValue": 100,
@@ -574,7 +566,7 @@
         "rgba(237, 129, 40, 0.89)",
         "#d44a3a"
       ],
-      "datasource": "",
+      "datasource": "${DS_PROMETHEUS}",
       "format": "none",
       "gauge": {
         "maxValue": 100,
@@ -657,7 +649,7 @@
         "rgba(237, 129, 40, 0.89)",
         "#d44a3a"
       ],
-      "datasource": "",
+      "datasource": "${DS_PROMETHEUS}",
       "format": "none",
       "gauge": {
         "maxValue": 100,
@@ -740,7 +732,7 @@
         "rgba(237, 129, 40, 0.89)",
         "#d44a3a"
       ],
-      "datasource": "",
+      "datasource": "${DS_PROMETHEUS}",
       "format": "none",
       "gauge": {
         "maxValue": 100,
@@ -832,7 +824,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "",
+      "datasource": "${DS_PROMETHEUS}",
       "decimals": null,
       "fill": 1,
       "fillGradient": 0,
@@ -925,7 +917,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "",
+      "datasource": "${DS_PROMETHEUS}",
       "decimals": null,
       "fill": 1,
       "fillGradient": 0,
@@ -1018,7 +1010,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "",
+      "datasource": "${DS_PROMETHEUS}",
       "decimals": null,
       "fill": 1,
       "fillGradient": 0,
@@ -1112,7 +1104,7 @@
       "cacheTimeout": null,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "",
+      "datasource": "${DS_PROMETHEUS}",
       "decimals": null,
       "fill": 1,
       "fillGradient": 0,
@@ -1206,7 +1198,7 @@
       "cacheTimeout": null,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "",
+      "datasource": "${DS_PROMETHEUS}",
       "decimals": null,
       "fill": 1,
       "fillGradient": 0,
@@ -1300,7 +1292,7 @@
       "cacheTimeout": null,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "",
+      "datasource": "${DS_PROMETHEUS}",
       "decimals": null,
       "fill": 1,
       "fillGradient": 0,
@@ -1408,7 +1400,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "",
+      "datasource": "${DS_PROMETHEUS}",
       "fill": 1,
       "fillGradient": 0,
       "gridPos": {
@@ -1498,7 +1490,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "",
+      "datasource": "${DS_PROMETHEUS}",
       "fill": 1,
       "fillGradient": 0,
       "gridPos": {
@@ -1588,7 +1580,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "",
+      "datasource": "${DS_PROMETHEUS}",
       "fill": 1,
       "fillGradient": 0,
       "gridPos": {

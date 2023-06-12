@@ -1,13 +1,5 @@
 {
   "__inputs": [
-    {
-      "name": "DS_PROMETHEUS",
-      "label": "Prometheus",
-      "description": "",
-      "type": "datasource",
-      "pluginId": "prometheus",
-      "pluginName": "Prometheus"
-    }
   ],
   "__requires": [
     {
@@ -63,7 +55,7 @@
         "rgba(237, 129, 40, 0.89)",
         "#299c46"
       ],
-      "datasource": "",
+      "datasource": "${DS_PROMETHEUS}",
       "description": "Number of brokers online",
       "format": "none",
       "gauge": {
@@ -148,7 +140,7 @@
         "#e5ac0e",
         "#bf1b00"
       ],
-      "datasource": "",
+      "datasource": "${DS_PROMETHEUS}",
       "description": "Number of active controllers in the cluster",
       "format": "none",
       "gauge": {
@@ -230,7 +222,7 @@
         "rgba(237, 129, 40, 0.89)",
         "#d44a3a"
       ],
-      "datasource": "",
+      "datasource": "${DS_PROMETHEUS}",
       "description": "Unclean leader election rate",
       "format": "none",
       "gauge": {
@@ -312,7 +304,7 @@
         "rgba(237, 129, 40, 0.89)",
         "#299c46"
       ],
-      "datasource": "",
+      "datasource": "${DS_PROMETHEUS}",
       "description": "Replicas that are online",
       "format": "none",
       "gauge": {
@@ -393,7 +385,7 @@
         "rgba(237, 129, 40, 0.89)",
         "#bf1b00"
       ],
-      "datasource": "",
+      "datasource": "${DS_PROMETHEUS}",
       "description": "Number of under-replicated partitions (| ISR | < | all replicas |).",
       "format": "none",
       "gauge": {
@@ -475,7 +467,7 @@
         "#ef843c",
         "#bf1b00"
       ],
-      "datasource": "",
+      "datasource": "${DS_PROMETHEUS}",
       "description": "Number of partitions which are at their minimum in sync replica count (| ISR | == | min.insync.replicas |)",
       "format": "none",
       "gauge": {
@@ -557,7 +549,7 @@
         "#ef843c",
         "#bf1b00"
       ],
-      "datasource": "",
+      "datasource": "${DS_PROMETHEUS}",
       "description": "Number of partitions which are under their minimum in sync replica count (| ISR | < | min.insync.replicas |)",
       "format": "none",
       "gauge": {
@@ -639,7 +631,7 @@
         "#ef843c",
         "#bf1b00"
       ],
-      "datasource": "",
+      "datasource": "${DS_PROMETHEUS}",
       "description": "Number of partitions that don’t have an active leader and are hence not writable or readable",
       "format": "none",
       "gauge": {
@@ -730,7 +722,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "",
+      "datasource": "${DS_PROMETHEUS}",
       "description": "Kafka broker pods memory usage",
       "fill": 1,
       "gridPos": {
@@ -818,7 +810,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "",
+      "datasource": "${DS_PROMETHEUS}",
       "description": "Aggregated Kafka broker pods CPU usage",
       "fill": 1,
       "gridPos": {
@@ -906,7 +898,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "",
+      "datasource": "${DS_PROMETHEUS}",
       "description": "Kafka broker pods disk usage",
       "fill": 1,
       "gridPos": {
@@ -994,7 +986,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "",
+      "datasource": "${DS_PROMETHEUS}",
       "description": "Open File Descriptors",
       "fill": 1,
       "gridPos": {
@@ -1082,7 +1074,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "",
+      "datasource": "${DS_PROMETHEUS}",
       "fill": 1,
       "gridPos": {
         "h": 7,
@@ -1168,7 +1160,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "",
+      "datasource": "${DS_PROMETHEUS}",
       "fill": 1,
       "gridPos": {
         "h": 7,
@@ -1254,7 +1246,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "",
+      "datasource": "${DS_PROMETHEUS}",
       "fill": 1,
       "gridPos": {
         "h": 7,
@@ -1340,7 +1332,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "",
+      "datasource": "${DS_PROMETHEUS}",
       "description": "JVM thread count",
       "fill": 1,
       "gridPos": {
@@ -1431,7 +1423,7 @@
         "rgba(237, 129, 40, 0.89)",
         "#299c46"
       ],
-      "datasource": "",
+      "datasource": "${DS_PROMETHEUS}",
       "description": "Total incoming byte rate",
       "format": "Bps",
       "gauge": {
@@ -1515,7 +1507,7 @@
         "rgba(237, 129, 40, 0.89)",
         "#299c46"
       ],
-      "datasource": "",
+      "datasource": "${DS_PROMETHEUS}",
       "description": "Total outgoing byte rate",
       "format": "Bps",
       "gauge": {
@@ -1599,7 +1591,7 @@
         "rgba(237, 129, 40, 0.89)",
         "#299c46"
       ],
-      "datasource": "",
+      "datasource": "${DS_PROMETHEUS}",
       "description": "Incoming messages rate",
       "format": "wps",
       "gauge": {
@@ -1683,7 +1675,7 @@
         "rgba(237, 129, 40, 0.89)",
         "#299c46"
       ],
-      "datasource": "",
+      "datasource": "${DS_PROMETHEUS}",
       "description": "Total produce request rate",
       "format": "reqps",
       "gauge": {
@@ -1763,7 +1755,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "",
+      "datasource": "${DS_PROMETHEUS}",
       "description": "Byte rate",
       "fill": 1,
       "gridPos": {
@@ -1866,7 +1858,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "",
+      "datasource": "${DS_PROMETHEUS}",
       "fill": 1,
       "gridPos": {
         "h": 8,
@@ -1953,7 +1945,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "",
+      "datasource": "${DS_PROMETHEUS}",
       "description": "Produce request rate",
       "fill": 1,
       "gridPos": {
@@ -2048,7 +2040,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "",
+      "datasource": "${DS_PROMETHEUS}",
       "description": "Fetch request rate",
       "fill": 1,
       "gridPos": {
@@ -2142,7 +2134,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "",
+      "datasource": "${DS_PROMETHEUS}",
       "description": "Average percentage of time network processor is idle",
       "fill": 1,
       "gridPos": {
@@ -2229,7 +2221,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "",
+      "datasource": "${DS_PROMETHEUS}",
       "description": "Average percentage of time request handler threads are idle",
       "fill": 1,
       "gridPos": {
@@ -2317,7 +2309,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "",
+      "datasource": "${DS_PROMETHEUS}",
       "description": "Disk writes",
       "fill": 1,
       "gridPos": {
@@ -2405,7 +2397,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "",
+      "datasource": "${DS_PROMETHEUS}",
       "description": "Disk reads",
       "fill": 1,
       "gridPos": {
@@ -2493,7 +2485,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "",
+      "datasource": "${DS_PROMETHEUS}",
       "description": "Disk reads",
       "fill": 1,
       "gridPos": {
@@ -2581,7 +2573,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "",
+      "datasource": "${DS_PROMETHEUS}",
       "fill": 1,
       "gridPos": {
         "h": 13,
@@ -2676,7 +2668,7 @@
       {
         "allValue": null,
         "current": {},
-        "datasource": "",
+        "datasource": "${DS_PROMETHEUS}",
         "definition": "",
         "hide": 0,
         "includeAll": false,
@@ -2698,7 +2690,7 @@
       {
         "allValue": null,
         "current": {},
-        "datasource": "",
+        "datasource": "${DS_PROMETHEUS}",
         "definition": "",
         "hide": 0,
         "includeAll": false,
@@ -2720,7 +2712,7 @@
       {
         "allValue": ".*",
         "current": {},
-        "datasource": "",
+        "datasource": "${DS_PROMETHEUS}",
         "definition": "",
         "hide": 0,
         "includeAll": true,
@@ -2742,7 +2734,7 @@
       {
         "allValue": ".+",
         "current": {},
-        "datasource": "",
+        "datasource": "${DS_PROMETHEUS}",
         "definition": "",
         "hide": 0,
         "includeAll": true,
@@ -2764,7 +2756,7 @@
       {
         "allValue": ".*",
         "current": {},
-        "datasource": "",
+        "datasource": "${DS_PROMETHEUS}",
         "definition": "",
         "hide": 0,
         "includeAll": true,
