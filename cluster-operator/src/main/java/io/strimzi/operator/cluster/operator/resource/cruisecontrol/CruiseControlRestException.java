@@ -17,13 +17,4 @@ public class CruiseControlRestException extends RuntimeException {
         super(message);
     }
 
-    /**
-     * Constructor
-     *
-     * @param cause Error cause
-     * @param message   Error message
-     */
-    public CruiseControlRestException(Throwable cause, String message) {
-        super(message, cause);
-    }
 }
