@@ -4,6 +4,7 @@
 
 * Add support for Apache Kafka 3.4.1
 * Update Kafka Exporter to [1.7.0](https://github.com/danielqsj/kafka_exporter/releases/tag/v1.7.0)
+* Update Kaniko container builder to 1.11.0
 
 ### Changes, deprecations and removals
 
