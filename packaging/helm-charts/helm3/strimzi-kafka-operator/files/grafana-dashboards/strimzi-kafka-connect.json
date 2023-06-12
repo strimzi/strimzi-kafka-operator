@@ -70,7 +70,7 @@
         "rgba(237, 129, 40, 0.89)",
         "rgba(50, 172, 45, 0.97)"
       ],
-      "datasource": "${DS_PROMETHEUS}",
+      "datasource": "",
       "format": "none",
       "gauge": {
         "maxValue": 100,
@@ -153,7 +153,7 @@
         "rgba(237, 129, 40, 0.89)",
         "rgba(50, 172, 45, 0.97)"
       ],
-      "datasource": "${DS_PROMETHEUS}",
+      "datasource": "",
       "format": "none",
       "gauge": {
         "maxValue": 100,
@@ -231,7 +231,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "${DS_PROMETHEUS}",
+      "datasource": "",
       "fill": 1,
       "gridPos": {
         "h": 7,
@@ -314,7 +314,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "${DS_PROMETHEUS}",
+      "datasource": "",
       "fill": 1,
       "gridPos": {
         "h": 7,
@@ -397,7 +397,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "${DS_PROMETHEUS}",
+      "datasource": "",
       "fill": 1,
       "gridPos": {
         "h": 7,
@@ -485,7 +485,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "${DS_PROMETHEUS}",
+      "datasource": "",
       "fill": 1,
       "gridPos": {
         "h": 7,
@@ -573,7 +573,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "${DS_PROMETHEUS}",
+      "datasource": "",
       "fill": 1,
       "gridPos": {
         "h": 7,
@@ -661,7 +661,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "${DS_PROMETHEUS}",
+      "datasource": "",
       "description": "JVM thread count",
       "fill": 1,
       "gridPos": {
@@ -745,7 +745,7 @@
     {
       "cacheTimeout": null,
       "columns": [],
-      "datasource": "${DS_PROMETHEUS}",
+      "datasource": "",
       "fontSize": "100%",
       "gridPos": {
         "h": 7,
@@ -841,7 +841,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "${DS_PROMETHEUS}",
+      "datasource": "",
       "fill": 1,
       "gridPos": {
         "h": 7,
@@ -959,7 +959,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "${DS_PROMETHEUS}",
+      "datasource": "",
       "fill": 1,
       "gridPos": {
         "h": 7,
@@ -1051,7 +1051,7 @@
       }
     },
     {
-      "datasource": "${DS_PROMETHEUS}",
+      "datasource": "",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1185,7 +1185,7 @@
       "type": "table"
     },
     {
-      "datasource": "${DS_PROMETHEUS}",
+      "datasource": "",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1297,7 +1297,7 @@
       {
         "allValue": null,
         "current": {},
-        "datasource": "${DS_PROMETHEUS}",
+        "datasource": "",
         "hide": 0,
         "includeAll": false,
         "label": "Namespace",
@@ -1317,7 +1317,7 @@
       {
         "allValue": null,
         "current": {},
-        "datasource": "${DS_PROMETHEUS}",
+        "datasource": "",
         "hide": 0,
         "includeAll": false,
         "label": "Cluster Name",

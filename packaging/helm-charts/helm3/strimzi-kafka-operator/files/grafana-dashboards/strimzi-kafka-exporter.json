@@ -59,7 +59,7 @@
         "rgba(237, 129, 40, 0.89)",
         "#d44a3a"
       ],
-      "datasource": "${DS_PROMETHEUS}",
+      "datasource": "",
       "format": "none",
       "gauge": {
         "maxValue": 100,
@@ -141,7 +141,7 @@
         "rgba(237, 129, 40, 0.89)",
         "#d44a3a"
       ],
-      "datasource": "${DS_PROMETHEUS}",
+      "datasource": "",
       "format": "none",
       "gauge": {
         "maxValue": 100,
@@ -223,7 +223,7 @@
         "rgba(237, 129, 40, 0.89)",
         "#d44a3a"
       ],
-      "datasource": "${DS_PROMETHEUS}",
+      "datasource": "",
       "format": "none",
       "gauge": {
         "maxValue": 100,
@@ -305,7 +305,7 @@
         "rgba(237, 129, 40, 0.89)",
         "#d44a3a"
       ],
-      "datasource": "${DS_PROMETHEUS}",
+      "datasource": "",
       "format": "none",
       "gauge": {
         "maxValue": 100,
@@ -387,7 +387,7 @@
         "#F2495C",
         "#d44a3a"
       ],
-      "datasource": "${DS_PROMETHEUS}",
+      "datasource": "",
       "format": "none",
       "gauge": {
         "maxValue": 100,
@@ -469,7 +469,7 @@
         "#F2495C",
         "#d44a3a"
       ],
-      "datasource": "${DS_PROMETHEUS}",
+      "datasource": "",
       "description": "Number of partitions which are at their minimum in sync replica count (| ISR | == | min.insync.replicas |)",
       "format": "none",
       "gauge": {
@@ -552,7 +552,7 @@
         "#F2495C",
         "#d44a3a"
       ],
-      "datasource": "${DS_PROMETHEUS}",
+      "datasource": "",
       "description": "Number of partitions which are under their minimum in sync replica count (| ISR | < | min.insync.replicas |)",
       "format": "none",
       "gauge": {
@@ -635,7 +635,7 @@
         "#F2495C",
         "#d44a3a"
       ],
-      "datasource": "${DS_PROMETHEUS}",
+      "datasource": "",
       "format": "none",
       "gauge": {
         "maxValue": 100,
@@ -713,7 +713,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "${DS_PROMETHEUS}",
+      "datasource": "",
       "fill": 0,
       "gridPos": {
         "h": 10,
@@ -804,7 +804,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "${DS_PROMETHEUS}",
+      "datasource": "",
       "fill": 0,
       "gridPos": {
         "h": 10,
@@ -895,7 +895,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "${DS_PROMETHEUS}",
+      "datasource": "",
       "fill": 0,
       "gridPos": {
         "h": 10,
@@ -984,7 +984,7 @@
     },
     {
       "columns": [],
-      "datasource": "${DS_PROMETHEUS}",
+      "datasource": "",
       "fontSize": "100%",
       "gridPos": {
         "h": 10,
@@ -1058,7 +1058,7 @@
     },
     {
       "columns": [],
-      "datasource": "${DS_PROMETHEUS}",
+      "datasource": "",
       "fontSize": "100%",
       "gridPos": {
         "h": 10,
@@ -1132,7 +1132,7 @@
     },
     {
       "columns": [],
-      "datasource": "${DS_PROMETHEUS}",
+      "datasource": "",
       "fontSize": "100%",
       "gridPos": {
         "h": 10,
@@ -1206,7 +1206,7 @@
     },
     {
       "columns": [],
-      "datasource": "${DS_PROMETHEUS}",
+      "datasource": "",
       "fontSize": "100%",
       "gridPos": {
         "h": 10,
@@ -1280,7 +1280,7 @@
     },
     {
       "columns": [],
-      "datasource": "${DS_PROMETHEUS}",
+      "datasource": "",
       "fontSize": "100%",
       "gridPos": {
         "h": 10,
@@ -1366,7 +1366,7 @@
       {
         "allValue": null,
         "current": {},
-        "datasource": "${DS_PROMETHEUS}",
+        "datasource": "",
         "definition": "",
         "hide": 0,
         "includeAll": false,
@@ -1388,7 +1388,7 @@
       {
         "allValue": null,
         "current": {},
-        "datasource": "${DS_PROMETHEUS}",
+        "datasource": "",
         "definition": "",
         "hide": 0,
         "includeAll": false,
@@ -1415,7 +1415,7 @@
             "$__all"
           ]
         },
-        "datasource": "${DS_PROMETHEUS}",
+        "datasource": "",
         "definition": "label_values(kafka_consumergroup_current_offset{namespace=\"$kubernetes_namespace\",strimzi_io_cluster=\"$strimzi_cluster_name\"}, consumergroup)",
         "hide": 0,
         "includeAll": true,
@@ -1442,7 +1442,7 @@
             "$__all"
           ]
         },
-        "datasource": "${DS_PROMETHEUS}",
+        "datasource": "",
         "definition": "label_values(kafka_topic_partition_current_offset{namespace=\"$kubernetes_namespace\",strimzi_io_cluster=\"$strimzi_cluster_name\"}, topic)",
         "hide": 0,
         "includeAll": true,

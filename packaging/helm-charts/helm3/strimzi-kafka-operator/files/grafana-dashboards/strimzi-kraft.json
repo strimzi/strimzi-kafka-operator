@@ -51,7 +51,7 @@
   "panels": [
     {
       "collapsed": false,
-      "datasource": "${DS_PROMETHEUS}",
+      "datasource": "",
       "gridPos": {
         "h": 1,
         "w": 24,
@@ -68,7 +68,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "${DS_PROMETHEUS}",
+      "datasource": "",
       "description": "Kafka broker pods memory usage",
       "fill": 1,
       "gridPos": {
@@ -160,7 +160,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "${DS_PROMETHEUS}",
+      "datasource": "",
       "description": "Aggregated Kafka broker pods CPU usage",
       "fill": 1,
       "gridPos": {
@@ -252,7 +252,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "${DS_PROMETHEUS}",
+      "datasource": "",
       "description": "Kafka broker pods disk usage",
       "fill": 1,
       "gridPos": {
@@ -344,7 +344,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "${DS_PROMETHEUS}",
+      "datasource": "",
       "description": "Open File Descriptors",
       "fill": 1,
       "gridPos": {
@@ -436,7 +436,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "${DS_PROMETHEUS}",
+      "datasource": "",
       "fill": 1,
       "gridPos": {
         "h": 7,
@@ -526,7 +526,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "${DS_PROMETHEUS}",
+      "datasource": "",
       "fill": 1,
       "gridPos": {
         "h": 7,
@@ -618,7 +618,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "${DS_PROMETHEUS}",
+      "datasource": "",
       "fill": 1,
       "gridPos": {
         "h": 7,
@@ -708,7 +708,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "${DS_PROMETHEUS}",
+      "datasource": "",
       "description": "JVM thread count",
       "fill": 1,
       "gridPos": {
@@ -799,7 +799,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "${DS_PROMETHEUS}",
+      "datasource": "",
       "description": "The average number of records appended per sec as the leader of the raft quorum.",
       "fill": 1,
       "gridPos": {
@@ -900,7 +900,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "${DS_PROMETHEUS}",
+      "datasource": "",
       "description": "The average number of records fetched from the leader of the raft quorum.",
       "fill": 1,
       "gridPos": {
@@ -995,7 +995,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "${DS_PROMETHEUS}",
+      "datasource": "",
       "description": "The average time in milliseconds to commit an entry in the raft log.",
       "fill": 1,
       "gridPos": {
@@ -1096,7 +1096,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "${DS_PROMETHEUS}",
+      "datasource": "",
       "description": "The current quorum leader's id; -1 indicates unknown",
       "fill": 1,
       "gridPos": {
@@ -1192,7 +1192,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "${DS_PROMETHEUS}",
+      "datasource": "",
       "description": "The current voted leader's id; -1 indicates not voted for anyone",
       "fill": 1,
       "gridPos": {
@@ -1288,7 +1288,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "${DS_PROMETHEUS}",
+      "datasource": "",
       "description": "The current quorum epoch",
       "fill": 1,
       "gridPos": {
@@ -1384,7 +1384,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "${DS_PROMETHEUS}",
+      "datasource": "",
       "description": "The number of bytes read off all sockets per second",
       "fill": 1,
       "gridPos": {
@@ -1479,7 +1479,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "${DS_PROMETHEUS}",
+      "datasource": "",
       "description": "The number of outgoing bytes sent to all servers per second",
       "fill": 1,
       "gridPos": {
@@ -1574,7 +1574,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "${DS_PROMETHEUS}",
+      "datasource": "",
       "description": "The number of requests sent per second",
       "fill": 1,
       "gridPos": {
@@ -1670,7 +1670,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "${DS_PROMETHEUS}",
+      "datasource": "",
       "description": "The number of responses received per second",
       "fill": 1,
       "gridPos": {
@@ -1765,7 +1765,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "${DS_PROMETHEUS}",
+      "datasource": "",
       "description": "The high watermark maintained on this member; -1 if it is unknown.",
       "fill": 1,
       "gridPos": {
@@ -1860,7 +1860,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": "${DS_PROMETHEUS}",
+      "datasource": "",
       "description": "The current raft log end offset.",
       "fill": 1,
       "gridPos": {
@@ -1963,7 +1963,7 @@
       {
         "allValue": null,
         "current": {},
-        "datasource": "${DS_PROMETHEUS}",
+        "datasource": "",
         "definition": "",
         "error": null,
         "hide": 0,
@@ -1986,7 +1986,7 @@
       {
         "allValue": null,
         "current": {},
-        "datasource": "${DS_PROMETHEUS}",
+        "datasource": "",
         "definition": "",
         "error": null,
         "hide": 0,
@@ -2009,7 +2009,7 @@
       {
         "allValue": ".*",
         "current": {},
-        "datasource": "${DS_PROMETHEUS}",
+        "datasource": "",
         "definition": "",
         "error": null,
         "hide": 0,
