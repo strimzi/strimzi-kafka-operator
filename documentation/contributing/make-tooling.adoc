@@ -1,18 +1,30 @@
 [[make-tooling]]
-= Using make with documentation
+= Building the documentation locally
 
 When you make changes to the documentation, it is a good practice to do a local test build to verify the book builds successfully and renders as you expect before you submit the merge request back to upstream main.
 
 Make is a useful tool for building your documentation and pushing it to a public website so that peer and quality reviewers can see your edits as the user would.
 
-== Make commands to build documentation
+== Building documentation using AsciiDoctor
+
+As the documentation is based on asciidoc, you can use AsciiDoctor to build the guides locally.
+To build a guide using AsciiDoctor on your local machine, you run the `asciidoctor` command for the source file of the guide. 
+
+For example, this command builds the Overview:
+
+[source,shell]
+----
+asciidoctor <path_to_overview.adoc>
+----
+
+== Building documentation with make commands
 
 `make docu_clean`:: Delete all temporary files
 `make docu_check`:: Execute the documentation checks in `.azure/scripts/check_docs.sh`
 `make docu_html`:: Generate the HTML version of all the guides (the HTML files can be found in `documentation/html)
 `make docu_htmlnoheader`:: Generate the HTML version of all the guides without the HTML headers so they are suitable for including into a website (the HTML files can be found in `documentation/htmlnoheader)
 
-== Generate the Strimzi Custom Resource API Reference
+== Generating the Strimzi Custom Resource API Reference
 
 The `documentation/modules/appendix_crds.adoc` file provides the main content for the _Strimzi Custom Resource API Reference_.
 It is generated directly from the Java code when building the operators.

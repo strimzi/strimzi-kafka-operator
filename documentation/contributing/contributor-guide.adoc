@@ -52,7 +52,7 @@ image:operators.png[Operators within the Strimzi architecture]
 ----
 
 [[contributing]]
-== Contributing to the documentation
+== Adding or updating content
 
 Once you have your local repository set up and have up-to-date copies of upstream content,
 follow these steps to contribute to the documentation.
