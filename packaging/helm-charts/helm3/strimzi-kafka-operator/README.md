@@ -217,6 +217,7 @@ the documentation for more details.
 | `dashboards.extraLabels`             | Any additional labels you would like on the dashboards | `{}`                                    |
 | `dashboards.namespace`               | What namespace should the dashboards be loaded into | `Follows toplevel Namespace`               |
 | `dashboards.annotations`             | Any custom annotations (such as folder for the sidecar) | `{}`                                   |
+| `dashboards.datasource`              | Override Prometheus datasource name (use empty string for default source)    | `${DS_PROMETHEUS}`|
 
 Specify each parameter using the `--set key=value[,key=value]` argument to `helm install`. For example,
 
