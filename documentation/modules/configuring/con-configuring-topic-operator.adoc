@@ -3,9 +3,10 @@
 // assembly-kafka-entity-operator.adoc
 
 [id='topic-operator-{context}']
-= Topic Operator configuration properties
+= Configuring the Topic Operator
 
-Topic Operator deployment can be configured using additional options inside the `topicOperator` object.
+[role="_abstract"]
+Use `topicOperator` properties in `Kafka.spec.entityOperator` to configure the Topic Operator.
 The following properties are supported:
 
 `watchedNamespace`::

@@ -1,6 +1,6 @@
 // Module included in the following assemblies:
 //
-// assembly-deployment-configuration-kafka-mirror-maker.adoc
+// assembly-deploy-kafka-mirror-maker.adoc
 
 [id='ref-list-of-kafka-mirror-maker-resources-{context}']
 = List of Kafka MirrorMaker cluster resources

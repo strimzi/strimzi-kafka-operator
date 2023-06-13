@@ -7,8 +7,9 @@
 = Deploying Kafka Connect
 
 [role="_abstract"]
-link:https://kafka.apache.org/documentation/#connect[Kafka Connect^] is a tool for streaming data between Apache Kafka and other systems.
-For example, Kafka Connect might integrate Kafka with external databases or storage and messaging systems.
+link:https://kafka.apache.org/documentation/#connect[Kafka Connect^] is an integration toolkit for streaming data between Kafka brokers and other systems using connector plugins.
+Kafka Connect provides a framework for integrating Kafka with an external data source or target, such as a database or messaging system, for import or export of data using connectors.
+Connectors are plugins that provide the connection configuration needed.
 
 In Strimzi, Kafka Connect is deployed in distributed mode.
 Kafka Connect can also work in standalone mode, but this is not supported by Strimzi.
@@ -31,4 +32,6 @@ include::../../modules/deploying/proc-deploy-kafka-connect.adoc[leveloffset=+1]
 include::../../modules/configuring/con-config-kafka-connect-multiple-instances.adoc[leveloffset=+1]
 //Connectors
 include::assembly-deploy-kafka-connect-with-plugins.adoc[leveloffset=+1]
+//Resources created for Kafka Connect
+include::../../modules/configuring/ref-config-list-of-kafka-connect-resources.adoc[leveloffset=+1]
 

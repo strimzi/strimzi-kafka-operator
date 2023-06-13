@@ -71,4 +71,4 @@ The deployment is successful when the `STATUS` shows as `Running`.
 [role="_additional-resources"]
 .Additional resources
 
-* xref:assembly-deployment-configuration-kafka-mirror-maker-str[Kafka MirrorMaker cluster configuration]
+* xref:con-config-mirrormaker-str[Kafka MirrorMaker cluster configuration]

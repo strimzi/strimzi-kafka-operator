@@ -1,6 +1,6 @@
 // Module included in the following assemblies:
 //
-// assembly-config-kafka.adoc
+// assembly-management-tasks.adoc
 
 [id='proc-connnecting-to-zookeeper-{context}']
 = Connecting to ZooKeeper from a terminal

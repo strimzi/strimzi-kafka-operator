@@ -16,5 +16,5 @@ For more information about deploying and configuring the Cluster Operator, see x
 
 In addition, if you want to use standalone installations of the Topic and User Operators with a Kafka cluster that is not managed by the Strimzi Cluster Operator, you can deploy them from the `install/topic-operator` and `install/user-operator` folders.
 
-NOTE: Additionally, Strimzi container images are available through the {DockerRepository}.
+NOTE: Strimzi container images are also available through the {DockerRepository}.
 However, we recommend that you use the YAML files provided to deploy Strimzi.

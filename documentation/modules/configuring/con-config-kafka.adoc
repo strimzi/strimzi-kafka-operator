@@ -1,25 +1,28 @@
 // Module included in the following assemblies:
 //
-// assembly-config-kafka.adoc
+// assembly-config.adoc
 
-[id='proc-config-kafka-{context}']
+[id='con-config-kafka-{context}']
 = Configuring Kafka
 
-Use the properties of the `Kafka` resource to configure your Kafka deployment.
+[role="_abstract"]
+Update the `spec` properties of the `Kafka` custom resource to configure your Kafka deployment.
 
 As well as configuring Kafka, you can add configuration for ZooKeeper and the Strimzi Operators.
 Common configuration properties, such as logging and healthchecks, are configured independently for each component.
 
-This procedure shows only some of the possible configuration options, but those that are particularly important include:
+Configuration options that are particularly important include the following:
 
 * Resource requests (CPU / Memory)
 * JVM options for maximum and minimum memory allocation
-* Listeners (and authentication of clients)
+* Listeners for connecting clients to Kafka brokers (and authentication of clients)
 * Authentication
 * Storage
 * Rack awareness
 * Metrics
 * Cruise Control for cluster rebalancing
+
+For a deeper understanding of the Kafka cluster configuration options, refer to the link:{BookURLConfiguring}[Strimzi Custom Resource API Reference^].
 
 .Kafka versions
 
@@ -31,16 +34,13 @@ From Kafka 3.0.0, when the `inter.broker.protocol.version` is set to `3.0` or hi
 An update to the `inter.broker.protocol.version` is required when upgrading your Kafka version.
 For more information, see xref:assembly-upgrading-kafka-versions-str[Upgrading Kafka].
 
-.Prerequisites
+.Managing TLS certificates
+When deploying Kafka, the Cluster Operator automatically sets up and renews TLS certificates to enable encryption and authentication within your cluster.
+If required, you can manually renew the cluster and clients CA certificates before their renewal period starts.
+You can also replace the keys used by the cluster and clients CA certificates.
+For more information, see xref:proc-renewing-ca-certs-manually-{context}[Renewing CA certificates manually] and xref:proc-replacing-private-keys-{context}[Replacing private keys].
 
-* A running Cluster Operator
-
-.Procedure
-
-. Edit the `spec` properties for the `Kafka` resource.
-+
-The properties you can configure are shown in this example configuration:
-+
+.Example `Kafka` custom resource configuration
 [source,yaml,subs="+attributes"]
 ----
 apiVersion: {KafkaApiVersion}
@@ -181,7 +181,7 @@ spec:
 ----
 <1> The number of replica nodes.
 <2> Kafka version, which can be changed to a supported version by following the upgrade procedure.
-<3> Kafka loggers and log levels added directly (`inline`) or indirectly (`external`) through a ConfigMap. A custom ConfigMap must be placed under the `log4j.properties` key. For the Kafka `kafka.root.logger.level` logger, you can set the log level to INFO, ERROR, WARN, TRACE, DEBUG, FATAL or OFF.
+<3> Kafka loggers and log levels added directly (`inline`) or indirectly (`external`) through a ConfigMap. A custom Log4j configuration must be placed under the `log4j.properties` key in the ConfigMap. For the Kafka `kafka.root.logger.level` logger, you can set the log level to INFO, ERROR, WARN, TRACE, DEBUG, FATAL or OFF.
 <4> Requests for reservation of supported resources, currently `cpu` and `memory`, and limits to specify the maximum resources that can be consumed.
 <5> Healthchecks to know when to restart a container (liveness) and when a container can accept traffic (readiness).
 <6> JVM configuration options to optimize performance for the Virtual Machine (VM) running Kafka.
@@ -190,7 +190,7 @@ spec:
 <9> Name to identify the listener. Must be unique within the Kafka cluster.
 <10> Port number used by the listener inside Kafka. The port number has to be unique within a given Kafka cluster. Allowed port numbers are 9092 and higher with the exception of ports 9404 and 9999, which are already used for Prometheus and JMX. Depending on the listener type, the port number might not be the same as the port number that connects Kafka clients.
 <11> Listener type specified as `internal` or `cluster-ip` (to expose Kafka using per-broker `ClusterIP` services), or for external listeners, as `route` (OpenShift only), `loadbalancer`, `nodeport` or `ingress` (Kubernetes only).
-<12> Enables TLS encryption for each listener. Default is `false`. TLS encryption is not required for `route` listeners.
+<12> Enables TLS encryption for each listener. Default is `false`. TLS encryption has to be enabled, by setting it to `true`, for `route` and `ingress` type listeners.
 <13> Defines whether the fully-qualified DNS names including the cluster service suffix (usually `.cluster.local`) are assigned.
 <14> Listener authentication mechanism specified as mTLS, SCRAM-SHA-512, or token-based OAuth 2.0.
 <15> External listener configuration specifies how the Kafka cluster is exposed outside Kubernetes, such as through a `route`, `loadbalancer` or `nodeport`.
@@ -201,7 +201,7 @@ spec:
 <20> Persistent storage has additional configuration options, such as a storage `id` and `class` for dynamic volume provisioning.
 <21> Rack awareness configuration to spread replicas across different racks, data centers, or availability zones. The `topologyKey` must match a node label containing the rack ID. The example used in this configuration specifies a zone using the standard `{K8sZoneLabel}` label.
 <22> Prometheus metrics enabled. In this example, metrics are configured for the Prometheus JMX Exporter (the default metrics exporter).
-<23> Prometheus rules for exporting metrics to a Grafana dashboard through the Prometheus JMX Exporter, which are enabled by referencing a ConfigMap containing configuration for the Prometheus JMX exporter. You can enable metrics without further configuration using a reference to a ConfigMap containing an empty file under `metricsConfig.valueFrom.configMapKeyRef.key`.
+<23> Rules for exporting metrics in Prometheus format to a Grafana dashboard through the Prometheus JMX Exporter, which are enabled by referencing a ConfigMap containing configuration for the Prometheus JMX exporter. You can enable metrics without further configuration using a reference to a ConfigMap containing an empty file under `metricsConfig.valueFrom.configMapKeyRef.key`.
 <24> ZooKeeper-specific configuration, which contains properties similar to the Kafka configuration.
 <25> The number of ZooKeeper nodes. ZooKeeper clusters or ensembles usually run with an odd number of nodes, typically three, five, or seven. The majority of nodes must be available in order to maintain an effective quorum.
 If the ZooKeeper cluster loses its quorum, it will stop responding to clients and the Kafka brokers will stop working.
@@ -213,8 +213,3 @@ Having a stable and highly available ZooKeeper cluster is crucial for Strimzi.
 <30> Specified User Operator loggers and log levels.
 <31> Kafka Exporter configuration. Kafka Exporter is an optional component for extracting metrics data from Kafka brokers, in particular consumer lag data. For Kafka Exporter to be able to work properly, consumer groups need to be in use. 
 <32> Optional configuration for Cruise Control, which is used to rebalance the Kafka cluster.
-
-. Create or update the resource:
-+
-[source,shell,subs=+quotes]
-kubectl apply -f _<kafka_configuration_file>_

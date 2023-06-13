@@ -3,7 +3,7 @@
 // assembly-config.adoc
 
 [id='config-resources-{context}']
-= CPU and memory resource limits and requests
+= Configuring CPU and memory resource limits and requests
 
 [role="_abstract"]
 By default, the Strimzi Cluster Operator does not specify CPU and memory resource requests and limits for its deployed operands.

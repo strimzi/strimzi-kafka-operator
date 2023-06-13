@@ -3,8 +3,9 @@
 // assembly-kafka-entity-operator.adoc
 
 [id='ref-kafka-entity-operator-{context}']
-= Entity Operator configuration properties
+= Configuring the Entity Operator
 
+[role="_abstract"]
 Use the `entityOperator` property in `Kafka.spec` to configure the Entity Operator.
 
 The `entityOperator` property supports several sub-properties:

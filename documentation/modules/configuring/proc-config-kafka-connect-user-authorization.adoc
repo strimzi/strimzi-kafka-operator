@@ -1,6 +1,6 @@
 // Module included in the following assemblies:
 //
-// assembly-kafka-connect-configuration.adoc
+// assembly-config.adoc
 
 [id='proc-configuring-kafka-connect-user-authorization-{context}']
 = Configuring Kafka Connect user authorization

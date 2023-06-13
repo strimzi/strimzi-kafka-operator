@@ -1,6 +1,6 @@
 // Module included in the following assemblies:
 //
-// assembly-management-tasks.adoc
+// assembly-config.adoc
 
 [id='proc-setting-broker-limits-{context}']
 

@@ -1,24 +1,22 @@
 // This assembly is included in the following assemblies:
 //
-// assembly-config-kafka.adoc
+// assembly-config.adoc
 
 [id='assembly-kafka-entity-operator-{context}']
 
-= Configuring the Entity Operator
+= Configuring Strimzi operators
 
-The Entity Operator is responsible for managing Kafka-related entities in a running Kafka cluster.
-
-The Entity Operator comprises the:
+[role="_abstract"]
+The Entity Operator is responsible for managing Kafka-related entities in a running Kafka cluster. It comprises the following operators:
 
 * Topic Operator to manage Kafka topics
 * User Operator to manage Kafka users
 
-Through `Kafka` resource configuration, the Cluster Operator can deploy the Entity Operator, including one or both operators, when deploying a Kafka cluster.
+By configuring the `Kafka` resource, the Cluster Operator can deploy the Entity Operator, including one or both operators. 
+Once deployed, the operators are automatically configured to handle the topics and users of the Kafka cluster. 
 
-The operators are automatically configured to manage the topics and users of the Kafka cluster.
-The Topic Operator and User Operator can only watch a single namespace.
-
-NOTE: When deployed, the Entity Operator pod contains the operators according to the deployment configuration.
+It's important to note that each operator can only monitor a single namespace.
+For more information, see xref:con-operators-namespaces-str[].
 
 include::../../modules/configuring/ref-kafka-entity-operator.adoc[leveloffset=+1]
 //topic operator config
