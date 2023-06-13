@@ -36,10 +36,10 @@ import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StrimziPodSetUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.test.TestUtils;
-import io.strimzi.systemtest.annotations.ParallelSuite;
 import io.vertx.core.cli.annotations.Description;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
@@ -63,16 +63,13 @@ import static org.hamcrest.MatcherAssert.assertThat;
 @Tag(REGRESSION)
 @Tag(INTERNAL_CLIENTS_USED)
 @Tag(ROLLING_UPDATE)
-@ParallelSuite
 class AlternativeReconcileTriggersST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(AlternativeReconcileTriggersST.class);
-
-    private final String namespace = testSuiteNamespaceManager.getMapOfAdditionalNamespaces().get(AlternativeReconcileTriggersST.class.getSimpleName()).stream().findFirst().get();
 
     @ParallelNamespaceTest
     @SuppressWarnings("checkstyle:MethodLength")
     void testManualTriggeringRollingUpdate(ExtensionContext extensionContext) {
-        final TestStorage testStorage = new TestStorage(extensionContext, namespace);
+        final TestStorage testStorage = new TestStorage(extensionContext, clusterOperator.getDeploymentNamespace());
 
         final String continuousTopicName = "continuous-" + testStorage.getTopicName();
         final String continuousProducerName = "continuous-" + testStorage.getProducerName();
@@ -205,7 +202,7 @@ class AlternativeReconcileTriggersST extends AbstractST {
     @ParallelNamespaceTest
     @Tag(ROLLING_UPDATE)
     void testTriggerRollingUpdateAfterOverrideBootstrap(ExtensionContext extensionContext) throws CertificateException {
-        final String namespaceName = StUtils.getNamespaceBasedOnRbac(namespace, extensionContext);
+        final String namespaceName = StUtils.getNamespaceBasedOnRbac(clusterOperator.getDeploymentNamespace(), extensionContext);
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         final String bootstrapDns = "kafka-test.XXXX.azure.XXXX.net";
 
@@ -258,7 +255,7 @@ class AlternativeReconcileTriggersST extends AbstractST {
 
     @ParallelNamespaceTest
     void testManualRollingUpdateForSinglePod(ExtensionContext extensionContext) {
-        final String namespaceName = StUtils.getNamespaceBasedOnRbac(namespace, extensionContext);
+        final String namespaceName = StUtils.getNamespaceBasedOnRbac(clusterOperator.getDeploymentNamespace(), extensionContext);
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
         final LabelSelector kafkaSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.kafkaStatefulSetName(clusterName));
@@ -331,7 +328,7 @@ class AlternativeReconcileTriggersST extends AbstractST {
     @ParallelNamespaceTest
     @KRaftNotSupported("JBOD is not supported by KRaft mode and is used in this test case.")
     void testAddingAndRemovingJbodVolumes(ExtensionContext extensionContext) {
-        final TestStorage testStorage = new TestStorage(extensionContext, namespace);
+        final TestStorage testStorage = new TestStorage(extensionContext, clusterOperator.getDeploymentNamespace());
 
         final String continuousTopicName = "continuous-" + testStorage.getTopicName();
         final String continuousProducerName = "continuous-" + testStorage.getProducerName();
@@ -423,6 +420,14 @@ class AlternativeReconcileTriggersST extends AbstractST {
         // ##############################
         ClientUtils.waitForClientsSuccess(continuousProducerName, continuousConsumerName, testStorage.getNamespaceName(), continuousClientsMessageCount);
         // ##############################
+    }
+
+    @BeforeAll
+    void setup(ExtensionContext extensionContext) {
+        this.clusterOperator = this.clusterOperator
+                .defaultInstallation(extensionContext)
+                .createInstallation()
+                .runInstallation();
     }
 }
 

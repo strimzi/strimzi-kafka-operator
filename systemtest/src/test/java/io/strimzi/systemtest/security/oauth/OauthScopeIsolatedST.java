@@ -12,7 +12,6 @@ import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListener;
 import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.systemtest.annotations.FIPSNotSupported;
-import io.strimzi.systemtest.annotations.IsolatedSuite;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
@@ -46,7 +45,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 @Tag(OAUTH)
 @Tag(REGRESSION)
 @Tag(ARM64_UNSUPPORTED)
-@IsolatedSuite
 @FIPSNotSupported("Keycloak is not customized to run on FIPS env - https://github.com/strimzi/strimzi-kafka-operator/issues/8331")
 public class OauthScopeIsolatedST extends OauthAbstractST {
     

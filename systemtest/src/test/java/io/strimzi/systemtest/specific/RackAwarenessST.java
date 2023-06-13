@@ -23,7 +23,7 @@ import static io.strimzi.systemtest.Constants.REGRESSION;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
-import io.strimzi.systemtest.annotations.ParallelSuite;
+
 import static io.strimzi.systemtest.resources.ResourceManager.kubeClient;
 
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
@@ -49,6 +49,7 @@ import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.is;
 
 import org.junit.jupiter.api.Assumptions;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtensionContext;
@@ -57,7 +58,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 @Tag(REGRESSION)
-@ParallelSuite
 class RackAwarenessST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(RackAwarenessST.class);
     private static final String TOPOLOGY_KEY = "kubernetes.io/hostname";
@@ -348,5 +348,13 @@ class RackAwarenessST extends AbstractST {
     @BeforeEach
     void createTestResources(ExtensionContext extensionContext) {
         storageMap.put(extensionContext, new TestStorage(extensionContext));
+    }
+
+    @BeforeAll
+    void setup(ExtensionContext extensionContext) {
+        this.clusterOperator = this.clusterOperator
+                .defaultInstallation(extensionContext)
+                .createInstallation()
+                .runInstallation();
     }
 }

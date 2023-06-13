@@ -9,11 +9,9 @@ import io.strimzi.api.kafka.model.KafkaConnectResources;
 import io.strimzi.api.kafka.model.KafkaJmxAuthenticationPassword;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.AbstractST;
-import io.strimzi.systemtest.BeforeAllOnce;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.FIPSNotSupported;
-import io.strimzi.systemtest.annotations.IsolatedSuite;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.templates.crd.KafkaConnectTemplates;
@@ -41,7 +39,6 @@ import static org.hamcrest.Matchers.containsString;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @Tag(REGRESSION)
-@IsolatedSuite
 public class JmxIsolatedST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(JmxIsolatedST.class);
@@ -117,12 +114,11 @@ public class JmxIsolatedST extends AbstractST {
     }
 
     @BeforeAll
-    void setup() {
+    void setup(final ExtensionContext extensionContext) {
         final String namespaceToWatch = Environment.isNamespaceRbacScope() ? INFRA_NAMESPACE : Constants.WATCH_ALL_NAMESPACES;
 
-        clusterOperator.unInstall();
         clusterOperator = new SetupClusterOperator.SetupClusterOperatorBuilder()
-            .withExtensionContext(BeforeAllOnce.getSharedExtensionContext())
+            .withExtensionContext(extensionContext)
             .withNamespace(INFRA_NAMESPACE)
             .withWatchingNamespaces(namespaceToWatch)
             .withOperationTimeout(Constants.CO_OPERATION_TIMEOUT_SHORT)

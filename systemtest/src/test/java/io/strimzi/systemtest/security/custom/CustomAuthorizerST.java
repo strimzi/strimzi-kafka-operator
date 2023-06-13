@@ -14,7 +14,6 @@ import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.annotations.KRaftNotSupported;
-import io.strimzi.systemtest.annotations.ParallelSuite;
 import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
@@ -29,32 +28,27 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
-import java.rmi.UnexpectedException;
-
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
 
 @Tag(REGRESSION)
-@ParallelSuite
 @KRaftNotSupported("Custom Authorizer is not supported by KRaft mode and is used in this test case")
 public class CustomAuthorizerST extends AbstractST {
     static final String CLUSTER_NAME = "custom-authorizer";
     static final String ADMIN = "sre-admin";
     private static final Logger LOGGER = LogManager.getLogger(CustomAuthorizerST.class);
 
-    private final String namespace = testSuiteNamespaceManager.getMapOfAdditionalNamespaces().get(CustomAuthorizerST.class.getSimpleName()).stream().findFirst().get();
-
     @ParallelTest
     @Tag(INTERNAL_CLIENTS_USED)
-    void testAclRuleReadAndWrite(ExtensionContext extensionContext) throws UnexpectedException {
-        final TestStorage testStorage = new TestStorage(extensionContext, namespace);
+    void testAclRuleReadAndWrite(ExtensionContext extensionContext) {
+        final TestStorage testStorage = new TestStorage(extensionContext, clusterOperator.getDeploymentNamespace());
         final String kafkaUserWrite = "kafka-user-write";
         final String kafkaUserRead = "kafka-user-read";
         final String consumerGroupName = "consumer-group-name-1";
 
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(CLUSTER_NAME, testStorage.getTopicName(), namespace).build());
+        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(CLUSTER_NAME, testStorage.getTopicName(), clusterOperator.getDeploymentNamespace()).build());
 
-        KafkaUser writeUser = KafkaUserTemplates.tlsUser(namespace, CLUSTER_NAME, kafkaUserWrite)
+        KafkaUser writeUser = KafkaUserTemplates.tlsUser(clusterOperator.getDeploymentNamespace(), CLUSTER_NAME, kafkaUserWrite)
             .editSpec()
                 .withNewKafkaUserAuthorizationSimple()
                     .addNewAcl()
@@ -67,7 +61,7 @@ public class CustomAuthorizerST extends AbstractST {
             .endSpec()
             .build();
 
-        KafkaUser readUser = KafkaUserTemplates.tlsUser(namespace, CLUSTER_NAME, kafkaUserRead)
+        KafkaUser readUser = KafkaUserTemplates.tlsUser(clusterOperator.getDeploymentNamespace(), CLUSTER_NAME, kafkaUserRead)
             .editSpec()
                 .withNewKafkaUserAuthorizationSimple()
                     .addNewAcl()
@@ -124,11 +118,11 @@ public class CustomAuthorizerST extends AbstractST {
     @ParallelTest
     @Tag(INTERNAL_CLIENTS_USED)
     void testAclWithSuperUser(ExtensionContext extensionContext) {
-        final TestStorage testStorage = new TestStorage(extensionContext, namespace);
+        final TestStorage testStorage = new TestStorage(extensionContext, clusterOperator.getDeploymentNamespace());
 
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(CLUSTER_NAME, testStorage.getTopicName(), namespace).build());
+        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(CLUSTER_NAME, testStorage.getTopicName(), clusterOperator.getDeploymentNamespace()).build());
 
-        KafkaUser adminUser = KafkaUserTemplates.tlsUser(namespace, CLUSTER_NAME, ADMIN)
+        KafkaUser adminUser = KafkaUserTemplates.tlsUser(clusterOperator.getDeploymentNamespace(), CLUSTER_NAME, ADMIN)
             .editSpec()
                 .withNewKafkaUserAuthorizationSimple()
                     .addNewAcl()
@@ -167,9 +161,14 @@ public class CustomAuthorizerST extends AbstractST {
 
     @BeforeAll
     public void setup(ExtensionContext extensionContext) {
+        this.clusterOperator = this.clusterOperator
+            .defaultInstallation(extensionContext)
+            .createInstallation()
+            .runInstallation();
+
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(CLUSTER_NAME, 1, 1)
             .editMetadata()
-                .withNamespace(namespace)
+                .withNamespace(clusterOperator.getDeploymentNamespace())
             .endMetadata()
             .editSpec()
                 .editKafka()

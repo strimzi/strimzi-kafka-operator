@@ -10,7 +10,6 @@ import io.strimzi.api.kafka.model.ProbeBuilder;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
-import io.strimzi.systemtest.annotations.IsolatedSuite;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.kubernetes.DeploymentResource;
@@ -38,7 +37,6 @@ import static io.strimzi.systemtest.resources.ResourceManager.kubeClient;
  * they should be replacement for StatefulSets in the future.
  */
 @Tag(REGRESSION)
-@IsolatedSuite
 public class PodSetIsolatedST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(PodSetIsolatedST.class);
@@ -94,10 +92,9 @@ public class PodSetIsolatedST extends AbstractST {
     }
 
     @BeforeAll
-    void setup() {
-        clusterOperator.unInstall();
-        clusterOperator = clusterOperator
-            .defaultInstallation()
+    void setup(final ExtensionContext extensionContext) {
+        this.clusterOperator = this.clusterOperator
+            .defaultInstallation(extensionContext)
             .createInstallation()
             .runInstallation();
     }

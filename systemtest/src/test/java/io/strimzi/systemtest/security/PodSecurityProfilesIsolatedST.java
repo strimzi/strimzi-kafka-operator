@@ -15,7 +15,6 @@ import io.strimzi.api.kafka.model.KafkaMirrorMaker2;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
-import io.strimzi.systemtest.annotations.IsolatedSuite;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.annotations.RequiredMinKubeOrOcpBasedKubeVersion;
 import io.strimzi.systemtest.enums.PodSecurityProfile;
@@ -60,7 +59,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
  */
 @Tag(REGRESSION)
 @Tag(POD_SECURITY_PROFILES_RESTRICTED)
-@IsolatedSuite
 public class PodSecurityProfilesIsolatedST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(PodSecurityProfilesIsolatedST.class);
@@ -234,7 +232,7 @@ public class PodSecurityProfilesIsolatedST extends AbstractST {
         // EntityOperator, Bridge). Another alternative but more complicated is to set it via .template section inside each CR.
         clusterOperator.unInstall();
         clusterOperator = clusterOperator
-            .defaultInstallation()
+            .defaultInstallation(extensionContext)
             .withExtraEnvVars(Collections.singletonList(new EnvVarBuilder()
                 .withName("STRIMZI_POD_SECURITY_PROVIDER_CLASS")
                 // default is `baseline` and thus other tests suites are testing it
@@ -303,5 +301,13 @@ public class PodSecurityProfilesIsolatedST extends AbstractST {
         namespaceLabels.put("pod-security.kubernetes.io/enforce", "restricted");
         namespace.getMetadata().setLabels(namespaceLabels);
         kubeClient().updateNamespace(namespace);
+    }
+
+    @BeforeAll
+    void setup(ExtensionContext extensionContext) {
+        this.clusterOperator = this.clusterOperator
+                .defaultInstallation(extensionContext)
+                .createInstallation()
+                .runInstallation();
     }
 }

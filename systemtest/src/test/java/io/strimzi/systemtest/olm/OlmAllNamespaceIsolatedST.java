@@ -4,7 +4,6 @@
  */
 package io.strimzi.systemtest.olm;
 
-import io.strimzi.systemtest.annotations.IsolatedSuite;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
@@ -22,7 +21,6 @@ import static io.strimzi.systemtest.Constants.WATCH_ALL_NAMESPACES;
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @Tag(OLM)
-@IsolatedSuite
 public class OlmAllNamespaceIsolatedST extends OlmAbstractST {
 
     public static final String NAMESPACE = "olm-namespace";
@@ -81,9 +79,7 @@ public class OlmAllNamespaceIsolatedST extends OlmAbstractST {
 
     @BeforeAll
     void setup(ExtensionContext extensionContext) {
-        // delete shared ClusterOperator
-        clusterOperator.unInstall();
-        clusterOperator = clusterOperator.defaultInstallation()
+        clusterOperator = clusterOperator.defaultInstallation(extensionContext)
             .withNamespace(cluster.getDefaultOlmNamespace())
             .withWatchingNamespaces(WATCH_ALL_NAMESPACES)
             .createInstallation()

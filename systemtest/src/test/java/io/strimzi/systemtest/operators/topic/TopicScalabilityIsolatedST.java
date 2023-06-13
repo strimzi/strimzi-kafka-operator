@@ -6,7 +6,6 @@ package io.strimzi.systemtest.operators.topic;
 
 import io.strimzi.api.kafka.model.KafkaTopicSpecBuilder;
 import io.strimzi.systemtest.AbstractST;
-import io.strimzi.systemtest.annotations.IsolatedSuite;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicScalabilityUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
@@ -28,7 +27,6 @@ import static io.strimzi.systemtest.Constants.SCALABILITY;
 
 
 @Tag(SCALABILITY)
-@IsolatedSuite
 @Disabled("TO is not so stable with large number of topics. After new version of TO, these should be enabled again")
 public class TopicScalabilityIsolatedST extends AbstractST {
 
@@ -122,8 +120,7 @@ public class TopicScalabilityIsolatedST extends AbstractST {
 
     @BeforeAll
     void setup(ExtensionContext extensionContext) {
-        clusterOperator.unInstall();
-        clusterOperator.defaultInstallation().createInstallation().runInstallation();
+        clusterOperator.defaultInstallation(extensionContext).createInstallation().runInstallation();
         LOGGER.info("Deploying shared Kafka across all test cases in {} namespace", clusterOperator.getDeploymentNamespace());
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(sharedClusterName, 3, 1)
             .editMetadata()

@@ -6,8 +6,6 @@ package io.strimzi.systemtest.logs;
 
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.exceptions.KubernetesClusterUnstableException;
-import io.strimzi.systemtest.parallel.SuiteThreadController;
-import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.test.logs.CollectorElement;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -73,16 +71,6 @@ public class TestExecutionWatcher implements TestExecutionExceptionHandler, Life
         LOGGER.error("{} - Exception {} has been thrown in @AfterAll. Going to collect logs from components.", extensionContext.getRequiredTestClass().getSimpleName(), throwable.getMessage());
         if (!(throwable instanceof KubernetesClusterUnstableException)) {
             final String testClass = extensionContext.getRequiredTestClass().getName();
-
-            SuiteThreadController suiteThreadController = SuiteThreadController.getInstance();
-            if (StUtils.isParallelSuite(extensionContext)) {
-                suiteThreadController.notifyParallelSuiteToAllowExecution(extensionContext);
-                suiteThreadController.removeParallelSuite(extensionContext);
-            }
-
-            if (StUtils.isIsolatedSuite(extensionContext)) {
-                suiteThreadController.unLockIsolatedSuite();
-            }
 
             collectLogs(extensionContext, new CollectorElement(testClass));
         }

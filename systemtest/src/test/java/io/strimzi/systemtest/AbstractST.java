@@ -16,12 +16,10 @@ import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.exceptions.KubernetesClusterUnstableException;
 import io.strimzi.systemtest.interfaces.IndicativeSentences;
-import io.strimzi.systemtest.listeners.ExecutionListener;
 import io.strimzi.systemtest.logs.TestExecutionWatcher;
 import io.strimzi.systemtest.parallel.TestSuiteNamespaceManager;
 import io.strimzi.systemtest.parallel.SuiteThreadController;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
-import io.strimzi.systemtest.resources.operator.specific.OlmResource;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.utils.StUtils;
@@ -50,7 +48,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import static io.strimzi.operator.common.Util.hashStub;
@@ -66,7 +63,7 @@ import static org.hamcrest.core.IsNull.nullValue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-@ExtendWith({TestExecutionWatcher.class, BeforeAllOnce.class})
+@ExtendWith({TestExecutionWatcher.class})
 @DisplayNameGeneration(IndicativeSentences.class)
 public abstract class AbstractST implements TestSeparator {
     public static final List<String> LB_FINALIZERS;
@@ -77,8 +74,7 @@ public abstract class AbstractST implements TestSeparator {
     protected final ResourceManager resourceManager = ResourceManager.getInstance();
     protected final TestSuiteNamespaceManager testSuiteNamespaceManager = TestSuiteNamespaceManager.getInstance();
     private final SuiteThreadController parallelSuiteController = SuiteThreadController.getInstance();
-    protected SetupClusterOperator clusterOperator;
-    protected OlmResource olmResource;
+    protected SetupClusterOperator clusterOperator = SetupClusterOperator.getInstanceHolder();
     protected KubeClusterResource cluster;
     private static final Logger LOGGER = LogManager.getLogger(AbstractST.class);
 
@@ -91,10 +87,6 @@ public abstract class AbstractST implements TestSeparator {
     protected static Map<String, String> mapWithTestUsers = new HashMap<>();
     protected static Map<String, String> mapWithScraperNames = new HashMap<>();
     protected static ConcurrentHashMap<ExtensionContext, TestStorage> storageMap = new ConcurrentHashMap<>();
-
-    // we need to shared this number across all test suites
-    private static AtomicInteger counterOfNamespaces = new AtomicInteger(0);
-
     protected static final String CLUSTER_NAME_PREFIX = "my-cluster-";
     protected static final String KAFKA_IMAGE_MAP = "STRIMZI_KAFKA_IMAGES";
     protected static final String KAFKA_CONNECT_IMAGE_MAP = "STRIMZI_KAFKA_CONNECT_IMAGES";
@@ -530,33 +522,6 @@ public abstract class AbstractST implements TestSeparator {
     private void afterAllMustExecute(ExtensionContext extensionContext)  {
         if (cluster.cluster().isClusterUp()) {
             clusterOperator = SetupClusterOperator.getInstanceHolder();
-
-            if (StUtils.isParallelSuite(extensionContext)) {
-                parallelSuiteController.notifyParallelSuiteToAllowExecution(extensionContext);
-                parallelSuiteController.removeParallelSuite(extensionContext);
-            }
-
-            if (StUtils.isIsolatedSuite(extensionContext)) {
-                parallelSuiteController.unLockIsolatedSuite();
-            }
-            // 1st case = contract that we always change configuration of CO when we annotate suite to 'isolated' and therefore
-            // we need to rollback to default configuration, which most of the suites use.
-            // ----
-            // 2nd case = transition from if previous suite is @IsolatedSuite and now @ParallelSuite is running we must do
-            // additional check that configuration is in default
-            if (clusterOperator != null &&
-                !clusterOperator.defaultInstallation().createInstallation().equals(clusterOperator) &&
-                !ExecutionListener.isNextSuiteIsolated(extensionContext) &&
-                !ExecutionListener.isLastSuite(extensionContext)) {
-                // install configuration differs from default one we are gonna roll-back
-                LOGGER.debug(String.join("", Collections.nCopies(76, "=")));
-                LOGGER.debug("{} - Configurations of previous Cluster Operator are not identical. Starting rollback to the default configuration.", extensionContext.getRequiredTestClass().getSimpleName());
-                LOGGER.debug("Current Cluster Operator configuration:\n" + clusterOperator.toString());
-                LOGGER.debug("Default Cluster Operator configuration:\n" + clusterOperator.defaultInstallation().createInstallation().toString());
-                LOGGER.info("Current Cluster Operator configuration differs from default Cluster Operator in these attributes:{}", clusterOperator.diff(clusterOperator.defaultInstallation().createInstallation()));
-                LOGGER.debug(String.join("", Collections.nCopies(76, "=")));
-                clusterOperator.rollbackToDefaultConfiguration();
-            }
         } else {
             throw new KubernetesClusterUnstableException("Cluster is not responding and its probably un-stable (i.e., caused by network, OOM problem)");
         }
@@ -565,7 +530,6 @@ public abstract class AbstractST implements TestSeparator {
     protected synchronized void afterAllMayOverride(ExtensionContext extensionContext) throws Exception {
         if (!Environment.SKIP_TEARDOWN) {
             ResourceManager.getInstance().deleteResources(extensionContext);
-            testSuiteNamespaceManager.deleteAdditionalNamespaces(extensionContext);
         }
     }
 
@@ -616,26 +580,7 @@ public abstract class AbstractST implements TestSeparator {
 
     private void beforeAllMustExecute(ExtensionContext extensionContext) {
         if (cluster.cluster().isClusterUp()) {
-            if (StUtils.isParallelSuite(extensionContext)) {
-                parallelSuiteController.addParallelSuite(extensionContext);
-                parallelSuiteController.waitUntilAllowedNumberTestSuitesInParallel(extensionContext);
-            }
-            try {
-                // (optional) create additional namespace/namespaces for test suites if needed
-                // in case `Terminating` issue with namespace we have to execute finally block
-                testSuiteNamespaceManager.createAdditionalNamespaces(extensionContext);
-            } finally {
-                if (StUtils.isIsolatedSuite(extensionContext)) {
-                    cluster.setNamespace(Constants.INFRA_NAMESPACE);
-                    // wait for parallel suites are done
-                    parallelSuiteController.waitUntilZeroParallelSuites(extensionContext);
-                    // wait for isolated suites
-                    parallelSuiteController.waitUntilEntryIsOpen(extensionContext);
-                } else if (StUtils.isParallelSuite(extensionContext) && Environment.isNamespaceRbacScope()) {
-                    cluster.setNamespace(Constants.INFRA_NAMESPACE);
-                }
-                clusterOperator = SetupClusterOperator.getInstanceHolder();
-            }
+            // nop
         } else {
             throw new KubernetesClusterUnstableException("Cluster is not responding and its probably un-stable (i.e., caused by network, OOM problem)");
         }
@@ -649,7 +594,6 @@ public abstract class AbstractST implements TestSeparator {
      */
     protected void beforeAllMayOverride(ExtensionContext extensionContext) {
         cluster = KubeClusterResource.getInstance();
-        clusterOperator = BeforeAllOnce.getClusterOperator();
     }
 
     @BeforeEach

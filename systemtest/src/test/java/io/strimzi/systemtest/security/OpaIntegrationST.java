@@ -11,7 +11,6 @@ import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBui
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
-import io.strimzi.systemtest.annotations.ParallelSuite;
 import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
@@ -37,7 +36,6 @@ import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 
 @Tag(REGRESSION)
 @Tag(INTERNAL_CLIENTS_USED)
-@ParallelSuite
 public class OpaIntegrationST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(OpaIntegrationST.class);
     private static final String OPA_SUPERUSER = "arnost";
@@ -45,11 +43,9 @@ public class OpaIntegrationST extends AbstractST {
     private static final String OPA_BAD_USER = "bad-user";
     private static final String CLUSTER_NAME = "opa-cluster";
 
-    private final String namespace = testSuiteNamespaceManager.getMapOfAdditionalNamespaces().get(OpaIntegrationST.class.getSimpleName()).stream().findFirst().get();
-
     @ParallelTest
     void testOpaAuthorization(ExtensionContext extensionContext) {
-        final TestStorage testStorage = new TestStorage(extensionContext, namespace);
+        final TestStorage testStorage = new TestStorage(extensionContext, clusterOperator.getDeploymentNamespace());
 
         KafkaUser goodUser = KafkaUserTemplates.tlsUser(testStorage.getNamespaceName(), CLUSTER_NAME, OPA_GOOD_USER).build();
         KafkaUser badUser = KafkaUserTemplates.tlsUser(testStorage.getNamespaceName(), CLUSTER_NAME, OPA_BAD_USER).build();
@@ -84,7 +80,7 @@ public class OpaIntegrationST extends AbstractST {
 
     @ParallelTest
     void testOpaAuthorizationSuperUser(ExtensionContext extensionContext) {
-        final TestStorage testStorage = new TestStorage(extensionContext, namespace);
+        final TestStorage testStorage = new TestStorage(extensionContext, clusterOperator.getDeploymentNamespace());
 
         KafkaUser superuser = KafkaUserTemplates.tlsUser(testStorage.getNamespaceName(), CLUSTER_NAME, OPA_SUPERUSER).build();
 
@@ -109,12 +105,17 @@ public class OpaIntegrationST extends AbstractST {
 
     @BeforeAll
     void setup(ExtensionContext extensionContext) throws Exception {
+        this.clusterOperator = this.clusterOperator
+            .defaultInstallation(extensionContext)
+            .createInstallation()
+            .runInstallation();
+
         // Install OPA
-        cmdKubeClient().apply(FileUtils.updateNamespaceOfYamlFile(TestUtils.USER_PATH + "/../systemtest/src/test/resources/opa/opa.yaml", namespace));
+        cmdKubeClient().apply(FileUtils.updateNamespaceOfYamlFile(TestUtils.USER_PATH + "/../systemtest/src/test/resources/opa/opa.yaml", clusterOperator.getDeploymentNamespace()));
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(CLUSTER_NAME, 3, 1)
             .editMetadata()
-                .withNamespace(namespace)
+                .withNamespace(clusterOperator.getDeploymentNamespace())
             .endMetadata()
             .editSpec()
                 .editKafka()
@@ -137,6 +138,6 @@ public class OpaIntegrationST extends AbstractST {
     @AfterAll
     void teardown() throws IOException {
         // Delete OPA
-        cmdKubeClient().delete(FileUtils.updateNamespaceOfYamlFile(TestUtils.USER_PATH + "/../systemtest/src/test/resources/opa/opa.yaml", namespace));
+        cmdKubeClient().delete(FileUtils.updateNamespaceOfYamlFile(TestUtils.USER_PATH + "/../systemtest/src/test/resources/opa/opa.yaml", clusterOperator.getDeploymentNamespace()));
     }
 }

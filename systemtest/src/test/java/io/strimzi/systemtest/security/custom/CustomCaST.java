@@ -14,7 +14,6 @@ import io.strimzi.operator.common.Annotations;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
-import io.strimzi.systemtest.annotations.ParallelSuite;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
@@ -31,6 +30,7 @@ import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
@@ -62,7 +62,6 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
  * @see <a href="https://strimzi.io/docs/operators/in-development/configuring.html#proc-replacing-your-own-private-keys-str">Replacing your own private keys</a>
  */
 @Tag(REGRESSION)
-@ParallelSuite
 public class CustomCaST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(CustomCaST.class);
@@ -620,6 +619,14 @@ public class CustomCaST extends AbstractST {
                 initialKafkaUserCertStartTime.compareTo(changedKafkaUserCertStartTime) < 0);
         assertThat("UserCert end date has been renewed",
                 initialKafkaUserCertEndTime.compareTo(changedKafkaUserCertEndTime) < 0);
+    }
+
+    @BeforeAll
+    void setup(ExtensionContext extensionContext) {
+        this.clusterOperator = this.clusterOperator
+                .defaultInstallation(extensionContext)
+                .createInstallation()
+                .runInstallation();
     }
 
 }

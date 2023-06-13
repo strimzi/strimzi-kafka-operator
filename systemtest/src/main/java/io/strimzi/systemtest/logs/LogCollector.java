@@ -10,7 +10,6 @@ import io.strimzi.api.kafka.model.StrimziPodSet;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.IsolatedTest;
-import io.strimzi.systemtest.annotations.ParallelSuite;
 import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.enums.ClusterOperatorInstallType;
 import io.strimzi.systemtest.utils.StUtils;
@@ -156,7 +155,7 @@ public class LogCollector {
         if (!this.collectorElement.getTestMethodName().isEmpty()) {
             // @ParallelSuite -> this is generated namespace but we collect logs only iff STRIMZI_RBAC_SCOPE=CLUSTER
             // because when we run STRIMZI_RBAC_SCOPE=NAMESPACE mode we use one namespace (i.e., clusterOperatorNamespace).
-            if (StUtils.isParallelSuite(extensionContext.getParent().get()) && !Environment.isNamespaceRbacScope()) {
+            if (!Environment.isNamespaceRbacScope()) {
                 // @IsolatedTest or @ParallelTest or @ParallelNamespaceTest -> are executed in that generated namespace
                 if (StUtils.isIsolatedTest(extensionContext) ||
                     StUtils.isParallelTest(extensionContext) ||

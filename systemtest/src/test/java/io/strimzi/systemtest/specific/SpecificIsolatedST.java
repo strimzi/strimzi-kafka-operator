@@ -25,7 +25,6 @@ import io.strimzi.systemtest.templates.kubernetes.ClusterRoleBindingTemplates;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
-import io.strimzi.systemtest.annotations.IsolatedSuite;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.executor.Exec;
 import io.strimzi.test.logs.CollectorElement;
@@ -54,7 +53,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @Tag(SPECIFIC)
-@IsolatedSuite
 public class SpecificIsolatedST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(SpecificIsolatedST.class);
 
@@ -259,7 +257,7 @@ public class SpecificIsolatedST extends AbstractST {
         // create namespace, where we will be able to deploy Custom Resources
         cluster.createNamespace(CollectorElement.createCollectorElement(extensionContext.getRequiredTestClass().getName(), extensionContext.getRequiredTestMethod().getName()), namespaceWhereCreationOfCustomResourcesIsApproved);
         StUtils.copyImagePullSecrets(namespaceWhereCreationOfCustomResourcesIsApproved);
-        clusterOperator = clusterOperator.defaultInstallation()
+        clusterOperator = clusterOperator.defaultInstallation(extensionContext)
             .withWatchingNamespaces(Constants.WATCH_ALL_NAMESPACES)
             // use our pre-defined Roles
             .withRoles(roles)
@@ -296,17 +294,13 @@ public class SpecificIsolatedST extends AbstractST {
 
         assertThat(condition.getReason(), CoreMatchers.is("KubernetesClientException"));
         assertThat(condition.getStatus(), CoreMatchers.is("True"));
-
-        // rollback to the default configuration
-        clusterOperator.rollbackToDefaultConfiguration();
     }
 
     @BeforeAll
-    void setUp() {
-        clusterOperator.unInstall();
-        clusterOperator = clusterOperator
-                .defaultInstallation()
-                .createInstallation()
-                .runInstallation();
+    void setUp(final ExtensionContext extensionContext) {
+        this.clusterOperator = this.clusterOperator
+            .defaultInstallation(extensionContext)
+            .createInstallation()
+            .runInstallation();
     }
 }

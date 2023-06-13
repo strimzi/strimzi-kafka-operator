@@ -4,7 +4,6 @@
  */
 package io.strimzi.systemtest.utils;
 
-import io.strimzi.systemtest.annotations.ParallelSuite;
 import io.strimzi.systemtest.annotations.ParallelTest;
 import org.junit.jupiter.api.Tag;
 
@@ -14,7 +13,6 @@ import static io.strimzi.systemtest.Constants.REGRESSION;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @Tag(REGRESSION)
-@ParallelSuite
 public class KafkaVersionUtilsTest {
 
     @ParallelTest

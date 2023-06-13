@@ -18,7 +18,6 @@ import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
-import io.strimzi.systemtest.annotations.IsolatedSuite;
 import io.strimzi.systemtest.annotations.KRaftNotSupported;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
@@ -68,7 +67,6 @@ import static org.junit.jupiter.api.Assumptions.assumeFalse;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 @Tag(REGRESSION)
-@IsolatedSuite
 public class MultipleClusterOperatorsIsolatedST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(MultipleClusterOperatorsIsolatedST.class);
@@ -355,7 +353,5 @@ public class MultipleClusterOperatorsIsolatedST extends AbstractST {
     @BeforeAll
     void setup() {
         assumeTrue(!Environment.isHelmInstall() && !Environment.isOlmInstall());
-
-        clusterOperator.unInstall();
     }
 }

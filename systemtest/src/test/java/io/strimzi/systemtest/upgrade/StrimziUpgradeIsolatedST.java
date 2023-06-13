@@ -16,10 +16,8 @@ import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
-import io.strimzi.systemtest.annotations.IsolatedSuite;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -44,7 +42,6 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
  * Kafka upgrade is done as part of those tests as well, but the tests for Kafka upgrade/downgrade are in {@link KafkaUpgradeDowngradeIsolatedST}.
  */
 @Tag(UPGRADE)
-@IsolatedSuite
 @KRaftNotSupported("Strimzi and Kafka upgrade is not supported with KRaft mode")
 public class StrimziUpgradeIsolatedST extends AbstractUpgradeST {
 
@@ -208,10 +205,5 @@ public class StrimziUpgradeIsolatedST extends AbstractUpgradeST {
 
         ResourceManager.getInstance().deleteResources(extensionContext);
         cluster.deleteNamespaces();
-    }
-
-    @AfterAll
-    void tearDown() {
-        clusterOperator.unInstall();
     }
 }

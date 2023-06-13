@@ -33,4 +33,6 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
 @Test
 @Tag(PARALLEL_NAMESPACE)
 public @interface ParallelNamespaceTest {
+
+    String value() default "";
 }

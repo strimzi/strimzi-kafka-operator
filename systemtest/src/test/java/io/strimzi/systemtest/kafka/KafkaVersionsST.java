@@ -12,7 +12,6 @@ import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.annotations.KRaftNotSupported;
-import io.strimzi.systemtest.annotations.ParallelSuite;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 import io.strimzi.systemtest.storage.TestStorage;
@@ -23,6 +22,7 @@ import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.TestKafkaVersion;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -30,7 +30,6 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 import static io.strimzi.systemtest.Constants.KAFKA_SMOKE;
 
-@ParallelSuite
 @Tag(KAFKA_SMOKE)
 public class KafkaVersionsST extends AbstractST {
 
@@ -188,5 +187,13 @@ public class KafkaVersionsST extends AbstractST {
         );
 
         ClientUtils.waitForClientsSuccess(testStorage);
+    }
+
+    @BeforeAll
+    void setup(ExtensionContext extensionContext) {
+        this.clusterOperator = this.clusterOperator
+                .defaultInstallation(extensionContext)
+                .createInstallation()
+                .runInstallation();
     }
 }

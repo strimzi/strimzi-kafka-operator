@@ -15,7 +15,6 @@ import io.strimzi.systemtest.templates.crd.KafkaConnectTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaConnectorTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
-import io.strimzi.systemtest.annotations.IsolatedSuite;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.test.logs.CollectorElement;
 import org.apache.logging.log4j.LogManager;
@@ -29,7 +28,6 @@ import static io.strimzi.systemtest.Constants.REGRESSION;
 
 @Tag(HELM)
 @Tag(REGRESSION)
-@IsolatedSuite
 class HelmChartIsolatedST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(HelmChartIsolatedST.class);
@@ -59,9 +57,6 @@ class HelmChartIsolatedST extends AbstractST {
 
     @BeforeAll
     void setup(ExtensionContext extensionContext) {
-        // shared classic CO operator removed
-        clusterOperator.unInstall();
-
         LOGGER.info("Creating resources before the test class");
         cluster.createNamespace(CollectorElement.createCollectorElement(extensionContext.getRequiredTestClass().getName()), clusterOperator.getDeploymentNamespace());
         StUtils.copyImagePullSecrets(clusterOperator.getDeploymentNamespace());
@@ -76,7 +71,7 @@ class HelmChartIsolatedST extends AbstractST {
 
         super.afterAllMayOverride(extensionContext);
         // back to the old CO because we performed verification by Helm Chart Cluster Operator and now we continue with default.
-        clusterOperator.defaultInstallation()
+        clusterOperator.defaultInstallation(extensionContext)
             .createInstallation()
             .runInstallation();
     }

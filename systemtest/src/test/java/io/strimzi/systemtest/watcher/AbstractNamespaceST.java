@@ -33,7 +33,6 @@ import io.strimzi.systemtest.templates.specific.ScraperTemplates;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectorUtils;
-import io.strimzi.systemtest.annotations.IsolatedSuite;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.Tag;
@@ -57,7 +56,6 @@ import static org.hamcrest.Matchers.not;
 /**
  * Test suite that implements exact tests to be executed with Cluster Operator set to watch all or multiple namespaces, based on extending class.
  */
-@IsolatedSuite
 public abstract class AbstractNamespaceST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(AbstractNamespaceST.class);

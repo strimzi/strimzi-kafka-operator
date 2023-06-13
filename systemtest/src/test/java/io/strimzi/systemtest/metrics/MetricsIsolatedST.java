@@ -29,7 +29,6 @@ import io.strimzi.operator.common.Annotations;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
-import io.strimzi.systemtest.annotations.IsolatedSuite;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.annotations.KRaftNotSupported;
 import io.strimzi.systemtest.annotations.ParallelTest;
@@ -144,7 +143,6 @@ import static org.junit.jupiter.api.Assumptions.assumeFalse;
 @Tag(REGRESSION)
 @Tag(METRICS)
 @Tag(CRUISE_CONTROL)
-@IsolatedSuite
 public class MetricsIsolatedST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(MetricsIsolatedST.class);
@@ -703,13 +701,12 @@ public class MetricsIsolatedST extends AbstractST {
     void setupEnvironment(ExtensionContext extensionContext) throws Exception {
         // Metrics tests are not designed to run with namespace RBAC scope.
         assumeFalse(Environment.isNamespaceRbacScope());
-        clusterOperator.unInstall();
         cluster.createNamespaces(CollectorElement.createCollectorElement(this.getClass().getName()), clusterOperator.getDeploymentNamespace(), Arrays.asList(namespaceFirst, namespaceSecond));
         // Copy pull secret into newly created namespaces
         StUtils.copyImagePullSecrets(namespaceFirst);
         StUtils.copyImagePullSecrets(namespaceSecond);
 
-        clusterOperator = clusterOperator.defaultInstallation()
+        clusterOperator = clusterOperator.defaultInstallation(extensionContext)
             .createInstallation()
             .runInstallation();
 

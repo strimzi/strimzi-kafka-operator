@@ -20,7 +20,6 @@ import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.FileUtils;
 import io.strimzi.systemtest.utils.RollingUpdateUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
-import io.strimzi.systemtest.annotations.IsolatedSuite;
 import io.strimzi.test.k8s.KubeClusterResource;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -48,7 +47,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
  * Tests in this class use OLM for install cluster operator.
  */
 @Tag(OLM_UPGRADE)
-@IsolatedSuite
 @KRaftNotSupported("Strimzi and Kafka downgrade is not supported with KRaft mode")
 public class OlmUpgradeIsolatedST extends AbstractUpgradeST {
 
@@ -153,9 +151,8 @@ public class OlmUpgradeIsolatedST extends AbstractUpgradeST {
     }
 
     @BeforeAll
-    void setup() {
-        clusterOperator.unInstall();
-        clusterOperator = clusterOperator.defaultInstallation()
+    void setup(final ExtensionContext extensionContext) {
+        clusterOperator = clusterOperator.defaultInstallation(extensionContext)
             .withNamespace(INFRA_NAMESPACE)
             .withBindingsNamespaces(Collections.singletonList(INFRA_NAMESPACE))
             .withWatchingNamespaces(INFRA_NAMESPACE)

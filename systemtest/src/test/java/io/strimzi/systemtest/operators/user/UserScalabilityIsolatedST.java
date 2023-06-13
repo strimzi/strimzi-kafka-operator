@@ -129,8 +129,7 @@ public class UserScalabilityIsolatedST extends AbstractST {
         clusterName = testStorage.getClusterName();
         topicName = testStorage.getTopicName();
 
-        clusterOperator.unInstall();
-        clusterOperator.defaultInstallation()
+        clusterOperator.defaultInstallation(extensionContext)
             .createInstallation()
             .runInstallation();
 

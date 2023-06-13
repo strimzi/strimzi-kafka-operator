@@ -26,7 +26,6 @@ import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
-import io.strimzi.systemtest.annotations.IsolatedSuite;
 import io.strimzi.systemtest.annotations.OpenShiftOnly;
 import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
@@ -76,7 +75,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @Tag(REGRESSION)
 @Tag(CONNECT_COMPONENTS)
 @Tag(CONNECT)
-@IsolatedSuite
 class ConnectBuilderIsolatedST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(ConnectBuilderIsolatedST.class);
@@ -521,8 +519,7 @@ class ConnectBuilderIsolatedST extends AbstractST {
 
     @BeforeAll
     void setup(ExtensionContext extensionContext) {
-        clusterOperator.unInstall();
-        clusterOperator = clusterOperator.defaultInstallation()
+        clusterOperator = clusterOperator.defaultInstallation(extensionContext)
             .withOperationTimeout(Constants.CO_OPERATION_TIMEOUT_SHORT)
             .createInstallation()
             .runInstallation();
