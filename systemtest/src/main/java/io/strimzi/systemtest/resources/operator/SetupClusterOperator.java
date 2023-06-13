@@ -251,12 +251,7 @@ public class SetupClusterOperator {
 
     @SuppressFBWarnings("ST_WRITE_TO_STATIC_FROM_INSTANCE_METHOD")
     public SetupClusterOperator runManualOlmInstallation(final String fromOlmChannelName, final String fromVersion) {
-        if (isClusterOperatorNamespaceNotCreated()) {
-            cluster.setNamespace(namespaceInstallTo);
-            cluster.createNamespaces(CollectorElement.createCollectorElement(testClassName, testMethodName), namespaceInstallTo, bindingsNamespaces);
-            extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.PREPARE_OPERATOR_ENV_KEY + namespaceInstallTo, false);
-            StUtils.copyImagePullSecrets(namespaceInstallTo);
-        }
+        createClusterOperatorNamespace();
 
         OlmConfiguration olmConfiguration = new OlmConfigurationBuilder()
             .withNamespaceName(this.namespaceInstallTo)
@@ -278,14 +273,14 @@ public class SetupClusterOperator {
     private void helmInstallation() {
         LOGGER.info("Install ClusterOperator via Helm");
         helmResource = new HelmResource(namespaceInstallTo, namespaceToWatch);
-        createCONamespaceIfNeeded();
+        createClusterOperatorNamespace();
         helmResource.create(extensionContext, operationTimeout, reconciliationInterval, extraEnvVars, replicas);
     }
 
     private void bundleInstallation() {
         LOGGER.info("Install ClusterOperator via Yaml bundle");
         // check if namespace is already created
-        createCONamespaceIfNeeded();
+        createClusterOperatorNamespace();
         prepareEnvForOperator(extensionContext, namespaceInstallTo, bindingsNamespaces);
         // if we manage directly in the individual test one of the Role, ClusterRole, RoleBindings and ClusterRoleBinding we must do it
         // everything by ourselves in scope of RBAC permissions otherwise we apply the default one
@@ -343,14 +338,14 @@ public class SetupClusterOperator {
                         .collect(Collectors.toList());
                 }
 
-                createCONamespaceIfNeeded();
+                createClusterOperatorNamespace();
                 createClusterRoleBindings();
                 olmResource = new OlmResource(olmConfiguration.withNamespaceName(namespaceInstallTo).build());
                 olmResource.create();
             }
             // single-namespace olm co-operator
         } else {
-            createCONamespaceIfNeeded();
+            createClusterOperatorNamespace();
             olmResource = new OlmResource(olmConfiguration.withNamespaceName(namespaceInstallTo).build());
             olmResource.create();
         }
@@ -377,15 +372,10 @@ public class SetupClusterOperator {
         olmResource.updateSubscription(olmConfiguration);
     }
 
-    public void createCONamespaceIfNeeded() {
-        if (isClusterOperatorNamespaceNotCreated()) {
-            cluster.setNamespace(namespaceInstallTo);
-            cluster.createNamespaces(CollectorElement.createCollectorElement(testClassName, testMethodName), namespaceInstallTo, bindingsNamespaces);
-            extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.PREPARE_OPERATOR_ENV_KEY + namespaceInstallTo, false);
-            StUtils.copyImagePullSecrets(namespaceInstallTo);
-        } else {
-            LOGGER.info("Environment for ClusterOperator was already prepared! Going to install it now.");
-        }
+    public void createClusterOperatorNamespace() {
+        cluster.setNamespace(namespaceInstallTo);
+        cluster.createNamespaces(CollectorElement.createCollectorElement(testClassName, testMethodName), namespaceInstallTo, bindingsNamespaces);
+        StUtils.copyImagePullSecrets(namespaceInstallTo);
     }
 
     private void createClusterRoleBindings() {

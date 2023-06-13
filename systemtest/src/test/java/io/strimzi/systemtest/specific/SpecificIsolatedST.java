@@ -258,6 +258,7 @@ public class SpecificIsolatedST extends AbstractST {
         cluster.createNamespace(CollectorElement.createCollectorElement(extensionContext.getRequiredTestClass().getName(), extensionContext.getRequiredTestMethod().getName()), namespaceWhereCreationOfCustomResourcesIsApproved);
         StUtils.copyImagePullSecrets(namespaceWhereCreationOfCustomResourcesIsApproved);
         clusterOperator = clusterOperator.defaultInstallation(extensionContext)
+            .withNamespace(Constants.INFRA_NAMESPACE)
             .withWatchingNamespaces(Constants.WATCH_ALL_NAMESPACES)
             // use our pre-defined Roles
             .withRoles(roles)

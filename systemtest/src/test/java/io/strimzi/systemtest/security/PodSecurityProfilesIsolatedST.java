@@ -230,7 +230,6 @@ public class PodSecurityProfilesIsolatedST extends AbstractST {
     void beforeAll(ExtensionContext extensionContext) {
         // we configure Pod Security via provider class, which sets SecurityContext to all containers (e.g., Kafka, ZooKeeper,
         // EntityOperator, Bridge). Another alternative but more complicated is to set it via .template section inside each CR.
-        clusterOperator.unInstall();
         clusterOperator = clusterOperator
             .defaultInstallation(extensionContext)
             .withExtraEnvVars(Collections.singletonList(new EnvVarBuilder()
@@ -301,13 +300,5 @@ public class PodSecurityProfilesIsolatedST extends AbstractST {
         namespaceLabels.put("pod-security.kubernetes.io/enforce", "restricted");
         namespace.getMetadata().setLabels(namespaceLabels);
         kubeClient().updateNamespace(namespace);
-    }
-
-    @BeforeAll
-    void setup(ExtensionContext extensionContext) {
-        this.clusterOperator = this.clusterOperator
-                .defaultInstallation(extensionContext)
-                .createInstallation()
-                .runInstallation();
     }
 }
