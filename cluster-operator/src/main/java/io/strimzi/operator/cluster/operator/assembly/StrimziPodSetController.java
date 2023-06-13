@@ -215,13 +215,7 @@ public class StrimziPodSetController implements Runnable {
     private void enqueuePod(Pod pod, String action) {
         LOGGER.debugOp("Pod {} in namespace {} was {}", pod.getMetadata().getName(), pod.getMetadata().getNamespace(), action);
 
-        StrimziPodSet parentPodSet = strimziPodSetLister
-                .namespace(pod.getMetadata().getNamespace())
-                .list()
-                .stream()
-                .filter(podSet -> podSet.getSpec() != null
-                        && Util.matchesSelector(Optional.ofNullable(podSet.getSpec().getSelector()), pod))
-                .findFirst().orElse(null);
+        StrimziPodSet parentPodSet = findParentPodSetForPod(pod);
 
         if (parentPodSet != null) {
             if (matchesCrSelector(parentPodSet)) {
@@ -231,6 +225,72 @@ public class StrimziPodSetController implements Runnable {
             }
         } else {
             LOGGER.debugOp("Pod {} in namespace {} which was {} does not seem to be controlled by any StrimziPodSet and will be ignored", pod.getMetadata().getName(), pod.getMetadata().getNamespace(), action);
+        }
+    }
+
+    /**
+     * Finds parent StrimziPodSet of a Pod. It first tries to do it through an owner reference. If that does not
+     * succeed, it tries that by matching the selector labels of the StrimziPodSet against the Pod. This is needed to
+     * work around label changes introduced by node pools.
+     *
+     * @param pod   Pod for which we want to find the StrimziPodSet
+     *
+     * @return  The parent StrimziPodSet (or null if not found)
+     */
+    private StrimziPodSet findParentPodSetForPod(Pod pod) {
+        StrimziPodSet parentPodSet = findParentPodSetForPodByOwnerReference(pod);
+
+        if (parentPodSet == null)   {
+            LOGGER.debugOp("Did not found parent StrimziPodSet for Pod {} in namespace {} based on owner reference. Will try selector labels next.", pod.getMetadata().getName(), pod.getMetadata().getNamespace());
+            parentPodSet = findParentPodSetForPodByLabels(pod);
+        }
+
+        return parentPodSet;
+    }
+
+    /**
+     * Finds the parent StrimziPodSet of the Pod from the parameter by matching the StrimziPodSet selector labels
+     * against the Pod.
+     *
+     * @param pod   Pod for which we want to find the StrimziPodSet
+     *
+     * @return  The parent StrimziPodSet (or null if not found)
+     */
+    private StrimziPodSet findParentPodSetForPodByLabels(Pod pod)   {
+        return strimziPodSetLister
+                .namespace(pod.getMetadata().getNamespace())
+                .list()
+                .stream()
+                .filter(podSet -> podSet.getSpec() != null
+                        && Util.matchesSelector(Optional.ofNullable(podSet.getSpec().getSelector()), pod))
+                .findFirst().orElse(null);
+    }
+
+    /**
+     * Finds the parent StrimziPodSet of the Pod from the parameter based on the OwnerReference from the Pod.
+     *
+     * @param pod   Pod for which we want to find the StrimziPodSet
+     *
+     * @return  The parent StrimziPodSet (or null if not found)
+     */
+    private StrimziPodSet findParentPodSetForPodByOwnerReference(Pod pod)   {
+        OwnerReference owner = pod.getMetadata().getOwnerReferences()
+                .stream().filter(or -> StrimziPodSet.RESOURCE_KIND.equals(or.getKind()))
+                .findFirst()
+                .orElse(null);
+
+        if (owner == null)    {
+            // There is no owner reference to a PodSet => we cannot find the parent StrimziPodSet based on it
+            return null;
+        } else {
+            // We have owner reference => we find the StrimziPodSet based on it
+            return strimziPodSetLister
+                    .namespace(pod.getMetadata().getNamespace())
+                    .list()
+                    .stream()
+                    .filter(podSet -> podSet.getMetadata().getName().equals(owner.getName()))
+                    .findFirst()
+                    .orElse(null);
         }
     }
 
