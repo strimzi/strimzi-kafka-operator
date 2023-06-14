@@ -32,6 +32,7 @@ import io.strimzi.operator.common.ReconciliationException;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.cluster.operator.resource.SharedEnvironmentProvider;
 import io.strimzi.operator.common.Util;
+import io.strimzi.operator.common.VertxUtil;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.NamespaceAndName;
 import io.strimzi.operator.common.operator.resource.DeploymentOperator;
@@ -353,7 +354,7 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
     Future<Integer> generateAuthHash(String namespace, KafkaConnectSpec kafkaConnectSpec) {
         KafkaClientAuthentication auth = kafkaConnectSpec.getAuthentication();
         List<CertSecretSource> trustedCertificates = kafkaConnectSpec.getTls() == null ? Collections.emptyList() : kafkaConnectSpec.getTls().getTrustedCertificates();
-        return Util.authTlsHash(secretOperations, namespace, auth, trustedCertificates);
+        return VertxUtil.authTlsHash(secretOperations, namespace, auth, trustedCertificates);
     }
 
     private boolean isPaused(KafkaConnectorStatus status) {

@@ -14,7 +14,7 @@ import io.fabric8.kubernetes.client.dsl.base.PatchContext;
 import io.fabric8.kubernetes.client.dsl.base.PatchType;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
-import io.strimzi.operator.common.Util;
+import io.strimzi.operator.common.VertxUtil;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
@@ -71,7 +71,7 @@ public class CrdOperator<C extends KubernetesClient,
     protected Future<ReconcileResult<T>> internalDelete(Reconciliation reconciliation, String namespace, String name, boolean cascading) {
         Resource<T> resourceOp = operation().inNamespace(namespace).withName(name);
 
-        Future<Void> watchForDeleteFuture = Util.waitFor(reconciliation, vertx,
+        Future<Void> watchForDeleteFuture = VertxUtil.waitFor(reconciliation, vertx,
             String.format("%s resource %s", resourceKind, name),
             "deleted",
             1_000,

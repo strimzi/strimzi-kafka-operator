@@ -41,8 +41,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
-import static io.strimzi.operator.common.Util.async;
-
 /**
  * A base implementation of {@link Operator}.
  *
@@ -474,7 +472,7 @@ public abstract class AbstractOperator<
      * @return A future which completes when the watcher has been created.
      */
     public Future<Watch> createWatch(String namespace, Consumer<WatcherException> onClose) {
-        return async(vertx, () -> resourceOperator.watch(namespace, selector(), new OperatorWatcher<>(this, namespace, onClose)));
+        return VertxUtil.async(vertx, () -> resourceOperator.watch(namespace, selector(), new OperatorWatcher<>(this, namespace, onClose)));
     }
 
     /**

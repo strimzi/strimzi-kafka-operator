@@ -51,6 +51,7 @@ import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.Util;
+import io.strimzi.operator.common.VertxUtil;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.resource.AbstractWatchableStatusedNamespacedResourceOperator;
 import io.strimzi.operator.common.operator.resource.ConfigMapOperator;
@@ -216,7 +217,7 @@ public class KafkaRebalanceAssemblyOperator
      */
     public Future<Void> createRebalanceWatch(String watchNamespaceOrWildcard) {
 
-        return Util.async(this.vertx, () -> {
+        return VertxUtil.async(this.vertx, () -> {
             kafkaRebalanceOperator.watch(watchNamespaceOrWildcard, selector(), new Watcher<>() {
                 @Override
                 public void eventReceived(Action action, KafkaRebalance kafkaRebalance) {

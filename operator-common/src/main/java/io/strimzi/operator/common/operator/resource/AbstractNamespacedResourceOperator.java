@@ -19,7 +19,7 @@ import io.fabric8.kubernetes.client.dsl.base.PatchType;
 import io.fabric8.kubernetes.client.informers.SharedIndexInformer;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
-import io.strimzi.operator.common.Util;
+import io.strimzi.operator.common.VertxUtil;
 import io.strimzi.operator.common.model.Labels;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
@@ -394,7 +394,7 @@ public abstract class AbstractNamespacedResourceOperator<C extends KubernetesCli
      * is ready.
      */
     public Future<Void> waitFor(Reconciliation reconciliation, String namespace, String name, String logState, long pollIntervalMs, final long timeoutMs, BiPredicate<String, String> predicate) {
-        return Util.waitFor(reconciliation, vertx,
+        return VertxUtil.waitFor(reconciliation, vertx,
             String.format("%s resource %s in namespace %s", resourceKind, name, namespace),
             logState,
             pollIntervalMs,

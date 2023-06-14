@@ -11,6 +11,7 @@ import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Util;
+import io.strimzi.operator.common.VertxUtil;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
@@ -159,7 +160,7 @@ public class ZookeeperScaler implements AutoCloseable {
                 watchedEvent -> LOGGER.debugCr(reconciliation, "Received event {} from ZooKeeperAdmin client connected to {}", watchedEvent, zookeeperConnectionString),
                 clientConfig);
 
-            Util.waitFor(reconciliation, vertx,
+            VertxUtil.waitFor(reconciliation, vertx,
                 String.format("ZooKeeperAdmin connection to %s", zookeeperConnectionString),
                 "connected",
                 1_000,
