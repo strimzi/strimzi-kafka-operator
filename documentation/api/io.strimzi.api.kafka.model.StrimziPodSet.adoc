@@ -1,0 +1,2 @@
+IMPORTANT: `StrimziPodSet` is an internal Strimzi resource.
+Strimzi users are not expected to create, modify or delete `StrimziPodSet` resources.

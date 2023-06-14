@@ -16,6 +16,7 @@ import io.fabric8.kubernetes.model.annotation.Version;
 import io.strimzi.api.kafka.model.status.StrimziPodSetStatus;
 import io.strimzi.crdgenerator.annotations.Crd;
 import io.strimzi.crdgenerator.annotations.Description;
+import io.strimzi.crdgenerator.annotations.DescriptionFile;
 import io.sundr.builder.annotations.Buildable;
 import io.sundr.builder.annotations.BuildableReference;
 import lombok.EqualsAndHashCode;
@@ -78,6 +79,7 @@ import static java.util.Collections.emptyMap;
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({"apiVersion", "kind", "metadata", "spec", "status"})
+@DescriptionFile
 @EqualsAndHashCode(callSuper = true)
 @Version(Constants.V1BETA2)
 @Group(Constants.RESOURCE_CORE_GROUP_NAME)

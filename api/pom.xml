@@ -252,6 +252,7 @@
                                 <argument>io.strimzi.api.kafka.model.KafkaMirrorMaker2</argument>
                                 <argument>io.strimzi.api.kafka.model.KafkaRebalance</argument>
                                 <argument>io.strimzi.api.kafka.model.nodepool.KafkaNodePool</argument>
+                                <argument>io.strimzi.api.kafka.model.StrimziPodSet</argument>
                             </arguments>
                             <workingDirectory>${project.basedir}${file.separator}..${file.separator}documentation</workingDirectory>
                         </configuration>

@@ -1615,7 +1615,7 @@ Used in: xref:type-Kafka-{context}[`Kafka`]
 [id='type-Condition-{context}']
 = `Condition` schema reference
 
-Used in: xref:type-KafkaBridgeStatus-{context}[`KafkaBridgeStatus`], xref:type-KafkaConnectorStatus-{context}[`KafkaConnectorStatus`], xref:type-KafkaConnectStatus-{context}[`KafkaConnectStatus`], xref:type-KafkaMirrorMaker2Status-{context}[`KafkaMirrorMaker2Status`], xref:type-KafkaMirrorMakerStatus-{context}[`KafkaMirrorMakerStatus`], xref:type-KafkaNodePoolStatus-{context}[`KafkaNodePoolStatus`], xref:type-KafkaRebalanceStatus-{context}[`KafkaRebalanceStatus`], xref:type-KafkaStatus-{context}[`KafkaStatus`], xref:type-KafkaTopicStatus-{context}[`KafkaTopicStatus`], xref:type-KafkaUserStatus-{context}[`KafkaUserStatus`]
+Used in: xref:type-KafkaBridgeStatus-{context}[`KafkaBridgeStatus`], xref:type-KafkaConnectorStatus-{context}[`KafkaConnectorStatus`], xref:type-KafkaConnectStatus-{context}[`KafkaConnectStatus`], xref:type-KafkaMirrorMaker2Status-{context}[`KafkaMirrorMaker2Status`], xref:type-KafkaMirrorMakerStatus-{context}[`KafkaMirrorMakerStatus`], xref:type-KafkaNodePoolStatus-{context}[`KafkaNodePoolStatus`], xref:type-KafkaRebalanceStatus-{context}[`KafkaRebalanceStatus`], xref:type-KafkaStatus-{context}[`KafkaStatus`], xref:type-KafkaTopicStatus-{context}[`KafkaTopicStatus`], xref:type-KafkaUserStatus-{context}[`KafkaUserStatus`], xref:type-StrimziPodSetStatus-{context}[`StrimziPodSetStatus`]
 
 
 [options="header"]
@@ -3471,5 +3471,65 @@ Used in: xref:type-KafkaNodePool-{context}[`KafkaNodePool`]
 |integer
 |labelSelector       1.2+<.<a|Label selector for pods providing this resource.
 |string
+|====
+
+[id='type-StrimziPodSet-{context}']
+= `StrimziPodSet` schema reference
+
+xref:type-StrimziPodSet-schema-{context}[Full list of `StrimziPodSet` schema properties]
+
+include::../api/io.strimzi.api.kafka.model.StrimziPodSet.adoc[leveloffset=+1]
+
+[id='type-StrimziPodSet-schema-{context}']
+== `StrimziPodSet` schema properties
+
+
+[options="header"]
+|====
+|Property       |Description
+|spec    1.2+<.<a|The specification of the StrimziPodSet.
+|xref:type-StrimziPodSetSpec-{context}[`StrimziPodSetSpec`]
+|status  1.2+<.<a|The status of the StrimziPodSet.
+|xref:type-StrimziPodSetStatus-{context}[`StrimziPodSetStatus`]
+|====
+
+[id='type-StrimziPodSetSpec-{context}']
+= `StrimziPodSetSpec` schema reference
+
+Used in: xref:type-StrimziPodSet-{context}[`StrimziPodSet`]
+
+
+[options="header"]
+|====
+|Property         |Description
+|selector  1.2+<.<a|Selector is a label query which matches all the pods managed by this `StrimziPodSet`. Only `matchLabels` is supported. If `matchExpressions` is set, it will be ignored. For more information, see the https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.23/#labelselector-v1-meta[external documentation for meta/v1 labelselector].
+
+
+|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.23/#labelselector-v1-meta[LabelSelector]
+|pods      1.2+<.<a|The Pods managed by this StrimziPodSet. For more information, see the https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.23/#pods-v1-core[external documentation for core/v1 pods].
+
+
+|https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.23/#pods-v1-core[Map] array
+|====
+
+[id='type-StrimziPodSetStatus-{context}']
+= `StrimziPodSetStatus` schema reference
+
+Used in: xref:type-StrimziPodSet-{context}[`StrimziPodSet`]
+
+
+[options="header"]
+|====
+|Property                   |Description
+|conditions          1.2+<.<a|List of status conditions.
+|xref:type-Condition-{context}[`Condition`] array
+|observedGeneration  1.2+<.<a|The generation of the CRD that was last reconciled by the operator.
+|integer
+|pods                1.2+<.<a|Number of pods managed by this StrimziPodSet resource.
+|integer
+|readyPods           1.2+<.<a|Number of pods managed by this StrimziPodSet resource that are ready.
+|integer
+|currentPods         1.2+<.<a|Number of pods managed by this StrimziPodSet resource that have the current revision.
+|integer
 |====
 
