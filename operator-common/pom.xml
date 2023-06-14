@@ -102,6 +102,7 @@
         <dependency>
             <groupId>io.vertx</groupId>
             <artifactId>vertx-core</artifactId>
+            <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>org.quartz-scheduler</groupId>
@@ -188,6 +189,7 @@
         <dependency>
             <groupId>io.vertx</groupId>
             <artifactId>vertx-micrometer-metrics</artifactId>
+            <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>io.fabric8</groupId>

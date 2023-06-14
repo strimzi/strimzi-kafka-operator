@@ -4,11 +4,12 @@
  */
 package io.strimzi.operator.user.operator;
 
+import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.ListOptionsBuilder;
+import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.KafkaUserQuotas;
@@ -22,8 +23,8 @@ import io.strimzi.operator.common.ReconciliationException;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.model.NamespaceAndName;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
-import io.strimzi.operator.common.operator.resource.ResourceDiff;
 import io.strimzi.operator.common.operator.resource.StatusUtils;
+import io.strimzi.operator.common.operator.resource.concurrent.SecretOperator;
 import io.strimzi.operator.user.UserOperatorConfig;
 import io.strimzi.operator.user.model.KafkaUserModel;
 import io.strimzi.operator.user.model.acl.SimpleAclRule;
@@ -54,6 +55,7 @@ public class KafkaUserOperator {
     private final UserOperatorConfig config;
     private final PasswordGenerator passwordGenerator;
     private final LabelSelector selector;
+    private final SecretOperator secretOperator;
 
     /**
      * Creates the instance of KafkaUserOperator
@@ -85,6 +87,7 @@ public class KafkaUserOperator {
 
         this.selector = (config.getLabels() == null || config.getLabels().toMap().isEmpty()) ? new LabelSelector() : new LabelSelector(null, config.getLabels().toMap());
         this.passwordGenerator = new PasswordGenerator(this.config.getScramPasswordLength());
+        this.secretOperator = new SecretOperator(executor, client);
     }
 
     /**
@@ -418,66 +421,15 @@ public class KafkaUserOperator {
      * @return                  CompletionStage describing the result
      */
     private CompletionStage<ReconcileResult<Secret>> reconcileUserSecret(Reconciliation reconciliation, KafkaUserModel user, Secret currentSecret, KafkaUserStatus userStatus) {
-        return CompletableFuture.supplyAsync(() -> {
-            String namespace = reconciliation.namespace();
-            String name = user.getSecretName();
-            Secret desiredSecret = user.generateSecret();
-
-            if (desiredSecret != null)  {
-                if (currentSecret != null)  {
-                    // Both secrets exist => if they differ we patch them, if not we just continue
-                    if (new ResourceDiff<>(reconciliation, "Secret", name, currentSecret, desiredSecret, ResourceDiff.DEFAULT_IGNORABLE_PATHS).isEmpty()) {
-                        // Secrets are identical
-                        LOGGER.debugCr(reconciliation, "Secret {}/{} exist, and is identical", namespace, name);
-                        userStatus.setSecret(desiredSecret.getMetadata().getName());
-                        return ReconcileResult.noop(desiredSecret);
-                    } else {
-                        // Secrets differ
-                        LOGGER.debugCr(reconciliation, "Secret {}/{} exist, patching it", namespace, name);
-                        client.secrets().inNamespace(namespace).resource(desiredSecret).update();
-                        userStatus.setSecret(desiredSecret.getMetadata().getName());
-                        return ReconcileResult.patched(desiredSecret);
-                    }
-                } else {
-                    LOGGER.debugCr(reconciliation, "Secret {}/{} does not exist, creating it", namespace, name);
-                    createOrReplaceSecret(reconciliation, namespace, desiredSecret);
-                    userStatus.setSecret(desiredSecret.getMetadata().getName());
-                    return ReconcileResult.created(desiredSecret);
+        return secretOperator
+            .reconcile(reconciliation, reconciliation.namespace(), user.getSecretName(), currentSecret, user.generateSecret())
+            .whenComplete((result, error) -> {
+                if (error == null) {
+                    result.resourceOpt()
+                        .map(HasMetadata::getMetadata)
+                        .map(ObjectMeta::getName)
+                        .ifPresent(userStatus::setSecret);
                 }
-            } else {
-                if (currentSecret != null)  {
-                    LOGGER.debugCr(reconciliation, "Secret {}/{} exist, deleting it", namespace, name);
-                    client.secrets().inNamespace(namespace).withName(name).delete();
-                    return ReconcileResult.deleted();
-                } else {
-                    LOGGER.debugCr(reconciliation, "Secret {}/{} does not exist, noop", namespace, name);
-                    return ReconcileResult.noop(null);
-                }
-            }
-        }, executor);
-    }
-
-    /**
-     * When the Secret has a wrong labels, the informers will not have it even if it exists and the create() call will
-     * fail with the 409 (Conflict) error. This utility method captures this error and tries to update the Secret
-     * instead. This replaces the original createOrReplace() call which was deprecated in Fabric8 Kubernetes client. If
-     * any other error occurs, we just re-throw it without any special handling.
-     *
-     * @param reconciliation    Reconciliation marker
-     * @param namespace         Namespace of the Secret
-     * @param secret            The Secret which should be created or replaced
-     */
-    private void createOrReplaceSecret(Reconciliation reconciliation, String namespace, Secret secret)    {
-        try {
-            client.secrets().inNamespace(namespace).resource(secret).create();
-        } catch (KubernetesClientException e)   {
-            if (e.getCode() == 409) {
-                LOGGER.debugCr(reconciliation, "Secret {} in namespace {} already exists and cannot be created. It will be updated instead", secret.getMetadata().getName(), namespace);
-                client.secrets().inNamespace(namespace).resource(secret).update();
-            } else {
-                throw e;
-            }
-        }
-
+            });
     }
 }
