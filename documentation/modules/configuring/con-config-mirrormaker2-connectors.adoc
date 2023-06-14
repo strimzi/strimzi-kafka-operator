@@ -1,12 +1,20 @@
 // Module included in the following assemblies:
 //
-// assembly-config-mirrormaker2.adoc
+// assembly-config.adoc
 
 [id='con-config-mirrormaker2-connectors-{context}']
-= Connector configuration
+= Configuring MirrorMaker 2 connectors
 
 [role="_abstract"]
 Use Mirrormaker 2 connector configuration for the internal connectors that orchestrate the synchronization of data between Kafka clusters.
+
+MirrorMaker 2 consists of the following connectors:
+
+`MirrorSourceConnector`:: The source connector replicates topics from a source cluster to a target cluster. It also replicates ACLs and is necessary for the `MirrorCheckpointConnector` to run. 
+`MirrorCheckpointConnector`:: The checkpoint connector periodically tracks offsets. If enabled, it also synchronizes consumer group offsets between the source and target cluster.
+`MirrorHeartbeatConnector`:: The heartbeat connector periodically checks connectivity between the source and target cluster.
+
+NOTE: ACL replication through the connector is not possible if you are xref:con-mirrormaker-acls-{context}[using the User Operator].
 
 The following table describes connector properties and the connectors you configure to use them.
 
@@ -77,7 +85,8 @@ The `IdentityReplicationPolicy` class does not use the property as topics retain
 |
 |
 
-|refresh.topics.interval.seconds:: Frequency of topic refresh. Default is `600` (10 minutes).
+|refresh.topics.interval.seconds:: Frequency of topic refresh. Default is `600` (10 minutes). By default, a check for new topics in the source cluster is made every 10 minutes.
+You can change the frequency by adding `refresh.topics.interval.seconds` to the source connector configuration.
 |✓
 |
 |
@@ -163,6 +172,66 @@ The `IdentityReplicationPolicy` class does not use the property as topics retain
 |✓
 
 |===
+
+== Changing the location of the consumer group offsets topic
+
+MirrorMaker 2 tracks offsets for consumer groups using internal topics.
+
+`offset-syncs` topic:: The `offset-syncs` topic maps the source and target offsets for replicated topic partitions from record metadata.
+`checkpoints` topic:: The `checkpoints` topic maps the last committed offset in the source and target cluster for replicated topic partitions in each consumer group.
+
+As they are used internally by MirrorMaker 2, you do not interact directly with these topics. 
+
+`MirrorCheckpointConnector` emits _checkpoints_ for offset tracking.
+Offsets for the `checkpoints` topic are tracked at predetermined intervals through configuration.
+Both topics enable replication to be fully restored from the correct offset position on failover.
+
+The location of the `offset-syncs` topic is the `source` cluster by default.
+You can use the `offset-syncs.topic.location` connector configuration to change this to the `target` cluster.
+You need read/write access to the cluster that contains the topic.
+Using the target cluster as the location of the `offset-syncs` topic allows you to use MirrorMaker 2 even if you have only read access to the source cluster.
+
+== Synchronizing consumer group offsets
+
+The `__consumer_offsets` topic stores information on committed offsets for each consumer group.
+Offset synchronization periodically transfers the consumer offsets for the consumer groups of a source cluster into the consumer offsets topic of a target cluster.
+
+Offset synchronization is particularly useful in an _active/passive_ configuration.
+If the active cluster goes down, consumer applications can switch to the passive (standby) cluster and pick up from the last transferred offset position.
+
+To use topic offset synchronization, enable the synchronization by adding `sync.group.offsets.enabled` to the checkpoint connector configuration, and setting the property to `true`.
+Synchronization is disabled by default.
+
+When using the `IdentityReplicationPolicy` in the source connector, it also has to be configured in the checkpoint connector configuration.
+This ensures that the mirrored consumer offsets will be applied for the correct topics.
+
+Consumer offsets are only synchronized for consumer groups that are not active in the target cluster.
+If the consumer groups are in the target cluster, the synchronization cannot be performed and an `UNKNOWN_MEMBER_ID` error is returned. 
+
+If enabled, the synchronization of offsets from the source cluster is made periodically.
+You can change the frequency by adding `sync.group.offsets.interval.seconds` and `emit.checkpoints.interval.seconds` to the checkpoint connector configuration.
+The properties specify the frequency in seconds that the consumer group offsets are synchronized, and the frequency of checkpoints emitted for offset tracking.
+The default for both properties is 60 seconds.
+You can also change the frequency of checks for new consumer groups using the `refresh.groups.interval.seconds` property, which is performed every 10 minutes by default.
+
+Because the synchronization is time-based, any switchover by consumers to a passive cluster will likely result in some duplication of messages.
+
+NOTE: If you have an application written in Java, you can use the `RemoteClusterUtils.java` utility to synchronize offsets through the application. The utility fetches remote offsets for a consumer group from the `checkpoints` topic. 
+
+
+== Deciding when to use the heartbeat connector
+
+The heartbeat connector emits heartbeats to check connectivity between source and target Kafka clusters.
+An internal `heartbeat` topic is replicated from the source cluster, which means that the heartbeat connector must be connected to the source cluster. 
+The `heartbeat` topic is located on the target cluster, which allows it to do the following:
+
+* Identify all source clusters it is mirroring data from
+* Verify the liveness and latency of the mirroring process
+
+This helps to make sure that the process is not stuck or has stopped for any reason. 
+While the heartbeat connector can be a valuable tool for monitoring the mirroring processes between Kafka clusters, it's not always necessary to use it. 
+For example, if your deployment has low network latency or a small number of topics, you might prefer to monitor the mirroring process using log messages or other monitoring tools. 
+If you decide not to use the heartbeat connector, simply omit it from your MirrorMaker 2 configuration.
 
 == Aligning the configuration of MirrorMaker 2 connectors
 

@@ -1,9 +1,9 @@
 // Module included in the following assemblies:
 //
-// assembly-config-kafka.adoc
+// assembly-management-tasks.adoc
 
 [id='proc-manual-delete-pod-pvc-zookeeper-{context}']
-= Deleting ZooKeeper nodes manually
+= Deleting ZooKeeper nodes using annotations
 
 This procedure describes how to delete an existing ZooKeeper node by using a Kubernetes annotation.
 Deleting a ZooKeeper node consists of deleting both the `Pod` on which ZooKeeper is running and the related `PersistentVolumeClaim` (if the cluster was deployed with persistent storage).

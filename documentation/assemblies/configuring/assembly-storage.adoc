@@ -1,6 +1,6 @@
 // This assembly is included in the following assemblies:
 //
-// assembly-config-kafka.adoc
+// assembly-config.adoc
 
 [id='assembly-storage-{context}']
 = Configuring Kafka and ZooKeeper storage

@@ -1,9 +1,9 @@
 // This assembly is included in the following assemblies:
 //
-// assembly-deployment-configuration.adoc
+// assembly-config.adoc
 
 [id='external-logging_{context}']
-= Logging configuration
+= Configuring log levels
 
 [role="_abstract"]
 Configure logging levels in the custom resources of Kafka components and Strimzi Operators.

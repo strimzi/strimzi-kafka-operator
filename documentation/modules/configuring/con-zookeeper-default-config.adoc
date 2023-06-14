@@ -1,6 +1,6 @@
 // Module included in the following assemblies:
 //
-// assembly-config-kafka.adoc
+// assembly-config.adoc
 
 [id='con-zookeeper-default-config-{context}']
 = Default ZooKeeper configuration values

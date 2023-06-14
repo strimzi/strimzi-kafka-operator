@@ -1,42 +1,11 @@
 // This module is included in:
 //
-// overview/assembly-configuration-points.adoc
+// assembly-config.adoc
 
 [id="con-overview-mm2-{context}"]
-= MirrorMaker 2 configuration
+= Configuring active/active or active/passive modes 
 
 [role="_abstract"]
-MirrorMaker 2 consumes messages from a source Kafka cluster and writes them to a target Kafka cluster.
-
-MirrorMaker 2 uses:
-
-* Source cluster configuration to consume data from the source cluster
-* Target cluster configuration to output data to the target cluster
-
-MirrorMaker 2 is based on the Kafka Connect framework, _connectors_ managing the transfer of data between clusters.
-
-You configure MirrorMaker 2 to define the Kafka Connect deployment, including the connection details of the source and target clusters, and then run a set of MirrorMaker 2 connectors to make the connection.
-
-MirrorMaker 2 consists of the following connectors:
-
-`MirrorSourceConnector`:: The source connector replicates topics from a source cluster to a target cluster. It also replicates ACLs and is necessary for the `MirrorCheckpointConnector` to run. 
-`MirrorCheckpointConnector`:: The checkpoint connector periodically tracks offsets. If enabled, it also synchronizes consumer group offsets between the source and target cluster.
-`MirrorHeartbeatConnector`:: The heartbeat connector periodically checks connectivity between the source and target cluster.
-
-NOTE: If you are using the User Operator to manage ACLs, ACL replication through the connector is not possible.    
-
-The process of _mirroring_ data from a source cluster to a target cluster is asynchronous.
-Each MirrorMaker 2 instance mirrors data from one source cluster to one target cluster. 
-You can use more than one MirrorMaker 2 instance to mirror data between any number of clusters.
-
-.Replication across two clusters
-image::mirrormaker.png[MirrorMaker 2 replication]
-
-By default, a check for new topics in the source cluster is made every 10 minutes.
-You can change the frequency by adding `refresh.topics.interval.seconds` to the source connector configuration.
-
-== Cluster configuration
-
 You can use MirrorMaker 2 in _active/passive_ or _active/active_ cluster configurations.
 
 active/active cluster configuration:: An active/active configuration has two active clusters replicating data bidirectionally. Applications can use either cluster. Each cluster can provide the same data. In this way,  you can make the same data available in different geographical locations. As consumer groups are active in both clusters, consumer offsets for replicated topics are not synchronized back to the source cluster. 

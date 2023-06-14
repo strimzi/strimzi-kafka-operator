@@ -1,8 +1,0 @@
-// This assembly is included in the following assemblies:
-//
-// assembly-config-kafka.adoc
-
-[id='assembly-jmxtrans-{context}']
-= Retrieving JMX metrics with JmxTrans
-
-As of Strimzi 0.35.0, support for link:https://github.com/jmxtrans/jmxtrans[JmxTrans^] has been removed.

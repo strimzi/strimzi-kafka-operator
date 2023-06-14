@@ -1,12 +1,17 @@
 // Module included in the following assemblies:
 //
-// assembly-kafka-connect.adoc
+// assembly-config.adoc
 
-[id='proc-kafka-connect-config-{context}']
+[id='con-kafka-connect-config-{context}']
 = Configuring Kafka Connect
+
+[role="_abstract"]
+Update the `spec` properties of the `KafkaConnect` custom resource to configure your Kafka Connect deployment.
 
 Use Kafka Connect to set up external data connections to your Kafka cluster.
 Use the properties of the `KafkaConnect` resource to configure your Kafka Connect deployment.
+
+For a deeper understanding of the Kafka Connect cluster configuration options, refer to the link:{BookURLConfiguring}[Strimzi Custom Resource API Reference^].
 
 .KafkaConnector configuration
 `KafkaConnector` resources allow you to create and manage connector instances for Kafka Connect in a Kubernetes-native way.
@@ -29,16 +34,7 @@ This method applies especially to confidential data, such as usernames, password
 You can tune the configuration to handle high volumes of messages.
 For more information, see xref:con-high-volume-config-properties-{context}[Handling high volumes of messages].
 
-.Prerequisites
-
-* A running Cluster Operator
-
-.Procedure
-
-. Edit the `spec` properties of the `KafkaConnect` resource.
-+
-The properties you can configure are shown in this example configuration:
-+
+.Example `KafkaConnect` custom resource configuration
 [source,yaml,subs=attributes+,options="nowrap"]
 ----
 apiVersion: {KafkaConnectApiVersion}
@@ -168,7 +164,7 @@ Standard Apache Kafka configuration may be provided, restricted to those propert
 <11> External configuration for connectors using environment variables, as shown here, or volumes.
 You can also use configuration provider plugins to load configuration values from external sources.
 <12> Requests for reservation of supported resources, currently `cpu` and `memory`, and limits to specify the maximum resources that can be consumed.
-<13> Specified Kafka Connect loggers and log levels added directly (`inline`) or indirectly (`external`) through a ConfigMap. A custom ConfigMap must be placed under the `log4j.properties` or `log4j2.properties` key. For the Kafka Connect `log4j.rootLogger` logger, you can set the log level to INFO, ERROR, WARN, TRACE, DEBUG, FATAL or OFF.
+<13> Specified Kafka Connect loggers and log levels added directly (`inline`) or indirectly (`external`) through a ConfigMap. A custom Log4j configuration must be placed under the `log4j.properties` or `log4j2.properties` key in the ConfigMap. For the Kafka Connect `log4j.rootLogger` logger, you can set the log level to INFO, ERROR, WARN, TRACE, DEBUG, FATAL or OFF.
 <14> Healthchecks to know when to restart a container (liveness) and when a container can accept traffic (readiness).
 <15> Prometheus metrics, which are enabled by referencing a ConfigMap containing configuration for the Prometheus JMX exporter in this example. You can enable metrics without further configuration using a reference to a ConfigMap containing an empty file under `metricsConfig.valueFrom.configMapKeyRef.key`.
 <16> JVM configuration options to optimize performance for the Virtual Machine (VM) running Kafka Connect.
@@ -177,15 +173,3 @@ You can also use configuration provider plugins to load configuration values fro
 <19> Template customization. Here a pod is scheduled with anti-affinity, so the pod is not scheduled on nodes with the same hostname.
 <20> Environment variables are set for distributed tracing.
 <21> Distributed tracing is enabled by using OpenTelemetry.
-
-. Create or update the resource:
-+
-[source,shell,subs=+quotes]
-kubectl apply -f _KAFKA-CONNECT-CONFIG-FILE_
-
-. If authorization is enabled for Kafka Connect, xref:proc-configuring-kafka-connect-user-authorization-{context}[configure Kafka Connect users to enable access to the Kafka Connect consumer group and topics].
-
-[role="_additional-resources"]
-.Additional resources
-
-* xref:assembly-distributed-tracing-str[Introducing distributed tracing]

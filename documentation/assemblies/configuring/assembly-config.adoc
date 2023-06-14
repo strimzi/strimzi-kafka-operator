@@ -35,16 +35,79 @@ This might include configuration that supports the following:
 
 The link:{BookURLConfiguring}[Strimzi Custom Resource API Reference^] describes the properties you can use in your configuration.
 
+NOTE: Labels applied to a custom resource are also applied to the Kubernetes resources making up its cluster.
+This provides a convenient mechanism for resources to be labeled as required.
+
+.Applying changes to a custom resource configuration file
+
+You add configuration to a custom resource using `spec` properties. 
+After adding the configuration, you can use `kubectl` to apply the changes to a custom resource configuration file:
+
+[source,shell,subs=+quotes]
+----
+kubectl apply -f <kafka_configuration_file>
+----
+
 //How to access examples
 include::../../modules/configuring/con-config-examples.adoc[leveloffset=+1]
 
-//configuration of compoments
-include::../../assemblies/configuring/assembly-deployment-configuration.adoc[leveloffset=+1]
+//`Kafka` resource config
+include::../../modules/configuring/con-config-kafka.adoc[leveloffset=+1]
+//setting static broker limits
+include::../../modules/managing/proc-setting-broker-limits.adoc[leveloffset=+2]
+//Zookeeper's default configuration
+include::../../modules/configuring/con-zookeeper-default-config.adoc[leveloffset=+2]
 
+//`Kafka` config for operators
+include::../../modules/configuring/ref-kafka-entity-operator.adoc[leveloffset=+1]
+//topic operator config
+include::../../modules/configuring/con-configuring-topic-operator.adoc[leveloffset=+2]
+//user operator config
+include::../../modules/configuring/con-configuring-user-operator.adoc[leveloffset=+2]
 
-//configuring resources
+//`KafkaConnect` resource config
+include::../../modules/configuring/con-config-kafka-connect.adoc[leveloffset=+1]
+//if authorization is enabled, configure the Kafka Connect user for read/write access rights
+include::../../modules/configuring/proc-config-kafka-connect-user-authorization.adoc[leveloffset=+2]
+
+//`KafkaMirrorMaker2` resource config
+include::../../modules/configuring/con-config-mirrormaker2.adoc[leveloffset=+1]
+//configuring replication modes 
+include::../../modules/overview/con-overview-mirrormaker2.adoc[leveloffset=+2]
+//configuring MM2 connectors
+include::../../modules/configuring/con-config-mirrormaker2-connectors.adoc[leveloffset=+2]
+//configuring MM2 connector producers and consumers
+include::../../modules/configuring/con-config-mirrormaker2-producers-consumers.adoc[leveloffset=+2]
+//increasing the number of tasks
+include::../../modules/configuring/con-config-mirrormaker2-tasks-max.adoc[leveloffset=+2]
+//handling of ACLs in replication
+include::../../modules/configuring/con-config-mirrormaker2-acls.adoc[leveloffset=+2]
+//securing connections to and from mirrormaker
+include::../../modules/configuring/proc-config-mirrormaker2-securing-connection.adoc[leveloffset=+2]
+
+//`KafkaMirrorMaker` resource config
+include::../../modules/configuring/con-config-mirrormaker.adoc[leveloffset=+1]
+
+//`KafkaBridge` resource config
+include::../../modules/configuring/con-config-kafka-bridge.adoc[leveloffset=+1]
+
+//configuring Kafka and ZooKeeper storage
+include::../../assemblies/configuring/assembly-storage.adoc[leveloffset=+1]
+
+//configuring CPU and memory resources and limits
 include::../../modules/configuring/con-config-resources.adoc[leveloffset=+1]
-//load configuration from configmaps for certain types of data
+
+//customizing Kubernetes resources like Deployment etc
+include::assembly-customizing-kubernetes-resources.adoc[leveloffset=+1]
+
+//scheduling separate Kafka pods 
+include::assembly-scheduling.adoc[leveloffset=+1]
+
+//configuring log levels
+include::assembly-logging-configuration.adoc[leveloffset=+1]
+
+//loading configuration from configmaps for certain types of data
 include::../../modules/configuring/con-configuration-points-configmaps.adoc[leveloffset=+1]
-//Load configuration from external sources for all Kafka components
+
+//loading configuration from external sources for all Kafka components
 include::assembly-external-config.adoc[leveloffset=+1]

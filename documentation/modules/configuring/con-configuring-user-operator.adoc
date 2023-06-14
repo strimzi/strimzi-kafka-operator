@@ -1,11 +1,12 @@
 // Module included in the following assemblies:
 //
-// assembly-kafka-entity-operator.adoc
+// ref-kafka-entity-operator.adoc
 
 [id='user-operator-{context}']
-= User Operator configuration properties
+= Configuring the User Operator
 
-User Operator deployment can be configured using additional options inside the `userOperator` object.
+[role="_abstract"]
+Use `userOperator` properties in `Kafka.spec.entityOperator` to configure the User Operator.
 The following properties are supported:
 
 `watchedNamespace`::

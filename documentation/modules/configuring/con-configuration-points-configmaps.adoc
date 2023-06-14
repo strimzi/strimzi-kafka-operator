@@ -79,4 +79,4 @@ Make sure that any custom ConfigMaps you create do not have the same name as the
 * xref:external-logging_str[Logging configuration]
 * link:{BookURLConfiguring}#con-common-configuration-prometheus-reference[`metricsConfig`^]
 * link:{BookURLConfiguring}#type-ExternalConfiguration-reference[`ExternalConfiguration` schema reference^]
-* xref:assembly-loading-config-with-providers-{context}[Loading configuration values from external sources^]
+* xref:assembly-loading-config-with-providers-{context}[Loading configuration values from external sources]

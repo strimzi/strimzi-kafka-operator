@@ -1,11 +1,22 @@
 // Module included in the following assemblies:
 //
-// assembly-kafka-entity-operator.adoc
+// assembly-config.adoc
 
 [id='ref-kafka-entity-operator-{context}']
-= Entity Operator configuration properties
+= Configuring the Entity Operator
 
+[role="_abstract"]
 Use the `entityOperator` property in `Kafka.spec` to configure the Entity Operator.
+The Entity Operator is responsible for managing Kafka-related entities in a running Kafka cluster. It comprises the following operators:
+
+* Topic Operator to manage Kafka topics
+* User Operator to manage Kafka users
+
+By configuring the `Kafka` resource, the Cluster Operator can deploy the Entity Operator, including one or both operators. 
+Once deployed, the operators are automatically configured to handle the topics and users of the Kafka cluster. 
+
+Each operator can only monitor a single namespace.
+For more information, see xref:con-operators-namespaces-str[].
 
 The `entityOperator` property supports several sub-properties:
 

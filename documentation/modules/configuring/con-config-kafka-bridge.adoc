@@ -1,28 +1,20 @@
 // Module included in the following assemblies:
 //
-// assembly-config-kafka-bridge.adoc
+// assembly-config.adoc
 
-[id='proc-config-kafka-bridge-{context}']
+[id='con-config-kafka-bridge-{context}']
 = Configuring the Kafka Bridge
 
-Use the Kafka Bridge to make HTTP-based requests to the Kafka cluster.
-
-Use the properties of the `KafkaBridge` resource to configure your Kafka Bridge deployment.
+[role="_abstract"]
+Update the `spec` properties of the `KafkaBridge` custom resource to configure your Kafka Bridge deployment.
 
 In order to prevent issues arising when client consumer requests are processed by different Kafka Bridge instances, address-based routing must be employed to ensure that requests are routed to the right Kafka Bridge instance.
 Additionally, each independent Kafka Bridge instance must have a replica.
 A Kafka Bridge instance has its own state which is not shared with another instances.
 
-.Prerequisites
+For a deeper understanding of the Kafka Bridge cluster configuration options, refer to the link:{BookURLConfiguring}[Strimzi Custom Resource API Reference^].
 
-* A running Cluster Operator
-
-.Procedure
-
-. Edit the `spec` properties for the `KafkaBridge` resource.
-+
-The properties you can configure are shown in this example configuration:
-+
+.Example `KafkaBridge` custom resource configuration
 [source,yaml,subs="+quotes,attributes"]
 ----
 apiVersion: {KafkaBridgeApiVersion}
@@ -111,7 +103,7 @@ By default, the Kafka Bridge connects to Kafka brokers without authentication.
 <7> Consumer configuration options.
 <8> Producer configuration options.
 <9> Requests for reservation of supported resources, currently `cpu` and `memory`, and limits to specify the maximum resources that can be consumed.
-<10> Specified Kafka Bridge loggers and log levels added directly (`inline`) or indirectly (`external`) through a ConfigMap. A custom ConfigMap must be placed under the `log4j.properties` or `log4j2.properties` key. For the Kafka Bridge loggers, you can set the log level to INFO, ERROR, WARN, TRACE, DEBUG, FATAL or OFF.
+<10> Specified Kafka Bridge loggers and log levels added directly (`inline`) or indirectly (`external`) through a ConfigMap. A custom Log4j configuration must be placed under the `log4j.properties` or `log4j2.properties` key in the ConfigMap. For the Kafka Bridge loggers, you can set the log level to INFO, ERROR, WARN, TRACE, DEBUG, FATAL or OFF.
 <11> JVM configuration options to optimize performance for the Virtual Machine (VM) running the Kafka Bridge.
 <12> Healthchecks to know when to restart a container (liveness) and when a container can accept traffic (readiness).
 <13> Optional: Container image configuration, which is recommended only in special situations.
@@ -119,13 +111,7 @@ By default, the Kafka Bridge connects to Kafka brokers without authentication.
 <15> Environment variables are set for distributed tracing.
 <16> Distributed tracing is enabled by using OpenTelemetry.
 
-. Create or update the resource:
-+
-[source,shell,subs=+quotes]
-kubectl apply -f _KAFKA-BRIDGE-CONFIG-FILE_
-
 [role="_additional-resources"]
 .Additional resources
 
 * link:{BookURLBridge}[Using the Strimzi Kafka Bridge^]
-* xref:assembly-distributed-tracing-str[Introducing distributed tracing]
