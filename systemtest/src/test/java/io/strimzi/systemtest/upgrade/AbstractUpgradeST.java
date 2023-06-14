@@ -245,8 +245,6 @@ public class AbstractUpgradeST extends AbstractST {
                 cmdKubeClient().replaceContent(TestUtils.getContent(f, TestUtils::toYamlString));
             }
         });
-        // Set info that CO is already installed
-        extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(io.strimzi.systemtest.Constants.PREPARE_OPERATOR_ENV_KEY + namespace, false);
     }
 
     protected void deleteInstalledYamls(File root, String namespace) {
