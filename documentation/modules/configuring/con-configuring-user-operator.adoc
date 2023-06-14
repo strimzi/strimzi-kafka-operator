@@ -1,6 +1,6 @@
 // Module included in the following assemblies:
 //
-// assembly-kafka-entity-operator.adoc
+// ref-kafka-entity-operator.adoc
 
 [id='user-operator-{context}']
 = Configuring the User Operator

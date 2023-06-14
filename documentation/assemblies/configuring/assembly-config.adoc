@@ -3,7 +3,7 @@
 // configuring/configuring.adoc
 
 [id='overview-{context}']
-= Configuring a Strimzi deployment
+= Configuring a deployment
 
 [role="_abstract"]
 Configure and manage a Strimzi deployment to your precise needs using Strimzi custom resources.
@@ -59,7 +59,11 @@ include::../../modules/managing/proc-setting-broker-limits.adoc[leveloffset=+2]
 include::../../modules/configuring/con-zookeeper-default-config.adoc[leveloffset=+2]
 
 //`Kafka` config for operators
-include::assembly-kafka-entity-operator.adoc[leveloffset=+1]
+include::../../modules/configuring/ref-kafka-entity-operator.adoc[leveloffset=+1]
+//topic operator config
+include::../../modules/configuring/con-configuring-topic-operator.adoc[leveloffset=+2]
+//user operator config
+include::../../modules/configuring/con-configuring-user-operator.adoc[leveloffset=+2]
 
 //`KafkaConnect` resource config
 include::../../modules/configuring/con-config-kafka-connect.adoc[leveloffset=+1]

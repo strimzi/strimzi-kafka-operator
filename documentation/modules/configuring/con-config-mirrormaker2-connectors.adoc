@@ -14,7 +14,7 @@ MirrorMaker 2 consists of the following connectors:
 `MirrorCheckpointConnector`:: The checkpoint connector periodically tracks offsets. If enabled, it also synchronizes consumer group offsets between the source and target cluster.
 `MirrorHeartbeatConnector`:: The heartbeat connector periodically checks connectivity between the source and target cluster.
 
-NOTE: ACL replication through the connector is not possible if you are xref:con-mirrormaker-acls-{context}[using the User Operator to manage ACLs].
+NOTE: ACL replication through the connector is not possible if you are xref:con-mirrormaker-acls-{context}[using the User Operator].
 
 The following table describes connector properties and the connectors you configure to use them.
 

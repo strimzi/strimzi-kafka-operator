@@ -14,7 +14,7 @@ MirrorMaker consumes messages from a source cluster and republishes those messag
 Data replication across clusters supports scenarios that require the following:
 
 * Recovery of data in the event of a system failure
-* Aggregation of data for analysis
+* Consolidation of data from multiple source clusters for centralized analysis
 * Restriction of data access to a specific cluster
 * Provision of data at a specific location to improve latency
 
