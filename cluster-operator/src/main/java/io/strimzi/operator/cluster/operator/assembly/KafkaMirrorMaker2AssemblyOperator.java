@@ -159,7 +159,7 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
             mirrorMaker2Cluster = KafkaMirrorMaker2Cluster.fromCrd(reconciliation, kafkaMirrorMaker2, versions, sharedEnvironmentProvider);
         } catch (Exception e) {
             LOGGER.warnCr(reconciliation, e);
-            StatusUtils.setStatusConditionAndObservedGeneration(kafkaMirrorMaker2, kafkaMirrorMaker2Status, Future.failedFuture(e));
+            StatusUtils.setStatusConditionAndObservedGeneration(kafkaMirrorMaker2, kafkaMirrorMaker2Status, e);
             return Future.failedFuture(new ReconciliationException(kafkaMirrorMaker2Status, e));
         }
 
@@ -231,7 +231,7 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
                 .map((Void) null)
                 .onComplete(reconciliationResult -> {
                     List<Condition> conditions = kafkaMirrorMaker2Status.getConditions();
-                    StatusUtils.setStatusConditionAndObservedGeneration(kafkaMirrorMaker2, kafkaMirrorMaker2Status, reconciliationResult);
+                    StatusUtils.setStatusConditionAndObservedGeneration(kafkaMirrorMaker2, kafkaMirrorMaker2Status, reconciliationResult.cause());
 
                     if (!hasZeroReplicas) {
                         kafkaMirrorMaker2Status.setUrl(KafkaMirrorMaker2Resources.url(mirrorMaker2Cluster.getCluster(), namespace, KafkaMirrorMaker2Cluster.REST_API_PORT));
@@ -389,7 +389,7 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
                                 .withConfig(mm2ConnectorSpec.getConfig())
                                 .withPause(mm2ConnectorSpec.getPause())
                                 .withTasksMax(mm2ConnectorSpec.getTasksMax())
-                                .build();                      
+                                .build();
 
                         prepareMirrorMaker2ConnectorConfig(reconciliation, mirror, clusterMap.get(sourceClusterAlias), clusterMap.get(targetClusterAlias), connectorSpec, mirrorMaker2Cluster);
                         LOGGER.debugCr(reconciliation, "creating/updating connector {} config: {}", connectorName, connectorSpec.getConfig());
@@ -433,11 +433,11 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
         if (topicsExclude != null) {
             config.put("topics.exclude", topicsExclude);
         }
-        
+
         if (mirror.getGroupsPattern() != null) {
             config.put("groups", mirror.getGroupsPattern());
         }
-        
+
         String groupsExcludePattern = mirror.getGroupsExcludePattern();
         String groupsBlacklistPattern = mirror.getGroupsBlacklistPattern();
         if (groupsExcludePattern != null && groupsBlacklistPattern != null) {
@@ -492,7 +492,7 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
             String clientAuthType = authProperties.get(AuthenticationUtils.SASL_MECHANISM);
             if (KafkaClientAuthenticationPlain.TYPE_PLAIN.equals(clientAuthType)) {
                 saslMechanism = "PLAIN";
-                jaasConfig = "org.apache.kafka.common.security.plain.PlainLoginModule required username=\"" + authProperties.get(AuthenticationUtils.SASL_USERNAME) + "\" password=\"${file:" + CONNECTORS_CONFIG_FILE + ":" + cluster.getAlias() + ".sasl.password}\";";        
+                jaasConfig = "org.apache.kafka.common.security.plain.PlainLoginModule required username=\"" + authProperties.get(AuthenticationUtils.SASL_USERNAME) + "\" password=\"${file:" + CONNECTORS_CONFIG_FILE + ":" + cluster.getAlias() + ".sasl.password}\";";
             } else if (KafkaClientAuthenticationScramSha256.TYPE_SCRAM_SHA_256.equals(clientAuthType)) {
                 saslMechanism = "SCRAM-SHA-256";
                 jaasConfig = "org.apache.kafka.common.security.scram.ScramLoginModule required username=\"" + authProperties.get(AuthenticationUtils.SASL_USERNAME) + "\" password=\"${file:" + CONNECTORS_CONFIG_FILE + ":" + cluster.getAlias() + ".sasl.password}\";";
@@ -590,7 +590,7 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
         if (error != null) {
             LOGGER.warnCr(reconciliation, "Error reconciling MirrorMaker 2 {}", mirrorMaker2.getMetadata().getName(), error);
         }
-        StatusUtils.setStatusConditionAndObservedGeneration(mirrorMaker2, status, error != null ? Future.failedFuture(error) : Future.succeededFuture());
+        StatusUtils.setStatusConditionAndObservedGeneration(mirrorMaker2, status, error);
         return maybeUpdateStatusCommon(resourceOperator, mirrorMaker2, reconciliation, status,
             (mirror1, status2) -> new KafkaMirrorMaker2Builder(mirror1).withStatus(status2).build());
     }

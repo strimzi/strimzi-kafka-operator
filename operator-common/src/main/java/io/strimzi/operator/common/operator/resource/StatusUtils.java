@@ -17,7 +17,6 @@ import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.model.ResourceVisitor;
 import io.strimzi.operator.common.model.ValidationVisitor;
-import io.vertx.core.AsyncResult;
 
 import java.time.Instant;
 import java.time.ZoneOffset;
@@ -158,21 +157,6 @@ public class StatusUtils {
                 .withType(type)
                 .withStatus("True")
                 .build();
-    }
-
-    /**
-     * Sets a status with conditions and observed generation in a resource
-     *
-     * @param resource  Current custom resource
-     * @param status    Desired status
-     * @param result    Reconciliation result to add to the status
-     *
-     * @param <R>   Type of the custom resource
-     * @param <P>   Type of the custom resource spec
-     * @param <S>   Type of the custom resource status
-     */
-    public static <R extends CustomResource<P, S>, P extends Spec, S extends Status> void setStatusConditionAndObservedGeneration(R resource, S status, AsyncResult<Void> result) {
-        setStatusConditionAndObservedGeneration(resource, status, result.cause());
     }
 
     /**

@@ -116,7 +116,7 @@ class TopicOperator {
         public void handle(Void v) {
             EventBuilder evtb = new EventBuilder();
             final String eventTime = ZonedDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'"));
-            
+
             if (involvedObject != null) {
                 evtb.withNewInvolvedObject()
                         .withKind(involvedObject.getKind())
@@ -1166,7 +1166,7 @@ class TopicOperator {
                             topic.getMetadata().getResourceVersion(),
                             topic.getMetadata().getGeneration());
                     KafkaTopicStatus kts = new KafkaTopicStatus();
-                    StatusUtils.setStatusConditionAndObservedGeneration(topic, kts, result);
+                    StatusUtils.setStatusConditionAndObservedGeneration(topic, kts, result.cause());
 
                     if (topic.getStatus() == null || topic.getStatus().getTopicName() == null) {
                         String specTopicName = new TopicName(topic).toString();

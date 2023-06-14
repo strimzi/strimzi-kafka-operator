@@ -78,7 +78,7 @@ public class KafkaBridgeAssemblyOperator extends AbstractAssemblyOperator<Kubern
             bridge = KafkaBridgeCluster.fromCrd(reconciliation, assemblyResource, sharedEnvironmentProvider);
         } catch (Exception e) {
             LOGGER.warnCr(reconciliation, e);
-            StatusUtils.setStatusConditionAndObservedGeneration(assemblyResource, kafkaBridgeStatus, Future.failedFuture(e));
+            StatusUtils.setStatusConditionAndObservedGeneration(assemblyResource, kafkaBridgeStatus, e);
             return Future.failedFuture(new ReconciliationException(kafkaBridgeStatus, e));
         }
         KafkaClientAuthentication auth = assemblyResource.getSpec().getAuthentication();
@@ -105,7 +105,7 @@ public class KafkaBridgeAssemblyOperator extends AbstractAssemblyOperator<Kubern
             .compose(i -> deploymentOperations.waitForObserved(reconciliation, namespace, bridge.getComponentName(), 1_000, operationTimeoutMs))
             .compose(i -> bridgeHasZeroReplicas ? Future.succeededFuture() : deploymentOperations.readiness(reconciliation, namespace, bridge.getComponentName(), 1_000, operationTimeoutMs))
             .onComplete(reconciliationResult -> {
-                StatusUtils.setStatusConditionAndObservedGeneration(assemblyResource, kafkaBridgeStatus, reconciliationResult.mapEmpty());
+                StatusUtils.setStatusConditionAndObservedGeneration(assemblyResource, kafkaBridgeStatus, reconciliationResult.mapEmpty().cause());
                 if (!bridgeHasZeroReplicas) {
                     int port = KafkaBridgeCluster.DEFAULT_REST_API_PORT;
                     if (bridge.getHttp() != null) {
