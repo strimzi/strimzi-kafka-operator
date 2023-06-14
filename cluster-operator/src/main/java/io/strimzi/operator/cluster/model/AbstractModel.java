@@ -82,17 +82,38 @@ public abstract class AbstractModel {
      * Constructor
      *
      * @param reconciliation    The reconciliation marker
+     * @param cluster           Name of the cluster to which this component belongs
+     * @param namespace         Namespace of this component
+     * @param componentName     Name of the Strimzi component usually consisting from the cluster name and component type
+     * @param labels            Labels used for this component
+     * @param ownerReference    Owner reference used for this component
+     */
+    protected AbstractModel(Reconciliation reconciliation, String cluster, String namespace, String componentName, Labels labels, OwnerReference ownerReference) {
+        this.reconciliation = reconciliation;
+        this.cluster = cluster;
+        this.namespace = namespace;
+        this.componentName = componentName;
+        this.labels = labels;
+        this.ownerReference = ownerReference;
+    }
+
+    /**
+     * Constructor
+     *
+     * @param reconciliation    The reconciliation marker
      * @param resource          Custom resource with metadata containing the namespace and cluster name
      * @param componentName     Name of the Strimzi component usually consisting from the cluster name and component type
      * @param componentType     Type of the component that the extending class is deploying (e.g. Kafka, ZooKeeper etc. )
      */
     protected AbstractModel(Reconciliation reconciliation, HasMetadata resource, String componentName, String componentType) {
-        this.reconciliation = reconciliation;
-        this.cluster = resource.getMetadata().getName();
-        this.namespace = resource.getMetadata().getNamespace();
-        this.componentName = componentName;
-        this.labels = Labels.generateDefaultLabels(resource, componentName, componentType, STRIMZI_CLUSTER_OPERATOR_NAME);
-        this.ownerReference = ModelUtils.createOwnerReference(resource, false);
+        this(
+                reconciliation,
+                resource.getMetadata().getName(),
+                resource.getMetadata().getNamespace(),
+                componentName,
+                Labels.generateDefaultLabels(resource, componentName, componentType, STRIMZI_CLUSTER_OPERATOR_NAME),
+                ModelUtils.createOwnerReference(resource, false)
+        );
     }
 
     /**

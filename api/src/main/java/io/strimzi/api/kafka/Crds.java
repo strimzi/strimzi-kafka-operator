@@ -24,6 +24,7 @@ import io.strimzi.api.kafka.model.StrimziPodSet;
 import io.strimzi.api.kafka.model.KafkaRebalance;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaUser;
+import io.strimzi.api.kafka.model.nodepool.KafkaNodePool;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -46,7 +47,8 @@ public class Crds {
         KafkaConnector.class,
         KafkaMirrorMaker2.class,
         KafkaRebalance.class,
-        StrimziPodSet.class
+        StrimziPodSet.class,
+        KafkaNodePool.class
     };
 
     private Crds() {
@@ -146,6 +148,15 @@ public class Crds {
             kind = StrimziPodSet.RESOURCE_KIND;
             listKind = StrimziPodSet.RESOURCE_LIST_KIND;
             versions = StrimziPodSet.VERSIONS;
+            status = new CustomResourceSubresourceStatus();
+        } else if (cls.equals(KafkaNodePool.class)) {
+            scope = KafkaNodePool.SCOPE;
+            plural = KafkaNodePool.RESOURCE_PLURAL;
+            singular = KafkaNodePool.RESOURCE_SINGULAR;
+            group = KafkaNodePool.RESOURCE_GROUP;
+            kind = KafkaNodePool.RESOURCE_KIND;
+            listKind = KafkaNodePool.RESOURCE_LIST_KIND;
+            versions = KafkaNodePool.VERSIONS;
             status = new CustomResourceSubresourceStatus();
         } else {
             throw new RuntimeException();
@@ -265,6 +276,14 @@ public class Crds {
 
     public static MixedOperation<StrimziPodSet, StrimziPodSetList, Resource<StrimziPodSet>> strimziPodSetOperation(KubernetesClient client) {
         return client.resources(StrimziPodSet.class, StrimziPodSetList.class);
+    }
+
+    public static CustomResourceDefinition kafkaNodePool() {
+        return crd(KafkaNodePool.class);
+    }
+
+    public static MixedOperation<KafkaNodePool, KafkaNodePoolList, Resource<KafkaNodePool>> kafkaNodePoolOperation(KubernetesClient client) {
+        return client.resources(KafkaNodePool.class, KafkaNodePoolList.class);
     }
 
     public static <T extends CustomResource, L extends DefaultKubernetesResourceList<T>> MixedOperation<T, L, Resource<T>>

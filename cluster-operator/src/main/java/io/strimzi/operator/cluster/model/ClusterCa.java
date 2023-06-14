@@ -169,7 +169,7 @@ public class ClusterCa extends Ca {
         LOGGER.debugCr(reconciliation, "{}: Reconciling Cruise Control certificates", this);
         return maybeCopyOrGenerateCerts(
             reconciliation,
-            Set.of(new NodeRef("cruise-control", 0)),
+            Set.of(new NodeRef("cruise-control", 0, null, false, false)),
             subjectFn,
             cruiseControlSecret,
             isMaintenanceTimeWindowsSatisfied);
@@ -284,7 +284,7 @@ public class ClusterCa extends Ca {
      * @param nodes                                 List of nodes for which the certificates should be generated
      * @param subjectFn                             Function to generate certificate subject for given node / pod
      * @param secret                                Secret with certificates
-     * @param isMaintenanceTimeWindowsSatisfied     Flag indicating if we are inside an maintenance window or not
+     * @param isMaintenanceTimeWindowsSatisfied     Flag indicating if we are inside a maintenance window or not
      *
      * @return  Returns map with node certificates which can be used to create or update the certificate secret
      *
@@ -297,7 +297,7 @@ public class ClusterCa extends Ca {
             Secret secret,
             boolean isMaintenanceTimeWindowsSatisfied
     ) throws IOException {
-        // Maps for storing the certificates => will be used in the new or updated secret. This map is filled in in this method and returned at the end.
+        // Maps for storing the certificates => will be used in the new or updated secret. This map is filled in this method and returned at the end.
         Map<String, CertAndKey> certs = new HashMap<>();
 
         // Temp files used when we need to generate new certificates

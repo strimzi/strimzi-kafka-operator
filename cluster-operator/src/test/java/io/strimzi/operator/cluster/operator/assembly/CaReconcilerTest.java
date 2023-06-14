@@ -153,6 +153,7 @@ public class CaReconcilerTest {
         when(deploymentOps.getAsync(eq(NAMESPACE), any())).thenReturn(Future.succeededFuture());
 
         when(spsOps.getAsync(eq(NAMESPACE), any())).thenReturn(Future.succeededFuture());
+        when(spsOps.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(Future.succeededFuture());
 
         when(podOps.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(Future.succeededFuture(List.of()));
 

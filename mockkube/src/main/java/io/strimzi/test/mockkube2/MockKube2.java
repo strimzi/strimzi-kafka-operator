@@ -13,6 +13,7 @@ import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2;
+import io.strimzi.api.kafka.model.nodepool.KafkaNodePool;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.mockkube2.controllers.AbstractMockController;
 import io.strimzi.test.mockkube2.controllers.MockDeploymentController;
@@ -204,6 +205,16 @@ public class MockKube2 {
         }
 
         /**
+         * Registers the KafkaNodePool CRD
+         *
+         * @return  MockKube builder instance
+         */
+        public MockKube2Builder withKafkaNodePoolCrd()  {
+            mock.registerCrd(TestUtils.CRD_KAFKA_NODE_POOL);
+            return this;
+        }
+
+        /**
          * Registers the StrimziPodSet CRD
          *
          * @return  MockKube builder instance
@@ -246,6 +257,18 @@ public class MockKube2 {
          */
         public MockKube2Builder withInitialKafkaMirrorMaker2s(KafkaMirrorMaker2... resources)  {
             initializeResources(Crds.kafkaMirrorMaker2Operation(client), resources);
+            return this;
+        }
+
+        /**
+         * Creates initial instances of the KafkaNodePool CR
+         *
+         * @param resources One or more custom resources
+         *
+         * @return  MockKube builder instance
+         */
+        public MockKube2Builder withInitialKafkaNodePools(KafkaNodePool... resources)  {
+            initializeResources(Crds.kafkaNodePoolOperation(client), resources);
             return this;
         }
 

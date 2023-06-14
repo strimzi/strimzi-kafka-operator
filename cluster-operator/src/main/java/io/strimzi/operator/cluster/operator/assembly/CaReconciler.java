@@ -13,6 +13,7 @@ import io.strimzi.api.kafka.model.CruiseControlResources;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaExporterResources;
 import io.strimzi.api.kafka.model.KafkaResources;
+import io.strimzi.api.kafka.model.StrimziPodSet;
 import io.strimzi.certs.CertManager;
 import io.strimzi.operator.cluster.ClusterOperator;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
@@ -21,7 +22,6 @@ import io.strimzi.operator.cluster.model.Ca;
 import io.strimzi.operator.cluster.model.ClientsCa;
 import io.strimzi.operator.cluster.model.ClusterCa;
 import io.strimzi.operator.cluster.model.InvalidResourceException;
-import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.ModelUtils;
 import io.strimzi.operator.cluster.model.NodeRef;
 import io.strimzi.operator.cluster.model.RestartReason;
@@ -51,6 +51,7 @@ import io.vertx.core.Vertx;
 
 import java.time.Clock;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -424,14 +425,23 @@ public class CaReconciler {
     }
 
     private Future<Set<NodeRef>> getKafkaReplicas() {
-        return strimziPodSetOperator.getAsync(reconciliation.namespace(), KafkaResources.kafkaStatefulSetName(reconciliation.name()))
-                                    .compose(podSet -> {
-                                        if (podSet != null) {
-                                            return Future.succeededFuture(KafkaCluster.nodes(reconciliation.name(), podSet.getSpec().getPods().size()));
-                                        } else {
-                                            return Future.succeededFuture(Set.of());
-                                        }
-                                    });
+        Labels selectorLabels = Labels.EMPTY
+                .withStrimziKind(reconciliation.kind())
+                .withStrimziCluster(reconciliation.name())
+                .withStrimziName(KafkaResources.kafkaStatefulSetName(reconciliation.name()));
+
+        return strimziPodSetOperator.listAsync(reconciliation.namespace(), selectorLabels)
+                .compose(podSets -> {
+                    Set<NodeRef> nodes = new LinkedHashSet<>();
+
+                    if (podSets != null) {
+                        for (StrimziPodSet podSet : podSets) {
+                            nodes.addAll(ReconcilerUtils.nodesFromPodSet(podSet));
+                        }
+                    }
+
+                    return Future.succeededFuture(nodes);
+                });
     }
 
     private Future<Void> rollKafkaBrokers(Set<NodeRef> nodes, RestartReasons podRollReasons) {

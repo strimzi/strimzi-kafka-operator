@@ -22,13 +22,14 @@ import java.util.List;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({ "conditions", "observedGeneration", "listeners" })
+@JsonPropertyOrder({ "conditions", "observedGeneration", "listeners", "kafkaNodePools" })
 @EqualsAndHashCode
 @ToString(callSuper = true)
 public class KafkaStatus extends Status {
     private static final long serialVersionUID = 1L;
 
     private List<ListenerStatus> listeners;
+    private List<UsedNodePoolStatus> kafkaNodePools;
     
     private String clusterId;
 
@@ -40,7 +41,16 @@ public class KafkaStatus extends Status {
     public void setListeners(List<ListenerStatus> listeners) {
         this.listeners = listeners;
     }
-    
+
+    @Description("List of the KafkaNodePools used by this Kafka cluster")
+    public List<UsedNodePoolStatus> getKafkaNodePools() {
+        return kafkaNodePools;
+    }
+
+    public void setKafkaNodePools(List<UsedNodePoolStatus> kafkaNodePools) {
+        this.kafkaNodePools = kafkaNodePools;
+    }
+
     @Description("Kafka cluster Id")
     public String getClusterId() {
         return clusterId;

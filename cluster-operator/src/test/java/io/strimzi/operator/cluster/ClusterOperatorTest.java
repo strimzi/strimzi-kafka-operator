@@ -31,6 +31,7 @@ import java.net.URL;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -63,6 +64,7 @@ public class ClusterOperatorTest {
         env.put(ClusterOperatorConfig.STRIMZI_KAFKA_CONNECT_IMAGES, KafkaVersionTestUtils.getKafkaConnectImagesEnvVarString());
         env.put(ClusterOperatorConfig.STRIMZI_KAFKA_MIRROR_MAKER_IMAGES, KafkaVersionTestUtils.getKafkaMirrorMakerImagesEnvVarString());
         env.put(ClusterOperatorConfig.STRIMZI_KAFKA_MIRROR_MAKER_2_IMAGES, KafkaVersionTestUtils.getKafkaMirrorMaker2ImagesEnvVarString());
+        env.put(ClusterOperatorConfig.FEATURE_GATES.key(), "+KafkaNodePools,+StableConnectIdentities");
 
         if (podSetsOnly) {
             env.put(ClusterOperatorConfig.POD_SET_RECONCILIATION_ONLY.key(), "true");
@@ -132,6 +134,7 @@ public class ClusterOperatorTest {
             Indexer mockCmIndexer = mock(Indexer.class);
             SharedIndexInformer mockCmInformer = mock(SharedIndexInformer.class);
             when(mockCmInformer.getIndexer()).thenReturn(mockCmIndexer);
+            when(mockCmInformer.stopped()).thenReturn(CompletableFuture.completedFuture(null));
 
             MixedOperation mockNamespacedCms = mock(MixedOperation.class);
             when(mockNamespacedCms.watch(any())).thenAnswer(invo -> {
@@ -156,6 +159,7 @@ public class ClusterOperatorTest {
             SharedIndexInformer mockPodInformer = mock(SharedIndexInformer.class);
             MixedOperation mockNamespacedPods = mock(MixedOperation.class);
             when(mockPodInformer.getIndexer()).thenReturn(mockPodIndexer);
+            when(mockPodInformer.stopped()).thenReturn(CompletableFuture.completedFuture(null));
             when(mockNamespacedPods.runnableInformer(anyLong())).thenAnswer(i -> {
                 numInformers.getAndIncrement();
                 return mockPodInformer;
@@ -184,7 +188,7 @@ public class ClusterOperatorTest {
                     });
                 }
 
-                int maximumExpectedNumberOfWatchers = podSetsOnly ? 0 : 7 * namespaceList.size();
+                int maximumExpectedNumberOfWatchers = podSetsOnly ? 0 : 8 * namespaceList.size();
                 assertThat("Looks like there were more watchers than namespaces",
                         numWatchers.get(), lessThanOrEqualTo(maximumExpectedNumberOfWatchers));
 
@@ -224,6 +228,7 @@ public class ClusterOperatorTest {
         Indexer mockCmIndexer = mock(Indexer.class);
         SharedIndexInformer mockCmInformer = mock(SharedIndexInformer.class);
         when(mockCmInformer.getIndexer()).thenReturn(mockCmIndexer);
+        when(mockCmInformer.stopped()).thenReturn(CompletableFuture.completedFuture(null));
 
         AnyNamespaceOperation mockFilteredCms = mock(AnyNamespaceOperation.class);
         when(mockFilteredCms.withLabels(any())).thenReturn(mockFilteredCms);
@@ -252,6 +257,7 @@ public class ClusterOperatorTest {
         when(mockFilteredPods.withLabelSelector(any(LabelSelector.class))).thenReturn(mockFilteredPods);
         when(mockPods.inAnyNamespace()).thenReturn(mockFilteredPods);
         when(mockPodInformer.getIndexer()).thenReturn(mockPodIndexer);
+        when(mockPodInformer.stopped()).thenReturn(CompletableFuture.completedFuture(null));
         when(mockFilteredPods.runnableInformer(anyLong())).thenAnswer(i -> {
             numInformers.getAndIncrement();
             return mockPodInformer;
@@ -276,7 +282,7 @@ public class ClusterOperatorTest {
                     });
                 }
 
-                int maximumExpectedNumberOfWatchers = podSetsOnly ? 0 : 7;
+                int maximumExpectedNumberOfWatchers = podSetsOnly ? 0 : 8;
                 assertThat("Looks like there were more watchers than custom resources", numWatchers.get(), lessThanOrEqualTo(maximumExpectedNumberOfWatchers));
 
                 int numberOfInformers = 5;

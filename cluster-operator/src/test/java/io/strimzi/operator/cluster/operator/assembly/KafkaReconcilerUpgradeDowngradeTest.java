@@ -28,9 +28,9 @@ import io.strimzi.operator.cluster.model.PodSetUtils;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.MockCertManager;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
-import io.strimzi.operator.common.operator.resource.SecretOperator;
 import io.strimzi.operator.common.operator.resource.StrimziPodSetOperator;
 import io.strimzi.platform.KubernetesVersion;
 import io.vertx.core.Future;
@@ -46,6 +46,8 @@ import org.mockito.ArgumentCaptor;
 
 import java.time.Clock;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -136,11 +138,10 @@ public class KafkaReconcilerUpgradeDowngradeTest {
 
         // Mock StrimziPodSet operations
         StrimziPodSetOperator mockSpsOps = supplier.strimziPodSetOperator;
+        when(mockSpsOps.listAsync(any(), any(Labels.class))).thenReturn(Future.succeededFuture(List.of()));
+        when(mockSpsOps.batchReconcile(any(), any(), any(), any())).thenCallRealMethod();
         ArgumentCaptor<StrimziPodSet> spsCaptor = ArgumentCaptor.forClass(StrimziPodSet.class);
         when(mockSpsOps.reconcile(any(), any(), any(), spsCaptor.capture())).thenReturn(Future.succeededFuture(ReconcileResult.patched(new StrimziPodSet())));
-
-        // Mock Secret gets
-        SecretOperator mockSecretOps = supplier.secretOperations;
 
         // Run the test
         KafkaReconciler reconciler = new MockKafkaReconciler(
@@ -179,11 +180,10 @@ public class KafkaReconcilerUpgradeDowngradeTest {
 
         // Mock StrimziPodSet operations
         StrimziPodSetOperator mockSpsOps = supplier.strimziPodSetOperator;
+        when(mockSpsOps.listAsync(any(), any(Labels.class))).thenReturn(Future.succeededFuture(List.of()));
+        when(mockSpsOps.batchReconcile(any(), any(), any(), any())).thenCallRealMethod();
         ArgumentCaptor<StrimziPodSet> spsCaptor = ArgumentCaptor.forClass(StrimziPodSet.class);
         when(mockSpsOps.reconcile(any(), any(), any(), spsCaptor.capture())).thenReturn(Future.succeededFuture(ReconcileResult.patched(new StrimziPodSet())));
-
-        // Mock Secret gets
-        SecretOperator mockSecretOps = supplier.secretOperations;
 
         // Run the test
         KafkaReconciler reconciler = new MockKafkaReconciler(
@@ -232,11 +232,10 @@ public class KafkaReconcilerUpgradeDowngradeTest {
 
         // Mock StrimziPodSet operations
         StrimziPodSetOperator mockSpsOps = supplier.strimziPodSetOperator;
+        when(mockSpsOps.listAsync(any(), any(Labels.class))).thenReturn(Future.succeededFuture(List.of()));
+        when(mockSpsOps.batchReconcile(any(), any(), any(), any())).thenCallRealMethod();
         ArgumentCaptor<StrimziPodSet> spsCaptor = ArgumentCaptor.forClass(StrimziPodSet.class);
         when(mockSpsOps.reconcile(any(), any(), any(), spsCaptor.capture())).thenReturn(Future.succeededFuture(ReconcileResult.patched(new StrimziPodSet())));
-
-        // Mock Secret gets
-        SecretOperator mockSecretOps = supplier.secretOperations;
 
         // Run the test
         KafkaReconciler reconciler = new MockKafkaReconciler(
@@ -269,7 +268,7 @@ public class KafkaReconcilerUpgradeDowngradeTest {
 
     static class MockKafkaReconciler extends KafkaReconciler {
         public MockKafkaReconciler(Reconciliation reconciliation, ResourceOperatorSupplier supplier, Kafka kafkaCr, KafkaVersionChange versionChange) {
-            super(reconciliation, kafkaCr, null, 0, CLUSTER_CA, CLIENTS_CA, versionChange, CO_CONFIG, supplier, PFA, vertx);
+            super(reconciliation, kafkaCr, null, Map.of(), Map.of(), CLUSTER_CA, CLIENTS_CA, versionChange, CO_CONFIG, supplier, PFA, vertx);
             listenerReconciliationResults = new KafkaListenersReconciler.ReconciliationResult();
         }
 

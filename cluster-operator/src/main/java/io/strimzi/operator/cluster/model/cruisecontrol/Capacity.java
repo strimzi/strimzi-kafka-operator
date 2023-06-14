@@ -6,6 +6,7 @@ package io.strimzi.operator.cluster.model.cruisecontrol;
 
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
+import io.strimzi.api.kafka.model.CruiseControlSpec;
 import io.strimzi.api.kafka.model.KafkaSpec;
 import io.strimzi.api.kafka.model.balancing.BrokerCapacityOverride;
 import io.strimzi.api.kafka.model.storage.EphemeralStorage;
@@ -13,7 +14,6 @@ import io.strimzi.api.kafka.model.storage.JbodStorage;
 import io.strimzi.api.kafka.model.storage.PersistentClaimStorage;
 import io.strimzi.api.kafka.model.storage.SingleVolumeStorage;
 import io.strimzi.api.kafka.model.storage.Storage;
-import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.NodeRef;
 import io.strimzi.operator.cluster.model.StorageUtils;
 import io.strimzi.operator.cluster.model.VolumeUtils;
@@ -159,8 +159,6 @@ public class Capacity {
     private static final String OUTBOUND_NETWORK_KEY = "NW_OUT";
     private static final String DOC_KEY = "doc";
 
-    private final Storage storage;
-
     private enum ResourceRequirementType {
         REQUEST,
         LIMIT;
@@ -189,14 +187,21 @@ public class Capacity {
      *
      * @param reconciliation    Reconciliation marker
      * @param spec              Spec of the Kafka custom resource
-     * @param storage           Used storage configuration
+     * @param kafkaNodes                List of the nodes which are part of the Kafka cluster
+     * @param kafkaStorage              A map with storage configuration used by the Kafka cluster and its node pools
+     * @param kafkaResources            A map with resource configuration used by the Kafka cluster and its node pools
      */
-    public Capacity(Reconciliation reconciliation, KafkaSpec spec, Storage storage) {
+    public Capacity(
+            Reconciliation reconciliation,
+            KafkaSpec spec,
+            Set<NodeRef> kafkaNodes,
+            Map<String, Storage> kafkaStorage,
+            Map<String, ResourceRequirements> kafkaResources
+    ) {
         this.reconciliation = reconciliation;
         this.capacityEntries = new TreeMap<>();
-        this.storage = storage;
 
-        processCapacityEntries(spec);
+        processCapacityEntries(spec.getCruiseControl(), kafkaNodes, kafkaStorage, kafkaResources);
     }
 
     private static Integer getResourceRequirement(ResourceRequirements resources, ResourceRequirementType requirementType) {
@@ -209,24 +214,25 @@ public class Capacity {
         return null;
     }
 
-    private static String getCpuBasedOnRequirements(ResourceRequirements resourceRequirements) {
+    private static CpuCapacity getCpuBasedOnRequirements(ResourceRequirements resourceRequirements) {
         Integer request = getResourceRequirement(resourceRequirements, ResourceRequirementType.REQUEST);
         Integer limit = getResourceRequirement(resourceRequirements, ResourceRequirementType.LIMIT);
 
         if (limit != null) {
             if (request == null || limit.intValue() == request.intValue()) {
-                return CpuCapacity.milliCpuToCpu(limit);
+                return new CpuCapacity(CpuCapacity.milliCpuToCpu(limit));
             }
         }
+
         return null;
     }
 
-    private CpuCapacity processCpu(io.strimzi.api.kafka.model.balancing.BrokerCapacity bc, BrokerCapacityOverride override, String cpuBasedOnRequirements) {
+    private CpuCapacity processCpu(io.strimzi.api.kafka.model.balancing.BrokerCapacity bc, BrokerCapacityOverride override, CpuCapacity cpuBasedOnRequirements) {
         if (cpuBasedOnRequirements != null) {
             if ((override != null && override.getCpu() != null) || (bc != null && bc.getCpu() != null)) {
                 LOGGER.warnCr(reconciliation, "Ignoring CPU capacity override settings since they are automatically set to resource limits");
             }
-            return new CpuCapacity(cpuBasedOnRequirements);
+            return cpuBasedOnRequirements;
         } else if (override != null && override.getCpu() != null) {
             return new CpuCapacity(override.getCpu());
         } else if (bc != null && bc.getCpu() != null) {
@@ -335,31 +341,19 @@ public class Capacity {
         return String.valueOf(StorageUtils.convertTo(size, "Ki"));
     }
 
-    private void processCapacityEntries(KafkaSpec spec) {
-        io.strimzi.api.kafka.model.balancing.BrokerCapacity brokerCapacity = spec.getCruiseControl().getBrokerCapacity();
-        String cpuBasedOnRequirements = getCpuBasedOnRequirements(spec.getKafka().getResources());
-        int replicas = spec.getKafka().getReplicas();
+    private void processCapacityEntries(CruiseControlSpec spec, Set<NodeRef> kafkaNodes, Map<String, Storage> kafkaStorage, Map<String, ResourceRequirements> kafkaResources) {
+        io.strimzi.api.kafka.model.balancing.BrokerCapacity brokerCapacity = spec.getBrokerCapacity();
 
-        CpuCapacity cpu = processCpu(brokerCapacity, null, cpuBasedOnRequirements);
-        DiskCapacity disk = processDisk(storage, BrokerCapacity.DEFAULT_BROKER_ID);
         String inboundNetwork = processInboundNetwork(brokerCapacity, null);
         String outboundNetwork = processOutboundNetwork(brokerCapacity, null);
 
-        // Default broker entry
-        BrokerCapacity defaultBrokerCapacity = new BrokerCapacity(BrokerCapacity.DEFAULT_BROKER_ID, cpu, disk, inboundNetwork, outboundNetwork);
-        capacityEntries.put(BrokerCapacity.DEFAULT_BROKER_ID, defaultBrokerCapacity);
+        // We create a capacity for each broker node
+        for (NodeRef node : kafkaNodes)   {
+            DiskCapacity disk = processDisk(kafkaStorage.get(node.poolName()), node.nodeId());
+            CpuCapacity cpu = processCpu(brokerCapacity, null, getCpuBasedOnRequirements(kafkaResources.get(node.poolName())));
 
-        if (storage instanceof JbodStorage) {
-            // A capacity configuration for a cluster with a JBOD configuration
-            // requires a distinct broker capacity entry for every broker because the
-            // Kafka volume paths are not homogeneous across brokers and include
-            // the broker pod index in their names.
-            Set<NodeRef> nodeList = KafkaCluster.nodes(reconciliation.name(), replicas);
-            for (NodeRef node : nodeList)   {
-                disk = processDisk(storage, node.nodeId());
-                BrokerCapacity broker = new BrokerCapacity(node.nodeId(), cpu, disk, inboundNetwork, outboundNetwork);
-                capacityEntries.put(node.nodeId(), broker);
-            }
+            BrokerCapacity broker = new BrokerCapacity(node.nodeId(), cpu, disk, inboundNetwork, outboundNetwork);
+            capacityEntries.put(node.nodeId(), broker);
         }
 
         if (brokerCapacity != null) {
@@ -373,7 +367,6 @@ public class Capacity {
                 } else {
                     for (BrokerCapacityOverride override : overrides) {
                         List<Integer> ids = override.getBrokers();
-                        cpu = processCpu(brokerCapacity, override, cpuBasedOnRequirements);
                         inboundNetwork = processInboundNetwork(brokerCapacity, override);
                         outboundNetwork = processOutboundNetwork(brokerCapacity, override);
                         for (int id : ids) {
@@ -383,15 +376,14 @@ public class Capacity {
                                 if (capacityEntries.containsKey(id)) {
                                     if (overrideIds.add(id)) {
                                         BrokerCapacity brokerCapacityEntry = capacityEntries.get(id);
-                                        brokerCapacityEntry.setCpu(cpu);
+                                        brokerCapacityEntry.setCpu(processCpu(brokerCapacity, override, capacityEntries.get(id).getCpu()));
                                         brokerCapacityEntry.setInboundNetwork(inboundNetwork);
                                         brokerCapacityEntry.setOutboundNetwork(outboundNetwork);
                                     } else {
-                                        LOGGER.warnCr(reconciliation, "Duplicate broker id %d found in overrides, using first occurrence.", id);
+                                        LOGGER.warnCr(reconciliation, "Duplicate broker id {} found in overrides, using first occurrence.", id);
                                     }
                                 } else {
-                                    BrokerCapacity brokerCapacityEntry = new BrokerCapacity(id, cpu, disk, inboundNetwork, outboundNetwork);
-                                    capacityEntries.put(id, brokerCapacityEntry);
+                                    LOGGER.warnCr(reconciliation, "Ignoring broker capacity override for unknown node ID {}", id);
                                     overrideIds.add(id);
                                 }
                             }
