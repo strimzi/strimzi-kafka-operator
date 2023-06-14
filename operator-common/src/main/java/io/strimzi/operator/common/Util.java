@@ -58,6 +58,9 @@ import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.TimeZone;
 import java.util.TreeMap;
+import java.util.concurrent.CompletionException;
+import java.util.concurrent.CompletionStage;
+import java.util.function.BiConsumer;
 import java.util.function.BooleanSupplier;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
@@ -97,6 +100,55 @@ public class Util {
             }, result
         );
         return result.future();
+    }
+
+    /**
+     * Converts a standard Java {@link CompletionStage} to a Vert.x {@link Future}.
+     *
+     * @param <T>   type of the asynchronous result
+     * @param stage {@link CompletionStage} to convert
+     * @return a Vert.x {@link Future} with the result or error of the
+     *         {@link CompletionStage}
+     */
+    public static <T> Future<T> toFuture(CompletionStage<T> stage) {
+        Promise<T> promise = Promise.promise();
+        stage.whenComplete(unwrap((value, error) -> {
+            if (error != null) {
+                promise.fail(error);
+            } else {
+                promise.complete(value);
+            }
+        }));
+        return promise.future();
+    }
+
+    /**
+     * Wrap the given action with a BiConsumer that {@link #unwrap(Throwable)
+     * unwrap}s the error, if any. This method is meant to wrap the action typically
+     * passed to {@link CompletionStage#whenComplete(BiConsumer)}.
+     *
+     * @param <T>    type of the asynchronous result
+     * @param action action to be wrapped, expecting the cause of any
+     *               {@link CompletionException} as its second argument
+     * @return a BiConsumer to delegate to the provided action
+     */
+    public static <T> BiConsumer<T, Throwable> unwrap(BiConsumer<T, Throwable> action) {
+        return (result, error) -> action.accept(result, unwrap(error));
+    }
+
+    /**
+     * Returns the cause when the given Throwable is a {@link CompletionException}.
+     * Otherwise the error is returned unchanged.
+     *
+     * @param error any Throwable
+     * @return the cause when error is a {@link CompletionException}, else the same
+     *         Throwable
+     */
+    public static Throwable unwrap(Throwable error) {
+        if (error instanceof CompletionException wrapped) {
+            return wrapped.getCause();
+        }
+        return error;
     }
 
     /**
