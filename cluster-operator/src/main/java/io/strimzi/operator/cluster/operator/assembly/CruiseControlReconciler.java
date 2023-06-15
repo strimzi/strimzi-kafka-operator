@@ -276,6 +276,9 @@ public class CruiseControlReconciler {
             int caCertGeneration = ModelUtils.caCertGeneration(clusterCa);
             Annotations.annotations(deployment.getSpec().getTemplate()).put(
                     Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, String.valueOf(caCertGeneration));
+            int caKeyGeneration = ModelUtils.caKeyGeneration(clusterCa);
+            Annotations.annotations(deployment.getSpec().getTemplate()).put(
+                    Ca.ANNO_STRIMZI_IO_CLUSTER_CA_KEY_GENERATION, String.valueOf(caKeyGeneration));
 
             return deploymentOperator
                     .reconcile(reconciliation, reconciliation.namespace(), CruiseControlResources.deploymentName(reconciliation.name()), deployment)

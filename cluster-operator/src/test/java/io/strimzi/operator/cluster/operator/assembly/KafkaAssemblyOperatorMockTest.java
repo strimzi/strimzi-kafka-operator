@@ -195,6 +195,7 @@ public class KafkaAssemblyOperatorMockTest {
                 sps.getSpec().getPods().stream().map(PodSetUtils::mapToPod).forEach(pod -> {
                     assertThat(pod.getMetadata().getAnnotations(), hasEntry(Ca.ANNO_STRIMZI_IO_CLIENTS_CA_CERT_GENERATION, "0"));
                     assertThat(pod.getMetadata().getAnnotations(), hasEntry(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, "0"));
+                    assertThat(pod.getMetadata().getAnnotations(), hasEntry(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_KEY_GENERATION, "0"));
                     var brokersSecret = client.secrets().inNamespace(NAMESPACE).withName(KafkaResources.kafkaSecretName(CLUSTER_NAME)).get();
                     assertThat(pod.getMetadata().getAnnotations(), hasEntry(Annotations.ANNO_STRIMZI_SERVER_CERT_HASH,
                             CertUtils.getCertificateThumbprint(brokersSecret, ClusterCa.secretEntryNameForPod(pod.getMetadata().getName(), Ca.SecretEntry.CRT))
@@ -204,6 +205,7 @@ public class KafkaAssemblyOperatorMockTest {
                 StrimziPodSet zkSps = supplier.strimziPodSetOperator.client().inNamespace(NAMESPACE).withName(KafkaResources.zookeeperStatefulSetName(CLUSTER_NAME)).get();
                 zkSps.getSpec().getPods().stream().map(PodSetUtils::mapToPod).forEach(pod -> {
                     assertThat(pod.getMetadata().getAnnotations(), hasEntry(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, "0"));
+                    assertThat(pod.getMetadata().getAnnotations(), hasEntry(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_KEY_GENERATION, "0"));
                     var zooKeeperSecret = client.secrets().inNamespace(NAMESPACE).withName(KafkaResources.zookeeperSecretName(CLUSTER_NAME)).get();
                     assertThat(pod.getMetadata().getAnnotations(), hasEntry(Annotations.ANNO_STRIMZI_SERVER_CERT_HASH,
                             CertUtils.getCertificateThumbprint(zooKeeperSecret, ClusterCa.secretEntryNameForPod(pod.getMetadata().getName(), Ca.SecretEntry.CRT))
