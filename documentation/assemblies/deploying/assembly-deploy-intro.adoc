@@ -12,7 +12,7 @@ include::../../shared/snip-intro-text.adoc[leveloffset=+1]
 This guide provides instructions for deploying and managing Strimzi.
 Deployment options and steps are covered using the example installation files included with Strimzi. 
 While the guide highlights important configuration considerations, it does not cover all available options. 
-For a deeper understanding of the Kafka component configuration options, refer to the link:{BookURLConfiguring}[Custom resource API reference^].
+For a deeper understanding of the Kafka component configuration options, refer to the link:{BookURLConfiguring}[Strimzi Custom Resource API Reference^].
 
 In addition to deployment instructions, the guide offers pre- and post-deployment guidance. 
 It covers setting up and securing client access to your Kafka cluster. 
@@ -35,5 +35,5 @@ include::../../shared/ref-document-conventions.adoc[leveloffset=+1]
 == Additional resources
 
 * link:{BookURLOverview}[Strimzi Overview^]
-* link:{BookURLConfiguring}[Custom resource API reference^]
+* link:{BookURLConfiguring}[Strimzi Custom Resource API Reference^]
 * link:{BookURLBridge}[Using the Strimzi Kafka Bridge^]

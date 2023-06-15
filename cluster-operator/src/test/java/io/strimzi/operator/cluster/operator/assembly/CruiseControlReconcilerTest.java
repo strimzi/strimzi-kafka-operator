@@ -22,6 +22,7 @@ import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.AbstractModel;
 import io.strimzi.operator.cluster.model.ClusterCa;
 import io.strimzi.operator.cluster.model.KafkaVersion;
+import io.strimzi.operator.cluster.model.NodeRef;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
@@ -42,6 +43,7 @@ import org.mockito.ArgumentCaptor;
 
 import java.time.Clock;
 import java.util.Map;
+import java.util.Set;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
@@ -57,6 +59,10 @@ public class CruiseControlReconcilerTest {
     private static final String NAMESPACE = "namespace";
     private static final String NAME = "name";
     private static final KafkaVersion.Lookup VERSIONS = KafkaVersionTestUtils.getKafkaVersionLookup();
+    private final static Set<NodeRef> NODES = Set.of(
+            new NodeRef(NAME + "kafka-0", 0, "kafka", false, true),
+            new NodeRef(NAME + "kafka-1", 1, "kafka", false, true),
+            new NodeRef(NAME + "kafka-2", 2, "kafka", false, true));
 
     private final CruiseControlSpec cruiseControlSpec = new CruiseControlSpecBuilder()
             .withBrokerCapacity(new BrokerCapacityBuilder().withInboundNetwork("10000KB/s").withOutboundNetwork("10000KB/s").build())
@@ -115,7 +121,9 @@ public class CruiseControlReconcilerTest {
                 supplier,
                 kafka,
                 VERSIONS,
-                kafka.getSpec().getKafka().getStorage(),
+                NODES,
+                Map.of("kafka", kafka.getSpec().getKafka().getStorage()),
+                Map.of(),
                 clusterCa
         );
 
@@ -193,7 +201,9 @@ public class CruiseControlReconcilerTest {
                 supplier,
                 kafka,
                 VERSIONS,
-                kafka.getSpec().getKafka().getStorage(),
+                NODES,
+                Map.of(NAME + "-kafka", kafka.getSpec().getKafka().getStorage()),
+                Map.of(),
                 clusterCa
         );
 

@@ -1,0 +1,134 @@
+// Module included in the following assemblies:
+//
+// assembly-config.adoc
+
+[id='con-config-mirrormaker-{context}']
+= Configuring Kafka MirrorMaker (deprecated)
+
+[role="_abstract"]
+Update the `spec` properties of the `KafkaMirrorMaker` custom resource to configure your Kafka MirrorMaker deployment.
+
+You can configure access control for producers and consumers using TLS or SASL authentication.
+This procedure shows a configuration that uses TLS encryption and mTLS authentication on the consumer and producer side.
+
+For a deeper understanding of the Kafka MirrorMaker cluster configuration options, refer to the link:{BookURLConfiguring}[Strimzi Custom Resource API Reference^].
+
+IMPORTANT: Kafka MirrorMaker 1 (referred to as just _MirrorMaker_ in the documentation) has been deprecated in Apache Kafka 3.0.0 and will be removed in Apache Kafka 4.0.0.  
+As a result, the `KafkaMirrorMaker` custom resource which is used to deploy Kafka MirrorMaker 1 has been deprecated in Strimzi as well.
+The `KafkaMirrorMaker` resource will be removed from Strimzi when we adopt Apache Kafka 4.0.0.
+As a replacement, use the `KafkaMirrorMaker2` custom resource with the xref:unidirectional_replication_activepassive[`IdentityReplicationPolicy`].
+
+.Example `KafkaMirrorMaker` custom resource configuration
+[source,yaml,subs="+quotes,attributes"]
+----
+apiVersion: {KafkaMirrorMakerApiVersion}
+kind: KafkaMirrorMaker
+metadata:
+  name: my-mirror-maker
+spec:
+  replicas: 3 # <1>
+  consumer:
+    bootstrapServers: my-source-cluster-kafka-bootstrap:9092 # <2>
+    groupId: "my-group" # <3>
+    numStreams: 2 # <4>
+    offsetCommitInterval: 120000 # <5>
+    tls: # <6>
+      trustedCertificates:
+      - secretName: my-source-cluster-ca-cert
+        certificate: ca.crt
+    authentication: # <7>
+      type: tls
+      certificateAndKey:
+        secretName: my-source-secret
+        certificate: public.crt
+        key: private.key
+    config: # <8>
+      max.poll.records: 100
+      receive.buffer.bytes: 32768
+  producer:
+    bootstrapServers: my-target-cluster-kafka-bootstrap:9092
+    abortOnSendFailure: false # <9>
+    tls:
+      trustedCertificates:
+      - secretName: my-target-cluster-ca-cert
+        certificate: ca.crt
+    authentication:
+      type: tls
+      certificateAndKey:
+        secretName: my-target-secret
+        certificate: public.crt
+        key: private.key
+    config:
+      compression.type: gzip
+      batch.size: 8192
+  include: "my-topic|other-topic" # <10>
+  resources: # <11>
+    requests:
+      cpu: "1"
+      memory: 2Gi
+    limits:
+      cpu: "2"
+      memory: 2Gi
+  logging: # <12>
+    type: inline
+    loggers:
+      mirrormaker.root.logger: INFO
+  readinessProbe: # <13>
+    initialDelaySeconds: 15
+    timeoutSeconds: 5
+  livenessProbe:
+    initialDelaySeconds: 15
+    timeoutSeconds: 5
+  metricsConfig: # <14>
+   type: jmxPrometheusExporter
+   valueFrom:
+     configMapKeyRef:
+       name: my-config-map
+       key: my-key
+  jvmOptions: # <15>
+    "-Xmx": "1g"
+    "-Xms": "1g"
+  image: my-org/my-image:latest # <16>
+  template: # <17>
+    pod:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchExpressions:
+                  - key: application
+                    operator: In
+                    values:
+                      - postgresql
+                      - mongodb
+              topologyKey: "kubernetes.io/hostname"
+    mirrorMakerContainer: # <18>
+      env:
+        - name: OTEL_SERVICE_NAME
+          value: my-otel-service
+        - name: OTEL_EXPORTER_OTLP_ENDPOINT
+          value: "http://otlp-host:4317"
+  tracing: # <19>
+    type: opentelemetry
+----
+<1> The number of replica nodes.
+<2> Bootstrap servers for consumer and producer.
+<3> Group ID for the consumer.
+<4> The number of consumer streams.
+<5> The offset auto-commit interval in milliseconds.
+<6> TLS encryption with key names under which TLS certificates are stored in X.509 format for consumer or producer. If certificates are stored in the same secret, it can be listed multiple times.
+<7> Authentication for consumer or producer, specified as mTLS, token-based OAuth, SASL-based SCRAM-SHA-256/SCRAM-SHA-512, or PLAIN.
+<8> Kafka configuration options for consumer and producer.
+<9> If the `abortOnSendFailure` property is set to `true`, Kafka MirrorMaker will exit and the container will restart following a send failure for a message.
+<10> A list of included topics mirrored from source to target Kafka cluster.
+<11> Requests for reservation of supported resources, currently `cpu` and `memory`, and limits to specify the maximum resources that can be consumed.
+<12> Specified loggers and log levels added directly (`inline`) or indirectly (`external`) through a ConfigMap. A custom Log4j configuration must be placed under the `log4j.properties` or `log4j2.properties` key in the ConfigMap. MirrorMaker has a single logger called `mirrormaker.root.logger`. You can set the log level to INFO, ERROR, WARN, TRACE, DEBUG, FATAL or OFF.
+<13> Healthchecks to know when to restart a container (liveness) and when a container can accept traffic (readiness).
+<14> Prometheus metrics, which are enabled by referencing a ConfigMap containing configuration for the Prometheus JMX exporter in this example. You can enable metrics without further configuration using a reference to a ConfigMap containing an empty file under `metricsConfig.valueFrom.configMapKeyRef.key`.
+<15> JVM configuration options to optimize performance for the Virtual Machine (VM) running Kafka MirrorMaker.
+<16> ADVANCED OPTION: Container image configuration, which is recommended only in special situations.
+<17> Template customization. Here a pod is scheduled with anti-affinity, so the pod is not scheduled on nodes with the same hostname.
+<18> Environment variables are set for distributed tracing.
+<19> Distributed tracing is enabled by using OpenTelemetry.
++
+WARNING: With the `abortOnSendFailure` property set to `false`, the producer attempts to send the next message in a topic. The original message might be lost, as there is no attempt to resend a failed message.

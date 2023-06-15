@@ -1,7 +1,7 @@
 Configures a Kafka cluster.
 
 [id='property-kafka-listeners-{context}']
-=== `listeners`
+= `listeners`
 
 Use the `listeners` property to configure listeners to provide access to Kafka brokers.
 
@@ -25,7 +25,7 @@ spec:
 ----
 
 [id='property-kafka-config-{context}']
-=== `config`
+= `config`
 
 Use the `config` properties to configure Kafka broker options as keys.
 
@@ -122,7 +122,7 @@ spec:
 ----
 
 [id='property-kafka-brokerRackInitImage-{context}']
-=== `brokerRackInitImage`
+= `brokerRackInitImage`
 
 When rack awareness is enabled, Kafka broker pods use init container to collect the labels from the Kubernetes cluster nodes.
 The container image used for this container can be configured using the `brokerRackInitImage` property.
@@ -152,7 +152,7 @@ For example, because your network does not allow access to the container registr
 If the configured image is not compatible with Strimzi images, it might not work properly.
 
 [id='property-kafka-logging-{context}']
-=== `logging`
+= `logging`
 
 Kafka has its own configurable loggers, which include the following:
 

@@ -48,7 +48,7 @@ public class StrimziPodSetCrdOperatorIT extends AbstractCustomResourceOperatorIT
 
     @Override
     protected StrimziPodSetOperator operator() {
-        return new StrimziPodSetOperator(vertx, client, 10_000L);
+        return new StrimziPodSetOperator(vertx, client);
     }
 
     @Override
@@ -140,47 +140,13 @@ public class StrimziPodSetCrdOperatorIT extends AbstractCustomResourceOperatorIT
         });
     }
 
-    /**
-     * PodSet creation requires the status to be updated and the PodSet to be ready. This helper method updates the status once created.
-     *
-     * @param op            PodSet operator instance
-     * @param namespace     Namespace of the PodSet resource
-     * @param resourceName  Name of the PodSet resource
-     */
-    private void readinessHelper(StrimziPodSetOperator op, String namespace, String resourceName)  {
-        LOGGER.info("Setup helper to update readiness");
-        op.waitFor(Reconciliation.DUMMY_RECONCILIATION, namespace, resourceName, 100L, 10_000L, (n, ns) -> operator().get(namespace, resourceName) != null)
-                .compose(i -> {
-                    LOGGER.info("Updating readiness in helper");
-                    return op.updateStatusAsync(Reconciliation.DUMMY_RECONCILIATION, getResource(resourceName));
-                });
-    }
-
     @Test
-    public void testUnreadyCreateFails(VertxTestContext context) {
-        String resourceName = getResourceName(RESOURCE_NAME);
-        Checkpoint async = context.checkpoint();
-        String namespace = getNamespace();
-
-        // We create custom operator here to use small timout
-        StrimziPodSetOperator op = new StrimziPodSetOperator(vertx, client, 100L);
-
-        LOGGER.info("Creating resource");
-        op.reconcile(Reconciliation.DUMMY_RECONCILIATION, namespace, resourceName, getResource(resourceName))
-                .onComplete(context.failing(e -> context.verify(() -> {
-                    assertThat(e, instanceOf(TimeoutException.class));
-                    async.flag();
-                })));
-    }
-
-    @Test
-    public void testReadyCreateSucceeds(VertxTestContext context) {
+    public void testCreateSucceeds(VertxTestContext context) {
         String resourceName = getResourceName(RESOURCE_NAME);
         Checkpoint async = context.checkpoint();
         String namespace = getNamespace();
 
         StrimziPodSetOperator op = operator();
-        readinessHelper(op, namespace, resourceName); // Required to be able to create the resource
 
         LOGGER.info("Creating resource");
         op.reconcile(Reconciliation.DUMMY_RECONCILIATION, namespace, resourceName, getResource(resourceName))
@@ -199,7 +165,6 @@ public class StrimziPodSetCrdOperatorIT extends AbstractCustomResourceOperatorIT
         String namespace = getNamespace();
 
         StrimziPodSetOperator op = operator();
-        readinessHelper(op, namespace, resourceName); // Required to be able to create the resource
 
         LOGGER.info("Creating resource");
         op.reconcile(Reconciliation.DUMMY_RECONCILIATION, namespace, resourceName, getResource(resourceName))
@@ -236,7 +201,6 @@ public class StrimziPodSetCrdOperatorIT extends AbstractCustomResourceOperatorIT
         String namespace = getNamespace();
 
         StrimziPodSetOperator op = operator();
-        readinessHelper(op, namespace, resourceName); // Required to be able to create the resource
 
         AtomicReference<StrimziPodSet> newStatus = new AtomicReference<>();
 
@@ -279,7 +243,7 @@ public class StrimziPodSetCrdOperatorIT extends AbstractCustomResourceOperatorIT
         StrimziPodSetOperator op = operator();
 
         Promise<Void> updateStatus = Promise.promise();
-        readinessHelper(op, namespace, resourceName); // Required to be able to create the resource
+        //readinessHelper(op, namespace, resourceName); // Required to be able to create the resource
 
         LOGGER.info("Creating resource");
         op.reconcile(Reconciliation.DUMMY_RECONCILIATION, namespace, resourceName, getResource(resourceName))

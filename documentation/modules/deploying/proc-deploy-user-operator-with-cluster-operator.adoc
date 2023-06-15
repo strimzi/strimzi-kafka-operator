@@ -17,7 +17,7 @@ One namespace should be watched by only one User Operator.
 If you want to use the User Operator with a Kafka cluster that is not managed by Strimzi,
 you must xref:deploying-the-user-operator-standalone-{context}[deploy the User Operator as a standalone component].
 
-For more information about configuring the `entityOperator` and `userOperator` properties, see link:{BookURLConfiguring}#assembly-kafka-entity-operator-str[Configuring the Entity Operator^].
+For more information about configuring the `entityOperator` and `userOperator` properties, see xref:ref-kafka-entity-operator-str[Configuring the Entity Operator].
 
 .Prerequisites
 

@@ -609,6 +609,16 @@ public class ModelUtils {
     }
 
     /**
+     * Extract the CA key generation from the CA
+     *
+     * @param ca CA from which the generation should be extracted
+     * @return CA key generation or the initial generation if no generation is set
+     */
+    public static int caKeyGeneration(Ca ca) {
+        return Annotations.intAnnotation(ca.caKeySecret(), Ca.ANNO_STRIMZI_IO_CA_KEY_GENERATION, Ca.INIT_GENERATION);
+    }
+
+    /**
      * Generates all possible DNS names for a Kubernetes service:
      *     - service-name
      *     - service-name.namespace

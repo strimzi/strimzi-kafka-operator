@@ -11,8 +11,7 @@ After a new custom resource type is added to your cluster by installing a CRD, y
 
 Depending on the cluster setup, installation typically requires cluster admin privileges.
 
-NOTE: Access to manage custom resources is limited to Strimzi administrators.
-For more information, see xref:adding-users-the-strimzi-admin-role-str[].
+NOTE: Access to manage custom resources is limited to Strimzi administrators. For more information, see xref:adding-users-the-strimzi-admin-role-str[].
 
 A CRD defines a new `kind` of resource, such as `kind:Kafka`, within a Kubernetes cluster.
 
@@ -101,7 +100,6 @@ status:
 <1> The `kind` and `apiVersion` identify the CRD of which the custom resource is an instance.
 <2> A label, applicable only to `KafkaTopic` and `KafkaUser` resources, that defines the name of the Kafka cluster (which is same as the name of the `Kafka` resource) to which a topic or user belongs.
 +
-//The name is used by the xref:con-topic-operator-cluster-label-deploying[Topic Operator] and xref:con-user-operator-cluster-label-deploying-uo[User Operator] to identify the Kafka cluster when creating a topic or user, and in subsequent handling.
 <3> The spec shows the number of partitions and replicas for the topic as well as the configuration parameters for the topic itself. In this example, the retention period for a message to remain in the topic and the segment file size for the log are specified.
 <4> Status conditions for the `KafkaTopic` resource. The `type` condition changed to `Ready` at the `lastTransitionTime`.
 

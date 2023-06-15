@@ -38,9 +38,9 @@ public class ClusterCaRenewalTest {
     private static final Set<NodeRef> NODES = new LinkedHashSet<>();
     // LinkedHashSet is used to maintain ordering and have predictable test results
     static {
-        NODES.add(new NodeRef("pod0", 0));
-        NODES.add(new NodeRef("pod1", 1));
-        NODES.add(new NodeRef("pod2", 2));
+        NODES.add(new NodeRef("pod0", 0, null, false, true));
+        NODES.add(new NodeRef("pod1", 1, null, false, true));
+        NODES.add(new NodeRef("pod2", 2, null, false, true));
     }
 
     @ParallelTest
@@ -437,7 +437,7 @@ public class ClusterCaRenewalTest {
 
         Map<String, CertAndKey> newCerts = mockedCa.maybeCopyOrGenerateCerts(
                 Reconciliation.DUMMY_RECONCILIATION,
-                Set.of(new NodeRef("pod1", 1)),
+                Set.of(new NodeRef("pod1", 1, null, false, true)),
                 SUBJECT_FN,
                 initialSecret,
                 true);

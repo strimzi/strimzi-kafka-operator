@@ -1,9 +1,9 @@
 // Module included in the following assemblies:
 //
-// assembly-config-mirrormaker2.adoc
+// assembly-config.adoc
 
 [id='con-mirrormaker-producers-consumers-{context}']
-= Connector producer and consumer configuration
+= Configuring MirrorMaker 2 connector producers and consumers
 
 [role="_abstract"]
 MirrorMaker 2 connectors use internal producers and consumers.
@@ -103,9 +103,3 @@ spec:
         producer.override.request.timeout.ms: 30000
         # ...      
 ----
-
-[role="_additional-resources"]
-.Additional resources
-
-* xref:type-KafkaMirrorMaker2ConnectorSpec-reference[]
-* xref:type-KafkaMirrorMaker2MirrorSpec-reference[]

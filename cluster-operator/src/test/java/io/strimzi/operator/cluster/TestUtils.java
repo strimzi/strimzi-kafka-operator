@@ -66,21 +66,21 @@ public class TestUtils {
     public static void maybeAddHttpProxyEnvVars(List<EnvVar> envVars) {
         if (System.getenv(ClusterOperatorConfig.HTTP_PROXY) != null) {
             envVars.add(new EnvVarBuilder()
-                .withName(ClusterOperatorConfig.HTTP_PROXY)
-                .withValue(System.getenv(ClusterOperatorConfig.NO_PROXY))
-                .build());
+                    .withName(ClusterOperatorConfig.HTTP_PROXY)
+                    .withValue(System.getenv(ClusterOperatorConfig.NO_PROXY))
+                    .build());
         }
         if (System.getenv(ClusterOperatorConfig.HTTPS_PROXY) != null) {
             envVars.add(new EnvVarBuilder()
-                .withName(ClusterOperatorConfig.HTTPS_PROXY)
-                .withValue(System.getenv(ClusterOperatorConfig.HTTPS_PROXY))
-                .build());
+                    .withName(ClusterOperatorConfig.HTTPS_PROXY)
+                    .withValue(System.getenv(ClusterOperatorConfig.HTTPS_PROXY))
+                    .build());
         }
         if (System.getenv(ClusterOperatorConfig.NO_PROXY) != null) {
             envVars.add(new EnvVarBuilder()
-                .withName(ClusterOperatorConfig.NO_PROXY)
-                .withValue(System.getenv(ClusterOperatorConfig.NO_PROXY))
-                .build());
+                    .withName(ClusterOperatorConfig.NO_PROXY)
+                    .withValue(System.getenv(ClusterOperatorConfig.NO_PROXY))
+                    .build());
         }
     }
 }

@@ -21,7 +21,7 @@ template:
 ----
 
 [id='property-hostaliases-config-{context}']
-=== `hostAliases`
+= `hostAliases`
 
 Use the `hostAliases` property to a specify a list of hosts and IP addresses,
 which are injected into the `/etc/hosts` file of the pod.

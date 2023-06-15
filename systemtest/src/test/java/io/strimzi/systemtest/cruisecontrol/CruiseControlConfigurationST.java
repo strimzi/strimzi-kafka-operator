@@ -27,8 +27,6 @@ import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.systemtest.utils.specific.CruiseControlUtils;
 import io.strimzi.test.WaitException;
-import io.vertx.core.json.JsonArray;
-import io.vertx.core.json.JsonObject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.Tag;
@@ -40,8 +38,8 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.Map;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
 
@@ -50,12 +48,11 @@ import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.CoreMatchers.hasItem;
-import static org.hamcrest.CoreMatchers.nullValue;
-import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.CoreMatchers.nullValue;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasEntry;
-import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @Tag(REGRESSION)
@@ -66,94 +63,6 @@ public class CruiseControlConfigurationST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(CruiseControlConfigurationST.class);
 
     private final String namespace = testSuiteNamespaceManager.getMapOfAdditionalNamespaces().get(CruiseControlConfigurationST.class.getSimpleName()).stream().findFirst().get();
-
-    @ParallelNamespaceTest
-    void testCapacityFile(ExtensionContext extensionContext) {
-        final String namespaceName = StUtils.getNamespaceBasedOnRbac(namespace, extensionContext);
-        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
-
-        double disk = 100_000;
-        String cpu = "1.222";
-        String cpuOverride0 = "2575m";
-        String cpuOverride1 = "3";
-        String inboundNetwork = "10000KiB/s";
-        String outboundNetwork = "10000KiB/s";
-        String inboundNetworkOverride0 = "20000KiB/s";
-        String inboundNetworkOverride1 = "40000KiB/s";
-        String outboundNetworkOverride1 = "400000KiB/s";
-
-        int broker0 = 0;
-        int broker1 = 1;
-        int broker2 = 2;
-
-        List<Integer> overrideList0 = List.of(broker0, broker1, broker2, broker0);
-        List<Integer> overrideList1 = List.of(broker1);
-
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaWithCruiseControl(clusterName, 3, 3)
-            .editOrNewSpec()
-                .editCruiseControl()
-                    .withNewBrokerCapacity()
-                        .withCpu(cpu)
-                        .withInboundNetwork(inboundNetwork)
-                        .addNewOverride()
-                            .withBrokers(overrideList0)
-                            .withCpu(cpuOverride0)
-                            .withInboundNetwork(inboundNetworkOverride0)
-                        .endOverride()
-                        .addNewOverride()
-                            .withBrokers(overrideList1)
-                            .withCpu(cpuOverride1)
-                            .withInboundNetwork(inboundNetworkOverride1)
-                            .withOutboundNetwork(outboundNetworkOverride1)
-                        .endOverride()
-                    .endBrokerCapacity()
-                .endCruiseControl()
-            .endSpec()
-            .build());
-
-        String cruiseControlPodName = kubeClient(namespaceName).listPodsByPrefixInName(namespaceName, clusterName + "-cruise-control-").get(0).getMetadata().getName();
-
-        JsonObject cruiseControlCapacityFileContent =
-            new JsonObject(cmdKubeClient(namespaceName).execInPod(cruiseControlPodName, "/bin/bash", "-c", "cat " + Constants.CRUISE_CONTROL_CAPACITY_FILE_PATH).out());
-
-        LOGGER.info("Verifying cruise control configuration.");
-        JsonArray brokerCapacities =  cruiseControlCapacityFileContent.getJsonArray("brokerCapacities");
-        assertThat(brokerCapacities, not(nullValue()));
-
-        LOGGER.info("We have 4 entries in broker-capacities");
-        assertThat(brokerCapacities.size(), is(4));
-
-        JsonObject defaultBroker = brokerCapacities.getJsonObject(0);
-        assertThat(defaultBroker.getString("brokerId"), is("-1"));
-        assertThat(defaultBroker.getString("doc"), notNullValue());
-
-        LOGGER.info("Verifying default cruise control capacities");
-        JsonObject defaultBrokerCapacity = defaultBroker.getJsonObject("capacity");
-        String cpuCapacity = "{num.cores=" + cpu + "}";
-
-        assertThat(Double.valueOf(defaultBrokerCapacity.getString("DISK")), is(disk));
-        assertThat(defaultBrokerCapacity.getString("CPU"), is(cpuCapacity));
-        assertThat(Double.valueOf(defaultBrokerCapacity.getString("NW_IN")), is(CruiseControlUtils.removeNetworkCapacityKibSuffix(inboundNetwork)));
-        assertThat(Double.valueOf(defaultBrokerCapacity.getString("NW_OUT")), is(CruiseControlUtils.removeNetworkCapacityKibSuffix(outboundNetwork)));
-
-        LOGGER.info("Verifying cruise control capacity overrides");
-        JsonObject broker0Capacity = brokerCapacities.getJsonObject(1).getJsonObject("capacity");
-        JsonObject broker1Capacity = brokerCapacities.getJsonObject(2).getJsonObject("capacity");
-        JsonObject broker2Capacity = brokerCapacities.getJsonObject(3).getJsonObject("capacity");
-        cpuCapacity = "{num.cores=2.575}";
-
-        assertThat(broker0Capacity.getString("CPU"), is(cpuCapacity));
-        assertThat(Double.valueOf(broker0Capacity.getString("NW_IN")), is(CruiseControlUtils.removeNetworkCapacityKibSuffix(inboundNetworkOverride0)));
-        assertThat(Double.valueOf(broker0Capacity.getString("NW_OUT")), is(CruiseControlUtils.removeNetworkCapacityKibSuffix(outboundNetwork)));
-
-        assertThat(broker1Capacity.getString("CPU"), is(cpuCapacity));
-        assertThat(Double.valueOf(broker1Capacity.getString("NW_IN")), is(CruiseControlUtils.removeNetworkCapacityKibSuffix(inboundNetworkOverride0)));
-        assertThat(Double.valueOf(broker1Capacity.getString("NW_OUT")), is(CruiseControlUtils.removeNetworkCapacityKibSuffix(outboundNetwork)));
-
-        assertThat(broker2Capacity.getString("CPU"), is(cpuCapacity));
-        assertThat(Double.valueOf(broker2Capacity.getString("NW_IN")), is(CruiseControlUtils.removeNetworkCapacityKibSuffix(inboundNetworkOverride0)));
-        assertThat(Double.valueOf(broker2Capacity.getString("NW_OUT")), is(CruiseControlUtils.removeNetworkCapacityKibSuffix(outboundNetwork)));
-    }
 
     @ParallelNamespaceTest
     void testDeployAndUnDeployCruiseControl(ExtensionContext extensionContext) throws IOException {

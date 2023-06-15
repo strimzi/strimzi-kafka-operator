@@ -1,6 +1,6 @@
 // Module included in the following assemblies:
 //
-// assembly-deployment-configuration-kafka-connect.adoc
+// assembly-deploy-kafka-connect.adoc
 
 [id='ref-list-of-kafka-connect-resources-{context}']
 = List of Kafka Connect cluster resources

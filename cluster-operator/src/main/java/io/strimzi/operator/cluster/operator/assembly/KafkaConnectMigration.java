@@ -185,7 +185,7 @@ public class KafkaConnectMigration {
      */
     private Future<Void> scaleDownDeployment(int replicas)    {
         LOGGER.infoCr(reconciliation, "Scaling down Deployment {}", connect.getComponentName());
-        return deploymentOperator.scaleDown(reconciliation, reconciliation.namespace(), connect.getComponentName(), replicas)
+        return deploymentOperator.scaleDown(reconciliation, reconciliation.namespace(), connect.getComponentName(), replicas, operationTimeoutMs)
                 .compose(i -> deploymentOperator.waitForObserved(reconciliation, reconciliation.namespace(), connect.getComponentName(), 1_000, operationTimeoutMs))
                 .compose(i -> deploymentOperator.readiness(reconciliation, reconciliation.namespace(), connect.getComponentName(), 1_000, operationTimeoutMs));
     }
@@ -290,7 +290,7 @@ public class KafkaConnectMigration {
      */
     private Future<Void> scaleUpDeployment(int replicas)    {
         LOGGER.infoCr(reconciliation, "Scaling up Deployment {}", connect.getComponentName());
-        return deploymentOperator.scaleUp(reconciliation, reconciliation.namespace(), connect.getComponentName(), replicas)
+        return deploymentOperator.scaleUp(reconciliation, reconciliation.namespace(), connect.getComponentName(), replicas, operationTimeoutMs)
                 .compose(i -> deploymentOperator.waitForObserved(reconciliation, reconciliation.namespace(), connect.getComponentName(), 1_000, operationTimeoutMs))
                 .compose(i -> deploymentOperator.readiness(reconciliation, reconciliation.namespace(), connect.getComponentName(), 1_000, operationTimeoutMs));
     }

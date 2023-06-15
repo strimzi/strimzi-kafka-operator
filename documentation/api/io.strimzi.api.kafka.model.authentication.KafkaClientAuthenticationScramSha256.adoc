@@ -1,10 +1,10 @@
 To configure SASL-based SCRAM-SHA-256 authentication, set the `type` property to `scram-sha-256`.
 The SCRAM-SHA-256 authentication mechanism requires a username and password.
 
-=== `username`
+= `username`
 Specify the username in the `username` property.
 
-=== `passwordSecret`
+= `passwordSecret`
 In the `passwordSecret` property, specify a link to a `Secret` containing the password.
 
 You can use the secrets created by the User Operator.

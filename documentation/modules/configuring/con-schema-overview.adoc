@@ -1,0 +1,19 @@
+// This module is included in the following files:
+//
+// configuring/configuring.adoc
+
+[id='con-schema-reference-intro-{context}']
+= Using schema properties to configure custom resources
+
+[role="_abstract"]
+Custom resources offer a flexible way to manage and fine-tune the operation of Strimzi components using configuration properties. 
+This reference guide describes common configuration properties that apply to multiple custom resources, as well as the configuration properties available for each custom resource schema available with Strimzi.
+Where appropriate, expanded descriptions of properties and examples of how they are configured are provided. 
+
+The properties defined for each schema provide a structured and organized way to specify configuration for the custom resources. 
+Whether it's adjusting resource allocation or specifying access controls, the properties in the schemas allow for a granular level of configuration.
+For example, you can use the properties of the `KafkaClusterSpec` schema to specify the type of storage for a Kafka cluster or add listeners that provide secure access to Kafka brokers. 
+
+Some property options within a schema may be constrained, as indicated in the property descriptions. 
+These constraints define specific options or limitations on the values that can be assigned to those properties. 
+Constraints ensure that the custom resources are configured with valid and appropriate values.

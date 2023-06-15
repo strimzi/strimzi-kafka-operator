@@ -881,9 +881,9 @@ public class KafkaRebalanceAssemblyOperator
                                             }
                                         })
                                         .onFailure(e -> {
-                                            LOGGER.errorCr(reconciliation, "Cruise Control getting rebalance proposal failed", e.getCause());
+                                            LOGGER.errorCr(reconciliation, "Cruise Control getting rebalance proposal failed");
                                             vertx.cancelTimer(t);
-                                            p.fail(e.getCause());
+                                            p.fail(e);
                                         });
                                 }
                             } else {

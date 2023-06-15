@@ -1,6 +1,6 @@
 // Module included in the following assemblies:
 //
-// assembly-deployment-configuration-kafka-bridge.adoc
+// assembly-deploy-kafka-bridge.adoc
 
 [id='ref-list-of-kafka-bridge-resources-{context}']
 = List of Kafka Bridge cluster resources

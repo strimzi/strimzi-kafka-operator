@@ -142,7 +142,6 @@ public class ManualPodCleanerTest {
 
         ManualPodCleaner cleaner = new ManualPodCleaner(
                 Reconciliation.DUMMY_RECONCILIATION,
-                CONTROLLER_NAME,
                 SELECTOR,
                 supplier
         );

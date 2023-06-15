@@ -58,6 +58,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static java.util.Collections.emptyMap;
 
@@ -65,7 +67,7 @@ import static java.util.Collections.emptyMap;
  * ZooKeeper cluster model
  */
 @SuppressWarnings({"checkstyle:ClassFanOutComplexity"})
-public class ZookeeperCluster extends AbstractStatefulModel implements SupportsMetrics, SupportsLogging, SupportsJmx {
+public class ZookeeperCluster extends AbstractModel implements SupportsMetrics, SupportsLogging, SupportsJmx {
     /**
      * Port for plaintext access for ZooKeeper clients (available inside the pod only)
      */
@@ -108,6 +110,16 @@ public class ZookeeperCluster extends AbstractStatefulModel implements SupportsM
     private MetricsModel metrics;
     private LoggingModel logging;
     /* test */ ZookeeperConfiguration configuration;
+
+    /**
+     * Storage configuration
+     */
+    protected Storage storage;
+
+    /**
+     * Warning conditions generated from the Custom Resource
+     */
+    protected List<Condition> warningConditions = new ArrayList<>(0);
 
     private static final boolean DEFAULT_ZOOKEEPER_SNAPSHOT_CHECK_ENABLED = true;
 
@@ -203,9 +215,15 @@ public class ZookeeperCluster extends AbstractStatefulModel implements SupportsM
 
         if (oldStorage != null) {
             Storage newStorage = zookeeperClusterSpec.getStorage();
-            StorageUtils.validatePersistentStorage(newStorage);
+            StorageUtils.validatePersistentStorage(newStorage, "Kafka.spec.zookeeper.storage");
 
-            StorageDiff diff = new StorageDiff(reconciliation, oldStorage, newStorage, oldReplicas, zookeeperClusterSpec.getReplicas());
+            StorageDiff diff = new StorageDiff(
+                    reconciliation,
+                    oldStorage,
+                    newStorage,
+                    IntStream.range(0, oldReplicas).boxed().collect(Collectors.toUnmodifiableSet()),
+                    IntStream.range(0, zookeeperClusterSpec.getReplicas()).boxed().collect(Collectors.toUnmodifiableSet())
+            );
 
             if (!diff.isEmpty()) {
                 LOGGER.warnCr(reconciliation, "Only the following changes to Zookeeper storage are allowed: " +
@@ -263,6 +281,32 @@ public class ZookeeperCluster extends AbstractStatefulModel implements SupportsM
         result.warningConditions.addAll(specChecker.run());
 
         return result;
+    }
+
+    /**
+     * @return The storage.
+     */
+    public Storage getStorage() {
+        return storage;
+    }
+
+    /**
+     * Set the Storage
+     *
+     * @param storage Persistent Storage configuration
+     */
+    protected void setStorage(Storage storage) {
+        StorageUtils.validatePersistentStorage(storage, "Kafka.spec.zookeeper.storage");
+        this.storage = storage;
+    }
+
+    /**
+     * Returns a list of warning conditions set by the model. Returns an empty list if no warning conditions were set.
+     *
+     * @return  List of warning conditions.
+     */
+    public List<Condition> getWarningConditions() {
+        return warningConditions;
     }
 
     /**
@@ -601,11 +645,11 @@ public class ZookeeperCluster extends AbstractStatefulModel implements SupportsM
     /**
      * @return  Set of node references for this ZooKeeper cluster
      */
-    private Set<NodeRef> nodes()   {
+    public Set<NodeRef> nodes()   {
         Set<NodeRef> nodes = new LinkedHashSet<>();
 
         for (int i = 0; i < replicas; i++)  {
-            nodes.add(new NodeRef(getPodName(i), i));
+            nodes.add(new NodeRef(getPodName(i), i, null, false, false));
         }
 
         return nodes;

@@ -6,6 +6,7 @@ package io.strimzi.operator.cluster;
 
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.Watch;
+import io.strimzi.api.kafka.model.nodepool.KafkaNodePool;
 import io.strimzi.operator.cluster.operator.assembly.AbstractConnectOperator;
 import io.strimzi.operator.cluster.operator.assembly.KafkaAssemblyOperator;
 import io.strimzi.operator.cluster.operator.assembly.KafkaBridgeAssemblyOperator;
@@ -123,6 +124,15 @@ public class ClusterOperator extends AbstractVerticle {
                 startFutures.add(operator.createWatch(namespace, operator.recreateWatch(namespace)).compose(w -> {
                     LOGGER.info("Opened watch for {} operator", operator.kind());
                     watchByKind.put(operator.kind(), w);
+                    return Future.succeededFuture();
+                }));
+            }
+
+            if (config.featureGates().kafkaNodePoolsEnabled())  {
+                // When node pools are enabled, we create the NodePool watch
+                startFutures.add(kafkaAssemblyOperator.createNodePoolWatch(namespace).compose(w -> {
+                    LOGGER.info("Opened KafkaNodePool watch for {} operator", kafkaAssemblyOperator.kind());
+                    watchByKind.put(KafkaNodePool.RESOURCE_KIND, w);
                     return Future.succeededFuture();
                 }));
             }

@@ -35,6 +35,7 @@ import io.strimzi.operator.common.model.Labels;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
 
 /**
@@ -116,6 +117,56 @@ public class WorkloadUtils {
 
         for (int i = 0; i < replicas; i++)  {
             Pod pod = podCreator.apply(i);
+            pods.add(PodSetUtils.podToMap(pod));
+        }
+
+        return new StrimziPodSetBuilder()
+                .withNewMetadata()
+                    .withName(name)
+                    .withLabels(labels.withAdditionalLabels(TemplateUtils.labels(template)).toMap())
+                    .withNamespace(namespace)
+                    .withAnnotations(Util.mergeLabelsOrAnnotations(annotations, TemplateUtils.annotations(template)))
+                    .withOwnerReferences(ownerReference)
+                .endMetadata()
+                .withNewSpec()
+                    .withSelector(new LabelSelectorBuilder().withMatchLabels(selectorLabels.toMap()).build())
+                    .withPods(pods)
+                .endSpec()
+                .build();
+    }
+
+    /**
+     * Create a Strimzi PodSet with Pod definitions
+     *
+     * @param name           Name of the PodSet
+     * @param namespace      Namespace of the PodSet
+     * @param labels         Labels of the PodSet
+     * @param ownerReference OwnerReference of the PodSet
+     * @param template       PodSet template with user's custom configuration
+     * @param nodes          List of node references
+     * @param annotations    Additional annotations which should be set on the PodSet. This might contain annotations
+     *                       for tracking storage configuration, Kafka versions and similar.
+     * @param selectorLabels Labels used for the Pod selector in the StrimziPodSetSpec
+     * @param podCreator     Function for generating the Pods which should be included in this PodSet based on the node
+     *                       reference.
+     *
+     * @return Created PodSet
+     */
+    public static StrimziPodSet createPodSet(
+            String name,
+            String namespace,
+            Labels labels,
+            OwnerReference ownerReference,
+            ResourceTemplate template,
+            Set<NodeRef> nodes,
+            Map<String, String> annotations,
+            Labels selectorLabels,
+            Function<NodeRef, Pod> podCreator
+    )  {
+        List<Map<String, Object>> pods = new ArrayList<>();
+
+        for (NodeRef node : nodes)  {
+            Pod pod = podCreator.apply(node);
             pods.add(PodSetUtils.podToMap(pod));
         }
 

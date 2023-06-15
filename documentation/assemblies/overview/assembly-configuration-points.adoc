@@ -22,6 +22,9 @@ include::../../modules/overview/con-configuration-points-common.adoc[leveloffset
 include::../../modules/overview/con-configuration-points-broker.adoc[leveloffset=+1]
 
 //MirrorMaker configuration points
+include::../../modules/overview/con-configuration-points-mirrormaker2.adoc[leveloffset=+1]
+
+//MirrorMaker configuration points
 include::../../modules/overview/con-configuration-points-mirrormaker.adoc[leveloffset=+1]
 
 //Kafka Connect configuration points

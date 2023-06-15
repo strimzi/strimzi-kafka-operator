@@ -30,6 +30,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiPredicate;
 import java.util.stream.Collectors;
 
@@ -142,11 +143,12 @@ public abstract class AbstractNamespacedResourceOperator<C extends KubernetesCli
      *
      * @return  Future which completes when the lists are reconciled
      */
-    public Future<Void> batchReconcile(Reconciliation reconciliation, String namespace, List<T> desired, Labels selector)  {
+    public Future<Map<String, ReconcileResult<T>>> batchReconcile(Reconciliation reconciliation, String namespace, List<T> desired, Labels selector)  {
         return listAsync(namespace, selector)
                 .compose(current -> {
                     @SuppressWarnings({ "rawtypes" }) // Has to use Raw type because of the CompositeFuture
                     List<Future> futures = new ArrayList<>(desired.size());
+                    Map<String, ReconcileResult<T>> reconcileResults = new ConcurrentHashMap<>();
                     List<String> currentNames = current.stream().map(ingress -> ingress.getMetadata().getName()).collect(Collectors.toList());
 
                     LOGGER.debugCr(reconciliation, "Reconciling existing {} resources {} against the desired {} resources", resourceKind, currentNames, resourceKind);
@@ -155,19 +157,25 @@ public abstract class AbstractNamespacedResourceOperator<C extends KubernetesCli
                     for (T desiredResource : desired) {
                         String name = desiredResource.getMetadata().getName();
                         currentNames.remove(name);
-                        futures.add(reconcile(reconciliation, namespace, name, desiredResource));
+                        futures.add(reconcile(reconciliation, namespace, name, desiredResource).map(result -> {
+                            reconcileResults.put(name, result);
+                            return result;
+                        }));
                     }
 
                     LOGGER.debugCr(reconciliation, "{} {}/{} should be deleted", resourceKind, namespace, currentNames);
 
                     // Delete resources which match our selector but are not desired anymore
                     for (String name : currentNames) {
-                        futures.add(reconcile(reconciliation, namespace, name, null));
+                        futures.add(reconcile(reconciliation, namespace, name, null).map(result -> {
+                            reconcileResults.put(name, result);
+                            return result;
+                        }));
                     }
 
                     return CompositeFuture
                             .join(futures)
-                            .map((Void) null);
+                            .map(reconcileResults);
                 });
     }
 

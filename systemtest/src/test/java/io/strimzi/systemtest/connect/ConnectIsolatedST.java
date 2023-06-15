@@ -1059,6 +1059,7 @@ class ConnectIsolatedST extends AbstractST {
 
         KafkaConnectUtils.waitForConnectReady(namespaceName, clusterName);
         PodUtils.waitForPodsReady(namespaceName, labelSelector, 0, true);
+        KafkaConnectorUtils.waitForConnectorNotReady(namespaceName, clusterName);
 
         connectPods = kubeClient(namespaceName).listPods(Labels.STRIMZI_NAME_LABEL, KafkaConnectResources.deploymentName(clusterName));
         KafkaConnectStatus connectStatus = KafkaConnectResource.kafkaConnectClient().inNamespace(namespaceName).withName(clusterName).get().getStatus();

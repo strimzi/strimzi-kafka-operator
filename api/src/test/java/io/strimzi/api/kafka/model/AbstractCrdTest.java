@@ -24,7 +24,6 @@ public abstract class AbstractCrdTest<R extends CustomResource> {
     }
 
     protected void assertDesiredResource(R actual, String expectedResource) {
-        //assertNotNull("The resource " + resourceName + " does not exist", model);
         String content = TestUtils.readResource(getClass(), expectedResource);
         assertThat("The resource " + expectedResource + " does not exist", content, is(notNullValue()));
 

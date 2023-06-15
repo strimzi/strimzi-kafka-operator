@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -x
 
+TEST_HELM3_VERSION=${TEST_HELM3_VERSION:-'v3.12.0'}
+
 function install_helm3 {
     export HELM_INSTALL_DIR=/usr/bin
     curl https://raw.githubusercontent.com/kubernetes/helm/master/scripts/get > get_helm.sh

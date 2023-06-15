@@ -27,7 +27,7 @@ General points about the alerting rule definitions:
 Alertmanager can be configured to use email, chat messages or other notification methods.
 Adapt the default configuration of the example rules according to your specific needs.
 
-== Example altering rules
+== Example alerting rules
 
 The `prometheus-rules.yaml` file contains example rules for the following components:
 

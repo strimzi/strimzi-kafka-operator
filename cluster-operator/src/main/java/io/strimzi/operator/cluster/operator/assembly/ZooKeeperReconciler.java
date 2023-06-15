@@ -235,7 +235,6 @@ public class ZooKeeperReconciler {
     protected Future<Void> manualPodCleaning() {
         return new ManualPodCleaner(
                 reconciliation,
-                KafkaResources.zookeeperStatefulSetName(reconciliation.name()),
                 zk.getSelectorLabels(),
                 strimziPodSetOperator,
                 podOperator,
@@ -514,6 +513,7 @@ public class ZooKeeperReconciler {
     public Map<String, String> zkPodSetPodAnnotations(int podNum) {
         Map<String, String> podAnnotations = new LinkedHashMap<>((int) Math.ceil(podNum / 0.75));
         podAnnotations.put(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_CERT_GENERATION, String.valueOf(ModelUtils.caCertGeneration(this.clusterCa)));
+        podAnnotations.put(Ca.ANNO_STRIMZI_IO_CLUSTER_CA_KEY_GENERATION, String.valueOf(ModelUtils.caKeyGeneration(this.clusterCa)));
         podAnnotations.put(Annotations.ANNO_STRIMZI_LOGGING_HASH, loggingHash);
         podAnnotations.put(ANNO_STRIMZI_SERVER_CERT_HASH, zkCertificateHash.get(podNum));
         return podAnnotations;

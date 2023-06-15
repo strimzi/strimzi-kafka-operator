@@ -236,13 +236,16 @@ public class UserController implements Liveness, Readiness {
      */
     @Override
     public boolean isAlive()    {
-        boolean ready = true;
+        boolean alive = true;
 
         for (UserControllerLoop t : threadPool) {
-            ready &= t.isAlive();
+            alive &= t.isAlive();
         }
 
-        return ready;
+        alive &= userInformer.isRunning();
+        alive &= secretInformer.isRunning();
+
+        return alive;
     }
 
     /**
