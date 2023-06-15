@@ -600,8 +600,6 @@ public class KafkaBridgeAssemblyOperatorTest {
         when(mockBridgeOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(bar));
         when(mockBridgeOps.updateStatusAsync(any(), any(KafkaBridge.class))).thenReturn(Future.succeededFuture());
         // when requested ConfigMap for a specific Kafka Bridge cluster
-        when(mockBridgeOps.get(eq(kbNamespace), eq("foo"))).thenReturn(foo);
-        when(mockBridgeOps.get(eq(kbNamespace), eq("bar"))).thenReturn(bar);
         when(mockBridgeOps.getAsync(eq(kbNamespace), eq("foo"))).thenReturn(Future.succeededFuture(foo));
         when(mockBridgeOps.getAsync(eq(kbNamespace), eq("bar"))).thenReturn(Future.succeededFuture(bar));
 

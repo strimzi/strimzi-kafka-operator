@@ -619,8 +619,6 @@ public class KafkaMirrorMaker2AssemblyOperatorTest {
         KafkaMirrorMaker2 bar = ResourceUtils.createEmptyKafkaMirrorMaker2(kmm2Namespace, "bar");
         when(mockMirrorMaker2Ops.listAsync(eq(kmm2Namespace), any(Optional.class))).thenReturn(Future.succeededFuture(asList(foo, bar)));
         // when requested ConfigMap for a specific Kafka MirrorMaker 2 cluster
-        when(mockMirrorMaker2Ops.get(eq(kmm2Namespace), eq("foo"))).thenReturn(foo);
-        when(mockMirrorMaker2Ops.get(eq(kmm2Namespace), eq("bar"))).thenReturn(bar);
         when(mockMirrorMaker2Ops.getAsync(eq(kmm2Namespace), eq("foo"))).thenReturn(Future.succeededFuture(foo));
         when(mockMirrorMaker2Ops.getAsync(eq(kmm2Namespace), eq("bar"))).thenReturn(Future.succeededFuture(bar));
 

@@ -174,7 +174,6 @@ public class KafkaStatusTest {
         CrdOperator<KubernetesClient, Kafka, KafkaList> mockKafkaOps = supplier.kafkaOperator;
 
         when(mockKafkaOps.getAsync(eq(namespace), eq(clusterName))).thenReturn(Future.succeededFuture(kafka));
-        when(mockKafkaOps.get(eq(namespace), eq(clusterName))).thenReturn(kafka);
 
         ArgumentCaptor<Kafka> kafkaCaptor = ArgumentCaptor.forClass(Kafka.class);
         when(mockKafkaOps.updateStatusAsync(any(), kafkaCaptor.capture())).thenReturn(Future.succeededFuture());
@@ -396,7 +395,6 @@ public class KafkaStatusTest {
         CrdOperator<KubernetesClient, Kafka, KafkaList> mockKafkaOps = supplier.kafkaOperator;
 
         when(mockKafkaOps.getAsync(eq(namespace), eq(clusterName))).thenReturn(Future.succeededFuture(kafka));
-        when(mockKafkaOps.get(eq(namespace), eq(clusterName))).thenReturn(kafka);
 
         ArgumentCaptor<Kafka> kafkaCaptor = ArgumentCaptor.forClass(Kafka.class);
         when(mockKafkaOps.updateStatusAsync(any(), kafkaCaptor.capture())).thenReturn(Future.succeededFuture());
@@ -434,7 +432,6 @@ public class KafkaStatusTest {
         CrdOperator<KubernetesClient, Kafka, KafkaList> mockKafkaOps = supplier.kafkaOperator;
 
         when(mockKafkaOps.getAsync(eq(namespace), eq(clusterName))).thenReturn(Future.succeededFuture(kafka));
-        when(mockKafkaOps.get(eq(namespace), eq(clusterName))).thenReturn(kafka);
 
         ArgumentCaptor<Kafka> kafkaCaptor = ArgumentCaptor.forClass(Kafka.class);
         when(mockKafkaOps.updateStatusAsync(any(), kafkaCaptor.capture())).thenReturn(Future.succeededFuture());

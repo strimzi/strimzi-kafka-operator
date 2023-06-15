@@ -746,8 +746,6 @@ public class KafkaConnectAssemblyOperatorTest {
         KafkaConnect bar = ResourceUtils.createEmptyKafkaConnect(kcNamespace, "bar");
         when(mockConnectOps.listAsync(eq(kcNamespace), any(Optional.class))).thenReturn(Future.succeededFuture(asList(foo, bar)));
         // when requested ConfigMap for a specific Kafka Connect cluster
-        when(mockConnectOps.get(eq(kcNamespace), eq("foo"))).thenReturn(foo);
-        when(mockConnectOps.get(eq(kcNamespace), eq("bar"))).thenReturn(bar);
         when(mockConnectOps.getAsync(eq(kcNamespace), eq("foo"))).thenReturn(Future.succeededFuture(foo));
         when(mockConnectOps.getAsync(eq(kcNamespace), eq("bar"))).thenReturn(Future.succeededFuture(bar));
 
