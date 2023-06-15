@@ -7,7 +7,9 @@ package io.strimzi.systemtest.operators;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
+import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaConnect;
+import io.strimzi.api.kafka.model.KafkaConnector;
 import io.strimzi.api.kafka.model.KafkaRebalance;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.operator.common.Annotations;
@@ -20,6 +22,8 @@ import io.strimzi.systemtest.annotations.IsolatedSuite;
 import io.strimzi.systemtest.annotations.KRaftNotSupported;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
+import io.strimzi.systemtest.metrics.MetricsCollector;
+import io.strimzi.systemtest.resources.ComponentType;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.annotations.IsolatedTest;
@@ -31,6 +35,7 @@ import io.strimzi.systemtest.templates.crd.KafkaRebalanceTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.templates.kubernetes.ClusterRoleBindingTemplates;
+import io.strimzi.systemtest.templates.specific.ScraperTemplates;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.RollingUpdateUtils;
 import io.strimzi.systemtest.utils.StUtils;
@@ -38,6 +43,7 @@ import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaRebalanceUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
+import io.strimzi.systemtest.utils.specific.MetricsUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -95,14 +101,29 @@ public class MultipleClusterOperatorsIsolatedST extends AbstractST {
         String producerName = "hello-world-producer";
         String consumerName = "hello-world-consumer";
 
+        String firstCOScraperName = FIRST_NAMESPACE + "-" + Constants.SCRAPER_NAME;
+        String secondCOScraperName = SECOND_NAMESPACE + "-" + Constants.SCRAPER_NAME;
+
+        LOGGER.info("Deploying Cluster Operators: {}, {} in respective namespaces: {}, {}", FIRST_CO_NAME, SECOND_CO_NAME, FIRST_NAMESPACE, SECOND_NAMESPACE);
         deployCOInNamespace(extensionContext, FIRST_CO_NAME, FIRST_NAMESPACE, Collections.singletonList(FIRST_CO_SELECTOR_ENV), true);
         deployCOInNamespace(extensionContext, SECOND_CO_NAME, SECOND_NAMESPACE, Collections.singletonList(SECOND_CO_SELECTOR_ENV), true);
 
+        LOGGER.info("Deploying scraper Pods: {}, {} for later metrics retrieval", firstCOScraperName, secondCOScraperName);
+        resourceManager.createResource(extensionContext, true,
+            ScraperTemplates.scraperPod(FIRST_NAMESPACE, firstCOScraperName).build(),
+            ScraperTemplates.scraperPod(SECOND_NAMESPACE, secondCOScraperName).build()
+        );
+
+        LOGGER.info("Setting up metric collectors targeting Cluster Operators: {}, {}", FIRST_CO_NAME, SECOND_CO_NAME);
+        MetricsCollector firstCoMetricsCollector = setupCOMetricsCollectorInNamespace(FIRST_CO_NAME, FIRST_NAMESPACE);
+        MetricsCollector secondCoMetricsCollector = setupCOMetricsCollectorInNamespace(SECOND_CO_NAME, SECOND_NAMESPACE);
+
+        LOGGER.info("Deploying Namespace: {} to host all additional operands", DEFAULT_NAMESPACE);
         cluster.createNamespace(DEFAULT_NAMESPACE);
         StUtils.copyImagePullSecrets(DEFAULT_NAMESPACE);
         cluster.setNamespace(DEFAULT_NAMESPACE);
 
-        LOGGER.info("Deploying Kafka without CR selector");
+        LOGGER.info("Deploying Kafka: {}/{} without CR selector", DEFAULT_NAMESPACE, clusterName);
         resourceManager.createResource(extensionContext, false, KafkaTemplates.kafkaEphemeral(clusterName, 3, 3)
             .editMetadata()
                 .withNamespace(DEFAULT_NAMESPACE)
@@ -112,7 +133,11 @@ public class MultipleClusterOperatorsIsolatedST extends AbstractST {
         // checking that no pods with prefix 'clusterName' will be created in some time
         PodUtils.waitUntilPodStabilityReplicasCount(DEFAULT_NAMESPACE, clusterName, 0);
 
-        LOGGER.info("Adding {} selector of {} into Kafka CR", FIRST_CO_SELECTOR, FIRST_CO_NAME);
+        // verify that metric signalizing managing of kafka is not present in either of cluster operators
+        MetricsUtils.assertCoMetricResourcesNullOrZero(firstCoMetricsCollector, Kafka.RESOURCE_KIND, DEFAULT_NAMESPACE);
+        MetricsUtils.assertCoMetricResourcesNullOrZero(secondCoMetricsCollector, Kafka.RESOURCE_KIND, DEFAULT_NAMESPACE);
+
+        LOGGER.info("Adding {} selector of {} into Kafka: {} CR", FIRST_CO_SELECTOR, FIRST_CO_NAME, clusterName);
         KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, kafka -> kafka.getMetadata().setLabels(FIRST_CO_SELECTOR), DEFAULT_NAMESPACE);
         KafkaUtils.waitForKafkaReady(DEFAULT_NAMESPACE, clusterName);
 
@@ -160,6 +185,37 @@ public class MultipleClusterOperatorsIsolatedST extends AbstractST {
         ClientUtils.waitForClientSuccess(producerName, DEFAULT_NAMESPACE, MESSAGE_COUNT);
 
         KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(DEFAULT_NAMESPACE, kafkaConnectPodName, Constants.DEFAULT_SINK_FILE_PATH, "Hello-world - 99");
+
+        LOGGER.info("Verifying that all operands in Namespace: {} are managed by Cluster Operator: {}", DEFAULT_NAMESPACE, FIRST_CO_NAME);
+        MetricsUtils.assertMetricResourcesHigherThanOrEqualTo(firstCoMetricsCollector, Kafka.RESOURCE_KIND, 1);
+        MetricsUtils.assertMetricResourcesHigherThanOrEqualTo(firstCoMetricsCollector, KafkaConnect.RESOURCE_KIND, 1);
+        MetricsUtils.assertMetricResourcesHigherThanOrEqualTo(firstCoMetricsCollector, KafkaConnector.RESOURCE_KIND, 1);
+
+        LOGGER.info("Switch management of Kafka Cluster: {}/{} operand from CO: {} to CO: {}", DEFAULT_NAMESPACE, clusterName, FIRST_CO_NAME, SECOND_CO_NAME);
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, kafka -> {
+            kafka.getMetadata().getLabels().replace("app.kubernetes.io/operator", SECOND_CO_NAME);
+        }, DEFAULT_NAMESPACE);
+
+        LOGGER.info("Verifying that number of managed Kafka resources in increased in CO: {} and decreased om CO: {}", SECOND_CO_NAME, FIRST_CO_NAME);
+        MetricsUtils.assertMetricResourcesHigherThanOrEqualTo(secondCoMetricsCollector, Kafka.RESOURCE_KIND, 1);
+        MetricsUtils.assertMetricResourcesLowerThanOrEqualTo(firstCoMetricsCollector, Kafka.RESOURCE_KIND, 0);
+    }
+
+    private MetricsCollector setupCOMetricsCollectorInNamespace(String coName, String coNamespace) {
+        // necessary for finding correct deployment when building metric collector.
+        ResourceManager.setCoDeploymentName(coName);
+
+        String coScraperName = coNamespace + "-" + Constants.SCRAPER_NAME;
+        String coScraperPodName = ResourceManager.kubeClient().listPodsByPrefixInName(coNamespace, coScraperName).get(0).getMetadata().getName();
+
+        MetricsCollector clusterOperatorCollector = new MetricsCollector.Builder()
+            .withScraperPodName(coScraperPodName)
+            .withNamespaceName(coNamespace)
+            .withComponentType(ComponentType.ClusterOperator)
+            .withComponentName("")
+            .build();
+
+        return clusterOperatorCollector;
     }
 
     @IsolatedTest
