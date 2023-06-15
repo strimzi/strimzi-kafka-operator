@@ -74,7 +74,7 @@ public abstract class AbstractST implements TestSeparator {
     protected final ResourceManager resourceManager = ResourceManager.getInstance();
     protected final TestSuiteNamespaceManager testSuiteNamespaceManager = TestSuiteNamespaceManager.getInstance();
     private final SuiteThreadController parallelSuiteController = SuiteThreadController.getInstance();
-    protected SetupClusterOperator clusterOperator = SetupClusterOperator.getInstanceHolder();
+    protected SetupClusterOperator clusterOperator = SetupClusterOperator.getInstance();
     protected KubeClusterResource cluster;
     private static final Logger LOGGER = LogManager.getLogger(AbstractST.class);
 
@@ -521,7 +521,7 @@ public abstract class AbstractST implements TestSeparator {
 
     private void afterAllMustExecute(ExtensionContext extensionContext)  {
         if (cluster.cluster().isClusterUp()) {
-            clusterOperator = SetupClusterOperator.getInstanceHolder();
+            clusterOperator = SetupClusterOperator.getInstance();
         } else {
             throw new KubernetesClusterUnstableException("Cluster is not responding and its probably un-stable (i.e., caused by network, OOM problem)");
         }
@@ -579,9 +579,7 @@ public abstract class AbstractST implements TestSeparator {
     }
 
     private void beforeAllMustExecute(ExtensionContext extensionContext) {
-        if (cluster.cluster().isClusterUp()) {
-            // nop
-        } else {
+        if (!cluster.cluster().isClusterUp()) {
             throw new KubernetesClusterUnstableException("Cluster is not responding and its probably un-stable (i.e., caused by network, OOM problem)");
         }
     }

@@ -111,7 +111,7 @@ public class SetupClusterOperator {
         co.namespaceToWatch == null && co.bindingsNamespaces == null && co.operationTimeout == 0 && co.reconciliationInterval == 0 &&
         co.extraEnvVars == null && co.clusterOperatorRBACType == null && co.testClassName == null && co.testMethodName == null;
 
-    public synchronized static SetupClusterOperator getInstanceHolder() {
+    public synchronized static SetupClusterOperator getInstance() {
         if (instanceHolder == null) {
             // empty cluster operator
             instanceHolder = new SetupClusterOperator();

@@ -80,8 +80,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 class LogSettingST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(LogSettingST.class);
 
-
-
     private static final String INFO = "INFO";
     private static final String ERROR = "ERROR";
     private static final String WARN = "WARN";

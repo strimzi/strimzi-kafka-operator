@@ -45,11 +45,9 @@ import static io.strimzi.systemtest.Constants.REGRESSION;
 class HttpBridgeTlsST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(HttpBridgeTlsST.class);
     private BridgeClients kafkaBridgeClientJob;
-    private String kafkaClientsPodName;
     private String sharedKafkaUserName;
 
     private final String httpBridgeTlsClusterName = "http-bridge-tls-cluster-name";
-
 
     @ParallelTest
     void testSendSimpleMessageTls(ExtensionContext extensionContext) {

@@ -45,10 +45,6 @@ import static io.strimzi.systemtest.Constants.REGRESSION;
 class HttpBridgeScramShaST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(HttpBridgeScramShaST.class);
     private final String httpBridgeScramShaClusterName = "http-bridge-scram-sha-cluster-name";
-
-
-
-    private String kafkaClientsPodName;
     private BridgeClients kafkaBridgeClientJob;
 
     @ParallelTest

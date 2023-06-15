@@ -90,8 +90,6 @@ public abstract class TracingAbstractST extends AbstractST {
     private final String jaegerInstancePath = TestUtils.USER_PATH + "/../systemtest/src/test/resources/tracing/jaeger-instance.yaml";
     private final String jaegerOperatorPath = TestUtils.USER_PATH + "/../systemtest/src/test/resources/tracing/jaeger-operator.yaml";
 
-
-
     protected abstract Tracing tracing();
     protected abstract String serviceNameEnvVar();
 

@@ -84,7 +84,6 @@ public class TopicST extends AbstractST {
     private static final String KAFKA_CLUSTER_NAME = "topic-cluster-name";
     private static final String SCRAPER_NAME = KAFKA_CLUSTER_NAME + "-" + Constants.SCRAPER_NAME;
 
-
     private String scraperPodName;
 
     private static int topicOperatorReconciliationInterval;
@@ -718,7 +717,7 @@ public class TopicST extends AbstractST {
             .createInstallation()
             .runInstallation();
 
-        LOGGER.info("Deploying shared Kafka across all test cases in {} namespace", clusterOperator.getDeploymentNamespace());
+        LOGGER.info("Deploying shared Kafka {}/{} across all test cases", clusterOperator.getDeploymentNamespace(), KAFKA_CLUSTER_NAME);
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(KAFKA_CLUSTER_NAME, 3, 1)
             .editMetadata()
