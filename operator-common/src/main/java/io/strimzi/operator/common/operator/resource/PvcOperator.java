@@ -23,7 +23,9 @@ public class PvcOperator extends AbstractNamespacedResourceOperator<KubernetesCl
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(PvcOperator.class);
     private static final Pattern IGNORABLE_PATHS = Pattern.compile(
             "^(/metadata/managedFields" +
-                    "|/metadata/annotations/pv.kubernetes.io~1bind-completed" +
+                    "|/metadata/annotations/pv.kubernetes.io~1.*" +
+                    "|/metadata/annotations/volume.beta.kubernetes.io~1.*" +
+                    "|/metadata/annotations/volume.kubernetes.io~1.*" +
                     "|/metadata/finalizers" +
                     "|/metadata/creationTimestamp" +
                     "|/metadata/resourceVersion" +
