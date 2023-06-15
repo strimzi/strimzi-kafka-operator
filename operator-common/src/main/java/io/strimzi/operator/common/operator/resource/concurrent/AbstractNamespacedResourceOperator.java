@@ -19,6 +19,7 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.Watcher;
 import io.fabric8.kubernetes.client.dsl.FilterWatchListDeletable;
 import io.fabric8.kubernetes.client.dsl.Informable;
@@ -276,11 +277,29 @@ public abstract class AbstractNamespacedResourceOperator<C extends KubernetesCli
     }
 
     /**
-     * Creates a resource with the given namespace and name with the given desired state
-     * and completes the given future accordingly.
+     * Creates a resource with the given namespace and name with the given desired
+     * state and completes the given future accordingly. If the resource already
+     * exists (Kubernetes responds with 409/Conflict), then an attempt will be made
+     * to update the existing resource with the desired state.
      */
     protected CompletionStage<ReconcileResult<T>> internalCreate(Reconciliation reconciliation, String namespace, String name, T desired) {
-        return CompletableFuture.supplyAsync(operation().inNamespace(namespace).resource(desired)::update, asyncExecutor)
+        return CompletableFuture.supplyAsync(() -> {
+            R resource = operation().inNamespace(namespace).resource(desired);
+            T result;
+
+            try {
+                result = resource.create();
+            } catch (KubernetesClientException e) {
+                if (e.getCode() == 409) {
+                    LOGGER.debugCr(reconciliation, "{} {} in namespace {} already exists and cannot be created. It will be updated instead", resourceKind, name, namespace);
+                    result = resource.update();
+                } else {
+                    throw e;
+                }
+            }
+
+            return result;
+        }, asyncExecutor)
             .thenApply(ReconcileResult::created)
             .whenComplete((result, error) -> {
                 if (error == null) {
