@@ -76,10 +76,10 @@ public interface Constants {
       */
     String ECHO_SINK_CONNECTOR_NAME = "echo-sink-connector";
     String ECHO_SINK_CLASS_NAME = "cz.scholz.kafka.connect.echosink.EchoSinkConnector";
-    String ECHO_SINK_TGZ_URL = "https://github.com/scholzj/echo-sink/archive/1.3.1.tar.gz";
-    String ECHO_SINK_TGZ_CHECKSUM = "6b360470e0a9aa92977be4e669a99d324149ed1544db91a527e6af5f25e9b01fd53e18eeae675c5edc7b8237aeeba9265bf999d77bb1e16df3e4263b3a5003b3";
-    String ECHO_SINK_JAR_URL = "https://github.com/scholzj/echo-sink/releases/download/1.3.1/echo-sink-1.3.1.jar";
-    String ECHO_SINK_JAR_CHECKSUM = "1d59ede165c0d547e3217d20fd40d7f67ed820c78fc9b5551a3cea53c5928479dc8f5ddf8806d1775e9080bac6a59d044456402c375ae5393f67b96171df7caf";
+    String ECHO_SINK_TGZ_URL = "https://github.com/scholzj/echo-sink/archive/1.4.0.tar.gz";
+    String ECHO_SINK_TGZ_CHECKSUM = "64d07f29a560dd20542f979e4eebbfe7735ba981a3e452f21a5b927357e705c450c61d003ffa71ff182c3b34a1a34d1e1f9c28bf8272d68fee94accb57bf7148";
+    String ECHO_SINK_JAR_URL = "https://github.com/scholzj/echo-sink/releases/download/1.4.0/echo-sink-1.4.0.jar";
+    String ECHO_SINK_JAR_CHECKSUM = "6d40b6334b9e6ff81a11176f23d082688ace58ff000570867dfabbd69a301c579c21f571985612c36cddd9d03454cea8cf0ace0d1f9335b5ef2e039f9781074a";
     String ECHO_SINK_FILE_NAME = "echo-sink-test.jar";
     String ECHO_SINK_JAR_WRONG_CHECKSUM = "f1f167902325062efc8c755647bc1b782b2b067a87a6e507ff7a3f6205803220";
 

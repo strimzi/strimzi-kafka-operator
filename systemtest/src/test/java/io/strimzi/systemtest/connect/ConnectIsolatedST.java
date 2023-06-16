@@ -678,7 +678,7 @@ class ConnectIsolatedST extends AbstractST {
 
         // TODO: the check is currently not working - there is some issue with committing the consumer offset and the Connector is restarted multiple times
         // https://github.com/strimzi/strimzi-kafka-operator/issues/8560
-        // KafkaConnectorUtils.waitForConnectorAutoRestartCount(testStorage.getNamespaceName(), Constants.ECHO_SINK_CONNECTOR_NAME, 0);
+        KafkaConnectorUtils.waitForConnectorAutoRestartCount(testStorage.getNamespaceName(), Constants.ECHO_SINK_CONNECTOR_NAME, 0);
     }
 
     @ParallelNamespaceTest
