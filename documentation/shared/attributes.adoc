@@ -151,6 +151,7 @@
 // API Versions current
 :ApiVersion: v1beta2
 :KafkaApiVersion: kafka.strimzi.io/v1beta2
+:KafkaNodePoolApiVersion: kafka.strimzi.io/v1beta2
 :KafkaConnectApiVersion: kafka.strimzi.io/v1beta2
 :KafkaConnectorApiVersion: kafka.strimzi.io/v1beta2
 :KafkaTopicApiVersion: kafka.strimzi.io/v1beta2
