@@ -37,13 +37,14 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import static java.util.Collections.emptyMap;
 
@@ -61,6 +62,10 @@ public class ModelUtils {
 
     protected static final ReconciliationLogger LOGGER = ReconciliationLogger.create(ModelUtils.class.getName());
     protected static final String TLS_SIDECAR_LOG_LEVEL = "TLS_SIDECAR_LOG_LEVEL";
+    /**
+     * Set of JVM performance options to be prioritized in sorting.
+     */
+    private static final Set<String> JVM_PERFORMANCE_PRIORITY_OPTIONS = Set.of("UnlockDiagnosticVMOptions");
 
     /**
      * @param certificateAuthority The CA configuration.
@@ -339,9 +344,7 @@ public class ModelUtils {
     public static List<String> getLinesWithoutCommentsAndEmptyLines(String config) {
         List<String> validLines = new ArrayList<>();
         if (config != null) {
-            List<String> allLines = Arrays.asList(config.split("\\r?\\n"));
-
-            for (String line : allLines) {
+            for (String line : config.split("\\r?\\n")) {
                 if (!line.isEmpty() && !line.matches("\\s*\\#.*")) {
                     validLines.add(line);
                 }
@@ -369,20 +372,8 @@ public class ModelUtils {
             strimziJavaOpts.append(" -Xmx").append(xmx);
         }
 
-        Map<String, String> xx = jvmOptions != null ? jvmOptions.getXx() : null;
-        if (xx != null) {
-            xx.forEach((k, v) -> {
-                strimziJavaOpts.append(' ').append("-XX:");
-
-                if ("true".equalsIgnoreCase(v))   {
-                    strimziJavaOpts.append("+").append(k);
-                } else if ("false".equalsIgnoreCase(v)) {
-                    strimziJavaOpts.append("-").append(k);
-                } else  {
-                    strimziJavaOpts.append(k).append("=").append(v);
-                }
-            });
-        }
+        parseJvmPerformanceOptions(jvmOptions)
+            .ifPresent(opts -> strimziJavaOpts.append(' ').append(opts));
 
         String optsTrim = strimziJavaOpts.toString().trim();
         if (!optsTrim.isEmpty()) {
@@ -422,27 +413,77 @@ public class ModelUtils {
      * @param jvmOptions JVM options
      */
     public static void jvmPerformanceOptions(List<EnvVar> envVars, JvmOptions jvmOptions) {
-        StringBuilder jvmPerformanceOpts = new StringBuilder();
+        parseJvmPerformanceOptions(jvmOptions)
+            .map(envVar -> ContainerUtils.createEnvVar(AbstractModel.ENV_VAR_KAFKA_JVM_PERFORMANCE_OPTS, envVar))
+            .ifPresent(envVars::add);
+    }
 
-        Map<String, String> xx = jvmOptions != null ? jvmOptions.getXx() : null;
-        if (xx != null) {
-            xx.forEach((k, v) -> {
-                jvmPerformanceOpts.append(' ').append("-XX:");
+    /**
+     * Parses JVM performance options from {@link JvmOptions#getXx()} property into a space-separated string of JVM flags.
+     * If performance options object is null or XX options are not configured then {@link Optional#empty()} will be returned.
+     *
+     * @param jvmOptions JVM options to parse
+     * @return optional comma-separated string of JVM flags
+     */
+    private static Optional<String> parseJvmPerformanceOptions(JvmOptions jvmOptions) {
+        return Optional.ofNullable(jvmOptions)
+            .map(JvmOptions::getXx)
+            .map(Map::entrySet)
+            .map(entrySet -> entrySet.stream()
+                .sorted(ModelUtils::compareJvmPerformanceOption)
+                .map(ModelUtils::toJvmPerformanceFlag)
+                .collect(Collectors.joining(" ")))
+            .filter(envVar -> !envVar.isEmpty());
+    }
 
-                if ("true".equalsIgnoreCase(v))   {
-                    jvmPerformanceOpts.append("+").append(k);
-                } else if ("false".equalsIgnoreCase(v)) {
-                    jvmPerformanceOpts.append("-").append(k);
-                } else  {
-                    jvmPerformanceOpts.append(k).append("=").append(v);
-                }
-            });
+    /**
+     * Compares two JVM option for sorting. The options are sorted by priority or if not prioritized by name.
+     * The prioritized options are placed at the beginning to ensure correctness of JVM flags.
+     * For example `-XX:+UnlockDiagnosticVMOptions` flag must be entered before `-XX:+PrintNMTStatistics`.
+     *
+     * @param jvmOption1 first JVM option to compare with key holding flag name placed in the key
+     * @param jvmOption2 second JVM option to compare with key holding flag name placed in the key
+     * @return comparison result [-1, 0, 1]
+     */
+    private static int compareJvmPerformanceOption(Map.Entry<String, String> jvmOption1, Map.Entry<String, String> jvmOption2) {
+        final var isJvmOption1Prioritized = isPriorityJvmPerformanceOption(jvmOption1);
+        final var isJvmOption2Prioritized = isPriorityJvmPerformanceOption(jvmOption2);
+        if (isJvmOption1Prioritized && isJvmOption2Prioritized) {
+            return 0;
         }
-
-        String jvmPerformanceOptsString = jvmPerformanceOpts.toString().trim();
-        if (!jvmPerformanceOptsString.isEmpty()) {
-            envVars.add(ContainerUtils.createEnvVar(AbstractModel.ENV_VAR_KAFKA_JVM_PERFORMANCE_OPTS, jvmPerformanceOptsString));
+        if (isJvmOption1Prioritized) {
+            return -1;
         }
+        if (isJvmOption2Prioritized) {
+            return 1;
+        }
+        return jvmOption1.getKey().compareTo(jvmOption2.getKey());
+    }
+
+    /**
+     * Checks whether the given JVM option should be prioritized or not.
+     *
+     * @param jvmOption JVM option to check
+     * @return true - JVM option should be prioritized, false - otherwise
+     */
+    private static boolean isPriorityJvmPerformanceOption(Map.Entry<String, String> jvmOption)  {
+        return JVM_PERFORMANCE_PRIORITY_OPTIONS.contains(jvmOption.getKey());
+    }
+
+    /**
+     * Converts JVM option into a JVM flag.
+     *
+     * @param jvmOption JVM option to convert with flag name placed in th eky
+     * @return JVM flag e.g. -XX+PrintNMTStatistics
+     */
+    private static String toJvmPerformanceFlag(Map.Entry<String, String> jvmOption) {
+        if ("true".equalsIgnoreCase(jvmOption.getValue())) {
+            return "-XX:+" + jvmOption.getKey();
+        }
+        if ("false".equalsIgnoreCase(jvmOption.getValue())) {
+            return "-XX:-" + jvmOption.getKey();
+        }
+        return "-XX:" + jvmOption.getKey() + "=" + jvmOption.getValue();
     }
 
     /**
@@ -656,7 +697,7 @@ public class ModelUtils {
     public static void validateComputeResources(ResourceRequirements resources, String path) {
         List<String> errors = ModelUtils.validateComputeResources(resources, "cpu", path);
         errors.addAll(ModelUtils.validateComputeResources(resources, "memory", path));
-        if (errors.size() > 0) {
+        if (!errors.isEmpty()) {
             throw new InvalidResourceException(errors.toString());
         }
     }
