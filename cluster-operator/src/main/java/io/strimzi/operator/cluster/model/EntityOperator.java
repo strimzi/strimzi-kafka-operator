@@ -126,6 +126,7 @@ public class EntityOperator extends AbstractModel {
     public static EntityOperator fromCrd(Reconciliation reconciliation, Kafka kafkaAssembly, KafkaVersion.Lookup versions, SharedEnvironmentProvider sharedEnvironmentProvider) {
         return fromCrd(reconciliation, kafkaAssembly, versions, sharedEnvironmentProvider, false);
     }
+    
     /**
      * Create an Entity Operator from given desired resource
      *

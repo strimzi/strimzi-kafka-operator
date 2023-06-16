@@ -7,7 +7,12 @@ package io.strimzi.operator.topic.v2;
 import java.util.Objects;
 import java.util.function.Function;
 
-class Either<X, Y> {
+/**
+ * A functional-style immutable holder for one of two possible <em>cases</em>, known as "left" and "right".
+ * @param <L> The type of the left hand case, which often represents the error case.
+ * @param <R> The type of the right hand case, which often represents the success case.
+ */
+class Either<L, R> {
     private final boolean left;
     private final Object value;
 
@@ -25,18 +30,18 @@ class Either<X, Y> {
     }
 
     @SuppressWarnings({"unchecked", "rawtypes"})
-    public <Z> Either<Z, Y> mapLeft(Function<X, Z> fn) {
+    public <Z> Either<Z, R> mapLeft(Function<L, Z> fn) {
         if (left) {
-            return ofLeft(fn.apply((X) value));
+            return ofLeft(fn.apply((L) value));
         } else {
             return (Either) this;
         }
     }
 
     @SuppressWarnings({"unchecked", "rawtypes"})
-    public <Z> Either<Z, Y> flatMapLeft(Function<X, Either<Z, Y>> fn) {
+    public <Z> Either<Z, R> flatMapLeft(Function<L, Either<Z, R>> fn) {
         if (left) {
-            return fn.apply((X) value);
+            return fn.apply((L) value);
         } else {
             return (Either) this;
         }
@@ -72,22 +77,22 @@ class Either<X, Y> {
         return this.left;
     }
 
-    public boolean isLeftEqual(X b) {
+    public boolean isLeftEqual(L b) {
         return this.left && Objects.equals(this.value, b);
     }
 
     @SuppressWarnings("unchecked")
-    public Y right() {
+    public R right() {
         if (left) {
             throw new IllegalStateException();
         }
-        return (Y) this.value;
+        return (R) this.value;
     }
 
     @SuppressWarnings("unchecked")
-    public X left() {
+    public L left() {
         if (left) {
-            return (X) this.value;
+            return (L) this.value;
         }
         throw new IllegalStateException();
     }

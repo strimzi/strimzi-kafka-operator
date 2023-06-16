@@ -1,6 +1,6 @@
 # Unidirectional topic operator
 
-These notes should be read in conjunction with the [Strimzi proposal][1] that covers the unidirectional topic operator (UTO).
+These notes should be read in conjunction with the [Strimzi proposal][proposal] that covers the unidirectional topic operator (UTO).
 While that proposal specifies most of the expected behaviour these notes cover the implementation. 
 
 The UTO aims to be scalable in terms of the number of topics that it can operate on.
@@ -18,14 +18,11 @@ In this case the controller does the following:
 It follows that reducing the cost of those `Admin` operations will allow the steady-state UTO to cope with larger numbers of `KafkaTopic`. 
 Kafka provides a useful mechanism for getting higher throughput for metadata operations: batching.
 
-For this reason the UTO tries to make use of the request batching supported by the Admin client.
-It does this by using a similar heuristic to that used in the Apache Kafka `Producer` client: Trading a bit of latency (in the form of a configurable "linger" duration) to in order to collect a batch of items to achieve higher throughput.
 For this reason the UTO tries to make use of the request batching supported by the `Admin` client.
 It does this by using a similar heuristic to that used in the Apache Kafka `Producer` client: Trading a bit of latency (in the form of a configurable "linger" duration) to in order to collect a batch of items to achieve higher throughput.
 Thus rather than reconciling individual KafkaTopics the UTO reconcilate batches of KafkaTopics. 
 * The batches are created on each iteration of the `BatchingLoop.LoopRunnable`.
-* Once a batch is created, the topics within it are reconciled together through to completion.
-  I.e. there is a single point of batching and topics in same batch will be reconciled together an complete reconciliation in that same batch.
+* Once a batch is created, the topic events within it are reconciled together through to completion (1 iteration of `LoopRunnable` => 1 batch => N topic events).
 * It is only `Admin` operations that are batched, because Kubernetes' API doesn't support batching.
 
 The items in a batch are not simply `KafkaTopics`, but upserts to, and deletions of, `KafkaTopics`.
@@ -36,3 +33,6 @@ We need the state of the KafkaTopic, (rather than using `null` to mean the topic
 For simplicity the `BatchingLoop.LoopRunnable` prevents two events about the same `KafkaTopic` in the same batch.
 Where this rule would be broken the later events are pushed back onto the head of the queue (that is, it's really a deque) for processing in a later batch.
 If there were concurrent controllers processing the queue (currently only a single thread is supported) a mechanism would be required to prevent two events for the same topic being processed concurrently.
+
+
+[proposal]: https://github.com/strimzi/proposals/blob/main/051-unidirectional-topic-operator.md

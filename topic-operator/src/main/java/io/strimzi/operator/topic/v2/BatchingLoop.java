@@ -33,7 +33,7 @@ class BatchingLoop {
 
     /**
      * The set of topics currently being reconciled by a controller.
-     * Guarded by the monitor of the BetterLoop.
+     * Guarded by the monitor of the BatchingLoop.
      * This functions as mechanism for preventing concurrent reconciliation of the same topic.
      */
     private final Set<Ref> inFlight = new HashSet<>(); // guarded by this
@@ -224,7 +224,7 @@ class BatchingLoop {
         }
 
         private void fillBatch(int batchId, Batch batch) throws InterruptedException {
-            LOGGER.infoOp("[Batch #{}] Filling", batchId);
+            LOGGER.traceOp("[Batch #{}] Filling", batchId);
             List<TopicEvent> rejected = new ArrayList<>();
 
 

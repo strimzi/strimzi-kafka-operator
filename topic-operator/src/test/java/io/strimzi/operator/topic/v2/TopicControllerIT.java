@@ -104,8 +104,6 @@ class TopicControllerIT {
     private static final Logger LOGGER = LogManager.getLogger(TopicControllerIT.class);
     public static final Map<String, String> SELECTOR = Map.of("foo", "FOO", "bar", "BAR");
 
-    //boolean useFinalizer = true;
-
     KubernetesClient client;
 
     Admin[] admin;

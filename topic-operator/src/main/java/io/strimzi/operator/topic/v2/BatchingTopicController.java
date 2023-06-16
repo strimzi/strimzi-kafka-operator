@@ -176,19 +176,19 @@ public class BatchingTopicController {
     private Either<Boolean, TopicOperatorException> validate(ReconcilableTopic reconcilableTopic) {
         var doReconcile = Either.<Boolean, TopicOperatorException>ofLeft(true);
         doReconcile = doReconcile.flatMapLeft((Boolean x) -> x ? validateUnchangedTopicName(reconcilableTopic) : Either.ofLeft(false));
-        doReconcile = doReconcile.flatMapLeft((Boolean x) -> x ? validateSingleManagingResource(reconcilableTopic) : Either.ofLeft(false));
+        doReconcile = doReconcile.mapLeft((Boolean x) -> x ? rememberTopic(reconcilableTopic) : false);
         return doReconcile;
     }
 
-    private Either<Boolean, TopicOperatorException> validateSingleManagingResource(ReconcilableTopic reconcilableTopic) {
+    private boolean rememberTopic(ReconcilableTopic reconcilableTopic) {
         String tn = reconcilableTopic.topicName();
         var existing = topics.computeIfAbsent(tn, k -> new HashSet<>());
         Ref thisRef = new Ref(reconcilableTopic.kt());
         existing.add(thisRef);
-        return Either.ofLeft(true);
+        return true;
     }
 
-    private Either<Boolean, TopicOperatorException> validateSingleManagingResource2(ReconcilableTopic reconcilableTopic) {
+    private Either<Boolean, TopicOperatorException> validateSingleManagingResource(ReconcilableTopic reconcilableTopic) {
         String tn = reconcilableTopic.topicName();
         var existing = topics.get(tn);
         Ref thisRef = new Ref(reconcilableTopic.kt());
@@ -268,9 +268,6 @@ public class BatchingTopicController {
     }
 
     private static TopicOperatorException handleAdminException(ExecutionException e) {
-        // Note this method is declared to return a RuntimeException purely so that the caller
-        // can invoke the method like `throw handleAdminException()`
-        // which can help compiler understand the control flow
         var cause = e.getCause();
         if (cause instanceof ApiException) {
             return new TopicOperatorException.KafkaError((ApiException) cause);
@@ -453,7 +450,7 @@ public class BatchingTopicController {
                 return false;
             }
         }).filter(reconcilableTopic -> {
-            var e = validateSingleManagingResource2(reconcilableTopic);
+            var e = validateSingleManagingResource(reconcilableTopic);
             if (e.isLeftEqual(false)) {
                 // Do nothing
                 return false;
