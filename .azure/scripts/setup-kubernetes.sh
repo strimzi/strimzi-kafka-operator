@@ -12,6 +12,7 @@ DEFAULT_MINIKUBE_CPU=$(awk '$1~/cpu[0-9]/{usage=($2+$4)*100/($2+$4+$5); print $1
 
 MINIKUBE_MEMORY=${MINIKUBE_MEMORY:-$DEFAULT_MINIKUBE_MEMORY}
 MINIKUBE_CPU=${MINIKUBE_CPU:-$DEFAULT_MINIKUBE_CPU}
+REGISTRY_PORT=${REGISTRY_PORT:-5000}
 
 echo "[INFO] MINIKUBE_MEMORY: ${MINIKUBE_MEMORY}"
 echo "[INFO] MINIKUBE_CPU: ${MINIKUBE_CPU}"
@@ -61,14 +62,14 @@ if [ "$TEST_CLUSTER" = "minikube" ]; then
     mkdir $HOME/.kube || true
     touch $HOME/.kube/config
 
-    docker run -d -p 5000:5000 ${MINIKUBE_REGISTRY_IMAGE}
+    docker run -d -p $REGISTRY_PORT:5000 ${MINIKUBE_REGISTRY_IMAGE}
 
     export KUBECONFIG=$HOME/.kube/config
     # We can turn on network polices support by adding the following options --network-plugin=cni --cni=calico
     # We have to allow trafic for ITS when NPs are turned on
     # We can allow NP after Strimzi#4092 which should fix some issues on STs side
     minikube start --vm-driver=docker --kubernetes-version=${KUBE_VERSION} \
-      --insecure-registry=localhost:5000 --extra-config=apiserver.authorization-mode=Node,RBAC \
+      --insecure-registry=localhost:$REGISTRY_PORT --extra-config=apiserver.authorization-mode=Node,RBAC \
       --cpus=${MINIKUBE_CPU} --memory=${MINIKUBE_MEMORY} --force
 
     if [ $? -ne 0 ]

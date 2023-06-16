@@ -77,6 +77,7 @@ prepare:
       if [[ $ARCH == "x86_64" ]]; then ARCH="amd64"; fi
       if [[ $ARCH == "aarch64" ]]; then ARCH="arm64"; fi
       export MINIKUBE_MEMORY=$(($(free -m | grep "Mem" | awk '{print $2}') - 2048))
+      export REGISTRY_PORT="58925"
       ./.azure/scripts/setup-kubernetes.sh ${ARCH}
 
   - name: Install helm
@@ -104,7 +105,7 @@ prepare:
         export DOCKER_BUILD_ARGS="--platform linux/arm64 --build-arg TARGETPLATFORM=linux/arm64"
       fi
       export MVN_ARGS="-B -DskipTests -Dmaven.javadoc.skip=true --no-transfer-progress"
-      export DOCKER_REGISTRY="localhost:5000"
+      export DOCKER_REGISTRY="localhost:58925"
       export DOCKER_ORG="strimzi"
       export DOCKER_TAG="test"
       
