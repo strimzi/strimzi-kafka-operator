@@ -450,7 +450,7 @@ public abstract class AbstractST implements TestSeparator {
 
     protected void assertNoCoErrorsLogged(String namespaceName, long sinceSeconds) {
         LOGGER.info("Search in strimzi-cluster-operator log for errors in last {} second(s)", sinceSeconds);
-        String clusterOperatorLog = cmdKubeClient(namespaceName).searchInLog("deploy", ResourceManager.getCoDeploymentName(), sinceSeconds, "Exception", "Error", "Throwable");
+        String clusterOperatorLog = cmdKubeClient(namespaceName).searchInLog(Constants.DEPLOYMENT, ResourceManager.getCoDeploymentName(), sinceSeconds, "Exception", "Error", "Throwable", "OOM");
         assertThat(clusterOperatorLog, logHasNoUnexpectedErrors());
     }
 
@@ -620,6 +620,7 @@ public abstract class AbstractST implements TestSeparator {
         // does not proceed with the next method (i.e., afterEachMustExecute()). This ensures that if such problem happen
         // it will always execute the second method.
         try {
+            assertNoCoErrorsLogged(clusterOperator.getDeploymentNamespace(), 0);
             afterEachMayOverride(extensionContext);
         } finally {
             afterEachMustExecute(extensionContext);
