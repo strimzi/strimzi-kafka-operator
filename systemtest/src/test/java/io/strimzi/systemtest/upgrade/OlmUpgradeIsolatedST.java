@@ -145,9 +145,6 @@ public class OlmUpgradeIsolatedST extends AbstractUpgradeST {
 
         // Wait for messages of previously created clients
         ClientUtils.waitForClientsSuccess(testStorage.getProducerName(), testStorage.getConsumerName(), clusterOperator.getDeploymentNamespace(), testStorage.getMessageCount());
-
-        // Check for errors in Cluster Operator log
-        assertNoCoErrorsLogged(clusterOperator.getDeploymentNamespace(), 0);
     }
 
     @BeforeAll

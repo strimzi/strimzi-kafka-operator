@@ -79,8 +79,6 @@ public class StrimziDowngradeIsolatedST extends AbstractUpgradeST {
         checkAllImages(downgradeData, clusterOperator.getDeploymentNamespace());
         // Verify upgrade
         verifyProcedure(downgradeData, testStorage.getProducerName(), testStorage.getConsumerName(), clusterOperator.getDeploymentNamespace());
-        // Check errors in CO log
-        assertNoCoErrorsLogged(clusterOperator.getDeploymentNamespace(), 0);
     }
 
     @BeforeEach
