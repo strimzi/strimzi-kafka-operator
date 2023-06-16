@@ -31,13 +31,10 @@ import io.strimzi.test.annotations.ParallelParameterizedTest;
 import io.strimzi.test.annotations.ParallelSuite;
 import io.strimzi.test.annotations.ParallelTest;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.provider.CsvSource;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -411,13 +408,13 @@ class ModelUtilsTest {
     @CsvSource(value = {
         // ms | mx   | xx                                      | expected Java Opts
         //----+------+-----------------------------------------+-------------------------------------------------------------
-       "null  | null | null                                    | null",
+        "null | null | null                                    | null",
         "null | 512m | null                                    | -Xmx512m",
         "64m  | null | null                                    | -Xms64m",
         "64m  | 512m | null                                    | -Xms64m -Xmx512m",
         "64m  | 512m | foo:bar UnlockDiagnosticVMOptions:false | -Xms64m -Xmx512m -XX:-UnlockDiagnosticVMOptions -XX:foo=bar",
         "64m  | 512m | test:true                               | -Xms64m -Xmx512m -XX:+test",
-        "null | null | null                                    | null",
+        "null | null | null                                    | null"
     }, delimiterString = "|", nullValues = "null")
     void testThatStrimziJavaOptsEnvVariableIsAppendedFromJavaOptions(String ms, String mx,  String xx,  String expectedJavaOpts) {
         // given
@@ -444,7 +441,7 @@ class ModelUtilsTest {
         //-------------------------+--------------------------------
         "null                      | null",
         "prop:value                | -Dprop=value",
-        "prop1:value1 prop2:value2 | -Dprop1=value1 -Dprop2=value2",
+        "prop1:value1 prop2:value2 | -Dprop1=value1 -Dprop2=value2"
     }, delimiterString = "|", nullValues = "null")
     void testThatStrimziJavaSystemPropertiesEnvVariableIsAppendedFromJavaOptions(String systemProperties,  String expectedSystemProperties) {
         // given
