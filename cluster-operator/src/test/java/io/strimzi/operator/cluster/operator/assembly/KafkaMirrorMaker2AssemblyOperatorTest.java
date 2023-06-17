@@ -1047,8 +1047,6 @@ public class KafkaMirrorMaker2AssemblyOperatorTest {
         ArgumentCaptor<PodDisruptionBudget> pdbCaptor = ArgumentCaptor.forClass(PodDisruptionBudget.class);
         when(mockPdbOps.reconcile(any(), anyString(), any(), pdbCaptor.capture())).thenReturn(Future.succeededFuture());
 
-        ArgumentCaptor<io.fabric8.kubernetes.api.model.policy.v1beta1.PodDisruptionBudget> pdbV1Beta1Captor = ArgumentCaptor.forClass(io.fabric8.kubernetes.api.model.policy.v1beta1.PodDisruptionBudget.class);
-
         ArgumentCaptor<KafkaMirrorMaker2> mirrorMaker2Captor = ArgumentCaptor.forClass(KafkaMirrorMaker2.class);
         when(mockMirrorMaker2Ops.updateStatusAsync(any(), mirrorMaker2Captor.capture())).thenReturn(Future.succeededFuture());
 
