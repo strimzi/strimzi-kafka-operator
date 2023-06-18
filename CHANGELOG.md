@@ -6,6 +6,7 @@
 * Update Kafka Exporter to [1.7.0](https://github.com/danielqsj/kafka_exporter/releases/tag/v1.7.0)
 * Update Kaniko container builder to 1.11.0
 * Add support for _Kafka node pools_ according to [Strimzi Proposal #50](https://github.com/strimzi/proposals/blob/main/050-Kafka-Node-Pools.md)
+* Update OpenTelemetry 1.19.0
 
 ### Changes, deprecations and removals
 
