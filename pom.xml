@@ -145,8 +145,8 @@
         <jaeger.version>1.8.1</jaeger.version>
         <opentracing.version>0.33.0</opentracing.version>
         <opentracing-kafka.version>0.1.13</opentracing-kafka.version>
-        <opentelemetry.version>1.18.0</opentelemetry.version>
-        <opentelemetry.alpha-version>1.18.0-alpha</opentelemetry.alpha-version>
+        <opentelemetry.version>1.19.0</opentelemetry.version>
+        <opentelemetry.alpha-version>1.19.0-alpha</opentelemetry.alpha-version>
         <jetty.version>9.4.51.v20230217</jetty.version>
         <javax-servlet.version>3.1.0</javax-servlet.version>
         <strimzi-oauth.version>0.12.0</strimzi-oauth.version>
