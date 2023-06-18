@@ -9,7 +9,6 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.fabric8.kubernetes.api.model.Namespaced;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.model.annotation.Group;
@@ -82,7 +81,6 @@ import static java.util.Collections.emptyMap;
 @EqualsAndHashCode(callSuper = true)
 @Version(Constants.V1BETA2)
 @Group(Constants.RESOURCE_CORE_GROUP_NAME)
-@SuppressFBWarnings("RCN_REDUNDANT_NULLCHECK_OF_NONNULL_VALUE")
 public class StrimziPodSet extends CustomResource<StrimziPodSetSpec, StrimziPodSetStatus> implements Namespaced, UnknownPropertyPreserving {
     private static final long serialVersionUID = 1L;
 

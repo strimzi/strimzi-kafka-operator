@@ -4,7 +4,6 @@
  */
 package io.strimzi.operator.common;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.vertx.core.Vertx;
 import static java.util.Objects.requireNonNull;
 import org.apache.logging.log4j.LogManager;
@@ -19,7 +18,6 @@ import java.util.concurrent.TimeUnit;
  * <p>
  * We add a fixed timeout because Vertx has none for stopping running Verticles.
  */
-@SuppressFBWarnings("RCN_REDUNDANT_NULLCHECK_OF_NONNULL_VALUE")
 public class ShutdownHook implements Runnable {
     private static final Logger LOGGER = LogManager.getLogger(ShutdownHook.class);
 

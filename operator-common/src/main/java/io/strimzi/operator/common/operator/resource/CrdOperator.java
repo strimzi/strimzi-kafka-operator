@@ -4,7 +4,6 @@
  */
 package io.strimzi.operator.common.operator.resource;
 
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.fabric8.kubernetes.api.model.DefaultKubernetesResourceList;
 import io.fabric8.kubernetes.api.model.DeletionPropagation;
 import io.fabric8.kubernetes.client.CustomResource;
@@ -28,8 +27,6 @@ import io.vertx.core.Vertx;
  * @param <T> The custom resource type.
  * @param <L> The list variant of the custom resource type.
  */
-@SuppressFBWarnings(value = "RCN_REDUNDANT_NULLCHECK_OF_NONNULL_VALUE",
-        justification = "Erroneous on Java 11: https://github.com/spotbugs/spotbugs/issues/756")
 public class CrdOperator<C extends KubernetesClient,
             T extends CustomResource,
             L extends DefaultKubernetesResourceList<T>>

@@ -109,14 +109,14 @@
         <maven.enforcer.version>3.0.0-M2</maven.enforcer.version>
         <maven.jar.version>3.1.0</maven.jar.version>
         <sonatype.nexus.staging.version>1.6.13</sonatype.nexus.staging.version>
-        <maven.spotbugs.version>4.5.3.0</maven.spotbugs.version>
+        <maven.spotbugs.version>4.7.3.4</maven.spotbugs.version>
         <maven.jacoco.version>0.8.8</maven.jacoco.version>
         <maven.exec.version>3.1.0</maven.exec.version>
         <maven.resources.version>3.1.0</maven.resources.version>
 
         <!-- Build tools -->
         <checkstyle.version>9.2.1</checkstyle.version>
-        <spotbugs.version>4.7.2</spotbugs.version>
+        <spotbugs.version>4.7.3</spotbugs.version>
         <sundrio.version>0.91.1</sundrio.version>
         <lombok.version>1.18.24</lombok.version>
 
