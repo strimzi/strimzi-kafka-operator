@@ -74,8 +74,8 @@ public class OauthTlsIsolatedST extends OauthAbstractST {
     private final String oauthClusterName = "oauth-cluster-tls-name";
 
     @Description(
-            "As an oauth producer, I am able to produce messages to the kafka broker\n" +
-            "As an oauth consumer, I am able to consumer messages from the kafka broker using encrypted communication")
+            "As an OAuth producer, I am able to produce messages to the Kafka Broker\n" +
+            "As an OAuth consumer, I am able to consumer messages from the Kafka Broker using encrypted communication")
     @ParallelTest
     void testProducerConsumer(ExtensionContext extensionContext) {
         String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
@@ -104,7 +104,7 @@ public class OauthTlsIsolatedST extends OauthAbstractST {
         ClientUtils.waitForClientSuccess(consumerName, clusterOperator.getDeploymentNamespace(), MESSAGE_COUNT);
     }
 
-    @Description("As an oauth KafkaConnect, I am able to sink messages from kafka broker topic using encrypted communication.")
+    @Description("As an OAuth KafkaConnect, I am able to sink messages from Kafka Broker topic using encrypted communication.")
     @ParallelTest
     @Tag(CONNECT)
     @Tag(CONNECT_COMPONENTS)
@@ -168,7 +168,7 @@ public class OauthTlsIsolatedST extends OauthAbstractST {
 
         resourceManager.createResource(extensionContext, connect, ScraperTemplates.scraperPod(clusterOperator.getDeploymentNamespace(), scraperName).build());
 
-        LOGGER.info("Deploy NetworkPolicies for KafkaConnect");
+        LOGGER.info("Deploying NetworkPolicies for KafkaConnect");
         NetworkPolicyResource.deployNetworkPolicyForResource(extensionContext, connect, KafkaConnectResources.deploymentName(clusterName));
 
         String kafkaConnectPodName = kubeClient().listPods(clusterOperator.getDeploymentNamespace(), clusterName, Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND).get(0).getMetadata().getName();
@@ -180,7 +180,7 @@ public class OauthTlsIsolatedST extends OauthAbstractST {
         KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(clusterOperator.getDeploymentNamespace(), kafkaConnectPodName, Constants.DEFAULT_SINK_FILE_PATH, "\"Hello-world - 99\"");
     }
 
-    @Description("As a oauth bridge, i am able to send messages to bridge endpoint using encrypted communication")
+    @Description("As a OAuth bridge, i am able to send messages to bridge endpoint using encrypted communication")
     @ParallelTest
     @Tag(BRIDGE)
     void testProducerConsumerBridge(ExtensionContext extensionContext) {
@@ -253,8 +253,8 @@ public class OauthTlsIsolatedST extends OauthAbstractST {
         ClientUtils.waitForClientSuccess(producerName, clusterOperator.getDeploymentNamespace(), MESSAGE_COUNT);
     }
 
-    @Description("As a oauth mirror maker, I am able to replicate topic data using using encrypted communication")
-    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
+    @Description("As a OAuth MirrorMaker, I am able to replicate Topic data using using encrypted communication")
+    @IsolatedTest("Using more tha one Kafka cluster in one Namespace")
     @Tag(MIRROR_MAKER)
     @Tag(NODEPORT_SUPPORTED)
     @SuppressWarnings({"checkstyle:MethodLength"})

@@ -70,7 +70,7 @@ public class ResourceOperation {
     }
 
     /**
-     * timeoutForPodsOperation returns a reasonable timeout in milliseconds for a number of pods in a quorum to roll on update,
+     * timeoutForPodsOperation returns a reasonable timeout in milliseconds for a number of Pods in a quorum to roll on update,
      *  scale up or create
      */
     public static long timeoutForPodsOperation(int numberOfPods) {

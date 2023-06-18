@@ -161,7 +161,7 @@ public class ExternalKafkaClient extends AbstractKafkaClient<ExternalKafkaClient
                         sent.complete(messagesSentCounter[0]);
                     } else {
                         RecordMetadata metadata = producer.send(record).get();
-                        LOGGER.debug("Message " + record.value() + " written on topic=" + metadata.topic() +
+                        LOGGER.debug("Message " + record.value() + " written on Topic=" + metadata.topic() +
                             ", partition=" + metadata.partition() +
                             ", offset=" + metadata.offset());
                         messagesSentCounter[0]++;
@@ -179,7 +179,7 @@ public class ExternalKafkaClient extends AbstractKafkaClient<ExternalKafkaClient
 
         try {
             int messagesSent = sent.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS);
-            LOGGER.info("Sent {} messages.", messagesSent);
+            LOGGER.info("Sent {} messages", messagesSent);
 
             producer.close();
 
@@ -224,7 +224,7 @@ public class ExternalKafkaClient extends AbstractKafkaClient<ExternalKafkaClient
 
         try {
             int messagesReceived = received.get(Constants.GLOBAL_CLIENTS_TIMEOUT, TimeUnit.MILLISECONDS);
-            LOGGER.info("Received {} messages.", messagesReceived);
+            LOGGER.info("Received {} messages", messagesReceived);
 
             consumer.close();
 

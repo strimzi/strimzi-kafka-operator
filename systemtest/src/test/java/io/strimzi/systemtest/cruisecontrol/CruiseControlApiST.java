@@ -44,7 +44,7 @@ public class CruiseControlApiST extends AbstractST {
     private final String cruiseControlApiClusterName = "cruise-control-api-cluster-name";
 
     @ParallelNamespaceTest
-    @KRaftNotSupported("TopicOperator is not supported by KRaft mode and is used in this test class")
+    @KRaftNotSupported("Topic Operator is not supported by KRaft mode and is used in this test class")
     void testCruiseControlBasicAPIRequests(ExtensionContext extensionContext)  {
         final TestStorage testStorage = new TestStorage(extensionContext);
 

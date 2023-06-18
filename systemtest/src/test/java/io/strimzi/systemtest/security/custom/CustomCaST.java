@@ -92,7 +92,7 @@ public class CustomCaST extends AbstractST {
         clusterCaCertificateSecret.getData().put(oldCaCertName, clusterCaCertificateSecret.getData().get("ca.crt"));
 
         //  c) Encode your new CA certificate into base64.
-        LOGGER.info("Generating a new custom 'Cluster certificate authority' with `Root` and `Intermediate` for Strimzi and PEM bundles.");
+        LOGGER.info("Generating a new custom 'Cluster certificate authority' with `Root` and `Intermediate` for Strimzi and PEM bundles");
         clusterCa = new SystemTestCertHolder(
             "CN=" + extensionContext.getRequiredTestClass().getSimpleName() + "ClusterCAv2",
             KafkaResources.clusterCaCertificateSecretName(testStorage.getClusterName()),
@@ -122,7 +122,7 @@ public class CustomCaST extends AbstractST {
 
         // --- verification phase (Rolling Update of components)
 
-        // 7. save the current state of the Kafka, ZooKeeper and EntityOperator pods
+        // 7. save the current state of the Kafka, ZooKeeper and Entity Operator pods
         Map<String, String> kafkaPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getKafkaSelector());
 
         Map<String, String> zkPods = new HashMap<>();
@@ -132,7 +132,7 @@ public class CustomCaST extends AbstractST {
         Map<String, String> eoPod = DeploymentUtils.depSnapshot(testStorage.getNamespaceName(), testStorage.getEoDeploymentName());
 
         // 8. Resume reconciliation from the pause.
-        LOGGER.info("Resume the reconciliation of the Kafka custom resource ({}).", testStorage.getKafkaStatefulSetName());
+        LOGGER.info("Resume the reconciliation of the Kafka custom resource ({})", testStorage.getKafkaStatefulSetName());
         KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), kafka -> {
             kafka.getMetadata().getAnnotations().remove(Annotations.ANNO_STRIMZI_IO_PAUSE_RECONCILIATION);
         }, testStorage.getNamespaceName());
@@ -140,7 +140,7 @@ public class CustomCaST extends AbstractST {
         // 9. On the next reconciliation, the Cluster Operator performs a `rolling update`:
         //      a) ZooKeeper
         //      b) Kafka
-        //      c) and other components to trust the new CA certificate. (i.e., EntityOperator)
+        //      c) and other components to trust the new CA certificate. (i.e., Entity Operator)
         //  When the rolling update is complete, the Cluster Operator
         //  will start a new one to generate new server certificates signed by the new CA key.
         if (!Environment.isKRaftModeEnabled()) {
@@ -201,7 +201,7 @@ public class CustomCaST extends AbstractST {
         clientsCaCertificateSecret.getData().put(oldCaCertName, clientsCaCertificateSecret.getData().get("ca.crt"));
 
         //  c) Encode your new CA certificate into base64.
-        LOGGER.info("Generating a new custom 'User certificate authority' with `Root` and `Intermediate` for Strimzi and PEM bundles.");
+        LOGGER.info("Generating a new custom 'User certificate authority' with `Root` and `Intermediate` for Strimzi and PEM bundles");
         clientsCa = new SystemTestCertHolder(
             "CN=" + extensionContext.getRequiredTestClass().getSimpleName() + "ClientsCAv2",
             KafkaResources.clientsCaCertificateSecretName(testStorage.getClusterName()),
@@ -230,7 +230,7 @@ public class CustomCaST extends AbstractST {
 
         // --- verification phase (Rolling Update of components)
 
-        // 7. save the current state of the Kafka, ZooKeeper and EntityOperator pods
+        // 7. save the current state of the Kafka, ZooKeeper and Entity Operator pods
         final Map<String, String> kafkaPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getKafkaSelector());
 
         Map<String, String> zkPods = new HashMap<>();
@@ -240,7 +240,7 @@ public class CustomCaST extends AbstractST {
         final Map<String, String> eoPod = DeploymentUtils.depSnapshot(testStorage.getNamespaceName(), testStorage.getEoDeploymentName());
 
         // 8. Resume reconciliation from the pause.
-        LOGGER.info("Resume the reconciliation of the Kafka custom resource ({}).", testStorage.getKafkaStatefulSetName());
+        LOGGER.info("Resume the reconciliation of the Kafka custom resource ({})", testStorage.getKafkaStatefulSetName());
         KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), kafka -> {
             kafka.getMetadata().getAnnotations().remove(Annotations.ANNO_STRIMZI_IO_PAUSE_RECONCILIATION);
         }, testStorage.getNamespaceName());
@@ -316,7 +316,7 @@ public class CustomCaST extends AbstractST {
             .build());
 
         // 3. Pause the reconciliation of the Kafka custom resource
-        LOGGER.info("Pause the reconciliation of the Kafka custom resource ({}).", KafkaResources.kafkaStatefulSetName(testStorage.getClusterName()));
+        LOGGER.info("Pause the reconciliation of the Kafka custom resource ({})", KafkaResources.kafkaStatefulSetName(testStorage.getClusterName()));
         KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), kafka -> {
             Map<String, String> kafkaAnnotations = kafka.getMetadata().getAnnotations();
             if (kafkaAnnotations == null) {
@@ -373,7 +373,7 @@ public class CustomCaST extends AbstractST {
         checkCustomCaCorrectness(clientsCa, clientsCert);
         checkCustomCaCorrectness(clusterCa, clusterCert);
 
-        LOGGER.info("Deploy kafka with new certs/secrets.");
+        LOGGER.info("Deploying Kafka with new certs, Secrets");
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3, 3)
             .editSpec()
                 .withNewClusterCa()
@@ -386,7 +386,7 @@ public class CustomCaST extends AbstractST {
             .build()
         );
 
-        LOGGER.info("Check Kafka(s) and Zookeeper(s) certificates.");
+        LOGGER.info("Check Kafka(s) and ZooKeeper(s) certificates");
         final X509Certificate kafkaCert = SecretUtils.getCertificateFromSecret(kubeClient(testStorage.getNamespaceName()).getSecret(testStorage.getNamespaceName(),
             testStorage.getClusterName() + "-kafka-brokers"), testStorage.getClusterName() + "-kafka-0.crt");
         assertThat("KafkaCert does not have expected test Issuer: " + kafkaCert.getIssuerDN(),
@@ -401,7 +401,7 @@ public class CustomCaST extends AbstractST {
 
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getTopicName()).build());
 
-        LOGGER.info("Check KafkaUser certificate.");
+        LOGGER.info("Check KafkaUser certificate");
         final KafkaUser user = KafkaUserTemplates.tlsUser(testStorage).build();
         resourceManager.createResource(extensionContext, user);
         final X509Certificate userCert = SecretUtils.getCertificateFromSecret(kubeClient(testStorage.getNamespaceName()).getSecret(testStorage.getNamespaceName(),
@@ -409,7 +409,7 @@ public class CustomCaST extends AbstractST {
         assertThat("Generated ClientsCA does not have expected test Subject: " + userCert.getIssuerDN(),
                 SystemTestCertManager.containsAllDN(userCert.getIssuerX500Principal().getName(), clientsCa.getSubjectDn()));
 
-        LOGGER.info("Send and receive messages over TLS.");
+        LOGGER.info("Send and receive messages over TLS");
 
         KafkaClients kafkaClients = new KafkaClientsBuilder()
             .withProducerName(testStorage.getProducerName())
@@ -435,7 +435,7 @@ public class CustomCaST extends AbstractST {
     }
 
     private void checkCustomCaCorrectness(final SystemTestCertHolder caHolder, final X509Certificate certificate) {
-        LOGGER.info("Check ClusterCA and ClientsCA certificates.");
+        LOGGER.info("Check ClusterCA and ClientsCA certificates");
         assertThat("Generated ClientsCA or ClusterCA does not have expected Issuer: " + certificate.getIssuerDN(),
             SystemTestCertManager.containsAllDN(certificate.getIssuerX500Principal().getName(), STRIMZI_INTERMEDIATE_CA));
         assertThat("Generated ClientsCA or ClusterCA does not have expected Subject: " + certificate.getSubjectDN(),
@@ -498,7 +498,7 @@ public class CustomCaST extends AbstractST {
             initialZkCertEndTime = zkBrokerCert.getNotAfter();
         }
 
-        LOGGER.info("Change of kafka validity and renewal days - reconciliation should start.");
+        LOGGER.info("Change of Kafka validity and renewal days - reconciliation should start");
         final CertificateAuthority newClusterCA = new CertificateAuthority();
         newClusterCA.setRenewalDays(150);
         newClusterCA.setValidityDays(200);
@@ -509,7 +509,7 @@ public class CustomCaST extends AbstractST {
         // On the next reconciliation, the Cluster Operator performs a `rolling update`:
         //   a) ZooKeeper
         //   b) Kafka
-        //   c) and other components to trust the new Cluster CA certificate. (i.e., EntityOperator)
+        //   c) and other components to trust the new Cluster CA certificate. (i.e., Entity Operator)
         if (!Environment.isKRaftModeEnabled()) {
             RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getZookeeperSelector(), 3, zkPods);
         }
@@ -540,11 +540,11 @@ public class CustomCaST extends AbstractST {
 
         LOGGER.info("Initial ClusterCA cert dates: " + initialCertStartTime + " --> " + initialCertEndTime);
         LOGGER.info("Changed ClusterCA cert dates: " + changedCertStartTime + " --> " + changedCertEndTime);
-        LOGGER.info("KafkaBroker cert creation dates: " + initialKafkaBrokerCertStartTime + " --> " + initialKafkaBrokerCertEndTime);
-        LOGGER.info("KafkaBroker cert changed dates:  " + changedKafkaBrokerCertStartTime + " --> " + changedKafkaBrokerCertEndTime);
+        LOGGER.info("Kafka Broker cert creation dates: " + initialKafkaBrokerCertStartTime + " --> " + initialKafkaBrokerCertEndTime);
+        LOGGER.info("Kafka Broker cert changed dates:  " + changedKafkaBrokerCertStartTime + " --> " + changedKafkaBrokerCertEndTime);
         if (!Environment.isKRaftModeEnabled()) {
-            LOGGER.info("Zookeeper cert creation dates: " + initialZkCertStartTime + " --> " + initialZkCertEndTime);
-            LOGGER.info("Zookeeper cert changed dates:  " + changedZkCertStartTime + " --> " + changedZkCertEndTime);
+            LOGGER.info("ZooKeeper cert creation dates: " + initialZkCertStartTime + " --> " + initialZkCertEndTime);
+            LOGGER.info("ZooKeeper cert changed dates:  " + changedZkCertStartTime + " --> " + changedZkCertEndTime);
         }
 
         assertThat("ClusterCA cert should not have changed.",
@@ -604,7 +604,7 @@ public class CustomCaST extends AbstractST {
         final Date initialKafkaUserCertStartTime = userCert.getNotBefore();
         final Date initialKafkaUserCertEndTime = userCert.getNotAfter();
 
-        LOGGER.info("Change of kafka validity and renewal days - reconciliation should start.");
+        LOGGER.info("Change of Kafka validity and renewal days - reconciliation should start");
         final CertificateAuthority newClientsCA = new CertificateAuthority();
         newClientsCA.setRenewalDays(150);
         newClientsCA.setValidityDays(200);

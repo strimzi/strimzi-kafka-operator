@@ -228,7 +228,7 @@ class UserST extends AbstractST {
         KafkaUserResource.kafkaUserClient().inNamespace(clusterOperator.getDeploymentNamespace()).withName(user.getMetadata().getName()).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
         KafkaUserUtils.waitForKafkaUserDeletion(clusterOperator.getDeploymentNamespace(), user.getMetadata().getName());
 
-        TestUtils.waitFor("all KafkaUser " + userName + " attributes will be cleaned", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
+        TestUtils.waitFor("all attributes of KafkaUser: " + userName + " to be cleaned", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
             () -> {
                 String resultAfterDelete = KafkaCmdClient.describeUserUsingPodCli(clusterOperator.getDeploymentNamespace(), scraperPodName, KafkaResources.plainBootstrapAddress(userClusterName), userName);
 
@@ -286,7 +286,7 @@ class UserST extends AbstractST {
         Secret tlsSecret = kubeClient().getSecret(testStorage.getNamespaceName(), secretPrefix + tlsUserName);
         Secret scramShaSecret = kubeClient().getSecret(testStorage.getNamespaceName(), secretPrefix + scramShaUserName);
 
-        LOGGER.info("Checking if user secrets with secret prefixes exists");
+        LOGGER.info("Checking for existing user Secrets with prefix: {}", secretPrefix);
         assertNotNull(tlsSecret);
         assertNotNull(scramShaSecret);
 
@@ -313,17 +313,17 @@ class UserST extends AbstractST {
         resourceManager.createResource(extensionContext, clients.producerScramShaPlainStrimzi(), clients.consumerScramShaPlainStrimzi());
         ClientUtils.waitForClientsSuccess(testStorage);
 
-        LOGGER.info("Checking owner reference - if the secret will be deleted when we delete KafkaUser");
+        LOGGER.info("Checking owner reference - if the Secret will be deleted when we delete KafkaUser");
 
-        LOGGER.info("Deleting KafkaUser:{}", tlsUserName);
+        LOGGER.info("Deleting KafkaUser: {}/{}", testStorage.getNamespaceName(), tlsUserName);
         KafkaUserResource.kafkaUserClient().inNamespace(testStorage.getNamespaceName()).withName(tlsUserName).delete();
         KafkaUserUtils.waitForKafkaUserDeletion(testStorage.getNamespaceName(), tlsUserName);
 
-        LOGGER.info("Deleting KafkaUser:{}", scramShaUserName);
+        LOGGER.info("Deleting KafkaUser: {}/{}", testStorage.getNamespaceName(), scramShaUserName);
         KafkaUserResource.kafkaUserClient().inNamespace(testStorage.getNamespaceName()).withName(scramShaUserName).delete();
         KafkaUserUtils.waitForKafkaUserDeletion(testStorage.getNamespaceName(), scramShaUserName);
 
-        LOGGER.info("Checking if secrets are deleted");
+        LOGGER.info("Checking if Secrets are deleted");
         SecretUtils.waitForSecretDeletion(testStorage.getNamespaceName(), tlsSecret.getMetadata().getName());
         SecretUtils.waitForSecretDeletion(testStorage.getNamespaceName(), scramShaSecret.getMetadata().getName());
         assertNull(kubeClient().getSecret(testStorage.getNamespaceName(), tlsSecret.getMetadata().getName()));
@@ -434,7 +434,7 @@ class UserST extends AbstractST {
         uOLogs = kubeClient().logsInSpecificNamespace(clusterOperator.getDeploymentNamespace(), entityOperatorPodName, "user-operator");
         assertThat(uOLogs, not(containsString("KafkaUser " + testStorage.getUsername() + " in namespace " + clusterOperator.getDeploymentNamespace() + " was ADDED")));
 
-        LOGGER.info("Verifying KafkaUser: {}/{} has label: {}={} corresponding to Kafka Cluster it belongs to", clusterOperator.getDeploymentNamespace(), testStorage.getUsername(), Labels.STRIMZI_CLUSTER_LABEL, userListeningClusterName);
+        LOGGER.info("Verifying KafkaUser: {}/{} has label: {}={} corresponding to Kafka cluster it belongs to", clusterOperator.getDeploymentNamespace(), testStorage.getUsername(), Labels.STRIMZI_CLUSTER_LABEL, userListeningClusterName);
         String kafkaUserResource = cmdKubeClient(clusterOperator.getDeploymentNamespace()).getResourceAsYaml("kafkauser", testStorage.getUsername());
         assertThat(kafkaUserResource, containsString(Labels.STRIMZI_CLUSTER_LABEL + ": " + userListeningClusterName));
 

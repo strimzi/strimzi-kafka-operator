@@ -74,7 +74,7 @@ public class OlmUpgradeIsolatedST extends AbstractUpgradeST {
         File dir = FileUtils.downloadAndUnzip(olmUpgradeData.getFromUrl());
         File kafkaYaml = new File(dir, olmUpgradeData.getFromExamples() + "/examples/kafka/kafka-persistent.yaml");
 
-        LOGGER.info("Deploy Kafka from file: {}", kafkaYaml.getPath());
+        LOGGER.info("Deploying Kafka from file: {}", kafkaYaml.getPath());
         KubeClusterResource.cmdKubeClient().create(kafkaYaml);
         waitForReadinessOfKafkaCluster();
 

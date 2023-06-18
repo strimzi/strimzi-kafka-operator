@@ -121,7 +121,7 @@ public class FeatureGatesIsolatedST extends AbstractST {
             KafkaUserTemplates.tlsUser(testStorage).build()
         );
 
-        LOGGER.info("Try to send some messages to Kafka over next few minutes.");
+        LOGGER.info("Trying to send some messages to Kafka in next few minutes");
 
         KafkaClients kafkaClients = new KafkaClientsBuilder()
                 .withProducerName(producerName)
@@ -139,17 +139,17 @@ public class FeatureGatesIsolatedST extends AbstractST {
 
         // Check that there is no ZooKeeper
         Map<String, String> zkPods = PodUtils.podSnapshot(INFRA_NAMESPACE, zkSelector);
-        assertThat("No ZooKeeper pods should exist", zkPods.size(), is(0));
+        assertThat("No ZooKeeper Pods should exist", zkPods.size(), is(0));
 
         // Roll Kafka
-        LOGGER.info("Force Rolling Update of Kafka via read-only configuration change.");
+        LOGGER.info("Forcing rolling update of Kafka via read-only configuration change");
         Map<String, String> kafkaPods = PodUtils.podSnapshot(INFRA_NAMESPACE, kafkaSelector);
         KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, k -> k.getSpec().getKafka().getConfig().put("log.retention.hours", 72), INFRA_NAMESPACE);
 
-        LOGGER.info("Wait for next reconciliation to happen.");
+        LOGGER.info("Waiting for the next reconciliation to happen");
         RollingUpdateUtils.waitTillComponentHasRolled(INFRA_NAMESPACE, kafkaSelector, kafkaReplicas, kafkaPods);
 
-        LOGGER.info("Waiting for clients to finish sending/receiving messages.");
+        LOGGER.info("Waiting for clients to finish sending/receiving messages");
         ClientUtils.waitForClientsSuccess(producerName, consumerName, INFRA_NAMESPACE, MESSAGE_COUNT);
     }
     @IsolatedTest

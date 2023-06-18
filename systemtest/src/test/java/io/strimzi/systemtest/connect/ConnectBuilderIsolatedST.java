@@ -198,12 +198,12 @@ class ConnectBuilderIsolatedST extends AbstractST {
 
         String scraperPodName = kubeClient(testStorage.getNamespaceName()).listPodsByPrefixInName(testStorage.getScraperName()).get(0).getMetadata().getName();
 
-        LOGGER.info("Checking if KafkaConnect API contains EchoSink connector");
+        LOGGER.info("Checking if KafkaConnect API contains EchoSink KafkaConnector");
         String plugins = cmdKubeClient().execInPod(scraperPodName, "curl", "-X", "GET", "http://" + KafkaConnectResources.serviceName(testStorage.getClusterName()) + ":8083/connector-plugins").out();
 
         assertTrue(plugins.contains(Constants.ECHO_SINK_CLASS_NAME));
 
-        LOGGER.info("Checking if KafkaConnect resource contains EchoSink connector in status");
+        LOGGER.info("Checking if KafkaConnect resource contains EchoSink KafkaConnector in status");
         kafkaConnect = KafkaConnectResource.kafkaConnectClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get();
         assertTrue(kafkaConnect.getStatus().getConnectorPlugins().stream().anyMatch(connectorPlugin -> connectorPlugin.getConnectorClass().contains(Constants.ECHO_SINK_CLASS_NAME)));
     }
@@ -346,14 +346,14 @@ class ConnectBuilderIsolatedST extends AbstractST {
 
         resourceManager.createResource(extensionContext, connect, ScraperTemplates.scraperPod(testStorage.getNamespaceName(), testStorage.getScraperName()).build());
 
-        LOGGER.info("Deploy NetworkPolicies for KafkaConnect");
+        LOGGER.info("Deploying NetworkPolicies for KafkaConnect");
         NetworkPolicyResource.deployNetworkPolicyForResource(extensionContext, connect, KafkaConnectResources.deploymentName(testStorage.getClusterName()));
 
         Map<String, Object> echoSinkConfig = new HashMap<>();
         echoSinkConfig.put("topics", topicName);
         echoSinkConfig.put("level", "INFO");
 
-        LOGGER.info("Creating EchoSink connector");
+        LOGGER.info("Creating EchoSink KafkaConnector");
         resourceManager.createResource(extensionContext, KafkaConnectorTemplates.kafkaConnector(Constants.ECHO_SINK_CONNECTOR_NAME, testStorage.getClusterName())
             .editOrNewSpec()
                 .withClassName(Constants.ECHO_SINK_CLASS_NAME)
@@ -365,7 +365,7 @@ class ConnectBuilderIsolatedST extends AbstractST {
         Map<String, String> connectSnapshot = PodUtils.podSnapshot(testStorage.getNamespaceName(), labelSelector);
         String scraperPodName = kubeClient(testStorage.getNamespaceName()).listPodsByPrefixInName(testStorage.getScraperName()).get(0).getMetadata().getName();
 
-        LOGGER.info("Checking that KafkaConnect API contains EchoSink connector and not Camel-Telegram Connector class name");
+        LOGGER.info("Checking that KafkaConnect API contains EchoSink KafkaConnector and not Camel-Telegram Connector class name");
         String plugins = cmdKubeClient().execInPod(scraperPodName, "curl", "-X", "GET", "http://" + KafkaConnectResources.serviceName(testStorage.getClusterName()) + ":8083/connector-plugins").out();
 
         assertFalse(plugins.contains(CAMEL_CONNECTOR_HTTP_SINK_CLASS_NAME));
@@ -382,7 +382,7 @@ class ConnectBuilderIsolatedST extends AbstractST {
         camelHttpConfig.put("camel.sink.path.httpUri", "http://" + KafkaConnectResources.serviceName(testStorage.getClusterName()) + ":8083");
         camelHttpConfig.put("topics", topicName);
 
-        LOGGER.info("Creating Camel-HTTP-Sink connector");
+        LOGGER.info("Creating Camel-HTTP-Sink KafkaConnector");
         resourceManager.createResource(extensionContext, KafkaConnectorTemplates.kafkaConnector(camelConnector, testStorage.getClusterName())
             .editOrNewSpec()
                 .withClassName(CAMEL_CONNECTOR_HTTP_SINK_CLASS_NAME)

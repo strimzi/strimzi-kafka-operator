@@ -63,17 +63,17 @@ public class JmxUtils {
     public static String collectJmxMetricsWithWait(String namespace, String serviceName, String secretName, String podName, String commands) {
         Secret jmxSecret = kubeClient(namespace).getSecret(secretName);
 
-        LOGGER.info("Getting username and password for service: {} and secret: {}", serviceName, secretName);
+        LOGGER.info("Getting username and password for Service: {}/{} and Secret: {}/{}", namespace, serviceName, namespace, secretName);
         String userName = new String(Base64.getDecoder().decode(jmxSecret.getData().get("jmx-username")), StandardCharsets.UTF_8);
         String password = new String(Base64.getDecoder().decode(jmxSecret.getData().get("jmx-password")), StandardCharsets.UTF_8);
 
-        LOGGER.info("Creating script file for service: {}", serviceName);
+        LOGGER.info("Creating script file for Service: {}/{}", namespace, serviceName);
         createScriptForJMXTermInPod(podName, serviceName, userName, password, commands);
 
         String[] result = {""};
 
-        LOGGER.info("Waiting for JMX metrics for service: {} will be present", serviceName);
-        TestUtils.waitFor("JMX metrics will be present for service: " + serviceName, Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
+        LOGGER.info("Waiting for JMX metrics to be present for Service: {}/{}", namespace, serviceName);
+        TestUtils.waitFor("JMX metrics to be present for Service: " + serviceName, Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
             () -> {
                 result[0] = getResultOfJMXTermExec(podName, serviceName);
                 return !result[0].isEmpty();

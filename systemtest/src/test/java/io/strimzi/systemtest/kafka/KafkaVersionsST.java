@@ -39,9 +39,9 @@ public class KafkaVersionsST extends AbstractST {
      * Test checking basic functionality for each supported Kafka version.
      * Ensures that for every Kafka version:
      *     - Kafka cluster is deployed without an issue
-     *       - with TopicOperator, UserOperator, 3 Zookeeper and Kafka pods
-     *     - TopicOperator is working - because of the KafkaTopic creation
-     *     - UserOperator is working - because of SCRAM-SHA, ACLs and overall KafkaUser creations
+     *       - with Topic Operator, User Operator, 3 Zookeeper and Kafka pods
+     *     - Topic Operator is working - because of the KafkaTopic creation
+     *     - User Operator is working - because of SCRAM-SHA, ACLs and overall KafkaUser creations
      *     - Sending and receiving messages is working to PLAIN (with SCRAM-SHA) and TLS listeners
      * @param testKafkaVersion TestKafkaVersion added for each iteration of the parametrized test
      * @param extensionContext context in which the current test is being executed

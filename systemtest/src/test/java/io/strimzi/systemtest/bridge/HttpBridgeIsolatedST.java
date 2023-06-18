@@ -108,7 +108,7 @@ class HttpBridgeIsolatedST extends AbstractST {
 
         ClientUtils.waitForClientSuccess(consumerName, clusterOperator.getDeploymentNamespace(), MESSAGE_COUNT);
 
-        // Checking labels for Kafka Bridge
+        // Checking labels for KafkaBridge
         verifyLabelsOnPods(clusterOperator.getDeploymentNamespace(), httpBridgeClusterName, "my-bridge", "KafkaBridge");
         verifyLabelsForService(clusterOperator.getDeploymentNamespace(), httpBridgeClusterName, "bridge", "bridge-service", "KafkaBridge");
     }
@@ -217,7 +217,7 @@ class HttpBridgeIsolatedST extends AbstractST {
 
         // Remove variable which is already in use
         envVarGeneral.remove(usedVariable);
-        LOGGER.info("Verify values before update");
+        LOGGER.info("Verifying values before update");
         checkReadinessLivenessProbe(clusterOperator.getDeploymentNamespace(), KafkaBridgeResources.deploymentName(bridgeName), KafkaBridgeResources.deploymentName(bridgeName), initialDelaySeconds, timeoutSeconds,
                 periodSeconds, successThreshold, failureThreshold);
         checkSpecificVariablesInContainer(clusterOperator.getDeploymentNamespace(), KafkaBridgeResources.deploymentName(bridgeName), KafkaBridgeResources.deploymentName(bridgeName), envVarGeneral);
@@ -245,7 +245,7 @@ class HttpBridgeIsolatedST extends AbstractST {
 
         DeploymentUtils.waitTillDepHasRolled(clusterOperator.getDeploymentNamespace(), KafkaBridgeResources.deploymentName(bridgeName), 1, bridgeSnapshot);
 
-        LOGGER.info("Verify values after update");
+        LOGGER.info("Verifying values after update");
         checkReadinessLivenessProbe(clusterOperator.getDeploymentNamespace(), KafkaBridgeResources.deploymentName(bridgeName), KafkaBridgeResources.deploymentName(bridgeName), updatedInitialDelaySeconds, updatedTimeoutSeconds,
                 updatedPeriodSeconds, successThreshold, updatedFailureThreshold);
         checkSpecificVariablesInContainer(clusterOperator.getDeploymentNamespace(), KafkaBridgeResources.deploymentName(bridgeName), KafkaBridgeResources.deploymentName(bridgeName), envVarUpdated);
@@ -360,12 +360,12 @@ class HttpBridgeIsolatedST extends AbstractST {
         assertThat(kafkaBridge.getMetadata().getLabels().toString(), containsString("some=label"));
         assertThat(kafkaBridge.getSpec().getTemplate().getDeployment().getDeploymentStrategy(), is(DeploymentStrategy.RECREATE));
 
-        LOGGER.info("Changing deployment strategy to {}", DeploymentStrategy.ROLLING_UPDATE);
+        LOGGER.info("Changing Deployment strategy to {}", DeploymentStrategy.ROLLING_UPDATE);
         KafkaBridgeResource.replaceBridgeResourceInSpecificNamespace(bridgeName,
             kb -> kb.getSpec().getTemplate().getDeployment().setDeploymentStrategy(DeploymentStrategy.ROLLING_UPDATE), clusterOperator.getDeploymentNamespace());
         KafkaBridgeUtils.waitForKafkaBridgeReady(clusterOperator.getDeploymentNamespace(), bridgeName);
 
-        LOGGER.info("Adding another label to KafkaBridge resource, pods should be rolled");
+        LOGGER.info("Adding another label to KafkaBridge resource, Pods should be rolled");
         KafkaBridgeResource.replaceBridgeResourceInSpecificNamespace(bridgeName, kb -> kb.getMetadata().getLabels().put("another", "label"), clusterOperator.getDeploymentNamespace());
         DeploymentUtils.waitForDeploymentAndPodsReady(clusterOperator.getDeploymentNamespace(), bridgeDepName, 1);
 
@@ -432,7 +432,7 @@ class HttpBridgeIsolatedST extends AbstractST {
                 .createInstallation()
                 .runInstallation();
 
-        LOGGER.info("Deploy Kafka and KafkaBridge before tests");
+        LOGGER.info("Deploying Kafka and KafkaBridge before tests");
 
         // Deploy kafka
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(httpBridgeClusterName, 1, 1)

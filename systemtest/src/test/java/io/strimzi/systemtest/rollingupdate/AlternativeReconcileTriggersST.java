@@ -153,7 +153,7 @@ class AlternativeReconcileTriggersST extends AbstractST {
         if (!Environment.isKRaftModeEnabled()) {
             // rolling update for zookeeper
             // set annotation to trigger Zookeeper rolling update
-            LOGGER.info("Annotate Zookeeper {} {} with manual rolling update annotation", StrimziPodSet.RESOURCE_KIND, zkName);
+            LOGGER.info("Annotate ZooKeeper: {} - {}/{} with manual rolling update annotation", StrimziPodSet.RESOURCE_KIND, testStorage.getNamespaceName(), zkName);
 
             StrimziPodSetUtils.annotateStrimziPodSet(testStorage.getNamespaceName(), zkName, Collections.singletonMap(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "true"));
 
@@ -273,7 +273,7 @@ class AlternativeReconcileTriggersST extends AbstractST {
             zkSnapshot = Collections.singletonMap(zkPod.getMetadata().getName(), zkPod.getMetadata().getUid());
         }
 
-        LOGGER.info("Trying to roll just single Kafka and single ZK pod");
+        LOGGER.info("Trying to roll just single Kafka and single ZK Pod");
         kubeClient(namespaceName).editPod(KafkaResources.kafkaPodName(clusterName, 0)).edit(pod -> new PodBuilder(pod)
             .editMetadata()
                 .addToAnnotations(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "true")
@@ -295,7 +295,7 @@ class AlternativeReconcileTriggersST extends AbstractST {
             zkSnapshot = RollingUpdateUtils.waitTillComponentHasRolled(namespaceName, zkSelector, 3, zkSnapshot);
         }
 
-        LOGGER.info("Adding anno to all ZK and Kafka pods");
+        LOGGER.info("Adding anno to all ZK and Kafka Pods");
         kafkaSnapshot.keySet().forEach(podName -> {
             kubeClient(namespaceName).editPod(podName).edit(pod -> new PodBuilder(pod)
                 .editMetadata()

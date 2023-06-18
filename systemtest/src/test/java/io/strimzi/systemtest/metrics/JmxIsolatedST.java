@@ -105,9 +105,9 @@ public class JmxIsolatedST extends AbstractST {
             String zkBean = Arrays.stream(zkBeans.split("\\n")).filter(bean -> bean.matches("org.apache.ZooKeeperService:name[0-9]+=ReplicatedServer_id[0-9]+")).findFirst().orElseThrow();
 
             String zkResults = JmxUtils.collectJmxMetricsWithWait(namespaceName, KafkaResources.zookeeperHeadlessServiceName(clusterName), zkSecretName, scraperPodName, "bean " + zkBean + "\nget -i *");
-            assertThat("Result from Zookeeper JMX doesn't contain right quorum size, result: " + zkResults, zkResults, containsString("QuorumSize = 3"));
+            assertThat("Result from ZooKeeper JMX doesn't contain right quorum size, result: " + zkResults, zkResults, containsString("QuorumSize = 3"));
 
-            LOGGER.info("Checking that Zookeeper JMX secret is created with custom labels and annotations");
+            LOGGER.info("Checking that ZooKeeper JMX Secret is created with custom labels and annotations");
             assertTrue(jmxZkSecret.getMetadata().getLabels().entrySet().containsAll(jmxSecretLabels.entrySet()));
             assertTrue(jmxZkSecret.getMetadata().getAnnotations().entrySet().containsAll(jmxSecretAnnotations.entrySet()));
         }

@@ -36,21 +36,21 @@ public class TracingUtils {
     }
 
     private static void verifyThatServiceIsPresent(String namespaceName, String componentJaegerServiceName, String clientPodName, String jaegerServiceName) {
-        TestUtils.waitFor("Jaeger service " + componentJaegerServiceName + " to be present", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT, () -> {
+        TestUtils.waitFor("Jaeger Service: " + componentJaegerServiceName + " to be present", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT, () -> {
             JsonObject jaegerServices = new JsonObject(cmdKubeClient(namespaceName).execInPod(clientPodName, "/bin/bash", "-c", "curl " + jaegerServiceName + ":" + JAEGER_QUERY_PORT + JAEGER_QUERY_SERVICE_ENDPOINT).out());
 
             if (jaegerServices.getJsonArray("data").contains(componentJaegerServiceName)) {
-                LOGGER.info("Jaeger service {} is present", componentJaegerServiceName);
+                LOGGER.info("Jaeger Service: {}/{} is present", namespaceName, componentJaegerServiceName);
                 return true;
             } else {
-                LOGGER.info("Jaeger service {} is not present. Present services are {}.", componentJaegerServiceName, jaegerServices.getJsonArray("data"));
+                LOGGER.info("Jaeger Service: {}/{} is not present. Present services are: {}", namespaceName, componentJaegerServiceName, jaegerServices.getJsonArray("data"));
                 return false;
             }
         });
     }
 
     private static void verifyThatServiceTracesArePresent(String namespaceName, String componentJaegerServiceName, String clientPodName, String operation, String jaegerServiceName) {
-        TestUtils.waitFor("Jaeger service " + componentJaegerServiceName + " has some traces", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT, () -> {
+        TestUtils.waitFor("Jaeger Service: " + componentJaegerServiceName + " to contain some traces", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT, () -> {
             String query;
             if (operation == null)  {
                 query = jaegerServiceName + ":" + JAEGER_QUERY_PORT + JAEGER_QUERY_SERVICE_TRACES_ENDPOINT + JAEGER_QUERY_SERVICE_PARAM_SERVICE + componentJaegerServiceName;
@@ -63,7 +63,7 @@ public class TracingUtils {
             JsonArray traces = jaegerServicesTraces.getJsonArray("data");
 
             if (!(jaegerServicesTraces.getJsonArray("data").size() > 0)) {
-                LOGGER.error("Jaeger service {} does not contain data object", componentJaegerServiceName);
+                LOGGER.error("Jaeger Service: {}/{} does not contain data object", namespaceName, componentJaegerServiceName);
                 return false;
             }
 

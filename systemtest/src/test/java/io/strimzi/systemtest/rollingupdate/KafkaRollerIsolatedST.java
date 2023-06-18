@@ -73,7 +73,7 @@ public class KafkaRollerIsolatedST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(KafkaRollerIsolatedST.class);
 
     @ParallelNamespaceTest
-    @KRaftNotSupported("TopicOperator is not supported by KRaft mode and is used in this test class")
+    @KRaftNotSupported("Topic Operator is not supported by KRaft mode and is used in this test class")
     void testKafkaRollsWhenTopicIsUnderReplicated(ExtensionContext extensionContext) {
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(clusterOperator.getDeploymentNamespace(), extensionContext);
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
@@ -132,7 +132,7 @@ public class KafkaRollerIsolatedST extends AbstractST {
     }
 
     @ParallelNamespaceTest
-    @KRaftNotSupported("TopicOperator is not supported by KRaft mode and is used in this test class")
+    @KRaftNotSupported("Topic Operator is not supported by KRaft mode and is used in this test class")
     void testKafkaTopicRFLowerThanMinInSyncReplicas(ExtensionContext extensionContext) {
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(clusterOperator.getDeploymentNamespace(), extensionContext);
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());

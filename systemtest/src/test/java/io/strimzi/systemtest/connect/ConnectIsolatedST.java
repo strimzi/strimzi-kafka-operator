@@ -283,7 +283,7 @@ class ConnectIsolatedST extends AbstractST {
         
         resourceManager.createResource(extensionContext, connect, ScraperTemplates.scraperPod(testStorage.getNamespaceName(), testStorage.getScraperName()).build());
 
-        LOGGER.info("Deploy NetworkPolicies for KafkaConnect");
+        LOGGER.info("Deploying NetworkPolicies for KafkaConnect");
         NetworkPolicyResource.deployNetworkPolicyForResource(extensionContext, connect, KafkaConnectResources.deploymentName(testStorage.getClusterName()));
 
         final String kafkaConnectPodName = kubeClient(testStorage.getNamespaceName()).listPodsByPrefixInName(KafkaConnectResources.deploymentName(testStorage.getClusterName())).get(0).getMetadata().getName();
@@ -292,10 +292,10 @@ class ConnectIsolatedST extends AbstractST {
 
         KafkaConnectUtils.waitUntilKafkaConnectRestApiIsAvailable(testStorage.getNamespaceName(), kafkaConnectPodName);
 
-        LOGGER.info("Verifying that KafkaConnect pod logs don't contain ERRORs");
+        LOGGER.info("Verifying that KafkaConnect Pod logs don't contain ERRORs");
         assertThat(kafkaConnectLogs, not(containsString("ERROR")));
 
-        LOGGER.info("Creating FileStreamSink connector via pod {} with topic {}", scraperPodName, testStorage.getTopicName());
+        LOGGER.info("Creating FileStreamSink KafkaConnector via Pod: {}/{} with Topic: {}", testStorage.getNamespaceName(), scraperPodName, testStorage.getTopicName());
         KafkaConnectorUtils.createFileSinkConnector(testStorage.getNamespaceName(), scraperPodName, testStorage.getTopicName(),
             Constants.DEFAULT_SINK_FILE_PATH, KafkaConnectResources.url(testStorage.getClusterName(), testStorage.getNamespaceName(), 8083));
 
@@ -338,7 +338,7 @@ class ConnectIsolatedST extends AbstractST {
 
         String connectorName = "license-source";
 
-        LOGGER.info("Deploy NetworkPolicies for KafkaConnect");
+        LOGGER.info("Deploying NetworkPolicies for KafkaConnect");
         NetworkPolicyResource.deployNetworkPolicyForResource(extensionContext, connect, KafkaConnectResources.deploymentName(testStorage.getClusterName()));
 
         resourceManager.createResource(extensionContext, KafkaConnectorTemplates.kafkaConnector(connectorName, testStorage.getClusterName(), 2)
@@ -484,7 +484,7 @@ class ConnectIsolatedST extends AbstractST {
 
         resourceManager.createResource(extensionContext, connect, ScraperTemplates.scraperPod(testStorage.getNamespaceName(), testStorage.getScraperName()).build());
 
-        LOGGER.info("Deploy NetworkPolicies for KafkaConnect");
+        LOGGER.info("Deploying NetworkPolicies for KafkaConnect");
         NetworkPolicyResource.deployNetworkPolicyForResource(extensionContext, connect, KafkaConnectResources.deploymentName(testStorage.getClusterName()));
 
         final String kafkaConnectPodName = kubeClient(testStorage.getNamespaceName()).listPodsByPrefixInName(KafkaConnectResources.deploymentName(testStorage.getClusterName())).get(0).getMetadata().getName();
@@ -493,10 +493,10 @@ class ConnectIsolatedST extends AbstractST {
 
         KafkaConnectUtils.waitUntilKafkaConnectRestApiIsAvailable(testStorage.getNamespaceName(), kafkaConnectPodName);
 
-        LOGGER.info("Verifying that KafkaConnect pod logs don't contain ERRORs");
+        LOGGER.info("Verifying that KafkaConnect Pod logs don't contain ERRORs");
         assertThat(kafkaConnectLogs, not(containsString("ERROR")));
 
-        LOGGER.info("Creating FileStreamSink connector via pod {} with topic {}", scraperPodName, testStorage.getTopicName());
+        LOGGER.info("Creating FileStreamSink KafkaConnector via Pod: {}/{} with Topic: {}", testStorage.getNamespaceName(), scraperPodName, testStorage.getTopicName());
         KafkaConnectorUtils.createFileSinkConnector(testStorage.getNamespaceName(), scraperPodName, testStorage.getTopicName(),
             Constants.DEFAULT_SINK_FILE_PATH, KafkaConnectResources.url(testStorage.getClusterName(), testStorage.getNamespaceName(), 8083));
 
@@ -565,17 +565,17 @@ class ConnectIsolatedST extends AbstractST {
 
         resourceManager.createResource(extensionContext, connect, ScraperTemplates.scraperPod(testStorage.getNamespaceName(), testStorage.getScraperName()).build());
 
-        LOGGER.info("Deploy NetworkPolicies for KafkaConnect");
+        LOGGER.info("Deploying NetworkPolicies for KafkaConnect");
         NetworkPolicyResource.deployNetworkPolicyForResource(extensionContext, connect, KafkaConnectResources.deploymentName(testStorage.getClusterName()));
 
         final String kafkaConnectPodName = kubeClient(testStorage.getNamespaceName()).listPodsByPrefixInName(KafkaConnectResources.deploymentName(testStorage.getClusterName())).get(0).getMetadata().getName();
         final String kafkaConnectLogs = kubeClient(testStorage.getNamespaceName()).logs(kafkaConnectPodName);
         final String scraperPodName = kubeClient(testStorage.getNamespaceName()).listPodsByPrefixInName(testStorage.getScraperName()).get(0).getMetadata().getName();
 
-        LOGGER.info("Verifying that KafkaConnect pod logs don't contain ERRORs");
+        LOGGER.info("Verifying that KafkaConnect Pod logs don't contain ERRORs");
         assertThat(kafkaConnectLogs, not(containsString("ERROR")));
 
-        LOGGER.info("Creating FileStreamSink connector via pod {} with topic {}", scraperPodName, testStorage.getTopicName());
+        LOGGER.info("Creating FileStreamSink KafkaConnector via Pod: {}/{} with Topic: {}", testStorage.getNamespaceName(), scraperPodName, testStorage.getTopicName());
         KafkaConnectorUtils.createFileSinkConnector(testStorage.getNamespaceName(), scraperPodName, testStorage.getTopicName(),
             Constants.DEFAULT_SINK_FILE_PATH, KafkaConnectResources.url(testStorage.getClusterName(), testStorage.getNamespaceName(), 8083));
 
@@ -631,7 +631,7 @@ class ConnectIsolatedST extends AbstractST {
             .build();
 
         resourceManager.createResource(extensionContext, connect, ScraperTemplates.scraperPod(testStorage.getNamespaceName(), testStorage.getScraperName()).build());
-        LOGGER.info("Deploy NetworkPolicies for KafkaConnect");
+        LOGGER.info("Deploying NetworkPolicies for KafkaConnect");
         NetworkPolicyResource.deployNetworkPolicyForResource(extensionContext, connect, KafkaConnectResources.deploymentName(testStorage.getClusterName()));
 
         // How many messages should be sent and at what count should the test connector fail
@@ -642,7 +642,7 @@ class ConnectIsolatedST extends AbstractST {
         echoSinkConfig.put("level", "INFO");
         echoSinkConfig.put("fail.task.after.records", failMessageCount);
 
-        LOGGER.info("Creating EchoSink connector");
+        LOGGER.info("Creating EchoSink KafkaConnector");
         resourceManager.createResource(extensionContext, KafkaConnectorTemplates.kafkaConnector(Constants.ECHO_SINK_CONNECTOR_NAME, testStorage.getClusterName())
             .editOrNewSpec()
                 .withTasksMax(1)
@@ -736,7 +736,7 @@ class ConnectIsolatedST extends AbstractST {
 
         // Remove variable which is already in use
         envVarGeneral.remove(usedVariable);
-        LOGGER.info("Verify values before update");
+        LOGGER.info("Verifying values before update");
         checkReadinessLivenessProbe(namespaceName, KafkaConnectResources.deploymentName(clusterName), KafkaConnectResources.deploymentName(clusterName), initialDelaySeconds, timeoutSeconds,
                 periodSeconds, successThreshold, failureThreshold);
         checkSpecificVariablesInContainer(namespaceName, KafkaConnectResources.deploymentName(clusterName), KafkaConnectResources.deploymentName(clusterName), envVarGeneral);
@@ -764,7 +764,7 @@ class ConnectIsolatedST extends AbstractST {
 
         RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(namespaceName, labelSelector, 1, connectSnapshot);
 
-        LOGGER.info("Verify values after update");
+        LOGGER.info("Verifying values after update");
         checkReadinessLivenessProbe(namespaceName, KafkaConnectResources.deploymentName(clusterName), KafkaConnectResources.deploymentName(clusterName), updatedInitialDelaySeconds, updatedTimeoutSeconds,
                 updatedPeriodSeconds, successThreshold, updatedFailureThreshold);
         checkSpecificVariablesInContainer(namespaceName, KafkaConnectResources.deploymentName(clusterName), KafkaConnectResources.deploymentName(clusterName), envVarUpdated);
@@ -1128,9 +1128,9 @@ class ConnectIsolatedST extends AbstractST {
         assertThat(KafkaConnectorResource.kafkaConnectorClient().inNamespace(namespaceName).withName(clusterName).get().getSpec().getTasksMax(), is(scaleTo));
         assertThat(KafkaConnectorResource.kafkaConnectorClient().inNamespace(namespaceName).withName(clusterName).get().getStatus().getTasksMax(), is(scaleTo));
 
-        LOGGER.info("Check taskMax on Connect pods API");
+        LOGGER.info("Check taskMax on Connect Pods API");
         for (Pod pod : connectPods) {
-            LOGGER.info("Checking taskMax over API for pod {}/{}", pod.getMetadata().getNamespace(), pod.getMetadata().getName());
+            LOGGER.info("Checking taskMax over API for Pod: {}/{}", pod.getMetadata().getNamespace(), pod.getMetadata().getName());
             TestUtils.waitFor(String.format("pod's %s API return tasksMax=%s", pod.getMetadata().getName(), scaleTo),
                 Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT_SHORT, () -> {
                     JsonObject json = new JsonObject(KafkaConnectorUtils.getConnectorSpecFromConnectAPI(namespaceName, pod.getMetadata().getName(), clusterName));
@@ -1332,7 +1332,7 @@ class ConnectIsolatedST extends AbstractST {
         assertThat(kafkaConnect.getMetadata().getLabels().toString(), containsString("some=label"));
         assertThat(kafkaConnect.getSpec().getTemplate().getDeployment().getDeploymentStrategy(), is(DeploymentStrategy.RECREATE));
 
-        LOGGER.info("Changing deployment strategy to {}", DeploymentStrategy.ROLLING_UPDATE);
+        LOGGER.info("Changing Deployment strategy to {}", DeploymentStrategy.ROLLING_UPDATE);
         KafkaConnectResource.replaceKafkaConnectResourceInSpecificNamespace(clusterName,
             kc -> kc.getSpec().getTemplate().getDeployment().setDeploymentStrategy(DeploymentStrategy.ROLLING_UPDATE), namespaceName);
         KafkaConnectUtils.waitForConnectReady(namespaceName, clusterName);
@@ -1347,13 +1347,13 @@ class ConnectIsolatedST extends AbstractST {
                     kC.getSpec().getTemplate().getDeployment().getDeploymentStrategy().equals(DeploymentStrategy.ROLLING_UPDATE);
         });
 
-        LOGGER.info("Adding another label to Connect resource, pods should be rolled");
+        LOGGER.info("Adding another label to Connect resource, Pods should be rolled");
         RollingUpdateUtils.waitForComponentAndPodsReady(namespaceName, labelSelector, 1);
     }
 
     @ParallelNamespaceTest
     @Tag(INTERNAL_CLIENTS_USED)
-    // changing the password in secret should cause the RU of connect pod
+    // changing the password in Secret should cause the RU of connect pod
     void testKafkaConnectWithScramShaAuthenticationRolledAfterPasswordChanged(ExtensionContext extensionContext) {
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(clusterOperator.getDeploymentNamespace(), extensionContext);
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());

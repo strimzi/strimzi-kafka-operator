@@ -53,7 +53,7 @@ public class OpaIntegrationST extends AbstractST {
         resourceManager.createResource(extensionContext, goodUser);
         resourceManager.createResource(extensionContext, badUser);
 
-        LOGGER.info("Checking KafkaUser {} that is able to send and receive messages to/from topic '{}'", OPA_GOOD_USER, testStorage.getTopicName());
+        LOGGER.info("Checking KafkaUser: {}/{} that is able to send and receive messages to/from Topic: {}/{}", testStorage.getNamespaceName(), OPA_GOOD_USER, testStorage.getNamespaceName(), testStorage.getTopicName());
 
         KafkaClients kafkaClients = new KafkaClientsBuilder()
             .withProducerName(testStorage.getProducerName())
@@ -68,7 +68,7 @@ public class OpaIntegrationST extends AbstractST {
         resourceManager.createResource(extensionContext, kafkaClients.producerTlsStrimzi(CLUSTER_NAME), kafkaClients.consumerTlsStrimzi(CLUSTER_NAME));
         ClientUtils.waitForClientsSuccess(testStorage);
 
-        LOGGER.info("Checking KafkaUser {} that is not able to send or receive messages to/from topic '{}'", OPA_BAD_USER, testStorage.getTopicName());
+        LOGGER.info("Checking KafkaUser: {}/{} that is not able to send or receive messages to/from Topic: {}/{}", testStorage.getNamespaceName(), OPA_BAD_USER, testStorage.getNamespaceName(), testStorage.getTopicName());
 
         kafkaClients = new KafkaClientsBuilder(kafkaClients)
             .withUsername(OPA_BAD_USER)
@@ -87,7 +87,7 @@ public class OpaIntegrationST extends AbstractST {
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(CLUSTER_NAME, testStorage.getTopicName(), testStorage.getNamespaceName()).build());
         resourceManager.createResource(extensionContext, superuser);
 
-        LOGGER.info("Checking KafkaUser {} that is able to send and receive messages to/from topic '{}'", OPA_GOOD_USER, testStorage.getTopicName());
+        LOGGER.info("Checking KafkaUser: {}/{} that is able to send and receive messages to/from Topic: {}/{}", testStorage.getNamespaceName(), OPA_GOOD_USER, testStorage.getNamespaceName(), testStorage.getTopicName());
 
         KafkaClients kafkaClients = new KafkaClientsBuilder()
             .withProducerName(testStorage.getProducerName())

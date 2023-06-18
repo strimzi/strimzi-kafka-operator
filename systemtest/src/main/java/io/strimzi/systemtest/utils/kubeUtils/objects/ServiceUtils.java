@@ -30,8 +30,8 @@ public class ServiceUtils {
             boolean isStrimziTag = entry.getKey().startsWith(Labels.STRIMZI_DOMAIN);
             // ignoring strimzi.io and k8s labels
             if (!(isStrimziTag || isK8sTag)) {
-                LOGGER.info("Waiting for Service label change {} -> {}", entry.getKey(), entry.getValue());
-                TestUtils.waitFor("Service label change " + entry.getKey() + " -> " + entry.getValue(), Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS,
+                LOGGER.info("Waiting for Service label to change {} -> {}", entry.getKey(), entry.getValue());
+                TestUtils.waitFor("Service label to change " + entry.getKey() + " -> " + entry.getValue(), Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS,
                     Constants.GLOBAL_TIMEOUT, () ->
                         kubeClient(namespaceName).getService(namespaceName, serviceName).getMetadata().getLabels().get(entry.getKey()).equals(entry.getValue())
                 );
@@ -41,8 +41,8 @@ public class ServiceUtils {
 
     public static void waitForServiceLabelsDeletion(String namespaceName, String serviceName, String... labelKeys) {
         for (final String labelKey : labelKeys) {
-            LOGGER.info("Service label {} change to {}", labelKey, null);
-            TestUtils.waitFor("Service label" + labelKey + " change to " + null, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS,
+            LOGGER.info("Service label {} to change to {}", labelKey, null);
+            TestUtils.waitFor("Service label: " + labelKey + " change to " + null, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS,
                 DELETION_TIMEOUT, () ->
                     kubeClient(namespaceName).getService(namespaceName, serviceName).getMetadata().getLabels().get(labelKey) == null
             );
@@ -55,15 +55,15 @@ public class ServiceUtils {
      * @param serviceUid service original uid
      */
     public static void waitForServiceRecovery(String namespaceName, String serviceName, String serviceUid) {
-        LOGGER.info("Waiting when Service {}/{}-{} will be recovered", namespaceName, serviceName, serviceUid);
+        LOGGER.info("Waiting for Service: {}/{}-{} to be recovered", namespaceName, serviceName, serviceUid);
 
-        TestUtils.waitFor("Service " + serviceName + "/" + namespaceName + " to be recovered", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_RECOVERY,
+        TestUtils.waitFor("recovery of Service: " + serviceName + "/" + namespaceName, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_RECOVERY,
             () -> !kubeClient().getServiceUid(serviceName).equals(serviceUid));
-        LOGGER.info("Service {}/{} is recovered", namespaceName, serviceName);
+        LOGGER.info("Service: {}/{} is recovered", namespaceName, serviceName);
     }
 
     public static void waitUntilAddressIsReachable(String address) {
-        LOGGER.info("Wait until address {} is reachable", address);
+        LOGGER.info("Waiting for address: {} to be reachable", address);
         TestUtils.waitFor("", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_STATUS_TIMEOUT,
             () -> {
                 try {
@@ -73,6 +73,6 @@ public class ServiceUtils {
                     return false;
                 }
             });
-        LOGGER.info("Address {} is reachable", address);
+        LOGGER.info("Address: {} is reachable", address);
     }
 }

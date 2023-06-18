@@ -100,7 +100,7 @@ public class MirrorMakerIsolatedST extends AbstractST {
         resourceManager.createResource(extensionContext, clients.producerStrimzi(), clients.consumerStrimzi());
         ClientUtils.waitForClientsSuccess(testStorage);
 
-        // Deploy Mirror Maker
+        // Deploy MirrorMaker
         resourceManager.createResource(extensionContext, KafkaMirrorMakerTemplates.kafkaMirrorMaker(testStorage.getClusterName(), kafkaClusterSourceName, kafkaClusterTargetName, ClientUtils.generateRandomConsumerGroup(), 1, false)
             .editSpec()
             .withResources(new ResourceRequirementsBuilder()
@@ -144,7 +144,7 @@ public class MirrorMakerIsolatedST extends AbstractST {
     }
 
     /**
-     * Test mirroring messages by Mirror Maker over tls transport using mutual tls auth
+     * Test mirroring messages by MirrorMaker over tls transport using mutual tls auth
      */
     @ParallelNamespaceTest
     @Tag(ACCEPTANCE)
@@ -217,7 +217,7 @@ public class MirrorMakerIsolatedST extends AbstractST {
         resourceManager.createResource(extensionContext, clients.producerTlsStrimzi(kafkaClusterSourceName), clients.consumerTlsStrimzi(kafkaClusterSourceName));
         ClientUtils.waitForClientsSuccess(testStorage);
 
-        // Deploy Mirror Maker with tls listener and mutual tls auth
+        // Deploy MirrorMaker with tls listener and mutual tls auth
         resourceManager.createResource(extensionContext, KafkaMirrorMakerTemplates.kafkaMirrorMaker(testStorage.getClusterName(), kafkaClusterSourceName, kafkaClusterTargetName, ClientUtils.generateRandomConsumerGroup(), 1, true)
             .editSpec()
                 .editConsumer()
@@ -257,7 +257,7 @@ public class MirrorMakerIsolatedST extends AbstractST {
     }
 
     /**
-     * Test mirroring messages by Mirror Maker over tls transport using scram-sha auth
+     * Test mirroring messages by MirrorMaker over tls transport using scram-sha auth
      */
     @ParallelNamespaceTest
     @SuppressWarnings("checkstyle:methodlength")
@@ -307,12 +307,12 @@ public class MirrorMakerIsolatedST extends AbstractST {
             KafkaUserTemplates.scramShaUser(testStorage.getNamespaceName(), kafkaClusterTargetName, kafkaTargetUserName).build()
         );
 
-        // Initialize PasswordSecretSource to set this as PasswordSecret in Mirror Maker spec
+        // Initialize PasswordSecretSource to set this as PasswordSecret in MirrorMaker spec
         PasswordSecretSource passwordSecretSource = new PasswordSecretSource();
         passwordSecretSource.setSecretName(kafkaSourceUserName);
         passwordSecretSource.setPassword("password");
 
-        // Initialize PasswordSecretSource to set this as PasswordSecret in Mirror Maker spec
+        // Initialize PasswordSecretSource to set this as PasswordSecret in MirrorMaker spec
         PasswordSecretSource passwordSecretTarget = new PasswordSecretSource();
         passwordSecretTarget.setSecretName(kafkaTargetUserName);
         passwordSecretTarget.setPassword("password");
@@ -340,7 +340,7 @@ public class MirrorMakerIsolatedST extends AbstractST {
         resourceManager.createResource(extensionContext, clients.producerScramShaTlsStrimzi(kafkaClusterSourceName), clients.consumerScramShaTlsStrimzi(kafkaClusterSourceName));
         ClientUtils.waitForClientsSuccess(testStorage);
 
-        // Deploy Mirror Maker with TLS and ScramSha512
+        // Deploy MirrorMaker with TLS and ScramSha512
         resourceManager.createResource(extensionContext, KafkaMirrorMakerTemplates.kafkaMirrorMaker(testStorage.getClusterName(), kafkaClusterSourceName, kafkaClusterTargetName, ClientUtils.generateRandomConsumerGroup(), 1, true)
             .editSpec()
                 .editConsumer()
@@ -518,7 +518,7 @@ public class MirrorMakerIsolatedST extends AbstractST {
 
         // Remove variable which is already in use
         envVarGeneral.remove(usedVariable);
-        LOGGER.info("Verify values before update");
+        LOGGER.info("Verifying values before update");
         checkReadinessLivenessProbe(namespaceName, KafkaMirrorMakerResources.deploymentName(clusterName),
             KafkaMirrorMakerResources.deploymentName(clusterName), initialDelaySeconds, timeoutSeconds, periodSeconds,
             successThreshold, failureThreshold);
@@ -550,7 +550,7 @@ public class MirrorMakerIsolatedST extends AbstractST {
 
         DeploymentUtils.waitTillDepHasRolled(namespaceName, KafkaMirrorMakerResources.deploymentName(clusterName), 1, mirrorMakerSnapshot);
 
-        LOGGER.info("Verify values after update");
+        LOGGER.info("Verifying values after update");
         checkReadinessLivenessProbe(namespaceName, KafkaMirrorMakerResources.deploymentName(clusterName),
             KafkaMirrorMakerResources.deploymentName(clusterName), updatedInitialDelaySeconds, updatedTimeoutSeconds,
                 updatedPeriodSeconds, successThreshold, updatedFailureThreshold);
@@ -662,12 +662,12 @@ public class MirrorMakerIsolatedST extends AbstractST {
         assertThat(kmm.getMetadata().getLabels().toString(), Matchers.containsString("some=label"));
         assertThat(kmm.getSpec().getTemplate().getDeployment().getDeploymentStrategy(), is(DeploymentStrategy.RECREATE));
 
-        LOGGER.info("Changing deployment strategy to {}", DeploymentStrategy.ROLLING_UPDATE);
+        LOGGER.info("Changing Deployment strategy to {}", DeploymentStrategy.ROLLING_UPDATE);
         KafkaMirrorMakerResource.replaceMirrorMakerResourceInSpecificNamespace(clusterName,
             mm -> mm.getSpec().getTemplate().getDeployment().setDeploymentStrategy(DeploymentStrategy.ROLLING_UPDATE), namespaceName);
         KafkaMirrorMakerUtils.waitForKafkaMirrorMakerReady(namespaceName, clusterName);
 
-        LOGGER.info("Adding another label to MirrorMaker resource, pods should be rolled");
+        LOGGER.info("Adding another label to MirrorMaker resource, Pods should be rolled");
         KafkaMirrorMakerResource.replaceMirrorMakerResourceInSpecificNamespace(clusterName, mm -> mm.getMetadata().getLabels().put("another", "label"), namespaceName);
         DeploymentUtils.waitForDeploymentAndPodsReady(namespaceName, mmDepName, 1);
 

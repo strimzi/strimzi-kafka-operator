@@ -43,15 +43,15 @@ public class KafkaConnectorUtils {
         // not need to be final because reference to the array does not get another array assigned
         int[] i = {0};
 
-        TestUtils.waitFor("Waiting for stability of connector " + connectorName, Constants.GLOBAL_POLL_INTERVAL, Constants.KAFKA_CONNECTOR_STABILITY_TIMEOUT,
+        TestUtils.waitFor("stability of KafkaConnector: " + namespaceName + "/" + connectorName, Constants.GLOBAL_POLL_INTERVAL, Constants.KAFKA_CONNECTOR_STABILITY_TIMEOUT,
             () -> {
                 String availableConnectors = getCreatedConnectors(namespaceName, connectPodName);
                 if (availableConnectors.contains(connectorName)) {
-                    LOGGER.info("Connector with name {} is present. Remaining seconds for stability {}", connectorName,
+                    LOGGER.info("KafkaConnector: {}/{} is present. Must remain stable for: {} second(s)", namespaceName, connectorName,
                             Constants.GLOBAL_RECONCILIATION_COUNT - i[0]);
                     return i[0]++ == (Constants.GLOBAL_RECONCILIATION_COUNT);
                 } else {
-                    throw new RuntimeException("Connector" + connectorName + " is not stable!");
+                    throw new RuntimeException("KafkaConnector" + namespaceName + "/" + connectorName + " is not stable!");
                 }
             }, () -> ResourceManager.logCurrentResourceStatus(KafkaConnectorResource.kafkaConnectorClient().inNamespace(namespaceName).withName(connectorName).get())
         );
@@ -87,7 +87,7 @@ public class KafkaConnectorUtils {
             if (KafkaConnectorResource.kafkaConnectorClient().inNamespace(namespaceName).withName(connectorName).get() == null) {
                 return true;
             } else {
-                LOGGER.info("KafkaConnector: {} is not deleted yet, triggering force delete", connectorName);
+                LOGGER.info("KafkaConnector: {}/{} is not deleted yet, triggering force delete", namespaceName, connectorName);
                 cmdKubeClient().deleteByName(KafkaConnector.RESOURCE_KIND, connectorName);
                 return false;
             }
@@ -104,7 +104,7 @@ public class KafkaConnectorUtils {
     }
 
     public static void waitForConnectorsTaskMaxChange(String namespaceName, String connectorName, int taskMax) {
-        TestUtils.waitFor("Wait for KafkaConnector taskMax will change", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.GLOBAL_TIMEOUT,
+        TestUtils.waitFor("KafkaConnector taskMax change", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.GLOBAL_TIMEOUT,
             () -> (KafkaConnectorResource.kafkaConnectorClient().inNamespace(namespaceName)
                 .withName(connectorName).get().getSpec().getTasksMax() == taskMax)
                 && (KafkaConnectorResource.kafkaConnectorClient().inNamespace(namespaceName)
@@ -113,8 +113,8 @@ public class KafkaConnectorUtils {
     }
 
     public static void waitForConnectorTaskState(String namespaceName, String connectorName, int taskId, String state) {
-        LOGGER.info("Waiting for task with id:{} to be in state {}", taskId, state);
-        TestUtils.waitFor(String.format("Wait for KafkaConnector task status to be: %s", state), Constants.GLOBAL_POLL_INTERVAL_MEDIUM, Constants.GLOBAL_TIMEOUT,
+        LOGGER.info("Waiting for task with id: {} to be in state {}", taskId, state);
+        TestUtils.waitFor("KafkaConnector task status to be: " + state, Constants.GLOBAL_POLL_INTERVAL_MEDIUM, Constants.GLOBAL_TIMEOUT,
             () -> (getConnectorTaskState(namespaceName, connectorName, taskId).equals(state))
         );
     }
@@ -126,8 +126,8 @@ public class KafkaConnectorUtils {
     }
 
     public static void waitForConnectorAutoRestartCount(String namespaceName, String connectorName, int restartCount) {
-        LOGGER.info("Waiting for kafkaConnector {} to have autoRestartCount {}", connectorName, restartCount);
-        TestUtils.waitFor(String.format("Wait for kafkaConnector %s to have autoRestartCount: %s", connectorName, restartCount), Constants.GLOBAL_POLL_INTERVAL_MEDIUM, Constants.GLOBAL_TIMEOUT,
+        LOGGER.info("Waiting for KafkaConnector: {}/{} to have autoRestartCount: {}", namespaceName, connectorName, restartCount);
+        TestUtils.waitFor("KafkaConnector: " + namespaceName + "/" + connectorName + " to have autoRestartCount: " + restartCount, Constants.GLOBAL_POLL_INTERVAL_MEDIUM, Constants.GLOBAL_TIMEOUT,
             () -> (getConnectorAutoRestartCount(namespaceName, connectorName) == restartCount)
         );
     }
@@ -142,7 +142,7 @@ public class KafkaConnectorUtils {
     }
 
     public static void waitForConnectorsTaskMaxChangeViaAPI(String namespaceName, String connectPodName, String connectorName, int taskMax) {
-        TestUtils.waitFor("Wait for KafkaConnector taskMax will change via API", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS,
+        TestUtils.waitFor("KafkaConnector taskMax change via API", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS,
             ResourceOperation.getTimeoutForResourceReadiness(KafkaConnector.RESOURCE_KIND),
             () -> getConnectorSpecFromConnectAPI(namespaceName, connectPodName, connectorName).contains("\"tasks.max\":\"" + taskMax + "\""));
     }
@@ -158,7 +158,7 @@ public class KafkaConnectorUtils {
     }
 
     public static String waitForConnectorConfigUpdate(String namespaceName, String podName, String connectorName, String oldConfig, String apiUrl) {
-        TestUtils.waitFor("Wait for KafkaConnector config will contain desired config", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS,
+        TestUtils.waitFor("KafkaConnector config to contain desired values", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS,
             ResourceOperation.getTimeoutForResourceReadiness(KafkaConnector.RESOURCE_KIND),
             () -> !oldConfig.equals(getConnectorConfig(namespaceName, podName, connectorName, apiUrl)));
         return getConnectorConfig(namespaceName, podName, connectorName, apiUrl);
@@ -170,15 +170,15 @@ public class KafkaConnectorUtils {
     public static void waitForConnectorSpecFromConnectAPIStability(String namespaceName, String podName, String connectorName, String oldSpec) {
         int[] stableCounter = {0};
 
-        TestUtils.waitFor("Connector's spec will be stable", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_STATUS_TIMEOUT, () -> {
+        TestUtils.waitFor("KafkaConnector's spec to be stable", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_STATUS_TIMEOUT, () -> {
             if (getConnectorSpecFromConnectAPI(namespaceName, podName, connectorName).equals(oldSpec)) {
                 stableCounter[0]++;
                 if (stableCounter[0] == Constants.GLOBAL_STABILITY_OFFSET_COUNT) {
-                    LOGGER.info("Connector's spec is stable for {} polls intervals", stableCounter[0]);
+                    LOGGER.info("Connector's spec is stable for: {} poll intervals", stableCounter[0]);
                     return true;
                 }
             } else {
-                LOGGER.info("Connector's spec is not stable. Going to set the counter to zero.");
+                LOGGER.info("Connector's spec is not stable. Going to set the counter to zero");
                 stableCounter[0] = 0;
                 return false;
             }
@@ -188,8 +188,8 @@ public class KafkaConnectorUtils {
     }
 
     public static void waitForConnectorWorkerStatus(String namespaceName, String podName, String connectName, String connectorName, String state) {
-        LOGGER.info("Wait until KafkaConnector {}'s worker will be in {} state", connectorName, state);
-        TestUtils.waitFor(String.format("KafkaConnector %s's worker will be in %s state", connectorName, state), Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.GLOBAL_TIMEOUT,
+        LOGGER.info("Waiting for worker of KafkaConnector: {}/{} to be in {} state", namespaceName, connectorName, state);
+        TestUtils.waitFor("KafkaConnector's:" + connectorName + " worker to be in state: " + state, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.GLOBAL_TIMEOUT,
             () -> {
                 JsonObject connectorStatus = new JsonObject(
                         cmdKubeClient().namespace(namespaceName).execInPod(podName,
@@ -203,13 +203,13 @@ public class KafkaConnectorUtils {
 
     public static void loggerStabilityWait(String namespaceName, String connectClusterName, String podName, String desiredLogger, String connectorName) {
         int[] counter = {0};
-        TestUtils.waitFor("Connector logger will be stable", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
+        TestUtils.waitFor("KafkaConnector logger to be stable", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
             () ->  {
                 String logger = cmdKubeClient().namespace(namespaceName).execInPod(podName, "curl",
                     "http://" + KafkaConnectResources.serviceName(connectClusterName) + ":8083/admin/loggers/" + connectorName).out();
                 if (logger.contains(desiredLogger)) {
                     counter[0]++;
-                    LOGGER.info("Logger level is {}. Remaining seconds for logger to be stable: {}", desiredLogger, GLOBAL_RECONCILIATION_COUNT - counter[0]);
+                    LOGGER.info("Logger level is {}. Must remain stable for: {} second(s)", desiredLogger, GLOBAL_RECONCILIATION_COUNT - counter[0]);
                 } else {
                     LOGGER.warn("Logger level has changed: {}. Reseting counter from {} to 0", logger, counter[0]);
                     counter[0] = 0;

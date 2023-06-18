@@ -118,7 +118,7 @@ public class SpecificIsolatedST extends AbstractST {
                 .endKafka()
             .endSpec().build());
 
-        LOGGER.info("Kafka with version {} deployed.", nonExistingVersion);
+        LOGGER.info("Kafka with version {} deployed", nonExistingVersion);
 
         KafkaUtils.waitForKafkaNotReady(clusterOperator.getDeploymentNamespace(), clusterName);
         KafkaUtils.waitUntilKafkaStatusConditionContainsMessage(clusterName, clusterOperator.getDeploymentNamespace(), nonExistingVersionMessage);
@@ -193,7 +193,7 @@ public class SpecificIsolatedST extends AbstractST {
                 clusterOperator.getDeploymentNamespace()
         );
 
-        LOGGER.info("Expecting that clients will not be able to connect to external load-balancer service cause of invalid load-balancer source range.");
+        LOGGER.info("Expecting that clients will not be able to connect to external load-balancer service cause of invalid load-balancer source range");
 
         ExternalKafkaClient newExternalKafkaClient = externalKafkaClient.toBuilder()
             .withMessageCount(2 * MESSAGE_COUNT)

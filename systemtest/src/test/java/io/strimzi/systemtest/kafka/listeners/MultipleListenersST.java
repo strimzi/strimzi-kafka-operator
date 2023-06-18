@@ -157,7 +157,7 @@ public class MultipleListenersST extends AbstractST {
     }
 
     private void runListenersTest(ExtensionContext extensionContext, List<GenericKafkaListener> listeners, String clusterName) {
-        LOGGER.info("This is listeners {}, which will verified.", listeners);
+        LOGGER.info("These are listeners to be verified: {}", listeners);
 
         // exercise phase
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3)

@@ -41,7 +41,7 @@ import static io.strimzi.systemtest.Constants.REGRESSION;
 @Tag(INTERNAL_CLIENTS_USED)
 @Tag(BRIDGE)
 @Tag(REGRESSION)
-@KRaftNotSupported("UserOperator and scram-sha are not supported by KRaft mode and is used in this test class")
+@KRaftNotSupported("User Operator and scram-sha are not supported by KRaft mode and is used in this test class")
 class HttpBridgeScramShaST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(HttpBridgeScramShaST.class);
     private final String httpBridgeScramShaClusterName = "http-bridge-scram-sha-cluster-name";
@@ -118,7 +118,7 @@ class HttpBridgeScramShaST extends AbstractST {
             .createInstallation()
             .runInstallation();
 
-        LOGGER.info("Deploy Kafka and KafkaBridge before tests");
+        LOGGER.info("Deploying Kafka and KafkaBridge before tests");
 
         // Deploy kafka
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(httpBridgeScramShaClusterName, 1, 1)
@@ -147,12 +147,12 @@ class HttpBridgeScramShaST extends AbstractST {
 
         resourceManager.createResource(extensionContext, scramShaUser);
 
-        // Initialize PasswordSecret to set this as PasswordSecret in Mirror Maker spec
+        // Initialize PasswordSecret to set this as PasswordSecret in MirrorMaker spec
         PasswordSecretSource passwordSecret = new PasswordSecretSource();
         passwordSecret.setSecretName(USER_NAME);
         passwordSecret.setPassword("password");
 
-        // Initialize CertSecretSource with certificate and secret names for consumer
+        // Initialize CertSecretSource with certificate and Secret names for consumer
         CertSecretSource certSecret = new CertSecretSource();
         certSecret.setCertificate("ca.crt");
         certSecret.setSecretName(KafkaResources.clusterCaCertificateSecretName(httpBridgeScramShaClusterName));

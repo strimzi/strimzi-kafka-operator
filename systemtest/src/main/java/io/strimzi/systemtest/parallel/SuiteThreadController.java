@@ -125,7 +125,7 @@ public class SuiteThreadController {
     public synchronized void waitUntilEntryIsOpen(ExtensionContext extensionContext) {
         // other threads must wait until is open
         while (this.isOpen.get()) {
-            LOGGER.debug("Suite {} is waiting to lock to be released.", StUtils.removePackageName(extensionContext.getRequiredTestClass().getName()));
+            LOGGER.debug("Suite {} is waiting to lock to be released", StUtils.removePackageName(extensionContext.getRequiredTestClass().getName()));
             try {
                 Thread.currentThread().sleep(STARTING_DELAY);
             } catch (InterruptedException e) {
@@ -134,7 +134,7 @@ public class SuiteThreadController {
         }
         // lock flag
         this.isOpen.set(true);
-        LOGGER.debug("Suite {} has locked the @IsolatedSuite and other @IsolatedSuites must wait until lock is released.", StUtils.removePackageName(extensionContext.getRequiredTestClass().getName()));
+        LOGGER.debug("Suite {} has locked the @IsolatedSuite and other @IsolatedSuites must wait until lock is released", StUtils.removePackageName(extensionContext.getRequiredTestClass().getName()));
     }
 
     public boolean isRunningAllowedNumberTestSuitesInParallel() {
@@ -252,7 +252,7 @@ public class SuiteThreadController {
      * @param extensionContext extension context for identifying, which test suite notifies.
      */
     public void notifyParallelSuiteToAllowExecution(ExtensionContext extensionContext) {
-        LOGGER.debug("{} - Notifies waiting test suites:{} to and randomly select one to start execution", extensionContext.getRequiredTestClass().getSimpleName(), waitingTestSuites.toString());
+        LOGGER.debug("{} - Notifies waiting TestSuite: {} to and randomly select one to start execution", extensionContext.getRequiredTestClass().getSimpleName(), waitingTestSuites.toString());
         isParallelSuiteReleased.set(true);
     }
 
@@ -265,7 +265,7 @@ public class SuiteThreadController {
      * @param extensionContext extension context for identifying, which test suite notifies.
      */
     public void notifyParallelTestToAllowExecution(ExtensionContext extensionContext) {
-        LOGGER.debug("{} - Notifies waiting test cases:{} to and randomly select one to start execution", extensionContext.getDisplayName(), waitingTestCases.toString());
+        LOGGER.debug("{} - Notifies waiting TestCases: {} to and randomly select one to start execution", extensionContext.getDisplayName(), waitingTestCases.toString());
         isParallelTestReleased.set(true);
     }
 

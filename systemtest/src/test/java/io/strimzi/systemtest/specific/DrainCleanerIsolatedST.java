@@ -105,10 +105,10 @@ public class DrainCleanerIsolatedST extends AbstractST {
                 .stream().filter(snapshot -> snapshot.getKey().equals(kafkaPodName)).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
             if (!Environment.isKRaftModeEnabled()) {
-                LOGGER.info("Evicting pods: {}", zkPodName);
+                LOGGER.info("Evicting Pods: {}", zkPodName);
                 kubeClient().getClient().pods().inNamespace(Constants.DRAIN_CLEANER_NAMESPACE).withName(zkPodName).evict();
             }
-            LOGGER.info("Evicting pods: {}", kafkaPodName);
+            LOGGER.info("Evicting Pods: {}", kafkaPodName);
             kubeClient().getClient().pods().inNamespace(Constants.DRAIN_CLEANER_NAMESPACE).withName(kafkaPodName).evict();
 
             if (!Environment.isKRaftModeEnabled()) {

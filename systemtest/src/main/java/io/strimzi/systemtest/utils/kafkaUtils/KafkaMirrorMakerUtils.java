@@ -17,7 +17,7 @@ public class KafkaMirrorMakerUtils {
 
     /**
      * Wait until KafkaMirrorMaker status is in desired state
-     * @param namespaceName namespace where Kafka mirror maker resource is located
+     * @param namespaceName Namespace where MirrorMaker resource is located
      * @param clusterName name of KafkaMirrorMaker cluster
      * @param state desired state - like Ready
      */

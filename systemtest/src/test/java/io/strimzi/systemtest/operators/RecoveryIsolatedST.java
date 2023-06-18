@@ -51,7 +51,7 @@ class RecoveryIsolatedST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(RecoveryIsolatedST.class);
 
     @IsolatedTest("We need for each test case its own Cluster Operator")
-    @KRaftNotSupported("TopicOperator is not supported by KRaft mode and is used in this test class")
+    @KRaftNotSupported("Topic Operator is not supported by KRaft mode and is used in this test class")
     void testRecoveryFromEntityOperatorDeletion() {
         // kafka cluster already deployed
         LOGGER.info("Running testRecoveryFromEntityOperatorDeletion with cluster {}", sharedClusterName);
@@ -277,7 +277,7 @@ class RecoveryIsolatedST extends AbstractST {
         final LabelSelector kafkaSelector = KafkaResource.getLabelSelector(sharedClusterName, kafkaName);
         final LabelSelector zkSelector = KafkaResource.getLabelSelector(sharedClusterName, zkName);
 
-        LOGGER.info("Deleting most of the Kafka and ZK pods");
+        LOGGER.info("Deleting most of the Kafka and ZK Pods");
         List<Pod> kafkaPodList = kubeClient().listPods(kafkaSelector);
         List<Pod> zkPodList = kubeClient().listPods(zkSelector);
 
