@@ -3525,11 +3525,11 @@ Used in: xref:type-StrimziPodSet-{context}[`StrimziPodSet`]
 |xref:type-Condition-{context}[`Condition`] array
 |observedGeneration  1.2+<.<a|The generation of the CRD that was last reconciled by the operator.
 |integer
-|pods                1.2+<.<a|Number of pods managed by this StrimziPodSet resource.
+|pods                1.2+<.<a|Number of pods managed by this `StrimziPodSet` resource.
 |integer
-|readyPods           1.2+<.<a|Number of pods managed by this StrimziPodSet resource that are ready.
+|readyPods           1.2+<.<a|Number of pods managed by this `StrimziPodSet` resource that are ready.
 |integer
-|currentPods         1.2+<.<a|Number of pods managed by this StrimziPodSet resource that have the current revision.
+|currentPods         1.2+<.<a|Number of pods managed by this `StrimziPodSet` resource that have the current revision.
 |integer
 |====
 
