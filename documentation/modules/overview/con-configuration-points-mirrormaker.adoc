@@ -17,19 +17,19 @@ As a consequence, the Strimzi `KafkaMirrorMaker` custom resource which is used t
 The `KafkaMirrorMaker` resource will be removed from Strimzi when Kafka 4.0.0 is adopted.
 
 [discrete]
-=== Key Consumer configuration
+== Key Consumer configuration
 
 Consumer group identifier:: The consumer group ID for a MirrorMaker consumer so that messages consumed are assigned to a consumer group.
 Number of consumer streams:: A value to determine the number of consumers in a consumer group that consume a message in parallel.
 Offset commit interval:: An offset commit interval to set the time between consuming and committing a message.
 
 [discrete]
-=== Key Producer configuration
+== Key Producer configuration
 
 Cancel option for send failure:: You can define whether a message send failure is ignored or MirrorMaker is terminated and recreated.
 
 [discrete]
-=== Example YAML showing MirrorMaker configuration
+== Example YAML showing MirrorMaker configuration
 [source,yaml,subs="+quotes,attributes"]
 ----
 apiVersion: {KafkaMirrorMakerApiVersion}
