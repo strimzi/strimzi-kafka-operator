@@ -17,9 +17,9 @@ import io.strimzi.api.kafka.model.connect.build.PluginBuilder;
 import io.strimzi.api.kafka.model.connect.build.TgzArtifactBuilder;
 import io.strimzi.api.kafka.model.connect.build.ZipArtifact;
 import io.strimzi.api.kafka.model.connect.build.ZipArtifactBuilder;
-import io.strimzi.operator.common.MockSharedEnvironmentProvider;
+import io.strimzi.operator.cluster.operator.resource.MockSharedEnvironmentProvider;
 import io.strimzi.operator.common.InvalidConfigurationException;
-import io.strimzi.operator.common.SharedEnvironmentProvider;
+import io.strimzi.operator.cluster.operator.resource.SharedEnvironmentProvider;
 import io.strimzi.test.annotations.ParallelSuite;
 import io.strimzi.test.annotations.ParallelTest;
 

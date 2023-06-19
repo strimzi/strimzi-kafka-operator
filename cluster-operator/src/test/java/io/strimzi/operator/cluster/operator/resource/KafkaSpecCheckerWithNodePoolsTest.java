@@ -20,9 +20,7 @@ import io.strimzi.operator.cluster.model.KafkaConfiguration;
 import io.strimzi.operator.cluster.model.KafkaPool;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.nodepools.NodePoolUtils;
-import io.strimzi.operator.common.MockSharedEnvironmentProvider;
 import io.strimzi.operator.common.Reconciliation;
-import io.strimzi.operator.common.SharedEnvironmentProvider;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;

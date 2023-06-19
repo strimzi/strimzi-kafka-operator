@@ -12,7 +12,7 @@ import io.strimzi.operator.cluster.model.InvalidResourceException;
 import io.strimzi.operator.cluster.model.KafkaPool;
 import io.strimzi.operator.cluster.model.ModelUtils;
 import io.strimzi.operator.common.Reconciliation;
-import io.strimzi.operator.common.SharedEnvironmentProvider;
+import io.strimzi.operator.cluster.operator.resource.SharedEnvironmentProvider;
 
 import java.util.ArrayList;
 import java.util.List;

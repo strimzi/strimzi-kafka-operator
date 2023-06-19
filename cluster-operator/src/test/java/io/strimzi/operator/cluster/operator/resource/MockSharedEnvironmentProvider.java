@@ -2,10 +2,11 @@
  * Copyright Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.strimzi.operator.common;
+package io.strimzi.operator.cluster.operator.resource;
 
 import io.fabric8.kubernetes.api.model.EnvVar;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -31,10 +32,15 @@ public class MockSharedEnvironmentProvider implements SharedEnvironmentProvider 
      * @param envVarMap Custom env var map.
      */
     public MockSharedEnvironmentProvider(Map<String, EnvVar> envVarMap) {
-        List<String> sharedNames = EnvVarName.names();
+        List<String> sharedNames = names();
         Map<String, EnvVar> filteredMap = new HashMap<>(envVarMap);
         filteredMap.keySet().removeIf(k -> !sharedNames.contains(k));
         this.envVarMap = Collections.unmodifiableMap(filteredMap);
+    }
+
+    @Override
+    public List<String> names() {
+        return Arrays.stream(EnvVarName.values()).map(Enum::name).toList();
     }
 
     @Override

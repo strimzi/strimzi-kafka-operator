@@ -18,9 +18,9 @@ import io.strimzi.api.kafka.model.nodepool.ProcessRoles;
 import io.strimzi.api.kafka.model.storage.JbodStorageBuilder;
 import io.strimzi.api.kafka.model.storage.PersistentClaimStorageBuilder;
 import io.strimzi.operator.cluster.model.nodepools.NodeIdAssignment;
-import io.strimzi.operator.common.MockSharedEnvironmentProvider;
+import io.strimzi.operator.cluster.operator.resource.MockSharedEnvironmentProvider;
 import io.strimzi.operator.common.Reconciliation;
-import io.strimzi.operator.common.SharedEnvironmentProvider;
+import io.strimzi.operator.cluster.operator.resource.SharedEnvironmentProvider;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;

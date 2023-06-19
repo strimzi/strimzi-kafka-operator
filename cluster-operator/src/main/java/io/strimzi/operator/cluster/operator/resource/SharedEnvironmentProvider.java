@@ -2,11 +2,10 @@
  * Copyright Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.strimzi.operator.common;
+package io.strimzi.operator.cluster.operator.resource;
 
 import io.fabric8.kubernetes.api.model.EnvVar;
 
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
@@ -27,15 +26,14 @@ public interface SharedEnvironmentProvider {
         NO_PROXY,
         /** Disable FIPS mode by setting disabled as value */
         FIPS_MODE;
-
-        /**
-         * Returns the list of env var names.
-         * @return list of env var names
-         */
-        public static List<String> names() {
-            return Arrays.stream(EnvVarName.values()).map(Enum::name).toList();
-        }
     }
+
+    /**
+     * Returns the list of env var names.
+     *
+     * @return List of env var names
+     */
+    List<String> names();
 
     /**
      * Returns a read-only collection of the shared env vars.

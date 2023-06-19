@@ -27,9 +27,7 @@ import io.strimzi.operator.cluster.operator.resource.events.KubernetesRestartEve
 import io.strimzi.operator.common.AdminClientProvider;
 import io.strimzi.operator.common.BackOff;
 import io.strimzi.operator.common.DefaultAdminClientProvider;
-import io.strimzi.operator.common.DefaultSharedEnvironmentProvider;
 import io.strimzi.operator.common.MetricsProvider;
-import io.strimzi.operator.common.SharedEnvironmentProvider;
 import io.strimzi.operator.common.operator.resource.BuildConfigOperator;
 import io.strimzi.operator.common.operator.resource.BuildOperator;
 import io.strimzi.operator.common.operator.resource.ClusterRoleBindingOperator;
