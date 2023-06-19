@@ -21,8 +21,6 @@ import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.strimzi.api.kafka.model.CertificateAuthority;
-import io.strimzi.api.kafka.model.JvmOptions;
-import io.strimzi.api.kafka.model.SystemProperty;
 import io.strimzi.api.kafka.model.TlsSidecar;
 import io.strimzi.api.kafka.model.TlsSidecarLogLevel;
 import io.strimzi.api.kafka.model.storage.Storage;
@@ -43,8 +41,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 import static java.util.Collections.emptyMap;
 
@@ -53,19 +49,11 @@ import static java.util.Collections.emptyMap;
  * These are generally to be used within the classes that extend the AbstractModel class
  */
 public class ModelUtils {
-    /**
-     * Default JVM -Xms setting
-     */
-    protected static final String DEFAULT_JVM_XMS = "128M";
 
     private ModelUtils() {}
 
     protected static final ReconciliationLogger LOGGER = ReconciliationLogger.create(ModelUtils.class.getName());
     protected static final String TLS_SIDECAR_LOG_LEVEL = "TLS_SIDECAR_LOG_LEVEL";
-    /**
-     * Set of JVM performance options to be prioritized in sorting.
-     */
-    private static final Set<String> JVM_PERFORMANCE_PRIORITY_OPTIONS = Set.of("UnlockDiagnosticVMOptions");
 
     /**
      * @param certificateAuthority The CA configuration.
@@ -324,17 +312,6 @@ public class ModelUtils {
                 .orElse(Collections.emptyList());
     }
 
-    private static String getJavaSystemPropertiesToString(List<SystemProperty> javaSystemProperties) {
-        if (javaSystemProperties == null) {
-            return null;
-        }
-        List<String> javaSystemPropertiesList = new ArrayList<>(javaSystemProperties.size());
-        for (SystemProperty property: javaSystemProperties) {
-            javaSystemPropertiesList.add("-D" + property.getName() + "=" + property.getValue());
-        }
-        return String.join(" ", javaSystemPropertiesList);
-    }
-
     /**
      * This method transforms a String into a List of Strings, where each entry is an uncommented line of input.
      * The lines beginning with '#' (comments) are ignored.
@@ -351,199 +328,6 @@ public class ModelUtils {
             }
         }
         return validLines;
-    }
-
-    /**
-     * Get the set of JVM options, bringing the Java system properties as well, and fill corresponding Strimzi environment variables
-     * in order to pass them to the running application on the command line
-     *
-     * @param envVars environment variables list to put the JVM options and Java system properties
-     * @param jvmOptions JVM options
-     */
-    public static void javaOptions(List<EnvVar> envVars, JvmOptions jvmOptions) {
-        StringBuilder strimziJavaOpts = new StringBuilder();
-        String xms = jvmOptions != null ? jvmOptions.getXms() : null;
-        if (xms != null) {
-            strimziJavaOpts.append("-Xms").append(xms);
-        }
-
-        String xmx = jvmOptions != null ? jvmOptions.getXmx() : null;
-        if (xmx != null) {
-            strimziJavaOpts.append(" -Xmx").append(xmx);
-        }
-
-        parseJvmPerformanceOptions(jvmOptions)
-            .ifPresent(opts -> strimziJavaOpts.append(' ').append(opts));
-
-        String optsTrim = strimziJavaOpts.toString().trim();
-        if (!optsTrim.isEmpty()) {
-            envVars.add(ContainerUtils.createEnvVar(AbstractModel.ENV_VAR_STRIMZI_JAVA_OPTS, optsTrim));
-        }
-
-        List<SystemProperty> javaSystemProperties = jvmOptions != null ? jvmOptions.getJavaSystemProperties() : null;
-        if (javaSystemProperties != null) {
-            String propsTrim = ModelUtils.getJavaSystemPropertiesToString(javaSystemProperties).trim();
-            if (!propsTrim.isEmpty()) {
-                envVars.add(ContainerUtils.createEnvVar(AbstractModel.ENV_VAR_STRIMZI_JAVA_SYSTEM_PROPERTIES, propsTrim));
-            }
-        }
-    }
-
-    /**
-     * Adds the STRIMZI_JAVA_SYSTEM_PROPERTIES variable to the EnvVar list if any system properties were specified
-     * through the provided JVM options
-     *
-     * @param envVars list of the Environment Variables to add to
-     * @param jvmOptions JVM options
-     */
-    public static void jvmSystemProperties(List<EnvVar> envVars, JvmOptions jvmOptions) {
-        if (jvmOptions != null) {
-            String jvmSystemPropertiesString = ModelUtils.getJavaSystemPropertiesToString(jvmOptions.getJavaSystemProperties());
-            if (jvmSystemPropertiesString != null && !jvmSystemPropertiesString.isEmpty()) {
-                envVars.add(ContainerUtils.createEnvVar(AbstractModel.ENV_VAR_STRIMZI_JAVA_SYSTEM_PROPERTIES, jvmSystemPropertiesString));
-            }
-        }
-    }
-
-    /**
-     * Adds the KAFKA_JVM_PERFORMANCE_OPTS variable to the EnvVar list if any performance related options were specified
-     * through the provided JVM options
-     *
-     * @param envVars list of the Environment Variables to add to
-     * @param jvmOptions JVM options
-     */
-    public static void jvmPerformanceOptions(List<EnvVar> envVars, JvmOptions jvmOptions) {
-        parseJvmPerformanceOptions(jvmOptions)
-            .map(envVar -> ContainerUtils.createEnvVar(AbstractModel.ENV_VAR_KAFKA_JVM_PERFORMANCE_OPTS, envVar))
-            .ifPresent(envVars::add);
-    }
-
-    /**
-     * Parses JVM performance options from {@link JvmOptions#getXx()} property into a space-separated string of JVM flags.
-     * If performance options object is null or XX options are not configured then {@link Optional#empty()} will be returned.
-     *
-     * @param jvmOptions JVM options to parse
-     * @return optional comma-separated string of JVM flags
-     */
-    private static Optional<String> parseJvmPerformanceOptions(JvmOptions jvmOptions) {
-        return Optional.ofNullable(jvmOptions)
-            .map(JvmOptions::getXx)
-            .map(Map::entrySet)
-            .map(entrySet -> entrySet.stream()
-                .sorted(ModelUtils::compareJvmPerformanceOption)
-                .map(ModelUtils::toJvmPerformanceFlag)
-                .collect(Collectors.joining(" ")))
-            .filter(envVar -> !envVar.isEmpty());
-    }
-
-    /**
-     * Compares two JVM option for sorting. The options are sorted by priority or if not prioritized by name.
-     * The prioritized options are placed at the beginning to ensure correctness of JVM flags.
-     * For example `-XX:+UnlockDiagnosticVMOptions` flag must be entered before `-XX:+PrintNMTStatistics`.
-     *
-     * @param jvmOption1 first JVM option to compare with key holding flag name placed in the key
-     * @param jvmOption2 second JVM option to compare with key holding flag name placed in the key
-     * @return comparison result [-1, 0, 1]
-     */
-    private static int compareJvmPerformanceOption(Map.Entry<String, String> jvmOption1, Map.Entry<String, String> jvmOption2) {
-        final var isJvmOption1Prioritized = isPriorityJvmPerformanceOption(jvmOption1);
-        final var isJvmOption2Prioritized = isPriorityJvmPerformanceOption(jvmOption2);
-        if (isJvmOption1Prioritized && isJvmOption2Prioritized) {
-            return 0;
-        }
-        if (isJvmOption1Prioritized) {
-            return -1;
-        }
-        if (isJvmOption2Prioritized) {
-            return 1;
-        }
-        return jvmOption1.getKey().compareTo(jvmOption2.getKey());
-    }
-
-    /**
-     * Checks whether the given JVM option should be prioritized or not.
-     *
-     * @param jvmOption JVM option to check
-     * @return true - JVM option should be prioritized, false - otherwise
-     */
-    private static boolean isPriorityJvmPerformanceOption(Map.Entry<String, String> jvmOption)  {
-        return JVM_PERFORMANCE_PRIORITY_OPTIONS.contains(jvmOption.getKey());
-    }
-
-    /**
-     * Converts JVM option into a JVM flag.
-     *
-     * @param jvmOption JVM option to convert with flag name placed in th eky
-     * @return JVM flag e.g. -XX+PrintNMTStatistics
-     */
-    private static String toJvmPerformanceFlag(Map.Entry<String, String> jvmOption) {
-        if ("true".equalsIgnoreCase(jvmOption.getValue())) {
-            return "-XX:+" + jvmOption.getKey();
-        }
-        if ("false".equalsIgnoreCase(jvmOption.getValue())) {
-            return "-XX:-" + jvmOption.getKey();
-        }
-        return "-XX:" + jvmOption.getKey() + "=" + jvmOption.getValue();
-    }
-
-    /**
-     * Adds KAFKA_HEAP_OPTS variable to the EnvVar list if any heap related options were specified through the provided JVM options
-     * If Xmx Java Options are not set STRIMZI_DYNAMIC_HEAP_PERCENTAGE and STRIMZI_DYNAMIC_HEAP_MAX may also be set by using the ResourceRequirements
-     *
-     * @param envVars list of the Environment Variables to add to
-     * @param dynamicHeapPercentage value to set for the STRIMZI_DYNAMIC_HEAP_PERCENTAGE
-     * @param dynamicHeapMaxBytes value to set for the STRIMZI_DYNAMIC_HEAP_MAX
-     * @param jvmOptions JVM options
-     * @param resources the resource requirements
-     */
-    public static void heapOptions(List<EnvVar> envVars, int dynamicHeapPercentage, long dynamicHeapMaxBytes, JvmOptions jvmOptions, ResourceRequirements resources) {
-        if (dynamicHeapPercentage <= 0 || dynamicHeapPercentage > 100)  {
-            throw new RuntimeException("The Heap percentage " + dynamicHeapPercentage + " is invalid. It has to be >0 and <= 100.");
-        }
-
-        StringBuilder kafkaHeapOpts = new StringBuilder();
-
-        String xms = jvmOptions != null ? jvmOptions.getXms() : null;
-        if (xms != null) {
-            kafkaHeapOpts.append("-Xms")
-                    .append(xms);
-        }
-
-        String xmx = jvmOptions != null ? jvmOptions.getXmx() : null;
-        if (xmx != null) {
-            // Honour user provided explicit max heap
-            kafkaHeapOpts.append(' ').append("-Xmx").append(xmx);
-        } else {
-            // Get the resources => if requests are set, take request. If requests are not set, try limits
-            Quantity configuredMemory = null;
-            if (resources != null)  {
-                if (resources.getRequests() != null && resources.getRequests().get("memory") != null)    {
-                    configuredMemory = resources.getRequests().get("memory");
-                } else if (resources.getLimits() != null && resources.getLimits().get("memory") != null)   {
-                    configuredMemory = resources.getLimits().get("memory");
-                }
-            }
-
-            if (configuredMemory != null) {
-                // Delegate to the container to figure out only when CGroup memory limits are defined to prevent allocating
-                // too much memory on the kubelet.
-
-                envVars.add(ContainerUtils.createEnvVar(AbstractModel.ENV_VAR_DYNAMIC_HEAP_PERCENTAGE, Integer.toString(dynamicHeapPercentage)));
-
-                if (dynamicHeapMaxBytes > 0) {
-                    envVars.add(ContainerUtils.createEnvVar(AbstractModel.ENV_VAR_DYNAMIC_HEAP_MAX, Long.toString(dynamicHeapMaxBytes)));
-                }
-            } else if (xms == null) {
-                // When no memory limit, `Xms`, and `Xmx` are defined then set a default `Xms` and
-                // leave `Xmx` undefined.
-                kafkaHeapOpts.append("-Xms").append(DEFAULT_JVM_XMS);
-            }
-        }
-
-        String kafkaHeapOptsString = kafkaHeapOpts.toString().trim();
-        if (!kafkaHeapOptsString.isEmpty()) {
-            envVars.add(ContainerUtils.createEnvVar(AbstractModel.ENV_VAR_KAFKA_HEAP_OPTS, kafkaHeapOptsString));
-        }
     }
 
     /**

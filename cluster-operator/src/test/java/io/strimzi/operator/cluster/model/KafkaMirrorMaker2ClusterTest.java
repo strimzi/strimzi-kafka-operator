@@ -109,7 +109,7 @@ public class KafkaMirrorMaker2ClusterTest {
     private final String configurationJson = "foo: bar";
     private final String bootstrapServers = "foo-kafka:9092";
     private final String targetClusterAlias = "target";
-    private final String kafkaHeapOpts = "-Xms" + ModelUtils.DEFAULT_JVM_XMS;
+    private final String kafkaHeapOpts = "-Xms" + JvmOptionUtils.DEFAULT_JVM_XMS;
 
     private final OrderedProperties defaultConfiguration = new OrderedProperties()
             .addPair("config.storage.topic", "mirrormaker2-cluster-configs")

@@ -97,7 +97,7 @@ public class KafkaMirrorMakerClusterTest {
     private final String include = ".*";
     private final int offsetCommitInterval = 42000;
     private final boolean abortOnSendFailure = false;
-    private final String kafkaHeapOpts = "-Xms" + ModelUtils.DEFAULT_JVM_XMS;
+    private final String kafkaHeapOpts = "-Xms" + JvmOptionUtils.DEFAULT_JVM_XMS;
 
     private final KafkaMirrorMakerProducerSpec producer = new KafkaMirrorMakerProducerSpecBuilder()
             .withBootstrapServers(producerBootstrapServers)
