@@ -30,7 +30,7 @@ public class StrimziPodSetStatus extends Status {
     private int readyPods;
     private int currentPods;
 
-    @Description("Number of pods managed by the StrimziPodSet controller.")
+    @Description("Number of pods managed by this `StrimziPodSet` resource.")
     @JsonInclude(value = JsonInclude.Include.NON_NULL)
     public int getPods() {
         return pods;
@@ -40,7 +40,7 @@ public class StrimziPodSetStatus extends Status {
         this.pods = pods;
     }
 
-    @Description("Number of pods managed by the StrimziPodSet controller that are ready.")
+    @Description("Number of pods managed by this `StrimziPodSet` resource that are ready.")
     @JsonInclude(value = JsonInclude.Include.NON_NULL)
     public int getReadyPods() {
         return readyPods;
@@ -50,7 +50,7 @@ public class StrimziPodSetStatus extends Status {
         this.readyPods = readyPods;
     }
 
-    @Description("Number of pods managed by the StrimziPodSet controller that have the current revision.")
+    @Description("Number of pods managed by this `StrimziPodSet` resource that have the current revision.")
     @JsonInclude(value = JsonInclude.Include.NON_NULL)
     public int getCurrentPods() {
         return currentPods;
