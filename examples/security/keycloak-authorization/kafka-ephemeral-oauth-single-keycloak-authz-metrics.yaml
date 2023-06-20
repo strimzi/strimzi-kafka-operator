@@ -67,8 +67,6 @@ spec:
   kafkaExporter:
     topicRegex: ".*"
     groupRegex: ".*"
-    topicExcludeRegex: "^$"
-    groupExcludeRegex: "^$"
 ---
 kind: ConfigMap
 apiVersion: v1
