@@ -6,6 +6,8 @@ package io.strimzi.systemtest.utils.specific;
 
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.metrics.MetricsCollector;
+import io.strimzi.systemtest.resources.ComponentType;
+import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.executor.Exec;
 import org.apache.logging.log4j.LogManager;
@@ -52,6 +54,25 @@ public class MetricsUtils {
 
         assertThat("Collected metrics should not be empty", exec.out(), not(emptyString()));
         return exec.out();
+    }
+
+    public static MetricsCollector setupCOMetricsCollectorInNamespace(String coName, String coNamespace, String coScraperName) {
+
+        String originalCODeploymentName = ResourceManager.getCoDeploymentName();
+        // necessary for finding correct deployment when building metric collector.
+        ResourceManager.setCoDeploymentName(coName);
+
+        String coScraperPodName = ResourceManager.kubeClient().listPodsByPrefixInName(coNamespace, coScraperName).get(0).getMetadata().getName();
+
+        MetricsCollector metricsCollector =  new MetricsCollector.Builder()
+            .withScraperPodName(coScraperPodName)
+            .withNamespaceName(coNamespace)
+            .withComponentType(ComponentType.ClusterOperator)
+            .withComponentName("")
+            .build();
+
+        ResourceManager.setCoDeploymentName(originalCODeploymentName);
+        return metricsCollector;
     }
 
     public static void assertCoMetricResourceNotNull(MetricsCollector collector, String metric, String kind) {

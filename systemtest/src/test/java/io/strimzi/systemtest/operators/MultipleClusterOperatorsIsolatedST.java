@@ -23,7 +23,6 @@ import io.strimzi.systemtest.annotations.KRaftNotSupported;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 import io.strimzi.systemtest.metrics.MetricsCollector;
-import io.strimzi.systemtest.resources.ComponentType;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.annotations.IsolatedTest;
@@ -48,6 +47,7 @@ import io.strimzi.systemtest.utils.specific.MetricsUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import static io.strimzi.systemtest.utils.specific.MetricsUtils.setupCOMetricsCollectorInNamespace;
 import static org.hamcrest.CoreMatchers.is;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
@@ -94,7 +94,7 @@ public class MultipleClusterOperatorsIsolatedST extends AbstractST {
      * of operand from one Cluster Operator to another.
      *
      * @steps
-     *  1. - Deploy all namespace watching first Cluster Operator to the first namespace and second Cluster Operator to the second namespace.
+     *  1. - Deploy two Cluster Operators - first to the first namespace and second to the second namespace - both watching all namespaces.
      *     - Cluster Operators are successfully deployed.
      *  2. - Set up scrapers and metric collectors for both of Cluster Operators.
      *     - Mentioned resources are successfully set up.
@@ -107,8 +107,8 @@ public class MultipleClusterOperatorsIsolatedST extends AbstractST {
      *  6. - Modify Kafka custom resource, by changing its label 'app.kubernetes.io/operator' to point to the first Cluster Operator
      *     - Kafka is deployed and operated by the first Cluster Operator.
      *  7. - Deploy Kafka Connect (with label 'app.kubernetes.io/operator' pointing the first Cluster Operator) and  Kafka Connector
-     *     - Both Operands are successfully deployed, and managed by the first Cluster Operator.
-     *  8. - Produce messages into the kafka Topic and consume with Sink Connector.
+     *     - Both operands are successfully deployed, and managed by the first Cluster Operator.
+     *  8. - Produce messages into the Kafka Topic and consume with Sink Connector.
      *     - Messages are produced and later handled correctly by the Connector.
      *  9. - Management of Kafka is switched to the second Cluster Operator by modifying value of label 'app.kubernetes.io/operator'.
      *     - Management is modified, later confirmed by the expected change in the value of metric 'strimzi_resource' for kind Kafka on both Cluster Operators.
@@ -146,8 +146,10 @@ public class MultipleClusterOperatorsIsolatedST extends AbstractST {
         );
 
         LOGGER.info("Setting up metric collectors targeting Cluster Operators: {}, {}", FIRST_CO_NAME, SECOND_CO_NAME);
-        MetricsCollector firstCoMetricsCollector = setupCOMetricsCollectorInNamespace(FIRST_CO_NAME, FIRST_NAMESPACE);
-        MetricsCollector secondCoMetricsCollector = setupCOMetricsCollectorInNamespace(SECOND_CO_NAME, SECOND_NAMESPACE);
+        String firstCOScraper = FIRST_NAMESPACE + "-" + Constants.SCRAPER_NAME;
+        MetricsCollector firstCoMetricsCollector = setupCOMetricsCollectorInNamespace(FIRST_CO_NAME, FIRST_NAMESPACE, firstCOScraper);
+        String secondCOScraper = SECOND_NAMESPACE + "-" + Constants.SCRAPER_NAME;
+        MetricsCollector secondCoMetricsCollector = setupCOMetricsCollectorInNamespace(SECOND_CO_NAME, SECOND_NAMESPACE, secondCOScraper);
 
         LOGGER.info("Deploying Namespace: {} to host all additional operands", testStorage.getNamespaceName());
         cluster.createNamespace(testStorage.getNamespaceName());
@@ -223,7 +225,7 @@ public class MultipleClusterOperatorsIsolatedST extends AbstractST {
     }
 
     /**
-     * @description This test case checks how two Cluster Operators deployed in the same namespace operates operands including rebalances and transition
+     * @description This test case checks how two Cluster Operators deployed in the same namespace operates operands including KafkaRebalance and transition
      * of operand from one Cluster Operator to another.
      *
      * @steps
@@ -231,7 +233,7 @@ public class MultipleClusterOperatorsIsolatedST extends AbstractST {
      *     - Cluster Operators are successfully deployed.
      *  2. - Set up scrapers and metric collectors for first Cluster Operators.
      *     - Mentioned resources are successfully set up.
-     *  3. - Deploy Kafka Cluster with 3 kafka replicas and label 'app.kubernetes.io/operator' pointing to the first Cluster Operator.
+     *  3. - Deploy Kafka Cluster with 3 Kafka replicas and label 'app.kubernetes.io/operator' pointing to the first Cluster Operator.
      *     - Kafka is deployed.
      *  4. - Modify Kafka custom resource, by removing its 'app.kubernetes.io/operator' and changing number of replicas to 4
      *     - Kafka is not scaled to 4 replicas.
@@ -272,7 +274,8 @@ public class MultipleClusterOperatorsIsolatedST extends AbstractST {
         resourceManager.createResource(extensionContext, true, ScraperTemplates.scraperPod(testStorage.getNamespaceName(), secondCOScraperName).build());
 
         LOGGER.info("Setting up metric collectors targeting Cluster Operator: {}", SECOND_CO_NAME);
-        MetricsCollector secondCoMetricsCollector = setupCOMetricsCollectorInNamespace(SECOND_CO_NAME, testStorage.getNamespaceName());
+        String coScraperName = testStorage.getNamespaceName() + "-" + Constants.SCRAPER_NAME;
+        MetricsCollector secondCoMetricsCollector = setupCOMetricsCollectorInNamespace(SECOND_CO_NAME, testStorage.getNamespaceName(), coScraperName);
 
         LOGGER.info("Deploying Kafka with {} selector of {}", FIRST_CO_NAME, FIRST_CO_SELECTOR);
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaWithCruiseControl(testStorage.getClusterName(), 3, 3)
@@ -326,22 +329,22 @@ public class MultipleClusterOperatorsIsolatedST extends AbstractST {
         MetricsUtils.assertMetricResourcesHigherThanOrEqualTo(secondCoMetricsCollector, Kafka.RESOURCE_KIND, 1);
     }
 
-    private MetricsCollector setupCOMetricsCollectorInNamespace(String coName, String coNamespace) {
-        // necessary for finding correct deployment when building metric collector.
-        ResourceManager.setCoDeploymentName(coName);
-
-        String coScraperName = coNamespace + "-" + Constants.SCRAPER_NAME;
-        String coScraperPodName = ResourceManager.kubeClient().listPodsByPrefixInName(coNamespace, coScraperName).get(0).getMetadata().getName();
-
-        MetricsCollector clusterOperatorCollector = new MetricsCollector.Builder()
-            .withScraperPodName(coScraperPodName)
-            .withNamespaceName(coNamespace)
-            .withComponentType(ComponentType.ClusterOperator)
-            .withComponentName("")
-            .build();
-
-        return clusterOperatorCollector;
-    }
+//    private MetricsCollector setupCOMetricsCollectorInNamespace(String coName, String coNamespace) {
+//        // necessary for finding correct deployment when building metric collector.
+//        ResourceManager.setCoDeploymentName(coName);
+//
+//        String coScraperName = coNamespace + "-" + Constants.SCRAPER_NAME;
+//        String coScraperPodName = ResourceManager.kubeClient().listPodsByPrefixInName(coNamespace, coScraperName).get(0).getMetadata().getName();
+//
+//        MetricsCollector clusterOperatorCollector = new MetricsCollector.Builder()
+//            .withScraperPodName(coScraperPodName)
+//            .withNamespaceName(coNamespace)
+//            .withComponentType(ComponentType.ClusterOperator)
+//            .withComponentName("")
+//            .build();
+//
+//        return clusterOperatorCollector;
+//    }
 
     void deployCOInNamespace(ExtensionContext extensionContext, String coName, String coNamespace, List<EnvVar> extraEnvs, boolean multipleNamespaces) {
         String namespace = multipleNamespaces ? Constants.WATCH_ALL_NAMESPACES : coNamespace;
