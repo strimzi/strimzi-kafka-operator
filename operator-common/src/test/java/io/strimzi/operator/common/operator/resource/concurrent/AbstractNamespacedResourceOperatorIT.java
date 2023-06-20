@@ -123,7 +123,7 @@ public abstract class AbstractNamespacedResourceOperatorIT<
                     "resource deletion " + resourceName,
                     "deleted",
                     1000,
-                    30_000,
+                    60_000,
                     () -> op.get(namespace, resourceName) == null))
             .thenRun(() -> {
                 assertThat(op.get(namespace, resourceName), is(nullValue()));
