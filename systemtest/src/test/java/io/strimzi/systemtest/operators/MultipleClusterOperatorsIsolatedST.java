@@ -329,23 +329,6 @@ public class MultipleClusterOperatorsIsolatedST extends AbstractST {
         MetricsUtils.assertMetricResourcesHigherThanOrEqualTo(secondCoMetricsCollector, Kafka.RESOURCE_KIND, 1);
     }
 
-//    private MetricsCollector setupCOMetricsCollectorInNamespace(String coName, String coNamespace) {
-//        // necessary for finding correct deployment when building metric collector.
-//        ResourceManager.setCoDeploymentName(coName);
-//
-//        String coScraperName = coNamespace + "-" + Constants.SCRAPER_NAME;
-//        String coScraperPodName = ResourceManager.kubeClient().listPodsByPrefixInName(coNamespace, coScraperName).get(0).getMetadata().getName();
-//
-//        MetricsCollector clusterOperatorCollector = new MetricsCollector.Builder()
-//            .withScraperPodName(coScraperPodName)
-//            .withNamespaceName(coNamespace)
-//            .withComponentType(ComponentType.ClusterOperator)
-//            .withComponentName("")
-//            .build();
-//
-//        return clusterOperatorCollector;
-//    }
-
     void deployCOInNamespace(ExtensionContext extensionContext, String coName, String coNamespace, List<EnvVar> extraEnvs, boolean multipleNamespaces) {
         String namespace = multipleNamespaces ? Constants.WATCH_ALL_NAMESPACES : coNamespace;
 
