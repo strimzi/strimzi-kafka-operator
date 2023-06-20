@@ -126,7 +126,7 @@ public class KafkaRoller {
     private final Reconciliation reconciliation;
     private final boolean allowReconfiguration;
     private Admin allClient;
-    private BrokerStateProvider brokerStateProvider;
+    private KafkaAgentClient kafkaAgentClient;
 
     /**
      * Constructor
@@ -368,8 +368,8 @@ public class KafkaRoller {
             throw new UnforceableProblem("Error getting pod " + nodeRef.podName(), e);
         }
 
-        if (brokerStateProvider == null) {
-            this.brokerStateProvider = initBrokerStateProvider();
+        if (kafkaAgentClient == null) {
+            this.kafkaAgentClient = initKafkaAgentClient();
         }
 
         if (!isPodStuck(pod)) {
@@ -381,7 +381,7 @@ public class KafkaRoller {
             try {
                 await(isReady(pod), operationTimeoutMs, TimeUnit.MILLISECONDS, e -> new RuntimeException(e));
             } catch (Exception e) {
-                BrokerState brokerState = brokerStateProvider.getBrokerState(pod.getMetadata().getName());
+                BrokerState brokerState = kafkaAgentClient.getBrokerState(pod.getMetadata().getName());
                 if (brokerState.isBrokerInRecovery()) {
                     throw new UnforceableProblem("Pod " + nodeRef.podName() + " is not ready because the broker is performing log recovery. There are  " + brokerState.remainingLogsToRecover() + " logs and " + brokerState.remainingSegmentsToRecover() + " segments left to recover.", e.getCause());
                 }
@@ -448,11 +448,11 @@ public class KafkaRoller {
         }
     }
 
-    protected BrokerStateProvider initBrokerStateProvider() throws FatalProblem {
+    protected KafkaAgentClient initKafkaAgentClient() throws FatalProblem {
         if (clusterCaCertSecret == null || coKeySecret == null) {
-            throw new FatalProblem("Missing secrets for cluster CA and operator certificates required to create connection to the broker");
+            throw new FatalProblem("Missing secrets for cluster CA and operator certificates required to create connection to Kafka Agent");
         }
-        return new BrokerStateProvider(reconciliation, vertx, cluster, namespace, clusterCaCertSecret, coKeySecret);
+        return new KafkaAgentClient(reconciliation, cluster, namespace, clusterCaCertSecret, coKeySecret);
     }
 
     private boolean podWaitingBecauseOfAnyReasons(Pod pod, Set<String> reasons) {
