@@ -38,15 +38,13 @@ public class ResourceUtils {
     public static final String CA_KEY_NAME = "ca-key";
     public static final String PASSWORD = "my-password";
 
-    public static UserOperatorConfig createUserOperatorConfig(Map<String, String> labels, boolean aclsAdminApiSupported, boolean useKRaft, String scramShaPasswordLength, String secretPrefix) {
+    public static UserOperatorConfig createUserOperatorConfig(Map<String, String> labels, boolean aclsAdminApiSupported, String scramShaPasswordLength, String secretPrefix) {
         Map<String, String> envVars = new HashMap<>(4);
         envVars.put(UserOperatorConfig.NAMESPACE.key(), NAMESPACE);
         envVars.put(UserOperatorConfig.LABELS.key(), labels.entrySet().stream().map(e -> e.getKey() + "=" + e.getValue()).collect(Collectors.joining(",")));
         envVars.put(UserOperatorConfig.CA_CERT_SECRET_NAME.key(), CA_CERT_NAME);
         envVars.put(UserOperatorConfig.CA_KEY_SECRET_NAME.key(), CA_KEY_NAME);
         envVars.put(UserOperatorConfig.ACLS_ADMIN_API_SUPPORTED.key(), Boolean.toString(aclsAdminApiSupported));
-        envVars.put(UserOperatorConfig.KRAFT_ENABLED.key(), Boolean.toString(useKRaft));
-
 
         if (!scramShaPasswordLength.equals("32")) {
             envVars.put(UserOperatorConfig.SCRAM_SHA_PASSWORD_LENGTH.key(), scramShaPasswordLength);
@@ -60,7 +58,7 @@ public class ResourceUtils {
     }
 
     public static UserOperatorConfig createUserOperatorConfigForUserControllerTesting(Map<String, String> labels, int fullReconciliationInterval, int queueSize, int poolSize, String secretPrefix) {
-        return new UserOperatorConfigBuilder(createUserOperatorConfig(labels, false, false, "32", secretPrefix))
+        return new UserOperatorConfigBuilder(createUserOperatorConfig(labels, false, "32", secretPrefix))
                       .with(UserOperatorConfig.RECONCILIATION_INTERVAL_MS.key(), String.valueOf(fullReconciliationInterval))
                       .with(UserOperatorConfig.WORK_QUEUE_SIZE.key(), String.valueOf(queueSize))
                       .with(UserOperatorConfig.USER_OPERATIONS_THREAD_POOL_SIZE.key(), String.valueOf(poolSize))
@@ -68,7 +66,7 @@ public class ResourceUtils {
     }
 
     public static UserOperatorConfig createUserOperatorConfig() {
-        return createUserOperatorConfig(Map.of(), true, false, "32", null);
+        return createUserOperatorConfig(Map.of(), true, "32", null);
     }
 
     public static UserOperatorConfig createUserOperatorConfig(String scramShaPasswordLength) {

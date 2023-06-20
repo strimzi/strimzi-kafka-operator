@@ -130,12 +130,7 @@ public class KafkaUserOperator {
         }
 
         // Get the SCRAM-SHA users
-        CompletionStage<List<String>> scramUsers;
-        if (!config.isKraftEnabled()) {
-            scramUsers = scramCredentialsOperator.getAllUsers();
-        } else {
-            scramUsers = CompletableFuture.completedFuture(List.of());
-        }
+        CompletionStage<List<String>> scramUsers = scramCredentialsOperator.getAllUsers();
 
         return CompletableFuture.allOf(kafkaUsers.toCompletableFuture(), quotaUsers.toCompletableFuture(), aclUsers.toCompletableFuture(), scramUsers.toCompletableFuture())
                 .thenApplyAsync(i -> {
@@ -222,7 +217,7 @@ public class KafkaUserOperator {
                 CompletableFuture.supplyAsync(() -> client.secrets().inNamespace(namespace).withName(KafkaUserModel.getSecretName(config.getSecretPrefix(), user)).delete(), executor),
                 config.isAclsAdminApiSupported() ? aclOperator.reconcile(reconciliation, KafkaUserModel.getTlsUserName(user), null).toCompletableFuture() : CompletableFuture.completedFuture(ReconcileResult.noop(null)),
                 config.isAclsAdminApiSupported() ? aclOperator.reconcile(reconciliation, KafkaUserModel.getScramUserName(user), null).toCompletableFuture() : CompletableFuture.completedFuture(ReconcileResult.noop(null)),
-                !config.isKraftEnabled() ? scramCredentialsOperator.reconcile(reconciliation, KafkaUserModel.getScramUserName(user), null).toCompletableFuture() : CompletableFuture.completedFuture(ReconcileResult.noop(null)),
+                scramCredentialsOperator.reconcile(reconciliation, KafkaUserModel.getScramUserName(user), null).toCompletableFuture(),
                 quotasOperator.reconcile(reconciliation, KafkaUserModel.getTlsUserName(user), null).toCompletableFuture(),
                 quotasOperator.reconcile(reconciliation, KafkaUserModel.getScramUserName(user), null).toCompletableFuture()
         );
@@ -244,7 +239,7 @@ public class KafkaUserOperator {
         KafkaUserStatus userStatus = new KafkaUserStatus();
 
         try {
-            user = KafkaUserModel.fromCrd(kafkaUser, config.getSecretPrefix(), config.isAclsAdminApiSupported(), config.isKraftEnabled());
+            user = KafkaUserModel.fromCrd(kafkaUser, config.getSecretPrefix(), config.isAclsAdminApiSupported());
             LOGGER.debugCr(reconciliation, "Updating User {} in namespace {}", reconciliation.name(), reconciliation.namespace());
         } catch (Exception e) {
             LOGGER.warnCr(reconciliation, e);
@@ -370,13 +365,7 @@ public class KafkaUserOperator {
         }
 
         // Reconcile the user SCRAM-SHA-512 credentials
-        CompletionStage<ReconcileResult<String>> scramCredentialsFuture;
-        if (config.isKraftEnabled()) {
-            // SCRAM-SHA authentication is currently not supported when KRaft is used
-            scramCredentialsFuture = CompletableFuture.completedFuture(ReconcileResult.noop(null));
-        } else {
-            scramCredentialsFuture = scramCredentialsOperator.reconcile(reconciliation, user.getName(), user.getScramSha512Password());
-        }
+        CompletionStage<ReconcileResult<String>> scramCredentialsFuture = scramCredentialsOperator.reconcile(reconciliation, user.getName(), user.getScramSha512Password());
 
         // Quotas need to reconciled for both regular and TLS username. It will be (possibly) set for one user and deleted for the other
         CompletionStage<ReconcileResult<KafkaUserQuotas>> tlsQuotasFuture = quotasOperator.reconcile(reconciliation, KafkaUserModel.getTlsUserName(reconciliation.name()), tlsQuotas);

@@ -56,7 +56,7 @@ public class ScramShaCredentialsBatchReconciler extends AbstractBatchReconciler<
                 .toCompletionStage()
                 .handleAsync((r, e) -> {
                     if (e != null)  {
-                        LOGGER.warnOp("Quotas reconciliation failed", e);
+                        LOGGER.warnOp("SCRAM-SHA credentials reconciliation failed", e);
                         items.forEach(req -> req.result().completeExceptionally(e));
                     } else {
                         Map<String, KafkaFuture<Void>> perItemResults = result.values();

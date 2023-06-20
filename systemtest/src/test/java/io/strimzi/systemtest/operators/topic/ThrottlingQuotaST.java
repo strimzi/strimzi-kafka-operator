@@ -42,7 +42,6 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 @Tag(REGRESSION)
 @Tag(INTERNAL_CLIENTS_USED)
 @ParallelSuite
-@KRaftNotSupported("Scram-sha is not supported by KRaft mode and is used in this test case")
 public class ThrottlingQuotaST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(ThrottlingQuotaST.class);
@@ -57,6 +56,7 @@ public class ThrottlingQuotaST extends AbstractST {
     private String scraperPodName = "";
 
     @ParallelTest
+    @KRaftNotSupported("TopicOperator is not supported by KRaft mode and is used in this test class")
     void testThrottlingQuotasDuringAllTopicOperations(ExtensionContext extensionContext) {
         final TestStorage testStorage = new TestStorage(extensionContext, namespace);
 

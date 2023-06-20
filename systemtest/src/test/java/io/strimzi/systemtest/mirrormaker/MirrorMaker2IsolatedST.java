@@ -324,7 +324,7 @@ class MirrorMaker2IsolatedST extends AbstractST {
      * Test mirroring messages by MirrorMaker 2 over tls transport using scram-sha-512 auth
      */
     @ParallelNamespaceTest
-    @KRaftNotSupported("Scram-sha is not supported by KRaft mode and is used in this test case")
+    @KRaftNotSupported("TopicOperator is not supported by KRaft mode and is used in this test class")
     void testMirrorMaker2TlsAndScramSha512Auth(ExtensionContext extensionContext) {
         final TestStorage testStorage = new TestStorage(extensionContext, clusterOperator.getDeploymentNamespace());
 
@@ -967,7 +967,7 @@ class MirrorMaker2IsolatedST extends AbstractST {
      * while user Scram passwords, CA cluster and clients certificates are changed.
      */
     @ParallelNamespaceTest
-    @KRaftNotSupported("Scram-sha is not supported by KRaft mode and is used in this test case")
+    @KRaftNotSupported("TopicOperator is not supported by KRaft mode and is used in this test class")
     @SuppressWarnings({"checkstyle:MethodLength"})
     void testKMM2RollAfterSecretsCertsUpdateScramSha(ExtensionContext extensionContext) {
         TestStorage testStorage = new TestStorage(extensionContext);

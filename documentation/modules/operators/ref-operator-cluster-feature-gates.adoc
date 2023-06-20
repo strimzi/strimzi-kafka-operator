@@ -70,7 +70,6 @@ Currently, the KRaft mode in Strimzi has the following major limitations:
   Users might need to delete the cluster, upgrade the operator and deploy a new Kafka cluster.
 * The Topic Operator is not supported.
   The `spec.entityOperator.topicOperator` property *must be removed* from the `Kafka` custom resource.
-* SCRAM-SHA-512 authentication is not supported.
 * JBOD storage is not supported. 
   The `type: jbod` storage can be used, but the JBOD array can contain only one disk.
 

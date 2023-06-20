@@ -88,10 +88,6 @@ public class UserOperatorConfig {
      */
     public static final ConfigParameter<Boolean> ACLS_ADMIN_API_SUPPORTED = new ConfigParameter<>("STRIMZI_ACLS_ADMIN_API_SUPPORTED", BOOLEAN, "true", CONFIG_VALUES);
     /**
-     * Indicates whether KRaft is used in the Kafka cluster
-     */
-    public static final ConfigParameter<Boolean> KRAFT_ENABLED = new ConfigParameter<>("STRIMZI_KRAFT_ENABLED", BOOLEAN, "false", CONFIG_VALUES);
-    /**
      * Timeout for internal operations specified in milliseconds
      */
     public static final ConfigParameter<Long> OPERATION_TIMEOUT_MS = new ConfigParameter<>("STRIMZI_OPERATION_TIMEOUT_MS", LONG, "300000", CONFIG_VALUES);
@@ -287,14 +283,6 @@ public class UserOperatorConfig {
     }
 
     /**
-     * @return Indicates whether KRaft is used in the Kafka cluster or not. When it is used, some APIs might need to be
-     * disabled or used differently.
-     */
-    public boolean isKraftEnabled() {
-        return get(KRAFT_ENABLED);
-    }
-
-    /**
      * @return List of maintenance windows. Null if no maintenance windows were specified.
      */
     public List<String> getMaintenanceWindows() {
@@ -395,7 +383,6 @@ public class UserOperatorConfig {
                 ", clientsCaValidityDays=" + getClientsCaValidityDays() +
                 ", clientsCaRenewalDays=" + getClientsCaRenewalDays() +
                 ", aclsAdminApiSupported=" + isAclsAdminApiSupported() +
-                ", kraftEnabled=" + isKraftEnabled() +
                 ", scramPasswordLength=" + getScramPasswordLength() +
                 ", maintenanceWindows=" + getMaintenanceWindows() +
                 ", kafkaAdminClientConfiguration=" + getKafkaAdminClientConfiguration() +

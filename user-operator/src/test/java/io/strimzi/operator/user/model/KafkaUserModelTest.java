@@ -61,7 +61,7 @@ public class KafkaUserModelTest {
 
     @Test
     public void testFromCrdTlsUser()   {
-        KafkaUserModel model = KafkaUserModel.fromCrd(tlsUser, UserOperatorConfig.SECRET_PREFIX.defaultValue(), Boolean.parseBoolean(UserOperatorConfig.ACLS_ADMIN_API_SUPPORTED.defaultValue()), false);
+        KafkaUserModel model = KafkaUserModel.fromCrd(tlsUser, UserOperatorConfig.SECRET_PREFIX.defaultValue(), Boolean.parseBoolean(UserOperatorConfig.ACLS_ADMIN_API_SUPPORTED.defaultValue()));
 
         assertThat(model.namespace, is(ResourceUtils.NAMESPACE));
         assertThat(model.name, is(ResourceUtils.NAME));
@@ -79,7 +79,7 @@ public class KafkaUserModelTest {
 
     @Test
     public void testFromCrdTlsExternalUser()   {
-        KafkaUserModel model = KafkaUserModel.fromCrd(ResourceUtils.createKafkaUser(new KafkaUserTlsExternalClientAuthentication()), UserOperatorConfig.SECRET_PREFIX.defaultValue(), Boolean.parseBoolean(UserOperatorConfig.ACLS_ADMIN_API_SUPPORTED.defaultValue()), false);
+        KafkaUserModel model = KafkaUserModel.fromCrd(ResourceUtils.createKafkaUser(new KafkaUserTlsExternalClientAuthentication()), UserOperatorConfig.SECRET_PREFIX.defaultValue(), Boolean.parseBoolean(UserOperatorConfig.ACLS_ADMIN_API_SUPPORTED.defaultValue()));
 
         assertThat(model.namespace, is(ResourceUtils.NAMESPACE));
         assertThat(model.name, is(ResourceUtils.NAME));
@@ -97,7 +97,7 @@ public class KafkaUserModelTest {
 
     @Test
     public void testFromCrdQuotaUser()   {
-        KafkaUserModel model = KafkaUserModel.fromCrd(quotasUser, UserOperatorConfig.SECRET_PREFIX.defaultValue(), Boolean.parseBoolean(UserOperatorConfig.ACLS_ADMIN_API_SUPPORTED.defaultValue()), false);
+        KafkaUserModel model = KafkaUserModel.fromCrd(quotasUser, UserOperatorConfig.SECRET_PREFIX.defaultValue(), Boolean.parseBoolean(UserOperatorConfig.ACLS_ADMIN_API_SUPPORTED.defaultValue()));
 
         assertThat(model.namespace, is(ResourceUtils.NAMESPACE));
         assertThat(model.name, is(ResourceUtils.NAME));
@@ -117,7 +117,7 @@ public class KafkaUserModelTest {
     @Test
     public void testFromCrdQuotaUserWithNullValues()   {
         KafkaUser quotasUserWithNulls = ResourceUtils.createKafkaUserQuotas(null, 2000, null, 10d);
-        KafkaUserModel model = KafkaUserModel.fromCrd(quotasUserWithNulls, UserOperatorConfig.SECRET_PREFIX.defaultValue(), Boolean.parseBoolean(UserOperatorConfig.ACLS_ADMIN_API_SUPPORTED.defaultValue()), false);
+        KafkaUserModel model = KafkaUserModel.fromCrd(quotasUserWithNulls, UserOperatorConfig.SECRET_PREFIX.defaultValue(), Boolean.parseBoolean(UserOperatorConfig.ACLS_ADMIN_API_SUPPORTED.defaultValue()));
 
         assertThat(model.namespace, is(ResourceUtils.NAMESPACE));
         assertThat(model.name, is(ResourceUtils.NAME));
@@ -136,7 +136,7 @@ public class KafkaUserModelTest {
 
     @Test
     public void testGenerateSecret()    {
-        KafkaUserModel model = KafkaUserModel.fromCrd(tlsUser, UserOperatorConfig.SECRET_PREFIX.defaultValue(), Boolean.parseBoolean(UserOperatorConfig.ACLS_ADMIN_API_SUPPORTED.defaultValue()), false);
+        KafkaUserModel model = KafkaUserModel.fromCrd(tlsUser, UserOperatorConfig.SECRET_PREFIX.defaultValue(), Boolean.parseBoolean(UserOperatorConfig.ACLS_ADMIN_API_SUPPORTED.defaultValue()));
         model.maybeGenerateCertificates(Reconciliation.DUMMY_RECONCILIATION, mockCertManager, passwordGenerator, clientsCaCert, clientsCaKey, null, 365, 30, null, Clock.systemUTC());
         Secret generatedSecret = model.generateSecret();
 
@@ -160,7 +160,7 @@ public class KafkaUserModelTest {
     @Test
     public void testGenerateSecretWithPrefix()    {
         String secretPrefix = "strimzi-";
-        KafkaUserModel model = KafkaUserModel.fromCrd(tlsUser, secretPrefix, Boolean.parseBoolean(UserOperatorConfig.ACLS_ADMIN_API_SUPPORTED.defaultValue()), false);
+        KafkaUserModel model = KafkaUserModel.fromCrd(tlsUser, secretPrefix, Boolean.parseBoolean(UserOperatorConfig.ACLS_ADMIN_API_SUPPORTED.defaultValue()));
         model.maybeGenerateCertificates(Reconciliation.DUMMY_RECONCILIATION, mockCertManager, passwordGenerator, clientsCaCert, clientsCaKey, null, 365, 30, null, Clock.systemUTC());
         Secret generatedSecret = model.generateSecret();
 
@@ -197,7 +197,7 @@ public class KafkaUserModelTest {
                 .endSpec()
                 .build();
 
-        KafkaUserModel model = KafkaUserModel.fromCrd(userWithTemplate, UserOperatorConfig.SECRET_PREFIX.defaultValue(), Boolean.parseBoolean(UserOperatorConfig.ACLS_ADMIN_API_SUPPORTED.defaultValue()), false);
+        KafkaUserModel model = KafkaUserModel.fromCrd(userWithTemplate, UserOperatorConfig.SECRET_PREFIX.defaultValue(), Boolean.parseBoolean(UserOperatorConfig.ACLS_ADMIN_API_SUPPORTED.defaultValue()));
         model.maybeGenerateCertificates(Reconciliation.DUMMY_RECONCILIATION, mockCertManager, passwordGenerator, clientsCaCert, clientsCaKey, null, 365, 30, null, Clock.systemUTC());
         Secret generatedSecret = model.generateSecret();
 
@@ -221,7 +221,7 @@ public class KafkaUserModelTest {
 
     @Test
     public void testGenerateSecretGeneratesCertificateWhenNoSecretExistsProvidedByUser()    {
-        KafkaUserModel model = KafkaUserModel.fromCrd(tlsUser, UserOperatorConfig.SECRET_PREFIX.defaultValue(), Boolean.parseBoolean(UserOperatorConfig.ACLS_ADMIN_API_SUPPORTED.defaultValue()), false);
+        KafkaUserModel model = KafkaUserModel.fromCrd(tlsUser, UserOperatorConfig.SECRET_PREFIX.defaultValue(), Boolean.parseBoolean(UserOperatorConfig.ACLS_ADMIN_API_SUPPORTED.defaultValue()));
         model.maybeGenerateCertificates(Reconciliation.DUMMY_RECONCILIATION, mockCertManager, passwordGenerator, clientsCaCert, clientsCaKey, null, 365, 30, null, Clock.systemUTC());
         Secret generated = model.generateSecret();
 
@@ -237,7 +237,7 @@ public class KafkaUserModelTest {
 
     @Test
     public void testMissingOrWrongCaSecrets()    {
-        KafkaUserModel model = KafkaUserModel.fromCrd(tlsUser, UserOperatorConfig.SECRET_PREFIX.defaultValue(), Boolean.parseBoolean(UserOperatorConfig.ACLS_ADMIN_API_SUPPORTED.defaultValue()), false);
+        KafkaUserModel model = KafkaUserModel.fromCrd(tlsUser, UserOperatorConfig.SECRET_PREFIX.defaultValue(), Boolean.parseBoolean(UserOperatorConfig.ACLS_ADMIN_API_SUPPORTED.defaultValue()));
 
         Secret emptySecret = new SecretBuilder()
                 .withNewMetadata()
@@ -276,7 +276,7 @@ public class KafkaUserModelTest {
         Secret clientsCaKeySecret = ResourceUtils.createClientsCaKeySecret();
         clientsCaKeySecret.getData().put("ca.key", Base64.getEncoder().encodeToString("different-clients-ca-key".getBytes()));
 
-        KafkaUserModel model = KafkaUserModel.fromCrd(tlsUser, UserOperatorConfig.SECRET_PREFIX.defaultValue(), Boolean.parseBoolean(UserOperatorConfig.ACLS_ADMIN_API_SUPPORTED.defaultValue()), false);
+        KafkaUserModel model = KafkaUserModel.fromCrd(tlsUser, UserOperatorConfig.SECRET_PREFIX.defaultValue(), Boolean.parseBoolean(UserOperatorConfig.ACLS_ADMIN_API_SUPPORTED.defaultValue()));
         model.maybeGenerateCertificates(Reconciliation.DUMMY_RECONCILIATION, mockCertManager, passwordGenerator, clientsCaCertSecret, clientsCaKeySecret, userCert, 365, 30, null, Clock.systemUTC());
         Secret generatedSecret = model.generateSecret();
 
@@ -294,7 +294,7 @@ public class KafkaUserModelTest {
     public void testGenerateSecretGeneratedCertificateDoesNotChangeFromUserProvided()    {
         Secret userCert = ResourceUtils.createUserSecretTls();
 
-        KafkaUserModel model = KafkaUserModel.fromCrd(tlsUser, UserOperatorConfig.SECRET_PREFIX.defaultValue(), Boolean.parseBoolean(UserOperatorConfig.ACLS_ADMIN_API_SUPPORTED.defaultValue()), false);
+        KafkaUserModel model = KafkaUserModel.fromCrd(tlsUser, UserOperatorConfig.SECRET_PREFIX.defaultValue(), Boolean.parseBoolean(UserOperatorConfig.ACLS_ADMIN_API_SUPPORTED.defaultValue()));
         model.maybeGenerateCertificates(Reconciliation.DUMMY_RECONCILIATION, mockCertManager, passwordGenerator, clientsCaCert, clientsCaKey, userCert, 365, 30, null, Clock.systemUTC());
         Secret generatedSecret = model.generateSecret();
 
@@ -312,7 +312,7 @@ public class KafkaUserModelTest {
     @Test
     public void testGenerateSecretGeneratesCertificateWithExistingScramSha()    {
         Secret userCert = ResourceUtils.createUserSecretScramSha();
-        KafkaUserModel model = KafkaUserModel.fromCrd(tlsUser, UserOperatorConfig.SECRET_PREFIX.defaultValue(), Boolean.parseBoolean(UserOperatorConfig.ACLS_ADMIN_API_SUPPORTED.defaultValue()), false);
+        KafkaUserModel model = KafkaUserModel.fromCrd(tlsUser, UserOperatorConfig.SECRET_PREFIX.defaultValue(), Boolean.parseBoolean(UserOperatorConfig.ACLS_ADMIN_API_SUPPORTED.defaultValue()));
         model.maybeGenerateCertificates(Reconciliation.DUMMY_RECONCILIATION, mockCertManager, passwordGenerator, clientsCaCert, clientsCaKey, userCert, 365, 30, null, Clock.systemUTC());
         Secret generated = model.generateSecret();
 
@@ -328,7 +328,7 @@ public class KafkaUserModelTest {
 
     @Test
     public void testGenerateSecretGeneratesKeyStoreWhenOldVersionSecretExists() {
-        KafkaUserModel model = KafkaUserModel.fromCrd(tlsUser, UserOperatorConfig.SECRET_PREFIX.defaultValue(), Boolean.parseBoolean(UserOperatorConfig.ACLS_ADMIN_API_SUPPORTED.defaultValue()), false);
+        KafkaUserModel model = KafkaUserModel.fromCrd(tlsUser, UserOperatorConfig.SECRET_PREFIX.defaultValue(), Boolean.parseBoolean(UserOperatorConfig.ACLS_ADMIN_API_SUPPORTED.defaultValue()));
         model.maybeGenerateCertificates(Reconciliation.DUMMY_RECONCILIATION, mockCertManager, passwordGenerator, clientsCaCert, clientsCaKey, null, 365, 30, null, Clock.systemUTC());
         Secret oldSecret = model.generateSecret();
 
@@ -336,7 +336,7 @@ public class KafkaUserModelTest {
         oldSecret.getData().remove("user.p12");
         oldSecret.getData().remove("user.password");
 
-        model = KafkaUserModel.fromCrd(tlsUser, UserOperatorConfig.SECRET_PREFIX.defaultValue(), Boolean.parseBoolean(UserOperatorConfig.ACLS_ADMIN_API_SUPPORTED.defaultValue()), false);
+        model = KafkaUserModel.fromCrd(tlsUser, UserOperatorConfig.SECRET_PREFIX.defaultValue(), Boolean.parseBoolean(UserOperatorConfig.ACLS_ADMIN_API_SUPPORTED.defaultValue()));
         model.maybeGenerateCertificates(Reconciliation.DUMMY_RECONCILIATION, mockCertManager, passwordGenerator, clientsCaCert, clientsCaKey, oldSecret, 365, 30, null, Clock.systemUTC());
         Secret generatedSecret = model.generateSecret();
 
@@ -355,7 +355,7 @@ public class KafkaUserModelTest {
 
     @Test
     public void testGenerateSecretGeneratesPasswordWhenNoUserSecretExists()    {
-        KafkaUserModel model = KafkaUserModel.fromCrd(scramShaUser, UserOperatorConfig.SECRET_PREFIX.defaultValue(), Boolean.parseBoolean(UserOperatorConfig.ACLS_ADMIN_API_SUPPORTED.defaultValue()), false);
+        KafkaUserModel model = KafkaUserModel.fromCrd(scramShaUser, UserOperatorConfig.SECRET_PREFIX.defaultValue(), Boolean.parseBoolean(UserOperatorConfig.ACLS_ADMIN_API_SUPPORTED.defaultValue()));
         model.maybeGeneratePassword(Reconciliation.DUMMY_RECONCILIATION, passwordGenerator, null, null);
         Secret generatedSecret = model.generateSecret();
 
@@ -384,7 +384,7 @@ public class KafkaUserModelTest {
     @Test
     public void testGenerateSecretGeneratesPasswordKeepingExistingScramShaPassword()    {
         Secret scramShaSecret = ResourceUtils.createUserSecretScramSha();
-        KafkaUserModel model = KafkaUserModel.fromCrd(scramShaUser, UserOperatorConfig.SECRET_PREFIX.defaultValue(), Boolean.parseBoolean(UserOperatorConfig.ACLS_ADMIN_API_SUPPORTED.defaultValue()), false);
+        KafkaUserModel model = KafkaUserModel.fromCrd(scramShaUser, UserOperatorConfig.SECRET_PREFIX.defaultValue(), Boolean.parseBoolean(UserOperatorConfig.ACLS_ADMIN_API_SUPPORTED.defaultValue()));
         model.maybeGeneratePassword(Reconciliation.DUMMY_RECONCILIATION, passwordGenerator, scramShaSecret, null);
         Secret generated = model.generateSecret();
 
@@ -427,7 +427,7 @@ public class KafkaUserModelTest {
                 .addToData("my-password", DESIRED_BASE64_PASSWORD)
                 .build();
 
-        KafkaUserModel model = KafkaUserModel.fromCrd(user, UserOperatorConfig.SECRET_PREFIX.defaultValue(), Boolean.parseBoolean(UserOperatorConfig.ACLS_ADMIN_API_SUPPORTED.defaultValue()), false);
+        KafkaUserModel model = KafkaUserModel.fromCrd(user, UserOperatorConfig.SECRET_PREFIX.defaultValue(), Boolean.parseBoolean(UserOperatorConfig.ACLS_ADMIN_API_SUPPORTED.defaultValue()));
         model.maybeGeneratePassword(Reconciliation.DUMMY_RECONCILIATION, passwordGenerator, null, desiredPasswordSecret);
         Secret generatedSecret = model.generateSecret();
 
@@ -476,7 +476,7 @@ public class KafkaUserModelTest {
                 .addToData("my-password", DESIRED_BASE64_PASSWORD)
                 .build();
 
-        KafkaUserModel model = KafkaUserModel.fromCrd(user, UserOperatorConfig.SECRET_PREFIX.defaultValue(), Boolean.parseBoolean(UserOperatorConfig.ACLS_ADMIN_API_SUPPORTED.defaultValue()), false);
+        KafkaUserModel model = KafkaUserModel.fromCrd(user, UserOperatorConfig.SECRET_PREFIX.defaultValue(), Boolean.parseBoolean(UserOperatorConfig.ACLS_ADMIN_API_SUPPORTED.defaultValue()));
         model.maybeGeneratePassword(Reconciliation.DUMMY_RECONCILIATION, passwordGenerator, scramShaSecret, desiredPasswordSecret);
         Secret generated = model.generateSecret();
 
@@ -521,7 +521,7 @@ public class KafkaUserModelTest {
                 .addToData("my-other-password", DESIRED_BASE64_PASSWORD)
                 .build();
 
-        KafkaUserModel model = KafkaUserModel.fromCrd(user, UserOperatorConfig.SECRET_PREFIX.defaultValue(), Boolean.parseBoolean(UserOperatorConfig.ACLS_ADMIN_API_SUPPORTED.defaultValue()), false);
+        KafkaUserModel model = KafkaUserModel.fromCrd(user, UserOperatorConfig.SECRET_PREFIX.defaultValue(), Boolean.parseBoolean(UserOperatorConfig.ACLS_ADMIN_API_SUPPORTED.defaultValue()));
 
         InvalidResourceException e = assertThrows(InvalidResourceException.class, () -> {
             model.maybeGeneratePassword(Reconciliation.DUMMY_RECONCILIATION, passwordGenerator, null, desiredPasswordSecret);
@@ -551,7 +551,7 @@ public class KafkaUserModelTest {
                 .addToData("my-password", Base64.getEncoder().encodeToString("".getBytes(StandardCharsets.UTF_8)))
                 .build();
 
-        KafkaUserModel model = KafkaUserModel.fromCrd(user, UserOperatorConfig.SECRET_PREFIX.defaultValue(), Boolean.parseBoolean(UserOperatorConfig.ACLS_ADMIN_API_SUPPORTED.defaultValue()), false);
+        KafkaUserModel model = KafkaUserModel.fromCrd(user, UserOperatorConfig.SECRET_PREFIX.defaultValue(), Boolean.parseBoolean(UserOperatorConfig.ACLS_ADMIN_API_SUPPORTED.defaultValue()));
         InvalidResourceException e = assertThrows(InvalidResourceException.class, () -> {
             model.maybeGeneratePassword(Reconciliation.DUMMY_RECONCILIATION, passwordGenerator, null, desiredPasswordSecret);
         });
@@ -573,7 +573,7 @@ public class KafkaUserModelTest {
                 .endSpec()
                 .build();
 
-        KafkaUserModel model = KafkaUserModel.fromCrd(user, UserOperatorConfig.SECRET_PREFIX.defaultValue(), Boolean.parseBoolean(UserOperatorConfig.ACLS_ADMIN_API_SUPPORTED.defaultValue()), false);
+        KafkaUserModel model = KafkaUserModel.fromCrd(user, UserOperatorConfig.SECRET_PREFIX.defaultValue(), Boolean.parseBoolean(UserOperatorConfig.ACLS_ADMIN_API_SUPPORTED.defaultValue()));
 
         InvalidResourceException e = assertThrows(InvalidResourceException.class, () -> {
             model.maybeGeneratePassword(Reconciliation.DUMMY_RECONCILIATION, passwordGenerator, null, null);
@@ -585,7 +585,7 @@ public class KafkaUserModelTest {
     @Test
     public void testGenerateSecretGeneratesPasswordFromExistingTlsSecret()    {
         Secret userCert = ResourceUtils.createUserSecretTls();
-        KafkaUserModel model = KafkaUserModel.fromCrd(scramShaUser, UserOperatorConfig.SECRET_PREFIX.defaultValue(), Boolean.parseBoolean(UserOperatorConfig.ACLS_ADMIN_API_SUPPORTED.defaultValue()), false);
+        KafkaUserModel model = KafkaUserModel.fromCrd(scramShaUser, UserOperatorConfig.SECRET_PREFIX.defaultValue(), Boolean.parseBoolean(UserOperatorConfig.ACLS_ADMIN_API_SUPPORTED.defaultValue()));
         model.maybeGeneratePassword(Reconciliation.DUMMY_RECONCILIATION, passwordGenerator, userCert, null);
         Secret generated = model.generateSecret();
 
@@ -617,7 +617,7 @@ public class KafkaUserModelTest {
         KafkaUser user = ResourceUtils.createKafkaUserTls();
         user.setSpec(new KafkaUserSpec());
 
-        KafkaUserModel model = KafkaUserModel.fromCrd(user, UserOperatorConfig.SECRET_PREFIX.defaultValue(), Boolean.parseBoolean(UserOperatorConfig.ACLS_ADMIN_API_SUPPORTED.defaultValue()), false);
+        KafkaUserModel model = KafkaUserModel.fromCrd(user, UserOperatorConfig.SECRET_PREFIX.defaultValue(), Boolean.parseBoolean(UserOperatorConfig.ACLS_ADMIN_API_SUPPORTED.defaultValue()));
 
         assertThat(model.generateSecret(), is(nullValue()));
     }
@@ -627,7 +627,7 @@ public class KafkaUserModelTest {
         KafkaUser user = ResourceUtils.createKafkaUserTls();
         user.setSpec(new KafkaUserSpec());
 
-        KafkaUserModel model = KafkaUserModel.fromCrd(user, UserOperatorConfig.SECRET_PREFIX.defaultValue(), Boolean.parseBoolean(UserOperatorConfig.ACLS_ADMIN_API_SUPPORTED.defaultValue()), false);
+        KafkaUserModel model = KafkaUserModel.fromCrd(user, UserOperatorConfig.SECRET_PREFIX.defaultValue(), Boolean.parseBoolean(UserOperatorConfig.ACLS_ADMIN_API_SUPPORTED.defaultValue()));
 
         assertThat(model.getSimpleAclRules(), is(nullValue()));
     }
@@ -655,7 +655,7 @@ public class KafkaUserModelTest {
 
         assertThrows(InvalidResourceException.class, () -> {
             // 65 characters => Should throw exception with TLS
-            KafkaUserModel.fromCrd(tooLong, UserOperatorConfig.SECRET_PREFIX.defaultValue(), Boolean.parseBoolean(UserOperatorConfig.ACLS_ADMIN_API_SUPPORTED.defaultValue()), false);
+            KafkaUserModel.fromCrd(tooLong, UserOperatorConfig.SECRET_PREFIX.defaultValue(), Boolean.parseBoolean(UserOperatorConfig.ACLS_ADMIN_API_SUPPORTED.defaultValue()));
         });
     }
 
@@ -668,7 +668,7 @@ public class KafkaUserModelTest {
                 .endMetadata()
                 .build();
 
-        KafkaUserModel.fromCrd(notTooLong, UserOperatorConfig.SECRET_PREFIX.defaultValue(), Boolean.parseBoolean(UserOperatorConfig.ACLS_ADMIN_API_SUPPORTED.defaultValue()), false);
+        KafkaUserModel.fromCrd(notTooLong, UserOperatorConfig.SECRET_PREFIX.defaultValue(), Boolean.parseBoolean(UserOperatorConfig.ACLS_ADMIN_API_SUPPORTED.defaultValue()));
     }
 
     @Test
@@ -680,7 +680,7 @@ public class KafkaUserModelTest {
                 .endMetadata()
                 .build();
 
-        KafkaUserModel.fromCrd(tooLong, UserOperatorConfig.SECRET_PREFIX.defaultValue(), Boolean.parseBoolean(UserOperatorConfig.ACLS_ADMIN_API_SUPPORTED.defaultValue()), false);
+        KafkaUserModel.fromCrd(tooLong, UserOperatorConfig.SECRET_PREFIX.defaultValue(), Boolean.parseBoolean(UserOperatorConfig.ACLS_ADMIN_API_SUPPORTED.defaultValue()));
     }
 
     @Test
@@ -695,7 +695,7 @@ public class KafkaUserModelTest {
                 .build();
 
         InvalidResourceException e = assertThrows(InvalidResourceException.class, () -> {
-            KafkaUserModel.fromCrd(emptyPassword, UserOperatorConfig.SECRET_PREFIX.defaultValue(), Boolean.parseBoolean(UserOperatorConfig.ACLS_ADMIN_API_SUPPORTED.defaultValue()), false);
+            KafkaUserModel.fromCrd(emptyPassword, UserOperatorConfig.SECRET_PREFIX.defaultValue(), Boolean.parseBoolean(UserOperatorConfig.ACLS_ADMIN_API_SUPPORTED.defaultValue()));
         });
 
         assertThat(e.getMessage(), is("Resource requests custom SCRAM-SHA-512 password but doesn't specify the secret name and/or key"));
@@ -716,7 +716,7 @@ public class KafkaUserModelTest {
                 .build();
 
         InvalidResourceException e = assertThrows(InvalidResourceException.class, () -> {
-            KafkaUserModel.fromCrd(missingKey, UserOperatorConfig.SECRET_PREFIX.defaultValue(), Boolean.parseBoolean(UserOperatorConfig.ACLS_ADMIN_API_SUPPORTED.defaultValue()), false);
+            KafkaUserModel.fromCrd(missingKey, UserOperatorConfig.SECRET_PREFIX.defaultValue(), Boolean.parseBoolean(UserOperatorConfig.ACLS_ADMIN_API_SUPPORTED.defaultValue()));
         });
 
         assertThat(e.getMessage(), is("Resource requests custom SCRAM-SHA-512 password but doesn't specify the secret name and/or key"));
@@ -736,7 +736,7 @@ public class KafkaUserModelTest {
                 .endSpec()
                 .build();
 
-        KafkaUserModel model = KafkaUserModel.fromCrd(user, UserOperatorConfig.SECRET_PREFIX.defaultValue(), Boolean.parseBoolean(UserOperatorConfig.ACLS_ADMIN_API_SUPPORTED.defaultValue()), false);
+        KafkaUserModel model = KafkaUserModel.fromCrd(user, UserOperatorConfig.SECRET_PREFIX.defaultValue(), Boolean.parseBoolean(UserOperatorConfig.ACLS_ADMIN_API_SUPPORTED.defaultValue()));
 
         assertThat(model.isUserWithDesiredPassword(), is(true));
         assertThat(model.desiredPasswordSecretKey(), is("my-password"));
@@ -745,7 +745,7 @@ public class KafkaUserModelTest {
 
     @Test
     public void testFromCrdScramShaUserWithoutPasswordParsing()    {
-        KafkaUserModel model = KafkaUserModel.fromCrd(scramShaUser, UserOperatorConfig.SECRET_PREFIX.defaultValue(), Boolean.parseBoolean(UserOperatorConfig.ACLS_ADMIN_API_SUPPORTED.defaultValue()), false);
+        KafkaUserModel model = KafkaUserModel.fromCrd(scramShaUser, UserOperatorConfig.SECRET_PREFIX.defaultValue(), Boolean.parseBoolean(UserOperatorConfig.ACLS_ADMIN_API_SUPPORTED.defaultValue()));
 
         assertThat(model.isUserWithDesiredPassword(), is(false));
         assertThat(model.desiredPasswordSecretKey(), is(nullValue()));
@@ -754,13 +754,7 @@ public class KafkaUserModelTest {
 
     @Test
     public void testFromCrdAclsWithAclsAdminApiSupportMissing()    {
-        InvalidResourceException e = assertThrows(InvalidResourceException.class, () -> KafkaUserModel.fromCrd(scramShaUser, UserOperatorConfig.SECRET_PREFIX.defaultValue(), false, false));
+        InvalidResourceException e = assertThrows(InvalidResourceException.class, () -> KafkaUserModel.fromCrd(scramShaUser, UserOperatorConfig.SECRET_PREFIX.defaultValue(), false));
         assertThat(e.getMessage(), is("Simple authorization ACL rules are configured but not supported in the Kafka cluster configuration."));
-    }
-
-    @Test
-    public void testFromCrdScramSha512NotSupportedInKraft()    {
-        InvalidResourceException e = assertThrows(InvalidResourceException.class, () -> KafkaUserModel.fromCrd(scramShaUser, UserOperatorConfig.SECRET_PREFIX.defaultValue(), true, true));
-        assertThat(e.getMessage(), is("SCRAM-SHA-512 authentication is currently not supported in KRaft based Kafka clusters."));
     }
 }
