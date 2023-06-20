@@ -100,12 +100,12 @@ class BatchingLoop {
      * @return True if the loop is alive..
      */
     boolean isAlive() {
-        for (var t : threads) {
-            if (!t.isAlive()) {
-                LOGGER.infoOp("isAlive returning false because {} is not alive", t);
+        for (var thread : threads) {
+            if (!thread.isAlive()) {
+                LOGGER.infoOp("isAlive returning false because {} is not alive", thread);
                 return false;
-            } else if (t.msSinceLastLoop() > 120_000L) {
-                LOGGER.infoOp("isAlive returning false because {} appears to be stuck", t);
+            } else if (thread.msSinceLastLoop() > 120_000L) {
+                LOGGER.infoOp("isAlive returning false because {} appears to be stuck", thread);
                 return false;
             }
         }
@@ -226,8 +226,7 @@ class BatchingLoop {
         private void fillBatch(int batchId, Batch batch) throws InterruptedException {
             LOGGER.traceOp("[Batch #{}] Filling", batchId);
             List<TopicEvent> rejected = new ArrayList<>();
-
-
+            
             final long deadlineNanoTime = System.nanoTime() + maxBatchLingerMs * 1_000_000;
             while (true) {
                 if (batch.size() >= maxBatchSize) {
