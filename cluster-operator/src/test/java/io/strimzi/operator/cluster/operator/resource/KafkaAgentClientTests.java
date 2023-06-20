@@ -4,28 +4,24 @@
  */
 package io.strimzi.operator.cluster.operator.resource;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.spy;
 
-
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import io.strimzi.operator.common.Reconciliation;
-
 
 public class KafkaAgentClientTests {
 
     @Test
-    public void testBrokerInRecoveryState() throws Exception {
+    public void testBrokerInRecoveryState() {
         KafkaAgentClient kafkaAgentClient = spy(new KafkaAgentClient(new Reconciliation("test", "kafka", "namespace", "my-cluster"), "mycluster", "namespace", null, null));
-        doAnswer(invocation -> {
-            return "{\"brokerState\":2,\"recoveryState\":{\"remainingLogsToRecover\":10,\"remainingSegmentsToRecover\":100}}";
-        }).when(kafkaAgentClient).doGet(any());
+        doAnswer(invocation -> "{\"brokerState\":2,\"recoveryState\":{\"remainingLogsToRecover\":10,\"remainingSegmentsToRecover\":100}}").when(kafkaAgentClient).doGet(any());
         BrokerState actual = kafkaAgentClient.getBrokerState("mypod");
-        assertTrue("broker is not recovery as expected", actual.isBrokerInRecovery());
+        assertTrue(actual.isBrokerInRecovery(), "broker is not in log recovery as expected");
         assertEquals(10, actual.remainingLogsToRecover());
         assertEquals(100, actual.remainingSegmentsToRecover());
     }
@@ -33,9 +29,7 @@ public class KafkaAgentClientTests {
     @Test
     public void testBrokerInRunningState() {
         KafkaAgentClient kafkaAgentClient = spy(new KafkaAgentClient(new Reconciliation("test", "kafka", "namespace", "my-cluster"), null, "mycluster", null, null));
-        doAnswer(invocation -> {
-            return "{\"brokerState\":3}";
-        }).when(kafkaAgentClient).doGet(any());
+        doAnswer(invocation -> "{\"brokerState\":3}").when(kafkaAgentClient).doGet(any());
 
         BrokerState actual = kafkaAgentClient.getBrokerState("mypod");
         assertEquals(3, actual.code());
@@ -46,9 +40,7 @@ public class KafkaAgentClientTests {
     @Test
     public void testInvalidJsonResponse() {
         KafkaAgentClient kafkaAgentClient = spy(new KafkaAgentClient(new Reconciliation("test", "kafka", "namespace", "my-cluster"), null, "mycluster", null, null));
-        doAnswer(invocation -> {
-            return "&\"brokerState\":3&";
-        }).when(kafkaAgentClient).doGet(any());
+        doAnswer(invocation -> "&\"brokerState\":3&").when(kafkaAgentClient).doGet(any());
 
         BrokerState actual = kafkaAgentClient.getBrokerState("mypod");
         assertEquals(-1, actual.code());
