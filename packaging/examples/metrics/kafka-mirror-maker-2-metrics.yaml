@@ -14,23 +14,27 @@ spec:
     - alias: "my-cluster-target"
       bootstrapServers: my-cluster-target-kafka-bootstrap:9092
       config:
-        config.storage.replication.factor: 1
-        offset.storage.replication.factor: 1
-        status.storage.replication.factor: 1
+        # -1 means it will use the default replication factor configured in the broker
+        config.storage.replication.factor: -1
+        offset.storage.replication.factor: -1
+        status.storage.replication.factor: -1
   mirrors:
     - sourceCluster: "my-cluster-source"
       targetCluster: "my-cluster-target"
       sourceConnector:
         config:
-          replication.factor: 1
-          offset-syncs.topic.replication.factor: 1
+          # -1 means it will use the default replication factor configured in the broker
+          replication.factor: -1
+          offset-syncs.topic.replication.factor: -1
           sync.topic.acls.enabled: "false"
       heartbeatConnector:
         config:
-          heartbeats.topic.replication.factor: 1
+          # -1 means it will use the default replication factor configured in the broker
+          heartbeats.topic.replication.factor: -1
       checkpointConnector:
         config:
-          checkpoints.topic.replication.factor: 1
+          # -1 means it will use the default replication factor configured in the broker
+          checkpoints.topic.replication.factor: -1
       topicsPattern: ".*"
       groupsPattern: ".*"
   metricsConfig:

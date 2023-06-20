@@ -248,13 +248,15 @@ spec:
       sourceConnector:
         tasksMax: 1
         config:
-          replication.factor: 1
-          offset-syncs.topic.replication.factor: 1
+          # -1 means it will use the default replication factor configured in the broker
+          replication.factor: -1
+          offset-syncs.topic.replication.factor: -1
           sync.topic.acls.enabled: "false"
       checkpointConnector:
         tasksMax: 1
         config:
-          checkpoints.topic.replication.factor: 1
+          # -1 means it will use the default replication factor configured in the broker
+          checkpoints.topic.replication.factor: -1
           sync.group.offsets.enabled: "true"
       topicsPattern: ".*"
       groupsPattern: ".*"
