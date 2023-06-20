@@ -4,6 +4,7 @@
  */
 package io.strimzi.systemtest.utils.specific;
 
+import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.metrics.MetricsCollector;
 import io.strimzi.systemtest.resources.ComponentType;
@@ -16,6 +17,7 @@ import org.apache.logging.log4j.Logger;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
@@ -58,21 +60,15 @@ public class MetricsUtils {
 
     public static MetricsCollector setupCOMetricsCollectorInNamespace(String coName, String coNamespace, String coScraperName) {
 
-        String originalCODeploymentName = ResourceManager.getCoDeploymentName();
-        // necessary for finding correct deployment when building metric collector.
-        ResourceManager.setCoDeploymentName(coName);
+        var scraperDeploymentPodLabel = new LabelSelector(null, Map.of(Constants.APP_POD_LABEL, coScraperName));
+        String coScraperPodName = ResourceManager.kubeClient().listPods(coNamespace, scraperDeploymentPodLabel).get(0).getMetadata().getName();
 
-        String coScraperPodName = ResourceManager.kubeClient().listPodsByPrefixInName(coNamespace, coScraperName).get(0).getMetadata().getName();
-
-        MetricsCollector metricsCollector =  new MetricsCollector.Builder()
+        return  new MetricsCollector.Builder()
             .withScraperPodName(coScraperPodName)
             .withNamespaceName(coNamespace)
             .withComponentType(ComponentType.ClusterOperator)
-            .withComponentName("")
+            .withComponentName(coName)
             .build();
-
-        ResourceManager.setCoDeploymentName(originalCODeploymentName);
-        return metricsCollector;
     }
 
     public static void assertCoMetricResourceNotNull(MetricsCollector collector, String metric, String kind) {

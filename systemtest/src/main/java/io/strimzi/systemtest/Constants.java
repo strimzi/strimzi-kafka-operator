@@ -111,6 +111,11 @@ public interface Constants {
     String DRAIN_CLEANER_NAMESPACE = "strimzi-drain-cleaner";
 
     /**
+     * Deployment labels related constants
+     */
+    String APP_POD_LABEL = "app";
+
+    /**
      * Constants for specific ports
      */
     int COMPONENTS_METRICS_PORT = 9404;
