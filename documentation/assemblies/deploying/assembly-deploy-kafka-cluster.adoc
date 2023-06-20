@@ -19,7 +19,7 @@ After you have deployed the Cluster Operator, use a `Kafka` resource to deploy t
 When installing Kafka, Strimzi also installs a ZooKeeper cluster and adds the necessary configuration to connect Kafka with ZooKeeper.
 
 If you are trying the preview of the node pools feature, you can deploy a Kafka cluster with one or more node pools.
-Node pools provide configuration for a set of kafka nodes.
+Node pools provide configuration for a set of Kafka nodes.
 By using node pools, nodes can have different configuration within the same Kafka cluster.
 
 Node pools are not enabled by default, so you must xref:ref-operator-kafka-node-pools-feature-gate-{context}[enable the `KafkaNodePools` feature gate] before using them. 

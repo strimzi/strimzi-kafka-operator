@@ -13,6 +13,16 @@ When the replicas on the new node are in-sync, you can delete the old node.
 The steps assume that you are using ZooKeeper for cluster management. 
 The operation is not possible for clusters using KRaft mode.
 
+In this procedure, we start with two node pools:
+
+* `pool-a` with three replicas is the target node pool
+* `pool-b` with four replicas is the source node pool
+
+We scale up `pool-a`, and reassign partitions and scale down `pool-b`, which results in the following:
+
+* `pool-a` with four replicas
+* `pool-b` with three replicas
+
 NOTE: During this process, the ID of the node that holds the partition replicas changes. Consider any dependencies that reference the node ID.
 
 .Prerequisites

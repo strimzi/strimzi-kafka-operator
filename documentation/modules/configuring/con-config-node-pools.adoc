@@ -75,7 +75,7 @@ spec:
 apiVersion: {KafkaNodePoolApiVersion}
 kind: KafkaNodePool
 metadata:
-  name: dual-role # <1>
+  name: kraft-dual-role # <1>
   labels:
     strimzi.io/cluster: my-cluster # <2>
 spec:

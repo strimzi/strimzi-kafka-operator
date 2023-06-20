@@ -56,9 +56,9 @@ The `UseKRaft` feature gate has a default state of _disabled_.
 The `UseKRaft` feature gate deploys the Kafka cluster in the KRaft (Kafka Raft metadata) mode without ZooKeeper.
 ZooKeeper and KRaft are mechanisms used to manage metadata and coordinate operations in Kafka clusters. 
 KRaft mode eliminates the need for an external coordination service like ZooKeeper. 
-In KRaft mode, brokers take on the roles of brokers, controllers, or both. 
+In KRaft mode, Kafka nodes take on the roles of brokers, controllers, or both. 
 They collectively manage the metadata, which is replicated across partitions. 
-Controller brokers are responsible for coordinating operations and maintaining the cluster's state.
+Controllers are responsible for coordinating operations and maintaining the cluster's state.
 
 This feature gate is currently intended only for development and testing.
 
