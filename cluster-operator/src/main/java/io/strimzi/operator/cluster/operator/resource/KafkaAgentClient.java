@@ -4,9 +4,11 @@
  */
 package io.strimzi.operator.cluster.operator.resource;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
@@ -109,7 +111,11 @@ class KafkaAgentClient {
         try {
             URI uri = new URI("https://" +  host + ":" + BROKER_STATE_HTTPS_PORT + BROKER_STATE_REST_PATH);
             brokerstate = MAPPER.readValue(doGet(uri), BrokerState.class);
-        } catch (Exception e) {
+        } catch (JsonProcessingException e) {
+            LOGGER.warnCr(reconciliation, "Failed to parse broker state", e);
+        } catch (URISyntaxException e) {
+            LOGGER.warnCr(reconciliation, "Failed to get broker state due to invalid URI", e);
+        } catch (RuntimeException e) {
             LOGGER.warnCr(reconciliation, "Failed to get broker state", e);
         }
         return brokerstate;
