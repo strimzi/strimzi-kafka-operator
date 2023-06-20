@@ -61,11 +61,6 @@ kubectl get secret my-cluster-clients-ca-cert -n my-project -o=jsonpath='{.data.
 +
 The command returns a `notBefore` and `notAfter` date, which is the valid start and end date for the CA certificate.
 
-. Delete old certificates from the secret.
-+
-When components are using the new certificates, older certificates might still be active.
-Delete the old certificates to remove any potential security risk.
-
 . Update client configurations to trust the new cluster CA certificate.
 +
 See:
