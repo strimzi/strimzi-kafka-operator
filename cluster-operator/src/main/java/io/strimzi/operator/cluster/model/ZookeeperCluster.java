@@ -493,9 +493,9 @@ public class ZookeeperCluster extends AbstractModel implements SupportsMetrics, 
 
         varList.addAll(jmx.envVars());
 
-        ModelUtils.heapOptions(varList, 75, 2L * 1024L * 1024L * 1024L, jvmOptions, resources);
-        ModelUtils.jvmPerformanceOptions(varList, jvmOptions);
-        ModelUtils.jvmSystemProperties(varList, jvmOptions);
+        JvmOptionUtils.heapOptions(varList, 75, 2L * 1024L * 1024L * 1024L, jvmOptions, resources);
+        JvmOptionUtils.jvmPerformanceOptions(varList, jvmOptions);
+        JvmOptionUtils.jvmSystemProperties(varList, jvmOptions);
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_ZOOKEEPER_CONFIGURATION, configuration.getConfiguration()));
 
         // Add shared environment variables used for all containers

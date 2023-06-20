@@ -121,7 +121,7 @@ public class KafkaConnectClusterTest {
     private final JmxPrometheusExporterMetrics jmxMetricsConfig = io.strimzi.operator.cluster.TestUtils.getJmxPrometheusExporterMetrics("metrics-config.yml", metricsCMName);
     private final String configurationJson = "foo: bar";
     private final String bootstrapServers = "foo-kafka:9092";
-    private final String kafkaHeapOpts = "-Xms" + ModelUtils.DEFAULT_JVM_XMS;
+    private final String kafkaHeapOpts = "-Xms" + JvmOptionUtils.DEFAULT_JVM_XMS;
 
     private final OrderedProperties defaultConfiguration = new OrderedProperties()
             .addPair("offset.storage.topic", "connect-cluster-offsets")

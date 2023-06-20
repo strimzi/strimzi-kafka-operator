@@ -392,9 +392,9 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_API_PORT,  String.valueOf(REST_API_PORT)));
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_API_HEALTHCHECK_PATH, API_HEALTHCHECK_PATH));
 
-        ModelUtils.heapOptions(varList, 75, 0L, jvmOptions, resources);
-        ModelUtils.jvmPerformanceOptions(varList, jvmOptions);
-        ModelUtils.jvmSystemProperties(varList, jvmOptions);
+        JvmOptionUtils.heapOptions(varList, 75, 0L, jvmOptions, resources);
+        JvmOptionUtils.jvmPerformanceOptions(varList, jvmOptions);
+        JvmOptionUtils.jvmSystemProperties(varList, jvmOptions);
 
         if (configuration != null && !configuration.getConfiguration().isEmpty()) {
             varList.add(ContainerUtils.createEnvVar(ENV_VAR_CRUISE_CONTROL_CONFIGURATION, configuration.getConfiguration()));

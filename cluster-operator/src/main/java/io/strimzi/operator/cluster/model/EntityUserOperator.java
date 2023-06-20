@@ -199,7 +199,7 @@ public class EntityUserOperator extends AbstractModel implements SupportsLogging
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_SECRET_PREFIX, secretPrefix));
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_ACLS_ADMIN_API_SUPPORTED, String.valueOf(aclsAdminApiSupported)));
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_KRAFT_ENABLED, String.valueOf(kraftEnabled)));
-        ModelUtils.javaOptions(varList, jvmOptions);
+        JvmOptionUtils.javaOptions(varList, jvmOptions);
 
         // Add shared environment variables used for all containers
         varList.addAll(ContainerUtils.requiredEnvVars());

@@ -1457,9 +1457,9 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_METRICS_ENABLED, String.valueOf(metrics.isEnabled())));
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_STRIMZI_KAFKA_GC_LOG_ENABLED, String.valueOf(pool.gcLoggingEnabled)));
 
-        ModelUtils.heapOptions(varList, 50, 5L * 1024L * 1024L * 1024L, pool.jvmOptions, pool.resources);
-        ModelUtils.jvmPerformanceOptions(varList, pool.jvmOptions);
-        ModelUtils.jvmSystemProperties(varList, pool.jvmOptions);
+        JvmOptionUtils.heapOptions(varList, 50, 5L * 1024L * 1024L * 1024L, pool.jvmOptions, pool.resources);
+        JvmOptionUtils.jvmPerformanceOptions(varList, pool.jvmOptions);
+        JvmOptionUtils.jvmSystemProperties(varList, pool.jvmOptions);
 
         for (GenericKafkaListener listener : listeners) {
             if (isListenerWithOAuth(listener))   {
