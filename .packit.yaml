@@ -145,4 +145,4 @@ jobs:
     tf_extra_params:
       test:
         fmf:
-          name: kraft-components
+          name: acceptance
