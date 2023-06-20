@@ -37,8 +37,8 @@ public class KafkaExporterSpec implements HasLivenessProbe, HasReadinessProbe, U
     private String image;
     private String groupRegex = ".*";
     private String topicRegex = ".*";
-    private String topicExcludeRegex = "^$";
-    private String groupExcludeRegex = "^$";
+    private String topicExcludeRegex;
+    private String groupExcludeRegex;
 
     private ResourceRequirements resources;
     private Probe livenessProbe;
@@ -81,7 +81,7 @@ public class KafkaExporterSpec implements HasLivenessProbe, HasReadinessProbe, U
     }
 
     @Description("Regular expression to specify which consumer groups to exclude. " +
-            "Default value is `^$`.")
+            "Default value is null.")
     @JsonInclude(JsonInclude.Include.NON_DEFAULT)
     public String getGroupExcludeRegex() {
         return groupExcludeRegex;
@@ -92,7 +92,7 @@ public class KafkaExporterSpec implements HasLivenessProbe, HasReadinessProbe, U
     }
 
     @Description("Regular expression to specify which topics to exclude. " +
-            "Default value is `^$`.")
+            "Default value is null.")
     @JsonInclude(JsonInclude.Include.NON_DEFAULT)
     public String getTopicExcludeRegex() {
         return topicExcludeRegex;

@@ -69,8 +69,8 @@ public class KafkaExporter extends AbstractModel {
 
     protected String groupRegex = ".*";
     protected String topicRegex = ".*";
-    protected String groupExcludeRegex = "^$";
-    protected String topicExcludeRegex = "^$";
+    protected String groupExcludeRegex;
+    protected String topicExcludeRegex;
     protected boolean saramaLoggingEnabled;
     /* test */ String exporterLogging;
     protected String version;
@@ -215,8 +215,12 @@ public class KafkaExporter extends AbstractModel {
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_EXPORTER_KAFKA_VERSION, version));
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_EXPORTER_GROUP_REGEX, groupRegex));
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_EXPORTER_TOPIC_REGEX, topicRegex));
-        varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_EXPORTER_GROUP_EXCLUDE_REGEX, groupExcludeRegex));
-        varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_EXPORTER_TOPIC_EXCLUDE_REGEX, topicExcludeRegex));
+        if (groupExcludeRegex != null) {
+            varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_EXPORTER_GROUP_EXCLUDE_REGEX, groupExcludeRegex));
+        }
+        if (topicExcludeRegex != null) {
+            varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_EXPORTER_TOPIC_EXCLUDE_REGEX, topicExcludeRegex));
+        }
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_EXPORTER_KAFKA_SERVER, KafkaResources.bootstrapServiceName(cluster) + ":" + KafkaCluster.REPLICATION_PORT));
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_EXPORTER_ENABLE_SARAMA, String.valueOf(saramaLoggingEnabled)));
 

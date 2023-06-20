@@ -3,6 +3,7 @@
 ## 0.36.0
 
 * Update Kafka Exporter to [1.7.0](https://github.com/danielqsj/kafka_exporter/releases/tag/v1.7.0)
+* Added support for Kafka Exporter topic exclude and consumer group exclude parameters
 
 ### Changes, deprecations and removals
 

@@ -59,6 +59,7 @@ import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.junit.Assert.assertNull;
 
 @ParallelSuite
 public class KafkaExporterTest {
@@ -145,8 +146,8 @@ public class KafkaExporterTest {
         assertThat(ke.exporterLogging, is("info"));
         assertThat(ke.groupRegex, is(".*"));
         assertThat(ke.topicRegex, is(".*"));
-        assertThat(ke.groupExcludeRegex, is("^$"));
-        assertThat(ke.topicExcludeRegex, is("^$"));
+        assertNull(ke.groupExcludeRegex);
+        assertNull(ke.topicExcludeRegex);
         assertThat(ke.saramaLoggingEnabled, is(false));
     }
 
@@ -263,8 +264,6 @@ public class KafkaExporterTest {
                 .withLogging(exporterOperatorLogging)
                 .withGroupRegex(groupRegex)
                 .withTopicRegex(topicRegex)
-                .withGroupExcludeRegex(groupExcludeRegex)
-                .withTopicExcludeRegex(topicExcludeRegex)
                 .withImage(keImage)
                 .withNewTemplate()
                     .withNewContainer()
@@ -301,8 +300,6 @@ public class KafkaExporterTest {
                 .withLogging(exporterOperatorLogging)
                 .withGroupRegex(groupRegex)
                 .withTopicRegex(topicRegex)
-                .withGroupExcludeRegex(groupExcludeRegex)
-                .withTopicExcludeRegex(topicExcludeRegex)
                 .withImage(keImage)
                 .withNewTemplate()
                     .withNewContainer()
