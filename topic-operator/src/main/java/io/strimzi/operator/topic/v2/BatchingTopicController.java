@@ -198,10 +198,17 @@ public class BatchingTopicController {
             var oldest = byCreationTime.get(0);
             var nextOldest = byCreationTime.size() >= 2 ? byCreationTime.get(1) : null;
             TopicOperatorException e = new TopicOperatorException.ResourceConflict("Managed by " + oldest);
-            if (thisRef.equals(oldest)
-                    && (nextOldest == null || nextOldest.creationTime() != oldest.creationTime())) {
+            if (nextOldest == null) {
+                // This is only resource for that topic => it is the unique oldest
+                return Either.ofRight(true);
+            } else if (thisRef.equals(oldest) && nextOldest.creationTime() != oldest.creationTime()) {
                 // This resource is the unique oldest, so it's OK.
                 // The others will eventually get reconciled and put into ResourceConflict
+                return Either.ofRight(true);
+            } else if (thisRef.equals(oldest)
+                    && reconcilableTopic.kt().getStatus() != null
+                    && reconcilableTopic.kt().getStatus().getConditions() != null
+                    && reconcilableTopic.kt().getStatus().getConditions().stream().anyMatch(c -> "Ready".equals(c.getType()) && "True".equals(c.getStatus()))) {
                 return Either.ofRight(true);
             } else {
                 // Return an error putting this resource into ResourceConflict
