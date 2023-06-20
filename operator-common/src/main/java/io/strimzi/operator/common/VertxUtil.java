@@ -171,7 +171,7 @@ public final class VertxUtil {
     }
 
     /**
-     * Converts Kafka Future to VErt.x future
+     * Converts Kafka Future to Vert.x future
      *
      * @param reconciliation    Reconciliation marker
      * @param vertx             Vert.x instance
@@ -206,7 +206,7 @@ public final class VertxUtil {
     }
 
     /**
-     * When TLS certificate or Auth certificate (or password) is changed, the has is computed.
+     * When TLS certificate or Auth certificate (or password) is changed, the hash is computed.
      * It is used for rolling updates.
      * @param secretOperations Secret operator
      * @param namespace namespace to get Secrets in
