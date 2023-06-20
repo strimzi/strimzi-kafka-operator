@@ -52,7 +52,7 @@ public class TopicOperatorMain implements Liveness, Readiness {
         this.controller = new BatchingTopicController(selector, admin, client, config.useFinalizer());
         this.itemStore = new BasicItemStore<KafkaTopic>(Cache::metaNamespaceKeyFunc);
         this.queue = new BatchingLoop(config.maxQueueSize(),  controller, 1, config.maxBatchSize(), config.maxBatchLingerMs(), itemStore);
-        this.handler = new TopicOperatorEventHandler(queue);
+        this.handler = new TopicOperatorEventHandler(queue, config.useFinalizer());
         this.healthAndMetricsServer = new HealthCheckAndMetricsServer(8080, this, this, null);
     }
 

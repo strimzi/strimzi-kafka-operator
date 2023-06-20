@@ -13,9 +13,11 @@ class TopicOperatorEventHandler implements ResourceEventHandler<KafkaTopic> {
     private final static ReconciliationLogger LOGGER = ReconciliationLogger.create(TopicOperatorEventHandler.class);
 
     private final BatchingLoop queue;
+    private final boolean useFinalizer;
 
-    public TopicOperatorEventHandler(BatchingLoop queue) {
+    public TopicOperatorEventHandler(BatchingLoop queue, boolean useFinalizer) {
         this.queue = queue;
+        this.useFinalizer = useFinalizer;
     }
 
     @Override
@@ -38,7 +40,11 @@ class TopicOperatorEventHandler implements ResourceEventHandler<KafkaTopic> {
 
     @Override
     public void onDelete(KafkaTopic obj, boolean deletedFinalStateUnknown) {
-        LOGGER.debugOp("Informed of delete {}", obj);
-        queue.offer(new TopicDelete(System.nanoTime(), obj));
+        if (useFinalizer) {
+            LOGGER.debugOp("Ignoring of delete {} (using finalizers)", obj);
+        } else {
+            LOGGER.debugOp("Informed of delete {}", obj);
+            queue.offer(new TopicDelete(System.nanoTime(), obj));
+        }
     }
 }
