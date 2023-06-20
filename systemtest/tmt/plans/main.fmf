@@ -125,6 +125,11 @@ finish:
 
 /smoke:
   summary: Run smoke strimzi test suite
+  provision:
+    hardware:
+      memory: ">= 8 GiB"
+      cpu:
+        processors: ">= 4"
   discover+:
     test:
       - smoke
@@ -152,6 +157,17 @@ finish:
   discover+:
     test:
       - kraft-components
+
+/acceptance:
+  summary: Run acceptance strimzi test suite
+  provision:
+    hardware:
+      memory: ">= 16 GiB"
+      cpu:
+        processors: ">= 4"
+  discover+:
+    test:
+      - acceptance
 
 /upgrade:
   summary: Run upgrade strimzi test suite
