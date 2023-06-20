@@ -9,6 +9,8 @@ environment:
   TEST_GROUPS: ""
   EXCLUDED_TEST_GROUPS: "loadbalancer"
   CLUSTER_OPERATOR_INSTALLTYPE: bundle
+  # Temporary freeze kafka version due to https://github.com/strimzi/strimzi-kafka-operator/issues/8675
+  ST_KAFKA_VERSION: "3.4.0"
 adjust:
   - environment+:
       EXCLUDED_TEST_GROUPS: "loadbalancer,arm64unsupported"
