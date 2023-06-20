@@ -71,7 +71,7 @@ public class BatchingTopicController {
     private final KubernetesClient kubeClient;
 
     // Key: topic name, Value: The KafkaTopics known to manage that topic
-    /* test */ final Map<String, Set<Ref>> topics = new HashMap<>();
+    /* test */ final Map<String, Set<KubeRef>> topics = new HashMap<>();
 
 
     BatchingTopicController(Map<String, String> selector,
@@ -183,7 +183,7 @@ public class BatchingTopicController {
     private boolean rememberTopic(ReconcilableTopic reconcilableTopic) {
         String tn = reconcilableTopic.topicName();
         var existing = topics.computeIfAbsent(tn, k -> new HashSet<>());
-        Ref thisRef = new Ref(reconcilableTopic.kt());
+        KubeRef thisRef = new KubeRef(reconcilableTopic.kt());
         existing.add(thisRef);
         return true;
     }
@@ -191,9 +191,9 @@ public class BatchingTopicController {
     private Either<TopicOperatorException, Boolean> validateSingleManagingResource(ReconcilableTopic reconcilableTopic) {
         String tn = reconcilableTopic.topicName();
         var existing = topics.get(tn);
-        Ref thisRef = new Ref(reconcilableTopic.kt());
+        KubeRef thisRef = new KubeRef(reconcilableTopic.kt());
         if (existing.size() != 1) {
-            var byCreationTime = existing.stream().sorted(Comparator.comparing(Ref::creationTime)).toList();
+            var byCreationTime = existing.stream().sorted(Comparator.comparing(KubeRef::creationTime)).toList();
 
             var oldest = byCreationTime.get(0);
             var nextOldest = byCreationTime.size() >= 2 ? byCreationTime.get(1) : null;
@@ -849,7 +849,7 @@ public class BatchingTopicController {
     private void forgetTopic(ReconcilableTopic reconcilableTopic) {
         topics.compute(reconcilableTopic.topicName(), (k, v) -> {
             if (v != null) {
-                v.remove(new Ref(reconcilableTopic.kt()));
+                v.remove(new KubeRef(reconcilableTopic.kt()));
                 if (v.isEmpty()) {
                     return null;
                 } else {

@@ -18,8 +18,8 @@ sealed interface TopicEvent permits TopicUpsert, TopicDelete {
     String name();
     String resourceVersion();
 
-    default Ref toRef() {
-        return new Ref(namespace(), name(), 0);
+    default KubeRef toRef() {
+        return new KubeRef(namespace(), name(), 0);
     }
 }
 /**

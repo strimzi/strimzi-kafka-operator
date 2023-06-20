@@ -36,7 +36,7 @@ class BatchingLoop {
      * Guarded by the monitor of the BatchingLoop.
      * This functions as mechanism for preventing concurrent reconciliation of the same topic.
      */
-    private final Set<Ref> inFlight = new HashSet<>(); // guarded by this
+    private final Set<KubeRef> inFlight = new HashSet<>(); // guarded by this
     private final LoopRunnable[] threads;
     private final int maxBatchSize;
     private final long maxBatchLingerMs;
@@ -226,7 +226,7 @@ class BatchingLoop {
         private void fillBatch(int batchId, Batch batch) throws InterruptedException {
             LOGGER.traceOp("[Batch #{}] Filling", batchId);
             List<TopicEvent> rejected = new ArrayList<>();
-            
+
             final long deadlineNanoTime = System.nanoTime() + maxBatchLingerMs * 1_000_000;
             while (true) {
                 if (batch.size() >= maxBatchSize) {
@@ -268,7 +268,7 @@ class BatchingLoop {
             // E.g. upset then delete is equivalent to just a delete
             // It's actually a bit tricky since you have to process the events in reverse order to correctly
             // simplify them, so `Batch` would have to be something like a `Map<Ref, List<TopicEvent>>`.
-            Ref ref = topicEvent.toRef();
+            KubeRef ref = topicEvent.toRef();
             if (inFlight.add(ref)) {
                 // wasn't already inflight
                 LOGGER.debugOp("[Batch #{}] Adding {}", batchId, topicEvent);

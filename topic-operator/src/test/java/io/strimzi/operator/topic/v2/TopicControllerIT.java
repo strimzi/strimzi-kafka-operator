@@ -602,7 +602,7 @@ class TopicControllerIT {
         assertEquals(Set.of(kt.getSpec().getReplicas()), replicationFactors(topicDescription));
         assertEquals(Map.of(), topicConfigMap(expectedTopicName));
 
-        Map<String, Set<Ref>> topics = new HashMap<>(operator.controller.topics);
+        Map<String, Set<KubeRef>> topics = new HashMap<>(operator.controller.topics);
         assertFalse(topics.containsKey("foo")
                         || topics.containsKey("FOO"),
                 "Transition to a non-selected resource should result in removal from topics map: " + topics);

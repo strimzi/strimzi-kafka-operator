@@ -14,8 +14,8 @@ import java.util.Objects;
  * Equality is based on {@link #namespace()} and {@link #name()}.
  * {@link #creationTime()} is present to allow disambiguation of multiple KafkaTopics managing the same topic in Kafka.
  */
-record Ref(String namespace, String name, long creationTime) {
-    Ref(KafkaTopic kt) {
+record KubeRef(String namespace, String name, long creationTime) {
+    KubeRef(KafkaTopic kt) {
         this(kt.getMetadata().getNamespace(), kt.getMetadata().getName(), StatusUtils.isoUtcDatetime(kt.getMetadata().getCreationTimestamp()).toEpochMilli());
     }
 
@@ -23,7 +23,7 @@ record Ref(String namespace, String name, long creationTime) {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        Ref ref = (Ref) o;
+        KubeRef ref = (KubeRef) o;
         return Objects.equals(namespace, ref.namespace) && Objects.equals(name, ref.name);
     }
 
