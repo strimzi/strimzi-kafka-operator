@@ -98,10 +98,6 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>com.github.spotbugs</groupId>
-            <artifactId>spotbugs-annotations</artifactId>
-        </dependency>
-        <dependency>
             <groupId>io.strimzi</groupId>
             <artifactId>test</artifactId>
             <scope>test</scope>
@@ -256,6 +252,7 @@
                                 <argument>io.strimzi.api.kafka.model.KafkaMirrorMaker2</argument>
                                 <argument>io.strimzi.api.kafka.model.KafkaRebalance</argument>
                                 <argument>io.strimzi.api.kafka.model.nodepool.KafkaNodePool</argument>
+                                <argument>io.strimzi.api.kafka.model.StrimziPodSet</argument>
                             </arguments>
                             <workingDirectory>${project.basedir}${file.separator}..${file.separator}documentation</workingDirectory>
                         </configuration>

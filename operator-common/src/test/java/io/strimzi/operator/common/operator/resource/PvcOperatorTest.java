@@ -12,10 +12,12 @@ import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
+import io.strimzi.operator.common.Reconciliation;
 import io.vertx.core.Vertx;
 import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
+import java.util.Map;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -102,5 +104,35 @@ public class PvcOperatorTest extends AbstractNamespacedResourceOperatorTest<Kube
         assertThat(current.getSpec().getAccessModes(), is(desired.getSpec().getAccessModes()));
         assertThat(current.getSpec().getSelector(), is(desired.getSpec().getSelector()));
         assertThat(current.getSpec().getVolumeName(), is(desired.getSpec().getVolumeName()));
+    }
+
+    @Test
+    public void testIgnoredAnnotationsInDiff()   {
+        PersistentVolumeClaim pvcWithDefaultAnnos = new PersistentVolumeClaimBuilder(resource("my-pvc"))
+                .editMetadata()
+                    .withAnnotations(Map.of("strimzi.io/delete-claim", "false"))
+                .endMetadata()
+                .build();
+        PersistentVolumeClaim pvcWithOtherAnnos = new PersistentVolumeClaimBuilder(pvcWithDefaultAnnos)
+                .editMetadata()
+                    .withAnnotations(Map.of("strimzi.io/delete-claim", "false",
+                            "pv.kubernetes.io/bound-by-controller", "my-controller",
+                            "some.annotation.io/key", "value"))
+                .endMetadata()
+                .build();
+        PersistentVolumeClaim pvcWithIgnoredAnnos = new PersistentVolumeClaimBuilder(pvcWithDefaultAnnos)
+                .editMetadata()
+                    .withAnnotations(Map.of("strimzi.io/delete-claim", "false",
+                            "pv.kubernetes.io/bound-by-controller", "my-controller",
+                            "volume.beta.kubernetes.io/storage-provisioner", "my-provisioner",
+                            "volume.kubernetes.io/storage-resizer", "my-resizer"))
+                .endMetadata()
+                .build();
+
+        PvcOperator op = createResourceOperations(vertx, mock(KubernetesClient.class));
+
+        assertThat(op.diff(Reconciliation.DUMMY_RECONCILIATION, "my-pvc", pvcWithDefaultAnnos, pvcWithDefaultAnnos).isEmpty(), is(true));
+        assertThat(op.diff(Reconciliation.DUMMY_RECONCILIATION, "my-pvc", pvcWithDefaultAnnos, pvcWithIgnoredAnnos).isEmpty(), is(true));
+        assertThat(op.diff(Reconciliation.DUMMY_RECONCILIATION, "my-pvc", pvcWithDefaultAnnos, pvcWithOtherAnnos).isEmpty(), is(false));
     }
 }
