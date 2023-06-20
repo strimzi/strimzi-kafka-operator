@@ -13,35 +13,35 @@ import java.util.function.Function;
  * @param <R> The type of the right hand case, which often represents the success case.
  */
 class Either<L, R> {
-    private final boolean left;
+    private final boolean right;
     private final Object value;
 
-    private Either(boolean left, Object value) {
-        this.left = left;
+    private Either(boolean right, Object value) {
+        this.right = right;
         this.value = value;
     }
 
-    static <X, Y> Either<X, Y> ofLeft(X x) {
-        return new Either<X, Y>(true, x);
+    static <L, R> Either<L, R> ofRight(R right) {
+        return new Either<L, R>(true, right);
     }
 
-    static <X, Y> Either<X, Y> ofRight(Y y) {
-        return new Either<X, Y>(false, y);
+    static <L, R> Either<L, R> ofLeft(L left) {
+        return new Either<L, R>(false, left);
     }
 
     @SuppressWarnings({"unchecked", "rawtypes"})
-    public <Z> Either<Z, R> mapLeft(Function<L, Z> fn) {
-        if (left) {
-            return ofLeft(fn.apply((L) value));
+    public <R2> Either<L, R2> mapRight(Function<R, R2> fn) {
+        if (right) {
+            return ofRight(fn.apply((R) value));
         } else {
             return (Either) this;
         }
     }
 
     @SuppressWarnings({"unchecked", "rawtypes"})
-    public <Z> Either<Z, R> flatMapLeft(Function<L, Either<Z, R>> fn) {
-        if (left) {
-            return fn.apply((L) value);
+    public <R2> Either<L, R2> flatMapRight(Function<R, Either<L, R2>> fn) {
+        if (right) {
+            return fn.apply((R) value);
         } else {
             return (Either) this;
         }
@@ -52,47 +52,47 @@ class Either<L, R> {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         Either<?, ?> either = (Either<?, ?>) o;
-        return left == either.left && Objects.equals(value, either.value);
+        return right == either.right && Objects.equals(value, either.value);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(left, value);
+        return Objects.hash(right, value);
     }
 
     @Override
     public String toString() {
-        if (left) {
-            return "Left(" +
-                    value +
-                    ')';
-        } else {
+        if (right) {
             return "Right(" +
                     value +
                     ')';
+        } else {
+            return "Left(" +
+                    value +
+                    ')';
         }
     }
 
-    public boolean isLeft() {
-        return this.left;
+    public boolean isRight() {
+        return this.right;
     }
 
-    public boolean isLeftEqual(L b) {
-        return this.left && Objects.equals(this.value, b);
-    }
-
-    @SuppressWarnings("unchecked")
-    public R right() {
-        if (left) {
-            throw new IllegalStateException();
-        }
-        return (R) this.value;
+    public boolean isRightEqual(R b) {
+        return this.right && Objects.equals(this.value, b);
     }
 
     @SuppressWarnings("unchecked")
     public L left() {
-        if (left) {
-            return (L) this.value;
+        if (right) {
+            throw new IllegalStateException();
+        }
+        return (L) this.value;
+    }
+
+    @SuppressWarnings("unchecked")
+    public R right() {
+        if (right) {
+            return (R) this.value;
         }
         throw new IllegalStateException();
     }

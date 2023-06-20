@@ -173,10 +173,10 @@ public class BatchingTopicController {
         }
     }
 
-    private Either<Boolean, TopicOperatorException> validate(ReconcilableTopic reconcilableTopic) {
-        var doReconcile = Either.<Boolean, TopicOperatorException>ofLeft(true);
-        doReconcile = doReconcile.flatMapLeft((Boolean x) -> x ? validateUnchangedTopicName(reconcilableTopic) : Either.ofLeft(false));
-        doReconcile = doReconcile.mapLeft((Boolean x) -> x ? rememberTopic(reconcilableTopic) : false);
+    private Either<TopicOperatorException, Boolean> validate(ReconcilableTopic reconcilableTopic) {
+        var doReconcile = Either.<TopicOperatorException, Boolean>ofRight(true);
+        doReconcile = doReconcile.flatMapRight((Boolean x) -> x ? validateUnchangedTopicName(reconcilableTopic) : Either.ofRight(false));
+        doReconcile = doReconcile.mapRight((Boolean x) -> x ? rememberTopic(reconcilableTopic) : false);
         return doReconcile;
     }
 
@@ -188,7 +188,7 @@ public class BatchingTopicController {
         return true;
     }
 
-    private Either<Boolean, TopicOperatorException> validateSingleManagingResource(ReconcilableTopic reconcilableTopic) {
+    private Either<TopicOperatorException, Boolean> validateSingleManagingResource(ReconcilableTopic reconcilableTopic) {
         String tn = reconcilableTopic.topicName();
         var existing = topics.get(tn);
         Ref thisRef = new Ref(reconcilableTopic.kt());
@@ -202,14 +202,14 @@ public class BatchingTopicController {
                     && (nextOldest == null || nextOldest.creationTime() != oldest.creationTime())) {
                 // This resource is the unique oldest, so it's OK.
                 // The others will eventually get reconciled and put into ResourceConflict
-                return Either.ofLeft(true);
+                return Either.ofRight(true);
             } else {
                 // Return an error putting this resource into ResourceConflict
-                return Either.ofRight(e);
+                return Either.ofLeft(e);
             }
 
         }
-        return Either.ofLeft(true);
+        return Either.ofRight(true);
     }
 
     /* test */ static boolean matchesSelector(Map<String, String> selector, Map<String, String> resourceLabels) {
@@ -225,14 +225,14 @@ public class BatchingTopicController {
         return resourceLabels.keySet().containsAll(selector.keySet());
     }
 
-    private static Either<Boolean, TopicOperatorException> validateUnchangedTopicName(ReconcilableTopic reconcilableTopic) {
+    private static Either<TopicOperatorException, Boolean> validateUnchangedTopicName(ReconcilableTopic reconcilableTopic) {
         if (reconcilableTopic.kt().getStatus() != null
                 && reconcilableTopic.kt().getStatus().getTopicName() != null
                 && !topicName(reconcilableTopic.kt()).equals(reconcilableTopic.kt().getStatus().getTopicName())) {
-            return Either.ofRight(new TopicOperatorException.NotSupported("Changing spec.topicName is not supported"
+            return Either.ofLeft(new TopicOperatorException.NotSupported("Changing spec.topicName is not supported"
             ));
         }
-        return Either.ofLeft(true);
+        return Either.ofRight(true);
     }
 
     private PartitionedByError<ReconcilableTopic, Void> createTopics(List<ReconcilableTopic> kts) {
@@ -258,9 +258,9 @@ public class BatchingTopicController {
         return partitionedByError(kts.stream().map(reconcilableTopic -> {
             try {
                 values.get(reconcilableTopic.topicName()).get();
-                return pair(reconcilableTopic, Either.ofLeft((null)));
+                return pair(reconcilableTopic, Either.ofRight((null)));
             } catch (ExecutionException e) {
-                return pair(reconcilableTopic, Either.ofRight(handleAdminException(e)));
+                return pair(reconcilableTopic, Either.ofLeft(handleAdminException(e)));
             } catch (InterruptedException e) {
                 throw new UncheckedInterruptedException(e);
             }
@@ -344,21 +344,21 @@ public class BatchingTopicController {
         }
     }
 
-    record PartitionedByError<K, X>(List<Pair<K, Either<X, TopicOperatorException>>> okList,
-                                    List<Pair<K, Either<X, TopicOperatorException>>> errorsList) {
+    record PartitionedByError<K, X>(List<Pair<K, Either<TopicOperatorException, X>>> okList,
+                                    List<Pair<K, Either<TopicOperatorException, X>>> errorsList) {
 
         public Stream<Pair<K, X>> ok() {
-            return okList.stream().map(x -> pair(x.getKey(), x.getValue().left()));
+            return okList.stream().map(x -> pair(x.getKey(), x.getValue().right()));
         }
 
         public Stream<Pair<K, TopicOperatorException>> errors() {
-            return errorsList.stream().map(x -> pair(x.getKey(), x.getValue().right()));
+            return errorsList.stream().map(x -> pair(x.getKey(), x.getValue().left()));
         }
 
     }
 
-    private static <K, X> PartitionedByError<K, X> partitionedByError(Stream<Pair<K, Either<X, TopicOperatorException>>> stream) {
-        var collect = stream.collect(Collectors.partitioningBy(x -> x.getValue().isLeft()));
+    private static <K, X> PartitionedByError<K, X> partitionedByError(Stream<Pair<K, Either<TopicOperatorException, X>>> stream) {
+        var collect = stream.collect(Collectors.partitioningBy(x -> x.getValue().isRight()));
         return new PartitionedByError<>(
                 collect.get(true),
                 collect.get(false));
@@ -408,11 +408,11 @@ public class BatchingTopicController {
             deleteInternal(toBeDeleted, false);
         }
 
-        Map<ReconcilableTopic, Either<Object, TopicOperatorException>> results = new HashMap<>();
+        Map<ReconcilableTopic, Either<TopicOperatorException, Object>> results = new HashMap<>();
 
         var partitionedByManaged = partitionedByDeletion.get(false).stream().collect(Collectors.partitioningBy(reconcilableTopic -> isManaged(reconcilableTopic.kt())));
         var unmanaged = partitionedByManaged.get(false);
-        addOrRemoveFinalizer(useFinalizer, unmanaged).forEach(rt -> results.put(rt, Either.ofLeft(null)));
+        addOrRemoveFinalizer(useFinalizer, unmanaged).forEach(rt -> results.put(rt, Either.ofRight(null)));
 
         List<ReconcilableTopic> mayNeedUpdate = validateManagedTopics(partitionedByManaged);
 
@@ -440,68 +440,68 @@ public class BatchingTopicController {
     private List<ReconcilableTopic> validateManagedTopics(Map<Boolean, List<ReconcilableTopic>> partitionedByManaged) {
         var mayNeedUpdate = partitionedByManaged.get(true).stream().filter(reconcilableTopic -> {
             var e = validate(reconcilableTopic);
-            if (e.isLeftEqual(false)) {
+            if (e.isRightEqual(false)) {
                 // Do nothing
                 return false;
-            } else if (e.isLeftEqual(true)) {
+            } else if (e.isRightEqual(true)) {
                 return true;
             } else {
-                updateStatusForException(reconcilableTopic, e.right());
+                updateStatusForException(reconcilableTopic, e.left());
                 return false;
             }
         }).filter(reconcilableTopic -> {
             var e = validateSingleManagingResource(reconcilableTopic);
-            if (e.isLeftEqual(false)) {
+            if (e.isRightEqual(false)) {
                 // Do nothing
                 return false;
-            } else if (e.isLeftEqual(true)) {
+            } else if (e.isRightEqual(true)) {
                 return true;
             } else {
-                updateStatusForException(reconcilableTopic, e.right());
+                updateStatusForException(reconcilableTopic, e.left());
                 return false;
             }
         }).toList();
         return mayNeedUpdate;
     }
 
-    private void createMissingTopics(Map<ReconcilableTopic, Either<Object, TopicOperatorException>> results, PartitionedByError<ReconcilableTopic, CurrentState> currentStatesOrError) {
+    private void createMissingTopics(Map<ReconcilableTopic, Either<TopicOperatorException, Object>> results, PartitionedByError<ReconcilableTopic, CurrentState> currentStatesOrError) {
         var partitionedByUnknownTopic = currentStatesOrError.errors().collect(Collectors.partitioningBy(pair -> {
             var ex = pair.getValue();
             return ex instanceof TopicOperatorException.KafkaError
                     && ex.getCause() instanceof UnknownTopicOrPartitionException;
         }));
-        partitionedByUnknownTopic.get(false).forEach(pair -> results.put(pair.getKey(), Either.ofRight(pair.getValue())));
+        partitionedByUnknownTopic.get(false).forEach(pair -> results.put(pair.getKey(), Either.ofLeft(pair.getValue())));
 
         if (!partitionedByUnknownTopic.get(true).isEmpty()) {
             var createResults = createTopics(partitionedByUnknownTopic.get(true).stream().map(Pair::getKey).toList());
-            createResults.ok().forEach(pair -> results.put(pair.getKey(), Either.ofLeft(null)));
-            createResults.errors().forEach(pair -> results.put(pair.getKey(), Either.ofRight(pair.getValue())));
+            createResults.ok().forEach(pair -> results.put(pair.getKey(), Either.ofRight(null)));
+            createResults.errors().forEach(pair -> results.put(pair.getKey(), Either.ofLeft(pair.getValue())));
         }
     }
 
-    private void updateStatuses(Map<ReconcilableTopic, Either<Object, TopicOperatorException>> results) {
+    private void updateStatuses(Map<ReconcilableTopic, Either<TopicOperatorException, Object>> results) {
         // Update statues with the overall results.
         var t0 = System.nanoTime();
         results.entrySet().stream().forEach(entry -> {
             var reconcilableTopic = entry.getKey();
             var either = entry.getValue();
-            if (either.isLeft()) {
+            if (either.isRight()) {
                 updateStatusOk(reconcilableTopic);
             } else {
-                updateStatusForException(reconcilableTopic, either.right());
+                updateStatusForException(reconcilableTopic, either.left());
             }
         });
         LOGGER.traceOp("Updated status of {} KafkaTopics in {}ns", results.size(), System.nanoTime() - t0);
     }
 
-    private void accumulateResults(Map<ReconcilableTopic, Either<Object, TopicOperatorException>> results, PartitionedByError<ReconcilableTopic, CurrentState> currentStatesOrError, PartitionedByError<ReconcilableTopic, Void> alterConfigsResults, PartitionedByError<ReconcilableTopic, Void> createPartitionsResults) {
+    private void accumulateResults(Map<ReconcilableTopic, Either<TopicOperatorException, Object>> results, PartitionedByError<ReconcilableTopic, CurrentState> currentStatesOrError, PartitionedByError<ReconcilableTopic, Void> alterConfigsResults, PartitionedByError<ReconcilableTopic, Void> createPartitionsResults) {
         // add the successes to the results
-        alterConfigsResults.ok().forEach(pair -> results.put(pair.getKey(), Either.ofLeft(null)));
-        createPartitionsResults.ok().forEach(pair -> results.put(pair.getKey(), Either.ofLeft(null)));
+        alterConfigsResults.ok().forEach(pair -> results.put(pair.getKey(), Either.ofRight(null)));
+        createPartitionsResults.ok().forEach(pair -> results.put(pair.getKey(), Either.ofRight(null)));
 
         // add to errors (potentially overwriting some successes, e.g. if configs succeeded but partitions failed)
-        alterConfigsResults.errors().forEach(pair -> results.put(pair.getKey(), Either.ofRight(pair.getValue())));
-        createPartitionsResults.errors().forEach(pair -> results.put(pair.getKey(), Either.ofRight(pair.getValue())));
+        alterConfigsResults.errors().forEach(pair -> results.put(pair.getKey(), Either.ofLeft(pair.getValue())));
+        createPartitionsResults.errors().forEach(pair -> results.put(pair.getKey(), Either.ofLeft(pair.getValue())));
         var apparentlyDifferentRf = currentStatesOrError.ok().filter(pair -> {
             var reconcilableTopic = pair.getKey();
             var currentState = pair.getValue();
@@ -510,16 +510,16 @@ public class BatchingTopicController {
 
         var actuallyDifferentRf = partitionedByError(filterByReassignmentTargetReplicas(apparentlyDifferentRf).stream());
         actuallyDifferentRf.errors().forEach(pair -> {
-            results.put(pair.getKey(), Either.ofRight(pair.getValue()));
+            results.put(pair.getKey(), Either.ofLeft(pair.getValue()));
         });
         actuallyDifferentRf.ok().forEach(pair -> {
             var reconcilableTopic = pair.getKey();
             var partitions = pair.getValue().partitionsWithDifferentRfThan(reconcilableTopic.kt().getSpec().getReplicas());
-            results.put(reconcilableTopic, Either.ofRight(new TopicOperatorException.NotSupported("Replication factor change not supported, but required for partitions " + partitions)));
+            results.put(reconcilableTopic, Either.ofLeft(new TopicOperatorException.NotSupported("Replication factor change not supported, but required for partitions " + partitions)));
         });
     }
 
-    private static List<Pair<ReconcilableTopic, Collection<AlterConfigOp>>> configChanges(Map<ReconcilableTopic, Either<Object, TopicOperatorException>> results, PartitionedByError<ReconcilableTopic, CurrentState> currentStatesOrError) {
+    private static List<Pair<ReconcilableTopic, Collection<AlterConfigOp>>> configChanges(Map<ReconcilableTopic, Either<TopicOperatorException, Object>> results, PartitionedByError<ReconcilableTopic, CurrentState> currentStatesOrError) {
         // Determine config changes
         Map<Boolean, List<Pair<ReconcilableTopic, Collection<AlterConfigOp>>>> alterConfigs = currentStatesOrError.ok().map(pair -> {
             var reconcilableTopic = pair.getKey();
@@ -529,12 +529,12 @@ public class BatchingTopicController {
         }).collect(Collectors.partitioningBy(pair -> pair.getValue().isEmpty()));
 
         // add topics which don't require configs changes to the results (may be overwritten later)
-        alterConfigs.get(true).forEach(pair -> results.put(pair.getKey(), Either.ofLeft(null)));
+        alterConfigs.get(true).forEach(pair -> results.put(pair.getKey(), Either.ofRight(null)));
         var someAlterConfigs = alterConfigs.get(false);
         return someAlterConfigs;
     }
 
-    private static List<Pair<ReconcilableTopic, NewPartitions>> partitionChanges(Map<ReconcilableTopic, Either<Object, TopicOperatorException>> results, PartitionedByError<ReconcilableTopic, CurrentState> currentStatesOrError) {
+    private static List<Pair<ReconcilableTopic, NewPartitions>> partitionChanges(Map<ReconcilableTopic, Either<TopicOperatorException, Object>> results, PartitionedByError<ReconcilableTopic, CurrentState> currentStatesOrError) {
         // Determine partition changes
         PartitionedByError<ReconcilableTopic, NewPartitions> newPartitionsOrError = partitionedByError(currentStatesOrError.ok().map(pair -> {
             var reconcilableTopic = pair.getKey();
@@ -542,17 +542,17 @@ public class BatchingTopicController {
             // determine config changes
             return BatchingTopicController.pair(reconcilableTopic, buildNewPartitions(reconcilableTopic.reconciliation(), reconcilableTopic.kt(), currentState.numPartitions()));
         }));
-        newPartitionsOrError.errors().forEach(pair -> results.put(pair.getKey(), Either.ofRight(pair.getValue())));
+        newPartitionsOrError.errors().forEach(pair -> results.put(pair.getKey(), Either.ofLeft(pair.getValue())));
 
         var createPartitions = newPartitionsOrError.ok().collect(
                 Collectors.partitioningBy(pair -> pair.getValue() == null));
         // add topics which don't require partitions changes to the results (may be overwritten later)
-        createPartitions.get(true).forEach(pair -> results.put(pair.getKey(), Either.ofLeft(null)));
+        createPartitions.get(true).forEach(pair -> results.put(pair.getKey(), Either.ofRight(null)));
         var someCreatePartitions = createPartitions.get(false);
         return someCreatePartitions;
     }
 
-    private List<Pair<ReconcilableTopic, Either<CurrentState, TopicOperatorException>>> filterByReassignmentTargetReplicas(
+    private List<Pair<ReconcilableTopic, Either<TopicOperatorException, CurrentState>>> filterByReassignmentTargetReplicas(
             List<Pair<ReconcilableTopic, CurrentState>> apparentlyDifferentRfTopics) {
         if (apparentlyDifferentRfTopics.isEmpty()) {
             return List.of();
@@ -576,7 +576,7 @@ public class BatchingTopicController {
         } catch (ExecutionException e) {
             LOGGER.traceOp("Admin.listPartitionReassignments({}) took {}ns to fail with {}", apparentDifferentRfPartitions, System.nanoTime() - t0, e);
             return apparentlyDifferentRfTopics.stream().map(pair ->
-                    pair(pair.getKey, Either.<CurrentState, TopicOperatorException>ofRight(handleAdminException(e)))).toList();
+                    pair(pair.getKey, Either.<TopicOperatorException, CurrentState>ofLeft(handleAdminException(e)))).toList();
         } catch (InterruptedException e) {
             throw new UncheckedInterruptedException(e);
         }
@@ -601,7 +601,7 @@ public class BatchingTopicController {
                 return !Objects.equals(targetRf, desiredRf);
             });
             return b;
-        }).map(pair -> pair(pair.getKey, Either.<CurrentState, TopicOperatorException>ofLeft(pair.getValue))).toList();
+        }).map(pair -> pair(pair.getKey, Either.<TopicOperatorException, CurrentState>ofRight(pair.getValue))).toList();
     }
 
     // A pair of values. We can't use Map.entry because it forbids null values, which we want to allow.
@@ -629,11 +629,11 @@ public class BatchingTopicController {
             });
         }
         var alterConfigsResult = acr.values();
-        Stream<Pair<ReconcilableTopic, Either<Void, TopicOperatorException>>> entryStream = someAlterConfigs.stream().map(entry -> {
+        Stream<Pair<ReconcilableTopic, Either<TopicOperatorException, Void>>> entryStream = someAlterConfigs.stream().map(entry -> {
             try {
-                return pair(entry.getKey(), Either.ofLeft(alterConfigsResult.get(topicConfigResource(entry.getKey().topicName())).get()));
+                return pair(entry.getKey(), Either.ofRight(alterConfigsResult.get(topicConfigResource(entry.getKey().topicName())).get()));
             } catch (ExecutionException e) {
-                return pair(entry.getKey(), Either.ofRight(handleAdminException(e)));
+                return pair(entry.getKey(), Either.ofLeft(handleAdminException(e)));
             } catch (InterruptedException e) {
                 throw new UncheckedInterruptedException(e);
             }
@@ -662,9 +662,9 @@ public class BatchingTopicController {
         var entryStream = someCreatePartitions.stream().map(entry -> {
             try {
                 createPartitionsResult.get(entry.getKey().topicName()).get();
-                return pair(entry.getKey(), Either.<Void, TopicOperatorException>ofLeft(null));
+                return pair(entry.getKey(), Either.<TopicOperatorException, Void>ofRight(null));
             } catch (ExecutionException e) {
-                return pair(entry.getKey(), Either.<Void, TopicOperatorException>ofRight(handleAdminException(e)));
+                return pair(entry.getKey(), Either.<TopicOperatorException, Void>ofLeft(handleAdminException(e)));
             } catch (InterruptedException e) {
                 throw new UncheckedInterruptedException(e);
             }
@@ -740,9 +740,9 @@ public class BatchingTopicController {
                 throw new UncheckedInterruptedException(e);
             }
             if (exception != null) {
-                return pair(reconcilableTopic, Either.ofRight(handleAdminException(exception)));
+                return pair(reconcilableTopic, Either.ofLeft(handleAdminException(exception)));
             } else {
-                return pair(reconcilableTopic, Either.ofLeft(new CurrentState(description, configs)));
+                return pair(reconcilableTopic, Either.ofRight(new CurrentState(description, configs)));
             }
         }));
     }
@@ -765,14 +765,14 @@ public class BatchingTopicController {
         var partitionedByManaged = batch.stream().filter(reconcilableTopic -> {
             if (isManaged(reconcilableTopic.kt())) {
                 var e = validate(reconcilableTopic);
-                if (e.isLeftEqual(true)) {
+                if (e.isRightEqual(true)) {
                     // adminDelete, removeFinalizer, forgetTopic, updateStatus
                     return true;
-                } else if (e.isLeftEqual(false)) {
+                } else if (e.isRightEqual(false)) {
                     // do nothing
                     return false;
                 } else {
-                    updateStatusForException(reconcilableTopic, e.right());
+                    updateStatusForException(reconcilableTopic, e.left());
                     return false;
                 }
             } else {
@@ -832,12 +832,12 @@ public class BatchingTopicController {
         var deleteResult = partitionedByError(batch.stream().map(reconcilableTopic -> {
             try {
                 futuresMap.get(reconcilableTopic.topicName()).get();
-                return pair(reconcilableTopic, Either.ofLeft(null));
+                return pair(reconcilableTopic, Either.ofRight(null));
             } catch (ExecutionException e) {
                 if (e.getCause() instanceof UnknownTopicOrPartitionException) {
-                    return pair(reconcilableTopic, Either.ofLeft(null));
+                    return pair(reconcilableTopic, Either.ofRight(null));
                 } else {
-                    return pair(reconcilableTopic, Either.ofRight(handleAdminException(e)));
+                    return pair(reconcilableTopic, Either.ofLeft(handleAdminException(e)));
                 }
             } catch (InterruptedException e) {
                 throw new UncheckedInterruptedException(e);
@@ -861,17 +861,17 @@ public class BatchingTopicController {
         });
     }
 
-    private static Either<NewPartitions, TopicOperatorException> buildNewPartitions(Reconciliation reconciliation, KafkaTopic kt, int currentNumPartitions) {
+    private static Either<TopicOperatorException, NewPartitions> buildNewPartitions(Reconciliation reconciliation, KafkaTopic kt, int currentNumPartitions) {
         Integer requested = kt.getSpec().getPartitions();
         if (requested > currentNumPartitions) {
             LOGGER.debugCr(reconciliation, "Partition increase from {} to {}", currentNumPartitions, requested);
-            return Either.ofLeft(NewPartitions.increaseTo(requested));
+            return Either.ofRight(NewPartitions.increaseTo(requested));
         } else if (requested < currentNumPartitions) {
             LOGGER.debugCr(reconciliation, "Partition decrease from {} to {}", currentNumPartitions, requested);
-            return Either.ofRight(new TopicOperatorException.NotSupported("Decreasing partitions not supported"));
+            return Either.ofLeft(new TopicOperatorException.NotSupported("Decreasing partitions not supported"));
         } else {
             LOGGER.debugCr(reconciliation, "No partition change");
-            return Either.ofLeft(null);
+            return Either.ofRight(null);
         }
     }
 

@@ -14,56 +14,56 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class EitherTest {
 
-    private final Either<Integer, String> left = Either.<Integer, String>ofLeft(1);
-    private final Either<Integer, String> right = Either.<Integer, String>ofRight("A");
+    private final Either<String, Integer> right = Either.ofRight(1);
+    private final Either<String, Integer> left = Either.ofLeft("A");
 
     @Test
     void testAccessors() {
-        assertTrue(left.isLeft());
-        assertFalse(right.isLeft());
-        assertEquals(1, left.left());
-        assertThrows(IllegalStateException.class, () -> left.right());
-        assertEquals("A", right.right());
-        assertThrows(IllegalStateException.class, () -> right.left());
+        assertTrue(right.isRight());
+        assertFalse(left.isRight());
+        assertEquals(1, right.right());
+        assertThrows(IllegalStateException.class, right::left);
+        assertEquals("A", left.left());
+        assertThrows(IllegalStateException.class, left::right);
     }
 
     @Test
     void testEquals() {
-        assertEquals(Either.<Integer, String>ofLeft(1), left);
-        assertNotEquals(Either.<Integer, String>ofLeft(2), left);
-        assertEquals(Either.<Integer, String>ofLeft(1).hashCode(), left.hashCode());
-        assertNotEquals(Either.<Integer, String>ofLeft(2).hashCode(), left.hashCode());
-        assertTrue(left.isLeftEqual(1));
-        assertFalse(left.isLeftEqual(2));
+        assertEquals(Either.<String, Integer>ofRight(1), right);
+        assertNotEquals(Either.<String, Integer>ofRight(2), right);
+        assertEquals(Either.<String, Integer>ofRight(1).hashCode(), right.hashCode());
+        assertNotEquals(Either.<String, Integer>ofRight(2).hashCode(), right.hashCode());
+        assertTrue(right.isRightEqual(1));
+        assertFalse(right.isRightEqual(2));
 
-        assertEquals(Either.<Integer, String>ofRight("A"), right);
-        assertNotEquals(Either.<Integer, String>ofRight("B"), right);
-        assertEquals(Either.<Integer, String>ofRight("A").hashCode(), right.hashCode());
-        assertNotEquals(Either.<Integer, String>ofRight("B").hashCode(), right.hashCode());
-        assertFalse(right.isLeftEqual(1));
-        assertFalse(right.isLeftEqual(2));
+        assertEquals(Either.<String, Integer>ofLeft("A"), left);
+        assertNotEquals(Either.<String, Integer>ofLeft("B"), left);
+        assertEquals(Either.<String, Integer>ofLeft("A").hashCode(), left.hashCode());
+        assertNotEquals(Either.<String, Integer>ofLeft("B").hashCode(), left.hashCode());
+        assertFalse(left.isRightEqual(1));
+        assertFalse(left.isRightEqual(2));
     }
 
     @Test
     void testMapLeft() {
-        var mappedLeft = left.mapLeft(i -> i + 1);
-        var mappedRight = right.mapLeft(i -> i + 1);
-        assertEquals(Either.<Integer, String>ofLeft(2), mappedLeft);
-        assertEquals(right, mappedRight);
+        var mappedRight = right.mapRight(i -> i + 1);
+        var mappedLeft = left.mapRight(i -> i + 1);
+        assertEquals(Either.<String, Integer>ofRight(2), mappedRight);
+        assertEquals(left, mappedLeft);
     }
 
     @Test
     void testFlatMapLeft() {
-        var mappedLeft = left.flatMapLeft(i -> Either.ofLeft(i + 1));
-        var mappedRight = right.flatMapLeft(i -> Either.<Integer, String>ofRight("B"));
-        assertEquals(Either.<Integer, String>ofLeft(2), mappedLeft);
-        assertEquals(right, mappedRight);
+        var mappedRight = right.flatMapRight(i -> Either.ofRight(i + 1));
+        var mappedLeft = left.flatMapRight(i -> Either.ofLeft("B"));
+        assertEquals(Either.ofRight(2), mappedRight);
+        assertEquals(left, mappedLeft);
     }
 
     @Test
     void testToString() {
-        assertEquals("Left(1)", left.toString());
-        assertEquals("Right(A)", right.toString());
+        assertEquals("Right(1)", right.toString());
+        assertEquals("Left(A)", left.toString());
     }
 
 }
