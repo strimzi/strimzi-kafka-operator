@@ -74,6 +74,7 @@ If you are trying Kafka in KRaft mode, you can also enable the `KafkaNodePools` 
 Currently, the KRaft mode in Strimzi has the following major limitations:
 
 * Moving from Kafka clusters with ZooKeeper to KRaft clusters or the other way around is not supported.
+* Controller-only nodes cannot undergo rolling updates or be updated individually.
 * Upgrades and downgrades of Apache Kafka versions or the Strimzi operator are not supported.
   Users might need to delete the cluster, upgrade the operator and deploy a new Kafka cluster.
 * The Topic Operator is not supported.
