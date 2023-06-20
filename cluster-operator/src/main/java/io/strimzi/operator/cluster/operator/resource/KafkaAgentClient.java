@@ -45,6 +45,7 @@ class KafkaAgentClient {
     private String cluster;
     private Secret clusterCaCertSecret;
     private Secret coKeySecret;
+    private HttpClient httpClient;
 
     KafkaAgentClient(Reconciliation reconciliation, String cluster, String namespace, Secret clusterCaCertSecret, Secret coKeySecret) {
         this.reconciliation = reconciliation;
@@ -54,40 +55,47 @@ class KafkaAgentClient {
         this.coKeySecret = coKeySecret;
     }
 
-    protected String doGet(URI uri) {
-        try {
-            SSLContext sslContext = SSLContext.getInstance("TLSv1.3");
-            KeyStore trustStore = KeyStore.getInstance("PKCS12");
-            trustStore.load(new ByteArrayInputStream(
-                Util.decodeFromSecret(clusterCaCertSecret, "ca.p12")),
+    private HttpClient createHttpClient() throws GeneralSecurityException, IOException {
+
+        SSLContext sslContext = SSLContext.getInstance("TLSv1.3");
+        KeyStore trustStore = KeyStore.getInstance("PKCS12");
+        trustStore.load(new ByteArrayInputStream(
+                        Util.decodeFromSecret(clusterCaCertSecret, "ca.p12")),
                 new String(Util.decodeFromSecret(clusterCaCertSecret, "ca.password"), StandardCharsets.UTF_8).toCharArray());
 
-            String trustManagerFactoryAlgorithm = TrustManagerFactory.getDefaultAlgorithm();
-            TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance(trustManagerFactoryAlgorithm);
-            trustManagerFactory.init(trustStore);
-            char[] keyPassword = new String(Util.decodeFromSecret(coKeySecret, "cluster-operator.password"), StandardCharsets.UTF_8).toCharArray();
-            KeyStore coKeyStore = KeyStore.getInstance("PKCS12");
-            coKeyStore.load(new ByteArrayInputStream(
-                Util.decodeFromSecret(coKeySecret, "cluster-operator.p12")),
+        String trustManagerFactoryAlgorithm = TrustManagerFactory.getDefaultAlgorithm();
+        TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance(trustManagerFactoryAlgorithm);
+        trustManagerFactory.init(trustStore);
+        char[] keyPassword = new String(Util.decodeFromSecret(coKeySecret, "cluster-operator.password"), StandardCharsets.UTF_8).toCharArray();
+        KeyStore coKeyStore = KeyStore.getInstance("PKCS12");
+        coKeyStore.load(new ByteArrayInputStream(
+                        Util.decodeFromSecret(coKeySecret, "cluster-operator.p12")),
                 keyPassword
-            );
+        );
 
-            String keyManagerFactoryAlgorithm = KeyManagerFactory.getDefaultAlgorithm();
-            KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance(keyManagerFactoryAlgorithm);
-            keyManagerFactory.init(coKeyStore, keyPassword);
+        String keyManagerFactoryAlgorithm = KeyManagerFactory.getDefaultAlgorithm();
+        KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance(keyManagerFactoryAlgorithm);
+        keyManagerFactory.init(coKeyStore, keyPassword);
 
-            sslContext.init(keyManagerFactory.getKeyManagers(), trustManagerFactory.getTrustManagers(), null);
+        sslContext.init(keyManagerFactory.getKeyManagers(), trustManagerFactory.getTrustManagers(), null);
 
+        return HttpClient.newBuilder()
+                .sslContext(sslContext)
+                .build();
+    }
 
+    protected String doGet(URI uri) {
+        try {
             HttpRequest req = HttpRequest.newBuilder()
                     .uri(uri)
                     .GET()
                     .build();
 
-            var response =  HttpClient.newBuilder()
-                    .sslContext(sslContext)
-                    .build()
-                    .send(req, HttpResponse.BodyHandlers.ofString());
+            if (httpClient == null) {
+                httpClient = createHttpClient();
+            }
+
+            var response = httpClient.send(req, HttpResponse.BodyHandlers.ofString());
             if (response.statusCode() != 200) {
                 throw new RuntimeException("Unexpected HTTP status code: " + response.statusCode());
             }
@@ -109,7 +117,7 @@ class KafkaAgentClient {
         BrokerState brokerstate = new BrokerState(-1, null);
         String host = DnsNameGenerator.podDnsName(namespace, KafkaResources.brokersServiceName(cluster), podName);
         try {
-            URI uri = new URI("https://" +  host + ":" + BROKER_STATE_HTTPS_PORT + BROKER_STATE_REST_PATH);
+            URI uri = new URI("https", null, host, BROKER_STATE_HTTPS_PORT, BROKER_STATE_REST_PATH, null, null);
             brokerstate = MAPPER.readValue(doGet(uri), BrokerState.class);
         } catch (JsonProcessingException e) {
             LOGGER.warnCr(reconciliation, "Failed to parse broker state", e);

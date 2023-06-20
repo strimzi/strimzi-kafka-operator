@@ -12,7 +12,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 /**
  * Java representation of the JSON response from the /v1/broker-state endpoint of the KafkaAgent
  */
-public class BrokerState {
+class BrokerState {
     private static final int BROKER_RECOVERY_STATE = 2;
 
     private int code;
@@ -31,7 +31,7 @@ public class BrokerState {
     }
 
     /**
-     * Integer that represents the broker state
+     * Integer that represents the broker state, or -1 if there was an error when getting the broker state.
      * @return integer result
      */
     public int code() {
