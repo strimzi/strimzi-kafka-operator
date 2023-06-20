@@ -59,7 +59,6 @@ dashboards:
   labelValue: "1" # this is the default value from the grafana chart
   annotations: {}
   extraLabels: {}
-  datasource: "${DS_PROMETHEUS}"  # set to empty string to use default source
 
 # Docker images that operator uses to provision various components of Strimzi. To use your own registry prefix the
 # repository name with your registry URL.
