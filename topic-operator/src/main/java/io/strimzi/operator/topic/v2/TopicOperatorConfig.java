@@ -222,26 +222,26 @@ record TopicOperatorConfig(
     public String toString() {
         String mask = "********";
         return "TopicOperatorConfig{" +
-                "namespace='" + namespace + '\'' +
-                ", labelSelector=" + labelSelector +
-                ", bootstrapServers='" + bootstrapServers + '\'' +
-                ", clientId='" + clientId + '\'' +
-                ", fullReconciliationIntervalMs=" + fullReconciliationIntervalMs +
-                ", tlsEnabled=" + tlsEnabled +
-                ", truststoreLocation='" + truststoreLocation + '\'' +
-                ", truststorePassword='" + mask + '\'' +
-                ", keystoreLocation='" + keystoreLocation + '\'' +
-                ", keystorePassword='" + mask + '\'' +
-                ", sslEndpointIdentificationAlgorithm='" + sslEndpointIdentificationAlgorithm + '\'' +
-                ", saslEnabled=" + saslEnabled +
-                ", saslMechanism='" + saslMechanism + '\'' +
-                ", saslUsername='" + saslUsername + '\'' +
-                ", saslPassword='" + mask + '\'' +
-                ", securityProtocol='" + securityProtocol + '\'' +
-                ", useFinalizer=" + useFinalizer +
-                ", maxQueueSize=" + maxQueueSize +
-                ", maxBatchSize=" + maxBatchSize +
-                ", maxBatchLingerMs=" + maxBatchLingerMs +
+                "\n\tnamespace='" + namespace + '\'' +
+                "\n\tlabelSelector=" + labelSelector +
+                "\n\tbootstrapServers='" + bootstrapServers + '\'' +
+                "\n\tclientId='" + clientId + '\'' +
+                "\n\tfullReconciliationIntervalMs=" + fullReconciliationIntervalMs +
+                "\n\ttlsEnabled=" + tlsEnabled +
+                "\n\ttruststoreLocation='" + truststoreLocation + '\'' +
+                "\n\ttruststorePassword='" + mask + '\'' +
+                "\n\tkeystoreLocation='" + keystoreLocation + '\'' +
+                "\n\tkeystorePassword='" + mask + '\'' +
+                "\n\tsslEndpointIdentificationAlgorithm='" + sslEndpointIdentificationAlgorithm + '\'' +
+                "\n\tsaslEnabled=" + saslEnabled +
+                "\n\tsaslMechanism='" + saslMechanism + '\'' +
+                "\n\tsaslUsername='" + saslUsername + '\'' +
+                "\n\tsaslPassword='" + mask + '\'' +
+                "\n\tsecurityProtocol='" + securityProtocol + '\'' +
+                "\n\tuseFinalizer=" + useFinalizer +
+                "\n\tmaxQueueSize=" + maxQueueSize +
+                "\n\tmaxBatchSize=" + maxBatchSize +
+                "\n\tmaxBatchLingerMs=" + maxBatchLingerMs +
                 '}';
     }
 }
