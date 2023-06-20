@@ -4,10 +4,8 @@
  */
 package io.strimzi.operator.user.operator;
 
-import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.ListOptionsBuilder;
-import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.api.kafka.Crds;
@@ -425,9 +423,7 @@ public class KafkaUserOperator {
             .reconcile(reconciliation, reconciliation.namespace(), user.getSecretName(), currentSecret, user.generateSecret())
             .whenComplete((result, error) -> {
                 if (error == null) {
-                    result.resourceOpt()
-                        .map(HasMetadata::getMetadata)
-                        .map(ObjectMeta::getName)
+                    result.resourceOpt().map(secret -> secret.getMetadata().getName())
                         .ifPresent(userStatus::setSecret);
                 }
             });
