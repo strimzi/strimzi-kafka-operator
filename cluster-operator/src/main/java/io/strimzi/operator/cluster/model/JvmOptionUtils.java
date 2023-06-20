@@ -160,7 +160,7 @@ public final class JvmOptionUtils  {
     /**
      * Converts JVM option into a JVM flag.
      *
-     * @param jvmOption JVM option to convert with flag name placed in th eky
+     * @param jvmOption JVM option to convert with flag name placed in the key
      * @return JVM flag e.g. -XX+PrintNMTStatistics
      */
     private static String toJvmPerformanceFlag(Map.Entry<String, String> jvmOption) {
