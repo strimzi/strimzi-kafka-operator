@@ -135,7 +135,7 @@ jobs:
     trigger: commit
     branch: main
     # Suffix for job name
-    identifier: "acceptance"
+    identifier: "sanity"
     targets:
       # This target is not used at all by our tests, but it has to be one of the available - https://packit.dev/docs/configuration/#aliases
       - centos-stream-9-x86_64
@@ -145,4 +145,4 @@ jobs:
     tf_extra_params:
       test:
         fmf:
-          name: acceptance
+          name: sanity

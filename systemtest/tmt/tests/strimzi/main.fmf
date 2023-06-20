@@ -71,3 +71,11 @@ adjust:
   tier: 2
   environment+:
     TEST_PROFILE: acceptance
+
+/sanity:
+  summary: Run sanity strimzi test suite
+  tags: [strimzi, kafka, sanity]
+  duration: 5h
+  tier: 2
+  environment+:
+    TEST_PROFILE: sanity
