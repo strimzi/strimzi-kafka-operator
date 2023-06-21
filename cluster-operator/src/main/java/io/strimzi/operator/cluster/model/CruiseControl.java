@@ -26,6 +26,7 @@ import io.strimzi.api.kafka.model.JvmOptions;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaClusterSpec;
 import io.strimzi.api.kafka.model.KafkaResources;
+import io.strimzi.api.kafka.model.balancing.ApiUser;
 import io.strimzi.api.kafka.model.storage.Storage;
 import io.strimzi.api.kafka.model.template.CruiseControlTemplate;
 import io.strimzi.api.kafka.model.template.DeploymentTemplate;
@@ -34,6 +35,8 @@ import io.strimzi.api.kafka.model.template.PodTemplate;
 import io.strimzi.certs.CertAndKey;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.model.cruisecontrol.Capacity;
+import io.strimzi.operator.cluster.model.cruisecontrol.api.ApiUsersValidator;
+import io.strimzi.operator.cluster.model.cruisecontrol.api.CruiseControlRestApiUtil;
 import io.strimzi.operator.cluster.model.logging.LoggingModel;
 import io.strimzi.operator.cluster.model.logging.SupportsLogging;
 import io.strimzi.operator.cluster.model.metrics.MetricsModel;
@@ -49,8 +52,10 @@ import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -61,6 +66,7 @@ import java.util.Set;
 import static io.strimzi.api.kafka.model.template.DeploymentStrategy.ROLLING_UPDATE;
 import static io.strimzi.operator.cluster.model.CruiseControlConfiguration.CRUISE_CONTROL_DEFAULT_ANOMALY_DETECTION_GOALS;
 import static io.strimzi.operator.cluster.model.CruiseControlConfiguration.CRUISE_CONTROL_GOALS;
+import static io.strimzi.operator.cluster.model.ModelUtils.asListOrEmptyList;
 import static io.strimzi.operator.cluster.model.VolumeUtils.createConfigMapVolume;
 import static io.strimzi.operator.cluster.model.VolumeUtils.createSecretVolume;
 import static io.strimzi.operator.cluster.model.VolumeUtils.createVolumeMount;
@@ -73,20 +79,25 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
     protected static final String CRUISE_CONTROL_METRIC_REPORTER = "com.linkedin.kafka.cruisecontrol.metricsreporter.CruiseControlMetricsReporter";
     protected static final String CRUISE_CONTROL_CONTAINER_NAME = "cruise-control";
 
-    // Fields used for Cruise Control API authentication
     /**
-     * Name of the admin user
+     * API user used exclusively by KafkaRebalance Operator for interacting with
+     * Cruise Control REST API.
      */
     public static final String API_ADMIN_NAME = "admin";
-    private static final String API_ADMIN_ROLE = "ADMIN";
-    protected static final String API_USER_NAME = "user";
-    private static final String API_USER_ROLE = "USER";
+    /**
+     * API user used exclusively by KafkaRebalance Operator for checking the health
+     * of Cruise Control REST API.
+     */
+    public static final String API_HEALTHCHECK_NAME = "healthcheck";
+
+    /**
+     * Default key for generated password for user API secret
+     */
+    public static final String API_USER_KEY_PASSWORD = "password";
 
     /**
      * Key for the admin user password
      */
-    public static final String API_ADMIN_PASSWORD_KEY = COMPONENT_TYPE + ".apiAdminPassword";
-    private static final String API_USER_PASSWORD_KEY = COMPONENT_TYPE + ".apiUserPassword";
     private static final String API_AUTH_FILE_KEY = COMPONENT_TYPE + ".apiAuthFile";
     protected static final String API_HEALTHCHECK_PATH = "/kafkacruisecontrol/state";
 
@@ -110,6 +121,8 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
     private String minInsyncReplicas = "1";
     private boolean sslEnabled;
     private boolean authEnabled;
+    private List<ApiUser> apiUsers;
+    private List<Secret> apiUserSecrets = new ArrayList<>();
     @SuppressFBWarnings({"UWF_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR"}) // This field is initialized in the fromCrd method
     protected Capacity capacity;
     @SuppressFBWarnings({"UWF_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR"}) // This field is initialized in the fromCrd method
@@ -134,7 +147,7 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
 
     protected static final String ENV_VAR_API_SSL_ENABLED = "STRIMZI_CC_API_SSL_ENABLED";
     protected static final String ENV_VAR_API_AUTH_ENABLED = "STRIMZI_CC_API_AUTH_ENABLED";
-    protected static final String ENV_VAR_API_USER = "API_USER";
+    protected static final String ENV_VAR_API_HEALTHCHECK_NAME = "API_HEALTHCHECK";
     protected static final String ENV_VAR_API_PORT = "API_PORT";
     protected static final String ENV_VAR_API_HEALTHCHECK_PATH = "API_HEALTHCHECK_PATH";
 
@@ -204,6 +217,10 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
             CruiseControlConfiguration ccConfiguration = result.configuration;
             result.sslEnabled = ccConfiguration.isApiSslEnabled();
             result.authEnabled = ccConfiguration.isApiAuthEnabled();
+
+            List<ApiUser> apiUsers = asListOrEmptyList(ccSpec.getApiUsers());
+            ApiUsersValidator.validate(reconciliation, apiUsers);
+            result.apiUsers = apiUsers;
 
             KafkaConfiguration configuration = new KafkaConfiguration(reconciliation, kafkaClusterSpec.getConfig().entrySet());
             if (configuration.getConfigOption(MIN_INSYNC_REPLICAS) != null) {
@@ -317,7 +334,7 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
         return List.of(VolumeUtils.createTempDirVolume(templatePod),
                 createSecretVolume(TLS_CC_CERTS_VOLUME_NAME, CruiseControlResources.secretName(cluster), isOpenShift),
                 createSecretVolume(TLS_CA_CERTS_VOLUME_NAME, AbstractModel.clusterCaCertSecretName(cluster), isOpenShift),
-                createSecretVolume(API_AUTH_CONFIG_VOLUME_NAME, CruiseControlResources.apiSecretName(cluster), isOpenShift),
+                createSecretVolume(API_AUTH_CONFIG_VOLUME_NAME, CruiseControlResources.apiAuthConfigSecretName(cluster), isOpenShift),
                 createConfigMapVolume(LOG_AND_METRICS_CONFIG_VOLUME_NAME, CruiseControlResources.logAndMetricsConfigMapName(cluster)));
     }
 
@@ -392,7 +409,7 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
 
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_API_SSL_ENABLED,  String.valueOf(this.sslEnabled)));
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_API_AUTH_ENABLED,  String.valueOf(this.authEnabled)));
-        varList.add(ContainerUtils.createEnvVar(ENV_VAR_API_USER,  API_USER_NAME));
+        varList.add(ContainerUtils.createEnvVar(ENV_VAR_API_HEALTHCHECK_NAME, API_HEALTHCHECK_NAME));
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_API_PORT,  String.valueOf(REST_API_PORT)));
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_API_HEALTHCHECK_PATH, API_HEALTHCHECK_PATH));
 
@@ -413,29 +430,19 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
     }
 
     /**
-     * Creates Cruise Control API auth usernames, passwords, and credentials file
+     * Generate a Secret containing a password for Cruise Control API user.
+     * Returns null otherwise.
      *
-     * @return Map containing Cruise Control API auth credentials
+     * @param name Name of the API user secret
+     *
+     * @return The secret.
      */
-    public static Map<String, String> generateCruiseControlApiCredentials() {
+    public Secret generateApiUserSecret(String name)  {
         PasswordGenerator passwordGenerator = new PasswordGenerator(16);
-        String apiAdminPassword = passwordGenerator.generate();
-        String apiUserPassword = passwordGenerator.generate();
-
-        /*
-         * Create Cruise Control API auth credentials file following Jetty's
-         *  HashLoginService's file format: username: password [,rolename ...]
-         */
-        String authCredentialsFile =
-                API_ADMIN_NAME + ": " + apiAdminPassword + "," + API_ADMIN_ROLE + "\n" +
-                API_USER_NAME + ": " + apiUserPassword + "," + API_USER_ROLE + "\n";
-
-        Map<String, String> data = new HashMap<>(3);
-        data.put(API_ADMIN_PASSWORD_KEY, Util.encodeToBase64(apiAdminPassword));
-        data.put(API_USER_PASSWORD_KEY, Util.encodeToBase64(apiUserPassword));
-        data.put(API_AUTH_FILE_KEY, Util.encodeToBase64(authCredentialsFile));
-
-        return data;
+        String pass = passwordGenerator.generate();
+        Map<String, String> data = new HashMap<>(1);
+        data.put(API_USER_KEY_PASSWORD, Base64.getEncoder().encodeToString(pass.getBytes(StandardCharsets.US_ASCII)));
+        return ModelUtils.createSecret(name, namespace, labels, ownerReference, data, Collections.emptyMap(), Collections.emptyMap());
     }
 
     /**
@@ -443,8 +450,27 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
      *
      * @return The generated Secret.
      */
-    public Secret generateApiSecret() {
-        return ModelUtils.createSecret(CruiseControlResources.apiSecretName(cluster), namespace, labels, ownerReference, generateCruiseControlApiCredentials(), Collections.emptyMap(), Collections.emptyMap());
+    public Secret generateApiAuthConfigSecret() {
+        return ModelUtils.createSecret(CruiseControlResources.apiAuthConfigSecretName(cluster), namespace, labels, ownerReference,
+                CruiseControlRestApiUtil.generateCruiseControlApiCredentials(this.getCluster(), this.apiUsers, apiUserSecrets), Collections.emptyMap(), Collections.emptyMap());
+    }
+
+    /**
+     * Get list of Cruise Control API users
+     *
+     * @return The list of Cruise Control API users
+     */
+    public List<ApiUser> getApiUsers() {
+        return this.apiUsers;
+    }
+
+    /**
+     * Add secret to apiUserSecrets list
+     *
+     * @param secret secret to be added to apiSecrets list
+     */
+    public void addSecret(Secret secret) {
+        this.apiUserSecrets.add(secret);
     }
 
     /**

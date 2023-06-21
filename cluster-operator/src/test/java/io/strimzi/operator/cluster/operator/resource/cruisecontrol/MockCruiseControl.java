@@ -9,8 +9,8 @@ import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.strimzi.api.kafka.model.CruiseControlResources;
 import io.strimzi.certs.Subject;
-import io.strimzi.operator.cluster.model.CruiseControl;
 import io.strimzi.operator.cluster.model.ModelUtils;
+import io.strimzi.operator.cluster.model.cruisecontrol.api.CruiseControlRestApiUtil;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.MockCertManager;
 import org.mockserver.configuration.ConfigurationProperties;
@@ -76,9 +76,9 @@ public class MockCruiseControl {
             .endMetadata()
             .addToData("cruise-control.crt", MockCertManager.clusterCaCert())
             .build();
-    public static final Secret CC_API_SECRET = ModelUtils.createSecret(CruiseControlResources.apiSecretName(CLUSTER), NAMESPACE, Labels.EMPTY, null,
-            CruiseControl.generateCruiseControlApiCredentials(), Collections.emptyMap(), Collections.emptyMap());
 
+    public static final Secret CC_API_SECRET = ModelUtils.createSecret(CruiseControlResources.apiAuthConfigSecretName(CLUSTER), NAMESPACE, Labels.EMPTY, null,
+            CruiseControlRestApiUtil.generateCruiseControlApiCredentials(CLUSTER, Collections.emptyList(), Collections.emptyList()), Collections.emptyMap(), Collections.emptyMap());
     private static final Header AUTH_HEADER = convertToHeader(CruiseControlApiImpl.getAuthHttpHeader(true, CC_API_SECRET));
 
     /**

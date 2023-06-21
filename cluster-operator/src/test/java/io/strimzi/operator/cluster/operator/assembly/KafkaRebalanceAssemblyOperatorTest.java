@@ -190,7 +190,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
     private void mockSecretResources() {
         when(mockSecretOps.getAsync(CLUSTER_NAMESPACE, CruiseControlResources.secretName(CLUSTER_NAME)))
                 .thenReturn(Future.succeededFuture(MockCruiseControl.CC_SECRET));
-        when(mockSecretOps.getAsync(CLUSTER_NAMESPACE, CruiseControlResources.apiSecretName(CLUSTER_NAME)))
+        when(mockSecretOps.getAsync(CLUSTER_NAMESPACE, CruiseControlResources.apiAuthConfigSecretName(CLUSTER_NAME)))
                 .thenReturn(Future.succeededFuture(MockCruiseControl.CC_API_SECRET));
     }
 

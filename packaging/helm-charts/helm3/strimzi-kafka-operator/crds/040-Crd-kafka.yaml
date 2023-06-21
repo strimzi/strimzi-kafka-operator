@@ -4854,6 +4854,43 @@ spec:
                               - brokers
                           description: Overrides for individual brokers. The `overrides` property lets you specify a different capacity configuration for different brokers.
                       description: The Cruise Control `brokerCapacity` configuration.
+                    apiUsers:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          name:
+                            type: string
+                            pattern: "[a-z0-9]+$"
+                            description: "Cruise Control REST API user. The following names are reserved for Strimzi and cannot be used: admin, healthcheck."
+                          password:
+                            type: object
+                            properties:
+                              valueFrom:
+                                type: object
+                                properties:
+                                  secretKeyRef:
+                                    type: object
+                                    properties:
+                                      key:
+                                        type: string
+                                      name:
+                                        type: string
+                                      optional:
+                                        type: boolean
+                                    description: Selects a key of a Secret in the resource's namespace.
+                                description: Secret from which the password should be read.
+                            required:
+                              - valueFrom
+                            description: Specify the password for the user Cruise Control REST API user.
+                          role:
+                            type: string
+                            pattern: ^(ADMIN)|(USER)|(VIEWER)$
+                            description: "Cruise Control REST API user role.Valid API user roles are VIEWER, USER, and ADMINFor more information on valid API user roles see https://github.com/linkedin/cruise-control/wiki/Security#authorization."
+                        required:
+                          - name
+                          - role
+                      description: List of Cruise Control REST API users.
                     config:
                       x-kubernetes-preserve-unknown-fields: true
                       type: object

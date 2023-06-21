@@ -626,6 +626,9 @@ public class KafkaAssemblyOperatorTest {
         when(mockSecretOps.getAsync(kafkaNamespace, ClusterOperator.secretName(kafkaName))).thenAnswer(i ->
                 Future.succeededFuture(secretsMap.get(i.<String>getArgument(1)))
         );
+        when(mockSecretOps.listAsync(eq(kafkaNamespace), any(Labels.class))).thenAnswer(i ->
+                Future.succeededFuture(List.of())
+        );
 
         when(mockSecretOps.reconcile(any(), anyString(), anyString(), any())).thenAnswer(invocation -> {
             Secret desired = invocation.getArgument(3);
@@ -1098,6 +1101,9 @@ public class KafkaAssemblyOperatorTest {
         );
         when(mockSecretOps.getAsync(clusterNamespace, CruiseControlResources.secretName(clusterName))).thenReturn(
                 Future.succeededFuture()
+        );
+        when(mockSecretOps.listAsync(eq(clusterNamespace), any(Labels.class))).thenReturn(
+                Future.succeededFuture(List.of())
         );
 
         // Mock NetworkPolicy get

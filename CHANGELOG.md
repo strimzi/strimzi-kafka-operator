@@ -8,6 +8,7 @@
 * Add support for _Kafka node pools_ according to [Strimzi Proposal #50](https://github.com/strimzi/proposals/blob/main/050-Kafka-Node-Pools.md)
 * Update OpenTelemetry 1.19.0
 * Fixed ordering of JVM performance options [#8579](https://github.com/strimzi/strimzi-kafka-operator/issues/8579)
+* Add ability to create REST API users for Cruise Control
 
 ### Changes, deprecations and removals
 

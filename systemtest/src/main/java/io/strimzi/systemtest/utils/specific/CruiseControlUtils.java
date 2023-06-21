@@ -34,6 +34,7 @@ public class CruiseControlUtils {
     public static final String CRUISE_CONTROL_METRICS_TOPIC = "strimzi.cruisecontrol.metrics"; // partitions 1 , rf - 1
     public static final String CRUISE_CONTROL_MODEL_TRAINING_SAMPLES_TOPIC = "strimzi.cruisecontrol.modeltrainingsamples"; // partitions 32 , rf - 2
     public static final String CRUISE_CONTROL_PARTITION_METRICS_SAMPLES_TOPIC = "strimzi.cruisecontrol.partitionmetricsamples"; // partitions 32 , rf - 2
+    public static final String CRUISE_CONTROL_DEFAULT_ENDPOINT_SUFFIX = "";
 
     private static final int CRUISE_CONTROL_DEFAULT_PORT = 9090;
     private static final int CRUISE_CONTROL_METRICS_PORT = 9404;
@@ -52,23 +53,19 @@ public class CruiseControlUtils {
         HTTPS
     }
 
-    public static String callApi(String namespaceName, SupportedHttpMethods method, CruiseControlEndpoints endpoint, SupportedSchemes scheme, Boolean withCredentials) {
-        return callApi(namespaceName, method, endpoint, scheme, withCredentials, "");
+    @SuppressFBWarnings("DM_CONVERT_CASE")
+    public static String callApiWithAdminCredentials(String namespaceName, SupportedHttpMethods method, CruiseControlEndpoints endpoint, SupportedSchemes scheme, String endpointSuffix) {
+        return callApiWithCredentials(namespaceName, method, endpoint, scheme, "admin", "$(cat /opt/cruise-control/api-auth-config/cruise-control.apiAdminPassword)", endpointSuffix);
     }
 
-    @SuppressWarnings("Regexp")
     @SuppressFBWarnings("DM_CONVERT_CASE")
-    public static String callApi(String namespaceName, SupportedHttpMethods method, CruiseControlEndpoints endpoint, SupportedSchemes scheme, Boolean withCredentials, String endpointSuffix) {
+    public static String callApiWithCredentials(String namespaceName, SupportedHttpMethods method, CruiseControlEndpoints endpoint, SupportedSchemes scheme, String username, String password, String endpointSuffix) {
         String ccPodName = PodUtils.getFirstPodNameContaining(namespaceName, CONTAINER_NAME);
-        String args = " -k ";
-
-        if (withCredentials) {
-            args = " --cacert /etc/cruise-control/cc-certs/cruise-control.crt"
-                + " --user admin:$(cat /opt/cruise-control/api-auth-config/cruise-control.apiAdminPassword) ";
-        }
+        String args = " --cacert /etc/cruise-control/cc-certs/cruise-control.crt"
+                    + " --user " + username + ":" + password;
 
         return cmdKubeClient(namespaceName).execInPodContainer(Level.DEBUG, ccPodName, CONTAINER_NAME, "/bin/bash", "-c",
-            "curl -X " + method.name() + args + " " + scheme + "://localhost:" + CRUISE_CONTROL_DEFAULT_PORT + endpoint.toString() + endpointSuffix).out();
+                "curl -X " + method.name() + args + " " + scheme + "://localhost:" + CRUISE_CONTROL_DEFAULT_PORT + endpoint.toString() + endpointSuffix).out();
     }
 
     @SuppressWarnings("Regexp")
@@ -169,7 +166,7 @@ public class CruiseControlUtils {
     public static void waitForRebalanceEndpointIsReady(String namespaceName) {
         TestUtils.waitFor("Wait for rebalance endpoint is ready",
             Constants.API_CRUISE_CONTROL_POLL, Constants.API_CRUISE_CONTROL_TIMEOUT, () -> {
-                String response = callApi(namespaceName, SupportedHttpMethods.POST, CruiseControlEndpoints.REBALANCE, SupportedSchemes.HTTPS, true);
+                String response = callApiWithAdminCredentials(namespaceName, SupportedHttpMethods.POST, CruiseControlEndpoints.REBALANCE, SupportedSchemes.HTTPS, CRUISE_CONTROL_DEFAULT_ENDPOINT_SUFFIX);
                 LOGGER.debug("API response {}", response);
                 return !response.contains("Error processing POST request '/rebalance' due to: " +
                     "'com.linkedin.kafka.cruisecontrol.exception.KafkaCruiseControlException: " +

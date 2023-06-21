@@ -11,6 +11,7 @@ import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.strimzi.api.kafka.model.CruiseControlResources;
 import io.strimzi.api.kafka.model.Kafka;
+import io.strimzi.api.kafka.model.balancing.ApiUser;
 import io.strimzi.api.kafka.model.storage.Storage;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.model.Ca;
@@ -21,6 +22,7 @@ import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.MetricsAndLoggingUtils;
 import io.strimzi.operator.cluster.model.ModelUtils;
 import io.strimzi.operator.cluster.model.NodeRef;
+import io.strimzi.operator.cluster.model.cruisecontrol.api.CruiseControlRestApiUtil;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
@@ -34,9 +36,12 @@ import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.strimzi.operator.common.operator.resource.SecretOperator;
 import io.strimzi.operator.common.operator.resource.ServiceAccountOperator;
 import io.strimzi.operator.common.operator.resource.ServiceOperator;
+import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 
 import java.time.Clock;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -125,7 +130,8 @@ public class CruiseControlReconciler {
                 .compose(i -> serviceAccount())
                 .compose(i -> metricsAndLoggingConfigMap())
                 .compose(i -> certificatesSecret(clock))
-                .compose(i -> apiSecret())
+                .compose(i -> apiAuthUserSecrets())
+                .compose(i -> apiAuthConfigSecret())
                 .compose(i -> service())
                 .compose(i -> deployment(isOpenShift, imagePullPolicy, imagePullSecrets))
                 .compose(i -> waitForDeploymentReadiness());
@@ -223,28 +229,86 @@ public class CruiseControlReconciler {
     }
 
     /**
-     * Manages the Cruise Control API keys secret.
+     * Manages the Cruise Control API user secrets.
+     *
+     * @return Future which completes when the reconciliation is done
+     */
+    protected Future<Void> apiAuthUserSecrets() {
+        List<Future> futureList = new ArrayList<>();
+        List<ApiUser> apiUsers;
+
+        if (cruiseControl != null) {
+            apiUsers = cruiseControl.getApiUsers();
+            for (ApiUser user : apiUsers) {
+                Future future = null;
+
+                if (user.getPassword() == null) {
+                    // Generate password secret if it was not provided
+                    String secretName = CruiseControlResources.apiAuthUserSecretName(reconciliation.name(), user.getName());
+                    future = secretOperator.reconcile(reconciliation, reconciliation.namespace(), secretName, cruiseControl.generateApiUserSecret(secretName))
+                            .onComplete(ar -> {
+                                cruiseControl.addSecret(ar.result().resource());
+                            });
+                } else {
+                    // Retrieve password secret if it was provided
+                    String secretName = CruiseControlRestApiUtil.getUserSecretName(cruiseControl.getCluster(), user);
+                    future = secretOperator.getAsync(reconciliation.namespace(), secretName)
+                            .onComplete(ar -> {
+                                cruiseControl.addSecret(ar.result());
+                            });
+                }
+                futureList.add(future);
+            }
+        } else {
+            apiUsers = Collections.emptyList();
+        }
+
+        // Delete auto-generated API user secrets not being used anymore
+        return secretOperator.listAsync(reconciliation.namespace(), Labels.forStrimziCluster(reconciliation.name()))
+                .compose(secrets -> {
+                    List<String> apiUserNames = new ArrayList<>();
+
+                    for (ApiUser user : apiUsers) {
+                        apiUserNames.add(user.getName());
+                    }
+
+                    String secretNamePrefix = CruiseControlResources.apiAuthUserSecretPrefixName(reconciliation.name());
+                    for (Secret secret : secrets) {
+                        String secretName = secret.getMetadata().getName();
+                        if (secretName.startsWith(secretNamePrefix))  {
+                            String apiUserNameFromSecret = secretName.replaceFirst(secretNamePrefix, "");
+
+                            if (!apiUserNames.contains(apiUserNameFromSecret)) {
+                                futureList.add(secretOperator.deleteAsync(reconciliation, reconciliation.namespace(), secretName, true));
+                            }
+                        }
+                    }
+                    return CompositeFuture.all(futureList).map((Void) null);
+                });
+    }
+
+    /**
+     * Manages the Cruise Control API authentication configuration secret.
      *
      * @return  Future which completes when the reconciliation is done
      */
-    protected Future<Void> apiSecret() {
+    protected Future<Void> apiAuthConfigSecret() {
         if (cruiseControl != null) {
-            return secretOperator.getAsync(reconciliation.namespace(), CruiseControlResources.apiSecretName(reconciliation.name()))
+            return secretOperator.getAsync(reconciliation.namespace(), CruiseControlResources.apiAuthConfigSecretName(reconciliation.name()))
                     .compose(oldSecret -> {
-                        Secret newSecret = cruiseControl.generateApiSecret();
+                        Secret newSecret = cruiseControl.generateApiAuthConfigSecret();
 
-                        if (oldSecret != null)  {
+                        if (oldSecret != null) {
                             // The credentials should not change with every release
                             // So if the secret with credentials already exists, we re-use the values
                             // But we use the new secret to update labels etc. if needed
                             newSecret.setData(oldSecret.getData());
                         }
 
-                        return secretOperator.reconcile(reconciliation, reconciliation.namespace(), CruiseControlResources.apiSecretName(reconciliation.name()), newSecret)
-                                .map((Void) null);
+                        return secretOperator.reconcile(reconciliation, reconciliation.namespace(), CruiseControlResources.apiAuthConfigSecretName(reconciliation.name()), newSecret).map((Void) null);
                     });
         } else {
-            return secretOperator.reconcile(reconciliation, reconciliation.namespace(), CruiseControlResources.apiSecretName(reconciliation.name()), null)
+            return secretOperator.reconcile(reconciliation, reconciliation.namespace(), CruiseControlResources.apiAuthConfigSecretName(reconciliation.name()), null)
                     .map((Void) null);
         }
     }

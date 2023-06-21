@@ -49,14 +49,37 @@ public class CruiseControlResources {
     }
 
     /**
-     * Returns the name of the Cruise Control {@code Secret} used for API authorization for a {@code Kafka} cluster of the given name.
+     * Returns the prefix used for Cruise Control {@code Secret} for API users of a {@code Kafka} cluster of the given name.
+     *
+     * @param clusterName  The {@code metadata.name} of the {@code Kafka} resource.
+     * @return The prefix used by Cruise Control API user {@code Secret}.
+     */
+    public static String apiAuthUserSecretPrefixName(String clusterName) {
+        return apiAuthConfigSecretName(clusterName) + "-";
+    }
+
+    /**
+     * Returns the name of the Cruise Control {@code Secret} containing password for specified API user for a {@code Kafka} cluster of the given name.
+     * This {@code Secret} will only exist if {@code Kafka.spec.cruiseControl.apiUsers} is configured in the
+     * {@code Kafka} resource with the given name.
+     *
+     * @param clusterName  The {@code metadata.name} of the {@code Kafka} resource.
+     * @param user  The name of the Cruise Control API user.
+     * @return The name of the corresponding Cruise Control user {@code Secret}.
+     */
+    public static String apiAuthUserSecretName(String clusterName, String user) {
+        return apiAuthUserSecretPrefixName(clusterName) + user;
+    }
+
+    /**
+     * Returns the name of the Cruise Control {@code Secret} containing API authorization configuration data for a {@code Kafka} cluster of the given name.
      * This {@code Secret} will only exist if {@code Kafka.spec.cruiseControl} is configured in the
      * {@code Kafka} resource with the given name.
      *
      * @param clusterName  The {@code metadata.name} of the {@code Kafka} resource.
      * @return The name of the corresponding Cruise Control {@code Secret}.
      */
-    public static String apiSecretName(String clusterName) {
+    public static String apiAuthConfigSecretName(String clusterName) {
         return deploymentName(clusterName) + "-api";
     }
 

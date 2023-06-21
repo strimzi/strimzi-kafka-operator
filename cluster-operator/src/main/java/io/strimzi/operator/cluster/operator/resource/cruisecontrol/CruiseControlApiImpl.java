@@ -4,10 +4,11 @@
  */
 package io.strimzi.operator.cluster.operator.resource.cruisecontrol;
 
+import io.strimzi.operator.cluster.model.CruiseControl;
+import io.strimzi.operator.cluster.model.cruisecontrol.api.CruiseControlRestApiUtil;
 import io.strimzi.operator.cluster.operator.resource.HttpClientUtils;
 import io.fabric8.kubernetes.api.model.HTTPHeader;
 import io.fabric8.kubernetes.api.model.Secret;
-import io.strimzi.operator.cluster.model.CruiseControl;
 import io.strimzi.operator.common.Util;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
@@ -90,7 +91,7 @@ public class CruiseControlApiImpl implements CruiseControlApi {
 
     protected static HTTPHeader getAuthHttpHeader(boolean apiAuthEnabled, Secret apiSecret) {
         if (apiAuthEnabled) {
-            String password = new String(Util.decodeFromSecret(apiSecret, CruiseControl.API_ADMIN_PASSWORD_KEY), StandardCharsets.US_ASCII);
+            String password = new String(Util.decodeFromSecret(apiSecret, CruiseControlRestApiUtil.API_ADMIN_PASSWORD_KEY), StandardCharsets.US_ASCII);
             HTTPHeader header = generateAuthHttpHeader(CruiseControl.API_ADMIN_NAME, password);
             return header;
         } else {

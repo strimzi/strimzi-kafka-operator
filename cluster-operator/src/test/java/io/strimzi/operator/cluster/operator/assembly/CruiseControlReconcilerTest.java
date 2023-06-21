@@ -15,6 +15,7 @@ import io.strimzi.api.kafka.model.CruiseControlSpec;
 import io.strimzi.api.kafka.model.CruiseControlSpecBuilder;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
+import io.strimzi.api.kafka.model.balancing.ApiUserBuilder;
 import io.strimzi.api.kafka.model.balancing.BrokerCapacityBuilder;
 import io.strimzi.certs.OpenSslCertManager;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
@@ -26,10 +27,12 @@ import io.strimzi.operator.cluster.model.NodeRef;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.MockCertManager;
 import io.strimzi.operator.common.operator.resource.ConfigMapOperator;
 import io.strimzi.operator.common.operator.resource.DeploymentOperator;
 import io.strimzi.operator.common.operator.resource.NetworkPolicyOperator;
+import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.strimzi.operator.common.operator.resource.SecretOperator;
 import io.strimzi.operator.common.operator.resource.ServiceAccountOperator;
 import io.strimzi.operator.common.operator.resource.ServiceOperator;
@@ -42,6 +45,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 
 import java.time.Clock;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -49,9 +53,12 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.mockito.Answers.RETURNS_MOCKS;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(VertxExtension.class)
@@ -65,6 +72,7 @@ public class CruiseControlReconcilerTest {
             new NodeRef(NAME + "kafka-2", 2, "kafka", false, true));
 
     private final CruiseControlSpec cruiseControlSpec = new CruiseControlSpecBuilder()
+            .withApiUsers(new ApiUserBuilder().withName(NAME).withRole("USER").build())
             .withBrokerCapacity(new BrokerCapacityBuilder().withInboundNetwork("10000KB/s").withOutboundNetwork("10000KB/s").build())
             .withConfig(Map.of("hard.goals", "com.linkedin.kafka.cruisecontrol.analyzer.goals.NetworkInboundCapacityGoal,com.linkedin.kafka.cruisecontrol.analyzer.goals.NetworkOutboundCapacityGoal"))
             .build();
@@ -84,7 +92,10 @@ public class CruiseControlReconcilerTest {
 
         ArgumentCaptor<Secret> secretCaptor = ArgumentCaptor.forClass(Secret.class);
         when(mockSecretOps.reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.secretName(NAME)), secretCaptor.capture())).thenReturn(Future.succeededFuture());
-        when(mockSecretOps.reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.apiSecretName(NAME)), secretCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockSecretOps.reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.apiAuthUserSecretName(NAME, NAME)), secretCaptor.capture())).thenReturn(Future.succeededFuture(ReconcileResult.created(mock(Secret.class, RETURNS_MOCKS))));
+        when(mockSecretOps.reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.apiAuthConfigSecretName(NAME)), secretCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockSecretOps.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(Future.succeededFuture(List.of()));
+        when(mockSecretOps.deleteAsync(any(), eq(NAMESPACE), any(), anyBoolean())).thenReturn(Future.succeededFuture());
 
         ArgumentCaptor<Service> serviceCaptor = ArgumentCaptor.forClass(Service.class);
         when(mockServiceOps.reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.serviceName(NAME)), serviceCaptor.capture())).thenReturn(Future.succeededFuture());
@@ -133,9 +144,10 @@ public class CruiseControlReconcilerTest {
                     assertThat(saCaptor.getAllValues().size(), is(1));
                     assertThat(saCaptor.getValue(), is(notNullValue()));
 
-                    assertThat(secretCaptor.getAllValues().size(), is(2));
+                    assertThat(secretCaptor.getAllValues().size(), is(3));
                     assertThat(secretCaptor.getAllValues().get(0), is(notNullValue()));
                     assertThat(secretCaptor.getAllValues().get(1), is(notNullValue()));
+                    assertThat(secretCaptor.getAllValues().get(2), is(notNullValue()));
 
                     assertThat(serviceCaptor.getAllValues().size(), is(1));
                     assertThat(serviceCaptor.getValue(), is(notNullValue()));
@@ -168,7 +180,10 @@ public class CruiseControlReconcilerTest {
 
         ArgumentCaptor<Secret> secretCaptor = ArgumentCaptor.forClass(Secret.class);
         when(mockSecretOps.reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.secretName(NAME)), secretCaptor.capture())).thenReturn(Future.succeededFuture());
-        when(mockSecretOps.reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.apiSecretName(NAME)), secretCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockSecretOps.reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.apiAuthUserSecretName(NAME, NAME)), secretCaptor.capture())).thenReturn(Future.succeededFuture(ReconcileResult.created(mock(Secret.class, RETURNS_MOCKS))));
+        when(mockSecretOps.reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.apiAuthConfigSecretName(NAME)), secretCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockSecretOps.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(Future.succeededFuture(List.of()));
+        when(mockSecretOps.deleteAsync(any(), eq(NAMESPACE), any(), anyBoolean())).thenReturn(Future.succeededFuture());
 
         ArgumentCaptor<Service> serviceCaptor = ArgumentCaptor.forClass(Service.class);
         when(mockServiceOps.reconcile(any(), eq(NAMESPACE), eq(CruiseControlResources.serviceName(NAME)), serviceCaptor.capture())).thenReturn(Future.succeededFuture());

@@ -1190,7 +1190,7 @@ public class KafkaRebalanceAssemblyOperator
                     }
 
                     String ccSecretName =  CruiseControlResources.secretName(clusterName);
-                    String ccApiSecretName =  CruiseControlResources.apiSecretName(clusterName);
+                    String ccApiSecretName =  CruiseControlResources.apiAuthConfigSecretName(clusterName);
 
                     Future<Secret> ccSecretFuture = secretOperations.getAsync(clusterNamespace, ccSecretName);
                     Future<Secret> ccApiSecretFuture = secretOperations.getAsync(clusterNamespace, ccApiSecretName);

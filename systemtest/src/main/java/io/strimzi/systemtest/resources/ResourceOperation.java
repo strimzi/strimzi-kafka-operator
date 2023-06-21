@@ -27,6 +27,7 @@ public class ResourceOperation {
         long timeout;
 
         switch (kind) {
+
             case Kafka.RESOURCE_KIND:
                 timeout = Duration.ofMinutes(14).toMillis();
                 break;
@@ -46,6 +47,9 @@ public class ResourceOperation {
                 break;
             case KafkaConnector.RESOURCE_KIND:
                 timeout = Duration.ofMinutes(7).toMillis();
+                break;
+            case Constants.SECRET:
+                timeout = Duration.ofMinutes(5).toMillis();
                 break;
             default:
                 timeout = Duration.ofMinutes(3).toMillis();

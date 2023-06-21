@@ -11,6 +11,7 @@ import io.fabric8.kubernetes.api.model.Pod;
 import io.strimzi.api.kafka.model.CruiseControlResources;
 import io.strimzi.api.kafka.model.CruiseControlSpec;
 import io.strimzi.api.kafka.model.CruiseControlSpecBuilder;
+import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlConfigurationParameters;
 import io.strimzi.systemtest.AbstractST;
@@ -25,6 +26,7 @@ import io.strimzi.systemtest.utils.RollingUpdateUtils;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
+import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
 import io.strimzi.systemtest.utils.specific.CruiseControlUtils;
 import io.strimzi.test.WaitException;
 import org.apache.logging.log4j.LogManager;
@@ -70,7 +72,25 @@ public class CruiseControlConfigurationST extends AbstractST {
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         final LabelSelector kafkaSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.kafkaStatefulSetName(clusterName));
 
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaWithCruiseControl(clusterName, 3, 3).build());
+        String apiUserName = "user";
+        String apiUserRole = "USER";
+        String apiUserSecretName = CruiseControlResources.apiAuthUserSecretName(clusterName, apiUserName);
+
+        KafkaBuilder kb = KafkaTemplates.kafkaWithCruiseControl(clusterName, 3, 3)
+            .editOrNewSpec()
+                .editCruiseControl()
+                .withApiUsers()
+                    .addNewApiUser()
+                        .withName(apiUserName)
+                        .withRole(apiUserRole)
+                    .endApiUser()
+                .endCruiseControl()
+            .endSpec();
+
+        resourceManager.createResource(extensionContext, kb.build());
+
+        LOGGER.info("Verifying that in {} secret is present in the Kafka cluster", apiUserSecretName);
+        SecretUtils.waitForSecretReady(namespaceName, apiUserSecretName, () -> { });
 
         Map<String, String> kafkaPods = PodUtils.podSnapshot(namespaceName, kafkaSelector);
 
@@ -88,7 +108,11 @@ public class CruiseControlConfigurationST extends AbstractST {
         PodUtils.waitUntilPodStabilityReplicasCount(namespaceName, clusterName + "-cruise-control-", 0);
 
         LOGGER.info("Verifying that in Kafka config map there is no configuration to cruise control metric reporter");
+
         assertThrows(WaitException.class, () -> CruiseControlUtils.verifyCruiseControlMetricReporterConfigurationInKafkaConfigMapIsPresent(CruiseControlUtils.getKafkaCruiseControlMetricsReporterConfiguration(namespaceName, clusterName)));
+
+        LOGGER.info("Verifying that {} secret is not present in the Kafka cluster", apiUserSecretName);
+        SecretUtils.waitForSecretDeletion(namespaceName, apiUserSecretName, () -> { });
 
         if (!Environment.isKRaftModeEnabled()) {
             LOGGER.info("Cruise Control topics will not be deleted and will stay in the Kafka cluster");
