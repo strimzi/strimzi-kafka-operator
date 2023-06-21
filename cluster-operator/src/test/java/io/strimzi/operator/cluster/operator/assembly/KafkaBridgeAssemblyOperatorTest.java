@@ -19,7 +19,9 @@ import io.strimzi.api.kafka.model.KafkaBridgeHttpConfig;
 import io.strimzi.api.kafka.model.KafkaBridgeProducerSpec;
 import io.strimzi.api.kafka.model.KafkaBridgeResources;
 import io.strimzi.api.kafka.model.status.KafkaBridgeStatus;
+import io.strimzi.operator.cluster.operator.resource.MockSharedEnvironmentProvider;
 import io.strimzi.operator.cluster.model.metrics.MetricsModel;
+import io.strimzi.operator.cluster.operator.resource.SharedEnvironmentProvider;
 import io.strimzi.operator.common.operator.resource.ClusterRoleBindingOperator;
 import io.strimzi.operator.common.operator.resource.CrdOperator;
 import io.strimzi.platform.KubernetesVersion;
@@ -82,8 +84,8 @@ import static org.mockito.Mockito.when;
 
 @ExtendWith(VertxExtension.class)
 public class KafkaBridgeAssemblyOperatorTest {
-
     private static final KafkaVersion.Lookup VERSIONS = KafkaVersionTestUtils.getKafkaVersionLookup();
+    private static final SharedEnvironmentProvider SHARED_ENV_PROVIDER = new MockSharedEnvironmentProvider();
 
     protected static Vertx vertx;
     private static final String METRICS_CONFIG = "{\"foo\":\"bar\"}";
@@ -148,8 +150,7 @@ public class KafkaBridgeAssemblyOperatorTest {
                 supplier,
                 ResourceUtils.dummyClusterOperatorConfig(VERSIONS));
 
-        KafkaBridgeCluster bridge = KafkaBridgeCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kb
-        );
+        KafkaBridgeCluster bridge = KafkaBridgeCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kb, SHARED_ENV_PROVIDER);
 
         Checkpoint async = context.checkpoint();
         ops.reconcile(new Reconciliation("test-trigger", KafkaBridge.RESOURCE_KIND, kbNamespace, kbName))
@@ -202,8 +203,7 @@ public class KafkaBridgeAssemblyOperatorTest {
         KafkaBridge kb = ResourceUtils.createKafkaBridge(kbNamespace, kbName, image, 1,
                 BOOTSTRAP_SERVERS, KAFKA_BRIDGE_PRODUCER_SPEC, KAFKA_BRIDGE_CONSUMER_SPEC, KAFKA_BRIDGE_HTTP_SPEC, true);
 
-        KafkaBridgeCluster bridge = KafkaBridgeCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kb
-        );
+        KafkaBridgeCluster bridge = KafkaBridgeCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kb, SHARED_ENV_PROVIDER);
         when(mockBridgeOps.get(kbNamespace, kbName)).thenReturn(kb);
         when(mockBridgeOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(kb));
         when(mockBridgeOps.updateStatusAsync(any(), any(KafkaBridge.class))).thenReturn(Future.succeededFuture());
@@ -279,8 +279,7 @@ public class KafkaBridgeAssemblyOperatorTest {
 
         KafkaBridge kb = ResourceUtils.createKafkaBridge(kbNamespace, kbName, image, 1,
                 BOOTSTRAP_SERVERS, KAFKA_BRIDGE_PRODUCER_SPEC, KAFKA_BRIDGE_CONSUMER_SPEC, KAFKA_BRIDGE_HTTP_SPEC, true);
-        KafkaBridgeCluster bridge = KafkaBridgeCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kb
-        );
+        KafkaBridgeCluster bridge = KafkaBridgeCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kb, SHARED_ENV_PROVIDER);
         kb.getSpec().setImage("some/different:image"); // Change the image to generate some diff
 
         when(mockBridgeOps.get(kbNamespace, kbName)).thenReturn(kb);
@@ -338,8 +337,7 @@ public class KafkaBridgeAssemblyOperatorTest {
         ops.createOrUpdate(new Reconciliation("test-trigger", KafkaBridge.RESOURCE_KIND, kbNamespace, kbName), kb)
             .onComplete(context.succeeding(v -> context.verify(() -> {
 
-                KafkaBridgeCluster compareTo = KafkaBridgeCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kb
-                );
+                KafkaBridgeCluster compareTo = KafkaBridgeCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kb, SHARED_ENV_PROVIDER);
 
                 // Verify service
                 List<Service> capturedServices = serviceCaptor.getAllValues();
@@ -415,8 +413,7 @@ public class KafkaBridgeAssemblyOperatorTest {
 
         KafkaBridge kb = ResourceUtils.createKafkaBridge(kbNamespace, kbName, image, 1,
                 BOOTSTRAP_SERVERS, KAFKA_BRIDGE_PRODUCER_SPEC, KAFKA_BRIDGE_CONSUMER_SPEC, KAFKA_BRIDGE_HTTP_SPEC, true);
-        KafkaBridgeCluster bridge = KafkaBridgeCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kb
-        );
+        KafkaBridgeCluster bridge = KafkaBridgeCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kb, SHARED_ENV_PROVIDER);
         kb.getSpec().setImage("some/different:image"); // Change the image to generate some differences
 
         when(mockBridgeOps.get(kbNamespace, kbName)).thenReturn(kb);
@@ -479,7 +476,7 @@ public class KafkaBridgeAssemblyOperatorTest {
 
         KafkaBridge kb = ResourceUtils.createEmptyKafkaBridge(kbNamespace, kbName);
         kb.getSpec().setReplicas(0);
-        KafkaBridgeCluster bridge = KafkaBridgeCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kb);
+        KafkaBridgeCluster bridge = KafkaBridgeCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kb, SHARED_ENV_PROVIDER);
         kb.getSpec().setReplicas(scaleTo); // Change replicas to create ScaleUp
 
         when(mockBridgeOps.get(kbNamespace, kbName)).thenReturn(kb);
@@ -540,7 +537,7 @@ public class KafkaBridgeAssemblyOperatorTest {
                     .withReplicas(scaleTo)
                 .endSpec()
                 .build();
-        KafkaBridgeCluster bridge = KafkaBridgeCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kb);
+        KafkaBridgeCluster bridge = KafkaBridgeCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kb, SHARED_ENV_PROVIDER);
 
         when(mockBridgeOps.get(kbNamespace, kbName)).thenReturn(kb);
         when(mockBridgeOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(kb));
@@ -609,16 +606,14 @@ public class KafkaBridgeAssemblyOperatorTest {
         // providing the list of ALL Deployments for all the Kafka Bridge clusters
         Labels newLabels = Labels.forStrimziKind(KafkaBridge.RESOURCE_KIND);
         when(mockDcOps.list(eq(kbNamespace), eq(newLabels))).thenReturn(
-                List.of(KafkaBridgeCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, bar
-                ).generateDeployment(Map.of(), true, null, null)));
+                List.of(KafkaBridgeCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, bar, SHARED_ENV_PROVIDER).generateDeployment(Map.of(), true, null, null)));
         when(mockDcOps.readiness(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
         when(mockDcOps.waitForObserved(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
 
         // providing the list Deployments for already "existing" Kafka Bridge clusters
         Labels barLabels = Labels.forStrimziCluster("bar");
         when(mockDcOps.list(eq(kbNamespace), eq(barLabels))).thenReturn(
-                List.of(KafkaBridgeCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, bar
-                ).generateDeployment(Map.of(), true, null, null))
+                List.of(KafkaBridgeCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, bar, SHARED_ENV_PROVIDER).generateDeployment(Map.of(), true, null, null))
         );
 
         when(mockSecretOps.reconcile(any(), eq(kbNamespace), any(), any())).thenReturn(Future.succeededFuture());

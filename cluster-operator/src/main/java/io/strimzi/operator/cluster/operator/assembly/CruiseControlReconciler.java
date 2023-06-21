@@ -92,7 +92,7 @@ public class CruiseControlReconciler {
             ClusterCa clusterCa
     ) {
         this.reconciliation = reconciliation;
-        this.cruiseControl = CruiseControl.fromCrd(reconciliation, kafkaAssembly, versions, kafkaNodes, kafkaStorage, kafkaResources);
+        this.cruiseControl = CruiseControl.fromCrd(reconciliation, kafkaAssembly, versions, kafkaNodes, kafkaStorage, kafkaResources, supplier.sharedEnvironmentProvider);
         this.clusterCa = clusterCa;
         this.maintenanceWindows = kafkaAssembly.getSpec().getMaintenanceTimeWindows();
         this.operationTimeoutMs = config.getOperationTimeoutMs();

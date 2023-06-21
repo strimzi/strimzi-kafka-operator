@@ -17,7 +17,9 @@ import io.strimzi.api.kafka.model.connect.build.PluginBuilder;
 import io.strimzi.api.kafka.model.connect.build.TgzArtifactBuilder;
 import io.strimzi.api.kafka.model.connect.build.ZipArtifact;
 import io.strimzi.api.kafka.model.connect.build.ZipArtifactBuilder;
+import io.strimzi.operator.cluster.operator.resource.MockSharedEnvironmentProvider;
 import io.strimzi.operator.common.InvalidConfigurationException;
+import io.strimzi.operator.cluster.operator.resource.SharedEnvironmentProvider;
 import io.strimzi.test.annotations.ParallelSuite;
 import io.strimzi.test.annotations.ParallelTest;
 
@@ -30,6 +32,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @ParallelSuite
 public class KafkaConnectDockerfileTest {
+    private static final SharedEnvironmentProvider SHARED_ENV_PROVIDER = new MockSharedEnvironmentProvider();
+
     private final Artifact jarArtifactNoChecksum = new JarArtifactBuilder()
             .withUrl("https://mydomain.tld/my.jar")
             .build();
@@ -79,7 +83,7 @@ public class KafkaConnectDockerfileTest {
                 .withPlugins(emptyList())
                 .build();
 
-        KafkaConnectDockerfile df = new KafkaConnectDockerfile("myImage:latest", connectBuild);
+        KafkaConnectDockerfile df = new KafkaConnectDockerfile("myImage:latest", connectBuild, SHARED_ENV_PROVIDER);
 
         assertThat(df.getDockerfile(), isEquivalent("FROM myImage:latest",
                 "USER root:root",
@@ -95,7 +99,7 @@ public class KafkaConnectDockerfileTest {
                         .build())
                 .build();
 
-        KafkaConnectDockerfile df = new KafkaConnectDockerfile("myImage:latest", connectBuild);
+        KafkaConnectDockerfile df = new KafkaConnectDockerfile("myImage:latest", connectBuild, SHARED_ENV_PROVIDER);
 
         assertThat(df.getDockerfile(), isEquivalent("FROM myImage:latest",
                 "USER root:root",
@@ -111,7 +115,7 @@ public class KafkaConnectDockerfileTest {
                         .build())
                 .build();
 
-        KafkaConnectDockerfile df = new KafkaConnectDockerfile("myImage:latest", connectBuild);
+        KafkaConnectDockerfile df = new KafkaConnectDockerfile("myImage:latest", connectBuild, SHARED_ENV_PROVIDER);
 
         assertThat(df.getDockerfile(), isEquivalent("FROM myImage:latest",
                 "USER root:root",
@@ -129,7 +133,7 @@ public class KafkaConnectDockerfileTest {
                         .build())
                 .build();
 
-        KafkaConnectDockerfile df = new KafkaConnectDockerfile("myImage:latest", connectBuild);
+        KafkaConnectDockerfile df = new KafkaConnectDockerfile("myImage:latest", connectBuild, SHARED_ENV_PROVIDER);
 
         assertThat(df.getDockerfile(), isEquivalent("FROM myImage:latest",
                 "USER root:root",
@@ -150,7 +154,7 @@ public class KafkaConnectDockerfileTest {
                         .build())
                 .build();
 
-        KafkaConnectDockerfile df = new KafkaConnectDockerfile("myImage:latest", connectBuild);
+        KafkaConnectDockerfile df = new KafkaConnectDockerfile("myImage:latest", connectBuild, SHARED_ENV_PROVIDER);
 
         assertThat(df.getDockerfile(), isEquivalent("FROM myImage:latest",
                 "USER root:root",
@@ -168,7 +172,7 @@ public class KafkaConnectDockerfileTest {
                         .build())
                 .build();
 
-        KafkaConnectDockerfile df = new KafkaConnectDockerfile("myImage:latest", connectBuild);
+        KafkaConnectDockerfile df = new KafkaConnectDockerfile("myImage:latest", connectBuild, SHARED_ENV_PROVIDER);
 
         assertThat(df.getDockerfile(), isEquivalent("FROM myImage:latest",
                 "USER root:root",
@@ -189,7 +193,7 @@ public class KafkaConnectDockerfileTest {
                         .build())
                 .build();
 
-        KafkaConnectDockerfile df = new KafkaConnectDockerfile("myImage:latest", connectBuild);
+        KafkaConnectDockerfile df = new KafkaConnectDockerfile("myImage:latest", connectBuild, SHARED_ENV_PROVIDER);
 
         assertThat(df.getDockerfile(), isEquivalent("FROM myImage:latest",
                 "USER root:root",
@@ -210,7 +214,7 @@ public class KafkaConnectDockerfileTest {
                         .build())
                 .build();
 
-        KafkaConnectDockerfile df = new KafkaConnectDockerfile("myImage:latest", connectBuild);
+        KafkaConnectDockerfile df = new KafkaConnectDockerfile("myImage:latest", connectBuild, SHARED_ENV_PROVIDER);
 
         assertThat(df.getDockerfile(), isEquivalent("FROM myImage:latest",
                 "USER root:root",
@@ -233,7 +237,7 @@ public class KafkaConnectDockerfileTest {
                         .build())
                 .build();
 
-        KafkaConnectDockerfile df = new KafkaConnectDockerfile("myImage:latest", connectBuild);
+        KafkaConnectDockerfile df = new KafkaConnectDockerfile("myImage:latest", connectBuild, SHARED_ENV_PROVIDER);
 
         assertThat(df.getDockerfile(), isEquivalent("FROM myImage:latest",
                 "USER root:root",
@@ -253,7 +257,7 @@ public class KafkaConnectDockerfileTest {
                         .build())
                 .build();
 
-        KafkaConnectDockerfile df = new KafkaConnectDockerfile("myImage:latest", connectBuild);
+        KafkaConnectDockerfile df = new KafkaConnectDockerfile("myImage:latest", connectBuild, SHARED_ENV_PROVIDER);
 
         assertThat(df.getDockerfile(), isEquivalent("FROM myImage:latest",
                 "USER root:root",
@@ -274,7 +278,7 @@ public class KafkaConnectDockerfileTest {
                         .build())
                 .build();
 
-        KafkaConnectDockerfile df = new KafkaConnectDockerfile("myImage:latest", connectBuild);
+        KafkaConnectDockerfile df = new KafkaConnectDockerfile("myImage:latest", connectBuild, SHARED_ENV_PROVIDER);
 
         assertThat(df.getDockerfile(), isEquivalent("FROM myImage:latest",
                 "USER root:root",
@@ -298,7 +302,7 @@ public class KafkaConnectDockerfileTest {
                         .build())
                 .build();
 
-        KafkaConnectDockerfile df = new KafkaConnectDockerfile("myImage:latest", connectBuild);
+        KafkaConnectDockerfile df = new KafkaConnectDockerfile("myImage:latest", connectBuild, SHARED_ENV_PROVIDER);
 
         assertThat(df.getDockerfile(), isEquivalent("FROM myImage:latest",
                 "USER root:root",
@@ -321,7 +325,7 @@ public class KafkaConnectDockerfileTest {
                         .build())
                 .build();
 
-        KafkaConnectDockerfile df = new KafkaConnectDockerfile("myImage:latest", connectBuild);
+        KafkaConnectDockerfile df = new KafkaConnectDockerfile("myImage:latest", connectBuild, SHARED_ENV_PROVIDER);
 
         assertThat(df.getDockerfile(), isEquivalent("FROM myImage:latest",
                 "USER root:root",
@@ -348,7 +352,7 @@ public class KafkaConnectDockerfileTest {
                         .build())
                 .build();
 
-        KafkaConnectDockerfile df = new KafkaConnectDockerfile("myImage:latest", connectBuild);
+        KafkaConnectDockerfile df = new KafkaConnectDockerfile("myImage:latest", connectBuild, SHARED_ENV_PROVIDER);
 
         assertThat(df.getDockerfile(), isEquivalent("FROM myImage:latest",
                 "USER root:root",
@@ -377,7 +381,7 @@ public class KafkaConnectDockerfileTest {
                         .build())
                 .build();
 
-        KafkaConnectDockerfile df = new KafkaConnectDockerfile("myImage:latest", connectBuild);
+        KafkaConnectDockerfile df = new KafkaConnectDockerfile("myImage:latest", connectBuild, SHARED_ENV_PROVIDER);
 
         assertThat(df.getDockerfile(), is("##############################\n" +
                 "##############################\n" +
@@ -423,7 +427,7 @@ public class KafkaConnectDockerfileTest {
                         .build())
                 .build();
 
-        Throwable e = assertThrows(InvalidConfigurationException.class, () -> new KafkaConnectDockerfile("myImage:latest", connectBuildTgz));
+        Throwable e = assertThrows(InvalidConfigurationException.class, () -> new KafkaConnectDockerfile("myImage:latest", connectBuildTgz, SHARED_ENV_PROVIDER));
         assertThat(e.getMessage(), is("`tgz` artifact is missing a URL."));
 
         Build connectBuildZip = new BuildBuilder()
@@ -433,7 +437,7 @@ public class KafkaConnectDockerfileTest {
                         .build())
                 .build();
 
-        e = assertThrows(InvalidConfigurationException.class, () -> new KafkaConnectDockerfile("myImage:latest", connectBuildZip));
+        e = assertThrows(InvalidConfigurationException.class, () -> new KafkaConnectDockerfile("myImage:latest", connectBuildZip, SHARED_ENV_PROVIDER));
         assertThat(e.getMessage(), is("`zip` artifact is missing a URL."));
 
         Build connectBuildJar = new BuildBuilder()
@@ -443,7 +447,7 @@ public class KafkaConnectDockerfileTest {
                         .build())
                 .build();
 
-        e = assertThrows(InvalidConfigurationException.class, () -> new KafkaConnectDockerfile("myImage:latest", connectBuildJar));
+        e = assertThrows(InvalidConfigurationException.class, () -> new KafkaConnectDockerfile("myImage:latest", connectBuildJar, SHARED_ENV_PROVIDER));
         assertThat(e.getMessage(), is("`jar` artifact is missing a URL."));
 
         Build connectBuildOther = new BuildBuilder()
@@ -453,7 +457,7 @@ public class KafkaConnectDockerfileTest {
                         .build())
                 .build();
 
-        e = assertThrows(InvalidConfigurationException.class, () -> new KafkaConnectDockerfile("myImage:latest", connectBuildOther));
+        e = assertThrows(InvalidConfigurationException.class, () -> new KafkaConnectDockerfile("myImage:latest", connectBuildOther, SHARED_ENV_PROVIDER));
         assertThat(e.getMessage(), is("`other` artifact is missing a URL."));
     }
 
@@ -474,7 +478,7 @@ public class KafkaConnectDockerfileTest {
                         .build())
                 .build();
 
-        KafkaConnectDockerfile df = new KafkaConnectDockerfile("myImage:latest", connectBuild);
+        KafkaConnectDockerfile df = new KafkaConnectDockerfile("myImage:latest", connectBuild, SHARED_ENV_PROVIDER);
 
         assertThat(df.getDockerfile(), isEquivalent("FROM myImage:latest",
                 "USER root:root",
@@ -521,7 +525,7 @@ public class KafkaConnectDockerfileTest {
                         .build())
                 .build();
 
-        KafkaConnectDockerfile df = new KafkaConnectDockerfile("myImage:latest", connectBuild);
+        KafkaConnectDockerfile df = new KafkaConnectDockerfile("myImage:latest", connectBuild, SHARED_ENV_PROVIDER);
 
         assertThat(df.getDockerfile(), is("##############################\n" +
                 "##############################\n" +
@@ -582,7 +586,7 @@ public class KafkaConnectDockerfileTest {
                         .build())
                 .build();
 
-        KafkaConnectDockerfile df = new KafkaConnectDockerfile("myImage:latest", connectBuild);
+        KafkaConnectDockerfile df = new KafkaConnectDockerfile("myImage:latest", connectBuild, SHARED_ENV_PROVIDER);
 
         assertThat(df.getDockerfile(), is("##############################\n" +
                 "##############################\n" +
@@ -627,7 +631,7 @@ public class KafkaConnectDockerfileTest {
                                 .build())
                 .build();
 
-        KafkaConnectDockerfile df = new KafkaConnectDockerfile("myImage:latest", connectBuild);
+        KafkaConnectDockerfile df = new KafkaConnectDockerfile("myImage:latest", connectBuild, SHARED_ENV_PROVIDER);
 
         assertThat(df.getDockerfile(), is("##############################\n" +
                 "##############################\n" +

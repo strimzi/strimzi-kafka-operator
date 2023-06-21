@@ -21,8 +21,10 @@ import io.strimzi.api.kafka.model.Probe;
 import io.strimzi.api.kafka.model.SystemProperty;
 import io.strimzi.api.kafka.model.SystemPropertyBuilder;
 import io.strimzi.api.kafka.model.template.EntityOperatorTemplateBuilder;
+import io.strimzi.operator.cluster.operator.resource.MockSharedEnvironmentProvider;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.cluster.operator.resource.SharedEnvironmentProvider;
 import io.strimzi.test.annotations.ParallelSuite;
 import io.strimzi.test.annotations.ParallelTest;
 
@@ -38,6 +40,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 @ParallelSuite
 public class EntityTopicOperatorTest {
+    private static final SharedEnvironmentProvider SHARED_ENV_PROVIDER = new MockSharedEnvironmentProvider();
 
     private final String namespace = "test";
     private final String cluster = "foo";
@@ -112,7 +115,8 @@ public class EntityTopicOperatorTest {
                     .endSpec()
                     .build();
 
-    private final EntityTopicOperator entityTopicOperator = EntityTopicOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource);
+    private final EntityTopicOperator entityTopicOperator = EntityTopicOperator.fromCrd(
+        new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, SHARED_ENV_PROVIDER);
 
     private List<EnvVar> getExpectedEnvVars() {
         List<EnvVar> expected = new ArrayList<>();
@@ -128,7 +132,6 @@ public class EntityTopicOperatorTest {
         expected.add(new EnvVarBuilder().withName(EntityTopicOperator.ENV_VAR_STRIMZI_GC_LOG_ENABLED).withValue(Boolean.toString(JvmOptions.DEFAULT_GC_LOGGING_ENABLED)).build());
         expected.add(new EnvVarBuilder().withName(EntityTopicOperator.ENV_VAR_STRIMZI_JAVA_OPTS).withValue("-Xms128m").build());
         expected.add(new EnvVarBuilder().withName(EntityTopicOperator.ENV_VAR_STRIMZI_JAVA_SYSTEM_PROPERTIES).withValue("-Djavax.net.debug=verbose -Dsomething.else=42").build());
-        io.strimzi.operator.cluster.TestUtils.maybeAddHttpProxyEnvVars(expected);
         return expected;
     }
 
@@ -176,7 +179,8 @@ public class EntityTopicOperatorTest {
                         .withEntityOperator(entityOperatorSpec)
                         .endSpec()
                         .build();
-        EntityTopicOperator entityTopicOperator = EntityTopicOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource);
+        EntityTopicOperator entityTopicOperator = EntityTopicOperator.fromCrd(
+            new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, SHARED_ENV_PROVIDER);
 
         assertThat(entityTopicOperator.watchedNamespace(), is(namespace));
         assertThat(entityTopicOperator.getImage(), is("quay.io/strimzi/operator:latest"));
@@ -197,7 +201,8 @@ public class EntityTopicOperatorTest {
     public void testFromCrdNoEntityOperator() {
         Kafka resource = ResourceUtils.createKafka(namespace, cluster, replicas, image,
                 healthDelay, healthTimeout);
-        EntityTopicOperator entityTopicOperator = EntityTopicOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource);
+        EntityTopicOperator entityTopicOperator = EntityTopicOperator.fromCrd(
+            new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, SHARED_ENV_PROVIDER);
         assertThat(entityTopicOperator, is(nullValue()));
     }
 
@@ -210,7 +215,8 @@ public class EntityTopicOperatorTest {
                         .withEntityOperator(entityOperatorSpec)
                         .endSpec()
                         .build();
-        EntityTopicOperator entityTopicOperator = EntityTopicOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource);
+        EntityTopicOperator entityTopicOperator = EntityTopicOperator.fromCrd(
+            new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, SHARED_ENV_PROVIDER);
         assertThat(entityTopicOperator, is(nullValue()));
     }
 
@@ -226,7 +232,8 @@ public class EntityTopicOperatorTest {
                         .endSpec()
                         .build();
 
-        EntityTopicOperator entityTopicOperator = EntityTopicOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource);
+        EntityTopicOperator entityTopicOperator = EntityTopicOperator.fromCrd(
+            new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, SHARED_ENV_PROVIDER);
 
         assertThat(entityTopicOperator.watchedNamespace(), is(namespace));
     }
@@ -244,7 +251,8 @@ public class EntityTopicOperatorTest {
                 .endSpec()
                 .build();
 
-        EntityTopicOperator entityTopicOperator = EntityTopicOperator.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource);
+        EntityTopicOperator entityTopicOperator = EntityTopicOperator.fromCrd(
+            new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, SHARED_ENV_PROVIDER);
 
         assertThat(entityTopicOperator.watchedNamespace(), is("some-other-namespace"));
     }

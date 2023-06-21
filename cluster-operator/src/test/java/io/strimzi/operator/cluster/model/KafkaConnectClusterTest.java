@@ -65,6 +65,7 @@ import io.strimzi.api.kafka.model.tracing.JaegerTracing;
 import io.strimzi.api.kafka.model.tracing.OpenTelemetryTracing;
 import io.strimzi.kafka.oauth.client.ClientConfig;
 import io.strimzi.kafka.oauth.server.ServerConfig;
+import io.strimzi.operator.cluster.operator.resource.MockSharedEnvironmentProvider;
 import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
@@ -72,6 +73,7 @@ import io.strimzi.operator.cluster.model.metrics.MetricsModel;
 import io.strimzi.operator.cluster.operator.resource.PodRevision;
 import io.strimzi.operator.common.MetricsAndLogging;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.cluster.operator.resource.SharedEnvironmentProvider;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.OrderedProperties;
 import io.strimzi.platform.KubernetesVersion;
@@ -109,6 +111,11 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 @ParallelSuite
 public class KafkaConnectClusterTest {
     private static final KafkaVersion.Lookup VERSIONS = KafkaVersionTestUtils.getKafkaVersionLookup();
+    private static final SharedEnvironmentProvider SHARED_ENV_PROVIDER = new MockSharedEnvironmentProvider(Map.of(
+        "NO_PROXY", new EnvVarBuilder().withName("NO_PROXY").withValue("127.0.0.1").build(),
+        "NON_SHARED_VAR", new EnvVarBuilder().withName("NON_SHARED_VAR").withValue("foo").build()
+    ));
+
     private final String namespace = "test";
     private final String clusterName = "foo";
     private final int replicas = 2;
@@ -152,7 +159,7 @@ public class KafkaConnectClusterTest {
             .endSpec()
             .build();
 
-    private final KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resourceWithMetrics, VERSIONS);
+    private final KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resourceWithMetrics, VERSIONS, SHARED_ENV_PROVIDER);
 
     @ParallelTest
     public void testMetricsConfigMap() {
@@ -191,7 +198,7 @@ public class KafkaConnectClusterTest {
         expected.add(new EnvVarBuilder().withName(KafkaConnectCluster.ENV_VAR_KAFKA_CONNECT_BOOTSTRAP_SERVERS).withValue(bootstrapServers).build());
         expected.add(new EnvVarBuilder().withName(KafkaConnectCluster.ENV_VAR_STRIMZI_KAFKA_GC_LOG_ENABLED).withValue(Boolean.toString(JvmOptions.DEFAULT_GC_LOGGING_ENABLED)).build());
         expected.add(new EnvVarBuilder().withName(AbstractModel.ENV_VAR_KAFKA_HEAP_OPTS).withValue(kafkaHeapOpts).build());
-        io.strimzi.operator.cluster.TestUtils.maybeAddHttpProxyEnvVars(expected);
+        expected.add(new EnvVarBuilder().withName("NO_PROXY").withValue("127.0.0.1").build());
         if (stablePodIdentities) {
             expected.add(new EnvVarBuilder().withName(KafkaConnectCluster.ENV_VAR_STRIMZI_STABLE_IDENTITIES_ENABLED).withValue("true").build());
         }
@@ -200,7 +207,7 @@ public class KafkaConnectClusterTest {
 
     @ParallelTest
     public void testDefaultValues() {
-        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, ResourceUtils.createEmptyKafkaConnect(namespace, clusterName), VERSIONS);
+        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, ResourceUtils.createEmptyKafkaConnect(namespace, clusterName), VERSIONS, SHARED_ENV_PROVIDER);
 
         assertThat(kc.image, is(KafkaVersionTestUtils.DEFAULT_KAFKA_CONNECT_IMAGE));
         assertThat(kc.getReplicas(), is(3));
@@ -260,7 +267,7 @@ public class KafkaConnectClusterTest {
                     .endTemplate()
                 .endSpec()
                 .build();
-        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS);
+        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS, SHARED_ENV_PROVIDER);
         Service svc = kc.generateHeadlessService();
 
         Map<String, String> expectedLabels = expectedLabels(kc.getComponentName());
@@ -296,7 +303,7 @@ public class KafkaConnectClusterTest {
                 .endSpec()
                 .build();
 
-        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS);
+        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS, SHARED_ENV_PROVIDER);
         Deployment deployment = kc.generateDeployment(replicas, null, new HashMap<>(), false, null, null, null);
 
         checkDeployment(deployment, resource);
@@ -304,14 +311,14 @@ public class KafkaConnectClusterTest {
 
     @ParallelTest
     public void withAffinity() throws IOException {
-        ResourceTester<KafkaConnect, KafkaConnectCluster> resourceTester = new ResourceTester<>(KafkaConnect.class, VERSIONS, (connect, lookup) -> KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, connect, lookup), this.getClass().getSimpleName() + ".withAffinity");
+        ResourceTester<KafkaConnect, KafkaConnectCluster> resourceTester = new ResourceTester<>(KafkaConnect.class, VERSIONS, (connect, lookup) -> KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, connect, lookup, SHARED_ENV_PROVIDER), this.getClass().getSimpleName() + ".withAffinity");
         resourceTester
             .assertDesiredModel("-Deployment.yaml", kcc -> kcc.generateDeployment(replicas, null, new HashMap<>(), true, null, null, null).getSpec().getTemplate().getSpec().getAffinity());
     }
 
     @ParallelTest
     public void withTolerations() throws IOException {
-        ResourceTester<KafkaConnect, KafkaConnectCluster> resourceTester = new ResourceTester<>(KafkaConnect.class, VERSIONS, (connect, lookup) -> KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, connect, lookup), this.getClass().getSimpleName() + ".withTolerations");
+        ResourceTester<KafkaConnect, KafkaConnectCluster> resourceTester = new ResourceTester<>(KafkaConnect.class, VERSIONS, (connect, lookup) -> KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, connect, lookup, SHARED_ENV_PROVIDER), this.getClass().getSimpleName() + ".withTolerations");
         resourceTester
             .assertDesiredModel("-Deployment.yaml", kcc -> kcc.generateDeployment(replicas, null, new HashMap<>(), true, null, null, null).getSpec().getTemplate().getSpec().getTolerations());
     }
@@ -327,7 +334,7 @@ public class KafkaConnectClusterTest {
                 .endTls()
                 .endSpec()
                 .build();
-        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS);
+        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS, SHARED_ENV_PROVIDER);
         Deployment dep = kc.generateDeployment(replicas, null, emptyMap(), true, null, null, null);
 
         assertThat(dep.getSpec().getTemplate().getSpec().getVolumes().get(2).getName(), is("my-secret"));
@@ -360,7 +367,7 @@ public class KafkaConnectClusterTest {
                                 .build())
                 .endSpec()
                 .build();
-        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS);
+        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS, SHARED_ENV_PROVIDER);
         Deployment dep = kc.generateDeployment(replicas, null, emptyMap(), true, null, null, null);
 
         assertThat(dep.getSpec().getTemplate().getSpec().getVolumes().get(3).getName(), is("user-secret"));
@@ -391,7 +398,7 @@ public class KafkaConnectClusterTest {
                                 .build())
                 .endSpec()
                 .build();
-        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS);
+        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS, SHARED_ENV_PROVIDER);
         Deployment dep = kc.generateDeployment(replicas, null, emptyMap(), true, null, null, null);
 
         // 3 = 1 temp volume + 1 volume from logging/metrics + just 1 from above certs Secret
@@ -412,7 +419,7 @@ public class KafkaConnectClusterTest {
                     .endKafkaClientAuthenticationScramSha512()
                 .endSpec()
                 .build();
-        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS);
+        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS, SHARED_ENV_PROVIDER);
         Deployment dep = kc.generateDeployment(replicas, null, emptyMap(), true, null, null, null);
 
         assertThat(dep.getSpec().getTemplate().getSpec().getVolumes().get(2).getName(), is("user1-secret"));
@@ -447,7 +454,7 @@ public class KafkaConnectClusterTest {
                 .endKafkaClientAuthenticationScramSha512()
             .endSpec()
             .build();
-        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS);
+        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS, SHARED_ENV_PROVIDER);
         Deployment dep = kc.generateDeployment(replicas, null, emptyMap(), true, null, null, null);
 
         assertThat(dep.getSpec().getTemplate().getSpec().getVolumes().size(), is(3));
@@ -486,7 +493,7 @@ public class KafkaConnectClusterTest {
                 .endKafkaClientAuthenticationScramSha256()
                 .endSpec()
                 .build();
-        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS);
+        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS, SHARED_ENV_PROVIDER);
         Deployment dep = kc.generateDeployment(replicas, null, emptyMap(), true, null, null, null);
 
         assertThat(dep.getSpec().getTemplate().getSpec().getVolumes().get(2).getName(), is("user1-secret"));
@@ -521,7 +528,7 @@ public class KafkaConnectClusterTest {
                 .endKafkaClientAuthenticationScramSha256()
                 .endSpec()
                 .build();
-        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS);
+        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS, SHARED_ENV_PROVIDER);
         Deployment dep = kc.generateDeployment(replicas, null, emptyMap(), true, null, null, null);
 
         assertThat(dep.getSpec().getTemplate().getSpec().getVolumes().size(), is(3));
@@ -560,7 +567,7 @@ public class KafkaConnectClusterTest {
                 .endKafkaClientAuthenticationPlain()
             .endSpec()
             .build();
-        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS);
+        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS, SHARED_ENV_PROVIDER);
         Deployment dep = kc.generateDeployment(replicas, null, emptyMap(), true, null, null, null);
 
         assertThat(dep.getSpec().getTemplate().getSpec().getVolumes().get(2).getName(), is("user1-secret"));
@@ -595,7 +602,7 @@ public class KafkaConnectClusterTest {
                 .endKafkaClientAuthenticationPlain()
             .endSpec()
             .build();
-        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS);
+        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS, SHARED_ENV_PROVIDER);
         Deployment dep = kc.generateDeployment(replicas, null, emptyMap(), true, null, null, null);
 
         assertThat(dep.getSpec().getTemplate().getSpec().getVolumes().size(), is(3));
@@ -635,7 +642,7 @@ public class KafkaConnectClusterTest {
                     .endTemplate()
                 .endSpec()
                 .build();
-        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS);
+        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS, SHARED_ENV_PROVIDER);
 
         StrimziPodSet ps = kc.generatePodSet(3, Map.of("anno2", "anno-value2"), Map.of("anno3", "anno-value3"), false, null, null, null);
 
@@ -776,7 +783,7 @@ public class KafkaConnectClusterTest {
                     .endTemplate()
                 .endSpec()
                 .build();
-        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS);
+        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS, SHARED_ENV_PROVIDER);
 
         // Check Deployment
         Deployment dep = kc.generateDeployment(replicas, null, emptyMap(), true, null, null, null);
@@ -835,7 +842,7 @@ public class KafkaConnectClusterTest {
 
                 .endSpec()
                 .build();
-        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS);
+        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS, SHARED_ENV_PROVIDER);
 
         // Check Deployment
         Deployment dep = kc.generateDeployment(replicas, null, emptyMap(), true, null, null, null);
@@ -862,7 +869,7 @@ public class KafkaConnectClusterTest {
                 .endExternalConfiguration()
                 .endSpec()
                 .build();
-        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS);
+        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS, SHARED_ENV_PROVIDER);
 
         // Check Deployment
         Deployment dep = kc.generateDeployment(replicas, null, emptyMap(), true, null, null, null);
@@ -887,7 +894,7 @@ public class KafkaConnectClusterTest {
                     .endExternalConfiguration()
                 .endSpec()
                 .build();
-        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS);
+        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS, SHARED_ENV_PROVIDER);
 
         // Check Deployment
         Deployment dep = kc.generateDeployment(replicas, null, emptyMap(), true, null, null, null);
@@ -918,7 +925,7 @@ public class KafkaConnectClusterTest {
                     .endExternalConfiguration()
                 .endSpec()
                 .build();
-        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS);
+        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS, SHARED_ENV_PROVIDER);
 
         // Check Deployment
         Deployment dep = kc.generateDeployment(replicas, null, emptyMap(), true, null, null, null);
@@ -949,7 +956,7 @@ public class KafkaConnectClusterTest {
                     .endExternalConfiguration()
                 .endSpec()
                 .build();
-        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS);
+        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS, SHARED_ENV_PROVIDER);
 
         // Check Deployment
         Deployment dep = kc.generateDeployment(replicas, null, emptyMap(), true, null, null, null);
@@ -980,7 +987,7 @@ public class KafkaConnectClusterTest {
                     .endExternalConfiguration()
                 .endSpec()
                 .build();
-        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS);
+        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS, SHARED_ENV_PROVIDER);
 
         // Check Deployment
         Deployment dep = kc.generateDeployment(replicas, null, emptyMap(), true, null, null, null);
@@ -1012,7 +1019,7 @@ public class KafkaConnectClusterTest {
                     .endExternalConfiguration()
                 .endSpec()
                 .build();
-        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS);
+        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS, SHARED_ENV_PROVIDER);
 
         // Check Deployment
         Deployment dep = kc.generateDeployment(replicas, null, emptyMap(), true, null, null, null);
@@ -1038,7 +1045,7 @@ public class KafkaConnectClusterTest {
                 .endExternalConfiguration()
                 .endSpec()
                 .build();
-        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS);
+        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS, SHARED_ENV_PROVIDER);
 
         // Check Deployment
         Deployment dep = kc.generateDeployment(replicas, null, emptyMap(), true, null, null, null);
@@ -1068,7 +1075,7 @@ public class KafkaConnectClusterTest {
                 .endExternalConfiguration()
                 .endSpec()
                 .build();
-        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS);
+        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS, SHARED_ENV_PROVIDER);
 
         // Check Deployment
         Deployment dep = kc.generateDeployment(replicas, null, emptyMap(), true, null, null, null);
@@ -1092,7 +1099,7 @@ public class KafkaConnectClusterTest {
                 .endExternalConfiguration()
                 .endSpec()
                 .build();
-        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS);
+        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS, SHARED_ENV_PROVIDER);
 
         // Check Deployment
         Deployment dep = kc.generateDeployment(replicas, null, emptyMap(), true, null, null, null);
@@ -1112,7 +1119,7 @@ public class KafkaConnectClusterTest {
                     .endTemplate()
                 .endSpec()
                 .build();
-        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS);
+        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS, SHARED_ENV_PROVIDER);
 
         Deployment dep = kc.generateDeployment(replicas, null, emptyMap(), true, null, null, null);
         assertThat(dep.getSpec().getTemplate().getSpec().getTerminationGracePeriodSeconds(), is(123L));
@@ -1121,7 +1128,7 @@ public class KafkaConnectClusterTest {
     @ParallelTest
     public void testDefaultGracePeriod() {
         KafkaConnect resource = new KafkaConnectBuilder(this.resource).build();
-        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS);
+        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS, SHARED_ENV_PROVIDER);
 
         Deployment dep = kc.generateDeployment(replicas, null, emptyMap(), true, null, null, null);
         assertThat(dep.getSpec().getTemplate().getSpec().getTerminationGracePeriodSeconds(), is(30L));
@@ -1141,7 +1148,7 @@ public class KafkaConnectClusterTest {
                     .endTemplate()
                 .endSpec()
                 .build();
-        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS);
+        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS, SHARED_ENV_PROVIDER);
 
         Deployment dep = kc.generateDeployment(replicas, null, emptyMap(), true, null, null, null);
         assertThat(dep.getSpec().getTemplate().getSpec().getImagePullSecrets().size(), is(2));
@@ -1158,7 +1165,7 @@ public class KafkaConnectClusterTest {
         secrets.add(secret1);
         secrets.add(secret2);
 
-        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, this.resource, VERSIONS);
+        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, this.resource, VERSIONS, SHARED_ENV_PROVIDER);
 
         Deployment dep = kc.generateDeployment(replicas, null, emptyMap(), true, null, secrets, null);
         assertThat(dep.getSpec().getTemplate().getSpec().getImagePullSecrets().size(), is(2));
@@ -1180,7 +1187,7 @@ public class KafkaConnectClusterTest {
                     .endTemplate()
                 .endSpec()
                 .build();
-        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS);
+        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS, SHARED_ENV_PROVIDER);
 
         Deployment dep = kc.generateDeployment(replicas, null, emptyMap(), true, null, singletonList(secret1), null);
         assertThat(dep.getSpec().getTemplate().getSpec().getImagePullSecrets().size(), is(1));
@@ -1191,7 +1198,7 @@ public class KafkaConnectClusterTest {
     @ParallelTest
     public void testDefaultImagePullSecrets() {
         KafkaConnect resource = new KafkaConnectBuilder(this.resource).build();
-        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS);
+        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS, SHARED_ENV_PROVIDER);
 
         Deployment dep = kc.generateDeployment(replicas, null, emptyMap(), true, null, null, null);
         assertThat(dep.getSpec().getTemplate().getSpec().getImagePullSecrets(), is(nullValue()));
@@ -1208,7 +1215,7 @@ public class KafkaConnectClusterTest {
                     .endTemplate()
                 .endSpec()
                 .build();
-        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS);
+        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS, SHARED_ENV_PROVIDER);
 
         Deployment dep = kc.generateDeployment(replicas, null, emptyMap(), true, null, null, null);
         assertThat(dep.getSpec().getTemplate().getSpec().getSecurityContext(), is(notNullValue()));
@@ -1220,7 +1227,7 @@ public class KafkaConnectClusterTest {
     @ParallelTest
     public void testDefaultSecurityContext() {
         KafkaConnect resource = new KafkaConnectBuilder(this.resource).build();
-        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS);
+        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS, SHARED_ENV_PROVIDER);
 
         Deployment dep = kc.generateDeployment(replicas, null, emptyMap(), true, null, null, null);
         assertThat(dep.getSpec().getTemplate().getSpec().getSecurityContext(), is(nullValue()));
@@ -1228,7 +1235,7 @@ public class KafkaConnectClusterTest {
 
     @ParallelTest
     public void testRestrictedSecurityContext() {
-        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS);
+        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS, SHARED_ENV_PROVIDER);
         kc.securityProvider = new RestrictedPodSecurityProvider();
         kc.securityProvider.configure(new PlatformFeaturesAvailability(false, KubernetesVersion.MINIMAL_SUPPORTED_VERSION));
 
@@ -1251,7 +1258,7 @@ public class KafkaConnectClusterTest {
                     .endTemplate()
                 .endSpec()
                 .build();
-        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS);
+        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS, SHARED_ENV_PROVIDER);
 
         PodDisruptionBudget pdb = kc.generatePodDisruptionBudget(false);
         assertThat(pdb.getSpec().getMinAvailable(), is(nullValue()));
@@ -1265,7 +1272,7 @@ public class KafkaConnectClusterTest {
     @ParallelTest
     public void testDefaultPodDisruptionBudget() {
         KafkaConnect resource = new KafkaConnectBuilder(this.resource).build();
-        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS);
+        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS, SHARED_ENV_PROVIDER);
 
         PodDisruptionBudget pdb = kc.generatePodDisruptionBudget(false);
         assertThat(pdb.getSpec().getMinAvailable(), is(nullValue()));
@@ -1278,7 +1285,7 @@ public class KafkaConnectClusterTest {
 
     @ParallelTest
     public void testImagePullPolicy() {
-        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS);
+        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS, SHARED_ENV_PROVIDER);
 
         Deployment dep = kc.generateDeployment(replicas, null, Collections.EMPTY_MAP, true, ImagePullPolicy.ALWAYS, null, null);
         assertThat(dep.getSpec().getTemplate().getSpec().getContainers().get(0).getImagePullPolicy(), is(ImagePullPolicy.ALWAYS.toString()));
@@ -1302,7 +1309,7 @@ public class KafkaConnectClusterTest {
                     .withResources(new ResourceRequirementsBuilder().withLimits(limits).withRequests(requests).build())
                 .endSpec()
                 .build();
-        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS);
+        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS, SHARED_ENV_PROVIDER);
 
         Deployment dep = kc.generateDeployment(replicas, null, Collections.EMPTY_MAP, true, null, null, null);
         Container cont = dep.getSpec().getTemplate().getSpec().getContainers().get(0);
@@ -1325,7 +1332,7 @@ public class KafkaConnectClusterTest {
                     .endJvmOptions()
                 .endSpec()
                 .build();
-        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS);
+        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS, SHARED_ENV_PROVIDER);
 
         Deployment dep = kc.generateDeployment(replicas, null, Collections.EMPTY_MAP, true, null, null, null);
         Container cont = dep.getSpec().getTemplate().getSpec().getContainers().get(0);
@@ -1364,7 +1371,7 @@ public class KafkaConnectClusterTest {
                 .endSpec()
                 .build();
 
-        List<EnvVar> kafkaEnvVars = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS).getEnvVars(false);
+        List<EnvVar> kafkaEnvVars = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS, SHARED_ENV_PROVIDER).getEnvVars(false);
 
         assertThat("Failed to correctly set container environment variable: " + testEnvOneKey,
                 kafkaEnvVars.stream().filter(env -> testEnvOneKey.equals(env.getName()))
@@ -1402,7 +1409,7 @@ public class KafkaConnectClusterTest {
                 .endSpec()
                 .build();
 
-        List<EnvVar> kafkaEnvVars = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS).getEnvVars(false);
+        List<EnvVar> kafkaEnvVars = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS, SHARED_ENV_PROVIDER).getEnvVars(false);
 
         assertThat("Failed to prevent over writing existing container environment variable: " + testEnvOneKey,
                 kafkaEnvVars.stream().filter(env -> testEnvOneKey.equals(env.getName()))
@@ -1435,7 +1442,7 @@ public class KafkaConnectClusterTest {
                 .endSpec()
                 .build();
 
-        KafkaConnectCluster kcc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS);
+        KafkaConnectCluster kcc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS, SHARED_ENV_PROVIDER);
         Deployment deployment = kcc.generateDeployment(replicas, null, null, false, null, null, null);
 
         assertThat(deployment.getSpec().getTemplate().getSpec().getContainers(),
@@ -1479,7 +1486,7 @@ public class KafkaConnectClusterTest {
         }
         KafkaConnect resource = builder.build();
 
-        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS);
+        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS, SHARED_ENV_PROVIDER);
 
         Deployment dep = kc.generateDeployment(replicas, null, Collections.EMPTY_MAP, true, null, null, null);
         Container cont = dep.getSpec().getTemplate().getSpec().getContainers().get(0);
@@ -1502,7 +1509,7 @@ public class KafkaConnectClusterTest {
                 .endSpec()
                 .build();
 
-        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS);
+        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS, SHARED_ENV_PROVIDER);
         Deployment dep = kc.generateDeployment(replicas, null, emptyMap(), true, null, null, null);
         Container cont = dep.getSpec().getTemplate().getSpec().getContainers().get(0);
 
@@ -1533,7 +1540,7 @@ public class KafkaConnectClusterTest {
                 .endSpec()
                 .build();
 
-        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS);
+        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS, SHARED_ENV_PROVIDER);
         Deployment dep = kc.generateDeployment(replicas, null, emptyMap(), true, null, null, null);
         Container cont = dep.getSpec().getTemplate().getSpec().getContainers().get(0);
 
@@ -1563,7 +1570,7 @@ public class KafkaConnectClusterTest {
                 .endSpec()
                 .build();
 
-        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS);
+        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS, SHARED_ENV_PROVIDER);
         Deployment dep = kc.generateDeployment(replicas, null, emptyMap(), true, null, null, null);
         Container cont = dep.getSpec().getTemplate().getSpec().getContainers().get(0);
 
@@ -1596,7 +1603,7 @@ public class KafkaConnectClusterTest {
                 .endSpec()
                 .build();
 
-        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS);
+        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS, SHARED_ENV_PROVIDER);
         Deployment dep = kc.generateDeployment(replicas, null, emptyMap(), true, null, null, null);
         Container cont = dep.getSpec().getTemplate().getSpec().getContainers().get(0);
 
@@ -1623,7 +1630,7 @@ public class KafkaConnectClusterTest {
                     .endSpec()
                     .build();
 
-            KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS);
+            KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS, SHARED_ENV_PROVIDER);
         });
     }
 
@@ -1643,7 +1650,7 @@ public class KafkaConnectClusterTest {
                     .endSpec()
                     .build();
 
-            KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS);
+            KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS, SHARED_ENV_PROVIDER);
         });
     }
 
@@ -1680,7 +1687,7 @@ public class KafkaConnectClusterTest {
                 .endSpec()
                 .build();
 
-        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS);
+        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS, SHARED_ENV_PROVIDER);
         Deployment dep = kc.generateDeployment(replicas, null, emptyMap(), true, null, null, null);
         Container cont = dep.getSpec().getTemplate().getSpec().getContainers().get(0);
 
@@ -1713,7 +1720,7 @@ public class KafkaConnectClusterTest {
     public void testNetworkPolicyWithConnectorOperator() {
         KafkaConnect resource = new KafkaConnectBuilder(this.resourceWithMetrics)
                 .build();
-        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS);
+        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS, SHARED_ENV_PROVIDER);
 
         NetworkPolicy np = kc.generateNetworkPolicy(true, "operator-namespace", null);
 
@@ -1735,7 +1742,7 @@ public class KafkaConnectClusterTest {
     public void testNetworkPolicyWithConnectorOperatorSameNamespace() {
         KafkaConnect resource = new KafkaConnectBuilder(this.resourceWithMetrics)
                 .build();
-        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS);
+        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS, SHARED_ENV_PROVIDER);
 
         NetworkPolicy np = kc.generateNetworkPolicy(true, namespace, null);
 
@@ -1757,7 +1764,7 @@ public class KafkaConnectClusterTest {
     public void testNetworkPolicyWithConnectorOperatorWithNamespaceLabels() {
         KafkaConnect resource = new KafkaConnectBuilder(this.resourceWithMetrics)
                 .build();
-        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS);
+        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS, SHARED_ENV_PROVIDER);
 
         NetworkPolicy np = kc.generateNetworkPolicy(true, "operator-namespace", Labels.fromMap(Collections.singletonMap("nsLabelKey", "nsLabelValue")));
 
@@ -1779,7 +1786,7 @@ public class KafkaConnectClusterTest {
     public void testNetworkPolicyWithoutConnectorOperator() {
         KafkaConnect resource = new KafkaConnectBuilder(this.resource)
                 .build();
-        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS);
+        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS, SHARED_ENV_PROVIDER);
 
         assertThat(kc.generateNetworkPolicy(false, null, null), is(nullValue()));
     }
@@ -1798,7 +1805,7 @@ public class KafkaConnectClusterTest {
                     .endSpec()
                 .build();
 
-        KafkaConnectCluster cluster = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS);
+        KafkaConnectCluster cluster = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS, SHARED_ENV_PROVIDER);
         ClusterRoleBinding crb = cluster.generateClusterRoleBinding();
 
         assertThat(crb.getMetadata().getName(), is(KafkaConnectResources.initContainerClusterRoleBindingName(clusterName, testNamespace)));
@@ -1817,7 +1824,7 @@ public class KafkaConnectClusterTest {
                 .endMetadata()
                 .build();
 
-        KafkaConnectCluster cluster = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS);
+        KafkaConnectCluster cluster = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS, SHARED_ENV_PROVIDER);
         ClusterRoleBinding crb = cluster.generateClusterRoleBinding();
 
         assertThat(crb, is(nullValue()));
@@ -1887,7 +1894,7 @@ public class KafkaConnectClusterTest {
                 .endSpec()
                 .build();
 
-        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaConnect, VERSIONS);
+        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaConnect, VERSIONS, SHARED_ENV_PROVIDER);
 
         assertThat(kc.metrics().isEnabled(), is(true));
         assertThat(kc.metrics().getConfigMapName(), is("my-metrics-configuration"));
@@ -1896,7 +1903,7 @@ public class KafkaConnectClusterTest {
 
     @ParallelTest
     public void testMetricsParsingNoMetrics() {
-        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, this.resource, VERSIONS);
+        KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, this.resource, VERSIONS, SHARED_ENV_PROVIDER);
 
         assertThat(kc.metrics().isEnabled(), is(false));
         assertThat(kc.metrics().getConfigMapName(), is(nullValue()));
@@ -1930,7 +1937,7 @@ public class KafkaConnectClusterTest {
                 .endSpec()
                 .build();
 
-        KafkaConnectCluster kafkaConnectCluster = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaConnect, VERSIONS);
+        KafkaConnectCluster kafkaConnectCluster = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaConnect, VERSIONS, SHARED_ENV_PROVIDER);
 
         Secret jmxSecret = kafkaConnectCluster.jmx().jmxSecret(null);
 
@@ -1966,7 +1973,7 @@ public class KafkaConnectClusterTest {
             .endSpec()
             .build();
 
-        KafkaConnectCluster kcc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaConnect, VERSIONS);
+        KafkaConnectCluster kcc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaConnect, VERSIONS, SHARED_ENV_PROVIDER);
 
         ResourceRequirements initContainersResources = kcc.createInitContainer(ImagePullPolicy.IFNOTPRESENT).getResources();
         assertThat(initContainersResources.getRequests(), is(requirements));

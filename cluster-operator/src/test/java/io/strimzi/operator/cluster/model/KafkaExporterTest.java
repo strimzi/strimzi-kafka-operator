@@ -37,10 +37,12 @@ import io.strimzi.api.kafka.model.storage.EphemeralStorage;
 import io.strimzi.api.kafka.model.storage.SingleVolumeStorage;
 import io.strimzi.api.kafka.model.storage.Storage;
 import io.strimzi.api.kafka.model.template.DeploymentStrategy;
+import io.strimzi.operator.cluster.operator.resource.MockSharedEnvironmentProvider;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.metrics.MetricsModel;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.cluster.operator.resource.SharedEnvironmentProvider;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.annotations.ParallelSuite;
@@ -62,6 +64,8 @@ import static org.hamcrest.Matchers.containsInAnyOrder;
 
 @ParallelSuite
 public class KafkaExporterTest {
+    private static final SharedEnvironmentProvider SHARED_ENV_PROVIDER = new MockSharedEnvironmentProvider();
+
     private final String namespace = "test";
     private final String cluster = "foo";
     private final int replicas = 3;
@@ -110,7 +114,8 @@ public class KafkaExporterTest {
                         .withKafkaExporter(exporterOperator)
                     .endSpec()
                     .build();
-    private final KafkaExporter ke = KafkaExporter.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, VERSIONS);
+    private final KafkaExporter ke = KafkaExporter.fromCrd(
+        new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, VERSIONS, SHARED_ENV_PROVIDER);
 
     public void checkOwnerReference(OwnerReference ownerRef, HasMetadata resource)  {
         assertThat(resource.getMetadata().getOwnerReferences().size(), is(1));
@@ -125,7 +130,6 @@ public class KafkaExporterTest {
         expected.add(new EnvVarBuilder().withName(KafkaExporter.ENV_VAR_KAFKA_EXPORTER_TOPIC_REGEX).withValue(topicRegex).build());
         expected.add(new EnvVarBuilder().withName(KafkaExporter.ENV_VAR_KAFKA_EXPORTER_KAFKA_SERVER).withValue("foo-kafka-bootstrap:" + KafkaCluster.REPLICATION_PORT).build());
         expected.add(new EnvVarBuilder().withName(KafkaExporter.ENV_VAR_KAFKA_EXPORTER_ENABLE_SARAMA).withValue("true").build());
-        io.strimzi.operator.cluster.TestUtils.maybeAddHttpProxyEnvVars(expected);
         return expected;
     }
 
@@ -134,7 +138,8 @@ public class KafkaExporterTest {
         Kafka resource = ResourceUtils.createKafka(namespace, cluster, replicas, null,
                 healthDelay, healthTimeout, jmxMetricsConfig, kafkaConfig, zooConfig,
                 kafkaStorage, zkStorage, kafkaLogJson, zooLogJson, new KafkaExporterSpec(), null);
-        KafkaExporter ke = KafkaExporter.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, VERSIONS);
+        KafkaExporter ke = KafkaExporter.fromCrd(
+            new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, VERSIONS, SHARED_ENV_PROVIDER);
         assertThat(ke.getImage(), is(KafkaVersionTestUtils.DEFAULT_KAFKA_IMAGE));
         assertThat(ke.exporterLogging, is("info"));
         assertThat(ke.groupRegex, is(".*"));
@@ -264,7 +269,8 @@ public class KafkaExporterTest {
         Kafka resource = ResourceUtils.createKafka(namespace, cluster, replicas, image,
                 healthDelay, healthTimeout, jmxMetricsConfig, kafkaConfig, zooConfig,
                 kafkaStorage, zkStorage, kafkaLogJson, zooLogJson, exporterSpec, null);
-        KafkaExporter ke = KafkaExporter.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, VERSIONS);
+        KafkaExporter ke = KafkaExporter.fromCrd(
+            new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, VERSIONS, SHARED_ENV_PROVIDER);
 
         List<EnvVar> kafkaEnvVars = ke.getEnvVars();
         assertThat(kafkaEnvVars.stream().filter(var -> testEnvOneKey.equals(var.getName())).map(EnvVar::getValue).findFirst().orElseThrow(), is(testEnvOneValue));
@@ -300,7 +306,8 @@ public class KafkaExporterTest {
         Kafka resource = ResourceUtils.createKafka(namespace, cluster, replicas, image,
                 healthDelay, healthTimeout, jmxMetricsConfig, kafkaConfig, zooConfig,
                 kafkaStorage, zkStorage, kafkaLogJson, zooLogJson, exporterSpec, null);
-        KafkaExporter ke = KafkaExporter.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, VERSIONS);
+        KafkaExporter ke = KafkaExporter.fromCrd(
+            new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, VERSIONS, SHARED_ENV_PROVIDER);
 
         List<EnvVar> kafkaEnvVars = ke.getEnvVars();
         assertThat(kafkaEnvVars.stream().filter(var -> testEnvOneKey.equals(var.getName())).map(EnvVar::getValue).findFirst().orElseThrow(), is(testEnvOneValue));
@@ -312,7 +319,8 @@ public class KafkaExporterTest {
         Kafka resource = ResourceUtils.createKafka(namespace, cluster, replicas, image,
                 healthDelay, healthTimeout, jmxMetricsConfig, kafkaConfig, zooConfig,
                 kafkaStorage, zkStorage, kafkaLogJson, zooLogJson, null, null);
-        KafkaExporter ke = KafkaExporter.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, VERSIONS);
+        KafkaExporter ke = KafkaExporter.fromCrd(
+            new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, VERSIONS, SHARED_ENV_PROVIDER);
 
         assertThat(ke, is(nullValue()));
     }
@@ -400,7 +408,8 @@ public class KafkaExporterTest {
                     .endKafkaExporter()
                 .endSpec()
                 .build();
-        KafkaExporter ke = KafkaExporter.fromCrd(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, VERSIONS);
+        KafkaExporter ke = KafkaExporter.fromCrd(
+            new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, VERSIONS, SHARED_ENV_PROVIDER);
 
         // Check Deployment
         Deployment dep = ke.generateDeployment(true, null, null);
@@ -438,7 +447,7 @@ public class KafkaExporterTest {
                 .endSpec()
                 .build();
         KafkaExporter ke = KafkaExporter.fromCrd(new Reconciliation("test", resource.getKind(), 
-                resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, VERSIONS);
+                resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, VERSIONS, SHARED_ENV_PROVIDER);
         Deployment dep = ke.generateDeployment(true, null, null);
         assertThat(dep.getSpec().getStrategy().getType(), is("Recreate"));
     }

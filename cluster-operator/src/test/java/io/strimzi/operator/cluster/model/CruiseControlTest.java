@@ -50,6 +50,7 @@ import io.strimzi.api.kafka.model.storage.PersistentClaimStorageBuilder;
 import io.strimzi.api.kafka.model.storage.Storage;
 import io.strimzi.api.kafka.model.template.IpFamily;
 import io.strimzi.api.kafka.model.template.IpFamilyPolicy;
+import io.strimzi.operator.cluster.operator.resource.MockSharedEnvironmentProvider;
 import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
@@ -58,6 +59,7 @@ import io.strimzi.operator.cluster.model.cruisecontrol.Capacity;
 import io.strimzi.operator.cluster.model.cruisecontrol.CpuCapacity;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlConfigurationParameters;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.cluster.operator.resource.SharedEnvironmentProvider;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.platform.KubernetesVersion;
 import io.strimzi.plugin.security.profiles.impl.RestrictedPodSecurityProvider;
@@ -107,6 +109,8 @@ public class CruiseControlTest {
             new NodeRef("foo-kafka-0", 0, "kafka", false, true),
             new NodeRef("foo-kafka-1", 1, "kafka", false, true),
             new NodeRef("foo-kafka-2", 2, "kafka", false, true));
+
+    private static final SharedEnvironmentProvider SHARED_ENV_PROVIDER = new MockSharedEnvironmentProvider();
 
     private final String namespace = "test";
     private final String cluster = "foo";
@@ -170,7 +174,8 @@ public class CruiseControlTest {
                         VERSIONS,
                         NODES,
                         createStorageMap(kafkaAssembly),
-                        createResourceRequirementsMap(kafkaAssembly)
+                        createResourceRequirementsMap(kafkaAssembly),
+                        SHARED_ENV_PROVIDER
                 );
     }
 
@@ -220,7 +225,6 @@ public class CruiseControlTest {
         expected.add(new EnvVarBuilder().withName(CruiseControl.ENV_VAR_API_HEALTHCHECK_PATH).withValue(API_HEALTHCHECK_PATH).build());
         expected.add(new EnvVarBuilder().withName(CruiseControl.ENV_VAR_KAFKA_HEAP_OPTS).withValue("-Xms" + JvmOptionUtils.DEFAULT_JVM_XMS).build());
         expected.add(new EnvVarBuilder().withName(CruiseControl.ENV_VAR_CRUISE_CONTROL_CONFIGURATION).withValue(ccConfiguration.getConfiguration()).build());
-        io.strimzi.operator.cluster.TestUtils.maybeAddHttpProxyEnvVars(expected);
         return expected;
     }
 
@@ -404,7 +408,7 @@ public class CruiseControlTest {
         resources.put("pool2", new ResourceRequirementsBuilder().withLimits(Map.of("cpu", new Quantity("5"), "memory", new Quantity("20Gi"))).build());
 
         // Test the capacity
-        CruiseControl cc = CruiseControl.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, VERSIONS, nodes, storage, resources);
+        CruiseControl cc = CruiseControl.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, VERSIONS, nodes, storage, resources, SHARED_ENV_PROVIDER);
         Capacity capacity = cc.capacity;
 
         JsonArray brokerEntries = capacity.generateCapacityConfig().getJsonArray(Capacity.CAPACITIES_KEY);

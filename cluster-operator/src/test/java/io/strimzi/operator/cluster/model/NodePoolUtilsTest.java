@@ -16,7 +16,9 @@ import io.strimzi.api.kafka.model.storage.PersistentClaimStorageBuilder;
 import io.strimzi.api.kafka.model.storage.Storage;
 import io.strimzi.operator.cluster.model.nodepools.NodePoolUtils;
 import io.strimzi.operator.cluster.model.nodepools.VirtualNodePoolConverter;
+import io.strimzi.operator.cluster.operator.resource.MockSharedEnvironmentProvider;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.cluster.operator.resource.SharedEnvironmentProvider;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -32,6 +34,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 public class NodePoolUtilsTest {
     private final static String NAMESPACE = "my-namespace";
     private final static String CLUSTER_NAME = "my-cluster";
+    private static final SharedEnvironmentProvider SHARED_ENV_PROVIDER = new MockSharedEnvironmentProvider();
     private final static Kafka KAFKA = new KafkaBuilder()
                 .withNewMetadata()
                     .withName(CLUSTER_NAME)
@@ -75,7 +78,7 @@ public class NodePoolUtilsTest {
 
     @Test
     public void testNewVirtualNodePool()  {
-        List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, KAFKA, null, Map.of(), Map.of(), false);
+        List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, KAFKA, null, Map.of(), Map.of(), false, SHARED_ENV_PROVIDER);
 
         assertThat(pools.size(), is(1));
         assertThat(pools.get(0).poolName, is(VirtualNodePoolConverter.DEFAULT_NODE_POOL_NAME));
@@ -97,7 +100,7 @@ public class NodePoolUtilsTest {
                 )
         );
 
-        List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, KAFKA, null, Map.of(), existingPods, false);
+        List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, KAFKA, null, Map.of(), existingPods, false, SHARED_ENV_PROVIDER);
 
         assertThat(pools.size(), is(1));
         assertThat(pools.get(0).poolName, is(VirtualNodePoolConverter.DEFAULT_NODE_POOL_NAME));
@@ -118,7 +121,7 @@ public class NodePoolUtilsTest {
                 )
         );
 
-        List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, KAFKA, null, Map.of(), existingPods, false);
+        List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, KAFKA, null, Map.of(), existingPods, false, SHARED_ENV_PROVIDER);
 
         assertThat(pools.size(), is(1));
         assertThat(pools.get(0).poolName, is(VirtualNodePoolConverter.DEFAULT_NODE_POOL_NAME));
@@ -145,7 +148,7 @@ public class NodePoolUtilsTest {
                 new JbodStorageBuilder().withVolumes(new PersistentClaimStorageBuilder().withId(0).withSize("1Ti").build()).build()
         );
 
-        List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, KAFKA, null, existingStorage, existingPods, false);
+        List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, KAFKA, null, existingStorage, existingPods, false, SHARED_ENV_PROVIDER);
 
         assertThat(pools.size(), is(1));
         assertThat(pools.get(0).poolName, is(VirtualNodePoolConverter.DEFAULT_NODE_POOL_NAME));
@@ -156,7 +159,7 @@ public class NodePoolUtilsTest {
 
     @Test
     public void testNewVirtualNodePoolWithKRaft()  {
-        List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, KAFKA, null, Map.of(), Map.of(), true);
+        List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, KAFKA, null, Map.of(), Map.of(), true, SHARED_ENV_PROVIDER);
 
         assertThat(pools.size(), is(1));
         assertThat(pools.get(0).poolName, is(VirtualNodePoolConverter.DEFAULT_NODE_POOL_NAME));
@@ -169,7 +172,7 @@ public class NodePoolUtilsTest {
 
     @Test
     public void testNewNodePools()  {
-        List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, KAFKA, List.of(POOL_A, POOL_B), Map.of(), Map.of(), false);
+        List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, KAFKA, List.of(POOL_A, POOL_B), Map.of(), Map.of(), false, SHARED_ENV_PROVIDER);
 
         assertThat(pools.size(), is(2));
 
@@ -209,7 +212,7 @@ public class NodePoolUtilsTest {
                 new JbodStorageBuilder().withVolumes(new PersistentClaimStorageBuilder().withId(0).withSize("200Gi").build()).build()
         );
 
-        List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, KAFKA, List.of(poolA, poolB), existingStorage, Map.of(), false);
+        List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, KAFKA, List.of(poolA, poolB), existingStorage, Map.of(), false, SHARED_ENV_PROVIDER);
 
         assertThat(pools.size(), is(2));
 
@@ -254,7 +257,7 @@ public class NodePoolUtilsTest {
                 .endStatus()
                 .build();
 
-        List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, KAFKA, List.of(poolA, poolB), Map.of(), Map.of(), false);
+        List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, KAFKA, List.of(poolA, poolB), Map.of(), Map.of(), false, SHARED_ENV_PROVIDER);
 
         assertThat(pools.size(), is(2));
 
@@ -287,7 +290,7 @@ public class NodePoolUtilsTest {
                 .endSpec()
                 .build();
 
-        List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, KAFKA, List.of(poolA, poolB), Map.of(), Map.of(), true);
+        List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, KAFKA, List.of(poolA, poolB), Map.of(), Map.of(), true, SHARED_ENV_PROVIDER);
 
         assertThat(pools.size(), is(2));
 
@@ -312,7 +315,7 @@ public class NodePoolUtilsTest {
                 .endSpec()
                 .build();
 
-        List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, KAFKA, List.of(poolA, poolB), Map.of(), Map.of(), true);
+        List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, KAFKA, List.of(poolA, poolB), Map.of(), Map.of(), true, SHARED_ENV_PROVIDER);
 
         assertThat(pools.size(), is(2));
 
@@ -344,7 +347,7 @@ public class NodePoolUtilsTest {
                 new JbodStorageBuilder().withVolumes(new PersistentClaimStorageBuilder().withId(0).withSize("1Ti").build()).build()
         );
 
-        List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, KAFKA, List.of(poolA, poolB), existingStorage, Map.of(), false);
+        List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, KAFKA, List.of(poolA, poolB), existingStorage, Map.of(), false, SHARED_ENV_PROVIDER);
 
         assertThat(pools.size(), is(2));
 
@@ -511,7 +514,7 @@ public class NodePoolUtilsTest {
 
     @Test
     public void testValidationIsCalledFromMainMethod()   {
-        InvalidResourceException ex = assertThrows(InvalidResourceException.class, () -> NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, KAFKA, List.of(), Map.of(), Map.of(), false));
+        InvalidResourceException ex = assertThrows(InvalidResourceException.class, () -> NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, KAFKA, List.of(), Map.of(), Map.of(), false, SHARED_ENV_PROVIDER));
         assertThat(ex.getMessage(), is("KafkaNodePools are enabled, but the KafkaNodePool for Kafka cluster my-cluster either don't exists or have 0 replicas. Please make sure at least one KafkaNodePool resource exists, is in the same namespace as the Kafka resource, has at least one replica, and has the strimzi.io/cluster label set to the name of the Kafka resource."));
     }
 }

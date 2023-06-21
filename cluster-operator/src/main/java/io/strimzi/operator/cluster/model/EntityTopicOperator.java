@@ -28,6 +28,7 @@ import io.strimzi.operator.cluster.model.logging.SupportsLogging;
 import io.strimzi.operator.cluster.model.securityprofiles.ContainerSecurityProviderContextImpl;
 import io.strimzi.operator.common.MetricsAndLogging;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.cluster.operator.resource.SharedEnvironmentProvider;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -84,9 +85,10 @@ public class EntityTopicOperator extends AbstractModel implements SupportsLoggin
     /**
      * @param reconciliation   The reconciliation
      * @param resource Kubernetes resource with metadata containing the namespace and cluster name
+     * @param sharedEnvironmentProvider Shared environment provider
      */
-    protected EntityTopicOperator(Reconciliation reconciliation, HasMetadata resource) {
-        super(reconciliation, resource, resource.getMetadata().getName() + NAME_SUFFIX, COMPONENT_TYPE);
+    protected EntityTopicOperator(Reconciliation reconciliation, HasMetadata resource, SharedEnvironmentProvider sharedEnvironmentProvider) {
+        super(reconciliation, resource, resource.getMetadata().getName() + NAME_SUFFIX, COMPONENT_TYPE, sharedEnvironmentProvider);
 
         // create a default configuration
         this.kafkaBootstrapServers = KafkaResources.bootstrapServiceName(cluster) + ":" + KafkaCluster.REPLICATION_PORT;
@@ -103,14 +105,15 @@ public class EntityTopicOperator extends AbstractModel implements SupportsLoggin
      *
      * @param reconciliation The reconciliation
      * @param kafkaAssembly desired resource with cluster configuration containing the Entity Topic Operator one
+     * @param sharedEnvironmentProvider Shared environment provider
      *
      * @return Entity Topic Operator instance, null if not configured
      */
-    public static EntityTopicOperator fromCrd(Reconciliation reconciliation, Kafka kafkaAssembly) {
+    public static EntityTopicOperator fromCrd(Reconciliation reconciliation, Kafka kafkaAssembly, SharedEnvironmentProvider sharedEnvironmentProvider) {
         if (kafkaAssembly.getSpec().getEntityOperator() != null
                 && kafkaAssembly.getSpec().getEntityOperator().getTopicOperator() != null) {
             EntityTopicOperatorSpec topicOperatorSpec = kafkaAssembly.getSpec().getEntityOperator().getTopicOperator();
-            EntityTopicOperator result = new EntityTopicOperator(reconciliation, kafkaAssembly);
+            EntityTopicOperator result = new EntityTopicOperator(reconciliation, kafkaAssembly, sharedEnvironmentProvider);
 
             String image = topicOperatorSpec.getImage();
             if (image == null) {
@@ -172,7 +175,7 @@ public class EntityTopicOperator extends AbstractModel implements SupportsLoggin
         JvmOptionUtils.javaOptions(varList, jvmOptions);
 
         // Add shared environment variables used for all containers
-        varList.addAll(ContainerUtils.requiredEnvVars());
+        varList.addAll(sharedEnvironmentProvider.variables());
 
         ContainerUtils.addContainerEnvsToExistingEnvs(reconciliation, varList, templateContainer);
 

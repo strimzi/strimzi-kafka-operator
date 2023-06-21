@@ -30,6 +30,7 @@ import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationException;
 import io.strimzi.operator.common.ReconciliationLogger;
+import io.strimzi.operator.cluster.operator.resource.SharedEnvironmentProvider;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.NamespaceAndName;
@@ -68,6 +69,7 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
     private final ConnectBuildOperator connectBuildOperator;
     private final KafkaVersion.Lookup versions;
     private final boolean stableIdentities;
+    private final SharedEnvironmentProvider sharedEnvironmentProvider;
 
     /**
      * Constructor
@@ -124,6 +126,7 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
 
         this.versions = config.versions();
         this.stableIdentities = config.featureGates().stableConnectIdentitiesEnabled();
+        this.sharedEnvironmentProvider = supplier.sharedEnvironmentProvider;
     }
 
     @Override
@@ -132,8 +135,8 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
         KafkaConnectBuild build;
         KafkaConnectStatus kafkaConnectStatus = new KafkaConnectStatus();
         try {
-            connect = KafkaConnectCluster.fromCrd(reconciliation, kafkaConnect, versions);
-            build = KafkaConnectBuild.fromCrd(reconciliation, kafkaConnect, versions);
+            connect = KafkaConnectCluster.fromCrd(reconciliation, kafkaConnect, versions, sharedEnvironmentProvider);
+            build = KafkaConnectBuild.fromCrd(reconciliation, kafkaConnect, versions, sharedEnvironmentProvider);
         } catch (Exception e) {
             LOGGER.warnCr(reconciliation, e);
             StatusUtils.setStatusConditionAndObservedGeneration(kafkaConnect, kafkaConnectStatus, Future.failedFuture(e));

@@ -18,7 +18,9 @@ import io.strimzi.api.kafka.model.nodepool.ProcessRoles;
 import io.strimzi.api.kafka.model.storage.JbodStorageBuilder;
 import io.strimzi.api.kafka.model.storage.PersistentClaimStorageBuilder;
 import io.strimzi.operator.cluster.model.nodepools.NodeIdAssignment;
+import io.strimzi.operator.cluster.operator.resource.MockSharedEnvironmentProvider;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.cluster.operator.resource.SharedEnvironmentProvider;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -35,6 +37,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class KafkaPoolTest {
     private final static String NAMESPACE = "my-namespace";
+    private static final SharedEnvironmentProvider SHARED_ENV_PROVIDER = new MockSharedEnvironmentProvider();
     private final static String CLUSTER_NAME = "my-cluster";
     private final static Kafka KAFKA = new KafkaBuilder()
                 .withNewMetadata()
@@ -80,7 +83,8 @@ public class KafkaPoolTest {
                 POOL,
                 new NodeIdAssignment(Set.of(10, 11, 13), Set.of(10, 11, 13), Set.of(), Set.of()),
                 new JbodStorageBuilder().withVolumes(new PersistentClaimStorageBuilder().withId(0).withSize("100Gi").build()).build(),
-                OWNER_REFERENCE
+                OWNER_REFERENCE,
+                SHARED_ENV_PROVIDER
         );
 
         assertThat(kp, is(notNullValue()));
@@ -134,7 +138,8 @@ public class KafkaPoolTest {
                 pool,
                 new NodeIdAssignment(Set.of(10, 11, 13), Set.of(10, 11, 13), Set.of(), Set.of()),
                 new JbodStorageBuilder().withVolumes(new PersistentClaimStorageBuilder().withId(0).withSize("100Gi").build()).build(),
-                OWNER_REFERENCE
+                OWNER_REFERENCE,
+                SHARED_ENV_PROVIDER
         );
 
         assertThat(kp, is(notNullValue()));
@@ -171,7 +176,8 @@ public class KafkaPoolTest {
                 pool,
                 new NodeIdAssignment(Set.of(10, 11, 13), Set.of(10, 11, 13), Set.of(), Set.of()),
                 new JbodStorageBuilder().withVolumes(new PersistentClaimStorageBuilder().withId(0).withSize("100Gi").build()).build(),
-                OWNER_REFERENCE
+                OWNER_REFERENCE,
+                SHARED_ENV_PROVIDER
         );
 
         assertThat(kp, is(notNullValue()));
@@ -215,7 +221,8 @@ public class KafkaPoolTest {
                 POOL,
                 new NodeIdAssignment(Set.of(10, 11, 13), Set.of(10, 11, 13), Set.of(), Set.of()),
                 new JbodStorageBuilder().withVolumes(new PersistentClaimStorageBuilder().withId(0).withSize("100Gi").build()).build(),
-                OWNER_REFERENCE
+                OWNER_REFERENCE,
+                SHARED_ENV_PROVIDER
         );
 
         assertThat(kp, is(notNullValue()));
@@ -274,7 +281,8 @@ public class KafkaPoolTest {
                 pool,
                 new NodeIdAssignment(Set.of(10, 11, 13), Set.of(10, 11, 13), Set.of(), Set.of()),
                 new JbodStorageBuilder().withVolumes(new PersistentClaimStorageBuilder().withId(0).withSize("100Gi").build()).build(),
-                OWNER_REFERENCE
+                OWNER_REFERENCE,
+                SHARED_ENV_PROVIDER
         );
 
         assertThat(kp, is(notNullValue()));
@@ -328,7 +336,8 @@ public class KafkaPoolTest {
                 pool,
                 new NodeIdAssignment(Set.of(10, 11, 13), Set.of(10, 11, 13), Set.of(), Set.of()),
                 new JbodStorageBuilder().withVolumes(new PersistentClaimStorageBuilder().withId(0).withSize("100Gi").build()).build(),
-                OWNER_REFERENCE
+                OWNER_REFERENCE,
+                SHARED_ENV_PROVIDER
         );
 
         assertThat(kp, is(notNullValue()));
@@ -364,7 +373,8 @@ public class KafkaPoolTest {
                 pool,
                 new NodeIdAssignment(Set.of(10, 11, 13), Set.of(10, 11, 13), Set.of(), Set.of()),
                 new JbodStorageBuilder().withVolumes(new PersistentClaimStorageBuilder().withId(0).withSize("100Gi").build()).build(),
-                OWNER_REFERENCE
+                OWNER_REFERENCE,
+                SHARED_ENV_PROVIDER
         ));
 
         assertThat(ex.getMessage(), containsString("KafkaNodePool.spec.resources cpu request must be <= limit"));
@@ -386,7 +396,8 @@ public class KafkaPoolTest {
                 pool,
                 new NodeIdAssignment(Set.of(10, 11, 13), Set.of(10, 11, 13), Set.of(), Set.of()),
                 null,
-                OWNER_REFERENCE
+                OWNER_REFERENCE,
+                SHARED_ENV_PROVIDER
         ));
 
         assertThat(ex.getMessage(), containsString("JbodStorage needs to contain at least one volume (KafkaNodePool.spec.storage"));

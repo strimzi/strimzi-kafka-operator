@@ -44,6 +44,7 @@ import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationException;
 import io.strimzi.operator.common.ReconciliationLogger;
+import io.strimzi.operator.cluster.operator.resource.SharedEnvironmentProvider;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.operator.resource.DeploymentOperator;
 import io.strimzi.operator.common.operator.resource.PodOperator;
@@ -91,6 +92,7 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
     private final PodOperator podOperations;
     private final KafkaVersion.Lookup versions;
     private final boolean stableIdentities;
+    private final SharedEnvironmentProvider sharedEnvironmentProvider;
 
     private static final String MIRRORMAKER2_CONNECTOR_PACKAGE = "org.apache.kafka.connect.mirror";
     private static final String MIRRORMAKER2_SOURCE_CONNECTOR_SUFFIX = ".MirrorSourceConnector";
@@ -146,6 +148,7 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
         this.podOperations = supplier.podOperations;
         this.versions = config.versions();
         this.stableIdentities = config.featureGates().stableConnectIdentitiesEnabled();
+        this.sharedEnvironmentProvider = supplier.sharedEnvironmentProvider;
     }
 
     @Override
@@ -153,7 +156,7 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
         KafkaMirrorMaker2Cluster mirrorMaker2Cluster;
         KafkaMirrorMaker2Status kafkaMirrorMaker2Status = new KafkaMirrorMaker2Status();
         try {
-            mirrorMaker2Cluster = KafkaMirrorMaker2Cluster.fromCrd(reconciliation, kafkaMirrorMaker2, versions);
+            mirrorMaker2Cluster = KafkaMirrorMaker2Cluster.fromCrd(reconciliation, kafkaMirrorMaker2, versions, sharedEnvironmentProvider);
         } catch (Exception e) {
             LOGGER.warnCr(reconciliation, e);
             StatusUtils.setStatusConditionAndObservedGeneration(kafkaMirrorMaker2, kafkaMirrorMaker2Status, Future.failedFuture(e));

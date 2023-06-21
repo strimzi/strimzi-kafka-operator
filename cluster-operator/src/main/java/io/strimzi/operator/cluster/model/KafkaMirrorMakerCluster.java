@@ -38,6 +38,7 @@ import io.strimzi.operator.cluster.model.securityprofiles.ContainerSecurityProvi
 import io.strimzi.operator.cluster.model.securityprofiles.PodSecurityProviderContextImpl;
 import io.strimzi.operator.common.MetricsAndLogging;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.cluster.operator.resource.SharedEnvironmentProvider;
 import io.strimzi.operator.common.Util;
 
 import java.util.ArrayList;
@@ -140,9 +141,10 @@ public class KafkaMirrorMakerCluster extends AbstractModel implements SupportsMe
      *
      * @param reconciliation The reconciliation
      * @param resource Kubernetes resource with metadata containing the namespace and cluster name
+     * @param sharedEnvironmentProvider Shared environment provider
      */
-    protected KafkaMirrorMakerCluster(Reconciliation reconciliation, HasMetadata resource) {
-        super(reconciliation, resource, KafkaMirrorMakerResources.deploymentName(resource.getMetadata().getName()), COMPONENT_TYPE);
+    protected KafkaMirrorMakerCluster(Reconciliation reconciliation, HasMetadata resource, SharedEnvironmentProvider sharedEnvironmentProvider) {
+        super(reconciliation, resource, KafkaMirrorMakerResources.deploymentName(resource.getMetadata().getName()), COMPONENT_TYPE, sharedEnvironmentProvider);
     }
 
     /**
@@ -151,12 +153,16 @@ public class KafkaMirrorMakerCluster extends AbstractModel implements SupportsMe
      * @param reconciliation        Reconciliation marker
      * @param kafkaMirrorMaker      KafkaMirrorMaker custom resource
      * @param versions              Supported Kafka versions
+     * @param sharedEnvironmentProvider Shared environment provider.
      *
      * @return  Kafka Mirror Maker model instance
      */
     @SuppressWarnings("deprecation")
-    public static KafkaMirrorMakerCluster fromCrd(Reconciliation reconciliation, KafkaMirrorMaker kafkaMirrorMaker, KafkaVersion.Lookup versions) {
-        KafkaMirrorMakerCluster result = new KafkaMirrorMakerCluster(reconciliation, kafkaMirrorMaker);
+    public static KafkaMirrorMakerCluster fromCrd(Reconciliation reconciliation,
+                                                  KafkaMirrorMaker kafkaMirrorMaker,
+                                                  KafkaVersion.Lookup versions,
+                                                  SharedEnvironmentProvider sharedEnvironmentProvider) {
+        KafkaMirrorMakerCluster result = new KafkaMirrorMakerCluster(reconciliation, kafkaMirrorMaker, sharedEnvironmentProvider);
 
         KafkaMirrorMakerSpec spec = kafkaMirrorMaker.getSpec();
         if (spec != null) {
@@ -386,7 +392,7 @@ public class KafkaMirrorMakerCluster extends AbstractModel implements SupportsMe
                 String.valueOf(readinessProbeOptions.getPeriodSeconds() != null ? readinessProbeOptions.getPeriodSeconds() : DEFAULT_HEALTHCHECK_PERIOD)));
 
         // Add shared environment variables used for all containers
-        varList.addAll(ContainerUtils.requiredEnvVars());
+        varList.addAll(sharedEnvironmentProvider.variables());
 
         ContainerUtils.addContainerEnvsToExistingEnvs(reconciliation, varList, templateContainer);
 

@@ -25,6 +25,7 @@ import io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationPlain;
 import io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationScram;
 import io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationTls;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.cluster.operator.resource.SharedEnvironmentProvider;
 import io.strimzi.operator.common.Util;
 
 import java.util.HashMap;
@@ -76,9 +77,10 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
      *
      * @param reconciliation The reconciliation
      * @param resource Kubernetes resource with metadata containing the namespace and cluster name
+     * @param sharedEnvironmentProvider Shared environment provider
      */
-    private KafkaMirrorMaker2Cluster(Reconciliation reconciliation, HasMetadata resource) {
-        super(reconciliation, resource, KafkaMirrorMaker2Resources.deploymentName(resource.getMetadata().getName()), COMPONENT_TYPE);
+    private KafkaMirrorMaker2Cluster(Reconciliation reconciliation, HasMetadata resource, SharedEnvironmentProvider sharedEnvironmentProvider) {
+        super(reconciliation, resource, KafkaMirrorMaker2Resources.deploymentName(resource.getMetadata().getName()), COMPONENT_TYPE, sharedEnvironmentProvider);
 
         this.serviceName = KafkaMirrorMaker2Resources.serviceName(cluster);
         this.loggingAndMetricsConfigMapName = KafkaMirrorMaker2Resources.metricsAndLogConfigMapName(cluster);
@@ -90,12 +92,14 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
      * @param reconciliation    The reconciliation
      * @param kafkaMirrorMaker2 The Custom Resource based on which the cluster model should be created.
      * @param versions The image versions for MirrorMaker 2 clusters.
+     * @param sharedEnvironmentProvider Shared environment provider.
      * @return The MirrorMaker 2 cluster model.
      */
     public static KafkaMirrorMaker2Cluster fromCrd(Reconciliation reconciliation,
                                                    KafkaMirrorMaker2 kafkaMirrorMaker2,
-                                                   KafkaVersion.Lookup versions) {
-        KafkaMirrorMaker2Cluster result = new KafkaMirrorMaker2Cluster(reconciliation, kafkaMirrorMaker2);
+                                                   KafkaVersion.Lookup versions,
+                                                   SharedEnvironmentProvider sharedEnvironmentProvider) {
+        KafkaMirrorMaker2Cluster result = new KafkaMirrorMaker2Cluster(reconciliation, kafkaMirrorMaker2, sharedEnvironmentProvider);
         KafkaMirrorMaker2Spec spec = kafkaMirrorMaker2.getSpec();
 
         result.image = versions.kafkaMirrorMaker2Version(spec.getImage(), spec.getVersion());
