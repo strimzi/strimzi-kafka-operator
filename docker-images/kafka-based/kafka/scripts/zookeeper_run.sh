@@ -41,17 +41,17 @@ mkdir -p /tmp/zookeeper
 # This is useful in environment (i.e. minikube) where DNS registration is slow
 # It is also related to https://issues.apache.org/jira/browse/ZOOKEEPER-4708
 if [ -z "$ZOOKEEPER_DNS_CHECKS_DISABLED" ] || [ "$ZOOKEEPER_DNS_CHECKS_DISABLED" = "false" ]; then
-  echo "Resolving ${BASE_HOSTNAME}-$((ZOOKEEPER_ID-1)).${BASE_FQDN} ..."
+  echo "Trying to resolve ${BASE_HOSTNAME}-$((ZOOKEEPER_ID-1)).${BASE_FQDN} ..."
   ipaddress=$(nslookup ${BASE_HOSTNAME}-$((ZOOKEEPER_ID-1)).${BASE_FQDN} | grep "Address" | awk '{print $2}' | sed -n 2p)
 
   while [ -z $ipaddress ]; do
     sleep 1
-    echo "Resolving ${BASE_HOSTNAME}-$((ZOOKEEPER_ID-1)).${BASE_FQDN} ..."
+    echo "Trying to resolve ${BASE_HOSTNAME}-$((ZOOKEEPER_ID-1)).${BASE_FQDN} ..."
     ipaddress=$(nslookup ${BASE_HOSTNAME}-$((ZOOKEEPER_ID-1)).${BASE_FQDN} | grep "Address" | awk '{print $2}' | sed -n 2p)
   done
 fi
 
-echo "IP address $ipaddress"
+echo "Resolved IP address $ipaddress"
 
 # Import certificates into keystore and truststore
 ./zookeeper_tls_prepare_certificates.sh
