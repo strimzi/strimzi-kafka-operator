@@ -108,7 +108,7 @@ A sequential index number starting with `0` identifies each Kafka and ZooKeeper 
 With the default deployment, you create an Entity Operator cluster, 3 Kafka pods, and 3 ZooKeeper pods.
 +
 `READY` shows the number of replicas that are ready/expected.
-The deployment is successful when the `STATUS` shows as `Running`.
+The deployment is successful when the `STATUS` displays as `Running`.
 
 [role="_additional-resources"]
 .Additional resources

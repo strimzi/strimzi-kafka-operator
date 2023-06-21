@@ -65,4 +65,4 @@ my-cluster-entity-operator  3/3     Running   0
 `my-cluster` is the name of the Kafka cluster.
 +
 `READY` shows the number of replicas that are ready/expected.
-The deployment is successful when the `STATUS` shows as `Running`.
+The deployment is successful when the `STATUS` displays as `Running`.

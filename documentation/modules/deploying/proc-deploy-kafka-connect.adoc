@@ -53,7 +53,7 @@ A pod ID identifies each pod created.
 With the default deployment, you create a single Kafka Connect pod.
 +
 `READY` shows the number of replicas that are ready/expected.
-The deployment is successful when the `STATUS` shows as `Running`.
+The deployment is successful when the `STATUS` displays as `Running`.
 
 [role="_additional-resources"]
 .Additional resources

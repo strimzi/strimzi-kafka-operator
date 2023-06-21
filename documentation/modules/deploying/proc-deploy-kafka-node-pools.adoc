@@ -89,7 +89,7 @@ A sequential index number starting with `0` identifies each Kafka pod created.
 If you are using ZooKeeper, you'll also see the ZooKeeper pods.
 +
 `READY` shows the number of replicas that are ready/expected.
-The deployment is successful when the `STATUS` shows as `Running`.
+The deployment is successful when the `STATUS` displays as `Running`.
 +
 Information on the deployment is also shown in the status of the `KafkaNodePool` resource, including a list of IDs for nodes in the pool.
 +
