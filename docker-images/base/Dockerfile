@@ -9,7 +9,7 @@ ARG TARGETARCH
 USER root
 
 RUN microdnf update \
-    && microdnf --setopt=install_weak_deps=0 --setopt=tsflags=nodocs install java-${JAVA_VERSION}-openjdk-headless openssl shadow-utils \
+    && microdnf --setopt=install_weak_deps=0 --setopt=tsflags=nodocs install java-${JAVA_VERSION}-openjdk-headless openssl shadow-utils bind-utils \
     && microdnf reinstall -y tzdata \
     && microdnf clean all
 
