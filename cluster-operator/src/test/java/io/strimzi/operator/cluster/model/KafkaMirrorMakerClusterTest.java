@@ -97,7 +97,7 @@ public class KafkaMirrorMakerClusterTest {
     private final String include = ".*";
     private final int offsetCommitInterval = 42000;
     private final boolean abortOnSendFailure = false;
-    private final String kafkaHeapOpts = "-Xms" + ModelUtils.DEFAULT_JVM_XMS;
+    private final String kafkaHeapOpts = "-Xms" + JvmOptionUtils.DEFAULT_JVM_XMS;
 
     private final KafkaMirrorMakerProducerSpec producer = new KafkaMirrorMakerProducerSpecBuilder()
             .withBootstrapServers(producerBootstrapServers)
@@ -647,11 +647,6 @@ public class KafkaMirrorMakerClusterTest {
         PodDisruptionBudget pdb = mmc.generatePodDisruptionBudget();
         assertThat(pdb.getMetadata().getLabels().entrySet().containsAll(pdbLabels.entrySet()), is(true));
         assertThat(pdb.getMetadata().getAnnotations().entrySet().containsAll(pdbAnots.entrySet()), is(true));
-
-        // Check PodDisruptionBudgetV1Beta1
-        io.fabric8.kubernetes.api.model.policy.v1beta1.PodDisruptionBudget pdbV1Beta1 = mmc.generatePodDisruptionBudgetV1Beta1();
-        assertThat(pdbV1Beta1.getMetadata().getLabels().entrySet().containsAll(pdbLabels.entrySet()), is(true));
-        assertThat(pdbV1Beta1.getMetadata().getAnnotations().entrySet().containsAll(pdbAnots.entrySet()), is(true));
 
         // Check Service Account
         ServiceAccount sa = mmc.generateServiceAccount();

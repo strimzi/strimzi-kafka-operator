@@ -1,0 +1,117 @@
+// Module included in the following assemblies:
+//
+// assembly-config.adoc
+
+[id='con-config-kafka-bridge-{context}']
+= Configuring the Kafka Bridge
+
+[role="_abstract"]
+Update the `spec` properties of the `KafkaBridge` custom resource to configure your Kafka Bridge deployment.
+
+In order to prevent issues arising when client consumer requests are processed by different Kafka Bridge instances, address-based routing must be employed to ensure that requests are routed to the right Kafka Bridge instance.
+Additionally, each independent Kafka Bridge instance must have a replica.
+A Kafka Bridge instance has its own state which is not shared with another instances.
+
+For a deeper understanding of the Kafka Bridge cluster configuration options, refer to the link:{BookURLConfiguring}[Strimzi Custom Resource API Reference^].
+
+.Example `KafkaBridge` custom resource configuration
+[source,yaml,subs="+quotes,attributes"]
+----
+apiVersion: {KafkaBridgeApiVersion}
+kind: KafkaBridge
+metadata:
+  name: my-bridge
+spec:
+  replicas: 3 # <1>
+  bootstrapServers: _<cluster_name>_-cluster-kafka-bootstrap:9092 # <2>
+  tls: # <3>
+    trustedCertificates:
+      - secretName: my-cluster-cluster-cert
+        certificate: ca.crt
+      - secretName: my-cluster-cluster-cert
+        certificate: ca2.crt
+  authentication: # <4>
+    type: tls
+    certificateAndKey:
+      secretName: my-secret
+      certificate: public.crt
+      key: private.key
+  http: # <5>
+    port: 8080
+    cors: # <6>
+      allowedOrigins: "https://strimzi.io"
+      allowedMethods: "GET,POST,PUT,DELETE,OPTIONS,PATCH"
+  consumer: # <7>
+    config:
+      auto.offset.reset: earliest
+  producer: # <8>
+    config:
+      delivery.timeout.ms: 300000
+  resources: # <9>
+    requests:
+      cpu: "1"
+      memory: 2Gi
+    limits:
+      cpu: "2"
+      memory: 2Gi
+  logging: # <10>
+    type: inline
+    loggers:
+      logger.bridge.level: INFO
+      # enabling DEBUG just for send operation
+      logger.send.name: "http.openapi.operation.send"
+      logger.send.level: DEBUG
+  jvmOptions: # <11>
+    "-Xmx": "1g"
+    "-Xms": "1g"
+  readinessProbe: # <12>
+    initialDelaySeconds: 15
+    timeoutSeconds: 5
+  livenessProbe:
+    initialDelaySeconds: 15
+    timeoutSeconds: 5
+  image: my-org/my-image:latest # <13>
+  template: # <14>
+    pod:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchExpressions:
+                  - key: application
+                    operator: In
+                    values:
+                      - postgresql
+                      - mongodb
+              topologyKey: "kubernetes.io/hostname"
+    bridgeContainer: # <15>
+      env:
+        - name: OTEL_SERVICE_NAME
+          value: my-otel-service
+        - name: OTEL_EXPORTER_OTLP_ENDPOINT
+          value: "http://otlp-host:4317"
+  tracing:
+    type: opentelemetry # <16>
+----
+<1> The number of replica nodes.
+<2> Bootstrap server for connection to the target Kafka cluster. Use the name of the Kafka cluster as the _<cluster_name>_.
+<3> TLS encryption with key names under which TLS certificates are stored in X.509 format for the source Kafka cluster. If certificates are stored in the same secret, it can be listed multiple times.
+<4> Authentication for the Kafka Bridge cluster, specified as mTLS, token-based OAuth, SASL-based SCRAM-SHA-256/SCRAM-SHA-512, or PLAIN.
+By default, the Kafka Bridge connects to Kafka brokers without authentication.
+<5> HTTP access to Kafka brokers.
+<6> CORS access specifying selected resources and access methods. Additional HTTP headers in requests describe the origins that are permitted access to the Kafka cluster.
+<7> Consumer configuration options.
+<8> Producer configuration options.
+<9> Requests for reservation of supported resources, currently `cpu` and `memory`, and limits to specify the maximum resources that can be consumed.
+<10> Specified Kafka Bridge loggers and log levels added directly (`inline`) or indirectly (`external`) through a ConfigMap. A custom Log4j configuration must be placed under the `log4j.properties` or `log4j2.properties` key in the ConfigMap. For the Kafka Bridge loggers, you can set the log level to INFO, ERROR, WARN, TRACE, DEBUG, FATAL or OFF.
+<11> JVM configuration options to optimize performance for the Virtual Machine (VM) running the Kafka Bridge.
+<12> Healthchecks to know when to restart a container (liveness) and when a container can accept traffic (readiness).
+<13> Optional: Container image configuration, which is recommended only in special situations.
+<14> Template customization. Here a pod is scheduled with anti-affinity, so the pod is not scheduled on nodes with the same hostname.
+<15> Environment variables are set for distributed tracing.
+<16> Distributed tracing is enabled by using OpenTelemetry.
+
+[role="_additional-resources"]
+.Additional resources
+
+* link:{BookURLBridge}[Using the Strimzi Kafka Bridge^]

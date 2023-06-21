@@ -189,8 +189,7 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
                     return configMapOperations.reconcile(reconciliation, namespace, logAndMetricsConfigMap.getMetadata().getName(), logAndMetricsConfigMap);
                 })
                 .compose(i -> ReconcilerUtils.reconcileJmxSecret(reconciliation, secretOperations, mirrorMaker2Cluster))
-                .compose(i -> pfa.hasPodDisruptionBudgetV1() ? podDisruptionBudgetOperator.reconcile(reconciliation, namespace, mirrorMaker2Cluster.getComponentName(), mirrorMaker2Cluster.generatePodDisruptionBudget(stableIdentities)) : Future.succeededFuture())
-                .compose(i -> !pfa.hasPodDisruptionBudgetV1() ? podDisruptionBudgetV1Beta1Operator.reconcile(reconciliation, namespace, mirrorMaker2Cluster.getComponentName(), mirrorMaker2Cluster.generatePodDisruptionBudgetV1Beta1(stableIdentities)) : Future.succeededFuture())
+                .compose(i -> podDisruptionBudgetOperator.reconcile(reconciliation, namespace, mirrorMaker2Cluster.getComponentName(), mirrorMaker2Cluster.generatePodDisruptionBudget(stableIdentities)))
                 .compose(i -> generateAuthHash(namespace, kafkaMirrorMaker2.getSpec()))
                 .compose(hash -> {
                     podAnnotations.put(Annotations.ANNO_STRIMZI_AUTH_HASH, Integer.toString(hash));
@@ -267,9 +266,9 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
                                              KafkaMirrorMaker2Cluster mirrorMaker2Cluster,
                                              Map<String, String> podAnnotations,
                                              boolean hasZeroReplicas)  {
-        return deploymentOperations.scaleDown(reconciliation, reconciliation.namespace(), mirrorMaker2Cluster.getComponentName(), mirrorMaker2Cluster.getReplicas())
+        return deploymentOperations.scaleDown(reconciliation, reconciliation.namespace(), mirrorMaker2Cluster.getComponentName(), mirrorMaker2Cluster.getReplicas(), operationTimeoutMs)
                 .compose(i -> deploymentOperations.reconcile(reconciliation, reconciliation.namespace(), mirrorMaker2Cluster.getComponentName(), mirrorMaker2Cluster.generateDeployment(mirrorMaker2Cluster.getReplicas(), null, podAnnotations, pfa.isOpenshift(), imagePullPolicy, imagePullSecrets, null)))
-                .compose(i -> deploymentOperations.scaleUp(reconciliation, reconciliation.namespace(), mirrorMaker2Cluster.getComponentName(), mirrorMaker2Cluster.getReplicas()))
+                .compose(i -> deploymentOperations.scaleUp(reconciliation, reconciliation.namespace(), mirrorMaker2Cluster.getComponentName(), mirrorMaker2Cluster.getReplicas(), operationTimeoutMs))
                 .compose(i -> deploymentOperations.waitForObserved(reconciliation, reconciliation.namespace(), mirrorMaker2Cluster.getComponentName(), 1_000, operationTimeoutMs))
                 .compose(i -> hasZeroReplicas ? Future.succeededFuture() : deploymentOperations.readiness(reconciliation, reconciliation.namespace(), mirrorMaker2Cluster.getComponentName(), 1_000, operationTimeoutMs));
     }

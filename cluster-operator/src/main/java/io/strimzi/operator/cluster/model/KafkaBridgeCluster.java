@@ -251,6 +251,7 @@ public class KafkaBridgeCluster extends AbstractModel implements SupportsLogging
                 ownerReference,
                 templateService,
                 List.of(ServiceUtils.createServicePort(REST_API_PORT_NAME, port, port, "TCP")),
+                labels.strimziSelectorLabels(),
                 ModelUtils.getCustomLabelsOrAnnotations(CO_ENV_VAR_CUSTOM_SERVICE_LABELS),
                 Util.mergeLabelsOrAnnotations(getDiscoveryAnnotation(port), ModelUtils.getCustomLabelsOrAnnotations(CO_ENV_VAR_CUSTOM_SERVICE_ANNOTATIONS))
         );
@@ -393,7 +394,7 @@ public class KafkaBridgeCluster extends AbstractModel implements SupportsLogging
         List<EnvVar> varList = new ArrayList<>();
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_BRIDGE_METRICS_ENABLED, String.valueOf(isMetricsEnabled)));
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_STRIMZI_GC_LOG_ENABLED, String.valueOf(gcLoggingEnabled)));
-        ModelUtils.javaOptions(varList, jvmOptions);
+        JvmOptionUtils.javaOptions(varList, jvmOptions);
 
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_BRIDGE_BOOTSTRAP_SERVERS, bootstrapServers));
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_BRIDGE_ADMIN_CLIENT_CONFIG, kafkaBridgeAdminClient == null ? "" : new KafkaBridgeAdminClientConfiguration(reconciliation, kafkaBridgeAdminClient.getConfig().entrySet()).getConfiguration()));
@@ -484,15 +485,6 @@ public class KafkaBridgeCluster extends AbstractModel implements SupportsLogging
      */
     public PodDisruptionBudget generatePodDisruptionBudget() {
         return PodDisruptionBudgetUtils.createPodDisruptionBudget(componentName, namespace, labels, ownerReference, templatePodDisruptionBudget);
-    }
-
-    /**
-     * Generates the PodDisruptionBudgetV1Beta1
-     *
-     * @return The pod disruption budget V1Beta1.
-     */
-    public io.fabric8.kubernetes.api.model.policy.v1beta1.PodDisruptionBudget generatePodDisruptionBudgetV1Beta1() {
-        return PodDisruptionBudgetUtils.createPodDisruptionBudgetV1Beta1(componentName, namespace, labels, ownerReference, templatePodDisruptionBudget);
     }
 
     /**

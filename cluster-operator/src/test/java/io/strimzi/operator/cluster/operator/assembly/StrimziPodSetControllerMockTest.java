@@ -55,6 +55,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
@@ -106,7 +107,7 @@ public class StrimziPodSetControllerMockTest {
         kafkaOperator = new CrdOperator<>(vertx, client, Kafka.class, KafkaList.class, Kafka.RESOURCE_KIND);
         kafkaConnectOperator = new CrdOperator<>(vertx, client, KafkaConnect.class, KafkaConnectList.class, KafkaConnect.RESOURCE_KIND);
         kafkaMirrorMaker2Operator = new CrdOperator<>(vertx, client, KafkaMirrorMaker2.class, KafkaMirrorMaker2List.class, KafkaMirrorMaker2.RESOURCE_KIND);
-        podSetOperator = new StrimziPodSetOperator(vertx, client, 10_000L);
+        podSetOperator = new StrimziPodSetOperator(vertx, client);
         podOperator = new PodOperator(vertx, client);
         metricsProvider = ResourceUtils.metricsProvider();
 
@@ -753,6 +754,9 @@ public class StrimziPodSetControllerMockTest {
             // We keep the resource version for pod re-creation test
             String resourceVersion = failedPod.getMetadata().getResourceVersion();
 
+            // Used to store reference to the recreated Pod
+            AtomicReference<Pod> recreatedPod = new AtomicReference<>();
+
             // Check that pod is created
             TestUtils.waitFor(
                     "Wait for Pod to be recreated",
@@ -764,15 +768,19 @@ public class StrimziPodSetControllerMockTest {
                         // updated by MockKube (and its MockPodController). Waiting for the status of the Pod to be
                         // updated is important to avoid any Null Pointer Exceptions in the asserts done after
                         // the wait is complete
-                        return p != null
+                        if (p != null
                                 && !resourceVersion.equals(p.getMetadata().getResourceVersion())
-                                && p.getStatus() != null;
+                                && p.getStatus() != null) {
+                            recreatedPod.set(p);
+                            return true;
+                        } else {
+                            return false;
+                        }
                     },
                     () -> context.failNow("Test timed out waiting for pod recreation!"));
 
             // Check the Pod is not failed anymore
-            Pod recreatedPod = client.pods().inNamespace(NAMESPACE).withName(podName).get();
-            assertThat(recreatedPod.getStatus().getPhase(), is(not("Failed")));
+            assertThat(recreatedPod.get().getStatus().getPhase(), is(not("Failed")));
 
             context.completeNow();
         } finally {

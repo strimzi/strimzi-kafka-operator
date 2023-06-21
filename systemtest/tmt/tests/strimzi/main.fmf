@@ -1,0 +1,81 @@
+test:
+  ./test.sh
+duration: 2h
+environment:
+  DOCKER_ORG: "strimzi"
+  DOCKER_TAG: "test"
+  TEST_LOG_DIR: "systemtest/target/logs"
+  TESTS: ""
+  TEST_GROUPS: ""
+  EXCLUDED_TEST_GROUPS: "loadbalancer"
+  CLUSTER_OPERATOR_INSTALLTYPE: bundle
+adjust:
+  - environment+:
+      EXCLUDED_TEST_GROUPS: "loadbalancer,arm64unsupported"
+    when: arch == aarch64, arm64
+
+/smoke:
+  summary: Run smoke strimzi test suite
+  tags: [smoke]
+  duration: 20m
+  tier: 1
+  environment+:
+    TEST_PROFILE: smoke
+
+/upgrade:
+  summary: Run upgrade strimzi test suite
+  tags: [strimzi, kafka, upgrade]
+  duration: 5h
+  tier: 2
+  environment+:
+    TEST_PROFILE: upgrade
+
+/regression-operators:
+  summary: Run regression strimzi test suite
+  tags: [strimzi, kafka, regression, operators]
+  duration: 10h
+  tier: 2
+  environment+:
+    TEST_PROFILE: operators
+
+/regression-components:
+  summary: Run regression strimzi test suite
+  tags: [strimzi, kafka, regression, components]
+  duration: 12h
+  tier: 2
+  environment+:
+    TEST_PROFILE: components
+
+/kraft-operators:
+  summary: Run regression kraft strimzi test suite
+  tags: [strimzi, kafka, kraft, operators]
+  duration: 8h
+  tier: 2
+  environment+:
+    TEST_PROFILE: operators
+    STRIMZI_FEATURE_GATES: "+UseKRaft,+StableConnectIdentities"
+
+/kraft-components:
+  summary: Run regression kraft strimzi test suite
+  tags: [strimzi, kafka, kraft, components]
+  duration: 8h
+  tier: 2
+  environment+:
+    TEST_PROFILE: components
+    STRIMZI_FEATURE_GATES: "+UseKRaft,+StableConnectIdentities"
+
+/acceptance:
+  summary: Run acceptance strimzi test suite
+  tags: [strimzi, kafka, acceptance]
+  duration: 5h
+  tier: 2
+  environment+:
+    TEST_PROFILE: acceptance
+
+/sanity:
+  summary: Run sanity strimzi test suite
+  tags: [strimzi, kafka, sanity]
+  duration: 5h
+  tier: 2
+  environment+:
+    TEST_PROFILE: sanity

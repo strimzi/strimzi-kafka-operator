@@ -247,7 +247,7 @@ Use advisedly as the connection is insecure.
 [role="_additional-resources"]
 .Additional resources
 
-* link:{BookURLConfiguring}#assembly-kafka-connect-str[Kafka Connect configuration options^]
+* link:{BookURLDeploying}#con-kafka-connect-config-str[Kafka Connect configuration options^]
 * link:{BookURLDeploying}#con-kafka-connect-multiple-instances-str[Kafka Connect configuration for multiple instances^]
 * link:{BookURLDeploying}#using-kafka-connect-with-plug-ins-str[Extending Kafka Connect with plugins^]
 * link:{BookURLDeploying}#creating-new-image-using-kafka-connect-build-str[Creating a new container image automatically using Strimzi^]

@@ -170,4 +170,4 @@ NOTE: For Kafka Exporter to be able to work properly, consumer groups need to be
 [role="_additional-resources"]
 .Additional resources
 
-link:{BookURLConfiguring}[Custom resource API reference^].
+link:{BookURLConfiguring}[Strimzi Custom Resource API Reference^].

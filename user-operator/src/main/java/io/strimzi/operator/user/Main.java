@@ -14,7 +14,6 @@ import io.micrometer.core.instrument.binder.jvm.JvmThreadMetrics;
 import io.micrometer.core.instrument.binder.system.ProcessorMetrics;
 import io.micrometer.prometheus.PrometheusConfig;
 import io.micrometer.prometheus.PrometheusMeterRegistry;
-import io.strimzi.api.kafka.Crds;
 import io.strimzi.certs.OpenSslCertManager;
 import io.strimzi.operator.common.AdminClientProvider;
 import io.strimzi.operator.common.DefaultAdminClientProvider;
@@ -43,16 +42,6 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class Main {
     private final static Logger LOGGER = LogManager.getLogger(Main.class);
-
-    // Registers the CRDs to be deserialized automatically
-    static {
-        try {
-            Crds.registerCustomKinds();
-        } catch (Error | RuntimeException t) {
-            LOGGER.error("Failed to register CRDs", t);
-            throw t;
-        }
-    }
 
     /**
      * Main method which starts the webserver with healthchecks and metrics and the UserController which is responsible

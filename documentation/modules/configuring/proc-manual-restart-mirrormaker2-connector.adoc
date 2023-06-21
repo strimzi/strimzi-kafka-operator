@@ -1,8 +1,8 @@
 // Module included in the following assemblies:
-// configuring/assembly-config-mirrormaker2.adoc
+// assembly-management-tasks.adoc
 
 [id='proc-manual-restart-mirrormaker2-connector-{context}']
-= Performing a restart of a Kafka MirrorMaker 2 connector
+= Performing restarts of MirrorMaker 2 connectors using annotations
 
 This procedure describes how to manually trigger a restart of a Kafka MirrorMaker 2 connector by using a Kubernetes annotation.
 
@@ -42,4 +42,4 @@ When the restart request is accepted, the annotation is removed from the `KafkaM
 [role="_additional-resources"]
 .Additional resources
 
-* xref:assembly-mirrormaker-{context}[Kafka MirrorMaker 2 cluster configuration].
+* xref:con-config-mirrormaker2-{context}[Kafka MirrorMaker 2 cluster configuration].

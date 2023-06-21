@@ -100,15 +100,14 @@ public class KafkaMirrorMakerAssemblyOperator extends AbstractAssemblyOperator<K
 
         LOGGER.debugCr(reconciliation, "Updating Kafka Mirror Maker cluster");
         mirrorMakerServiceAccount(reconciliation, namespace, mirror)
-                .compose(i -> deploymentOperations.scaleDown(reconciliation, namespace, mirror.getComponentName(), mirror.getReplicas()))
+                .compose(i -> deploymentOperations.scaleDown(reconciliation, namespace, mirror.getComponentName(), mirror.getReplicas(), operationTimeoutMs))
                 .compose(i -> MetricsAndLoggingUtils.metricsAndLogging(reconciliation, configMapOperations, mirror.logging(), mirror.metrics()))
                 .compose(metricsAndLoggingCm -> {
                     ConfigMap logAndMetricsConfigMap = mirror.generateMetricsAndLogConfigMap(metricsAndLoggingCm);
                     annotations.put(Annotations.STRIMZI_LOGGING_ANNOTATION, logAndMetricsConfigMap.getData().get(mirror.logging().configMapKey()));
                     return configMapOperations.reconcile(reconciliation, namespace, KafkaMirrorMakerResources.metricsAndLogConfigMapName(reconciliation.name()), logAndMetricsConfigMap);
                 })
-                .compose(i -> pfa.hasPodDisruptionBudgetV1() ? podDisruptionBudgetOperator.reconcile(reconciliation, namespace, mirror.getComponentName(), mirror.generatePodDisruptionBudget()) : Future.succeededFuture())
-                .compose(i -> !pfa.hasPodDisruptionBudgetV1() ? podDisruptionBudgetV1Beta1Operator.reconcile(reconciliation, namespace, mirror.getComponentName(), mirror.generatePodDisruptionBudgetV1Beta1()) : Future.succeededFuture())
+                .compose(i -> podDisruptionBudgetOperator.reconcile(reconciliation, namespace, mirror.getComponentName(), mirror.generatePodDisruptionBudget()))
                 .compose(i -> CompositeFuture.join(Util.authTlsHash(secretOperations, namespace, authConsumer, trustedCertificatesConsumer),
                         Util.authTlsHash(secretOperations, namespace, authProducer, trustedCertificatesProducer)))
                 .compose(hashFut -> {
@@ -118,7 +117,7 @@ public class KafkaMirrorMakerAssemblyOperator extends AbstractAssemblyOperator<K
                     return Future.succeededFuture();
                 })
                 .compose(i -> deploymentOperations.reconcile(reconciliation, namespace, mirror.getComponentName(), mirror.generateDeployment(annotations, pfa.isOpenshift(), imagePullPolicy, imagePullSecrets)))
-                .compose(i -> deploymentOperations.scaleUp(reconciliation, namespace, mirror.getComponentName(), mirror.getReplicas()))
+                .compose(i -> deploymentOperations.scaleUp(reconciliation, namespace, mirror.getComponentName(), mirror.getReplicas(), operationTimeoutMs))
                 .compose(i -> deploymentOperations.waitForObserved(reconciliation, namespace, mirror.getComponentName(), 1_000, operationTimeoutMs))
                 .compose(i -> mirrorHasZeroReplicas ? Future.succeededFuture() : deploymentOperations.readiness(reconciliation, namespace, mirror.getComponentName(), 1_000, operationTimeoutMs))
                 .onComplete(reconciliationResult -> {

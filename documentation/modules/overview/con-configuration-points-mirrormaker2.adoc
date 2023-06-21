@@ -1,0 +1,49 @@
+// This module is included in:
+//
+// overview/assembly-configuration-points.adoc
+
+[id="con-configuration-points-mm2-{context}"]
+= Kafka MirrorMaker 2 configuration
+
+[role="_abstract"]
+Kafka MirrorMaker 2 replicates data between two or more active Kafka clusters, within or across data centers.
+To set up MirrorMaker 2, a source and target (destination) Kafka cluster must be running.
+
+The process of _mirroring_ data from a source cluster to a target cluster is asynchronous.
+Each MirrorMaker 2 instance mirrors data from one source cluster to one target cluster. 
+You can use more than one MirrorMaker 2 instance to mirror data between any number of clusters.
+
+.Replication across two clusters
+image::mirrormaker.png[MirrorMaker 2 replication]
+
+MirrorMaker 2 uses source and target cluster configuration as follows:
+
+* Source cluster configuration for consuming data from the source cluster
+* Target cluster configuration for outputting data to the target cluster
+
+Topic and consumer group replication is specified as comma-separated lists or regular expression patterns.
+
+[discrete]
+== Example YAML showing MirrorMaker 2 configuration
+
+[source,yaml,subs="+quotes,attributes"]
+----
+  apiVersion: {KafkaMirrorMaker2ApiVersion}
+  kind: KafkaMirrorMaker2
+  metadata:
+    name: my-mirror-maker2
+    spec:
+      version: {DefaultKafkaVersion}
+      connectCluster: "my-cluster-target"
+      clusters:
+      - alias: "my-cluster-source"
+        bootstrapServers: my-cluster-source-kafka-bootstrap:9092
+      - alias: "my-cluster-target"
+        bootstrapServers: my-cluster-target-kafka-bootstrap:9092
+      mirrors:
+      - sourceCluster: "my-cluster-source"
+        targetCluster: "my-cluster-target"
+        sourceConnector: {}
+      topicsPattern: ".*"
+      groupsPattern: "group1|group2|group3"
+----

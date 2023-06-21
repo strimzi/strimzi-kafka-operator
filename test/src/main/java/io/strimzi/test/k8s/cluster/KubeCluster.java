@@ -57,6 +57,9 @@ public interface KubeCluster {
                 case "minikube":
                     clusters = new KubeCluster[]{new Minikube()};
                     break;
+                case "microshift":
+                    clusters = new KubeCluster[]{new Microshift()};
+                    break;
                 case "kubernetes":
                     clusters = new KubeCluster[]{new Kubernetes()};
                     break;
@@ -65,7 +68,7 @@ public interface KubeCluster {
             }
         }
         if (clusters == null) {
-            clusters = new KubeCluster[]{new Minikube(), new Kubernetes(), new OpenShift()};
+            clusters = new KubeCluster[]{new Minikube(), new Kubernetes(), new OpenShift(), new Microshift()};
         }
         KubeCluster cluster = null;
         for (KubeCluster kc : clusters) {

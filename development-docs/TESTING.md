@@ -15,6 +15,7 @@ For more information about the build process, see [Dev guide document](DEV_GUIDE
 - [Helper Script](#helper-script)
 - [Running single test class](#running-single-test-class)
 - [Skip Teardown](#skip-teardown)
+- [Testing-farm](../systemtest/tmt/README.md)
 
 <!-- /TOC -->
 
@@ -480,4 +481,3 @@ spec:
 ```
 
 Now you can efficiently run OLM tests.
-

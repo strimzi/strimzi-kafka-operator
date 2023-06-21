@@ -2,42 +2,8 @@
 //
 // overview/assembly-configuration-points.adoc
 
-[id="con-configuration-points-mm2-{context}"]
+[id="con-configuration-points-mm-{context}"]
 = Kafka MirrorMaker configuration
-
-[role="_abstract"]
-Kafka MirrorMaker replicates data between two or more active Kafka clusters, within or across data centers.
-To set up MirrorMaker, a source and target (destination) Kafka cluster must be running.
-
-include::con-overview-mirrormaker2.adoc[leveloffset=+1]
-
-[discrete]
-=== Example YAML showing MirrorMaker 2 configuration
-
-[source,yaml,subs="+quotes,attributes"]
-----
-  apiVersion: {KafkaMirrorMaker2ApiVersion}
-  kind: KafkaMirrorMaker2
-  metadata:
-    name: my-mirror-maker2
-    spec:
-      version: {DefaultKafkaVersion}
-      connectCluster: "my-cluster-target"
-      clusters:
-      - alias: "my-cluster-source"
-        bootstrapServers: my-cluster-source-kafka-bootstrap:9092
-      - alias: "my-cluster-target"
-        bootstrapServers: my-cluster-target-kafka-bootstrap:9092
-      mirrors:
-      - sourceCluster: "my-cluster-source"
-        targetCluster: "my-cluster-target"
-        sourceConnector: {}
-      topicsPattern: ".*"
-      groupsPattern: "group1|group2|group3"
-----
-
-== MirrorMaker configuration
-
 Kafka MirrorMaker (also referred to as MirrorMaker 1) uses producers and consumers to replicate data across clusters as follows:
 
 * Consumers consume data from the source cluster
@@ -51,19 +17,19 @@ As a consequence, the Strimzi `KafkaMirrorMaker` custom resource which is used t
 The `KafkaMirrorMaker` resource will be removed from Strimzi when Kafka 4.0.0 is adopted.
 
 [discrete]
-=== Key Consumer configuration
+== Key Consumer configuration
 
 Consumer group identifier:: The consumer group ID for a MirrorMaker consumer so that messages consumed are assigned to a consumer group.
 Number of consumer streams:: A value to determine the number of consumers in a consumer group that consume a message in parallel.
 Offset commit interval:: An offset commit interval to set the time between consuming and committing a message.
 
 [discrete]
-=== Key Producer configuration
+== Key Producer configuration
 
 Cancel option for send failure:: You can define whether a message send failure is ignored or MirrorMaker is terminated and recreated.
 
 [discrete]
-=== Example YAML showing MirrorMaker configuration
+== Example YAML showing MirrorMaker configuration
 [source,yaml,subs="+quotes,attributes"]
 ----
 apiVersion: {KafkaMirrorMakerApiVersion}

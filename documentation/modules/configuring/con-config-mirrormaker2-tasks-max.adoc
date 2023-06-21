@@ -1,9 +1,9 @@
 // Module included in the following assemblies:
 //
-// assembly-config-mirrormaker2.adoc
+// assembly-config.adoc
 
 [id='con-mirrormaker-tasks-max-{context}']
-= Specifying a maximum number of tasks
+= Specifying a maximum number of data replication tasks
 
 [role="_abstract"]
 Connectors create the tasks that are responsible for moving data in and out of Kafka.
@@ -83,4 +83,4 @@ The example MirrorMaker 2 Grafana dashboard provided with Strimzi shows the foll
 [role="_additional-resources"]
 .Additional resources
 
-* link:{BookURLDeploying}#assembly-metrics-{context}[Introducing metrics^]
+* xref:assembly-metrics-{context}[]

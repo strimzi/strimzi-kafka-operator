@@ -70,6 +70,7 @@ public class ServiceUtils {
      * @param ownerReference        OwnerReference of the Service
      * @param template              Service template with user's custom configuration
      * @param ports                 List of service ports
+     * @param selector              Selector for selecting the Pods to route the traffic to
      * @param discoveryLabels       Additional discovery labels
      * @param discoveryAnnotations  Additional discovery annotations
      *
@@ -82,6 +83,7 @@ public class ServiceUtils {
             OwnerReference ownerReference,
             InternalServiceTemplate template,
             List<ServicePort> ports,
+            Labels selector,
             Map<String, String> discoveryLabels,
             Map<String, String> discoveryAnnotations
     )   {
@@ -92,7 +94,7 @@ public class ServiceUtils {
                 ownerReference,
                 template,
                 ports,
-                labels.strimziSelectorLabels(),
+                selector,
                 "ClusterIP",
                 discoveryLabels,
                 discoveryAnnotations,

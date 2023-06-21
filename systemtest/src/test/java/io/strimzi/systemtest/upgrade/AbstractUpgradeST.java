@@ -415,6 +415,8 @@ public class AbstractUpgradeST extends AbstractST {
 
     protected void deployCoWithWaitForReadiness(final ExtensionContext extensionContext, final BundleVersionModificationData upgradeData,
                                                 final String namespaceName) throws IOException {
+        LOGGER.info("Deploying CO: {} in namespace: {}", ResourceManager.getCoDeploymentName(), namespaceName);
+
         if (upgradeData.getFromVersion().equals("HEAD")) {
             coDir = new File(TestUtils.USER_PATH + "/../packaging/install/cluster-operator");
         } else {
@@ -434,6 +436,8 @@ public class AbstractUpgradeST extends AbstractST {
 
     protected void deployKafkaClusterWithWaitForReadiness(final ExtensionContext extensionContext, final BundleVersionModificationData upgradeData,
                                                           final UpgradeKafkaVersion upgradeKafkaVersion) {
+        LOGGER.info("Deploying Kafka: {} in namespace: {}", clusterName, kubeClient().getNamespace());
+
         if (!cmdKubeClient().getResources(getResourceApiVersion(Kafka.RESOURCE_PLURAL, upgradeData.getFromVersion())).contains(clusterName)) {
             // Deploy a Kafka cluster
             if (upgradeData.getFromExamples().equals("HEAD")) {
@@ -463,6 +467,8 @@ public class AbstractUpgradeST extends AbstractST {
 
     protected void deployKafkaUserWithWaitForReadiness(final ExtensionContext extensionContext, final BundleVersionModificationData upgradeData,
                                                        final String namespaceName) {
+        LOGGER.info("Deploying KafkaUser: {} in namespace: {}", userName, kubeClient().getNamespace());
+
         if (!cmdKubeClient().getResources(getResourceApiVersion(KafkaUser.RESOURCE_PLURAL, upgradeData.getFromVersion())).contains(userName)) {
             if (upgradeData.getFromVersion().equals("HEAD")) {
                 resourceManager.createResource(extensionContext, KafkaUserTemplates.tlsUser(namespaceName, clusterName, userName).build());
@@ -476,6 +482,8 @@ public class AbstractUpgradeST extends AbstractST {
     }
 
     protected void deployKafkaTopicWithWaitForReadiness(final BundleVersionModificationData upgradeData) {
+        LOGGER.info("Deploying KafkaTopic: {} in namespace: {}", topicName, kubeClient().getNamespace());
+
         if (!cmdKubeClient().getResources(getResourceApiVersion(KafkaTopic.RESOURCE_PLURAL, upgradeData.getFromVersion())).contains(topicName)) {
             if (upgradeData.getFromVersion().equals("HEAD")) {
                 kafkaTopicYaml = new File(dir, PATH_TO_PACKAGING_EXAMPLES + "/topic/kafka-topic.yaml");

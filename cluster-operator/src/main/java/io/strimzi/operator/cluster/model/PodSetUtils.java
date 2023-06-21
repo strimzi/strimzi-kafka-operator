@@ -85,6 +85,17 @@ public class PodSetUtils {
     }
 
     /**
+     * Extracts Pod names from a PodSet
+     *
+     * @param podSet    PodSet to extract the pod names from
+     *
+     * @return  List of pod names
+     */
+    public static List<String> podNames(StrimziPodSet podSet)   {
+        return podSetToPods(podSet).stream().map(pod -> pod.getMetadata().getName()).toList();
+    }
+
+    /**
      * Check whether the Pod reached one of its terminal phases: Succeeded or Failed. This is checked based on
      * the .status.phase field.
      *

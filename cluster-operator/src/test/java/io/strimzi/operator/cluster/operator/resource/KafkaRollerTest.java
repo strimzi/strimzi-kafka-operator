@@ -249,7 +249,7 @@ public class KafkaRollerTest {
         Set<NodeRef> podNames = new LinkedHashSet<>(replicas);
 
         for (int podId = 0; podId < replicas; podId++) {
-            podNames.add(new NodeRef(KafkaResources.kafkaPodName(clusterName(), podId), podId));
+            podNames.add(new NodeRef(KafkaResources.kafkaPodName(clusterName(), podId), podId, null, false, true));
         }
 
         return podNames;
@@ -258,11 +258,11 @@ public class KafkaRollerTest {
     public Set<NodeRef> addDisconnectedPodNames(int replicas) {
         Set<NodeRef> podNames = new LinkedHashSet<>(replicas);
 
-        podNames.add(new NodeRef(KafkaResources.kafkaPodName(clusterName(), 10), 10));
-        podNames.add(new NodeRef(KafkaResources.kafkaPodName(clusterName(), 200), 200));
-        podNames.add(new NodeRef(KafkaResources.kafkaPodName(clusterName(), 30), 30));
-        podNames.add(new NodeRef(KafkaResources.kafkaPodName(clusterName(), 400), 400));
-        podNames.add(new NodeRef(KafkaResources.kafkaPodName(clusterName(), 500), 500));
+        podNames.add(new NodeRef(KafkaResources.kafkaPodName(clusterName(), 10), 10, null, false, true));
+        podNames.add(new NodeRef(KafkaResources.kafkaPodName(clusterName(), 200), 200, null, false, true));
+        podNames.add(new NodeRef(KafkaResources.kafkaPodName(clusterName(), 30), 30, null, false, true));
+        podNames.add(new NodeRef(KafkaResources.kafkaPodName(clusterName(), 400), 400, null, false, true));
+        podNames.add(new NodeRef(KafkaResources.kafkaPodName(clusterName(), 500), 500, null, false, true));
         return podNames;
     }
 

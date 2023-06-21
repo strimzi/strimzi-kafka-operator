@@ -169,7 +169,7 @@ public class EntityTopicOperator extends AbstractModel implements SupportsLoggin
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_SECURITY_PROTOCOL, EntityTopicOperatorSpec.DEFAULT_SECURITY_PROTOCOL));
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_TLS_ENABLED, Boolean.toString(true)));
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_STRIMZI_GC_LOG_ENABLED, String.valueOf(gcLoggingEnabled)));
-        ModelUtils.javaOptions(varList, jvmOptions);
+        JvmOptionUtils.javaOptions(varList, jvmOptions);
 
         // Add shared environment variables used for all containers
         varList.addAll(ContainerUtils.requiredEnvVars());

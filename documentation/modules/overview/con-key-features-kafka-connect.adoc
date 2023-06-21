@@ -137,4 +137,4 @@ NOTE: You can also specify converters for specific connectors to override the ge
 .Additional resources
 * http://kafka.apache.org[Apache Kafka documentation^]
 * link:{BookURLConfiguring}#property-kafka-connect-config-reference[Kafka Connect configuration of workers^]
-* link:{BookURLConfiguring}#proc-mirrormaker-replication-str[Synchronizing data between Kafka clusters using MirrorMaker 2^]
+* link:{BookURLDeploying}#proc-mirrormaker-replication-str[Synchronizing data between Kafka clusters using MirrorMaker 2^]

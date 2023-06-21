@@ -11,6 +11,7 @@ import io.fabric8.kubernetes.api.model.ContainerPort;
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
+import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.Volume;
@@ -168,13 +169,21 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
      * @param reconciliation    Reconciliation marker used for logging
      * @param kafkaCr           The Kafka custom resource
      * @param versions          Supported Kafka versions
-     * @param storage           The actual storage configuration used by the cluster. This might differ from the storage
-     *                          configuration configured by the user in the Kafka CR due to unallowed changes.
+     * @param kafkaNodes                List of the nodes which are part of the Kafka cluster
+     * @param kafkaStorage              A map with storage configuration used by the Kafka cluster and its node pools
+     * @param kafkaResources            A map with resource configuration used by the Kafka cluster and its node pools
      *
      * @return                  Instance of the Cruise Control model
      */
     @SuppressWarnings({"checkstyle:NPathComplexity", "checkstyle:CyclomaticComplexity"})
-    public static CruiseControl fromCrd(Reconciliation reconciliation, Kafka kafkaCr, KafkaVersion.Lookup versions, Storage storage) {
+    public static CruiseControl fromCrd(
+            Reconciliation reconciliation,
+            Kafka kafkaCr,
+            KafkaVersion.Lookup versions,
+            Set<NodeRef> kafkaNodes,
+            Map<String, Storage> kafkaStorage,
+            Map<String, ResourceRequirements> kafkaResources
+    ) {
         CruiseControlSpec ccSpec = kafkaCr.getSpec().getCruiseControl();
         KafkaClusterSpec kafkaClusterSpec = kafkaCr.getSpec().getKafka();
 
@@ -199,7 +208,7 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
 
             // To avoid illegal storage configurations provided by the user,
             // we rely on the storage configuration provided by the KafkaAssemblyOperator
-            result.capacity = new Capacity(reconciliation, kafkaCr.getSpec(), storage);
+            result.capacity = new Capacity(reconciliation, kafkaCr.getSpec(), kafkaNodes, kafkaStorage, kafkaResources);
             result.readinessProbeOptions = ProbeUtils.extractReadinessProbeOptionsOrDefault(ccSpec, ProbeUtils.DEFAULT_HEALTHCHECK_OPTIONS);
             result.livenessProbeOptions = ProbeUtils.extractLivenessProbeOptionsOrDefault(ccSpec, ProbeUtils.DEFAULT_HEALTHCHECK_OPTIONS);
             result.gcLoggingEnabled = ccSpec.getJvmOptions() == null ? JvmOptions.DEFAULT_GC_LOGGING_ENABLED : ccSpec.getJvmOptions().isGcLoggingEnabled();
@@ -383,9 +392,9 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_API_PORT,  String.valueOf(REST_API_PORT)));
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_API_HEALTHCHECK_PATH, API_HEALTHCHECK_PATH));
 
-        ModelUtils.heapOptions(varList, 75, 0L, jvmOptions, resources);
-        ModelUtils.jvmPerformanceOptions(varList, jvmOptions);
-        ModelUtils.jvmSystemProperties(varList, jvmOptions);
+        JvmOptionUtils.heapOptions(varList, 75, 0L, jvmOptions, resources);
+        JvmOptionUtils.jvmPerformanceOptions(varList, jvmOptions);
+        JvmOptionUtils.jvmSystemProperties(varList, jvmOptions);
 
         if (configuration != null && !configuration.getConfiguration().isEmpty()) {
             varList.add(ContainerUtils.createEnvVar(ENV_VAR_CRUISE_CONTROL_CONFIGURATION, configuration.getConfiguration()));

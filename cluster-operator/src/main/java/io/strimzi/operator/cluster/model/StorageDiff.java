@@ -19,6 +19,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -45,11 +46,11 @@ public class StorageDiff extends AbstractJsonDiff {
      * @param reconciliation    The reconciliation
      * @param current           Current Storage configuration
      * @param desired           Desired Storage configuration
-     * @param currentReplicas   Current number of replicas (will differ from desired number of replicas when scaling up or down)
-     * @param desiredReplicas   Desired number of replicas (will differ from current number of replicas when scaling up or down)
+     * @param currentNodeIds    Node IDs currently used by this node pool
+     * @param desiredNodeIds    Node IDs used in the future by this node pool
      */
-    public StorageDiff(Reconciliation reconciliation, Storage current, Storage desired, int currentReplicas, int desiredReplicas) {
-        this(reconciliation, current, desired, currentReplicas, desiredReplicas, "");
+    public StorageDiff(Reconciliation reconciliation, Storage current, Storage desired, Set<Integer> currentNodeIds, Set<Integer> desiredNodeIds) {
+        this(reconciliation, current, desired, currentNodeIds, desiredNodeIds, "");
     }
 
     /**
@@ -60,19 +61,17 @@ public class StorageDiff extends AbstractJsonDiff {
      * @param reconciliation    The reconciliation
      * @param current           Current Storage configuration
      * @param desired           Desired Storage configuration
-     * @param currentReplicas   Current number of replicas (will differ from desired number of replicas when scaling up or down)
-     * @param desiredReplicas   Desired number of replicas (will differ from current number of replicas when scaling up or down)
+     * @param currentNodeIds    Node IDs currently used by this node pool
+     * @param desiredNodeIds    Node IDs used in the future by this node pool
      * @param volumeDesc        Description of the volume which is being used
      */
-    private StorageDiff(Reconciliation reconciliation, Storage current, Storage desired, int currentReplicas, int desiredReplicas, String volumeDesc) {
+    private StorageDiff(Reconciliation reconciliation, Storage current, Storage desired, Set<Integer> currentNodeIds, Set<Integer> desiredNodeIds, String volumeDesc) {
         boolean changesType = false;
         boolean shrinkSize = false;
         boolean isEmpty = true;
         boolean volumesAddedOrRemoved = false;
 
-        if (current instanceof JbodStorage && desired instanceof JbodStorage) {
-            JbodStorage currentJbodStorage = (JbodStorage) current;
-            JbodStorage desiredJbodStorage = (JbodStorage) desired;
+        if (current instanceof JbodStorage currentJbodStorage && desired instanceof JbodStorage desiredJbodStorage) {
             Set<Integer> volumeIds = new HashSet<>();
 
             volumeIds.addAll(currentJbodStorage.getVolumes().stream().map(SingleVolumeStorage::getId).collect(Collectors.toSet()));
@@ -88,7 +87,7 @@ public class StorageDiff extends AbstractJsonDiff {
 
                 volumesAddedOrRemoved |= isNull(currentVolume) != isNull(desiredVolume);
 
-                StorageDiff diff = new StorageDiff(reconciliation, currentVolume, desiredVolume, currentReplicas, desiredReplicas, "(volume ID: " + volumeId + ") ");
+                StorageDiff diff = new StorageDiff(reconciliation, currentVolume, desiredVolume, currentNodeIds, desiredNodeIds, "(volume ID: " + volumeId + ") ");
 
                 changesType |= diff.changesType();
                 shrinkSize |= diff.shrinkSize();
@@ -111,9 +110,7 @@ public class StorageDiff extends AbstractJsonDiff {
 
                 // It might be possible to increase the volume size, but never to shrink volumes
                 // When size changes, we need to detect whether it is shrinking or increasing
-                if (pathValue.endsWith("/size") && desired.getType().equals(current.getType()) && current instanceof PersistentClaimStorage && desired instanceof PersistentClaimStorage)    {
-                    PersistentClaimStorage persistentCurrent = (PersistentClaimStorage) current;
-                    PersistentClaimStorage persistentDesired = (PersistentClaimStorage) desired;
+                if (pathValue.endsWith("/size") && desired.getType().equals(current.getType()) && current instanceof PersistentClaimStorage persistentCurrent && desired instanceof PersistentClaimStorage persistentDesired)    {
 
                     long currentSize = StorageUtils.convertToMillibytes(persistentCurrent.getSize());
                     long desiredSize = StorageUtils.convertToMillibytes(persistentDesired.getSize());
@@ -129,7 +126,7 @@ public class StorageDiff extends AbstractJsonDiff {
                 // * When scaling up or down, you can set the overrides for new nodes
                 // * You can set overrides for nodes which do nto exist (yet)
                 if (pathValue.startsWith("/overrides")) {
-                    if (isOverrideChangeAllowed(current, desired, currentReplicas, desiredReplicas))    {
+                    if (isOverrideChangeAllowed(current, desired, currentNodeIds, desiredNodeIds))    {
                         continue;
                     }
                 }
@@ -196,11 +193,12 @@ public class StorageDiff extends AbstractJsonDiff {
      *
      * @param current           Current Storage configuration
      * @param desired           New storage configuration
-     * @param currentReplicas   Current number of replicas
-     * @param desiredReplicas   Desired number of replicas
+     * @param currentNodeIds    Node IDs currently used by this node pool
+     * @param desiredNodeIds    Node IDs used in the future by this node pool
+     *
      * @return                  True if only allowed override changes were done, false othewise
      */
-    private boolean isOverrideChangeAllowed(Storage current, Storage desired,  int currentReplicas, int desiredReplicas)   {
+    private boolean isOverrideChangeAllowed(Storage current, Storage desired, Set<Integer> currentNodeIds, Set<Integer> desiredNodeIds)   {
         List<PersistentClaimStorageOverride> currentOverrides = ((PersistentClaimStorage) current).getOverrides();
         if (currentOverrides == null)   {
             currentOverrides = Collections.emptyList();
@@ -212,11 +210,10 @@ public class StorageDiff extends AbstractJsonDiff {
         }
 
         // We care only about the nodes which existed before this reconciliation and will still exist after it
-        int existedAndWillExist = Math.min(currentReplicas, desiredReplicas);
+        Set<Integer> existedAndWillExist = new TreeSet<>(currentNodeIds);
+        existedAndWillExist.retainAll(desiredNodeIds);
 
-        for (int i = 0; i < existedAndWillExist; i++)    {
-            int nodeId = i;
-
+        for (int nodeId : existedAndWillExist)   {
             PersistentClaimStorageOverride currentOverride = currentOverrides.stream()
                     .filter(override -> override.getBroker() == nodeId)
                     .findFirst()

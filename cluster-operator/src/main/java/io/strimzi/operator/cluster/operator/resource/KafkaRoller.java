@@ -221,7 +221,13 @@ public class KafkaRoller {
             for (NodeRef node : nodes)  {
                 // Order the nodes unready first otherwise repeated reconciliations might each restart a pod
                 // only for it not to become ready and thus drive the cluster to a worse state.
-                pods.add(podOperations.isReady(namespace, node.podName()) ? pods.size() : 0, node);
+
+                // TODO: In KRaft mode, We currently roll only nodes with the broker role. This is because of Kafka
+                //       limitations. Once managing controller nodes is supported with Kafka Admin API, this should be
+                //       fixed. This is tracked in https://github.com/strimzi/strimzi-kafka-operator/issues/8593.
+                if (node.broker()) {
+                    pods.add(podOperations.isReady(namespace, node.podName()) ? pods.size() : 0, node);
+                }
             }
             LOGGER.debugCr(reconciliation, "Initial order for updating pods (rolling restart or dynamic update) is {}", pods);
 
@@ -346,7 +352,6 @@ public class KafkaRoller {
      * @throws ForceableProblem         Some error. Not thrown when finalAttempt==true.
      * @throws UnforceableProblem       Some error, still thrown when finalAttempt==true.
      */
-    @SuppressFBWarnings("RCN_REDUNDANT_NULLCHECK_OF_NONNULL_VALUE")
     @SuppressWarnings({"checkstyle:CyclomaticComplexity"})
     private void restartIfNecessary(NodeRef nodeRef, RestartContext restartContext)
             throws Exception {
@@ -758,20 +763,23 @@ public class KafkaRoller {
      * Returns an AdminClient instance bootstrapped from the given pod.
      */
     protected Admin adminClient(Set<NodeRef> nodes, boolean ceShouldBeFatal) throws ForceableProblem, FatalProblem {
-        List<String> podNames = nodes.stream().map(node -> node.podName()).toList();
+        // TODO: Currently, when running in KRaft mode, only nodes which have the broker process role can be roller due
+        //       to Kafka limitations. This should be fixed once Kafka supports using Kafka Admin APi with controller
+        //       nodes. This is tracked in https://github.com/strimzi/strimzi-kafka-operator/issues/8593.
+        String bootstrapHostnames = nodes.stream().filter(node -> node.broker()).map(node -> DnsNameGenerator.podDnsName(namespace, KafkaResources.brokersServiceName(cluster), node.podName()) + ":" + KafkaCluster.REPLICATION_PORT).collect(Collectors.joining(","));
+
         try {
-            String bootstrapHostnames = podNames.stream().map(podName -> DnsNameGenerator.podDnsName(namespace, KafkaResources.brokersServiceName(cluster), podName) + ":" + KafkaCluster.REPLICATION_PORT).collect(Collectors.joining(","));
             LOGGER.debugCr(reconciliation, "Creating AdminClient for {}", bootstrapHostnames);
             return adminClientProvider.createAdminClient(bootstrapHostnames, this.clusterCaCertSecret, this.coKeySecret, "cluster-operator");
         } catch (KafkaException e) {
             if (ceShouldBeFatal && (e instanceof ConfigException
                     || e.getCause() instanceof ConfigException)) {
-                throw new FatalProblem("An error while try to create an admin client with bootstrap brokers " + podNames, e);
+                throw new FatalProblem("An error while try to create an admin client with bootstrap brokers " + bootstrapHostnames, e);
             } else {
-                throw new ForceableProblem("An error while try to create an admin client with bootstrap brokers " + podNames, e);
+                throw new ForceableProblem("An error while try to create an admin client with bootstrap brokers " + bootstrapHostnames, e);
             }
         } catch (RuntimeException e) {
-            throw new ForceableProblem("An error while try to create an admin client with bootstrap brokers " + podNames, e);
+            throw new ForceableProblem("An error while try to create an admin client with bootstrap brokers " + bootstrapHostnames, e);
         }
     }
 

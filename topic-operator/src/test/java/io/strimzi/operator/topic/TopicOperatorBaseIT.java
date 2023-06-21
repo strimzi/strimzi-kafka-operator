@@ -9,7 +9,6 @@ import io.fabric8.kubernetes.api.model.Event;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
-import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.KafkaTopicList;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaTopicBuilder;
@@ -149,7 +148,6 @@ public abstract class TopicOperatorBaseIT {
         adminClient = AdminClient.create(p);
 
         kubeClient = kubeClient().getClient();
-        Crds.registerCustomKinds();
 
         // We can't delete events, so record the events which exist at the start of the test
         // and then waitForEvents() can ignore those

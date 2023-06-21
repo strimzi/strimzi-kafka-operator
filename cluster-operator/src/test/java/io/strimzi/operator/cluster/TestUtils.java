@@ -81,6 +81,21 @@ public class TestUtils {
                 .withName(ClusterOperatorConfig.NO_PROXY)
                 .withValue(System.getenv(ClusterOperatorConfig.NO_PROXY))
                 .build());
+                    .withName(ClusterOperatorConfig.HTTP_PROXY)
+                    .withValue(System.getenv(ClusterOperatorConfig.NO_PROXY))
+                    .build());
+        }
+        if (System.getenv(ClusterOperatorConfig.HTTPS_PROXY) != null) {
+            envVars.add(new EnvVarBuilder()
+                    .withName(ClusterOperatorConfig.HTTPS_PROXY)
+                    .withValue(System.getenv(ClusterOperatorConfig.HTTPS_PROXY))
+                    .build());
+        }
+        if (System.getenv(ClusterOperatorConfig.NO_PROXY) != null) {
+            envVars.add(new EnvVarBuilder()
+                    .withName(ClusterOperatorConfig.NO_PROXY)
+                    .withValue(System.getenv(ClusterOperatorConfig.NO_PROXY))
+                    .build());
         }
     }
 }

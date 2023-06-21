@@ -6283,6 +6283,15 @@ spec:
                           type: string
                         description: A list of TLS certificates which can be used to verify the identity of the server when connecting to the given listener. Set only for `tls` and `external` listeners.
                   description: Addresses of the internal and external listeners.
+                kafkaNodePools:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      name:
+                        type: string
+                        description: The name of the KafkaNodePool used by this Kafka resource.
+                  description: List of the KafkaNodePools used by this Kafka cluster.
                 clusterId:
                   type: string
                   description: Kafka cluster Id.

@@ -76,7 +76,7 @@ class DocGenerator {
     }
 
     private void appendHeading(String name) throws IOException {
-        appendRepeated('#', headerDepth);
+        appendRepeated('=', headerDepth);
         out.append(' ');
         out.append(name);
         out.append(" schema reference");
@@ -398,7 +398,7 @@ class DocGenerator {
             out.append("include::../" + filename + "[leveloffset=+1]").append(NL);
             out.append(NL);
             out.append("[id='type-").append(cls.getSimpleName()).append("-schema-{context}']").append(NL);
-            out.append("==== `").append(cls.getSimpleName()).append("` schema properties").append(NL);
+            out.append("== `").append(cls.getSimpleName()).append("` schema properties").append(NL);
             out.append(NL);
 
         } else if (description != null) {
@@ -538,7 +538,7 @@ class DocGenerator {
                 .append(".").append(NL);
             writer.append("// To change this documentation you need to edit the Java sources.").append(NL);
             writer.append(NL);
-            DocGenerator dg = new DocGenerator(crApiVersion, 3, classes, writer, linker);
+            DocGenerator dg = new DocGenerator(crApiVersion, 1, classes, writer, linker);
             for (Class<? extends CustomResource> c : classes) {
                 dg.generate(c);
             }

@@ -208,7 +208,7 @@ public class ServiceUtilsTest {
 
     @ParallelTest
     public void testCreateDiscoverableServiceWithNullTemplate() {
-        Service svc = ServiceUtils.createDiscoverableClusterIpService(NAME, NAMESPACE, LABELS, OWNER_REFERENCE, null, List.of(PORT), Map.of("discovery-label", "label-value"), Map.of("strimzi.io/discovery-anno", "anno-value"));
+        Service svc = ServiceUtils.createDiscoverableClusterIpService(NAME, NAMESPACE, LABELS, OWNER_REFERENCE, null, List.of(PORT), LABELS.strimziSelectorLabels(), Map.of("discovery-label", "label-value"), Map.of("strimzi.io/discovery-anno", "anno-value"));
 
         assertThat(svc.getMetadata().getName(), is(NAME));
         assertThat(svc.getMetadata().getNamespace(), is(NAMESPACE));
@@ -229,7 +229,7 @@ public class ServiceUtilsTest {
 
     @ParallelTest
     public void testCreateDiscoverableServiceWithTemplate() {
-        Service svc = ServiceUtils.createDiscoverableClusterIpService(NAME, NAMESPACE, LABELS, OWNER_REFERENCE, TEMPLATE, List.of(PORT), Map.of("discovery-label", "label-value"), Map.of("strimzi.io/discovery-anno", "anno-value"));
+        Service svc = ServiceUtils.createDiscoverableClusterIpService(NAME, NAMESPACE, LABELS, OWNER_REFERENCE, TEMPLATE, List.of(PORT), LABELS.strimziSelectorLabels(), Map.of("discovery-label", "label-value"), Map.of("strimzi.io/discovery-anno", "anno-value"));
 
         assertThat(svc.getMetadata().getName(), is(NAME));
         assertThat(svc.getMetadata().getNamespace(), is(NAMESPACE));

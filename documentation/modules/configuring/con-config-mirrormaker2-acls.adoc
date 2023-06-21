@@ -1,13 +1,15 @@
 // Module included in the following assemblies:
 //
-// assembly-config-mirrormaker2.adoc
+// assembly-config.adoc
 
 [id='con-mirrormaker-acls-{context}']
-= ACL rules synchronization
+= Synchronizing ACL rules for remote topics
 
-ACL access to remote topics is possible if you are *not* using the User Operator.
+[role="_abstract"]
+When using MirrorMaker 2 with Strimzi, it is possible to synchronize ACL rules for remote topics. 
+However, this feature is only available if you are not using the User Operator.
 
-If `AclAuthorizer` is being used, without the User Operator, ACL rules that manage access to brokers also apply to remote topics.
-Users that can read a source topic can read its remote equivalent.
+If you are using the AclAuthorizer without the User Operator, the ACL rules that manage access to brokers also apply to remote topics. 
+This means that users who have read access to a source topic can also read its remote equivalent.
 
 NOTE: OAuth 2.0 authorization does not support access to remote topics in this way.

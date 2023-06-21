@@ -647,9 +647,9 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_CONNECT_BOOTSTRAP_SERVERS, bootstrapServers));
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_STRIMZI_KAFKA_GC_LOG_ENABLED, String.valueOf(gcLoggingEnabled)));
 
-        ModelUtils.heapOptions(varList, 75, 0L, jvmOptions, resources);
-        ModelUtils.jvmPerformanceOptions(varList, jvmOptions);
-        ModelUtils.jvmSystemProperties(varList, jvmOptions);
+        JvmOptionUtils.heapOptions(varList, 75, 0L, jvmOptions, resources);
+        JvmOptionUtils.jvmPerformanceOptions(varList, jvmOptions);
+        JvmOptionUtils.jvmSystemProperties(varList, jvmOptions);
 
         if (tls != null) {
             populateTLSEnvVars(varList);
@@ -779,21 +779,6 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
             return PodDisruptionBudgetUtils.createCustomControllerPodDisruptionBudget(componentName, namespace, labels, ownerReference, templatePodDisruptionBudget, replicas);
         } else {
             return PodDisruptionBudgetUtils.createPodDisruptionBudget(componentName, namespace, labels, ownerReference, templatePodDisruptionBudget);
-        }
-    }
-
-    /**
-     * Generates the PodDisruptionBudgetV1Beta1
-     *
-     * @param stableIdentities  Indicates whether the StableConnectIdentities (use of StrimziPodSets) feature gate is enabled or not
-     *
-     * @return The pod disruption budget V1Beta1.
-     */
-    public io.fabric8.kubernetes.api.model.policy.v1beta1.PodDisruptionBudget generatePodDisruptionBudgetV1Beta1(boolean stableIdentities) {
-        if (stableIdentities) {
-            return PodDisruptionBudgetUtils.createCustomControllerPodDisruptionBudgetV1Beta1(componentName, namespace, labels, ownerReference, templatePodDisruptionBudget, replicas);
-        } else {
-            return PodDisruptionBudgetUtils.createPodDisruptionBudgetV1Beta1(componentName, namespace, labels, ownerReference, templatePodDisruptionBudget);
         }
     }
 

@@ -6,7 +6,8 @@
 [id='kafka-bridge-{context}']
 = Deploying Kafka Bridge
 
-The Cluster Operator deploys one or more Kafka bridge replicas to send data between Kafka clusters and clients via HTTP API.
+[role="_abstract"]
+Kafka Bridge provides an API for integrating HTTP-based clients with a Kafka cluster.
 
 //Procedure to deploy a Kafka Bridge cluster
 include::../../modules/deploying/proc-deploy-kafka-bridge.adoc[leveloffset=+1]
@@ -14,3 +15,5 @@ include::../../modules/deploying/proc-deploy-kafka-bridge.adoc[leveloffset=+1]
 include::../../modules/deploying/proc-exposing-kafka-bridge-service-local-machine.adoc[leveloffset=+1]
 //accessing the bridge outside the cluster
 include::../../modules/deploying/con-accessing-kafka-bridge-from-outside.adoc[leveloffset=+1]
+//Resources created for Kafka Bridge
+include::../../modules/configuring/ref-list-of-kafka-bridge-resources.adoc[leveloffset=+1]

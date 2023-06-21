@@ -1,0 +1,148 @@
+# Default packit instance is a prod and only this is used
+# stg instance is present for testing new packit features in forked repositories where stg is installed.
+packit_instances: ["prod", "stg"]
+upstream_project_url: https://github.com/strimzi/strimzi-kafka-operator
+issue_repository: https://github.com/strimzi/strimzi-kafka-operator
+jobs:
+  - job: tests
+    trigger: pull_request
+    # Suffix for job name
+    identifier: "automation-check"
+    targets:
+      # This target is not used at all by our tests, but it has to be one of the available - https://packit.dev/docs/configuration/#aliases
+      - centos-stream-9-x86_64
+      - centos-stream-9-aarch64
+    # We don't need to build any packages for Fedora/RHEL/CentOS, it is not related to Strimzi tests
+    skip_build: true
+    manual_trigger: true
+    labels:
+      - smoke
+      - automation-check
+    tf_extra_params:
+      test:
+        fmf:
+          name: smoke
+  ###############################################################################################
+
+  - job: tests
+    trigger: pull_request
+    # Suffix for job name
+    identifier: "upgrade"
+    targets:
+      # This target is not used at all by our tests, but it has to be one of the available - https://packit.dev/docs/configuration/#aliases
+      - centos-stream-9-x86_64
+      - centos-stream-9-aarch64
+    # We don't need to build any packages for Fedora/RHEL/CentOS, it is not related to Strimzi tests
+    skip_build: true
+    manual_trigger: true
+    labels:
+      - upgrade
+    tf_extra_params:
+      test:
+        fmf:
+          name: upgrade
+  ###############################################################################################
+
+  - job: tests
+    trigger: pull_request
+    # Suffix for job name
+    identifier: "regression-operators"
+    targets:
+      # This target is not used at all by our tests, but it has to be one of the available - https://packit.dev/docs/configuration/#aliases
+      - centos-stream-9-x86_64
+      - centos-stream-9-aarch64
+    # We don't need to build any packages for Fedora/RHEL/CentOS, it is not related to Strimzi tests
+    skip_build: true
+    manual_trigger: true
+    labels:
+      - regression
+      - operators
+      - regression-operators
+      - ro
+    tf_extra_params:
+      test:
+        fmf:
+          name: regression-operators
+  ###############################################################################################
+
+  - job: tests
+    trigger: pull_request
+    # Suffix for job name
+    identifier: "regression-components"
+    targets:
+      # This target is not used at all by our tests, but it has to be one of the available - https://packit.dev/docs/configuration/#aliases
+      - centos-stream-9-x86_64
+      - centos-stream-9-aarch64
+    # We don't need to build any packages for Fedora/RHEL/CentOS, it is not related to Strimzi tests
+    skip_build: true
+    manual_trigger: true
+    labels:
+      - regression
+      - components
+      - regression-components
+      - rc
+    tf_extra_params:
+      test:
+        fmf:
+          name: regression-components
+  ###############################################################################################
+
+  - job: tests
+    trigger: pull_request
+    # Suffix for job name
+    identifier: "kraft-operators"
+    targets:
+      # This target is not used at all by our tests, but it has to be one of the available - https://packit.dev/docs/configuration/#aliases
+      - centos-stream-9-x86_64
+      - centos-stream-9-aarch64
+    # We don't need to build any packages for Fedora/RHEL/CentOS, it is not related to Strimzi tests
+    skip_build: true
+    manual_trigger: true
+    labels:
+      - kraft
+      - operators
+      - kraft-operators
+      - ko
+    tf_extra_params:
+      test:
+        fmf:
+          name: kraft-operators
+  ###############################################################################################
+
+  - job: tests
+    trigger: pull_request
+    # Suffix for job name
+    identifier: "kraft-components"
+    targets:
+      # This target is not used at all by our tests, but it has to be one of the available - https://packit.dev/docs/configuration/#aliases
+      - centos-stream-9-x86_64
+      - centos-stream-9-aarch64
+    # We don't need to build any packages for Fedora/RHEL/CentOS, it is not related to Strimzi tests
+    skip_build: true
+    manual_trigger: true
+    labels:
+      - kraft
+      - components
+      - kraft-components
+      - kc
+    tf_extra_params:
+      test:
+        fmf:
+          name: kraft-components
+  ###############################################################################################
+
+  - job: tests
+    trigger: commit
+    branch: main
+    # Suffix for job name
+    identifier: "sanity"
+    targets:
+      # This target is not used at all by our tests, but it has to be one of the available - https://packit.dev/docs/configuration/#aliases
+      - centos-stream-9-x86_64
+      - centos-stream-9-aarch64
+    # We don't need to build any packages for Fedora/RHEL/CentOS, it is not related to Strimzi tests
+    skip_build: true
+    tf_extra_params:
+      test:
+        fmf:
+          name: sanity

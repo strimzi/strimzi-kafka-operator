@@ -1,19 +1,14 @@
 include::shared/version-dependent-attrs.adoc[]
 include::shared/attributes.adoc[]
 
-:context: str
-
-[id="configuring-book_{context}"]
-= Configuring Strimzi
-
-include::assemblies/configuring/assembly-deployment-configuration.adoc[leveloffset=+1]
-
-[id='api_reference-{context}']
-:parent-context: {context}
 :context: reference
 
-== Custom resource API reference
+[id="configuring-book_{context}"]
+= Strimzi Custom Resource API Reference
+
+//introduces the schema reference
+include::modules/configuring/con-schema-overview.adoc[leveloffset=+1]
+//properties common to more than one custom resource
 include::modules/con-common-configuration-properties.adoc[leveloffset=+1]
-=== Schema properties
+//content built from @Description annotations in the Java files
 include::modules/appendix_crds.adoc[leveloffset=+1]
-:context: {parent-context}

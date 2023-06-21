@@ -370,9 +370,9 @@ public class KafkaMirrorMakerCluster extends AbstractModel implements SupportsMe
             varList.add(ContainerUtils.createEnvVar(ENV_VAR_STRIMZI_TRACING, tracing.getType()));
         }
 
-        ModelUtils.heapOptions(varList, 75, 0L, jvmOptions, resources);
-        ModelUtils.jvmPerformanceOptions(varList, jvmOptions);
-        ModelUtils.jvmSystemProperties(varList, jvmOptions);
+        JvmOptionUtils.heapOptions(varList, 75, 0L, jvmOptions, resources);
+        JvmOptionUtils.jvmPerformanceOptions(varList, jvmOptions);
+        JvmOptionUtils.jvmSystemProperties(varList, jvmOptions);
 
         /* consumer */
         addConsumerEnvVars(varList);
@@ -452,15 +452,6 @@ public class KafkaMirrorMakerCluster extends AbstractModel implements SupportsMe
      */
     public PodDisruptionBudget generatePodDisruptionBudget() {
         return PodDisruptionBudgetUtils.createPodDisruptionBudget(componentName, namespace, labels, ownerReference, templatePodDisruptionBudget);
-    }
-
-    /**
-     * Generates the PodDisruptionBudgetV1Beta1
-     *
-     * @return The pod disruption budget V1Beta1.
-     */
-    public io.fabric8.kubernetes.api.model.policy.v1beta1.PodDisruptionBudget generatePodDisruptionBudgetV1Beta1() {
-        return PodDisruptionBudgetUtils.createPodDisruptionBudgetV1Beta1(componentName, namespace, labels, ownerReference, templatePodDisruptionBudget);
     }
 
     protected String getInclude() {

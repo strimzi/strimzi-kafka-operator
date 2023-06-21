@@ -1,6 +1,6 @@
 // This assembly is included in the following assemblies:
 //
-// using/assembly-management-tasks.adoc
+// assembly-management-tasks.adoc
 
 [id='assembly-drain-cleaner-{context}']
 = Evicting pods with the Strimzi Drain Cleaner

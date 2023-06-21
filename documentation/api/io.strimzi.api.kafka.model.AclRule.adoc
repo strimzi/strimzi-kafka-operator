@@ -31,7 +31,7 @@ spec:
 
 
 [id='property-acl-resource-{context}']
-=== `resource`
+= `resource`
 
 Use the `resource` property to specify the resource that the rule applies to.
 
@@ -66,7 +66,7 @@ When `patternType` is set as `literal`, you can set the name to `*` to indicate 
 ----
 
 [id='property-acl-type-{context}']
-=== `type`
+= `type`
 
 The `type` of rule, which is to `allow` or `deny` (not currently supported) an operations.
 
@@ -74,7 +74,7 @@ The `type` field is optional.
 If `type` is unspecified, the ACL rule is treated as an `allow` rule.
 
 [id='property-acl-operation-{context}']
-=== `operations`
+= `operations`
 
 Specify a list of `operations` for the rule to allow or deny.
 
@@ -97,7 +97,7 @@ Only certain operations work with each resource.
 For more details about `AclAuthorizer`, ACLs and supported combinations of resources and operations, see link:http://kafka.apache.org/documentation/#security_authz[Authorization and ACLs^].
 
 [id='property-acl-host-{context}']
-=== `host`
+= `host`
 
 Use the `host` property to specify a remote host from which the rule is allowed or denied.
 

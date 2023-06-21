@@ -121,7 +121,7 @@ public class KafkaConnectClusterTest {
     private final JmxPrometheusExporterMetrics jmxMetricsConfig = io.strimzi.operator.cluster.TestUtils.getJmxPrometheusExporterMetrics("metrics-config.yml", metricsCMName);
     private final String configurationJson = "foo: bar";
     private final String bootstrapServers = "foo-kafka:9092";
-    private final String kafkaHeapOpts = "-Xms" + ModelUtils.DEFAULT_JVM_XMS;
+    private final String kafkaHeapOpts = "-Xms" + JvmOptionUtils.DEFAULT_JVM_XMS;
 
     private final OrderedProperties defaultConfiguration = new OrderedProperties()
             .addPair("offset.storage.topic", "connect-cluster-offsets")
@@ -807,11 +807,6 @@ public class KafkaConnectClusterTest {
         assertThat(pdb.getMetadata().getLabels().entrySet().containsAll(pdbLabels.entrySet()), is(true));
         assertThat(pdb.getMetadata().getAnnotations().entrySet().containsAll(pdbAnots.entrySet()), is(true));
 
-        // Check PodDisruptionBudget V1Beta1
-        io.fabric8.kubernetes.api.model.policy.v1beta1.PodDisruptionBudget pdbV1Beta1 = kc.generatePodDisruptionBudgetV1Beta1(false);
-        assertThat(pdbV1Beta1.getMetadata().getLabels().entrySet().containsAll(pdbLabels.entrySet()), is(true));
-        assertThat(pdbV1Beta1.getMetadata().getAnnotations().entrySet().containsAll(pdbAnots.entrySet()), is(true));
-
         // Check ClusterRoleBinding
         ClusterRoleBinding crb = kc.generateClusterRoleBinding();
         assertThat(crb.getMetadata().getLabels().entrySet().containsAll(crbLabels.entrySet()), is(true));
@@ -1262,17 +1257,9 @@ public class KafkaConnectClusterTest {
         assertThat(pdb.getSpec().getMinAvailable(), is(nullValue()));
         assertThat(pdb.getSpec().getMaxUnavailable(), is(new IntOrString(2)));
 
-        io.fabric8.kubernetes.api.model.policy.v1beta1.PodDisruptionBudget pdbV1Beta1 = kc.generatePodDisruptionBudgetV1Beta1(false);
-        assertThat(pdbV1Beta1.getSpec().getMinAvailable(), is(nullValue()));
-        assertThat(pdbV1Beta1.getSpec().getMaxUnavailable(), is(new IntOrString(2)));
-
         pdb = kc.generatePodDisruptionBudget(true);
         assertThat(pdb.getSpec().getMinAvailable(), is(new IntOrString(0)));
         assertThat(pdb.getSpec().getMaxUnavailable(), is(nullValue()));
-
-        pdbV1Beta1 = kc.generatePodDisruptionBudgetV1Beta1(true);
-        assertThat(pdbV1Beta1.getSpec().getMinAvailable(), is(new IntOrString(0)));
-        assertThat(pdbV1Beta1.getSpec().getMaxUnavailable(), is(nullValue()));
     }
 
     @ParallelTest
@@ -1284,17 +1271,9 @@ public class KafkaConnectClusterTest {
         assertThat(pdb.getSpec().getMinAvailable(), is(nullValue()));
         assertThat(pdb.getSpec().getMaxUnavailable(), is(new IntOrString(1)));
 
-        io.fabric8.kubernetes.api.model.policy.v1beta1.PodDisruptionBudget pdbV1Beta1 = kc.generatePodDisruptionBudgetV1Beta1(false);
-        assertThat(pdbV1Beta1.getSpec().getMinAvailable(), is(nullValue()));
-        assertThat(pdbV1Beta1.getSpec().getMaxUnavailable(), is(new IntOrString(1)));
-
         pdb = kc.generatePodDisruptionBudget(true);
         assertThat(pdb.getSpec().getMinAvailable(), is(new IntOrString(1)));
         assertThat(pdb.getSpec().getMaxUnavailable(), is(nullValue()));
-
-        pdbV1Beta1 = kc.generatePodDisruptionBudgetV1Beta1(true);
-        assertThat(pdbV1Beta1.getSpec().getMinAvailable(), is(new IntOrString(1)));
-        assertThat(pdbV1Beta1.getSpec().getMaxUnavailable(), is(nullValue()));
     }
 
     @ParallelTest
