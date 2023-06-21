@@ -3,7 +3,7 @@
 
 When you make changes to the documentation, it is a good practice to do a local test build to verify the book builds successfully and renders as you expect before you submit the merge request back to upstream main.
 
-Make is a useful tool for building your documentation and pushing it to a public website so that peer and quality reviewers can see your edits as the user would.
+After you have made documentation updates in your local GitHub clone of the `strimzi-kafka-operator` project, you can build the documentation using AsciiDoctor or the `Makefile` provided with the project.
 
 == Building documentation using AsciiDoctor
 
@@ -19,10 +19,17 @@ asciidoctor <path_to_overview.adoc>
 
 == Building documentation with make commands
 
-`make docu_clean`:: Delete all temporary files
-`make docu_check`:: Execute the documentation checks in `.azure/scripts/check_docs.sh`
-`make docu_html`:: Generate the HTML version of all the guides (the HTML files can be found in `documentation/html)
-`make docu_htmlnoheader`:: Generate the HTML version of all the guides without the HTML headers so they are suitable for including into a website (the HTML files can be found in `documentation/htmlnoheader)
+Use make commands from the root of the `strimzi-kafka-operator` project to build all the documentation at the same time.
+The documentation is output to `documentation/html`.   
+
+`make docu_clean`:: Deletes all temporary files
+`make docu_check`:: Executes the documentation checks in `.azure/scripts/check_docs.sh`
+`make docu_html`:: Generates HTML versions of all the guides
+`make docu_htmlnoheader`:: Generates HTML versions of all the guides without the HTML headers so they are suitable for including in a website
+
+NOTE: Before running the make commands, ensure that you remove any old build files from the documentation directories. 
+Failure to do so will result in these files being included in the documentation checks and causing build failures. 
+For instance, if you previously generated an HTML file in the `deploying` directory using Asciidoctor, make sure to delete that file.  
 
 == Generating the Strimzi Custom Resource API Reference
 
