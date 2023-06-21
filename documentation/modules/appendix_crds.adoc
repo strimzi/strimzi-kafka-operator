@@ -1554,6 +1554,10 @@ Used in: xref:type-KafkaSpec-{context}[`KafkaSpec`]
 |string
 |topicRegex           1.2+<.<a|Regular expression to specify which topics to collect. Default value is `.*`.
 |string
+|groupExcludeRegex    1.2+<.<a|Regular expression to specify which consumer groups to exclude.
+|string
+|topicExcludeRegex    1.2+<.<a|Regular expression to specify which topics to exclude.
+|string
 |resources            1.2+<.<a|CPU and memory resources to reserve. For more information, see the https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.23/#resourcerequirements-v1-core[external documentation for core/v1 resourcerequirements].
 
 
