@@ -80,8 +80,7 @@ public class KafkaExporterSpec implements HasLivenessProbe, HasReadinessProbe, U
         this.topicRegex = topicRegex;
     }
 
-    @Description("Regular expression to specify which consumer groups to exclude. " +
-            "Default value is null.")
+    @Description("Regular expression to specify which consumer groups to exclude.")
     @JsonInclude(JsonInclude.Include.NON_DEFAULT)
     public String getGroupExcludeRegex() {
         return groupExcludeRegex;
@@ -91,8 +90,7 @@ public class KafkaExporterSpec implements HasLivenessProbe, HasReadinessProbe, U
         this.groupExcludeRegex = groupExcludeRegex;
     }
 
-    @Description("Regular expression to specify which topics to exclude. " +
-            "Default value is null.")
+    @Description("Regular expression to specify which topics to exclude.")
     @JsonInclude(JsonInclude.Include.NON_DEFAULT)
     public String getTopicExcludeRegex() {
         return topicExcludeRegex;

@@ -123,8 +123,8 @@ spec:
     image: my-registry.io/my-org/my-exporter-cluster:latest <1>
     groupRegex: ".*" <2>
     topicRegex: ".*" <3>
-    groupExcludeRegex: "^$" <4>
-    topicExcludeRegex: "^$" <5>
+    groupExcludeRegex: "Exlcude some groups" <4>
+    topicExcludeRegex: "Exclude some topics" <5>
     resources: <6>
       requests:
         cpu: 200m
