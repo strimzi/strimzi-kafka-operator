@@ -51,12 +51,17 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.StringTokenizer;
+import java.util.concurrent.CompletionStage;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.function.BooleanSupplier;
 import java.util.function.Function;
 
 import static java.util.Arrays.asList;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.nullValue;
 
 @SuppressWarnings({"checkstyle:ClassFanOutComplexity"})
 public final class TestUtils {
@@ -88,6 +93,16 @@ public final class TestUtils {
     public static final String CRD_KAFKA_NODE_POOL = USER_PATH + "/../packaging/install/cluster-operator/04A-Crd-kafkanodepool.yaml";
 
     public static final String CRD_STRIMZI_POD_SET = USER_PATH + "/../packaging/install/cluster-operator/042-Crd-strimzipodset.yaml";
+
+    /**
+     * Default timeout for asynchronous tests.
+     */
+    public static final int DEFAULT_TIMEOUT_DURATION = 30;
+
+    /**
+     * Default timeout unit for asynchronous tests.
+     */
+    public static final TimeUnit DEFAULT_TIMEOUT_UNIT = TimeUnit.SECONDS;
 
     private TestUtils() {
         // All static methods
@@ -446,5 +461,48 @@ public final class TestUtils {
         } catch (IOException e) {
             throw new RuntimeException("Failed to find free port", e);
         }
+    }
+
+    /**
+     * Awaits completion of the given stage using the default timeout.
+     *
+     * @param stage the stage to await completion
+     */
+    public static <T> T await(CompletionStage<T> stage) {
+        return await(stage, DEFAULT_TIMEOUT_DURATION, DEFAULT_TIMEOUT_UNIT);
+    }
+
+    /**
+     * Awaits completion of the given stage using the given timeout and unit.
+     *
+     * @param stage the stage to await completion
+     * @param timeout the amount of time to wait for completion
+     * @param unit the unit of time give by the timeout parameter
+     */
+    public static <T> T await(CompletionStage<T> stage, long timeout, TimeUnit unit) {
+        try {
+            return stage.toCompletableFuture().get(timeout, unit);
+        } catch (InterruptedException e) {
+            throw new RuntimeException("Interrupted waiting for CompletionStage", e);
+        } catch (ExecutionException e) {
+            throw new RuntimeException("CompletionStage failed to complete", e.getCause());
+        } catch (TimeoutException e) {
+            throw new RuntimeException("CompletionStage timed out", e);
+        }
+    }
+
+    /**
+     * Asserts that the given error is null, indicating that the result of an
+     * asynchronous execution stage completed successfully. This method is meant to
+     * be used with
+     * {@link CompletionStage#whenComplete(java.util.function.BiConsumer)
+     * CompletionStage#whenComplete} to easily assert success without modifying the
+     * result.
+     *
+     * @param unused the result of a completion stage, unused by this method
+     * @param error an error thrown by the an earlier completion stage
+     */
+    public static void assertSuccessful(Object unused, Throwable error) {
+        assertThat(error, is(nullValue()));
     }
 }
