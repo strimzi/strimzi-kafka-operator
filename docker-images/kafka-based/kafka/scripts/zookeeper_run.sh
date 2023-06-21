@@ -42,12 +42,12 @@ mkdir -p /tmp/zookeeper
 # It is also related to https://issues.apache.org/jira/browse/ZOOKEEPER-4708
 if [ -z "$ZOOKEEPER_DNS_CHECKS_DISABLED" ] || [ "$ZOOKEEPER_DNS_CHECKS_DISABLED" = "false" ]; then
   echo "Trying to resolve ${BASE_HOSTNAME}-$((ZOOKEEPER_ID-1)).${BASE_FQDN} ..."
-  ipaddress=$(nslookup ${BASE_HOSTNAME}-$((ZOOKEEPER_ID-1)).${BASE_FQDN} | grep "Address" | awk '{print $2}' | sed -n 2p)
+  ipaddress=$(nslookup "${BASE_HOSTNAME}"-$((ZOOKEEPER_ID-1))."${BASE_FQDN}" | grep "Address" | awk '{print $2}' | sed -n 2p)
 
-  while [ -z $ipaddress ]; do
+  while [ -z "$ipaddress" ]; do
     sleep 1
     echo "Trying to resolve ${BASE_HOSTNAME}-$((ZOOKEEPER_ID-1)).${BASE_FQDN} ..."
-    ipaddress=$(nslookup ${BASE_HOSTNAME}-$((ZOOKEEPER_ID-1)).${BASE_FQDN} | grep "Address" | awk '{print $2}' | sed -n 2p)
+    ipaddress=$(nslookup "${BASE_HOSTNAME}"-$((ZOOKEEPER_ID-1))."${BASE_FQDN}" | grep "Address" | awk '{print $2}' | sed -n 2p)
   done
 fi
 
