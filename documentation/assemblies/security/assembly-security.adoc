@@ -14,8 +14,8 @@ Strimzi establishes encrypted TLS connections for communication between the foll
 * Kafka brokers (interbroker communication) 
 * ZooKeeper nodes (internodal communication)
 * Strimzi operators and Kafka and ZooKeeper
-* Cruise Control and Kafka and ZooKeeper
-* Kafka Exporter and Kafka and ZooKeeper
+* Cruise Control and Kafka
+* Kafka Exporter and Kafka
 
 Connections between Kafka brokers use an internal control plane listener on port 9090. 
 Connections to replicate data between brokers, and internal connections from the Strimzi operators, Cruise Control, or the Kafka Exporter, use a replication listener on port 9091. 
