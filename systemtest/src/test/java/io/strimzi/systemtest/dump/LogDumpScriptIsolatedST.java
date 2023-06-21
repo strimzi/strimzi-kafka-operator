@@ -36,7 +36,7 @@ public class LogDumpScriptIsolatedST extends AbstractST {
 
     @BeforeAll
     void setUp(final ExtensionContext extensionContext) {
-        clusterOperator = clusterOperator
+        this.clusterOperator = this.clusterOperator
             .defaultInstallation(extensionContext)
             .createInstallation()
             .runInstallation();

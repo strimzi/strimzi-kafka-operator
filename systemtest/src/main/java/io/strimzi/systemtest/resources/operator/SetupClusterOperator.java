@@ -798,6 +798,10 @@ public class SetupClusterOperator {
             LOGGER.info("Un-installing Cluster Operator from namespace {}", namespaceInstallTo);
             LOGGER.info(String.join("", Collections.nCopies(76, "=")));
 
+            if (this.extensionContext != null) {
+                this.extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.PREPARE_OPERATOR_ENV_KEY + namespaceInstallTo, null);
+            }
+
             // trigger that we will again create namespace
             if (Environment.isHelmInstall()) {
                 helmResource.delete();
