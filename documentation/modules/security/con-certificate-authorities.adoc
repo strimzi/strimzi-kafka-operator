@@ -20,8 +20,6 @@ Unless TLS encryption for external listeners is disabled, client applications mu
 This is also true for client applications that perform mTLS authentication. 
 
 By default, Strimzi automatically generates and renews CA certificates issued by the cluster CA or clients CA.
-You can configure the management of these CA certificates in the `Kafka.spec.clusterCa` and `Kafka.spec.clientsCa` objects.
+You can configure the management of these CA certificates using `Kafka.spec.clusterCa` and `Kafka.spec.clientsCa` properties.
 
-You can replace the CA certificates for the cluster CA or clients CA with your own.
-For more information, see xref:installing-your-own-ca-certificates-{context}[].
-If you provide your own CA certificates, you must renew them before they expire.
+NOTE: If you are xref:installing-your-own-ca-certificates-{context}[providing your own CA certificates], you must renew them before they expire.
