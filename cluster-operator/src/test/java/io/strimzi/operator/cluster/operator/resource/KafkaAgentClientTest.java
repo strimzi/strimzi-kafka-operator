@@ -14,11 +14,13 @@ import org.junit.jupiter.api.Test;
 
 import io.strimzi.operator.common.Reconciliation;
 
-public class KafkaAgentClientTests {
+public class KafkaAgentClientTest {
+
+    private static final Reconciliation RECONCILIATION = new Reconciliation("test", "kafka", "namespace", "my-cluster");
 
     @Test
     public void testBrokerInRecoveryState() {
-        KafkaAgentClient kafkaAgentClient = spy(new KafkaAgentClient(new Reconciliation("test", "kafka", "namespace", "my-cluster"), "mycluster", "namespace", null, null));
+        KafkaAgentClient kafkaAgentClient = spy(new KafkaAgentClient(RECONCILIATION, "my-cluster", "namespace"));
         doAnswer(invocation -> "{\"brokerState\":2,\"recoveryState\":{\"remainingLogsToRecover\":10,\"remainingSegmentsToRecover\":100}}").when(kafkaAgentClient).doGet(any());
         BrokerState actual = kafkaAgentClient.getBrokerState("mypod");
         assertTrue(actual.isBrokerInRecovery(), "broker is not in log recovery as expected");
@@ -28,7 +30,7 @@ public class KafkaAgentClientTests {
 
     @Test
     public void testBrokerInRunningState() {
-        KafkaAgentClient kafkaAgentClient = spy(new KafkaAgentClient(new Reconciliation("test", "kafka", "namespace", "my-cluster"), null, "mycluster", null, null));
+        KafkaAgentClient kafkaAgentClient = spy(new KafkaAgentClient(RECONCILIATION, "my-cluster", "namespace"));
         doAnswer(invocation -> "{\"brokerState\":3}").when(kafkaAgentClient).doGet(any());
 
         BrokerState actual = kafkaAgentClient.getBrokerState("mypod");
@@ -39,7 +41,7 @@ public class KafkaAgentClientTests {
 
     @Test
     public void testInvalidJsonResponse() {
-        KafkaAgentClient kafkaAgentClient = spy(new KafkaAgentClient(new Reconciliation("test", "kafka", "namespace", "my-cluster"), null, "mycluster", null, null));
+        KafkaAgentClient kafkaAgentClient = spy(new KafkaAgentClient(RECONCILIATION, "my-cluster", "namespace"));
         doAnswer(invocation -> "&\"brokerState\":3&").when(kafkaAgentClient).doGet(any());
 
         BrokerState actual = kafkaAgentClient.getBrokerState("mypod");
@@ -50,7 +52,7 @@ public class KafkaAgentClientTests {
 
     @Test
     public void testErrorResponse() {
-        KafkaAgentClient kafkaAgentClient = spy(new KafkaAgentClient(new Reconciliation("test", "kafka", "namespace", "my-cluster"), null, "mycluster", null, null));
+        KafkaAgentClient kafkaAgentClient = spy(new KafkaAgentClient(RECONCILIATION, "my-cluster", "namespace"));
         doAnswer(invocation -> {
             throw new RuntimeException("Test failure");
         }).when(kafkaAgentClient).doGet(any());

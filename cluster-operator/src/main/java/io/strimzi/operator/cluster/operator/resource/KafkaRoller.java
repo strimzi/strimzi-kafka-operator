@@ -368,10 +368,6 @@ public class KafkaRoller {
             throw new UnforceableProblem("Error getting pod " + nodeRef.podName(), e);
         }
 
-        if (kafkaAgentClient == null) {
-            this.kafkaAgentClient = initKafkaAgentClient();
-        }
-
         if (!isPodStuck(pod)) {
             // We want to give pods chance to get ready before we try to connect to the or consider them for rolling.
             // This is important especially for pods which were just started. But only in case when they are not stuck.
@@ -381,6 +377,10 @@ public class KafkaRoller {
             try {
                 await(isReady(pod), operationTimeoutMs, TimeUnit.MILLISECONDS, e -> new RuntimeException(e));
             } catch (Exception e) {
+                //Initialise the client for KafkaAgent if pod is not ready
+                if (kafkaAgentClient == null) {
+                    this.kafkaAgentClient = initKafkaAgentClient();
+                }
                 BrokerState brokerState = kafkaAgentClient.getBrokerState(pod.getMetadata().getName());
                 if (brokerState.isBrokerInRecovery()) {
                     throw new UnforceableProblem("Pod " + nodeRef.podName() + " is not ready because the broker is performing log recovery. There are  " + brokerState.remainingLogsToRecover() + " logs and " + brokerState.remainingSegmentsToRecover() + " segments left to recover.", e.getCause());
@@ -449,10 +449,11 @@ public class KafkaRoller {
     }
 
     protected KafkaAgentClient initKafkaAgentClient() throws FatalProblem {
-        if (clusterCaCertSecret == null || coKeySecret == null) {
-            throw new FatalProblem("Missing secrets for cluster CA and operator certificates required to create connection to Kafka Agent");
+        try {
+            return new KafkaAgentClient(reconciliation, cluster, namespace, clusterCaCertSecret, coKeySecret);
+        } catch (Exception e) {
+            throw new FatalProblem("Failed to initialise KafkaAgentClient", e);
         }
-        return new KafkaAgentClient(reconciliation, cluster, namespace, clusterCaCertSecret, coKeySecret);
     }
 
     private boolean podWaitingBecauseOfAnyReasons(Pod pod, Set<String> reasons) {

@@ -53,35 +53,50 @@ class KafkaAgentClient {
         this.namespace = namespace;
         this.clusterCaCertSecret = clusterCaCertSecret;
         this.coKeySecret = coKeySecret;
+        this.httpClient = createHttpClient();
     }
 
-    private HttpClient createHttpClient() throws GeneralSecurityException, IOException {
+    //visible for testing
+    KafkaAgentClient(Reconciliation reconciliation, String cluster, String namespace) {
+        this.reconciliation = reconciliation;
+        this.namespace = namespace;
+        this.cluster =  cluster;
+    }
 
-        SSLContext sslContext = SSLContext.getInstance("TLSv1.3");
-        KeyStore trustStore = KeyStore.getInstance("PKCS12");
-        trustStore.load(new ByteArrayInputStream(
-                        Util.decodeFromSecret(clusterCaCertSecret, "ca.p12")),
-                new String(Util.decodeFromSecret(clusterCaCertSecret, "ca.password"), StandardCharsets.UTF_8).toCharArray());
+    private HttpClient createHttpClient() {
+        if (clusterCaCertSecret == null || coKeySecret == null) {
+            throw new RuntimeException("Missing secrets for cluster CA and operator certificates required to create connection to Kafka Agent");
+        }
 
-        String trustManagerFactoryAlgorithm = TrustManagerFactory.getDefaultAlgorithm();
-        TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance(trustManagerFactoryAlgorithm);
-        trustManagerFactory.init(trustStore);
-        char[] keyPassword = new String(Util.decodeFromSecret(coKeySecret, "cluster-operator.password"), StandardCharsets.UTF_8).toCharArray();
-        KeyStore coKeyStore = KeyStore.getInstance("PKCS12");
-        coKeyStore.load(new ByteArrayInputStream(
-                        Util.decodeFromSecret(coKeySecret, "cluster-operator.p12")),
-                keyPassword
-        );
+        try {
+            SSLContext sslContext = SSLContext.getInstance("TLSv1.3");
+            KeyStore trustStore = KeyStore.getInstance("PKCS12");
+            trustStore.load(new ByteArrayInputStream(
+                            Util.decodeFromSecret(clusterCaCertSecret, "ca.p12")),
+                    new String(Util.decodeFromSecret(clusterCaCertSecret, "ca.password"), StandardCharsets.UTF_8).toCharArray());
 
-        String keyManagerFactoryAlgorithm = KeyManagerFactory.getDefaultAlgorithm();
-        KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance(keyManagerFactoryAlgorithm);
-        keyManagerFactory.init(coKeyStore, keyPassword);
+            String trustManagerFactoryAlgorithm = TrustManagerFactory.getDefaultAlgorithm();
+            TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance(trustManagerFactoryAlgorithm);
+            trustManagerFactory.init(trustStore);
+            char[] keyPassword = new String(Util.decodeFromSecret(coKeySecret, "cluster-operator.password"), StandardCharsets.UTF_8).toCharArray();
+            KeyStore coKeyStore = KeyStore.getInstance("PKCS12");
+            coKeyStore.load(new ByteArrayInputStream(
+                            Util.decodeFromSecret(coKeySecret, "cluster-operator.p12")),
+                    keyPassword
+            );
 
-        sslContext.init(keyManagerFactory.getKeyManagers(), trustManagerFactory.getTrustManagers(), null);
+            String keyManagerFactoryAlgorithm = KeyManagerFactory.getDefaultAlgorithm();
+            KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance(keyManagerFactoryAlgorithm);
+            keyManagerFactory.init(coKeyStore, keyPassword);
 
-        return HttpClient.newBuilder()
-                .sslContext(sslContext)
-                .build();
+            sslContext.init(keyManagerFactory.getKeyManagers(), trustManagerFactory.getTrustManagers(), null);
+
+            return HttpClient.newBuilder()
+                    .sslContext(sslContext)
+                    .build();
+        } catch (GeneralSecurityException | IOException e) {
+            throw new RuntimeException("Failed to configure HTTP client", e);
+        }
     }
 
     protected String doGet(URI uri) {
@@ -100,7 +115,7 @@ class KafkaAgentClient {
                 throw new RuntimeException("Unexpected HTTP status code: " + response.statusCode());
             }
             return response.body();
-        } catch (GeneralSecurityException | IOException | InterruptedException e) {
+        } catch (IOException | InterruptedException e) {
             throw new RuntimeException("Failed to send HTTP request to Kafka Agent", e);
         }
     }
