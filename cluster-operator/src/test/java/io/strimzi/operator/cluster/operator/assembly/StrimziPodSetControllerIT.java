@@ -319,11 +319,16 @@ public class StrimziPodSetControllerIT {
             // Delete the PodSet
             podSetOp().inNamespace(NAMESPACE).withName(podSetName).delete();
 
-            // Check that pod is deleted after pod set deletion
+            /*
+             * Check that pod is deleted after pod set deletion
+             *
+             * The CR finalizer removal does not complete in a consistent amount of time,
+             * therefore the timeout for waiting on the deletion is increased to 1 minute.
+             */
             TestUtils.waitFor(
                     "Wait for Pod to be deleted",
                     100,
-                    10_000,
+                    60_000,
                     () -> client.pods().inNamespace(NAMESPACE).withName(podName).get() == null,
                     () -> context.failNow("Test timed out waiting for pod deletion!"));
 
@@ -655,11 +660,16 @@ public class StrimziPodSetControllerIT {
             // Delete the PodSet in non-cascading way
             podSetOp().inNamespace(NAMESPACE).withName(podSetName).withPropagationPolicy(DeletionPropagation.ORPHAN).delete();
 
-            // Check that the PodSet is deleted
+            /*
+             * Check that the PodSet is deleted
+             *
+             * The CR finalizer removal does not complete in a consistent amount of time,
+             * therefore the timeout for waiting on the deletion is increased to 1 minute.
+             */
             TestUtils.waitFor(
                     "Wait for StrimziPodSet deletion",
                     100,
-                    10_000,
+                    60_000,
                     () -> {
                         StrimziPodSet podSet = podSetOp().inNamespace(NAMESPACE).withName(podSetName).get();
                         return podSet == null;
