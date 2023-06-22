@@ -162,6 +162,8 @@ public class FeatureGatesIsolatedST extends AbstractST {
 
         final TestStorage testStorage = new TestStorage(extensionContext);
         final int connectReplicas = 1;
+        // sending a lot of messages throughout the test, so we will not hit race condition when there will not be any
+        // messages left to send at the end of the test scenario (for the last `waitForMessagesInKafkaConnectFileSink` check)
         final int messageCount = 1000;
         List<EnvVar> coEnvVars = new ArrayList<>();
 
@@ -217,7 +219,7 @@ public class FeatureGatesIsolatedST extends AbstractST {
             .withNamespaceName(clusterOperator.getDeploymentNamespace())
             .build();
 
-        String connectorPodName = kubeClient().listPodsByPrefixInName(testStorage.getNamespaceName(), testStorage.getClusterName() + "-connect").get(0).getMetadata().getName();
+        String connectorPodName = kubeClient().listPods(testStorage.getNamespaceName(), connectLabelSelector).get(0).getMetadata().getName();
 
         // we are sending messages continuously throughout the test to check that connector is working
         resourceManager.createResource(extensionContext, clients.producerStrimzi());
@@ -237,7 +239,7 @@ public class FeatureGatesIsolatedST extends AbstractST {
         connectPods = RollingUpdateUtils.waitTillComponentHasRolled(clusterOperator.getDeploymentNamespace(), connectLabelSelector, connectReplicas, connectPods);
         KafkaConnectorUtils.waitForConnectorReady(testStorage.getNamespaceName(), testStorage.getClusterName());
 
-        connectorPodName = kubeClient().listPodsByPrefixInName(testStorage.getNamespaceName(), testStorage.getClusterName() + "-connect").get(0).getMetadata().getName();
+        connectorPodName = kubeClient().listPods(testStorage.getNamespaceName(), connectLabelSelector).get(0).getMetadata().getName();
 
         LOGGER.info("Verifying that KafkaConnector is able to sink the messages to the file-sink file");
         KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(testStorage.getNamespaceName(), connectorPodName, Constants.DEFAULT_SINK_FILE_PATH, "Hello-world");
@@ -253,7 +255,7 @@ public class FeatureGatesIsolatedST extends AbstractST {
         RollingUpdateUtils.waitTillComponentHasRolled(clusterOperator.getDeploymentNamespace(), connectLabelSelector, connectReplicas, connectPods);
         KafkaConnectorUtils.waitForConnectorReady(testStorage.getNamespaceName(), testStorage.getClusterName());
 
-        connectorPodName = kubeClient().listPodsByPrefixInName(testStorage.getNamespaceName(), testStorage.getClusterName() + "-connect").get(0).getMetadata().getName();
+        connectorPodName = kubeClient().listPods(testStorage.getNamespaceName(), connectLabelSelector).get(0).getMetadata().getName();
 
         LOGGER.info("Verifying that KafkaConnector is able to sink the messages to the file-sink file");
         KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(testStorage.getNamespaceName(), connectorPodName, Constants.DEFAULT_SINK_FILE_PATH, "Hello-world");
