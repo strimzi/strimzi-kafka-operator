@@ -82,7 +82,7 @@ public class OperatorMetricsTest {
             }
 
             @Override
-            protected Status createStatus() {
+            protected Status createStatus(CustomResource ignored) {
                 return new Status() { };
             }
         };
@@ -144,7 +144,7 @@ public class OperatorMetricsTest {
             }
 
             @Override
-            protected Status createStatus() {
+            protected Status createStatus(CustomResource ignored) {
                 return new Status() { };
             }
         };
@@ -208,7 +208,7 @@ public class OperatorMetricsTest {
             }
 
             @Override
-            protected Status createStatus() {
+            protected Status createStatus(CustomResource ignored) {
                 return new Status() { };
             }
         };
@@ -258,7 +258,7 @@ public class OperatorMetricsTest {
             }
 
             @Override
-            protected Status createStatus() {
+            protected Status createStatus(CustomResource ignored) {
                 return new Status() { };
             }
         };
@@ -310,7 +310,7 @@ public class OperatorMetricsTest {
             }
 
             @Override
-            protected Status createStatus() {
+            protected Status createStatus(CustomResource ignored) {
                 return new Status() { };
             }
         };
@@ -585,7 +585,7 @@ public class OperatorMetricsTest {
         }
 
         @Override
-        protected Status createStatus() {
+        protected Status createStatus(CustomResource ignored) {
             return new Status() { };
         }
 

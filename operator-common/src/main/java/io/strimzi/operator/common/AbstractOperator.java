@@ -196,7 +196,7 @@ public abstract class AbstractOperator<
 
                 Promise<Void> createOrUpdate = Promise.promise();
                 if (Annotations.isReconciliationPausedWithAnnotation(cr)) {
-                    S status = createStatus();
+                    S status = createStatus(cr);
                     Set<Condition> conditions = StatusUtils.validate(reconciliation, cr);
                     conditions.add(StatusUtils.getPausedCondition());
                     status.setConditions(new ArrayList<>(conditions));
@@ -215,7 +215,7 @@ public abstract class AbstractOperator<
                 } else if (cr.getSpec() == null) {
                     InvalidResourceException exception = new InvalidResourceException("Spec cannot be null");
 
-                    S status = createStatus();
+                    S status = createStatus(cr);
                     Condition errorCondition = new ConditionBuilder()
                             .withLastTransitionTime(StatusUtils.iso8601Now())
                             .withType("NotReady")
@@ -347,7 +347,7 @@ public abstract class AbstractOperator<
                     });
     }
 
-    protected abstract S createStatus();
+    protected abstract S createStatus(T cr);
 
     /**
      * The exception by which Futures returned by {@link #withLock(Reconciliation, long, Callable)} are failed when

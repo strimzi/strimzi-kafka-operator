@@ -232,7 +232,7 @@ class AbstractOperatorTest {
         }
 
         @Override
-        protected S createStatus() {
+        protected S createStatus(T cr) {
             return null;
         }
 

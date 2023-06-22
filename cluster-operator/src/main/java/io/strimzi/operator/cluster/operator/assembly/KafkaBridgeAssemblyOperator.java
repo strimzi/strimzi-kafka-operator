@@ -143,7 +143,7 @@ public class KafkaBridgeAssemblyOperator extends AbstractAssemblyOperator<Kubern
 
 
     @Override
-    protected KafkaBridgeStatus createStatus() {
+    protected KafkaBridgeStatus createStatus(KafkaBridge ignored) {
         return new KafkaBridgeStatus();
     }
 

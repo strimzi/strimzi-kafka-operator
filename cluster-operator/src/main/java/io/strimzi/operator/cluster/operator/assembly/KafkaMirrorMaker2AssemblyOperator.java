@@ -288,7 +288,7 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
     }
 
     @Override
-    protected KafkaMirrorMaker2Status createStatus() {
+    protected KafkaMirrorMaker2Status createStatus(KafkaMirrorMaker2 ignored) {
         return new KafkaMirrorMaker2Status();
     }
 

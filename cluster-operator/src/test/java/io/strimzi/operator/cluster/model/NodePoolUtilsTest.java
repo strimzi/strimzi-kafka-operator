@@ -27,6 +27,8 @@ import java.util.Set;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -380,7 +382,7 @@ public class NodePoolUtilsTest {
                 .endSpec()
                 .build();
 
-        InvalidResourceException ex = assertThrows(InvalidResourceException.class, () -> NodePoolUtils.validateNodePools(KAFKA, List.of(poolA), false));
+        InvalidResourceException ex = assertThrows(InvalidResourceException.class, () -> NodePoolUtils.validateNodePools(Reconciliation.DUMMY_RECONCILIATION, KAFKA, List.of(poolA), false));
         assertThat(ex.getMessage(), containsString("KafkaNodePool pool-a has no role defined in .spec.roles"));
     }
 
@@ -392,7 +394,7 @@ public class NodePoolUtilsTest {
                 .endSpec()
                 .build();
 
-        InvalidResourceException ex = assertThrows(InvalidResourceException.class, () -> NodePoolUtils.validateNodePools(KAFKA, List.of(poolA), false));
+        InvalidResourceException ex = assertThrows(InvalidResourceException.class, () -> NodePoolUtils.validateNodePools(Reconciliation.DUMMY_RECONCILIATION, KAFKA, List.of(poolA), false));
         assertThat(ex.getMessage(), containsString("KafkaNodePool pool-a contains invalid roles configuration. In a ZooKeeper-based Kafka cluster, the KafkaNodePool role has to be always set only to the 'broker' role."));
     }
 
@@ -404,7 +406,7 @@ public class NodePoolUtilsTest {
                 .endSpec()
                 .build();
 
-        InvalidResourceException ex = assertThrows(InvalidResourceException.class, () -> NodePoolUtils.validateNodePools(KAFKA, List.of(poolA), false));
+        InvalidResourceException ex = assertThrows(InvalidResourceException.class, () -> NodePoolUtils.validateNodePools(Reconciliation.DUMMY_RECONCILIATION, KAFKA, List.of(poolA), false));
         assertThat(ex.getMessage(), containsString("KafkaNodePool pool-a contains invalid roles configuration. In a ZooKeeper-based Kafka cluster, the KafkaNodePool role has to be always set only to the 'broker' role."));
     }
 
@@ -416,7 +418,7 @@ public class NodePoolUtilsTest {
                 .endSpec()
                 .build();
 
-        InvalidResourceException ex = assertThrows(InvalidResourceException.class, () -> NodePoolUtils.validateNodePools(KAFKA, List.of(poolA), true));
+        InvalidResourceException ex = assertThrows(InvalidResourceException.class, () -> NodePoolUtils.validateNodePools(Reconciliation.DUMMY_RECONCILIATION, KAFKA, List.of(poolA), true));
         assertThat(ex.getMessage(), containsString("KafkaNodePool pool-a has no role defined in .spec.roles"));
     }
 
@@ -435,7 +437,7 @@ public class NodePoolUtilsTest {
                 .build();
 
 
-        assertDoesNotThrow(() -> NodePoolUtils.validateNodePools(KAFKA, List.of(poolA, poolB), true));
+        assertDoesNotThrow(() -> NodePoolUtils.validateNodePools(Reconciliation.DUMMY_RECONCILIATION, KAFKA, List.of(poolA, poolB), true));
     }
 
     @Test
@@ -452,10 +454,10 @@ public class NodePoolUtilsTest {
                 .build();
 
 
-        InvalidResourceException ex = assertThrows(InvalidResourceException.class, () -> NodePoolUtils.validateNodePools(KAFKA, List.of(poolA), true));
+        InvalidResourceException ex = assertThrows(InvalidResourceException.class, () -> NodePoolUtils.validateNodePools(Reconciliation.DUMMY_RECONCILIATION, KAFKA, List.of(poolA), true));
         assertThat(ex.getMessage(), containsString("At least one KafkaNodePool with the broker role and at least one replica is required when KRaft mode is enabled"));
 
-        ex = assertThrows(InvalidResourceException.class, () -> NodePoolUtils.validateNodePools(KAFKA, List.of(poolB), true));
+        ex = assertThrows(InvalidResourceException.class, () -> NodePoolUtils.validateNodePools(Reconciliation.DUMMY_RECONCILIATION, KAFKA, List.of(poolB), true));
         assertThat(ex.getMessage(), containsString("At least one KafkaNodePool with the controller role and at least one replica is required when KRaft mode is enabled"));
     }
 
@@ -487,10 +489,10 @@ public class NodePoolUtilsTest {
                 .build();
 
 
-        InvalidResourceException ex = assertThrows(InvalidResourceException.class, () -> NodePoolUtils.validateNodePools(KAFKA, List.of(poolAWithReplicas, poolBWithoutReplicas), true));
+        InvalidResourceException ex = assertThrows(InvalidResourceException.class, () -> NodePoolUtils.validateNodePools(Reconciliation.DUMMY_RECONCILIATION, KAFKA, List.of(poolAWithReplicas, poolBWithoutReplicas), true));
         assertThat(ex.getMessage(), containsString("At least one KafkaNodePool with the broker role and at least one replica is required when KRaft mode is enabled"));
 
-        ex = assertThrows(InvalidResourceException.class, () -> NodePoolUtils.validateNodePools(KAFKA, List.of(poolAWithoutReplicas, poolBWithReplicas), true));
+        ex = assertThrows(InvalidResourceException.class, () -> NodePoolUtils.validateNodePools(Reconciliation.DUMMY_RECONCILIATION, KAFKA, List.of(poolAWithoutReplicas, poolBWithReplicas), true));
         assertThat(ex.getMessage(), containsString("At least one KafkaNodePool with the controller role and at least one replica is required when KRaft mode is enabled"));
     }
 
@@ -502,13 +504,13 @@ public class NodePoolUtilsTest {
                 .endSpec()
                 .build();
 
-        InvalidResourceException ex = assertThrows(InvalidResourceException.class, () -> NodePoolUtils.validateNodePools(KAFKA, List.of(poolA), false));
+        InvalidResourceException ex = assertThrows(InvalidResourceException.class, () -> NodePoolUtils.validateNodePools(Reconciliation.DUMMY_RECONCILIATION, KAFKA, List.of(poolA), false));
         assertThat(ex.getMessage(), is("KafkaNodePools are enabled, but the KafkaNodePool for Kafka cluster my-cluster either don't exists or have 0 replicas. Please make sure at least one KafkaNodePool resource exists, is in the same namespace as the Kafka resource, has at least one replica, and has the strimzi.io/cluster label set to the name of the Kafka resource."));
     }
 
     @Test
-    public void testValidationOnlyPoolsWithZEroReplicas()   {
-        InvalidResourceException ex = assertThrows(InvalidResourceException.class, () -> NodePoolUtils.validateNodePools(KAFKA, List.of(), false));
+    public void testValidationOnlyPoolsWithZeroReplicas()   {
+        InvalidResourceException ex = assertThrows(InvalidResourceException.class, () -> NodePoolUtils.validateNodePools(Reconciliation.DUMMY_RECONCILIATION, KAFKA, List.of(), false));
         assertThat(ex.getMessage(), is("KafkaNodePools are enabled, but the KafkaNodePool for Kafka cluster my-cluster either don't exists or have 0 replicas. Please make sure at least one KafkaNodePool resource exists, is in the same namespace as the Kafka resource, has at least one replica, and has the strimzi.io/cluster label set to the name of the Kafka resource."));
     }
 
@@ -516,5 +518,202 @@ public class NodePoolUtilsTest {
     public void testValidationIsCalledFromMainMethod()   {
         InvalidResourceException ex = assertThrows(InvalidResourceException.class, () -> NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, KAFKA, List.of(), Map.of(), Map.of(), false, SHARED_ENV_PROVIDER));
         assertThat(ex.getMessage(), is("KafkaNodePools are enabled, but the KafkaNodePool for Kafka cluster my-cluster either don't exists or have 0 replicas. Please make sure at least one KafkaNodePool resource exists, is in the same namespace as the Kafka resource, has at least one replica, and has the strimzi.io/cluster label set to the name of the Kafka resource."));
+    }
+
+    @Test
+    public void testGetClusterIdIfSetInKafka() {
+        Kafka kafka = new KafkaBuilder(KAFKA)
+                .withNewStatus()
+                    .withClusterId("my-cluster-id")
+                .endStatus()
+                .build();
+
+        KafkaNodePool poolA = new KafkaNodePoolBuilder(POOL_A)
+                .withNewStatus()
+                    .withClusterId("my-other-cluster-id")
+                .endStatus()
+                .build();
+
+        // Not set in the predefined Kafka and no pools
+        assertThat(NodePoolUtils.getClusterIdIfSet(KAFKA, null), is(nullValue()));
+
+        // Not set in the predefined Kafka and not set in pools
+        assertThat(NodePoolUtils.getClusterIdIfSet(KAFKA, List.of(POOL_A)), is(nullValue()));
+
+        // Set in our custom Kafka
+        assertThat(NodePoolUtils.getClusterIdIfSet(kafka, null), is("my-cluster-id"));
+
+        // Not set in Kafka but set in node pool
+        assertThat(NodePoolUtils.getClusterIdIfSet(KAFKA, List.of(poolA)), is("my-other-cluster-id"));
+
+        // Not set in Kafka but set in one node pool
+        assertThat(NodePoolUtils.getClusterIdIfSet(KAFKA, List.of(poolA, POOL_B)), is("my-other-cluster-id"));
+
+        // Set in both Kafka and KafkaPool
+        assertThat(NodePoolUtils.getClusterIdIfSet(kafka, List.of(poolA)), is("my-cluster-id"));
+
+        // Set in both Kafka and one KafkaPool
+        assertThat(NodePoolUtils.getClusterIdIfSet(kafka, List.of(poolA, POOL_B)), is("my-cluster-id"));
+    }
+
+    @Test
+    public void testGetOrGenerateClusterId() {
+        Kafka kafka = new KafkaBuilder(KAFKA)
+                .withNewStatus()
+                    .withClusterId("my-cluster-id")
+                .endStatus()
+                .build();
+
+        KafkaNodePool poolA = new KafkaNodePoolBuilder(POOL_A)
+                .withNewStatus()
+                    .withClusterId("my-other-cluster-id")
+                .endStatus()
+                .build();
+
+        // Not set in the predefined Kafka and no pools
+        assertThat(NodePoolUtils.getOrGenerateKRaftClusterId(KAFKA, List.of(POOL_B)), is(notNullValue()));
+
+        // Not set in the predefined Kafka and not in node pool
+        assertThat(NodePoolUtils.getOrGenerateKRaftClusterId(KAFKA, List.of(POOL_B)), is(notNullValue()));
+
+        // Set in our custom Kafka and no pools
+        assertThat(NodePoolUtils.getOrGenerateKRaftClusterId(kafka, null), is("my-cluster-id"));
+
+        // Set in our custom Kafka and not in pools
+        assertThat(NodePoolUtils.getOrGenerateKRaftClusterId(kafka, List.of(poolA)), is("my-cluster-id"));
+
+        // Set not in Kafka but in KafkaPool
+        assertThat(NodePoolUtils.getOrGenerateKRaftClusterId(KAFKA, List.of(poolA)), is("my-other-cluster-id"));
+    }
+
+    @Test
+    public void testClusterIdValidationWithZooKeeper()   {
+        Kafka kafkaWithClusterId = new KafkaBuilder(KAFKA)
+                .withNewStatus()
+                    .withClusterId("my-cluster-id")
+                .endStatus()
+                .build();
+
+        KafkaNodePool poolAWithClusterId = new KafkaNodePoolBuilder(POOL_A)
+                .withNewStatus()
+                    .withClusterId("my-cluster-id")
+                .endStatus()
+                .build();
+        KafkaNodePool poolAWithAnotherClusterId = new KafkaNodePoolBuilder(POOL_A)
+                .withNewStatus()
+                    .withClusterId("my-other-cluster-id")
+                .endStatus()
+                .build();
+        KafkaNodePool poolBWithClusterId = new KafkaNodePoolBuilder(POOL_B)
+                .withNewStatus()
+                    .withClusterId("my-cluster-id")
+                .endStatus()
+                .build();
+        KafkaNodePool poolBWithAnotherClusterId = new KafkaNodePoolBuilder(POOL_B)
+                .withNewStatus()
+                    .withClusterId("my-other-cluster-id")
+                .endStatus()
+                .build();
+
+        // Have no or the same cluster IDs
+        assertThat(NodePoolUtils.validateZooKeeperBasedClusterIds(Reconciliation.DUMMY_RECONCILIATION, KAFKA, List.of()).size(), is(0));
+        assertThat(NodePoolUtils.validateZooKeeperBasedClusterIds(Reconciliation.DUMMY_RECONCILIATION, KAFKA, List.of(POOL_A, POOL_B)).size(), is(0));
+        assertThat(NodePoolUtils.validateZooKeeperBasedClusterIds(Reconciliation.DUMMY_RECONCILIATION, kafkaWithClusterId, List.of(poolAWithClusterId, POOL_B)).size(), is(0));
+        assertThat(NodePoolUtils.validateZooKeeperBasedClusterIds(Reconciliation.DUMMY_RECONCILIATION, kafkaWithClusterId, List.of(poolAWithClusterId, poolBWithClusterId)).size(), is(0));
+
+        // Test conflicts
+        assertThat(NodePoolUtils.validateZooKeeperBasedClusterIds(Reconciliation.DUMMY_RECONCILIATION, KAFKA, List.of(poolAWithClusterId, poolBWithClusterId)).size(), is(1));
+        assertThat(NodePoolUtils.validateZooKeeperBasedClusterIds(Reconciliation.DUMMY_RECONCILIATION, KAFKA, List.of(POOL_A, poolBWithClusterId)).size(), is(1));
+        assertThat(NodePoolUtils.validateZooKeeperBasedClusterIds(Reconciliation.DUMMY_RECONCILIATION, kafkaWithClusterId, List.of(poolAWithAnotherClusterId)).size(), is(1));
+        assertThat(NodePoolUtils.validateZooKeeperBasedClusterIds(Reconciliation.DUMMY_RECONCILIATION, kafkaWithClusterId, List.of(poolAWithAnotherClusterId, poolBWithClusterId)).size(), is(1));
+        assertThat(NodePoolUtils.validateZooKeeperBasedClusterIds(Reconciliation.DUMMY_RECONCILIATION, kafkaWithClusterId, List.of(poolAWithAnotherClusterId, POOL_B)).size(), is(1));
+        assertThat(NodePoolUtils.validateZooKeeperBasedClusterIds(Reconciliation.DUMMY_RECONCILIATION, kafkaWithClusterId, List.of(poolAWithAnotherClusterId, poolBWithAnotherClusterId)).size(), is(1));
+        assertThat(NodePoolUtils.validateZooKeeperBasedClusterIds(Reconciliation.DUMMY_RECONCILIATION, KAFKA, List.of(poolAWithClusterId, poolBWithAnotherClusterId)).size(), is(1));
+    }
+
+    @Test
+    public void testClusterIdValidationInKraft()   {
+        Kafka kafkaWithClusterId = new KafkaBuilder(KAFKA)
+                .withNewStatus()
+                    .withClusterId("my-cluster-id")
+                .endStatus()
+                .build();
+
+        KafkaNodePool poolAWithClusterId = new KafkaNodePoolBuilder(POOL_A)
+                .withNewStatus()
+                    .withClusterId("my-cluster-id")
+                .endStatus()
+                .build();
+        KafkaNodePool poolAWithAnotherClusterId = new KafkaNodePoolBuilder(POOL_A)
+                .withNewStatus()
+                    .withClusterId("my-other-cluster-id")
+                .endStatus()
+                .build();
+        KafkaNodePool poolBWithClusterId = new KafkaNodePoolBuilder(POOL_B)
+                .withNewStatus()
+                    .withClusterId("my-cluster-id")
+                .endStatus()
+                .build();
+        KafkaNodePool poolBWithAnotherClusterId = new KafkaNodePoolBuilder(POOL_B)
+                .withNewStatus()
+                    .withClusterId("my-other-cluster-id")
+                .endStatus()
+                .build();
+
+        // Have no or the same cluster IDs
+        assertThat(NodePoolUtils.validateKRaftClusterIds(Reconciliation.DUMMY_RECONCILIATION, KAFKA, List.of()).size(), is(0));
+        assertThat(NodePoolUtils.validateKRaftClusterIds(Reconciliation.DUMMY_RECONCILIATION, KAFKA, List.of(POOL_A, POOL_B)).size(), is(0));
+        assertThat(NodePoolUtils.validateKRaftClusterIds(Reconciliation.DUMMY_RECONCILIATION, kafkaWithClusterId, List.of(poolAWithClusterId, POOL_B)).size(), is(0));
+        assertThat(NodePoolUtils.validateKRaftClusterIds(Reconciliation.DUMMY_RECONCILIATION, kafkaWithClusterId, List.of(poolAWithClusterId, poolBWithClusterId)).size(), is(0));
+        assertThat(NodePoolUtils.validateKRaftClusterIds(Reconciliation.DUMMY_RECONCILIATION, KAFKA, List.of(poolAWithClusterId, poolBWithClusterId)).size(), is(0));
+
+        // Test conflicts
+        assertThat(NodePoolUtils.validateKRaftClusterIds(Reconciliation.DUMMY_RECONCILIATION, kafkaWithClusterId, List.of(poolAWithAnotherClusterId)).size(), is(1));
+        assertThat(NodePoolUtils.validateKRaftClusterIds(Reconciliation.DUMMY_RECONCILIATION, kafkaWithClusterId, List.of(poolAWithAnotherClusterId, poolBWithClusterId)).size(), is(1));
+        assertThat(NodePoolUtils.validateKRaftClusterIds(Reconciliation.DUMMY_RECONCILIATION, kafkaWithClusterId, List.of(poolAWithAnotherClusterId, POOL_B)).size(), is(1));
+        assertThat(NodePoolUtils.validateKRaftClusterIds(Reconciliation.DUMMY_RECONCILIATION, kafkaWithClusterId, List.of(poolAWithAnotherClusterId, poolBWithAnotherClusterId)).size(), is(1));
+        assertThat(NodePoolUtils.validateKRaftClusterIds(Reconciliation.DUMMY_RECONCILIATION, KAFKA, List.of(poolAWithClusterId, poolBWithAnotherClusterId)).size(), is(1));
+    }
+
+    @Test
+    public void testClusterIdValidationIsCalledFromMainMethodWithZooKeeper()   {
+        Kafka kafka = new KafkaBuilder(KAFKA)
+                .withNewStatus()
+                    .withClusterId("my-cluster-id")
+                .endStatus()
+                .build();
+
+        KafkaNodePool poolA = new KafkaNodePoolBuilder(POOL_A)
+                .withNewStatus()
+                    .withClusterId("my-other-cluster-id")
+                .endStatus()
+                .build();
+
+        InvalidResourceException ex = assertThrows(InvalidResourceException.class, () -> NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafka, List.of(poolA), Map.of(), Map.of(), false, SHARED_ENV_PROVIDER));
+        assertThat(ex.getMessage(), is("Tha Kafka cluster my-cluster is invalid: [The Kafka custom resource and its KafkaNodePool resources use different cluster IDs.]"));
+
+        ex = assertThrows(InvalidResourceException.class, () -> NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, KAFKA, List.of(poolA), Map.of(), Map.of(), false, SHARED_ENV_PROVIDER));
+        assertThat(ex.getMessage(), is("Tha Kafka cluster my-cluster is invalid: [The KafkaNodePool resources should not have cluster ID set before the Kafka custom resource.]"));
+    }
+
+    @Test
+    public void testClusterIdValidationIsCalledFromMainMethodWithKRaft()   {
+        Kafka kafka = new KafkaBuilder(KAFKA)
+                .withNewStatus()
+                    .withClusterId("my-cluster-id")
+                .endStatus()
+                .build();
+
+        KafkaNodePool poolA = new KafkaNodePoolBuilder(POOL_A)
+                .editSpec()
+                    .withRoles(ProcessRoles.CONTROLLER, ProcessRoles.BROKER)
+                .endSpec()
+                .withNewStatus()
+                    .withClusterId("my-other-cluster-id")
+                .endStatus()
+                .build();
+
+        InvalidResourceException ex = assertThrows(InvalidResourceException.class, () -> NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafka, List.of(poolA), Map.of(), Map.of(), true, SHARED_ENV_PROVIDER));
+        assertThat(ex.getMessage(), is("Tha Kafka cluster my-cluster is invalid: [The Kafka custom resource and its KafkaNodePool resources use different cluster IDs.]"));
     }
 }

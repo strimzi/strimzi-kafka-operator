@@ -84,7 +84,6 @@ import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
-import org.apache.kafka.common.Uuid;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -266,34 +265,27 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
     /**
      * Creates the Kafka cluster model instance from a Kafka CR
      *
-     * @param reconciliation    Reconciliation marker
-     * @param kafka             Kafka custom resource
-     * @param pools             Set of node pools used by this cluster
-     * @param versions          Supported Kafka versions
-     * @param useKRaft          Flag indicating if KRaft is enabled
-     * @param sharedEnvironmentProvider Shared environment provider
-     *
-     * @return  Kafka cluster instance
+     * @param reconciliation                Reconciliation marker
+     * @param kafka                         Kafka custom resource
+     * @param pools                         Set of node pools used by this cluster
+     * @param versions                      Supported Kafka versions
+     * @param useKRaft                      Flag indicating if KRaft is enabled
+     * @param clusterId                     Kafka cluster Id (or null if it is not known yet)
+     * @param sharedEnvironmentProvider     Shared environment provider
+     * @return Kafka cluster instance
      */
-    public static KafkaCluster fromCrd(Reconciliation reconciliation, Kafka kafka, List<KafkaPool> pools, KafkaVersion.Lookup versions, boolean useKRaft, SharedEnvironmentProvider sharedEnvironmentProvider) {
+    public static KafkaCluster fromCrd(Reconciliation reconciliation, Kafka kafka, List<KafkaPool> pools, KafkaVersion.Lookup versions, boolean useKRaft, String clusterId, SharedEnvironmentProvider sharedEnvironmentProvider) {
         KafkaSpec kafkaSpec = kafka.getSpec();
         KafkaClusterSpec kafkaClusterSpec = kafkaSpec.getKafka();
 
         KafkaCluster result = new KafkaCluster(reconciliation, kafka, sharedEnvironmentProvider);
 
+        result.clusterId = clusterId;
+        result.useKRaft = useKRaft;
         result.nodePools = pools;
 
         // This also validates that the Kafka version is supported
         result.kafkaVersion = versions.supportedVersion(kafkaClusterSpec.getVersion());
-
-        // Configures KRaft and KRaft cluster ID
-        if (useKRaft)   {
-            result.useKRaft = true;
-            result.clusterId = getOrGenerateKRaftClusterId(kafka);
-        } else {
-            // We do not use KRaft, so we do not generate the cluster ID. We only take it if it is already set.
-            result.clusterId = getClusterIdIfSet(kafka);
-        }
 
         ModelUtils.validateComputeResources(kafkaClusterSpec.getResources(), ".spec.kafka.resources");
         validateIntConfigProperty("default.replication.factor", kafkaClusterSpec);
@@ -417,41 +409,6 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
         }
 
         throw new RuntimeException("Node ID " + nodeId + " does not belong to any known node pool!");
-    }
-
-    /**
-     * If the cluster already exists and has a cluster ID set in its status, it will be extracted from it. If it doesn't
-     * exist in the status yet, a null will be returned.
-     *
-     * @param kafkaCr   The Kafka CR from which the cluster ID should be extracted
-     *
-     * @return  The extracted cluster ID or null if it is not set
-     */
-    /* test */ static String getClusterIdIfSet(Kafka kafkaCr)   {
-        if (kafkaCr.getStatus() != null && kafkaCr.getStatus().getClusterId() != null) {
-            return kafkaCr.getStatus().getClusterId();
-        } else {
-            return null;
-        }
-    }
-
-    /**
-     * If the cluster already exists and has a cluster ID set in its status, it will be extracted from it. If it doesn't
-     * exist in the status yet, a new cluster ID will be generated. The cluster ID is used to bootstrap KRaft clusters.
-     * The clusterID is added to the KafkaStatus in KafkaReconciler method clusterId(...).
-     *
-     * @param kafkaCr   The Kafka CR from which the cluster ID should be extracted
-     *
-     * @return  The extracted or generated cluster ID
-     */
-    /* test */ static String getOrGenerateKRaftClusterId(Kafka kafkaCr)   {
-        String clusterId = getClusterIdIfSet(kafkaCr);
-
-        if (clusterId == null) {
-            clusterId = Uuid.randomUuid().toString();
-        }
-
-        return clusterId;
     }
 
     /**

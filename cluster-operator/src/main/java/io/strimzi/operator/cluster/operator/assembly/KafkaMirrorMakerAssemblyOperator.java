@@ -141,7 +141,7 @@ public class KafkaMirrorMakerAssemblyOperator extends AbstractAssemblyOperator<K
     }
 
     @Override
-    protected KafkaMirrorMakerStatus createStatus() {
+    protected KafkaMirrorMakerStatus createStatus(KafkaMirrorMaker ignored) {
         return new KafkaMirrorMakerStatus();
     }
 
