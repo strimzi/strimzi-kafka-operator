@@ -471,7 +471,7 @@ public class BatchingTopicController {
         return mayNeedUpdate;
     }
 
-    private static void putResult(Map<ReconcilableTopic, Either<TopicOperatorException, Object>> results, ReconcilableTopic key, Either result) {
+    private static void putResult(Map<ReconcilableTopic, Either<TopicOperatorException, Object>> results, ReconcilableTopic key, Either<TopicOperatorException, Object> result) {
         results.compute(key, (k, v) -> {
             if (v == null) {
                 return result;
