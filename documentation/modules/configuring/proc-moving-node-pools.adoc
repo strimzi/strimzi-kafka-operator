@@ -47,18 +47,17 @@ kubectl scale kafkanodepool pool-a --replicas=4
 kubectl get pods -n _<my_cluster_operator_namespace>_
 ----
 +
-.Output shows four Kafka nodes in the node pool
+.Output shows four Kafka nodes in the target node pool
 [source,shell,subs="+quotes"]
 ----
 NAME                        READY   STATUS    RESTARTS
-my-cluster-entity-operator  3/3     Running   0
 my-cluster-pool-a-kafka-0   1/1     Running   0
 my-cluster-pool-a-kafka-1   1/1     Running   0
 my-cluster-pool-a-kafka-4   1/1     Running   0
 my-cluster-pool-a-kafka-5   1/1     Running   0
 ----
 +
-NOTE: Node IDs run sequentially across the Kafka cluster. This means that they might not run sequentially within a node pool.
+NOTE: The node IDs appended to each name start at 0 (zero) and run sequentially across the Kafka cluster. This means that they might not run sequentially within a node pool.
 
 . Reassign the partitions from the old node to the new node using the `kafka-reassign-partitions.sh` tool.
 +
@@ -74,4 +73,13 @@ kubectl scale kafkanodepool pool-b --replicas=3
 ----
 +
 The node with the highest ID within a pool is removed.
++
+.Output shows three Kafka nodes in the source node pool
+[source,shell,subs="+quotes"]
+----
+NAME                        READY   STATUS    RESTARTS
+my-cluster-pool-b-kafka-2   1/1     Running   0
+my-cluster-pool-b-kafka-3   1/1     Running   0
+my-cluster-pool-b-kafka-6   1/1     Running   0
+----
 
