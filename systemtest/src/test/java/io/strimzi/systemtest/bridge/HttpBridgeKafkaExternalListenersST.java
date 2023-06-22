@@ -57,7 +57,7 @@ public class HttpBridgeKafkaExternalListenersST extends AbstractST {
     private final String producerName = "producer-" + new Random().nextInt(Integer.MAX_VALUE);
     private final String consumerName = "consumer-" + new Random().nextInt(Integer.MAX_VALUE);
 
-    @ParallelNamespaceTest("Creating a node port service and thus avoiding 409 error")
+    @ParallelNamespaceTest("Creating a node port service and thus avoiding 409 error (service already exists)")
     void testScramShaAuthWithWeirdUsername(ExtensionContext extensionContext) {
         final TestStorage ts = new TestStorage(extensionContext);
         // Create weird named user with . and more than 64 chars -> SCRAM-SHA
