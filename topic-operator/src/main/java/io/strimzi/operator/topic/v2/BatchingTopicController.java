@@ -419,7 +419,7 @@ public class BatchingTopicController {
 
         var partitionedByManaged = partitionedByDeletion.get(false).stream().collect(Collectors.partitioningBy(reconcilableTopic -> isManaged(reconcilableTopic.kt())));
         var unmanaged = partitionedByManaged.get(false);
-        addOrRemoveFinalizer(useFinalizer, unmanaged).forEach(rt -> results.put(rt, Either.ofRight(null)));
+        addOrRemoveFinalizer(useFinalizer, unmanaged).forEach(rt -> putResult(results, rt, Either.ofRight(null)));
 
         List<ReconcilableTopic> mayNeedUpdate = validateManagedTopics(partitionedByManaged);
 
@@ -471,18 +471,30 @@ public class BatchingTopicController {
         return mayNeedUpdate;
     }
 
+    private static void putResult(Map<ReconcilableTopic, Either<TopicOperatorException, Object>> results, ReconcilableTopic key, Either result) {
+        results.compute(key, (k, v) -> {
+            if (v == null) {
+                return result;
+            } else if (v.isRight()) {
+                return result;
+            } else {
+                return v;
+            }
+        });
+    }
+
     private void createMissingTopics(Map<ReconcilableTopic, Either<TopicOperatorException, Object>> results, PartitionedByError<ReconcilableTopic, CurrentState> currentStatesOrError) {
         var partitionedByUnknownTopic = currentStatesOrError.errors().collect(Collectors.partitioningBy(pair -> {
             var ex = pair.getValue();
             return ex instanceof TopicOperatorException.KafkaError
                     && ex.getCause() instanceof UnknownTopicOrPartitionException;
         }));
-        partitionedByUnknownTopic.get(false).forEach(pair -> results.put(pair.getKey(), Either.ofLeft(pair.getValue())));
+        partitionedByUnknownTopic.get(false).forEach(pair -> putResult(results, pair.getKey(), Either.ofLeft(pair.getValue())));
 
         if (!partitionedByUnknownTopic.get(true).isEmpty()) {
             var createResults = createTopics(partitionedByUnknownTopic.get(true).stream().map(Pair::getKey).toList());
-            createResults.ok().forEach(pair -> results.put(pair.getKey(), Either.ofRight(null)));
-            createResults.errors().forEach(pair -> results.put(pair.getKey(), Either.ofLeft(pair.getValue())));
+            createResults.ok().forEach(pair -> putResult(results, pair.getKey(), Either.ofRight(null)));
+            createResults.errors().forEach(pair -> putResult(results, pair.getKey(), Either.ofLeft(pair.getValue())));
         }
     }
 
@@ -503,12 +515,12 @@ public class BatchingTopicController {
 
     private void accumulateResults(Map<ReconcilableTopic, Either<TopicOperatorException, Object>> results, PartitionedByError<ReconcilableTopic, CurrentState> currentStatesOrError, PartitionedByError<ReconcilableTopic, Void> alterConfigsResults, PartitionedByError<ReconcilableTopic, Void> createPartitionsResults) {
         // add the successes to the results
-        alterConfigsResults.ok().forEach(pair -> results.put(pair.getKey(), Either.ofRight(null)));
-        createPartitionsResults.ok().forEach(pair -> results.put(pair.getKey(), Either.ofRight(null)));
+        alterConfigsResults.ok().forEach(pair -> putResult(results, pair.getKey(), Either.ofRight(null)));
+        createPartitionsResults.ok().forEach(pair -> putResult(results, pair.getKey(), Either.ofRight(null)));
 
         // add to errors (potentially overwriting some successes, e.g. if configs succeeded but partitions failed)
-        alterConfigsResults.errors().forEach(pair -> results.put(pair.getKey(), Either.ofLeft(pair.getValue())));
-        createPartitionsResults.errors().forEach(pair -> results.put(pair.getKey(), Either.ofLeft(pair.getValue())));
+        alterConfigsResults.errors().forEach(pair -> putResult(results, pair.getKey(), Either.ofLeft(pair.getValue())));
+        createPartitionsResults.errors().forEach(pair -> putResult(results, pair.getKey(), Either.ofLeft(pair.getValue())));
         var apparentlyDifferentRf = currentStatesOrError.ok().filter(pair -> {
             var reconcilableTopic = pair.getKey();
             var currentState = pair.getValue();
@@ -517,12 +529,12 @@ public class BatchingTopicController {
 
         var actuallyDifferentRf = partitionedByError(filterByReassignmentTargetReplicas(apparentlyDifferentRf).stream());
         actuallyDifferentRf.errors().forEach(pair -> {
-            results.put(pair.getKey(), Either.ofLeft(pair.getValue()));
+            putResult(results, pair.getKey(), Either.ofLeft(pair.getValue()));
         });
         actuallyDifferentRf.ok().forEach(pair -> {
             var reconcilableTopic = pair.getKey();
             var partitions = pair.getValue().partitionsWithDifferentRfThan(reconcilableTopic.kt().getSpec().getReplicas());
-            results.put(reconcilableTopic, Either.ofLeft(new TopicOperatorException.NotSupported("Replication factor change not supported, but required for partitions " + partitions)));
+            putResult(results, reconcilableTopic, Either.ofLeft(new TopicOperatorException.NotSupported("Replication factor change not supported, but required for partitions " + partitions)));
         });
     }
 
@@ -536,7 +548,7 @@ public class BatchingTopicController {
         }).collect(Collectors.partitioningBy(pair -> pair.getValue().isEmpty()));
 
         // add topics which don't require configs changes to the results (may be overwritten later)
-        alterConfigs.get(true).forEach(pair -> results.put(pair.getKey(), Either.ofRight(null)));
+        alterConfigs.get(true).forEach(pair -> putResult(results, pair.getKey(), Either.ofRight(null)));
         var someAlterConfigs = alterConfigs.get(false);
         return someAlterConfigs;
     }
@@ -549,12 +561,12 @@ public class BatchingTopicController {
             // determine config changes
             return BatchingTopicController.pair(reconcilableTopic, buildNewPartitions(reconcilableTopic.reconciliation(), reconcilableTopic.kt(), currentState.numPartitions()));
         }));
-        newPartitionsOrError.errors().forEach(pair -> results.put(pair.getKey(), Either.ofLeft(pair.getValue())));
+        newPartitionsOrError.errors().forEach(pair -> putResult(results, pair.getKey(), Either.ofLeft(pair.getValue())));
 
         var createPartitions = newPartitionsOrError.ok().collect(
                 Collectors.partitioningBy(pair -> pair.getValue() == null));
         // add topics which don't require partitions changes to the results (may be overwritten later)
-        createPartitions.get(true).forEach(pair -> results.put(pair.getKey(), Either.ofRight(null)));
+        createPartitions.get(true).forEach(pair -> putResult(results, pair.getKey(), Either.ofRight(null)));
         var someCreatePartitions = createPartitions.get(false);
         return someCreatePartitions;
     }

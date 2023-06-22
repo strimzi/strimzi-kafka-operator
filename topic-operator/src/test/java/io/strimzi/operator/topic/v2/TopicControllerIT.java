@@ -1721,6 +1721,53 @@ class TopicControllerIT {
                 "Decreasing partitions not supported"));
     }
 
+    @Test
+    public void shouldFailIfNumPartitionsDivergedWithConfigChange(@BrokerConfig(name = "auto.create.topics.enable", value = "false")
+                                                  KafkaCluster kafkaCluster) throws ExecutionException, InterruptedException, TimeoutException {
+        // Scenario from https://github.com/strimzi/strimzi-kafka-operator/pull/8627#pullrequestreview-1477513413
+
+        // given
+
+        // create foo
+        LOGGER.info("Create foo");
+        var foo = kafkaTopic("ns", "foo", null, null, 1, 1);
+        var createdFoo = createTopicAndAssertSuccess(kafkaCluster, foo);
+
+        // create conflicting bar
+        LOGGER.info("Create conflicting bar");
+        var bar = kafkaTopic("ns", "bar", SELECTOR, null, "foo", 1, 1,
+                Map.of(TopicConfig.COMPRESSION_TYPE_CONFIG, "snappy"));
+        var createdBar = createTopic(kafkaCluster, bar);
+        assertTrue(readyIsFalse().test(createdBar));
+        var condition = assertExactlyOneCondition(createdBar);
+        assertEquals(TopicOperatorException.Reason.RESOURCE_CONFLICT.reason, condition.getReason());
+        assertEquals("Managed by Ref{namespace='ns', name='foo'}", condition.getMessage());
+
+        // increase partitions of foo
+        LOGGER.info("Increase partitions of foo");
+        var editedFoo = modifyTopicAndAwait(createdFoo, theKt ->
+                        new KafkaTopicBuilder(theKt).editSpec().withPartitions(3).endSpec().build(),
+                readyIsTrue());
+
+        // unmanage foo
+        LOGGER.info("Unmanage foo");
+        var unmanagedFoo = modifyTopicAndAwait(editedFoo, theKt ->
+                        new KafkaTopicBuilder(theKt).editMetadata().addToAnnotations(BatchingTopicController.MANAGED, "false").endMetadata().build(),
+                readyIsTrue());
+
+        // when: delete foo
+        LOGGER.info("Delete foo");
+        Crds.topicOperation(client).resource(unmanagedFoo).delete();
+        LOGGER.info("Test deleted KafkaTopic {} with resourceVersion {}",
+                unmanagedFoo.getMetadata().getName(), BatchingTopicController.rv(unmanagedFoo));
+        waitUntilCondition(Crds.topicOperation(client).resource(unmanagedFoo), Objects::isNull);
+
+        // then: expect bar's unreadiness to be due to mismatching #partitions
+        waitUntil(createdBar, readyIsFalseAndReasonIs(
+                TopicOperatorException.Reason.NOT_SUPPORTED.reason,
+                "Decreasing partitions not supported"));
+    }
+
     private static <T> KafkaFuture<T> failedFuture(Throwable error) throws ExecutionException, InterruptedException {
         var future = new KafkaFutureImpl<T>();
         future.completeExceptionally(error);
