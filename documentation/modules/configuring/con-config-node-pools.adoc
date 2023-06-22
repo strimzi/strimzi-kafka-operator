@@ -1,0 +1,109 @@
+// Module included in the following assemblies:
+//
+// assembly-config.adoc
+
+[id='config-node-pools-{context}']
+= (Preview) Configuring node pools
+
+[role="_abstract"]
+Update the `spec` properties of the `KafkaNodePool` custom resource to configure a node pool deployment.
+
+NOTE: The node pools feature is available as a preview. Node pools are not enabled by default, so you must xref:ref-operator-kafka-node-pools-feature-gate-{context}[enable the `KafkaNodePools` feature gate] before using them. 
+
+A node pool refers to a distinct group of Kafka nodes within a Kafka cluster.
+Each pool has its own unique configuration, which includes mandatory settings for the number of replicas, roles, and storage allocation.
+
+Optionally, you can also specify values for the following properties:
+
+* `resources` to specify memory and cpu requests and limits
+* `template` to specify custom configuration for pods and other Kubernetes resources
+* `jvmOptions` to specify custom JVM configuration for heap size, runtime and other options 
+
+The `Kafka` resource represents the configuration for all nodes in the Kafka cluster.
+The `KafkaNodePool` resource represents the configuration for nodes only in the node pool.
+If a configuration property is not specified in `KafkaNodePool`, it is inherited from the `Kafka` resource.
+Configuration specified in the `KafkaNodePool` resource takes precedence if set in both resources.
+For example, if both the node pool and Kafka configuration includes `jvmOptions`, the values specified in the node pool configuration are used.
+When `-Xmx: 1024m` is set in `KafkaNodePool.spec.jvmOptions` and `-Xms: 512m` is set in `Kafka.spec.kafka.jvmOptions`, the node uses the value from its node pool configuration.
+
+Properties from `Kafka` and `KafkaNodePool` schemas are not combined.  
+To clarify, if `KafkaNodePool.spec.template` includes only `podSet.metadata.labels`, and `Kafka.spec.kafka.template` includes `podSet.metadata.annotations` and `pod.metadata.labels`, the template values from the Kafka configuration are ignored since there is a template value in the node pool configuration.
+
+Node pools can be used with Kafka clusters that operate in KRaft mode (using Kafka Raft metadata) or use ZooKeeper for cluster management.
+If you are using KRaft mode, you can specify roles for all nodes in the node pool to operate as brokers, controllers, or both.
+If you are using ZooKeeper, nodes must be set as brokers only.
+
+IMPORTANT: **KRaft mode is not ready for production in Apache Kafka or in Strimzi.**
+
+For a deeper understanding of the node pool configuration options, refer to the link:{BookURLConfiguring}[Strimzi Custom Resource API Reference^].
+
+NOTE: While the `KafkaNodePools` feature gate that enables node pools is in alpha phase, replica and storage configuration properties in the `KafkaNodePool` resource must also be present in the `Kafka` resource. The configuration in the `Kafka` resource is ignored when node pools are used. Similarly, ZooKeeper configuration properties must also be present in the `Kafka` resource when using KRaft mode. These properties are also ignored.
+
+.Example configuration for a node pool in a cluster using ZooKeeper
+[source,yaml,subs="+attributes"]
+----
+apiVersion: {KafkaNodePoolApiVersion}
+kind: KafkaNodePool
+metadata:
+  name: pool-a
+  labels:
+    strimzi.io/cluster: my-cluster
+spec:
+  replicas: 3
+  roles:
+    - broker # <1>
+  storage:
+    type: jbod
+    volumes:
+      - id: 0
+        type: persistent-claim
+        size: 100Gi
+        deleteClaim: false
+  resources:
+      requests:
+        memory: 64Gi
+        cpu: "8"
+      limits:
+        memory: 64Gi
+        cpu: "12"      
+----
+<1> Roles for the nodes in the node pool, which can only be `broker` when using Kafka with ZooKeeper.
+
+.Example configuration for a node pool in a cluster using KRaft mode 
+[source,yaml,subs="+attributes"]
+----
+apiVersion: {KafkaNodePoolApiVersion}
+kind: KafkaNodePool
+metadata:
+  name: kraft-dual-role # <1>
+  labels:
+    strimzi.io/cluster: my-cluster # <2>
+spec:
+  replicas: 3 # <3>
+  roles: # <4>
+    - controller
+    - broker
+  storage: # <5>
+    type: jbod
+    volumes:
+      - id: 0
+        type: persistent-claim
+        size: 20Gi
+        deleteClaim: false
+  resources: # <6>
+      requests:
+        memory: 64Gi
+        cpu: "8"
+      limits:
+        memory: 64Gi
+        cpu: "12"      
+----
+<1> Unique name for the node pool.
+<2> The Kafka cluster the node pool belongs to. A node pool can only belong to a single cluster.
+<3> Number of replicas for the nodes. 
+<4> Roles for the nodes in the node pool. In this example, the nodes have dual roles as controllers and brokers.
+<5> Storage specification for the nodes. 
+<6> Requests for reservation of supported resources, currently `cpu` and `memory`, and limits to specify the maximum resources that can be consumed.
+
+NOTE: The configuration for the `Kafka` resource must be suitable for KRaft mode. Currently, KRaft mode has xref:ref-operator-use-kraft-feature-gate-str[a number of limitations]. 
+

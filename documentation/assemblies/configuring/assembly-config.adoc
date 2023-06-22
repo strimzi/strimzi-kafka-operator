@@ -24,6 +24,7 @@ Use custom resources to configure and create instances of the following componen
 You can also use custom resource configuration to manage your instances or modify your deployment to introduce additional features.
 This might include configuration that supports the following:
 
+* (Preview) Specifying node pools
 * Securing client access to Kafka brokers
 * Accessing Kafka brokers from outside the cluster
 * Creating topics
@@ -57,6 +58,11 @@ include::../../modules/configuring/con-config-kafka.adoc[leveloffset=+1]
 include::../../modules/managing/proc-setting-broker-limits.adoc[leveloffset=+2]
 //Zookeeper's default configuration
 include::../../modules/configuring/con-zookeeper-default-config.adoc[leveloffset=+2]
+
+//configuring node pools
+include::../../modules/configuring/con-config-node-pools.adoc[leveloffset=+1]
+include::../../modules/configuring/proc-moving-node-pools.adoc[leveloffset=+2]
+include::../../modules/configuring/proc-migrating-clusters-node-pools.adoc[leveloffset=+2]
 
 //`Kafka` config for operators
 include::../../modules/configuring/ref-kafka-entity-operator.adoc[leveloffset=+1]

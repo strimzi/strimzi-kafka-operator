@@ -1,0 +1,85 @@
+// Module included in the following assemblies:
+//
+// assembly-config.adoc
+
+[id='proc-moving-node-pools-{context}']
+= (Preview) Moving Kafka nodes between node pools
+
+[role="_abstract"]
+This procedure describes how to move nodes between source and target Kafka node pools without downtime.
+You create a new node on the target node pool and reassign partitions to move data from the old node on the source node pool.
+When the replicas on the new node are in-sync, you can delete the old node.
+
+The steps assume that you are using ZooKeeper for cluster management. 
+The operation is not possible for clusters using KRaft mode.
+
+In this procedure, we start with two node pools:
+
+* `pool-a` with three replicas is the target node pool
+* `pool-b` with four replicas is the source node pool
+
+We scale up `pool-a`, and reassign partitions and scale down `pool-b`, which results in the following:
+
+* `pool-a` with four replicas
+* `pool-b` with three replicas
+
+NOTE: During this process, the ID of the node that holds the partition replicas changes. Consider any dependencies that reference the node ID.
+
+.Prerequisites
+
+* xref:deploying-cluster-operator-str[The Cluster Operator must be deployed.]
+
+.Procedure
+
+. Create a new node in the target node pool.
++
+For example, node pool `pool-a` has three replicas. We add a node by increasing the number of replicas:
++
+[source,shell]
+----
+kubectl scale kafkanodepool pool-a --replicas=4
+----
+
+. Check the status of the deployment and wait for the pods in the node pool to be created and have a status of `READY`.
++
+[source,shell,subs="+quotes"]
+----
+kubectl get pods -n _<my_cluster_operator_namespace>_
+----
++
+.Output shows four Kafka nodes in the target node pool
+[source,shell,subs="+quotes"]
+----
+NAME                        READY   STATUS    RESTARTS
+my-cluster-pool-a-kafka-0   1/1     Running   0
+my-cluster-pool-a-kafka-1   1/1     Running   0
+my-cluster-pool-a-kafka-4   1/1     Running   0
+my-cluster-pool-a-kafka-5   1/1     Running   0
+----
++
+NOTE: The node IDs appended to each name start at 0 (zero) and run sequentially across the Kafka cluster. This means that they might not run sequentially within a node pool.
+
+. Reassign the partitions from the old node to the new node using the `kafka-reassign-partitions.sh` tool.
++
+For more information, see xref:proc-scaling-down-a-kafka-cluster-str[].
+
+. After the reassignment process is complete, reduce the number of Kafka nodes in the source node pool.
++
+For example, node pool `pool-b` has four replicas. We remove a node by decreasing the number of replicas:
++
+[source,shell]
+----
+kubectl scale kafkanodepool pool-b --replicas=3
+----
++
+The node with the highest ID within a pool is removed.
++
+.Output shows three Kafka nodes in the source node pool
+[source,shell,subs="+quotes"]
+----
+NAME                        READY   STATUS    RESTARTS
+my-cluster-pool-b-kafka-2   1/1     Running   0
+my-cluster-pool-b-kafka-3   1/1     Running   0
+my-cluster-pool-b-kafka-6   1/1     Running   0
+----
+
