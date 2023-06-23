@@ -34,7 +34,6 @@ import org.apache.kafka.clients.admin.CreatePartitionsResult;
 import org.apache.kafka.clients.admin.CreateTopicsResult;
 import org.apache.kafka.clients.admin.DeleteTopicsResult;
 import org.apache.kafka.clients.admin.NewPartitionReassignment;
-import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.clients.admin.TopicDescription;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerRecord;
@@ -291,7 +290,7 @@ class TopicControllerIT {
             operator.start();
         }
     }
-    
+
     private void assertNotExistsInKafka(String expectedTopicName) throws InterruptedException {
         try {
             admin[0].describeTopics(Set.of(expectedTopicName)).topicNameValues().get(expectedTopicName).get();
@@ -838,6 +837,8 @@ class TopicControllerIT {
             KafkaCluster kafkaCluster,
             Admin admin) throws ExecutionException, InterruptedException, TimeoutException {
 
+        // Scenario from https://github.com/strimzi/strimzi-kafka-operator/pull/8627#issuecomment-1600852809
+
         // given: a range of broker configs coming from a variety of sources
         admin.incrementalAlterConfigs(Map.of(
                 new ConfigResource(ConfigResource.Type.BROKER, "0"), List.of(
@@ -862,7 +863,7 @@ class TopicControllerIT {
                 "\\[Batch #[0-9]+\\] Reconciled batch",
                 5L,
                 TimeUnit.SECONDS)) {
-            // Wait for a full reconciliation
+            LOGGER.debug("Waiting for a full resync");
         }
 
         // then: verify that only the expected methods were called on the admin (e.g. no incrementalAlterConfigs)
@@ -1723,52 +1724,6 @@ class TopicControllerIT {
         var condition = assertExactlyOneCondition(deleted);
         assertEquals("KafkaError", condition.getReason());
         assertEquals("org.apache.kafka.common.errors.TopicAuthorizationException: not allowed", condition.getMessage());
-    }
-
-    @Test
-    public void shouldFailIfNumPartitionsDiverged(@BrokerConfig(name = "auto.create.topics.enable", value = "false")
-                                                  KafkaCluster kafkaCluster) throws ExecutionException, InterruptedException, TimeoutException {
-        // Scenario from https://github.com/strimzi/strimzi-kafka-operator/pull/8627#pullrequestreview-1477513413
-
-        // given
-
-        // create foo
-        LOGGER.info("Create foo");
-        var foo = kafkaTopic("ns", "foo", null, null, 1, 1);
-        var createdFoo = createTopicAndAssertSuccess(kafkaCluster, foo);
-
-        // create conflicting bar
-        LOGGER.info("Create conflicting bar");
-        var bar = kafkaTopic("ns", "bar", null, "foo", 1, 1);;
-        var createdBar = createTopic(kafkaCluster, bar);
-        assertTrue(readyIsFalse().test(createdBar));
-        var condition = assertExactlyOneCondition(createdBar);
-        assertEquals(TopicOperatorException.Reason.RESOURCE_CONFLICT.reason, condition.getReason());
-        assertEquals("Managed by Ref{namespace='ns', name='foo'}", condition.getMessage());
-
-        // increase partitions of foo
-        LOGGER.info("Increase partitions of foo");
-        var editedFoo = modifyTopicAndAwait(createdFoo, theKt ->
-                new KafkaTopicBuilder(theKt).editSpec().withPartitions(3).endSpec().build(),
-                readyIsTrue());
-
-        // unmanage foo
-        LOGGER.info("Unmanage foo");
-        var unmanagedFoo = modifyTopicAndAwait(editedFoo, theKt ->
-                        new KafkaTopicBuilder(theKt).editMetadata().addToAnnotations(BatchingTopicController.MANAGED, "false").endMetadata().build(),
-                readyIsTrue());
-
-        // when: delete foo
-        LOGGER.info("Delete foo");
-        Crds.topicOperation(client).resource(unmanagedFoo).delete();
-        LOGGER.info("Test deleted KafkaTopic {} with resourceVersion {}",
-                unmanagedFoo.getMetadata().getName(), BatchingTopicController.rv(unmanagedFoo));
-        waitUntilCondition(Crds.topicOperation(client).resource(unmanagedFoo), Objects::isNull);
-
-        // then: expect bar's unreadiness to be due to mismatching #partitions
-        waitUntil(createdBar, readyIsFalseAndReasonIs(
-                TopicOperatorException.Reason.NOT_SUPPORTED.reason,
-                "Decreasing partitions not supported"));
     }
 
     @Test

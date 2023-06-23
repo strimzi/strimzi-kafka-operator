@@ -96,7 +96,6 @@ class BatchingTopicControllerTest {
     }
 
     private String namespace(String ns) {
-        //namespaces.push(ns);
         Resource<Namespace> resource = client.namespaces().withName(ns);
         if (resource.get() == null) {
             LOGGER.debug("Creating namespace {}", ns);
