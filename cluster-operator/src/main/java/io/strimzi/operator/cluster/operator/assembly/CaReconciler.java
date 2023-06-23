@@ -44,7 +44,6 @@ import io.strimzi.operator.common.operator.resource.PodOperator;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.strimzi.operator.common.operator.resource.SecretOperator;
 import io.strimzi.operator.common.operator.resource.StrimziPodSetOperator;
-import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
@@ -282,8 +281,7 @@ public class CaReconciler {
                             clientsCaConfig != null && !clientsCaConfig.isGenerateSecretOwnerReference() ? null : ownerRef,
                             Util.isMaintenanceTimeWindowsSatisfied(reconciliation, maintenanceWindows, clock.instant()));
 
-                    @SuppressWarnings({ "rawtypes" }) // Has to use Raw type because of the CompositeFuture
-                    List<Future> secretReconciliations = new ArrayList<>(2);
+                    List<Future<ReconcileResult<Secret>>> secretReconciliations = new ArrayList<>(2);
 
                     if (clusterCaConfig == null || clusterCaConfig.isGenerateCertificateAuthority())   {
                         Future<ReconcileResult<Secret>> clusterSecretReconciliation = secretOperator.reconcile(reconciliation, reconciliation.namespace(), clusterCaCertName, clusterCa.caCertSecret())
@@ -297,7 +295,7 @@ public class CaReconciler {
                         secretReconciliations.add(clientsSecretReconciliation);
                     }
 
-                    CompositeFuture.join(secretReconciliations).onComplete(res -> {
+                    Future.join(secretReconciliations).onComplete(res -> {
                         if (res.succeeded())    {
                             future.complete();
                         } else {

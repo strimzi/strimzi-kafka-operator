@@ -21,7 +21,6 @@ import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.VertxUtil;
 import io.strimzi.operator.common.model.Labels;
-import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
@@ -146,8 +145,7 @@ public abstract class AbstractNamespacedResourceOperator<C extends KubernetesCli
     public Future<Map<String, ReconcileResult<T>>> batchReconcile(Reconciliation reconciliation, String namespace, List<T> desired, Labels selector)  {
         return listAsync(namespace, selector)
                 .compose(current -> {
-                    @SuppressWarnings({ "rawtypes" }) // Has to use Raw type because of the CompositeFuture
-                    List<Future> futures = new ArrayList<>(desired.size());
+                    List<Future<ReconcileResult<T>>> futures = new ArrayList<>(desired.size());
                     Map<String, ReconcileResult<T>> reconcileResults = new ConcurrentHashMap<>();
                     List<String> currentNames = current.stream().map(ingress -> ingress.getMetadata().getName()).collect(Collectors.toList());
 
@@ -173,7 +171,7 @@ public abstract class AbstractNamespacedResourceOperator<C extends KubernetesCli
                         }));
                     }
 
-                    return CompositeFuture
+                    return Future
                             .join(futures)
                             .map(reconcileResults);
                 });
@@ -235,7 +233,7 @@ public abstract class AbstractNamespacedResourceOperator<C extends KubernetesCli
 
         Future<Void> deleteFuture = resourceSupport.deleteAsync(resourceOp.withPropagationPolicy(cascading ? DeletionPropagation.FOREGROUND : DeletionPropagation.ORPHAN).withGracePeriod(-1L));
 
-        return CompositeFuture.join(watchForDeleteFuture, deleteFuture).map(ReconcileResult.deleted());
+        return Future.join(watchForDeleteFuture, deleteFuture).map(ReconcileResult.deleted());
     }
 
     /**

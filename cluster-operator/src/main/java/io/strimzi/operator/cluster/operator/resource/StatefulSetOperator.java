@@ -17,7 +17,6 @@ import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.operator.resource.AbstractScalableNamespacedResourceOperator;
 import io.strimzi.operator.common.operator.resource.PodOperator;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
-import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
@@ -179,13 +178,12 @@ public class StatefulSetOperator extends AbstractScalableNamespacedResourceOpera
      */
     protected Future<?> podReadiness(Reconciliation reconciliation, String namespace, StatefulSet desired, long pollInterval, long operationTimeoutMs) {
         final int replicas = desired.getSpec().getReplicas();
-        @SuppressWarnings({ "rawtypes" }) // Has to use Raw type because of the CompositeFuture
-        List<Future> waitPodResult = new ArrayList<>(replicas);
+        List<Future<Void>> waitPodResult = new ArrayList<>(replicas);
         for (int i = 0; i < replicas; i++) {
             String podName = getPodName(desired, i);
             waitPodResult.add(podOperations.readiness(reconciliation, namespace, podName, pollInterval, operationTimeoutMs));
         }
-        return CompositeFuture.join(waitPodResult);
+        return Future.join(waitPodResult);
     }
 
     /**

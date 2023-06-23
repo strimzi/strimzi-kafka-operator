@@ -30,7 +30,6 @@ import io.strimzi.operator.common.operator.resource.RoleOperator;
 import io.strimzi.operator.common.operator.resource.SecretOperator;
 import io.strimzi.operator.common.operator.resource.ServiceAccountOperator;
 import io.strimzi.operator.common.operator.resource.NetworkPolicyOperator;
-import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 
 import java.time.Clock;
@@ -229,7 +228,7 @@ public class EntityOperatorReconciler {
             Future<ReconcileResult<RoleBinding>> ownNamespaceFuture = roleBindingOperator.reconcile(reconciliation, reconciliation.namespace(),
                     KafkaResources.entityTopicOperatorRoleBinding(reconciliation.name()), entityOperator.topicOperator().generateRoleBindingForRole(reconciliation.namespace(), reconciliation.namespace()));
 
-            return CompositeFuture.join(ownNamespaceFuture, watchedNamespaceFuture)
+            return Future.join(ownNamespaceFuture, watchedNamespaceFuture)
                     .map((Void) null);
         } else {
             return roleBindingOperator
@@ -260,7 +259,7 @@ public class EntityOperatorReconciler {
             Future<ReconcileResult<RoleBinding>> ownNamespaceFuture = roleBindingOperator.reconcile(reconciliation, reconciliation.namespace(),
                     KafkaResources.entityUserOperatorRoleBinding(reconciliation.name()), entityOperator.userOperator().generateRoleBindingForRole(reconciliation.namespace(), reconciliation.namespace()));
 
-            return CompositeFuture.join(ownNamespaceFuture, watchedNamespaceFuture)
+            return Future.join(ownNamespaceFuture, watchedNamespaceFuture)
                     .map((Void) null);
         } else {
             return roleBindingOperator

@@ -25,7 +25,6 @@ import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.VertxUtil;
 import io.strimzi.operator.common.operator.resource.PodOperator;
-import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
@@ -232,12 +231,11 @@ public class KafkaRoller {
             }
             LOGGER.debugCr(reconciliation, "Initial order for updating pods (rolling restart or dynamic update) is {}", pods);
 
-            @SuppressWarnings({ "rawtypes" }) // Composite future requires raw Future objects
-            List<Future> futures = new ArrayList<>(nodes.size());
+            List<Future<Void>> futures = new ArrayList<>(nodes.size());
             for (NodeRef node : pods) {
                 futures.add(schedule(node, 0, TimeUnit.MILLISECONDS));
             }
-            CompositeFuture.join(futures).onComplete(ar -> {
+            Future.join(futures).onComplete(ar -> {
                 singleExecutor.shutdown();
                 try {
                     if (allClient != null) {

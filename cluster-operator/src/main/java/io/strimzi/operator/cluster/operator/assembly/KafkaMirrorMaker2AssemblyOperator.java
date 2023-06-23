@@ -51,7 +51,6 @@ import io.strimzi.operator.common.operator.resource.DeploymentOperator;
 import io.strimzi.operator.common.operator.resource.PodOperator;
 import io.strimzi.operator.common.operator.resource.StatusUtils;
 import io.strimzi.operator.common.operator.resource.StrimziPodSetOperator;
-import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
@@ -256,7 +255,7 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
                                              KafkaMirrorMaker2Cluster mirrorMaker2Cluster,
                                              AtomicReference<Deployment> deploymentReference,
                                              AtomicReference<StrimziPodSet> podSetReference)   {
-        return CompositeFuture
+        return Future
                 .join(deploymentOperations.getAsync(reconciliation.namespace(), mirrorMaker2Cluster.getComponentName()), podSetOperations.getAsync(reconciliation.namespace(), mirrorMaker2Cluster.getComponentName()))
                 .compose(res -> {
                     deploymentReference.set(res.resultAt(0));
@@ -305,7 +304,7 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
         if (kafkaMirrorMaker2Spec.getClusters() == null) {
             authHash.complete(0);
         } else {
-            CompositeFuture.join(kafkaMirrorMaker2Spec.getClusters()
+            Future.join(kafkaMirrorMaker2Spec.getClusters()
                             .stream()
                             .map(cluster -> {
                                 List<CertSecretSource> trustedCertificates = cluster.getTls() == null ? Collections.emptyList() : cluster.getTls().getTrustedCertificates();
@@ -351,7 +350,7 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
                     .map(connectorName -> apiClient.delete(reconciliation, host, KafkaConnectCluster.REST_API_PORT, connectorName));
             Stream<Future<Void>> createUpdateFutures = mirrors.stream()
                     .map(mirror -> reconcileMirrorMaker2Connectors(reconciliation, host, apiClient, kafkaMirrorMaker2, mirror, mirrorMaker2Cluster, mirrorMaker2Status, desiredLogging));
-            return CompositeFuture.join(Stream.concat(deletionFutures, createUpdateFutures).collect(Collectors.toList())).map((Void) null);
+            return Future.join(Stream.concat(deletionFutures, createUpdateFutures).collect(Collectors.toList())).map((Void) null);
         });
     }
 
@@ -378,7 +377,7 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
                     new InvalidResourceException("sourceCluster with alias " + mirror.getSourceCluster() + " cannot be found in the list of clusters at spec.clusters"));
         }
 
-        return CompositeFuture.join(MIRRORMAKER2_CONNECTORS.entrySet().stream()
+        return Future.join(MIRRORMAKER2_CONNECTORS.entrySet().stream()
                     .filter(entry -> entry.getValue().apply(mirror) != null) // filter out non-existent connectors
                     .map(entry -> {
                         String connectorName = sourceClusterAlias + "->" + targetClusterAlias + entry.getKey();

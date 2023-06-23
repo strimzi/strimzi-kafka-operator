@@ -39,7 +39,7 @@ public class Zk2KafkaStreams {
                 .thenCompose(ksTopicStore -> {
                     LOGGER.info("Starting upgrade ...");
                     @SuppressWarnings("rawtypes")
-                    List<Future> results = new ArrayList<>();
+                    List<Future<Void>> results = new ArrayList<>();
                     List<String> list = zk.getChildren(topicsPath);
                     LOGGER.info("Topics to upgrade: {}", list);
                     list.forEach(topicName -> {
@@ -54,7 +54,7 @@ public class Zk2KafkaStreams {
                         );
                     });
                     CompletableFuture<Void> result = new CompletableFuture<>();
-                    CompositeFuture cf = CompositeFuture.all(results);
+                    CompositeFuture cf = Future.all(results);
                     cf.onComplete(ar -> {
                         if (ar.failed()) {
                             result.completeExceptionally(ar.cause());

@@ -18,7 +18,6 @@ import io.strimzi.operator.common.MetricsProvider;
 import io.strimzi.operator.common.MicrometerMetricsProvider;
 import io.strimzi.operator.common.Reconciliation;
 import io.vertx.core.AsyncResult;
-import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
@@ -467,7 +466,7 @@ public class TopicOperatorTest {
         mockK8s.setModifyResponse(resourceName, null);
         LogContext logContext = LogContext.zkWatch("///", topicName.toString(), topicOperator.getNamespace(), topicName.toString());
         Checkpoint async = context.checkpoint(3);
-        CompositeFuture.all(kafkaTopicFuture, topicStoreFuture, topicResourceFuture)
+        Future.all(kafkaTopicFuture, topicStoreFuture, topicResourceFuture)
             .compose(v -> topicOperator.onTopicConfigChanged(logContext, topicName))
             .onComplete(context.succeeding(v -> {
                 context.verify(() -> assertThat(mockKafka.getTopicState(topicName).getConfig().get("cleanup.policy"), is("baz")));
@@ -552,7 +551,7 @@ public class TopicOperatorTest {
                 .create(privateTopic);
         mockTopicStore.setDeleteTopicResponse(topicName, null);
 
-        CompositeFuture.all(topicResourceFuture, kafkaTopicFuture)
+        Future.all(topicResourceFuture, kafkaTopicFuture)
             .compose(v -> topicOperator.reconcile(reconciliation(logContext), logContext, null, kubeTopic, kafkaTopic, privateTopic))
             .onComplete(context.succeeding(v -> {
                 mockKafka.assertNotExists(context, kubeTopic.getTopicName());
@@ -636,7 +635,7 @@ public class TopicOperatorTest {
         Future<Void> topicResourceFuture = mockTopicStore.create(kafkaTopic).mapEmpty();
         mockTopicStore.setDeleteTopicResponse(topicName, null);
 
-        CompositeFuture.all(kafkaTopicFuture, topicResourceFuture)
+        Future.all(kafkaTopicFuture, topicResourceFuture)
             .compose(v -> {
                 LogContext logContext = LogContext.periodic(topicName.toString(), topicOperator.getNamespace(), topicName.toString());
                 return topicOperator.reconcile(reconciliation(logContext), logContext, null, kubeTopic, kafkaTopic, privateTopic);
@@ -668,7 +667,7 @@ public class TopicOperatorTest {
         Future<Void> topicResourceFuture = mockK8s.createResource(topicResource).mapEmpty();
         mockTopicStore.setCreateTopicResponse(topicName, null);
 
-        CompositeFuture.all(kafkaTopicFuture, topicResourceFuture)
+        Future.all(kafkaTopicFuture, topicResourceFuture)
             .compose(v -> topicOperator.reconcile(reconciliation(logContext), logContext, null, kubeTopic, kafkaTopic, privateTopic))
             .compose(v -> {
                 mockTopicStore.assertExists(context, topicName);
@@ -713,7 +712,7 @@ public class TopicOperatorTest {
         LogContext logContext = LogContext.periodic(topicName.toString(), topicOperator.getNamespace(), topicName.toString());
         Future<Void> topicResourceFuture = mockK8s.createResource(topicResource).mapEmpty();
         mockTopicStore.setCreateTopicResponse(topicName, null);
-        CompositeFuture.all(kafkaTopicFuture, topicResourceFuture)
+        Future.all(kafkaTopicFuture, topicResourceFuture)
             .compose(v -> topicOperator.reconcile(reconciliation(logContext), logContext, null, kubeTopic, kafkaTopic, privateTopic))
             .compose(v -> {
                 mockTopicStore.assertExists(context, topicName);
@@ -762,7 +761,7 @@ public class TopicOperatorTest {
         mockK8s.setModifyResponse(topicName.asKubeName(), null);
         mockTopicStore.setCreateTopicResponse(topicName, null);
 
-        CompositeFuture.all(kafkaTopicFuture, topicResourceFuture)
+        Future.all(kafkaTopicFuture, topicResourceFuture)
             .compose(v -> topicOperator.reconcile(reconciliation(logContext), logContext, topic, kubeTopic, kafkaTopic, privateTopic))
             .compose(v -> {
                 mockTopicStore.assertExists(context, topicName);
@@ -809,7 +808,7 @@ public class TopicOperatorTest {
         mockK8s.setModifyResponse(topicName.asKubeName(), null);
         mockTopicStore.setCreateTopicResponse(topicName, null);
 
-        CompositeFuture.all(kafkaTopicFuture, topicResourceFuture)
+        Future.all(kafkaTopicFuture, topicResourceFuture)
             .compose(v -> topicOperator.reconcile(reconciliation(logContext), logContext, topic, kubeTopic, kafkaTopic, privateTopic))
             .compose(v -> {
                 mockK8s.assertContainsEvent(context, e ->
@@ -854,7 +853,7 @@ public class TopicOperatorTest {
         mockTopicStore.setCreateTopicResponse(topicName, null);
         Future<Void> privateTopicFuture = mockTopicStore.create(privateTopic);
 
-        CompositeFuture.all(kafkaTopicFuture, topicResourceFuture, privateTopicFuture)
+        Future.all(kafkaTopicFuture, topicResourceFuture, privateTopicFuture)
             .compose(v -> topicOperator.reconcile(reconciliation(logContext), logContext, resource, kubeTopic, kafkaTopic, privateTopic))
             .compose(v -> {
                 mockK8s.assertNoEvents(context);
@@ -897,7 +896,7 @@ public class TopicOperatorTest {
         KafkaTopic resource = TopicSerialization.toTopicResource(kubeTopic, labels);
         LogContext logContext = LogContext.kubeWatch(Watcher.Action.DELETED, resource);
 
-        return CompositeFuture.all(kafkaTopicFuture, topicStoreFuture)
+        return Future.all(kafkaTopicFuture, topicStoreFuture)
             .compose(v -> topicOperator.onResourceEvent(logContext, resource, DELETED))
             .onComplete(ar -> {
                 if (deleteTopicException != null || storeException != null) {
@@ -954,7 +953,7 @@ public class TopicOperatorTest {
         Future<Void> topicResourceFuture = mockK8s.createResource(resource).mapEmpty();
         mockK8s.setModifyResponse(resourceName, null);
 
-        CompositeFuture.all(kafkaTopicFuture, topicStoreFuture, topicResourceFuture)
+        Future.all(kafkaTopicFuture, topicStoreFuture, topicResourceFuture)
             .compose(v -> topicOperator.onResourceEvent(logContext, resource, MODIFIED))
             .compose(v -> {
                 context.verify(() -> assertThat(mockKafka.getTopicState(topicName).getConfig().get("cleanup.policy"), is("baz")));
@@ -1029,7 +1028,7 @@ public class TopicOperatorTest {
         mockKafka.setTopicExistsResult(t -> Future.succeededFuture(topicExists));
 
         LogContext logContext = LogContext.zkWatch("///", topicName.toString(), topicOperator.getNamespace(), topicName.toString());
-        return CompositeFuture.all(topicResourceFuture, topicStoreFuture)
+        return Future.all(topicResourceFuture, topicStoreFuture)
             .compose(v -> topicOperator.onTopicDeleted(logContext, topicName))
             .onComplete(ar -> {
                 if (k8sException != null

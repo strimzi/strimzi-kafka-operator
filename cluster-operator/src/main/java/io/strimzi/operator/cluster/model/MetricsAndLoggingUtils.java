@@ -14,7 +14,6 @@ import io.strimzi.operator.common.MetricsAndLogging;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.operator.resource.ConfigMapOperator;
-import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 
 import java.util.HashMap;
@@ -41,7 +40,7 @@ public class MetricsAndLoggingUtils {
                                                               ConfigMapOperator configMapOperations,
                                                               LoggingModel logging,
                                                               MetricsModel metrics) {
-        return CompositeFuture
+        return Future
                 .join(metricsConfigMap(reconciliation, configMapOperations, metrics), loggingConfigMap(reconciliation, configMapOperations, logging))
                 .map(result -> new MetricsAndLogging(result.resultAt(0), result.resultAt(1)));
     }

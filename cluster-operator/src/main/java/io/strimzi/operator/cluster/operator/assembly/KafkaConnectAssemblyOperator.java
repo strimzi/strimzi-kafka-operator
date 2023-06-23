@@ -40,7 +40,6 @@ import io.strimzi.operator.common.operator.resource.PodOperator;
 import io.strimzi.operator.common.operator.resource.StatusUtils;
 import io.strimzi.operator.common.operator.resource.StrimziPodSetOperator;
 import io.vertx.core.AsyncResult;
-import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
@@ -244,7 +243,7 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
                                              KafkaConnectCluster connect,
                                              AtomicReference<Deployment> deploymentReference,
                                              AtomicReference<StrimziPodSet> podSetReference)   {
-        return CompositeFuture
+        return Future
                 .join(deploymentOperations.getAsync(reconciliation.namespace(), connect.getComponentName()), podSetOperations.getAsync(reconciliation.namespace(), connect.getComponentName()))
                 .compose(res -> {
                     deploymentReference.set(res.resultAt(0));

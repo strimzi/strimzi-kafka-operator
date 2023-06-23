@@ -15,7 +15,6 @@ import io.fabric8.kubernetes.client.dsl.base.PatchType;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.model.Labels;
-import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
@@ -146,7 +145,7 @@ public abstract class AbstractNonNamespacedResourceOperator<C extends Kubernetes
 
         Future<Void> deleteFuture = resourceSupport.deleteAsync(resourceOp);
 
-        return CompositeFuture.join(watchForDeleteFuture, deleteFuture).map(ReconcileResult.deleted());
+        return Future.join(watchForDeleteFuture, deleteFuture).map(ReconcileResult.deleted());
     }
 
     /**

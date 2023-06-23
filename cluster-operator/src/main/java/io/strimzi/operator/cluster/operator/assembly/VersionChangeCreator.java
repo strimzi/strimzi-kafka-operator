@@ -23,7 +23,6 @@ import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.resource.PodOperator;
-import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 
 import java.util.List;
@@ -117,7 +116,7 @@ public class VersionChangeCreator {
         Future<StatefulSet> stsFuture = stsOperator.getAsync(reconciliation.namespace(), KafkaResources.kafkaStatefulSetName(reconciliation.name()));
         Future<StrimziPodSet> podSetFuture = strimziPodSetOperator.getAsync(reconciliation.namespace(), KafkaResources.kafkaStatefulSetName(reconciliation.name()));
 
-        return CompositeFuture.join(stsFuture, podSetFuture)
+        return Future.join(stsFuture, podSetFuture)
                 .compose(res -> {
                     StatefulSet sts = res.resultAt(0);
                     StrimziPodSet podSet = res.resultAt(1);

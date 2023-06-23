@@ -19,7 +19,6 @@ import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.AbstractOperator;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.AsyncResult;
-import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
@@ -112,8 +111,7 @@ public class ClusterOperator extends AbstractVerticle {
         // Configure the executor here, but it is used only in other places
         sharedWorkerExecutor = getVertx().createSharedWorkerExecutor("kubernetes-ops-pool", config.getOperationsThreadPoolSize(), TimeUnit.SECONDS.toNanos(120));
 
-        @SuppressWarnings({ "rawtypes" })
-        List<Future> startFutures = new ArrayList<>(8);
+        List<Future<?>> startFutures = new ArrayList<>(8);
         startFutures.add(maybeStartStrimziPodSetController());
 
         if (!config.isPodSetReconciliationOnly()) {
@@ -141,7 +139,7 @@ public class ClusterOperator extends AbstractVerticle {
             startFutures.add(kafkaRebalanceAssemblyOperator.createRebalanceWatch(namespace));
         }
 
-        CompositeFuture.join(startFutures)
+        Future.join(startFutures)
                 .compose(f -> {
                     LOGGER.info("Setting up periodic reconciliation for namespace {}", namespace);
                     this.reconcileTimer = vertx.setPeriodic(this.config.getReconciliationIntervalMs(), res2 -> {
