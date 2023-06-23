@@ -56,8 +56,7 @@ class KafkaAgentClient {
         this.httpClient = createHttpClient();
     }
 
-    //visible for testing
-    KafkaAgentClient(Reconciliation reconciliation, String cluster, String namespace) {
+    /* test */ KafkaAgentClient(Reconciliation reconciliation, String cluster, String namespace) {
         this.reconciliation = reconciliation;
         this.namespace = namespace;
         this.cluster =  cluster;
@@ -69,7 +68,7 @@ class KafkaAgentClient {
         }
 
         try {
-            SSLContext sslContext = SSLContext.getInstance("TLSv1.3");
+            SSLContext sslContext = SSLContext.getInstance("TLS");
             KeyStore trustStore = KeyStore.getInstance("PKCS12");
             trustStore.load(new ByteArrayInputStream(
                             Util.decodeFromSecret(clusterCaCertSecret, "ca.p12")),

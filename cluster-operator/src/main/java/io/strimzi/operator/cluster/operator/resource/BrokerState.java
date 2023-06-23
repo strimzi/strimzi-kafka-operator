@@ -62,7 +62,7 @@ class BrokerState {
 
     @Override
     public String toString() {
-        return String.format("Broker state: {} , Recovery state: {}", code, recoveryState.toString());
+        return String.format("Broker state: %d, Recovery state: %s", code, recoveryState);
     }
 
     /**
