@@ -126,6 +126,15 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 status.setObservedGeneration(kafkaAssembly.getMetadata().getGeneration());
             }
 
+            if (status.getClusterId() == null
+                    && kafkaAssembly.getStatus() != null
+                    && kafkaAssembly.getStatus().getClusterId() != null)  {
+                // If not set in the status prepared by reconciliation but set in the status previously, we copy the
+                // cluster ID into the new status. This is useful for example when the reconciliation fails for some
+                // reason before setting the cluster ID
+                status.setClusterId(kafkaAssembly.getStatus().getClusterId());
+            }
+
             if (reconcileResult.succeeded())    {
                 condition = new ConditionBuilder()
                         .withLastTransitionTime(StatusUtils.iso8601(clock.instant()))
@@ -702,8 +711,15 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
     }
 
     @Override
-    protected KafkaStatus createStatus() {
-        return new KafkaStatus();
+    protected KafkaStatus createStatus(Kafka kafka) {
+        KafkaStatus status = new KafkaStatus();
+
+        // We copy the cluster ID if set
+        if (kafka.getStatus() != null && kafka.getStatus().getClusterId() != null)  {
+            status.setClusterId(kafka.getStatus().getClusterId());
+        }
+
+        return status;
     }
 
     /**

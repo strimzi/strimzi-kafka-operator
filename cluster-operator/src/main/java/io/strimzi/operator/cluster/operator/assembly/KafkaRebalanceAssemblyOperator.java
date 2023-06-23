@@ -1460,7 +1460,7 @@ public class KafkaRebalanceAssemblyOperator
     }
 
     @Override
-    protected KafkaRebalanceStatus createStatus() {
+    protected KafkaRebalanceStatus createStatus(KafkaRebalance ignored) {
         return new KafkaRebalanceStatus();
     }
 }

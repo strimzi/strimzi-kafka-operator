@@ -108,6 +108,7 @@ public class KafkaStatusTest {
                             .withType("NotReady")
                             .withStatus("True")
                             .build())
+                    .withClusterId("my-cluster-id")
                 .endStatus()
                 .build();
     }
@@ -157,6 +158,7 @@ public class KafkaStatusTest {
             assertThat(status.getConditions().get(0).getStatus(), is("True"));
 
             assertThat(status.getObservedGeneration(), is(2L));
+            assertThat(status.getClusterId(), is("my-cluster-id"));
 
             async.flag();
         });
@@ -195,6 +197,8 @@ public class KafkaStatusTest {
             assertThat(status.getConditions().get(0).getStatus(), is("True"));
             assertThat(status.getConditions().get(0).getType(), is("ReconciliationPaused"));
             assertThat(status.getObservedGeneration(), is(1L));
+            assertThat(status.getClusterId(), is("my-cluster-id"));
+
             async.flag();
         });
     }
@@ -304,6 +308,7 @@ public class KafkaStatusTest {
             assertThat(status.getConditions().get(0).getMessage(), is(exception.getMessage()));
 
             assertThat(status.getObservedGeneration(), is(2L));
+            assertThat(status.getClusterId(), is("my-cluster-id"));
 
             async.flag();
         });

@@ -302,7 +302,7 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
 
 
     @Override
-    protected KafkaConnectStatus createStatus() {
+    protected KafkaConnectStatus createStatus(KafkaConnect ignored) {
         return new KafkaConnectStatus();
     }
 
