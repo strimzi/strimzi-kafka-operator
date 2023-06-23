@@ -11,7 +11,6 @@ import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.annotations.KRaftNotSupported;
-import io.strimzi.systemtest.annotations.ParallelSuite;
 import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.AdminClientOperation;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaAdminClients;
@@ -41,15 +40,12 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
  */
 @Tag(REGRESSION)
 @Tag(INTERNAL_CLIENTS_USED)
-@ParallelSuite
 public class ThrottlingQuotaST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(ThrottlingQuotaST.class);
 
     private static final String THROTTLING_ERROR_MSG =
         "org.apache.kafka.common.errors.ThrottlingQuotaExceededException: The throttling quota has been exceeded.";
-
-    private final String namespace = testSuiteNamespaceManager.getMapOfAdditionalNamespaces().get(ThrottlingQuotaST.class.getSimpleName()).stream().findFirst().get();
     private TestStorage sharedTestStorage;
 
     private KafkaAdminClientsBuilder adminClientsBuilder;
@@ -58,7 +54,7 @@ public class ThrottlingQuotaST extends AbstractST {
     @ParallelTest
     @KRaftNotSupported("TopicOperator is not supported by KRaft mode and is used in this test class")
     void testThrottlingQuotasDuringAllTopicOperations(ExtensionContext extensionContext) {
-        final TestStorage testStorage = new TestStorage(extensionContext, namespace);
+        final TestStorage testStorage = new TestStorage(extensionContext, clusterOperator.getDeploymentNamespace());
 
         final String createAdminName = "create-" + testStorage.getAdminName();
         final String alterAdminName = "alter-" + testStorage.getAdminName();
@@ -186,7 +182,12 @@ public class ThrottlingQuotaST extends AbstractST {
 
     @BeforeAll
     void setup(ExtensionContext extensionContext) {
-        sharedTestStorage = new TestStorage(extensionContext, namespace);
+        this.clusterOperator = this.clusterOperator
+            .defaultInstallation(extensionContext)
+            .createInstallation()
+            .runInstallation();
+
+        sharedTestStorage = new TestStorage(extensionContext, clusterOperator.getDeploymentNamespace());
 
         // Deploy kafka with ScramSHA512
         LOGGER.info("Deploying shared Kafka across all test cases in {} namespace", sharedTestStorage.getNamespaceName());

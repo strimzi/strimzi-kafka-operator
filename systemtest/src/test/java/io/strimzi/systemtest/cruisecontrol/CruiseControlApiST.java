@@ -12,7 +12,6 @@ import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.annotations.KRaftNotSupported;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
-import io.strimzi.systemtest.annotations.ParallelSuite;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaRebalanceTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
@@ -20,6 +19,7 @@ import io.strimzi.systemtest.utils.kafkaUtils.KafkaRebalanceUtils;
 import io.strimzi.systemtest.utils.specific.CruiseControlUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
@@ -37,13 +37,10 @@ import static org.hamcrest.MatcherAssert.assertThat;
 @Tag(REGRESSION)
 @Tag(CRUISE_CONTROL)
 @Tag(ACCEPTANCE)
-@ParallelSuite
 public class CruiseControlApiST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(CruiseControlApiST.class);
     private static final String CRUISE_CONTROL_NAME = "Cruise Control";
-
-    private final String namespace = testSuiteNamespaceManager.getMapOfAdditionalNamespaces().get(CruiseControlApiST.class.getSimpleName()).stream().findFirst().get();
     private final String cruiseControlApiClusterName = "cruise-control-api-cluster-name";
 
     @ParallelNamespaceTest
@@ -221,5 +218,13 @@ public class CruiseControlApiST extends AbstractST {
         assertThat(response, containsString("LeaderReplicaDistributionGoal"));
         assertThat(response, containsString("LeaderBytesInDistributionGoal"));
         assertThat(response, containsString("PreferredLeaderElectionGoal"));
+    }
+
+    @BeforeAll
+    void setUp(final ExtensionContext extensionContext) {
+        this.clusterOperator = this.clusterOperator
+            .defaultInstallation(extensionContext)
+            .createInstallation()
+            .runInstallation();
     }
 }

@@ -12,11 +12,8 @@ import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.strimzi.api.kafka.model.KafkaBridgeResources;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.AbstractST;
-import io.strimzi.systemtest.BeforeAllOnce;
 import io.strimzi.systemtest.Constants;
-import io.strimzi.systemtest.annotations.IsolatedSuite;
 import io.strimzi.systemtest.annotations.KRaftNotSupported;
-import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.rollingupdate.KafkaRollerIsolatedST;
 import io.strimzi.systemtest.templates.crd.KafkaBridgeTemplates;
@@ -41,12 +38,10 @@ import java.util.Map;
 
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.systemtest.Constants.BRIDGE;
-import static io.strimzi.systemtest.Constants.INFRA_NAMESPACE;
 import static io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils.generateRandomNameOfKafka;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 @Tag(REGRESSION)
-@IsolatedSuite
 class RecoveryIsolatedST extends AbstractST {
 
     static String sharedClusterName;
@@ -296,10 +291,7 @@ class RecoveryIsolatedST extends AbstractST {
 
     @BeforeEach
     void setup(ExtensionContext extensionContext) {
-        clusterOperator.unInstall();
-        clusterOperator = new SetupClusterOperator.SetupClusterOperatorBuilder()
-            .withExtensionContext(BeforeAllOnce.getSharedExtensionContext())
-            .withNamespace(INFRA_NAMESPACE)
+        this.clusterOperator = this.clusterOperator.defaultInstallation(extensionContext)
             .withReconciliationInterval(Constants.CO_OPERATION_TIMEOUT_SHORT)
             .createInstallation()
             .runInstallation();

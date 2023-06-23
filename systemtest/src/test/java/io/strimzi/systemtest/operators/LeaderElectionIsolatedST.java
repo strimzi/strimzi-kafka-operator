@@ -11,7 +11,6 @@ import io.fabric8.kubernetes.api.model.coordination.v1.Lease;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
-import io.strimzi.systemtest.annotations.IsolatedSuite;
 import io.strimzi.systemtest.resources.operator.BundleResource;
 import io.strimzi.systemtest.resources.operator.specific.HelmResource;
 import io.strimzi.systemtest.storage.TestStorage;
@@ -20,7 +19,6 @@ import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.test.annotations.IsolatedTest;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtensionContext;
@@ -53,7 +51,6 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
  */
 
 @Tag(REGRESSION)
-@IsolatedSuite
 public class LeaderElectionIsolatedST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(LeaderElectionIsolatedST.class);
@@ -71,7 +68,7 @@ public class LeaderElectionIsolatedST extends AbstractST {
         final TestStorage testStorage = new TestStorage(extensionContext);
 
         // create CO with 2 replicas, wait for Deployment readiness and leader election
-        clusterOperator = clusterOperator.defaultInstallation()
+        clusterOperator = clusterOperator.defaultInstallation(extensionContext)
             .withExtensionContext(extensionContext)
             .withReplicas(2)
             .createInstallation()
@@ -111,7 +108,7 @@ public class LeaderElectionIsolatedST extends AbstractST {
         final TestStorage testStorage = new TestStorage(extensionContext);
 
         // create CO with 1 replicas and with disabled leader election, wait for Deployment readiness
-        clusterOperator = clusterOperator.defaultInstallation()
+        clusterOperator = clusterOperator.defaultInstallation(extensionContext)
             .withExtensionContext(extensionContext)
             .withExtraEnvVars(Collections.singletonList(LEADER_DISABLED_ENV))
             .createInstallation()
@@ -149,14 +146,8 @@ public class LeaderElectionIsolatedST extends AbstractST {
         // skipping if install type is OLM
         // OLM installation doesn't support configuring number of replicas inside the subscription
         assumeTrue(!Environment.isOlmInstall());
-        clusterOperator.unInstall();
 
         LOGGER.info("Checking if deployment files for install type: {} contains all needed env variables for leader election", Environment.CLUSTER_OPERATOR_INSTALL_TYPE);
         checkDeploymentFiles();
-    }
-
-    @AfterEach
-    void cleanUp() {
-        clusterOperator.unInstall();
     }
 }

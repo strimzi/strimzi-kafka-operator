@@ -14,10 +14,8 @@ import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBui
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.systemtest.AbstractST;
-import io.strimzi.systemtest.BeforeAllOnce;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
-import io.strimzi.systemtest.annotations.IsolatedSuite;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 import io.strimzi.systemtest.resources.ResourceManager;
@@ -60,7 +58,6 @@ import static org.junit.jupiter.api.Assumptions.assumeFalse;
  * https://github.com/strimzi/proposals/blob/main/022-feature-gates.md
  */
 @Tag(REGRESSION)
-@IsolatedSuite
 public class FeatureGatesIsolatedST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(FeatureGatesIsolatedST.class);
 
@@ -87,9 +84,8 @@ public class FeatureGatesIsolatedST extends AbstractST {
 
         testEnvVars.add(new EnvVar(Environment.STRIMZI_FEATURE_GATES_ENV, "+UseKRaft", null));
 
-        clusterOperator.unInstall();
         clusterOperator = new SetupClusterOperator.SetupClusterOperatorBuilder()
-                .withExtensionContext(BeforeAllOnce.getSharedExtensionContext())
+                .withExtensionContext(extensionContext)
                 .withNamespace(INFRA_NAMESPACE)
                 .withWatchingNamespaces(Constants.WATCH_ALL_NAMESPACES)
                 .withExtraEnvVars(testEnvVars)
@@ -169,9 +165,8 @@ public class FeatureGatesIsolatedST extends AbstractST {
 
         LOGGER.info("Deploying CO without Stable Connect Identities");
 
-        clusterOperator.unInstall();
         clusterOperator = new SetupClusterOperator.SetupClusterOperatorBuilder()
-                .withExtensionContext(BeforeAllOnce.getSharedExtensionContext())
+                .withExtensionContext(extensionContext)
                 .withNamespace(testStorage.getNamespaceName())
                 .withWatchingNamespaces(Constants.WATCH_ALL_NAMESPACES)
                 .withExtraEnvVars(coEnvVars)

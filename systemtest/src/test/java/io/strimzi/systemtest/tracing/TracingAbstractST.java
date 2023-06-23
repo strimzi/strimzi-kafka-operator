@@ -90,8 +90,6 @@ public abstract class TracingAbstractST extends AbstractST {
     private final String jaegerInstancePath = TestUtils.USER_PATH + "/../systemtest/src/test/resources/tracing/jaeger-instance.yaml";
     private final String jaegerOperatorPath = TestUtils.USER_PATH + "/../systemtest/src/test/resources/tracing/jaeger-operator.yaml";
 
-    private final String namespace = testSuiteNamespaceManager.getMapOfAdditionalNamespaces().get(this.getClass().getSimpleName()).stream().findFirst().get();
-
     protected abstract Tracing tracing();
     protected abstract String serviceNameEnvVar();
 
@@ -352,7 +350,7 @@ public abstract class TracingAbstractST extends AbstractST {
         configOfKafkaConnect.put("key.converter.schemas.enable", "false");
         configOfKafkaConnect.put("value.converter.schemas.enable", "false");
 
-        resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnect(storageMap.get(extensionContext).getClusterName(), namespace, 1)
+        resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnect(storageMap.get(extensionContext).getClusterName(), clusterOperator.getDeploymentNamespace(), 1)
             .editMetadata()
                 .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
             .endMetadata()
@@ -557,7 +555,7 @@ public abstract class TracingAbstractST extends AbstractST {
      * Delete Jaeger instance
      */
     private void deleteJaeger() {
-        cmdKubeClient().namespace(this.namespace).deleteContent(this.jaegerConfigs);
+        cmdKubeClient().namespace(this.clusterOperator.getDeploymentNamespace()).deleteContent(this.jaegerConfigs);
     }
 
     private void deleteCertManager() {
@@ -593,11 +591,11 @@ public abstract class TracingAbstractST extends AbstractST {
     private void deployJaegerContent(ExtensionContext extensionContext) {
         TestUtils.waitFor("Jaeger deploy", JAEGER_DEPLOYMENT_POLL, JAEGER_DEPLOYMENT_TIMEOUT, () -> {
             try {
-                String jaegerOperator = Files.readString(Paths.get(jaegerOperatorPath)).replace("observability", this.namespace);
+                String jaegerOperator = Files.readString(Paths.get(jaegerOperatorPath)).replace("observability", this.clusterOperator.getDeploymentNamespace());
 
                 this.jaegerConfigs = jaegerOperator;
                 LOGGER.info("Creating Jaeger operator (and needed resources) from {}", jaegerOperatorPath);
-                cmdKubeClient(this.namespace).applyContent(jaegerOperator);
+                cmdKubeClient(this.clusterOperator.getDeploymentNamespace()).applyContent(jaegerOperator);
                 return true;
             } catch (Exception e) {
                 LOGGER.error("{} - Exception {} has been thrown during Jaeger deployment" + e.getMessage());
@@ -605,7 +603,7 @@ public abstract class TracingAbstractST extends AbstractST {
             }
         });
         ResourceManager.STORED_RESOURCES.get(extensionContext.getDisplayName()).push(new ResourceItem<>(this::deleteJaeger));
-        DeploymentUtils.waitForDeploymentAndPodsReady(this.namespace, JAEGER_OPERATOR_DEPLOYMENT_NAME, 1);
+        DeploymentUtils.waitForDeploymentAndPodsReady(this.clusterOperator.getDeploymentNamespace(), JAEGER_OPERATOR_DEPLOYMENT_NAME, 1);
     }
 
     private void deployJaegerOperator(final ExtensionContext extensionContext) {
@@ -618,7 +616,7 @@ public abstract class TracingAbstractST extends AbstractST {
             .withKind(Constants.NETWORK_POLICY)
             .withNewMetadata()
                 .withName("jaeger-allow")
-                .withNamespace(this.namespace)
+                .withNamespace(this.clusterOperator.getDeploymentNamespace())
             .endMetadata()
             .withNewSpec()
                 .addNewIngress()
@@ -650,7 +648,7 @@ public abstract class TracingAbstractST extends AbstractST {
 
     @BeforeEach
     void createTestResources(final ExtensionContext extensionContext) {
-        final TestStorage testStorage = new TestStorage(extensionContext, this.namespace);
+        final TestStorage testStorage = new TestStorage(extensionContext, this.clusterOperator.getDeploymentNamespace());
 
         storageMap.put(extensionContext, testStorage);
 
@@ -703,6 +701,11 @@ public abstract class TracingAbstractST extends AbstractST {
 
     @BeforeAll
     void setup(final ExtensionContext extensionContext) {
+        this.clusterOperator = this.clusterOperator
+                .defaultInstallation(extensionContext)
+                .createInstallation()
+                .runInstallation();
+
         ResourceManager.STORED_RESOURCES.computeIfAbsent(extensionContext.getDisplayName(), k -> new Stack<>());
         deployAndWaitForCertManager(extensionContext);
         deployJaegerOperator(extensionContext);

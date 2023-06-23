@@ -14,7 +14,6 @@ import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.annotations.KRaftNotSupported;
-import io.strimzi.systemtest.annotations.ParallelSuite;
 import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.BridgeClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.BridgeClientsBuilder;
@@ -43,14 +42,9 @@ import static io.strimzi.systemtest.Constants.REGRESSION;
 @Tag(BRIDGE)
 @Tag(REGRESSION)
 @KRaftNotSupported("UserOperator and scram-sha are not supported by KRaft mode and is used in this test class")
-@ParallelSuite
 class HttpBridgeScramShaST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(HttpBridgeScramShaST.class);
     private final String httpBridgeScramShaClusterName = "http-bridge-scram-sha-cluster-name";
-
-    private final String namespace = testSuiteNamespaceManager.getMapOfAdditionalNamespaces().get(HttpBridgeScramShaST.class.getSimpleName()).stream().findFirst().get();
-
-    private String kafkaClientsPodName;
     private BridgeClients kafkaBridgeClientJob;
 
     @ParallelTest
@@ -67,24 +61,24 @@ class HttpBridgeScramShaST extends AbstractST {
         // Create topic
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(httpBridgeScramShaClusterName, topicName)
             .editMetadata()
-                .withNamespace(namespace)
+                .withNamespace(clusterOperator.getDeploymentNamespace())
             .endMetadata()
             .build());
 
         resourceManager.createResource(extensionContext, kafkaBridgeClientJb.producerStrimziBridge());
-        ClientUtils.waitForClientSuccess(producerName, namespace, MESSAGE_COUNT);
+        ClientUtils.waitForClientSuccess(producerName, clusterOperator.getDeploymentNamespace(), MESSAGE_COUNT);
 
         KafkaClients kafkaClients = new KafkaClientsBuilder()
             .withTopicName(topicName)
             .withMessageCount(MESSAGE_COUNT)
             .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(httpBridgeScramShaClusterName))
             .withConsumerName(consumerName)
-            .withNamespaceName(namespace)
+            .withNamespaceName(clusterOperator.getDeploymentNamespace())
             .withUsername(USER_NAME)
             .build();
 
         resourceManager.createResource(extensionContext, kafkaClients.consumerScramShaTlsStrimzi(httpBridgeScramShaClusterName));
-        ClientUtils.waitForClientSuccess(consumerName, namespace, MESSAGE_COUNT);
+        ClientUtils.waitForClientSuccess(consumerName, clusterOperator.getDeploymentNamespace(), MESSAGE_COUNT);
     }
 
     @ParallelTest
@@ -100,7 +94,7 @@ class HttpBridgeScramShaST extends AbstractST {
 
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(httpBridgeScramShaClusterName, TOPIC_NAME)
             .editMetadata()
-                .withNamespace(namespace)
+                .withNamespace(clusterOperator.getDeploymentNamespace())
             .endMetadata().build());
         resourceManager.createResource(extensionContext, kafkaBridgeClientJb.consumerStrimziBridge());
 
@@ -110,22 +104,26 @@ class HttpBridgeScramShaST extends AbstractST {
             .withMessageCount(MESSAGE_COUNT)
             .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(httpBridgeScramShaClusterName))
             .withProducerName(producerName)
-            .withNamespaceName(namespace)
+            .withNamespaceName(clusterOperator.getDeploymentNamespace())
             .withUsername(USER_NAME)
             .build();
 
         resourceManager.createResource(extensionContext, kafkaClients.producerScramShaTlsStrimzi(httpBridgeScramShaClusterName));
-        ClientUtils.waitForClientsSuccess(producerName, consumerName, namespace, MESSAGE_COUNT);
+        ClientUtils.waitForClientsSuccess(producerName, consumerName, clusterOperator.getDeploymentNamespace(), MESSAGE_COUNT);
     }
 
     @BeforeAll
     void setUp(ExtensionContext extensionContext) {
+        clusterOperator = clusterOperator.defaultInstallation(extensionContext)
+            .createInstallation()
+            .runInstallation();
+
         LOGGER.info("Deploy Kafka and KafkaBridge before tests");
 
         // Deploy kafka
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(httpBridgeScramShaClusterName, 1, 1)
             .editMetadata()
-                .withNamespace(namespace)
+                .withNamespace(clusterOperator.getDeploymentNamespace())
             .endMetadata()
             .editSpec()
                 .editKafka()
@@ -141,9 +139,9 @@ class HttpBridgeScramShaST extends AbstractST {
             .endSpec().build());
 
         // Create Kafka user
-        KafkaUser scramShaUser = KafkaUserTemplates.scramShaUser(namespace, httpBridgeScramShaClusterName, USER_NAME)
+        KafkaUser scramShaUser = KafkaUserTemplates.scramShaUser(clusterOperator.getDeploymentNamespace(), httpBridgeScramShaClusterName, USER_NAME)
             .editMetadata()
-                .withNamespace(namespace)
+                .withNamespace(clusterOperator.getDeploymentNamespace())
             .endMetadata()
             .build();
 
@@ -163,7 +161,7 @@ class HttpBridgeScramShaST extends AbstractST {
         resourceManager.createResource(extensionContext, KafkaBridgeTemplates.kafkaBridge(httpBridgeScramShaClusterName,
             KafkaResources.tlsBootstrapAddress(httpBridgeScramShaClusterName), 1)
             .editMetadata()
-                .withNamespace(namespace)
+                .withNamespace(clusterOperator.getDeploymentNamespace())
             .endMetadata()
             .editSpec()
                     .withNewConsumer()
@@ -183,7 +181,7 @@ class HttpBridgeScramShaST extends AbstractST {
             .withTopicName(TOPIC_NAME)
             .withMessageCount(MESSAGE_COUNT)
             .withPort(Constants.HTTP_BRIDGE_DEFAULT_PORT)
-            .withNamespaceName(namespace)
+            .withNamespaceName(clusterOperator.getDeploymentNamespace())
             .build();
     }
 }

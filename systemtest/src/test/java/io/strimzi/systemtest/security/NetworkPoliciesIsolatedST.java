@@ -15,10 +15,8 @@ import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.systemtest.AbstractST;
-import io.strimzi.systemtest.BeforeAllOnce;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
-import io.strimzi.systemtest.annotations.IsolatedSuite;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
@@ -60,7 +58,6 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 @Tag(NETWORKPOLICIES_SUPPORTED)
 @Tag(REGRESSION)
-@IsolatedSuite
 public class NetworkPoliciesIsolatedST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(NetworkPoliciesIsolatedST.class);
 
@@ -75,9 +72,8 @@ public class NetworkPoliciesIsolatedST extends AbstractST {
         final String deniedProducerName = "denied-" + testStorage.getProducerName();
         final String deniedConsumerName = "denied-" + testStorage.getConsumerName();
 
-        clusterOperator.unInstall();
         clusterOperator = new SetupClusterOperator.SetupClusterOperatorBuilder()
-            .withExtensionContext(BeforeAllOnce.getSharedExtensionContext())
+            .withExtensionContext(extensionContext)
             .withNamespace(clusterOperator.getDeploymentNamespace())
             .createInstallation()
             .runInstallation();
@@ -173,9 +169,8 @@ public class NetworkPoliciesIsolatedST extends AbstractST {
         final String deniedProducerName = "denied-" + testStorage.getProducerName();
         final String deniedConsumerName = "denied-" + testStorage.getConsumerName();
 
-        clusterOperator.unInstall();
         clusterOperator = new SetupClusterOperator.SetupClusterOperatorBuilder()
-            .withExtensionContext(BeforeAllOnce.getSharedExtensionContext())
+            .withExtensionContext(extensionContext)
             .withNamespace(clusterOperator.getDeploymentNamespace())
             .createInstallation()
             .runInstallation();
@@ -243,9 +238,8 @@ public class NetworkPoliciesIsolatedST extends AbstractST {
 
         String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
-        clusterOperator.unInstall();
         clusterOperator = new SetupClusterOperator.SetupClusterOperatorBuilder()
-            .withExtensionContext(BeforeAllOnce.getSharedExtensionContext())
+            .withExtensionContext(extensionContext)
             .withNamespace(clusterOperator.getDeploymentNamespace())
             .createInstallation()
             .runInstallation();
@@ -271,9 +265,8 @@ public class NetworkPoliciesIsolatedST extends AbstractST {
                 .withValue(labels.toString().replaceAll("\\{|}", ""))
                 .build();
 
-        clusterOperator.unInstall();
         clusterOperator = new SetupClusterOperator.SetupClusterOperatorBuilder()
-            .withExtensionContext(BeforeAllOnce.getSharedExtensionContext())
+            .withExtensionContext(extensionContext)
             .withNamespace(clusterOperator.getDeploymentNamespace())
             .withWatchingNamespaces(Constants.WATCH_ALL_NAMESPACES)
             .withBindingsNamespaces(Arrays.asList(clusterOperator.getDeploymentNamespace(), secondNamespace))
@@ -312,7 +305,6 @@ public class NetworkPoliciesIsolatedST extends AbstractST {
             .withValue("false")
             .build();
 
-        clusterOperator.unInstall();
         clusterOperator = new SetupClusterOperator.SetupClusterOperatorBuilder()
             .withExtensionContext(extensionContext)
             .withNamespace(clusterOperator.getDeploymentNamespace())

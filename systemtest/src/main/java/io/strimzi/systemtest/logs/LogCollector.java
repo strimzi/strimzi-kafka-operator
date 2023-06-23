@@ -9,9 +9,6 @@ import io.fabric8.kubernetes.api.model.Pod;
 import io.strimzi.api.kafka.model.StrimziPodSet;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
-import io.strimzi.systemtest.annotations.IsolatedTest;
-import io.strimzi.systemtest.annotations.ParallelSuite;
-import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.enums.ClusterOperatorInstallType;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.test.logs.CollectorElement;
@@ -136,10 +133,6 @@ public class LogCollector {
      *          c) @ParallelNamespaceTest, which is basically in namespace with following pattern namespace-[n], where n is greater than 0.
      *      4.@AfterEach scope
      *      5.@AfterAll scope
-     *
-     *  More advanced is when {@link ParallelTest#annotationType()} or {@link IsolatedTest#annotationType()} are executed inside
-     *  {@link ParallelSuite#annotationType()}, which means they use automatically generated namespace by
-     *  {@link io.strimzi.systemtest.parallel.TestSuiteNamespaceManager#createAdditionalNamespaces(ExtensionContext)}.
      */
     public synchronized void collect() {
         Set<String> namespaces = KubeClusterResource.getMapWithSuiteNamespaces().get(this.collectorElement);
@@ -156,7 +149,7 @@ public class LogCollector {
         if (!this.collectorElement.getTestMethodName().isEmpty()) {
             // @ParallelSuite -> this is generated namespace but we collect logs only iff STRIMZI_RBAC_SCOPE=CLUSTER
             // because when we run STRIMZI_RBAC_SCOPE=NAMESPACE mode we use one namespace (i.e., clusterOperatorNamespace).
-            if (StUtils.isParallelSuite(extensionContext.getParent().get()) && !Environment.isNamespaceRbacScope()) {
+            if (!Environment.isNamespaceRbacScope()) {
                 // @IsolatedTest or @ParallelTest or @ParallelNamespaceTest -> are executed in that generated namespace
                 if (StUtils.isIsolatedTest(extensionContext) ||
                     StUtils.isParallelTest(extensionContext) ||

@@ -12,8 +12,6 @@ import io.strimzi.api.kafka.model.EntityOperatorSpecBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.systemtest.AbstractST;
-import io.strimzi.systemtest.BeforeAllOnce;
-import io.strimzi.systemtest.annotations.IsolatedSuite;
 import io.strimzi.systemtest.cli.KafkaCmdClient;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
@@ -47,7 +45,6 @@ import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
  * Procedure described in documentation  https://strimzi.io/docs/master/#namespace-deletion_str
  */
 @Tag(RECOVERY)
-@IsolatedSuite
 class NamespaceDeletionRecoveryIsolatedST extends AbstractST {
     private String storageClassName = "retain";
 
@@ -191,9 +188,8 @@ class NamespaceDeletionRecoveryIsolatedST extends AbstractST {
     }
 
     private void prepareEnvironmentForRecovery(ExtensionContext extensionContext, TestStorage testStorage) {
-        clusterOperator.unInstall();
         clusterOperator = new SetupClusterOperator.SetupClusterOperatorBuilder()
-            .withExtensionContext(BeforeAllOnce.getSharedExtensionContext())
+            .withExtensionContext(extensionContext)
             .withNamespace(testStorage.getNamespaceName())
             .createInstallation()
             .runInstallation();
@@ -249,10 +245,9 @@ class NamespaceDeletionRecoveryIsolatedST extends AbstractST {
     }
 
     private void recreateClusterOperator(ExtensionContext extensionContext) {
-        // Recreate CO
         clusterOperator.unInstall();
         clusterOperator = new SetupClusterOperator.SetupClusterOperatorBuilder()
-            .withExtensionContext(BeforeAllOnce.getSharedExtensionContext())
+            .withExtensionContext(extensionContext)
             .withNamespace(INFRA_NAMESPACE)
             .createInstallation()
             .runInstallation();

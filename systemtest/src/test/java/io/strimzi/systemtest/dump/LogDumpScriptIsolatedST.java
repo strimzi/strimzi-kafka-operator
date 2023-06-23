@@ -16,7 +16,6 @@ import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.utils.ClientUtils;
-import io.strimzi.systemtest.annotations.IsolatedSuite;
 import io.strimzi.test.annotations.IsolatedTest;
 import io.strimzi.test.executor.Exec;
 import org.apache.logging.log4j.LogManager;
@@ -32,15 +31,13 @@ import java.nio.file.Paths;
 
 @Tag(REGRESSION)
 @Tag(INTERNAL_CLIENTS_USED)
-@IsolatedSuite
 public class LogDumpScriptIsolatedST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(LogDumpScriptIsolatedST.class);
 
     @BeforeAll
-    void setUp() {
-        clusterOperator.unInstall();
-        clusterOperator = clusterOperator
-            .defaultInstallation()
+    void setUp(final ExtensionContext extensionContext) {
+        this.clusterOperator = this.clusterOperator
+            .defaultInstallation(extensionContext)
             .createInstallation()
             .runInstallation();
     }

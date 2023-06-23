@@ -12,7 +12,6 @@ import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
-import io.strimzi.systemtest.annotations.ParallelSuite;
 import io.strimzi.systemtest.kafkaclients.externalClients.ExternalKafkaClient;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.annotations.OpenShiftOnly;
@@ -46,13 +45,11 @@ import static io.strimzi.systemtest.Constants.REGRESSION;
 import static org.junit.jupiter.api.Assumptions.assumeFalse;
 
 @Tag(REGRESSION)
-@ParallelSuite
 public class MultipleListenersST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(MultipleListenersST.class);
     private Object lock = new Object();
 
-    private final String namespace = testSuiteNamespaceManager.getMapOfAdditionalNamespaces().get(MultipleListenersST.class.getSimpleName()).stream().findFirst().get();
     // only 4 type of listeners
     private Map<KafkaListenerType, List<GenericKafkaListener>> testCases = new HashMap<>(4);
 
@@ -165,7 +162,7 @@ public class MultipleListenersST extends AbstractST {
         // exercise phase
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3)
             .editMetadata()
-                .withNamespace(namespace)
+                .withNamespace(clusterOperator.getDeploymentNamespace())
             .endMetadata()
             .editSpec()
                 .editKafka()
@@ -177,7 +174,7 @@ public class MultipleListenersST extends AbstractST {
         // only on thread can access to verification phase (here is a lot of variables which can be modified in run-time (data-race))
         synchronized (lock) {
             String kafkaUsername = KafkaUserUtils.generateRandomNameOfKafkaUser();
-            KafkaUser kafkaUserInstance = KafkaUserTemplates.tlsUser(namespace, clusterName, kafkaUsername).build();
+            KafkaUser kafkaUserInstance = KafkaUserTemplates.tlsUser(clusterOperator.getDeploymentNamespace(), clusterName, kafkaUsername).build();
 
             resourceManager.createResource(extensionContext, kafkaUserInstance);
 
@@ -186,7 +183,7 @@ public class MultipleListenersST extends AbstractST {
                 final String consumerName = "consumer-" + new Random().nextInt(Integer.MAX_VALUE);
 
                 String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
-                resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(clusterName, topicName, namespace).build());
+                resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(clusterName, topicName, clusterOperator.getDeploymentNamespace()).build());
 
                 boolean isTlsEnabled = listener.isTls();
 
@@ -194,7 +191,7 @@ public class MultipleListenersST extends AbstractST {
                     if (isTlsEnabled) {
                         ExternalKafkaClient externalTlsKafkaClient = new ExternalKafkaClient.Builder()
                             .withTopicName(topicName)
-                            .withNamespaceName(namespace)
+                            .withNamespaceName(clusterOperator.getDeploymentNamespace())
                             .withClusterName(clusterName)
                             .withMessageCount(MESSAGE_COUNT)
                             .withKafkaUsername(kafkaUsername)
@@ -213,7 +210,7 @@ public class MultipleListenersST extends AbstractST {
                     } else {
                         ExternalKafkaClient externalPlainKafkaClient = new ExternalKafkaClient.Builder()
                             .withTopicName(topicName)
-                            .withNamespaceName(namespace)
+                            .withNamespaceName(clusterOperator.getDeploymentNamespace())
                             .withClusterName(clusterName)
                             .withMessageCount(MESSAGE_COUNT)
                             .withSecurityProtocol(SecurityProtocol.PLAINTEXT)
@@ -236,7 +233,7 @@ public class MultipleListenersST extends AbstractST {
                         .withProducerName(producerName)
                         .withConsumerName(consumerName)
                         .withUsername(kafkaUsername)
-                        .withNamespaceName(namespace)
+                        .withNamespaceName(clusterOperator.getDeploymentNamespace())
                         .withBootstrapAddress(KafkaResources.bootstrapServiceName(clusterName) + ":" + listener.getPort())
                         .build();
 
@@ -252,7 +249,7 @@ public class MultipleListenersST extends AbstractST {
                             kafkaClients.consumerStrimzi()
                         );
                     }
-                    ClientUtils.waitForClientsSuccess(producerName, consumerName, namespace, MESSAGE_COUNT);
+                    ClientUtils.waitForClientsSuccess(producerName, consumerName, clusterOperator.getDeploymentNamespace(), MESSAGE_COUNT);
                 }
             }
         }
@@ -349,5 +346,10 @@ public class MultipleListenersST extends AbstractST {
         super.beforeAllMayOverride(extensionContext);
         // secondly generate test cases
         generateTestCases();
+
+        this.clusterOperator = this.clusterOperator
+            .defaultInstallation(extensionContext)
+            .createInstallation()
+            .runInstallation();
     }
 }

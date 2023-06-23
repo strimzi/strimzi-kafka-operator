@@ -402,26 +402,6 @@ public class StUtils {
     }
 
     /**
-     * Checking if test case contains annotation {@link io.strimzi.systemtest.annotations.ParallelSuite}
-     * @param annotationHolder context of the test case
-     * @return true if test case contains annotation {@link io.strimzi.systemtest.annotations.ParallelSuite},
-     * otherwise false
-     */
-    public static boolean isParallelSuite(Object annotationHolder) {
-        return CONTAINS_ANNOTATION.apply(Constants.PARALLEL_SUITE, annotationHolder);
-    }
-
-    /**
-     * Checking if test case contains annotation {@link io.strimzi.systemtest.annotations.IsolatedSuite}
-     * @param annotationHolder context of the test case
-     * @return true if test case contains annotation {@link io.strimzi.systemtest.annotations.IsolatedSuite},
-     * otherwise false
-     */
-    public static boolean isIsolatedSuite(Object annotationHolder) {
-        return CONTAINS_ANNOTATION.apply(Constants.ISOLATED_SUITE, annotationHolder);
-    }
-
-    /**
      * Retrieve namespace based on the cluster configuration
      * @param namespace suite namespace
      * @param extensionContext test context for get the parallel namespace

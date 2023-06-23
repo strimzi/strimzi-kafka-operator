@@ -25,7 +25,6 @@ import io.strimzi.systemtest.templates.kubernetes.ClusterRoleBindingTemplates;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
-import io.strimzi.systemtest.annotations.IsolatedSuite;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.executor.Exec;
 import io.strimzi.test.logs.CollectorElement;
@@ -54,7 +53,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @Tag(SPECIFIC)
-@IsolatedSuite
 public class SpecificIsolatedST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(SpecificIsolatedST.class);
 
@@ -216,13 +214,13 @@ public class SpecificIsolatedST extends AbstractST {
         final String namespaceWhereCreationOfCustomResourcesIsApproved = "example-1";
 
         // --- a) defining Role and ClusterRoles
-        final Role strimziClusterOperator020 = TestUtils.configFromYaml(SetupClusterOperator.getInstanceHolder().switchClusterRolesToRolesIfNeeded(new File(Constants.PATH_TO_PACKAGING_INSTALL_FILES + "/cluster-operator/020-ClusterRole-strimzi-cluster-operator-role.yaml"), true), Role.class);
+        final Role strimziClusterOperator020 = TestUtils.configFromYaml(SetupClusterOperator.getInstance().switchClusterRolesToRolesIfNeeded(new File(Constants.PATH_TO_PACKAGING_INSTALL_FILES + "/cluster-operator/020-ClusterRole-strimzi-cluster-operator-role.yaml"), true), Role.class);
 
         // specify explicit namespace for Role (for ClusterRole we do not specify namespace because ClusterRole is a non-namespaced resource
         strimziClusterOperator020.getMetadata().setNamespace(namespaceWhereCreationOfCustomResourcesIsApproved);
 
         final ClusterRole strimziClusterOperator021 = TestUtils.configFromYaml(new File(Constants.PATH_TO_PACKAGING_INSTALL_FILES + "/cluster-operator/021-ClusterRole-strimzi-cluster-operator-role.yaml"), ClusterRole.class);
-        final ClusterRole strimziClusterOperator022 = TestUtils.configFromYaml(SetupClusterOperator.getInstanceHolder().changeLeaseNameInResourceIfNeeded(new File(Constants.PATH_TO_PACKAGING_INSTALL_FILES + "/cluster-operator/022-ClusterRole-strimzi-cluster-operator-role.yaml").getAbsolutePath()), ClusterRole.class);
+        final ClusterRole strimziClusterOperator022 = TestUtils.configFromYaml(SetupClusterOperator.getInstance().changeLeaseNameInResourceIfNeeded(new File(Constants.PATH_TO_PACKAGING_INSTALL_FILES + "/cluster-operator/022-ClusterRole-strimzi-cluster-operator-role.yaml").getAbsolutePath()), ClusterRole.class);
         final ClusterRole strimziClusterOperator023 = TestUtils.configFromYaml(new File(Constants.PATH_TO_PACKAGING_INSTALL_FILES + "/cluster-operator/023-ClusterRole-strimzi-cluster-operator-role.yaml"), ClusterRole.class);
         final ClusterRole strimziClusterOperator030 = TestUtils.configFromYaml(new File(Constants.PATH_TO_PACKAGING_INSTALL_FILES + "/cluster-operator/030-ClusterRole-strimzi-kafka-broker.yaml"), ClusterRole.class);
         final ClusterRole strimziClusterOperator031 = TestUtils.configFromYaml(new File(Constants.PATH_TO_PACKAGING_INSTALL_FILES + "/cluster-operator/031-ClusterRole-strimzi-entity-operator.yaml"), ClusterRole.class);
@@ -233,8 +231,8 @@ public class SpecificIsolatedST extends AbstractST {
                 strimziClusterOperator023, strimziClusterOperator030, strimziClusterOperator031, strimziClusterOperator033);
 
         // ---- b) defining RoleBindings
-        final RoleBinding strimziClusterOperator020Namespaced = TestUtils.configFromYaml(SetupClusterOperator.getInstanceHolder().switchClusterRolesToRolesIfNeeded(new File(Constants.PATH_TO_PACKAGING_INSTALL_FILES + "/cluster-operator/020-RoleBinding-strimzi-cluster-operator.yaml"), true), RoleBinding.class);
-        final RoleBinding strimziClusterOperator022LeaderElection = TestUtils.configFromYaml(SetupClusterOperator.getInstanceHolder().changeLeaseNameInResourceIfNeeded(new File(Constants.PATH_TO_LEASE_ROLE_BINDING).getAbsolutePath()), RoleBinding.class);
+        final RoleBinding strimziClusterOperator020Namespaced = TestUtils.configFromYaml(SetupClusterOperator.getInstance().switchClusterRolesToRolesIfNeeded(new File(Constants.PATH_TO_PACKAGING_INSTALL_FILES + "/cluster-operator/020-RoleBinding-strimzi-cluster-operator.yaml"), true), RoleBinding.class);
+        final RoleBinding strimziClusterOperator022LeaderElection = TestUtils.configFromYaml(SetupClusterOperator.getInstance().changeLeaseNameInResourceIfNeeded(new File(Constants.PATH_TO_LEASE_ROLE_BINDING).getAbsolutePath()), RoleBinding.class);
 
         // specify explicit namespace for RoleBindings
         strimziClusterOperator020Namespaced.getMetadata().setNamespace(namespaceWhereCreationOfCustomResourcesIsApproved);
@@ -259,8 +257,7 @@ public class SpecificIsolatedST extends AbstractST {
         // create namespace, where we will be able to deploy Custom Resources
         cluster.createNamespace(CollectorElement.createCollectorElement(extensionContext.getRequiredTestClass().getName(), extensionContext.getRequiredTestMethod().getName()), namespaceWhereCreationOfCustomResourcesIsApproved);
         StUtils.copyImagePullSecrets(namespaceWhereCreationOfCustomResourcesIsApproved);
-        clusterOperator = clusterOperator.defaultInstallation()
-            .withWatchingNamespaces(Constants.WATCH_ALL_NAMESPACES)
+        clusterOperator = clusterOperator.defaultInstallation(extensionContext)
             // use our pre-defined Roles
             .withRoles(roles)
             // use our pre-defined RoleBindings
@@ -296,17 +293,13 @@ public class SpecificIsolatedST extends AbstractST {
 
         assertThat(condition.getReason(), CoreMatchers.is("KubernetesClientException"));
         assertThat(condition.getStatus(), CoreMatchers.is("True"));
-
-        // rollback to the default configuration
-        clusterOperator.rollbackToDefaultConfiguration();
     }
 
     @BeforeAll
-    void setUp() {
-        clusterOperator.unInstall();
-        clusterOperator = clusterOperator
-                .defaultInstallation()
-                .createInstallation()
-                .runInstallation();
+    void setUp(final ExtensionContext extensionContext) {
+        this.clusterOperator = this.clusterOperator
+            .defaultInstallation(extensionContext)
+            .createInstallation()
+            .runInstallation();
     }
 }

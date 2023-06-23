@@ -19,7 +19,6 @@ import io.strimzi.systemtest.utils.RollingUpdateUtils;
 import io.strimzi.systemtest.utils.TestKafkaVersion;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
-import io.strimzi.systemtest.annotations.IsolatedSuite;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
@@ -41,7 +40,6 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
  * Metadata for upgrade/downgrade procedure are loaded from kafka-versions.yaml in root dir of this repository.
  */
 @Tag(UPGRADE)
-@IsolatedSuite
 @KRaftNotSupported("Strimzi and Kafka downgrade is not supported with KRaft mode")
 public class KafkaUpgradeDowngradeIsolatedST extends AbstractUpgradeST {
 
@@ -169,9 +167,9 @@ public class KafkaUpgradeDowngradeIsolatedST extends AbstractUpgradeST {
     }
 
     @BeforeAll
-    void setupEnvironment() {
+    void setupEnvironment(final ExtensionContext extensionContext) {
         clusterOperator.unInstall();
-        clusterOperator.defaultInstallation().createInstallation().runInstallation();
+        clusterOperator.defaultInstallation(extensionContext).createInstallation().runInstallation();
     }
 
     @SuppressWarnings({"checkstyle:MethodLength"})

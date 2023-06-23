@@ -26,7 +26,6 @@ import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.Spec;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.api.kafka.model.status.Status;
-import io.strimzi.systemtest.BeforeAllOnce;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.enums.DeploymentTypes;
@@ -177,15 +176,12 @@ public class ResourceManager {
                 }
             }
 
-            // ignore test context of shared Cluster Operator
-            if (testContext != BeforeAllOnce.getSharedExtensionContext()) {
-                // if it is parallel namespace test we are gonna replace resource a namespace
-                if (StUtils.isParallelNamespaceTest(testContext)) {
-                    if (!Environment.isNamespaceRbacScope()) {
-                        final String namespace = testContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
-                        LOGGER.info("Using Namespace: {}", namespace);
-                        resource.getMetadata().setNamespace(namespace);
-                    }
+            // if it is parallel namespace test we are gonna replace resource a namespace
+            if (StUtils.isParallelNamespaceTest(testContext)) {
+                if (!Environment.isNamespaceRbacScope()) {
+                    final String namespace = testContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
+                    LOGGER.info("Using Namespace: {}", namespace);
+                    resource.getMetadata().setNamespace(namespace);
                 }
             }
 

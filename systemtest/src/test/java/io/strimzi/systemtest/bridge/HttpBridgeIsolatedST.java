@@ -13,17 +13,14 @@ import io.strimzi.api.kafka.model.status.KafkaBridgeStatus;
 import io.strimzi.api.kafka.model.template.DeploymentStrategy;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
-import io.strimzi.systemtest.BeforeAllOnce;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
-import io.strimzi.systemtest.annotations.IsolatedSuite;
 import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.BridgeClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.BridgeClientsBuilder;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 import io.strimzi.systemtest.resources.crd.KafkaBridgeResource;
-import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.templates.crd.KafkaBridgeTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
@@ -64,7 +61,6 @@ import static org.hamcrest.Matchers.containsString;
 @Tag(REGRESSION)
 @Tag(BRIDGE)
 @Tag(INTERNAL_CLIENTS_USED)
-@IsolatedSuite
 class HttpBridgeIsolatedST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(HttpBridgeIsolatedST.class);
 
@@ -418,26 +414,23 @@ class HttpBridgeIsolatedST extends AbstractST {
     @BeforeAll
     void createClassResources(ExtensionContext extensionContext) {
         final String namespaceToWatch = Environment.isNamespaceRbacScope() ? INFRA_NAMESPACE : Constants.WATCH_ALL_NAMESPACES;
-        // un-install old cluster operator
-        clusterOperator.unInstall();
-        // install new one with branch new configuration
-        clusterOperator = new SetupClusterOperator.SetupClusterOperatorBuilder()
-            .withExtensionContext(BeforeAllOnce.getSharedExtensionContext())
-            .withNamespace(INFRA_NAMESPACE)
-            .withWatchingNamespaces(namespaceToWatch)
-            .withExtraEnvVars(
-                Arrays.asList(
-                    new EnvVarBuilder()
-                        .withName("STRIMZI_CUSTOM_KAFKA_BRIDGE_SERVICE_LABELS")
-                        .withValue("app=bar")
-                        .build(),
-                    new EnvVarBuilder()
-                        .withName("STRIMZI_CUSTOM_KAFKA_BRIDGE_SERVICE_ANNOTATIONS")
-                        .withValue("bar=app")
-                        .build()
-                )
-            ).createInstallation()
-            .runInstallation();
+
+        clusterOperator = clusterOperator.defaultInstallation(extensionContext)
+                .withNamespace(INFRA_NAMESPACE)
+                .withWatchingNamespaces(namespaceToWatch)
+                .withExtraEnvVars(
+                    Arrays.asList(
+                        new EnvVarBuilder()
+                                .withName("STRIMZI_CUSTOM_KAFKA_BRIDGE_SERVICE_LABELS")
+                                .withValue("app=bar")
+                                .build(),
+                        new EnvVarBuilder()
+                                .withName("STRIMZI_CUSTOM_KAFKA_BRIDGE_SERVICE_ANNOTATIONS")
+                                .withValue("bar=app")
+                                .build()
+                    ))
+                .createInstallation()
+                .runInstallation();
 
         LOGGER.info("Deploy Kafka and KafkaBridge before tests");
 

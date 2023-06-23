@@ -18,13 +18,11 @@ import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
-import io.strimzi.systemtest.annotations.IsolatedSuite;
 import io.strimzi.systemtest.annotations.KRaftNotSupported;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 import io.strimzi.systemtest.metrics.MetricsCollector;
 import io.strimzi.systemtest.resources.ResourceManager;
-import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.resources.crd.KafkaRebalanceResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
@@ -68,7 +66,6 @@ import static org.junit.jupiter.api.Assumptions.assumeFalse;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 @Tag(REGRESSION)
-@IsolatedSuite
 public class MultipleClusterOperatorsIsolatedST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(MultipleClusterOperatorsIsolatedST.class);
@@ -341,8 +338,7 @@ public class MultipleClusterOperatorsIsolatedST extends AbstractST {
 
         LOGGER.info("Creating {} in {} namespace", coName, coNamespace);
 
-        clusterOperator = new SetupClusterOperator.SetupClusterOperatorBuilder()
-            .withExtensionContext(extensionContext)
+        clusterOperator = clusterOperator.defaultInstallation(extensionContext)
             .withNamespace(coNamespace)
             .withClusterOperatorName(coName)
             .withWatchingNamespaces(namespace)
@@ -355,7 +351,5 @@ public class MultipleClusterOperatorsIsolatedST extends AbstractST {
     @BeforeAll
     void setup() {
         assumeTrue(!Environment.isHelmInstall() && !Environment.isOlmInstall());
-
-        clusterOperator.unInstall();
     }
 }

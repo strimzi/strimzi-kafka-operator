@@ -20,8 +20,6 @@ import io.strimzi.api.kafka.model.template.DeploymentStrategy;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
-import io.strimzi.systemtest.BeforeAllOnce;
-import io.strimzi.systemtest.annotations.IsolatedSuite;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
@@ -69,7 +67,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @Tag(REGRESSION)
 @Tag(MIRROR_MAKER)
 @Tag(INTERNAL_CLIENTS_USED)
-@IsolatedSuite
 public class MirrorMakerIsolatedST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(MirrorMakerIsolatedST.class);
@@ -688,9 +685,8 @@ public class MirrorMakerIsolatedST extends AbstractST {
 
     @BeforeAll
     void setupEnvironment(ExtensionContext extensionContext) {
-        clusterOperator.unInstall();
         clusterOperator = new SetupClusterOperator.SetupClusterOperatorBuilder()
-            .withExtensionContext(BeforeAllOnce.getSharedExtensionContext())
+            .withExtensionContext(extensionContext)
             .withNamespace(Constants.INFRA_NAMESPACE)
             .withWatchingNamespaces(Constants.WATCH_ALL_NAMESPACES)
             .withOperationTimeout(Constants.CO_OPERATION_TIMEOUT_MEDIUM)
