@@ -32,7 +32,7 @@ The following resources are defined on deployment:
 
 .Procedure
 
-. Update the `alert-manager-config.yaml` file in the `examples/metrics/prometheus-alertmanager-config` directory to replace the:
+. Update the `alert-manager-config.yaml` file in the `examples/metrics/prometheus-alertmanager-config` directory to replace the following:
 +
 * `slack_api_url` property with the actual value of the Slack API URL related to the application for the Slack workspace
 * `channel` property with the actual Slack channel on which to send notifications
