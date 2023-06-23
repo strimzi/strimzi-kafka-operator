@@ -177,11 +177,6 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
     public static final String ANNO_STRIMZI_CUSTOM_LISTENER_CERT_THUMBPRINTS = Annotations.STRIMZI_DOMAIN + "custom-listener-cert-thumbprints";
 
     /**
-     * Annotation for enabling or disabling the Node Pools. This annotation is used on the Kafka CR
-     */
-    public static final String ANNO_STRIMZI_IO_NODE_POOLS = Annotations.STRIMZI_DOMAIN + "node-pools";
-
-    /**
      * The annotation value which indicates that the Node Pools are enabled
      */
     public static final String ENABLED_VALUE_STRIMZI_IO_NODE_POOLS = "enabled";

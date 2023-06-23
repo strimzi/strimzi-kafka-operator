@@ -7,6 +7,7 @@ package io.strimzi.systemtest.storage;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
@@ -34,6 +35,7 @@ final public class TestStorage {
     private ExtensionContext extensionContext;
     private String namespaceName;
     private String clusterName;
+    private String kafkaNodePoolName;
     private String targetClusterName;
     private String topicName;
     private String targetTopicName;
@@ -62,6 +64,7 @@ final public class TestStorage {
         this.extensionContext = extensionContext;
         this.namespaceName = StUtils.isParallelNamespaceTest(extensionContext) ? StUtils.getNamespaceBasedOnRbac(namespaceName, extensionContext) : namespaceName;
         this.clusterName = CLUSTER_NAME_PREFIX + hashStub(String.valueOf(RANDOM.nextInt(Integer.MAX_VALUE)));
+        this.kafkaNodePoolName = Constants.KAFKA_NODE_POOL_PREFIX + hashStub(clusterName);
         this.targetClusterName = CLUSTER_NAME_PREFIX + hashStub(String.valueOf(RANDOM.nextInt(Integer.MAX_VALUE))) + "-target";
         this.topicName = KafkaTopicUtils.generateRandomNameOfTopic();
         this.targetTopicName = topicName + "-target";
@@ -72,7 +75,8 @@ final public class TestStorage {
         this.adminName = clusterName + "-" + ADMIN;
         this.username = clusterName + "-" + USER;
         this.eoDeploymentName = KafkaResources.entityOperatorDeploymentName(clusterName);
-        this.kafkaStatefulSetName = KafkaResources.kafkaStatefulSetName(clusterName);
+        this.kafkaStatefulSetName = Environment.isKafkaNodePoolEnabled() ?
+            this.clusterName + "-" + this.kafkaNodePoolName : KafkaResources.kafkaStatefulSetName(clusterName);
         this.zkStatefulSetName = KafkaResources.zookeeperStatefulSetName(clusterName);
         this.kafkaSelector = KafkaResource.getLabelSelector(clusterName, this.kafkaStatefulSetName);
         this.zkSelector = KafkaResource.getLabelSelector(clusterName, this.zkStatefulSetName);
@@ -80,6 +84,7 @@ final public class TestStorage {
 
         extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.NAMESPACE_KEY, this.namespaceName);
         extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.CLUSTER_KEY, this.clusterName);
+        extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.KAFKA_NODE_POOL_KEY, this.kafkaNodePoolName);
         extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.TARGET_CLUSTER_KEY, this.targetClusterName);
         extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.TOPIC_KEY, this.topicName);
         extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.TARGET_TOPIC_KEY, this.targetTopicName);
@@ -111,6 +116,10 @@ final public class TestStorage {
 
     public String getClusterName() {
         return extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.CLUSTER_KEY).toString();
+    }
+
+    public String getKafkaNodePoolName() {
+        return extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.KAFKA_NODE_POOL_KEY).toString();
     }
 
     public String getTargetClusterName() {

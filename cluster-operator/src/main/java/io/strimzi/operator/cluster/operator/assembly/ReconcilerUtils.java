@@ -370,6 +370,6 @@ public class ReconcilerUtils {
      * @return      True when the node pools are enabled. False otherwise.
      */
     public static boolean nodePoolsEnabled(Kafka kafka) {
-        return KafkaCluster.ENABLED_VALUE_STRIMZI_IO_NODE_POOLS.equals(Annotations.stringAnnotation(kafka, KafkaCluster.ANNO_STRIMZI_IO_NODE_POOLS, "disabled").toLowerCase(Locale.ENGLISH));
+        return KafkaCluster.ENABLED_VALUE_STRIMZI_IO_NODE_POOLS.equals(Annotations.stringAnnotation(kafka, Annotations.ANNO_STRIMZI_IO_NODE_POOLS, "disabled").toLowerCase(Locale.ENGLISH));
     }
 }

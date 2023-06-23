@@ -24,8 +24,11 @@ import io.strimzi.api.kafka.model.KafkaConnector;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.Spec;
+import io.strimzi.api.kafka.model.nodepool.KafkaNodePool;
+import io.strimzi.api.kafka.model.nodepool.ProcessRoles;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.api.kafka.model.status.Status;
+import io.strimzi.operator.common.Annotations;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.enums.DeploymentTypes;
@@ -35,6 +38,7 @@ import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
 import io.strimzi.systemtest.resources.crd.KafkaConnectorResource;
 import io.strimzi.systemtest.resources.crd.KafkaMirrorMaker2Resource;
 import io.strimzi.systemtest.resources.crd.KafkaMirrorMakerResource;
+import io.strimzi.systemtest.resources.crd.KafkaNodePoolResource;
 import io.strimzi.systemtest.resources.crd.KafkaRebalanceResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
@@ -57,6 +61,7 @@ import io.strimzi.systemtest.resources.kubernetes.ValidatingWebhookConfiguration
 import io.strimzi.systemtest.resources.openshift.OperatorGroupResource;
 import io.strimzi.systemtest.resources.openshift.SubscriptionResource;
 import io.strimzi.systemtest.resources.operator.BundleResource;
+import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.HelmClient;
@@ -75,10 +80,12 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Random;
 import java.util.Stack;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
+import static io.strimzi.operator.common.Util.hashStub;
 import static java.util.Arrays.asList;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -97,6 +104,7 @@ public class ResourceManager {
 
     private static String coDeploymentName = Constants.STRIMZI_DEPLOYMENT_NAME;
     private static ResourceManager instance;
+    private static final Random RANDOM = new Random();
 
     public static synchronized ResourceManager getInstance() {
         if (instance == null) {
@@ -144,7 +152,8 @@ public class ResourceManager {
         new SecretResource(),
         new ValidatingWebhookConfigurationResource(),
         new SubscriptionResource(),
-        new OperatorGroupResource()
+        new OperatorGroupResource(),
+        new KafkaNodePoolResource()
     };
 
     @SafeVarargs
@@ -164,6 +173,19 @@ public class ResourceManager {
                         resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName());
             }
 
+            if (resource.getKind().equals(Kafka.RESOURCE_KIND)) {
+                // in case we want to run tests with KafkaNodePools enabled, we want to use it for all the Kafka resources
+                if (Environment.isKafkaNodePoolEnabled()) {
+                    Map<String, String> annotations = resource.getMetadata().getAnnotations();
+                    annotations.put(Annotations.ANNO_STRIMZI_IO_NODE_POOLS, "enabled");
+                    resource.getMetadata().setAnnotations(annotations);
+                }
+
+                // in case when Kafka contains "strimzi.io/node-pools: enabled" annotation, we want to create KafkaNodePool
+                // and configure it as Kafka resource
+                createKafkaNodePoolIfNeeded(testContext, (Kafka) resource);
+            }
+
             if (Environment.isKRaftModeEnabled()) {
                 if (Objects.equals(resource.getKind(), Kafka.RESOURCE_KIND)) {
                     // Remove TO when KRaft mode is enabled, because it is not supported
@@ -176,49 +198,9 @@ public class ResourceManager {
                 }
             }
 
-            // if it is parallel namespace test we are gonna replace resource a namespace
-            if (StUtils.isParallelNamespaceTest(testContext)) {
-                if (!Environment.isNamespaceRbacScope()) {
-                    final String namespace = testContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
-                    LOGGER.info("Using Namespace: {}", namespace);
-                    resource.getMetadata().setNamespace(namespace);
-                }
-            }
+            setNamespaceInResource(testContext, resource);
 
-            // If we are create resource in test case we annotate it with label. This is needed for filtering when
-            // we collect logs from Pods, ReplicaSets, Deployments etc.
-            Map<String, String> labels = null;
-            if (testContext.getTestMethod().isPresent()) {
-                String testCaseName = testContext.getRequiredTestMethod().getName();
-                // because label values `must be no more than 63 characters`
-                if (testCaseName.length() > 63) {
-                    // we cut to 62 characters
-                    testCaseName = testCaseName.substring(0, 62);
-                }
-
-                if (resource.getMetadata().getLabels() == null) {
-                    labels = new HashMap<>();
-                    labels.put(Constants.TEST_CASE_NAME_LABEL, testCaseName);
-                } else {
-                    labels = new HashMap<>(resource.getMetadata().getLabels());
-                    labels.put(Constants.TEST_CASE_NAME_LABEL, testCaseName);
-                }
-                resource.getMetadata().setLabels(labels);
-            } else {
-                // this is labeling for shared resources in @BeforeAll
-                if (testContext.getTestClass().isPresent()) {
-                    final String testSuiteName = StUtils.removePackageName(testContext.getRequiredTestClass().getName());
-
-                    if (resource.getMetadata().getLabels() == null) {
-                        labels = new HashMap<>();
-                        labels.put(Constants.TEST_SUITE_NAME_LABEL, testSuiteName);
-                    } else {
-                        labels = new HashMap<>(resource.getMetadata().getLabels());
-                        labels.put(Constants.TEST_SUITE_NAME_LABEL, testSuiteName);
-                    }
-                    resource.getMetadata().setLabels(labels);
-                }
-            }
+            labelResource(testContext, resource);
 
             // adding test.suite and test.case labels to the PodTemplate
             if (resource.getKind().equals(Constants.JOB)) {
@@ -246,6 +228,98 @@ public class ResourceManager {
                 }
                 assertTrue(waitResourceCondition(resource, ResourceCondition.readiness(type)),
                     String.format("Timed out waiting for %s %s/%s to be ready", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()));
+            }
+        }
+    }
+
+    private void createKafkaNodePoolIfNeeded(ExtensionContext testContext, Kafka resource) {
+        Map<String, String> annotations = resource.getMetadata().getAnnotations();
+
+        if (annotations.get(Annotations.ANNO_STRIMZI_IO_NODE_POOLS) != null && annotations.get(Annotations.ANNO_STRIMZI_IO_NODE_POOLS).equals("enabled")) {
+            List<ProcessRoles> nodeRoles = new ArrayList<>();
+            nodeRoles.add(ProcessRoles.BROKER);
+
+            if (Environment.isKRaftModeEnabled()) {
+                nodeRoles.add(ProcessRoles.CONTROLLER);
+            }
+
+            String nodePoolName = Constants.KAFKA_NODE_POOL_PREFIX + hashStub(resource.getMetadata().getName());
+
+            KafkaNodePool nodePool = KafkaNodePoolTemplates.defaultKafkaNodePool(nodePoolName, resource.getMetadata().getName(), resource.getSpec().getKafka().getReplicas())
+                .editOrNewMetadata()
+                    .withNamespace(resource.getMetadata().getNamespace())
+                .endMetadata()
+                .editOrNewSpec()
+                    .withRoles(nodeRoles)
+                    .withStorage(resource.getSpec().getKafka().getStorage())
+                .endSpec()
+                .build();
+
+            setNamespaceInResource(testContext, resource);
+
+            labelResource(testContext, resource);
+
+            ResourceType<KafkaNodePool> nodePoolType = findResourceType(nodePool);
+            nodePoolType.create(nodePool);
+
+            // add it to stack
+            synchronized (this) {
+                STORED_RESOURCES.computeIfAbsent(testContext.getDisplayName(), k -> new Stack<>());
+                STORED_RESOURCES.get(testContext.getDisplayName()).push(
+                    new ResourceItem<>(
+                        () -> deleteResource(nodePool),
+                        nodePool
+                    ));
+            }
+
+            nodePoolType.waitForReadiness(nodePool);
+        }
+    }
+
+    private <T extends HasMetadata> void labelResource(ExtensionContext testContext, T resource) {
+        // If we are create resource in test case we annotate it with label. This is needed for filtering when
+        // we collect logs from Pods, ReplicaSets, Deployments etc.
+        Map<String, String> labels;
+        if (testContext.getTestMethod().isPresent()) {
+            String testCaseName = testContext.getRequiredTestMethod().getName();
+            // because label values `must be no more than 63 characters`
+            if (testCaseName.length() > 63) {
+                // we cut to 62 characters
+                testCaseName = testCaseName.substring(0, 62);
+            }
+
+            if (resource.getMetadata().getLabels() == null) {
+                labels = new HashMap<>();
+                labels.put(Constants.TEST_CASE_NAME_LABEL, testCaseName);
+            } else {
+                labels = new HashMap<>(resource.getMetadata().getLabels());
+                labels.put(Constants.TEST_CASE_NAME_LABEL, testCaseName);
+            }
+            resource.getMetadata().setLabels(labels);
+        } else {
+            // this is labeling for shared resources in @BeforeAll
+            if (testContext.getTestClass().isPresent()) {
+                final String testSuiteName = StUtils.removePackageName(testContext.getRequiredTestClass().getName());
+
+                if (resource.getMetadata().getLabels() == null) {
+                    labels = new HashMap<>();
+                    labels.put(Constants.TEST_SUITE_NAME_LABEL, testSuiteName);
+                } else {
+                    labels = new HashMap<>(resource.getMetadata().getLabels());
+                    labels.put(Constants.TEST_SUITE_NAME_LABEL, testSuiteName);
+                }
+                resource.getMetadata().setLabels(labels);
+            }
+        }
+    }
+
+    private <T extends HasMetadata> void setNamespaceInResource(ExtensionContext testContext, T resource) {
+        // if it is parallel namespace test we are gonna replace resource a namespace
+        if (StUtils.isParallelNamespaceTest(testContext)) {
+            if (!Environment.isNamespaceRbacScope()) {
+                final String namespace = testContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
+                LOGGER.info("Using Namespace: {}", namespace);
+                resource.getMetadata().setNamespace(namespace);
             }
         }
     }

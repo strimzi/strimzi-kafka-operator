@@ -20,6 +20,7 @@ import io.strimzi.operator.cluster.model.KafkaConfiguration;
 import io.strimzi.operator.cluster.model.KafkaPool;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.nodepools.NodePoolUtils;
+import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import org.junit.jupiter.api.Test;
 
@@ -40,7 +41,7 @@ public class KafkaSpecCheckerWithNodePoolsTest {
                 .withNewMetadata()
                     .withName(NAME)
                     .withNamespace(NAMESPACE)
-                    .withAnnotations(Map.of(KafkaCluster.ANNO_STRIMZI_IO_NODE_POOLS, "enabled"))
+                    .withAnnotations(Map.of(Annotations.ANNO_STRIMZI_IO_NODE_POOLS, "enabled"))
                 .endMetadata()
                 .withNewSpec()
                     .withNewKafka()

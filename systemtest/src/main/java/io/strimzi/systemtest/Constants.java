@@ -192,6 +192,7 @@ public interface Constants {
      */
     String USE_KRAFT_MODE = "+UseKRaft";
     String USE_STABLE_CONNECT_IDENTITIES = "+StableConnectIdentities";
+    String USE_KAFKA_NODE_POOLS = "+KafkaNodePools";
 
     /**
      * Default value which allows execution of tests with any tags
@@ -435,6 +436,7 @@ public interface Constants {
     String WATCH_ALL_NAMESPACES = "*";
 
     String CLUSTER_KEY = "CLUSTER_NAME";
+    String KAFKA_NODE_POOL_KEY = "KAFKA_NODE_POOL";
     String TARGET_CLUSTER_KEY = "TARGET_CLUSTER_NAME";
     String TOPIC_KEY = "TOPIC_NAME";
     String TARGET_TOPIC_KEY = "TARGET_TOPIC_NAME";
@@ -478,4 +480,9 @@ public interface Constants {
      * Connect build image name
      */
     String ST_CONNECT_BUILD_IMAGE_NAME = "strimzi-sts-connect-build";
+
+    /**
+     * KafkaNodePools constants
+     */
+    String KAFKA_NODE_POOL_PREFIX = "kafka-pool-";
 }
