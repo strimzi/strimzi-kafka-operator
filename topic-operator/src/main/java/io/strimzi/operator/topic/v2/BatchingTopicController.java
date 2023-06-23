@@ -910,7 +910,7 @@ public class BatchingTopicController {
             }
         }
         HashSet<String> keysToRemove = configs.entries().stream()
-                .filter(configEntry -> !configEntry.isDefault())
+                .filter(configEntry -> configEntry.source() == ConfigEntry.ConfigSource.DYNAMIC_TOPIC_CONFIG)
                 .map(ConfigEntry::name).collect(Collectors.toCollection(HashSet::new));
         if (hasConfig(kt)) {
             keysToRemove.removeAll(kt.getSpec().getConfig().keySet());

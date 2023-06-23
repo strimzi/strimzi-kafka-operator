@@ -34,6 +34,7 @@ import org.apache.kafka.clients.admin.CreatePartitionsResult;
 import org.apache.kafka.clients.admin.CreateTopicsResult;
 import org.apache.kafka.clients.admin.DeleteTopicsResult;
 import org.apache.kafka.clients.admin.NewPartitionReassignment;
+import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.clients.admin.TopicDescription;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerRecord;
@@ -290,7 +291,7 @@ class TopicControllerIT {
             operator.start();
         }
     }
-
+    
     private void assertNotExistsInKafka(String expectedTopicName) throws InterruptedException {
         try {
             admin[0].describeTopics(Set.of(expectedTopicName)).topicNameValues().get(expectedTopicName).get();
@@ -830,6 +831,45 @@ class TopicControllerIT {
                 });
     }
 
+    @Test
+    public void shouldNotRemoveInheritedConfigs(
+            @BrokerConfig(name = "auto.create.topics.enable", value = "false")
+            @BrokerConfig(name = "compression.type", value = "snappy")
+            KafkaCluster kafkaCluster,
+            Admin admin) throws ExecutionException, InterruptedException, TimeoutException {
+
+        // given: a range of broker configs coming from a variety of sources
+        admin.incrementalAlterConfigs(Map.of(
+                new ConfigResource(ConfigResource.Type.BROKER, "0"), List.of(
+                        new AlterConfigOp(new ConfigEntry("log.cleaner.delete.retention.ms", "" + (1000L * 60 * 60)), AlterConfigOp.OpType.SET)),
+                new ConfigResource(ConfigResource.Type.BROKER, ""), List.of(
+                        new AlterConfigOp(new ConfigEntry("log.segment.delete.delay.ms", "" + (1000L * 60 * 60)), AlterConfigOp.OpType.SET)))).all().get();
+
+        TopicOperatorConfig config = topicOperatorConfig("ns", kafkaCluster, true, 500);
+        operatorAdmin = new Admin[]{Mockito.spy(Admin.create(config.adminClientConfig()))};
+
+        maybeStartOperator(config);
+
+        KafkaTopic kt = kafkaTopic("ns", "bar", SELECTOR, null, null, 1, 1,
+                Map.of("flush.messages", "1234"));
+        var barKt = createTopic(kafkaCluster, kt);
+        assertCreateSuccess(kt, barKt, Map.of("flush.messages", "1234"));
+
+        // when: resync
+
+        try (var logCaptor = LogCaptor.logMessageMatches2(BatchingLoop.LoopRunnable.LOGGER,
+                Level.DEBUG,
+                "\\[Batch #[0-9]+\\] Reconciled batch",
+                5L,
+                TimeUnit.SECONDS)) {
+            // Wait for a full reconciliation
+        }
+
+        // then: verify that only the expected methods were called on the admin (e.g. no incrementalAlterConfigs)
+        Mockito.verify(operatorAdmin[0], Mockito.never()).incrementalAlterConfigs(any());
+        Mockito.verify(operatorAdmin[0], Mockito.never()).incrementalAlterConfigs(any(), any());
+    }
+
     @ParameterizedTest
     @MethodSource("managedKafkaTopics")
     public void shouldUpdateTopicInKafkaWhenPartitionsIncreasedInKube(
@@ -1049,8 +1089,12 @@ class TopicControllerIT {
     }
 
     private static TopicOperatorConfig topicOperatorConfig(String ns, KafkaCluster kafkaCluster, boolean useFinalizer) {
+        return topicOperatorConfig(ns, kafkaCluster, useFinalizer, 10_000);
+    }
+
+    private static TopicOperatorConfig topicOperatorConfig(String ns, KafkaCluster kafkaCluster, boolean useFinalizer, long fullReconciliationIntervalMs) {
         return new TopicOperatorConfig(ns, Labels.fromMap(SELECTOR),
-                kafkaCluster.getBootstrapServers(), TopicControllerIT.class.getSimpleName(), 10_000,
+                kafkaCluster.getBootstrapServers(), TopicControllerIT.class.getSimpleName(), fullReconciliationIntervalMs,
                 false, "", "", "", "", "",
                 false, "", "", "", "",
                 useFinalizer,
