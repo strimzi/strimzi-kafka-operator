@@ -49,7 +49,7 @@ public class KafkaVersionsST extends AbstractST {
      */
     @ParameterizedTest(name = "Kafka version: {0}.version()")
     @MethodSource("io.strimzi.systemtest.utils.TestKafkaVersion#getSupportedKafkaVersions")
-    @KRaftNotSupported("Scram-sha is not supported by KRaft mode and is used in this test case")
+    @KRaftNotSupported("Kafka 3.4.0 and 3.4.1 does not support SCRAM-SHA authentication. This test should be enabled once we support only Kafka 3.5.0 and newer.")
     void testKafkaWithVersion(final TestKafkaVersion testKafkaVersion, ExtensionContext extensionContext) {
         final TestStorage testStorage = new TestStorage(extensionContext);
 

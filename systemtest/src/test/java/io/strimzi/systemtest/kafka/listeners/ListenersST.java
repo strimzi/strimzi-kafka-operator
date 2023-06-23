@@ -23,7 +23,6 @@ import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
-import io.strimzi.systemtest.annotations.KRaftNotSupported;
 import io.strimzi.systemtest.annotations.ParallelSuite;
 import io.strimzi.systemtest.kafkaclients.externalClients.ExternalKafkaClient;
 import io.strimzi.systemtest.annotations.OpenShiftOnly;
@@ -212,7 +211,6 @@ public class ListenersST extends AbstractST {
      */
     @ParallelNamespaceTest
     @Tag(INTERNAL_CLIENTS_USED)
-    @KRaftNotSupported("Scram-sha is not supported by KRaft mode and is used in this test case")
     void testSendMessagesPlainScramSha(ExtensionContext extensionContext) {
         final TestStorage testStorage = new TestStorage(extensionContext);
 
@@ -275,7 +273,6 @@ public class ListenersST extends AbstractST {
     @ParallelNamespaceTest
     @Tag(ACCEPTANCE)
     @Tag(INTERNAL_CLIENTS_USED)
-    @KRaftNotSupported("Scram-sha is not supported by KRaft mode and is used in this test case")
     void testSendMessagesTlsScramSha(ExtensionContext extensionContext) {
         final TestStorage testStorage = new TestStorage(extensionContext);
         final int passwordLength = 50;
@@ -346,7 +343,6 @@ public class ListenersST extends AbstractST {
     @ParallelNamespaceTest
     @Tag(ACCEPTANCE)
     @Tag(INTERNAL_CLIENTS_USED)
-    @KRaftNotSupported("Scram-sha is not supported by KRaft mode and is used in this test case")
     void testSendMessagesCustomListenerTlsScramSha(ExtensionContext extensionContext) {
         final TestStorage testStorage = new TestStorage(extensionContext);
 
@@ -2192,7 +2188,6 @@ public class ListenersST extends AbstractST {
     }
 
     @ParallelNamespaceTest
-    @KRaftNotSupported("Scram-sha is not supported by KRaft mode and is used in this test case")
     void testMessagesTlsScramShaWithPredefinedPassword(ExtensionContext extensionContext) {
         final TestStorage testStorage = new TestStorage(extensionContext);
 

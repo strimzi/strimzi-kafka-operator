@@ -31,7 +31,6 @@ public class UserOperatorConfigTest {
         ENV_VARS.put(UserOperatorConfig.CERTS_VALIDITY_DAYS.key(), "1000");
         ENV_VARS.put(UserOperatorConfig.CERTS_RENEWAL_DAYS.key(), "10");
         ENV_VARS.put(UserOperatorConfig.ACLS_ADMIN_API_SUPPORTED.key(), "false");
-        ENV_VARS.put(UserOperatorConfig.KRAFT_ENABLED.key(), "true");
         ENV_VARS.put(UserOperatorConfig.SCRAM_SHA_PASSWORD_LENGTH.key(), "20");
 
 
@@ -54,7 +53,6 @@ public class UserOperatorConfigTest {
         assertThat(config.getClientsCaValidityDays(), is(1000));
         assertThat(config.getClientsCaRenewalDays(), is(10));
         assertThat(config.isAclsAdminApiSupported(), is(false));
-        assertThat(config.isKraftEnabled(), is(true));
         assertThat(config.getScramPasswordLength(), is(20));
         assertThat(config.getMaintenanceWindows(), is(nullValue()));
         assertThat(config.getOperationTimeoutMs(), is(300_000L));
@@ -161,15 +159,6 @@ public class UserOperatorConfigTest {
 
         UserOperatorConfig config =  UserOperatorConfig.buildFromMap(envVars);
         assertThat(config.get(UserOperatorConfig.ACLS_ADMIN_API_SUPPORTED), is(Boolean.parseBoolean(UserOperatorConfig.ACLS_ADMIN_API_SUPPORTED.defaultValue())));
-    }
-
-    @Test
-    public void testFromMapKraftEnabledDefaults()  {
-        Map<String, String> envVars = new HashMap<>(UserOperatorConfigTest.ENV_VARS);
-        envVars.remove(UserOperatorConfig.KRAFT_ENABLED.key());
-
-        UserOperatorConfig config =  UserOperatorConfig.buildFromMap(envVars);
-        assertThat(config.get(UserOperatorConfig.KRAFT_ENABLED), is(Boolean.parseBoolean(UserOperatorConfig.KRAFT_ENABLED.defaultValue())));
     }
 
     @Test

@@ -7,7 +7,6 @@ package io.strimzi.operator.cluster.model;
 import io.strimzi.api.kafka.model.EntityOperatorSpec;
 import io.strimzi.api.kafka.model.KafkaClusterSpec;
 import io.strimzi.api.kafka.model.KafkaSpec;
-import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationScramSha512;
 import io.strimzi.api.kafka.model.storage.JbodStorage;
 
 import java.util.HashSet;
@@ -65,21 +64,6 @@ public class KRaftUtils {
 
                 if (jbod.getVolumes().size() > 1) {
                     errors.add("Using more than one disk in a JBOD storage is currently not supported when the UseKRaft feature gate is enabled");
-                }
-            }
-
-            // Has SCRAM-SHA-512 authentication
-            if (kafka.getListeners() != null)   {
-                boolean hasScramSha512 = kafka.getListeners().stream()
-                        .anyMatch(listener -> {
-                            if (listener.getAuth() == null || listener.getAuth().getType() == null)
-                                return false;
-
-                            return KafkaListenerAuthenticationScramSha512.SCRAM_SHA_512.equals(listener.getAuth().getType());
-                        });
-
-                if (hasScramSha512) {
-                    errors.add("Authentication of type 'scram-sha-512` is currently not supported when the UseKRaft feature gate is enabled");
                 }
             }
         } else {

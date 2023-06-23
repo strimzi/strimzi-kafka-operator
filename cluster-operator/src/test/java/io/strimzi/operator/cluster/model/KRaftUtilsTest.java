@@ -73,7 +73,7 @@ public class KRaftUtilsTest {
 
         InvalidResourceException ex = assertThrows(InvalidResourceException.class, () -> KRaftUtils.validateKafkaCrForKRaft(spec));
 
-        assertThat(ex.getMessage(), is("Kafka configuration is not valid: [Authentication of type 'scram-sha-512` is currently not supported when the UseKRaft feature gate is enabled, Using more than one disk in a JBOD storage is currently not supported when the UseKRaft feature gate is enabled]"));
+        assertThat(ex.getMessage(), is("Kafka configuration is not valid: [Using more than one disk in a JBOD storage is currently not supported when the UseKRaft feature gate is enabled]"));
     }
 
     @ParallelTest
@@ -151,24 +151,5 @@ public class KRaftUtilsTest {
         KRaftUtils.validateKafkaSpec(errors, kcs);
 
         assertThat(errors, is(Set.of()));
-    }
-
-    @ParallelTest
-    public void testKafkaScramSha512Listener() {
-        Set<String> errors = new HashSet<>(0);
-        KafkaClusterSpec kcs = new KafkaClusterSpecBuilder()
-                .withListeners(new GenericKafkaListenerBuilder()
-                        .withName("listener")
-                        .withPort(9092)
-                        .withTls(true)
-                        .withType(KafkaListenerType.INTERNAL)
-                        .withNewKafkaListenerAuthenticationScramSha512Auth()
-                        .endKafkaListenerAuthenticationScramSha512Auth()
-                        .build())
-                .build();
-
-        KRaftUtils.validateKafkaSpec(errors, kcs);
-
-        assertThat(errors, is(Set.of("Authentication of type 'scram-sha-512` is currently not supported when the UseKRaft feature gate is enabled")));
     }
 }

@@ -14,7 +14,6 @@ import io.strimzi.api.kafka.model.KafkaUserBuilder;
 import io.strimzi.api.kafka.model.KafkaUserSpec;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.annotations.IsolatedTest;
-import io.strimzi.systemtest.annotations.KRaftNotSupported;
 import io.strimzi.systemtest.enums.UserAuthType;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
@@ -39,7 +38,6 @@ public class UserScalabilityIsolatedST extends AbstractST {
     private static String topicName;
 
     @IsolatedTest
-    @KRaftNotSupported("Scram-sha is not supported by KRaft mode and is used in this test case")
     void testCreateAndAlterBigAmountOfScramShaUsers(ExtensionContext extensionContext) {
         final TestStorage testStorage = new TestStorage(extensionContext);
         testCreateAndAlterBigAmountOfUsers(extensionContext, testStorage, UserAuthType.ScramSha);

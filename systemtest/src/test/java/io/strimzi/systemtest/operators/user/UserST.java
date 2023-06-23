@@ -73,7 +73,6 @@ class UserST extends AbstractST {
     private String scraperPodName = "";
 
     @ParallelTest
-    @KRaftNotSupported("Scram-sha is not supported by KRaft mode and is used in this test case")
     void testUserWithNameMoreThan64Chars(ExtensionContext extensionContext) {
         String userWithLongName = "user" + "abcdefghijklmnopqrstuvxyzabcdefghijklmnopqrstuvxyzabcdefghijk"; // 65 character username
         String userWithCorrectName = "user-with-correct-name" + "abcdefghijklmnopqrstuvxyzabcdefghijklmnopq"; // 64 character username
@@ -109,7 +108,6 @@ class UserST extends AbstractST {
 
     @ParallelTest
     @Tag(ACCEPTANCE)
-    @KRaftNotSupported("Scram-sha is not supported by KRaft mode and is used in this test case")
     void testUpdateUser(ExtensionContext extensionContext) {
         String userName = mapWithTestUsers.get(extensionContext.getDisplayName());
 
@@ -171,7 +169,6 @@ class UserST extends AbstractST {
     }
 
     @ParallelTest
-    @KRaftNotSupported("Scram-sha is not supported by KRaft mode and is used in this test case")
     void testScramUserWithQuotas(ExtensionContext extensionContext) {
         KafkaUser user = KafkaUserTemplates.scramShaUser(namespace, userClusterName, "scramed-arnost").build();
 
@@ -248,7 +245,6 @@ class UserST extends AbstractST {
     }
 
     @ParallelNamespaceTest
-    @KRaftNotSupported("Scram-sha is not supported by KRaft mode and is used in this test case")
     void testCreatingUsersWithSecretPrefix(ExtensionContext extensionContext) {
         final TestStorage testStorage = new TestStorage(extensionContext, namespace);
 

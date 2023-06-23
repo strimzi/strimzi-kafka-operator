@@ -116,15 +116,14 @@ public class EntityOperator extends AbstractModel {
     /**
      * Create an Entity Operator from given desired resource
      *
-     * @param reconciliation The reconciliation
-     * @param kafkaAssembly desired resource with cluster configuration containing the Entity Operator one
-     * @param versions The versions.
-     * @param kraftEnabled Indicates whether KRaft is used in the Kafka cluster
-     * @param sharedEnvironmentProvider Shared environment provider
+     * @param reconciliation                The reconciliation
+     * @param kafkaAssembly                 Desired resource with cluster configuration containing the Entity Operator one
+     * @param versions                      The supported Kafka versions
+     * @param sharedEnvironmentProvider     Shared environment provider
      *
      * @return Entity Operator instance, null if not configured in the ConfigMap
      */
-    public static EntityOperator fromCrd(Reconciliation reconciliation, Kafka kafkaAssembly, KafkaVersion.Lookup versions, boolean kraftEnabled, SharedEnvironmentProvider sharedEnvironmentProvider) {
+    public static EntityOperator fromCrd(Reconciliation reconciliation, Kafka kafkaAssembly, KafkaVersion.Lookup versions, SharedEnvironmentProvider sharedEnvironmentProvider) {
         EntityOperatorSpec entityOperatorSpec = kafkaAssembly.getSpec().getEntityOperator();
 
         if (entityOperatorSpec != null
@@ -132,7 +131,7 @@ public class EntityOperator extends AbstractModel {
             EntityOperator result = new EntityOperator(reconciliation, kafkaAssembly, sharedEnvironmentProvider);
 
             EntityTopicOperator topicOperator = EntityTopicOperator.fromCrd(reconciliation, kafkaAssembly, sharedEnvironmentProvider);
-            EntityUserOperator userOperator = EntityUserOperator.fromCrd(reconciliation, kafkaAssembly, kraftEnabled, sharedEnvironmentProvider);
+            EntityUserOperator userOperator = EntityUserOperator.fromCrd(reconciliation, kafkaAssembly, sharedEnvironmentProvider);
 
             result.tlsSidecar = entityOperatorSpec.getTlsSidecar();
             result.topicOperator = topicOperator;

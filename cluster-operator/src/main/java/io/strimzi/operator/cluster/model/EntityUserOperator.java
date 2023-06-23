@@ -65,7 +65,6 @@ public class EntityUserOperator extends AbstractModel implements SupportsLogging
     /* test */ static final String ENV_VAR_EO_KEY_SECRET_NAME = "STRIMZI_EO_KEY_SECRET_NAME";
     /* test */ static final String ENV_VAR_SECRET_PREFIX = "STRIMZI_SECRET_PREFIX";
     /* test */ static final String ENV_VAR_ACLS_ADMIN_API_SUPPORTED = "STRIMZI_ACLS_ADMIN_API_SUPPORTED";
-    /* test */ static final String ENV_VAR_KRAFT_ENABLED = "STRIMZI_KRAFT_ENABLED";
     /* test */ static final String ENV_VAR_MAINTENANCE_TIME_WINDOWS = "STRIMZI_MAINTENANCE_TIME_WINDOWS";
 
     // Volume name of the temporary volume used by the UO container
@@ -82,7 +81,6 @@ public class EntityUserOperator extends AbstractModel implements SupportsLogging
     private ResourceTemplate templateRoleBinding;
 
     private boolean aclsAdminApiSupported = false;
-    private boolean kraftEnabled = false;
     private List<String> maintenanceWindows;
     private LoggingModel logging;
 
@@ -108,14 +106,13 @@ public class EntityUserOperator extends AbstractModel implements SupportsLogging
      * Create an Entity User Operator from given desired resource. When User Operator (Or Entity Operator) are not
      * enabled, it returns null.
      *
-     * @param reconciliation The reconciliation
-     * @param kafkaAssembly desired resource with cluster configuration containing the Entity User Operator one
-     * @param kraftEnabled Indicates whether KRaft is enabled int he Kafka cluster
-     * @param sharedEnvironmentProvider Shared environment provider
+     * @param reconciliation                The reconciliation
+     * @param kafkaAssembly                 Desired resource with cluster configuration containing the Entity User Operator one
+     * @param sharedEnvironmentProvider     Shared environment provider
      *
      * @return Entity User Operator instance, null if not configured
      */
-    public static EntityUserOperator fromCrd(Reconciliation reconciliation, Kafka kafkaAssembly, boolean kraftEnabled, SharedEnvironmentProvider sharedEnvironmentProvider) {
+    public static EntityUserOperator fromCrd(Reconciliation reconciliation, Kafka kafkaAssembly, SharedEnvironmentProvider sharedEnvironmentProvider) {
         if (kafkaAssembly.getSpec().getEntityOperator() != null
                 && kafkaAssembly.getSpec().getEntityOperator().getUserOperator() != null) {
             EntityUserOperatorSpec userOperatorSpec = kafkaAssembly.getSpec().getEntityOperator().getUserOperator();
@@ -156,8 +153,6 @@ public class EntityUserOperator extends AbstractModel implements SupportsLogging
                 // plugin. This information is passed to the User Operator.
                 result.aclsAdminApiSupported = kafkaAssembly.getSpec().getKafka().getAuthorization().supportsAdminApi();
             }
-
-            result.kraftEnabled = kraftEnabled;
 
             if (kafkaAssembly.getSpec().getMaintenanceTimeWindows() != null)    {
                 result.maintenanceWindows = kafkaAssembly.getSpec().getMaintenanceTimeWindows();
@@ -201,7 +196,6 @@ public class EntityUserOperator extends AbstractModel implements SupportsLogging
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_STRIMZI_GC_LOG_ENABLED, String.valueOf(gcLoggingEnabled)));
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_SECRET_PREFIX, secretPrefix));
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_ACLS_ADMIN_API_SUPPORTED, String.valueOf(aclsAdminApiSupported)));
-        varList.add(ContainerUtils.createEnvVar(ENV_VAR_KRAFT_ENABLED, String.valueOf(kraftEnabled)));
         JvmOptionUtils.javaOptions(varList, jvmOptions);
 
         // Add shared environment variables used for all containers
