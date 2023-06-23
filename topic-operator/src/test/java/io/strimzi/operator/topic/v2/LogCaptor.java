@@ -207,21 +207,21 @@ public class LogCaptor implements AutoCloseable {
     static class CaptorAppender extends AbstractAppender {
 
         private final Predicate<LogEvent> predicate;
-        private final Consumer<LogEvent> latch;
+        private final Consumer<LogEvent> consumer;
 
         public CaptorAppender(final String name,
                               final Filter filter,
                               Predicate<LogEvent> predicate,
-                              Consumer<LogEvent> latch) {
+                              Consumer<LogEvent> consumer) {
             super(name, filter, null, false, null);
             this.predicate = predicate;
-            this.latch = latch;
+            this.consumer = consumer;
         }
 
         @Override
         public void append(LogEvent event) {
             if (predicate.test(event)) {
-                latch.accept(event);
+                consumer.accept(event);
             }
         }
     }
