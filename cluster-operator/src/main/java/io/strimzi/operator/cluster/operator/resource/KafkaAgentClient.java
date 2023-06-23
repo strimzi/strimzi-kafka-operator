@@ -98,16 +98,12 @@ class KafkaAgentClient {
         }
     }
 
-    protected String doGet(URI uri) {
+    String doGet(URI uri) {
         try {
             HttpRequest req = HttpRequest.newBuilder()
                     .uri(uri)
                     .GET()
                     .build();
-
-            if (httpClient == null) {
-                httpClient = createHttpClient();
-            }
 
             var response = httpClient.send(req, HttpResponse.BodyHandlers.ofString());
             if (response.statusCode() != 200) {
