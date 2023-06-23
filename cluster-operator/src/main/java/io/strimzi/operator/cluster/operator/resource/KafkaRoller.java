@@ -353,7 +353,6 @@ public class KafkaRoller {
      * @throws ForceableProblem         Some error. Not thrown when finalAttempt==true.
      * @throws UnforceableProblem       Some error, still thrown when finalAttempt==true.
      */
-    @SuppressFBWarnings("RCN_REDUNDANT_NULLCHECK_OF_NONNULL_VALUE")
     @SuppressWarnings({"checkstyle:CyclomaticComplexity"})
     private void restartIfNecessary(NodeRef nodeRef, RestartContext restartContext)
             throws Exception {

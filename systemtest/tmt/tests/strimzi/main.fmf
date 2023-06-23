@@ -16,7 +16,7 @@ adjust:
 
 /smoke:
   summary: Run smoke strimzi test suite
-  component: [smoke]
+  tags: [smoke]
   duration: 20m
   tier: 1
   environment+:
@@ -24,7 +24,7 @@ adjust:
 
 /upgrade:
   summary: Run upgrade strimzi test suite
-  component: [strimzi, kafka, upgrade]
+  tags: [strimzi, kafka, upgrade]
   duration: 5h
   tier: 2
   environment+:
@@ -32,7 +32,7 @@ adjust:
 
 /regression-operators:
   summary: Run regression strimzi test suite
-  component: [strimzi, kafka, regression, operators]
+  tags: [strimzi, kafka, regression, operators]
   duration: 10h
   tier: 2
   environment+:
@@ -40,7 +40,7 @@ adjust:
 
 /regression-components:
   summary: Run regression strimzi test suite
-  component: [strimzi, kafka, regression, components]
+  tags: [strimzi, kafka, regression, components]
   duration: 12h
   tier: 2
   environment+:
@@ -48,7 +48,7 @@ adjust:
 
 /kraft-operators:
   summary: Run regression kraft strimzi test suite
-  component: [strimzi, kafka, kraft, operators]
+  tags: [strimzi, kafka, kraft, operators]
   duration: 8h
   tier: 2
   environment+:
@@ -57,9 +57,25 @@ adjust:
 
 /kraft-components:
   summary: Run regression kraft strimzi test suite
-  component: [strimzi, kafka, kraft, components]
+  tags: [strimzi, kafka, kraft, components]
   duration: 8h
   tier: 2
   environment+:
     TEST_PROFILE: components
     STRIMZI_FEATURE_GATES: "+UseKRaft,+StableConnectIdentities"
+
+/acceptance:
+  summary: Run acceptance strimzi test suite
+  tags: [strimzi, kafka, acceptance]
+  duration: 5h
+  tier: 2
+  environment+:
+    TEST_PROFILE: acceptance
+
+/sanity:
+  summary: Run sanity strimzi test suite
+  tags: [strimzi, kafka, sanity]
+  duration: 5h
+  tier: 2
+  environment+:
+    TEST_PROFILE: sanity

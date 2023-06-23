@@ -80,7 +80,7 @@ public class EntityOperatorReconciler {
     ) {
         this.reconciliation = reconciliation;
         this.operationTimeoutMs = config.getOperationTimeoutMs();
-        this.entityOperator = EntityOperator.fromCrd(reconciliation, kafkaAssembly, versions, config.featureGates().useKRaftEnabled());
+        this.entityOperator = EntityOperator.fromCrd(reconciliation, kafkaAssembly, versions, config.featureGates().useKRaftEnabled(), supplier.sharedEnvironmentProvider);
         this.clusterCa = clusterCa;
         this.maintenanceWindows = kafkaAssembly.getSpec().getMaintenanceTimeWindows();
         this.isNetworkPolicyGeneration = config.isNetworkPolicyGeneration();
@@ -114,7 +114,7 @@ public class EntityOperatorReconciler {
                 .compose(i -> networkPolicy())
                 .compose(i -> topicOperatorRoleBindings())
                 .compose(i -> userOperatorRoleBindings())
-                .compose(i -> topicOperagorConfigMap())
+                .compose(i -> topicOperatorConfigMap())
                 .compose(i -> userOperatorConfigMap())
                 .compose(i -> deleteOldEntityOperatorSecret())
                 .compose(i -> topicOperatorSecret(clock))
@@ -275,7 +275,7 @@ public class EntityOperatorReconciler {
      *
      * @return  Future which completes when the reconciliation is done
      */
-    protected Future<Void> topicOperagorConfigMap() {
+    protected Future<Void> topicOperatorConfigMap() {
         if (entityOperator != null && entityOperator.topicOperator() != null) {
             return MetricsAndLoggingUtils.metricsAndLogging(reconciliation, configMapOperator, entityOperator.topicOperator().logging(), null)
                     .compose(logging ->

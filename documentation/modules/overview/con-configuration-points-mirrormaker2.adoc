@@ -24,7 +24,7 @@ MirrorMaker 2 uses source and target cluster configuration as follows:
 Topic and consumer group replication is specified as comma-separated lists or regular expression patterns.
 
 [discrete]
-=== Example YAML showing MirrorMaker 2 configuration
+== Example YAML showing MirrorMaker 2 configuration
 
 [source,yaml,subs="+quotes,attributes"]
 ----

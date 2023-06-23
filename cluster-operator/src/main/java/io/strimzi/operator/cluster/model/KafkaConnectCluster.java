@@ -71,6 +71,7 @@ import io.strimzi.operator.cluster.model.securityprofiles.ContainerSecurityProvi
 import io.strimzi.operator.cluster.model.securityprofiles.PodSecurityProviderContextImpl;
 import io.strimzi.operator.common.MetricsAndLogging;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.cluster.operator.resource.SharedEnvironmentProvider;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.OrderedProperties;
@@ -169,9 +170,10 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
      *
      * @param reconciliation The reconciliation
      * @param resource Kubernetes resource with metadata containing the namespace and cluster name
+     * @param sharedEnvironmentProvider Shared environment provider
      */
-    protected KafkaConnectCluster(Reconciliation reconciliation, HasMetadata resource) {
-        this(reconciliation, resource, KafkaConnectResources.deploymentName(resource.getMetadata().getName()), COMPONENT_TYPE);
+    protected KafkaConnectCluster(Reconciliation reconciliation, HasMetadata resource, SharedEnvironmentProvider sharedEnvironmentProvider) {
+        this(reconciliation, resource, KafkaConnectResources.deploymentName(resource.getMetadata().getName()), COMPONENT_TYPE, sharedEnvironmentProvider);
     }
 
     /**
@@ -179,11 +181,12 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
      *
      * @param reconciliation The reconciliation
      * @param resource Kubernetes resource with metadata containing the namespace and cluster name
-     *                 @param name              Name of the Strimzi component usually consisting from the cluster name and component type
+     * @param name              Name of the Strimzi component usually consisting from the cluster name and component type
      * @param componentType configurable allow other classes to extend this class
+     * @param sharedEnvironmentProvider Shared environment provider
      */
-    protected KafkaConnectCluster(Reconciliation reconciliation, HasMetadata resource, String name, String componentType) {
-        super(reconciliation, resource, name, componentType);
+    protected KafkaConnectCluster(Reconciliation reconciliation, HasMetadata resource, String name, String componentType, SharedEnvironmentProvider sharedEnvironmentProvider) {
+        super(reconciliation, resource, name, componentType, sharedEnvironmentProvider);
 
         this.serviceName = KafkaConnectResources.serviceName(cluster);
         this.loggingAndMetricsConfigMapName = KafkaConnectResources.metricsAndLogConfigMapName(cluster);
@@ -195,11 +198,15 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
      * @param reconciliation    Reconciliation marker
      * @param kafkaConnect      Kafka connect custom resource
      * @param versions          Supported Kafka versions
+     * @param sharedEnvironmentProvider Shared environment provider
      *
      * @return  Instance of the Kafka Connect model class
      */
-    public static KafkaConnectCluster fromCrd(Reconciliation reconciliation, KafkaConnect kafkaConnect, KafkaVersion.Lookup versions) {
-        return fromSpec(reconciliation, kafkaConnect.getSpec(), versions, new KafkaConnectCluster(reconciliation, kafkaConnect));
+    public static KafkaConnectCluster fromCrd(Reconciliation reconciliation,
+                                              KafkaConnect kafkaConnect,
+                                              KafkaVersion.Lookup versions,
+                                              SharedEnvironmentProvider sharedEnvironmentProvider) {
+        return fromSpec(reconciliation, kafkaConnect.getSpec(), versions, new KafkaConnectCluster(reconciliation, kafkaConnect, sharedEnvironmentProvider));
     }
 
     /**
@@ -622,7 +629,7 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_INIT_RACK_TOPOLOGY_KEY, rack.getTopologyKey()));
 
         // Add shared environment variables used for all containers
-        varList.addAll(ContainerUtils.requiredEnvVars());
+        varList.addAll(sharedEnvironmentProvider.variables());
 
         ContainerUtils.addContainerEnvsToExistingEnvs(reconciliation, varList, templateInitContainer);
 
@@ -647,9 +654,9 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_CONNECT_BOOTSTRAP_SERVERS, bootstrapServers));
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_STRIMZI_KAFKA_GC_LOG_ENABLED, String.valueOf(gcLoggingEnabled)));
 
-        ModelUtils.heapOptions(varList, 75, 0L, jvmOptions, resources);
-        ModelUtils.jvmPerformanceOptions(varList, jvmOptions);
-        ModelUtils.jvmSystemProperties(varList, jvmOptions);
+        JvmOptionUtils.heapOptions(varList, 75, 0L, jvmOptions, resources);
+        JvmOptionUtils.jvmPerformanceOptions(varList, jvmOptions);
+        JvmOptionUtils.jvmSystemProperties(varList, jvmOptions);
 
         if (tls != null) {
             populateTLSEnvVars(varList);
@@ -664,7 +671,7 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
         varList.addAll(jmx.envVars());
 
         // Add shared environment variables used for all containers
-        varList.addAll(ContainerUtils.requiredEnvVars());
+        varList.addAll(sharedEnvironmentProvider.variables());
 
         varList.addAll(getExternalConfigurationEnvVars());
 

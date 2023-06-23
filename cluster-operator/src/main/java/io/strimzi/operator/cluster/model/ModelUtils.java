@@ -21,8 +21,6 @@ import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.strimzi.api.kafka.model.CertificateAuthority;
-import io.strimzi.api.kafka.model.JvmOptions;
-import io.strimzi.api.kafka.model.SystemProperty;
 import io.strimzi.api.kafka.model.TlsSidecar;
 import io.strimzi.api.kafka.model.TlsSidecarLogLevel;
 import io.strimzi.api.kafka.model.storage.Storage;
@@ -37,7 +35,6 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collections;
 import java.util.HashMap;
@@ -52,10 +49,6 @@ import static java.util.Collections.emptyMap;
  * These are generally to be used within the classes that extend the AbstractModel class
  */
 public class ModelUtils {
-    /**
-     * Default JVM -Xms setting
-     */
-    protected static final String DEFAULT_JVM_XMS = "128M";
 
     private ModelUtils() {}
 
@@ -319,17 +312,6 @@ public class ModelUtils {
                 .orElse(Collections.emptyList());
     }
 
-    private static String getJavaSystemPropertiesToString(List<SystemProperty> javaSystemProperties) {
-        if (javaSystemProperties == null) {
-            return null;
-        }
-        List<String> javaSystemPropertiesList = new ArrayList<>(javaSystemProperties.size());
-        for (SystemProperty property: javaSystemProperties) {
-            javaSystemPropertiesList.add("-D" + property.getName() + "=" + property.getValue());
-        }
-        return String.join(" ", javaSystemPropertiesList);
-    }
-
     /**
      * This method transforms a String into a List of Strings, where each entry is an uncommented line of input.
      * The lines beginning with '#' (comments) are ignored.
@@ -339,170 +321,13 @@ public class ModelUtils {
     public static List<String> getLinesWithoutCommentsAndEmptyLines(String config) {
         List<String> validLines = new ArrayList<>();
         if (config != null) {
-            List<String> allLines = Arrays.asList(config.split("\\r?\\n"));
-
-            for (String line : allLines) {
+            for (String line : config.split("\\r?\\n")) {
                 if (!line.isEmpty() && !line.matches("\\s*\\#.*")) {
                     validLines.add(line);
                 }
             }
         }
         return validLines;
-    }
-
-    /**
-     * Get the set of JVM options, bringing the Java system properties as well, and fill corresponding Strimzi environment variables
-     * in order to pass them to the running application on the command line
-     *
-     * @param envVars environment variables list to put the JVM options and Java system properties
-     * @param jvmOptions JVM options
-     */
-    public static void javaOptions(List<EnvVar> envVars, JvmOptions jvmOptions) {
-        StringBuilder strimziJavaOpts = new StringBuilder();
-        String xms = jvmOptions != null ? jvmOptions.getXms() : null;
-        if (xms != null) {
-            strimziJavaOpts.append("-Xms").append(xms);
-        }
-
-        String xmx = jvmOptions != null ? jvmOptions.getXmx() : null;
-        if (xmx != null) {
-            strimziJavaOpts.append(" -Xmx").append(xmx);
-        }
-
-        Map<String, String> xx = jvmOptions != null ? jvmOptions.getXx() : null;
-        if (xx != null) {
-            xx.forEach((k, v) -> {
-                strimziJavaOpts.append(' ').append("-XX:");
-
-                if ("true".equalsIgnoreCase(v))   {
-                    strimziJavaOpts.append("+").append(k);
-                } else if ("false".equalsIgnoreCase(v)) {
-                    strimziJavaOpts.append("-").append(k);
-                } else  {
-                    strimziJavaOpts.append(k).append("=").append(v);
-                }
-            });
-        }
-
-        String optsTrim = strimziJavaOpts.toString().trim();
-        if (!optsTrim.isEmpty()) {
-            envVars.add(ContainerUtils.createEnvVar(AbstractModel.ENV_VAR_STRIMZI_JAVA_OPTS, optsTrim));
-        }
-
-        List<SystemProperty> javaSystemProperties = jvmOptions != null ? jvmOptions.getJavaSystemProperties() : null;
-        if (javaSystemProperties != null) {
-            String propsTrim = ModelUtils.getJavaSystemPropertiesToString(javaSystemProperties).trim();
-            if (!propsTrim.isEmpty()) {
-                envVars.add(ContainerUtils.createEnvVar(AbstractModel.ENV_VAR_STRIMZI_JAVA_SYSTEM_PROPERTIES, propsTrim));
-            }
-        }
-    }
-
-    /**
-     * Adds the STRIMZI_JAVA_SYSTEM_PROPERTIES variable to the EnvVar list if any system properties were specified
-     * through the provided JVM options
-     *
-     * @param envVars list of the Environment Variables to add to
-     * @param jvmOptions JVM options
-     */
-    public static void jvmSystemProperties(List<EnvVar> envVars, JvmOptions jvmOptions) {
-        if (jvmOptions != null) {
-            String jvmSystemPropertiesString = ModelUtils.getJavaSystemPropertiesToString(jvmOptions.getJavaSystemProperties());
-            if (jvmSystemPropertiesString != null && !jvmSystemPropertiesString.isEmpty()) {
-                envVars.add(ContainerUtils.createEnvVar(AbstractModel.ENV_VAR_STRIMZI_JAVA_SYSTEM_PROPERTIES, jvmSystemPropertiesString));
-            }
-        }
-    }
-
-    /**
-     * Adds the KAFKA_JVM_PERFORMANCE_OPTS variable to the EnvVar list if any performance related options were specified
-     * through the provided JVM options
-     *
-     * @param envVars list of the Environment Variables to add to
-     * @param jvmOptions JVM options
-     */
-    public static void jvmPerformanceOptions(List<EnvVar> envVars, JvmOptions jvmOptions) {
-        StringBuilder jvmPerformanceOpts = new StringBuilder();
-
-        Map<String, String> xx = jvmOptions != null ? jvmOptions.getXx() : null;
-        if (xx != null) {
-            xx.forEach((k, v) -> {
-                jvmPerformanceOpts.append(' ').append("-XX:");
-
-                if ("true".equalsIgnoreCase(v))   {
-                    jvmPerformanceOpts.append("+").append(k);
-                } else if ("false".equalsIgnoreCase(v)) {
-                    jvmPerformanceOpts.append("-").append(k);
-                } else  {
-                    jvmPerformanceOpts.append(k).append("=").append(v);
-                }
-            });
-        }
-
-        String jvmPerformanceOptsString = jvmPerformanceOpts.toString().trim();
-        if (!jvmPerformanceOptsString.isEmpty()) {
-            envVars.add(ContainerUtils.createEnvVar(AbstractModel.ENV_VAR_KAFKA_JVM_PERFORMANCE_OPTS, jvmPerformanceOptsString));
-        }
-    }
-
-    /**
-     * Adds KAFKA_HEAP_OPTS variable to the EnvVar list if any heap related options were specified through the provided JVM options
-     * If Xmx Java Options are not set STRIMZI_DYNAMIC_HEAP_PERCENTAGE and STRIMZI_DYNAMIC_HEAP_MAX may also be set by using the ResourceRequirements
-     *
-     * @param envVars list of the Environment Variables to add to
-     * @param dynamicHeapPercentage value to set for the STRIMZI_DYNAMIC_HEAP_PERCENTAGE
-     * @param dynamicHeapMaxBytes value to set for the STRIMZI_DYNAMIC_HEAP_MAX
-     * @param jvmOptions JVM options
-     * @param resources the resource requirements
-     */
-    public static void heapOptions(List<EnvVar> envVars, int dynamicHeapPercentage, long dynamicHeapMaxBytes, JvmOptions jvmOptions, ResourceRequirements resources) {
-        if (dynamicHeapPercentage <= 0 || dynamicHeapPercentage > 100)  {
-            throw new RuntimeException("The Heap percentage " + dynamicHeapPercentage + " is invalid. It has to be >0 and <= 100.");
-        }
-
-        StringBuilder kafkaHeapOpts = new StringBuilder();
-
-        String xms = jvmOptions != null ? jvmOptions.getXms() : null;
-        if (xms != null) {
-            kafkaHeapOpts.append("-Xms")
-                    .append(xms);
-        }
-
-        String xmx = jvmOptions != null ? jvmOptions.getXmx() : null;
-        if (xmx != null) {
-            // Honour user provided explicit max heap
-            kafkaHeapOpts.append(' ').append("-Xmx").append(xmx);
-        } else {
-            // Get the resources => if requests are set, take request. If requests are not set, try limits
-            Quantity configuredMemory = null;
-            if (resources != null)  {
-                if (resources.getRequests() != null && resources.getRequests().get("memory") != null)    {
-                    configuredMemory = resources.getRequests().get("memory");
-                } else if (resources.getLimits() != null && resources.getLimits().get("memory") != null)   {
-                    configuredMemory = resources.getLimits().get("memory");
-                }
-            }
-
-            if (configuredMemory != null) {
-                // Delegate to the container to figure out only when CGroup memory limits are defined to prevent allocating
-                // too much memory on the kubelet.
-
-                envVars.add(ContainerUtils.createEnvVar(AbstractModel.ENV_VAR_DYNAMIC_HEAP_PERCENTAGE, Integer.toString(dynamicHeapPercentage)));
-
-                if (dynamicHeapMaxBytes > 0) {
-                    envVars.add(ContainerUtils.createEnvVar(AbstractModel.ENV_VAR_DYNAMIC_HEAP_MAX, Long.toString(dynamicHeapMaxBytes)));
-                }
-            } else if (xms == null) {
-                // When no memory limit, `Xms`, and `Xmx` are defined then set a default `Xms` and
-                // leave `Xmx` undefined.
-                kafkaHeapOpts.append("-Xms").append(DEFAULT_JVM_XMS);
-            }
-        }
-
-        String kafkaHeapOptsString = kafkaHeapOpts.toString().trim();
-        if (!kafkaHeapOptsString.isEmpty()) {
-            envVars.add(ContainerUtils.createEnvVar(AbstractModel.ENV_VAR_KAFKA_HEAP_OPTS, kafkaHeapOptsString));
-        }
     }
 
     /**
@@ -656,7 +481,7 @@ public class ModelUtils {
     public static void validateComputeResources(ResourceRequirements resources, String path) {
         List<String> errors = ModelUtils.validateComputeResources(resources, "cpu", path);
         errors.addAll(ModelUtils.validateComputeResources(resources, "memory", path));
-        if (errors.size() > 0) {
+        if (!errors.isEmpty()) {
             throw new InvalidResourceException(errors.toString());
         }
     }

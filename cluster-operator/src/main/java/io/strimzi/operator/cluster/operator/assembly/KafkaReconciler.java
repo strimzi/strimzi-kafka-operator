@@ -196,8 +196,8 @@ public class KafkaReconciler {
         this.kafkaNodePoolCrs = nodePools;
 
         // We prepare the KafkaPool models and create the KafkaCluster model
-        List<KafkaPool> pools = NodePoolUtils.createKafkaPools(reconciliation, kafkaCr, nodePools, oldStorage, currentPods, config.featureGates().useKRaftEnabled());
-        this.kafka = KafkaCluster.fromCrd(reconciliation, kafkaCr, pools, config.versions(), config.featureGates().useKRaftEnabled());
+        List<KafkaPool> pools = NodePoolUtils.createKafkaPools(reconciliation, kafkaCr, nodePools, oldStorage, currentPods, config.featureGates().useKRaftEnabled(), supplier.sharedEnvironmentProvider);
+        this.kafka = KafkaCluster.fromCrd(reconciliation, kafkaCr, pools, config.versions(), config.featureGates().useKRaftEnabled(), supplier.sharedEnvironmentProvider);
 
         // We set the user-configured inter.broker.protocol.version if needed (when not set by the user)
         if (versionChange.interBrokerProtocolVersion() != null) {

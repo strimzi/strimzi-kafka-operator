@@ -5549,6 +5549,12 @@ spec:
                   topicRegex:
                     type: string
                     description: Regular expression to specify which topics to collect. Default value is `.*`.
+                  groupExcludeRegex:
+                    type: string
+                    description: Regular expression to specify which consumer groups to exclude.
+                  topicExcludeRegex:
+                    type: string
+                    description: Regular expression to specify which topics to exclude.
                   resources:
                     type: object
                     properties:

@@ -16,6 +16,16 @@ if [ -n "$KAFKA_EXPORTER_TOPIC_REGEX" ]; then
     topicregex="--topic.filter=\""${KAFKA_EXPORTER_TOPIC_REGEX}"\""
 fi
 
+if [ -n "$KAFKA_EXPORTER_GROUP_EXCLUDE_REGEX" ]; then
+    # shellcheck disable=SC2027
+    groupExcludeRegex="--group.exclude=\""${KAFKA_EXPORTER_GROUP_EXCLUDE_REGEX}"\""
+fi
+
+if [ -n "$KAFKA_EXPORTER_TOPIC_EXCLUDE_REGEX" ]; then
+    # shellcheck disable=SC2027
+    topicExcludeRegex="--topic.exclude=\""${KAFKA_EXPORTER_TOPIC_EXCLUDE_REGEX}"\""
+fi
+
 if [ "$KAFKA_EXPORTER_ENABLE_SARAMA" = "true" ]; then
     saramaenable="--log.enable-sarama"
 fi
@@ -47,6 +57,8 @@ cat <<EOT > /tmp/run.sh
 $KAFKA_EXPORTER_HOME/kafka_exporter \
 $groupregex \
 $topicregex \
+$groupExcludeRegex \
+$topicExcludeRegex \
 $tls \
 $kafkaserver \
 $saramaenable \

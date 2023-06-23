@@ -21,6 +21,7 @@ import io.strimzi.api.kafka.model.template.PodTemplate;
 import io.strimzi.api.kafka.model.template.ResourceTemplate;
 import io.strimzi.operator.cluster.model.nodepools.NodeIdAssignment;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.cluster.operator.resource.SharedEnvironmentProvider;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.resource.StatusUtils;
 
@@ -81,6 +82,7 @@ public class KafkaPool extends AbstractModel {
      * @param componentName     Name of the component
      * @param ownerReference    Owner reference which should be used for this component.
      * @param idAssignment      Assignment of node IDs
+     * @param sharedEnvironmentProvider Shared environment provider
      */
     private KafkaPool(
             Reconciliation reconciliation,
@@ -88,7 +90,8 @@ public class KafkaPool extends AbstractModel {
             KafkaNodePool pool,
             String componentName,
             OwnerReference ownerReference,
-            NodeIdAssignment idAssignment
+            NodeIdAssignment idAssignment,
+            SharedEnvironmentProvider sharedEnvironmentProvider
     ) {
         super(
                 reconciliation,
@@ -109,7 +112,8 @@ public class KafkaPool extends AbstractModel {
                         .withKubernetesInstance(kafka.getMetadata().getName())
                         .withKubernetesPartOf(kafka.getMetadata().getName())
                         .withKubernetesManagedBy(STRIMZI_CLUSTER_OPERATOR_NAME),
-                ownerReference
+                ownerReference,
+                sharedEnvironmentProvider
         );
 
         this.poolName = pool.getMetadata().getName();
@@ -127,6 +131,7 @@ public class KafkaPool extends AbstractModel {
      *                          the Kafka CR)
      * @param ownerReference    Owner reference which should be used for this component. This should be the KafkaNodePool
      *                          CR for regular pool or the Kafka CR for virtual node pool.
+     * @param sharedEnvironmentProvider Shared environment provider
      *
      * @return Kafka pool instance
      */
@@ -136,12 +141,13 @@ public class KafkaPool extends AbstractModel {
             KafkaNodePool pool,
             NodeIdAssignment idAssignment,
             Storage oldStorage,
-            OwnerReference ownerReference
+            OwnerReference ownerReference,
+            SharedEnvironmentProvider sharedEnvironmentProvider
     ) {
         ModelUtils.validateComputeResources(pool.getSpec().getResources(), "KafkaNodePool.spec.resources");
         StorageUtils.validatePersistentStorage(pool.getSpec().getStorage(), "KafkaNodePool.spec.storage");
 
-        KafkaPool result = new KafkaPool(reconciliation, kafka, pool, componentName(kafka, pool), ownerReference, idAssignment);
+        KafkaPool result = new KafkaPool(reconciliation, kafka, pool, componentName(kafka, pool), ownerReference, idAssignment, sharedEnvironmentProvider);
 
         result.gcLoggingEnabled = isGcLoggingEnabled(kafka, pool);
         result.jvmOptions = pool.getSpec().getJvmOptions() != null ? pool.getSpec().getJvmOptions() : kafka.getSpec().getKafka().getJvmOptions();

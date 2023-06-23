@@ -10,7 +10,9 @@ import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.strimzi.api.kafka.model.JvmOptions;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
+import io.strimzi.operator.cluster.operator.resource.MockSharedEnvironmentProvider;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.cluster.operator.resource.SharedEnvironmentProvider;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.annotations.ParallelSuite;
 import io.strimzi.test.annotations.ParallelTest;
@@ -24,11 +26,13 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 @ParallelSuite
 public class AbstractModelTest {
+    private static final SharedEnvironmentProvider SHARED_ENV_PROVIDER = new MockSharedEnvironmentProvider();
 
     // Implement AbstractModel to test the abstract class
     private static class Model extends AbstractModel   {
         public Model(HasMetadata resource) {
-            super(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()), resource, resource.getMetadata().getName() + "-model-app", "model-app");
+            super(new Reconciliation("test", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()),
+                resource, resource.getMetadata().getName() + "-model-app", "model-app", SHARED_ENV_PROVIDER);
         }
 
     }
@@ -58,7 +62,7 @@ public class AbstractModelTest {
         AbstractModel am = new Model(kafka);
         am.jvmOptions = opts;
         List<EnvVar> envVars = new ArrayList<>(1);
-        ModelUtils.jvmPerformanceOptions(envVars, am.jvmOptions);
+        JvmOptionUtils.jvmPerformanceOptions(envVars, am.jvmOptions);
 
         if (!envVars.isEmpty()) {
             return envVars.get(0).getValue();

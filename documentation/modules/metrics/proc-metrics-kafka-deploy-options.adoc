@@ -123,16 +123,18 @@ spec:
     image: my-registry.io/my-org/my-exporter-cluster:latest <1>
     groupRegex: ".*" <2>
     topicRegex: ".*" <3>
-    resources: <4>
+    groupExcludeRegex: "^excluded-.*" <4>
+    topicExcludeRegex: "^excluded-.*" <5>
+    resources: <6>
       requests:
         cpu: 200m
         memory: 64Mi
       limits:
         cpu: 500m
         memory: 128Mi
-    logging: debug <5>
-    enableSaramaLogging: true <6>
-    template: <7>
+    logging: debug <7>
+    enableSaramaLogging: true <8>
+    template: <9>
       pod:
         metadata:
           labels:
@@ -143,10 +145,10 @@ spec:
           runAsUser: 1000001
           fsGroup: 0
         terminationGracePeriodSeconds: 120
-    readinessProbe: <8>
+    readinessProbe: <10>
       initialDelaySeconds: 15
       timeoutSeconds: 5
-    livenessProbe: <9>
+    livenessProbe: <11>
       initialDelaySeconds: 15
       timeoutSeconds: 5
 # ...
@@ -154,12 +156,14 @@ spec:
 <1> ADVANCED OPTION: Container image configuration, which is recommended only in special situations.
 <2> A regular expression to specify the consumer groups to include in the metrics.
 <3> A regular expression to specify the topics to include in the metrics.
-<4> CPU and memory resources to reserve.
-<5> Logging configuration, to log messages with a given severity (debug, info, warn, error, fatal) or above.
-<6> Boolean to enable Sarama logging, a Go client library used by Kafka Exporter.
-<7> Customization of deployment templates and pods.
-<8> Healthcheck readiness probes.
-<9> Healthcheck liveness probes.
+<4> A regular expression to specify the consumer groups to exclude in the metrics.
+<5> A regular expression to specify the topics to exclude in the metrics.
+<6> CPU and memory resources to reserve.
+<7> Logging configuration, to log messages with a given severity (debug, info, warn, error, fatal) or above.
+<8> Boolean to enable Sarama logging, a Go client library used by Kafka Exporter.
+<9> Customization of deployment templates and pods.
+<10> Healthcheck readiness probes.
+<11> Healthcheck liveness probes.
 
 NOTE: For Kafka Exporter to be able to work properly, consumer groups need to be in use. 
 

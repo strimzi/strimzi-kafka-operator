@@ -27,6 +27,7 @@ import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationException;
+import io.strimzi.operator.cluster.operator.resource.SharedEnvironmentProvider;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.operator.resource.DeploymentOperator;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
@@ -55,6 +56,7 @@ public class KafkaMirrorMakerAssemblyOperator extends AbstractAssemblyOperator<K
 
     private final DeploymentOperator deploymentOperations;
     private final KafkaVersion.Lookup versions;
+    private final SharedEnvironmentProvider sharedEnvironmentProvider;
 
     /**
      * @param vertx The Vertx instance
@@ -71,6 +73,7 @@ public class KafkaMirrorMakerAssemblyOperator extends AbstractAssemblyOperator<K
         super(vertx, pfa, KafkaMirrorMaker.RESOURCE_KIND, certManager, passwordGenerator, supplier.mirrorMakerOperator, supplier, config);
         this.deploymentOperations = supplier.deploymentOperations;
         this.versions = config.versions();
+        this.sharedEnvironmentProvider = supplier.sharedEnvironmentProvider;
     }
 
     @Override
@@ -80,7 +83,7 @@ public class KafkaMirrorMakerAssemblyOperator extends AbstractAssemblyOperator<K
         KafkaMirrorMakerStatus kafkaMirrorMakerStatus = new KafkaMirrorMakerStatus();
 
         try {
-            mirror = KafkaMirrorMakerCluster.fromCrd(reconciliation, assemblyResource, versions);
+            mirror = KafkaMirrorMakerCluster.fromCrd(reconciliation, assemblyResource, versions, sharedEnvironmentProvider);
         } catch (Exception e) {
             LOGGER.warnCr(reconciliation, e);
             StatusUtils.setStatusConditionAndObservedGeneration(assemblyResource, kafkaMirrorMakerStatus, Future.failedFuture(e));

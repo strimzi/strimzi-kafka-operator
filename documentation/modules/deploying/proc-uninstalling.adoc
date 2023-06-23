@@ -46,5 +46,5 @@ Replace _<resource_type>_ with the type of resource you are deleting and _<resou
 .Example to delete a secret
 [source,shell,subs="+quotes"]
 ----
-kubectl delete secret my-cluster-clients-ca -n my-project
+kubectl delete secret my-cluster-clients-ca-cert -n my-project
 ----

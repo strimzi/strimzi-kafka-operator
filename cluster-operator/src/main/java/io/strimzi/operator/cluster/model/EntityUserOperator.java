@@ -28,6 +28,7 @@ import io.strimzi.operator.cluster.model.logging.SupportsLogging;
 import io.strimzi.operator.cluster.model.securityprofiles.ContainerSecurityProviderContextImpl;
 import io.strimzi.operator.common.MetricsAndLogging;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.cluster.operator.resource.SharedEnvironmentProvider;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -88,9 +89,10 @@ public class EntityUserOperator extends AbstractModel implements SupportsLogging
     /**
      * @param reconciliation   The reconciliation
      * @param resource Kubernetes resource with metadata containing the namespace and cluster name
+     * @param sharedEnvironmentProvider Shared environment provider
      */
-    protected EntityUserOperator(Reconciliation reconciliation, HasMetadata resource) {
-        super(reconciliation, resource, resource.getMetadata().getName() + NAME_SUFFIX, COMPONENT_TYPE);
+    protected EntityUserOperator(Reconciliation reconciliation, HasMetadata resource, SharedEnvironmentProvider sharedEnvironmentProvider) {
+        super(reconciliation, resource, resource.getMetadata().getName() + NAME_SUFFIX, COMPONENT_TYPE, sharedEnvironmentProvider);
 
         // create a default configuration
         this.kafkaBootstrapServers = KafkaResources.bootstrapServiceName(cluster) + ":" + EntityUserOperatorSpec.DEFAULT_BOOTSTRAP_SERVERS_PORT;
@@ -109,14 +111,15 @@ public class EntityUserOperator extends AbstractModel implements SupportsLogging
      * @param reconciliation The reconciliation
      * @param kafkaAssembly desired resource with cluster configuration containing the Entity User Operator one
      * @param kraftEnabled Indicates whether KRaft is enabled int he Kafka cluster
+     * @param sharedEnvironmentProvider Shared environment provider
      *
      * @return Entity User Operator instance, null if not configured
      */
-    public static EntityUserOperator fromCrd(Reconciliation reconciliation, Kafka kafkaAssembly, boolean kraftEnabled) {
+    public static EntityUserOperator fromCrd(Reconciliation reconciliation, Kafka kafkaAssembly, boolean kraftEnabled, SharedEnvironmentProvider sharedEnvironmentProvider) {
         if (kafkaAssembly.getSpec().getEntityOperator() != null
                 && kafkaAssembly.getSpec().getEntityOperator().getUserOperator() != null) {
             EntityUserOperatorSpec userOperatorSpec = kafkaAssembly.getSpec().getEntityOperator().getUserOperator();
-            EntityUserOperator result = new EntityUserOperator(reconciliation, kafkaAssembly);
+            EntityUserOperator result = new EntityUserOperator(reconciliation, kafkaAssembly, sharedEnvironmentProvider);
 
             String image = userOperatorSpec.getImage();
             if (image == null) {
@@ -199,10 +202,10 @@ public class EntityUserOperator extends AbstractModel implements SupportsLogging
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_SECRET_PREFIX, secretPrefix));
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_ACLS_ADMIN_API_SUPPORTED, String.valueOf(aclsAdminApiSupported)));
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_KRAFT_ENABLED, String.valueOf(kraftEnabled)));
-        ModelUtils.javaOptions(varList, jvmOptions);
+        JvmOptionUtils.javaOptions(varList, jvmOptions);
 
         // Add shared environment variables used for all containers
-        varList.addAll(ContainerUtils.requiredEnvVars());
+        varList.addAll(sharedEnvironmentProvider.variables());
 
         ContainerUtils.addContainerEnvsToExistingEnvs(reconciliation, varList, templateContainer);
 

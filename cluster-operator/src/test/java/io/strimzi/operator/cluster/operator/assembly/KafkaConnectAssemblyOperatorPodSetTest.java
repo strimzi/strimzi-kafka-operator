@@ -19,6 +19,7 @@ import io.strimzi.api.kafka.model.StrimziPodSet;
 import io.strimzi.api.kafka.model.connect.build.JarArtifactBuilder;
 import io.strimzi.api.kafka.model.connect.build.PluginBuilder;
 import io.strimzi.api.kafka.model.status.KafkaConnectStatus;
+import io.strimzi.operator.cluster.operator.resource.MockSharedEnvironmentProvider;
 import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
@@ -28,6 +29,7 @@ import io.strimzi.operator.cluster.model.PodSetUtils;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.cluster.operator.resource.SharedEnvironmentProvider;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.resource.ConfigMapOperator;
 import io.strimzi.operator.common.operator.resource.CrdOperator;
@@ -79,6 +81,7 @@ public class KafkaConnectAssemblyOperatorPodSetTest {
     private static final KafkaVersion.Lookup VERSIONS = KafkaVersionTestUtils.getKafkaVersionLookup();
     private static final KubernetesVersion KUBERNETES_VERSION = KubernetesVersion.V1_26;
     private static final Reconciliation RECONCILIATION = new Reconciliation("test", "KafkaConnect", NAMESPACE, NAME);
+    private static final SharedEnvironmentProvider SHARED_ENV_PROVIDER = new MockSharedEnvironmentProvider();
 
     private static final KafkaConnect CONNECT = new KafkaConnectBuilder()
             .withNewMetadata()
@@ -89,7 +92,7 @@ public class KafkaConnectAssemblyOperatorPodSetTest {
                 .withReplicas(3)
             .endSpec()
             .build();
-    private static final KafkaConnectCluster CLUSTER = KafkaConnectCluster.fromCrd(RECONCILIATION, CONNECT, VERSIONS);
+    private static final KafkaConnectCluster CLUSTER = KafkaConnectCluster.fromCrd(RECONCILIATION, CONNECT, VERSIONS, SHARED_ENV_PROVIDER);
 
     protected static Vertx vertx;
 
@@ -594,6 +597,8 @@ public class KafkaConnectAssemblyOperatorPodSetTest {
         ArgumentCaptor<KafkaConnect> connectCaptor = ArgumentCaptor.forClass(KafkaConnect.class);
         when(mockConnectOps.updateStatusAsync(any(), connectCaptor.capture())).thenReturn(Future.succeededFuture());
 
+
+
         KafkaConnectAssemblyOperator ops = new KafkaConnectAssemblyOperator(
                 vertx,
                 new PlatformFeaturesAvailability(false, KUBERNETES_VERSION),
@@ -612,12 +617,12 @@ public class KafkaConnectAssemblyOperatorPodSetTest {
                     assertThat(capturesPodSets.size(), is(1));
                     StrimziPodSet podSet = capturesPodSets.get(0);
                     assertThat(podSet.getMetadata().getName(), is(COMPONENT_NAME));
-                    assertThat(podSet.getMetadata().getAnnotations().get(Annotations.STRIMZI_IO_CONNECT_BUILD_REVISION), is("a9e0ee08751944b0"));
+                    assertThat(podSet.getMetadata().getAnnotations().get(Annotations.STRIMZI_IO_CONNECT_BUILD_REVISION), is("ef83e71f751944b0"));
                     assertThat(podSet.getMetadata().getAnnotations().get(Annotations.STRIMZI_IO_CONNECT_BUILD_IMAGE), is("my-connect-build@sha256:blablabla"));
                     assertThat(podSet.getSpec().getPods().size(), is(3));
 
                     for (Pod pod : PodSetUtils.podSetToPods(podSet))  {
-                        assertThat(pod.getMetadata().getAnnotations().get(Annotations.STRIMZI_IO_CONNECT_BUILD_REVISION), is("a9e0ee08751944b0"));
+                        assertThat(pod.getMetadata().getAnnotations().get(Annotations.STRIMZI_IO_CONNECT_BUILD_REVISION), is("ef83e71f751944b0"));
                         assertThat(pod.getSpec().getContainers().get(0).getImage(), is("my-connect-build@sha256:blablabla"));
                     }
 

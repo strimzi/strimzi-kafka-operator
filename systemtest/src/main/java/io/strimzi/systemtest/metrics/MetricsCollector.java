@@ -12,7 +12,6 @@ import io.strimzi.api.kafka.model.KafkaMirrorMaker2Resources;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.resources.ComponentType;
-import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
 import io.strimzi.systemtest.resources.crd.KafkaMirrorMaker2Resource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
@@ -178,7 +177,7 @@ public class MetricsCollector {
             case TopicOperator:
                 return kubeClient(namespaceName).getDeploymentSelectors(KafkaResources.entityOperatorDeploymentName(componentName));
             case ClusterOperator:
-                return kubeClient(namespaceName).getDeploymentSelectors(ResourceManager.getCoDeploymentName());
+                return kubeClient(namespaceName).getDeploymentSelectors(componentName);
             case KafkaBridge:
                 return kubeClient(namespaceName).getDeploymentSelectors(KafkaBridgeResources.deploymentName(componentName));
             default:

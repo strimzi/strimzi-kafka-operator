@@ -51,6 +51,7 @@ import io.strimzi.operator.cluster.model.securityprofiles.ContainerSecurityProvi
 import io.strimzi.operator.cluster.model.securityprofiles.PodSecurityProviderContextImpl;
 import io.strimzi.operator.common.MetricsAndLogging;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.cluster.operator.resource.SharedEnvironmentProvider;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
 import io.vertx.core.json.JsonArray;
@@ -156,9 +157,10 @@ public class KafkaBridgeCluster extends AbstractModel implements SupportsLogging
      *
      * @param reconciliation The reconciliation
      * @param resource Kubernetes resource with metadata containing the namespace and cluster name
+     * @param sharedEnvironmentProvider Shared environment provider
      */
-    private KafkaBridgeCluster(Reconciliation reconciliation, HasMetadata resource) {
-        super(reconciliation, resource, KafkaBridgeResources.deploymentName(resource.getMetadata().getName()), COMPONENT_TYPE);
+    private KafkaBridgeCluster(Reconciliation reconciliation, HasMetadata resource, SharedEnvironmentProvider sharedEnvironmentProvider) {
+        super(reconciliation, resource, KafkaBridgeResources.deploymentName(resource.getMetadata().getName()), COMPONENT_TYPE, sharedEnvironmentProvider);
     }
 
     /**
@@ -166,12 +168,14 @@ public class KafkaBridgeCluster extends AbstractModel implements SupportsLogging
      *
      * @param reconciliation Reconciliation marker
      * @param kafkaBridge    KafkaBridge custom resource
+     * @param sharedEnvironmentProvider Shared environment provider
      * @return KafkaBridgeCluster instance
      */
     @SuppressWarnings({"checkstyle:NPathComplexity"})
-    public static KafkaBridgeCluster fromCrd(Reconciliation reconciliation, KafkaBridge kafkaBridge) {
-
-        KafkaBridgeCluster result = new KafkaBridgeCluster(reconciliation, kafkaBridge);
+    public static KafkaBridgeCluster fromCrd(Reconciliation reconciliation,
+                                             KafkaBridge kafkaBridge,
+                                             SharedEnvironmentProvider sharedEnvironmentProvider) {
+        KafkaBridgeCluster result = new KafkaBridgeCluster(reconciliation, kafkaBridge, sharedEnvironmentProvider);
 
         KafkaBridgeSpec spec = kafkaBridge.getSpec();
         result.tracing = spec.getTracing();
@@ -394,7 +398,7 @@ public class KafkaBridgeCluster extends AbstractModel implements SupportsLogging
         List<EnvVar> varList = new ArrayList<>();
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_BRIDGE_METRICS_ENABLED, String.valueOf(isMetricsEnabled)));
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_STRIMZI_GC_LOG_ENABLED, String.valueOf(gcLoggingEnabled)));
-        ModelUtils.javaOptions(varList, jvmOptions);
+        JvmOptionUtils.javaOptions(varList, jvmOptions);
 
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_BRIDGE_BOOTSTRAP_SERVERS, bootstrapServers));
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_BRIDGE_ADMIN_CLIENT_CONFIG, kafkaBridgeAdminClient == null ? "" : new KafkaBridgeAdminClientConfiguration(reconciliation, kafkaBridgeAdminClient.getConfig().entrySet()).getConfiguration()));
@@ -445,7 +449,7 @@ public class KafkaBridgeCluster extends AbstractModel implements SupportsLogging
         }
 
         // Add shared environment variables used for all containers
-        varList.addAll(ContainerUtils.requiredEnvVars());
+        varList.addAll(sharedEnvironmentProvider.variables());
 
         ContainerUtils.addContainerEnvsToExistingEnvs(reconciliation, varList, templateContainer);
 
@@ -572,7 +576,7 @@ public class KafkaBridgeCluster extends AbstractModel implements SupportsLogging
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_INIT_INIT_FOLDER_KEY, INIT_VOLUME_MOUNT));
 
         // Add shared environment variables used for all containers
-        varList.addAll(ContainerUtils.requiredEnvVars());
+        varList.addAll(sharedEnvironmentProvider.variables());
 
         ContainerUtils.addContainerEnvsToExistingEnvs(reconciliation, varList, templateInitContainer);
 

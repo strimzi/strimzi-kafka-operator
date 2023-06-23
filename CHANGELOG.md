@@ -2,11 +2,14 @@
 
 ## 0.36.0
 
-* Add support for Apache Kafka 3.4.1
+* Add support for Apache Kafka 3.4.1 and 3.5.0, and remove support for 3.3.1 and 3.3.2
 * Update Kafka Exporter to [1.7.0](https://github.com/danielqsj/kafka_exporter/releases/tag/v1.7.0)
 * Improve Kafka rolling update to avoid rolling broker in log recovery
+* Added support for Kafka Exporter topic exclude and consumer group exclude parameters
 * Update Kaniko container builder to 1.11.0
 * Add support for _Kafka node pools_ according to [Strimzi Proposal #50](https://github.com/strimzi/proposals/blob/main/050-Kafka-Node-Pools.md)
+* Update OpenTelemetry 1.19.0
+* Fixed ordering of JVM performance options [#8579](https://github.com/strimzi/strimzi-kafka-operator/issues/8579)
 
 ### Changes, deprecations and removals
 

@@ -109,21 +109,21 @@
         <maven.enforcer.version>3.0.0-M2</maven.enforcer.version>
         <maven.jar.version>3.1.0</maven.jar.version>
         <sonatype.nexus.staging.version>1.6.13</sonatype.nexus.staging.version>
-        <maven.spotbugs.version>4.5.3.0</maven.spotbugs.version>
+        <maven.spotbugs.version>4.7.3.4</maven.spotbugs.version>
         <maven.jacoco.version>0.8.8</maven.jacoco.version>
         <maven.exec.version>3.1.0</maven.exec.version>
         <maven.resources.version>3.1.0</maven.resources.version>
 
         <!-- Build tools -->
         <checkstyle.version>9.2.1</checkstyle.version>
-        <spotbugs.version>4.7.2</spotbugs.version>
+        <spotbugs.version>4.7.3</spotbugs.version>
         <sundrio.version>0.91.1</sundrio.version>
         <lombok.version>1.18.24</lombok.version>
 
         <!-- Runtime dependencies -->
-        <fabric8.kubernetes-client.version>6.7.0</fabric8.kubernetes-client.version>
-        <fabric8.openshift-client.version>6.7.0</fabric8.openshift-client.version>
-        <fabric8.kubernetes-model.version>6.7.0</fabric8.kubernetes-model.version>
+        <fabric8.kubernetes-client.version>6.7.2</fabric8.kubernetes-client.version>
+        <fabric8.openshift-client.version>6.7.2</fabric8.openshift-client.version>
+        <fabric8.kubernetes-model.version>6.7.2</fabric8.kubernetes-model.version>
         <fabric8.zjsonpatch.version>0.3.0</fabric8.zjsonpatch.version>
         <fasterxml.jackson-core.version>2.14.2</fasterxml.jackson-core.version>
         <fasterxml.jackson-databind.version>2.14.2</fasterxml.jackson-databind.version>
@@ -134,7 +134,7 @@
         <snakeyaml.version>2.0</snakeyaml.version>
         <vertx.version>4.3.8</vertx.version>
         <vertx-junit5.version>4.3.8</vertx-junit5.version>
-        <kafka.version>3.4.1</kafka.version>
+        <kafka.version>3.5.0</kafka.version>
         <yammer-metrics.version>2.2.0</yammer-metrics.version>
         <scala-library.version>2.13.9</scala-library.version>
         <zookeeper.version>3.6.4</zookeeper.version>
@@ -145,12 +145,12 @@
         <jaeger.version>1.8.1</jaeger.version>
         <opentracing.version>0.33.0</opentracing.version>
         <opentracing-kafka.version>0.1.13</opentracing-kafka.version>
-        <opentelemetry.version>1.18.0</opentelemetry.version>
-        <opentelemetry.alpha-version>1.18.0-alpha</opentelemetry.alpha-version>
+        <opentelemetry.version>1.19.0</opentelemetry.version>
+        <opentelemetry.alpha-version>1.19.0-alpha</opentelemetry.alpha-version>
         <jetty.version>9.4.51.v20230217</jetty.version>
         <javax-servlet.version>3.1.0</javax-servlet.version>
         <strimzi-oauth.version>0.12.0</strimzi-oauth.version>
-        <netty.version>4.1.87.Final</netty.version>
+        <netty.version>4.1.94.Final</netty.version>
         <micrometer.version>1.9.5</micrometer.version>
         <jayway-jsonpath.version>2.8.0</jayway-jsonpath.version>
         <registry.version>1.3.2.Final</registry.version>
