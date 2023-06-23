@@ -32,15 +32,15 @@ The following resources are defined on deployment:
 
 .Procedure
 
-. Create a `Secret` resource from the Alertmanager configuration file (`alert-manager-config.yaml` in the `examples/metrics/prometheus-alertmanager-config` directory):
-+
-[source,shell,subs="+quotes,attributes"]
-kubectl apply -f alert-manager-config.yaml
-
-. Update the `alert-manager-config.yaml` file to replace the:
+. Update the `alert-manager-config.yaml` file in the `examples/metrics/prometheus-alertmanager-config` directory to replace the following:
 +
 * `slack_api_url` property with the actual value of the Slack API URL related to the application for the Slack workspace
 * `channel` property with the actual Slack channel on which to send notifications
+
+. Create a `Secret` resource from the Alertmanager configuration file:
++
+[source,shell,subs="+quotes,attributes"]
+kubectl apply -f alert-manager-config.yaml
 
 . Deploy Alertmanager:
 +

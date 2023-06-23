@@ -10,24 +10,25 @@ To deploy the Prometheus Operator to your Kafka cluster, apply the YAML bundle r
 
 .Procedure
 
-. Download the `bundle.yaml` resources file from the repository.
+. Download the `bundle.yaml` resources file from the repository:
++
+[source,shell,subs="+quotes,attributes+"]
+curl -s https://raw.githubusercontent.com/coreos/prometheus-operator/master/bundle.yaml > prometheus-operator-deployment.yaml
++
+** Use the latest `master` release as shown, or choose a release that is compatible with your version of Kubernetes (see the https://github.com/coreos/kube-prometheus#kubernetes-compatibility-matrix[Kubernetes compatibility matrix]).
+The `master` release of the Prometheus Operator works with Kubernetes 1.18+.
++
+** Update the namespace by replacing the example `my-namespace` with your own.
 +
 On Linux, use:
 +
 [source,shell,subs="+quotes,attributes+"]
-curl -s https://raw.githubusercontent.com/coreos/prometheus-operator/master/bundle.yaml | sed -e '/[[:space:]]\*namespace: [a-zA-Z0-9-]*$/s/namespace:[[:space:]]\*[a-zA-Z0-9-]*$/namespace: _my-namespace_/' > prometheus-operator-deployment.yaml
+sed -E -i '/[[:space:]]\*namespace: [a-zA-Z0-9-]*$/s/namespace:[[:space:]]\*[a-zA-Z0-9-]*$/namespace: _my-namespace_/' prometheus-operator-deployment.yaml
 +
 On MacOS, use:
 +
 [source,shell,subs="+quotes,attributes+"]
-curl -s https://raw.githubusercontent.com/coreos/prometheus-operator/master/bundle.yaml | sed -e '' '/[[:space:]]\*namespace: [a-zA-Z0-9-]*$/s/namespace:[[:space:]]\*[a-zA-Z0-9-]*$/namespace: _my-namespace_/' > prometheus-operator-deployment.yaml
-+
-** Replace the example `namespace` with your own.
-+
-ifdef::Downloading[]
-** Use the latest `master` release as shown, or choose a release that is compatible with your version of Kubernetes (see the https://github.com/coreos/kube-prometheus#kubernetes-compatibility-matrix[Kubernetes compatibility matrix]). 
-The `master` release of the Prometheus Operator works with Kubernetes 1.18+.
-endif::Downloading[]
+sed -i '' -e '/[[:space:]]\*namespace: [a-zA-Z0-9-]*$/s/namespace:[[:space:]]\*[a-zA-Z0-9-]*$/namespace: _my-namespace_/' prometheus-operator-deployment.yaml
 +
 NOTE: If using OpenShift, specify a release of the link:https://github.com/openshift/prometheus-operator[OpenShift fork^] of the Prometheus Operator repository.
 
