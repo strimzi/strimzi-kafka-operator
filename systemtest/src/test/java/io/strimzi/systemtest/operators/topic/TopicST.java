@@ -95,7 +95,7 @@ public class TopicST extends AbstractST {
         int topicPartitions = 5;
 
         KafkaTopic kafkaTopic = KafkaTopicTemplates.topic(KAFKA_CLUSTER_NAME, topicName, topicPartitions, topicReplicationFactor, 1, clusterOperator.getDeploymentNamespace()).build();
-        resourceManager.createResourceWithoutWait(extensionContext, false, kafkaTopic);
+        resourceManager.createResourceWithoutWait(extensionContext, kafkaTopic);
 
         assertThat("Topic exists in Kafka CR (Kubernetes)", hasTopicInCRK8s(kafkaTopic, topicName));
         assertThat("Topic doesn't exists in Kafka itself", !hasTopicInKafka(topicName, KAFKA_CLUSTER_NAME));
