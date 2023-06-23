@@ -129,7 +129,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             if (status.getClusterId() == null
                     && kafkaAssembly.getStatus() != null
                     && kafkaAssembly.getStatus().getClusterId() != null)  {
-                // If not set in the status prepared by reconciliation but set int he status previously, we copy the
+                // If not set in the status prepared by reconciliation but set in the status previously, we copy the
                 // cluster ID into the new status. This is useful for example when the reconciliation fails for some
                 // reason before setting the cluster ID
                 status.setClusterId(kafkaAssembly.getStatus().getClusterId());

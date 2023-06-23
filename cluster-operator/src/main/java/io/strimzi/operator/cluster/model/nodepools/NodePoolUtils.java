@@ -245,7 +245,6 @@ public class NodePoolUtils {
                 if (kafkaCrClusterId == null)   {
                     hasClusterIdTooEarly = true;
                     LOGGER.warnCr(reconciliation, "Cluster ID {} found in KafkaNodePool {} is not allowed without the same cluster ID being present in the Kafka custom resource", pool.getStatus().getClusterId(), pool.getMetadata().getName());
-                    //kafkaCrClusterId = pool.getStatus().getClusterId();
                 } else if (!kafkaCrClusterId.equals(pool.getStatus().getClusterId())) {
                     hasConflict = true;
                     LOGGER.warnCr(reconciliation, "Cluster ID {} found in KafkaNodePool {} is not the same as the cluster ID {} found in the Kafka custom resource", pool.getStatus().getClusterId(), pool.getMetadata().getName(), kafkaCrClusterId);
@@ -265,7 +264,7 @@ public class NodePoolUtils {
     /**
      * Extracts the cluster IDs found in the Kafka and KafkaNodePool custom resources and validates whether the
      * resources do not belong to different Kafka cluster. This method is used for KRaft based Kafka clusters. In Kraft
-     * based Kafka clusters, we set the cluster ID our-self. So it might happen that the KafkaNOdePool status has the
+     * based Kafka clusters, we set the cluster ID our-self. So it might happen that the KafkaNodePool status has the
      * new cluster ID but the Kafka CR does not due to some intermittent failure. This differs from ZooKeeper based
      * Kafka clusters which have their own validation method.
      *
