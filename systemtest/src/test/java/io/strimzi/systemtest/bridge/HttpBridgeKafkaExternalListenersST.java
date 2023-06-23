@@ -19,7 +19,6 @@ import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.api.kafka.model.status.ListenerStatus;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
-import io.strimzi.systemtest.annotations.KRaftNotSupported;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.BridgeClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.BridgeClientsBuilder;
@@ -51,7 +50,6 @@ import static io.strimzi.systemtest.Constants.REGRESSION;
 @Tag(BRIDGE)
 @Tag(NODEPORT_SUPPORTED)
 @Tag(EXTERNAL_CLIENTS_USED)
-@KRaftNotSupported("Scram-sha is not supported by KRaft mode and is used in this test class")
 public class HttpBridgeKafkaExternalListenersST extends AbstractST {
     private static final String BRIDGE_EXTERNAL_SERVICE =  "shared-http-bridge-external-service";
     private final String producerName = "producer-" + new Random().nextInt(Integer.MAX_VALUE);
