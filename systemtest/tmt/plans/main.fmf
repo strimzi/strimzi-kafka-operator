@@ -47,7 +47,7 @@ prepare:
       if [[ $ARCH == "aarch64" ]]; then ARCH="arm64"; fi
       ./.azure/scripts/install_yq.sh ${ARCH}
 
-  - name: Install oc/kubectl
+  - name: Install oc kubectl client
     how: shell
     script: |
       PLATFORM=$(uname -m)
