@@ -141,53 +141,18 @@ public class LogCaptor implements AutoCloseable {
      * Create a captor
      * @param logger The logger though which the log message should (or should not) be omitted.
      * @param level The level of the required message
-     * @param message The required formatted message text
-     * @param timeout A timeout
-     * @param unit A timeout unit
-     * @return
-     */
-    public static LogCaptor logMessageEquals(Logger logger,
-                                             Level level,
-                                             String message,
-                                             long timeout,
-                                             TimeUnit unit) {
-        return logEventMatches(logger, level, le -> message.equals(le.getMessage().getFormattedMessage()), timeout, unit);
-    }
-
-    /**
-     * Create a captor
-     * @param logger The logger though which the log message should (or should not) be omitted.
-     * @param level The level of the required message
      * @param messageRegex A regex that the log message much match
      * @param timeout A timeout
      * @param unit A timeout unit
      * @return
      */
-    public static LogCaptor logMessageMatches(Logger logger,
+    public static LogCaptor logMessageMatches(ReconciliationLogger logger,
                                               Level level,
                                               String messageRegex,
                                               long timeout,
                                               TimeUnit unit) {
         var pattern = Pattern.compile(messageRegex);
-        return logEventMatches(logger, level, le -> pattern.matcher(le.getMessage().getFormattedMessage()).find(), timeout, unit);
-    }
-
-    /**
-     * Create a captor
-     * @param logger The logger though which the log message should (or should not) be omitted.
-     * @param level The level of the required message
-     * @param messageRegex A regex that the log message much match
-     * @param timeout A timeout
-     * @param unit A timeout unit
-     * @return
-     */
-    public static LogCaptor logMessageMatches2(ReconciliationLogger logger,
-                                              Level level,
-                                              String messageRegex,
-                                              long timeout,
-                                              TimeUnit unit) {
-        var pattern = Pattern.compile(messageRegex);
-        Predicate<LogEvent> logEventPredicate = new Predicate<LogEvent>() {
+        var logEventPredicate = new Predicate<LogEvent>() {
             @Override
             public boolean test(LogEvent le) {
                 return pattern.matcher(le.getMessage().getFormattedMessage()).find();

@@ -553,7 +553,7 @@ class TopicControllerIT {
         // when
 
         // then
-        try (var logCaptor = LogCaptor.logMessageMatches2(BatchingTopicController.LOGGER,
+        try (var logCaptor = LogCaptor.logMessageMatches(BatchingTopicController.LOGGER,
                 org.apache.logging.log4j.Level.DEBUG,
                 "Ignoring KafkaTopic .*? not selected by selector",
                 5L,
@@ -578,7 +578,7 @@ class TopicControllerIT {
         // given
         var expectedTopicName = expectedTopicName(kt);
         KafkaTopic unmanaged;
-        try (var logCaptor = LogCaptor.logMessageMatches2(BatchingTopicController.LOGGER,
+        try (var logCaptor = LogCaptor.logMessageMatches(BatchingTopicController.LOGGER,
                 org.apache.logging.log4j.Level.DEBUG,
                 "Ignoring KafkaTopic .*? not selected by selector",
                 5L,
@@ -629,7 +629,7 @@ class TopicControllerIT {
         maybeStartOperator(topicOperatorConfig(ns, kafkaCluster));
 
         KafkaTopic created;
-        try (var logCaptor = LogCaptor.logMessageMatches2(BatchingTopicController.LOGGER,
+        try (var logCaptor = LogCaptor.logMessageMatches(BatchingTopicController.LOGGER,
                 org.apache.logging.log4j.Level.DEBUG,
                 "Ignoring KafkaTopic .*? not selected by selector",
                 5L,
@@ -858,7 +858,7 @@ class TopicControllerIT {
 
         // when: resync
 
-        try (var logCaptor = LogCaptor.logMessageMatches2(BatchingLoop.LoopRunnable.LOGGER,
+        try (var logCaptor = LogCaptor.logMessageMatches(BatchingLoop.LoopRunnable.LOGGER,
                 Level.DEBUG,
                 "\\[Batch #[0-9]+\\] Reconciled batch",
                 5L,
@@ -1115,7 +1115,7 @@ class TopicControllerIT {
         createTopicAndAssertSuccess(kafkaCluster, kt);
 
         // when
-        try (var logCaptor = LogCaptor.logMessageMatches2(BatchingLoop.LoopRunnable.LOGGER,
+        try (var logCaptor = LogCaptor.logMessageMatches(BatchingLoop.LoopRunnable.LOGGER,
                 Level.DEBUG,
                 "\\[Batch #[0-9]+\\] Reconciled batch",
                 5L,
@@ -1784,7 +1784,7 @@ class TopicControllerIT {
                 @BrokerConfig(name = BatchingTopicController.AUTO_CREATE_TOPICS_ENABLE, value = "true")
                 KafkaCluster kafkaCluster)
             throws Exception {
-        try (var logCaptor = LogCaptor.logMessageMatches2(BatchingTopicController.LOGGER,
+        try (var logCaptor = LogCaptor.logMessageMatches(BatchingTopicController.LOGGER,
                 Level.WARN,
                 "It is recommended that " + BatchingTopicController.AUTO_CREATE_TOPICS_ENABLE + " is set to 'false' " +
                         "to avoid races between the operator and Kafka applications auto-creating topics",
