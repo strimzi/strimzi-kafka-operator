@@ -4,13 +4,8 @@
  */
 package io.strimzi.operator.topic.v2;
 
-import io.fabric8.kubernetes.api.model.Namespace;
-import io.fabric8.kubernetes.api.model.NamespaceBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientBuilder;
-import io.fabric8.kubernetes.client.KubernetesClientException;
-import io.fabric8.kubernetes.client.KubernetesClientTimeoutException;
-import io.fabric8.kubernetes.client.dsl.Resource;
 import io.kroxylicious.testing.kafka.api.KafkaCluster;
 import io.kroxylicious.testing.kafka.common.BrokerCluster;
 import io.kroxylicious.testing.kafka.junit5ext.KafkaClusterExtension;
@@ -19,10 +14,6 @@ import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaTopicBuilder;
 import io.strimzi.operator.common.Reconciliation;
-import io.strimzi.test.TestUtils;
-import io.strimzi.test.k8s.KubeClusterResource;
-import io.strimzi.test.k8s.cluster.KubeCluster;
-import io.strimzi.test.k8s.exceptions.NoClusterException;
 import org.apache.kafka.clients.admin.Admin;
 import org.apache.kafka.clients.admin.AdminClientConfig;
 import org.apache.kafka.clients.admin.AlterConfigsResult;
@@ -51,17 +42,10 @@ import org.mockito.Mockito;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
-import java.util.function.Predicate;
-import java.util.function.UnaryOperator;
 
-import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.fail;
-import static org.junit.jupiter.api.Assumptions.assumeTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -85,7 +69,7 @@ class BatchingTopicControllerTest {
     private Admin[] admin = new Admin[] {null};
 
     @BeforeEach
-    public void createKubClient() {
+    public void createKubeClient() {
         this.client = new KubernetesClientBuilder().build();
     }
 
@@ -96,13 +80,7 @@ class BatchingTopicControllerTest {
     }
 
     private String namespace(String ns) {
-        Resource<Namespace> resource = client.namespaces().withName(ns);
-        if (resource.get() == null) {
-            LOGGER.debug("Creating namespace {}", ns);
-            client.namespaces().resource(new NamespaceBuilder().withNewMetadata().withName(ns).endMetadata().build()).create();
-            waitUntilCondition(client.namespaces().withName(ns), Objects::nonNull);
-        }
-        return ns;
+        return TopicOperatorTestUtil.namespace(client, ns);
     }
 
     private KafkaTopic createResource() {
@@ -118,98 +96,28 @@ class BatchingTopicControllerTest {
         return kt;
     }
 
-    private static String testName(TestInfo testInfo) {
-        return testInfo.getTestMethod().map(m -> m.getName() + "() " + testInfo.getDisplayName().replaceAll("[\r\n]+", " ")).orElse("");
-    }
-
     @BeforeAll
     public static void setupKubeCluster() {
-        try {
-            KubeCluster.bootstrap();
-        } catch (NoClusterException e) {
-            assumeTrue(false, e.getMessage());
-        }
-        KubeClusterResource.getInstance();
-        cmdKubeClient().createNamespace(NAMESPACE);
-        LOGGER.info("#### Creating " + "../packaging/install/topic-operator/02-Role-strimzi-topic-operator.yaml");
-        cmdKubeClient().create(TestUtils.USER_PATH + "/../packaging/install/topic-operator/02-Role-strimzi-topic-operator.yaml");
-        LOGGER.info("#### Creating " + TestUtils.CRD_TOPIC);
-        cmdKubeClient().create(TestUtils.CRD_TOPIC);
-        LOGGER.info("#### Creating " + TestUtils.USER_PATH + "/src/test/resources/TopicOperatorIT-rbac.yaml");
-        cmdKubeClient().create(TestUtils.USER_PATH + "/src/test/resources/TopicOperatorIT-rbac.yaml");
+        TopicOperatorTestUtil.setupKubeCluster();
     }
 
     @AfterAll
     public static void teardownKubeCluster() {
-        cmdKubeClient()
-                .delete(TestUtils.USER_PATH + "/src/test/resources/TopicOperatorIT-rbac.yaml")
-                .delete(TestUtils.CRD_TOPIC)
-                .delete(TestUtils.USER_PATH + "/../packaging/install/topic-operator/02-Role-strimzi-topic-operator.yaml")
-                .deleteNamespace(NAMESPACE);
+        TopicOperatorTestUtil.teardownKubeCluster2();
     }
 
     @AfterEach
     public void after(TestInfo testInfo) throws InterruptedException {
-        LOGGER.debug("Cleaning up after test {}", testName(testInfo));
+        LOGGER.debug("Cleaning up after test {}", TopicOperatorTestUtil.testName(testInfo));
         if (admin[0] != null) {
             admin[0].close();
         }
 
         String pop = NAMESPACE;
-        LOGGER.debug("Cleaning up namespace {} after test {}", pop, testName(testInfo));
-        for (var kt : Crds.topicOperation(client).inNamespace(pop).list().getItems()) {
-            LOGGER.debug("Removing finalizer on {} after test {}", kt.getMetadata().getName(), testName(testInfo));
-            modifyTopic(kt, theKt -> {
-                theKt.getMetadata().getFinalizers().clear();
-                return theKt;
-            });
-        }
-        for (var kt : Crds.topicOperation(client).inNamespace(pop).list().getItems()) {
-            LOGGER.debug("Deleting KafkaTopic {} after test {}", kt.getMetadata().getName(), testName(testInfo));
-            Crds.topicOperation(client).resource(kt).delete();
-        }
-        for (var kt : Crds.topicOperation(client).inNamespace(pop).list().getItems()) {
-            waitUntilCondition(Crds.topicOperation(client).resource(kt), Objects::isNull);
-        }
+        TopicOperatorTestUtil.cleanupNamespace(client, testInfo, pop);
 
         client.close();
-        LOGGER.debug("Cleaned up after test {}", testName(testInfo));
-    }
-
-    private KafkaTopic modifyTopic(KafkaTopic kt, UnaryOperator<KafkaTopic> changer) {
-        String ns = kt.getMetadata().getNamespace();
-        String metadataName = kt.getMetadata().getName();
-        // Occasionally a single call to edit() will throw with a HTTP 409 (Conflict)
-        // so let's try up to 3 times
-        int i = 2;
-        while (true) {
-            try {
-                KafkaTopic edited = Crds.topicOperation(client).inNamespace(ns).withName(metadataName).edit(changer);
-                return edited;
-            } catch (KubernetesClientException e) {
-                if (i == 0 || e.getCode() != 409 /* conflict */) {
-                    throw e;
-                }
-            }
-            i--;
-        }
-    }
-
-
-    private static <T> T waitUntilCondition(Resource<T> resource, Predicate<T> condition) {
-        long timeoutMs = 30000L;
-        long deadline = System.currentTimeMillis() + timeoutMs;
-        while (true) {
-            try {
-                return resource.waitUntilCondition(condition, 100, TimeUnit.MILLISECONDS);
-            } catch (KubernetesClientTimeoutException e) {
-                if (System.currentTimeMillis() > deadline) {
-                    fail("Timeout after " + timeoutMs + "ms waiting for " + condition +
-                            ", current resource: " + e.getResourcesNotReady().get(0), e);
-                    throw new IllegalStateException(); // never actually thrown, because fail() will throw
-                }
-            }
-        }
+        LOGGER.debug("Cleaned up after test {}", TopicOperatorTestUtil.testName(testInfo));
     }
 
     private void assertOnUpdateThrowsInterruptedException(KubernetesClient client, Admin admin, KafkaTopic kt) throws ExecutionException, InterruptedException {

@@ -4,11 +4,8 @@
  */
 package io.strimzi.operator.topic.v2;
 
-import io.fabric8.kubernetes.api.model.Namespace;
-import io.fabric8.kubernetes.api.model.NamespaceBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientException;
-import io.fabric8.kubernetes.client.KubernetesClientTimeoutException;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.kroxylicious.testing.kafka.api.KafkaCluster;
 import io.kroxylicious.testing.kafka.common.BrokerCluster;
@@ -21,10 +18,6 @@ import io.strimzi.api.kafka.model.KafkaTopicBuilder;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.api.kafka.model.status.KafkaTopicStatus;
 import io.strimzi.operator.common.model.Labels;
-import io.strimzi.test.TestUtils;
-import io.strimzi.test.k8s.KubeClusterResource;
-import io.strimzi.test.k8s.cluster.KubeCluster;
-import io.strimzi.test.k8s.exceptions.NoClusterException;
 import org.apache.kafka.clients.admin.Admin;
 import org.apache.kafka.clients.admin.AlterConfigOp;
 import org.apache.kafka.clients.admin.AlterConfigsResult;
@@ -84,7 +77,6 @@ import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 
-import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
@@ -93,7 +85,6 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
-import static org.junit.jupiter.api.Assumptions.assumeTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 
@@ -117,28 +108,12 @@ class TopicControllerIT {
 
     @BeforeAll
     public static void setupKubeCluster() {
-
-        try {
-            KubeCluster.bootstrap();
-        } catch (NoClusterException e) {
-            assumeTrue(false, e.getMessage());
-        }
-        KubeClusterResource.getInstance();
-        LOGGER.info("#### Creating " + "../packaging/install/topic-operator/02-Role-strimzi-topic-operator.yaml");
-        cmdKubeClient().create(TestUtils.USER_PATH + "/../packaging/install/topic-operator/02-Role-strimzi-topic-operator.yaml");
-        LOGGER.info("#### Creating " + TestUtils.CRD_TOPIC);
-        cmdKubeClient().create(TestUtils.CRD_TOPIC);
-        LOGGER.info("#### Creating " + TestUtils.USER_PATH + "/src/test/resources/TopicOperatorIT-rbac.yaml");
-        cmdKubeClient().create(TestUtils.USER_PATH + "/src/test/resources/TopicOperatorIT-rbac.yaml");
+        TopicOperatorTestUtil.setupKubeCluster();
     }
 
     @AfterAll
     public static void teardownKubeCluster() {
-        cmdKubeClient()
-                .delete(TestUtils.USER_PATH + "/src/test/resources/TopicOperatorIT-rbac.yaml")
-                .delete(TestUtils.CRD_TOPIC)
-                .delete(TestUtils.USER_PATH + "/../packaging/install/topic-operator/02-Role-strimzi-topic-operator.yaml")
-                .deleteNamespace("ns");
+        TopicOperatorTestUtil.teardownKubeCluster2();
     }
 
     @BeforeEach
@@ -148,7 +123,7 @@ class TopicControllerIT {
     }
 
     private static String testName(TestInfo testInfo) {
-        return testInfo.getTestMethod().map(m -> m.getName() + "() " + testInfo.getDisplayName().replaceAll("[\r\n]+", " ")).orElse("");
+        return TopicOperatorTestUtil.testName(testInfo);
     }
 
     @AfterEach
@@ -168,23 +143,7 @@ class TopicControllerIT {
         }
         while (!namespaces.isEmpty()) {
             String pop = namespaces.pop();
-            LOGGER.debug("Cleaning up namespace {} after test {}", pop, testName(testInfo));
-            for (var kt : Crds.topicOperation(client).inNamespace(pop).list().getItems()) {
-                LOGGER.debug("Removing finalizer on {} after test {}", kt.getMetadata().getName(), testName(testInfo));
-                modifyTopic(kt, theKt -> {
-                    theKt.getMetadata().getFinalizers().clear();
-                    return theKt;
-                });
-            }
-            for (var kt : Crds.topicOperation(client).inNamespace(pop).list().getItems()) {
-                LOGGER.debug("Deleting KafkaTopic {} after test {}", kt.getMetadata().getName(), testName(testInfo));
-                Crds.topicOperation(client).resource(kt).delete();
-                LOGGER.info("Test deleted KafkaTopic {} with resourceVersion {}",
-                        kt.getMetadata().getName(), BatchingTopicController.rv(kt));
-            }
-            for (var kt : Crds.topicOperation(client).inNamespace(pop).list().getItems()) {
-                waitUntilCondition(Crds.topicOperation(client).resource(kt), Objects::isNull);
-            }
+            TopicOperatorTestUtil.cleanupNamespace(client, testInfo, pop);
         }
         client.close();
         LOGGER.debug("Cleaned up after test {}", testName(testInfo));
@@ -192,12 +151,7 @@ class TopicControllerIT {
 
     private String namespace(String ns) {
         namespaces.push(ns);
-        Resource<Namespace> resource = client.namespaces().withName(ns);
-        if (resource.get() == null) {
-            LOGGER.debug("Creating namespace {}", ns);
-            client.namespaces().resource(new NamespaceBuilder().withNewMetadata().withName(ns).endMetadata().build()).create();
-            waitUntilCondition(client.namespaces().withName(ns), Objects::nonNull);
-        }
+        TopicOperatorTestUtil.namespace(client, ns);
         return ns;
     }
 
@@ -256,23 +210,8 @@ class TopicControllerIT {
     }
 
     private KafkaTopic waitUntil(KafkaTopic kt, Predicate<KafkaTopic> condition) {
-        return waitUntilCondition(Crds.topicOperation(client).resource(kt), condition);
-    }
-
-    private static <T> T waitUntilCondition(Resource<T> resource, Predicate<T> condition) {
-        long timeoutMs = 30000L;
-        long deadline = System.currentTimeMillis() + timeoutMs;
-        while (true) {
-            try {
-                return resource.waitUntilCondition(condition, 100, TimeUnit.MILLISECONDS);
-            } catch (KubernetesClientTimeoutException e) {
-                if (System.currentTimeMillis() > deadline) {
-                    fail("Timeout after " + timeoutMs + "ms waiting for " + condition +
-                            ", current resource: " + e.getResourcesNotReady().get(0), e);
-                    throw new IllegalStateException(); // never actually thrown, because fail() will throw
-                }
-            }
-        }
+        Resource<KafkaTopic> resource = Crds.topicOperation(client).resource(kt);
+        return TopicOperatorTestUtil.waitUntilCondition(resource, condition);
     }
 
     private void maybeStartOperator(TopicOperatorConfig config) throws ExecutionException, InterruptedException {
@@ -1032,7 +971,8 @@ class TopicControllerIT {
         Crds.topicOperation(client).resource(kt).delete();
         LOGGER.info("Test deleted KafkaTopic {} with resourceVersion {}",
                 kt.getMetadata().getName(), BatchingTopicController.rv(kt));
-        waitUntilCondition(Crds.topicOperation(client).resource(kt), Objects::isNull);
+        Resource<KafkaTopic> resource = Crds.topicOperation(client).resource(kt);
+        TopicOperatorTestUtil.waitUntilCondition(resource, Objects::isNull);
 
         // then
         assertNotExistsInKafka(expectedTopicName(kt));
@@ -1055,7 +995,8 @@ class TopicControllerIT {
         Crds.topicOperation(client).resource(kt).delete();
         LOGGER.info("Test delete KafkaTopic {} with resourceVersion {}",
                 kt.getMetadata().getName(), BatchingTopicController.rv(kt));
-        var unready = waitUntilCondition(Crds.topicOperation(client).resource(kt), readyIsFalse());
+        Resource<KafkaTopic> resource = Crds.topicOperation(client).resource(kt);
+        var unready = TopicOperatorTestUtil.waitUntilCondition(resource, readyIsFalse());
 
         // then
         Condition condition = assertExactlyOneCondition(unready);
@@ -1079,7 +1020,8 @@ class TopicControllerIT {
         Crds.topicOperation(client).resource(kt).delete();
         LOGGER.info("Test deleted KafkaTopic {} with resourceVersion {}",
                 kt.getMetadata().getName(), BatchingTopicController.rv(kt));
-        waitUntilCondition(Crds.topicOperation(client).resource(kt), Objects::isNull);
+        Resource<KafkaTopic> resource = Crds.topicOperation(client).resource(kt);
+        TopicOperatorTestUtil.waitUntilCondition(resource, Objects::isNull);
 
         // then
         waitNotExistsInKafka(expectedTopicName(kt));
@@ -1124,7 +1066,8 @@ class TopicControllerIT {
             Crds.topicOperation(client).resource(kt).delete();
             LOGGER.info("Test deleted KafkaTopic {} with resourceVersion {}",
                     kt.getMetadata().getName(), BatchingTopicController.rv(kt));
-            waitUntilCondition(Crds.topicOperation(client).resource(kt), Objects::isNull);
+            Resource<KafkaTopic> resource = Crds.topicOperation(client).resource(kt);
+            TopicOperatorTestUtil.waitUntilCondition(resource, Objects::isNull);
         }
 
         // then
@@ -1151,7 +1094,8 @@ class TopicControllerIT {
         Crds.topicOperation(client).resource(kt).delete();
         LOGGER.info("Test created KafkaTopic {} with resourceVersion {}",
                 kt.getMetadata().getName(), BatchingTopicController.rv(kt));
-        waitUntilCondition(Crds.topicOperation(client).resource(kt), Objects::isNull);
+        Resource<KafkaTopic> resource = Crds.topicOperation(client).resource(kt);
+        TopicOperatorTestUtil.waitUntilCondition(resource, Objects::isNull);
 
         // then
         TopicDescription topicDescription = awaitTopicDescription(expectedTopicName);
@@ -1180,7 +1124,8 @@ class TopicControllerIT {
         Crds.topicOperation(client).resource(kt).delete();
         LOGGER.info("Test deleted KafkaTopic {} with resourceVersion {}",
                 kt.getMetadata().getName(), BatchingTopicController.rv(kt));
-        waitUntilCondition(Crds.topicOperation(client).resource(kt), Objects::isNull);
+        Resource<KafkaTopic> resource = Crds.topicOperation(client).resource(kt);
+        TopicOperatorTestUtil.waitUntilCondition(resource, Objects::isNull);
 
         // then
         TopicDescription topicDescription = awaitTopicDescription(expectedTopicName);
@@ -1718,7 +1663,8 @@ class TopicControllerIT {
         Crds.topicOperation(client).resource(kt).delete();
         LOGGER.info("Test deleted KafkaTopic {} with resourceVersion {}",
                 kt.getMetadata().getName(), BatchingTopicController.rv(kt));
-        var deleted = waitUntilCondition(Crds.topicOperation(client).resource(kt), readyIsFalse());
+        Resource<KafkaTopic> resource = Crds.topicOperation(client).resource(kt);
+        var deleted = TopicOperatorTestUtil.waitUntilCondition(resource, readyIsFalse());
 
         // then
         var condition = assertExactlyOneCondition(deleted);
@@ -1765,7 +1711,8 @@ class TopicControllerIT {
         Crds.topicOperation(client).resource(unmanagedFoo).delete();
         LOGGER.info("Test deleted KafkaTopic {} with resourceVersion {}",
                 unmanagedFoo.getMetadata().getName(), BatchingTopicController.rv(unmanagedFoo));
-        waitUntilCondition(Crds.topicOperation(client).resource(unmanagedFoo), Objects::isNull);
+        Resource<KafkaTopic> resource = Crds.topicOperation(client).resource(unmanagedFoo);
+        TopicOperatorTestUtil.waitUntilCondition(resource, Objects::isNull);
 
         // then: expect bar's unreadiness to be due to mismatching #partitions
         waitUntil(createdBar, readyIsFalseAndReasonIs(
