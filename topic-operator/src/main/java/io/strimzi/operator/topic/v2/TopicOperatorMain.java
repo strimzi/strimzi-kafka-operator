@@ -35,6 +35,7 @@ public class TopicOperatorMain implements Liveness, Readiness {
     private final long resyncIntervalMs;
     private final BasicItemStore<KafkaTopic> itemStore;
     /* test */ final BatchingTopicController controller;
+    private final Admin admin;
     private SharedIndexInformer<KafkaTopic> informer; // guarded by this
     private Thread shutdownHook; // guarded by this
 
@@ -49,6 +50,7 @@ public class TopicOperatorMain implements Liveness, Readiness {
         this.namespace = namespace;
         this.client = client;
         this.resyncIntervalMs = config.fullReconciliationIntervalMs();
+        this.admin = admin;
         this.controller = new BatchingTopicController(selector, admin, client, config.useFinalizer());
         this.itemStore = new BasicItemStore<KafkaTopic>(Cache::metaNamespaceKeyFunc);
         this.queue = new BatchingLoop(config.maxQueueSize(),  controller, 1, config.maxBatchSize(), config.maxBatchLingerMs(), itemStore);
@@ -109,6 +111,7 @@ public class TopicOperatorMain implements Liveness, Readiness {
                 informer = null;
             }
             this.queue.stop();
+            this.admin.close();
             this.healthAndMetricsServer.stop();
             LOGGER.infoOp("Shutdown completed normally");
         } catch (InterruptedException e) {

@@ -108,6 +108,8 @@ class TopicControllerIT {
 
     Admin[] admin;
 
+    Admin[] operatorAdmin;
+
     TopicOperatorMain operator;
 
     Stack<String> namespaces = new Stack<>();
@@ -152,8 +154,10 @@ class TopicControllerIT {
     @AfterEach
     public void after(TestInfo testInfo) throws InterruptedException, TimeoutException {
         LOGGER.debug("Cleaning up after test {}", testName(testInfo));
-        assertTrue(operator.queue.isAlive());
-        assertTrue(operator.queue.isReady());
+        if (operator != null) {
+            assertTrue(operator.queue.isAlive());
+            assertTrue(operator.queue.isReady());
+        }
         if (operator != null) {
             operator.stop();
             operator = null;
@@ -271,14 +275,16 @@ class TopicControllerIT {
         }
     }
 
-
     private void maybeStartOperator(TopicOperatorConfig config) throws ExecutionException, InterruptedException {
         if (admin == null) {
             admin = new Admin[]{Admin.create(config.adminClientConfig())};
         }
+        if (operatorAdmin == null) {
+            operatorAdmin = new Admin[]{Admin.create(config.adminClientConfig())};
+        }
         if (operator == null) {
             this.operatorConfig = config;
-            operator = TopicOperatorMain.operator(config, client, admin[0]);
+            operator = TopicOperatorMain.operator(config, client, operatorAdmin[0]);
             assertFalse(operator.queue.isAlive());
             assertFalse(operator.queue.isReady());
             operator.start();
@@ -1563,11 +1569,11 @@ class TopicControllerIT {
             throws ExecutionException, InterruptedException {
         // given
         var config = topicOperatorConfig("ns", kafkaCluster);
-        admin = new Admin[]{Mockito.spy(Admin.create(config.adminClientConfig()))};
+        operatorAdmin = new Admin[]{Mockito.spy(Admin.create(config.adminClientConfig()))};
         var ctr = mock(CreateTopicsResult.class);
         Mockito.doReturn(failedFuture(exception)).when(ctr).all();
         Mockito.doReturn(Map.of(expectedTopicName(kt), failedFuture(exception))).when(ctr).values();
-        Mockito.doReturn(ctr).when(admin[0]).createTopics(any());
+        Mockito.doReturn(ctr).when(operatorAdmin[0]).createTopics(any());
         maybeStartOperator(config);
 
         //when
@@ -1587,11 +1593,11 @@ class TopicControllerIT {
                                                  KafkaCluster kafkaCluster)
             throws ExecutionException, InterruptedException, TimeoutException {
         var config = topicOperatorConfig("ns", kafkaCluster);
-        admin = new Admin[]{Mockito.spy(Admin.create(config.adminClientConfig()))};
+        operatorAdmin = new Admin[]{Mockito.spy(Admin.create(config.adminClientConfig()))};
         var ctr = mock(AlterConfigsResult.class);
         Mockito.doReturn(failedFuture(new TopicAuthorizationException("not allowed"))).when(ctr).all();
         Mockito.doReturn(Map.of(new ConfigResource(ConfigResource.Type.TOPIC, expectedTopicName(kt)), failedFuture(new TopicAuthorizationException("not allowed")))).when(ctr).values();
-        Mockito.doReturn(ctr).when(admin[0]).incrementalAlterConfigs(any());
+        Mockito.doReturn(ctr).when(operatorAdmin[0]).incrementalAlterConfigs(any());
 
         maybeStartOperator(config);
         createTopicAndAssertSuccess(kafkaCluster, kt);
@@ -1623,11 +1629,11 @@ class TopicControllerIT {
                                                     KafkaCluster kafkaCluster)
             throws ExecutionException, InterruptedException, TimeoutException {
         var config = topicOperatorConfig("ns", kafkaCluster);
-        admin = new Admin[]{Mockito.spy(Admin.create(config.adminClientConfig()))};
+        operatorAdmin = new Admin[]{Mockito.spy(Admin.create(config.adminClientConfig()))};
         var ctr = mock(CreatePartitionsResult.class);
         Mockito.doReturn(failedFuture(new TopicAuthorizationException("not allowed"))).when(ctr).all();
         Mockito.doReturn(Map.of(expectedTopicName(kt), failedFuture(new TopicAuthorizationException("not allowed")))).when(ctr).values();
-        Mockito.doReturn(ctr).when(admin[0]).createPartitions(any());
+        Mockito.doReturn(ctr).when(operatorAdmin[0]).createPartitions(any());
 
         maybeStartOperator(config);
         createTopicAndAssertSuccess(kafkaCluster, kt);
@@ -1654,11 +1660,11 @@ class TopicControllerIT {
 
         // given
         var config = topicOperatorConfig("ns", kafkaCluster);
-        admin = new Admin[]{Mockito.spy(Admin.create(config.adminClientConfig()))};
+        operatorAdmin = new Admin[]{Mockito.spy(Admin.create(config.adminClientConfig()))};
         var ctr = mock(DeleteTopicsResult.class);
         Mockito.doReturn(failedFuture(new TopicAuthorizationException("not allowed"))).when(ctr).all();
         Mockito.doReturn(Map.of(expectedTopicName(kt), failedFuture(new TopicAuthorizationException("not allowed")))).when(ctr).topicNameValues();
-        Mockito.doReturn(ctr).when(admin[0]).deleteTopics(any(TopicCollection.TopicNameCollection.class));
+        Mockito.doReturn(ctr).when(operatorAdmin[0]).deleteTopics(any(TopicCollection.TopicNameCollection.class));
 
         maybeStartOperator(config);
         createTopicAndAssertSuccess(kafkaCluster, kt);
