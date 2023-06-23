@@ -93,7 +93,7 @@ record TopicOperatorConfig(
     static final ConfigParameter<String> SASL_PASSWORD = new ConfigParameter<>("STRIMZI_SASL_PASSWORD", STRING, "", CONFIG_VALUES);
     static final ConfigParameter<String> SECURITY_PROTOCOL = new ConfigParameter<>("STRIMZI_SECURITY_PROTOCOL", STRING, "", CONFIG_VALUES);
     static final ConfigParameter<Boolean> USE_FINALIZERS = new ConfigParameter<>("STRIMZI_USE_FINALIZERS", BOOLEAN, "true", CONFIG_VALUES);
-    static final ConfigParameter<Integer> MAX_QUEUE_SIZE = new ConfigParameter<>("STRIMZI_MAX_QUEUE_SIZE", strictlyPositive(INTEGER), "100", CONFIG_VALUES);
+    static final ConfigParameter<Integer> MAX_QUEUE_SIZE = new ConfigParameter<>("STRIMZI_MAX_QUEUE_SIZE", strictlyPositive(INTEGER), "1024", CONFIG_VALUES);
     static final ConfigParameter<Integer> MAX_BATCH_SIZE = new ConfigParameter<>("STRIMZI_MAX_BATCH_SIZE", strictlyPositive(INTEGER), "100", CONFIG_VALUES);
     static final ConfigParameter<Long> MAX_BATCH_LINGER_MS = new ConfigParameter<>("STRIMZI_MAX_BATCH_LINGER_MS", strictlyPositive(LONG), "100", CONFIG_VALUES);
 
