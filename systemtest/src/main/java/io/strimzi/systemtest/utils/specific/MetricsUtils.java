@@ -4,8 +4,11 @@
  */
 package io.strimzi.systemtest.utils.specific;
 
+import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.metrics.MetricsCollector;
+import io.strimzi.systemtest.resources.ComponentType;
+import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.executor.Exec;
 import org.apache.logging.log4j.LogManager;
@@ -14,7 +17,9 @@ import org.apache.logging.log4j.Logger;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
+import java.util.function.Predicate;
 import java.util.regex.Pattern;
 
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
@@ -51,6 +56,19 @@ public class MetricsUtils {
 
         assertThat("Collected metrics should not be empty", exec.out(), not(emptyString()));
         return exec.out();
+    }
+
+    public static MetricsCollector setupCOMetricsCollectorInNamespace(String coName, String coNamespace, String coScraperName) {
+
+        LabelSelector scraperDeploymentPodLabel = new LabelSelector(null, Map.of(Constants.APP_POD_LABEL, coScraperName));
+        String coScraperPodName = ResourceManager.kubeClient().listPods(coNamespace, scraperDeploymentPodLabel).get(0).getMetadata().getName();
+
+        return new MetricsCollector.Builder()
+            .withScraperPodName(coScraperPodName)
+            .withNamespaceName(coNamespace)
+            .withComponentType(ComponentType.ClusterOperator)
+            .withComponentName(coName)
+            .build();
     }
 
     public static void assertCoMetricResourceNotNull(MetricsCollector collector, String metric, String kind) {
@@ -99,14 +117,27 @@ public class MetricsUtils {
     }
 
     public static void assertMetricResourcesHigherThanOrEqualTo(MetricsCollector collector, String kind, int expectedValue) {
+        Predicate<Double> higherOrEqualToExpected = actual -> actual >= expectedValue;
+        String metricConditionDescription = "higher or equal to expected value: (%s)".formatted(expectedValue);
+        assertMetricResourcesIs(collector, kind, higherOrEqualToExpected, metricConditionDescription);
+    }
+
+    public static void assertMetricResourcesLowerThanOrEqualTo(MetricsCollector collector, String kind, int expectedValue) {
+        Predicate<Double> lowerOrEqualToExpected = actual -> actual <= expectedValue;
+        String metricConditionDescription = "lower or equal to expected value: (%s)".formatted(expectedValue);
+        assertMetricResourcesIs(collector, kind, lowerOrEqualToExpected, metricConditionDescription);
+    }
+
+    public static void assertMetricResourcesIs(MetricsCollector collector, String kind, Predicate<Double> predicate, String message) {
         String metric = "strimzi_resources\\{kind=\"" + kind + "\",.*}";
-        TestUtils.waitFor("metric " + metric + " has equal or higher value (" + expectedValue + ")", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.GLOBAL_TIMEOUT_SHORT, () -> {
+        TestUtils.waitFor("metric " + metric + "is " + message, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.GLOBAL_TIMEOUT_SHORT, () -> {
             collector.collectMetricsFromPods();
             ArrayList<Double> values = createPatternAndCollect(collector, metric);
             double actualValue = values.stream().mapToDouble(i -> i).sum();
-            return actualValue >= expectedValue;
+            return predicate.test(actualValue);
         });
     }
+
     public static void assertMetricValueNotNull(MetricsCollector collector, String metric) {
         ArrayList<Double> values = createPatternAndCollect(collector, metric);
         double actualValue = values.stream().mapToDouble(i -> i).count();

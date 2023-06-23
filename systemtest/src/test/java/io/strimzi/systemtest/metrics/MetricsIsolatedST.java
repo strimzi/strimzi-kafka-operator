@@ -783,7 +783,7 @@ public class MetricsIsolatedST extends AbstractST {
             .withScraperPodName(coScraperPodName)
             .withNamespaceName(clusterOperator.getDeploymentNamespace())
             .withComponentType(ComponentType.ClusterOperator)
-            .withComponentName("")
+            .withComponentName(clusterOperator.getClusterOperatorName())
             .build();
 
         kafkaCollector.collectMetricsFromPods();
