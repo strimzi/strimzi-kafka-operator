@@ -60,7 +60,8 @@ public class KafkaConnectUtils {
     public static void waitForMessagesInKafkaConnectFileSink(String namespaceName, String kafkaConnectPodName, String sinkFileName, String message) {
         LOGGER.info("Waiting for messages in file sink on {}", kafkaConnectPodName);
         TestUtils.waitFor("messages in file sink", Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_FOR_SEND_RECEIVE_MSG,
-            () -> cmdKubeClient(namespaceName).execInPod(Level.TRACE, kafkaConnectPodName, "/bin/bash", "-c", "cat " + sinkFileName).out().contains(message));
+            () -> cmdKubeClient(namespaceName).execInPod(Level.TRACE, kafkaConnectPodName, "/bin/bash", "-c", "cat " + sinkFileName).out().contains(message),
+            () -> LOGGER.warn(cmdKubeClient(namespaceName).execInPod(Level.TRACE, kafkaConnectPodName, "/bin/bash", "-c", "cat " + sinkFileName).out()));
         LOGGER.info("Expected messages are in file sink on {}", kafkaConnectPodName);
     }
 

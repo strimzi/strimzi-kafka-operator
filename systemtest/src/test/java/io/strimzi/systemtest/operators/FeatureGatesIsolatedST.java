@@ -158,7 +158,9 @@ public class FeatureGatesIsolatedST extends AbstractST {
 
         final TestStorage testStorage = new TestStorage(extensionContext);
         final int connectReplicas = 1;
-        final int messageCount = 500;
+        // sending a lot of messages throughout the test, so we will not hit race condition when there will not be any
+        // messages left to send at the end of the test scenario (for the last `waitForMessagesInKafkaConnectFileSink` check)
+        final int messageCount = 1000;
         List<EnvVar> coEnvVars = new ArrayList<>();
 
         coEnvVars.add(new EnvVar(Environment.STRIMZI_FEATURE_GATES_ENV, "-StableConnectIdentities", null));
@@ -175,7 +177,7 @@ public class FeatureGatesIsolatedST extends AbstractST {
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), 3, 1).build());
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getTopicName()).build());
-        resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnectWithFilePlugin(testStorage.getClusterName(), testStorage.getNamespaceName(), connectReplicas)
+        resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnectWithFilePlugin(testStorage.getClusterName(), clusterOperator.getDeploymentNamespace(), connectReplicas)
                 .editMetadata()
                     .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
                 .endMetadata()
@@ -200,19 +202,25 @@ public class FeatureGatesIsolatedST extends AbstractST {
         Map<String, String> coPod = DeploymentUtils.depSnapshot(clusterOperator.getDeploymentNamespace(), ResourceManager.getCoDeploymentName());
 
         final LabelSelector connectLabelSelector = KafkaConnectResource.getLabelSelector(testStorage.getClusterName(), KafkaConnectResources.deploymentName(testStorage.getClusterName()));
-        Map<String, String> connectPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), connectLabelSelector);
+        Map<String, String> connectPods = PodUtils.podSnapshot(clusterOperator.getDeploymentNamespace(), connectLabelSelector);
 
         KafkaClients clients = new KafkaClientsBuilder()
-                .withProducerName(testStorage.getProducerName())
-                .withConsumerName(testStorage.getConsumerName())
-                .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
-                .withTopicName(testStorage.getTopicName())
-                .withMessageCount(messageCount)
-                .withDelayMs(500)
-                .withNamespaceName(clusterOperator.getDeploymentNamespace())
-                .build();
+            .withProducerName(testStorage.getProducerName())
+            .withConsumerName(testStorage.getConsumerName())
+            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
+            .withTopicName(testStorage.getTopicName())
+            .withMessageCount(messageCount)
+            .withDelayMs(500)
+            .withNamespaceName(clusterOperator.getDeploymentNamespace())
+            .build();
 
+        String connectorPodName = kubeClient().listPods(testStorage.getNamespaceName(), connectLabelSelector).get(0).getMetadata().getName();
+
+        // we are sending messages continuously throughout the test to check that connector is working
         resourceManager.createResource(extensionContext, clients.producerStrimzi());
+
+        LOGGER.info("Verifying that KafkaConnector is able to sink the messages to the file-sink file");
+        KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(testStorage.getNamespaceName(), connectorPodName, Constants.DEFAULT_SINK_FILE_PATH, "Hello-world");
 
         LOGGER.info("Changing FG env variable to enable Stable Connect Identities");
         coEnvVars = kubeClient().getDeployment(clusterOperator.getDeploymentNamespace(), Constants.STRIMZI_DEPLOYMENT_NAME).getSpec().getTemplate().getSpec().getContainers().get(0).getEnv();
@@ -226,6 +234,11 @@ public class FeatureGatesIsolatedST extends AbstractST {
         connectPods = RollingUpdateUtils.waitTillComponentHasRolled(clusterOperator.getDeploymentNamespace(), connectLabelSelector, connectReplicas, connectPods);
         KafkaConnectorUtils.waitForConnectorReady(testStorage.getNamespaceName(), testStorage.getClusterName());
 
+        connectorPodName = kubeClient().listPods(testStorage.getNamespaceName(), connectLabelSelector).get(0).getMetadata().getName();
+
+        LOGGER.info("Verifying that KafkaConnector is able to sink the messages to the file-sink file");
+        KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(testStorage.getNamespaceName(), connectorPodName, Constants.DEFAULT_SINK_FILE_PATH, "Hello-world");
+
         LOGGER.info("Changing FG env variable to disable again Stable Connect Identities");
         coEnvVars.stream().filter(env -> env.getName().equals(Environment.STRIMZI_FEATURE_GATES_ENV)).findFirst().get().setValue("-StableConnectIdentities");
 
@@ -237,8 +250,9 @@ public class FeatureGatesIsolatedST extends AbstractST {
         RollingUpdateUtils.waitTillComponentHasRolled(clusterOperator.getDeploymentNamespace(), connectLabelSelector, connectReplicas, connectPods);
         KafkaConnectorUtils.waitForConnectorReady(testStorage.getNamespaceName(), testStorage.getClusterName());
 
-        final String connectorPodName = kubeClient().listPodsByPrefixInName(testStorage.getNamespaceName(), testStorage.getClusterName() + "-connect").get(0).getMetadata().getName();
+        connectorPodName = kubeClient().listPods(testStorage.getNamespaceName(), connectLabelSelector).get(0).getMetadata().getName();
 
-        KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(testStorage.getNamespaceName(), connectorPodName, Constants.DEFAULT_SINK_FILE_PATH, "\"Hello-world - 499\"");
+        LOGGER.info("Verifying that KafkaConnector is able to sink the messages to the file-sink file");
+        KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(testStorage.getNamespaceName(), connectorPodName, Constants.DEFAULT_SINK_FILE_PATH, "Hello-world");
     }
 }
