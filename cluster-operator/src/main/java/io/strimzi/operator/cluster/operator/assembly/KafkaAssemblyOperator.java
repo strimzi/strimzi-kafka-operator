@@ -64,7 +64,7 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.IntStream;
 
-import static io.strimzi.operator.common.Util.async;
+import static io.strimzi.operator.common.VertxUtil.async;
 
 /**
  * Assembly operator for the Kafka custom resource. It manages the following components:

@@ -55,6 +55,7 @@ import io.strimzi.operator.common.BackOff;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Util;
+import io.strimzi.operator.common.VertxUtil;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.OrderedProperties;
 import io.strimzi.operator.common.model.ResourceVisitor;
@@ -209,7 +210,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
                                                      String watchNamespaceOrWildcard, Labels selectorLabels) {
         Optional<LabelSelector> selector = (selectorLabels == null || selectorLabels.toMap().isEmpty()) ? Optional.empty() : Optional.of(new LabelSelector(null, selectorLabels.toMap()));
 
-        return Util.async(connectOperator.vertx, () -> {
+        return VertxUtil.async(connectOperator.vertx, () -> {
             Watch watch = connectOperator.connectorOperator.watch(watchNamespaceOrWildcard, new Watcher<>() {
                 @Override
                 public void eventReceived(Action action, KafkaConnector kafkaConnector) {
@@ -966,7 +967,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
         conditions.addAll(unknownAndDeprecatedConditions);
 
         if (!Annotations.isReconciliationPausedWithAnnotation(connector)) {
-            StatusUtils.setStatusConditionAndObservedGeneration(connector, status, error != null ? Future.failedFuture(error) : connectorReadiness);
+            StatusUtils.setStatusConditionAndObservedGeneration(connector, status, error != null ? error : connectorReadiness.cause());
             status.setConnectorStatus(statusResult);
             status.setTasksMax(getActualTaskCount(connector, statusResult));
             status.setTopics(topics);

@@ -2,18 +2,18 @@
  * Copyright Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.strimzi.operator.common.operator.resource;
+package io.strimzi.operator.common.operator.resource.concurrent;
 
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.api.kafka.KafkaUserList;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.KafkaUserBuilder;
 import io.strimzi.test.TestUtils;
-import io.vertx.junit5.VertxExtension;
-import io.vertx.junit5.VertxTestContext;
+
+import java.util.concurrent.ForkJoinPool;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.junit.jupiter.api.extension.ExtendWith;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -24,13 +24,12 @@ import static org.hamcrest.MatcherAssert.assertThat;
  * being created by the Kubernetes API etc. These things are hard to test with mocks. These IT tests make it easy to
  * test them against real clusters.
  */
-@ExtendWith(VertxExtension.class)
 public class KafkaUserCrdOperatorIT extends AbstractCustomResourceOperatorIT<KubernetesClient, KafkaUser, KafkaUserList> {
     protected static final Logger LOGGER = LogManager.getLogger(KafkaUserCrdOperatorIT.class);
 
     @Override
-    protected CrdOperator operator() {
-        return new CrdOperator(vertx, client, KafkaUser.class, KafkaUserList.class, KafkaUser.RESOURCE_KIND);
+    protected CrdOperator<KubernetesClient, KafkaUser, KafkaUserList> operator() {
+        return new CrdOperator<>(ForkJoinPool.commonPool(), client, KafkaUser.class, KafkaUserList.class, KafkaUser.RESOURCE_KIND);
     }
 
     @Override
@@ -81,10 +80,9 @@ public class KafkaUserCrdOperatorIT extends AbstractCustomResourceOperatorIT<Kub
     }
 
     @Override
-    protected void assertReady(VertxTestContext context, KafkaUser resource) {
-        context.verify(() -> assertThat(resource.getStatus()
+    protected void assertReady(KafkaUser resource) {
+        assertThat(resource.getStatus()
                 .getConditions()
-                .get(0), is(READY_CONDITION)));
+                .get(0), is(READY_CONDITION));
     }
 }
-

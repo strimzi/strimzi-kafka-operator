@@ -10,7 +10,7 @@ import io.fabric8.kubernetes.api.model.ServiceAccountList;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.operator.common.Reconciliation;
-import io.strimzi.operator.common.Util;
+import io.strimzi.operator.common.VertxUtil;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
@@ -79,7 +79,7 @@ public class ServiceAccountOperatorIT extends AbstractNamespacedResourceOperator
                 .compose(rr -> op.reconcile(Reconciliation.DUMMY_RECONCILIATION, namespace, resourceName, null))
                 .onComplete(context.succeeding(rrDeleted -> {
                     // it seems the resource is cached for some time so we need wait for it to be null
-                    context.verify(() -> Util.waitFor(Reconciliation.DUMMY_RECONCILIATION, vertx, "resource deletion " + resourceName, "deleted", 1000,
+                    context.verify(() -> VertxUtil.waitFor(Reconciliation.DUMMY_RECONCILIATION, vertx, "resource deletion " + resourceName, "deleted", 1000,
                             30_000, () -> op.get(namespace, resourceName) == null)
                             .onComplete(del -> {
                                 assertThat(op.get(namespace, resourceName), Matchers.is(nullValue()));

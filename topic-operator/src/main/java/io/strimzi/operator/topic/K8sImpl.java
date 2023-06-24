@@ -15,7 +15,7 @@ import io.fabric8.kubernetes.client.dsl.base.PatchType;
 import io.strimzi.api.kafka.KafkaTopicList;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.operator.common.Reconciliation;
-import io.strimzi.operator.common.Util;
+import io.strimzi.operator.common.VertxUtil;
 import io.strimzi.operator.common.operator.resource.CrdOperator;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
@@ -129,7 +129,7 @@ public class K8sImpl implements K8s {
                 // Delete the resource by the topic name, because neither ZK nor Kafka know the resource name
                 operation().inNamespace(namespace).withName(resourceName.toString()).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
 
-                Util.waitFor(reconciliation, vertx, "sync resource deletion " + resourceName, "deleted", 1000, Long.MAX_VALUE, () -> {
+                VertxUtil.waitFor(reconciliation, vertx, "sync resource deletion " + resourceName, "deleted", 1000, Long.MAX_VALUE, () -> {
                     KafkaTopic kafkaTopic = operation().inNamespace(namespace).withName(resourceName.toString()).get();
                     boolean notExists = kafkaTopic == null;
                     LOGGER.debug("KafkaTopic {} deleted {}", resourceName.toString(), notExists);

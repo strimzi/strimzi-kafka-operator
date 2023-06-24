@@ -22,7 +22,7 @@ import io.strimzi.operator.common.BackOff;
 import io.strimzi.operator.common.MaxAttemptsExceededException;
 import io.strimzi.operator.common.MetricsProvider;
 import io.strimzi.operator.common.ReconciliationLogger;
-import io.strimzi.operator.common.Util;
+import io.strimzi.operator.common.VertxUtil;
 import io.strimzi.operator.common.operator.resource.StatusUtils;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.CompositeFuture;
@@ -116,7 +116,7 @@ class TopicOperator {
         public void handle(Void v) {
             EventBuilder evtb = new EventBuilder();
             final String eventTime = ZonedDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'"));
-            
+
             if (involvedObject != null) {
                 evtb.withNewInvolvedObject()
                         .withKind(involvedObject.getKind())
@@ -956,7 +956,7 @@ class TopicOperator {
     private Future<Void> awaitExistential(LogContext logContext, TopicName topicName, boolean checkExists) {
         String logState = "confirmed " + (checkExists ? "" : "non-") + "existence";
         AtomicReference<Future<Boolean>> ref = new AtomicReference<>(kafka.topicExists(logContext.toReconciliation(), topicName));
-        return Util.waitFor(logContext.toReconciliation(), vertx, logContext.toString(), logState, 1_000, 60_000,
+        return VertxUtil.waitFor(logContext.toReconciliation(), vertx, logContext.toString(), logState, 1_000, 60_000,
             () -> {
                 Future<Boolean> existsFuture = ref.get();
                 if (existsFuture.isComplete()) {
@@ -1166,7 +1166,7 @@ class TopicOperator {
                             topic.getMetadata().getResourceVersion(),
                             topic.getMetadata().getGeneration());
                     KafkaTopicStatus kts = new KafkaTopicStatus();
-                    StatusUtils.setStatusConditionAndObservedGeneration(topic, kts, result);
+                    StatusUtils.setStatusConditionAndObservedGeneration(topic, kts, result.cause());
 
                     if (topic.getStatus() == null || topic.getStatus().getTopicName() == null) {
                         String specTopicName = new TopicName(topic).toString();
