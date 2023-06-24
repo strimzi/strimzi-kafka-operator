@@ -84,15 +84,14 @@ public class ReconcilerUtils {
      * @return  Future which completes when all pods are ready or fails when they are not ready in time
      */
     public static Future<Void> podsReady(Reconciliation reconciliation, PodOperator podOperator, long operationTimeoutMs, List<String> podNames) {
-        @SuppressWarnings({ "rawtypes" }) // Has to use Raw type because of the CompositeFuture
-        List<Future> podFutures = new ArrayList<>(podNames.size());
+        List<Future<Void>> podFutures = new ArrayList<>(podNames.size());
 
         for (String podName : podNames) {
             LOGGER.debugCr(reconciliation, "Checking readiness of pod {} in namespace {}", podName, reconciliation.namespace());
             podFutures.add(podOperator.readiness(reconciliation, reconciliation.namespace(), podName, 1_000, operationTimeoutMs));
         }
 
-        return CompositeFuture.join(podFutures)
+        return Future.join(podFutures)
                 .map((Void) null);
     }
 
@@ -107,7 +106,7 @@ public class ReconcilerUtils {
      *          result being the Kubernetes Secret with the Cluster Operator public and private key.
      */
     public static CompositeFuture clientSecrets(Reconciliation reconciliation, SecretOperator secretOperator) {
-        return CompositeFuture.join(
+        return Future.join(
                 getSecret(secretOperator, reconciliation.namespace(), KafkaResources.clusterCaCertificateSecretName(reconciliation.name())),
                 getSecret(secretOperator, reconciliation.namespace(), ClusterOperator.secretName(reconciliation.name()))
         );

@@ -8,7 +8,6 @@ import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.strimzi.operator.common.metrics.OperatorMetricsHolder;
 import io.strimzi.operator.common.model.NamespaceAndName;
 import io.vertx.core.AsyncResult;
-import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 
@@ -82,14 +81,13 @@ public interface Operator {
         }
 
         if (desiredNames.size() > 0) {
-            @SuppressWarnings({ "rawtypes" }) // Has to use Raw type because of the CompositeFuture
-            List<Future> futures = new ArrayList<>();
+            List<Future<Void>> futures = new ArrayList<>();
             for (NamespaceAndName resourceRef : desiredNames) {
                 metrics().resourceCounter(resourceRef.getNamespace()).getAndIncrement();
                 Reconciliation reconciliation = new Reconciliation(trigger, kind(), resourceRef.getNamespace(), resourceRef.getName());
                 futures.add(reconcile(reconciliation));
             }
-            CompositeFuture.join(futures).map((Void) null).onComplete(handler);
+            Future.join(futures).map((Void) null).onComplete(handler);
         } else {
             handler.handle(Future.succeededFuture());
         }

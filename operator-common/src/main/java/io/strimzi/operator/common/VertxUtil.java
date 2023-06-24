@@ -26,7 +26,6 @@ import io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationTls;
 import io.strimzi.certs.CertAndKey;
 import io.strimzi.operator.common.operator.resource.SecretOperator;
 import io.strimzi.operator.common.operator.resource.TimeoutException;
-import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Promise;
@@ -220,7 +219,7 @@ public final class VertxUtil {
             tlsFuture = Future.succeededFuture(0);
         } else {
             // get all TLS trusted certs, compute hash from each of them, sum hashes
-            tlsFuture = CompositeFuture.join(certSecretSources.stream().map(certSecretSource ->
+            tlsFuture = Future.join(certSecretSources.stream().map(certSecretSource ->
                     getCertificateAsync(secretOperations, namespace, certSecretSource)
                     .compose(cert -> Future.succeededFuture(cert.hashCode()))).collect(Collectors.toList()))
                 .compose(hashes -> Future.succeededFuture(hashes.list().stream().mapToInt(e -> (int) e).sum()));
@@ -245,7 +244,7 @@ public final class VertxUtil {
                         .compose(crtAndKey -> Future.succeededFuture(crtAndKey.certAsBase64String().hashCode() + crtAndKey.keyAsBase64String().hashCode() + tlsHash)));
             } else if (auth instanceof KafkaClientAuthenticationOAuth) {
                 @SuppressWarnings({ "rawtypes" }) // Has to use Raw type because of the CompositeFuture
-                List<Future> futureList = ((KafkaClientAuthenticationOAuth) auth).getTlsTrustedCertificates() == null ?
+                List<Future<Integer>> futureList = ((KafkaClientAuthenticationOAuth) auth).getTlsTrustedCertificates() == null ?
                         new ArrayList<>() : ((KafkaClientAuthenticationOAuth) auth).getTlsTrustedCertificates().stream().map(certSecretSource ->
                         getCertificateAsync(secretOperations, namespace, certSecretSource)
                                 .compose(cert -> Future.succeededFuture(cert.hashCode()))).collect(Collectors.toList());
@@ -253,7 +252,7 @@ public final class VertxUtil {
                 futureList.add(addSecretHash(secretOperations, namespace, ((KafkaClientAuthenticationOAuth) auth).getAccessToken()));
                 futureList.add(addSecretHash(secretOperations, namespace, ((KafkaClientAuthenticationOAuth) auth).getClientSecret()));
                 futureList.add(addSecretHash(secretOperations, namespace, ((KafkaClientAuthenticationOAuth) auth).getRefreshToken()));
-                return CompositeFuture.join(futureList)
+                return Future.join(futureList)
                         .compose(hashes -> Future.succeededFuture(hashes.list().stream().mapToInt(e -> (int) e).sum()));
             } else {
                 // unknown Auth type

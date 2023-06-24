@@ -31,7 +31,6 @@ import io.strimzi.operator.common.operator.resource.IngressOperator;
 import io.strimzi.operator.common.operator.resource.RouteOperator;
 import io.strimzi.operator.common.operator.resource.SecretOperator;
 import io.strimzi.operator.common.operator.resource.ServiceOperator;
-import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 
 import java.nio.charset.StandardCharsets;
@@ -360,8 +359,7 @@ public class KafkaListenersReconciler {
      */
     protected Future<Void> loadBalancerServicesReady() {
         List<GenericKafkaListener> loadBalancerListeners = ListenersUtils.loadBalancerListeners(kafka.getListeners());
-        @SuppressWarnings({ "rawtypes" }) // Has to use Raw type because of the CompositeFuture
-        List<Future> listenerFutures = new ArrayList<>(loadBalancerListeners.size());
+        List<Future<Void>> listenerFutures = new ArrayList<>(loadBalancerListeners.size());
 
         for (GenericKafkaListener listener : loadBalancerListeners) {
             String bootstrapServiceName = ListenersUtils.backwardsCompatibleBootstrapServiceName(reconciliation.name(), listener);
@@ -391,8 +389,7 @@ public class KafkaListenersReconciler {
                             });
                 }
             }).compose(res -> {
-                @SuppressWarnings({ "rawtypes" }) // Has to use Raw type because of the CompositeFuture
-                List<Future> perPodFutures = new ArrayList<>();
+                List<Future<Void>> perPodFutures = new ArrayList<>();
 
                 for (NodeRef node : kafka.nodes()) {
                     perPodFutures.add(
@@ -400,10 +397,9 @@ public class KafkaListenersReconciler {
                     );
                 }
 
-                return CompositeFuture.join(perPodFutures);
+                return Future.join(perPodFutures);
             }).compose(res -> {
-                @SuppressWarnings({ "rawtypes" }) // Has to use Raw type because of the CompositeFuture
-                List<Future> perPodFutures = new ArrayList<>();
+                List<Future<Void>> perPodFutures = new ArrayList<>();
 
                 for (NodeRef node : kafka.nodes()) {
                     Future<Void> perBrokerFut = serviceOperator.getAsync(reconciliation.namespace(), ListenersUtils.backwardsCompatiblePerBrokerServiceName(ReconcilerUtils.getControllerNameFromPodName(node.podName()), node.nodeId(), listener))
@@ -436,7 +432,7 @@ public class KafkaListenersReconciler {
                     perPodFutures.add(perBrokerFut);
                 }
 
-                return CompositeFuture.join(perPodFutures);
+                return Future.join(perPodFutures);
             }).compose(res -> {
                 ListenerStatus ls = new ListenerStatusBuilder()
                         .withName(listener.getName())
@@ -454,7 +450,7 @@ public class KafkaListenersReconciler {
             listenerFutures.add(perListenerFut);
         }
 
-        return CompositeFuture
+        return Future
                 .join(listenerFutures)
                 .map((Void) null);
     }
@@ -471,8 +467,7 @@ public class KafkaListenersReconciler {
      */
     protected Future<Void> nodePortServicesReady() {
         List<GenericKafkaListener> loadBalancerListeners = ListenersUtils.nodePortListeners(kafka.getListeners());
-        @SuppressWarnings({ "rawtypes" }) // Has to use Raw type because of the CompositeFuture
-        List<Future> listenerFutures = new ArrayList<>(loadBalancerListeners.size());
+        List<Future<?>> listenerFutures = new ArrayList<>(loadBalancerListeners.size());
 
         for (GenericKafkaListener listener : loadBalancerListeners) {
             String bootstrapServiceName = ListenersUtils.backwardsCompatibleBootstrapServiceName(reconciliation.name(), listener);
@@ -488,8 +483,7 @@ public class KafkaListenersReconciler {
                         return Future.succeededFuture();
                     })
                     .compose(res -> {
-                        @SuppressWarnings({ "rawtypes" }) // Has to use Raw type because of the CompositeFuture
-                        List<Future> perPodFutures = new ArrayList<>();
+                        List<Future<Void>> perPodFutures = new ArrayList<>();
 
                         for (NodeRef node : kafka.nodes()) {
                             perPodFutures.add(
@@ -497,11 +491,10 @@ public class KafkaListenersReconciler {
                             );
                         }
 
-                        return CompositeFuture.join(perPodFutures);
+                        return Future.join(perPodFutures);
                     })
                     .compose(res -> {
-                        @SuppressWarnings({ "rawtypes" }) // Has to use Raw type because of the CompositeFuture
-                        List<Future> perPodFutures = new ArrayList<>();
+                        List<Future<Void>> perPodFutures = new ArrayList<>();
 
                         for (NodeRef node : kafka.nodes()) {
                             Future<Void> perBrokerFut = serviceOperator.getAsync(reconciliation.namespace(), ListenersUtils.backwardsCompatiblePerBrokerServiceName(ReconcilerUtils.getControllerNameFromPodName(node.podName()), node.nodeId(), listener))
@@ -525,7 +518,7 @@ public class KafkaListenersReconciler {
                             perPodFutures.add(perBrokerFut);
                         }
 
-                        return CompositeFuture.join(perPodFutures);
+                        return Future.join(perPodFutures);
                     }).compose(res -> {
                         ListenerStatus ls = new ListenerStatusBuilder()
                                 .withName(listener.getName())
@@ -538,7 +531,7 @@ public class KafkaListenersReconciler {
             listenerFutures.add(perListenerFut);
         }
 
-        return CompositeFuture
+        return Future
                 .join(listenerFutures)
                 .map((Void) null);
     }
@@ -555,8 +548,7 @@ public class KafkaListenersReconciler {
      */
     protected Future<Void> routesReady() {
         List<GenericKafkaListener> routeListeners = ListenersUtils.routeListeners(kafka.getListeners());
-        @SuppressWarnings({ "rawtypes" }) // Has to use Raw type because of the CompositeFuture
-        List<Future> listenerFutures = new ArrayList<>(routeListeners.size());
+        List<Future<?>> listenerFutures = new ArrayList<>(routeListeners.size());
 
         for (GenericKafkaListener listener : routeListeners) {
             String bootstrapRouteName = ListenersUtils.backwardsCompatibleBootstrapRouteOrIngressName(reconciliation.name(), listener);
@@ -582,8 +574,7 @@ public class KafkaListenersReconciler {
                         return Future.succeededFuture();
                     })
                     .compose(res -> {
-                        @SuppressWarnings({ "rawtypes" }) // Has to use Raw type because of the CompositeFuture
-                        List<Future> perPodFutures = new ArrayList<>();
+                        List<Future<Void>> perPodFutures = new ArrayList<>();
 
                         for (NodeRef node : kafka.nodes()) {
                             perPodFutures.add(
@@ -591,11 +582,10 @@ public class KafkaListenersReconciler {
                             );
                         }
 
-                        return CompositeFuture.join(perPodFutures);
+                        return Future.join(perPodFutures);
                     })
                     .compose(res -> {
-                        @SuppressWarnings({ "rawtypes" }) // Has to use Raw type because of the CompositeFuture
-                        List<Future> perPodFutures = new ArrayList<>();
+                        List<Future<Void>> perPodFutures = new ArrayList<>();
 
                         for (NodeRef node : kafka.nodes()) {
                             //final int finalBrokerId = brokerId;
@@ -620,13 +610,13 @@ public class KafkaListenersReconciler {
                             perPodFutures.add(perBrokerFut);
                         }
 
-                        return CompositeFuture.join(perPodFutures);
+                        return Future.join(perPodFutures);
                     });
 
             listenerFutures.add(perListenerFut);
         }
 
-        return CompositeFuture
+        return Future
                 .join(listenerFutures)
                 .map((Void) null);
     }
@@ -644,8 +634,7 @@ public class KafkaListenersReconciler {
     protected Future<Void> ingressesReady() {
 
         List<GenericKafkaListener> ingressListeners = ListenersUtils.ingressListeners(kafka.getListeners());
-        @SuppressWarnings({ "rawtypes" }) // Has to use Raw type because of the CompositeFuture
-        List<Future> listenerFutures = new ArrayList<>(ingressListeners.size());
+        List<Future<Void>> listenerFutures = new ArrayList<>(ingressListeners.size());
 
         for (GenericKafkaListener listener : ingressListeners) {
             String bootstrapIngressName = ListenersUtils.backwardsCompatibleBootstrapRouteOrIngressName(reconciliation.name(), listener);
@@ -667,8 +656,7 @@ public class KafkaListenersReconciler {
                         result.listenerStatuses.add(ls);
 
                         // Check if broker ingresses are ready
-                        @SuppressWarnings({ "rawtypes" }) // Has to use Raw type because of the CompositeFuture
-                        List<Future> perPodFutures = new ArrayList<>();
+                        List<Future<Void>> perPodFutures = new ArrayList<>();
 
                         for (NodeRef node : kafka.nodes()) {
                             perPodFutures.add(
@@ -676,7 +664,7 @@ public class KafkaListenersReconciler {
                             );
                         }
 
-                        return CompositeFuture.join(perPodFutures);
+                        return Future.join(perPodFutures);
                     })
                     .compose(res -> {
                         for (NodeRef node : kafka.nodes()) {
@@ -705,7 +693,7 @@ public class KafkaListenersReconciler {
             listenerFutures.add(perListenerFut);
         }
 
-        return CompositeFuture
+        return Future
                 .join(listenerFutures)
                 .map((Void) null);
     }
@@ -725,8 +713,7 @@ public class KafkaListenersReconciler {
                 .collect(Collectors.toList());
         LOGGER.debugCr(reconciliation, "Validating secret {} with custom TLS listener certificates", secretNames);
 
-        @SuppressWarnings({ "rawtypes" }) // Has to use Raw type because of the CompositeFuture
-        List<Future> secretFutures = new ArrayList<>(secretNames.size());
+        List<Future<Secret>> secretFutures = new ArrayList<>(secretNames.size());
         Map<String, Secret> customSecrets = new HashMap<>(secretNames.size());
 
         for (String secretName : secretNames)   {
@@ -743,7 +730,7 @@ public class KafkaListenersReconciler {
             secretFutures.add(fut);
         }
 
-        return CompositeFuture.join(secretFutures)
+        return Future.join(secretFutures)
                 .compose(res -> {
                     List<String> errors = new ArrayList<>();
                     Map<String, String> customListenerCertificates = new HashMap<>();

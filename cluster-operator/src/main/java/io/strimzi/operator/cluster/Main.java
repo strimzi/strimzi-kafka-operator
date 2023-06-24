@@ -26,6 +26,7 @@ import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ShutdownHook;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.operator.resource.ClusterRoleOperator;
+import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
@@ -174,8 +175,7 @@ public class Main {
             kafkaRebalanceAssemblyOperator = new KafkaRebalanceAssemblyOperator(vertx, resourceOperatorSupplier, config);
         }
 
-        @SuppressWarnings({ "rawtypes" })
-        List<Future> futures = new ArrayList<>(config.getNamespaces().size());
+        List<Future<String>> futures = new ArrayList<>(config.getNamespaces().size());
         for (String namespace : config.getNamespaces()) {
             Promise<String> prom = Promise.promise();
             futures.add(prom.future());
@@ -203,7 +203,7 @@ public class Main {
                     prom.handle(res);
                 });
         }
-        return CompositeFuture.join(futures);
+        return Future.join(futures);
     }
 
     /**
@@ -260,7 +260,7 @@ public class Main {
     /*test*/ static Future<Void> maybeCreateClusterRoles(Vertx vertx, ClusterOperatorConfig config, KubernetesClient client)  {
         if (config.isCreateClusterRoles()) {
             @SuppressWarnings({ "rawtypes" })
-            List<Future> futures = new ArrayList<>();
+            List<Future<ReconcileResult<ClusterRole>>> futures = new ArrayList<>();
             ClusterRoleOperator cro = new ClusterRoleOperator(vertx, client);
 
             Map<String, String> clusterRoles = new HashMap<>(6);
@@ -279,7 +279,7 @@ public class Main {
                     String yaml = br.lines().collect(Collectors.joining(System.lineSeparator()));
                     ClusterRole role = ClusterRoleOperator.convertYamlToClusterRole(yaml);
                     @SuppressWarnings({ "rawtypes" })
-                    Future fut = cro.reconcile(new Reconciliation("start-cluster-operator", "Deployment", config.getOperatorNamespace(), "cluster-operator"), role.getMetadata().getName(), role);
+                    Future<ReconcileResult<ClusterRole>> fut = cro.reconcile(new Reconciliation("start-cluster-operator", "Deployment", config.getOperatorNamespace(), "cluster-operator"), role.getMetadata().getName(), role);
                     futures.add(fut);
                 } catch (IOException e) {
                     LOGGER.error("Failed to create Cluster Roles.", e);
@@ -289,7 +289,7 @@ public class Main {
             }
 
             Promise<Void> returnPromise = Promise.promise();
-            CompositeFuture.all(futures).onComplete(res -> {
+            Future.all(futures).onComplete(res -> {
                 if (res.succeeded())    {
                     returnPromise.complete();
                 } else  {

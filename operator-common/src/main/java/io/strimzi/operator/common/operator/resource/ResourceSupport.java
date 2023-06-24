@@ -17,7 +17,6 @@ import io.fabric8.kubernetes.client.dsl.Watchable;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.vertx.core.AsyncResult;
-import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Handler;
@@ -149,7 +148,7 @@ public class ResourceSupport {
                 this.resultPromise = Promise.promise();
                 this.timerId = vertx.setTimer(operationTimeoutMs,
                     ignored -> donePromise.tryFail(new TimeoutException("\"" + watchFnDescription + "\" timed out after " + operationTimeoutMs + "ms")));
-                CompositeFuture.join(watchPromise.future(), donePromise.future()).onComplete(joinResult -> {
+                Future.join(watchPromise.future(), donePromise.future()).onComplete(joinResult -> {
                     Future<Void> closeFuture;
                     if (watchPromise.future().succeeded()) {
                         closeFuture = closeOnWorkerThread(watchPromise.future().result());

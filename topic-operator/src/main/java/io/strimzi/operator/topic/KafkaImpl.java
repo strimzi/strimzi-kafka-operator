@@ -11,7 +11,6 @@ import java.util.concurrent.ExecutionException;
 
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
-import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
@@ -137,7 +136,7 @@ public class KafkaImpl implements Kafka {
                         singleton(topicName.toString())).topicNameValues().get(topicName.toString()));
                 Future<Config> configFuture = mapFuture(adminClient.describeConfigs(
                         singleton(resource)).values().get(resource));
-                return CompositeFuture.all(topicDescriptionFuture, configFuture)
+                return Future.all(topicDescriptionFuture, configFuture)
                         .map(compositeFuture -> new TopicMetadata(compositeFuture.resultAt(0), compositeFuture.resultAt(1)));
             } else {
                 return Future.succeededFuture(null);

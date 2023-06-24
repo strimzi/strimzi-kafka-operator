@@ -18,7 +18,6 @@ import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.resource.AbstractScalableNamespacedResourceOperator;
 import io.strimzi.operator.common.operator.resource.PodOperator;
 import io.strimzi.operator.common.operator.resource.PvcOperator;
-import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 
 import java.util.ArrayList;
@@ -202,15 +201,14 @@ public class ManualPodCleaner {
         return podOperator.deleteAsync(reconciliation, reconciliation.namespace(), podName, true)
                 .compose(ignore -> {
                     // With the pod deleted, we can delete all the PVCs belonging to this pod
-                    @SuppressWarnings({ "rawtypes" }) // Has to use Raw type because of the CompositeFuture
-                    List<Future> deleteResults = new ArrayList<>(deletePvcs.size());
+                    List<Future<Void>> deleteResults = new ArrayList<>(deletePvcs.size());
 
                     for (PersistentVolumeClaim pvc : deletePvcs)    {
                         String pvcName = pvc.getMetadata().getName();
                         LOGGER.debugCr(reconciliation, "Deleting PVC {} for Pod {} based on {} annotation", pvcName, podName, AbstractScalableNamespacedResourceOperator.ANNO_STRIMZI_IO_DELETE_POD_AND_PVC);
                         deleteResults.add(pvcOperator.deleteAsync(reconciliation, reconciliation.namespace(), pvcName, true));
                     }
-                    return CompositeFuture.join(deleteResults);
+                    return Future.join(deleteResults);
                 })
                 .map((Void) null);
     }

@@ -11,7 +11,6 @@ import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.operator.resource.PvcOperator;
 import io.strimzi.operator.common.operator.resource.StorageClassOperator;
-import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 
 import java.util.ArrayList;
@@ -60,8 +59,7 @@ public class PvcReconciler {
      */
     public Future<Collection<String>> resizeAndReconcilePvcs(Function<Integer, String> podNameProvider, List<PersistentVolumeClaim> pvcs) {
         Set<String> podsToRestart = new HashSet<>();
-        @SuppressWarnings({ "rawtypes" }) // Has to use Raw type because of the CompositeFuture
-        List<Future> futures = new ArrayList<>(pvcs.size());
+        List<Future<Void>> futures = new ArrayList<>(pvcs.size());
 
         for (PersistentVolumeClaim desiredPvc : pvcs)  {
             Future<Void> perPvcFuture = pvcOperator.getAsync(reconciliation.namespace(), desiredPvc.getMetadata().getName())
@@ -101,7 +99,7 @@ public class PvcReconciler {
             futures.add(perPvcFuture);
         }
 
-        return CompositeFuture.all(futures)
+        return Future.all(futures)
                 .map(podsToRestart);
     }
 
@@ -149,8 +147,7 @@ public class PvcReconciler {
      * @return                  Future which completes when all PVCs which needed to be deleted were deleted
      */
     public Future<Void> deletePersistentClaims(List<String> maybeDeletePvcs, List<String> desiredPvcs) {
-        @SuppressWarnings({ "rawtypes" }) // Has to use Raw type because of the CompositeFuture
-        List<Future> futures = new ArrayList<>();
+        List<Future<Void>> futures = new ArrayList<>();
 
         maybeDeletePvcs.removeAll(desiredPvcs);
 
@@ -159,7 +156,7 @@ public class PvcReconciler {
             futures.add(considerPersistentClaimDeletion(pvcName));
         }
 
-        return CompositeFuture.all(futures)
+        return Future.all(futures)
                 .map((Void) null);
     }
 

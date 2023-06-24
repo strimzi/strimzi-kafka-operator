@@ -58,7 +58,6 @@ import io.strimzi.operator.common.operator.resource.ConfigMapOperator;
 import io.strimzi.operator.common.operator.resource.CrdOperator;
 import io.strimzi.operator.common.operator.resource.SecretOperator;
 import io.strimzi.operator.common.operator.resource.StatusUtils;
-import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
@@ -1196,7 +1195,7 @@ public class KafkaRebalanceAssemblyOperator
                     Future<Secret> ccSecretFuture = secretOperations.getAsync(clusterNamespace, ccSecretName);
                     Future<Secret> ccApiSecretFuture = secretOperations.getAsync(clusterNamespace, ccApiSecretName);
 
-                    return CompositeFuture.join(ccSecretFuture, ccApiSecretFuture)
+                    return Future.join(ccSecretFuture, ccApiSecretFuture)
                             .compose(compositeFuture -> {
 
                                 Secret ccSecret = compositeFuture.resultAt(0);

@@ -1259,7 +1259,7 @@ class TopicOperator {
                             EventType.WARNING, eventResult -> { }));
                 }
             })
-            .compose(i -> CompositeFuture.all(getFromKafka(logContext.toReconciliation(), topicName), getFromTopicStore(topicName))
+            .compose(i -> Future.all(getFromKafka(logContext.toReconciliation(), topicName), getFromTopicStore(topicName))
                 .compose(compositeResult -> {
                     Topic kafkaTopic = compositeResult.resultAt(0);
                     Topic privateTopic = compositeResult.resultAt(1);
@@ -1441,7 +1441,7 @@ class TopicOperator {
                 return reconcileState;
             });
         }).compose(reconcileState -> {
-            List<Future> futs = new ArrayList<>();
+            List<Future<Boolean>> futs = new ArrayList<>();
             pausedTopicCounter.set(0);
             topicCounter.set(reconcileState.ktList.size());
             for (KafkaTopic kt : reconcileState.ktList) {
@@ -1480,8 +1480,8 @@ class TopicOperator {
                     }));
                 }
             }
-            return CompositeFuture.join(futs).compose(joined -> {
-                List<Future> futs2 = new ArrayList<>();
+            return Future.join(futs).compose(joined -> {
+                List<Future<Void>> futs2 = new ArrayList<>();
                 for (Throwable exception : reconcileState.failed.values()) {
                     futs2.add(Future.failedFuture(exception));
                 }
@@ -1496,7 +1496,7 @@ class TopicOperator {
                         }
                     }));
                 }
-                return CompositeFuture.join(futs2);
+                return Future.join(futs2);
             });
         });
     }
@@ -1558,7 +1558,7 @@ class TopicOperator {
 
     @SuppressWarnings("unchecked")
     private static <T> CompositeFuture join(List<T> futures) {
-        return CompositeFuture.join((List) futures);
+        return Future.join((List) futures);
     }
 
 
@@ -1635,7 +1635,7 @@ class TopicOperator {
             @Override
             public Future<Void> execute() {
                 Reconciliation self = this;
-                return CompositeFuture.all(
+                return Future.all(
                         k8s.getFromName(kubeName).map(kt -> {
                             observedTopicFuture(kt);
                             return kt;

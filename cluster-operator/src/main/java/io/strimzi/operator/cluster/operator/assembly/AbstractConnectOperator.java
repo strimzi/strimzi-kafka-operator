@@ -70,7 +70,6 @@ import io.strimzi.operator.common.operator.resource.SecretOperator;
 import io.strimzi.operator.common.operator.resource.ServiceAccountOperator;
 import io.strimzi.operator.common.operator.resource.ServiceOperator;
 import io.strimzi.operator.common.operator.resource.StatusUtils;
-import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
@@ -172,13 +171,12 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
     protected Future<Boolean> delete(Reconciliation reconciliation) {
         // When deleting KafkaConnect we need to update the status of all selected KafkaConnector
         return connectorOperator.listAsync(reconciliation.namespace(), Labels.forStrimziCluster(reconciliation.name())).compose(connectors -> {
-            @SuppressWarnings({ "rawtypes" }) // Composite future requires raw Future objects
-            List<Future> connectorFutures = new ArrayList<>();
+            List<Future<Void>> connectorFutures = new ArrayList<>();
             for (KafkaConnector connector : connectors) {
                 connectorFutures.add(maybeUpdateConnectorStatus(reconciliation, connector, null,
                         noConnectCluster(reconciliation.namespace(), reconciliation.name())));
             }
-            return CompositeFuture.join(connectorFutures);
+            return Future.join(connectorFutures);
         }).map(ignored -> Boolean.FALSE);
     }
 
@@ -375,7 +373,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
 
         if (scaledToZero)   {
             return connectorOperator.listAsync(namespace, Optional.of(new LabelSelectorBuilder().addToMatchLabels(Labels.STRIMZI_CLUSTER_LABEL, connectName).build()))
-                    .compose(connectors -> CompositeFuture.join(
+                    .compose(connectors -> Future.join(
                             connectors.stream().map(connector -> maybeUpdateConnectorStatus(reconciliation, connector, null, zeroReplicas(namespace, connectName)))
                                     .collect(Collectors.toList())
                     ))
@@ -384,7 +382,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
 
         KafkaConnectApi apiClient = connectClientProvider.apply(vertx);
 
-        return CompositeFuture.join(
+        return Future.join(
                 apiClient.list(reconciliation, host, port),
                 connectorOperator.listAsync(namespace, Optional.of(new LabelSelectorBuilder().addToMatchLabels(Labels.STRIMZI_CLUSTER_LABEL, connectName).build())),
                 apiClient.listConnectorPlugins(reconciliation, host, port),
@@ -408,14 +406,14 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
             Stream<Future<Void>> createUpdateFutures = desiredConnectors.stream()
                     .map(connector -> reconcileConnectorAndHandleResult(reconciliation, host, apiClient, true, connector.getMetadata().getName(), connector));
 
-            return CompositeFuture.join(Stream.concat(deletionFutures, createUpdateFutures).collect(Collectors.toList())).map((Void) null);
+            return Future.join(Stream.concat(deletionFutures, createUpdateFutures).collect(Collectors.toList())).map((Void) null);
         }).recover(error -> {
             if (error instanceof ConnectTimeoutException) {
                 Promise<Void> connectorStatuses = Promise.promise();
                 LOGGER.warnCr(reconciliation, "Failed to connect to the REST API => trying to update the connector status");
 
                 connectorOperator.listAsync(namespace, Optional.of(new LabelSelectorBuilder().addToMatchLabels(Labels.STRIMZI_CLUSTER_LABEL, connectName).build()))
-                        .compose(connectors -> CompositeFuture.join(
+                        .compose(connectors -> Future.join(
                                 connectors.stream().map(connector -> maybeUpdateConnectorStatus(reconciliation, connector, null, error))
                                         .collect(Collectors.toList())
                         ))

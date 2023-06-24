@@ -80,7 +80,6 @@ import io.strimzi.operator.common.operator.resource.ServiceAccountOperator;
 import io.strimzi.operator.common.operator.resource.ServiceOperator;
 import io.strimzi.operator.common.operator.resource.StorageClassOperator;
 import io.strimzi.operator.common.operator.resource.StrimziPodSetOperator;
-import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
@@ -337,7 +336,7 @@ public class KafkaReconciler {
         Future<List<NodeRef>> podsToRollThroughPodSetAnno = podsForManualRollingUpdateDiscoveredThroughPodSetAnnotation();
         Future<List<NodeRef>> podsToRollThroughPodAnno = podsForManualRollingUpdateDiscoveredThroughPodAnnotations();
 
-        return CompositeFuture
+        return Future
                 .join(podsToRollThroughPodSetAnno, podsToRollThroughPodAnno)
                 .compose(result -> {
                     // We merge the lists into set to avoid duplicates
@@ -524,8 +523,7 @@ public class KafkaReconciler {
                     if (podSets == null) {
                         return Future.succeededFuture();
                     } else {
-                        @SuppressWarnings({ "rawtypes" }) // Has to use Raw type because of the CompositeFuture
-                        List<Future> ops = new ArrayList<>();
+                        List<Future<Void>> ops = new ArrayList<>();
 
                         for (StrimziPodSet podSet : podSets) {
                             List<Map<String, Object>> desiredPods = podSet.getSpec().getPods().stream()
@@ -548,7 +546,7 @@ public class KafkaReconciler {
                             }
                         }
 
-                        return CompositeFuture.join(ops).map((Void) null);
+                        return Future.join(ops).map((Void) null);
                     }
                 });
     }
@@ -604,8 +602,7 @@ public class KafkaReconciler {
                     this.loggingHash = Util.hashStub(Util.getLoggingDynamicallyUnmodifiableEntries(logging));
 
                     List<ConfigMap> desiredConfigMaps = kafka.generatePerBrokerConfigurationConfigMaps(metricsAndLogging, listenerReconciliationResults.advertisedHostnames, listenerReconciliationResults.advertisedPorts);
-                    @SuppressWarnings({ "rawtypes" }) // Has to use Raw type because of the CompositeFuture
-                    List<Future> ops = new ArrayList<>();
+                    List<Future<?>> ops = new ArrayList<>();
 
                     // Delete all existing ConfigMaps which are not desired and are not the shared config map
                     List<String> desiredNames = new ArrayList<>(desiredConfigMaps.size() + 1);
@@ -654,7 +651,7 @@ public class KafkaReconciler {
                         ops.add(configMapOperator.reconcile(reconciliation, reconciliation.namespace(), cmName, cm));
                     }
 
-                    return CompositeFuture
+                    return Future
                             .join(ops)
                             .map((Void) null);
                 });
@@ -1033,15 +1030,14 @@ public class KafkaReconciler {
             // Sets the list of used Node Pools in the Kafka CR status
             kafkaStatus.setKafkaNodePools(statusesForKafka);
 
-            @SuppressWarnings({"rawtypes"}) // Has to use Raw type because of the CompositeFuture
-            List<Future> statusUpdateFutures = new ArrayList<>();
+            List<Future<KafkaNodePool>> statusUpdateFutures = new ArrayList<>();
 
             for (KafkaNodePool updatedNodePool : updatedNodePools) {
                 statusUpdateFutures.add(kafkaNodePoolOperator.updateStatusAsync(reconciliation, updatedNodePool));
             }
 
             // Return future
-            return CompositeFuture.join(statusUpdateFutures)
+            return Future.join(statusUpdateFutures)
                     .map((Void) null);
         } else {
             return Future.succeededFuture();

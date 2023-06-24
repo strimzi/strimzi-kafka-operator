@@ -50,7 +50,6 @@ import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.resource.CrdOperator;
 import io.strimzi.operator.common.operator.resource.StatusUtils;
 import io.strimzi.operator.common.operator.resource.StrimziPodSetOperator;
-import io.vertx.core.CompositeFuture;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
@@ -426,7 +425,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             Future<StatefulSet> stsFuture = stsOperations.getAsync(namespace, KafkaResources.zookeeperStatefulSetName(name));
             Future<StrimziPodSet> podSetFuture = strimziPodSetOperator.getAsync(namespace, KafkaResources.zookeeperStatefulSetName(name));
 
-            return CompositeFuture.join(stsFuture, podSetFuture)
+            return Future.join(stsFuture, podSetFuture)
                     .compose(res -> {
                         StatefulSet sts = res.resultAt(0);
                         StrimziPodSet podSet = res.resultAt(1);
@@ -540,7 +539,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             Future<StatefulSet> stsFuture = stsOperations.getAsync(namespace, KafkaResources.kafkaStatefulSetName(name));
             Future<List<StrimziPodSet>> podSetFuture = strimziPodSetOperator.listAsync(namespace, kafkaSelectorLabels);
 
-            return CompositeFuture.join(stsFuture, podSetFuture, nodePoolFuture)
+            return Future.join(stsFuture, podSetFuture, nodePoolFuture)
                     .compose(res -> {
                         StatefulSet sts = res.resultAt(0);
                         List<StrimziPodSet> podSets = res.resultAt(1);
