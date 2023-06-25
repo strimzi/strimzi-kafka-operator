@@ -11,6 +11,7 @@ import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.storage.StorageClass;
 import io.fabric8.kubernetes.api.model.storage.StorageClassBuilder;
 import io.strimzi.api.kafka.model.Kafka;
+import io.strimzi.api.kafka.model.status.KafkaStatus;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.Annotations;
@@ -31,6 +32,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
@@ -87,7 +89,7 @@ public class PvcReconcilerTest {
         );
 
         Checkpoint async = context.checkpoint();
-        reconciler.resizeAndReconcilePvcs(i -> "pod-" + i, pvcs)
+        reconciler.resizeAndReconcilePvcs(new KafkaStatus(), i -> "pod-" + i, pvcs)
                 .onComplete(res -> {
                     assertThat(res.succeeded(), is(true));
 
@@ -133,7 +135,7 @@ public class PvcReconcilerTest {
         );
 
         Checkpoint async = context.checkpoint();
-        reconciler.resizeAndReconcilePvcs(i -> "pod-" + i, pvcs)
+        reconciler.resizeAndReconcilePvcs(new KafkaStatus(), i -> "pod-" + i, pvcs)
                 .onComplete(res -> {
                     assertThat(res.succeeded(), is(true));
 
@@ -197,7 +199,7 @@ public class PvcReconcilerTest {
         );
 
         Checkpoint async = context.checkpoint();
-        reconciler.resizeAndReconcilePvcs(i -> "pod-" + i, pvcs)
+        reconciler.resizeAndReconcilePvcs(new KafkaStatus(), i -> "pod-" + i, pvcs)
                 .onComplete(res -> {
                     assertThat(res.succeeded(), is(true));
 
@@ -262,7 +264,7 @@ public class PvcReconcilerTest {
         );
 
         Checkpoint async = context.checkpoint();
-        reconciler.resizeAndReconcilePvcs(i -> "pod-" + i, pvcs)
+        reconciler.resizeAndReconcilePvcs(new KafkaStatus(), i -> "pod-" + i, pvcs)
                 .onComplete(res -> {
                     assertThat(res.succeeded(), is(false));
                     assertThat(res.cause(), is(instanceOf(IllegalArgumentException.class)));
@@ -321,14 +323,164 @@ public class PvcReconcilerTest {
                 mockSco
         );
 
+        // Used to capture the warning condition
+        KafkaStatus kafkaStatus = new KafkaStatus();
+
         Checkpoint async = context.checkpoint();
-        reconciler.resizeAndReconcilePvcs(i -> "pod-" + i, pvcs)
+        reconciler.resizeAndReconcilePvcs(kafkaStatus, i -> "pod-" + i, pvcs)
                 .onComplete(res -> {
                     assertThat(res.succeeded(), is(true));
 
                     assertThat(res.result().size(), is(0));
 
                     assertThat(pvcCaptor.getAllValues().size(), is(0));
+
+                    assertThat(kafkaStatus.getConditions().size(), is(3));
+                    kafkaStatus.getConditions().stream().forEach(c -> {
+                        assertThat(c.getReason(), is("PvcResizingWarning"));
+                        assertThat(c.getMessage(), containsString("Storage Class mysc does not support resizing of volumes."));
+                    });
+
+                    async.flag();
+                });
+    }
+
+    // Volumes exist with smaller size and are Bound without storage class => should NOT be reconciled
+    @Test
+    public void testVolumesBoundMissingStorageClass(VertxTestContext context)  {
+        List<PersistentVolumeClaim> pvcs = List.of(
+                createPvc("data-pod-0"),
+                createPvc("data-pod-1"),
+                createPvc("data-pod-2")
+        );
+
+        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
+
+        // Mock the PVC Operator
+        PvcOperator mockPvcOps = supplier.pvcOperations;
+        when(mockPvcOps.getAsync(eq(NAMESPACE), ArgumentMatchers.startsWith("data-")))
+                .thenAnswer(invocation -> {
+                    String pvcName = invocation.getArgument(1);
+                    PersistentVolumeClaim currentPvc = pvcs.stream().filter(pvc -> pvcName.equals(pvc.getMetadata().getName())).findFirst().orElse(null);
+
+                    if (currentPvc != null) {
+                        PersistentVolumeClaim pvcWithStatus = new PersistentVolumeClaimBuilder(currentPvc)
+                                .editSpec()
+                                    .withNewResources()
+                                        .withRequests(Map.of("storage", new Quantity("50Gi", null)))
+                                    .endResources()
+                                .endSpec()
+                                .withNewStatus()
+                                    .withPhase("Bound")
+                                    .withCapacity(Map.of("storage", new Quantity("50Gi", null)))
+                                .endStatus()
+                                .build();
+
+                        return Future.succeededFuture(pvcWithStatus);
+                    } else {
+                        return Future.succeededFuture();
+                    }
+                });
+        ArgumentCaptor<PersistentVolumeClaim> pvcCaptor = ArgumentCaptor.forClass(PersistentVolumeClaim.class);
+        when(mockPvcOps.reconcile(any(), anyString(), anyString(), pvcCaptor.capture())).thenReturn(Future.succeededFuture());
+
+        // Mock the StorageClass Operator
+        StorageClassOperator mockSco = supplier.storageClassOperations;
+        when(mockSco.getAsync(eq(STORAGE_CLASS_NAME))).thenReturn(Future.succeededFuture(null));
+
+        // Reconcile the PVCs
+        PvcReconciler reconciler = new PvcReconciler(
+                new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME),
+                mockPvcOps,
+                mockSco
+        );
+
+        // Used to capture the warning condition
+        KafkaStatus kafkaStatus = new KafkaStatus();
+
+        Checkpoint async = context.checkpoint();
+        reconciler.resizeAndReconcilePvcs(kafkaStatus, i -> "pod-" + i, pvcs)
+                .onComplete(res -> {
+                    assertThat(res.succeeded(), is(true));
+
+                    assertThat(res.result().size(), is(0));
+
+                    assertThat(pvcCaptor.getAllValues().size(), is(0));
+
+                    assertThat(kafkaStatus.getConditions().size(), is(3));
+                    kafkaStatus.getConditions().stream().forEach(c -> {
+                        assertThat(c.getReason(), is("PvcResizingWarning"));
+                        assertThat(c.getMessage(), containsString("Storage Class mysc not found."));
+                    });
+
+                    async.flag();
+                });
+    }
+
+    // Volumes exist with smaller size and are Bound without storage class => should NOT be reconciled
+    @Test
+    public void testVolumesBoundWithoutStorageClass(VertxTestContext context)  {
+        List<PersistentVolumeClaim> pvcs = List.of(
+                createPvc("data-pod-0"),
+                createPvc("data-pod-1"),
+                createPvc("data-pod-2")
+        );
+
+        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
+
+        // Mock the PVC Operator
+        PvcOperator mockPvcOps = supplier.pvcOperations;
+        when(mockPvcOps.getAsync(eq(NAMESPACE), ArgumentMatchers.startsWith("data-")))
+                .thenAnswer(invocation -> {
+                    String pvcName = invocation.getArgument(1);
+                    PersistentVolumeClaim currentPvc = pvcs.stream().filter(pvc -> pvcName.equals(pvc.getMetadata().getName())).findFirst().orElse(null);
+
+                    if (currentPvc != null) {
+                        PersistentVolumeClaim pvcWithStatus = new PersistentVolumeClaimBuilder(currentPvc)
+                                .editSpec()
+                                    .withStorageClassName(null)
+                                    .withNewResources()
+                                        .withRequests(Map.of("storage", new Quantity("50Gi", null)))
+                                    .endResources()
+                                .endSpec()
+                                .withNewStatus()
+                                    .withPhase("Bound")
+                                    .withCapacity(Map.of("storage", new Quantity("50Gi", null)))
+                                .endStatus()
+                                .build();
+
+                        return Future.succeededFuture(pvcWithStatus);
+                    } else {
+                        return Future.succeededFuture();
+                    }
+                });
+        ArgumentCaptor<PersistentVolumeClaim> pvcCaptor = ArgumentCaptor.forClass(PersistentVolumeClaim.class);
+        when(mockPvcOps.reconcile(any(), anyString(), anyString(), pvcCaptor.capture())).thenReturn(Future.succeededFuture());
+
+        // Reconcile the PVCs
+        PvcReconciler reconciler = new PvcReconciler(
+                new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME),
+                mockPvcOps,
+                supplier.storageClassOperations
+        );
+
+        // Used to capture the warning condition
+        KafkaStatus kafkaStatus = new KafkaStatus();
+
+        Checkpoint async = context.checkpoint();
+        reconciler.resizeAndReconcilePvcs(kafkaStatus, i -> "pod-" + i, pvcs)
+                .onComplete(res -> {
+                    assertThat(res.succeeded(), is(true));
+
+                    assertThat(res.result().size(), is(0));
+
+                    assertThat(pvcCaptor.getAllValues().size(), is(0));
+
+                    assertThat(kafkaStatus.getConditions().size(), is(3));
+                    kafkaStatus.getConditions().stream().forEach(c -> {
+                        assertThat(c.getReason(), is("PvcResizingWarning"));
+                        assertThat(c.getMessage(), containsString("does not use any Storage Class and cannot be resized."));
+                    });
 
                     async.flag();
                 });
@@ -384,7 +536,7 @@ public class PvcReconcilerTest {
         );
 
         Checkpoint async = context.checkpoint();
-        reconciler.resizeAndReconcilePvcs(i -> "pod-" + i, pvcs)
+        reconciler.resizeAndReconcilePvcs(new KafkaStatus(), i -> "pod-" + i, pvcs)
                 .onComplete(res -> {
                     assertThat(res.succeeded(), is(true));
 
@@ -446,7 +598,7 @@ public class PvcReconcilerTest {
         );
 
         Checkpoint async = context.checkpoint();
-        reconciler.resizeAndReconcilePvcs(i -> "pod-" + i, pvcs)
+        reconciler.resizeAndReconcilePvcs(new KafkaStatus(), i -> "pod-" + i, pvcs)
                 .onComplete(res -> {
                     assertThat(res.succeeded(), is(true));
 
@@ -505,7 +657,7 @@ public class PvcReconcilerTest {
         );
 
         Checkpoint async = context.checkpoint();
-        reconciler.resizeAndReconcilePvcs(i -> "pod-" + i, pvcs)
+        reconciler.resizeAndReconcilePvcs(new KafkaStatus(), i -> "pod-" + i, pvcs)
                 .onComplete(res -> {
                     assertThat(res.succeeded(), is(true));
 

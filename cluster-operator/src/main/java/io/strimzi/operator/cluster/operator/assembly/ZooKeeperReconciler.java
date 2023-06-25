@@ -188,7 +188,7 @@ public class ZooKeeperReconciler {
                 .compose(i -> manualRollingUpdate())
                 .compose(i -> logVersionChange())
                 .compose(i -> serviceAccount())
-                .compose(i -> pvcs())
+                .compose(i -> pvcs(kafkaStatus))
                 .compose(i -> service())
                 .compose(i -> headlessService())
                 .compose(i -> certificateSecret(clock))
@@ -365,13 +365,15 @@ public class ZooKeeperReconciler {
      * Manages the PVCs needed by the ZooKeeper cluster. This method only creates or updates the PVCs. Deletion of PVCs
      * after scale-down happens only at the end of the reconciliation when they are not used anymore.
      *
+     * @param kafkaStatus   Status of the Kafka custom resource where warnings about any issues with resizing will be added
+     *
      * @return  Completes when the PVCs were successfully created or updated
      */
-    protected Future<Void> pvcs() {
+    protected Future<Void> pvcs(KafkaStatus kafkaStatus) {
         List<PersistentVolumeClaim> pvcs = zk.generatePersistentVolumeClaims();
 
         return new PvcReconciler(reconciliation, pvcOperator, storageClassOperator)
-                .resizeAndReconcilePvcs(podIndex -> KafkaResources.zookeeperPodName(reconciliation.name(), podIndex), pvcs)
+                .resizeAndReconcilePvcs(kafkaStatus, podIndex -> KafkaResources.zookeeperPodName(reconciliation.name(), podIndex), pvcs)
                 .compose(podsToRestart -> {
                     fsResizingRestartRequest.addAll(podsToRestart);
                     return Future.succeededFuture();
