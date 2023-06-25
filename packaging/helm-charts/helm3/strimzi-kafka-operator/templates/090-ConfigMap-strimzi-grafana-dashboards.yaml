@@ -1,6 +1,4 @@
 {{- if .Values.dashboards.enabled }}
-{{- $datasource_pattern := "\"datasource\": +\"\\${DS_PROMETHEUS}\"" }}
-{{- $datasource_replacement := printf "\"datasource\": \"%s\"" $.Values.dashboards.datasource }}
 {{- $files := .Files.Glob "files/grafana-dashboards/*.json" }}
 {{- range $path, $fileContents := $files }}
 {{- $dashboardName := regexReplaceAll "(^.*/)(.*)\\.json$" $path "${2}" }}
@@ -23,6 +21,6 @@ metadata:
     {{- toYaml . | nindent 4 }}
   {{- end }}
 data:
-  {{ $dashboardName }}.json: {{ regexReplaceAllLiteral $datasource_pattern ($.Files.Get $path) $datasource_replacement | toJson }}
+  {{ $dashboardName }}.json: {{ $.Files.Get $path | toJson }}
 {{- end }}
 {{- end }}
