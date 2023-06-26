@@ -748,7 +748,7 @@ public class KafkaRollerTest {
         }
 
         @Override
-        protected KafkaAgentClient initKafkaAgentClient() {
+        KafkaAgentClient initKafkaAgentClient() {
             KafkaAgentClient agentClient = mock(KafkaAgentClient.class, invocation -> {
                 if ("getBrokerState".equals(invocation.getMethod().getName())) {
                     if (brokerState == null) {

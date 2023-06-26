@@ -447,7 +447,7 @@ public class KafkaRoller {
         }
     }
 
-    protected KafkaAgentClient initKafkaAgentClient() throws FatalProblem {
+    KafkaAgentClient initKafkaAgentClient() throws FatalProblem {
         try {
             return new KafkaAgentClient(reconciliation, cluster, namespace, clusterCaCertSecret, coKeySecret);
         } catch (Exception e) {

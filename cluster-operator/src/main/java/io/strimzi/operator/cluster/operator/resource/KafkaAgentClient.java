@@ -123,7 +123,7 @@ class KafkaAgentClient {
      *         -1 is returned for broker state if the http request failed or returned non 200 response.
      *         Null value is returned for recovery progress if broker state is not 2 (RECOVERY).
      */
-    public BrokerState getBrokerState(String podName) {
+    BrokerState getBrokerState(String podName) {
         BrokerState brokerstate = new BrokerState(-1, null);
         String host = DnsNameGenerator.podDnsName(namespace, KafkaResources.brokersServiceName(cluster), podName);
         try {
