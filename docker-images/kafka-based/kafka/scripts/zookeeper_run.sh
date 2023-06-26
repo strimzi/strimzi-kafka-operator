@@ -44,7 +44,7 @@ if [ -z "$ZOOKEEPER_DNS_CHECKS_DISABLED" ] || [ "$ZOOKEEPER_DNS_CHECKS_DISABLED"
   echo "Trying to resolve ${BASE_HOSTNAME}-$((ZOOKEEPER_ID-1)).${BASE_FQDN} ..."
   ipaddress=$(nslookup "${BASE_HOSTNAME}"-$((ZOOKEEPER_ID-1))."${BASE_FQDN}" | grep "Address" | awk '{print $2}' | sed -n 2p)
 
-  # check IP address is resolved and not 127.0.0.1, we want a Cluster IP one
+  # check IP address is resolved and not 127.0.0.1, we want a "valid" Pod one
   while [ -z "$ipaddress" ] || [ "$ipaddress" = "127.0.0.1" ]; do
     sleep 1
     echo "Trying to resolve ${BASE_HOSTNAME}-$((ZOOKEEPER_ID-1)).${BASE_FQDN} ..."
