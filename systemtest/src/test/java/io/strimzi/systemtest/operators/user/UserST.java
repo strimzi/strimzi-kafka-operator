@@ -278,7 +278,7 @@ class UserST extends AbstractST {
             .build());
 
         resourceManager.createResource(extensionContext,
-            KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getTopicName()).build(),
+            KafkaTopicTemplates.topic(testStorage).build(),
             KafkaUserTemplates.tlsUser(testStorage.getNamespaceName(), testStorage.getClusterName(), tlsUserName).build(),
             KafkaUserTemplates.scramShaUser(testStorage.getNamespaceName(), testStorage.getClusterName(), scramShaUserName).build()
         );

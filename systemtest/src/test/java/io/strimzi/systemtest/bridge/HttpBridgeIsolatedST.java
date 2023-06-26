@@ -86,11 +86,7 @@ class HttpBridgeIsolatedST extends AbstractST {
             .build();
 
         // Create topic
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(httpBridgeClusterName, topicName)
-            .editMetadata()
-                .withNamespace(clusterOperator.getDeploymentNamespace())
-            .endMetadata()
-            .build());
+        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(httpBridgeClusterName, topicName, clusterOperator.getDeploymentNamespace()).build());
 
         resourceManager.createResource(extensionContext, kafkaBridgeClientJob.producerStrimziBridge());
 
@@ -119,11 +115,7 @@ class HttpBridgeIsolatedST extends AbstractST {
         final String producerName = "producer-" + new Random().nextInt(Integer.MAX_VALUE);
         final String consumerName = "consumer-" + new Random().nextInt(Integer.MAX_VALUE);
 
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(httpBridgeClusterName, topicName)
-            .editMetadata()
-                .withNamespace(clusterOperator.getDeploymentNamespace())
-            .endMetadata()
-            .build());
+        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(httpBridgeClusterName, topicName, clusterOperator.getDeploymentNamespace()).build());
 
         final BridgeClients kafkaBridgeClientJob = new BridgeClientsBuilder()
             .withConsumerName(consumerName)

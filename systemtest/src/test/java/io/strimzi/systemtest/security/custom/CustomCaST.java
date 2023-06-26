@@ -399,7 +399,7 @@ public class CustomCaST extends AbstractST {
                     SystemTestCertManager.containsAllDN(zookeeperCert.getIssuerX500Principal().getName(), clusterCa.getSubjectDn()));
         }
 
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getTopicName()).build());
+        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(testStorage).build());
 
         LOGGER.info("Check KafkaUser certificate");
         final KafkaUser user = KafkaUserTemplates.tlsUser(testStorage).build();

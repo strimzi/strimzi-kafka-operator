@@ -145,7 +145,7 @@ public class KafkaVersionsST extends AbstractST {
                 .build();
 
         resourceManager.createResource(extensionContext,
-            KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getTopicName(), testStorage.getNamespaceName()).build(),
+            KafkaTopicTemplates.topic(testStorage).build(),
             readUser,
             writeUser,
             tlsReadWriteUser

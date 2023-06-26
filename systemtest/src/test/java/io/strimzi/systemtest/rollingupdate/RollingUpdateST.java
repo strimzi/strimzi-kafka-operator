@@ -86,7 +86,7 @@ class RollingUpdateST extends AbstractST {
 
         resourceManager.createResource(extensionContext,
             KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), 3, 3).build(),
-            KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getTopicName(), 2, 2).build(),
+            KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getTopicName(), 2, 2, testStorage.getNamespaceName()).build(),
             KafkaUserTemplates.tlsUser(testStorage).build()
         );
 
@@ -143,7 +143,7 @@ class RollingUpdateST extends AbstractST {
         // Create new topic to ensure, that ZK is working properly
         String newTopicName = KafkaTopicUtils.generateRandomNameOfTopic();
 
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(testStorage.getClusterName(), newTopicName).build());
+        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(testStorage.getClusterName(), newTopicName, testStorage.getNamespaceName()).build());
 
         clients = new KafkaClientsBuilder(clients)
             .withTopicName(newTopicName)
@@ -161,7 +161,7 @@ class RollingUpdateST extends AbstractST {
 
         resourceManager.createResource(extensionContext,
             KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), 3, 3).build(),
-            KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getTopicName(), 2, 2).build(),
+            KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getTopicName(), 2, 2, testStorage.getNamespaceName()).build(),
             KafkaUserTemplates.tlsUser(testStorage).build()
         );
 
@@ -229,7 +229,7 @@ class RollingUpdateST extends AbstractST {
         // Create new topic to ensure, that ZK is working properly
         String newTopicName = KafkaTopicUtils.generateRandomNameOfTopic();
 
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(testStorage.getClusterName(), newTopicName).build());
+        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(testStorage.getClusterName(), newTopicName, testStorage.getNamespaceName()).build());
 
         clients = new KafkaClientsBuilder(clients)
             .withTopicName(newTopicName)
@@ -268,7 +268,7 @@ class RollingUpdateST extends AbstractST {
         final int initialReplicas = kubeClient().getClient().pods().inNamespace(testStorage.getNamespaceName()).withLabelSelector(testStorage.getKafkaSelector()).list().getItems().size();
         assertEquals(3, initialReplicas);
 
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getTopicName(), 3, initialReplicas, initialReplicas).build());
+        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getTopicName(), 3, initialReplicas, initialReplicas, testStorage.getNamespaceName()).build());
 
         KafkaClients clients = new KafkaClientsBuilder()
             .withProducerName(testStorage.getProducerName())
@@ -347,7 +347,7 @@ class RollingUpdateST extends AbstractST {
         // Create new topic to ensure, that ZK or KRaft is working properly
         String newTopicName = KafkaTopicUtils.generateRandomNameOfTopic();
 
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(testStorage.getClusterName(), newTopicName).build());
+        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(testStorage.getClusterName(), newTopicName, testStorage.getNamespaceName()).build());
 
         clients = new KafkaClientsBuilder(clients)
             .withTopicName(newTopicName)
@@ -366,7 +366,7 @@ class RollingUpdateST extends AbstractST {
 
         resourceManager.createResource(extensionContext,
             KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), 3, 3).build(),
-            KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getTopicName()).build(),
+            KafkaTopicTemplates.topic(testStorage).build(),
             KafkaUserTemplates.tlsUser(testStorage).build()
         );
 
@@ -419,7 +419,7 @@ class RollingUpdateST extends AbstractST {
         // Create new topic to ensure, that ZK is working properly
         String scaleUpTopicName = KafkaTopicUtils.generateRandomNameOfTopic();
 
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(testStorage.getClusterName(), scaleUpTopicName, 1, 1).build());
+        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(testStorage.getClusterName(), scaleUpTopicName, 1, 1, testStorage.getNamespaceName()).build());
 
         clients = new KafkaClientsBuilder(clients)
             .withTopicName(scaleUpTopicName)
@@ -450,7 +450,7 @@ class RollingUpdateST extends AbstractST {
 
         // Create new topic to ensure, that ZK is working properly
         String scaleDownTopicName = KafkaTopicUtils.generateRandomNameOfTopic();
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(testStorage.getClusterName(), scaleDownTopicName, 1, 1).build());
+        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(testStorage.getClusterName(), scaleDownTopicName, 1, 1, testStorage.getNamespaceName()).build());
 
         clients = new KafkaClientsBuilder(clients)
             .withTopicName(scaleDownTopicName)

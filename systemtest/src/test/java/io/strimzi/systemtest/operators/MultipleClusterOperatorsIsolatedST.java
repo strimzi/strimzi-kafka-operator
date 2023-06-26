@@ -170,7 +170,7 @@ public class MultipleClusterOperatorsIsolatedST extends AbstractST {
         KafkaUtils.waitForKafkaReady(testStorage.getNamespaceName(), testStorage.getClusterName());
 
         resourceManager.createResource(extensionContext,
-            KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getTopicName())
+            KafkaTopicTemplates.topic(testStorage)
                 .build(),
             KafkaConnectTemplates.kafkaConnectWithFilePlugin(testStorage.getClusterName(), testStorage.getNamespaceName(), 1)
                 .editOrNewMetadata()

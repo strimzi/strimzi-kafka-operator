@@ -117,7 +117,7 @@ class MirrorMaker2IsolatedST extends AbstractST {
         );
 
         // Deploy source topic
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(kafkaClusterSourceName, testStorage.getTopicName(), 3).build());
+        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(kafkaClusterSourceName, testStorage.getTopicName(), 3, testStorage.getNamespaceName()).build());
 
         KafkaClients clients = new KafkaClientsBuilder()
             .withProducerName(testStorage.getProducerName())
@@ -233,7 +233,7 @@ class MirrorMaker2IsolatedST extends AbstractST {
 
         // Deploy topic
         resourceManager.createResource(extensionContext,
-            KafkaTopicTemplates.topic(kafkaClusterSourceName, testStorage.getTopicName(), 3).build(),
+            KafkaTopicTemplates.topic(kafkaClusterSourceName, testStorage.getTopicName(), 3, testStorage.getNamespaceName()).build(),
             KafkaUserTemplates.tlsUser(testStorage.getNamespaceName(), kafkaClusterSourceName, kafkaUserSourceName).build(),
             KafkaUserTemplates.tlsUser(testStorage.getNamespaceName(), kafkaClusterTargetName, kafkaUserTargetName).build()
         );
@@ -363,7 +363,7 @@ class MirrorMaker2IsolatedST extends AbstractST {
         );
 
         resourceManager.createResource(extensionContext,
-            KafkaTopicTemplates.topic(kafkaClusterSourceName, testStorage.getTopicName(), 3).build(),
+            KafkaTopicTemplates.topic(kafkaClusterSourceName, testStorage.getTopicName(), 3, testStorage.getNamespaceName()).build(),
             KafkaUserTemplates.scramShaUser(testStorage.getNamespaceName(), kafkaClusterSourceName, kafkaUserSourceName).build(),
             KafkaUserTemplates.scramShaUser(testStorage.getNamespaceName(), kafkaClusterTargetName, kafkaUserTargetName).build()
         );
@@ -534,7 +534,7 @@ class MirrorMaker2IsolatedST extends AbstractST {
         // Deploy target kafka
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(kafkaClusterTargetName, 1, 1).build());
         // Deploy Topic for example clients
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(kafkaClusterSourceName, testStorage.getTopicName()).build());
+        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(kafkaClusterSourceName, testStorage.getTopicName(), testStorage.getNamespaceName()).build());
 
         resourceManager.createResource(extensionContext, KafkaMirrorMaker2Templates.kafkaMirrorMaker2(testStorage.getClusterName(), kafkaClusterTargetName, kafkaClusterSourceName, 1, false)
                 .editSpec()
@@ -597,7 +597,7 @@ class MirrorMaker2IsolatedST extends AbstractST {
         final String scraperPodName =  kubeClient().listPodsByPrefixInName(testStorage.getNamespaceName(), testStorage.getScraperName()).get(0).getMetadata().getName();
 
         // Create topic
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(kafkaClusterSourceName, testStorage.getTopicName(), 3).build());
+        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(kafkaClusterSourceName, testStorage.getTopicName(), 3, testStorage.getNamespaceName()).build());
 
         resourceManager.createResource(extensionContext, KafkaMirrorMaker2Templates.kafkaMirrorMaker2(testStorage.getClusterName(), kafkaClusterTargetName, kafkaClusterSourceName, 1, false)
             .editSpec()
@@ -667,7 +667,7 @@ class MirrorMaker2IsolatedST extends AbstractST {
         final String scraperPodName =  kubeClient().listPodsByPrefixInName(testStorage.getNamespaceName(), testStorage.getScraperName()).get(0).getMetadata().getName();
 
         // Create topic
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(kafkaClusterSourceName, testStorage.getTopicName(), 3).build());
+        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(kafkaClusterSourceName, testStorage.getTopicName(), 3, testStorage.getNamespaceName()).build());
 
         resourceManager.createResource(extensionContext, KafkaMirrorMaker2Templates.kafkaMirrorMaker2(testStorage.getClusterName(), kafkaClusterTargetName, kafkaClusterSourceName, 1, false)
             .editSpec()
@@ -846,7 +846,7 @@ class MirrorMaker2IsolatedST extends AbstractST {
                     .endMirror()
                 .endSpec()
                 .build(),
-            KafkaTopicTemplates.topic(kafkaClusterSourceName, testStorage.getTopicName(), 3).build()
+            KafkaTopicTemplates.topic(kafkaClusterSourceName, testStorage.getTopicName(), 3, testStorage.getNamespaceName()).build()
         );
 
         KafkaClients initialInternalClientSourceJob = new KafkaClientsBuilder()
@@ -1007,7 +1007,7 @@ class MirrorMaker2IsolatedST extends AbstractST {
             .build());
 
         resourceManager.createResource(extensionContext,
-            KafkaTopicTemplates.topic(kafkaClusterSourceName, testStorage.getTopicName()).build(),
+            KafkaTopicTemplates.topic(kafkaClusterSourceName, testStorage.getTopicName(), testStorage.getNamespaceName()).build(),
             KafkaUserTemplates.scramShaUser(testStorage.getNamespaceName(), kafkaClusterSourceName, kafkaUserSourceName).build(),
             KafkaUserTemplates.scramShaUser(testStorage.getNamespaceName(), kafkaClusterTargetName, kafkaUserTargetName).build()
         );
@@ -1175,7 +1175,7 @@ class MirrorMaker2IsolatedST extends AbstractST {
             .build());
 
         resourceManager.createResource(extensionContext,
-            KafkaTopicTemplates.topic(kafkaClusterSourceName, testStorage.getTopicName(), 3).build(),
+            KafkaTopicTemplates.topic(kafkaClusterSourceName, testStorage.getTopicName(), 3, testStorage.getNamespaceName()).build(),
             KafkaUserTemplates.tlsUser(testStorage.getNamespaceName(), kafkaClusterSourceName, kafkaUserSourceName).build(),
             KafkaUserTemplates.tlsUser(testStorage.getNamespaceName(), kafkaClusterTargetName, kafkaUserTargetName).build()
         );

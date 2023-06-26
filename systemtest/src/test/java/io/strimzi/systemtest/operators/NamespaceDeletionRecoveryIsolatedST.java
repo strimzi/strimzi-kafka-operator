@@ -214,7 +214,7 @@ class NamespaceDeletionRecoveryIsolatedST extends AbstractST {
             .endSpec()
             .build());
 
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getTopicName())
+        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(testStorage)
             .editMetadata()
                 .withNamespace(testStorage.getNamespaceName())
             .endMetadata()
