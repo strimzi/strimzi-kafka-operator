@@ -26,13 +26,10 @@ jobs:
 
   - job: tests
     trigger: pull_request
-    # Suffix for job name
     identifier: "upgrade"
     targets:
-      # This target is not used at all by our tests, but it has to be one of the available - https://packit.dev/docs/configuration/#aliases
       - centos-stream-9-x86_64
       - centos-stream-9-aarch64
-    # We don't need to build any packages for Fedora/RHEL/CentOS, it is not related to Strimzi tests
     skip_build: true
     manual_trigger: true
     labels:
@@ -45,13 +42,10 @@ jobs:
 
   - job: tests
     trigger: pull_request
-    # Suffix for job name
     identifier: "regression-operators"
     targets:
-      # This target is not used at all by our tests, but it has to be one of the available - https://packit.dev/docs/configuration/#aliases
       - centos-stream-9-x86_64
       - centos-stream-9-aarch64
-    # We don't need to build any packages for Fedora/RHEL/CentOS, it is not related to Strimzi tests
     skip_build: true
     manual_trigger: true
     labels:
@@ -67,13 +61,10 @@ jobs:
 
   - job: tests
     trigger: pull_request
-    # Suffix for job name
     identifier: "regression-components"
     targets:
-      # This target is not used at all by our tests, but it has to be one of the available - https://packit.dev/docs/configuration/#aliases
       - centos-stream-9-x86_64
       - centos-stream-9-aarch64
-    # We don't need to build any packages for Fedora/RHEL/CentOS, it is not related to Strimzi tests
     skip_build: true
     manual_trigger: true
     labels:
@@ -89,13 +80,10 @@ jobs:
 
   - job: tests
     trigger: pull_request
-    # Suffix for job name
     identifier: "kraft-operators"
     targets:
-      # This target is not used at all by our tests, but it has to be one of the available - https://packit.dev/docs/configuration/#aliases
       - centos-stream-9-x86_64
       - centos-stream-9-aarch64
-    # We don't need to build any packages for Fedora/RHEL/CentOS, it is not related to Strimzi tests
     skip_build: true
     manual_trigger: true
     labels:
@@ -111,13 +99,10 @@ jobs:
 
   - job: tests
     trigger: pull_request
-    # Suffix for job name
     identifier: "kraft-components"
     targets:
-      # This target is not used at all by our tests, but it has to be one of the available - https://packit.dev/docs/configuration/#aliases
       - centos-stream-9-x86_64
       - centos-stream-9-aarch64
-    # We don't need to build any packages for Fedora/RHEL/CentOS, it is not related to Strimzi tests
     skip_build: true
     manual_trigger: true
     labels:
@@ -132,15 +117,28 @@ jobs:
   ###############################################################################################
 
   - job: tests
-    trigger: commit
-    branch: main
-    # Suffix for job name
-    identifier: "sanity"
+    trigger: pull_request
+    identifier: "acceptance"
     targets:
-      # This target is not used at all by our tests, but it has to be one of the available - https://packit.dev/docs/configuration/#aliases
       - centos-stream-9-x86_64
       - centos-stream-9-aarch64
-    # We don't need to build any packages for Fedora/RHEL/CentOS, it is not related to Strimzi tests
+    skip_build: true
+    manual_trigger: true
+    labels:
+      - acceptance
+    tf_extra_params:
+      test:
+        fmf:
+          name: acceptance
+  ###############################################################################################
+
+  - job: tests
+    trigger: commit
+    branch: main
+    identifier: "sanity"
+    targets:
+      - centos-stream-9-x86_64
+      - centos-stream-9-aarch64
     skip_build: true
     tf_extra_params:
       test:
