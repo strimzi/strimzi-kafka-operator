@@ -4,7 +4,6 @@
  */
 package io.strimzi.operator.topic;
 
-import java.io.CharArrayWriter;
 import java.net.HttpURLConnection;
 import java.util.HashMap;
 import java.util.Locale;
@@ -30,7 +29,6 @@ import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.common.errors.InvalidConfigurationException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.core.config.LoggerConfig;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -227,11 +225,6 @@ public class TopicOperatorIT extends TopicOperatorBaseIT {
 
     @Test
     public void testKafkaTopicAddedWithNoSpec() throws InterruptedException, TimeoutException {
-        final String logAppenderName = "WRITER";
-        CharArrayWriter logContent = new CharArrayWriter();
-
-        LoggerConfig loggerConfig = addAppenderForSTDOUTLogger(logAppenderName, logContent);
-
         String topicName = "test-resource-created-with-no-spec";
         Topic topic = new Topic.Builder(topicName, 1, (short) 1, emptyMap()).build();
 
@@ -251,10 +244,6 @@ public class TopicOperatorIT extends TopicOperatorBaseIT {
 
             return createdTopicResource != null;
         }, "Expected the kafkatopic to have been created by now");
-
-        assertThat(logContent.toString().contains("Topic " + NAMESPACE + "/" + topicName + " has no spec"), is(true));
-
-        loggerConfig.removeAppender(logAppenderName);
     }
 
     @Test

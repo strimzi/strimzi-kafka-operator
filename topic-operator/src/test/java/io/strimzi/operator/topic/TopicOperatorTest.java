@@ -151,6 +151,22 @@ public class TopicOperatorTest {
         context.completeNow();
     }
 
+    /** Test what happens when a KafkaTopic with no spec gets created in kubernetes */
+    @Test
+    public void testOnKafkaTopicAdded_nospec(VertxTestContext context) {
+        KafkaTopic kafkaTopic = new KafkaTopicBuilder()
+                .withMetadata(new ObjectMetaBuilder().withName("nospec")
+                        .withNamespace("my-namespace")
+                        .withLabels(labels.labels()).build())
+                .build();
+        K8sTopicWatcher watcher = new K8sTopicWatcher(topicOperator, Future.succeededFuture(), () -> { });
+        watcher.eventReceived(ADDED, kafkaTopic);
+
+        mockKafka.assertEmpty(context);
+        mockTopicStore.assertEmpty(context);
+        context.completeNow();
+    }
+
     /** Test what happens when a non-topic KafkaTopic gets created in kubernetes */
     @Test
     public void testOnKafkaTopicAdded_invalidResource(VertxTestContext context) {

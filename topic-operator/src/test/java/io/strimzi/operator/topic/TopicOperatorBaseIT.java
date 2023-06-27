@@ -37,15 +37,8 @@ import org.apache.kafka.common.errors.InvalidTopicException;
 import org.apache.kafka.common.errors.UnknownTopicOrPartitionException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.core.LoggerContext;
-import org.apache.logging.log4j.core.StringLayout;
-import org.apache.logging.log4j.core.appender.WriterAppender;
-import org.apache.logging.log4j.core.config.Configuration;
-import org.apache.logging.log4j.core.config.LoggerConfig;
-import org.apache.logging.log4j.core.layout.PatternLayout;
 import org.junit.jupiter.api.TestInstance;
 
-import java.io.CharArrayWriter;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
@@ -624,31 +617,6 @@ public abstract class TopicOperatorBaseIT {
                 .editOrNewSpec().addToConfig(key, newValue).endSpec().build();
         operation().inNamespace(NAMESPACE).withName(resourceName).replace(changedTopic);
         return newValue;
-    }
-
-    /**
-     * Adds a WriterAppender which writes to a CharArrayWriter to be used for output validation purposes
-     *
-     * @param appenderName
-     * @param outContent
-     * @return
-     */
-    protected LoggerConfig addAppenderForSTDOUTLogger(String appenderName, CharArrayWriter outContent) {
-        StringLayout layout = PatternLayout.newBuilder().withPattern("%msg").build();
-        WriterAppender appender = WriterAppender.newBuilder()
-                .setTarget(outContent)
-                .setLayout(layout)
-                .setName(appenderName).build();
-        appender.start();
-
-        LoggerContext ctx = (LoggerContext) LogManager.getContext(false);
-        Configuration config = ctx.getConfiguration();
-        config.addAppender(appender);
-
-        LoggerConfig loggerConfig = config.getLoggerConfig("STDOUT");
-        loggerConfig.addAppender(appender, null, null);
-
-        return loggerConfig;
     }
 }
 
