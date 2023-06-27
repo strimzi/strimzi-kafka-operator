@@ -4,20 +4,7 @@
  */
 package io.strimzi.operator.topic;
 
-import java.net.HttpURLConnection;
-import java.util.HashMap;
-import java.util.Locale;
-import java.util.Map;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeoutException;
-
-import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
-import io.fabric8.kubernetes.api.model.ObjectMeta;
-import io.fabric8.kubernetes.api.model.ObjectMetaBuilder;
-import io.fabric8.kubernetes.api.model.OwnerReference;
-import io.fabric8.kubernetes.api.model.OwnerReferenceBuilder;
-import io.fabric8.kubernetes.api.model.Status;
-import io.fabric8.kubernetes.api.model.StatusBuilder;
+import io.fabric8.kubernetes.api.model.*;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.WatcherException;
 import io.strimzi.api.kafka.model.KafkaTopic;
@@ -29,16 +16,24 @@ import org.apache.kafka.clients.admin.NewTopic;
 import org.apache.kafka.common.errors.InvalidConfigurationException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.core.config.LoggerConfig;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-import static java.util.Collections.emptyMap;
-import static java.util.Collections.singletonList;
-import static java.util.Collections.singletonMap;
+import java.io.CharArrayWriter;
+import java.net.HttpURLConnection;
+import java.util.HashMap;
+import java.util.Locale;
+import java.util.Map;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeoutException;
+
+import static java.util.Collections.*;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.fail;
 
 public class TopicOperatorIT extends TopicOperatorBaseIT {
@@ -220,6 +215,38 @@ public class TopicOperatorIT extends TopicOperatorBaseIT {
         } catch (KubernetesClientException e) {
             assertThat(e.getMessage().contains("spec.partitions in body should be greater than or equal to 1"), is(true));
         }
+    }
+
+    @Test
+    public void testKafkaTopicAddedWithNoSpec() throws InterruptedException, TimeoutException {
+        final String logAppenderName = "WRITER";
+        CharArrayWriter logContent = new CharArrayWriter();
+
+        LoggerConfig loggerConfig = addAppenderForSTDOUTLogger(logAppenderName, logContent);
+
+        String topicName = "test-resource-created-with-no-spec";
+        Topic topic = new Topic.Builder(topicName, 1, (short) 1, emptyMap()).build();
+
+        KafkaTopic kafkaTopic = TopicSerialization.toTopicResource(topic, labels);
+        kafkaTopic.setSpec(null);
+
+        operation().inNamespace(NAMESPACE).create(kafkaTopic);
+
+        // Wait for the resource to be created
+        waitFor(() -> {
+            KafkaTopic createdTopicResource = operation().inNamespace(NAMESPACE).withName(topicName).get();
+            LOGGER.info("Polled kafkatopic {} waiting for creation", topicName);
+
+            if (createdTopicResource != null) {
+                assertNull(createdTopicResource.getStatus());
+            }
+
+            return createdTopicResource != null;
+        }, "Expected the kafkatopic to have been created by now");
+
+        assertThat(logContent.toString().contains("Topic " + NAMESPACE + "/" + topicName + " has no spec"), is(true));
+
+        loggerConfig.removeAppender(logAppenderName);
     }
 
     @Test

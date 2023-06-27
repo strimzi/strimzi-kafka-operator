@@ -39,7 +39,7 @@ class TopicName {
      * @param kafkaTopic  The Kafka Topic
      */
     public TopicName(KafkaTopic kafkaTopic) {
-        this(kafkaTopic.getSpec().getTopicName() != null ? kafkaTopic.getSpec().getTopicName() : kafkaTopic.getMetadata().getName());
+        this(kafkaTopic.getSpec() != null && kafkaTopic.getSpec().getTopicName() != null ? kafkaTopic.getSpec().getTopicName() : kafkaTopic.getMetadata().getName());
     }
 
     /**
