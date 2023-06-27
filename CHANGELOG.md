@@ -10,6 +10,7 @@
 * Add support for _Kafka node pools_ according to [Strimzi Proposal #50](https://github.com/strimzi/proposals/blob/main/050-Kafka-Node-Pools.md)
 * Update OpenTelemetry 1.19.0
 * Fixed ordering of JVM performance options [#8579](https://github.com/strimzi/strimzi-kafka-operator/issues/8579)
+* Log a warning when a KafkaTopic has no spec [#8465](https://github.com/strimzi/strimzi-kafka-operator/issues/8465)
 
 ### Changes, deprecations and removals
 
