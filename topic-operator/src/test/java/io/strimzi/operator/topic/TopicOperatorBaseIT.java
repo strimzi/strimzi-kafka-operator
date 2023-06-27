@@ -633,7 +633,7 @@ public abstract class TopicOperatorBaseIT {
      * @param outContent
      * @return
      */
-    protected LoggerConfig addAppenderForSTDOUTLogger(String appenderName, CharArrayWriter outContent){
+    protected LoggerConfig addAppenderForSTDOUTLogger(String appenderName, CharArrayWriter outContent) {
         StringLayout layout = PatternLayout.newBuilder().withPattern("%msg").build();
         WriterAppender appender = WriterAppender.newBuilder()
                 .setTarget(outContent)
@@ -645,7 +645,7 @@ public abstract class TopicOperatorBaseIT {
         Configuration config = ctx.getConfiguration();
         config.addAppender(appender);
 
-        LoggerConfig loggerConfig = config.getLoggerConfig("STDOUT") ;
+        LoggerConfig loggerConfig = config.getLoggerConfig("STDOUT");
         loggerConfig.addAppender(appender, null, null);
 
         return loggerConfig;
