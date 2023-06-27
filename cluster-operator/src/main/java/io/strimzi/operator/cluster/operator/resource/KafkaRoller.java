@@ -126,6 +126,7 @@ public class KafkaRoller {
     private final Reconciliation reconciliation;
     private final boolean allowReconfiguration;
     private Admin allClient;
+    private KafkaAgentClient kafkaAgentClient;
 
     /**
      * Constructor
@@ -373,7 +374,16 @@ public class KafkaRoller {
             LOGGER.debugCr(reconciliation, "Waiting for pod {} to become ready before checking its state", nodeRef.podName());
             try {
                 await(isReady(pod), operationTimeoutMs, TimeUnit.MILLISECONDS, e -> new RuntimeException(e));
-            } catch (Exception e)   {
+            } catch (Exception e) {
+                //Initialise the client for KafkaAgent if pod is not ready
+                if (kafkaAgentClient == null) {
+                    this.kafkaAgentClient = initKafkaAgentClient();
+                }
+                BrokerState brokerState = kafkaAgentClient.getBrokerState(pod.getMetadata().getName());
+                if (brokerState.isBrokerInRecovery()) {
+                    throw new UnforceableProblem("Pod " + nodeRef.podName() + " is not ready because the broker is performing log recovery. There are  " + brokerState.remainingLogsToRecover() + " logs and " + brokerState.remainingSegmentsToRecover() + " segments left to recover.", e.getCause());
+                }
+
                 if (e.getCause() instanceof TimeoutException) {
                     LOGGER.warnCr(reconciliation, "Pod {} is not ready. We will check if KafkaRoller can do anything about it.", nodeRef.podName());
                 } else {
@@ -386,14 +396,17 @@ public class KafkaRoller {
 
         try {
             checkReconfigurability(nodeRef, pod, restartContext);
-            if (restartContext.forceRestart || restartContext.needsRestart || restartContext.needsReconfig) {
-                if (!restartContext.forceRestart && deferController(nodeRef, restartContext)) {
+            if (restartContext.forceRestart) {
+                LOGGER.debugCr(reconciliation, "Pod {} can be rolled now", nodeRef);
+                restartAndAwaitReadiness(pod, operationTimeoutMs, TimeUnit.MILLISECONDS, restartContext);
+            } else if (restartContext.needsRestart || restartContext.needsReconfig) {
+                if (deferController(nodeRef, restartContext)) {
                     LOGGER.debugCr(reconciliation, "Pod {} is controller and there are other pods to verify. Non-controller pods will be verified first.", nodeRef);
                     throw new ForceableProblem("Pod " + nodeRef.podName() + " is controller and there are other pods to verify. Non-controller pods will be verified first");
                 } else {
-                    if (restartContext.forceRestart || canRoll(nodeRef, 60_000, TimeUnit.MILLISECONDS, false, restartContext)) {
+                    if (canRoll(nodeRef, 60_000, TimeUnit.MILLISECONDS, false, restartContext)) {
                         // Check for rollability before trying a dynamic update so that if the dynamic update fails we can go to a full restart
-                        if (restartContext.forceRestart || !maybeDynamicUpdateBrokerConfig(nodeRef, restartContext)) {
+                        if (!maybeDynamicUpdateBrokerConfig(nodeRef, restartContext)) {
                             LOGGER.debugCr(reconciliation, "Pod {} can be rolled now", nodeRef);
                             restartAndAwaitReadiness(pod, operationTimeoutMs, TimeUnit.MILLISECONDS, restartContext);
                         } else {
@@ -430,6 +443,14 @@ public class KafkaRoller {
             } else {
                 throw e;
             }
+        }
+    }
+
+    KafkaAgentClient initKafkaAgentClient() throws FatalProblem {
+        try {
+            return new KafkaAgentClient(reconciliation, cluster, namespace, clusterCaCertSecret, coKeySecret);
+        } catch (Exception e) {
+            throw new FatalProblem("Failed to initialise KafkaAgentClient", e);
         }
     }
 
@@ -872,3 +893,4 @@ public class KafkaRoller {
             });
     }
 }
+
