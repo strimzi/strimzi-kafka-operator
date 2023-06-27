@@ -89,14 +89,14 @@ public class KafkaUtils {
      */
     public static void waitForKafkaStatusUpdate(String namespaceName, String clusterName) {
         LOGGER.info("Waiting for Kafka status to be updated");
-        TestUtils.waitFor("KafkaStatus update", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_STATUS_TIMEOUT, () -> {
+        TestUtils.waitFor("Kafka status to be updated", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_STATUS_TIMEOUT, () -> {
             Kafka k = KafkaResource.kafkaClient().inNamespace(namespaceName).withName(clusterName).get();
             return k.getMetadata().getGeneration() == k.getStatus().getObservedGeneration();
         });
     }
 
     public static void waitUntilKafkaStatusConditionContainsMessage(String clusterName, String namespace, String pattern, long timeout) {
-        TestUtils.waitFor("Kafka Status with message [" + pattern + "]",
+        TestUtils.waitFor("Kafka status to contain message [" + pattern + "]",
             Constants.GLOBAL_POLL_INTERVAL, timeout, () -> {
                 List<Condition> conditions = KafkaResource.kafkaClient().inNamespace(namespace).withName(clusterName).get().getStatus().getConditions();
                 for (Condition condition : conditions) {
@@ -133,7 +133,7 @@ public class KafkaUtils {
                     }
                     return false;
                 },
-                () -> LOGGER.info("zookeeper `mntr` output at the point of timeout does not match {}:{}{}",
+                () -> LOGGER.info("ZooKeeper `mntr` output at the point of timeout does not match {}:{}{}",
                     pattern.pattern(),
                     System.lineSeparator(),
                     indent(cmdKubeClient(namespaceName).execInPod(zookeeperPod, "/bin/bash", "-c", "echo mntr | nc localhost " + zookeeperPort).out()))
@@ -163,7 +163,7 @@ public class KafkaUtils {
     }
 
     public static void waitForKafkaSecretAndStatusCertsMatches(Supplier<String> kafkaStatusCertificate, Supplier<String> kafkaSecretCertificate) {
-        TestUtils.waitFor("Kafka Secret and KafkaStatus certificates matches", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
+        TestUtils.waitFor("Kafka Secret and Kafka status certificates to match", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
             () -> kafkaStatusCertificate.get().equals(kafkaSecretCertificate.get()));
     }
 
@@ -187,14 +187,14 @@ public class KafkaUtils {
         }
         eoPods[0] = DeploymentUtils.depSnapshot(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName));
 
-        TestUtils.waitFor("Cluster stable and ready", Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_FOR_CLUSTER_STABLE, () -> {
+        TestUtils.waitFor("Cluster to be stable and ready", Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_FOR_CLUSTER_STABLE, () -> {
             Map<String, String> kafkaSnapshot = PodUtils.podSnapshot(namespaceName, kafkaSelector);
             Map<String, String> eoSnapshot = DeploymentUtils.depSnapshot(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName));
             boolean kafkaSameAsLast = kafkaSnapshot.equals(kafkaPods[0]);
             boolean eoSameAsLast = eoSnapshot.equals(eoPods[0]);
 
             if (!kafkaSameAsLast) {
-                LOGGER.warn("Kafka Cluster not stable");
+                LOGGER.warn("Kafka cluster not stable");
             }
             if (!eoSameAsLast) {
                 LOGGER.warn("EO not stable");
@@ -210,9 +210,9 @@ public class KafkaUtils {
                 }
                 if (zkSameAsLast && eoSameAsLast && kafkaSameAsLast) {
                     int c = count[0]++;
-                    LOGGER.debug("All stable after {} polls", c);
+                    LOGGER.debug("All stable after: {} polls", c);
                     if (c > 60) {
-                        LOGGER.info("Kafka cluster is stable after {} polls.", c);
+                        LOGGER.info("Kafka cluster is stable after: {} polls", c);
                         return true;
                     }
                     return false;
@@ -221,9 +221,9 @@ public class KafkaUtils {
             } else {
                 if (kafkaSameAsLast && eoSameAsLast) {
                     int c = count[0]++;
-                    LOGGER.debug("All stable after {} polls", c);
+                    LOGGER.debug("All stable after: {} polls", c);
                     if (c > 60) {
-                        LOGGER.info("Kafka cluster is stable after {} polls.", c);
+                        LOGGER.info("Kafka cluster is stable after: {} polls", c);
                         return true;
                     }
                     return false;
@@ -257,7 +257,7 @@ public class KafkaUtils {
     /**
      * Method which, extends the @link updateConfiguration(String clusterName, KafkaConfiguration kafkaConfiguration, Object value) method
      * with stability and ensures after update of Kafka resource there will be not rolling update
-     * @param namespaceName namespace name
+     * @param namespaceName Namespace name
      * @param clusterName name of the cluster where Kafka resource can be found
      * @param brokerConfigName key of specific property
      * @param value value of specific property
@@ -300,14 +300,14 @@ public class KafkaUtils {
 
         for (Pod pod : kafkaPods) {
 
-            TestUtils.waitFor("Wait until dyn.configuration is changed", Constants.GLOBAL_POLL_INTERVAL, Constants.RECONCILIATION_INTERVAL + Duration.ofSeconds(10).toMillis(),
+            TestUtils.waitFor("dyn.configuration to change", Constants.GLOBAL_POLL_INTERVAL, Constants.RECONCILIATION_INTERVAL + Duration.ofSeconds(10).toMillis(),
                 () -> {
                     String result = KafkaCmdClient.describeKafkaBrokerUsingPodCli(namespaceName, scraperPodName, bootstrapServer, brokerId[0]++);
 
-                    LOGGER.debug("This dyn.configuration {} inside the Kafka pod {}", result, pod.getMetadata().getName());
+                    LOGGER.debug("This dyn.configuration {} inside the Kafka Pod: {}/{}", result, namespaceName, pod.getMetadata().getName());
 
                     if (!result.contains(brokerConfigName + "=" + value)) {
-                        LOGGER.error("Kafka Pod {} doesn't contain {} with value {}", pod.getMetadata().getName(), brokerConfigName, value);
+                        LOGGER.error("Kafka Pod: {}/{} doesn't contain {} with value {}", namespaceName, pod.getMetadata().getName(), brokerConfigName, value);
                         LOGGER.error("Kafka configuration {}", result);
                         return false;
                     }
@@ -349,7 +349,7 @@ public class KafkaUtils {
 
         LOGGER.info("Kafka config {}", configs.toString());
 
-        LOGGER.info("Number of all kafka configs {}", configs.size());
+        LOGGER.info("Number of all Kafka configs {}", configs.size());
 
         Map<String, ConfigModel> dynamicConfigs = configs
             .entrySet()
@@ -412,8 +412,8 @@ public class KafkaUtils {
     }
 
     public static void waitForKafkaDeletion(String namespaceName, String kafkaClusterName) {
-        LOGGER.info("Waiting for deletion of Kafka:{}", kafkaClusterName);
-        TestUtils.waitFor("Kafka deletion " + kafkaClusterName, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, DELETION_TIMEOUT,
+        LOGGER.info("Waiting for deletion of Kafka: {}/{}", namespaceName, kafkaClusterName);
+        TestUtils.waitFor("deletion of Kafka: " + namespaceName + "/" + kafkaClusterName, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, DELETION_TIMEOUT,
             () -> {
                 if (KafkaResource.kafkaClient().inNamespace(namespaceName).withName(kafkaClusterName).get() == null &&
                     StrimziPodSetResource.strimziPodSetClient().inNamespace(namespaceName).withName(KafkaResources.kafkaStatefulSetName(kafkaClusterName)).get() == null  &&
@@ -507,7 +507,7 @@ public class KafkaUtils {
             LOGGER.error("There is no Kafka external listener specified in the Kafka CR Status");
             throw new RuntimeException("There is no Kafka external listener specified in the Kafka CR Status");
         } else if (listenerName == null) {
-            LOGGER.info("Listener name is not specified. Picking the first one from the Kafka Status.");
+            LOGGER.info("Listener name is not specified. Picking the first one from the Kafka Status");
             return listenerStatusList.get(0).getBootstrapServers();
         }
 

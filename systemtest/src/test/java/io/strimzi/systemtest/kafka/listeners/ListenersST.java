@@ -240,11 +240,11 @@ public class ListenersST extends AbstractST {
         boolean found = false;
         while (m.find()) {
             found = true;
-            LOGGER.info("Broker pod log line about user {}: {}", testStorage.getUsername(), m.group());
+            LOGGER.info("Broker Pod log line about user: {} -> {}", testStorage.getUsername(), m.group());
         }
         if (!found) {
-            LOGGER.warn("No broker pod log lines about user {}", testStorage.getUsername());
-            LOGGER.info("Broker pod log:\n----\n{}\n----\n", brokerPodLog);
+            LOGGER.warn("No Broker Pod log lines about user: {}/{}", testStorage.getNamespaceName(), testStorage.getUsername());
+            LOGGER.info("Broker Pod log:\n----\n{}\n----\n", brokerPodLog);
         }
 
         KafkaClients kafkaClients = new KafkaClientsBuilder()
@@ -1335,9 +1335,9 @@ public class ListenersST extends AbstractST {
 
         String internalCerts = getKafkaStatusCertificates(Constants.TLS_LISTENER_DEFAULT_NAME, testStorage.getNamespaceName(), testStorage.getClusterName());
 
-        LOGGER.info("Check if KafkaStatus certificates from external listeners are the same as secret certificates");
+        LOGGER.info("Check if KafkaStatus certificates from external listeners are the same as Secret certificates");
         assertThat(externalSecretCerts, is(externalCerts));
-        LOGGER.info("Check if KafkaStatus certificates from internal TLS listener are the same as secret certificates");
+        LOGGER.info("Check if KafkaStatus certificates from internal TLS listener are the same as Secret certificates");
         //External secret cert is same as internal in this case
         assertThat(externalSecretCerts, is(internalCerts));
 
@@ -1401,9 +1401,9 @@ public class ListenersST extends AbstractST {
         internalCerts = getKafkaStatusCertificates(Constants.TLS_LISTENER_DEFAULT_NAME, testStorage.getNamespaceName(), testStorage.getClusterName());
         String internalSecretCerts = getKafkaSecretCertificates(testStorage.getNamespaceName(), clusterCustomCertServer2, "ca.crt");
 
-        LOGGER.info("Check if KafkaStatus certificates are the same as secret certificates");
+        LOGGER.info("Check if KafkaStatus certificates are the same as Secret certificates");
         assertThat(externalSecretCerts, is(externalCerts));
-        LOGGER.info("Check if KafkaStatus certificates from internal TLS listener are the same as secret certificates");
+        LOGGER.info("Check if KafkaStatus certificates from internal TLS listener are the same as Secret certificates");
         assertThat(internalSecretCerts, is(internalCerts));
 
         externalKafkaClient = externalKafkaClient.toBuilder()
@@ -1448,9 +1448,9 @@ public class ListenersST extends AbstractST {
         internalCerts = getKafkaStatusCertificates(Constants.TLS_LISTENER_DEFAULT_NAME, testStorage.getNamespaceName(), testStorage.getClusterName());
         internalSecretCerts = getKafkaSecretCertificates(testStorage.getNamespaceName(), clusterCustomCertServer2, "ca.crt");
 
-        LOGGER.info("Check if KafkaStatus certificates are the same as secret certificates");
+        LOGGER.info("Check if KafkaStatus certificates are the same as Secret certificates");
         assertThat(externalSecretCerts, is(externalCerts));
-        LOGGER.info("Check if KafkaStatus certificates from internal TLS listener are the same as secret certificates");
+        LOGGER.info("Check if KafkaStatus certificates from internal TLS listener are the same as Secret certificates");
         assertThat(internalSecretCerts, is(internalCerts));
 
         int sent = externalKafkaClient.sendMessagesTls() + testStorage.getMessageCount();
@@ -1514,9 +1514,9 @@ public class ListenersST extends AbstractST {
         internalCerts = getKafkaStatusCertificates(Constants.TLS_LISTENER_DEFAULT_NAME, testStorage.getNamespaceName(), testStorage.getClusterName());
         internalSecretCerts = getKafkaSecretCertificates(testStorage.getNamespaceName(), clusterCustomCertServer2, "ca.crt");
 
-        LOGGER.info("Check if KafkaStatus certificates are the same as secret certificates");
+        LOGGER.info("Check if KafkaStatus certificates are the same as Secret certificates");
         assertThat(externalSecretCerts, is(externalCerts));
-        LOGGER.info("Check if KafkaStatus certificates from internal TLS listener are the same as secret certificates");
+        LOGGER.info("Check if KafkaStatus certificates from internal TLS listener are the same as Secret certificates");
         assertThat(internalSecretCerts, is(internalCerts));
 
         externalKafkaClient = externalKafkaClient.toBuilder()
@@ -1959,7 +1959,7 @@ public class ListenersST extends AbstractST {
         // Delete already existing secrets
         SecretUtils.deleteSecretWithWait(clusterCustomCertServer1, testStorage.getNamespaceName());
         SecretUtils.deleteSecretWithWait(clusterCustomCertServer2, testStorage.getNamespaceName());
-        // Create secrets with new values (update)
+        // Create Secrets with new values (update)
         SecretUtils.createCustomSecret(clusterCustomCertServer1, testStorage.getClusterName(), testStorage.getNamespaceName(), strimziCertAndKey2);
         SecretUtils.createCustomSecret(clusterCustomCertServer2, testStorage.getClusterName(), testStorage.getNamespaceName(), strimziCertAndKey1);
 
@@ -2256,7 +2256,7 @@ public class ListenersST extends AbstractST {
         );
         ClientUtils.waitForClientsSuccess(testStorage);
 
-        LOGGER.info("Changing password in secret: {}, we should be able to send/receive messages", secretName);
+        LOGGER.info("Changing password in Secret: {}/{}, we should be able to send/receive messages", testStorage.getNamespaceName(), secretName);
 
         password = new SecretBuilder(password)
             .addToData("password", secondEncodedPassword)

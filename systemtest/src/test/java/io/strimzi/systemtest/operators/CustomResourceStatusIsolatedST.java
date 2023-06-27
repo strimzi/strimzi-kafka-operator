@@ -106,7 +106,7 @@ class CustomResourceStatusIsolatedST extends AbstractST {
     @Tag(NODEPORT_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
     void testKafkaStatus(ExtensionContext extensionContext) {
-        LOGGER.info("Checking status of deployed kafka cluster");
+        LOGGER.info("Checking status of deployed Kafka cluster");
         KafkaUtils.waitForKafkaReady(clusterOperator.getDeploymentNamespace(), CUSTOM_RESOURCE_STATUS_CLUSTER_NAME);
 
         ExternalKafkaClient externalKafkaClient = new ExternalKafkaClient.Builder()
@@ -130,10 +130,10 @@ class CustomResourceStatusIsolatedST extends AbstractST {
                     .build());
         }, clusterOperator.getDeploymentNamespace());
 
-        LOGGER.info("Wait until cluster will be in NotReady state ...");
+        LOGGER.info("Waiting for cluster to be in NotReady state");
         KafkaUtils.waitForKafkaNotReady(clusterOperator.getDeploymentNamespace(), CUSTOM_RESOURCE_STATUS_CLUSTER_NAME);
 
-        LOGGER.info("Recovery cluster to Ready state ...");
+        LOGGER.info("Recover cluster to Ready state");
         KafkaResource.replaceKafkaResourceInSpecificNamespace(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME, k -> {
             k.getSpec().getKafka().setResources(new ResourceRequirementsBuilder()
                     .addToRequests("cpu", new Quantity("100m"))
@@ -186,16 +186,16 @@ class CustomResourceStatusIsolatedST extends AbstractST {
         String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         String mirrorMakerName = clusterName + "-mirror-maker";
 
-        // Deploy Mirror Maker
+        // Deploy MirrorMaker
         resourceManager.createResource(extensionContext, KafkaMirrorMakerTemplates.kafkaMirrorMaker(mirrorMakerName, CUSTOM_RESOURCE_STATUS_CLUSTER_NAME, CUSTOM_RESOURCE_STATUS_CLUSTER_NAME, ClientUtils.generateRandomConsumerGroup(), 1, false).build());
         KafkaMirrorMakerUtils.waitForKafkaMirrorMakerReady(clusterOperator.getDeploymentNamespace(), mirrorMakerName);
         assertKafkaMirrorMakerStatus(1, mirrorMakerName);
-        // Corrupt Mirror Maker pods
+        // Corrupt MirrorMaker Pods
         KafkaMirrorMakerResource.replaceMirrorMakerResourceInSpecificNamespace(mirrorMakerName, mm -> mm.getSpec().setResources(new ResourceRequirementsBuilder()
                 .addToRequests("cpu", new Quantity("100000000m"))
                 .build()), clusterOperator.getDeploymentNamespace());
         KafkaMirrorMakerUtils.waitForKafkaMirrorMakerNotReady(clusterOperator.getDeploymentNamespace(), mirrorMakerName);
-        // Restore Mirror Maker pod
+        // Restore MirrorMaker Pod
         KafkaMirrorMakerResource.replaceMirrorMakerResourceInSpecificNamespace(mirrorMakerName, mm -> mm.getSpec().setResources(new ResourceRequirementsBuilder()
                 .addToRequests("cpu", new Quantity("100m"))
                 .build()), clusterOperator.getDeploymentNamespace());
@@ -216,10 +216,10 @@ class CustomResourceStatusIsolatedST extends AbstractST {
             .build());
         KafkaMirrorMakerUtils.waitForKafkaMirrorMakerReady(clusterOperator.getDeploymentNamespace(), mirrorMakerName);
         assertKafkaMirrorMakerStatus(1, mirrorMakerName);
-        // Corrupt Mirror Maker pods
+        // Corrupt MirrorMaker Pods
         KafkaMirrorMakerResource.replaceMirrorMakerResourceInSpecificNamespace(mirrorMakerName, mm -> mm.getSpec().getConsumer().setBootstrapServers("non-exists-bootstrap"), clusterOperator.getDeploymentNamespace());
         KafkaMirrorMakerUtils.waitForKafkaMirrorMakerNotReady(clusterOperator.getDeploymentNamespace(), mirrorMakerName);
-        // Restore Mirror Maker pods
+        // Restore MirrorMaker Pods
         KafkaMirrorMakerResource.replaceMirrorMakerResourceInSpecificNamespace(mirrorMakerName, mm -> mm.getSpec().getConsumer().setBootstrapServers(KafkaResources.plainBootstrapAddress(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME)), clusterOperator.getDeploymentNamespace());
         KafkaMirrorMakerUtils.waitForKafkaMirrorMakerReady(clusterOperator.getDeploymentNamespace(), mirrorMakerName);
         assertKafkaMirrorMakerStatus(3, mirrorMakerName);
@@ -347,7 +347,7 @@ class CustomResourceStatusIsolatedST extends AbstractST {
         String certs = getKafkaStatusCertificates(Constants.TLS_LISTENER_DEFAULT_NAME, clusterOperator.getDeploymentNamespace(), CUSTOM_RESOURCE_STATUS_CLUSTER_NAME);
         String secretCerts = getKafkaSecretCertificates(clusterOperator.getDeploymentNamespace(), CUSTOM_RESOURCE_STATUS_CLUSTER_NAME + "-cluster-ca-cert", "ca.crt");
 
-        LOGGER.info("Check if KafkaStatus certificates are the same as secret certificates");
+        LOGGER.info("Check if KafkaStatus certificates are the same as Secret certificates");
         assertThat(secretCerts, is(certs));
     }
 
@@ -380,13 +380,13 @@ class CustomResourceStatusIsolatedST extends AbstractST {
         KafkaMirrorMaker2Utils.waitForKafkaMirrorMaker2ConnectorReadiness(clusterOperator.getDeploymentNamespace(), mirrorMaker2Name);
         assertKafkaMirrorMaker2Status(1, mm2Url, mirrorMaker2Name);
 
-        // Corrupt Mirror Maker pods
+        // Corrupt MirrorMaker Pods
         KafkaMirrorMaker2Resource.replaceKafkaMirrorMaker2ResourceInSpecificNamespace(mirrorMaker2Name, mm2 -> mm2.getSpec().setResources(new ResourceRequirementsBuilder()
                 .addToRequests("cpu", new Quantity("100000000m"))
                 .build()),
             clusterOperator.getDeploymentNamespace());
         KafkaMirrorMaker2Utils.waitForKafkaMirrorMaker2NotReady(clusterOperator.getDeploymentNamespace(), mirrorMaker2Name);
-        // Restore Mirror Maker pod
+        // Restore MirrorMaker Pod
         KafkaMirrorMaker2Resource.replaceKafkaMirrorMaker2ResourceInSpecificNamespace(mirrorMaker2Name, mm2 -> mm2.getSpec().setResources(new ResourceRequirementsBuilder()
                 .addToRequests("cpu", new Quantity("100m"))
                 .build()),
@@ -493,13 +493,13 @@ class CustomResourceStatusIsolatedST extends AbstractST {
 
     void assertKafkaMirrorMakerStatus(long expectedObservedGeneration, String mirrorMakerName) {
         KafkaMirrorMakerStatus kafkaMirrorMakerStatus = KafkaMirrorMakerResource.kafkaMirrorMakerClient().inNamespace(clusterOperator.getDeploymentNamespace()).withName(mirrorMakerName).get().getStatus();
-        assertThat("Kafka MirrorMaker cluster status has incorrect Observed Generation", kafkaMirrorMakerStatus.getObservedGeneration(), is(expectedObservedGeneration));
+        assertThat("MirrorMaker cluster status has incorrect Observed Generation", kafkaMirrorMakerStatus.getObservedGeneration(), is(expectedObservedGeneration));
     }
 
     void assertKafkaMirrorMaker2Status(long expectedObservedGeneration, String apiUrl, String mirrorMaker2Name) {
         KafkaMirrorMaker2Status kafkaMirrorMaker2Status = KafkaMirrorMaker2Resource.kafkaMirrorMaker2Client().inNamespace(clusterOperator.getDeploymentNamespace()).withName(mirrorMaker2Name).get().getStatus();
-        assertThat("Kafka MirrorMaker2 cluster status has incorrect Observed Generation", kafkaMirrorMaker2Status.getObservedGeneration(), is(expectedObservedGeneration));
-        assertThat("Kafka MirrorMaker2 cluster status has incorrect URL", kafkaMirrorMaker2Status.getUrl(), is(apiUrl));
+        assertThat("MirrorMaker2 cluster status has incorrect Observed Generation", kafkaMirrorMaker2Status.getObservedGeneration(), is(expectedObservedGeneration));
+        assertThat("MirrorMaker2 cluster status has incorrect URL", kafkaMirrorMaker2Status.getUrl(), is(apiUrl));
         for (Map<String, Object> connector : kafkaMirrorMaker2Status.getConnectors()) {
             assertThat("One of the connectors is not RUNNING:\n" + connector.toString(), ((Map<String, String>) connector.get("connector")).get("state"), is("RUNNING"));
         }
@@ -507,14 +507,14 @@ class CustomResourceStatusIsolatedST extends AbstractST {
 
     void assertKafkaBridgeStatus(long expectedObservedGeneration, String bridgeAddress) {
         KafkaBridgeStatus kafkaBridgeStatus = KafkaBridgeResource.kafkaBridgeClient().inNamespace(clusterOperator.getDeploymentNamespace()).withName(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME).get().getStatus();
-        assertThat("Kafka Bridge cluster status has incorrect Observed Generation", kafkaBridgeStatus.getObservedGeneration(), is(expectedObservedGeneration));
-        assertThat("Kafka Bridge cluster status has incorrect URL", kafkaBridgeStatus.getUrl(), is(bridgeAddress));
+        assertThat("KafkaBridge cluster status has incorrect Observed Generation", kafkaBridgeStatus.getObservedGeneration(), is(expectedObservedGeneration));
+        assertThat("KafkaBridge cluster status has incorrect URL", kafkaBridgeStatus.getUrl(), is(bridgeAddress));
     }
 
     void assertKafkaConnectStatus(long expectedObservedGeneration, String expectedUrl) {
         KafkaConnectStatus kafkaConnectStatus = KafkaConnectResource.kafkaConnectClient().inNamespace(clusterOperator.getDeploymentNamespace()).withName(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME).get().getStatus();
-        assertThat("Kafka Connect cluster status has incorrect Observed Generation", kafkaConnectStatus.getObservedGeneration(), is(expectedObservedGeneration));
-        assertThat("Kafka Connect cluster status has incorrect URL", kafkaConnectStatus.getUrl(), is(expectedUrl));
+        assertThat("KafkaConnect cluster status has incorrect Observed Generation", kafkaConnectStatus.getObservedGeneration(), is(expectedObservedGeneration));
+        assertThat("KafkaConnect cluster status has incorrect URL", kafkaConnectStatus.getUrl(), is(expectedUrl));
 
         validateConnectPlugins(kafkaConnectStatus.getConnectorPlugins());
     }
@@ -531,7 +531,7 @@ class CustomResourceStatusIsolatedST extends AbstractST {
 
     @SuppressWarnings("unchecked")
     void assertKafkaConnectorStatus(long expectedObservedGeneration, String connectorStates, String type, List<String> topics) {
-        TestUtils.waitFor("wait until KafkaConnector status has excepted observed generation", Constants.GLOBAL_POLL_INTERVAL,
+        TestUtils.waitFor("KafkaConnector status to except observed generation", Constants.GLOBAL_POLL_INTERVAL,
             Constants.GLOBAL_TIMEOUT, () -> {
                 KafkaConnectorStatus kafkaConnectorStatus = KafkaConnectorResource.kafkaConnectorClient().inNamespace(clusterOperator.getDeploymentNamespace()).withName(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME).get().getStatus();
                 boolean formulaResult = kafkaConnectorStatus.getObservedGeneration() == expectedObservedGeneration;
@@ -544,7 +544,7 @@ class CustomResourceStatusIsolatedST extends AbstractST {
                 formulaResult = formulaResult && connectorStatus.get("type").equals(type);
                 formulaResult = formulaResult && connectorStatus.get("tasks") != null;
                 formulaResult = formulaResult && kafkaConnectorStatus.getTopics().equals(topics);
-                LOGGER.info("KafkaConnectorStatus topic: {}, and expected topic: {}", kafkaConnectorStatus.getTopics().toString(), topics);
+                LOGGER.info("KafkaConnectorStatus Topic: {}, and expected Topic: {}", kafkaConnectorStatus.getTopics().toString(), topics);
 
                 return formulaResult;
             });

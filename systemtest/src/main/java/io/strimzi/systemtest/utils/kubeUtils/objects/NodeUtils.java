@@ -49,14 +49,14 @@ public class NodeUtils {
 
         cmd.addAll(Arrays.asList("drain", nodeName, "--delete-local-data", "--force", "--ignore-daemonsets"));
 
-        LOGGER.info("Cluster node {} is going to drain", nodeName);
+        LOGGER.info("Draining cluster node: {}", nodeName);
         cordonNode(nodeName, false);
 
         KubeClusterResource.cmdKubeClient().exec(cmd);
     }
 
     public static void cordonNode(String node, boolean schedule) {
-        LOGGER.info("Set {} schedule {}", node, schedule);
+        LOGGER.info("Setting {} schedule {}", node, schedule);
         List<String> cmd = new ArrayList<>();
 
         if (KubeClusterResource.getInstance().isOpenShift()) {

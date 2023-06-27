@@ -45,7 +45,7 @@ public class ClusterRoleBindingResource implements ResourceType<ClusterRoleBindi
     }
 
     public static ClusterRoleBinding clusterRoleBinding(ExtensionContext extensionContext, String yamlPath, String namespace) {
-        LOGGER.info("Creating ClusterRoleBinding in test case {} from {} in namespace {}",
+        LOGGER.info("Creating ClusterRoleBinding in test case {} from {} in Namespace: {}",
             extensionContext.getDisplayName(), yamlPath, namespace);
         ClusterRoleBinding clusterRoleBinding = getClusterRoleBindingFromYaml(yamlPath);
         clusterRoleBinding = new ClusterRoleBindingBuilder(clusterRoleBinding)

@@ -157,10 +157,10 @@ public class ResourceManager {
         for (T resource : resources) {
             ResourceType<T> type = findResourceType(resource);
             if (resource.getMetadata().getNamespace() == null) {
-                LOGGER.info("Create/Update {} {}",
+                LOGGER.info("Creating/Updating {} {}",
                         resource.getKind(), resource.getMetadata().getName());
             } else {
-                LOGGER.info("Create/Update {} {}/{}",
+                LOGGER.info("Creating/Updating {} {}/{}",
                         resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName());
             }
 
@@ -171,7 +171,7 @@ public class ResourceManager {
                 }
                 if (Objects.equals(resource.getKind(), KafkaTopic.RESOURCE_KIND)) {
                     // Do not create KafkaTopic when KRaft is enabled
-                    LOGGER.warn("KafkaTopic {} will not be created, because TopicOperator is not enabled with KRaft mode", resource.getMetadata().getName());
+                    LOGGER.warn("KafkaTopic: {}/{} will not be created, because Topic Operator is not enabled with KRaft mode", resource.getMetadata().getNamespace(), resource.getMetadata().getName());
                     continue;
                 }
             }
@@ -296,7 +296,7 @@ public class ResourceManager {
         assertNotNull(type);
         boolean[] resourceReady = new boolean[1];
 
-        TestUtils.waitFor("Resource condition: " + condition.getConditionName() + " is fulfilled for resource " + resource.getKind() + ":" + resource.getMetadata().getName(),
+        TestUtils.waitFor("resource condition: " + condition.getConditionName() + " to be fulfilled for resource " + resource.getKind() + ":" + resource.getMetadata().getName(),
             Constants.GLOBAL_POLL_INTERVAL_MEDIUM, ResourceOperation.getTimeoutForResourceReadiness(resource.getKind()),
             () -> {
                 T res = type.get(resource.getMetadata().getNamespace(), resource.getMetadata().getName());
@@ -368,9 +368,9 @@ public class ResourceManager {
     public void deleteResources(ExtensionContext testContext) throws Exception {
         LOGGER.info(String.join("", Collections.nCopies(76, "#")));
         if (!STORED_RESOURCES.containsKey(testContext.getDisplayName()) || STORED_RESOURCES.get(testContext.getDisplayName()).isEmpty()) {
-            LOGGER.info("In context {} is everything deleted.", testContext.getDisplayName());
+            LOGGER.info("In context {} is everything deleted", testContext.getDisplayName());
         } else {
-            LOGGER.info("Delete all resources for {}", testContext.getDisplayName());
+            LOGGER.info("Deleting all resources for {}", testContext.getDisplayName());
         }
 
         // if stack is created for specific test suite or test case
@@ -395,7 +395,7 @@ public class ResourceManager {
     }
 
     /**
-     * Log actual status of custom resource with pods.
+     * Log actual status of custom resource with Pods.
      * @param customResource - Kafka, KafkaConnect etc. - every resource that HasMetadata and HasStatus (Strimzi status)
      */
     public static <T extends CustomResource<? extends Spec, ? extends Status>> void logCurrentResourceStatus(T customResource) {
@@ -455,7 +455,7 @@ public class ResourceManager {
     }
 
     public static <T extends CustomResource<? extends Spec, ? extends Status>> boolean waitForResourceStatus(MixedOperation<T, ?, ?> operation, String kind, String namespace, String name, Enum<?> status, long resourceTimeoutMs) {
-        LOGGER.info("Wait for {}: {}/{} will have desired state: {}", kind, namespace, name, status);
+        LOGGER.info("Waiting for {}: {}/{} will have desired state: {}", kind, namespace, name, status);
 
         TestUtils.waitFor(String.format("%s: %s#%s will have desired state: %s", kind, namespace, name, status),
             Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, resourceTimeoutMs,
@@ -486,7 +486,7 @@ public class ResourceManager {
     public static void waitForResourceReadiness(String resourceType, String resourceName) {
         LOGGER.info("Waiting for " + resourceType + "/" + resourceName + " readiness");
 
-        TestUtils.waitFor("resource " + resourceType + "/" + resourceName + " readiness",
+        TestUtils.waitFor("readiness of resource " + resourceType + "/" + resourceName,
                 Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_CMD_CLIENT_TIMEOUT,
             () -> ResourceManager.cmdKubeClient().getResourceReadiness(resourceType, resourceName));
         LOGGER.info("Resource " + resourceType + "/" + resourceName + " is ready");
@@ -503,7 +503,7 @@ public class ResourceManager {
     }
 
     public static <T extends CustomResource<? extends Spec, ? extends Status>> boolean waitForResourceStatusMessage(MixedOperation<T, ?, ?> operation, String kind, String namespace, String name, String message, long resourceTimeoutMs) {
-        LOGGER.info("Wait for {}: {}/{} will contain desired status message: {}", kind, namespace, name, message);
+        LOGGER.info("Waiting for {}: {}/{} will contain desired status message: {}", kind, namespace, name, message);
 
         TestUtils.waitFor(String.format("%s: %s#%s will contain desired status message: %s", kind, namespace, name, message),
             Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, resourceTimeoutMs,

@@ -63,7 +63,7 @@ public class PodSetIsolatedST extends AbstractST {
 
         Map<String, String> kafkaPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getKafkaSelector());
 
-        LOGGER.info("Changing Kafka resource configuration, the pods should not be rolled");
+        LOGGER.info("Changing Kafka resource configuration, the Pods should not be rolled");
 
         KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(),
             kafka -> {
@@ -86,7 +86,7 @@ public class PodSetIsolatedST extends AbstractST {
 
         DeploymentUtils.waitTillDepHasRolled(clusterOperator.getDeploymentNamespace(), STRIMZI_DEPLOYMENT_NAME, 1, coPod);
 
-        LOGGER.info("Because the configuration was changed, pods should be rolled");
+        LOGGER.info("Because the configuration was changed, Pods should be rolled");
 
         RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), testStorage.getKafkaSelector(), replicas, kafkaPods);
     }

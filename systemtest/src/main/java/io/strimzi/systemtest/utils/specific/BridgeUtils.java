@@ -71,7 +71,7 @@ public class BridgeUtils {
     }
 
     /**
-     * Returns Strimzi Kafka Bridge version which is associated with Strimzi Kafka Operator.
+     * Returns Strimzi KafkaBridge version which is associated with Strimzi Kafka Operator.
      * The value is parsed from {@code /bridge.version} classpath resource and return it as a string.
      * @return bridge version
      */

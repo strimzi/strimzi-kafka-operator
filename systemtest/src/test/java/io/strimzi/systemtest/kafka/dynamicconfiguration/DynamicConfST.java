@@ -103,7 +103,7 @@ public class DynamicConfST extends AbstractST {
         kafkaConfigurationFromPod = KafkaCmdClient.describeKafkaBrokerUsingPodCli(clusterOperator.getDeploymentNamespace(), scraperPodName, KafkaResources.plainBootstrapAddress(clusterName), 0);
         assertThat(kafkaConfigurationFromPod, containsString("unclean.leader.election.enable=" + true));
 
-        LOGGER.info("Verify values after update");
+        LOGGER.info("Verifying values after update");
 
         for (String cmName : StUtils.getKafkaConfigurationConfigMaps(clusterName, KAFKA_REPLICAS)) {
             String kafkaConfiguration = kubeClient().getConfigMap(clusterOperator.getDeploymentNamespace(), cmName).getData().get("server.config");

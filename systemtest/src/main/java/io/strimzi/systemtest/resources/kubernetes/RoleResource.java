@@ -40,7 +40,7 @@ public class RoleResource implements ResourceType<Role> {
     }
 
     public static void role(ExtensionContext extensionContext, String yamlPath, String namespace) {
-        LOGGER.info("Creating Role from {} in namespace {}", yamlPath, namespace);
+        LOGGER.info("Creating Role: {}/{}", namespace, yamlPath);
         Role role = getRoleFromYaml(yamlPath);
 
         ResourceManager.getInstance().createResource(extensionContext, new RoleBuilder(role)

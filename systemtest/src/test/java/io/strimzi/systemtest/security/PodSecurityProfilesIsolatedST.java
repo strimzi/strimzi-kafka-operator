@@ -54,7 +54,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
  * is that we need to modify Cluster Operator configuration, specifically env {@code STRIMZI_POD_SECURITY_PROVIDER_CLASS} to restricted.
  *
  * Test cases are design to verify common behaviour of Pod Security profiles. Specifically, (i.) we check if containers such
- * as Kafka, ZooKeeper, EntityOperator, KafkaBridge has properly set .securityContext (ii.) then we check if these
+ * as Kafka, ZooKeeper, Entity Operator, KafkaBridge has properly set .securityContext (ii.) then we check if these
  * resources working and are stable with exchanging messages.
  */
 @Tag(REGRESSION)
@@ -229,7 +229,7 @@ public class PodSecurityProfilesIsolatedST extends AbstractST {
     @BeforeAll
     void beforeAll(ExtensionContext extensionContext) {
         // we configure Pod Security via provider class, which sets SecurityContext to all containers (e.g., Kafka, ZooKeeper,
-        // EntityOperator, Bridge). Another alternative but more complicated is to set it via .template section inside each CR.
+        // Entity Operator, Bridge). Another alternative but more complicated is to set it via .template section inside each CR.
         clusterOperator = clusterOperator
             .defaultInstallation(extensionContext)
             .withExtraEnvVars(Collections.singletonList(new EnvVarBuilder()
@@ -266,7 +266,7 @@ public class PodSecurityProfilesIsolatedST extends AbstractST {
     private void verifyContainerSecurityContext(final Iterable<? extends Container> containers) {
         for (final Container c : containers) {
             final SecurityContext sc = c.getSecurityContext();
-            LOGGER.debug("Verifying Container: {} with following SecurityContext: {}", c.getName(), sc);
+            LOGGER.debug("Verifying Container: {} with SecurityContext: {}", c.getName(), sc);
 
             assertThat(sc.getAllowPrivilegeEscalation(), CoreMatchers.is(false));
             assertThat(sc.getCapabilities().getDrop(), CoreMatchers.hasItem("ALL"));

@@ -117,19 +117,19 @@ import static org.junit.jupiter.api.Assumptions.assumeFalse;
  * @beforeAll
  *  1. - Create namespaces {@namespaceFirst} and {@namespaceSecond}
  *     - Namespaces {@namespaceFirst} and {@namespaceSecond} are created
- *  2. - Deploy ClusterOperator
- *     - ClusterOperator is deployed
+ *  2. - Deploy Cluster Operator
+ *     - Cluster Operator is deployed
  *  3. - Deploy Kafka {@kafkaClusterFirstName} with metrics and CruiseControl configured
  *     - Kafka @{kafkaClusterFirstName} is deployed
  *  4. - Deploy Kafka {@kafkaClusterSecondtName} with metrics configured
  *     - Kafka @{kafkaClusterFirstName} is deployed
- *  5. - Deploy scraper pods in namespace {@namespaceFirst} and {@namespaceSecond} for collecting metrics from Strimzi pods
- *     - Scraper pods are deployed
+ *  5. - Deploy scraper Pods in namespace {@namespaceFirst} and {@namespaceSecond} for collecting metrics from Strimzi pods
+ *     - Scraper Pods are deployed
  *  6. - Create KafkaUsers and KafkaTopics
  *     - All KafkaUsers and KafkaTopics are Ready
- *  7. - Setup NetworkPolicies to grant access to operator pods and KafkaExporter
+ *  7. - Setup NetworkPolicies to grant access to Operator Pods and KafkaExporter
  *     - NetworkPolicies created
- *  8. - Create collectors for ClusterOperator, Kafka, KafkaExporter, and Zookeeper (Non-KRaft)
+ *  8. - Create collectors for Cluster Operator, Kafka, KafkaExporter, and Zookeeper (Non-KRaft)
  *     - Metrics collected in collectors structs
  *
  * @afterAll
@@ -171,7 +171,7 @@ public class MetricsIsolatedST extends AbstractST {
      * @description This test case check several random metrics exposed by Kafka.
      *
      * @steps
-     *  1. - Check if specific metric is available in collected metrics from Kafka pods
+     *  1. - Check if specific metric is available in collected metrics from Kafka Pods
      *     - Metric is available with expected value
      *
      * @usecase
@@ -191,7 +191,7 @@ public class MetricsIsolatedST extends AbstractST {
      * @description This test case check several random metrics exposed by Zookeeper.
      *
      * @steps
-     *  1. - Check if specific metric is available in collected metrics from Zookeeper pods
+     *  1. - Check if specific metric is available in collected metrics from Zookeeper Pods
      *     - Metric is available with expected value
      *
      * @usecase
@@ -200,7 +200,7 @@ public class MetricsIsolatedST extends AbstractST {
      */
     @ParallelTest
     @Tag(ACCEPTANCE)
-    @KRaftNotSupported("Zookeeper is not supported by KRaft mode and is used in this test case")
+    @KRaftNotSupported("ZooKeeper is not supported by KRaft mode and is used in this test case")
     void testZookeeperMetrics() {
         assertMetricValueNotNull(zookeeperCollector, "zookeeper_quorumsize");
         assertMetricCountHigherThan(zookeeperCollector, "zookeeper_numaliveconnections\\{.*\\}", 0L);
@@ -215,11 +215,11 @@ public class MetricsIsolatedST extends AbstractST {
      *     - KafkaConnect is up and running
      *  2. - Create KafkaConnector for KafkaConnect from step 1
      *     - KafkaConnector is in Ready state.
-     *  3. - Create metrics collector and collect metrics from KafkaConnect pods
+     *  3. - Create metrics collector and collect metrics from KafkaConnect Pods
      *     - Metrics are collected
-     *  4. - Check if specific metric is available in collected metrics from KafkaConnect pods
+     *  4. - Check if specific metric is available in collected metrics from KafkaConnect Pods
      *     - Metric is available with expected value
-     *  5. - Collect current metrics from Cluster Operator pod
+     *  5. - Collect current metrics from Cluster Operator Pod
      *     - Cluster Operator metrics are collected
      *  6. - Check that CO metrics contain data about KafkaConnect and KafkaConnector in namespace {@namespaceFirst}
      *     - CO metrics contain expected data
@@ -277,7 +277,7 @@ public class MetricsIsolatedST extends AbstractST {
      * @steps
      *  1. - Create Kafka producer and consumer and exchange some messages
      *     - Clients successfully exchange the messages
-     *  2. - Check if metric kafka_topic_partitions is available in collected metrics from KafkaExporter pods
+     *  2. - Check if metric kafka_topic_partitions is available in collected metrics from KafkaExporter Pods
      *     - Metric is available with expected value
      *  3. - Check if metric kafka_broker_info is available in collected metrics from KafkaExporter pods for each Kafka Broker pod
      *     - Metric is available with expected value
@@ -370,7 +370,7 @@ public class MetricsIsolatedST extends AbstractST {
         // Check that metrics don't contain info about consumer_offsets
         assertMetricValueNullOrZero(kafkaExporterCollector, "kafka_topic_partitions\\{topic=\"" + consumerOffsetsTopicName + "\"}");
 
-        LOGGER.info("Changing topic and group regexes back to default");
+        LOGGER.info("Changing Topic and group regexes back to default");
         KafkaResource.replaceKafkaResourceInSpecificNamespace(kafkaClusterFirstName, k -> {
             k.getSpec().getKafkaExporter().setGroupRegex(".*");
             k.getSpec().getKafkaExporter().setTopicRegex(".*");
@@ -718,7 +718,7 @@ public class MetricsIsolatedST extends AbstractST {
 
         // create resources without wait to deploy them simultaneously
         resourceManager.createResource(extensionContext, false,
-            // kafka with cruise control and metrics
+            // Kafka with CruiseControl and metrics
             KafkaTemplates.kafkaWithMetricsAndCruiseControlWithMetrics(kafkaClusterFirstName, namespaceFirst, 3, 3)
                 .editOrNewSpec()
                     .editEntityOperator()

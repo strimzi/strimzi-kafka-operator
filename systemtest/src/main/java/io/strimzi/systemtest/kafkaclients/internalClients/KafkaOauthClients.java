@@ -287,7 +287,7 @@ public class KafkaOauthClients extends KafkaClients {
         }
         if (this.getOauthClientSecret() == null || this.getOauthClientSecret().isEmpty() &&
             (this.getOauthProducerSecret() == null && this.getOauthConsumerSecret() == null)) {
-            throw new InvalidParameterException("OAuth client secret is not set.");
+            throw new InvalidParameterException("OAuth client Secret is not set.");
         }
         if (this.getClientUserName() == null || this.getClientUserName().isEmpty()) {
             this.setClientUserName(this.getOauthClientId());

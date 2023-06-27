@@ -27,10 +27,10 @@ public class ConfigMapUtils {
      * @param name The name of the ConfigMap.
      */
     public static void waitForConfigMapRecovery(String namespaceName, String name, String configMapUid) {
-        LOGGER.info("Waiting for config map {}/{}-{} recovery", namespaceName, name, configMapUid);
-        TestUtils.waitFor("Config map " + namespaceName + "/" + name + " to be recovered", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_RECOVERY,
+        LOGGER.info("Waiting for ConfigMap: {}/{}-{} recovery", namespaceName, name, configMapUid);
+        TestUtils.waitFor("recovery of ConfigMap: " + namespaceName + "/" + name, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.TIMEOUT_FOR_RESOURCE_RECOVERY,
             () -> !kubeClient().getConfigMapUid(name).equals(configMapUid));
-        LOGGER.info("Config map {}/{} was recovered", namespaceName, name);
+        LOGGER.info("ConfigMap: {}/{} was recovered", namespaceName, name);
     }
 
     public static void waitForConfigMapLabelsChange(String namespaceName, String configMapName, Map<String, String> labels) {
@@ -39,8 +39,8 @@ public class ConfigMapUtils {
             boolean isStrimziTag = entry.getKey().startsWith(Labels.STRIMZI_DOMAIN);
             // ignoring strimzi.io and k8s labels
             if (!(isStrimziTag || isK8sTag)) {
-                LOGGER.info("Waiting for ConfigMap {}/{} label change {} -> {}", namespaceName, configMapName, entry.getKey(), entry.getValue());
-                TestUtils.waitFor("ConfigMap label change " + entry.getKey() + " -> " + entry.getValue(), Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS,
+                LOGGER.info("Waiting for ConfigMap: {}/{} label to change {} -> {}", namespaceName, configMapName, entry.getKey(), entry.getValue());
+                TestUtils.waitFor("ConfigMap label to change " + entry.getKey() + " -> " + entry.getValue(), Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS,
                     Constants.GLOBAL_TIMEOUT, () ->
                         kubeClient(namespaceName).getConfigMap(namespaceName, configMapName).getMetadata().getLabels().get(entry.getKey()).equals(entry.getValue())
                 );

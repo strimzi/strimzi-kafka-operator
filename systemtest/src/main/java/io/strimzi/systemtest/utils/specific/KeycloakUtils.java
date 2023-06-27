@@ -41,7 +41,7 @@ public class KeycloakUtils {
 
     /**
      * Returns specific realm from Keycloak API
-     * @param namespaceName namespace name
+     * @param namespaceName Namespace name
      * @param baseURI base uri for accessing Keycloak API
      * @param token admin token
      * @param desiredRealm realm we want to get
@@ -63,7 +63,7 @@ public class KeycloakUtils {
 
     /**
      * Returns all clients for specific realm
-     * @param namespaceName namespace name
+     * @param namespaceName Namespace name
      * @param baseURI base uri for accessing Keycloak API
      * @param token admin token
      * @param desiredRealm realm we want to get clients from
@@ -85,7 +85,7 @@ public class KeycloakUtils {
 
     /**
      * Returns all policies from client of specific realm
-     * @param namespaceName namespace name
+     * @param namespaceName Namespace name
      * @param baseURI base uri for accessing Keycloak API
      * @param token admin token
      * @param desiredRealm realm we want to get clients from
@@ -98,7 +98,7 @@ public class KeycloakUtils {
 
     /**
      * Returns "resources" for desired endpoint -> policies, resources ...
-     * @param namespaceName namespace name
+     * @param namespaceName Namespace name
      * @param baseURI base uri for accessing Keycloak API
      * @param token admin token
      * @param desiredRealm realm we want to get clients from
@@ -122,7 +122,7 @@ public class KeycloakUtils {
 
     /**
      * Puts new configuration to the specific realm
-     * @param namespaceName namespace name
+     * @param namespaceName Namespace name
      * @param baseURI base uri for accessing Keycloak API
      * @param token admin token
      * @param desiredRealm realm where the config should be put
@@ -147,7 +147,7 @@ public class KeycloakUtils {
 
     /**
      * Updates policies of specific client in realm
-     * @param namespaceName namespace name
+     * @param namespaceName Namespace name
      * @param baseURI base uri for accessing Keycloak API
      * @param token admin token
      * @param desiredRealm realm where the client policies should be updated
@@ -173,7 +173,7 @@ public class KeycloakUtils {
 
     /**
      * Imports Keycloak realm
-     * @param namespaceName namespace name
+     * @param namespaceName Namespace name
      * @param baseURI base uri for accessing Keycloak API
      * @param token admin token
      * @param realmData realm data/configuration in JSON format

@@ -124,7 +124,7 @@ class RackAwarenessST extends AbstractST {
         assertThat(rackIdOut.trim(), is(hostname));
         assertThat(brokerRackOut.contains("broker.rack=" + hostname), is(true));
 
-        LOGGER.info("Producing and Consuming data in the Kafka Cluster: {}/{}", testStorage.getNamespaceName(), testStorage.getClusterName());
+        LOGGER.info("Producing and Consuming data in the Kafka cluster: {}/{}", testStorage.getNamespaceName(), testStorage.getClusterName());
         KafkaClients kafkaClients = new KafkaClientsBuilder()
             .withTopicName(testStorage.getTopicName())
             .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
@@ -172,14 +172,14 @@ class RackAwarenessST extends AbstractST {
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 1, 1).build());
 
-        LOGGER.info("Deploy unschedulable KafkaConnect: {}/{} with an invalid topology key: {}", testStorage.getNamespaceName(), invalidConnectClusterName, invalidTopologyKey);
+        LOGGER.info("Deploying unschedulable KafkaConnect: {}/{} with an invalid topology key: {}", testStorage.getNamespaceName(), invalidConnectClusterName, invalidTopologyKey);
         resourceManager.createResource(extensionContext, false, KafkaConnectTemplates.kafkaConnect(invalidConnectClusterName, testStorage.getNamespaceName(), testStorage.getClusterName(), 1)
                 .editSpec()
                     .withNewRack(invalidTopologyKey)
                 .endSpec()
                 .build());
 
-        LOGGER.info("Deploy KafkaConnect: {}/{} with a valid topology key: {}", testStorage.getNamespaceName(), testStorage.getClusterName(), TOPOLOGY_KEY);
+        LOGGER.info("Deploying KafkaConnect: {}/{} with a valid topology key: {}", testStorage.getNamespaceName(), testStorage.getClusterName(), TOPOLOGY_KEY);
         resourceManager.createResource(extensionContext, false, KafkaConnectTemplates.kafkaConnectWithFilePlugin(testStorage.getClusterName(), testStorage.getNamespaceName(), 1)
                 .editMetadata()
                     .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
@@ -189,7 +189,7 @@ class RackAwarenessST extends AbstractST {
                 .endSpec()
                 .build());
 
-        LOGGER.info("Check that KafkaConnect pod is unschedulable");
+        LOGGER.info("Check that KafkaConnect Pod is unschedulable");
         KafkaConnectUtils.waitForConnectPodCondition("Unschedulable", testStorage.getNamespaceName(), invalidConnectClusterName, 30_000);
 
         KafkaConnectUtils.waitForConnectReady(testStorage.getNamespaceName(), testStorage.getClusterName());
@@ -298,7 +298,7 @@ class RackAwarenessST extends AbstractST {
 
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(kafkaClusterSourceName, testStorage.getTopicName(), 3).build());
 
-        LOGGER.info("Producing messages into the source Kafka: {}/{}, topic: {}", testStorage.getNamespaceName(), kafkaClusterSourceName, testStorage.getTopicName());
+        LOGGER.info("Producing messages into the source Kafka: {}/{}, Topic: {}", testStorage.getNamespaceName(), kafkaClusterSourceName, testStorage.getTopicName());
         KafkaClients clients = new KafkaClientsBuilder()
             .withProducerName(testStorage.getProducerName())
             .withBootstrapAddress(KafkaResources.plainBootstrapAddress(kafkaClusterSourceName))
@@ -309,7 +309,7 @@ class RackAwarenessST extends AbstractST {
         resourceManager.createResource(extensionContext, clients.producerStrimzi());
         ClientUtils.waitForProducerClientSuccess(testStorage);
 
-        LOGGER.info("Consuming messages in the target Kafka: {}/{} mirrored topic: {}", testStorage.getNamespaceName(), kafkaClusterTargetName, sourceMirroredTopicName);
+        LOGGER.info("Consuming messages in the target Kafka: {}/{} mirrored Topic: {}", testStorage.getNamespaceName(), kafkaClusterTargetName, sourceMirroredTopicName);
         clients = new KafkaClientsBuilder(clients)
             .withTopicName(sourceMirroredTopicName)
             .withConsumerName(testStorage.getConsumerName())
@@ -321,7 +321,7 @@ class RackAwarenessST extends AbstractST {
 
     private void consumeDataWithNewSinkConnector(ExtensionContext extensionContext, String newConnectorName, String connectClusterName, String topicName, String namespace) {
 
-        LOGGER.info("Deploy Sink connector in Kafka Connect Cluster: {}/{}", namespace, newConnectorName);
+        LOGGER.info("Deploying Sink KafkaConnector in KafkaConnect Cluster: {}/{}", namespace, newConnectorName);
         Map<String, Object> connectorConfig = new HashMap<>();
         connectorConfig.put("topics", topicName);
         connectorConfig.put("file", Constants.DEFAULT_SINK_FILE_PATH);
@@ -339,7 +339,7 @@ class RackAwarenessST extends AbstractST {
             .build());
 
         String kafkaConnectPodName = KubeClusterResource.kubeClient(namespace).listPods(connectClusterName, Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND).get(0).getMetadata().getName();
-        LOGGER.info("Kafka Connect Pod: {}/{}", namespace, kafkaConnectPodName);
+        LOGGER.info("KafkaConnect Pod: {}/{}", namespace, kafkaConnectPodName);
         KafkaConnectUtils.waitUntilKafkaConnectRestApiIsAvailable(namespace, kafkaConnectPodName);
 
         KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(namespace, kafkaConnectPodName, Constants.DEFAULT_SINK_FILE_PATH, "99");

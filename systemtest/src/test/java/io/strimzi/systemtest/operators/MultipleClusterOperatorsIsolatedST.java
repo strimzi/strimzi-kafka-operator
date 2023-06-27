@@ -254,7 +254,7 @@ public class MultipleClusterOperatorsIsolatedST extends AbstractST {
      */
     @IsolatedTest
     @Tag(CRUISE_CONTROL)
-    @KRaftNotSupported("The scaling of the Kafka pods is not working properly at the moment")
+    @KRaftNotSupported("The scaling of the Kafka Pods is not working properly at the moment")
     void testKafkaCCAndRebalanceWithMultipleCOs(ExtensionContext extensionContext) {
         TestStorage testStorage = new TestStorage(extensionContext, DEFAULT_NAMESPACE);
         LabelSelector kafkaSelector = KafkaResource.getLabelSelector(testStorage.getClusterName(), KafkaResources.kafkaStatefulSetName(testStorage.getClusterName()));
@@ -282,7 +282,7 @@ public class MultipleClusterOperatorsIsolatedST extends AbstractST {
             .endMetadata()
             .build());
 
-        LOGGER.info("Removing CR selector from Kafka and increasing number of replicas to 4, new pod should not appear");
+        LOGGER.info("Removing CR selector from Kafka and increasing number of replicas to 4, new Pod should not appear");
         KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), kafka -> {
             kafka.getMetadata().getLabels().clear();
             kafka.getSpec().getKafka().setReplicas(scaleTo);
@@ -314,7 +314,7 @@ public class MultipleClusterOperatorsIsolatedST extends AbstractST {
         LOGGER.info("Adding {} selector of {} to Kafka", SECOND_CO_SELECTOR, SECOND_CO_NAME);
         KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), kafka -> kafka.getMetadata().setLabels(SECOND_CO_SELECTOR), testStorage.getNamespaceName());
 
-        LOGGER.info("Waiting for Kafka to scales pods to {}", scaleTo);
+        LOGGER.info("Waiting for Kafka to scales Pods to {}", scaleTo);
         RollingUpdateUtils.waitForComponentAndPodsReady(testStorage.getNamespaceName(), kafkaSelector, scaleTo);
 
         assertThat(PodUtils.podSnapshot(testStorage.getNamespaceName(), kafkaSelector).size(), is(scaleTo));
@@ -336,7 +336,7 @@ public class MultipleClusterOperatorsIsolatedST extends AbstractST {
                 clusterRoleBinding -> ResourceManager.getInstance().createResource(extensionContext, clusterRoleBinding));
         }
 
-        LOGGER.info("Creating {} in {} namespace", coName, coNamespace);
+        LOGGER.info("Creating: {} in Namespace: {}", coName, coNamespace);
 
         clusterOperator = clusterOperator.defaultInstallation(extensionContext)
             .withNamespace(coNamespace)

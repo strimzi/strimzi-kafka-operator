@@ -171,7 +171,7 @@ public class OauthPasswordGrantsIsolatedST extends OauthAbstractST {
         final String kafkaMirrorMakerLogs = KubeClusterResource.cmdKubeClient(clusterOperator.getDeploymentNamespace()).execInCurrentNamespace(Level.DEBUG, "logs", kafkaMirrorMakerPodName).out();
         verifyOauthConfiguration(kafkaMirrorMakerLogs);
 
-        TestUtils.waitFor("Waiting for Mirror Maker will copy messages from " + oauthClusterName + " to " + testStorage.getTargetClusterName(),
+        TestUtils.waitFor("MirrorMaker to copy messages from " + oauthClusterName + " to " + testStorage.getTargetClusterName(),
             Constants.GLOBAL_CLIENTS_POLL, Constants.TIMEOUT_FOR_MIRROR_MAKER_COPY_MESSAGES_BETWEEN_BROKERS,
             () -> {
                 LOGGER.info("Deleting the Job");
@@ -228,7 +228,7 @@ public class OauthPasswordGrantsIsolatedST extends OauthAbstractST {
 
         String kafkaSourceClusterName = oauthClusterName;
         String kafkaTargetClusterName = testStorage.getClusterName() + "-target";
-        // mirror maker 2 adding prefix to mirrored topic for in this case mirrotopic will be : my-cluster.my-topic
+        // MirrorMaker2 adding prefix to mirrored Topic for in this case mirror Topic will be : my-cluster.my-topic
         String kafkaTargetClusterTopicName = kafkaSourceClusterName + "." + testStorage.getTopicName();
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(kafkaTargetClusterName, 1, 1)
@@ -254,7 +254,7 @@ public class OauthPasswordGrantsIsolatedST extends OauthAbstractST {
             .endSpec()
             .build());
 
-        // Deploy Mirror Maker 2.0 with oauth
+        // Deploy MirrorMaker2 with OAuth
         KafkaMirrorMaker2ClusterSpec sourceClusterWithOauth = new KafkaMirrorMaker2ClusterSpecBuilder()
             .withAlias(kafkaSourceClusterName)
             .withConfig(connectorConfig)
@@ -313,13 +313,13 @@ public class OauthPasswordGrantsIsolatedST extends OauthAbstractST {
         final String kafkaMirrorMaker2Logs = KubeClusterResource.cmdKubeClient(clusterOperator.getDeploymentNamespace()).execInCurrentNamespace(Level.DEBUG, "logs", kafkaMirrorMaker2PodName).out();
         verifyOauthConfiguration(kafkaMirrorMaker2Logs);
 
-        TestUtils.waitFor("Waiting for Mirror Maker 2 will copy messages from " + kafkaSourceClusterName + " to " + kafkaTargetClusterName,
+        TestUtils.waitFor("MirrorMaker2 to copy messages from " + kafkaSourceClusterName + " to " + kafkaTargetClusterName,
             Duration.ofSeconds(30).toMillis(), Constants.TIMEOUT_FOR_MIRROR_MAKER_COPY_MESSAGES_BETWEEN_BROKERS,
             () -> {
-                LOGGER.info("Deleting the Job {}", testStorage.getConsumerName());
+                LOGGER.info("Deleting Job: {}/{}", clusterOperator.getDeploymentNamespace(), testStorage.getConsumerName());
                 JobUtils.deleteJobWithWait(clusterOperator.getDeploymentNamespace(), testStorage.getClusterName());
 
-                LOGGER.info("Creating new client with new consumer-group and also to point on {} cluster", kafkaTargetClusterName);
+                LOGGER.info("Creating new client with new consumer group and also to point on {} cluster", kafkaTargetClusterName);
 
                 KafkaOauthClients kafkaOauthClientJob = new KafkaOauthClientsBuilder()
                     .withNamespaceName(clusterOperator.getDeploymentNamespace())

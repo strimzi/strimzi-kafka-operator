@@ -140,7 +140,7 @@ public class MetricsCollector {
 
     protected MetricsCollector(Builder builder) {
         if (builder.namespaceName == null || builder.namespaceName.isEmpty()) builder.namespaceName = kubeClient().getNamespace();
-        if (builder.scraperPodName == null || builder.scraperPodName.isEmpty()) throw new InvalidParameterException("Scraper pod name is not set");
+        if (builder.scraperPodName == null || builder.scraperPodName.isEmpty()) throw new InvalidParameterException("Scraper Pod name is not set");
         if (builder.componentType == null) throw new InvalidParameterException("Component type is not set");
         if (builder.componentName == null || builder.componentName.isEmpty()) {
             if (!builder.componentType.equals(ComponentType.ClusterOperator)) {
@@ -273,21 +273,21 @@ public class MetricsCollector {
         // 20 seconds should be enough for collect data from the pod
         int ret = exec.execute(null, executableCommand, 20_000);
 
-        LOGGER.info("Metrics collection for Pod {}({}) from Pod {} finished with return code: {}", podName, metricsPodIp, scraperPodName, ret);
+        LOGGER.info("Metrics collection for Pod: {}/{}({}) from Pod: {}/{} finished with return code: {}", namespaceName, podName, metricsPodIp, namespaceName, scraperPodName, ret);
         return exec.out();
     }
 
     /**
-     * Collect metrics from all pods with specific selector with wait
+     * Collect metrics from all Pods with specific selector with wait
      */
     @SuppressWarnings("unchecked")
     public void collectMetricsFromPods() {
         Map<String, String>[] metricsData = (Map<String, String>[]) new HashMap[1];
-        TestUtils.waitFor("metrics has data", GLOBAL_POLL_INTERVAL, GLOBAL_TIMEOUT,
+        TestUtils.waitFor("metrics to contain data", GLOBAL_POLL_INTERVAL, GLOBAL_TIMEOUT,
             () -> {
                 metricsData[0] = collectMetricsFromPodsWithoutWait();
 
-                // Kafka Exporter metrics should be non-empty
+                // KafkaExporter metrics should be non-empty
                 if (!(metricsData[0].size() > 0)) {
                     return false;
                 }

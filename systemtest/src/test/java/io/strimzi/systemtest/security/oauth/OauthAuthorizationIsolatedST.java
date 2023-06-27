@@ -143,15 +143,15 @@ public class OauthAuthorizationIsolatedST extends OauthAbstractST {
             .withOauthTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
             .build();
 
-        LOGGER.info("Sending {} messages to broker with topic name {}", MESSAGE_COUNT, topicName);
-        LOGGER.info("Producer will not produce messages because authorization topic will failed. Team A can write only to topic starting with 'x-'");
+        LOGGER.info("Sending {} messages to Broker with Topic name {}", MESSAGE_COUNT, topicName);
+        LOGGER.info("Producer will not produce messages because authorization Topic will failed. Team A can write only to Topic starting with 'x-'");
 
         resourceManager.createResource(extensionContext, teamAOauthClientJob.producerStrimziOauthTls(oauthClusterName));
         JobUtils.waitForJobFailure(teamAProducerName, clusterOperator.getDeploymentNamespace(), 30_000);
         JobUtils.deleteJobWithWait(clusterOperator.getDeploymentNamespace(), teamAProducerName);
 
         String topicXName = TOPIC_X + "-" + clusterName;
-        LOGGER.info("Sending {} messages to broker with topic name {}", MESSAGE_COUNT, topicXName);
+        LOGGER.info("Sending {} messages to Broker with Topic name {}", MESSAGE_COUNT, topicXName);
 
         teamAOauthClientJob = new KafkaOauthClientsBuilder(teamAOauthClientJob)
             .withConsumerGroup(consumerGroup)
@@ -169,7 +169,7 @@ public class OauthAuthorizationIsolatedST extends OauthAbstractST {
 
         String topicAName = TOPIC_A + "-" + clusterName;
 
-        LOGGER.info("Sending {} messages to broker with topic name {}", MESSAGE_COUNT, topicAName);
+        LOGGER.info("Sending {} messages to Broker with Topic name {}", MESSAGE_COUNT, topicAName);
 
         teamAOauthClientJob = new KafkaOauthClientsBuilder(teamAOauthClientJob)
             .withConsumerGroup(consumerGroup)
@@ -205,7 +205,7 @@ public class OauthAuthorizationIsolatedST extends OauthAbstractST {
             .withOauthTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
             .build();
 
-        LOGGER.info("Sending {} messages to broker with topic name {}", MESSAGE_COUNT, topicAName);
+        LOGGER.info("Sending {} messages to Broker with Topic name {}", MESSAGE_COUNT, topicAName);
         resourceManager.createResource(extensionContext, teamAOauthClientJob.producerStrimziOauthTls(oauthClusterName));
         ClientUtils.waitForClientSuccess(teamAProducerName, clusterOperator.getDeploymentNamespace(), MESSAGE_COUNT);
 
@@ -256,13 +256,13 @@ public class OauthAuthorizationIsolatedST extends OauthAbstractST {
             .withOauthTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
             .build();
 
-        LOGGER.info("Sending {} messages to broker with topic name {}", MESSAGE_COUNT, TOPIC_NAME);
+        LOGGER.info("Sending {} messages to Broker with Topic name {}", MESSAGE_COUNT, TOPIC_NAME);
         // Producer will not produce messages because authorization topic will failed. Team A can write only to topic starting with 'x-'
         resourceManager.createResource(extensionContext, teamBOauthClientJob.producerStrimziOauthTls(oauthClusterName));
         JobUtils.waitForJobFailure(teamBProducerName, clusterOperator.getDeploymentNamespace(), 30_000);
         JobUtils.deleteJobWithWait(clusterOperator.getDeploymentNamespace(), teamBProducerName);
 
-        LOGGER.info("Sending {} messages to broker with topic name {}", MESSAGE_COUNT, TOPIC_B);
+        LOGGER.info("Sending {} messages to Broker with Topic name {}", MESSAGE_COUNT, TOPIC_B);
 
         teamBOauthClientJob = new KafkaOauthClientsBuilder(teamBOauthClientJob)
             .withConsumerGroup("x-consumer_group_b-" + clusterName)
@@ -344,7 +344,7 @@ public class OauthAuthorizationIsolatedST extends OauthAbstractST {
 
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(oauthClusterName, topicXName, clusterOperator.getDeploymentNamespace()).build());
 
-        LOGGER.info("Verifying that team B is not able write to topic starting with 'x-' because in kafka cluster" +
+        LOGGER.info("Verifying that team B is not able write to Topic starting with 'x-' because in Kafka cluster" +
                 "does not have super-users to break authorization rules");
 
         resourceManager.createResource(extensionContext, KafkaUserTemplates.tlsUser(clusterOperator.getDeploymentNamespace(), oauthClusterName, userName).build());
@@ -367,7 +367,7 @@ public class OauthAuthorizationIsolatedST extends OauthAbstractST {
         JobUtils.waitForJobFailure(teamBProducerName, clusterOperator.getDeploymentNamespace(), 30_000);
         JobUtils.deleteJobWithWait(clusterOperator.getDeploymentNamespace(), teamBProducerName);
 
-        LOGGER.info("Verifying that team A is not able read to topic starting with 'x-' because in kafka cluster" +
+        LOGGER.info("Verifying that team A is not able read to Topic starting with 'x-' because in Kafka cluster" +
                 "does not have super-users to break authorization rules");
 
         KafkaOauthClients teamAOauthClientJob = new KafkaOauthClientsBuilder()
@@ -401,12 +401,12 @@ public class OauthAuthorizationIsolatedST extends OauthAbstractST {
 
         RollingUpdateUtils.waitTillComponentHasRolled(clusterOperator.getDeploymentNamespace(), kafkaSelector, 1, kafkaPods);
 
-        LOGGER.info("Verifying that team B is able to write to topic starting with 'x-' and break authorization rule");
+        LOGGER.info("Verifying that team B is able to write to Topic starting with 'x-' and break authorization rule");
 
         resourceManager.createResource(extensionContext, teamBOauthClientJob.producerStrimziOauthTls(oauthClusterName));
         ClientUtils.waitForClientSuccess(teamBProducerName, clusterOperator.getDeploymentNamespace(), MESSAGE_COUNT);
 
-        LOGGER.info("Verifying that team A is able to write to topic starting with 'x-' and break authorization rule");
+        LOGGER.info("Verifying that team A is able to write to Topic starting with 'x-' and break authorization rule");
 
         teamAOauthClientJob = new KafkaOauthClientsBuilder(teamAOauthClientJob)
             .withConsumerGroup("x-consumer_group_b2-" + clusterName)
@@ -440,7 +440,7 @@ public class OauthAuthorizationIsolatedST extends OauthAbstractST {
         String teamAProducerName = TEAM_A_PRODUCER_NAME + "-" + clusterName;
         String teamAConsumerName = TEAM_A_CONSUMER_NAME + "-" + clusterName;
 
-        LOGGER.info("Verifying that team A producer is able to send messages to the {} topic -> the topic starting with 'x'", topicXName);
+        LOGGER.info("Verifying that team A producer is able to send messages to the {} Topic -> the Topic starting with 'x'", topicXName);
 
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(oauthClusterName, topicXName, clusterOperator.getDeploymentNamespace()).build());
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(oauthClusterName, topicAName, clusterOperator.getDeploymentNamespace()).build());
@@ -503,7 +503,7 @@ public class OauthAuthorizationIsolatedST extends OauthAbstractST {
         // now we need to get the token with new lifespan
         token = KeycloakUtils.getToken(clusterOperator.getDeploymentNamespace(), baseUri, keycloakInstance.getUsername(), keycloakInstance.getPassword());
 
-        LOGGER.info("Getting the {} kafka client for obtaining the Dev A Team policy for the x topics", TEST_REALM);
+        LOGGER.info("Getting the {} Kafka client for obtaining the Dev A Team policy for the x Topics", TEST_REALM);
         // we need to get clients for kafka-authz realm to access auth policies in kafka client
         JsonArray kafkaAuthzRealm = KeycloakUtils.getKeycloakRealmClients(clusterOperator.getDeploymentNamespace(), baseUri, token, TEST_REALM);
 
@@ -534,13 +534,13 @@ public class OauthAuthorizationIsolatedST extends OauthAbstractST {
 
         newDevAPolicy.put("config", config);
 
-        LOGGER.info("Changing the Dev Team A policy for topics starting with x- and checking that job will not be successful");
+        LOGGER.info("Changing the Dev Team A policy for Topics starting with x- and checking that Job will not be successful");
         KeycloakUtils.updatePolicyOfRealmClient(clusterOperator.getDeploymentNamespace(), baseUri, token, newDevAPolicy, TEST_REALM, kafkaClientId);
         assertThrows(WaitException.class, () -> ClientUtils.waitForClientSuccess(teamAProducerName, clusterOperator.getDeploymentNamespace(), MESSAGE_COUNT));
 
         JobUtils.deleteJobWithWait(clusterOperator.getDeploymentNamespace(), teamAProducerName);
 
-        LOGGER.info("Sending messages to topic starting with a- -> the messages should be successfully sent");
+        LOGGER.info("Sending messages to Topic starting with a- -> the messages should be successfully sent");
 
         teamAOauthClientJob = new KafkaOauthClientsBuilder(teamAOauthClientJob)
             .withTopicName(topicAName)

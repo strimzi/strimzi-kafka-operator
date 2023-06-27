@@ -124,7 +124,7 @@ class HttpBridgeTlsST extends AbstractST {
                 .createInstallation()
                 .runInstallation();
 
-        LOGGER.info("Deploy Kafka and KafkaBridge before tests");
+        LOGGER.info("Deploying Kafka and KafkaBridge before tests");
         sharedKafkaUserName = KafkaUserUtils.generateRandomNameOfKafkaUser();
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(httpBridgeTlsClusterName, 1, 1)
@@ -149,7 +149,7 @@ class HttpBridgeTlsST extends AbstractST {
         KafkaUser tlsUser = KafkaUserTemplates.tlsUser(clusterOperator.getDeploymentNamespace(), httpBridgeTlsClusterName, sharedKafkaUserName).build();
         resourceManager.createResource(extensionContext, tlsUser);
 
-        // Initialize CertSecretSource with certificate and secret names for consumer
+        // Initialize CertSecretSource with certificate and Secret names for consumer
         CertSecretSource certSecret = new CertSecretSource();
         certSecret.setCertificate("ca.crt");
         certSecret.setSecretName(KafkaResources.clusterCaCertificateSecretName(httpBridgeTlsClusterName));

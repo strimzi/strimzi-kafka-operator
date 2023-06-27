@@ -59,13 +59,13 @@ public class KafkaResource implements ResourceType<Kafka> {
         final String namespaceName = resource.getMetadata().getNamespace();
         final String clusterName = resource.getMetadata().getName();
 
-        Preconditions.notNull(namespaceName, "Kafka namespace name is null!");
+        Preconditions.notNull(namespaceName, "Kafka Namespace name is null!");
         Preconditions.notNull(clusterName, "Kafka cluster name is null!");
 
-        // imporant: contract that if one wants to delete Kafka cluster with `cruise control` it also trigger
+        // important: contract that if one wants to delete Kafka cluster with CruiseControl it also trigger
         // deletion of all KafkaTopics
         if (HAS_CRUISE_CONTROL_SUPPORT.test(resource)) {
-            LOGGER.info("Explicit deletion of KafkaTopics in namespace {}, for cruise control Kafka cluster {}", namespaceName, clusterName);
+            LOGGER.info("Explicit deletion of KafkaTopics in Namespace: {}, for CruiseControl Kafka cluster {}", namespaceName, clusterName);
             KafkaTopicResource.kafkaTopicClient().inNamespace(namespaceName).list()
                 .getItems().stream()
                 .parallel()
@@ -94,11 +94,11 @@ public class KafkaResource implements ResourceType<Kafka> {
     public boolean waitForReadiness(Kafka resource) {
         long timeout = ResourceOperation.getTimeoutForResourceReadiness(resource.getKind());
 
-        // Kafka Exporter is not setup every time
+        // KafkaExporter is not setup every time
         if (resource.getSpec().getKafkaExporter() != null) {
             timeout += ResourceOperation.getTimeoutForResourceReadiness(Constants.KAFKA_EXPORTER_DEPLOYMENT);
         }
-        // Cruise Control is not setup every time
+        // CruiseControl is not setup every time
         if (resource.getSpec().getCruiseControl() != null) {
             timeout += ResourceOperation.getTimeoutForResourceReadiness(Constants.KAFKA_CRUISE_CONTROL_DEPLOYMENT);
         }

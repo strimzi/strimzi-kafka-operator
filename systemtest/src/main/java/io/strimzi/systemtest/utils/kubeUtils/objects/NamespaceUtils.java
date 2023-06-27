@@ -20,10 +20,10 @@ public class NamespaceUtils {
     private NamespaceUtils() { }
 
     public static void waitForNamespaceDeletion(String name) {
-        LOGGER.info("Waiting for Namespace {} deletion", name);
+        LOGGER.info("Waiting for Namespace: {} deletion", name);
 
-        TestUtils.waitFor("namespace " + name, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, DELETION_TIMEOUT,
+        TestUtils.waitFor("Namespace: " + name, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, DELETION_TIMEOUT,
             () -> kubeClient().getNamespace(name) == null);
-        LOGGER.info("Namespace {} was deleted", name);
+        LOGGER.info("Namespace: {} was deleted", name);
     }
 }
