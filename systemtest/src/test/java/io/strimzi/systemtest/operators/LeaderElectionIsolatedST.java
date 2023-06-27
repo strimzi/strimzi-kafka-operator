@@ -77,7 +77,7 @@ public class LeaderElectionIsolatedST extends AbstractST {
         Lease oldLease = kubeClient().getClient().leases().inNamespace(testStorage.getNamespaceName()).withName(Constants.STRIMZI_DEPLOYMENT_NAME).get();
         String oldLeaderPodName = oldLease.getSpec().getHolderIdentity();
 
-        LOGGER.info("Changing image of the leader pod: {} to not available image - to cause CrashLoopBackOff and change of leader to second pod (failover)", oldLeaderPodName);
+        LOGGER.info("Changing image of the leader pod: {} to not available image - to cause CrashLoopBackOff and change of leader to second Pod (failover)", oldLeaderPodName);
 
         kubeClient().editPod(testStorage.getNamespaceName(), oldLeaderPodName).edit(pod -> new PodBuilder(pod)
             .editOrNewSpec()
@@ -147,7 +147,7 @@ public class LeaderElectionIsolatedST extends AbstractST {
         // OLM installation doesn't support configuring number of replicas inside the subscription
         assumeTrue(!Environment.isOlmInstall());
 
-        LOGGER.info("Checking if deployment files for install type: {} contains all needed env variables for leader election", Environment.CLUSTER_OPERATOR_INSTALL_TYPE);
+        LOGGER.info("Checking if Deployment files for install type: {} contains all needed env variables for leader election", Environment.CLUSTER_OPERATOR_INSTALL_TYPE);
         checkDeploymentFiles();
     }
 }

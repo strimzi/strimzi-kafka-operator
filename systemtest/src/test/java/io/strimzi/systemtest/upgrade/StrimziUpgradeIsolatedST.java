@@ -74,7 +74,7 @@ public class StrimziUpgradeIsolatedST extends AbstractUpgradeST {
         Map<String, String> kafkaSnapshot = PodUtils.podSnapshot(clusterOperator.getDeploymentNamespace(), zkSelector);
         Map<String, String> eoSnapshot = DeploymentUtils.depSnapshot(clusterOperator.getDeploymentNamespace(), KafkaResources.entityOperatorDeploymentName(clusterName));
 
-        // Make snapshots of all pods
+        // Make snapshots of all Pods
         makeSnapshots();
 
         // Upgrade CO
@@ -89,7 +89,7 @@ public class StrimziUpgradeIsolatedST extends AbstractUpgradeST {
         logPodImages(clusterName);
         checkAllImages(acrossUpgradeData, clusterOperator.getDeploymentNamespace());
 
-        // Verify that pods are stable
+        // Verify that Pods are stable
         PodUtils.verifyThatRunningPodsAreStable(clusterOperator.getDeploymentNamespace(), clusterName);
         // Verify upgrade
         verifyProcedure(acrossUpgradeData, testStorage.getProducerName(), testStorage.getConsumerName(), clusterOperator.getDeploymentNamespace());
@@ -106,7 +106,7 @@ public class StrimziUpgradeIsolatedST extends AbstractUpgradeST {
         // Setup env
         setupEnvAndUpgradeClusterOperator(extensionContext, acrossUpgradeData, testStorage, upgradeKafkaVersion, clusterOperator.getDeploymentNamespace());
 
-        // Make snapshots of all pods
+        // Make snapshots of all Pods
         makeSnapshots();
 
         // Upgrade CO
@@ -116,7 +116,7 @@ public class StrimziUpgradeIsolatedST extends AbstractUpgradeST {
         changeKafkaAndLogFormatVersion(acrossUpgradeData, extensionContext);
         logPodImages(clusterName);
         checkAllImages(acrossUpgradeData, clusterOperator.getDeploymentNamespace());
-        // Verify that pods are stable
+        // Verify that Pods are stable
         PodUtils.verifyThatRunningPodsAreStable(clusterOperator.getDeploymentNamespace(), clusterName);
         // Verify upgrade
         verifyProcedure(acrossUpgradeData, testStorage.getProducerName(), testStorage.getConsumerName(), clusterOperator.getDeploymentNamespace());
@@ -142,7 +142,7 @@ public class StrimziUpgradeIsolatedST extends AbstractUpgradeST {
         changeKafkaAndLogFormatVersion(acrossUpgradeData, extensionContext);
         logPodImages(clusterName);
         checkAllImages(acrossUpgradeData, clusterOperator.getDeploymentNamespace());
-        // Verify that pods are stable
+        // Verify that Pods are stable
         PodUtils.verifyThatRunningPodsAreStable(clusterOperator.getDeploymentNamespace(), clusterName);
         // Verify upgrade
         verifyProcedure(acrossUpgradeData, testStorage.getProducerName(), testStorage.getConsumerName(), clusterOperator.getDeploymentNamespace());
@@ -181,7 +181,7 @@ public class StrimziUpgradeIsolatedST extends AbstractUpgradeST {
         logPodImages(clusterName);
         checkAllImages(upgradeData, clusterOperator.getDeploymentNamespace());
 
-        // Verify that pods are stable
+        // Verify that Pods are stable
         PodUtils.verifyThatRunningPodsAreStable(clusterOperator.getDeploymentNamespace(), clusterName);
         // Verify upgrade
         verifyProcedure(upgradeData, testStorage.getProducerName(), testStorage.getConsumerName(), clusterOperator.getDeploymentNamespace());

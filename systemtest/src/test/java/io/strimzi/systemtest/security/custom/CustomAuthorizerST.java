@@ -49,52 +49,52 @@ public class CustomAuthorizerST extends AbstractST {
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(CLUSTER_NAME, testStorage.getTopicName(), clusterOperator.getDeploymentNamespace()).build());
 
         KafkaUser writeUser = KafkaUserTemplates.tlsUser(clusterOperator.getDeploymentNamespace(), CLUSTER_NAME, kafkaUserWrite)
-            .editSpec()
+                .editSpec()
                 .withNewKafkaUserAuthorizationSimple()
-                    .addNewAcl()
-                        .withNewAclRuleTopicResource()
-                            .withName(testStorage.getTopicName())
-                        .endAclRuleTopicResource()
-                        .withOperations(AclOperation.WRITE, AclOperation.DESCRIBE)
-                    .endAcl()
+                .addNewAcl()
+                .withNewAclRuleTopicResource()
+                .withName(testStorage.getTopicName())
+                .endAclRuleTopicResource()
+                .withOperations(AclOperation.WRITE, AclOperation.DESCRIBE)
+                .endAcl()
                 .endKafkaUserAuthorizationSimple()
-            .endSpec()
-            .build();
+                .endSpec()
+                .build();
 
         KafkaUser readUser = KafkaUserTemplates.tlsUser(clusterOperator.getDeploymentNamespace(), CLUSTER_NAME, kafkaUserRead)
-            .editSpec()
+                .editSpec()
                 .withNewKafkaUserAuthorizationSimple()
-                    .addNewAcl()
-                        .withNewAclRuleTopicResource()
-                            .withName(testStorage.getTopicName())
-                        .endAclRuleTopicResource()
-                        .withOperations(AclOperation.READ, AclOperation.DESCRIBE)
-                    .endAcl()
-                    .addNewAcl()
-                        .withNewAclRuleGroupResource()
-                            .withName(consumerGroupName)
-                        .endAclRuleGroupResource()
-                        .withOperations(AclOperation.READ)
-                    .endAcl()
+                .addNewAcl()
+                .withNewAclRuleTopicResource()
+                .withName(testStorage.getTopicName())
+                .endAclRuleTopicResource()
+                .withOperations(AclOperation.READ, AclOperation.DESCRIBE)
+                .endAcl()
+                .addNewAcl()
+                .withNewAclRuleGroupResource()
+                .withName(consumerGroupName)
+                .endAclRuleGroupResource()
+                .withOperations(AclOperation.READ)
+                .endAcl()
                 .endKafkaUserAuthorizationSimple()
-            .endSpec()
-            .build();
+                .endSpec()
+                .build();
 
         resourceManager.createResource(extensionContext, writeUser);
         resourceManager.createResource(extensionContext, readUser);
 
-        LOGGER.info("Checking KafkaUser {} that is able to send messages to topic '{}'", kafkaUserWrite, testStorage.getTopicName());
+        LOGGER.info("Checking KafkaUser {} that is able to send messages to Topic: {}", kafkaUserWrite, testStorage.getTopicName());
 
         KafkaClients kafkaClients = new KafkaClientsBuilder()
-            .withProducerName(testStorage.getProducerName())
-            .withConsumerName(testStorage.getConsumerName())
-            .withNamespaceName(testStorage.getNamespaceName())
-            .withMessageCount(testStorage.getMessageCount())
-            .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(CLUSTER_NAME))
-            .withTopicName(testStorage.getTopicName())
-            .withUsername(kafkaUserWrite)
-            .withConsumerGroup(consumerGroupName)
-            .build();
+                .withProducerName(testStorage.getProducerName())
+                .withConsumerName(testStorage.getConsumerName())
+                .withNamespaceName(testStorage.getNamespaceName())
+                .withMessageCount(testStorage.getMessageCount())
+                .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(CLUSTER_NAME))
+                .withTopicName(testStorage.getTopicName())
+                .withUsername(kafkaUserWrite)
+                .withConsumerGroup(consumerGroupName)
+                .build();
 
         resourceManager.createResource(extensionContext, kafkaClients.producerTlsStrimzi(CLUSTER_NAME));
         ClientUtils.waitForProducerClientSuccess(testStorage);
@@ -103,13 +103,13 @@ public class CustomAuthorizerST extends AbstractST {
         ClientUtils.waitForConsumerClientTimeout(testStorage);
 
         kafkaClients = new KafkaClientsBuilder(kafkaClients)
-            .withUsername(kafkaUserRead)
-            .build();
+                .withUsername(kafkaUserRead)
+                .build();
 
         resourceManager.createResource(extensionContext, kafkaClients.consumerTlsStrimzi(CLUSTER_NAME));
         ClientUtils.waitForConsumerClientSuccess(testStorage);
 
-        LOGGER.info("Checking KafkaUser {} that is not able to send messages to topic '{}'", kafkaUserRead, testStorage.getTopicName());
+        LOGGER.info("Checking KafkaUser: {}/{} that is not able to send messages to Topic: {}", testStorage.getNamespaceName(), kafkaUserRead, testStorage.getTopicName());
 
         resourceManager.createResource(extensionContext, kafkaClients.producerTlsStrimzi(CLUSTER_NAME));
         ClientUtils.waitForProducerClientTimeout(testStorage);
@@ -123,37 +123,37 @@ public class CustomAuthorizerST extends AbstractST {
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(CLUSTER_NAME, testStorage.getTopicName(), clusterOperator.getDeploymentNamespace()).build());
 
         KafkaUser adminUser = KafkaUserTemplates.tlsUser(clusterOperator.getDeploymentNamespace(), CLUSTER_NAME, ADMIN)
-            .editSpec()
+                .editSpec()
                 .withNewKafkaUserAuthorizationSimple()
-                    .addNewAcl()
-                        .withNewAclRuleTopicResource()
-                            .withName(testStorage.getTopicName())
-                        .endAclRuleTopicResource()
-                        .withOperations(AclOperation.WRITE, AclOperation.DESCRIBE)
-                    .endAcl()
+                .addNewAcl()
+                .withNewAclRuleTopicResource()
+                .withName(testStorage.getTopicName())
+                .endAclRuleTopicResource()
+                .withOperations(AclOperation.WRITE, AclOperation.DESCRIBE)
+                .endAcl()
                 .endKafkaUserAuthorizationSimple()
-            .endSpec()
-            .build();
+                .endSpec()
+                .build();
 
         resourceManager.createResource(extensionContext, adminUser);
 
-        LOGGER.info("Checking kafka super user:{} that is able to send messages to topic:{}", ADMIN, testStorage.getTopicName());
+        LOGGER.info("Checking Kafka Super User: {}/{} that is able to send messages to Topic: {}", clusterOperator.getDeploymentNamespace(), ADMIN, testStorage.getTopicName());
 
         KafkaClients kafkaClients = new KafkaClientsBuilder()
-            .withProducerName(testStorage.getProducerName())
-            .withConsumerName(testStorage.getConsumerName())
-            .withNamespaceName(testStorage.getNamespaceName())
-            .withMessageCount(testStorage.getMessageCount())
-            .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(CLUSTER_NAME))
-            .withTopicName(testStorage.getTopicName())
-            .withUsername(ADMIN)
-            .build();
+                .withProducerName(testStorage.getProducerName())
+                .withConsumerName(testStorage.getConsumerName())
+                .withNamespaceName(testStorage.getNamespaceName())
+                .withMessageCount(testStorage.getMessageCount())
+                .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(CLUSTER_NAME))
+                .withTopicName(testStorage.getTopicName())
+                .withUsername(ADMIN)
+                .build();
 
         resourceManager.createResource(extensionContext, kafkaClients.producerTlsStrimzi(CLUSTER_NAME));
         ClientUtils.waitForProducerClientSuccess(testStorage);
 
-        LOGGER.info("Checking kafka super user:{} that is able to read messages to topic:{} regardless that " +
-            "we configured Acls with only write operation", ADMIN, TOPIC_NAME);
+        LOGGER.info("Checking Kafka Super User: {}/{} that is able to read messages from Topic: {} regardless that " +
+                "we configured Acls with only write operation", clusterOperator.getDeploymentNamespace(), ADMIN, TOPIC_NAME);
 
         resourceManager.createResource(extensionContext, kafkaClients.consumerTlsStrimzi(CLUSTER_NAME));
         ClientUtils.waitForConsumerClientSuccess(testStorage);
@@ -162,30 +162,30 @@ public class CustomAuthorizerST extends AbstractST {
     @BeforeAll
     public void setup(ExtensionContext extensionContext) {
         this.clusterOperator = this.clusterOperator
-            .defaultInstallation(extensionContext)
-            .createInstallation()
-            .runInstallation();
+                .defaultInstallation(extensionContext)
+                .createInstallation()
+                .runInstallation();
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(CLUSTER_NAME, 1, 1)
-            .editMetadata()
+                .editMetadata()
                 .withNamespace(clusterOperator.getDeploymentNamespace())
-            .endMetadata()
-            .editSpec()
+                .endMetadata()
+                .editSpec()
                 .editKafka()
-                    .withNewKafkaAuthorizationCustom()
-                        .withAuthorizerClass(KafkaAuthorizationSimple.AUTHORIZER_CLASS_NAME)
-                        .withSupportsAdminApi(true)
-                        .withSuperUsers("CN=" + ADMIN)
-                    .endKafkaAuthorizationCustom()
-                    .withListeners(new GenericKafkaListenerBuilder()
-                            .withName(Constants.TLS_LISTENER_DEFAULT_NAME)
-                            .withPort(9093)
-                            .withType(KafkaListenerType.INTERNAL)
-                            .withTls(true)
-                            .withAuth(new KafkaListenerAuthenticationTls())
-                            .build())
+                .withNewKafkaAuthorizationCustom()
+                .withAuthorizerClass(KafkaAuthorizationSimple.AUTHORIZER_CLASS_NAME)
+                .withSupportsAdminApi(true)
+                .withSuperUsers("CN=" + ADMIN)
+                .endKafkaAuthorizationCustom()
+                .withListeners(new GenericKafkaListenerBuilder()
+                        .withName(Constants.TLS_LISTENER_DEFAULT_NAME)
+                        .withPort(9093)
+                        .withType(KafkaListenerType.INTERNAL)
+                        .withTls(true)
+                        .withAuth(new KafkaListenerAuthenticationTls())
+                        .build())
                 .endKafka()
-            .endSpec()
-            .build());
+                .endSpec()
+                .build());
     }
 }

@@ -258,7 +258,7 @@ public class KafkaUpgradeDowngradeIsolatedST extends AbstractUpgradeST {
         String zkVersionCommand = "ls libs | grep -Po 'zookeeper-\\K\\d+.\\d+.\\d+' | head -1";
         String zkResult = cmdKubeClient().execInPodContainer(KafkaResources.zookeeperPodName(clusterName, 0),
                 "zookeeper", "/bin/bash", "-c", zkVersionCommand).out().trim();
-        LOGGER.info("Pre-change Zookeeper version query returned: " + zkResult);
+        LOGGER.info("Pre-change ZooKeeper version query returned: " + zkResult);
 
         String kafkaVersionResult = KafkaUtils.getVersionFromKafkaPodLibs(KafkaResources.kafkaPodName(clusterName, 0));
         LOGGER.info("Pre-change Kafka version query returned: " + kafkaVersionResult);
@@ -276,7 +276,7 @@ public class KafkaUpgradeDowngradeIsolatedST extends AbstractUpgradeST {
 
         // Wait for the zk version change roll
         zkPods = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(clusterOperator.getDeploymentNamespace(), zkSelector, zkReplicas, zkPods);
-        LOGGER.info("1st Zookeeper roll (image change) is complete");
+        LOGGER.info("1st ZooKeeper roll (image change) is complete");
 
         // Wait for the kafka broker version change roll
         kafkaPods = RollingUpdateUtils.waitTillComponentHasRolled(clusterOperator.getDeploymentNamespace(), kafkaSelector, kafkaPods);
@@ -307,9 +307,9 @@ public class KafkaUpgradeDowngradeIsolatedST extends AbstractUpgradeST {
         // Extract the zookeeper version number from the jars in the lib directory
         zkResult = cmdKubeClient().execInPodContainer(KafkaResources.zookeeperPodName(clusterName, 0),
                 "zookeeper", "/bin/bash", "-c", zkVersionCommand).out().trim();
-        LOGGER.info("Post-change Zookeeper version query returned: " + zkResult);
+        LOGGER.info("Post-change ZooKeeper version query returned: " + zkResult);
 
-        assertThat("Zookeeper container had version " + zkResult + " where " + newVersion.zookeeperVersion() +
+        assertThat("ZooKeeper container had version " + zkResult + " where " + newVersion.zookeeperVersion() +
                 " was expected", zkResult, is(newVersion.zookeeperVersion()));
 
         // Extract the Kafka version number from the jars in the lib directory
@@ -320,8 +320,8 @@ public class KafkaUpgradeDowngradeIsolatedST extends AbstractUpgradeST {
                 " was expected", kafkaVersionResult, is(newVersion.version()));
 
         if (isUpgrade && !sameMinorVersion) {
-            LOGGER.info("Updating kafka config attribute 'log.message.format.version' from '{}' to '{}' version", initialVersion.messageVersion(), newVersion.messageVersion());
-            LOGGER.info("Updating kafka config attribute 'inter.broker.protocol.version' from '{}' to '{}' version", initialVersion.protocolVersion(), newVersion.protocolVersion());
+            LOGGER.info("Updating Kafka config attribute 'log.message.format.version' from '{}' to '{}' version", initialVersion.messageVersion(), newVersion.messageVersion());
+            LOGGER.info("Updating Kafka config attribute 'inter.broker.protocol.version' from '{}' to '{}' version", initialVersion.protocolVersion(), newVersion.protocolVersion());
 
             KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, kafka -> {
                 LOGGER.info("Kafka config before updating '{}'", kafka.getSpec().getKafka().getConfig().toString());
@@ -333,12 +333,12 @@ public class KafkaUpgradeDowngradeIsolatedST extends AbstractUpgradeST {
             }, clusterOperator.getDeploymentNamespace());
 
             if (currentLogMessageFormat != null || currentInterBrokerProtocol != null) {
-                LOGGER.info("Change of configuration is done manually - RollingUpdate");
+                LOGGER.info("Change of configuration is done manually - rolling update");
                 // Wait for the kafka broker version of log.message.format.version change roll
                 RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(clusterOperator.getDeploymentNamespace(), kafkaSelector, kafkaReplicas, kafkaPods);
                 LOGGER.info("Kafka roll (log.message.format.version change) is complete");
             } else {
-                LOGGER.info("ClusterOperator already changed the configuration, there should be no RollingUpdate");
+                LOGGER.info("Cluster Operator already changed the configuration, there should be no rolling update");
                 PodUtils.verifyThatRunningPodsAreStable(clusterOperator.getDeploymentNamespace(), KafkaResources.kafkaStatefulSetName(clusterName));
                 assertFalse(RollingUpdateUtils.componentHasRolled(clusterOperator.getDeploymentNamespace(), kafkaSelector, kafkaPods));
             }

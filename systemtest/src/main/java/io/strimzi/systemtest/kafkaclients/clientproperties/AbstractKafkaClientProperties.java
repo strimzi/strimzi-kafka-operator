@@ -111,7 +111,7 @@ abstract public class AbstractKafkaClientProperties<C extends AbstractKafkaClien
 
         public T withSaslJassConfig(String clientId, String clientSecretName, String oauthTokenEndpointUri) {
             if (clientId.isEmpty() || clientSecretName.isEmpty() || oauthTokenEndpointUri.isEmpty()) {
-                throw new InvalidParameterException("You do not specify client-id, client-secret name or oauth-token-endpoint-uri inside kafka client!");
+                throw new InvalidParameterException("You do not specify client-id, client-secret name or oauth-token-endpoint-uri inside Kafka client!");
             }
 
             this.properties.setProperty(SaslConfigs.SASL_JAAS_CONFIG,
@@ -299,7 +299,7 @@ abstract public class AbstractKafkaClientProperties<C extends AbstractKafkaClien
 
         if (matcher.find()) {
             String keycloakCertificateData = matcher.group(0);
-            LOGGER.info("Keycloak cert is:{}\n", keycloakCertificateData);
+            LOGGER.info("Keycloak cert is: {}\n", keycloakCertificateData);
 
             LOGGER.info("Creating keycloak.crt file");
             File keycloakCertFile = Files.createTempFile("keycloak", ".crt").toFile();

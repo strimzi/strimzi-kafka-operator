@@ -61,7 +61,7 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
 public class NetworkPoliciesIsolatedST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(NetworkPoliciesIsolatedST.class);
 
-    @IsolatedTest("Specific cluster operator for test case")
+    @IsolatedTest("Specific Cluster Operator for test case")
     @Tag(INTERNAL_CLIENTS_USED)
     void testNetworkPoliciesWithPlainListener(ExtensionContext extensionContext) {
         final TestStorage testStorage = new TestStorage(extensionContext, clusterOperator.getDeploymentNamespace());
@@ -140,7 +140,7 @@ public class NetworkPoliciesIsolatedST extends AbstractST {
         resourceManager.createResource(extensionContext, kafkaClients.producerStrimzi(), kafkaClients.consumerStrimzi());
         ClientUtils.waitForClientsTimeout(testStorage);
 
-        LOGGER.info("Check metrics exported by Kafka Exporter");
+        LOGGER.info("Check metrics exported by KafkaExporter");
 
         MetricsCollector metricsCollector = new MetricsCollector.Builder()
             .withScraperPodName(scraperPodName)
@@ -149,7 +149,7 @@ public class NetworkPoliciesIsolatedST extends AbstractST {
             .build();
 
         metricsCollector.collectMetricsFromPods();
-        assertThat("Kafka Exporter metrics should be non-empty", metricsCollector.getCollectedData().size() > 0);
+        assertThat("KafkaExporter metrics should be non-empty", metricsCollector.getCollectedData().size() > 0);
         for (Map.Entry<String, String> entry : metricsCollector.getCollectedData().entrySet()) {
             assertThat("Value from collected metric should be non-empty", !entry.getValue().isEmpty());
             assertThat("Metrics doesn't contain specific values", entry.getValue().contains("kafka_consumergroup_current_offset"));
@@ -158,7 +158,7 @@ public class NetworkPoliciesIsolatedST extends AbstractST {
         }
     }
 
-    @IsolatedTest("Specific cluster operator for test case")
+    @IsolatedTest("Specific Cluster Operator for test case")
     @Tag(INTERNAL_CLIENTS_USED)
     void testNetworkPoliciesWithTlsListener(ExtensionContext extensionContext) {
         final TestStorage testStorage = new TestStorage(extensionContext, clusterOperator.getDeploymentNamespace());
@@ -232,7 +232,7 @@ public class NetworkPoliciesIsolatedST extends AbstractST {
         ClientUtils.waitForClientsTimeout(testStorage);
     }
 
-    @IsolatedTest("Specific cluster operator for test case")
+    @IsolatedTest("Specific Cluster Operator for test case")
     void testNPWhenOperatorIsInSameNamespaceAsOperand(ExtensionContext extensionContext) {
         assumeTrue(!Environment.isHelmInstall() && !Environment.isOlmInstall());
 
@@ -250,7 +250,7 @@ public class NetworkPoliciesIsolatedST extends AbstractST {
         changeKafkaConfigurationAndCheckObservedGeneration(clusterName, clusterOperator.getDeploymentNamespace());
     }
 
-    @IsolatedTest("Specific cluster operator for test case")
+    @IsolatedTest("Specific Cluster Operator for test case")
     void testNPWhenOperatorIsInDifferentNamespaceThanOperand(ExtensionContext extensionContext) {
         assumeTrue(!Environment.isHelmInstall() && !Environment.isOlmInstall());
 
@@ -294,7 +294,7 @@ public class NetworkPoliciesIsolatedST extends AbstractST {
         changeKafkaConfigurationAndCheckObservedGeneration(clusterName, secondNamespace);
     }
 
-    @IsolatedTest("Specific cluster operator for test case")
+    @IsolatedTest("Specific Cluster Operator for test case")
     void testNPGenerationEnvironmentVariable(ExtensionContext extensionContext) {
         assumeTrue(!Environment.isHelmInstall() && !Environment.isOlmInstall());
 

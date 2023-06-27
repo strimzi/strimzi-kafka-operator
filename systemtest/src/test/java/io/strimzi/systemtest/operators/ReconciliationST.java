@@ -73,7 +73,7 @@ public class ReconciliationST extends AbstractST {
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(clusterName, 3).build());
 
-        LOGGER.info("Adding pause annotation into Kafka resource and also scaling replicas to 4, new pod should not appear");
+        LOGGER.info("Adding pause annotation into Kafka resource and also scaling replicas to 4, new Pod should not appear");
         KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, kafka -> {
             kafka.getMetadata().setAnnotations(PAUSE_ANNO);
             kafka.getSpec().getKafka().setReplicas(SCALE_TO);
@@ -87,7 +87,7 @@ public class ReconciliationST extends AbstractST {
         KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, kafka -> kafka.getMetadata().getAnnotations().replace(Annotations.ANNO_STRIMZI_IO_PAUSE_RECONCILIATION, "true", "false"), namespaceName);
         RollingUpdateUtils.waitForComponentAndPodsReady(namespaceName, kafkaSelector, SCALE_TO);
 
-        LOGGER.info("Deploying KafkaConnect with pause annotation from the start, no pods should appear");
+        LOGGER.info("Deploying KafkaConnect with pause annotation from the start, no Pods should appear");
         resourceManager.createResource(extensionContext, false, KafkaConnectTemplates.kafkaConnectWithFilePlugin(clusterName, namespaceName, 1)
             .editOrNewMetadata()
                 .addToAnnotations(PAUSE_ANNO)
@@ -132,7 +132,7 @@ public class ReconciliationST extends AbstractST {
 
     @ParallelNamespaceTest
     @Tag(CRUISE_CONTROL)
-    @KRaftNotSupported("TopicOperator is not supported by KRaft mode and is used in this test class")
+    @KRaftNotSupported("Topic Operator is not supported by KRaft mode and is used in this test class")
     void testPauseReconciliationInKafkaRebalanceAndTopic(ExtensionContext extensionContext) {
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(clusterOperator.getDeploymentNamespace(), extensionContext);
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());

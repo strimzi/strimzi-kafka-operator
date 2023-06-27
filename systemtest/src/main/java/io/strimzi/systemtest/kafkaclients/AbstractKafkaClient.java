@@ -173,7 +173,7 @@ public abstract class AbstractKafkaClient<C extends AbstractKafkaClient.Builder<
         if (listenerName == null || listenerName.isEmpty()) throw new InvalidParameterException("Listener name is not set.");
 
         if (consumerGroup == null || consumerGroup.isEmpty()) {
-            LOGGER.info("Consumer group were not specified going to create the random one.");
+            LOGGER.info("Consumer group were not specified going to create the random one");
             consumerGroup = ClientUtils.generateRandomConsumerGroup();
         }
     }
@@ -185,7 +185,7 @@ public abstract class AbstractKafkaClient<C extends AbstractKafkaClient.Builder<
         if (builder.messageCount <= 0) throw  new InvalidParameterException("Message count is less than 1");
         if (builder.listenerName == null || builder.listenerName.isEmpty()) throw new InvalidParameterException("Listener name is not set.");
         if (builder.consumerGroup == null || builder.consumerGroup.isEmpty()) {
-            LOGGER.info("Consumer group were not specified going to create the random one.");
+            LOGGER.info("Consumer group were not specified going to create the random one");
             builder.consumerGroup = ClientUtils.generateRandomConsumerGroup();
         }
     }
@@ -210,7 +210,7 @@ public abstract class AbstractKafkaClient<C extends AbstractKafkaClient.Builder<
             LOGGER.error("There is no Kafka external listener specified in the Kafka CR Status");
             throw new RuntimeException("There is no Kafka external listener specified in the Kafka CR Status");
         } else if (listenerName == null) {
-            LOGGER.info("Listener name is not specified. Picking the first one from the Kafka Status.");
+            LOGGER.info("Listener name is not specified. Picking the first one from the Kafka Status");
             return listenerStatusList.get(0).getBootstrapServers();
         }
 

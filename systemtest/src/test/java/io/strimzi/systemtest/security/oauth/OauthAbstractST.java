@@ -129,7 +129,7 @@ public class OauthAbstractST extends AbstractST {
 
         resourceManager.createResource(extensionContext, NetworkPolicyTemplates.applyDefaultNetworkPolicy(extensionContext, namespace, DefaultNetworkPolicy.DEFAULT_TO_ALLOW));
 
-        LOGGER.info("Deploying keycloak...");
+        LOGGER.info("Deploying keycloak");
 
         // this is need for cluster-wide OLM (creating `infra-namespace` for Keycloak)
         // Keycloak do not support cluster-wide namespace and thus we need it to deploy in non-OLM cluster wide namespace
@@ -154,7 +154,7 @@ public class OauthAbstractST extends AbstractST {
             .collect(Collectors.toList());
 
         for (Job job : clusterJobList) {
-            LOGGER.info("Deleting {} job", job.getMetadata().getName());
+            LOGGER.info("Deleting Job: {}/{} ", job.getMetadata().getNamespace(), job.getMetadata().getName());
             JobUtils.deleteJobWithWait(job.getMetadata().getNamespace(), job.getMetadata().getName());
         }
     }

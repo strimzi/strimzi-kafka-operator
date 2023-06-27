@@ -25,8 +25,8 @@ public class HttpUtils {
 
     public static void waitUntilServiceWithNameIsReady(String baserURI, String serviceName) {
 
-        LOGGER.info("Wait until Service name {} is present in json", serviceName);
-        TestUtils.waitFor("Service name " + serviceName + " is present in json", Constants.GLOBAL_TRACING_POLL, READINESS_TIMEOUT,
+        LOGGER.info("Waiting for Service name: {} to be present in JSON", serviceName);
+        TestUtils.waitFor("Service name: " + serviceName + " is present in JSON", Constants.GLOBAL_TRACING_POLL, READINESS_TIMEOUT,
             () -> {
                 Response response = given()
                         .when()
@@ -37,12 +37,12 @@ public class HttpUtils {
 
                 return response.body().peek().print().contains(serviceName);
             });
-        LOGGER.info("Service name {} is present", serviceName);
+        LOGGER.info("Service name: {} is present", serviceName);
     }
 
     public static void waitUntilServiceHasSomeTraces(String baseURI, String serviceName) {
-        LOGGER.info("Wait untill Service {} has some traces", serviceName);
-        TestUtils.waitFor("Service " + serviceName + " has some traces", Constants.GLOBAL_TRACING_POLL, READINESS_TIMEOUT,
+        LOGGER.info("Waiting for Service: {} to contain some traces", serviceName);
+        TestUtils.waitFor("Service: " + serviceName + " to contain some traces", Constants.GLOBAL_TRACING_POLL, READINESS_TIMEOUT,
             () -> {
                 Response response = given()
                             .when()
@@ -55,6 +55,6 @@ public class HttpUtils {
                 Map<Object, Object> data = jsonPathValidator.getMap("$");
                 return data.size() > 0;
             });
-        LOGGER.info("Service {} has traces", serviceName);
+        LOGGER.info("Service: {} contains some traces", serviceName);
     }
 }

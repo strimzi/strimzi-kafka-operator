@@ -20,7 +20,7 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * This class contains crucial methods to create, modify and check large amount of kafka topics
+ * This class contains crucial methods to create, modify and check large amount of KafkaTopics
  * */
 public class KafkaTopicScalabilityUtils {
 
@@ -30,7 +30,7 @@ public class KafkaTopicScalabilityUtils {
 
     public static void createTopicsViaK8s(ExtensionContext extensionContext, String namespaceName, String clusterName, String topicPrefix,
                                           int numberOfTopics, int numberOfPartitions, int numberOfReplicas, int minInSyncReplicas) {
-        LOGGER.info("Creating {} topics via Kubernetes", numberOfTopics);
+        LOGGER.info("Creating {} Topics via Kubernetes", numberOfTopics);
 
         for (int i = 0; i < numberOfTopics; i++) {
             String currentTopicName = topicPrefix + i;
@@ -40,7 +40,7 @@ public class KafkaTopicScalabilityUtils {
     }
 
     public static void waitForTopicStatus(String namespaceName, String topicPrefix, int numberOfTopics, Enum<?> state) {
-        LOGGER.info("Verifying that {} topics are in {} state", numberOfTopics, state.toString());
+        LOGGER.info("Verifying that {} Topics are in {} state", numberOfTopics, state.toString());
         List<CompletableFuture<?>> topics = new ArrayList<>();
 
         for (int i = 0; i < numberOfTopics; i++) {
@@ -51,7 +51,7 @@ public class KafkaTopicScalabilityUtils {
         }
 
         CompletableFuture<Void> allTopics = CompletableFuture.allOf(topics.toArray(new CompletableFuture[0]))
-                .thenRun(() -> LOGGER.info("All topics are in correct state"));
+                .thenRun(() -> LOGGER.info("All Topics are in correct state"));
 
         allTopics.join();
     }
@@ -65,7 +65,7 @@ public class KafkaTopicScalabilityUtils {
     }
 
     public static void waitForTopicsContainConfig(String namespaceName, String topicPrefix, int numberOfTopics, Map<String, Object> config) {
-        LOGGER.info("Verifying that {} topics contain right config", numberOfTopics);
+        LOGGER.info("Verifying that {} Topics contain right config", numberOfTopics);
         List<CompletableFuture<?>> topics = new ArrayList<>();
 
         for (int i = 0; i < numberOfTopics; i++) {
@@ -76,13 +76,13 @@ public class KafkaTopicScalabilityUtils {
         }
 
         CompletableFuture<Void> allTopics = CompletableFuture.allOf(topics.toArray(new CompletableFuture[0]))
-                .thenRun(() -> LOGGER.info("All topics contain right config"));
+                .thenRun(() -> LOGGER.info("All Topics contain right config"));
 
         allTopics.join();
     }
 
     public static void modifyBigAmountOfTopics(String namespaceName, String topicPrefix, int numberOfTopics, KafkaTopicSpec topicSpec) {
-        LOGGER.info("Modify {} topics via Kubernetes", numberOfTopics);
+        LOGGER.info("Modify {} Topics via Kubernetes", numberOfTopics);
 
         for (int i = 0; i < numberOfTopics; i++) {
             String currentTopicName = topicPrefix + i;

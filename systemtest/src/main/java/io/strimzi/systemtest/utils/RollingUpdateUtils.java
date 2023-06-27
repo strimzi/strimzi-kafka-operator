@@ -32,11 +32,11 @@ public class RollingUpdateUtils {
     private static final Logger LOGGER = LogManager.getLogger(RollingUpdateUtils.class);
 
     /**
-     * Method to check that all pods for expected component (StrimziPodSet, Deployment) were rolled
+     * Method to check that all Pods for expected component (StrimziPodSet, Deployment) were rolled
      * @param namespaceName Namespace name
      * @param selector
-     * @param snapshot Snapshot of pods for component (StrimziPodSet, Deployment) before the rolling update
-     * @return true when the pods for component (StrimziPodSet, Deployment) are recreated
+     * @param snapshot Snapshot of Pods for component (StrimziPodSet, Deployment) before the rolling update
+     * @return true when the Pods for component (StrimziPodSet, Deployment) are recreated
      */
     public static boolean componentHasRolled(String namespaceName, LabelSelector selector, Map<String, String> snapshot) {
         LOGGER.debug("Existing snapshot: {}/{}", namespaceName, new TreeMap<>(snapshot));
@@ -44,7 +44,7 @@ public class RollingUpdateUtils {
         Map<String, String> currentSnapshot = PodUtils.podSnapshot(namespaceName, selector);
 
         LOGGER.debug("Current snapshot: {}/{}", namespaceName, new TreeMap<>(currentSnapshot));
-        // rolled when all the pods in snapshot have a different version in map
+        // rolled when all the Pods in snapshot have a different version in map
 
         currentSnapshot.keySet().retainAll(snapshot.keySet());
 
@@ -59,7 +59,7 @@ public class RollingUpdateUtils {
             }
         }
 
-        LOGGER.debug("All pods seem to have rolled");
+        LOGGER.debug("All Pods seem to have rolled");
         return true;
     }
 
@@ -67,16 +67,14 @@ public class RollingUpdateUtils {
      *  Method to wait when component (StrimziPodSet, Deployment) will be recreated after rolling update
      * @param namespaceName Namespace name
      * @param selector
-     * @param snapshot Snapshot of pods for  component (StrimziPodSet, Deployment) before the rolling update
+     * @param snapshot Snapshot of Pods for  component (StrimziPodSet, Deployment) before the rolling update
      * @return The snapshot of the  component (StrimziPodSet, Deployment) after rolling update with Uid for every pod
      */
     public static Map<String, String> waitTillComponentHasRolled(String namespaceName, LabelSelector selector, Map<String, String> snapshot) {
         String componentName = selector.getMatchLabels().get(Labels.STRIMZI_NAME_LABEL);
 
-        LOGGER.info("Waiting for component: {}/{} rolling update", namespaceName, componentName);
-        LOGGER.debug("Waiting for rolling update of component matching LabelSelector: {}", selector);
-
-        TestUtils.waitFor("component " + namespaceName + "/" + componentName + " rolling update",
+        LOGGER.info("Waiting for component matching {} -> {}/{} rolling update", selector, namespaceName, componentName);
+        TestUtils.waitFor("rolling update of component: " + namespaceName + "/" + componentName,
             Constants.WAIT_FOR_ROLLING_UPDATE_INTERVAL, ResourceOperation.timeoutForPodsOperation(snapshot.size()), () -> {
                 try {
                     return componentHasRolled(namespaceName, selector, snapshot);
@@ -86,8 +84,7 @@ public class RollingUpdateUtils {
                 }
             });
 
-        LOGGER.info("Component {}/{} has been successfully rolled", namespaceName, componentName);
-        LOGGER.debug("Component matching LabelSelector {} successfully rolled", selector);
+        LOGGER.info("Component matching {} -> {}/{} has been successfully rolled", selector, namespaceName, componentName);
         return PodUtils.podSnapshot(namespaceName, selector);
     }
 
@@ -137,7 +134,7 @@ public class RollingUpdateUtils {
             throw new RuntimeException("Selector does not contain " + Labels.STRIMZI_KIND_LABEL + " label.");
         }
 
-        // 1. wait for readiness pods
+        // 1. wait for readiness Pods
         PodUtils.waitForPodsReady(namespaceName, selector, expectedPods, true, componentLogAfterTimeout);
 
         // 2. wait for readiness of the status
@@ -149,14 +146,14 @@ public class RollingUpdateUtils {
         // not need to be final because reference to the array does not get another array assigned
         int[] i = {0};
 
-        TestUtils.waitFor("Waiting for stability of rolling update will be not triggered", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
+        TestUtils.waitFor("Pods to remain stable and rolling update not to be triggered", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
             () -> {
                 if (!componentHasRolled(namespaceName, selector, pods)) {
-                    LOGGER.info("{}/{} pods didn't roll. Remaining seconds for stability: {}", namespaceName, pods.toString(),
+                    LOGGER.info("Pods {}/{} did not roll. Must remain stable for: {} second(s)", namespaceName, pods.toString(),
                         Constants.GLOBAL_RECONCILIATION_COUNT - i[0]);
                     return i[0]++ == Constants.GLOBAL_RECONCILIATION_COUNT;
                 } else {
-                    throw new RuntimeException(pods.toString() + " pods are rolling!");
+                    throw new RuntimeException(pods.toString() + " Pods are rolling!");
                 }
             }
         );
@@ -172,14 +169,14 @@ public class RollingUpdateUtils {
 
         LabelSelector kafkaSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.kafkaStatefulSetName(clusterName));
 
-        TestUtils.waitFor("Waiting for stability of rolling update will be not triggered", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
+        TestUtils.waitFor("Kafka Pods to remain stable and rolling update not to be triggered", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
             () -> {
                 boolean kafkaRolled = componentHasRolled(namespaceName, kafkaSelector, kafkaPods);
 
                 if (!kafkaRolled) {
-                    LOGGER.info("Kafka pods didn't roll. Remaining seconds for stability: {}", Constants.GLOBAL_RECONCILIATION_COUNT - i[0]);
+                    LOGGER.info("Kafka Pods did not roll. Must remain stable for: {} second(s)", Constants.GLOBAL_RECONCILIATION_COUNT - i[0]);
                 } else {
-                    throw new RuntimeException(kafkaPods.toString() + " pods are rolling!");
+                    throw new RuntimeException(kafkaPods.toString() + " Pods are rolling!");
                 }
 
                 return i[0]++ == Constants.GLOBAL_RECONCILIATION_COUNT;

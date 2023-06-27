@@ -78,7 +78,7 @@ public class CruiseControlST extends AbstractST {
     private static final String CRUISE_CONTROL_PARTITION_METRICS_SAMPLES_TOPIC = "strimzi.cruisecontrol.partitionmetricsamples"; // partitions 32 , rf - 2
 
     @IsolatedTest
-    @KRaftNotSupported("TopicOperator is not supported by KRaft mode and is used in this test class")
+    @KRaftNotSupported("Topic Operator is not supported by KRaft mode and is used in this test class")
     void testAutoCreationOfCruiseControlTopicsWithResources(ExtensionContext extensionContext) {
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
@@ -183,7 +183,7 @@ public class CruiseControlST extends AbstractST {
 
         Map<String, String> kafkaPods = PodUtils.podSnapshot(clusterOperator.getDeploymentNamespace(), kafkaSelector);
 
-        // Cruise Control spec is now enabled
+        // CruiseControl spec is now enabled
         KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, kafka -> kafka.getSpec().setCruiseControl(new CruiseControlSpec()), clusterOperator.getDeploymentNamespace());
 
         RollingUpdateUtils.waitTillComponentHasRolled(clusterOperator.getDeploymentNamespace(), kafkaSelector, 3, kafkaPods);
@@ -225,7 +225,7 @@ public class CruiseControlST extends AbstractST {
     }
 
     @ParallelNamespaceTest
-    @KRaftNotSupported("TopicOperator is not supported by KRaft mode and is used in this test class")
+    @KRaftNotSupported("Topic Operator is not supported by KRaft mode and is used in this test class")
     void testCruiseControlTopicExclusion(ExtensionContext extensionContext) {
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(clusterOperator.getDeploymentNamespace(), extensionContext);
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
@@ -271,7 +271,7 @@ public class CruiseControlST extends AbstractST {
 
         String ccPodName = kubeClient().listPodsByPrefixInName(namespaceName, CruiseControlResources.deploymentName(clusterName)).get(0).getMetadata().getName();
 
-        LOGGER.info("Check for default CruiseControl replicaMovementStrategy in pod configuration file.");
+        LOGGER.info("Check for default CruiseControl replicaMovementStrategy in Pod configuration file");
         Map<String, Object> actualStrategies = KafkaResource.kafkaClient().inNamespace(namespaceName)
             .withName(clusterName).get().getSpec().getCruiseControl().getConfig();
         // Check that config contains only configurations for max.active.user.tasks
@@ -286,11 +286,11 @@ public class CruiseControlST extends AbstractST {
         ccConfigMap.put(replicaMovementStrategies, newReplicaMovementStrategies);
 
         KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, kafka -> {
-            LOGGER.info("Set non-default CruiseControl replicaMovementStrategies to KafkaRebalance resource.");
+            LOGGER.info("Set non-default CruiseControl replicaMovementStrategies to KafkaRebalance resource");
             kafka.getSpec().getCruiseControl().setConfig(ccConfigMap);
         }, namespaceName);
 
-        LOGGER.info("Verifying that CC pod is rolling, because of change size of disk");
+        LOGGER.info("Verifying that CC Pod is rolling, because of change size of disk");
         DeploymentUtils.waitTillDepHasRolled(namespaceName, CruiseControlResources.deploymentName(clusterName), 1, kafkaRebalanceSnapshot);
 
         ccPodName = kubeClient().listPodsByPrefixInName(namespaceName, CruiseControlResources.deploymentName(clusterName)).get(0).getMetadata().getName();
@@ -378,7 +378,7 @@ public class CruiseControlST extends AbstractST {
 
         String scraperPodName = kubeClient().listPodsByPrefixInName(testStorage.getNamespaceName(), testStorage.getScraperName()).get(0).getMetadata().getName();
 
-        LOGGER.info("Checking that {} topic has replicas on first 3 brokers", testStorage.getTopicName());
+        LOGGER.info("Checking that Topic: {} has replicas on first 3 brokers", testStorage.getTopicName());
         List<String> topicReplicas = KafkaTopicUtils.getKafkaTopicReplicasForEachPartition(testStorage.getNamespaceName(), testStorage.getTopicName(), scraperPodName, KafkaResources.plainBootstrapAddress(testStorage.getClusterName()));
         assertEquals(0, (int) topicReplicas.stream().filter(line -> line.contains("3") || line.contains("4")).count());
 
@@ -406,11 +406,11 @@ public class CruiseControlST extends AbstractST {
         KafkaRebalanceUtils.doRebalancingProcess(new Reconciliation("test", KafkaRebalance.RESOURCE_KIND, testStorage.getNamespaceName(), testStorage.getClusterName()), testStorage.getNamespaceName(), testStorage.getClusterName());
         KafkaRebalanceResource.kafkaRebalanceClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).delete();
 
-        LOGGER.info("Checking that {} topic has replicas on one of the new brokers (or both)", testStorage.getTopicName());
+        LOGGER.info("Checking that Topic: {} has replicas on one of the new brokers (or both)", testStorage.getTopicName());
         topicReplicas = KafkaTopicUtils.getKafkaTopicReplicasForEachPartition(testStorage.getNamespaceName(), testStorage.getTopicName(), scraperPodName, KafkaResources.plainBootstrapAddress(testStorage.getClusterName()));
         assertTrue(topicReplicas.stream().anyMatch(line -> line.contains("3") || line.contains("4")));
 
-        LOGGER.info("Creating KafkaRebalance with remove_brokers mode - it needs to be done before actual scaling down of Kafka pods");
+        LOGGER.info("Creating KafkaRebalance with remove_brokers mode - it needs to be done before actual scaling down of Kafka Pods");
 
         // when using remove_brokers mode, we can hit `ProposalReady` right after KR creation - that's why `waitReady` is set to `false` here
         resourceManager.createResource(extensionContext, false,
@@ -428,7 +428,7 @@ public class CruiseControlST extends AbstractST {
         KafkaRebalanceUtils.waitForKafkaRebalanceCustomResourceState(testStorage.getNamespaceName(),  testStorage.getClusterName(), KafkaRebalanceState.ProposalReady);
         KafkaRebalanceUtils.doRebalancingProcess(new Reconciliation("test", KafkaRebalance.RESOURCE_KIND, testStorage.getNamespaceName(), testStorage.getClusterName()), testStorage.getNamespaceName(), testStorage.getClusterName());
 
-        LOGGER.info("Checking that {} topic has replicas only on first 3 brokers", testStorage.getTopicName());
+        LOGGER.info("Checking that Topic: {} has replicas only on first 3 brokers", testStorage.getTopicName());
         topicReplicas = KafkaTopicUtils.getKafkaTopicReplicasForEachPartition(testStorage.getNamespaceName(), testStorage.getTopicName(), scraperPodName, KafkaResources.plainBootstrapAddress(testStorage.getClusterName()));
         assertEquals(0, (int) topicReplicas.stream().filter(line -> line.contains("3") || line.contains("4")).count());
 

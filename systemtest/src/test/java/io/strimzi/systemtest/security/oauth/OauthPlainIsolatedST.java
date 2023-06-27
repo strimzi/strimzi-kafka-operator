@@ -107,8 +107,8 @@ public class OauthPlainIsolatedST extends OauthAbstractST {
     private MetricsCollector metricsCollector;
 
     @Description(
-            "As an oauth producer, I should be able to produce messages to the kafka broker\n" +
-            "As an oauth consumer, I should be able to consumer messages from the kafka broker.")
+            "As an OAuth producer, I should be able to produce messages to the Kafka Broker\n" +
+            "As an OAuth consumer, I should be able to consumer messages from the Kafka Broker.")
     @ParallelTest
     @Tag(METRICS)
     void testProducerConsumerWithOauthMetrics(ExtensionContext extensionContext) {
@@ -247,7 +247,7 @@ public class OauthPlainIsolatedST extends OauthAbstractST {
         String audienceConsumerName = OAUTH_CLIENT_AUDIENCE_CONSUMER + "-" + clusterName;
         String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
 
-        LOGGER.info("Use clients with clientId not containing 'hello-world' in access token.");
+        LOGGER.info("Use clients with clientId not containing 'hello-world' in access token");
 
         KafkaOauthClients oauthAudienceInternalClientJob = new KafkaOauthClientsBuilder()
             .withNamespaceName(clusterOperator.getDeploymentNamespace())
@@ -270,7 +270,7 @@ public class OauthPlainIsolatedST extends OauthAbstractST {
         JobUtils.deleteJobWithWait(clusterOperator.getDeploymentNamespace(), audienceProducerName);
         JobUtils.deleteJobWithWait(clusterOperator.getDeploymentNamespace(), audienceConsumerName);
 
-        LOGGER.info("Use clients with clientId containing 'hello-world' in access token.");
+        LOGGER.info("Use clients with clientId containing 'hello-world' in access token");
 
         KafkaOauthClients oauthInternalClientJob = new KafkaOauthClientsBuilder()
             .withNamespaceName(clusterOperator.getDeploymentNamespace())
@@ -290,7 +290,7 @@ public class OauthPlainIsolatedST extends OauthAbstractST {
         ClientUtils.waitForClientSuccess(consumerName, clusterOperator.getDeploymentNamespace(), MESSAGE_COUNT);
     }
 
-    @Description("As an oauth KafkaConnect, I should be able to sink messages from kafka broker topic.")
+    @Description("As an OAuth KafkaConnect, I should be able to sink messages from kafka Broker Topic.")
     @ParallelTest
     @Tag(CONNECT)
     @Tag(CONNECT_COMPONENTS)
@@ -373,8 +373,8 @@ public class OauthPlainIsolatedST extends OauthAbstractST {
         );
     }
 
-    @Description("As an oauth mirror maker, I should be able to replicate topic data between kafka clusters")
-    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
+    @Description("As an OAuth MirrorMaker, I should be able to replicate Topic data between Kafka clusters")
+    @IsolatedTest("Using more than one Kafka cluster in one Namespace")
     @Tag(MIRROR_MAKER)
     @Tag(NODEPORT_SUPPORTED)
     void testProducerConsumerMirrorMaker(ExtensionContext extensionContext) {
@@ -484,13 +484,13 @@ public class OauthPlainIsolatedST extends OauthAbstractST {
         final String kafkaMirrorMakerLogs = KubeClusterResource.cmdKubeClient(clusterOperator.getDeploymentNamespace()).execInCurrentNamespace(Level.DEBUG, "logs", kafkaMirrorMakerPodName).out();
         verifyOauthConfiguration(kafkaMirrorMakerLogs);
 
-        TestUtils.waitFor("Waiting for Mirror Maker will copy messages from " + oauthClusterName + " to " + targetKafkaCluster,
+        TestUtils.waitFor("MirrorMaker to copy messages from " + oauthClusterName + " to " + targetKafkaCluster,
             Constants.GLOBAL_CLIENTS_POLL, Constants.TIMEOUT_FOR_MIRROR_MAKER_COPY_MESSAGES_BETWEEN_BROKERS,
             () -> {
                 LOGGER.info("Deleting the Job");
                 JobUtils.deleteJobWithWait(clusterOperator.getDeploymentNamespace(), OAUTH_CONSUMER_NAME);
 
-                LOGGER.info("Creating new client with new consumer-group and also to point on {} cluster", targetKafkaCluster);
+                LOGGER.info("Creating new client with new consumer group and also to point on {} cluster", targetKafkaCluster);
                 KafkaOauthClients kafkaOauthClientJob = new KafkaOauthClientsBuilder()
                     .withNamespaceName(clusterOperator.getDeploymentNamespace())
                     .withProducerName(consumerName)
@@ -515,7 +515,7 @@ public class OauthPlainIsolatedST extends OauthAbstractST {
             });
     }
 
-    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
+    @IsolatedTest("Using more than one Kafka cluster in one Namespace")
     @Tag(MIRROR_MAKER2)
     @Tag(CONNECT_COMPONENTS)
     @Tag(NODEPORT_SUPPORTED)
@@ -548,7 +548,7 @@ public class OauthPlainIsolatedST extends OauthAbstractST {
 
         String kafkaSourceClusterName = oauthClusterName;
         String kafkaTargetClusterName = clusterName + "-target";
-        // mirror maker 2 adding prefix to mirrored topic for in this case mirrotopic will be : my-cluster.my-topic
+        // MirrorMaker2 adding prefix to mirrored Topic for in this case mirror Topic will be : my-cluster.my-topic
         String kafkaTargetClusterTopicName = kafkaSourceClusterName + "." + topicName;
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(kafkaTargetClusterName, 1, 1)
@@ -587,7 +587,7 @@ public class OauthPlainIsolatedST extends OauthAbstractST {
             .endSpec()
             .build());
 
-        // Deploy Mirror Maker 2.0 with oauth
+        // Deploy MirrorMaker2 with OAuth
         KafkaMirrorMaker2ClusterSpec sourceClusterWithOauth = new KafkaMirrorMaker2ClusterSpecBuilder()
             .withAlias(kafkaSourceClusterName)
             .withConfig(connectorConfig)
@@ -639,10 +639,10 @@ public class OauthPlainIsolatedST extends OauthAbstractST {
         final String kafkaMirrorMaker2Logs = KubeClusterResource.cmdKubeClient(clusterOperator.getDeploymentNamespace()).execInCurrentNamespace(Level.DEBUG, "logs", kafkaMirrorMaker2PodName).out();
         verifyOauthConfiguration(kafkaMirrorMaker2Logs);
 
-        TestUtils.waitFor("Waiting for Mirror Maker 2 will copy messages from " + kafkaSourceClusterName + " to " + kafkaTargetClusterName,
+        TestUtils.waitFor("MirrorMaker2 to copy messages from " + kafkaSourceClusterName + " to " + kafkaTargetClusterName,
             Duration.ofSeconds(30).toMillis(), Constants.TIMEOUT_FOR_MIRROR_MAKER_COPY_MESSAGES_BETWEEN_BROKERS,
             () -> {
-                LOGGER.info("Deleting the Job {}", consumerName);
+                LOGGER.info("Deleting Job: {}/{}", clusterOperator.getDeploymentNamespace(), consumerName);
                 JobUtils.deleteJobWithWait(clusterOperator.getDeploymentNamespace(), consumerName);
 
                 LOGGER.info("Creating new client with new consumer-group and also to point on {} cluster", kafkaTargetClusterName);
@@ -677,7 +677,7 @@ public class OauthPlainIsolatedST extends OauthAbstractST {
         );
     }
 
-    @Description("As a oauth bridge, I should be able to send messages to bridge endpoint.")
+    @Description("As a OAuth bridge, I should be able to send messages to bridge endpoint.")
     @ParallelTest
     @Tag(BRIDGE)
     @Tag(METRICS)
@@ -791,7 +791,7 @@ public class OauthPlainIsolatedST extends OauthAbstractST {
 
         for (final String podName : collector.getCollectedData().keySet()) {
             for (final String expectedMetric : expectedOauthMetrics) {
-                LOGGER.info("Searching value from pod with IP {} for metric {}", podName, expectedMetric);
+                LOGGER.info("Searching value from Pod with IP {} for metric {}", podName, expectedMetric);
                 assertThat(collector.getCollectedData().get(podName), containsString(expectedMetric));
             }
         }

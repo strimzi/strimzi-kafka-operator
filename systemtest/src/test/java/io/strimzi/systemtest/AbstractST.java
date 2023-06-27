@@ -175,7 +175,7 @@ public abstract class AbstractST implements TestSeparator {
      * @param config Expected component configuration
      */
     protected void checkComponentConfiguration(String namespaceName, String podNamePrefix, String containerName, String configKey, Map<String, Object> config) {
-        LOGGER.info("Getting pods by prefix in name {}", podNamePrefix);
+        LOGGER.info("Getting Pods by prefix: {} in Pod name", podNamePrefix);
         List<Pod> pods = kubeClient(namespaceName).listPodsByPrefixInName(podNamePrefix);
 
         if (pods.size() != 0) {
@@ -202,7 +202,7 @@ public abstract class AbstractST implements TestSeparator {
      * @param config Expected environment variables with values
      */
     protected void checkSpecificVariablesInContainer(String namespaceName, String podNamePrefix, String containerName, Map<String, String> config) {
-        LOGGER.info("Getting pods by prefix in name {}", podNamePrefix);
+        LOGGER.info("Getting Pods by prefix: {} in Pod name", podNamePrefix);
         List<Pod> pods = kubeClient(namespaceName).listPodsByPrefixInName(podNamePrefix);
 
         if (pods.size() != 0) {
@@ -232,7 +232,7 @@ public abstract class AbstractST implements TestSeparator {
      */
     protected void checkReadinessLivenessProbe(String namespaceName, String podNamePrefix, String containerName, int initialDelaySeconds, int timeoutSeconds,
                                                int periodSeconds, int successThreshold, int failureThreshold) {
-        LOGGER.info("Getting pods by prefix {} in pod name", podNamePrefix);
+        LOGGER.info("Getting Pods by prefix: {} in Pod name", podNamePrefix);
         List<Pod> pods = kubeClient(namespaceName).listPodsByPrefixInName(podNamePrefix);
 
         if (pods.size() != 0) {
@@ -274,7 +274,7 @@ public abstract class AbstractST implements TestSeparator {
     }
 
     void verifyLabelsOnCOPod(String namespaceName) {
-        LOGGER.info("Verifying labels for cluster-operator pod");
+        LOGGER.info("Verifying labels for cluster-operator Pod");
 
         Map<String, String> coLabels = kubeClient(namespaceName).listPods("name", ResourceManager.getCoDeploymentName()).get(0).getMetadata().getLabels();
         assertThat(coLabels.get("name"), is(ResourceManager.getCoDeploymentName()));
@@ -282,7 +282,7 @@ public abstract class AbstractST implements TestSeparator {
     }
 
     protected void verifyLabelsOnPods(String namespaceName, String clusterName, String podType, String kind) {
-        LOGGER.info("Verifying labels on pod type {}", podType);
+        LOGGER.info("Verifying labels on Pod type {}", podType);
         kubeClient(namespaceName).listPods().stream()
             .filter(pod -> pod.getMetadata().getName().startsWith(clusterName.concat("-" + podType)))
             .forEach(pod -> {
@@ -327,7 +327,7 @@ public abstract class AbstractST implements TestSeparator {
     }
 
     protected void verifyLabelsForService(String namespaceName, String clusterName, String nameLabel, String serviceToTest, String kind) {
-        LOGGER.info("Verifying labels for Kafka Connect Services");
+        LOGGER.info("Verifying labels for KafkaConnect Services");
 
         String serviceName = clusterName.concat("-").concat(serviceToTest);
         Service service = kubeClient(namespaceName).getService(serviceName);
@@ -341,11 +341,11 @@ public abstract class AbstractST implements TestSeparator {
     }
 
     void verifyLabelsForSecrets(String namespaceName, String clusterName, String appName) {
-        LOGGER.info("Verifying labels for secrets");
+        LOGGER.info("Verifying labels for Secrets");
         kubeClient(namespaceName).listSecrets(namespaceName).stream()
             .filter(p -> p.getMetadata().getName().matches("(" + clusterName + ")-(clients|cluster|(entity))(-operator)?(-ca)?(-certs?)?"))
             .forEach(p -> {
-                LOGGER.info("Verifying secret {}", p.getMetadata().getName());
+                LOGGER.info("Verifying Secret: {}", p.getMetadata().getName());
                 assertThat(p.getMetadata().getLabels().get("app"), is(appName));
                 assertThat(p.getMetadata().getLabels().get(Labels.STRIMZI_KIND_LABEL), is("Kafka"));
                 assertThat(p.getMetadata().getLabels().get(Labels.STRIMZI_CLUSTER_LABEL), is(clusterName));
@@ -448,7 +448,7 @@ public abstract class AbstractST implements TestSeparator {
     }
 
     protected void assertNoCoErrorsLogged(String namespaceName, long sinceSeconds) {
-        LOGGER.info("Search in strimzi-cluster-operator log for errors in last {} seconds", sinceSeconds);
+        LOGGER.info("Search in strimzi-cluster-operator log for errors in last {} second(s)", sinceSeconds);
         String clusterOperatorLog = cmdKubeClient(namespaceName).searchInLog("deploy", ResourceManager.getCoDeploymentName(), sinceSeconds, "Exception", "Error", "Throwable");
         assertThat(clusterOperatorLog, logHasNoUnexpectedErrors());
     }
@@ -469,14 +469,14 @@ public abstract class AbstractST implements TestSeparator {
             //Verifying docker image for zookeeper pods
             for (int i = 0; i < zkPods; i++) {
                 String imgFromPod = PodUtils.getContainerImageNameFromPod(kafkaNamespaceName, KafkaResources.zookeeperPodName(clusterName, i), "zookeeper");
-                assertThat("Zookeeper pod " + i + " uses wrong image", imgFromPod, containsString(TestUtils.parseImageMap(imgFromDeplConf.get(KAFKA_IMAGE_MAP)).get(kafkaVersion)));
+                assertThat("ZooKeeper Pod: " + i + " uses wrong image", imgFromPod, containsString(TestUtils.parseImageMap(imgFromDeplConf.get(KAFKA_IMAGE_MAP)).get(kafkaVersion)));
             }
         }
 
         //Verifying docker image for kafka pods
         for (int i = 0; i < kafkaPods; i++) {
             String imgFromPod = PodUtils.getContainerImageNameFromPod(kafkaNamespaceName, KafkaResources.kafkaPodName(clusterName, i), "kafka");
-            assertThat("Kafka pod " + i + " uses wrong image", imgFromPod, containsString(TestUtils.parseImageMap(imgFromDeplConf.get(KAFKA_IMAGE_MAP)).get(kafkaVersion)));
+            assertThat("Kafka Pod: " + i + " uses wrong image", imgFromPod, containsString(TestUtils.parseImageMap(imgFromDeplConf.get(KAFKA_IMAGE_MAP)).get(kafkaVersion)));
             if (rackAwareEnabled) {
                 String initContainerImage = PodUtils.getInitContainerImageName(KafkaResources.kafkaPodName(clusterName, i));
                 assertThat(initContainerImage, is(imgFromDeplConf.get(KAFKA_INIT_IMAGE)));
@@ -597,7 +597,7 @@ public abstract class AbstractST implements TestSeparator {
     @BeforeEach
     void setUpTestCase(ExtensionContext extensionContext) {
         LOGGER.debug(String.join("", Collections.nCopies(76, "=")));
-        LOGGER.debug("————————————  {}@efore Each - Setup test case environment ———————————— ", StUtils.removePackageName(this.getClass().getName()));
+        LOGGER.debug("————————————  {}@Before Each - Setup TestCase environment ———————————— ", StUtils.removePackageName(this.getClass().getName()));
         beforeEachMustExecute(extensionContext);
         beforeEachMayOverride(extensionContext);
     }
@@ -605,7 +605,7 @@ public abstract class AbstractST implements TestSeparator {
     @BeforeAll
     void setUpTestSuite(ExtensionContext extensionContext) {
         LOGGER.debug(String.join("", Collections.nCopies(76, "=")));
-        LOGGER.debug("———————————— {}@Before All - Setup test suite environment ———————————— ", StUtils.removePackageName(this.getClass().getName()));
+        LOGGER.debug("———————————— {}@Before All - Setup TestSuite environment ———————————— ", StUtils.removePackageName(this.getClass().getName()));
         beforeAllMayOverride(extensionContext);
         beforeAllMustExecute(extensionContext);
     }
@@ -628,7 +628,7 @@ public abstract class AbstractST implements TestSeparator {
     @AfterAll
     void tearDownTestSuite(ExtensionContext extensionContext) throws Exception {
         LOGGER.debug(String.join("", Collections.nCopies(76, "=")));
-        LOGGER.debug("———————————— {}@After All - Clean up after test suite ———————————— ", StUtils.removePackageName(this.getClass().getName()));
+        LOGGER.debug("———————————— {}@After All - Clean up after TestSuite ———————————— ", StUtils.removePackageName(this.getClass().getName()));
         afterAllMayOverride(extensionContext);
         afterAllMustExecute(extensionContext);
     }

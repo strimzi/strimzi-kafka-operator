@@ -221,8 +221,8 @@ public class SetupClusterOperator {
      */
     @SuppressFBWarnings("ST_WRITE_TO_STATIC_FROM_INSTANCE_METHOD")
     public SetupClusterOperator runInstallation() {
-        LOGGER.info("Cluster operator installation configuration:\n{}", this::prettyPrint);
-        LOGGER.debug("Cluster operator installation configuration:\n{}", this::toString);
+        LOGGER.info("Cluster Operator installation configuration:\n{}", this::prettyPrint);
+        LOGGER.debug("Cluster Operator installation configuration:\n{}", this::toString);
 
         this.testClassName = this.extensionContext.getRequiredTestClass() != null ? this.extensionContext.getRequiredTestClass().getName() : "";
         this.testMethodName = this.extensionContext.getDisplayName() != null ? this.extensionContext.getDisplayName() : "";
@@ -238,13 +238,13 @@ public class SetupClusterOperator {
     }
 
     public SetupClusterOperator runBundleInstallation() {
-        LOGGER.info("Cluster operator installation configuration:\n{}", this::toString);
+        LOGGER.info("Cluster Operator installation configuration:\n{}", this::toString);
         bundleInstallation();
         return this;
     }
 
     public SetupClusterOperator runOlmInstallation() {
-        LOGGER.info("Cluster operator installation configuration:\n{}", this::toString);
+        LOGGER.info("Cluster Operator installation configuration:\n{}", this::toString);
         olmInstallation();
         return this;
     }
@@ -271,14 +271,14 @@ public class SetupClusterOperator {
     }
 
     private void helmInstallation() {
-        LOGGER.info("Install ClusterOperator via Helm");
+        LOGGER.info("Install Cluster Operator via Helm");
         helmResource = new HelmResource(namespaceInstallTo, namespaceToWatch);
         createClusterOperatorNamespaceIfPossible();
         helmResource.create(extensionContext, operationTimeout, reconciliationInterval, extraEnvVars, replicas);
     }
 
     private void bundleInstallation() {
-        LOGGER.info("Install ClusterOperator via Yaml bundle");
+        LOGGER.info("Install Cluster Operator via Yaml bundle");
         // check if namespace is already created
         createClusterOperatorNamespaceIfPossible();
         prepareEnvForOperator(extensionContext, namespaceInstallTo, bindingsNamespaces);
@@ -293,7 +293,7 @@ public class SetupClusterOperator {
                 ResourceManager.getInstance().createResource(extensionContext, itemRoleOrBinding);
             }
         } else {
-            LOGGER.info("Install default bindings.");
+            LOGGER.info("Install default bindings");
             this.applyDefaultBindings();
         }
 
@@ -315,7 +315,7 @@ public class SetupClusterOperator {
     }
 
     private void olmInstallation() {
-        LOGGER.info("Install ClusterOperator via OLM");
+        LOGGER.info("Install Cluster Operator via OLM");
 
         OlmConfigurationBuilder olmConfiguration = new OlmConfigurationBuilder()
             .withExtensionContext(extensionContext)
@@ -357,7 +357,7 @@ public class SetupClusterOperator {
      */
     public void upgradeClusterOperator(OlmConfiguration olmConfiguration) {
         if (kubeClient().listPodsByPrefixInName(ResourceManager.getCoDeploymentName()).size() == 0) {
-            throw new RuntimeException("We can not perform upgrade! Cluster operator pod is not present.");
+            throw new RuntimeException("We can not perform upgrade! Cluster Operator Pod is not present.");
         }
 
         updateSubscription(olmConfiguration);
@@ -526,7 +526,7 @@ public class SetupClusterOperator {
             // This is needed in case you are using internal kubernetes registry and you want to pull images from there
             if (kubeClient().getNamespace(Environment.STRIMZI_ORG) != null) {
                 for (String namespace : namespaces) {
-                    LOGGER.debug("Setting group policy for Openshift registry in namespace: " + namespace);
+                    LOGGER.debug("Setting group policy for Openshift registry in Namespace: " + namespace);
                     Exec.exec(null, Arrays.asList("oc", "policy", "add-role-to-group", "system:image-puller", "system:serviceaccounts:" + namespace, "-n", Environment.STRIMZI_ORG), 0, Level.DEBUG, false);
                 }
             }
@@ -795,7 +795,7 @@ public class SetupClusterOperator {
             LOGGER.info(String.join("", Collections.nCopies(76, "=")));
         } else {
             LOGGER.info(String.join("", Collections.nCopies(76, "=")));
-            LOGGER.info("Un-installing Cluster Operator from namespace {}", namespaceInstallTo);
+            LOGGER.info("Un-installing Cluster Operator from Namespace: {}", namespaceInstallTo);
             LOGGER.info(String.join("", Collections.nCopies(76, "=")));
 
             if (this.extensionContext != null) {

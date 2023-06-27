@@ -151,7 +151,7 @@ public interface Constants {
     String OPERATOR_GROUP = "OperatorGroup";
 
     /**
-     * Kafka Bridge JSON encoding with JSON embedded format
+     * KafkaBridge JSON encoding with JSON embedded format
      */
     String KAFKA_BRIDGE_JSON_JSON = "application/vnd.kafka.json.v2+json";
     String DEFAULT_SINK_FILE_PATH = "/tmp/test-file-sink.txt";
@@ -339,7 +339,7 @@ public interface Constants {
     String METRICS = "metrics";
 
     /**
-     * Tag for tests where cruise control used
+     * Tag for tests where CruiseControl is used
      */
     String CRUISE_CONTROL = "cruisecontrol";
 
@@ -394,7 +394,7 @@ public interface Constants {
     String TEST_SUITE_NAME_LABEL = "test.suite";
 
     /**
-     * Cruise Control related parameters
+     * CruiseControl related parameters
      */
     String CRUISE_CONTROL_NAME = "Cruise Control";
     String CRUISE_CONTROL_CONTAINER_NAME = "cruise-control";

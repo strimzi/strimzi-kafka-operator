@@ -266,14 +266,14 @@ public class KafkaTemplates {
                 .endZookeeper()
                 .editEntityOperator()
                     .editUserOperator()
-                        // For UserOperator using 512Mi is too much and on the other hand 128Mi is causing OOM problem at the start.
+                        // For User Operator using 512Mi is too much and on the other hand 128Mi is causing OOM problem at the start.
                         .withResources(new ResourceRequirementsBuilder()
                             .addToLimits("memory", new Quantity("256Mi"))
                             .addToRequests("memory", new Quantity("256Mi"))
                             .build())
                     .endUserOperator()
                     .editTopicOperator()
-                        // For TopicOperator using 512Mi is too much and on the other hand 128Mi is causing OOM problem at the start.
+                        // For Topic Operator using 512Mi is too much and on the other hand 128Mi is causing OOM problem at the start.
                         .withResources(new ResourceRequirementsBuilder()
                             .addToLimits("memory", new Quantity("256Mi"))
                             .addToRequests("memory", new Quantity("256Mi"))

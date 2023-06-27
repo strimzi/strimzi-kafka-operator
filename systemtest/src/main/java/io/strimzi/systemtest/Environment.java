@@ -40,7 +40,7 @@ public class Environment {
      */
     private static final String CONFIG_FILE_PATH_ENV = "ST_CONFIG_PATH";
     /**
-     * Specify secret name of private registries, with the container registry credentials to be able to pull images.
+     * Specify Secret name of private registries, with the container registry credentials to be able to pull images.
      */
     private static final String STRIMZI_IMAGE_PULL_SECRET_ENV = "SYSTEM_TEST_STRIMZI_IMAGE_PULL_SECRET";
     /**
@@ -115,7 +115,7 @@ public class Environment {
      */
     private static final String DEFAULT_TO_DENY_NETWORK_POLICIES_ENV = "DEFAULT_TO_DENY_NETWORK_POLICIES";
     /**
-     * ClusterOperator installation type
+     * Cluster Operator installation type
      */
     private static final String CLUSTER_OPERATOR_INSTALL_TYPE_ENV = "CLUSTER_OPERATOR_INSTALL_TYPE";
 
@@ -218,7 +218,7 @@ public class Environment {
     public static final String OLM_OPERATOR_LATEST_RELEASE_VERSION = getOrDefault(OLM_OPERATOR_VERSION_ENV, "0.35.1");
     // NetworkPolicy variable
     public static final boolean DEFAULT_TO_DENY_NETWORK_POLICIES = getOrDefault(DEFAULT_TO_DENY_NETWORK_POLICIES_ENV, Boolean::parseBoolean, DEFAULT_TO_DENY_NETWORK_POLICIES_DEFAULT);
-    // ClusterOperator installation type variable
+    // Cluster Operator installation type variable
     public static final ClusterOperatorInstallType CLUSTER_OPERATOR_INSTALL_TYPE = getOrDefault(CLUSTER_OPERATOR_INSTALL_TYPE_ENV, value -> ClusterOperatorInstallType.valueOf(value.toUpperCase(Locale.ENGLISH)), CLUSTER_OPERATOR_INSTALL_TYPE_DEFAULT);
     public static final boolean LB_FINALIZERS = getOrDefault(LB_FINALIZERS_ENV, Boolean::parseBoolean, LB_FINALIZERS_DEFAULT);
     public static final String RESOURCE_ALLOCATION_STRATEGY = getOrDefault(RESOURCE_ALLOCATION_STRATEGY_ENV, RESOURCE_ALLOCATION_STRATEGY_DEFAULT);
@@ -257,7 +257,7 @@ public class Environment {
     }
 
     /**
-     * Determine wheter KRaft mode of Kafka cluster is enabled in ClusterOperator or not.
+     * Determine wheter KRaft mode of Kafka cluster is enabled in Cluster Operator or not.
      * @return true if KRaft mode is enabled, otherwise false
      */
     public static boolean isKRaftModeEnabled() {
@@ -291,7 +291,7 @@ public class Environment {
             Service service = kubeClient("kube-system").getService("registry");
 
             if (service == null)    {
-                throw new RuntimeException("Internal registry service for pushing newly build images not found.");
+                throw new RuntimeException("Internal registry Service for pushing newly build images not found.");
             } else {
                 return service.getSpec().getClusterIP() + ":" + service.getSpec().getPorts().stream().filter(servicePort -> servicePort.getName().equals("http")).findFirst().orElseThrow().getPort();
             }
@@ -328,7 +328,7 @@ public class Environment {
             File jsonFile = new File(config).getAbsoluteFile();
             return mapper.readTree(jsonFile);
         } catch (IOException ex) {
-            LOGGER.debug("Json configuration is not provided or cannot be processed!");
+            LOGGER.debug("JSON configuration is not provided or cannot be processed!");
             return mapper.createObjectNode();
         }
     }

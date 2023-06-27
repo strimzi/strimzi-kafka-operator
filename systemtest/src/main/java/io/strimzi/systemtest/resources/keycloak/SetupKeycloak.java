@@ -49,18 +49,18 @@ public class SetupKeycloak {
     private static final Logger LOGGER = LogManager.getLogger(SetupKeycloak.class);
 
     public static void deployKeycloakOperator(ExtensionContext extensionContext, final String deploymentNamespace, final String watchNamespace) {
-        LOGGER.info("Prepare Keycloak Operator in namespace {} with watching namespace {}", deploymentNamespace, watchNamespace);
+        LOGGER.info("Preparing Keycloak Operator in Namespace: {} while watching Namespace: {}", deploymentNamespace, watchNamespace);
 
         Exec.exec(Level.INFO, "/bin/bash", PATH_TO_KEYCLOAK_PREPARE_SCRIPT, deploymentNamespace, KeycloakUtils.LATEST_KEYCLOAK_VERSION, watchNamespace);
         DeploymentUtils.waitForDeploymentAndPodsReady(deploymentNamespace, KEYCLOAK_OPERATOR_DEPLOYMENT_NAME, 1);
 
         ResourceManager.STORED_RESOURCES.get(extensionContext.getDisplayName()).push(new ResourceItem<>(() -> deleteKeycloakOperator(deploymentNamespace, watchNamespace)));
 
-        LOGGER.info("Keycloak operator in namespace {} is ready", deploymentNamespace);
+        LOGGER.info("Keycloak Operator in Namespace: {} is ready", deploymentNamespace);
     }
 
     public static void deleteKeycloakOperator(final String deploymentNamespace, final String watchNamespace) {
-        LOGGER.info("Teardown Keycloak Operator in namespace {} with watching namespace {}", deploymentNamespace, watchNamespace);
+        LOGGER.info("Tearing down Keycloak Operator in Namespace: {} with watching Namespace: {}", deploymentNamespace, watchNamespace);
         Exec.exec(Level.INFO, "/bin/bash", PATH_TO_KEYCLOAK_TEARDOWN_SCRIPT, deploymentNamespace, KeycloakUtils.LATEST_KEYCLOAK_VERSION, watchNamespace);
         DeploymentUtils.waitForDeploymentDeletion(deploymentNamespace, KEYCLOAK_OPERATOR_DEPLOYMENT_NAME);
     }
@@ -75,20 +75,20 @@ public class SetupKeycloak {
     }
 
     private static void deployKeycloak(ExtensionContext extensionContext, String namespaceName) {
-        LOGGER.info("Deploying Keycloak instance into namespace: {}", namespaceName);
+        LOGGER.info("Deploying Keycloak instance into Namespace: {}", namespaceName);
         cmdKubeClient(namespaceName).apply(KEYCLOAK_INSTANCE_FILE_PATH);
 
         StatefulSetUtils.waitForAllStatefulSetPodsReady(namespaceName, "keycloak", 1);
 
         ResourceManager.STORED_RESOURCES.get(extensionContext.getDisplayName()).push(new ResourceItem<>(() -> deleteKeycloak(namespaceName)));
 
-        LOGGER.info("Waiting for Keycloak secret: {} to be present", KEYCLOAK_SECRET_NAME);
+        LOGGER.info("Waiting for Keycloak Secret: {}/{} to be present", namespaceName, KEYCLOAK_SECRET_NAME);
         SecretUtils.waitForSecretReady(namespaceName, KEYCLOAK_SECRET_NAME, () -> { });
-        LOGGER.info("Keycloak instance and Keycloak secret are ready");
+        LOGGER.info("Keycloak instance and Keycloak Secret are ready");
     }
 
     private static void deployPostgres(ExtensionContext extensionContext, String namespaceName) {
-        LOGGER.info("Deploying Postgres into namespace: {}", namespaceName);
+        LOGGER.info("Deploying Postgres into Namespace: {}", namespaceName);
         cmdKubeClient(namespaceName).apply(POSTGRES_FILE_PATH);
 
         DeploymentUtils.waitForDeploymentAndPodsReady(namespaceName, "postgres", 1);
@@ -146,14 +146,14 @@ public class SetupKeycloak {
     }
 
     private static void deleteKeycloak(String namespaceName) {
-        LOGGER.info("Deleting Keycloak in namespace {}", namespaceName);
+        LOGGER.info("Deleting Keycloak in Namespace: {}", namespaceName);
         cmdKubeClient(namespaceName).delete(KEYCLOAK_INSTANCE_FILE_PATH);
         kubeClient().deleteSecret(namespaceName, KEYCLOAK_SECRET_NAME);
         DeploymentUtils.waitForDeploymentDeletion(namespaceName, KEYCLOAK_DEPLOYMENT_NAME);
     }
 
     private static void deletePostgres(String namespaceName) {
-        LOGGER.info("Deleting Postgres in namespace {}", namespaceName);
+        LOGGER.info("Deleting Postgres in Namespace: {}", namespaceName);
         cmdKubeClient(namespaceName).delete(POSTGRES_FILE_PATH);
         kubeClient().deleteSecret(namespaceName, POSTGRES_SECRET_NAME);
         DeploymentUtils.waitForDeploymentDeletion(namespaceName, "postgres");

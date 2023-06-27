@@ -47,11 +47,11 @@ public class MetricsUtils {
         executableCommand.addAll(command);
 
         Exec exec = new Exec();
-        // 20 seconds should be enough for collect data from the pod
+        // 20 seconds should be enough for collect data from the Pod
         int ret = exec.execute(null, executableCommand, 20_000);
 
         synchronized (LOCK) {
-            LOGGER.info("Metrics collection for pod {} return code - {}", podName, ret);
+            LOGGER.info("Metrics collection for Pod: {}/{} return code - {}", namespace, podName, ret);
         }
 
         assertThat("Collected metrics should not be empty", exec.out(), not(emptyString()));

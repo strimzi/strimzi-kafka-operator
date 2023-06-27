@@ -43,7 +43,7 @@ public class TopicScalabilityIsolatedST extends AbstractST {
                 NUMBER_OF_TOPICS, 4, 3, 2);
         KafkaTopicScalabilityUtils.waitForTopicsReady(clusterOperator.getDeploymentNamespace(), topicPrefix, NUMBER_OF_TOPICS);
 
-        LOGGER.info("Verifying that we've created {} topics", NUMBER_OF_TOPICS);
+        LOGGER.info("Verifying that we've created {} Topics", NUMBER_OF_TOPICS);
         assertThat(KafkaTopicUtils.getAllKafkaTopicsWithPrefix(clusterOperator.getDeploymentNamespace(), topicPrefix).size(), is(NUMBER_OF_TOPICS));
     }
 
@@ -121,7 +121,7 @@ public class TopicScalabilityIsolatedST extends AbstractST {
     @BeforeAll
     void setup(ExtensionContext extensionContext) {
         clusterOperator.defaultInstallation(extensionContext).createInstallation().runInstallation();
-        LOGGER.info("Deploying shared Kafka across all test cases in {} namespace", clusterOperator.getDeploymentNamespace());
+        LOGGER.info("Deploying shared Kafka across all test cases in Namespace: {}", clusterOperator.getDeploymentNamespace());
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(sharedClusterName, 3, 1)
             .editMetadata()
                 .withNamespace(INFRA_NAMESPACE)

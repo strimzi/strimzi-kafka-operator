@@ -40,7 +40,7 @@ public class RoleBindingResource implements ResourceType<RoleBinding> {
     }
 
     public static void roleBinding(ExtensionContext extensionContext, String yamlPath, String namespace, String clientNamespace) {
-        LOGGER.info("Creating RoleBinding in test case {} from {} in namespace {}",
+        LOGGER.info("Creating RoleBinding in test case {} from {} in Namespace: {}",
                 extensionContext.getDisplayName(), yamlPath, namespace);
         RoleBinding roleBinding = getRoleBindingFromYaml(yamlPath);
 

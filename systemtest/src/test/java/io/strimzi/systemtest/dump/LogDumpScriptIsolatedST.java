@@ -80,7 +80,7 @@ public class LogDumpScriptIsolatedST extends AbstractST {
         assertThat("Output directory created in dry mode", Files.notExists(Paths.get(outPath)));
         
         // partition dump
-        LOGGER.info("Dump topic partition from cluster {}/{}", testStorage.getNamespaceName(), testStorage.getClusterName());
+        LOGGER.info("Dump Topic partition from cluster {}/{}", testStorage.getNamespaceName(), testStorage.getClusterName());
         String[] dumpPartCmd = new String[] {
             USER_PATH + "/../tools/log-dump/run.sh", "partition", "--namespace", testStorage.getNamespaceName(), "--cluster",
             testStorage.getClusterName(), "--topic", testStorage.getTopicName(), "--partition", partitionNumber, "--out-path", outPath

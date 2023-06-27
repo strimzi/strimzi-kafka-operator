@@ -154,7 +154,7 @@ public abstract class TracingAbstractST extends AbstractST {
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(kafkaClusterSourceName, 3, 1).build());
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(kafkaClusterTargetName, 3, 1).build());
 
-        // Create topic and deploy clients before Mirror Maker to not wait for MM to find the new topics
+        // Create topic and deploy clients before MirrorMaker to not wait for MM to find the new topics
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(kafkaClusterSourceName, storageMap.get(extensionContext).getTopicName())
             .editSpec()
                 .withReplicas(3)
@@ -169,7 +169,7 @@ public abstract class TracingAbstractST extends AbstractST {
             .endSpec()
             .build());
 
-        LOGGER.info("Setting for kafka source plain bootstrap:{}", KafkaResources.plainBootstrapAddress(kafkaClusterSourceName));
+        LOGGER.info("Setting for Kafka source plain bootstrap: {}", KafkaResources.plainBootstrapAddress(kafkaClusterSourceName));
 
         KafkaTracingClients sourceKafkaTracingClient = new KafkaTracingClientsBuilder((KafkaTracingClients) storageMap.get(extensionContext).retrieveFromTestStorage(KAFKA_TRACING_CLIENT_KEY))
             .withTopicName(storageMap.get(extensionContext).getTopicName())
@@ -178,7 +178,7 @@ public abstract class TracingAbstractST extends AbstractST {
 
         resourceManager.createResource(extensionContext, sourceKafkaTracingClient.producerWithTracing());
 
-        LOGGER.info("Setting for kafka target plain bootstrap:{}", KafkaResources.plainBootstrapAddress(kafkaClusterTargetName));
+        LOGGER.info("Setting for Kafka target plain bootstrap: {}", KafkaResources.plainBootstrapAddress(kafkaClusterTargetName));
 
         final KafkaTracingClients targetKafkaTracingClient = new KafkaTracingClientsBuilder((KafkaTracingClients) storageMap.get(extensionContext).retrieveFromTestStorage(KAFKA_TRACING_CLIENT_KEY))
             .withBootstrapAddress(KafkaResources.plainBootstrapAddress(kafkaClusterTargetName))
@@ -244,7 +244,7 @@ public abstract class TracingAbstractST extends AbstractST {
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(kafkaClusterSourceName, 3, 1).build());
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(kafkaClusterTargetName, 3, 1).build());
 
-        // Create topic and deploy clients before Mirror Maker to not wait for MM to find the new topics
+        // Create topic and deploy clients before MirrorMaker to not wait for MM to find the new topics
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(kafkaClusterSourceName, storageMap.get(extensionContext).getTopicName())
             .editSpec()
                 .withReplicas(3)
@@ -260,7 +260,7 @@ public abstract class TracingAbstractST extends AbstractST {
             .endSpec()
             .build());
 
-        LOGGER.info("Setting for kafka source plain bootstrap:{}", KafkaResources.plainBootstrapAddress(kafkaClusterSourceName));
+        LOGGER.info("Setting for Kafka source plain bootstrap: {}", KafkaResources.plainBootstrapAddress(kafkaClusterSourceName));
 
         final KafkaTracingClients sourceKafkaTracingClient =
             new KafkaTracingClientsBuilder((KafkaTracingClients) storageMap.get(extensionContext).retrieveFromTestStorage(KAFKA_TRACING_CLIENT_KEY))
@@ -269,7 +269,7 @@ public abstract class TracingAbstractST extends AbstractST {
 
         resourceManager.createResource(extensionContext, sourceKafkaTracingClient.producerWithTracing());
 
-        LOGGER.info("Setting for kafka target plain bootstrap:{}", KafkaResources.plainBootstrapAddress(kafkaClusterTargetName));
+        LOGGER.info("Setting for Kafka target plain bootstrap: {}", KafkaResources.plainBootstrapAddress(kafkaClusterTargetName));
 
         KafkaTracingClients targetKafkaTracingClient =  new KafkaTracingClientsBuilder((KafkaTracingClients) storageMap.get(extensionContext).retrieveFromTestStorage(KAFKA_TRACING_CLIENT_KEY))
             .withBootstrapAddress(KafkaResources.plainBootstrapAddress(kafkaClusterTargetName))
@@ -322,7 +322,7 @@ public abstract class TracingAbstractST extends AbstractST {
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(storageMap.get(extensionContext).getClusterName(), 3, 1).build());
 
-        // Create topic and deploy clients before Mirror Maker to not wait for MM to find the new topics
+        // Create topic and deploy clients before MirrorMaker to not wait for MM to find the new topics
         resourceManager.createResource(extensionContext,
             KafkaTopicTemplates.topic(storageMap.get(extensionContext).getClusterName(),
                     storageMap.get(extensionContext).getTopicName())
@@ -594,11 +594,11 @@ public abstract class TracingAbstractST extends AbstractST {
                 String jaegerOperator = Files.readString(Paths.get(jaegerOperatorPath)).replace("observability", this.clusterOperator.getDeploymentNamespace());
 
                 this.jaegerConfigs = jaegerOperator;
-                LOGGER.info("Creating Jaeger operator (and needed resources) from {}", jaegerOperatorPath);
+                LOGGER.info("Creating Jaeger Operator (and needed resources) from {}", jaegerOperatorPath);
                 cmdKubeClient(this.clusterOperator.getDeploymentNamespace()).applyContent(jaegerOperator);
                 return true;
             } catch (Exception e) {
-                LOGGER.error("{} - Exception {} has been thrown during Jaeger deployment" + e.getMessage());
+                LOGGER.error("{} - Exception {} has been thrown during Jaeger Deployment" + e.getMessage());
                 return false;
             }
         });
@@ -607,7 +607,7 @@ public abstract class TracingAbstractST extends AbstractST {
     }
 
     private void deployJaegerOperator(final ExtensionContext extensionContext) {
-        LOGGER.info("=== Applying jaeger operator install files ===");
+        LOGGER.info("=== Applying Jaeger Operator install files ===");
 
         this.deployJaegerContent(extensionContext);
 

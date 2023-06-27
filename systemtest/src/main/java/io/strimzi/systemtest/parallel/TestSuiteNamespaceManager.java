@@ -55,7 +55,7 @@ public class TestSuiteNamespaceManager {
 
                 extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.NAMESPACE_KEY, namespaceTestCase);
                 // create namespace by
-                LOGGER.info("Creating namespace:{} for test case:{}", namespaceTestCase, testCase);
+                LOGGER.info("Creating Namespace: {} for TestCase: {}", namespaceTestCase, testCase);
 
                 KubeClusterResource.getInstance().createNamespace(CollectorElement.createCollectorElement(extensionContext.getRequiredTestClass().getName(), extensionContext.getRequiredTestMethod().getName()), namespaceTestCase);
                 NetworkPolicyResource.applyDefaultNetworkPolicySettings(extensionContext, Collections.singletonList(namespaceTestCase));
@@ -76,7 +76,7 @@ public class TestSuiteNamespaceManager {
             if (!Environment.isNamespaceRbacScope()) {
                 final String namespaceToDelete = extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
 
-                LOGGER.info("Deleting namespace:{} for test case:{}", namespaceToDelete, extensionContext.getDisplayName());
+                LOGGER.info("Deleting Namespace: {} for TestCase: {}", namespaceToDelete, extensionContext.getDisplayName());
                 KubeClusterResource.getInstance().deleteNamespace(CollectorElement.createCollectorElement(extensionContext.getRequiredTestClass().getName(), extensionContext.getRequiredTestMethod().getName()), namespaceToDelete);
             }
         }

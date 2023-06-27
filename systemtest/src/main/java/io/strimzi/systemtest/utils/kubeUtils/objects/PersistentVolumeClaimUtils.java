@@ -30,8 +30,8 @@ public class PersistentVolumeClaimUtils {
     private PersistentVolumeClaimUtils() { }
 
     public static void waitUntilPVCLabelsChange(String namespaceName, String clusterName, Map<String, String> newLabels, String labelKey) {
-        LOGGER.info("Wait until PVC labels will change {}", newLabels.toString());
-        TestUtils.waitFor("PVC labels will change {}", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_STATUS_TIMEOUT,
+        LOGGER.info("Waiting for PVC labels to change {}", newLabels.toString());
+        TestUtils.waitFor("PVC labels to change -> " + newLabels.toString(), Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_STATUS_TIMEOUT,
             () -> {
                 List<Boolean> allPvcsHasLabelsChanged =
                     kubeClient(namespaceName).listPersistentVolumeClaims(namespaceName, clusterName).stream()
@@ -41,17 +41,17 @@ public class PersistentVolumeClaimUtils {
                         .map(persistentVolumeClaim -> persistentVolumeClaim.getMetadata().getLabels().get(labelKey).equals(newLabels.get(labelKey)))
                         .collect(Collectors.toList());
 
-                LOGGER.debug("Labels are changed:{}", allPvcsHasLabelsChanged.toString());
+                LOGGER.debug("Labels changed: {}", allPvcsHasLabelsChanged.toString());
 
                 // all must be TRUE...
                 return allPvcsHasLabelsChanged.size() > 0 && !allPvcsHasLabelsChanged.contains(Boolean.FALSE);
             });
-        LOGGER.info("PVC labels has changed {}", newLabels.toString());
+        LOGGER.info("PVC labels changed {}", newLabels.toString());
     }
 
     public static void waitUntilPVCAnnotationChange(String namespaceName, String clusterName, Map<String, String> newAnnotation, String annotationKey) {
-        LOGGER.info("Wait until PVC annotation will change {}", newAnnotation.toString());
-        TestUtils.waitFor("PVC labels will change {}", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_STATUS_TIMEOUT,
+        LOGGER.info("Waiting for PVC annotation to change {}", newAnnotation.toString());
+        TestUtils.waitFor("PVC labels to change -> " + newAnnotation.toString(), Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_STATUS_TIMEOUT,
             () -> {
                 List<Boolean> allPvcsHasLabelsChanged =
                     kubeClient(namespaceName).listPersistentVolumeClaims(namespaceName, clusterName).stream()
@@ -61,18 +61,18 @@ public class PersistentVolumeClaimUtils {
                         .map(persistentVolumeClaim -> persistentVolumeClaim.getMetadata().getAnnotations().get(annotationKey).equals(newAnnotation.get(annotationKey)))
                         .collect(Collectors.toList());
 
-                LOGGER.debug("Annotations are changed:{}", allPvcsHasLabelsChanged.toString());
+                LOGGER.debug("Annotations changed: {}", allPvcsHasLabelsChanged.toString());
 
                 // all must be TRUE...
                 return allPvcsHasLabelsChanged.size() > 0 && !allPvcsHasLabelsChanged.contains(Boolean.FALSE);
             });
-        LOGGER.info("PVC annotation has changed {}", newAnnotation.toString());
+        LOGGER.info("PVC annotation changed {}", newAnnotation.toString());
     }
 
     public static void waitForPersistentVolumeClaimDeletion(String namespaceName, String pvcName) {
-        TestUtils.waitFor("Wait for PVC deletion", Constants.POLL_INTERVAL_FOR_RESOURCE_DELETION, Constants.GLOBAL_TIMEOUT_SHORT, () -> {
+        TestUtils.waitFor("PVC deletion", Constants.POLL_INTERVAL_FOR_RESOURCE_DELETION, Constants.GLOBAL_TIMEOUT_SHORT, () -> {
             if (kubeClient().getPersistentVolumeClaim(namespaceName, pvcName) != null) {
-                LOGGER.warn("PVC {}/{} is not deleted yet! Triggering force delete by cmd client!", namespaceName, pvcName);
+                LOGGER.warn("PVC: {}/{} has not been deleted yet! Triggering force delete using cmd client!", namespaceName, pvcName);
                 cmdKubeClient(namespaceName).deleteByName("pvc", pvcName);
                 return false;
             }
@@ -82,8 +82,8 @@ public class PersistentVolumeClaimUtils {
     }
 
     public static void waitForPersistentVolumeClaimDeletion(TestStorage testStorage, int expectedNum) {
-        LOGGER.info("Waiting till PVC under cluster:{} and namesapce:{} reach expected number:{}", testStorage.getClusterName(), testStorage.getNamespaceName(), expectedNum);
-        TestUtils.waitFor("PVC created/deleted", Constants.GLOBAL_POLL_INTERVAL_MEDIUM, Constants.GLOBAL_TIMEOUT,
+        LOGGER.info("Waiting for PVC(s): {}/{} to reach expected amount: {}", testStorage.getClusterName(), testStorage.getNamespaceName(), expectedNum);
+        TestUtils.waitFor("PVC(s) to be created/deleted", Constants.GLOBAL_POLL_INTERVAL_MEDIUM, Constants.GLOBAL_TIMEOUT,
             () -> KubeClusterResource.kubeClient().listPersistentVolumeClaims(testStorage.getNamespaceName(), testStorage.getClusterName()).stream()
                 .filter(pvc -> pvc.getMetadata().getName().contains("data-" + testStorage.getKafkaStatefulSetName())).collect(Collectors.toList()).size() == expectedNum
         );
@@ -94,7 +94,7 @@ public class PersistentVolumeClaimUtils {
             singleVolumeStorage -> ((PersistentClaimStorage) singleVolumeStorage).isDeleteClaim()
         ).collect(Collectors.toList()).size();
 
-        TestUtils.waitFor("Wait for JBOD storage deletion", Constants.POLL_INTERVAL_FOR_RESOURCE_DELETION, Duration.ofMinutes(6).toMillis(), () -> {
+        TestUtils.waitFor("JBOD storage deletion", Constants.POLL_INTERVAL_FOR_RESOURCE_DELETION, Duration.ofMinutes(6).toMillis(), () -> {
             List<String> pvcs = kubeClient(namespaceName).listPersistentVolumeClaims(namespaceName, clusterName).stream()
                 .filter(pvc -> pvc.getMetadata().getName().contains(clusterName))
                 .map(pvc -> pvc.getMetadata().getName())
