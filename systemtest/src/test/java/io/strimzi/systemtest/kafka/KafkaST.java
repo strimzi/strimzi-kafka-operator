@@ -955,9 +955,9 @@ class KafkaST extends AbstractST {
 
         resourceManager.createResource(extensionContext, false, KafkaTemplates.kafkaEphemeral(clusterName, 1, 1)
                 .editSpec()
-                .editKafka()
-                .withVersion(nonExistingVersion)
-                .endKafka()
+                    .editKafka()
+                        .withVersion(nonExistingVersion)
+                    .endKafka()
                 .endSpec()
                 .build());
 
