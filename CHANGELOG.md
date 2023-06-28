@@ -4,6 +4,7 @@
 
 * Add support for Apache Kafka 3.4.1 and 3.5.0, and remove support for 3.3.1 and 3.3.2
 * Enable SCRAM-SHA authentication in KRaft mode (supported in Apache Kafka 3.5.0 and newer)
+* Add support for insecure flag in Maven artifacts in Kafka Connect Build
 * Update Kafka Exporter to [1.7.0](https://github.com/danielqsj/kafka_exporter/releases/tag/v1.7.0)
 * Improve Kafka rolling update to avoid rolling broker in log recovery
 * Added support for Kafka Exporter topic exclude and consumer group exclude parameters

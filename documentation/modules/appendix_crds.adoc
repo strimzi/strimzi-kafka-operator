@@ -2270,6 +2270,8 @@ It must have the value `maven` for the type `MavenArtifact`.
 |string
 |version     1.2+<.<a|Maven version number. Applicable to the `maven` artifact type only.
 |string
+|insecure    1.2+<.<a|By default, connections using TLS are verified to check they are secure. The server certificate used must be valid, trusted, and contain the server name. By setting this option to `true`, all TLS verification is disabled and the artifacts will be downloaded, even when the server is considered insecure.
+|boolean
 |type        1.2+<.<a|Must be `maven`.
 |string
 |====
