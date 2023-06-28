@@ -173,8 +173,7 @@ public class KafkaStatusTest {
         // Mock the Kafka Operator
         CrdOperator<KubernetesClient, Kafka, KafkaList> mockKafkaOps = supplier.kafkaOperator;
 
-        when(mockKafkaOps.getAsync(eq(namespace), eq(clusterName))).thenReturn(Future.succeededFuture(getKafkaCrd()));
-        when(mockKafkaOps.get(eq(namespace), eq(clusterName))).thenReturn(kafka);
+        when(mockKafkaOps.getAsync(eq(namespace), eq(clusterName))).thenReturn(Future.succeededFuture(kafka));
 
         ArgumentCaptor<Kafka> kafkaCaptor = ArgumentCaptor.forClass(Kafka.class);
         when(mockKafkaOps.updateStatusAsync(any(), kafkaCaptor.capture())).thenReturn(Future.succeededFuture());
@@ -186,21 +185,20 @@ public class KafkaStatusTest {
                 config);
 
         Checkpoint async = context.checkpoint();
-        kao.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName)).onComplete(res -> {
-            assertThat(res.succeeded(), is(true));
+        kao.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, namespace, clusterName))
+            .onComplete(context.succeeding(pfa -> context.verify(() -> {
+                assertThat(kafkaCaptor.getValue(), is(notNullValue()));
+                assertThat(kafkaCaptor.getValue().getStatus(), is(notNullValue()));
+                KafkaStatus status = kafkaCaptor.getValue().getStatus();
 
-            assertThat(kafkaCaptor.getValue(), is(notNullValue()));
-            assertThat(kafkaCaptor.getValue().getStatus(), is(notNullValue()));
-            KafkaStatus status = kafkaCaptor.getValue().getStatus();
+                assertThat(status.getConditions().size(), is(1));
+                assertThat(status.getConditions().get(0).getStatus(), is("True"));
+                assertThat(status.getConditions().get(0).getType(), is("ReconciliationPaused"));
+                assertThat(status.getObservedGeneration(), is(1L));
+                assertThat(status.getClusterId(), is("my-cluster-id"));
 
-            assertThat(status.getConditions().size(), is(1));
-            assertThat(status.getConditions().get(0).getStatus(), is("True"));
-            assertThat(status.getConditions().get(0).getType(), is("ReconciliationPaused"));
-            assertThat(status.getObservedGeneration(), is(1L));
-            assertThat(status.getClusterId(), is("my-cluster-id"));
-
-            async.flag();
-        });
+                async.flag();
+            })));
     }
 
     @Test
@@ -397,7 +395,6 @@ public class KafkaStatusTest {
         CrdOperator<KubernetesClient, Kafka, KafkaList> mockKafkaOps = supplier.kafkaOperator;
 
         when(mockKafkaOps.getAsync(eq(namespace), eq(clusterName))).thenReturn(Future.succeededFuture(kafka));
-        when(mockKafkaOps.get(eq(namespace), eq(clusterName))).thenReturn(kafka);
 
         ArgumentCaptor<Kafka> kafkaCaptor = ArgumentCaptor.forClass(Kafka.class);
         when(mockKafkaOps.updateStatusAsync(any(), kafkaCaptor.capture())).thenReturn(Future.succeededFuture());
@@ -435,7 +432,6 @@ public class KafkaStatusTest {
         CrdOperator<KubernetesClient, Kafka, KafkaList> mockKafkaOps = supplier.kafkaOperator;
 
         when(mockKafkaOps.getAsync(eq(namespace), eq(clusterName))).thenReturn(Future.succeededFuture(kafka));
-        when(mockKafkaOps.get(eq(namespace), eq(clusterName))).thenReturn(kafka);
 
         ArgumentCaptor<Kafka> kafkaCaptor = ArgumentCaptor.forClass(Kafka.class);
         when(mockKafkaOps.updateStatusAsync(any(), kafkaCaptor.capture())).thenReturn(Future.succeededFuture());

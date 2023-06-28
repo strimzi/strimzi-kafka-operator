@@ -170,7 +170,6 @@ public abstract class AbstractOperator<
      * @return A Future which is completed with the result of the reconciliation.
      */
     @Override
-    @SuppressWarnings("unchecked")
     public final Future<Void> reconcile(Reconciliation reconciliation) {
         String namespace = reconciliation.namespace();
         String name = reconciliation.name();
@@ -178,122 +177,135 @@ public abstract class AbstractOperator<
         metrics().reconciliationsCounter(reconciliation.namespace()).increment();
         Timer.Sample reconciliationTimerSample = Timer.start(metrics().metricsProvider().meterRegistry());
 
-        Future<Void> handler = withLock(reconciliation, LOCK_TIMEOUT_MS, () -> {
-            T cr = resourceOperator.get(namespace, name);
-
-            if (cr != null) {
-                if (!Util.matchesSelector(selector(), cr))  {
-                    // When the labels matching the selector are removed from the custom resource, a DELETE event is
-                    // triggered by the watch even through the custom resource might not match the watch labels anymore
-                    // and might not be really deleted. We have to filter these situations out and ignore the
-                    // reconciliation because such resource might be already operated by another instance (where the
-                    // same change triggered ADDED event).
-                    LOGGER.debugCr(reconciliation, "{} {} in namespace {} does not match label selector {} and will be ignored", kind(), name, namespace, selector().get().getMatchLabels());
-                    return Future.succeededFuture();
-                }
-
-                Promise<Void> createOrUpdate = Promise.promise();
-                if (Annotations.isReconciliationPausedWithAnnotation(cr)) {
-                    S status = createStatus(cr);
-                    Set<Condition> conditions = StatusUtils.validate(reconciliation, cr);
-                    conditions.add(StatusUtils.getPausedCondition());
-                    status.setConditions(new ArrayList<>(conditions));
-                    status.setObservedGeneration(cr.getStatus() != null ? cr.getStatus().getObservedGeneration() : 0);
-
-                    updateStatus(reconciliation, status).onComplete(statusResult -> {
-                        if (statusResult.succeeded()) {
-                            createOrUpdate.complete();
-                        } else {
-                            createOrUpdate.fail(statusResult.cause());
-                        }
-                    });
-                    metrics().pausedResourceCounter(namespace).getAndIncrement();
-                    LOGGER.infoCr(reconciliation, "Reconciliation of {} {} is paused", kind, name);
-                    return createOrUpdate.future();
-                } else if (cr.getSpec() == null) {
-                    InvalidResourceException exception = new InvalidResourceException("Spec cannot be null");
-
-                    S status = createStatus(cr);
-                    Condition errorCondition = new ConditionBuilder()
-                            .withLastTransitionTime(StatusUtils.iso8601Now())
-                            .withType("NotReady")
-                            .withStatus("True")
-                            .withReason(exception.getClass().getSimpleName())
-                            .withMessage(exception.getMessage())
-                            .build();
-                    status.setObservedGeneration(cr.getMetadata().getGeneration());
-                    status.addCondition(errorCondition);
-
-                    LOGGER.errorCr(reconciliation, "{} spec cannot be null", cr.getMetadata().getName());
-                    updateStatus(reconciliation, status).onComplete(notUsed -> {
-                        createOrUpdate.fail(exception);
-                    });
-
-                    return createOrUpdate.future();
-                }
-
-                Set<Condition> unknownAndDeprecatedConditions = StatusUtils.validate(reconciliation, cr);
-
-                LOGGER.infoCr(reconciliation, "{} {} will be checked for creation or modification", kind, name);
-
-                createOrUpdate(reconciliation, cr)
-                        .onComplete(res -> {
-                            if (res.succeeded()) {
-                                S status = res.result();
-
-                                StatusUtils.addConditionsToStatus(status, unknownAndDeprecatedConditions);
-                                updateStatus(reconciliation, status).onComplete(statusResult -> {
-                                    if (statusResult.succeeded()) {
-                                        createOrUpdate.complete();
-                                    } else {
-                                        createOrUpdate.fail(statusResult.cause());
-                                    }
-                                });
-                            } else {
-                                if (res.cause() instanceof ReconciliationException) {
-                                    ReconciliationException e = (ReconciliationException) res.cause();
-                                    Status status = e.getStatus();
-                                    StatusUtils.addConditionsToStatus(status, unknownAndDeprecatedConditions);
-
-                                    LOGGER.errorCr(reconciliation, "createOrUpdate failed", e.getCause());
-
-                                    updateStatus(reconciliation, (S) status).onComplete(statusResult -> {
-                                        createOrUpdate.fail(e.getCause());
-                                    });
-                                } else {
-                                    LOGGER.errorCr(reconciliation, "createOrUpdate failed", res.cause());
-                                    createOrUpdate.fail(res.cause());
-                                }
-                            }
-                        });
-
-                return createOrUpdate.future();
-            } else {
-                LOGGER.infoCr(reconciliation, "{} {} should be deleted", kind, name);
-                return delete(reconciliation).map(deleteResult -> {
-                    if (deleteResult) {
-                        LOGGER.infoCr(reconciliation, "{} {} deleted", kind, name);
-                    } else {
-                        LOGGER.infoCr(reconciliation, "Assembly {} or some parts of it will be deleted by garbage collection", name);
-                    }
-                    return (Void) null;
-                }).recover(deleteResult -> {
-                    LOGGER.errorCr(reconciliation, "Deletion of {} {} failed", kind, name, deleteResult);
-                    return Future.failedFuture(deleteResult);
-                });
-            }
-        });
+        Future<Void> handler = withLock(reconciliation, LOCK_TIMEOUT_MS, () ->
+            resourceOperator.getAsync(namespace, name)
+                .compose(cr -> cr != null ? reconcileResource(reconciliation, cr) : reconcileDeletion(reconciliation)));
 
         Promise<Void> result = Promise.promise();
-        handler.onComplete(reconcileResult -> {
-            try {
-                handleResult(reconciliation, reconcileResult, reconciliationTimerSample);
-            } finally {
-                result.handle(reconcileResult);
+        handler.onComplete(reconcileResult ->
+            callSafely(reconciliation, () -> handleResult(reconciliation, reconcileResult, reconciliationTimerSample))
+                .onComplete(handleSafely(reconciliation, ignored -> result.handle(reconcileResult))));
+
+        return result.future();
+    }
+
+    /**
+     * Reconcile assembly resources in the namespace given by {@code reconciliation} having the name
+     * give by {@code reconciliation}.
+     *
+     * Reconciliation works by comparing the assembly resource given by the {@code cr} parameter
+     * (e.g. a {@code KafkaUser} resource) with the corresponding resource(s) in the cluster.
+     *
+     * @param reconciliation The reconciliation.
+     * @param cr The custom resource
+     * @return A Future which is completed with the result of the reconciliation.
+     */
+    Future<Void> reconcileResource(Reconciliation reconciliation, T cr) {
+        String namespace = reconciliation.namespace();
+        String name = reconciliation.name();
+
+        if (!Util.matchesSelector(selector(), cr))  {
+            // When the labels matching the selector are removed from the custom resource, a DELETE event is
+            // triggered by the watch even through the custom resource might not match the watch labels anymore
+            // and might not be really deleted. We have to filter these situations out and ignore the
+            // reconciliation because such resource might be already operated by another instance (where the
+            // same change triggered ADDED event).
+            LOGGER.debugCr(reconciliation, "{} {} in namespace {} does not match label selector {} and will be ignored", kind(), name, namespace, selector().get().getMatchLabels());
+            return Future.succeededFuture();
+        }
+
+        Promise<Void> createOrUpdate = Promise.promise();
+        if (Annotations.isReconciliationPausedWithAnnotation(cr)) {
+            S status = createStatus(cr);
+            Set<Condition> conditions = StatusUtils.validate(reconciliation, cr);
+            conditions.add(StatusUtils.getPausedCondition());
+            status.setConditions(new ArrayList<>(conditions));
+            status.setObservedGeneration(cr.getStatus() != null ? cr.getStatus().getObservedGeneration() : 0);
+
+            updateStatus(reconciliation, status).onComplete(statusResult -> {
+                if (statusResult.succeeded()) {
+                    createOrUpdate.complete();
+                } else {
+                    createOrUpdate.fail(statusResult.cause());
+                }
+            });
+            metrics().pausedResourceCounter(namespace).getAndIncrement();
+            LOGGER.infoCr(reconciliation, "Reconciliation of {} {} is paused", kind, name);
+            return createOrUpdate.future();
+        } else if (cr.getSpec() == null) {
+            InvalidResourceException exception = new InvalidResourceException("Spec cannot be null");
+
+            S status = createStatus(cr);
+            Condition errorCondition = new ConditionBuilder()
+                    .withLastTransitionTime(StatusUtils.iso8601Now())
+                    .withType("NotReady")
+                    .withStatus("True")
+                    .withReason(exception.getClass().getSimpleName())
+                    .withMessage(exception.getMessage())
+                    .build();
+            status.setObservedGeneration(cr.getMetadata().getGeneration());
+            status.addCondition(errorCondition);
+
+            LOGGER.errorCr(reconciliation, "{} spec cannot be null", cr.getMetadata().getName());
+            updateStatus(reconciliation, status).onComplete(notUsed -> createOrUpdate.fail(exception));
+
+            return createOrUpdate.future();
+        }
+
+        Set<Condition> unknownAndDeprecatedConditions = StatusUtils.validate(reconciliation, cr);
+
+        LOGGER.infoCr(reconciliation, "{} {} will be checked for creation or modification", kind, name);
+
+        createOrUpdate(reconciliation, cr).onComplete(res -> {
+            if (res.succeeded()) {
+                S status = res.result();
+
+                StatusUtils.addConditionsToStatus(status, unknownAndDeprecatedConditions);
+                updateStatus(reconciliation, status).onComplete(statusResult -> {
+                    if (statusResult.succeeded()) {
+                        createOrUpdate.complete();
+                    } else {
+                        createOrUpdate.fail(statusResult.cause());
+                    }
+                });
+            } else if (res.cause() instanceof ReconciliationException e) {
+                @SuppressWarnings("unchecked")
+                S status = (S) e.getStatus();
+                StatusUtils.addConditionsToStatus(status, unknownAndDeprecatedConditions);
+
+                LOGGER.errorCr(reconciliation, "createOrUpdate failed", e.getCause());
+                updateStatus(reconciliation, status).onComplete(statusResult -> createOrUpdate.fail(e.getCause()));
+            } else {
+                LOGGER.errorCr(reconciliation, "createOrUpdate failed", res.cause());
+                createOrUpdate.fail(res.cause());
             }
         });
 
-        return result.future();
+        return createOrUpdate.future();
+    }
+
+    /**
+     * Delete assembly resources in the namespace given by {@code reconciliation} having the name
+     * give by {@code reconciliation}.
+     *
+     * @param reconciliation The reconciliation.
+     * @return A Future which is completed with the result of the reconciliation.
+     */
+    Future<Void> reconcileDeletion(Reconciliation reconciliation) {
+        String name = reconciliation.name();
+        LOGGER.infoCr(reconciliation, "{} {} should be deleted", kind, name);
+
+        return delete(reconciliation).<Void>map(deleteResult -> {
+            if (deleteResult) {
+                LOGGER.infoCr(reconciliation, "{} {} deleted", kind, name);
+            } else {
+                LOGGER.infoCr(reconciliation, "Assembly {} or some parts of it will be deleted by garbage collection", name);
+            }
+            return null;
+        }).recover(deleteResult -> {
+            LOGGER.errorCr(reconciliation, "Deletion of {} {} failed", kind, name, deleteResult);
+            return Future.failedFuture(deleteResult);
+        });
     }
 
     /**
@@ -500,29 +512,40 @@ public abstract class AbstractOperator<
     /**
      * Log the reconciliation outcome.
      */
-    private void handleResult(Reconciliation reconciliation, AsyncResult<Void> result, Timer.Sample reconciliationTimerSample) {
+    private Future<Void> handleResult(Reconciliation reconciliation, AsyncResult<Void> result, Timer.Sample reconciliationTimerSample) {
+        Promise<Void> handlingResult = Promise.promise();
+
         if (result.succeeded()) {
-            updateResourceState(reconciliation, true, null);
-            metrics().successfulReconciliationsCounter(reconciliation.namespace()).increment();
-            reconciliationTimerSample.stop(metrics().reconciliationsTimer(reconciliation.namespace()));
-            LOGGER.infoCr(reconciliation, "reconciled");
+            updateResourceState(reconciliation, true, null).onComplete(stateUpdateResult -> {
+                metrics().successfulReconciliationsCounter(reconciliation.namespace()).increment();
+                reconciliationTimerSample.stop(metrics().reconciliationsTimer(reconciliation.namespace()));
+                LOGGER.infoCr(reconciliation, "reconciled");
+                handlingResult.handle(stateUpdateResult);
+            });
         } else {
             Throwable cause = result.cause();
 
             if (cause instanceof InvalidConfigParameterException) {
-                updateResourceState(reconciliation, false, cause);
-                metrics().failedReconciliationsCounter(reconciliation.namespace()).increment();
-                reconciliationTimerSample.stop(metrics().reconciliationsTimer(reconciliation.namespace()));
-                LOGGER.warnCr(reconciliation, "Failed to reconcile {}", cause.getMessage());
+                updateResourceState(reconciliation, false, cause).onComplete(stateUpdateResult -> {
+                    metrics().failedReconciliationsCounter(reconciliation.namespace()).increment();
+                    reconciliationTimerSample.stop(metrics().reconciliationsTimer(reconciliation.namespace()));
+                    LOGGER.warnCr(reconciliation, "Failed to reconcile {}", cause.getMessage());
+                    handlingResult.handle(stateUpdateResult);
+                });
             } else if (cause instanceof UnableToAcquireLockException) {
                 metrics().lockedReconciliationsCounter(reconciliation.namespace()).increment();
-            } else  {
-                updateResourceState(reconciliation, false, cause);
-                metrics().failedReconciliationsCounter(reconciliation.namespace()).increment();
-                reconciliationTimerSample.stop(metrics().reconciliationsTimer(reconciliation.namespace()));
-                LOGGER.warnCr(reconciliation, "Failed to reconcile", cause);
+                handlingResult.complete();
+            } else {
+                updateResourceState(reconciliation, false, cause).onComplete(stateUpdateResult -> {
+                    metrics().failedReconciliationsCounter(reconciliation.namespace()).increment();
+                    reconciliationTimerSample.stop(metrics().reconciliationsTimer(reconciliation.namespace()));
+                    LOGGER.warnCr(reconciliation, "Failed to reconcile", cause);
+                    handlingResult.handle(stateUpdateResult);
+                });
             }
         }
+
+        return handlingResult.future();
     }
 
     /**
@@ -532,7 +555,7 @@ public abstract class AbstractOperator<
      * @param reconciliation reconciliation to use to update the resource state metric
      * @param ready if reconcile was successful and the resource is ready
      */
-    private void updateResourceState(Reconciliation reconciliation, boolean ready, Throwable cause) {
+    private Future<Void> updateResourceState(Reconciliation reconciliation, boolean ready, Throwable cause) {
         String key = reconciliation.namespace() + ":" + reconciliation.kind() + "/" + reconciliation.name();
 
         Tags metricTags = Tags.of(
@@ -540,8 +563,6 @@ public abstract class AbstractOperator<
                     Tag.of("name", reconciliation.name()),
                     Tag.of("resource-namespace", reconciliation.namespace()),
                     Tag.of("reason", cause == null ? "none" : cause.getMessage() == null ? "unknown error" : cause.getMessage()));
-
-        T cr = resourceOperator.get(reconciliation.namespace(), reconciliation.name());
 
         Optional<Meter> metric = metrics().metricsProvider().meterRegistry().getMeters()
                 .stream()
@@ -558,12 +579,16 @@ public abstract class AbstractOperator<
             LOGGER.debugCr(reconciliation, "Removed metric " + METRICS_PREFIX + "resource.state{}", key);
         }
 
-        if (cr != null && Util.matchesSelector(selector(), cr)) {
-            resourcesStateCounter.computeIfAbsent(key, tags ->
-                    metrics().metricsProvider().gauge(METRICS_PREFIX + "resource.state", "Current state of the resource: 1 ready, 0 fail", metricTags)
-            );
-            resourcesStateCounter.get(key).set(ready ? 1 : 0);
-            LOGGER.debugCr(reconciliation, "Updated metric " + METRICS_PREFIX + "resource.state{} = {}", metricTags, ready ? 1 : 0);
-        }
+        return resourceOperator.getAsync(reconciliation.namespace(), reconciliation.name()).<Void>map(cr -> {
+            if (cr != null && Util.matchesSelector(selector(), cr)) {
+                resourcesStateCounter.computeIfAbsent(key, tags ->
+                        metrics().metricsProvider().gauge(METRICS_PREFIX + "resource.state", "Current state of the resource: 1 ready, 0 fail", metricTags)
+                );
+                resourcesStateCounter.get(key).set(ready ? 1 : 0);
+                LOGGER.debugCr(reconciliation, "Updated metric " + METRICS_PREFIX + "resource.state{} = {}", metricTags, ready ? 1 : 0);
+            }
+
+            return null;
+        });
     }
 }

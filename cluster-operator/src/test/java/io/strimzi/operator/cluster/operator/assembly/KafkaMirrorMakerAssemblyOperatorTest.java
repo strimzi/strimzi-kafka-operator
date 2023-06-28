@@ -232,7 +232,7 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
 
         ArgumentCaptor<PodDisruptionBudget> pdbCaptor = ArgumentCaptor.forClass(PodDisruptionBudget.class);
         when(mockPdbOps.reconcile(any(), anyString(), any(), pdbCaptor.capture())).thenReturn(Future.succeededFuture());
-        
+
         when(mockCmOps.reconcile(any(), anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new ConfigMap())));
         KafkaMirrorMakerAssemblyOperator ops = new KafkaMirrorMakerAssemblyOperator(vertx,
                 new PlatformFeaturesAvailability(true, kubernetesVersion),
@@ -580,9 +580,8 @@ public class KafkaMirrorMakerAssemblyOperatorTest {
 
         when(mockMirrorOps.listAsync(eq(kmmNamespace), any(Optional.class))).thenReturn(Future.succeededFuture(asList(foo, bar)));
         // when requested ConfigMap for a specific Kafka Mirror Maker cluster
-        when(mockMirrorOps.get(eq(kmmNamespace), eq("foo"))).thenReturn(foo);
-        when(mockMirrorOps.get(eq(kmmNamespace), eq("bar"))).thenReturn(bar);
-        when(mockMirrorOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture());
+        when(mockMirrorOps.getAsync(anyString(), eq("foo"))).thenReturn(Future.succeededFuture(foo));
+        when(mockMirrorOps.getAsync(anyString(), eq("bar"))).thenReturn(Future.succeededFuture(bar));
 
         // providing the list of ALL Deployments for all the Kafka Mirror Maker clusters
         Labels newLabels = Labels.forStrimziKind(KafkaMirrorMaker.RESOURCE_KIND);
