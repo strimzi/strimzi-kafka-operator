@@ -293,6 +293,11 @@ public class OperatorMetricsTest {
             }
 
             @Override
+            public Future getAsync(String namespace, String name) {
+                return Future.succeededFuture();
+            }
+
+            @Override
             public Future updateStatusAsync(Reconciliation reconciliation, HasMetadata resource) {
                 return null;
             }
@@ -511,6 +516,11 @@ public class OperatorMetricsTest {
                 foo.setMetadata(md);
 
                 return foo;
+            }
+
+            @Override
+            public Future getAsync(String namespace, String name) {
+                return Future.succeededFuture(get(namespace, name));
             }
         };
     }
