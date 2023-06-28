@@ -179,19 +179,22 @@ public class KafkaClusterTest {
         assertThat(headless.getSpec().getType(), is("ClusterIP"));
         assertThat(headless.getSpec().getClusterIP(), is("None"));
         assertThat(headless.getSpec().getSelector(), is(expectedSelectorLabels()));
-        assertThat(headless.getSpec().getPorts().size(), is(4));
+        assertThat(headless.getSpec().getPorts().size(), is(5));
         assertThat(headless.getSpec().getPorts().get(0).getName(), is(KafkaCluster.CONTROLPLANE_PORT_NAME));
         assertThat(headless.getSpec().getPorts().get(0).getPort(), is(KafkaCluster.CONTROLPLANE_PORT));
         assertThat(headless.getSpec().getPorts().get(0).getProtocol(), is("TCP"));
         assertThat(headless.getSpec().getPorts().get(1).getName(), is(KafkaCluster.REPLICATION_PORT_NAME));
         assertThat(headless.getSpec().getPorts().get(1).getPort(), is(KafkaCluster.REPLICATION_PORT));
         assertThat(headless.getSpec().getPorts().get(1).getProtocol(), is("TCP"));
-        assertThat(headless.getSpec().getPorts().get(2).getName(), is(ListenersUtils.BACKWARDS_COMPATIBLE_PLAIN_PORT_NAME));
-        assertThat(headless.getSpec().getPorts().get(2).getPort(), is(9092));
+        assertThat(headless.getSpec().getPorts().get(2).getName(), is(KafkaCluster.KAFKA_AGENT_PORT_NAME));
+        assertThat(headless.getSpec().getPorts().get(2).getPort(), is(KafkaCluster.KAFKA_AGENT_PORT));
         assertThat(headless.getSpec().getPorts().get(2).getProtocol(), is("TCP"));
-        assertThat(headless.getSpec().getPorts().get(3).getName(), is(ListenersUtils.BACKWARDS_COMPATIBLE_TLS_PORT_NAME));
-        assertThat(headless.getSpec().getPorts().get(3).getPort(), is(9093));
+        assertThat(headless.getSpec().getPorts().get(3).getName(), is(ListenersUtils.BACKWARDS_COMPATIBLE_PLAIN_PORT_NAME));
+        assertThat(headless.getSpec().getPorts().get(3).getPort(), is(9092));
         assertThat(headless.getSpec().getPorts().get(3).getProtocol(), is("TCP"));
+        assertThat(headless.getSpec().getPorts().get(4).getName(), is(ListenersUtils.BACKWARDS_COMPATIBLE_TLS_PORT_NAME));
+        assertThat(headless.getSpec().getPorts().get(4).getPort(), is(9093));
+        assertThat(headless.getSpec().getPorts().get(4).getProtocol(), is("TCP"));
         assertThat(headless.getSpec().getIpFamilyPolicy(), is(nullValue()));
         assertThat(headless.getSpec().getIpFamilies(), is(nullValue()));
 
@@ -443,22 +446,25 @@ public class KafkaClusterTest {
 
         assertThat(headless.getSpec().getType(), is("ClusterIP"));
         assertThat(headless.getSpec().getSelector(), is(expectedSelectorLabels()));
-        assertThat(headless.getSpec().getPorts().size(), is(5));
+        assertThat(headless.getSpec().getPorts().size(), is(6));
         assertThat(headless.getSpec().getPorts().get(0).getName(), is(KafkaCluster.CONTROLPLANE_PORT_NAME));
         assertThat(headless.getSpec().getPorts().get(0).getPort(), is(KafkaCluster.CONTROLPLANE_PORT));
         assertThat(headless.getSpec().getPorts().get(0).getProtocol(), is("TCP"));
         assertThat(headless.getSpec().getPorts().get(1).getName(), is(KafkaCluster.REPLICATION_PORT_NAME));
         assertThat(headless.getSpec().getPorts().get(1).getPort(), is(KafkaCluster.REPLICATION_PORT));
         assertThat(headless.getSpec().getPorts().get(1).getProtocol(), is("TCP"));
-        assertThat(headless.getSpec().getPorts().get(2).getName(), is(ListenersUtils.BACKWARDS_COMPATIBLE_PLAIN_PORT_NAME));
-        assertThat(headless.getSpec().getPorts().get(2).getPort(), is(9092));
+        assertThat(headless.getSpec().getPorts().get(2).getName(), is(KafkaCluster.KAFKA_AGENT_PORT_NAME));
+        assertThat(headless.getSpec().getPorts().get(2).getPort(), is(KafkaCluster.KAFKA_AGENT_PORT));
         assertThat(headless.getSpec().getPorts().get(2).getProtocol(), is("TCP"));
-        assertThat(headless.getSpec().getPorts().get(3).getName(), is(ListenersUtils.BACKWARDS_COMPATIBLE_TLS_PORT_NAME));
-        assertThat(headless.getSpec().getPorts().get(3).getPort(), is(9093));
+        assertThat(headless.getSpec().getPorts().get(3).getName(), is(ListenersUtils.BACKWARDS_COMPATIBLE_PLAIN_PORT_NAME));
+        assertThat(headless.getSpec().getPorts().get(3).getPort(), is(9092));
         assertThat(headless.getSpec().getPorts().get(3).getProtocol(), is("TCP"));
-        assertThat(headless.getSpec().getPorts().get(4).getName(), is(JmxModel.JMX_PORT_NAME));
-        assertThat(headless.getSpec().getPorts().get(4).getPort(), is(JmxModel.JMX_PORT));
+        assertThat(headless.getSpec().getPorts().get(4).getName(), is(ListenersUtils.BACKWARDS_COMPATIBLE_TLS_PORT_NAME));
+        assertThat(headless.getSpec().getPorts().get(4).getPort(), is(9093));
         assertThat(headless.getSpec().getPorts().get(4).getProtocol(), is("TCP"));
+        assertThat(headless.getSpec().getPorts().get(5).getName(), is(JmxModel.JMX_PORT_NAME));
+        assertThat(headless.getSpec().getPorts().get(5).getPort(), is(JmxModel.JMX_PORT));
+        assertThat(headless.getSpec().getPorts().get(5).getProtocol(), is("TCP"));
 
         assertThat(headless.getMetadata().getLabels().containsKey(Labels.STRIMZI_DISCOVERY_LABEL), is(false));
 

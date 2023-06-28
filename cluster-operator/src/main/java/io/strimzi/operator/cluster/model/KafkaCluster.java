@@ -124,8 +124,11 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
      */
     public static final int REPLICATION_PORT = 9091;
     protected static final String REPLICATION_PORT_NAME = "tcp-replication";
+    protected static final int KAFKA_AGENT_PORT = 8443;
+    protected static final String KAFKA_AGENT_PORT_NAME = "tcp-kafkaagent";
     protected static final int CONTROLPLANE_PORT = 9090;
     protected static final String CONTROLPLANE_PORT_NAME = "tcp-ctrlplane"; // port name is up to 15 characters
+
 
     /**
      * Port used by the Route listeners
@@ -538,6 +541,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
         List<ServicePort> ports = new ArrayList<>(internalListeners.size() + 3);
         ports.add(ServiceUtils.createServicePort(CONTROLPLANE_PORT_NAME, CONTROLPLANE_PORT, CONTROLPLANE_PORT, "TCP"));
         ports.add(ServiceUtils.createServicePort(REPLICATION_PORT_NAME, REPLICATION_PORT, REPLICATION_PORT, "TCP"));
+        ports.add(ServiceUtils.createServicePort(KAFKA_AGENT_PORT_NAME, KAFKA_AGENT_PORT, KAFKA_AGENT_PORT, "TCP"));
 
         for (GenericKafkaListener listener : internalListeners) {
             ports.add(ServiceUtils.createServicePort(ListenersUtils.backwardsCompatiblePortName(listener), listener.getPort(), listener.getPort(), "TCP"));
@@ -1501,6 +1505,10 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
         // Replication rule covers the replication listener.
         // Replication listener is used by Kafka but also by our own tools => Operators, Cruise Control, and Kafka Exporter
         rules.add(NetworkPolicyUtils.createIngressRule(REPLICATION_PORT, List.of(clusterOperatorPeer, kafkaClusterPeer, entityOperatorPeer, kafkaExporterPeer, cruiseControlPeer)));
+
+        // KafkaAgent rule covers the KafkaAgent listener.
+        // KafkaAgent listener is used by our own tool => Operators
+        rules.add(NetworkPolicyUtils.createIngressRule(KAFKA_AGENT_PORT, List.of(clusterOperatorPeer)));
 
         // User-configured listeners are by default open for all. Users can pass peers in the Kafka CR.
         for (GenericKafkaListener listener : listeners) {
