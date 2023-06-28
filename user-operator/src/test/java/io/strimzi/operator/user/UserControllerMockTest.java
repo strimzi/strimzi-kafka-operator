@@ -6,27 +6,35 @@ package io.strimzi.operator.user;
 
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.server.mock.EnableKubernetesMockClient;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
-import io.strimzi.api.kafka.Crds;
+import io.strimzi.api.kafka.KafkaUserList;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.status.KafkaUserStatus;
 import io.strimzi.operator.common.MetricsProvider;
 import io.strimzi.operator.common.MicrometerMetricsProvider;
+import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.NamespaceAndName;
 import io.strimzi.operator.common.operator.resource.StatusUtils;
+import io.strimzi.operator.common.operator.resource.concurrent.CrdOperator;
+import io.strimzi.operator.common.operator.resource.concurrent.SecretOperator;
 import io.strimzi.operator.user.operator.KafkaUserOperator;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.mockkube2.MockKube2;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
@@ -34,6 +42,7 @@ import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.Mockito.atLeast;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -46,9 +55,11 @@ public class UserControllerMockTest {
     public static final String NAME = "user";
 
     // Injected by Fabric8 Mock Kubernetes Server
-    @SuppressWarnings("unused")
     private KubernetesClient client;
     private MockKube2 mockKube;
+    private SecretOperator secretOperator;
+    private CrdOperator<KubernetesClient, KafkaUser, KafkaUserList> kafkaUserOps;
+    private KafkaUserOperator mockKafkaUserOperator;
 
     @BeforeEach
     public void beforeEach() {
@@ -57,6 +68,17 @@ public class UserControllerMockTest {
                 .withKafkaUserCrd()
                 .build();
         mockKube.start();
+        secretOperator = new SecretOperator(ForkJoinPool.commonPool(), client);
+        kafkaUserOps = new CrdOperator<>(ForkJoinPool.commonPool(), client, KafkaUser.class, KafkaUserList.class, "KafkaUser");
+
+        mockKafkaUserOperator = mock(KafkaUserOperator.class);
+        when(mockKafkaUserOperator.informer(any(String.class), anyMap(), any(long.class)))
+            .thenAnswer(args -> kafkaUserOps.informer(
+                    args.getArgument(0),
+                    args.<Map<String, String>>getArgument(1),
+                    args.getArgument(2)));
+        when(mockKafkaUserOperator.updateStatusAsync(any(Reconciliation.class), any(KafkaUser.class)))
+            .thenAnswer(args -> kafkaUserOps.updateStatusAsync(args.getArgument(0), args.getArgument(1)));
     }
 
     @AfterEach
@@ -70,7 +92,6 @@ public class UserControllerMockTest {
         MetricsProvider metrics = new MicrometerMetricsProvider(new SimpleMeterRegistry());
 
         // Mock the UserOperator
-        KafkaUserOperator mockKafkaUserOperator = mock(KafkaUserOperator.class);
         when(mockKafkaUserOperator.reconcile(any(), any(), any())).thenAnswer(i -> {
             KafkaUserStatus status = new KafkaUserStatus();
             StatusUtils.setStatusConditionAndObservedGeneration(i.getArgument(1), status, (Throwable) null);
@@ -80,7 +101,7 @@ public class UserControllerMockTest {
         // Create User Controller
         UserController controller = new UserController(
                 ResourceUtils.createUserOperatorConfigForUserControllerTesting(Map.of(), 120000, 10, 1, ""),
-                client,
+                secretOperator,
                 mockKafkaUserOperator,
                 metrics
         );
@@ -89,10 +110,10 @@ public class UserControllerMockTest {
 
         // Test
         try {
-            Crds.kafkaUserOperation(client).inNamespace(NAMESPACE).resource(ResourceUtils.createKafkaUserTls()).create();
-            Crds.kafkaUserOperation(client).inNamespace(NAMESPACE).withName(NAME).waitUntilCondition(KafkaUser.isReady(), 10_000, TimeUnit.MILLISECONDS);
+            kafkaUserOps.resource(NAMESPACE, ResourceUtils.createKafkaUserTls()).create();
+            kafkaUserOps.resource(NAMESPACE, NAME).waitUntilCondition(KafkaUser.isReady(), 10_000, TimeUnit.MILLISECONDS);
 
-            KafkaUser user = Crds.kafkaUserOperation(client).inNamespace(NAMESPACE).withName(NAME).get();
+            KafkaUser user = kafkaUserOps.get(NAMESPACE, NAME);
 
             // Check resource
             assertThat(user.getStatus(), is(notNullValue()));
@@ -107,7 +128,7 @@ public class UserControllerMockTest {
             assertThat(metrics.meterRegistry().get("strimzi.reconciliations").tag("kind", "KafkaUser").tag("namespace", NAMESPACE).counter().count(), is(greaterThanOrEqualTo(1.0))); // Might be 1 or 2, depends on the timing
 
             // Test that secret change triggers reconciliation
-            client.secrets().inNamespace(NAMESPACE).resource(ResourceUtils.createUserSecretTls()).create();
+            secretOperator.resource(NAMESPACE, ResourceUtils.createUserSecretTls()).create();
 
             // Secret watch should trigger 3rd reconciliation => but we have no other way to know it happened apart from the metrics
             // So we wait for the metrics to be updated
@@ -133,7 +154,6 @@ public class UserControllerMockTest {
         MetricsProvider metrics = new MicrometerMetricsProvider(new SimpleMeterRegistry());
 
         // Mock the UserOperator
-        KafkaUserOperator mockKafkaUserOperator = mock(KafkaUserOperator.class);
         when(mockKafkaUserOperator.reconcile(any(), any(), any())).thenAnswer(i -> {
             KafkaUserStatus status = new KafkaUserStatus();
             StatusUtils.setStatusConditionAndObservedGeneration(i.getArgument(1), status, (Throwable) null);
@@ -143,7 +163,7 @@ public class UserControllerMockTest {
         // Create User Controller
         UserController controller = new UserController(
                 ResourceUtils.createUserOperatorConfigForUserControllerTesting(Map.of(), 120000, 10, 1, "prefix-"),
-                client,
+                secretOperator,
                 mockKafkaUserOperator,
                 metrics
         );
@@ -152,10 +172,10 @@ public class UserControllerMockTest {
 
         // Test
         try {
-            Crds.kafkaUserOperation(client).inNamespace(NAMESPACE).resource(ResourceUtils.createKafkaUserTls()).create();
-            Crds.kafkaUserOperation(client).inNamespace(NAMESPACE).withName(NAME).waitUntilCondition(KafkaUser.isReady(), 10_000, TimeUnit.MILLISECONDS);
+            kafkaUserOps.resource(NAMESPACE, ResourceUtils.createKafkaUserTls()).create();
+            kafkaUserOps.resource(NAMESPACE, NAME).waitUntilCondition(KafkaUser.isReady(), 10_000, TimeUnit.MILLISECONDS);
 
-            KafkaUser user = Crds.kafkaUserOperation(client).inNamespace(NAMESPACE).withName(NAME).get();
+            KafkaUser user = kafkaUserOps.get(NAMESPACE, NAME);
 
             // Check resource
             assertThat(user.getStatus(), is(notNullValue()));
@@ -172,7 +192,7 @@ public class UserControllerMockTest {
             // Test that secret change triggers reconciliation
             Secret userSecret = ResourceUtils.createUserSecretTls();
             userSecret.getMetadata().setName("prefix-" + NAME);
-            client.secrets().inNamespace(NAMESPACE).resource(userSecret).create();
+            secretOperator.resource(NAMESPACE, userSecret).create();
 
             // Secret watch should trigger 3rd reconciliation => but we have no other way to know it happened apart from the metrics
             // So we wait for the metrics to be updated
@@ -197,13 +217,10 @@ public class UserControllerMockTest {
         // Prepare metrics registry
         MetricsProvider metrics = new MicrometerMetricsProvider(new SimpleMeterRegistry());
 
-        // Mock the UserOperator
-        KafkaUserOperator mockKafkaUserOperator = mock(KafkaUserOperator.class);
-
         // Create User Controller
         UserController controller = new UserController(
                 ResourceUtils.createUserOperatorConfigForUserControllerTesting(Map.of(), 120000, 10, 1, ""),
-                client,
+                secretOperator,
                 mockKafkaUserOperator,
                 metrics
         );
@@ -214,21 +231,21 @@ public class UserControllerMockTest {
         try {
             KafkaUser pausedUser = ResourceUtils.createKafkaUserTls();
             pausedUser.getMetadata().setAnnotations(Map.of("strimzi.io/pause-reconciliation", "true"));
-            Crds.kafkaUserOperation(client).inNamespace(NAMESPACE).resource(pausedUser).create();
+            kafkaUserOps.resource(NAMESPACE, pausedUser).create();
 
             TestUtils.waitFor(
                     "KafkaUser to be paused",
                     100,
                     10_000,
                     () -> {
-                        KafkaUser u = Crds.kafkaUserOperation(client).inNamespace(NAMESPACE).withName(NAME).get();
+                        KafkaUser u = kafkaUserOps.get(NAMESPACE, NAME);
                         return u.getStatus() != null
                                 && u.getStatus().getConditions() != null
                                 && u.getStatus().getConditions().stream().filter(c -> "ReconciliationPaused".equals(c.getType())).findFirst().orElse(null) != null;
                     }
             );
 
-            KafkaUser user = Crds.kafkaUserOperation(client).inNamespace(NAMESPACE).withName(NAME).get();
+            KafkaUser user = kafkaUserOps.get(NAMESPACE, NAME);
 
             // Check resource
             assertThat(user.getStatus(), is(notNullValue()));
@@ -252,13 +269,12 @@ public class UserControllerMockTest {
         MetricsProvider metrics = new MicrometerMetricsProvider(new SimpleMeterRegistry());
 
         // Mock the UserOperator
-        KafkaUserOperator mockKafkaUserOperator = mock(KafkaUserOperator.class);
         when(mockKafkaUserOperator.reconcile(any(), any(), any())).thenAnswer(i -> CompletableFuture.failedFuture(new RuntimeException("Something failed")));
 
         // Create User Controller
         UserController controller = new UserController(
                 ResourceUtils.createUserOperatorConfigForUserControllerTesting(Map.of(), 120000, 10, 1, ""),
-                client,
+                secretOperator,
                 mockKafkaUserOperator,
                 metrics
         );
@@ -267,14 +283,14 @@ public class UserControllerMockTest {
 
         // Test
         try {
-            Crds.kafkaUserOperation(client).inNamespace(NAMESPACE).resource(ResourceUtils.createKafkaUserTls()).create();
+            kafkaUserOps.resource(NAMESPACE, ResourceUtils.createKafkaUserTls()).create();
 
             TestUtils.waitFor(
                     "KafkaUser to be failed",
                     100,
                     10_000,
                     () -> {
-                        KafkaUser u = Crds.kafkaUserOperation(client).inNamespace(NAMESPACE).withName(NAME).get();
+                        KafkaUser u = kafkaUserOps.get(NAMESPACE, NAME);
                         return u != null
                                 && u.getStatus() != null
                                 && u.getStatus().getConditions() != null
@@ -282,7 +298,7 @@ public class UserControllerMockTest {
                     }
             );
 
-            KafkaUser user = Crds.kafkaUserOperation(client).inNamespace(NAMESPACE).withName(NAME).get();
+            KafkaUser user = kafkaUserOps.get(NAMESPACE, NAME);
 
             // Check resource
             assertThat(user.getStatus(), is(notNullValue()));
@@ -302,7 +318,6 @@ public class UserControllerMockTest {
         MetricsProvider metrics = new MicrometerMetricsProvider(new SimpleMeterRegistry());
 
         // Mock the UserOperator
-        KafkaUserOperator mockKafkaUserOperator = mock(KafkaUserOperator.class);
         when(mockKafkaUserOperator.reconcile(any(), any(), any())).thenAnswer(i -> {
             KafkaUserStatus status = new KafkaUserStatus();
             StatusUtils.setStatusConditionAndObservedGeneration(i.getArgument(1), status, (Throwable) null);
@@ -312,7 +327,7 @@ public class UserControllerMockTest {
         // Create User Controller
         UserController controller = new UserController(
                 ResourceUtils.createUserOperatorConfigForUserControllerTesting(Map.of("select", "yes"), 120000, 10, 1, ""),
-                client,
+                secretOperator,
                 mockKafkaUserOperator,
                 metrics
         );
@@ -328,16 +343,16 @@ public class UserControllerMockTest {
             KafkaUser matchingLabel = ResourceUtils.createKafkaUserTls();
             matchingLabel.getMetadata().setLabels(Map.of("select", "yes"));
 
-            Crds.kafkaUserOperation(client).inNamespace(NAMESPACE).resource(wrongLabel).create();
-            Crds.kafkaUserOperation(client).inNamespace(NAMESPACE).resource(matchingLabel).create();
-            Crds.kafkaUserOperation(client).inNamespace(NAMESPACE).withName(NAME).waitUntilCondition(KafkaUser.isReady(), 10_000, TimeUnit.MILLISECONDS);
+            kafkaUserOps.resource(NAMESPACE, wrongLabel).create();
+            kafkaUserOps.resource(NAMESPACE, matchingLabel).create();
+            kafkaUserOps.resource(NAMESPACE, NAME).waitUntilCondition(KafkaUser.isReady(), 10_000, TimeUnit.MILLISECONDS);
 
             // Check resource
-            KafkaUser matchingUser = Crds.kafkaUserOperation(client).inNamespace(NAMESPACE).withName(NAME).get();
+            KafkaUser matchingUser = kafkaUserOps.get(NAMESPACE, NAME);
             assertThat(matchingUser.getStatus(), is(notNullValue()));
             assertThat(matchingUser.getStatus().getObservedGeneration(), is(1L));
 
-            KafkaUser wrongUSer = Crds.kafkaUserOperation(client).inNamespace(NAMESPACE).withName("other-user").get();
+            KafkaUser wrongUSer = kafkaUserOps.get(NAMESPACE, "other-user");
             assertThat(wrongUSer.getStatus(), is(nullValue()));
 
             // Paused resource => nothing should be reconciled
@@ -359,7 +374,6 @@ public class UserControllerMockTest {
 
         // Mock the UserOperator
         CountDownLatch periods = new CountDownLatch(2); // We will wait for 2 periodical reconciliations
-        KafkaUserOperator mockKafkaUserOperator = mock(KafkaUserOperator.class);
         when(mockKafkaUserOperator.reconcile(any(), any(), any())).thenAnswer(i -> {
             KafkaUserStatus status = new KafkaUserStatus();
             StatusUtils.setStatusConditionAndObservedGeneration(i.getArgument(1), status, (Throwable) null);
@@ -373,7 +387,7 @@ public class UserControllerMockTest {
         // Create User Controller
         UserController controller = new UserController(
                 ResourceUtils.createUserOperatorConfigForUserControllerTesting(Map.of(), 500, 10, 1, ""),
-                client,
+                secretOperator,
                 mockKafkaUserOperator,
                 metrics
         );
@@ -382,10 +396,10 @@ public class UserControllerMockTest {
 
         // Test
         try {
-            Crds.kafkaUserOperation(client).inNamespace(NAMESPACE).resource(ResourceUtils.createKafkaUserTls()).create();
-            Crds.kafkaUserOperation(client).inNamespace(NAMESPACE).withName(NAME).waitUntilCondition(KafkaUser.isReady(), 10_000, TimeUnit.MILLISECONDS);
+            kafkaUserOps.resource(NAMESPACE, ResourceUtils.createKafkaUserTls()).create();
+            kafkaUserOps.resource(NAMESPACE, NAME).waitUntilCondition(KafkaUser.isReady(), 10_000, TimeUnit.MILLISECONDS);
 
-            KafkaUser user = Crds.kafkaUserOperation(client).inNamespace(NAMESPACE).withName(NAME).get();
+            KafkaUser user = kafkaUserOps.get(NAMESPACE, NAME);
 
             // Check resource
             assertThat(user.getStatus(), is(notNullValue()));
@@ -401,6 +415,112 @@ public class UserControllerMockTest {
             assertThat(metrics.meterRegistry().get("strimzi.reconciliations.successful").tag("kind", "KafkaUser").tag("namespace", NAMESPACE).counter().count(), is(greaterThanOrEqualTo(3.0))); // Might be 3 or 4, depends on the timing
             assertThat(metrics.meterRegistry().get("strimzi.reconciliations").tag("kind", "KafkaUser").tag("namespace", NAMESPACE).counter().count(), is(greaterThanOrEqualTo(3.0))); // Might be 3 or 4, depends on the timing
             assertThat(metrics.meterRegistry().get("strimzi.reconciliations.periodical").tag("kind", "KafkaUser").tag("namespace", NAMESPACE).counter().count(), is(greaterThanOrEqualTo(2.0))); // At least 2, depends on timing
+        } finally {
+            controller.stop();
+        }
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+        "409, Conflict",
+        "404, Not Found",
+        "500, Internal Server Error"
+    })
+    void testReconciliationWithClientErrorStatusUpdate(int errorCode, String errorDescription) throws InterruptedException {
+        // Prepare metrics registry
+        MetricsProvider metrics = new MicrometerMetricsProvider(new SimpleMeterRegistry());
+
+        // Mock the UserOperator
+        when(mockKafkaUserOperator.reconcile(any(), any(), any())).thenAnswer(i -> {
+            KafkaUserStatus status = new KafkaUserStatus();
+            StatusUtils.setStatusConditionAndObservedGeneration(i.getArgument(1), status, (Throwable) null);
+            return CompletableFuture.completedFuture(status);
+        });
+
+        AtomicBoolean statusUpdateInvoked = new AtomicBoolean(false);
+        when(mockKafkaUserOperator.updateStatusAsync(any(), any())).thenAnswer(i -> {
+            KubernetesClientException error = new KubernetesClientException(errorDescription + " (expected)", errorCode, null);
+            statusUpdateInvoked.set(true);
+            return CompletableFuture.failedStage(error);
+        });
+
+        // Create User Controller
+        UserController controller = new UserController(
+                ResourceUtils.createUserOperatorConfigForUserControllerTesting(Map.of(), 5, 1, 1, ""),
+                secretOperator,
+                mockKafkaUserOperator,
+                metrics
+        );
+
+        controller.start();
+
+        // Test
+        try {
+            kafkaUserOps.resource(NAMESPACE, ResourceUtils.createKafkaUserTls()).create();
+            kafkaUserOps.resource(NAMESPACE, NAME).waitUntilCondition(i -> statusUpdateInvoked.get(), 10_000, TimeUnit.MILLISECONDS);
+
+            KafkaUser user = kafkaUserOps.get(NAMESPACE, NAME);
+
+            // Check resource - status remains null although `updateStatusAsync` was invoked
+            assertThat(user.getStatus(), is(nullValue()));
+
+            // Reconcile involved
+            verify(mockKafkaUserOperator, atLeast(1)).reconcile(any(), any(), any());
+
+            // Check metrics
+            assertThat(metrics.meterRegistry().get("strimzi.resources").tag("kind", "KafkaUser").tag("namespace", NAMESPACE).gauge().value(), is(1.0));
+            assertThat(metrics.meterRegistry().get("strimzi.reconciliations.successful").tag("kind", "KafkaUser").tag("namespace", NAMESPACE).counter().count(), is(1.0));
+            assertThat(metrics.meterRegistry().get("strimzi.reconciliations").tag("kind", "KafkaUser").tag("namespace", NAMESPACE).counter().count(), is(1.0));
+        } finally {
+            controller.stop();
+        }
+    }
+
+    @Test
+    void testReconciliationWithRuntimeErrorStatusUpdate() throws InterruptedException {
+        // Prepare metrics registry
+        MetricsProvider metrics = new MicrometerMetricsProvider(new SimpleMeterRegistry());
+
+        // Mock the UserOperator
+        when(mockKafkaUserOperator.reconcile(any(), any(), any())).thenAnswer(i -> {
+            KafkaUserStatus status = new KafkaUserStatus();
+            StatusUtils.setStatusConditionAndObservedGeneration(i.getArgument(1), status, (Throwable) null);
+            return CompletableFuture.completedFuture(status);
+        });
+
+        AtomicBoolean statusUpdateInvoked = new AtomicBoolean(false);
+        when(mockKafkaUserOperator.updateStatusAsync(any(), any())).thenAnswer(i -> {
+            statusUpdateInvoked.set(true);
+            return CompletableFuture.failedStage(new RuntimeException("Test exception (expected)"));
+        });
+
+        // Create User Controller
+        UserController controller = new UserController(
+                ResourceUtils.createUserOperatorConfigForUserControllerTesting(Map.of(), 5, 1, 1, ""),
+                secretOperator,
+                mockKafkaUserOperator,
+                metrics
+        );
+
+        controller.start();
+
+        // Test
+        try {
+            kafkaUserOps.resource(NAMESPACE, ResourceUtils.createKafkaUserTls()).create();
+            kafkaUserOps.resource(NAMESPACE, NAME).waitUntilCondition(i -> statusUpdateInvoked.get(), 10_000, TimeUnit.MILLISECONDS);
+
+            KafkaUser user = kafkaUserOps.get(NAMESPACE, NAME);
+
+            // Check resource - status remains null although `updateStatusAsync` was invoked
+            assertThat(user.getStatus(), is(nullValue()));
+
+            // Reconcile involved
+            verify(mockKafkaUserOperator, atLeast(1)).reconcile(any(), any(), any());
+
+            // Check metrics
+            assertThat(metrics.meterRegistry().get("strimzi.resources").tag("kind", "KafkaUser").tag("namespace", NAMESPACE).gauge().value(), is(1.0));
+            assertThat(metrics.meterRegistry().get("strimzi.reconciliations.successful").tag("kind", "KafkaUser").tag("namespace", NAMESPACE).counter().count(), is(1.0));
+            assertThat(metrics.meterRegistry().get("strimzi.reconciliations").tag("kind", "KafkaUser").tag("namespace", NAMESPACE).counter().count(), is(1.0));
         } finally {
             controller.stop();
         }

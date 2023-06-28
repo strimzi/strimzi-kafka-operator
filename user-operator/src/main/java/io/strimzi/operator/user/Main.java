@@ -7,6 +7,7 @@ package io.strimzi.operator.user;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.binder.MeterBinder;
 import io.micrometer.core.instrument.binder.jvm.ClassLoaderMetrics;
 import io.micrometer.core.instrument.binder.jvm.JvmGcMetrics;
 import io.micrometer.core.instrument.binder.jvm.JvmMemoryMetrics;
@@ -14,6 +15,8 @@ import io.micrometer.core.instrument.binder.jvm.JvmThreadMetrics;
 import io.micrometer.core.instrument.binder.system.ProcessorMetrics;
 import io.micrometer.prometheus.PrometheusConfig;
 import io.micrometer.prometheus.PrometheusMeterRegistry;
+import io.strimzi.api.kafka.KafkaUserList;
+import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.certs.OpenSslCertManager;
 import io.strimzi.operator.common.AdminClientProvider;
 import io.strimzi.operator.common.DefaultAdminClientProvider;
@@ -22,6 +25,8 @@ import io.strimzi.operator.common.MicrometerMetricsProvider;
 import io.strimzi.operator.common.OperatorKubernetesClientBuilder;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.http.HealthCheckAndMetricsServer;
+import io.strimzi.operator.common.operator.resource.concurrent.CrdOperator;
+import io.strimzi.operator.common.operator.resource.concurrent.SecretOperator;
 import io.strimzi.operator.user.operator.DisabledSimpleAclOperator;
 import io.strimzi.operator.user.operator.KafkaUserOperator;
 import io.strimzi.operator.user.operator.QuotasOperator;
@@ -34,13 +39,16 @@ import org.apache.logging.log4j.Logger;
 import java.security.Security;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Supplier;
+import java.util.stream.Stream;
 
 /**
  * The main class of the Strimzi User Operator
  */
 public class Main {
-    private final static Logger LOGGER = LogManager.getLogger(Main.class);
+    private static final Logger LOGGER = LogManager.getLogger(Main.class);
 
     /**
      * Main method which starts the webserver with healthchecks and metrics and the UserController which is responsible
@@ -63,18 +71,19 @@ public class Main {
         LOGGER.info("Cluster Operator configuration is {}", config);
 
         // Create KubernetesClient, AdminClient and KafkaUserOperator classes
+        ExecutorService kafkaUserOperatorExecutor = Executors.newFixedThreadPool(config.getUserOperationsThreadPoolSize(), new OperatorWorkThreadFactory());
         KubernetesClient client = new OperatorKubernetesClientBuilder("strimzi-user-operator", Main.class.getPackage().getImplementationVersion()).build();
-        Admin adminClient = createAdminClient(config, client, new DefaultAdminClientProvider());
-        AtomicInteger kafkaUserOperatorExecutorThreadCounter = new AtomicInteger(0);
-        ExecutorService kafkaUserOperatorExecutor = Executors.newFixedThreadPool(config.getUserOperationsThreadPoolSize(), r -> new Thread(r, "operator-thread-pool-" + kafkaUserOperatorExecutorThreadCounter.getAndIncrement()));
+        SecretOperator secretOperator = new SecretOperator(kafkaUserOperatorExecutor, client);
+        Admin adminClient = createAdminClient(config, secretOperator, new DefaultAdminClientProvider());
+
         KafkaUserOperator kafkaUserOperator = new KafkaUserOperator(
                 config,
-                client,
                 new OpenSslCertManager(),
+                secretOperator,
+                new CrdOperator<>(kafkaUserOperatorExecutor, client, KafkaUser.class, KafkaUserList.class, "KafkaUser"),
                 new ScramCredentialsOperator(adminClient, config, kafkaUserOperatorExecutor),
                 new QuotasOperator(adminClient, config, kafkaUserOperatorExecutor),
-                config.isAclsAdminApiSupported() ? new SimpleAclOperator(adminClient, config, kafkaUserOperatorExecutor) : new DisabledSimpleAclOperator(),
-                kafkaUserOperatorExecutor
+                config.isAclsAdminApiSupported() ? new SimpleAclOperator(adminClient, config, kafkaUserOperatorExecutor) : new DisabledSimpleAclOperator()
         );
 
         MetricsProvider metricsProvider = createMetricsProvider();
@@ -82,7 +91,7 @@ public class Main {
         // Create the User controller
         UserController controller = new UserController(
                 config,
-                client,
+                secretOperator,
                 kafkaUserOperator,
                 metricsProvider
         );
@@ -127,16 +136,9 @@ public class Main {
      *
      * @return  An instance of the Admin API client
      */
-    private static Admin createAdminClient(UserOperatorConfig config, KubernetesClient client, AdminClientProvider adminClientProvider)    {
-        Secret clusterCaCert = null;
-        if (config.getClusterCaCertSecretName() != null && !config.getClusterCaCertSecretName().isEmpty()) {
-            clusterCaCert = client.secrets().inNamespace(config.getCaNamespaceOrNamespace()).withName(config.getClusterCaCertSecretName()).get();
-        }
-
-        Secret uoKeyAndCert = null;
-        if (config.getEuoKeySecretName() != null && !config.getEuoKeySecretName().isEmpty()) {
-            uoKeyAndCert = client.secrets().inNamespace(config.getCaNamespaceOrNamespace()).withName(config.getEuoKeySecretName()).get();
-        }
+    private static Admin createAdminClient(UserOperatorConfig config, SecretOperator secretOperator, AdminClientProvider adminClientProvider)    {
+        Secret clusterCaCert = getSecret(secretOperator, config.getCaNamespaceOrNamespace(), config.getClusterCaCertSecretName());
+        Secret uoKeyAndCert = getSecret(secretOperator, config.getCaNamespaceOrNamespace(), config.getEuoKeySecretName());
 
         return adminClientProvider.createAdminClient(
                 config.getKafkaBootstrapServers(),
@@ -147,6 +149,22 @@ public class Main {
     }
 
     /**
+     * Fetch a secret with the given name and namespace using the secretOperator if
+     * the name is present.
+     *
+     * @param secretOperator secret operator to retrieve the secret
+     * @param namespace      namespace of the secret
+     * @param name           name of the secret
+     * @return the secret or null if not found or the name is not given
+     */
+    private static Secret getSecret(SecretOperator secretOperator, String namespace, String name) {
+        if (name != null && !name.isEmpty()) {
+            return secretOperator.get(namespace, name);
+        }
+        return null;
+    }
+
+    /**
      * Creates the MetricsProvider instance based on a PrometheusMeterRegistry and binds the JVM metrics to it
      *
      * @return  MetricsProvider instance
@@ -154,13 +172,30 @@ public class Main {
     private static MetricsProvider createMetricsProvider()  {
         MeterRegistry registry = new PrometheusMeterRegistry(PrometheusConfig.DEFAULT);
 
-        // Bind JVM metrics
-        new ClassLoaderMetrics().bindTo(registry);
-        new JvmMemoryMetrics().bindTo(registry);
-        new JvmGcMetrics().bindTo(registry);
-        new ProcessorMetrics().bindTo(registry);
-        new JvmThreadMetrics().bindTo(registry);
+        /*
+         * Bind JVM metrics. Handled as stream of Suppliers to circumvent checkstyle
+         * error for Class Data Abstraction Coupling by limiting direct instantiations.
+         *
+         * See https://checkstyle.sourceforge.io/checks/metrics/classdataabstractioncoupling.html
+         */
+        Stream.<Supplier<MeterBinder>>of(
+                ClassLoaderMetrics::new,
+                JvmMemoryMetrics::new,
+                JvmGcMetrics::new,
+                ProcessorMetrics::new,
+                JvmThreadMetrics::new)
+            .forEach(binder -> binder.get().bindTo(registry));
 
         return new MicrometerMetricsProvider(registry);
+    }
+
+    private static class OperatorWorkThreadFactory implements ThreadFactory {
+
+        private final AtomicInteger threadCounter = new AtomicInteger(0);
+
+        @Override
+        public Thread newThread(Runnable r) {
+            return new Thread(r, "operator-thread-pool-" + threadCounter.getAndIncrement());
+        }
     }
 }
