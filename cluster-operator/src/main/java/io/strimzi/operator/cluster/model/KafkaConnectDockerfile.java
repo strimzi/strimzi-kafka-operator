@@ -154,13 +154,28 @@ public class KafkaConnectDockerfile {
                     String settingsFile = "/tmp/" + artifactHash + ".xml";
                     String settingsXml = "<settings xmlns=\"http://maven.apache.org/SETTINGS/1.0.0\"><profiles><profile><id>download</id><repositories><repository><id>custom-repo</id><url>" + escapeXml(repo) + "</url></repository></repositories></profile></profiles><activeProfiles><activeProfile>download</activeProfile></activeProfiles></settings>";
 
-                    Cmd cmd = run("curl", "-f", "-L", "--create-dirs", "--output", "/tmp/" + artifactDir + "/pom.xml", assembleResourceUrl(repo, mvn, "pom"))
-                            .andRun("echo", settingsXml).redirectTo(settingsFile) // Create the settings file
-                            .andRun("mvn", "dependency:copy-dependencies", "-s", settingsFile,
-                                    "-DoutputDirectory=/tmp/artifacts/" + artifactDir, "-f", "/tmp/" + artifactDir + "/pom.xml")
-                            .andRun("curl", "-f", "-L", "--create-dirs", "--output",
-                                    "/tmp/artifacts/" + artifactDir + "/" + mvn.getArtifact() + "-" + mvn.getVersion() + ".jar",
-                                    assembleResourceUrl(repo, mvn, "jar"));
+                    Cmd cmd;
+                    if (Boolean.TRUE.equals(mvn.getInsecure()))    {
+                        // Insecure download => disables TLS certificate checks in curl and Maven commands
+                        cmd = run("curl", "-f", "-k", "-L", "--create-dirs", "--output", "/tmp/" + artifactDir + "/pom.xml", assembleResourceUrl(repo, mvn, "pom"))
+                                .andRun("echo", settingsXml).redirectTo(settingsFile) // Create the settings file
+                                .andRun("mvn", "dependency:copy-dependencies", "-s", settingsFile,
+                                        "-DoutputDirectory=/tmp/artifacts/" + artifactDir, "-Daether.connector.https.securityMode=insecure",
+                                        "-Dmaven.wagon.http.ssl.insecure=true", "-Dmaven.wagon.http.ssl.allowall=true",
+                                        "-Dmaven.wagon.http.ssl.ignore.validity.dates=true", "-f", "/tmp/" + artifactDir + "/pom.xml")
+                                .andRun("curl", "-f", "-k", "-L", "--create-dirs", "--output",
+                                        "/tmp/artifacts/" + artifactDir + "/" + mvn.getArtifact() + "-" + mvn.getVersion() + ".jar",
+                                        assembleResourceUrl(repo, mvn, "jar"));
+                    } else {
+                        cmd = run("curl", "-f", "-L", "--create-dirs", "--output", "/tmp/" + artifactDir + "/pom.xml", assembleResourceUrl(repo, mvn, "pom"))
+                                .andRun("echo", settingsXml).redirectTo(settingsFile) // Create the settings file
+                                .andRun("mvn", "dependency:copy-dependencies", "-s", settingsFile,
+                                        "-DoutputDirectory=/tmp/artifacts/" + artifactDir, "-f", "/tmp/" + artifactDir + "/pom.xml")
+                                .andRun("curl", "-f", "-L", "--create-dirs", "--output",
+                                        "/tmp/artifacts/" + artifactDir + "/" + mvn.getArtifact() + "-" + mvn.getVersion() + ".jar",
+                                        assembleResourceUrl(repo, mvn, "jar"));
+                    }
+                    
                     writer.append("RUN ").println(cmd);
                     writer.println();
                 })

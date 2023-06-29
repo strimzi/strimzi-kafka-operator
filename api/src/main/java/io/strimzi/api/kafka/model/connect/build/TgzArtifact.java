@@ -20,7 +20,7 @@ import lombok.EqualsAndHashCode;
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({ "url", "sha512sum", "insecure" })
-@EqualsAndHashCode
+@EqualsAndHashCode(callSuper = true)
 public class TgzArtifact extends DownloadableArtifact {
     private static final long serialVersionUID = 1L;
 
