@@ -740,9 +740,9 @@ public class MetricsIsolatedST extends AbstractST {
         // sync resources
         resourceManager.synchronizeResources(extensionContext);
 
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(kafkaClusterFirstName, topicName, 7, 2).build());
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(kafkaClusterFirstName, kafkaExporterTopicName, 7, 2).build());
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(kafkaClusterFirstName, bridgeTopicName).build());
+        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(kafkaClusterFirstName, topicName, 7, 2, namespaceFirst).build());
+        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(kafkaClusterFirstName, kafkaExporterTopicName, 7, 2, namespaceFirst).build());
+        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(kafkaClusterFirstName, bridgeTopicName, namespaceFirst).build());
         resourceManager.createResource(extensionContext, KafkaUserTemplates.tlsUser(namespaceFirst, kafkaClusterFirstName, KafkaUserUtils.generateRandomNameOfKafkaUser()).build());
         resourceManager.createResource(extensionContext, KafkaUserTemplates.tlsUser(namespaceFirst, kafkaClusterFirstName, KafkaUserUtils.generateRandomNameOfKafkaUser()).build());
 

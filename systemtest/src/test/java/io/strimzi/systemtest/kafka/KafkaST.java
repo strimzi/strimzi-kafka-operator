@@ -43,6 +43,7 @@ import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.RollingUpdateUtils;
 import io.strimzi.systemtest.utils.StUtils;
+import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.ConfigMapUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StrimziPodSetUtils;
@@ -542,7 +543,7 @@ class KafkaST extends AbstractST {
             .endSpec()
             .build());
 
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getTopicName()).build());
+        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(testStorage).build());
 
         KafkaClients kafkaClients = new KafkaClientsBuilder()
             .withTopicName(testStorage.getTopicName())
@@ -787,7 +788,7 @@ class KafkaST extends AbstractST {
 
         Map<String, String> kafkaPodsSnapshot = PodUtils.podSnapshot(testStorage.getNamespaceName(), kafkaSelector);
 
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getTopicName(), 1, 1).build());
+        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getTopicName(), 1, 1, testStorage.getNamespaceName()).build());
 
         KafkaClients kafkaClients = new KafkaClientsBuilder()
             .withTopicName(testStorage.getTopicName())
@@ -927,7 +928,7 @@ class KafkaST extends AbstractST {
 
         resourceManager.createResource(extensionContext, kafka);
 
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getTopicName()).build());
+        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(testStorage).build());
 
         KafkaClients kafkaClients = new KafkaClientsBuilder()
             .withTopicName(testStorage.getTopicName())
@@ -943,6 +944,29 @@ class KafkaST extends AbstractST {
             kafkaClients.consumerStrimzi()
         );
         ClientUtils.waitForClientsSuccess(testStorage);
+    }
+
+    @ParallelNamespaceTest
+    void testDeployUnsupportedKafka(ExtensionContext extensionContext) {
+        final TestStorage testStorage = new TestStorage(extensionContext);
+        String nonExistingVersion = "6.6.6";
+        String nonExistingVersionMessage = "Unsupported Kafka.spec.kafka.version: " + nonExistingVersion + ". Supported versions are:.*";
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+
+        resourceManager.createResource(extensionContext, false, KafkaTemplates.kafkaEphemeral(clusterName, 1, 1)
+                .editSpec()
+                    .editKafka()
+                        .withVersion(nonExistingVersion)
+                    .endKafka()
+                .endSpec()
+                .build());
+
+        LOGGER.info("Kafka with version {} deployed.", nonExistingVersion);
+
+        KafkaUtils.waitForKafkaNotReady(testStorage.getNamespaceName(), clusterName);
+        KafkaUtils.waitUntilKafkaStatusConditionContainsMessage(clusterName, testStorage.getNamespaceName(), nonExistingVersionMessage);
+
+        KafkaResource.kafkaClient().inNamespace(testStorage.getNamespaceName()).withName(clusterName).delete();
     }
 
     void verifyVolumeNamesAndLabels(String namespaceName, String clusterName, int kafkaReplicas, int diskCountPerReplica, String diskSizeGi) {

@@ -157,7 +157,7 @@ public class UserScalabilityIsolatedST extends AbstractST {
                 .endEntityOperator()
             .endSpec()
             .build(),
-            KafkaTopicTemplates.topic(clusterName, topicName).build()
+            KafkaTopicTemplates.topic(clusterName, topicName, testStorage.getNamespaceName()).build()
         );
     }
 }

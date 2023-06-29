@@ -368,11 +368,7 @@ public class CruiseControlST extends AbstractST {
                     .withNamespace(clusterOperator.getDeploymentNamespace())
                 .endMetadata()
                 .build(),
-            KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getTopicName(), 10, 3)
-                .editOrNewMetadata()
-                    .withNamespace(clusterOperator.getDeploymentNamespace())
-                .endMetadata()
-                .build(),
+            KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getTopicName(), 10, 3, testStorage.getNamespaceName()).build(),
             ScraperTemplates.scraperPod(testStorage.getNamespaceName(), testStorage.getScraperName()).build()
         );
 

@@ -115,8 +115,8 @@ public class PodSecurityProfilesIsolatedST extends AbstractST {
         resourceManager.createResource(extensionContext,
             KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), 1).build(),
             KafkaTemplates.kafkaPersistent(testStorage.getTargetClusterName(), 1).build(),
-            KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getTopicName()).build(),
-            KafkaTopicTemplates.topic(testStorage.getTargetClusterName(), testStorage.getTargetTopicName()).build());
+            KafkaTopicTemplates.topic(testStorage).build(),
+            KafkaTopicTemplates.topic(testStorage.getTargetClusterName(), testStorage.getTargetTopicName(), testStorage.getNamespaceName()).build());
 
         final KafkaClients kafkaClients = new KafkaClientsBuilder()
             .withTopicName(testStorage.getTopicName())
@@ -158,8 +158,8 @@ public class PodSecurityProfilesIsolatedST extends AbstractST {
         resourceManager.createResource(extensionContext,
             KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), 1).build(),
             KafkaTemplates.kafkaPersistent(testStorage.getTargetClusterName(), 1).build(),
-            KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getTopicName()).build(),
-            KafkaTopicTemplates.topic(testStorage.getTargetClusterName(), testStorage.getTargetTopicName()).build());
+            KafkaTopicTemplates.topic(testStorage).build(),
+            KafkaTopicTemplates.topic(testStorage.getTargetClusterName(), testStorage.getTargetTopicName(), testStorage.getNamespaceName()).build());
 
         final KafkaClients kafkaClients = new KafkaClientsBuilder()
             .withTopicName(testStorage.getTopicName())

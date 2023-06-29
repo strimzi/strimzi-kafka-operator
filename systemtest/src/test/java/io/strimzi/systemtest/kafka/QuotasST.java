@@ -55,7 +55,7 @@ public class QuotasST extends AbstractST {
                 .endKafka()
             .endSpec()
             .build());
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(clusterName, topicName).build());
+        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(clusterName, topicName, namespaceName).build());
 
         // Send more messages than disk can store to see if the integration works
         KafkaClients basicClients = new KafkaClientsBuilder()
