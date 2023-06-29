@@ -85,6 +85,7 @@ public class EntityOperator extends AbstractModel {
     /* test */ String zookeeperConnect;
     private EntityTopicOperator topicOperator;
     private EntityUserOperator userOperator;
+    /* test */  boolean unidirectionalTopicOperator;
     private TlsSidecar tlsSidecar;
     private String tlsSidecarImage;
 
@@ -154,6 +155,7 @@ public class EntityOperator extends AbstractModel {
 
             result.tlsSidecar = entityOperatorSpec.getTlsSidecar();
             result.topicOperator = topicOperator;
+            result.unidirectionalTopicOperator = unidirectionalTopicOperator;
             result.userOperator = userOperator;
 
             String tlsSideCarImage = entityOperatorSpec.getTlsSidecar() != null ? entityOperatorSpec.getTlsSidecar().getImage() : null;
@@ -247,7 +249,7 @@ public class EntityOperator extends AbstractModel {
         }
 
         // The TLS Sidecar is only used by the Topic Operator. Therefore, when the Topic Operator is disabled, the TLS side should also be disabled.
-        if (topicOperator != null) {
+        if (topicOperator != null && !this.unidirectionalTopicOperator) {
             String tlsSidecarImage = this.tlsSidecarImage;
             if (tlsSidecar != null && tlsSidecar.getImage() != null) {
                 tlsSidecarImage = tlsSidecar.getImage();
@@ -305,8 +307,10 @@ public class EntityOperator extends AbstractModel {
             volumeList.add(VolumeUtils.createSecretVolume(EUO_CERTS_VOLUME_NAME, KafkaResources.entityUserOperatorSecretName(cluster), isOpenShift));
         }
 
-        volumeList.add(VolumeUtils.createTempDirVolume(TLS_SIDECAR_TMP_DIRECTORY_DEFAULT_VOLUME_NAME, templatePod));
-        volumeList.add(VolumeUtils.createSecretVolume(TLS_SIDECAR_CA_CERTS_VOLUME_NAME, AbstractModel.clusterCaCertSecretName(cluster), isOpenShift));
+        if (!unidirectionalTopicOperator) {
+            volumeList.add(VolumeUtils.createTempDirVolume(TLS_SIDECAR_TMP_DIRECTORY_DEFAULT_VOLUME_NAME, templatePod));
+            volumeList.add(VolumeUtils.createSecretVolume(TLS_SIDECAR_CA_CERTS_VOLUME_NAME, AbstractModel.clusterCaCertSecretName(cluster), isOpenShift));
+        }
         return volumeList;
     }
 
