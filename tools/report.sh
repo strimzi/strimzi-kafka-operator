@@ -16,6 +16,9 @@ OC_INSTALLED=false
 KUBE_CLIENT="kubectl"
 OUT_DIR=""
 SECRETS_OPT="hidden"
+ACLS_OPT="off"
+CONSUMERS_OPT="off"
+TRANSACTIONS_OPT="on"
 
 # sed non-printable text delimiter
 SD=$(echo -en "\001") && readonly SD
@@ -55,6 +58,9 @@ Optional:
   --mm2=<string>                MM2 component name to get pods and logs.
   --secrets=(off|hidden|all)    Secret verbosity. Default is hidden, only the secret key will be reported.
   --out-dir=<string>            Script output directory.
+  --acls=(off|on)               Kafka ACL (Access Control List) verbosity. Default is off, these will not be reported.
+  --consumers=(off|on)          Kafka Consumer information verbosity. Default is off, these will not be reported.
+  --transactions=(off|on)       Kafka Transaction information verbosity. Default is on, high-level transaction information will be reported.
 "
 OPTSPEC=":-:"
 while getopts "$OPTSPEC" optchar; do
@@ -82,6 +88,15 @@ while getopts "$OPTSPEC" optchar; do
           ;;
         secrets=*)
           SECRETS_OPT=${OPTARG#*=} && readonly SECRETS_OPT
+          ;;
+        acls=*)
+          ACLS_OPT=${OPTARG#*=} && readonly ACLS_OPT
+          ;;
+        consumers=*)
+          CONSUMERS_OPT=${OPTARG#*=} && readonly CONSUMERS_OPT
+          ;;
+        transactions=*)
+          TRANSACTIONS_OPT=${OPTARG#*=} && readonly TRANSACTIONS_OPT
           ;;
         *)
           error "$USAGE"
@@ -235,6 +250,40 @@ get_pod_logs() {
   fi
 }
 
+get_kafka_instance_state() {
+  mkdir -p "$OUT_DIR"/reports/kafka/
+  local service && service=$($KUBE_CLIENT -n "$NAMESPACE" get service  -o name -l "app.kubernetes.io/name=kafka" | grep bootstrap | head -n1) && readonly service
+  local bootstrap_server && bootstrap_server=$($KUBE_CLIENT get kafka "$CLUSTER" -o=jsonpath='{.status.listeners[?(@.type=="plain")].bootstrapServers}' -n "$NAMESPACE") && readonly bootstrap_server
+  if [[ -n $service && -n $bootstrap_server ]]; then
+    local kafka_output
+    if [[ "$ACLS_OPT" == "on" ]]; then
+      kafka_output="$($KUBE_CLIENT exec -n "$NAMESPACE" "$service" -c kafka -- sh /opt/kafka/bin/kafka-acls.sh --bootstrap-server "$bootstrap_server" --list 2>&1)" ||true
+      if [[ -n $kafka_output ]]; then printf "%s" "$kafka_output" > "$OUT_DIR"/reports/kafka/kafka-acls.txt && echo "    acls"; fi
+    fi
+    if [[ "$CONSUMERS_OPT" == "on" ]]; then
+      kafka_output="$($KUBE_CLIENT exec -n "$NAMESPACE" "$service" -c kafka -- sh /opt/kafka/bin/kafka-consumer-groups.sh --bootstrap-server "$bootstrap_server" --all-groups --describe  2>&1)" ||true
+      if [[ -n $kafka_output ]]; then printf "%s" "$kafka_output" > "$OUT_DIR"/reports/kafka/kafka-consumer-groups.txt && echo "    consumergroups"; fi
+    fi
+    kafka_output="$($KUBE_CLIENT exec -n "$NAMESPACE" "$service" -c kafka -- sh /opt/kafka/bin/kafka-topics.sh --bootstrap-server "$bootstrap_server" --list 2>&1)" ||true
+    if [[ -n $kafka_output ]]; then printf "%s" "$kafka_output" > "$OUT_DIR"/reports/kafka/kafka-topics.txt && echo "    topics"; fi
+    if [[ "$TRANSACTIONS_OPT" == "on" ]]; then
+      echo "    transactions"
+      kafka_output="$($KUBE_CLIENT exec -n "$NAMESPACE" "$service" -c kafka -- sh /opt/kafka/bin/kafka-transactions.sh --bootstrap-server "$bootstrap_server" list 2>&1)" ||true
+      if [[ -n $kafka_output ]]; then printf "%s" "$kafka_output" > "$OUT_DIR"/reports/kafka/kafka-transactions-list.txt && echo "        list"; fi
+      local brokers && brokers=""
+      kafka_output="$($KUBE_CLIENT exec -n "$NAMESPACE" "$service" -c kafka -- ./bin/kafka-broker-api-versions.sh --bootstrap-server "$bootstrap_server" 2>&1)" ||true
+      if [[ -n $kafka_output ]]; then brokers="$(printf "%s" "$kafka_output" | grep "${bootstrap_server:(-4)}" | sed "s/\..*$//" | sort)"; fi
+      if [[ -n $brokers ]]; then
+        echo "        hangingtransactions"
+        for broker in ${brokers}; do
+          kafka_output="$($KUBE_CLIENT exec -n "$NAMESPACE" "$service" -c kafka -- sh /opt/kafka/bin/kafka-transactions.sh --bootstrap-server "$bootstrap_server" find-hanging --max-transaction-timeout 15 --broker-id "${broker:(-1)}" 2>&1)" ||true
+          if [[ -n $kafka_output ]]; then printf "%s" "$kafka_output" > "$OUT_DIR"/reports/kafka/kafka-transactions-hanging-"$broker".txt && echo "            $broker"; fi
+        done
+      fi
+    fi
+  fi
+}
+
 echo "clusteroperator"
 CO_DEPLOY=$($KUBE_CLIENT get deploy strimzi-cluster-operator -o name -n "$NAMESPACE" --ignore-not-found) && readonly CO_DEPLOY
 if [[ -n $CO_DEPLOY ]]; then
@@ -332,6 +381,9 @@ for POD in $PODS; do
     get_pod_logs "$POD" tls-sidecar
   fi
 done
+
+echo "kafka"
+get_kafka_instance_state
 
 FILENAME="report-$(date +"%d-%m-%Y_%H-%M-%S")"
 OLD_DIR="$(pwd)"
