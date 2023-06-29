@@ -175,14 +175,7 @@ public class KafkaConnectDockerfile {
                                         "/tmp/artifacts/" + artifactDir + "/" + mvn.getArtifact() + "-" + mvn.getVersion() + ".jar",
                                         assembleResourceUrl(repo, mvn, "jar"));
                     }
-
-                    //Cmd cmd = run("curl", "-f", insecureCurlFlag, "-L", "--create-dirs", "--output", "/tmp/" + artifactDir + "/pom.xml", assembleResourceUrl(repo, mvn, "pom"))
-                    //        .andRun("echo", settingsXml).redirectTo(settingsFile) // Create the settings file
-                    //        .andRun("mvn", "dependency:copy-dependencies", "-s", settingsFile,
-                    //                "-DoutputDirectory=/tmp/artifacts/" + artifactDir, insecureMavenFlags, "-f", "/tmp/" + artifactDir + "/pom.xml")
-                    //        .andRun("curl", "-f", insecureCurlFlag, "-L", "--create-dirs", "--output",
-                    //                "/tmp/artifacts/" + artifactDir + "/" + mvn.getArtifact() + "-" + mvn.getVersion() + ".jar",
-                    //                assembleResourceUrl(repo, mvn, "jar"));
+                    
                     writer.append("RUN ").println(cmd);
                     writer.println();
                 })
