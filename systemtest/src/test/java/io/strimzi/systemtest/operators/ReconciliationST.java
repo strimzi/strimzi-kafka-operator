@@ -146,7 +146,7 @@ public class ReconciliationST extends AbstractST {
 
         final String scraperPodName = kubeClient().listPodsByPrefixInName(namespaceName, scraperName).get(0).getMetadata().getName();
 
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(clusterName, topicName).build());
+        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(clusterName, topicName, namespaceName).build());
 
         // to prevent race condition when reconciliation is paused before KafkaTopic is actually created in Kafka
         KafkaTopicUtils.waitForTopicWillBePresentInKafka(namespaceName, topicName, KafkaResources.plainBootstrapAddress(clusterName), scraperPodName);

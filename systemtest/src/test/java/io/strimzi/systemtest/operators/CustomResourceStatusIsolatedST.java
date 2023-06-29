@@ -462,7 +462,7 @@ class CustomResourceStatusIsolatedST extends AbstractST {
             .endSpec();
 
         resourceManager.createResource(extensionContext, kafkaBuilder.build());
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME, TOPIC_NAME).build());
+        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME, TOPIC_NAME, clusterOperator.getDeploymentNamespace()).build());
     }
 
     void assertKafkaStatus(long expectedObservedGeneration, String internalAddress) {

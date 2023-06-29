@@ -71,11 +71,7 @@ public class DrainCleanerIsolatedST extends AbstractST {
             .endSpec()
             .build());
 
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getTopicName())
-            .editMetadata()
-                .withNamespace(Constants.DRAIN_CLEANER_NAMESPACE)
-            .endMetadata()
-            .build());
+        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getTopicName(), Constants.DRAIN_CLEANER_NAMESPACE).build());
         drainCleaner.createDrainCleaner(extensionContext);
 
         KafkaClients kafkaBasicExampleClients = new KafkaClientsBuilder()

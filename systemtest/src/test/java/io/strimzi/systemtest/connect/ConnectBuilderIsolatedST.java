@@ -215,7 +215,7 @@ class ConnectBuilderIsolatedST extends AbstractST {
         // this test also testing push into Docker output
         final String imageName = getImageNameForTestCase();
 
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(testStorage.getNamespaceName(), testStorage.getTopicName()).build());
+        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(testStorage.getNamespaceName(), testStorage.getTopicName(), testStorage.getNamespaceName()).build());
         resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnect(testStorage.getClusterName(), testStorage.getNamespaceName(), testStorage.getNamespaceName(), 1)
             .editMetadata()
                 .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
@@ -323,7 +323,7 @@ class ConnectBuilderIsolatedST extends AbstractST {
             .build();
 
         String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(testStorage.getNamespaceName(), topicName).build());
+        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(testStorage.getNamespaceName(), topicName, testStorage.getNamespaceName()).build());
 
         KafkaConnect connect = KafkaConnectTemplates.kafkaConnect(testStorage.getClusterName(), testStorage.getNamespaceName(), testStorage.getNamespaceName(), 1)
             .editMetadata()
@@ -407,7 +407,7 @@ class ConnectBuilderIsolatedST extends AbstractST {
 
         String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
 
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(testStorage.getNamespaceName(), topicName).build());
+        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(testStorage.getNamespaceName(), topicName, testStorage.getNamespaceName()).build());
 
         resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnect(testStorage.getClusterName(), testStorage.getNamespaceName(), testStorage.getNamespaceName(), 1)
             .editMetadata()
@@ -466,7 +466,7 @@ class ConnectBuilderIsolatedST extends AbstractST {
         final String connectorName = testStorage.getClusterName() + "-camel-connector";
 
         resourceManager.createResource(extensionContext,
-            KafkaTopicTemplates.topic(testStorage.getNamespaceName(), testStorage.getTopicName()).build(),
+            KafkaTopicTemplates.topic(testStorage.getNamespaceName(), testStorage.getTopicName(), testStorage.getNamespaceName()).build(),
             KafkaConnectTemplates.kafkaConnect(testStorage.getClusterName(), testStorage.getNamespaceName(), testStorage.getNamespaceName(), 1)
                 .editMetadata()
                     .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")

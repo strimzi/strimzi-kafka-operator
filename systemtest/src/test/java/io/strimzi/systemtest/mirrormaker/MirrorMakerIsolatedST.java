@@ -86,7 +86,7 @@ public class MirrorMakerIsolatedST extends AbstractST {
             KafkaTemplates.kafkaEphemeral(kafkaClusterTargetName, 1, 1).build()
         );
 
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(kafkaClusterSourceName, testStorage.getTopicName()).build());
+        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(kafkaClusterSourceName, testStorage.getTopicName(), testStorage.getNamespaceName()).build());
 
         KafkaClients clients = new KafkaClientsBuilder()
             .withProducerName(testStorage.getProducerName())
@@ -189,7 +189,7 @@ public class MirrorMakerIsolatedST extends AbstractST {
             .build());
 
         resourceManager.createResource(extensionContext,
-            KafkaTopicTemplates.topic(kafkaClusterSourceName, testStorage.getTopicName()).build(),
+            KafkaTopicTemplates.topic(kafkaClusterSourceName, testStorage.getTopicName(), testStorage.getNamespaceName()).build(),
             KafkaUserTemplates.tlsUser(testStorage.getNamespaceName(), kafkaClusterSourceName, kafkaSourceUserName).build(),
             KafkaUserTemplates.tlsUser(testStorage.getNamespaceName(), kafkaClusterTargetName, kafkaTargetUserName).build()
         );
@@ -302,7 +302,7 @@ public class MirrorMakerIsolatedST extends AbstractST {
 
         // Deploy topic
         resourceManager.createResource(extensionContext,
-            KafkaTopicTemplates.topic(kafkaClusterSourceName, testStorage.getTopicName()).build(),
+            KafkaTopicTemplates.topic(kafkaClusterSourceName, testStorage.getTopicName(), testStorage.getNamespaceName()).build(),
             KafkaUserTemplates.scramShaUser(testStorage.getNamespaceName(), kafkaClusterSourceName, kafkaSourceUserName).build(),
             KafkaUserTemplates.scramShaUser(testStorage.getNamespaceName(), kafkaClusterTargetName, kafkaTargetUserName).build()
         );
@@ -389,8 +389,8 @@ public class MirrorMakerIsolatedST extends AbstractST {
         );
 
         resourceManager.createResource(extensionContext,
-            KafkaTopicTemplates.topic(kafkaClusterSourceName, topicName).build(),
-            KafkaTopicTemplates.topic(kafkaClusterSourceName, topicNotIncluded).build()
+            KafkaTopicTemplates.topic(kafkaClusterSourceName, topicName, testStorage.getNamespaceName()).build(),
+            KafkaTopicTemplates.topic(kafkaClusterSourceName, topicNotIncluded, testStorage.getNamespaceName()).build()
         );
 
         KafkaClients clients = new KafkaClientsBuilder()

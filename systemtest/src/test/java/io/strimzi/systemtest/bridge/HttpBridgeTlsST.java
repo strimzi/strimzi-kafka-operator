@@ -62,11 +62,7 @@ class HttpBridgeTlsST extends AbstractST {
             .withProducerName(producerName)
             .build();
 
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(httpBridgeTlsClusterName, topicName)
-            .editMetadata()
-                .withNamespace(clusterOperator.getDeploymentNamespace())
-            .endMetadata()
-            .build());
+        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(httpBridgeTlsClusterName, topicName, clusterOperator.getDeploymentNamespace()).build());
 
         resourceManager.createResource(extensionContext, kafkaBridgeClientJobProduce.producerStrimziBridge());
         ClientUtils.waitForClientSuccess(producerName, clusterOperator.getDeploymentNamespace(), MESSAGE_COUNT);
@@ -96,11 +92,7 @@ class HttpBridgeTlsST extends AbstractST {
             .withConsumerName(consumerName)
             .build();
 
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(httpBridgeTlsClusterName, topicName)
-            .editMetadata()
-                .withNamespace(clusterOperator.getDeploymentNamespace())
-            .endMetadata()
-            .build());
+        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(httpBridgeTlsClusterName, topicName, clusterOperator.getDeploymentNamespace()).build());
 
         resourceManager.createResource(extensionContext, kafkaBridgeClientJobConsume.consumerStrimziBridge());
 

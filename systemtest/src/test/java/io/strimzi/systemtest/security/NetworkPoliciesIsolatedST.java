@@ -108,8 +108,8 @@ public class NetworkPoliciesIsolatedST extends AbstractST {
             .build(),
             ScraperTemplates.scraperPod(testStorage.getNamespaceName(), testStorage.getScraperName()).build(),
             KafkaUserTemplates.scramShaUser(testStorage).build(),
-            KafkaTopicTemplates.topic(testStorage.getClusterName(), topic0).build(),
-            KafkaTopicTemplates.topic(testStorage.getClusterName(), topic1).build()
+            KafkaTopicTemplates.topic(testStorage.getClusterName(), topic0, testStorage.getNamespaceName()).build(),
+            KafkaTopicTemplates.topic(testStorage.getClusterName(), topic1, testStorage.getNamespaceName()).build()
         );
 
         final String scraperPodName = kubeClient().listPodsByPrefixInName(testStorage.getNamespaceName(), testStorage.getScraperName()).get(0).getMetadata().getName();
@@ -201,8 +201,8 @@ public class NetworkPoliciesIsolatedST extends AbstractST {
                 .endKafka()
             .endSpec()
             .build(),
-            KafkaTopicTemplates.topic(testStorage.getClusterName(), topic0).build(),
-            KafkaTopicTemplates.topic(testStorage.getClusterName(), topic1).build(),
+            KafkaTopicTemplates.topic(testStorage.getClusterName(), topic0, testStorage.getNamespaceName()).build(),
+            KafkaTopicTemplates.topic(testStorage.getClusterName(), topic1, testStorage.getNamespaceName()).build(),
             KafkaUserTemplates.scramShaUser(testStorage).build()
         );
 

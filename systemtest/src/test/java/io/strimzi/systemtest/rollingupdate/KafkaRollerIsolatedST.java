@@ -104,7 +104,7 @@ public class KafkaRollerIsolatedST extends AbstractST {
 
         RollingUpdateUtils.waitForComponentScaleUpOrDown(namespaceName, kafkaSelector, scaledUpReplicas);
 
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(clusterName, topicName, 4, 4, 4).build());
+        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(clusterName, topicName, 4, 4, 4, namespaceName).build());
 
         //Test that the new pod does not have errors or failures in events
         String uid = kubeClient(namespaceName).getPodUid(KafkaResources.kafkaPodName(clusterName,  3));
@@ -141,7 +141,7 @@ public class KafkaRollerIsolatedST extends AbstractST {
         final LabelSelector kafkaSelector = KafkaResource.getLabelSelector(clusterName, kafkaName);
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(clusterName, 3, 3).build());
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(clusterName, topicName, 1, 1).build());
+        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(clusterName, topicName, 1, 1, namespaceName).build());
 
         Map<String, String> kafkaPods = PodUtils.podSnapshot(namespaceName, kafkaSelector);
 

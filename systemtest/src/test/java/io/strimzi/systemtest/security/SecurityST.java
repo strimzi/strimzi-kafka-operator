@@ -235,7 +235,7 @@ class SecurityST extends AbstractST {
 
         resourceManager.createResource(extensionContext,
             KafkaUserTemplates.tlsUser(testStorage).build(),
-            KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getTopicName()).build()
+            KafkaTopicTemplates.topic(testStorage).build()
         );
 
         KafkaClients kafkaClients = new KafkaClientsBuilder()
@@ -411,7 +411,7 @@ class SecurityST extends AbstractST {
 
         resourceManager.createResource(extensionContext,
             KafkaUserTemplates.tlsUser(testStorage).build(),
-            KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getTopicName()).build()
+            KafkaTopicTemplates.topic(testStorage).build()
         );
 
         KafkaClients kafkaClients = new KafkaClientsBuilder()
@@ -599,7 +599,7 @@ class SecurityST extends AbstractST {
 
         resourceManager.createResource(extensionContext,
             KafkaUserTemplates.tlsUser(testStorage).build(),
-            KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getTopicName()).build()
+            KafkaTopicTemplates.topic(testStorage).build()
         );
 
         KafkaClients kafkaClients = new KafkaClientsBuilder()
@@ -667,7 +667,7 @@ class SecurityST extends AbstractST {
 
         resourceManager.createResource(extensionContext,
             KafkaUserTemplates.tlsUser(testStorage).build(),
-            KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getTopicName()).build()
+            KafkaTopicTemplates.topic(testStorage).build()
         );
 
         Secret kafkaUserSecret = kubeClient(testStorage.getNamespaceName()).getSecret(testStorage.getNamespaceName(), testStorage.getUsername());
@@ -743,7 +743,7 @@ class SecurityST extends AbstractST {
 
         resourceManager.createResource(extensionContext,
             KafkaUserTemplates.tlsUser(testStorage).build(),
-            KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getTopicName()).build()
+            KafkaTopicTemplates.topic(testStorage).build()
         );
 
         KafkaClients kafkaClients = new KafkaClientsBuilder()
@@ -928,7 +928,7 @@ class SecurityST extends AbstractST {
             .endSpec()
             .build());
 
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(clusterName, topicName).build());
+        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(clusterName, topicName, namespaceName).build());
         resourceManager.createResource(extensionContext, KafkaUserTemplates.tlsUser(namespaceName, clusterName, kafkaUserWrite)
             .editSpec()
                 .withNewKafkaUserAuthorizationSimple()
@@ -1014,7 +1014,7 @@ class SecurityST extends AbstractST {
             .endSpec()
             .build());
 
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(clusterName, topicName).build());
+        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(clusterName, topicName, namespaceName).build());
         resourceManager.createResource(extensionContext, KafkaUserTemplates.tlsUser(namespaceName, clusterName, userName)
             .editSpec()
                 .withNewKafkaUserAuthorizationSimple()
@@ -1096,7 +1096,7 @@ class SecurityST extends AbstractST {
 
         resourceManager.createResource(extensionContext,
             KafkaUserTemplates.tlsUser(testStorage).build(),
-            KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getTopicName()).build()
+            KafkaTopicTemplates.topic(testStorage).build()
         );
 
         KafkaClients kafkaClients = new KafkaClientsBuilder()
@@ -1178,7 +1178,7 @@ class SecurityST extends AbstractST {
         // Try to send and receive messages with new certificates
         String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
 
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(testStorage.getClusterName(), topicName).build());
+        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(testStorage.getClusterName(), topicName, testStorage.getNamespaceName()).build());
 
         kafkaClients = new KafkaClientsBuilder(kafkaClients)
             .withConsumerGroup(ClientUtils.generateRandomConsumerGroup())
