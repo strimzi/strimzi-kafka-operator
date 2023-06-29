@@ -21,7 +21,7 @@ import lombok.EqualsAndHashCode;
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({ "url", "sha512sum", "fileName", "insecure" })
-@EqualsAndHashCode
+@EqualsAndHashCode(callSuper = true)
 public class OtherArtifact extends DownloadableArtifact {
     private static final long serialVersionUID = 1L;
 

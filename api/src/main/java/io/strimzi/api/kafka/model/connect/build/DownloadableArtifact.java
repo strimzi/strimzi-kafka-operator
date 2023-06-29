@@ -19,7 +19,7 @@ import lombok.EqualsAndHashCode;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@EqualsAndHashCode
+@EqualsAndHashCode(callSuper = true)
 public abstract class DownloadableArtifact extends Artifact {
     private static final long serialVersionUID = 1L;
 

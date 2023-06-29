@@ -21,7 +21,7 @@ import lombok.EqualsAndHashCode;
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({ "repository", "group", "artifact", "version" })
-@EqualsAndHashCode
+@EqualsAndHashCode(callSuper = true)
 public class MavenArtifact extends Artifact {
     private static final long serialVersionUID = 1L;
     public static final String DEFAULT_REPOSITORY = "https://repo1.maven.org/maven2/";
@@ -30,6 +30,7 @@ public class MavenArtifact extends Artifact {
     private String artifact;
     private String version;
     private String repository;
+    private Boolean insecure;
 
     @Description("Must be `" + TYPE_MVN + "`")
     @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -73,5 +74,17 @@ public class MavenArtifact extends Artifact {
 
     public void setRepository(String repository) {
         this.repository = repository;
+    }
+
+    @Description("By default, connections using TLS are verified to check they are secure. " +
+            "The server certificate used must be valid, trusted, and contain the server name. " +
+            "By setting this option to `true`, all TLS verification is disabled and the artifacts will be downloaded, even when the server is considered insecure.")
+    @JsonInclude(JsonInclude.Include.NON_NULL)
+    public Boolean getInsecure() {
+        return insecure;
+    }
+
+    public void setInsecure(Boolean insecure) {
+        this.insecure = insecure;
     }
 }
