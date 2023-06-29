@@ -18,6 +18,7 @@ OUT_DIR=""
 SECRETS_OPT="hidden"
 ACLS_OPT="off"
 CONSUMERS_OPT="off"
+TOPICS_OPT="on"
 TRANSACTIONS_OPT="on"
 
 # sed non-printable text delimiter
@@ -60,6 +61,7 @@ Optional:
   --out-dir=<string>            Script output directory.
   --acls=(off|on)               Kafka ACL (Access Control List) verbosity. Default is off, these will not be reported.
   --consumers=(off|on)          Kafka Consumer information verbosity. Default is off, these will not be reported.
+  --topics=(off|on)             Kafka Topic information verbosity. Default is on, high-level topic information will be reported.
   --transactions=(off|on)       Kafka Transaction information verbosity. Default is on, high-level transaction information will be reported.
 "
 OPTSPEC=":-:"
@@ -97,6 +99,9 @@ while getopts "$OPTSPEC" optchar; do
           ;;
         transactions=*)
           TRANSACTIONS_OPT=${OPTARG#*=} && readonly TRANSACTIONS_OPT
+          ;;
+        topics=*)
+          TOPICS_OPT=${OPTARG#*=} && readonly TOPICS_OPT
           ;;
         *)
           error "$USAGE"
@@ -250,36 +255,53 @@ get_pod_logs() {
   fi
 }
 
-get_kafka_instance_state() {
-  mkdir -p "$OUT_DIR"/reports/kafka/
-  local service && service=$($KUBE_CLIENT -n "$NAMESPACE" get service  -o name -l "app.kubernetes.io/name=kafka" | grep bootstrap | head -n1) && readonly service
-  local bootstrap_server && bootstrap_server=$($KUBE_CLIENT get kafka "$CLUSTER" -o=jsonpath='{.status.listeners[?(@.type=="plain")].bootstrapServers}' -n "$NAMESPACE") && readonly bootstrap_server
+get_kafka_acls() {
+  local service="$1"
+  local bootstrap_server="$2"
   if [[ -n $service && -n $bootstrap_server ]]; then
     local kafka_output
-    if [[ "$ACLS_OPT" == "on" ]]; then
-      kafka_output="$($KUBE_CLIENT exec -n "$NAMESPACE" "$service" -c kafka -- sh /opt/kafka/bin/kafka-acls.sh --bootstrap-server "$bootstrap_server" --list 2>&1)" ||true
-      if [[ -n $kafka_output ]]; then printf "%s" "$kafka_output" > "$OUT_DIR"/reports/kafka/kafka-acls.txt && echo "    acls"; fi
-    fi
-    if [[ "$CONSUMERS_OPT" == "on" ]]; then
-      kafka_output="$($KUBE_CLIENT exec -n "$NAMESPACE" "$service" -c kafka -- sh /opt/kafka/bin/kafka-consumer-groups.sh --bootstrap-server "$bootstrap_server" --all-groups --describe  2>&1)" ||true
-      if [[ -n $kafka_output ]]; then printf "%s" "$kafka_output" > "$OUT_DIR"/reports/kafka/kafka-consumer-groups.txt && echo "    consumergroups"; fi
-    fi
+    kafka_output="$($KUBE_CLIENT exec -n "$NAMESPACE" "$service" -c kafka -- sh /opt/kafka/bin/kafka-acls.sh --bootstrap-server "$bootstrap_server" --list 2>&1)" ||true
+    if [[ -n $kafka_output ]]; then printf "%s" "$kafka_output" > "$OUT_DIR"/reports/kafka/kafka-acls.txt && echo "    acls"; fi
+  fi
+}
+
+get_kafka_consumer_groups() {
+  local service="$1"
+  local bootstrap_server="$2"
+  if [[ -n $service && -n $bootstrap_server ]]; then
+    local kafka_output
+    kafka_output="$($KUBE_CLIENT exec -n "$NAMESPACE" "$service" -c kafka -- sh /opt/kafka/bin/kafka-consumer-groups.sh --bootstrap-server "$bootstrap_server" --all-groups --describe  2>&1)" ||true
+    if [[ -n $kafka_output ]]; then printf "%s" "$kafka_output" > "$OUT_DIR"/reports/kafka/kafka-consumer-groups.txt && echo "    consumergroups"; fi
+  fi
+}
+
+get_kafka_topics() {
+  local service="$1"
+  local bootstrap_server="$2"
+  if [[ -n $service && -n $bootstrap_server ]]; then
+    local kafka_output
     kafka_output="$($KUBE_CLIENT exec -n "$NAMESPACE" "$service" -c kafka -- sh /opt/kafka/bin/kafka-topics.sh --bootstrap-server "$bootstrap_server" --list 2>&1)" ||true
     if [[ -n $kafka_output ]]; then printf "%s" "$kafka_output" > "$OUT_DIR"/reports/kafka/kafka-topics.txt && echo "    topics"; fi
-    if [[ "$TRANSACTIONS_OPT" == "on" ]]; then
-      echo "    transactions"
-      kafka_output="$($KUBE_CLIENT exec -n "$NAMESPACE" "$service" -c kafka -- sh /opt/kafka/bin/kafka-transactions.sh --bootstrap-server "$bootstrap_server" list 2>&1)" ||true
-      if [[ -n $kafka_output ]]; then printf "%s" "$kafka_output" > "$OUT_DIR"/reports/kafka/kafka-transactions-list.txt && echo "        list"; fi
-      local brokers && brokers=""
-      kafka_output="$($KUBE_CLIENT exec -n "$NAMESPACE" "$service" -c kafka -- ./bin/kafka-broker-api-versions.sh --bootstrap-server "$bootstrap_server" 2>&1)" ||true
-      if [[ -n $kafka_output ]]; then brokers="$(printf "%s" "$kafka_output" | grep "${bootstrap_server:(-4)}" | sed "s/\..*$//" | sort)"; fi
-      if [[ -n $brokers ]]; then
-        echo "        hangingtransactions"
-        for broker in ${brokers}; do
-          kafka_output="$($KUBE_CLIENT exec -n "$NAMESPACE" "$service" -c kafka -- sh /opt/kafka/bin/kafka-transactions.sh --bootstrap-server "$bootstrap_server" find-hanging --max-transaction-timeout 15 --broker-id "${broker:(-1)}" 2>&1)" ||true
-          if [[ -n $kafka_output ]]; then printf "%s" "$kafka_output" > "$OUT_DIR"/reports/kafka/kafka-transactions-hanging-"$broker".txt && echo "            $broker"; fi
-        done
-      fi
+  fi
+}
+
+get_kafka_transactions() {
+  local service="$1"
+  local bootstrap_server="$2"
+  if [[ -n $service && -n $bootstrap_server ]]; then
+    local kafka_output
+    echo "    transactions"
+    kafka_output="$($KUBE_CLIENT exec -n "$NAMESPACE" "$service" -c kafka -- sh /opt/kafka/bin/kafka-transactions.sh --bootstrap-server "$bootstrap_server" list 2>&1)" ||true
+    if [[ -n $kafka_output ]]; then printf "%s" "$kafka_output" > "$OUT_DIR"/reports/kafka/kafka-transactions-list.txt && echo "        list"; fi
+    local brokers && brokers=""
+    kafka_output="$($KUBE_CLIENT exec -n "$NAMESPACE" "$service" -c kafka -- ./bin/kafka-broker-api-versions.sh --bootstrap-server "$bootstrap_server" 2>&1)" ||true
+    if [[ -n $kafka_output ]]; then brokers="$(printf "%s" "$kafka_output" | grep "${bootstrap_server:(-4)}" | sed "s/\..*$//" | sort)"; fi
+    if [[ -n $brokers ]]; then
+      echo "        hangingtransactions"
+      for broker in ${brokers}; do
+        kafka_output="$($KUBE_CLIENT exec -n "$NAMESPACE" "$service" -c kafka -- sh /opt/kafka/bin/kafka-transactions.sh --bootstrap-server "$bootstrap_server" find-hanging --max-transaction-timeout 15 --broker-id "${broker:(-1)}" 2>&1)" ||true
+        if [[ -n $kafka_output ]]; then printf "%s" "$kafka_output" > "$OUT_DIR"/reports/kafka/kafka-transactions-hanging-"$broker".txt && echo "            $broker"; fi
+      done
     fi
   fi
 }
@@ -383,7 +405,13 @@ for POD in $PODS; do
 done
 
 echo "kafka"
-get_kafka_instance_state
+mkdir -p "$OUT_DIR"/reports/kafka/
+SERVICE=$($KUBE_CLIENT -n "$NAMESPACE" get service  -o name -l "app.kubernetes.io/name=kafka" | grep bootstrap | head -n1) && readonly SERVICE
+BOOTSTRAP_SERVER=$($KUBE_CLIENT get kafka "$CLUSTER" -o=jsonpath='{.status.listeners[?(@.type=="plain")].bootstrapServers}' -n "$NAMESPACE") && readonly BOOTSTRAP_SERVER
+if [[ "$ACLS_OPT" == "on" ]]; then get_kafka_acls "$SERVICE" "$BOOTSTRAP_SERVER"; fi
+if [[ "$CONSUMERS_OPT" == "on" ]]; then get_kafka_consumer_groups "$SERVICE" "$BOOTSTRAP_SERVER"; fi
+if [[ "$TOPICS_OPT" == "on" ]]; then get_kafka_topics "$SERVICE" "$BOOTSTRAP_SERVER"; fi
+if [[ "$TRANSACTIONS_OPT" == "on" ]]; then get_kafka_transactions "$SERVICE" "$BOOTSTRAP_SERVER"; fi
 
 FILENAME="report-$(date +"%d-%m-%Y_%H-%M-%S")"
 OLD_DIR="$(pwd)"
