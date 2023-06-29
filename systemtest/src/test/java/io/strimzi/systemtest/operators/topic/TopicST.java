@@ -493,7 +493,7 @@ public class TopicST extends AbstractST {
         KafkaTopicUtils.waitForKafkaTopicNotReady(clusterOperator.getDeploymentNamespace(), topicName);
 
         reason = "IllegalArgumentException";
-        reasonMessage = "KafkaTopics cannot be renamed, but KafkaTopic's spec.topicName has changed.";
+        reasonMessage = "Kafka topics cannot be renamed, but KafkaTopic's spec.topicName has changed.";
         assertMetricResourceState(toMetricsCollector, KafkaTopic.RESOURCE_KIND, topicName, clusterOperator.getDeploymentNamespace(), 0, reasonMessage);
         assertKafkaTopicStatus(topicName, clusterOperator.getDeploymentNamespace(), NotReady, reason, reasonMessage, 2);
 
