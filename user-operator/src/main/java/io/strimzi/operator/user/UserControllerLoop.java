@@ -5,8 +5,10 @@
 package io.strimzi.operator.user;
 
 import io.fabric8.kubernetes.api.model.Secret;
+import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.informers.cache.Lister;
+import io.strimzi.api.kafka.KafkaUserList;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.KafkaUserBuilder;
 import io.strimzi.api.kafka.model.status.Condition;
@@ -21,6 +23,7 @@ import io.strimzi.operator.common.controller.ControllerQueue;
 import io.strimzi.operator.common.controller.ReconciliationLockManager;
 import io.strimzi.operator.common.metrics.ControllerMetricsHolder;
 import io.strimzi.operator.common.operator.resource.StatusUtils;
+import io.strimzi.operator.common.operator.resource.concurrent.CrdOperator;
 import io.strimzi.operator.user.model.KafkaUserModel;
 import io.strimzi.operator.user.operator.KafkaUserOperator;
 
@@ -41,6 +44,7 @@ public class UserControllerLoop extends AbstractControllerLoop {
 
     private final Lister<KafkaUser> userLister;
     private final Lister<Secret> secretLister;
+    private final CrdOperator<KubernetesClient, KafkaUser, KafkaUserList> userCrdOperator;
     private final KafkaUserOperator userOperator;
     private final ControllerMetricsHolder metrics;
 
@@ -59,6 +63,7 @@ public class UserControllerLoop extends AbstractControllerLoop {
      *                              used to run the progress warnings
      * @param userLister            The KafkaUser resource lister for getting the resources
      * @param secretLister          The Secret lister for getting the secrets
+     * @param userCrdOperator       For operating on KafkaUser resources
      * @param userOperator          The KafkaUserOperator which has the logic for updating the Kubernetes or Kafka resources
      * @param metrics               The metrics holder for providing metrics about the reconciliation
      * @param config                The User Operator config
@@ -70,6 +75,7 @@ public class UserControllerLoop extends AbstractControllerLoop {
             ScheduledExecutorService scheduledExecutor,
             Lister<KafkaUser> userLister,
             Lister<Secret> secretLister,
+            CrdOperator<KubernetesClient, KafkaUser, KafkaUserList> userCrdOperator,
             KafkaUserOperator userOperator,
             ControllerMetricsHolder metrics,
             UserOperatorConfig config
@@ -78,6 +84,7 @@ public class UserControllerLoop extends AbstractControllerLoop {
 
         this.userLister = userLister;
         this.secretLister = secretLister;
+        this.userCrdOperator = userCrdOperator;
         this.userOperator = userOperator;
         this.metrics = metrics;
 
@@ -155,7 +162,7 @@ public class UserControllerLoop extends AbstractControllerLoop {
                         .withStatus(desiredStatus)
                         .build();
 
-                userOperator.updateStatusAsync(reconciliation, updateKafkaUser)
+                userCrdOperator.updateStatusAsync(reconciliation, updateKafkaUser)
                     .exceptionally(error -> {
                         if (Util.unwrap(error) instanceof KubernetesClientException kce) {
                             switch (kce.getCode()) {

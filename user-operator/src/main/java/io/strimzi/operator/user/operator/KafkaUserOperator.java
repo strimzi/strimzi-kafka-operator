@@ -7,7 +7,6 @@ package io.strimzi.operator.user.operator;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.fabric8.kubernetes.client.informers.SharedIndexInformer;
 import io.strimzi.api.kafka.KafkaUserList;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.KafkaUserQuotas;
@@ -34,12 +33,11 @@ import java.time.Clock;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
-import java.util.function.Supplier;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -47,7 +45,6 @@ import java.util.stream.Collectors;
  */
 public class KafkaUserOperator {
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(KafkaUserOperator.class.getName());
-    private static final String MISSING_SECRET_MSG = "Secret %s in namespace %s with %s not found";
 
     private final CertManager certManager;
     private final AdminApiOperator<Set<SimpleAclRule>, Set<String>> aclOperator;
@@ -107,41 +104,6 @@ public class KafkaUserOperator {
         quotasOperator.stop();
         aclOperator.stop();
         scramCredentialsOperator.stop();
-    }
-
-    /**
-     * Creates the informer for given resource type to inform on all instances in
-     * given namespace (or cluster-wide) matching the selector. The informer
-     * returned by this method is not running and has to be started by the code
-     * using it.
-     *
-     * @param namespace        Namespace on which to inform
-     * @param selectorLabels   Selector which should be matched by the resources
-     * @param resyncIntervalMs The interval in which the resync of the informer
-     *                         should happen in milliseconds
-     *
-     * @return Informer instance
-     *
-     * @see io.strimzi.operator.common.operator.resource.concurrent.AbstractNamespacedResourceOperator#informer(String,
-     *      Map, long)
-     */
-    public SharedIndexInformer<KafkaUser> informer(String namespace, Map<String, String> selectorLabels, long resyncIntervalMs) {
-        return kafkaUserCrdOperator.informer(namespace, selectorLabels, resyncIntervalMs);
-    }
-
-    /**
-     * Updates custom resource status asynchronously
-     *
-     * @param reconciliation Reconciliation marker
-     * @param kafkaUser      Desired resource with the updated status
-     *
-     * @return Future which completes when the status is patched
-     *
-     * @see io.strimzi.operator.common.operator.resource.concurrent.CrdOperator#updateStatusAsync(Reconciliation,
-     *      KafkaUser)
-     */
-    public CompletionStage<KafkaUser> updateStatusAsync(Reconciliation reconciliation, KafkaUser kafkaUser) {
-        return kafkaUserCrdOperator.updateStatusAsync(reconciliation, kafkaUser);
     }
 
     /**
@@ -325,23 +287,17 @@ public class KafkaUserOperator {
      * @param userSecret        Secret with existing user credentials or null if the secret doesn't exist yet
      */
     private CompletionStage<Void> maybeGenerateScramCredentials(Reconciliation reconciliation, KafkaUserModel user, Secret userSecret) {
-        CompletableFuture<Secret> desiredPasswordPromise = new CompletableFuture<>();
+        CompletableFuture<Secret> desiredPasswordPromise;
 
         if (user.isUserWithDesiredPassword()) {
             // User is a SCRAM-SHA-512 user and requested some specific password instead of generating a random password
-            getRequiredSecret(
+            desiredPasswordPromise = getRequiredSecret(
                     reconciliation.namespace(),
                     user.desiredPasswordSecretName(),
-                    () -> new InvalidResourceException(String.format(MISSING_SECRET_MSG, user.desiredPasswordSecretName(), reconciliation.namespace(), "requested password")))
-                .whenComplete((secret, error) -> {
-                    if (error != null) {
-                        desiredPasswordPromise.completeExceptionally(Util.unwrap(error));
-                    } else {
-                        desiredPasswordPromise.complete(secret);
-                    }
-                });
+                    InvalidResourceException::new)
+                .toCompletableFuture();
         } else {
-            desiredPasswordPromise.complete(null);
+            desiredPasswordPromise = CompletableFuture.completedFuture(null);
         }
 
         return desiredPasswordPromise.thenAccept(desiredPasswordSecret -> user.maybeGeneratePassword(
@@ -364,12 +320,12 @@ public class KafkaUserOperator {
         CompletableFuture<Secret> caCertPromise = getRequiredSecret(
                 namespace,
                 config.getCaCertSecretName(),
-                () -> new InvalidConfigurationException(String.format(MISSING_SECRET_MSG, config.getCaCertSecretName(), namespace, "CA certificate")))
+                InvalidConfigurationException::new)
             .toCompletableFuture();
         CompletableFuture<Secret> caKeyPromise = getRequiredSecret(
                 namespace,
                 config.getCaKeySecretName(),
-                () -> new InvalidConfigurationException(String.format(MISSING_SECRET_MSG, config.getCaKeySecretName(), namespace, "CA key")))
+                InvalidConfigurationException::new)
             .toCompletableFuture();
 
         return CompletableFuture.allOf(caCertPromise, caKeyPromise)
@@ -387,14 +343,15 @@ public class KafkaUserOperator {
                 ));
     }
 
-    private CompletionStage<Secret> getRequiredSecret(String namespace, String name, Supplier<Throwable> errorSupplier) {
+    private CompletionStage<Secret> getRequiredSecret(String namespace, String name, Function<String, Throwable> missingSecretError) {
         CompletableFuture<Secret> secretPromise = new CompletableFuture<>();
 
         secretOperator.getAsync(namespace, name).whenComplete((secret, error) -> {
             if (error != null) {
                 secretPromise.completeExceptionally(Util.unwrap(error));
             } else if (secret == null) {
-                secretPromise.completeExceptionally(errorSupplier.get());
+                String msg = String.format("Secret %s in namespace %s not found", name, namespace);
+                secretPromise.completeExceptionally(missingSecretError.apply(msg));
             } else {
                 secretPromise.complete(secret);
             }

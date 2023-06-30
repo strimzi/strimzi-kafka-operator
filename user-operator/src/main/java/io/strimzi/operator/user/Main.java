@@ -7,7 +7,6 @@ package io.strimzi.operator.user;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.micrometer.core.instrument.MeterRegistry;
-import io.micrometer.core.instrument.binder.MeterBinder;
 import io.micrometer.core.instrument.binder.jvm.ClassLoaderMetrics;
 import io.micrometer.core.instrument.binder.jvm.JvmGcMetrics;
 import io.micrometer.core.instrument.binder.jvm.JvmMemoryMetrics;
@@ -41,12 +40,16 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Supplier;
-import java.util.stream.Stream;
 
 /**
  * The main class of the Strimzi User Operator
+ *
+ * Due to the number of classes instantiated in Main for bootstrapping the
+ * operator, the checkstyle error for Class Data Abstraction Coupling is
+ * disabled here. See
+ * https://checkstyle.sourceforge.io/checks/metrics/classdataabstractioncoupling.html
  */
+@SuppressWarnings("checkstyle:classdataabstractioncoupling")
 public class Main {
     private static final Logger LOGGER = LogManager.getLogger(Main.class);
 
@@ -75,12 +78,13 @@ public class Main {
         KubernetesClient client = new OperatorKubernetesClientBuilder("strimzi-user-operator", Main.class.getPackage().getImplementationVersion()).build();
         SecretOperator secretOperator = new SecretOperator(kafkaUserOperatorExecutor, client);
         Admin adminClient = createAdminClient(config, secretOperator, new DefaultAdminClientProvider());
+        var kafkaUserCrdOperator = new CrdOperator<>(kafkaUserOperatorExecutor, client, KafkaUser.class, KafkaUserList.class, "KafkaUser");
 
         KafkaUserOperator kafkaUserOperator = new KafkaUserOperator(
                 config,
                 new OpenSslCertManager(),
                 secretOperator,
-                new CrdOperator<>(kafkaUserOperatorExecutor, client, KafkaUser.class, KafkaUserList.class, "KafkaUser"),
+                kafkaUserCrdOperator,
                 new ScramCredentialsOperator(adminClient, config, kafkaUserOperatorExecutor),
                 new QuotasOperator(adminClient, config, kafkaUserOperatorExecutor),
                 config.isAclsAdminApiSupported() ? new SimpleAclOperator(adminClient, config, kafkaUserOperatorExecutor) : new DisabledSimpleAclOperator()
@@ -92,6 +96,7 @@ public class Main {
         UserController controller = new UserController(
                 config,
                 secretOperator,
+                kafkaUserCrdOperator,
                 kafkaUserOperator,
                 metricsProvider
         );
@@ -172,25 +177,17 @@ public class Main {
     private static MetricsProvider createMetricsProvider()  {
         MeterRegistry registry = new PrometheusMeterRegistry(PrometheusConfig.DEFAULT);
 
-        /*
-         * Bind JVM metrics. Handled as stream of Suppliers to circumvent checkstyle
-         * error for Class Data Abstraction Coupling by limiting direct instantiations.
-         *
-         * See https://checkstyle.sourceforge.io/checks/metrics/classdataabstractioncoupling.html
-         */
-        Stream.<Supplier<MeterBinder>>of(
-                ClassLoaderMetrics::new,
-                JvmMemoryMetrics::new,
-                JvmGcMetrics::new,
-                ProcessorMetrics::new,
-                JvmThreadMetrics::new)
-            .forEach(binder -> binder.get().bindTo(registry));
+        // Bind JVM metrics
+        new ClassLoaderMetrics().bindTo(registry);
+        new JvmMemoryMetrics().bindTo(registry);
+        new JvmGcMetrics().bindTo(registry);
+        new ProcessorMetrics().bindTo(registry);
+        new JvmThreadMetrics().bindTo(registry);
 
         return new MicrometerMetricsProvider(registry);
     }
 
     private static class OperatorWorkThreadFactory implements ThreadFactory {
-
         private final AtomicInteger threadCounter = new AtomicInteger(0);
 
         @Override

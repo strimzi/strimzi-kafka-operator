@@ -14,7 +14,6 @@ import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.status.KafkaUserStatus;
 import io.strimzi.operator.common.MetricsProvider;
 import io.strimzi.operator.common.MicrometerMetricsProvider;
-import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.NamespaceAndName;
 import io.strimzi.operator.common.operator.resource.StatusUtils;
 import io.strimzi.operator.common.operator.resource.concurrent.CrdOperator;
@@ -42,10 +41,11 @@ import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.greaterThanOrEqualTo;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.Mockito.atLeast;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -70,15 +70,7 @@ public class UserControllerMockTest {
         mockKube.start();
         secretOperator = new SecretOperator(ForkJoinPool.commonPool(), client);
         kafkaUserOps = new CrdOperator<>(ForkJoinPool.commonPool(), client, KafkaUser.class, KafkaUserList.class, "KafkaUser");
-
         mockKafkaUserOperator = mock(KafkaUserOperator.class);
-        when(mockKafkaUserOperator.informer(any(String.class), anyMap(), any(long.class)))
-            .thenAnswer(args -> kafkaUserOps.informer(
-                    args.getArgument(0),
-                    args.<Map<String, String>>getArgument(1),
-                    args.getArgument(2)));
-        when(mockKafkaUserOperator.updateStatusAsync(any(Reconciliation.class), any(KafkaUser.class)))
-            .thenAnswer(args -> kafkaUserOps.updateStatusAsync(args.getArgument(0), args.getArgument(1)));
     }
 
     @AfterEach
@@ -102,6 +94,7 @@ public class UserControllerMockTest {
         UserController controller = new UserController(
                 ResourceUtils.createUserOperatorConfigForUserControllerTesting(Map.of(), 120000, 10, 1, ""),
                 secretOperator,
+                kafkaUserOps,
                 mockKafkaUserOperator,
                 metrics
         );
@@ -164,6 +157,7 @@ public class UserControllerMockTest {
         UserController controller = new UserController(
                 ResourceUtils.createUserOperatorConfigForUserControllerTesting(Map.of(), 120000, 10, 1, "prefix-"),
                 secretOperator,
+                kafkaUserOps,
                 mockKafkaUserOperator,
                 metrics
         );
@@ -221,6 +215,7 @@ public class UserControllerMockTest {
         UserController controller = new UserController(
                 ResourceUtils.createUserOperatorConfigForUserControllerTesting(Map.of(), 120000, 10, 1, ""),
                 secretOperator,
+                kafkaUserOps,
                 mockKafkaUserOperator,
                 metrics
         );
@@ -275,6 +270,7 @@ public class UserControllerMockTest {
         UserController controller = new UserController(
                 ResourceUtils.createUserOperatorConfigForUserControllerTesting(Map.of(), 120000, 10, 1, ""),
                 secretOperator,
+                kafkaUserOps,
                 mockKafkaUserOperator,
                 metrics
         );
@@ -328,6 +324,7 @@ public class UserControllerMockTest {
         UserController controller = new UserController(
                 ResourceUtils.createUserOperatorConfigForUserControllerTesting(Map.of("select", "yes"), 120000, 10, 1, ""),
                 secretOperator,
+                kafkaUserOps,
                 mockKafkaUserOperator,
                 metrics
         );
@@ -388,6 +385,7 @@ public class UserControllerMockTest {
         UserController controller = new UserController(
                 ResourceUtils.createUserOperatorConfigForUserControllerTesting(Map.of(), 500, 10, 1, ""),
                 secretOperator,
+                kafkaUserOps,
                 mockKafkaUserOperator,
                 metrics
         );
@@ -438,16 +436,19 @@ public class UserControllerMockTest {
         });
 
         AtomicBoolean statusUpdateInvoked = new AtomicBoolean(false);
-        when(mockKafkaUserOperator.updateStatusAsync(any(), any())).thenAnswer(i -> {
+        var spiedKafkaUserOps = spy(kafkaUserOps);
+
+        doAnswer(i -> {
             KubernetesClientException error = new KubernetesClientException(errorDescription + " (expected)", errorCode, null);
             statusUpdateInvoked.set(true);
             return CompletableFuture.failedStage(error);
-        });
+        }).when(spiedKafkaUserOps).updateStatusAsync(any(), any());
 
         // Create User Controller
         UserController controller = new UserController(
                 ResourceUtils.createUserOperatorConfigForUserControllerTesting(Map.of(), 5, 1, 1, ""),
                 secretOperator,
+                spiedKafkaUserOps,
                 mockKafkaUserOperator,
                 metrics
         );
@@ -488,16 +489,19 @@ public class UserControllerMockTest {
             return CompletableFuture.completedFuture(status);
         });
 
+        var spiedKafkaUserOps = spy(kafkaUserOps);
         AtomicBoolean statusUpdateInvoked = new AtomicBoolean(false);
-        when(mockKafkaUserOperator.updateStatusAsync(any(), any())).thenAnswer(i -> {
+
+        doAnswer(i -> {
             statusUpdateInvoked.set(true);
             return CompletableFuture.failedStage(new RuntimeException("Test exception (expected)"));
-        });
+        }).when(spiedKafkaUserOps).updateStatusAsync(any(), any());
 
         // Create User Controller
         UserController controller = new UserController(
                 ResourceUtils.createUserOperatorConfigForUserControllerTesting(Map.of(), 5, 1, 1, ""),
                 secretOperator,
+                spiedKafkaUserOps,
                 mockKafkaUserOperator,
                 metrics
         );

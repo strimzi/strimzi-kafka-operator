@@ -34,7 +34,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 
 import java.nio.charset.StandardCharsets;
@@ -1497,11 +1497,8 @@ public class KafkaUserOperatorMockTest {
     }
 
     @ParameterizedTest
-    @CsvSource({
-        ResourceUtils.CA_CERT_NAME + ", CA certificate",
-        ResourceUtils.CA_KEY_NAME + ", CA key",
-    })
-    public void testReconciliationFailsWithMissingCaSecrets(String missingSecretName, String missingContentDescription) {
+    @ValueSource(strings = { ResourceUtils.CA_CERT_NAME, ResourceUtils.CA_KEY_NAME })
+    void testReconciliationFailsWithMissingCaSecrets(String missingSecretName) {
         KafkaUser user = ResourceUtils.createKafkaUserTls();
         KafkaUserOperator op = new KafkaUserOperator(ResourceUtils.createUserOperatorConfig(), mockCertManager, secretOps, kafkaUserOps, scramOps, quotasOps, new DisabledSimpleAclOperator());
         secretOps.resource(ResourceUtils.NAMESPACE, missingSecretName).delete();
@@ -1510,6 +1507,6 @@ public class KafkaUserOperatorMockTest {
         ExecutionException thrown = assertThrows(ExecutionException.class, futureResult.toCompletableFuture()::get);
         Throwable rootCause = Util.unwrap(thrown.getCause());
         assertTrue(rootCause instanceof InvalidConfigurationException);
-        assertThat(rootCause.getMessage(), containsString(missingContentDescription));
+        assertThat(rootCause.getMessage(), containsString(missingSecretName));
     }
 }
