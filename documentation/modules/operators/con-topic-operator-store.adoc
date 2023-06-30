@@ -3,7 +3,7 @@
 // assembly-using-the-topic-operator.adoc
 
 [id='ref-topic-operator-store-{context}']
-= Topic Operator topic store
+= Topic store
 
 [role="_abstract"]
 The Topic Operator uses Kafka to store topic metadata describing topic configuration as key-value pairs.
@@ -50,11 +50,11 @@ The command must correspond to the type of listener and authentication used to a
 
 The Topic Operator will reconstruct the ZooKeeper topic metadata from the state of the topics in Kafka.
 
-== Topic Operator topic replication and scaling
+== Topic replication and scaling
 
 The recommended configuration for topics managed by the Topic Operator is a topic replication factor of 3, and a minimum of 2 in-sync replicas.
 
-[source,shell,subs="+quotes,attributes"]
+[source,shell,subs="+attributes"]
 ----
 apiVersion: {KafkaTopicApiVersion}
 kind: KafkaTopic
@@ -63,10 +63,10 @@ metadata:
   labels:
     strimzi.io/cluster: my-cluster
 spec:
-  partitions: 10 <1>
-  replicas: 3 <2>
+  partitions: 10 # <1>
+  replicas: 3 # <2>
   config:
-    min.insync.replicas: 2 <3>
+    min.insync.replicas: 2 # <3>
   #...
 ----
 <1> The number of partitions for the topic.
@@ -82,32 +82,6 @@ However, you can use the `kafka-reassign-partitions.sh` tool to change the repli
 
 Alternatively, though the integration of Cruise Control for Strimzi cannot change the replication factor for topics,
 the optimization proposals it generates for rebalancing Kafka include commands that transfer partition replicas and change partition leadership.
-
-== Handling changes to topics
-
-A fundamental problem that the Topic Operator needs to solve is that there is no single source of truth:
-both the `KafkaTopic` resource and the Kafka topic can be modified independently of the Topic Operator.
-Complicating this, the Topic Operator might not always be able to observe changes at each end in real time.
-For example, when the Topic Operator is down.
-
-To resolve this, the Topic Operator maintains information about each topic in the topic store.
-When a change happens in the Kafka cluster or Kubernetes, it looks at both the state of the other system and the topic store in order to determine what needs to change to keep everything in sync.
-The same thing happens whenever the Topic Operator starts, and periodically while it is running.
-
-For example, suppose the Topic Operator is not running, and a `KafkaTopic` called _my-topic_ is created.
-When the Topic Operator starts, the topic store does not contain information on my-topic, so it can infer that the `KafkaTopic` was created after it was last running.
-The Topic Operator creates the topic corresponding to my-topic, and also stores metadata for my-topic in the topic store.
-
-If you update Kafka topic configuration or apply a change through the `KafkaTopic` custom resource,
-the topic store is updated after the Kafka cluster is reconciled.
-
-The topic store also allows the Topic Operator to manage scenarios where the topic configuration is changed in Kafka topics _and_ updated through Kubernetes `KafkaTopic` custom resources,
-as long as the changes are not incompatible.
-For example, it is possible to make changes to the same topic config key, but to different values.
-For incompatible changes, the Kafka configuration takes priority, and the `KafkaTopic` is updated accordingly.
-
-NOTE: You can also use the `KafkaTopic` resource to delete topics using a `kubectl delete -f _KAFKA-TOPIC-CONFIG-FILE_` command.
-To be able to do this, `delete.topic.enable` must be set to `true` (default) in the `spec.kafka.config` of the Kafka resource.
 
 [role="_additional-resources"]
 .Additional resources

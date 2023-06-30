@@ -3,102 +3,34 @@
 // assembly-using-the-topic-operator.adoc
 
 [id='ref-operator-topic-{context}']
-= Kafka topic resource
+= Topic management modes
 
-The `KafkaTopic` resource is used to configure topics, including the number of partitions and replicas.
+[role="_abstract"]
+The `KafkaTopic` resource is responsible for managing a single topic within a Kafka cluster. The Topic Operator provides two modes for managing `KafkaTopic` resources and Kafka topics:
 
-The full schema for `KafkaTopic` is described in link:{BookURLConfiguring}#type-KafkaTopic-reference[`KafkaTopic` schema reference^].
+Bidirectional mode:: Bidirectional mode is compatible with ZooKeeper for cluster management. It is not compatible with Strimzi in KRaft mode.
 
-== Identifying a Kafka cluster for topic handling
+(Preview) Unidirectional mode:: Unidirectional mode is designed for use with the xref:ref-operator-use-kraft-feature-gate-{context}[KRaft mode preview] for cluster management. It is not compatible with Strimzi when ZooKeeper is used.
 
-A `KafkaTopic` resource includes a label that specifies the name of the Kafka cluster (derived from the name of the `Kafka` resource) to which it belongs.
+NOTE: Unidirectional topic management is available as a preview. 
+Unidirectional topic management is not enabled by default, so you must xref:ref-operator-unidirectional-topic-operator-feature-gate-{context}[enable the `UnidirectionalTopicOperator` feature gate] to be able to use it.
 
-For example:
+== Bidirectional topic management
 
-[source,yaml,subs="attributes+"]
-----
-apiVersion: {KafkaTopicApiVersion}
-kind: KafkaTopic
-metadata:
-  name: topic-name-1
-  labels:
-    strimzi.io/cluster: my-cluster
-----
+In bidirectional mode, the Topic Operator operates as follows: 
 
-The label is used by the Topic Operator to identify the `KafkaTopic` resource and create a new topic, and also in subsequent handling of the topic.
+* When a `KafkaTopic` is created, deleted, or changed, the Topic Operator performs the corresponding operation on the Kafka topic.
+* Similarly, when a topic is created, deleted, or changed within the Kafka cluster, the Topic Operator performs the corresponding operation on the `KafkaTopic` resource.
 
-If the label does not match the Kafka cluster, the Topic Operator cannot identify the `KafkaTopic` and the topic is not created.
-
-== Kafka topic usage recommendations
-
-When working with topics, be consistent.
-Always operate on either `KafkaTopic` resources or topics directly in Kubernetes.
+TIP: Try to stick to one method of managing topics, either through the `KafkaTopic` resources or directly in Kafka.
 Avoid routinely switching between both methods for a given topic.
 
-Use topic names that reflect the nature of the topic, and remember that names cannot be changed later.
+== (Preview) Unidirectional topic management
 
-If creating a topic in Kafka, use a name that is a valid Kubernetes resource name,
-otherwise the Topic Operator will need to create the corresponding `KafkaTopic` with a name that conforms to the Kubernetes rules.
+In unidirectional mode, the Topic Operator operates as follows: 
 
-NOTE: For information on the requirements for identifiers and names in Kubernetes, refer to link:https://kubernetes.io/docs/concepts/overview/working-with-objects/names[Object Names and IDs^].
+* When a `KafkaTopic` is created, deleted, or changed, the Topic Operator performs the corresponding operation on the Kafka topic.
 
-== Kafka topic naming conventions
-
-Kafka and Kubernetes impose their own validation rules for the naming of topics in Kafka and `KafkaTopic.metadata.name` respectively.
-There are valid names for each which are invalid in the other.
-
-Using the `spec.topicName` property, it is possible to create a valid topic in Kafka with a name that would be invalid for the Kafka topic in Kubernetes.
-
-The `spec.topicName` property inherits Kafka naming validation rules:
-
-* The name must not be longer than 249 characters.
-* Valid characters for Kafka topics are ASCII alphanumerics, `.`, `_`, and `-`.
-* The name cannot be `.` or `..`, though `.` can be used in a name, such as `exampleTopic.` or `.exampleTopic`.
-
-`spec.topicName` must not be changed.
-
-For example:
-
-[source,yaml,subs="attributes+"]
-----
-apiVersion: {KafkaTopicApiVersion}
-kind: KafkaTopic
-metadata:
-  name: topic-name-1
-spec:
-  topicName: topicName-1 <1>
-  # ...
-----
-<1> Upper case is invalid in Kubernetes.
-
-cannot be changed to:
-
-[source,yaml,subs="attributes+"]
-----
-apiVersion: {KafkaTopicApiVersion}
-kind: KafkaTopic
-metadata:
-  name: topic-name-1
-spec:
-  topicName: name-2
-  # ...
-----
-
-[NOTE]
-====
-Some Kafka client applications, such as Kafka Streams, can create topics in Kafka programmatically.
-If those topics have names that are invalid Kubernetes resource names, the Topic Operator gives them a valid `metadata.name` based on the Kafka name.
-Invalid characters are replaced and a hash is appended to the name.
-For example:
-
-[source,yaml,subs="attributes+"]
-----
-apiVersion: {KafkaTopicApiVersion}
-kind: KafkaTopic
-metadata:
-  name: mytopic---c55e57fe2546a33f9e603caf57165db4072e827e
-spec:
-  topicName: myTopic
-  # ...
-----
-====
+If a topic is created, deleted, or modified directly within the Kafka cluster, without the presence of a corresponding `KafkaTopic` resource, the Topic Operator does not manage that topic.
+The Topic Operator will only manage Kafka topics associated with `KafkaTopic` resources and does not interfere with topics managed independently within the Kafka cluster.
+If a `KafkaTopic` does exist for a Kafka topic, any configuration changes made outside the resource are reverted. 

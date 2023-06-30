@@ -6,8 +6,8 @@
 = Using the Topic Operator
 
 [role="_abstract"]
-When you create, modify or delete a topic using the `KafkaTopic` resource,
-the Topic Operator ensures those changes are reflected in the Kafka cluster.
+The `KafkaTopic` resource configures topics, including partition and replica settings. 
+When you create, modify, or delete a topic using `KafkaTopic`, the Topic Operator ensures that these changes are reflected in the Kafka cluster.
 
 For more information on the `KafkaTopic` resource, see the link:{BookURLConfiguring}#type-KafkaTopic-reference[`KafkaTopic` schema reference^].
 
@@ -27,7 +27,17 @@ To deploy the standalone Topic Operator, you need to set environment variables t
 These environment variables do not need to be set if you are deploying the Topic Operator using the Cluster Operator as they will be set by the Cluster Operator.
 ====
 
+//modes of topic creation
 include::../../modules/operators/ref-operator-topic.adoc[leveloffset=+1]
+//topic naming conventions
+include::../../modules/operators/con-operator-topic-names.adoc[leveloffset=+1]
 include::../../modules/operators/con-topic-operator-store.adoc[leveloffset=+1]
+include::../../modules/operators/con-application-topic-handling.adoc[leveloffset=+1]
 include::../../modules/operators/proc-configuring-kafka-topic.adoc[leveloffset=+1]
+//converting managed topics to make changes to KafkaTopic resources
+include::../../modules/operators/proc-converting-managed-topics.adoc[leveloffset=+1]
+//converting non-managed topics so they are managed by KafkaTopic resources
+include::../../modules/operators/proc-converting-non-managed-topics.adoc[leveloffset=+1]
+//deleting managed topics
+include::../../modules/operators/con-deleting-managed-topics.adoc[leveloffset=+1]
 include::../../modules/operators/proc-topic-operator-with-resource-requests-limits.adoc[leveloffset=+1]

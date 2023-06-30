@@ -1,0 +1,38 @@
+// Module included in the following assemblies:
+//
+// assembly-using-the-topic-operator.adoc
+
+[id='con-application-topic-handling-{context}']
+= Handling changes to topics
+
+[role="_abstract"]
+The Topic Operator is capable of managing changes to topics when there is no single source of truth. 
+The `KafkaTopic` resource and the Kafka topic can undergo independent modifications, where real-time observation of changes may not always be feasible, particularly when the Topic Operator is not operational.
+To handle this, the Topic Operator maintains a topic store that stores relevant information about each topic. 
+It compares the state of the Kafka cluster and Kubernetes with the topic store to determine the necessary changes for synchronization. 
+This evaluation takes place during startup and at regular intervals while the Topic Operator is active.
+
+For example, if the Topic Operator is inactive, and a new `KafkaTopic` named _my-topic_ is created, upon restart, the Topic Operator recognizes the absence of _my-topic_ in the topic store. 
+It recognizes that the `KafkaTopic` was created after its last operation. 
+Consequently, the Topic Operator generates the corresponding Kafka topic and saves the metadata in the topic store.
+
+The topic store enables the Topic Operator to manage situations where the topic configuration is altered in both Kafka topics and `KafkaTopic` resources, as long as the changes are compatible.
+When Kafka topic configuration is updated or changes are made to the `KafkaTopic` custom resource, the topic store is updated after reconciling with the Kafka cluster, as long as the changes are compatible.
+
+The type of update depends on the xref:ref-operator-topic-{context}[mode of topic management].
+
+* For bidirectional topic management, configuration changes are synchronized between the Kafka topic and the `KafkaTopic` resource. Incompatible changes prioritize the Kafka configuration, and the `KafkaTopic` resource is adjusted accordingly.
+* For unidirectional topic management (currently in preview), configuration changes only go in one direction: from the `KafkaTopic` resource to the Kafka topic. Any changes to a Kafka topic managed outside the `KafkaTopic` resource are reverted. 
+
+== Automatic creation of topics
+
+Applications can trigger the automatic creation of topics in the Kafka cluster.
+If the Kafka broker configuration `auto.create.topics.enable` is set to `true`, it enables automatic topic creation by the Kafka broker when an application tries to produce or consume from a non-existing topic.   
+It's possible that this might trigger the creation of topics in the cluster before the Topic Operator can react.
+
+For bidirectional topic management, the Topic Operator synchronizes the changes between the topics and `KafkaTopic` resources.
+
+If you are trying the unidirectional topic management preview, this can mean that the topics created for an application deployment are initially created with default topic configuration.
+If the Topic Operator attempts to reconfigure the topics based on `KafkaTopic` resource specifications included with the application deployment, the operation might fail because the required change to the configuration is not allowed.
+For example, if the change means lowering the number of topic partitions.
+For this reason, it is recommended to disable `auto.create.topics.enable` in the Kafka cluster configuration when using unidirectional topic management.

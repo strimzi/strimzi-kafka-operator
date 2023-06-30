@@ -124,3 +124,19 @@ Examples of the `KafkaNodePool` resources can be found in the xref:config-exampl
 
 To enable the `KafkaNodePools` feature gate, specify `+KafkaNodePools` in the `STRIMZI_FEATURE_GATES` environment variable in the Cluster Operator configuration.
 The `Kafka` custom resource using the node pools must also have the annotation `strimzi.io/node-pools: enabled`.
+
+[id='ref-operator-unidirectional-topic-operator-feature-gate-{context}']
+== (Preview) UnidirectionalTopicOperator feature gate
+
+The `UnidirectionalTopicOperator` feature gate has a default state of _disabled_.
+
+The `UnidirectionalTopicOperator` feature gate introduces a unidirectional topic management mode for creating Kafka topics using the `KafkaTopic` resource.
+Unidirectional mode is compatible with using KRaft for cluster management.
+With unidirectional mode, you create Kafka topics using the `KafkaTopic` resource, which are then managed by the Topic Operator.
+Any configuration changes to a topic outside the `KafkaTopic` resource are reverted.
+For more information on topic management, see xref:ref-operator-topic-str[].
+
+.Enabling the UnidirectionalTopicOperator feature gate
+
+To enable the `UnidirectionalTopicOperator` feature gate, specify `+UnidirectionalTopicOperator` in the `STRIMZI_FEATURE_GATES` environment variable in the Cluster Operator configuration.
+The `KafkaTopic` custom resource must also have the annotation `strimzi.io/managed: true` (default).

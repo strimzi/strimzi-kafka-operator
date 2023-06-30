@@ -7,25 +7,30 @@
 
 [role="_abstract"]
 Use the properties of the `KafkaTopic` resource to configure Kafka topics.
+Changes made to topic configuration in the `KafkaTopic` are propagated to Kafka.
 
 You can use `kubectl apply` to create or modify topics, and `kubectl delete` to delete existing topics.
 
 For example:
 
-* `kubectl apply -f _<topic_config_file>_`
-* `kubectl delete KafkaTopic _<topic_name>_`
+* `kubectl apply -f <topic_config_file>`
+* `kubectl delete KafkaTopic <topic_name>`
+
+To be able to delete topics, `delete.topic.enable` must be set to `true` (default) in the `spec.kafka.config` of the Kafka resource.
 
 This procedure shows how to create a topic with 10 partitions and 2 replicas.
 
-.Before you start
+NOTE: The procedure is the same for the bidirectional and (preview) unidirectional modes of topic management. 
 
-It is important that you consider the following before making your changes:
+.Before you begin
 
-* Kafka does not support decreasing the number of partitions.
-* Increasing `spec.partitions` for topics with keys will change how records are partitioned, which can be particularly problematic when the topic uses _semantic partitioning_.
-* Strimzi does not support making the following changes through the `KafkaTopic` resource:
-** Using `spec.replicas` to change the number of replicas that were initially specified
-** Changing topic names using `spec.topicName`
+The KafkaTopic resource does not allow the following changes:
+
+* Renaming the topic defined in `spec.topicName`. A mismatch between `spec.topicName` and `status.topicName` will be detected.
+* Decreasing the number of partitions using `spec.partitions` (not supported by Kafka).
+* Modifying the number of replicas specified in `spec.replicas`.
+
+WARNING: Increasing `spec.partitions` for topics with keys will alter the partitioning of records, which can cause issues, especially when the topic uses semantic partitioning.
 
 .Prerequisites
 
@@ -43,7 +48,7 @@ It is important that you consider the following before making your changes:
 apiVersion: {KafkaTopicApiVersion}
 kind: KafkaTopic
 metadata:
-  name: orders
+  name: my-topic-1
   labels:
     strimzi.io/cluster: my-cluster
 spec:
@@ -51,7 +56,7 @@ spec:
   replicas: 2
 ----
 +
-TIP: When modifying a topic, you can get the current version of the resource using `kubectl get kafkatopic orders -o yaml`.
+TIP: When modifying a topic, you can get the current version of the resource using `kubectl get kafkatopic my-topic-1 -o yaml`.
 
 . Create the `KafkaTopic` resource in Kubernetes.
 +
@@ -78,7 +83,7 @@ Topic creation is successful when the `READY` output shows `True`.
 
 . If the `READY` column stays blank, get more details on the status from the resource YAML or from the Topic Operator logs.
 +
-Messages provide details on the reason for the current status.
+Status messages provide details on the reason for the current status.
 +
 [source,shell,subs="+quotes"]
 ----
