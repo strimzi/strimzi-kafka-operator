@@ -60,7 +60,8 @@ public class NodeIdRange {
 
             Integer nextNodeId = nextRange.getNextNodeId();
             if (nextNodeId == null) {
-                ranges.poll();
+                // The range is empty. We remove it.
+                ranges.remove();
             } else {
                 return nextNodeId;
             }
