@@ -41,6 +41,8 @@ class BatchingLoop {
     private final int maxBatchSize;
     private final long maxBatchLingerMs;
     private final ItemStore<KafkaTopic> itemStore;
+    private final Runnable stop;
+    private final int maxQueueSize;
 
     public BatchingLoop(
             int maxQueueSize,
@@ -48,7 +50,9 @@ class BatchingLoop {
             int maxThreads,
             int maxBatchSize,
             long maxBatchLingerMs,
-            ItemStore<KafkaTopic> itemStore) {
+            ItemStore<KafkaTopic> itemStore,
+            Runnable stop) {
+        this.maxQueueSize = maxQueueSize;
         this.queue = new LinkedBlockingDeque<>(maxQueueSize);
         this.controller = controller;
         this.threads = new LoopRunnable[maxThreads];
@@ -58,6 +62,7 @@ class BatchingLoop {
         this.maxBatchSize = maxBatchSize;
         this.maxBatchLingerMs = maxBatchLingerMs;
         this.itemStore = itemStore;
+        this.stop = stop;
     }
 
     /**
@@ -90,7 +95,10 @@ class BatchingLoop {
         if (queue.offerFirst(event)) {
             LOGGER.debugOp("Item {} push onto the deque tail", event);
         } else {
-            LOGGER.warnOp("Item {} could not be pushed onto the deque tail", event);
+            LOGGER.errorOp("Queue length {} exceeded, stopping operator. Please increase {} environment variable.",
+                    maxQueueSize,
+                    TopicOperatorConfig.MAX_QUEUE_SIZE.key());
+            this.stop.run();
         }
     }
 

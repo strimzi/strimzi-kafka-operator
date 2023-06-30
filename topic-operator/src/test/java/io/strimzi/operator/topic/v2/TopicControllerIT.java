@@ -1830,4 +1830,60 @@ class TopicControllerIT {
             maybeStartOperator(topicOperatorConfig("ns", kafkaCluster));
         }
     }
+
+    @Test
+    public void shouldTerminateIfQueueFull(
+            @BrokerConfig(name = "auto.create.topics.enable", value = "false")
+            @BrokerConfig(name = "num.partitions", value = "4")
+            @BrokerConfig(name = "default.replication.factor", value = "1")
+            KafkaCluster kafkaCluster)
+            throws ExecutionException, InterruptedException, TimeoutException {
+
+        // given
+        String ns = namespace("ns");
+
+        var config = new TopicOperatorConfig(ns, Labels.fromMap(SELECTOR),
+                kafkaCluster.getBootstrapServers(), TopicControllerIT.class.getSimpleName(), 10_000,
+                false, "", "", "", "", "",
+                false, "", "", "", "",
+                true,
+                1, 100, 5_0000);
+
+        maybeStartOperator(config);
+
+        assertTrue(operator.isAlive());
+
+        KafkaTopic kt = new KafkaTopicBuilder()
+                .withNewMetadata()
+                .withNamespace("ns")
+                .withName("foo")
+                .withLabels(SELECTOR)
+                .endMetadata()
+                .build();
+
+        // when
+
+        // We stop the loop thread, so nothing it taking from the queue, so that the queue length will be exceeded
+        operator.queue.stop();
+
+        try (var logCaptor = LogCaptor.logMessageMatches(BatchingLoop.LOGGER,
+                Level.ERROR,
+                "Queue length 1 exceeded, stopping operator. Please increase STRIMZI_MAX_QUEUE_SIZE environment variable",
+                5L,
+                TimeUnit.SECONDS)) {
+
+            Crds.topicOperation(client).resource(kt).create();
+            Crds.topicOperation(client).resource(new KafkaTopicBuilder(kt).editMetadata().withName("bar").endMetadata().build()).create();
+        }
+
+        // then
+        assertNull(operator.shutdownHook, "Expect the operator to shutdown");
+
+        // finally, because the @After method of this class asserts that the operator is running
+        // we start a new operator
+        admin = null;
+        operatorAdmin = null;
+        operator = null;
+        maybeStartOperator(topicOperatorConfig("ns", kafkaCluster));
+    }
 }
