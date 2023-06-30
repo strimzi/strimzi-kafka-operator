@@ -120,6 +120,7 @@ public class EntityTopicOperator extends AbstractModel implements SupportsLoggin
      * enabled, it returns null.
      * @param reconciliation The reconciliation
      * @param kafkaAssembly desired resource with cluster configuration containing the Entity Topic Operator one
+     *                      @param sharedEnvironmentProvider Shared environment provider
      * @param unidirectionalTopicOperator Indicates whether the UTO should be used.
      *
      * @return Entity Topic Operator instance, null if not configured
