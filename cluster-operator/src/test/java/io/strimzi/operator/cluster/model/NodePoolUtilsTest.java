@@ -17,6 +17,7 @@ import io.strimzi.api.kafka.model.storage.Storage;
 import io.strimzi.operator.cluster.model.nodepools.NodePoolUtils;
 import io.strimzi.operator.cluster.model.nodepools.VirtualNodePoolConverter;
 import io.strimzi.operator.cluster.operator.resource.MockSharedEnvironmentProvider;
+import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.cluster.operator.resource.SharedEnvironmentProvider;
 import org.junit.jupiter.api.Test;
@@ -272,10 +273,57 @@ public class NodePoolUtilsTest {
 
         assertThat(pools.get(1).poolName, is("pool-b"));
         assertThat(pools.get(1).kraftRoles, is(Set.of(ProcessRoles.BROKER)));
-        assertThat(pools.get(1).idAssignment.toBeAdded(), is(Set.of(12)));
+        assertThat(pools.get(1).idAssignment.toBeAdded(), is(Set.of(3)));
         assertThat(pools.get(1).idAssignment.toBeRemoved(), is(Set.of()));
         assertThat(pools.get(1).idAssignment.current(), is(Set.of(10, 11)));
-        assertThat(pools.get(1).idAssignment.desired(), is(Set.of(10, 11, 12)));
+        assertThat(pools.get(1).idAssignment.desired(), is(Set.of(3, 10, 11)));
+    }
+
+    @Test
+    public void testExistingNodePoolsScaleUpDownWithAnnotations()  {
+        KafkaNodePool poolA = new KafkaNodePoolBuilder(POOL_A)
+                .editMetadata()
+                    .withAnnotations(Map.of(Annotations.ANNO_STRIMZI_IO_NEXT_NODE_IDS, "[10-19]",
+                            Annotations.ANNO_STRIMZI_IO_REMOVE_NODE_IDS, "[19-10]"))
+                .endMetadata()
+                .editSpec()
+                    .withReplicas(2)
+                .endSpec()
+                .withNewStatus()
+                    .withNodeIds(10, 11, 12)
+                .endStatus()
+                .build();
+
+        KafkaNodePool poolB = new KafkaNodePoolBuilder(POOL_B)
+                .editMetadata()
+                    .withAnnotations(Map.of(Annotations.ANNO_STRIMZI_IO_NEXT_NODE_IDS, "[20-29]",
+                            Annotations.ANNO_STRIMZI_IO_REMOVE_NODE_IDS, "[29-20]"))
+                .endMetadata()
+                .editSpec()
+                    .withReplicas(3)
+                .endSpec()
+                .withNewStatus()
+                    .withNodeIds(20, 21)
+                .endStatus()
+                .build();
+
+        List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, KAFKA, List.of(poolA, poolB), Map.of(), Map.of(), false, SHARED_ENV_PROVIDER);
+
+        assertThat(pools.size(), is(2));
+
+        assertThat(pools.get(0).poolName, is("pool-a"));
+        assertThat(pools.get(0).kraftRoles, is(Set.of(ProcessRoles.BROKER)));
+        assertThat(pools.get(0).idAssignment.toBeAdded(), is(Set.of()));
+        assertThat(pools.get(0).idAssignment.toBeRemoved(), is(Set.of(12)));
+        assertThat(pools.get(0).idAssignment.current(), is(Set.of(10, 11, 12)));
+        assertThat(pools.get(0).idAssignment.desired(), is(Set.of(10, 11)));
+
+        assertThat(pools.get(1).poolName, is("pool-b"));
+        assertThat(pools.get(1).kraftRoles, is(Set.of(ProcessRoles.BROKER)));
+        assertThat(pools.get(1).idAssignment.toBeAdded(), is(Set.of(22)));
+        assertThat(pools.get(1).idAssignment.toBeRemoved(), is(Set.of()));
+        assertThat(pools.get(1).idAssignment.current(), is(Set.of(20, 21)));
+        assertThat(pools.get(1).idAssignment.desired(), is(Set.of(20, 21, 22)));
     }
 
     @Test
