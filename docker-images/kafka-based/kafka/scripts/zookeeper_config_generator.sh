@@ -38,12 +38,15 @@ ${ZOOKEEPER_CONFIGURATION}
 # Zookeeper nodes configuration
 EOF
 
+version() { echo "$@" | awk -F. '{ printf("%d%03d%03d\n", $1,$2,$3); }'; }
+
 # Setting self IP as 0.0.0.0 to workaround the slow DNS issue.
+# Also check that Kafka version is greater-equal 3.4.1, because binding to 0.0.0.0 doesn't seem to work with previous version.
 # For single node case, we cannot set to 0.0.0.0 since ZooKeeper will fail when looking for next candidate in case of issue.
 # See: https://issues.apache.org/jira/browse/ZOOKEEPER-4708
 NODE=1
 while [[ $NODE -le $ZOOKEEPER_NODE_COUNT ]]; do
-    if [[ $NODE -eq $ZOOKEEPER_ID ]] && [[ $ZOOKEEPER_NODE_COUNT -gt 1 ]]; then
+    if [[ $NODE -eq $ZOOKEEPER_ID ]] && [[ $ZOOKEEPER_NODE_COUNT -gt 1 ]] && [[ $(version $KAFKA_VERSION) -ge $(version "3.4.1") ]]; then
       echo "server.${NODE}=0.0.0.0:2888:3888:participant;127.0.0.1:12181"
     else
       echo "server.${NODE}=${BASE_HOSTNAME}-$((NODE-1)).${BASE_FQDN}:2888:3888:participant;127.0.0.1:12181"
