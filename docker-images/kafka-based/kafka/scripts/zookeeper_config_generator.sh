@@ -38,6 +38,9 @@ ${ZOOKEEPER_CONFIGURATION}
 # Zookeeper nodes configuration
 EOF
 
+# Setting self IP as 0.0.0.0 to workaround the slow DNS issue.
+# For single node case, we cannot set to 0.0.0.0 since ZooKeeper will fail when looking for next candidate in case of issue.
+# See: https://issues.apache.org/jira/browse/ZOOKEEPER-4708
 NODE=1
 while [[ $NODE -le $ZOOKEEPER_NODE_COUNT ]]; do
     if [[ $NODE -eq $ZOOKEEPER_ID ]] && [[ $ZOOKEEPER_NODE_COUNT -gt 1 ]]; then
