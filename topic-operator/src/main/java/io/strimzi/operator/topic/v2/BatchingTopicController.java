@@ -287,8 +287,8 @@ public class BatchingTopicController {
 
         return new NewTopic(
                 tn,
-                kt.getSpec().getPartitions(),
-                kt.getSpec().getReplicas().shortValue())
+                kt.getSpec() == null || kt.getSpec().getPartitions() == null ? -1 : kt.getSpec().getPartitions(),
+                kt.getSpec() == null || kt.getSpec().getReplicas() == null ? -1 : kt.getSpec().getReplicas().shortValue())
             .configs(buildConfigsMap(kt));
     }
 

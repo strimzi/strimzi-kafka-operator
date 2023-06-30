@@ -383,11 +383,20 @@ class TopicControllerIT {
         assertCreateSuccess(kt, reconciled, Map.of());
     }
 
-    private void assertCreateSuccess(KafkaTopic kt, KafkaTopic reconciled, Map<String, String> expectedConfigs) throws InterruptedException, ExecutionException, TimeoutException {
+    private void assertCreateSuccess(KafkaTopic kt, KafkaTopic reconciled,
+                                     Map<String, String> expectedConfigs) throws InterruptedException, ExecutionException, TimeoutException {
+        assertCreateSuccess(kt, reconciled,
+                kt.getSpec().getPartitions(),
+                kt.getSpec().getReplicas(),
+                expectedConfigs);
+    }
+
+    private void assertCreateSuccess(KafkaTopic kt, KafkaTopic reconciled,
+                                     int expectedPartitions,
+                                     int expectedReplicas,
+                                     Map<String, String> expectedConfigs) throws InterruptedException, ExecutionException, TimeoutException {
         waitUntil(kt, readyIsTrue());
         final String expectedTopicName = expectedTopicName(kt);
-        int specPartitions = kt.getSpec().getPartitions();
-        int specReplicas = kt.getSpec().getReplicas();
 
         // Check updates to the KafkaTopic
         assertNotNull(reconciled.getMetadata().getFinalizers());
@@ -396,8 +405,8 @@ class TopicControllerIT {
 
         // Check topic in Kafka
         TopicDescription topicDescription = awaitTopicDescription(expectedTopicName);
-        assertEquals(specPartitions, numPartitions(topicDescription));
-        assertEquals(Set.of(specReplicas), replicationFactors(topicDescription));
+        assertEquals(expectedPartitions, numPartitions(topicDescription));
+        assertEquals(Set.of(expectedReplicas), replicationFactors(topicDescription));
         assertEquals(expectedConfigs, topicConfigMap(expectedTopicName));
     }
 
@@ -456,6 +465,87 @@ class TopicControllerIT {
                                                                       KafkaCluster kafkaCluster)
             throws ExecutionException, InterruptedException, TimeoutException {
         createTopicAndAssertSuccess(kafkaCluster, kt);
+    }
+
+    @Test
+    public void shouldCreateTopicInKafkaWhenKafkaTopicHasNoSpec(
+                @BrokerConfig(name = "auto.create.topics.enable", value = "false")
+                @BrokerConfig(name = "num.partitions", value = "4")
+                @BrokerConfig(name = "default.replication.factor", value = "1")
+                KafkaCluster kafkaCluster)
+            throws ExecutionException, InterruptedException, TimeoutException {
+        KafkaTopic kt = new KafkaTopicBuilder()
+                .withNewMetadata()
+                    .withNamespace("ns")
+                    .withName("foo")
+                    .withLabels(SELECTOR)
+                .endMetadata()
+                .build();
+        var created = createTopic(kafkaCluster, kt);
+        assertCreateSuccess(kt, created, 4, 1, Map.of());
+    }
+
+    @Test
+    public void shouldCreateTopicInKafkaWhenKafkaTopicHasOnlyPartitions(
+                @BrokerConfig(name = "auto.create.topics.enable", value = "false")
+                @BrokerConfig(name = "num.partitions", value = "4")
+                @BrokerConfig(name = "default.replication.factor", value = "1")
+                KafkaCluster kafkaCluster)
+            throws ExecutionException, InterruptedException, TimeoutException {
+        KafkaTopic kt = new KafkaTopicBuilder()
+                .withNewMetadata()
+                    .withNamespace("ns")
+                    .withName("foo")
+                    .withLabels(SELECTOR)
+                .endMetadata()
+                .withNewSpec()
+                    .withPartitions(5)
+                .endSpec()
+                .build();
+        var created = createTopic(kafkaCluster, kt);
+        assertCreateSuccess(kt, created, 5, 1, Map.of());
+    }
+
+    @Test
+    public void shouldCreateTopicInKafkaWhenKafkaTopicHasOnlyReplicas(
+                @BrokerConfig(name = "auto.create.topics.enable", value = "false")
+                @BrokerConfig(name = "num.partitions", value = "4")
+                @BrokerConfig(name = "default.replication.factor", value = "1")
+                KafkaCluster kafkaCluster)
+            throws ExecutionException, InterruptedException, TimeoutException {
+        KafkaTopic kt = new KafkaTopicBuilder()
+                .withNewMetadata()
+                    .withNamespace("ns")
+                    .withName("foo")
+                .withLabels(SELECTOR)
+                .endMetadata()
+                .withNewSpec()
+                    .withReplicas(1)
+                .endSpec()
+                .build();
+        var created = createTopic(kafkaCluster, kt);
+        assertCreateSuccess(kt, created, 4, 1, Map.of());
+    }
+
+    @Test
+    public void shouldCreateTopicInKafkaWhenKafkaTopicHasOnlyConfigs(
+            @BrokerConfig(name = "auto.create.topics.enable", value = "false")
+            @BrokerConfig(name = "num.partitions", value = "4")
+            @BrokerConfig(name = "default.replication.factor", value = "1")
+            KafkaCluster kafkaCluster)
+            throws ExecutionException, InterruptedException, TimeoutException {
+        KafkaTopic kt = new KafkaTopicBuilder()
+                .withNewMetadata()
+                    .withNamespace("ns")
+                    .withName("foo")
+                    .withLabels(SELECTOR)
+                .endMetadata()
+                .withNewSpec()
+                    .addToConfig(TopicConfig.FLUSH_MS_CONFIG, "1000")
+                .endSpec()
+                .build();
+        var created = createTopic(kafkaCluster, kt);
+        assertCreateSuccess(kt, created, 4, 1, Map.of(TopicConfig.FLUSH_MS_CONFIG, "1000"));
     }
 
 
@@ -612,7 +702,7 @@ class TopicControllerIT {
 
     private static String expectedTopicName(KafkaTopic kt) {
         String metadataName = kt.getMetadata().getName();
-        String specTopicName = kt.getSpec().getTopicName();
+        String specTopicName = kt.getSpec() == null ? null : kt.getSpec().getTopicName();
         return Objects.requireNonNull(specTopicName != null ? specTopicName : metadataName);
     }
 
