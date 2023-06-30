@@ -10,8 +10,6 @@ dataDir=${ZOOKEEPER_DATA_DIR}
 4lw.commands.whitelist=*
 standaloneEnabled=false
 reconfigEnabled=true
-clientPort=12181
-clientPortAddress=127.0.0.1
 
 # TLS options
 serverCnxnFactory=org.apache.zookeeper.server.NettyServerCnxnFactory
