@@ -162,6 +162,7 @@ public class ClusterCa extends Ca {
             subject.addDnsName(ccDnsGenerator.serviceDnsNameWithoutClusterDomain());
             subject.addDnsName(ccDnsGenerator.serviceDnsName());
             subject.addDnsName(CruiseControlResources.serviceName(kafkaName));
+            subject.addDnsName(node.podName());
             subject.addDnsName("localhost");
             return subject.build();
         };
@@ -198,6 +199,7 @@ public class ClusterCa extends Ca {
             subject.addDnsName(zkDnsGenerator.wildcardServiceDnsName());
             subject.addDnsName(zkHeadlessDnsGenerator.wildcardServiceDnsNameWithoutClusterDomain());
             subject.addDnsName(zkHeadlessDnsGenerator.wildcardServiceDnsName());
+            subject.addDnsName(node.podName());
             return subject.build();
         };
 
@@ -228,6 +230,7 @@ public class ClusterCa extends Ca {
 
             subject.addDnsName(DnsNameGenerator.podDnsName(namespace, KafkaResources.brokersServiceName(crName), node.podName()));
             subject.addDnsName(DnsNameGenerator.podDnsNameWithoutClusterDomain(namespace, KafkaResources.brokersServiceName(crName), node.podName()));
+            subject.addDnsName(node.podName());
 
             if (externalBootstrapAddresses != null)   {
                 for (String dnsName : externalBootstrapAddresses) {
