@@ -28,6 +28,7 @@ import static io.strimzi.systemtest.resources.ResourceManager.kubeClient;
 
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
+import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaConnectTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaConnectorTemplates;
@@ -111,15 +112,15 @@ class RackAwarenessST extends AbstractST {
         assertThat(podAntiAffinityTerm, is(specPodAntiAffinityTerm));
         assertThat(specPodAntiAffinityTerm.getTopologyKey(), is(TOPOLOGY_KEY));
         assertThat(specPodAntiAffinityTerm.getLabelSelector().getMatchLabels(), hasEntry("strimzi.io/cluster", testStorage.getClusterName()));
-        assertThat(specPodAntiAffinityTerm.getLabelSelector().getMatchLabels(), hasEntry("strimzi.io/name", testStorage.getKafkaStatefulSetName()));
+        assertThat(specPodAntiAffinityTerm.getLabelSelector().getMatchLabels(), hasEntry("strimzi.io/name", KafkaResources.kafkaStatefulSetName(testStorage.getClusterName())));
 
         // check Kafka rack awareness configuration
         String podNodeName = pod.getSpec().getNodeName();
         String hostname = podNodeName.contains(".") ? podNodeName.substring(0, podNodeName.indexOf(".")) : podNodeName;
 
-        String rackIdOut = cmdKubeClient(testStorage.getNamespaceName()).execInPod(KafkaResources.kafkaPodName(testStorage.getClusterName(), 0),
+        String rackIdOut = cmdKubeClient(testStorage.getNamespaceName()).execInPod(KafkaResource.getKafkaPodName(testStorage.getClusterName(), 0),
                 "/bin/bash", "-c", "cat /opt/kafka/init/rack.id").out().trim();
-        String brokerRackOut = cmdKubeClient(testStorage.getNamespaceName()).execInPod(KafkaResources.kafkaPodName(testStorage.getClusterName(), 0),
+        String brokerRackOut = cmdKubeClient(testStorage.getNamespaceName()).execInPod(KafkaResource.getKafkaPodName(testStorage.getClusterName(), 0),
                 "/bin/bash", "-c", "cat /tmp/strimzi.properties | grep broker.rack").out().trim();
         assertThat(rackIdOut.trim(), is(hostname));
         assertThat(brokerRackOut.contains("broker.rack=" + hostname), is(true));

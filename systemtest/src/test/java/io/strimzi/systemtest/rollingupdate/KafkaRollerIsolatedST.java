@@ -184,13 +184,23 @@ public class KafkaRollerIsolatedST extends AbstractST {
             .endSpec()
             .build());
 
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, kafka ->
+        if (Environment.isKafkaNodePoolEnabled()) {
+            KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(KafkaResource.getNodePoolName(clusterName), knp ->
+                knp.getSpec().getJvmOptions().setXx(Collections.singletonMap("UseParNewGC", "true")), namespaceName);
+        } else {
+            KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, kafka ->
                 kafka.getSpec().getKafka().getJvmOptions().setXx(Collections.singletonMap("UseParNewGC", "true")), namespaceName);
+        }
 
         KafkaUtils.waitForKafkaNotReady(namespaceName, clusterName);
 
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, kafka ->
+        if (Environment.isKafkaNodePoolEnabled()) {
+            KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(KafkaResource.getNodePoolName(clusterName), knp ->
+                knp.getSpec().getJvmOptions().setXx(Collections.emptyMap()), namespaceName);
+        } else {
+            KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, kafka ->
                 kafka.getSpec().getKafka().getJvmOptions().setXx(Collections.emptyMap()), namespaceName);
+        }
 
         // kafka should get back ready in some reasonable time frame.
         // Current timeout for wait is set to 14 minutes, which should be enough.

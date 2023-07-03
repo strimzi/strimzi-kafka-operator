@@ -26,6 +26,7 @@ import io.strimzi.systemtest.resources.crd.KafkaBridgeResource;
 import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
 import io.strimzi.systemtest.resources.crd.KafkaMirrorMaker2Resource;
 import io.strimzi.systemtest.resources.crd.KafkaMirrorMakerResource;
+import io.strimzi.systemtest.resources.crd.KafkaNodePoolResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.templates.crd.KafkaBridgeTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaConnectTemplates;
@@ -226,6 +227,11 @@ class LogSettingST extends AbstractST {
         assertThat("UO GC logging is enabled", checkGcLoggingDeployments(clusterOperator.getDeploymentNamespace(), eoDepName, "user-operator"), is(true));
 
         LOGGER.info("Changing JVM options - setting GC logging to false");
+        if (Environment.isKafkaNodePoolEnabled()) {
+            KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(KafkaResource.getNodePoolName(LOG_SETTING_CLUSTER_NAME), knp ->
+                knp.getSpec().setJvmOptions(JVM_OPTIONS), clusterOperator.getDeploymentNamespace());
+        }
+
         KafkaResource.replaceKafkaResourceInSpecificNamespace(LOG_SETTING_CLUSTER_NAME, kafka -> {
             kafka.getSpec().getKafka().setJvmOptions(JVM_OPTIONS);
             kafka.getSpec().getZookeeper().setJvmOptions(JVM_OPTIONS);
