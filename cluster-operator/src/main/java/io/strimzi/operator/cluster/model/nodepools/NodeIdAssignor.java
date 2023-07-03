@@ -261,8 +261,8 @@ public class NodeIdAssignor {
     }
 
     /**
-     * Finds the next node ID from a range which is not in use. The IDs are found from range specified in the Node Pool
-     * annotation strimzi.io/next-node-ids.
+     * Finds the next node ID which should be removed from the existing node IDs. The IDs are found from range specified
+     * in the Node Pool annotation strimzi.io/remove-node-ids.
      *
      * @param desired           Set with currently used IDs
      * @param removeIdRange     The NodeIdRange which will pick up the next node ID
@@ -299,7 +299,7 @@ public class NodeIdAssignor {
         try {
             return removeNodeIds == null ? null : new NodeIdRange(removeNodeIds);
         } catch (NodeIdRange.InvalidNodeIdRangeException e) {
-            LOGGER.warnCr(reconciliation, "Failed to use " + Annotations.ANNO_STRIMZI_IO_NEXT_NODE_IDS + " " + removeNodeIds + ". Nodes will be scaled down from the highest node ID.", e);
+            LOGGER.warnCr(reconciliation, "Failed to use " + Annotations.ANNO_STRIMZI_IO_REMOVE_NODE_IDS + " " + removeNodeIds + ". Nodes will be scaled down from the highest node ID.", e);
             return null;
         }
     }
