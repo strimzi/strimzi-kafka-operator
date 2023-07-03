@@ -11,6 +11,7 @@ import io.strimzi.api.kafka.model.storage.Storage;
 import io.strimzi.operator.cluster.model.InvalidResourceException;
 import io.strimzi.operator.cluster.model.KafkaPool;
 import io.strimzi.operator.cluster.model.ModelUtils;
+import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.cluster.operator.resource.SharedEnvironmentProvider;
 import io.strimzi.operator.common.ReconciliationLogger;
@@ -70,7 +71,7 @@ public class NodePoolUtils {
             KafkaNodePool virtualNodePool = VirtualNodePoolConverter.convertKafkaToVirtualNodePool(kafka, currentReplicas, useKRaft);
 
             // We prepare ID Assignment
-            NodeIdAssignor assignor = new NodeIdAssignor(List.of(virtualNodePool));
+            NodeIdAssignor assignor = new NodeIdAssignor(reconciliation, List.of(virtualNodePool));
 
             pools.add(
                     KafkaPool.fromCrd(
@@ -87,7 +88,7 @@ public class NodePoolUtils {
             validateNodePools(reconciliation, kafka, nodePools, useKRaft);
 
             // We prepare ID Assignment
-            NodeIdAssignor assignor = new NodeIdAssignor(nodePools);
+            NodeIdAssignor assignor = new NodeIdAssignor(reconciliation, nodePools);
 
             // We create the Kafka pool resources
             for (KafkaNodePool nodePool : nodePools) {
@@ -138,6 +139,8 @@ public class NodePoolUtils {
                 // Validate cluster IDs
                 errors.addAll(validateZooKeeperBasedClusterIds(reconciliation, kafka, nodePools));
             }
+
+            validateNodeIdRanges(reconciliation, nodePools);
 
             // Throw an exception if there are any errors
             if (!errors.isEmpty()) {
@@ -259,6 +262,32 @@ public class NodePoolUtils {
         } else {
             return List.of();
         }
+    }
+
+    /**
+     * Validates the strimzi.io/next-node-ids and strimzi.io/remove-node-ids annotations on the KafkaNodePool resources
+     * and if they are invalid, a warning is logged. Invalid annotations do not break reconciliation and do not throw
+     * exception. If a scaling event happens and the corresponding annotation is invalid, the operator will ignore it
+     * and just pick up the next suitable node ID. But validating the annotation here help to give user a warning about
+     * the annotation(s) being invalid earlier - before some scaling happens.
+     *
+     * @param reconciliation    Reconciliation marker
+     * @param pools             List of node pool where the node ID range annotations should be validated
+     */
+    public static void validateNodeIdRanges(Reconciliation reconciliation, List<KafkaNodePool> pools)   {
+        pools.forEach(pool -> {
+            String nextNodeIds = Annotations.stringAnnotation(pool, Annotations.ANNO_STRIMZI_IO_NEXT_NODE_IDS, null);
+            if (nextNodeIds != null
+                    && !NodeIdRange.isValidNodeIdRange(nextNodeIds))    {
+                LOGGER.warnCr(reconciliation, "Invalid annotation {} on KafkaNodePool {} with value {}", Annotations.ANNO_STRIMZI_IO_NEXT_NODE_IDS, pool.getMetadata().getName(), nextNodeIds);
+            }
+
+            String removeNodeIds = Annotations.stringAnnotation(pool, Annotations.ANNO_STRIMZI_IO_REMOVE_NODE_IDS, null);
+            if (removeNodeIds != null
+                    && !NodeIdRange.isValidNodeIdRange(removeNodeIds))    {
+                LOGGER.warnCr(reconciliation, "Invalid annotation {} on KafkaNodePool {} with value {}", Annotations.ANNO_STRIMZI_IO_REMOVE_NODE_IDS, pool.getMetadata().getName(), nextNodeIds);
+            }
+        });
     }
 
     /**

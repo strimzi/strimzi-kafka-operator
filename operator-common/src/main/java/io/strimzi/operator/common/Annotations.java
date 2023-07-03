@@ -146,6 +146,16 @@ public class Annotations {
     public static final String ANNO_STRIMZI_IO_DELETE_CLAIM = STRIMZI_DOMAIN + "delete-claim";
 
     /**
+     * Annotation for configuring the ranges of node IDs which should be used for given node pool
+     */
+    public static final String ANNO_STRIMZI_IO_NEXT_NODE_IDS = STRIMZI_DOMAIN + "next-node-ids";
+
+    /**
+     * Annotation for configuring the ranges of node IDs which should be used for given node pool
+     */
+    public static final String ANNO_STRIMZI_IO_REMOVE_NODE_IDS = STRIMZI_DOMAIN + "remove-node-ids";
+
+    /**
      * Annotation for tracking Deployment revisions
      */
     public static final String ANNO_DEP_KUBE_IO_REVISION = "deployment.kubernetes.io/revision";
