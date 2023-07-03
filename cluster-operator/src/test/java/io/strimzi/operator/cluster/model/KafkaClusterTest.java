@@ -2360,7 +2360,6 @@ public class KafkaClusterTest {
                 asList(2, "foo-kafka-brokers.test"),
                 asList(2, "foo-kafka-brokers.test.svc"),
                 asList(2, "foo-kafka-brokers.test.svc.cluster.local"))));
-
     }
 
     @ParallelTest
