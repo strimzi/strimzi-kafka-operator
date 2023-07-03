@@ -78,7 +78,7 @@ final public class TestStorage {
         this.kafkaStatefulSetName = Environment.isKafkaNodePoolEnabled() ?
             this.clusterName + "-" + this.kafkaNodePoolName : KafkaResources.kafkaStatefulSetName(clusterName);
         this.zkStatefulSetName = KafkaResources.zookeeperStatefulSetName(clusterName);
-        this.kafkaSelector = KafkaResource.getLabelSelector(clusterName, this.kafkaStatefulSetName);
+        this.kafkaSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.kafkaStatefulSetName(clusterName));
         this.zkSelector = KafkaResource.getLabelSelector(clusterName, this.zkStatefulSetName);
         this.messageCount = messageCount;
 

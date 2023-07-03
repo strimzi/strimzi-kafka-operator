@@ -25,7 +25,6 @@ import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.Spec;
 import io.strimzi.api.kafka.model.nodepool.KafkaNodePool;
-import io.strimzi.api.kafka.model.nodepool.ProcessRoles;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.api.kafka.model.status.Status;
 import io.strimzi.operator.common.Annotations;
@@ -61,7 +60,6 @@ import io.strimzi.systemtest.resources.kubernetes.ValidatingWebhookConfiguration
 import io.strimzi.systemtest.resources.openshift.OperatorGroupResource;
 import io.strimzi.systemtest.resources.openshift.SubscriptionResource;
 import io.strimzi.systemtest.resources.operator.BundleResource;
-import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.HelmClient;
@@ -85,7 +83,6 @@ import java.util.Stack;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
-import static io.strimzi.operator.common.Util.hashStub;
 import static java.util.Arrays.asList;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -236,24 +233,7 @@ public class ResourceManager {
         Map<String, String> annotations = resource.getMetadata().getAnnotations();
 
         if (annotations.get(Annotations.ANNO_STRIMZI_IO_NODE_POOLS) != null && annotations.get(Annotations.ANNO_STRIMZI_IO_NODE_POOLS).equals("enabled")) {
-            List<ProcessRoles> nodeRoles = new ArrayList<>();
-            nodeRoles.add(ProcessRoles.BROKER);
-
-            if (Environment.isKRaftModeEnabled()) {
-                nodeRoles.add(ProcessRoles.CONTROLLER);
-            }
-
-            String nodePoolName = Constants.KAFKA_NODE_POOL_PREFIX + hashStub(resource.getMetadata().getName());
-
-            KafkaNodePool nodePool = KafkaNodePoolTemplates.defaultKafkaNodePool(nodePoolName, resource.getMetadata().getName(), resource.getSpec().getKafka().getReplicas())
-                .editOrNewMetadata()
-                    .withNamespace(resource.getMetadata().getNamespace())
-                .endMetadata()
-                .editOrNewSpec()
-                    .withRoles(nodeRoles)
-                    .withStorage(resource.getSpec().getKafka().getStorage())
-                .endSpec()
-                .build();
+            KafkaNodePool nodePool = KafkaNodePoolResource.convertKafkaResourceToKafkaNodePool(resource);
 
             setNamespaceInResource(testContext, resource);
 

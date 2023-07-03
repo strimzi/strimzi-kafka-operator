@@ -7,6 +7,7 @@ package io.strimzi.systemtest.security;
 import io.fabric8.kubernetes.api.model.DeletionPropagation;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Quantity;
+import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
@@ -33,6 +34,7 @@ import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
 import io.strimzi.systemtest.resources.crd.KafkaMirrorMakerResource;
+import io.strimzi.systemtest.resources.crd.KafkaNodePoolResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaConnectTemplates;
@@ -117,14 +119,14 @@ class SecurityST extends AbstractST {
 
         LOGGER.info("Check Kafka bootstrap certificate");
         String outputCertificate = SystemTestCertManager.generateOpenSslCommandByComponent(namespaceName, KafkaResources.tlsBootstrapAddress(clusterName), KafkaResources.bootstrapServiceName(clusterName),
-                KafkaResources.kafkaPodName(clusterName, 0), "kafka", false);
+            KafkaResource.getKafkaPodName(clusterName, 0), "kafka", false);
         LOGGER.info("OPENSSL OUTPUT: \n\n{}\n\n", outputCertificate);
         verifyCerts(clusterName, outputCertificate, "kafka");
 
         if (!Environment.isKRaftModeEnabled()) {
             LOGGER.info("Check ZooKeeper client certificate");
             outputCertificate = SystemTestCertManager.generateOpenSslCommandByComponent(namespaceName, KafkaResources.zookeeperServiceName(clusterName) + ":2181", KafkaResources.zookeeperServiceName(clusterName),
-                    KafkaResources.kafkaPodName(clusterName, 0), "kafka");
+                KafkaResource.getKafkaPodName(clusterName, 0), "kafka");
             verifyCerts(clusterName, outputCertificate, "zookeeper");
         }
 
@@ -137,7 +139,7 @@ class SecurityST extends AbstractST {
             LOGGER.info("Checking certificates for podId {}", podId);
             for (String kafkaPort : kafkaPorts) {
                 LOGGER.info("Check Kafka certificate for port {}", kafkaPort);
-                output = SystemTestCertManager.generateOpenSslCommandByComponentUsingSvcHostname(namespaceName, KafkaResources.kafkaPodName(clusterName, podId),
+                output = SystemTestCertManager.generateOpenSslCommandByComponentUsingSvcHostname(namespaceName, KafkaResource.getKafkaPodName(clusterName, podId),
                         KafkaResources.brokersServiceName(clusterName), kafkaPort, "kafka");
                 verifyCerts(clusterName, output, "kafka");
             }
@@ -1126,12 +1128,18 @@ class SecurityST extends AbstractST {
 
         final String clusterCaCert = kubeClient().getSecret(testStorage.getNamespaceName(), KafkaResources.clusterCaCertificateSecretName(testStorage.getClusterName())).getData().get("ca.crt");
 
+        final ResourceRequirements requirements = new ResourceRequirementsBuilder()
+            .addToRequests("cpu", new Quantity("100000m"))
+            .build();
+
+        if (Environment.isKafkaNodePoolEnabled()) {
+            KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(testStorage.getKafkaNodePoolName(), knp -> knp.getSpec().setResources(requirements), testStorage.getNamespaceName());
+        }
+
         KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), k -> {
             k.getSpec()
                 .getKafka()
-                .setResources(new ResourceRequirementsBuilder()
-                    .addToRequests("cpu", new Quantity("100000m"))
-                    .build());
+                .setResources(requirements);
             k.getSpec().setClusterCa(new CertificateAuthorityBuilder()
                 .withRenewalDays(4)
                 .withValidityDays(7)
@@ -1159,6 +1167,15 @@ class SecurityST extends AbstractST {
 
         resourceManager.createResource(extensionContext, kafkaClients.consumerTlsStrimzi(testStorage.getClusterName()));
         ClientUtils.waitForConsumerClientSuccess(testStorage);
+
+        final ResourceRequirements correctRequirements = new ResourceRequirementsBuilder()
+            .addToRequests("cpu", new Quantity("200m"))
+            .build();
+
+        if (Environment.isKafkaNodePoolEnabled()) {
+            KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(testStorage.getKafkaNodePoolName(),
+                knp -> knp.getSpec().setResources(correctRequirements), testStorage.getNamespaceName());
+        }
 
         KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), k -> {
             k.getSpec()
@@ -1422,7 +1439,7 @@ class SecurityST extends AbstractST {
 
         // Check Broker kafka certificate dates
         Secret brokerCertCreationSecret = kubeClient(testStorage.getNamespaceName()).getSecret(testStorage.getNamespaceName(), testStorage.getClusterName() + "-kafka-brokers");
-        X509Certificate kafkaBrokerCert = SecretUtils.getCertificateFromSecret(brokerCertCreationSecret, testStorage.getClusterName() + "-kafka-0.crt");
+        X509Certificate kafkaBrokerCert = SecretUtils.getCertificateFromSecret(brokerCertCreationSecret, KafkaResource.getKafkaPodName(testStorage.getClusterName(), 0) + ".crt");
         Date initialKafkaBrokerCertStartTime = kafkaBrokerCert.getNotBefore();
         Date initialKafkaBrokerCertEndTime = kafkaBrokerCert.getNotAfter();
 
@@ -1463,7 +1480,7 @@ class SecurityST extends AbstractST {
 
         // Check renewed Broker kafka certificate dates
         brokerCertCreationSecret = kubeClient(testStorage.getNamespaceName()).getSecret(testStorage.getNamespaceName(), testStorage.getClusterName() + "-kafka-brokers");
-        kafkaBrokerCert = SecretUtils.getCertificateFromSecret(brokerCertCreationSecret, testStorage.getClusterName() + "-kafka-0.crt");
+        kafkaBrokerCert = SecretUtils.getCertificateFromSecret(brokerCertCreationSecret, KafkaResource.getKafkaPodName(testStorage.getClusterName(), 0) + ".crt");
         Date changedKafkaBrokerCertStartTime = kafkaBrokerCert.getNotBefore();
         Date changedKafkaBrokerCertEndTime = kafkaBrokerCert.getNotAfter();
 

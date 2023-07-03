@@ -18,9 +18,9 @@ import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.strimzi.api.kafka.model.ContainerEnvVar;
 import io.strimzi.api.kafka.model.ContainerEnvVarBuilder;
-import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
+import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StrimziPodSetUtils;
 import io.strimzi.test.TestUtils;
@@ -544,7 +544,7 @@ public class StUtils {
         List<String> cmNames = new ArrayList<>(replicas);
 
         for (int i = 0; i < replicas; i++)  {
-            cmNames.add(KafkaResources.kafkaPodName(kafkaClusterName, i));
+            cmNames.add(KafkaResource.getKafkaPodName(kafkaClusterName, i));
         }
 
         return cmNames;

@@ -684,6 +684,16 @@ class KafkaST extends AbstractST {
         LOGGER.info("New values of labels which are to modify label and annotation of PVC present in Kafka CR, with following values {}", customSpecifiedLabelOrAnnotationPvc);
 
         LOGGER.info("Edit Kafka labels in Kafka CR,as well as labels, and annotations of PVCs");
+        if (Environment.isKafkaNodePoolEnabled()) {
+            KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(testStorage.getKafkaNodePoolName(), resource -> {
+                for (Map.Entry<String, String> label : customSpecifiedLabels.entrySet()) {
+                    resource.getMetadata().getLabels().put(label.getKey(), label.getValue());
+                }
+                resource.getSpec().getTemplate().getPersistentVolumeClaim().getMetadata().setLabels(customSpecifiedLabelOrAnnotationPvc);
+                resource.getSpec().getTemplate().getPersistentVolumeClaim().getMetadata().setAnnotations(customSpecifiedLabelOrAnnotationPvc);
+            }, testStorage.getNamespaceName());
+        }
+
         KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), resource -> {
             for (Map.Entry<String, String> label : customSpecifiedLabels.entrySet()) {
                 resource.getMetadata().getLabels().put(label.getKey(), label.getValue());
@@ -785,7 +795,7 @@ class KafkaST extends AbstractST {
     @KRaftNotSupported("Topic Operator is not supported by KRaft mode and is used in this test class")
     void testMessagesAndConsumerOffsetFilesOnDisk(ExtensionContext extensionContext) {
         final TestStorage testStorage = new TestStorage(extensionContext);
-        final LabelSelector kafkaSelector = KafkaResource.getLabelSelector(testStorage.getClusterName(), testStorage.getKafkaStatefulSetName());
+
         final Map<String, Object> kafkaConfig = new HashMap<>();
         kafkaConfig.put("offsets.topic.replication.factor", "1");
         kafkaConfig.put("offsets.topic.num.partitions", "100");
@@ -798,7 +808,7 @@ class KafkaST extends AbstractST {
             .endSpec()
             .build());
 
-        Map<String, String> kafkaPodsSnapshot = PodUtils.podSnapshot(testStorage.getNamespaceName(), kafkaSelector);
+        Map<String, String> kafkaPodsSnapshot = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getKafkaSelector());
 
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getTopicName(), 1, 1, testStorage.getNamespaceName()).build());
 
@@ -855,7 +865,7 @@ class KafkaST extends AbstractST {
         }
 
         LOGGER.info("Waiting for Kafka rolling restart");
-        RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), kafkaSelector, 1, kafkaPodsSnapshot);
+        RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getKafkaSelector(), 1, kafkaPodsSnapshot);
 
         LOGGER.info("Executing command {} in {}", commandToGetDataFromTopic, KafkaResource.getKafkaPodName(testStorage.getClusterName(), 0));
         topicData = cmdKubeClient(testStorage.getNamespaceName()).execInPod(KafkaResource.getKafkaPodName(testStorage.getClusterName(), 0), "/bin/bash", "-c",

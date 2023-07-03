@@ -164,4 +164,8 @@ public class KafkaResource implements ResourceType<Kafka> {
 
         return KafkaResources.kafkaPodName(clusterName, podNum);
     }
+
+    public static String getNodePoolName(String clusterName) {
+        return Constants.KAFKA_NODE_POOL_PREFIX + hashStub(clusterName);
+    }
 }

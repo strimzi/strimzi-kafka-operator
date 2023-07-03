@@ -234,7 +234,8 @@ public class ListenersST extends AbstractST {
             KafkaUserTemplates.scramShaUser(testStorage).build()
         );
 
-        String brokerPodLog = kubeClient(testStorage.getNamespaceName()).logsInSpecificNamespace(testStorage.getNamespaceName(), testStorage.getClusterName() + "-kafka-0", "kafka");
+        String brokerPodLog = kubeClient(testStorage.getNamespaceName()).logsInSpecificNamespace(testStorage.getNamespaceName(),
+            KafkaResource.getKafkaPodName(testStorage.getClusterName(), 0), "kafka");
         Pattern p = Pattern.compile("^.*" + Pattern.quote(testStorage.getUsername()) + ".*$", Pattern.MULTILINE);
         Matcher m = p.matcher(brokerPodLog);
         boolean found = false;

@@ -25,7 +25,9 @@ import io.strimzi.api.kafka.model.template.PodTemplate;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.KRaftNotSupported;
+import io.strimzi.systemtest.resources.crd.KafkaNodePoolResource;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
@@ -100,14 +102,19 @@ public class KafkaRollerIsolatedST extends AbstractST {
 
         // Now that KafkaStreamsTopicStore topic is set on the first 3 brokers, lets spin-up another one.
         int scaledUpReplicas = 4;
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, k -> k.getSpec().getKafka().setReplicas(scaledUpReplicas), namespaceName);
+
+        if (Environment.isKafkaNodePoolEnabled()) {
+            KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(KafkaResource.getNodePoolName(clusterName), knp -> knp.getSpec().setReplicas(scaledUpReplicas), namespaceName);
+        } else {
+            KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, k -> k.getSpec().getKafka().setReplicas(scaledUpReplicas), namespaceName);
+        }
 
         RollingUpdateUtils.waitForComponentScaleUpOrDown(namespaceName, kafkaSelector, scaledUpReplicas);
 
         resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(clusterName, topicName, 4, 4, 4, namespaceName).build());
 
         //Test that the new pod does not have errors or failures in events
-        String uid = kubeClient(namespaceName).getPodUid(KafkaResources.kafkaPodName(clusterName,  3));
+        String uid = kubeClient(namespaceName).getPodUid(KafkaResource.getKafkaPodName(clusterName,  3));
         List<Event> events = kubeClient(namespaceName).listEventsByResourceUid(uid);
         assertThat(events, hasAllOfReasons(Scheduled, Pulled, Created, Started));
 
@@ -115,14 +122,18 @@ public class KafkaRollerIsolatedST extends AbstractST {
         final int scaledDownReplicas = 3;
         LOGGER.info("Scaling down to {}", scaledDownReplicas);
 
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, k -> k.getSpec().getKafka().setReplicas(scaledDownReplicas), namespaceName);
+        if (Environment.isKafkaNodePoolEnabled()) {
+            KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(KafkaResource.getNodePoolName(clusterName), knp -> knp.getSpec().setReplicas(scaledDownReplicas), namespaceName);
+        } else {
+            KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, k -> k.getSpec().getKafka().setReplicas(scaledDownReplicas), namespaceName);
+        }
 
         Map<String, String> kafkaPods = RollingUpdateUtils.waitForComponentScaleUpOrDown(namespaceName, kafkaSelector, scaledDownReplicas);
 
         PodUtils.verifyThatRunningPodsAreStable(namespaceName, clusterName);
 
         // set annotation to trigger Kafka rolling update
-        StrimziPodSetUtils.annotateStrimziPodSet(namespaceName, kafkaStsName, Collections.singletonMap(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "true"));
+        StrimziPodSetUtils.annotateStrimziPodSet(namespaceName, KafkaResource.getStrimziPodSetName(clusterName), Collections.singletonMap(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "true"));
 
         RollingUpdateUtils.waitTillComponentHasRolled(namespaceName, kafkaSelector, scaledDownReplicas, kafkaPods);
         //Test that CO doesn't have any exceptions in log
@@ -152,7 +163,7 @@ public class KafkaRollerIsolatedST extends AbstractST {
         LOGGER.info("Annotate Kafka {} {} with manual rolling update annotation", StrimziPodSet.RESOURCE_KIND, kafkaName);
 
         // set annotation to trigger Kafka rolling update
-        StrimziPodSetUtils.annotateStrimziPodSet(namespaceName, kafkaName, Collections.singletonMap(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "true"));
+        StrimziPodSetUtils.annotateStrimziPodSet(namespaceName, KafkaResource.getStrimziPodSetName(clusterName), Collections.singletonMap(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "true"));
 
         RollingUpdateUtils.waitTillComponentHasRolled(namespaceName, kafkaSelector, 3, kafkaPods);
         assertThat(PodUtils.podSnapshot(namespaceName, kafkaSelector), is(not(kafkaPods)));
@@ -234,8 +245,14 @@ public class KafkaRollerIsolatedST extends AbstractST {
         Map<String, Quantity> requests = new HashMap<>(2);
         requests.put("cpu", new Quantity("123456"));
         requests.put("memory", new Quantity("128Mi"));
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, kafka ->
+
+        if (Environment.isKafkaNodePoolEnabled()) {
+            KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(KafkaResource.getNodePoolName(clusterName), knp ->
+                knp.getSpec().getResources().setRequests(requests), namespaceName);
+        } else {
+            KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, kafka ->
                 kafka.getSpec().getKafka().getResources().setRequests(requests), namespaceName);
+        }
 
         KafkaUtils.waitForKafkaNotReady(namespaceName, clusterName);
 
@@ -243,8 +260,13 @@ public class KafkaRollerIsolatedST extends AbstractST {
 
         requests.put("cpu", new Quantity("100m"));
 
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, kafka ->
+        if (Environment.isKafkaNodePoolEnabled()) {
+            KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(KafkaResource.getNodePoolName(clusterName), knp ->
+                knp.getSpec().getResources().setRequests(requests), namespaceName);
+        } else {
+            KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, kafka ->
                 kafka.getSpec().getKafka().getResources().setRequests(requests), namespaceName);
+        }
 
         // kafka should get back ready in some reasonable time frame.
         // Current timeout for wait is set to 14 minutes, which should be enough.
@@ -296,11 +318,16 @@ public class KafkaRollerIsolatedST extends AbstractST {
             .build());
 
         // pods are stable in the Pending state
-        PodUtils.waitUntilPodStabilityReplicasCount(namespaceName, KafkaResources.kafkaStatefulSetName(clusterName), 3);
+        PodUtils.waitUntilPodStabilityReplicasCount(namespaceName, KafkaResource.getStrimziPodSetName(clusterName), 3);
 
         LOGGER.info("Removing requirement for the affinity");
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, kafka ->
+        if (Environment.isKafkaNodePoolEnabled()) {
+            KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(KafkaResource.getNodePoolName(clusterName), knp ->
+                knp.getSpec().getTemplate().getPod().setAffinity(null), namespaceName);
+        } else {
+            KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, kafka ->
                 kafka.getSpec().getKafka().getTemplate().getPod().setAffinity(null), namespaceName);
+        }
 
         // kafka should get back ready in some reasonable time frame
         KafkaUtils.waitForKafkaReady(namespaceName, clusterName);
@@ -309,7 +336,7 @@ public class KafkaRollerIsolatedST extends AbstractST {
     }
 
     boolean checkIfExactlyOneKafkaPodIsNotReady(String namespaceName, String clusterName) {
-        List<Pod> kafkaPods = kubeClient(namespaceName).listPodsByPrefixInName(KafkaResources.kafkaStatefulSetName(clusterName));
+        List<Pod> kafkaPods = kubeClient(namespaceName).listPodsByPrefixInName(KafkaResource.getStrimziPodSetName(clusterName));
         int runningKafkaPods = (int) kafkaPods.stream().filter(pod -> pod.getStatus().getPhase().equals("Running")).count();
 
         return runningKafkaPods == (kafkaPods.size() - 1);
