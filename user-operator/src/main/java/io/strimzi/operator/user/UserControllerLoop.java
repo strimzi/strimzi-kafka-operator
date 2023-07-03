@@ -8,7 +8,7 @@ import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.informers.cache.Lister;
-import io.strimzi.api.kafka.Crds;
+import io.strimzi.api.kafka.KafkaUserList;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.KafkaUserBuilder;
 import io.strimzi.api.kafka.model.status.Condition;
@@ -17,16 +17,19 @@ import io.strimzi.operator.cluster.model.StatusDiff;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
+import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.controller.AbstractControllerLoop;
 import io.strimzi.operator.common.controller.ControllerQueue;
 import io.strimzi.operator.common.controller.ReconciliationLockManager;
 import io.strimzi.operator.common.metrics.ControllerMetricsHolder;
 import io.strimzi.operator.common.operator.resource.StatusUtils;
+import io.strimzi.operator.common.operator.resource.concurrent.CrdOperator;
 import io.strimzi.operator.user.model.KafkaUserModel;
 import io.strimzi.operator.user.operator.KafkaUserOperator;
 
 import java.util.Set;
 import java.util.concurrent.CancellationException;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
@@ -39,9 +42,9 @@ import java.util.concurrent.TimeoutException;
 public class UserControllerLoop extends AbstractControllerLoop {
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(UserControllerLoop.class);
 
-    private final KubernetesClient client;
     private final Lister<KafkaUser> userLister;
     private final Lister<Secret> secretLister;
+    private final CrdOperator<KubernetesClient, KafkaUser, KafkaUserList> userCrdOperator;
     private final KafkaUserOperator userOperator;
     private final ControllerMetricsHolder metrics;
 
@@ -58,9 +61,9 @@ public class UserControllerLoop extends AbstractControllerLoop {
      * @param lockManager           LockManager which is used to avoid the same resource being reconciled in multiple loops in parallel
      * @param scheduledExecutor     Scheduled executor service which will be passed to the AbstractControllerLoop and
      *                              used to run the progress warnings
-     * @param client                The Kubernetes client
      * @param userLister            The KafkaUser resource lister for getting the resources
      * @param secretLister          The Secret lister for getting the secrets
+     * @param userCrdOperator       For operating on KafkaUser resources
      * @param userOperator          The KafkaUserOperator which has the logic for updating the Kubernetes or Kafka resources
      * @param metrics               The metrics holder for providing metrics about the reconciliation
      * @param config                The User Operator config
@@ -70,18 +73,18 @@ public class UserControllerLoop extends AbstractControllerLoop {
             ControllerQueue workQueue,
             ReconciliationLockManager lockManager,
             ScheduledExecutorService scheduledExecutor,
-            KubernetesClient client,
             Lister<KafkaUser> userLister,
             Lister<Secret> secretLister,
+            CrdOperator<KubernetesClient, KafkaUser, KafkaUserList> userCrdOperator,
             KafkaUserOperator userOperator,
             ControllerMetricsHolder metrics,
             UserOperatorConfig config
     ) {
         super(name, workQueue, lockManager, scheduledExecutor);
 
-        this.client = client;
         this.userLister = userLister;
         this.secretLister = secretLister;
+        this.userCrdOperator = userCrdOperator;
         this.userOperator = userOperator;
         this.metrics = metrics;
 
@@ -150,27 +153,30 @@ public class UserControllerLoop extends AbstractControllerLoop {
      */
     private void maybeUpdateStatus(Reconciliation reconciliation, KafkaUser kafkaUser, KafkaUserStatus desiredStatus) {
         // KafkaUser or desiredStatus being null means deletion => no status to update
-        if (kafkaUser != null && desiredStatus != null) {
-            if (!new StatusDiff(kafkaUser.getStatus(), desiredStatus).isEmpty())  {
-                try {
-                    LOGGER.debugCr(reconciliation, "Updating status of {} {} in namespace {}", reconciliation.kind(), reconciliation.name(), reconciliation.namespace());
-                    KafkaUser latestKafkaUser = userLister.namespace(reconciliation.namespace()).get(reconciliation.name());
-                    if (latestKafkaUser != null) {
-                        KafkaUser updateKafkaUser = new KafkaUserBuilder(latestKafkaUser)
-                                .withStatus(desiredStatus)
-                                .build();
+        if (kafkaUser != null && desiredStatus != null && !new StatusDiff(kafkaUser.getStatus(), desiredStatus).isEmpty()) {
+            LOGGER.debugCr(reconciliation, "Updating status of {} {} in namespace {}", reconciliation.kind(), reconciliation.name(), reconciliation.namespace());
+            KafkaUser latestKafkaUser = userLister.namespace(reconciliation.namespace()).get(reconciliation.name());
 
-                        Crds.kafkaUserOperation(client).inNamespace(reconciliation.namespace()).resource(updateKafkaUser).updateStatus();
-                    }
-                } catch (KubernetesClientException e)   {
-                    if (e.getCode() == 409) {
-                        LOGGER.debugCr(reconciliation, "{} {} in namespace {} changed while trying to update status", reconciliation.kind(), reconciliation.name(), reconciliation.namespace());
-                    } else if (e.getCode() == 404) {
-                        LOGGER.debugCr(reconciliation, "{} {} in namespace {} was deleted while trying to update status", reconciliation.kind(), reconciliation.name(), reconciliation.namespace());
-                    } else {
-                        LOGGER.errorCr(reconciliation, "Failed to update status of {} {} in namespace {}", reconciliation.kind(), reconciliation.name(), reconciliation.namespace(), e);
-                    }
-                }
+            if (latestKafkaUser != null) {
+                KafkaUser updateKafkaUser = new KafkaUserBuilder(latestKafkaUser)
+                        .withStatus(desiredStatus)
+                        .build();
+
+                userCrdOperator.updateStatusAsync(reconciliation, updateKafkaUser)
+                    .exceptionally(error -> {
+                        if (Util.unwrap(error) instanceof KubernetesClientException kce) {
+                            switch (kce.getCode()) {
+                                case 409 -> LOGGER.debugCr(reconciliation, "{} {} in namespace {} changed while trying to update status", reconciliation.kind(), reconciliation.name(), reconciliation.namespace());
+                                case 404 -> LOGGER.debugCr(reconciliation, "{} {} in namespace {} was deleted while trying to update status", reconciliation.kind(), reconciliation.name(), reconciliation.namespace());
+                                default  -> LOGGER.errorCr(reconciliation, "Failed to update status of {} {} in namespace {}", reconciliation.kind(), reconciliation.name(), reconciliation.namespace(), kce);
+                            }
+                            return null;
+                        } else {
+                            throw new CompletionException(Util.unwrap(error));
+                        }
+                    })
+                    .toCompletableFuture()
+                    .join();
             }
         }
     }

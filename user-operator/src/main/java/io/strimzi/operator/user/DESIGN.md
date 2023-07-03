@@ -33,7 +33,7 @@ The metrics are handled from the Micrometer metrics and its Prometheus registry.
 
 The handlers for the different endpoints were originally based on `HttpServlet` classes.
 But this class implements `Serializable` and was causing issues when the servlet handlers were using non-serializable classes such as the `UserController` or `PrometheusMeterRegistry`.
-So instead, the code now uses the Jetty `AbstractHandler` which doe snot implement `Serializable` and does not have this kind od issues.
+So instead, the code now uses the Jetty `AbstractHandler` which does not implement `Serializable` and does not have this kind od issues.
 
 Another issue was that Jetty by default redirects the path without trailing `/` to the path with trailing `/`.
 So for example `/metrics` was always redirected to `/metrics/`.

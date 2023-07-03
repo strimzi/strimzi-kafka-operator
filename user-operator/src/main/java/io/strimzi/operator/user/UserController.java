@@ -9,7 +9,7 @@ import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.informers.ResourceEventHandler;
 import io.fabric8.kubernetes.client.informers.SharedIndexInformer;
 import io.fabric8.kubernetes.client.informers.cache.Lister;
-import io.strimzi.api.kafka.Crds;
+import io.strimzi.api.kafka.KafkaUserList;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.InformerUtils;
@@ -24,6 +24,8 @@ import io.strimzi.operator.common.http.Readiness;
 import io.strimzi.operator.common.metrics.ControllerMetricsHolder;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.NamespaceAndName;
+import io.strimzi.operator.common.operator.resource.concurrent.CrdOperator;
+import io.strimzi.operator.common.operator.resource.concurrent.SecretOperator;
 import io.strimzi.operator.user.operator.KafkaUserOperator;
 
 import java.util.ArrayList;
@@ -64,14 +66,23 @@ public class UserController implements Liveness, Readiness {
     private final ScheduledExecutorService scheduledExecutor;
 
     /**
-     * Creates the User controller responsible for controlling users in a single namespace
+     * Creates the User controller responsible for controlling users in a single
+     * namespace
      *
      * @param config          User Operator configuration
-     * @param client          Kubernetes client
-     * @param userOperator    The User Operator which encapsulates the logic for updating the users
+     * @param secretOperator  For operating on secrets
+     * @param userCrdOperator For operating on KafkaUser resources
+     * @param userOperator    The User Operator which encapsulates the logic for
+     *                        updating the users
      * @param metricsProvider Metrics provider for handling metrics
      */
-    public UserController(UserOperatorConfig config, KubernetesClient client, KafkaUserOperator userOperator, MetricsProvider metricsProvider) {
+    public UserController(
+            UserOperatorConfig config,
+            SecretOperator secretOperator,
+            CrdOperator<KubernetesClient, KafkaUser, KafkaUserList> userCrdOperator,
+            KafkaUserOperator userOperator,
+            MetricsProvider metricsProvider) {
+
         this.userOperator = userOperator;
 
         // Store some useful settings into local fields
@@ -95,11 +106,11 @@ public class UserController implements Liveness, Readiness {
         this.workQueue = new ControllerQueue(config.getWorkQueueSize(), this.metrics);
 
         // Secret informer and lister is used to get events about Secrets and get Secrets quickly
-        this.secretInformer = client.secrets().inNamespace(watchedNamespace).withLabels(secretSelector).runnableInformer(DEFAULT_RESYNC_PERIOD_MS);
+        this.secretInformer = secretOperator.informer(watchedNamespace, secretSelector, DEFAULT_RESYNC_PERIOD_MS);
         Lister<Secret> secretLister = new Lister<>(secretInformer.getIndexer());
 
         // KafkaUser informer and lister is used to get events about Users and get Users quickly
-        this.userInformer = Crds.kafkaUserOperation(client).inNamespace(watchedNamespace).withLabels(userSelector).runnableInformer(DEFAULT_RESYNC_PERIOD_MS);
+        this.userInformer = userCrdOperator.informer(watchedNamespace, userSelector, DEFAULT_RESYNC_PERIOD_MS);
         Lister<KafkaUser> userLister = new Lister<>(userInformer.getIndexer());
 
         // Creates the scheduled executor service used for periodical reconciliations and progress warnings
@@ -111,7 +122,7 @@ public class UserController implements Liveness, Readiness {
         // Create a thread pool for the reconciliation loops and add the reconciliation loops
         this.threadPool = new ArrayList<>(config.getControllerThreadPoolSize());
         for (int i = 0; i < config.getControllerThreadPoolSize(); i++)  {
-            threadPool.add(new UserControllerLoop(RESOURCE_KIND + "-ControllerLoop-" + i, workQueue, lockManager, scheduledExecutor, client, userLister, secretLister, userOperator, metrics, config));
+            threadPool.add(new UserControllerLoop(RESOURCE_KIND + "-ControllerLoop-" + i, workQueue, lockManager, scheduledExecutor, userLister, secretLister, userCrdOperator, userOperator, metrics, config));
         }
     }
 

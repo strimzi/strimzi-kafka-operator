@@ -506,4 +506,28 @@ public abstract class AbstractNamespacedResourceOperator<C extends KubernetesCli
     public MixedOperation<T, L, R> client() {
         return operation();
     }
+
+    /**
+     * Returns a Kubernetes client {@linkplain Resource} of this resource
+     * operator's type T for the given resource namespace and name.
+     *
+     * @param namespace namespace of the resource
+     * @param name name of the resource
+     * @return Kubernetes client {@linkplain Resource}
+     */
+    public Resource<T> resource(String namespace, String name) {
+        return operation().inNamespace(namespace).withName(name);
+    }
+
+    /**
+     * Returns a Kubernetes client {@linkplain Resource} of this resource
+     * operator's type T for the given resource namespace and item.
+     *
+     * @param namespace namespace of the resource
+     * @param item instance of the resource
+     * @return Kubernetes client {@linkplain Resource}
+     */
+    public Resource<T> resource(String namespace, T item) {
+        return operation().inNamespace(namespace).resource(item);
+    }
 }
