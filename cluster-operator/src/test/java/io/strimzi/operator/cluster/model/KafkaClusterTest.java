@@ -2359,9 +2359,7 @@ public class KafkaClusterTest {
                 asList(2, "foo-kafka-brokers"),
                 asList(2, "foo-kafka-brokers.test"),
                 asList(2, "foo-kafka-brokers.test.svc"),
-                asList(2, "foo-kafka-brokers.test.svc.cluster.local"),
-                asList(2, "foo-kafka-0"))));
-
+                asList(2, "foo-kafka-brokers.test.svc.cluster.local"))));
     }
 
     @ParallelTest
@@ -2381,7 +2379,6 @@ public class KafkaClusterTest {
         assertThat(new HashSet<Object>(cert.getSubjectAlternativeNames()), is(set(
                 asList(2, "foo-kafka-0.foo-kafka-brokers.test.svc.cluster.local"),
                 asList(2, "foo-kafka-0.foo-kafka-brokers.test.svc"),
-                asList(2, "foo-kafka-0"),
                 asList(2, "foo-kafka-bootstrap"),
                 asList(2, "foo-kafka-bootstrap.test"),
                 asList(2, "foo-kafka-bootstrap.test.svc"),
@@ -2411,7 +2408,6 @@ public class KafkaClusterTest {
         assertThat(new HashSet<Object>(cert.getSubjectAlternativeNames()), is(set(
                 asList(2, "foo-kafka-0.foo-kafka-brokers.test.svc.cluster.local"),
                 asList(2, "foo-kafka-0.foo-kafka-brokers.test.svc"),
-                asList(2, "foo-kafka-0"),
                 asList(2, "foo-kafka-bootstrap"),
                 asList(2, "foo-kafka-bootstrap.test"),
                 asList(2, "foo-kafka-bootstrap.test.svc"),
