@@ -46,7 +46,7 @@ public class DynamicConfSharedST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(DynamicConfSharedST.class);
 
-    private final String dynamicConfigurationSharedClusterName = "dynamic-configuration-shared-cluster-name";
+    private final String dynamicConfigurationSharedClusterName = "dynamic-config-shared";
 
     private String scraperPodName;
 
