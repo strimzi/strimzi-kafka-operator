@@ -219,6 +219,14 @@ public class CruiseControlST extends AbstractST {
         assertThat(kafkaStatus.getConditions().stream().filter(c -> "InvalidResourceException".equals(c.getReason())).findFirst().orElse(null), is(notNullValue()));
 
         LOGGER.info("Increasing Kafka nodes to 3");
+
+        int scaleTo = 3;
+
+        if (Environment.isKafkaNodePoolEnabled()) {
+            KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(KafkaResource.getNodePoolName(clusterName), knp ->
+                knp.getSpec().setReplicas(scaleTo), namespaceName);
+        }
+        // should be moved to else block once the issue - https://github.com/strimzi/strimzi-kafka-operator/issues/8770 - will be fixed
         KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, kafka -> kafka.getSpec().getKafka().setReplicas(3), namespaceName);
         KafkaUtils.waitForKafkaReady(namespaceName, clusterName);
 
