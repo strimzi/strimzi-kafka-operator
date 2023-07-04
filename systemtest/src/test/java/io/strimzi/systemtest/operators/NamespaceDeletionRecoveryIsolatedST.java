@@ -37,6 +37,7 @@ import java.util.List;
 
 import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.RECOVERY;
+import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.systemtest.Constants.INFRA_NAMESPACE;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
@@ -45,6 +46,7 @@ import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
  * Procedure described in documentation  https://strimzi.io/docs/master/#namespace-deletion_str
  */
 @Tag(RECOVERY)
+@Tag(REGRESSION)
 class NamespaceDeletionRecoveryIsolatedST extends AbstractST {
     private String storageClassName = "retain";
 
@@ -121,10 +123,13 @@ class NamespaceDeletionRecoveryIsolatedST extends AbstractST {
     void testTopicNotAvailable(ExtensionContext extensionContext) throws InterruptedException {
         final TestStorage testStorage = new TestStorage(extensionContext, clusterOperator.getDeploymentNamespace());
 
+        final List<String> topicsToRemove = List.of("__strimzi-topic-operator-kstreams-topic-store-changelog", "__strimzi_store_topic");
+
         prepareEnvironmentForRecovery(extensionContext, testStorage);
 
         // Wait till consumer offset topic is created
         KafkaTopicUtils.waitForKafkaTopicCreationByNamePrefix(clusterOperator.getDeploymentNamespace(), "consumer-offsets");
+
         // Get list of topics and list of PVC needed for recovery
         List<PersistentVolumeClaim> persistentVolumeClaimList = kubeClient().getClient().persistentVolumeClaims().list().getItems();
         deleteAndRecreateNamespace();
@@ -157,13 +162,13 @@ class NamespaceDeletionRecoveryIsolatedST extends AbstractST {
 
         // Wait some time after kafka is ready before delete topics files
         Thread.sleep(60000);
-        // Remove all topic data from topic store
 
-        KafkaCmdClient.deleteTopicUsingPodCli(testStorage.getNamespaceName(), scraperPodName, KafkaResources.plainBootstrapAddress(testStorage.getClusterName()), "__strimzi-topic-operator-kstreams-topic-store-changelog");
-        KafkaCmdClient.deleteTopicUsingPodCli(testStorage.getNamespaceName(), scraperPodName, KafkaResources.plainBootstrapAddress(testStorage.getClusterName()), "__strimzi_store_topic");
+        // Remove all topic data from topic store and wait for the deletion -> must do before deploying topic operator
+        for (String topicName : topicsToRemove) {
+            KafkaCmdClient.deleteTopicUsingPodCli(testStorage.getNamespaceName(), scraperPodName, KafkaResources.plainBootstrapAddress(testStorage.getClusterName()), topicName);
+            KafkaTopicUtils.waitForTopicsByPrefixDeletionUsingPodCli(testStorage.getNamespaceName(), topicName, KafkaResources.plainBootstrapAddress(testStorage.getClusterName()), scraperPodName, "");
+        }
 
-        // Wait till exec result will be finish
-        Thread.sleep(30000);
         KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), k -> {
             k.getSpec().setEntityOperator(new EntityOperatorSpecBuilder()
                 .withNewTopicOperator()
@@ -180,7 +185,7 @@ class NamespaceDeletionRecoveryIsolatedST extends AbstractST {
             .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
             .withNamespaceName(testStorage.getNamespaceName())
             .withTopicName(testStorage.getTopicName())
-            .withMessageCount(MESSAGE_COUNT)
+            .withMessageCount(testStorage.getMessageCount())
             .build();
 
         resourceManager.createResource(extensionContext, clients.producerStrimzi(), clients.consumerStrimzi());
@@ -241,7 +246,6 @@ class NamespaceDeletionRecoveryIsolatedST extends AbstractST {
     }
 
     private void recreateClusterOperator(ExtensionContext extensionContext) {
-        clusterOperator.unInstall();
         clusterOperator = new SetupClusterOperator.SetupClusterOperatorBuilder()
             .withExtensionContext(extensionContext)
             .withNamespace(INFRA_NAMESPACE)
