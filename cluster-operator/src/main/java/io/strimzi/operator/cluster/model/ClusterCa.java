@@ -192,6 +192,7 @@ public class ClusterCa extends Ca {
             subject.addDnsName(String.format("%s.%s", KafkaResources.zookeeperServiceName(crName), namespace));
             subject.addDnsName(zkDnsGenerator.serviceDnsNameWithoutClusterDomain());
             subject.addDnsName(zkDnsGenerator.serviceDnsName());
+            subject.addDnsName(node.podName());
             subject.addDnsName(DnsNameGenerator.podDnsName(namespace, KafkaResources.zookeeperHeadlessServiceName(crName), node.podName()));
             subject.addDnsName(DnsNameGenerator.podDnsNameWithoutClusterDomain(namespace, KafkaResources.zookeeperHeadlessServiceName(crName), node.podName()));
             subject.addDnsName(zkDnsGenerator.wildcardServiceDnsNameWithoutClusterDomain());
