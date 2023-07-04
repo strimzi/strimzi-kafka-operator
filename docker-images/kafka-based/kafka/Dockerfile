@@ -9,7 +9,7 @@ ARG strimzi_version
 ARG TARGETOS
 ARG TARGETARCH
 
-RUN microdnf --setopt=install_weak_deps=0 --setopt=tsflags=nodocs install gettext nmap-ncat stunnel net-tools unzip hostname findutils tar bind-utils \
+RUN microdnf --setopt=install_weak_deps=0 --setopt=tsflags=nodocs install gettext nmap-ncat stunnel net-tools unzip hostname findutils tar \
     && microdnf clean all
 
 # Add kafka user with UID 1001
