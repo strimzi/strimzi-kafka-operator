@@ -14,17 +14,17 @@ You apply the reassignment specified in the file to the brokers and then verify 
 This procedure describes a secure scaling process that uses TLS.
 You'll need a Kafka cluster that uses TLS encryption and mTLS authentication.
 
+The `kafka-reassign-partitions.sh` tool can be used to reassign partitions within a Kafka cluster, regardless of whether you are managing all nodes through the cluster or using the node pools preview to manage groups of nodes within the cluster.
+
 NOTE: Though you can use the `kafka-reassign-partitions.sh` tool, Cruise Control is recommended xref:cruise-control-concepts-str[for automated partition reassignments and cluster rebalancing]. 
 Cruise Control can move topics from one broker to another without any downtime, and it is the most efficient way to reassign partitions.
 
 .Prerequisites
 
 * You have a running Kafka cluster based on a `Kafka` resource configured with internal TLS encryption and mTLS authentication.
-* You have generated a reassignment JSON file named `reassignment.json`.
+* You have xref:proc-generating-reassignment-json-files-{context}[generated a reassignment JSON file] named `reassignment.json`.
 * You are running an interactive pod container that is connected to the running Kafka broker.
 * You are connected as a `KafkaUser` configured with ACL rules that specify permission to manage the Kafka cluster and its topics.
-
-See xref:proc-generating-reassignment-json-files-{context}[Generating reassignment JSON files].
 
 .Procedure
 
