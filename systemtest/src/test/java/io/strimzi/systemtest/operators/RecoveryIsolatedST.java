@@ -9,21 +9,22 @@ import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
-import io.strimzi.api.kafka.model.KafkaBridgeResources;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.KRaftNotSupported;
 import io.strimzi.systemtest.annotations.IsolatedTest;
+import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
+import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 import io.strimzi.systemtest.resources.crd.KafkaNodePoolResource;
 import io.strimzi.systemtest.rollingupdate.KafkaRollerIsolatedST;
+import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaBridgeTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
+import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.RollingUpdateUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
-import io.strimzi.systemtest.utils.kubeUtils.controllers.ConfigMapUtils;
-import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StrimziPodSetUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.ServiceUtils;
@@ -39,7 +40,6 @@ import java.util.List;
 import java.util.Map;
 
 import static io.strimzi.systemtest.Constants.REGRESSION;
-import static io.strimzi.systemtest.Constants.BRIDGE;
 import static io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils.generateRandomNameOfKafka;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
@@ -51,24 +51,6 @@ class RecoveryIsolatedST extends AbstractST {
     private static final int ZOOKEEPER_REPLICAS = KAFKA_REPLICAS;
 
     private static final Logger LOGGER = LogManager.getLogger(RecoveryIsolatedST.class);
-
-    @IsolatedTest("We need for each test case its own Cluster Operator")
-    @KRaftNotSupported("Topic Operator is not supported by KRaft mode and is used in this test class")
-    void testRecoveryFromEntityOperatorDeletion() {
-        // kafka cluster already deployed
-        LOGGER.info("Running testRecoveryFromEntityOperatorDeletion with cluster {}", sharedClusterName);
-
-        String entityOperatorDeploymentName = KafkaResources.entityOperatorDeploymentName(sharedClusterName);
-        String entityOperatorDeploymentUid = kubeClient().getDeploymentUid(clusterOperator.getDeploymentNamespace(), entityOperatorDeploymentName);
-
-        kubeClient().deleteDeployment(clusterOperator.getDeploymentNamespace(), entityOperatorDeploymentName);
-        PodUtils.waitForPodsWithPrefixDeletion(entityOperatorDeploymentName);
-
-        LOGGER.info("Waiting for recovery {}", entityOperatorDeploymentName);
-
-        DeploymentUtils.waitForDeploymentRecovery(clusterOperator.getDeploymentNamespace(), entityOperatorDeploymentName, entityOperatorDeploymentUid);
-        DeploymentUtils.waitForDeploymentAndPodsReady(clusterOperator.getDeploymentNamespace(), entityOperatorDeploymentName, 1);
-    }
 
     @IsolatedTest("We need for each test case its own Cluster Operator")
     void testRecoveryFromKafkaStrimziPodSetDeletion() {
@@ -106,7 +88,9 @@ class RecoveryIsolatedST extends AbstractST {
     }
 
     @IsolatedTest("We need for each test case its own Cluster Operator")
-    void testRecoveryFromKafkaServiceDeletion() {
+    void testRecoveryFromKafkaServiceDeletion(ExtensionContext extensionContext) {
+        TestStorage testStorage = new TestStorage(extensionContext);
+
         // kafka cluster already deployed
         LOGGER.info("Running deleteKafkaService with cluster {}", sharedClusterName);
 
@@ -117,11 +101,14 @@ class RecoveryIsolatedST extends AbstractST {
 
         LOGGER.info("Waiting for creation {}", kafkaServiceName);
         ServiceUtils.waitForServiceRecovery(clusterOperator.getDeploymentNamespace(), kafkaServiceName, kafkaServiceUid);
+        verifyStabilityBySendingAndReceivingMessages(extensionContext, testStorage);
     }
 
     @IsolatedTest("We need for each test case its own Cluster Operator")
     @KRaftNotSupported("Zookeeper is not supported by KRaft mode and is used in this test class")
-    void testRecoveryFromZookeeperServiceDeletion() {
+    void testRecoveryFromZookeeperServiceDeletion(ExtensionContext extensionContext) {
+        TestStorage testStorage = new TestStorage(extensionContext);
+
         // kafka cluster already deployed
         LOGGER.info("Running deleteKafkaService with cluster {}", sharedClusterName);
 
@@ -132,10 +119,14 @@ class RecoveryIsolatedST extends AbstractST {
 
         LOGGER.info("Waiting for creation {}", zookeeperServiceName);
         ServiceUtils.waitForServiceRecovery(clusterOperator.getDeploymentNamespace(), zookeeperServiceName, zookeeperServiceUid);
+
+        verifyStabilityBySendingAndReceivingMessages(extensionContext, testStorage);
     }
 
     @IsolatedTest("We need for each test case its own Cluster Operator")
-    void testRecoveryFromKafkaHeadlessServiceDeletion() {
+    void testRecoveryFromKafkaHeadlessServiceDeletion(ExtensionContext extensionContext) {
+        TestStorage testStorage = new TestStorage(extensionContext);
+
         // kafka cluster already deployed
         LOGGER.info("Running deleteKafkaHeadlessService with cluster {}", sharedClusterName);
 
@@ -146,11 +137,15 @@ class RecoveryIsolatedST extends AbstractST {
 
         LOGGER.info("Waiting for creation {}", kafkaHeadlessServiceName);
         ServiceUtils.waitForServiceRecovery(clusterOperator.getDeploymentNamespace(), kafkaHeadlessServiceName, kafkaHeadlessServiceUid);
+
+        verifyStabilityBySendingAndReceivingMessages(extensionContext, testStorage);
     }
 
     @IsolatedTest("We need for each test case its own Cluster Operator")
     @KRaftNotSupported("Zookeeper is not supported by KRaft mode and is used in this test class")
-    void testRecoveryFromZookeeperHeadlessServiceDeletion() {
+    void testRecoveryFromZookeeperHeadlessServiceDeletion(ExtensionContext extensionContext) {
+        TestStorage testStorage = new TestStorage(extensionContext);
+
         // kafka cluster already deployed
         LOGGER.info("Running deleteKafkaHeadlessService with cluster {}", sharedClusterName);
 
@@ -161,77 +156,8 @@ class RecoveryIsolatedST extends AbstractST {
 
         LOGGER.info("Waiting for creation {}", zookeeperHeadlessServiceName);
         ServiceUtils.waitForServiceRecovery(clusterOperator.getDeploymentNamespace(), zookeeperHeadlessServiceName, zookeeperHeadlessServiceUid);
-    }
 
-    @IsolatedTest("We need for each test case its own Cluster Operator")
-    void testRecoveryFromKafkaMetricsConfigDeletion() {
-        // kafka cluster already deployed
-        LOGGER.info("Running deleteKafkaMetricsConfig with cluster {}", sharedClusterName);
-
-        // For PodSets, we delete one of the per-broker config maps
-        String kafkaMetricsConfigName = KafkaResource.getKafkaPodName(sharedClusterName, 1);
-
-        String kafkaMetricsConfigUid = kubeClient().getConfigMapUid(kafkaMetricsConfigName);
-
-        kubeClient().deleteConfigMap(kafkaMetricsConfigName);
-
-        LOGGER.info("Waiting for creation {}", kafkaMetricsConfigName);
-        ConfigMapUtils.waitForConfigMapRecovery(clusterOperator.getDeploymentNamespace(), kafkaMetricsConfigName, kafkaMetricsConfigUid);
-    }
-
-    @IsolatedTest("We need for each test case its own Cluster Operator")
-    @KRaftNotSupported("Zookeeper is not supported by KRaft mode and is used in this test class")
-    void testRecoveryFromZookeeperMetricsConfigDeletion() {
-        LOGGER.info("Running deleteZookeeperMetricsConfig with cluster {}", sharedClusterName);
-
-        // kafka cluster already deployed
-        String zookeeperMetricsConfigName = KafkaResources.zookeeperMetricsAndLogConfigMapName(sharedClusterName);
-        String zookeeperMetricsConfigUid = kubeClient().getConfigMapUid(zookeeperMetricsConfigName);
-
-        kubeClient().deleteConfigMap(zookeeperMetricsConfigName);
-
-        LOGGER.info("Waiting for creation {}", zookeeperMetricsConfigName);
-        ConfigMapUtils.waitForConfigMapRecovery(clusterOperator.getDeploymentNamespace(), zookeeperMetricsConfigName, zookeeperMetricsConfigUid);
-    }
-
-    @IsolatedTest("We need for each test case its own Cluster Operator")
-    @Tag(BRIDGE)
-    void testRecoveryFromKafkaBridgeDeploymentDeletion() {
-        LOGGER.info("Running deleteKafkaBridgeDeployment with cluster {}", sharedClusterName);
-
-        // kafka cluster already deployed
-        String kafkaBridgeDeploymentName = KafkaBridgeResources.deploymentName(sharedClusterName);
-        String kafkaBridgeDeploymentUid = kubeClient().getDeploymentUid(clusterOperator.getDeploymentNamespace(), kafkaBridgeDeploymentName);
-
-        kubeClient().deleteDeployment(clusterOperator.getDeploymentNamespace(), kafkaBridgeDeploymentName);
-        PodUtils.waitForPodsWithPrefixDeletion(kafkaBridgeDeploymentName);
-
-        LOGGER.info("Waiting for deployment {} recovery", kafkaBridgeDeploymentName);
-        DeploymentUtils.waitForDeploymentRecovery(clusterOperator.getDeploymentNamespace(), kafkaBridgeDeploymentName, kafkaBridgeDeploymentUid);
-    }
-
-    @IsolatedTest("We need for each test case its own Cluster Operator")
-    @Tag(BRIDGE)
-    void testRecoveryFromKafkaBridgeServiceDeletion() {
-        LOGGER.info("Running deleteKafkaBridgeService with cluster {}", sharedClusterName);
-        String kafkaBridgeServiceName = KafkaBridgeResources.serviceName(sharedClusterName);
-        String kafkaBridgeServiceUid = kubeClient().namespace(clusterOperator.getDeploymentNamespace()).getServiceUid(kafkaBridgeServiceName);
-        kubeClient().deleteService(kafkaBridgeServiceName);
-
-        LOGGER.info("Waiting for service {} recovery", kafkaBridgeServiceName);
-        ServiceUtils.waitForServiceRecovery(clusterOperator.getDeploymentNamespace(), kafkaBridgeServiceName, kafkaBridgeServiceUid);
-    }
-
-    @IsolatedTest("We need for each test case its own Cluster Operator")
-    @Tag(BRIDGE)
-    void testRecoveryFromKafkaBridgeMetricsConfigDeletion() {
-        LOGGER.info("Running deleteKafkaBridgeMetricsConfig with cluster {}", sharedClusterName);
-        String kafkaBridgeMetricsConfigName = KafkaBridgeResources.metricsAndLogConfigMapName(sharedClusterName);
-        String kafkaBridgeMetricsConfigUid = kubeClient().getConfigMapUid(kafkaBridgeMetricsConfigName);
-        kubeClient().deleteConfigMap(kafkaBridgeMetricsConfigName);
-
-        LOGGER.info("Waiting for metric config {} re-creation", kafkaBridgeMetricsConfigName);
-        ConfigMapUtils.waitForConfigMapRecovery(clusterOperator.getDeploymentNamespace(), kafkaBridgeMetricsConfigName, kafkaBridgeMetricsConfigUid);
+        verifyStabilityBySendingAndReceivingMessages(extensionContext, testStorage);
     }
 
     /**
@@ -278,6 +204,21 @@ class RecoveryIsolatedST extends AbstractST {
 
         RollingUpdateUtils.waitForComponentAndPodsReady(clusterOperator.getDeploymentNamespace(), kafkaSelector, KAFKA_REPLICAS);
         KafkaUtils.waitForKafkaReady(clusterOperator.getDeploymentNamespace(), sharedClusterName);
+    }
+
+    void verifyStabilityBySendingAndReceivingMessages(ExtensionContext extensionContext, TestStorage testStorage) {
+        KafkaClients kafkaClients = new KafkaClientsBuilder()
+            .withTopicName(testStorage.getTopicName())
+            .withMessageCount(testStorage.getMessageCount())
+            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(sharedClusterName))
+            .withProducerName(testStorage.getProducerName())
+            .withConsumerName(testStorage.getConsumerName())
+            .withNamespaceName(testStorage.getNamespaceName())
+            .withUsername(testStorage.getUsername())
+            .build();
+
+        resourceManager.createResource(extensionContext, kafkaClients.producerStrimzi(), kafkaClients.consumerStrimzi());
+        ClientUtils.waitForClientsSuccess(testStorage);
     }
 
     @IsolatedTest
