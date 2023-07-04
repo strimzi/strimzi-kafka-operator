@@ -451,10 +451,11 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
             addAll(metricReporterList, configuration.getConfigOption(KAFKA_METRIC_REPORTERS_CONFIG_FIELD).split(","));
         }
 
-        if (kafkaAssembly.getSpec().getCruiseControl() != null && kafkaAssembly.getSpec().getKafka().getReplicas() < 2) {
+        if (kafkaAssembly.getSpec().getCruiseControl() != null
+                && kafkaCluster.nodes().stream().filter(n -> n.broker()).count() < 2) {
             throw new InvalidResourceException("Kafka " +
                     kafkaAssembly.getMetadata().getNamespace() + "/" + kafkaAssembly.getMetadata().getName() +
-                    " has invalid configuration. Cruise Control cannot be deployed with a single-node Kafka cluster. It requires at least two Kafka nodes.");
+                    " has invalid configuration. Cruise Control cannot be deployed with a Kafka cluster which has only one broker. It requires at least two Kafka brokers.");
         }
         kafkaCluster.cruiseControlSpec = kafkaAssembly.getSpec().getCruiseControl();
         if (kafkaCluster.cruiseControlSpec != null) {

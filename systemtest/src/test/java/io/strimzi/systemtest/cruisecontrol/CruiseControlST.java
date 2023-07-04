@@ -203,9 +203,9 @@ public class CruiseControlST extends AbstractST {
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(clusterOperator.getDeploymentNamespace(), extensionContext);
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
-        final String errMessage =  "Kafka " + namespaceName + "/" + clusterName + " has invalid configuration." +
-            " Cruise Control cannot be deployed with a single-node Kafka cluster. It requires " +
-            "at least two Kafka nodes.";
+        final String errMessage =  "Kafka " + namespaceName + "/" + clusterName + " has invalid configuration. " +
+            "Cruise Control cannot be deployed with a Kafka cluster which has only one broker. " +
+                "It requires at least two Kafka brokers.";
 
         LOGGER.info("Deploying single node Kafka with CruiseControl");
         resourceManager.createResource(extensionContext, false, KafkaTemplates.kafkaWithCruiseControl(clusterName, 1, 1).build());

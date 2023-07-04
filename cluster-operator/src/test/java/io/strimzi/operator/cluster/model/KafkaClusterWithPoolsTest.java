@@ -29,12 +29,14 @@ import io.strimzi.api.kafka.model.storage.PersistentClaimStorageBuilder;
 import io.strimzi.api.kafka.model.storage.Storage;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.model.nodepools.NodeIdAssignment;
+import io.strimzi.operator.cluster.model.nodepools.NodePoolUtils;
 import io.strimzi.operator.common.MetricsAndLogging;
 import io.strimzi.operator.cluster.operator.resource.MockSharedEnvironmentProvider;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.cluster.operator.resource.SharedEnvironmentProvider;
 import org.junit.jupiter.api.Test;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -43,6 +45,8 @@ import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class KafkaClusterWithPoolsTest {
     private static final KafkaVersion.Lookup VERSIONS = KafkaVersionTestUtils.getKafkaVersionLookup();
@@ -419,5 +423,64 @@ public class KafkaClusterWithPoolsTest {
         assertThat(resources.size(), is(2));
         assertThat(resources.get("pool-a").getRequests(), is(Map.of("cpu", new Quantity("4"), "memory", new Quantity("16Gi"))));
         assertThat(resources.get("pool-b").getRequests(), is(Map.of("cpu", new Quantity("6"), "memory", new Quantity("20Gi"))));
+    }
+
+    @Test
+    public void testCruiseControlWithSingleKafkaBroker() {
+        Map<String, Object> config = new HashMap<>();
+        config.put("offsets.topic.replication.factor", 1);
+        config.put("transaction.state.log.replication.factor", 1);
+        config.put("transaction.state.log.min.isr", 1);
+
+        KafkaNodePool poolA = new KafkaNodePoolBuilder(POOL_A)
+                .editSpec()
+                    .withRoles(ProcessRoles.CONTROLLER)
+                    .withReplicas(3)
+                .endSpec()
+                .build();
+
+        KafkaNodePool poolB = new KafkaNodePoolBuilder(POOL_B)
+                .editSpec()
+                    .withRoles(ProcessRoles.BROKER)
+                    .withReplicas(1)
+                .endSpec()
+                .build();
+
+        Kafka kafkaAssembly = new KafkaBuilder(KAFKA)
+                .editSpec()
+                    .editKafka()
+                        .withReplicas(1)
+                        .withConfig(config)
+                    .endKafka()
+                    .withNewCruiseControl()
+                    .endCruiseControl()
+                .endSpec()
+                .build();
+
+        // Test exception being raised when only one broker is present
+        InvalidResourceException ex = assertThrows(InvalidResourceException.class, () -> {
+            List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, List.of(poolA, poolB), Map.of(), Map.of(), true, SHARED_ENV_PROVIDER);
+            KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, pools, VERSIONS, true, null, SHARED_ENV_PROVIDER);
+        });
+
+        assertThat(ex.getMessage(), is("Kafka " + NAMESPACE + "/" + CLUSTER_NAME + " has invalid configuration. " +
+                "Cruise Control cannot be deployed with a Kafka cluster which has only one broker. " +
+                "It requires at least two Kafka brokers."));
+
+        // Test if works fine with 2 brokers in 2 different pools
+        KafkaNodePool poolC = new KafkaNodePoolBuilder(POOL_B)
+                .editMetadata()
+                    .withName("pool-c")
+                .endMetadata()
+                .editSpec()
+                    .withRoles(ProcessRoles.BROKER)
+                    .withReplicas(1)
+                .endSpec()
+                .build();
+
+        assertDoesNotThrow(() -> {
+            List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, List.of(poolA, poolB, poolC), Map.of(), Map.of(), true, SHARED_ENV_PROVIDER);
+            KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, pools, VERSIONS, true, null, SHARED_ENV_PROVIDER);
+        });
     }
 }
