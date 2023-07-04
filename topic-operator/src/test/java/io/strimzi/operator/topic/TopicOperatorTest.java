@@ -153,7 +153,7 @@ public class TopicOperatorTest {
 
     /** Test what happens when a KafkaTopic with no spec gets created in kubernetes */
     @Test
-    public void testOnKafkaTopicAdded_nospec(VertxTestContext context) {
+    public void testOnKafkaTopicAdded_noSpec(VertxTestContext context) {
         KafkaTopic kafkaTopic = new KafkaTopicBuilder()
                 .withMetadata(new ObjectMetaBuilder().withName("nospec")
                         .withNamespace("my-namespace")

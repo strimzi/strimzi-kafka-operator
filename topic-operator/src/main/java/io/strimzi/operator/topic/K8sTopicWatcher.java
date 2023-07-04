@@ -92,7 +92,7 @@ class K8sTopicWatcher implements Watcher<KafkaTopic> {
                 }
             }
         } else {
-            LOGGER.warnCr(logContext.toReconciliation(), "Topic {}/{} has no spec", kafkaTopic.getMetadata().getNamespace(), kafkaTopic.getMetadata().getName());
+            LOGGER.warnCr(logContext.toReconciliation(), "Topic has no spec");
         }
     }
 
