@@ -97,7 +97,7 @@ public class HelmResource implements SpecificResourceType {
         }
 
         Path pathToChart = new File(HELM_CHART).toPath();
-        ResourceManager.helmClient().install(pathToChart, HELM_RELEASE_NAME, values);
+        ResourceManager.helmClient().namespace(namespaceInstallTo).install(pathToChart, HELM_RELEASE_NAME, values);
         DeploymentUtils.waitForDeploymentReady(namespaceInstallTo, ResourceManager.getCoDeploymentName());
     }
 
