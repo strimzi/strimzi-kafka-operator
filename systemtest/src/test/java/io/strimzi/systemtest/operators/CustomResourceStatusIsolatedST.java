@@ -480,8 +480,18 @@ class CustomResourceStatusIsolatedST extends AbstractST {
     }
 
     void assertKafkaStatus(long expectedObservedGeneration, String internalAddress) {
+        long observedGeneration = 0;
+
         KafkaStatus kafkaStatus = KafkaResource.kafkaClient().inNamespace(clusterOperator.getDeploymentNamespace()).withName(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME).get().getStatus();
-        assertThat("Kafka cluster status has incorrect Observed Generation", kafkaStatus.getObservedGeneration(), is(expectedObservedGeneration));
+
+        if (Environment.isKafkaNodePoolEnabled()) {
+            String nodePoolName = KafkaResource.getNodePoolName(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME);
+            observedGeneration = KafkaNodePoolResource.kafkaNodePoolClient().inNamespace(clusterOperator.getDeploymentNamespace()).withName(nodePoolName).get().getStatus().getObservedGeneration();
+        } else {
+            observedGeneration = kafkaStatus.getObservedGeneration();
+        }
+
+        assertThat("Kafka cluster status has incorrect Observed Generation", observedGeneration, is(expectedObservedGeneration));
 
         for (ListenerStatus listener : kafkaStatus.getListeners()) {
             switch (listener.getType()) {
