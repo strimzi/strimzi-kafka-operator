@@ -100,7 +100,7 @@ public class CrdOperator<C extends KubernetesClient,
                 T result = operation().inNamespace(namespace).withName(name).patch(PatchContext.of(PatchType.JSON), resource);
                 LOGGER.debugCr(reconciliation, "{} {} in namespace {} has been patched", resourceKind, name, namespace);
                 future.complete(result);
-            } catch (Exception e) {
+            } catch (Throwable e) {
                 LOGGER.debugCr(reconciliation, "Caught exception while patching {} {} in namespace {}", resourceKind, name, namespace, e);
                 future.fail(e);
             }
@@ -113,7 +113,7 @@ public class CrdOperator<C extends KubernetesClient,
      * Updates custom resource status asynchronously
      *
      * @param reconciliation    Reconciliation marker
-     * @param resource          Desired resource with the updated statis
+     * @param resource          Desired resource with the updated status
      *
      * @return  Future which completes when the status is patched
      */
@@ -128,7 +128,7 @@ public class CrdOperator<C extends KubernetesClient,
                 T result = operation().inNamespace(namespace).resource(resource).updateStatus();
                 LOGGER.infoCr(reconciliation, "Status of {} {} in namespace {} has been updated", resourceKind, name, namespace);
                 future.complete(result);
-            } catch (Exception e) {
+            } catch (Throwable e) {
                 LOGGER.debugCr(reconciliation, "Caught exception while updating status of {} {} in namespace {}", resourceKind, name, namespace, e);
                 future.fail(e);
             }

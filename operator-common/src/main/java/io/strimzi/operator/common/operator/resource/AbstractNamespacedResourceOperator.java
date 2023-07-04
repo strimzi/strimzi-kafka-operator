@@ -77,8 +77,9 @@ public abstract class AbstractNamespacedResourceOperator<C extends KubernetesCli
      */
     public Future<ReconcileResult<T>> createOrUpdate(Reconciliation reconciliation, T resource) {
         if (resource == null) {
-            throw new NullPointerException();
+            return Future.failedFuture(new IllegalArgumentException("The " + resourceKind + " resource should not be null."));
         }
+
         return reconcile(reconciliation, resource.getMetadata().getNamespace(), resource.getMetadata().getName(), resource);
     }
 
@@ -306,8 +307,9 @@ public abstract class AbstractNamespacedResourceOperator<C extends KubernetesCli
      */
     public Future<T> getAsync(String namespace, String name) {
         if (name == null || name.isEmpty()) {
-            throw new IllegalArgumentException(namespace + "/" + resourceKind + " with an empty name cannot be configured. Please provide a name.");
+            return Future.failedFuture(new IllegalArgumentException(namespace + "/" + resourceKind + " with an empty name cannot be configured. Please provide a name."));
         }
+
         return resourceSupport.getAsync(operation().inNamespace(namespace).withName(name));
     }
 
