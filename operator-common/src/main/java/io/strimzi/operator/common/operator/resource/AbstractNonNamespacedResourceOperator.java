@@ -59,8 +59,9 @@ public abstract class AbstractNonNamespacedResourceOperator<C extends Kubernetes
      */
     public Future<ReconcileResult<T>> createOrUpdate(Reconciliation reconciliation, T resource) {
         if (resource == null) {
-            throw new NullPointerException();
+            return Future.failedFuture(new IllegalArgumentException("The " + resourceKind + " resource should not be null."));
         }
+
         return reconcile(reconciliation, resource.getMetadata().getName(), resource);
     }
 
@@ -218,8 +219,9 @@ public abstract class AbstractNonNamespacedResourceOperator<C extends Kubernetes
      */
     public Future<T> getAsync(String name) {
         if (name == null || name.isEmpty()) {
-            throw new IllegalArgumentException(resourceKind + " with an empty name cannot be configured. Please provide a name.");
+            return Future.failedFuture(new IllegalArgumentException(resourceKind + " with an empty name cannot be configured. Please provide a name."));
         }
+
         return resourceSupport.getAsync(operation().withName(name));
     }
 
