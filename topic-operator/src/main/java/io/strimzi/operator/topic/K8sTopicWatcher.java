@@ -49,8 +49,8 @@ class K8sTopicWatcher implements Watcher<KafkaTopic> {
     public void eventReceived(Action action, KafkaTopic kafkaTopic) {
         ObjectMeta metadata = kafkaTopic.getMetadata();
         Map<String, String> labels = metadata.getLabels();
+        LogContext logContext = LogContext.kubeWatch(action, kafkaTopic).withKubeTopic(kafkaTopic);
         if (kafkaTopic.getSpec() != null) {
-            LogContext logContext = LogContext.kubeWatch(action, kafkaTopic).withKubeTopic(kafkaTopic);
             String name = metadata.getName();
             String kind = kafkaTopic.getKind();
             if (!initReconcileFuture.isComplete()) {
@@ -91,6 +91,8 @@ class K8sTopicWatcher implements Watcher<KafkaTopic> {
                     LOGGER.debugCr(logContext.toReconciliation(), "Ignoring {} to {} {} because metadata.generation==status.observedGeneration", action, kind, name);
                 }
             }
+        } else {
+            LOGGER.warnCr(logContext.toReconciliation(), "Topic has no spec");
         }
     }
 

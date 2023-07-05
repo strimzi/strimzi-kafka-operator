@@ -40,6 +40,7 @@ import static java.util.Collections.singletonMap;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
 public class TopicOperatorIT extends TopicOperatorBaseIT {
     private static final Logger LOGGER = LogManager.getLogger(TopicOperatorIT.class);
@@ -220,6 +221,29 @@ public class TopicOperatorIT extends TopicOperatorBaseIT {
         } catch (KubernetesClientException e) {
             assertThat(e.getMessage().contains("spec.partitions in body should be greater than or equal to 1"), is(true));
         }
+    }
+
+    @Test
+    public void testKafkaTopicAddedWithNoSpec() throws InterruptedException, TimeoutException {
+        String topicName = "test-resource-created-with-no-spec";
+        Topic topic = new Topic.Builder(topicName, 1, (short) 1, emptyMap()).build();
+
+        KafkaTopic kafkaTopic = TopicSerialization.toTopicResource(topic, labels);
+        kafkaTopic.setSpec(null);
+
+        operation().inNamespace(NAMESPACE).create(kafkaTopic);
+
+        // Wait for the resource to be created
+        waitFor(() -> {
+            KafkaTopic createdTopicResource = operation().inNamespace(NAMESPACE).withName(topicName).get();
+            LOGGER.info("Polled kafkatopic {} waiting for creation", topicName);
+
+            if (createdTopicResource != null) {
+                assertNull(createdTopicResource.getStatus());
+            }
+
+            return createdTopicResource != null;
+        }, "Expected the kafkatopic to have been created by now");
     }
 
     @Test
