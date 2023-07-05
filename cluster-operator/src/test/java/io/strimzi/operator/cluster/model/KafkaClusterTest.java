@@ -3706,11 +3706,12 @@ public class KafkaClusterTest {
 
         InvalidResourceException ex = assertThrows(InvalidResourceException.class, () -> {
             List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, null, Map.of(), Map.of(), false, SHARED_ENV_PROVIDER);
-            KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, pools, VERSIONS, false, null, SHARED_ENV_PROVIDER);
+            KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, pools, VERSIONS, false, null, SHARED_ENV_PROVIDER);
         });
 
         assertThat(ex.getMessage(), is("Kafka " + NAMESPACE + "/" + CLUSTER + " has invalid configuration. " +
-                "Cruise Control cannot be deployed with a single-node Kafka cluster. It requires at least two Kafka nodes."));
+                "Cruise Control cannot be deployed with a Kafka cluster which has only one broker. " +
+                "It requires at least two Kafka brokers."));
     }
 
     @ParallelTest
