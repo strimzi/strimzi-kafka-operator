@@ -76,6 +76,7 @@ import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 @Tag(REGRESSION)
+@Tag(CRUISE_CONTROL)
 @TestMethodOrder(OrderAnnotation.class)
 class LogSettingST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(LogSettingST.class);
@@ -414,7 +415,6 @@ class LogSettingST extends AbstractST {
     }
 
     @IsolatedTest("Updating shared Kafka")
-    @Tag(CRUISE_CONTROL)
     // This test might be flaky, as it gets real logs from CruiseControl pod
     void testCruiseControlLogChange(ExtensionContext extensionContext) {
         final String debugText = " DEBUG ";

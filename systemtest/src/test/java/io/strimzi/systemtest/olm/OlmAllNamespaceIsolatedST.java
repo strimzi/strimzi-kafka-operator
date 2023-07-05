@@ -14,6 +14,7 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 
 import static io.strimzi.systemtest.Constants.BRIDGE;
 import static io.strimzi.systemtest.Constants.CONNECT;
+import static io.strimzi.systemtest.Constants.CRUISE_CONTROL;
 import static io.strimzi.systemtest.Constants.MIRROR_MAKER;
 import static io.strimzi.systemtest.Constants.MIRROR_MAKER2;
 import static io.strimzi.systemtest.Constants.OLM;
@@ -73,6 +74,7 @@ public class OlmAllNamespaceIsolatedST extends OlmAbstractST {
 
     @Test
     @Order(8)
+    @Tag(CRUISE_CONTROL)
     void testDeployExampleKafkaRebalance(ExtensionContext extensionContext) {
         doTestDeployExampleKafkaRebalance(extensionContext);
     }
