@@ -8,16 +8,16 @@
 
 [role="_abstract"]
 The Cluster Operator watches for updates in the namespaces where the Kafka resources are deployed. 
-When you deploy the Cluster Operator, you specify which namespaces to watch.
+When you deploy the Cluster Operator, you specify which namespaces to watch in the Kubernetes cluster.
 You can specify the following namespaces:
 
-* xref:deploying-cluster-operator-{context}[A single namespace] (the same namespace containing the Cluster Operator)
-* xref:deploying-cluster-operator-to-watch-multiple-namespaces-{context}[Multiple namespaces]
-* xref:deploying-cluster-operator-to-watch-whole-cluster-{context}[All namespaces]
+* xref:deploying-cluster-operator-{context}[A single selected namespace] (the same namespace containing the Cluster Operator)
+* xref:deploying-cluster-operator-to-watch-multiple-namespaces-{context}[Multiple selected namespaces]
+* xref:deploying-cluster-operator-to-watch-whole-cluster-{context}[All namespaces in the cluster]
 
-NOTE: The Cluster Operator can watch one, multiple, or all namespaces in a Kubernetes cluster.
-The Topic Operator and User Operator watch for `KafkaTopic` and `KafkaUser` resources in a single namespace. 
-For more information, see xref:con-operators-namespaces-str[].
+Watching multiple selected namespaces has the most impact on performance due to increased processing overhead. 
+To optimize performance for namespace monitoring, it is generally recommended to either watch a single namespace or monitor the entire cluster. 
+Watching a single namespace allows for focused monitoring of namespace-specific resources, while monitoring all namespaces provides a comprehensive view of the cluster's resources across all namespaces.
 
 The Cluster Operator watches for changes to the following resources:
 
@@ -37,3 +37,7 @@ Resources are either patched or deleted, and then recreated in order to make the
 This operation might cause a rolling update that might lead to service disruption.
 
 When a resource is deleted, the operator undeploys the cluster and deletes all related Kubernetes resources.
+
+NOTE: While the Cluster Operator can watch one, multiple, or all namespaces in a Kubernetes cluster,
+the Topic Operator and User Operator watch for `KafkaTopic` and `KafkaUser` resources in a single namespace. 
+For more information, see xref:con-operators-namespaces-str[].
