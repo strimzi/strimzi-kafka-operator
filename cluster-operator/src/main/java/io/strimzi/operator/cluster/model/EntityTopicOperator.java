@@ -70,7 +70,7 @@ public class EntityTopicOperator extends AbstractModel implements SupportsLoggin
     // Kafka bootstrap servers and Zookeeper nodes can't be specified in the JSON
     /* test */ String kafkaBootstrapServers;
     /* test */ String zookeeperConnect;
-    boolean unidirectionalTopicOperator;
+    private boolean unidirectionalTopicOperator;
 
     private String watchedNamespace;
     /* test */ int reconciliationIntervalMs;
@@ -110,7 +110,6 @@ public class EntityTopicOperator extends AbstractModel implements SupportsLoggin
      *
      * @return Entity Topic Operator instance, null if not configured
      */
-
     public static EntityTopicOperator fromCrd(Reconciliation reconciliation, Kafka kafkaAssembly, SharedEnvironmentProvider sharedEnvironmentProvider) {
         return fromCrd(reconciliation, kafkaAssembly, sharedEnvironmentProvider, false);
     }

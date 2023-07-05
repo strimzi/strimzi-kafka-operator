@@ -110,10 +110,10 @@ class BatchingLoop {
     boolean isAlive() {
         for (var thread : threads) {
             if (!thread.isAlive()) {
-                LOGGER.infoOp("isAlive returning false because {} is not alive", thread);
+                LOGGER.warnOp("isAlive returning false because {} is not alive", thread);
                 return false;
             } else if (thread.msSinceLastLoop() > 120_000L) {
-                LOGGER.infoOp("isAlive returning false because {} appears to be stuck", thread);
+                LOGGER.warnOp("isAlive returning false because {} appears to be stuck", thread);
                 return false;
             }
         }
@@ -129,7 +129,7 @@ class BatchingLoop {
     boolean isReady() {
         for (var thread : this.threads) {
             if (!thread.isAlive()) {
-                LOGGER.infoOp("isReady returning false, because {} is not alive", thread);
+                LOGGER.warnOp("isReady returning false, because {} is not alive", thread);
                 return false;
             }
         }
@@ -192,7 +192,7 @@ class BatchingLoop {
                 }
 
                 if (batch.size() > 0) {
-                    LOGGER.infoOp("[Batch #{}] Reconciling {} topics", batchId, batch.size());
+                    LOGGER.debugOp("[Batch #{}] Reconciling {} topics", batchId, batch.size());
                     // perform reconciliation on new batch
                     if (!batch.toUpdate.isEmpty()) {
                         controller.onUpdate(batch.toUpdate.stream().map(upsert -> lookup(batchId, upsert)).filter(Objects::nonNull).toList());
@@ -218,7 +218,7 @@ class BatchingLoop {
             var kt = itemStore.get(key);
             if (kt != null) {
                 LOGGER.traceOp("[Batch #{}] Lookup from item store for {} yielded KafkaTopic with resourceVersion {}",
-                        batchId, topicUpsert, BatchingTopicController.rv(kt));
+                        batchId, topicUpsert, BatchingTopicController.resourceVersion(kt));
                 var r = new Reconciliation("upsert", "KafkaTopic", topicUpsert.namespace(), topicUpsert.name());
                 LOGGER.debugOp("[Batch #{}] contains {}", batchId, r);
                 return new ReconcilableTopic(r, kt, BatchingTopicController.topicName(kt));

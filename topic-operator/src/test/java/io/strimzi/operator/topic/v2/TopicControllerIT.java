@@ -417,7 +417,7 @@ class TopicControllerIT {
         // Create resource and await readiness
         var created = Crds.topicOperation(client).resource(kt).create();
         LOGGER.info("Test created KafkaTopic {} with resourceVersion {}",
-                created.getMetadata().getName(), BatchingTopicController.rv(created));
+                created.getMetadata().getName(), BatchingTopicController.resourceVersion(created));
         return waitUntil(created, readyIsTrueOrFalse());
     }
 
@@ -589,7 +589,7 @@ class TopicControllerIT {
                 TimeUnit.SECONDS)) {
             var created = Crds.topicOperation(client).resource(kt).create();
             LOGGER.info("Test created KafkaTopic {} with resourceVersion {}",
-                    created.getMetadata().getName(), BatchingTopicController.rv(created));
+                    created.getMetadata().getName(), BatchingTopicController.resourceVersion(created));
         }
         KafkaTopic kafkaTopic = Crds.topicOperation(client).inNamespace(ns).withName(kt.getMetadata().getName()).get();
         assertNull(kafkaTopic.getStatus());
@@ -665,7 +665,7 @@ class TopicControllerIT {
                 TimeUnit.SECONDS)) {
             created = Crds.topicOperation(client).resource(kt).create();
             LOGGER.info("Test created KafkaTopic {} with resourceVersion {}",
-                    created.getMetadata().getName(), BatchingTopicController.rv(created));
+                    created.getMetadata().getName(), BatchingTopicController.resourceVersion(created));
         }
         assertUnknownTopic(expectedTopicName);
         assertNull(created.getStatus(), "Expect status not to be set");
@@ -1060,7 +1060,7 @@ class TopicControllerIT {
         // when
         Crds.topicOperation(client).resource(kt).delete();
         LOGGER.info("Test deleted KafkaTopic {} with resourceVersion {}",
-                kt.getMetadata().getName(), BatchingTopicController.rv(kt));
+                kt.getMetadata().getName(), BatchingTopicController.resourceVersion(kt));
         Resource<KafkaTopic> resource = Crds.topicOperation(client).resource(kt);
         TopicOperatorTestUtil.waitUntilCondition(resource, Objects::isNull);
 
@@ -1084,7 +1084,7 @@ class TopicControllerIT {
         // when
         Crds.topicOperation(client).resource(kt).delete();
         LOGGER.info("Test delete KafkaTopic {} with resourceVersion {}",
-                kt.getMetadata().getName(), BatchingTopicController.rv(kt));
+                kt.getMetadata().getName(), BatchingTopicController.resourceVersion(kt));
         Resource<KafkaTopic> resource = Crds.topicOperation(client).resource(kt);
         var unready = TopicOperatorTestUtil.waitUntilCondition(resource, readyIsFalse());
 
@@ -1109,7 +1109,7 @@ class TopicControllerIT {
         // when
         Crds.topicOperation(client).resource(kt).delete();
         LOGGER.info("Test deleted KafkaTopic {} with resourceVersion {}",
-                kt.getMetadata().getName(), BatchingTopicController.rv(kt));
+                kt.getMetadata().getName(), BatchingTopicController.resourceVersion(kt));
         Resource<KafkaTopic> resource = Crds.topicOperation(client).resource(kt);
         TopicOperatorTestUtil.waitUntilCondition(resource, Objects::isNull);
 
@@ -1155,7 +1155,7 @@ class TopicControllerIT {
 
             Crds.topicOperation(client).resource(kt).delete();
             LOGGER.info("Test deleted KafkaTopic {} with resourceVersion {}",
-                    kt.getMetadata().getName(), BatchingTopicController.rv(kt));
+                    kt.getMetadata().getName(), BatchingTopicController.resourceVersion(kt));
             Resource<KafkaTopic> resource = Crds.topicOperation(client).resource(kt);
             TopicOperatorTestUtil.waitUntilCondition(resource, Objects::isNull);
         }
@@ -1183,7 +1183,7 @@ class TopicControllerIT {
         // when
         Crds.topicOperation(client).resource(kt).delete();
         LOGGER.info("Test created KafkaTopic {} with resourceVersion {}",
-                kt.getMetadata().getName(), BatchingTopicController.rv(kt));
+                kt.getMetadata().getName(), BatchingTopicController.resourceVersion(kt));
         Resource<KafkaTopic> resource = Crds.topicOperation(client).resource(kt);
         TopicOperatorTestUtil.waitUntilCondition(resource, Objects::isNull);
 
@@ -1213,7 +1213,7 @@ class TopicControllerIT {
 
         Crds.topicOperation(client).resource(kt).delete();
         LOGGER.info("Test deleted KafkaTopic {} with resourceVersion {}",
-                kt.getMetadata().getName(), BatchingTopicController.rv(kt));
+                kt.getMetadata().getName(), BatchingTopicController.resourceVersion(kt));
         Resource<KafkaTopic> resource = Crds.topicOperation(client).resource(kt);
         TopicOperatorTestUtil.waitUntilCondition(resource, Objects::isNull);
 
@@ -1395,7 +1395,7 @@ class TopicControllerIT {
             try {
                 KafkaTopic edited = Crds.topicOperation(client).inNamespace(ns).withName(metadataName).edit(changer);
                 LOGGER.info("Test modified KafkaTopic {} with new resourceVersion {}",
-                        edited.getMetadata().getName(), BatchingTopicController.rv(edited));
+                        edited.getMetadata().getName(), BatchingTopicController.resourceVersion(edited));
                 return edited;
             } catch (KubernetesClientException e) {
                 if (i == 0 || e.getCode() != 409 /* conflict */) {
@@ -1485,7 +1485,7 @@ class TopicControllerIT {
     }
 
     @Test
-    @Disabled("Throttles don't provide a way to ensure that reconciliation happens when in will observe a non-empty removing set")
+    @Disabled("Throttles don't provide a way to ensure that reconciliation happens when the UTO will observe a non-empty removing set")
     public void shouldAccountForReassigningPartitionsDecreasingRf(
             @BrokerCluster(numBrokers = 3)
             @BrokerConfig(name = "auto.create.topics.enable", value = "false")
@@ -1752,7 +1752,7 @@ class TopicControllerIT {
         // when
         Crds.topicOperation(client).resource(kt).delete();
         LOGGER.info("Test deleted KafkaTopic {} with resourceVersion {}",
-                kt.getMetadata().getName(), BatchingTopicController.rv(kt));
+                kt.getMetadata().getName(), BatchingTopicController.resourceVersion(kt));
         Resource<KafkaTopic> resource = Crds.topicOperation(client).resource(kt);
         var deleted = TopicOperatorTestUtil.waitUntilCondition(resource, readyIsFalse());
 
@@ -1800,7 +1800,7 @@ class TopicControllerIT {
         LOGGER.info("Delete foo");
         Crds.topicOperation(client).resource(unmanagedFoo).delete();
         LOGGER.info("Test deleted KafkaTopic {} with resourceVersion {}",
-                unmanagedFoo.getMetadata().getName(), BatchingTopicController.rv(unmanagedFoo));
+                unmanagedFoo.getMetadata().getName(), BatchingTopicController.resourceVersion(unmanagedFoo));
         Resource<KafkaTopic> resource = Crds.topicOperation(client).resource(unmanagedFoo);
         TopicOperatorTestUtil.waitUntilCondition(resource, Objects::isNull);
 

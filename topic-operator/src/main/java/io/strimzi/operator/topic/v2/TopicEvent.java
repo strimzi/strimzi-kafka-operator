@@ -9,7 +9,6 @@ import io.strimzi.api.kafka.model.KafkaTopic;
 import java.util.Objects;
 
 /**
- *
  * Represents a change in Kube relating to a KafkaTopic
  */
 sealed interface TopicEvent permits TopicUpsert, TopicDelete {

@@ -135,8 +135,8 @@ public class EntityOperatorTest {
         testGenerateDeployment(true);
     }
 
-    private void testGenerateDeployment(boolean useUto) {
-        entityOperator.unidirectionalTopicOperator = useUto;
+    private void testGenerateDeployment(boolean useUnidirectionalTopicOperator) {
+        entityOperator.unidirectionalTopicOperator = useUnidirectionalTopicOperator;
         Deployment dep = entityOperator.generateDeployment(true, null, null);
 
         List<Container> containers = dep.getSpec().getTemplate().getSpec().getContainers();
@@ -146,12 +146,12 @@ public class EntityOperatorTest {
         assertThat(dep.getSpec().getReplicas(), is(1));
         TestUtils.checkOwnerReference(dep, resource);
 
-        assertThat(containers.size(), is(useUto ? 2 : 3));
+        assertThat(containers.size(), is(useUnidirectionalTopicOperator ? 2 : 3));
         // just check names of topic and user operators (their containers are tested in the related unit test classes)
         assertThat(containers.get(0).getName(), is(EntityTopicOperator.TOPIC_OPERATOR_CONTAINER_NAME));
         assertThat(containers.get(1).getName(), is(EntityUserOperator.USER_OPERATOR_CONTAINER_NAME));
         // checks on the TLS sidecar container
-        if (!useUto) {
+        if (!useUnidirectionalTopicOperator) {
             Container tlsSidecarContainer = containers.get(2);
             assertThat(tlsSidecarContainer.getImage(), is(image));
             assertThat(io.strimzi.operator.cluster.TestUtils.containerEnvVars(tlsSidecarContainer).get(EntityOperator.ENV_VAR_ZOOKEEPER_CONNECT), is(KafkaResources.zookeeperServiceName(cluster) + ":" + ZookeeperCluster.CLIENT_TLS_PORT));
@@ -170,7 +170,7 @@ public class EntityOperatorTest {
         assertThat(volumes.stream().filter(volume -> volume.getName().equals(EntityUserOperator.USER_OPERATOR_TMP_DIRECTORY_DEFAULT_VOLUME_NAME)).findFirst().orElseThrow().getEmptyDir().getSizeLimit(), is(new Quantity("100", "Mi")));
         assertThat(volumes.stream().filter(volume -> volume.getName().equals(EntityTopicOperator.TOPIC_OPERATOR_TMP_DIRECTORY_DEFAULT_VOLUME_NAME)).findFirst().orElseThrow().getEmptyDir().getSizeLimit(), is(new Quantity("100", "Mi")));
         assertThat(volumes.stream().filter(volume -> volume.getName().equals(EntityOperator.TLS_SIDECAR_CA_CERTS_VOLUME_NAME)).findFirst().isEmpty(), is(false));
-        if (!useUto) {
+        if (!useUnidirectionalTopicOperator) {
             assertThat(volumes.stream().filter(volume -> volume.getName().equals(EntityOperator.TLS_SIDECAR_TMP_DIRECTORY_DEFAULT_VOLUME_NAME)).findFirst().orElseThrow().getEmptyDir().getSizeLimit(), is(new Quantity("100", "Mi")));
         } else {
             assertThat(volumes.stream().filter(volume -> volume.getName().equals(EntityOperator.TLS_SIDECAR_TMP_DIRECTORY_DEFAULT_VOLUME_NAME)).findFirst().isEmpty(), is(true));

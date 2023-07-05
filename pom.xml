@@ -171,6 +171,7 @@
         <rest-assured.version>4.4.0</rest-assured.version>
         <rest-assured-json-path.version>4.4.0</rest-assured-json-path.version>
         <bouncycastle.version>1.69</bouncycastle.version>
+        <kroxylicious-testing.version>0.4.0</kroxylicious-testing.version>
 
         <!-- properties to skip surefire tests during failsafe execution -->
         <skipTests>false</skipTests>
@@ -894,6 +895,24 @@
                 <groupId>javax.servlet</groupId>
                 <artifactId>javax.servlet-api</artifactId>
                 <version>${javax-servlet.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.kroxylicious.testing</groupId>
+                <artifactId>testing-api</artifactId>
+                <version>${kroxylicious-testing.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>io.kroxylicious.testing</groupId>
+                <artifactId>testing-junit5-extension</artifactId>
+                <version>${kroxylicious-testing.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>io.kroxylicious.testing</groupId>
+                <artifactId>testing-impl</artifactId>
+                <version>${kroxylicious-testing.version}</version>
+                <scope>test</scope>
             </dependency>
         </dependencies>
     </dependencyManagement>

@@ -248,7 +248,8 @@ public class EntityOperator extends AbstractModel {
             containers.add(userOperator.createContainer(imagePullPolicy));
         }
 
-        // The TLS Sidecar is only used by the Topic Operator. Therefore, when the Topic Operator is disabled, the TLS side should also be disabled.
+        // The TLS Sidecar is only used by the Bidirectional Topic Operator.
+        // Therefore, when the Topic Operator is disabled, or we're using the Unidirectional TO, the TLS side should also be disabled.
         if (topicOperator != null && !this.unidirectionalTopicOperator) {
             String tlsSidecarImage = this.tlsSidecarImage;
             if (tlsSidecar != null && tlsSidecar.getImage() != null) {

@@ -29,20 +29,14 @@
         <dependency>
             <groupId>io.kroxylicious.testing</groupId>
             <artifactId>testing-api</artifactId>
-            <version>0.4.0</version>
-            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>io.kroxylicious.testing</groupId>
             <artifactId>testing-junit5-extension</artifactId>
-            <version>0.4.0</version>
-            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>io.kroxylicious.testing</groupId>
             <artifactId>testing-impl</artifactId>
-            <version>0.4.0</version>
-            <scope>test</scope>
         </dependency>
         <dependency>
             <!-- Override since both kroxylicious.testing and strimzi-test-container have it as a dependency

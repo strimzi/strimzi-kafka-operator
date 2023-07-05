@@ -132,7 +132,7 @@ public class BatchingTopicController {
         return tn;
     }
 
-    static String rv(KafkaTopic kt) {
+    static String resourceVersion(KafkaTopic kt) {
         return kt == null || kt.getMetadata() == null ? "null" : kt.getMetadata().getResourceVersion();
     }
 
@@ -153,7 +153,7 @@ public class BatchingTopicController {
             KafkaTopic edit = Crds.topicOperation(kubeClient).resource(reconcilableTopic.kt()).edit(old ->
                     new KafkaTopicBuilder(old).editOrNewMetadata().addToFinalizers(FINALIZER).endMetadata().build());
             LOGGER.traceCr(reconcilableTopic.reconciliation(), "Added finalizer {}, took {}ns, resourceVersion now {}", FINALIZER, System.nanoTime() - t0,
-                    rv(edit));
+                    resourceVersion(edit));
             return edit;
         }
         return reconcilableTopic.kt();
@@ -166,7 +166,7 @@ public class BatchingTopicController {
             var result = Crds.topicOperation(kubeClient).resource(reconcilableTopic.kt()).edit(old ->
                     new KafkaTopicBuilder(old).editOrNewMetadata().removeFromFinalizers(FINALIZER).endMetadata().build());
             LOGGER.traceCr(reconcilableTopic.reconciliation(), "Removed finalizer {}, took {}ns, resourceVersion now {}", FINALIZER, System.nanoTime() - t0,
-                    rv(result));
+                    resourceVersion(result));
             return result;
         } else {
             return reconcilableTopic.kt();
@@ -987,7 +987,7 @@ public class BatchingTopicController {
                     .updateStatus();
             LOGGER.traceCr(reconciliation, "Updated status to observedGeneration {}, resourceVersion now {}, took {}ns",
                     got.getStatus().getObservedGeneration(),
-                    rv(got), System.nanoTime() - t0);
+                    resourceVersion(got), System.nanoTime() - t0);
         } else {
             LOGGER.traceCr(reconciliation, "Unchanged status of {}", kt.getStatus());
         }
