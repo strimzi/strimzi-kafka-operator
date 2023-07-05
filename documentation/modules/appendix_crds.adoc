@@ -433,9 +433,9 @@ include::../api/io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaLi
 |Property               |Description
 |broker          1.2+<.<a|ID of the kafka broker (broker identifier). Broker IDs start from 0 and correspond to the number of broker replicas.
 |integer
-|advertisedHost  1.2+<.<a|The host name which will be used in the brokers' `advertised.brokers`.
+|advertisedHost  1.2+<.<a|The host name used in the brokers' `advertised.listeners`.
 |string
-|advertisedPort  1.2+<.<a|The port number which will be used in the brokers' `advertised.brokers`.
+|advertisedPort  1.2+<.<a|The port number used in the brokers' `advertised.listeners`.
 |integer
 |host            1.2+<.<a|The broker host. This field will be used in the Ingress resource or in the Route resource to specify the desired hostname. This field can be used only with `route` (optional) or `ingress` (required) type listeners.
 |string

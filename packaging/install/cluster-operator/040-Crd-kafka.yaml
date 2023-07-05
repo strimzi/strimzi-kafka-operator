@@ -325,10 +325,10 @@ spec:
                                     description: ID of the kafka broker (broker identifier). Broker IDs start from 0 and correspond to the number of broker replicas.
                                   advertisedHost:
                                     type: string
-                                    description: The host name which will be used in the brokers' `advertised.brokers`.
+                                    description: The host name used in the brokers' `advertised.listeners`.
                                   advertisedPort:
                                     type: integer
-                                    description: The port number which will be used in the brokers' `advertised.brokers`.
+                                    description: The port number used in the brokers' `advertised.listeners`.
                                   host:
                                     type: string
                                     description: The broker host. This field will be used in the Ingress resource or in the Route resource to specify the desired hostname. This field can be used only with `route` (optional) or `ingress` (required) type listeners.
