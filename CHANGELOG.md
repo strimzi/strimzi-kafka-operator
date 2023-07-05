@@ -18,6 +18,8 @@
 
 * **From Strimzi 0.36.0 on, we support only Kubernetes 1.21 and newer.**
   Kubernetes 1.19 and 1.20 are not supported anymore.
+* The Helm Chart repository at `https://strimzi.io/charts/` is now deprecated.
+  Please use the Helm Chart OCI artifacts from our [Helm Chart OCI repository instead](https://quay.io/organization/strimzi-helm).
 
 ## 0.35.0
 
