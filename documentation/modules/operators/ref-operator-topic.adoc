@@ -8,9 +8,9 @@
 [role="_abstract"]
 The `KafkaTopic` resource is responsible for managing a single topic within a Kafka cluster. The Topic Operator provides two modes for managing `KafkaTopic` resources and Kafka topics:
 
-Bidirectional mode:: Bidirectional mode is compatible with ZooKeeper for cluster management. It is not compatible with Strimzi in KRaft mode.
+Bidirectional mode:: Bidirectional mode requires ZooKeeper for cluster management. It is not compatible with Strimzi in KRaft mode.
 
-(Preview) Unidirectional mode:: Unidirectional mode is designed for use with the xref:ref-operator-use-kraft-feature-gate-{context}[KRaft mode preview] for cluster management. It is not compatible with Strimzi when ZooKeeper is used.
+(Preview) Unidirectional mode:: Unidirectional mode does not require ZooKeeper for cluster management. It is not compatible with Strimzi in KRaft mode.
 
 NOTE: Unidirectional topic management is available as a preview. 
 Unidirectional topic management is not enabled by default, so you must xref:ref-operator-unidirectional-topic-operator-feature-gate-{context}[enable the `UnidirectionalTopicOperator` feature gate] to be able to use it.

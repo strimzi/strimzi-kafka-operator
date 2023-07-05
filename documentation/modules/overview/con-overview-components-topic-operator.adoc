@@ -25,10 +25,8 @@ Updates from operations applied to a local in-memory topic store are persisted t
 The Topic Operator operates in the following modes: 
 
 Bidirectional mode:: Bidirectional mode means that the Topic Operator can reconcile changes to a `KafkaTopic` resource to and from a Kafka cluster.
-This means that you can update topics either through the `KafkaTopic` resource or directly in Kafka, and the Topic Operator will ensure that both sources are updated to reflect the changes. This mode can be used with ZooKeeper cluster management. 
-Unidirectional mode (preview):: Unidirectional means that the Topic Operator solely manages topics through the `KafkaTopic` resource. This mode can be used with KRaft cluster management.
-
-NOTE: Unidirectional mode and KRaft cluster management are available to try by enabling the `UnidirectionalTopicOperator` and `UseKRaft` feature gates. 
+This means that you can update topics either through the `KafkaTopic` resource or directly in Kafka, and the Topic Operator will ensure that both sources are updated to reflect the changes. This mode requires ZooKeeper for cluster management. 
+Unidirectional mode (preview):: Unidirectional means that the Topic Operator solely manages topics through the `KafkaTopic` resource. This mode does not require ZooKeeper.
 
 
 

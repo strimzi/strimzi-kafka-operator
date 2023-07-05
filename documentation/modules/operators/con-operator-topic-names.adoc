@@ -20,8 +20,11 @@ spec:
   topicName: topic-name-1  
 ----
 
-The cluster name is derived from the `Kafka` resource.
-If the label does not match the Kafka cluster, the Topic Operator cannot identify the `KafkaTopic`, and the topic is not created.
+The label provides the cluster name of the `Kafka` resource.
+If the label does not match the Kafka cluster, the Topic Operator cannot see the `KafkaTopic`, and the topic is not created.
+
+NOTE: The label is only used when deploying the Topic Operator with the `Kafka` resource.
+When deploying the standalone Topic Operator, you specify a connection to a Kafka cluster instead.
 
 Kafka and Kubernetes have their own naming validation rules, and a Kafka topic name might not be a valid resource name in Kubernetes.
 If possible, try and stick to a naming convention that works for both.
@@ -33,10 +36,10 @@ Consider the following guidelines:
 * Use all lower case and hyphens
 * Avoid special characters, spaces or symbols
 
-In the `KafkaTopic` resource, the Kafka topic name is specified using `metadata.name`.
-However, if the Kafka topic name is not a valid Kubernetes resource name, you can use the `spec.topicName` property as an alias that works in Kubernetes. 
-When absent, this name defaults to the `metadata.name` of the topic.
-Topic names cannot be changed later.
+The `KafkaTopic` resource allows you to specify the Kafka topic name using the `metadata.name` field. 
+However, if the desired Kafka topic name is not a valid Kubernetes resource name, you can use the `spec.topicName` property to specify the actual name. 
+The `spec.topicName` field is optional, and when it's absent, the Kafka topic name defaults to the `metadata.name` of the topic.
+When a topic is created, the topic name cannot be changed later.
 
 .Example of supplying a valid Kafka topic name
 [source,yaml,subs="attributes+"]
@@ -44,19 +47,20 @@ Topic names cannot be changed later.
 apiVersion: {KafkaTopicApiVersion}
 kind: KafkaTopic
 metadata:
-  name: My.Topic.1 # <1>
+  name: my-topic-1 # <1>
 spec:
-  topicName: my-topic-1 # <2>
+  topicName: My.Topic.1 # <2>
   # ...
 ----
-<1> Kafka topic name uses upper case and periods, which are invalid in Kubernetes.
-<2> A topic name alias that works in Kubernetes.
+<1> A valid topic name that works in Kubernetes.
+<2> A Kafka topic name that uses upper case and periods, which are invalid in Kubernetes.
 
 If more than one `KafkaTopic` resource refers to the same Kafka topic, the resource that was created first is considered to be the one managing the topic. 
 The status of the newer resources is updated to indicate a conflict, and their status is changed to `False`.
 
-If a Kafka client application, such as Kafka Streams, automatically creates topics with invalid Kubernetes resource names, the Topic Operator generates a valid `metadata.name`. 
-It replaces invalid characters and appends a hash to the name.
+If a Kafka client application, such as Kafka Streams, automatically creates topics with invalid Kubernetes resource names, the Topic Operator generates a valid `metadata.name` when used in bidirectional mode. 
+It replaces invalid characters and appends a hash to the name. 
+However, this behavior does not apply in (preview) unidirectional mode.
 
 .Example of replacing an invalid topic name
 [source,yaml,subs="attributes+"]

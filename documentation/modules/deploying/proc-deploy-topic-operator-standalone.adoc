@@ -78,7 +78,7 @@ spec:
               value: "-Djavax.net.debug=verbose -DpropertyName=value"
             - name: STRIMZI_PUBLIC_CA # <12>
               value: "false"
-            - name: STRIMZI_TLS_ENABLED # <13>
+            - name: STRIMZI_TLS_AUTH_ENABLED # <13>
               value: "false"
             - name: STRIMZI_SASL_ENABLED # <14>
               value: "false"
@@ -219,5 +219,60 @@ env:
 ----
 +
 Use this environment variable if you want to use finalizers to control xref:con-deleting-managed-topics-{context}[topic deletion].
++
+.Example standalone Topic Operator deployment configuration for unidirectional topic management
+[source,shell,subs=+quotes]
+----
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: strimzi-topic-operator
+  labels:
+    app: strimzi
+spec:
+  # ...
+  template:
+    # ...
+    spec:
+      # ...
+      containers:
+        - name: strimzi-topic-operator
+          # ...
+          env:
+            - name: STRIMZI_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: STRIMZI_KAFKA_BOOTSTRAP_SERVERS
+              value: my-kafka-bootstrap-address:9092
+            - name: STRIMZI_RESOURCE_LABELS
+              value: "strimzi.io/cluster=my-cluster"
+            - name: STRIMZI_FULL_RECONCILIATION_INTERVAL_MS
+              value: "120000"
+            - name: STRIMZI_LOG_LEVEL
+              value: INFO
+            - name: STRIMZI_TLS_ENABLED
+              value: "false"
+            - name: STRIMZI_JAVA_OPTS
+              value: "-Xmx=512M -Xms=256M"
+            - name: STRIMZI_JAVA_SYSTEM_PROPERTIES
+              value: "-Djavax.net.debug=verbose -DpropertyName=value"
+            - name: STRIMZI_PUBLIC_CA
+              value: "false"
+            - name: STRIMZI_TLS_AUTH_ENABLED
+              value: "false"
+            - name: STRIMZI_SASL_ENABLED
+              value: "false"
+            - name: STRIMZI_SASL_USERNAME
+              value: "admin"
+            - name: STRIMZI_SASL_PASSWORD
+              value: "password"
+            - name: STRIMZI_SASL_MECHANISM
+              value: "scram-sha-512"
+            - name: STRIMZI_SECURITY_PROTOCOL
+              value: "SSL"
+            - name: STRIMZI_USE_FINALIZERS
+              value: "true"  
+----
 
 . Deploy the standalone Topic Operator in the standard way.

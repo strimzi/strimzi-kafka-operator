@@ -139,4 +139,4 @@ For more information on topic management, see xref:ref-operator-topic-str[].
 .Enabling the UnidirectionalTopicOperator feature gate
 
 To enable the `UnidirectionalTopicOperator` feature gate, specify `+UnidirectionalTopicOperator` in the `STRIMZI_FEATURE_GATES` environment variable in the Cluster Operator configuration.
-The `KafkaTopic` custom resource must also have the annotation `strimzi.io/managed: true` (default).
+For the `KafkaTopic` custom resource to use this feature, the `strimzi.io/managed` annotation is set to `true` by default. 

@@ -8,7 +8,8 @@
 [role="_abstract"]
 Use `topicOperator` properties in `Kafka.spec.entityOperator` to configure the Topic Operator.
 
-NOTE: If you are using the preview of unidirectional topic management, the following properties are not used and will be ignored: `zookeeperSessionTimeoutSeconds` and `topicMetadataMaxAttempts`.
+NOTE: If you are using the preview of unidirectional topic management, the following properties are not used and will be ignored: 
+`Kafka.spec.entityOperator.topicOperator.zookeeperSessionTimeoutSeconds` and `Kafka.spec.entityOperator.topicOperator.topicMetadataMaxAttempts`.
 For more information on unidirectional topic management, refer to xref:ref-operator-topic-{context}[].
 
 The following properties are supported:
