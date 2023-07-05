@@ -8,9 +8,6 @@
 [role="_abstract"]
 This procedure describes how to scale down a node pool to remove nodes.
 
-The steps assume that you are using ZooKeeper for cluster management. 
-The operation is not possible for clusters using KRaft mode. 
-
 In this procedure, we start with four nodes for node pool `pool-a`:
 
 .Kafka nodes in the node pool

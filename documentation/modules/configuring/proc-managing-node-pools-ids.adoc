@@ -10,13 +10,10 @@ This procedure describes how to use annotations for advanced node ID handling by
 You specify the node IDs to use, rather than the Cluster Operator using the next ID in sequence.
 Management of node IDs in this way gives greater control.
 
-The steps assume that you are using ZooKeeper for cluster management. 
-The operation is not possible for clusters using KRaft mode.
-
 To add a range of IDs, you assign the following annotations to the `KafkaNodePool` resource:
 
-* `strimzi.io/next-node-ids` to add a range of IDs for scaling up
-* `strimzi.io/remove-node-ids` to add a range of IDs for scaling down
+* `strimzi.io/next-node-ids` to add a range of IDs that are used for new brokers
+* `strimzi.io/remove-node-ids` to add a range of IDs for removing existing brokers
 
 You can specify an array of individual node IDs, ID ranges, or a combination of both.
 For example, you can specify the following range of IDs: `[0, 1, 2, 10-20, 30]` for scaling up the Kafka node pool.
@@ -40,8 +37,8 @@ The annotations don't need to be updated after every scaling operation.
 Any unused IDs are still valid for the next scaling event. 
 
 The Cluster Operator allows you to specify a range of IDs in either ascending or descending order, so you can define them in the order the nodes are scaled. 
-For example, when scaling up, you can specify a range such as [`1000-1999`], and the new nodes are assigned the next lowest IDs: `1000`, `1001`, `1002`, `1003`, and so on. 
-Conversely, when scaling down, you can specify a range like [`1999-1000`], ensuring that nodes with the next highest IDs are removed: `1999`, `1998`, `1997`, `1996`, and so on.
+For example, when scaling up, you can specify a range such as `[1000-1999]`, and the new nodes are assigned the next lowest IDs: `1000`, `1001`, `1002`, `1003`, and so on. 
+Conversely, when scaling down, you can specify a range like `[1999-1000]`, ensuring that nodes with the next highest IDs are removed: `1003`, `1002`, `1001`, `1000`, and so on.
 
 If you don't specify an ID range using the annotations, the Cluster Operator follows its default behavior for handling IDs during scaling operations. 
 Node IDs start at 0 (zero) and run sequentially across the Kafka cluster. 
