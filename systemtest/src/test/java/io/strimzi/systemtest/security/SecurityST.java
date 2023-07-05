@@ -81,6 +81,7 @@ import static io.strimzi.api.kafka.model.KafkaResources.clusterCaKeySecretName;
 import static io.strimzi.systemtest.Constants.ACCEPTANCE;
 import static io.strimzi.systemtest.Constants.CONNECT;
 import static io.strimzi.systemtest.Constants.CONNECT_COMPONENTS;
+import static io.strimzi.systemtest.Constants.CRUISE_CONTROL;
 import static io.strimzi.systemtest.Constants.EXTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.MIRROR_MAKER;
@@ -165,6 +166,7 @@ class SecurityST extends AbstractST {
     @ParallelNamespaceTest
     @Tag(INTERNAL_CLIENTS_USED)
     @Tag(ROLLING_UPDATE)
+    @Tag(CRUISE_CONTROL)
     @Tag("ClusterCaCerts")
     void testAutoRenewClusterCaCertsTriggeredByAnno(ExtensionContext extensionContext) {
         autoRenewSomeCaCertsTriggeredByAnno(
@@ -181,6 +183,7 @@ class SecurityST extends AbstractST {
     @ParallelNamespaceTest
     @Tag(INTERNAL_CLIENTS_USED)
     @Tag(ROLLING_UPDATE)
+    @Tag(CRUISE_CONTROL)
     @Tag("ClientsCaCerts")
     void testAutoRenewClientsCaCertsTriggeredByAnno(ExtensionContext extensionContext) {
         autoRenewSomeCaCertsTriggeredByAnno(
@@ -199,6 +202,7 @@ class SecurityST extends AbstractST {
     @Tag(ACCEPTANCE)
     @Tag(INTERNAL_CLIENTS_USED)
     @Tag(ROLLING_UPDATE)
+    @Tag(CRUISE_CONTROL)
     @Tag("AllCaCerts")
     void testAutoRenewAllCaCertsTriggeredByAnno(ExtensionContext extensionContext) {
         autoRenewSomeCaCertsTriggeredByAnno(
@@ -345,6 +349,7 @@ class SecurityST extends AbstractST {
     @ParallelNamespaceTest
     @Tag(INTERNAL_CLIENTS_USED)
     @Tag(ROLLING_UPDATE)
+    @Tag(CRUISE_CONTROL)
     @Tag("ClusterCaKeys")
     void testAutoReplaceClusterCaKeysTriggeredByAnno(ExtensionContext extensionContext) {
         autoReplaceSomeKeysTriggeredByAnno(
@@ -359,6 +364,7 @@ class SecurityST extends AbstractST {
     @ParallelNamespaceTest
     @Tag(INTERNAL_CLIENTS_USED)
     @Tag(ROLLING_UPDATE)
+    @Tag(CRUISE_CONTROL)
     @Tag("ClientsCaKeys")
     void testAutoReplaceClientsCaKeysTriggeredByAnno(ExtensionContext extensionContext) {
         autoReplaceSomeKeysTriggeredByAnno(
@@ -373,6 +379,7 @@ class SecurityST extends AbstractST {
     @ParallelNamespaceTest
     @Tag(INTERNAL_CLIENTS_USED)
     @Tag(ROLLING_UPDATE)
+    @Tag(CRUISE_CONTROL)
     @Tag("AllCaKeys")
     void testAutoReplaceAllCaKeysTriggeredByAnno(ExtensionContext extensionContext) {
         autoReplaceSomeKeysTriggeredByAnno(
@@ -586,6 +593,7 @@ class SecurityST extends AbstractST {
 
     @ParallelNamespaceTest
     @Tag(INTERNAL_CLIENTS_USED)
+    @Tag(CRUISE_CONTROL)
     void testAutoRenewCaCertsTriggerByExpiredCertificate(ExtensionContext extensionContext) {
         final TestStorage testStorage = new TestStorage(extensionContext, clusterOperator.getDeploymentNamespace());
 
