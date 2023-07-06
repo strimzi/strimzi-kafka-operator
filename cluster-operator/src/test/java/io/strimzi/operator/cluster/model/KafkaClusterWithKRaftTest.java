@@ -12,11 +12,9 @@ import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.networking.v1.Ingress;
-import io.fabric8.kubernetes.api.model.policy.v1.PodDisruptionBudget;
 import io.fabric8.openshift.api.model.Route;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
-import io.strimzi.api.kafka.model.StrimziPodSet;
 import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerConfigurationBrokerBuilder;
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
@@ -30,10 +28,10 @@ import io.strimzi.api.kafka.model.storage.Storage;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.model.nodepools.NodeIdAssignment;
 import io.strimzi.operator.cluster.model.nodepools.NodePoolUtils;
-import io.strimzi.operator.common.MetricsAndLogging;
 import io.strimzi.operator.cluster.operator.resource.MockSharedEnvironmentProvider;
-import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.cluster.operator.resource.SharedEnvironmentProvider;
+import io.strimzi.operator.common.MetricsAndLogging;
+import io.strimzi.operator.common.Reconciliation;
 import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
@@ -48,7 +46,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-public class KafkaClusterWithPoolsTest {
+public class KafkaClusterWithKRaftTest {
     private static final KafkaVersion.Lookup VERSIONS = KafkaVersionTestUtils.getKafkaVersionLookup();
     private static final SharedEnvironmentProvider SHARED_ENV_PROVIDER = new MockSharedEnvironmentProvider();
     private final static String NAMESPACE = "my-namespace";
@@ -76,9 +74,32 @@ public class KafkaClusterWithPoolsTest {
             .withBlockOwnerDeletion(false)
             .withController(false)
             .build();
-    private final static KafkaNodePool POOL_A = new KafkaNodePoolBuilder()
+    private final static KafkaNodePool POOL_CONTROLLERS = new KafkaNodePoolBuilder()
             .withNewMetadata()
-                .withName("pool-a")
+                .withName("controllers")
+                .withNamespace(NAMESPACE)
+            .endMetadata()
+            .withNewSpec()
+                .withReplicas(3)
+                .withNewJbodStorage()
+                    .withVolumes(new PersistentClaimStorageBuilder().withId(0).withSize("100Gi").build())
+                .endJbodStorage()
+                .withRoles(ProcessRoles.CONTROLLER)
+                .withResources(new ResourceRequirementsBuilder().withRequests(Map.of("cpu", new Quantity("4"), "memory", new Quantity("16Gi"))).build())
+            .endSpec()
+            .build();
+    private final static KafkaPool KAFKA_POOL_CONTROLLERS = KafkaPool.fromCrd(
+            Reconciliation.DUMMY_RECONCILIATION,
+            KAFKA,
+            POOL_CONTROLLERS,
+            new NodeIdAssignment(Set.of(0, 1, 2), Set.of(0, 1, 2), Set.of(), Set.of()),
+            null,
+            OWNER_REFERENCE,
+            SHARED_ENV_PROVIDER
+    );
+    private final static KafkaNodePool POOL_BROKERS = new KafkaNodePoolBuilder()
+            .withNewMetadata()
+                .withName("brokers")
                 .withNamespace(NAMESPACE)
             .endMetadata()
             .withNewSpec()
@@ -90,34 +111,11 @@ public class KafkaClusterWithPoolsTest {
                 .withResources(new ResourceRequirementsBuilder().withRequests(Map.of("cpu", new Quantity("4"), "memory", new Quantity("16Gi"))).build())
             .endSpec()
             .build();
-    private final static KafkaPool KAFKA_POOL_A = KafkaPool.fromCrd(
+    private final static KafkaPool KAFKA_POOL_BROKERS = KafkaPool.fromCrd(
             Reconciliation.DUMMY_RECONCILIATION,
             KAFKA,
-            POOL_A,
-            new NodeIdAssignment(Set.of(0, 1, 2), Set.of(0, 1, 2), Set.of(), Set.of()),
-            null,
-            OWNER_REFERENCE,
-            SHARED_ENV_PROVIDER
-    );
-    private final static KafkaNodePool POOL_B = new KafkaNodePoolBuilder()
-            .withNewMetadata()
-                .withName("pool-b")
-                .withNamespace(NAMESPACE)
-            .endMetadata()
-            .withNewSpec()
-                .withReplicas(2)
-                .withNewJbodStorage()
-                    .withVolumes(new PersistentClaimStorageBuilder().withId(0).withSize("200Gi").build())
-                .endJbodStorage()
-                .withRoles(ProcessRoles.BROKER)
-                .withResources(new ResourceRequirementsBuilder().withRequests(Map.of("cpu", new Quantity("6"), "memory", new Quantity("20Gi"))).build())
-            .endSpec()
-            .build();
-    private final static KafkaPool KAFKA_POOL_B = KafkaPool.fromCrd(
-            Reconciliation.DUMMY_RECONCILIATION,
-            KAFKA,
-            POOL_B,
-            new NodeIdAssignment(Set.of(10, 11), Set.of(10, 11), Set.of(), Set.of()),
+            POOL_BROKERS,
+            new NodeIdAssignment(Set.of(1000, 1001, 1002), Set.of(1000, 1001, 1002), Set.of(), Set.of()),
             null,
             OWNER_REFERENCE,
             SHARED_ENV_PROVIDER
@@ -128,41 +126,43 @@ public class KafkaClusterWithPoolsTest {
         KafkaCluster kc = KafkaCluster.fromCrd(
                 Reconciliation.DUMMY_RECONCILIATION,
                 KAFKA,
-                List.of(KAFKA_POOL_A, KAFKA_POOL_B),
+                List.of(KAFKA_POOL_CONTROLLERS, KAFKA_POOL_BROKERS),
                 VERSIONS,
-                false,
+                true,
                 null, SHARED_ENV_PROVIDER
         );
 
         Set<NodeRef> nodes = kc.nodes();
-        assertThat(nodes.size(), is(5));
-        assertThat(nodes, hasItems(new NodeRef(CLUSTER_NAME + "-pool-a-0", 0, "pool-a", false, true),
-                new NodeRef(CLUSTER_NAME + "-pool-a-1", 1, "pool-a", false, true),
-                new NodeRef(CLUSTER_NAME + "-pool-a-2", 2, "pool-a", false, true),
-                new NodeRef(CLUSTER_NAME + "-pool-b-10", 10, "pool-b", false, true),
-                new NodeRef(CLUSTER_NAME + "-pool-b-11", 11, "pool-b", false, true)));
+        assertThat(nodes.size(), is(6));
+        assertThat(nodes, hasItems(new NodeRef(CLUSTER_NAME + "-controllers-0", 0, "controllers", true, false),
+                new NodeRef(CLUSTER_NAME + "-controllers-1", 1, "controllers", true, false),
+                new NodeRef(CLUSTER_NAME + "-controllers-2", 2, "controllers", true, false),
+                new NodeRef(CLUSTER_NAME + "-brokers-1000", 1000, "brokers", false, true),
+                new NodeRef(CLUSTER_NAME + "-brokers-1001", 1001, "brokers", false, true),
+                new NodeRef(CLUSTER_NAME + "-brokers-1002", 1002, "brokers", false, true)));
 
         Set<NodeRef> brokerNodes = kc.brokerNodes();
-        assertThat(brokerNodes.size(), is(5));
-        assertThat(brokerNodes, hasItems(new NodeRef(CLUSTER_NAME + "-pool-a-0", 0, "pool-a", false, true),
-                new NodeRef(CLUSTER_NAME + "-pool-a-1", 1, "pool-a", false, true),
-                new NodeRef(CLUSTER_NAME + "-pool-a-2", 2, "pool-a", false, true),
-                new NodeRef(CLUSTER_NAME + "-pool-b-10", 10, "pool-b", false, true),
-                new NodeRef(CLUSTER_NAME + "-pool-b-11", 11, "pool-b", false, true)));
+        assertThat(brokerNodes.size(), is(3));
+        assertThat(brokerNodes, hasItems(new NodeRef(CLUSTER_NAME + "-brokers-1000", 1000, "brokers", false, true),
+                new NodeRef(CLUSTER_NAME + "-brokers-1001", 1001, "brokers", false, true),
+                new NodeRef(CLUSTER_NAME + "-brokers-1002", 1002, "brokers", false, true)));
 
         Set<NodeRef> controllerNodes = kc.controllerNodes();
-        assertThat(controllerNodes.size(), is(0)); // No KRaft cluster => 0 controller nodes
+        assertThat(controllerNodes.size(), is(3));
+        assertThat(controllerNodes, hasItems(new NodeRef(CLUSTER_NAME + "-controllers-0", 0, "controllers", true, false),
+                new NodeRef(CLUSTER_NAME + "-controllers-1", 1, "controllers", true, false),
+                new NodeRef(CLUSTER_NAME + "-controllers-2", 2, "controllers", true, false)));
 
         Map<String, KafkaNodePoolStatus> statuses = kc.nodePoolStatuses();
         assertThat(statuses.size(), is(2));
-        assertThat(statuses.get("pool-a").getReplicas(), is(3));
-        assertThat(statuses.get("pool-a").getLabelSelector(), is("strimzi.io/cluster=my-cluster,strimzi.io/name=my-cluster-kafka,strimzi.io/kind=Kafka,strimzi.io/pool-name=pool-a"));
-        assertThat(statuses.get("pool-a").getNodeIds().size(), is(3));
-        assertThat(statuses.get("pool-a").getNodeIds(), hasItems(0, 1, 2));
-        assertThat(statuses.get("pool-b").getReplicas(), is(2));
-        assertThat(statuses.get("pool-b").getLabelSelector(), is("strimzi.io/cluster=my-cluster,strimzi.io/name=my-cluster-kafka,strimzi.io/kind=Kafka,strimzi.io/pool-name=pool-b"));
-        assertThat(statuses.get("pool-b").getNodeIds().size(), is(2));
-        assertThat(statuses.get("pool-b").getNodeIds(), hasItems(10, 11));
+        assertThat(statuses.get("controllers").getReplicas(), is(3));
+        assertThat(statuses.get("controllers").getLabelSelector(), is("strimzi.io/cluster=my-cluster,strimzi.io/name=my-cluster-kafka,strimzi.io/kind=Kafka,strimzi.io/pool-name=controllers"));
+        assertThat(statuses.get("controllers").getNodeIds().size(), is(3));
+        assertThat(statuses.get("controllers").getNodeIds(), hasItems(0, 1, 2));
+        assertThat(statuses.get("brokers").getReplicas(), is(3));
+        assertThat(statuses.get("brokers").getLabelSelector(), is("strimzi.io/cluster=my-cluster,strimzi.io/name=my-cluster-kafka,strimzi.io/kind=Kafka,strimzi.io/pool-name=brokers"));
+        assertThat(statuses.get("brokers").getNodeIds().size(), is(3));
+        assertThat(statuses.get("brokers").getNodeIds(), hasItems(1000, 1001, 1002));
     }
 
     @Test
@@ -170,10 +170,11 @@ public class KafkaClusterWithPoolsTest {
         KafkaCluster kc = KafkaCluster.fromCrd(
                 Reconciliation.DUMMY_RECONCILIATION,
                 KAFKA,
-                List.of(KAFKA_POOL_A, KAFKA_POOL_B),
+                List.of(KAFKA_POOL_CONTROLLERS, KAFKA_POOL_BROKERS),
                 VERSIONS,
-                false,
-                null, SHARED_ENV_PROVIDER
+                true,
+                null,
+                SHARED_ENV_PROVIDER
         );
 
         assertThat(kc.generatePerPodServices().size(), is(0));
@@ -194,15 +195,16 @@ public class KafkaClusterWithPoolsTest {
         KafkaCluster kc = KafkaCluster.fromCrd(
                 Reconciliation.DUMMY_RECONCILIATION,
                 kafka,
-                List.of(KAFKA_POOL_A, KAFKA_POOL_B),
+                List.of(KAFKA_POOL_CONTROLLERS, KAFKA_POOL_BROKERS),
                 VERSIONS,
-                false,
-                null, SHARED_ENV_PROVIDER
+                true,
+                null,
+                SHARED_ENV_PROVIDER
         );
 
         List<Service> services = kc.generatePerPodServices();
-        assertThat(services.size(), is(5));
-        assertThat(services.stream().map(s -> s.getMetadata().getName()).toList(), hasItems("my-cluster-pool-a-tls-0", "my-cluster-pool-a-tls-1", "my-cluster-pool-a-tls-2", "my-cluster-pool-b-tls-10", "my-cluster-pool-b-tls-11"));
+        assertThat(services.size(), is(3));
+        assertThat(services.stream().map(s -> s.getMetadata().getName()).toList(), hasItems("my-cluster-brokers-tls-1000", "my-cluster-brokers-tls-1001", "my-cluster-brokers-tls-1002"));
     }
 
     @Test
@@ -218,15 +220,16 @@ public class KafkaClusterWithPoolsTest {
         KafkaCluster kc = KafkaCluster.fromCrd(
                 Reconciliation.DUMMY_RECONCILIATION,
                 kafka,
-                List.of(KAFKA_POOL_A, KAFKA_POOL_B),
+                List.of(KAFKA_POOL_CONTROLLERS, KAFKA_POOL_BROKERS),
                 VERSIONS,
-                false,
-                null, SHARED_ENV_PROVIDER
+                true,
+                null,
+                SHARED_ENV_PROVIDER
         );
 
         List<Service> services = kc.generatePerPodServices();
-        assertThat(services.size(), is(5));
-        assertThat(services.stream().map(s -> s.getMetadata().getName()).toList(), hasItems("my-cluster-pool-a-tls-0", "my-cluster-pool-a-tls-1", "my-cluster-pool-a-tls-2", "my-cluster-pool-b-tls-10", "my-cluster-pool-b-tls-11"));
+        assertThat(services.size(), is(3));
+        assertThat(services.stream().map(s -> s.getMetadata().getName()).toList(), hasItems("my-cluster-brokers-tls-1000", "my-cluster-brokers-tls-1001", "my-cluster-brokers-tls-1002"));
     }
 
     @Test
@@ -243,11 +246,9 @@ public class KafkaClusterWithPoolsTest {
                                     .withNewBootstrap()
                                         .withHost("bootstrap.my-domain.tld")
                                     .endBootstrap()
-                                .withBrokers(new GenericKafkaListenerConfigurationBrokerBuilder().withBroker(0).withHost("broker-0.my-domain.tld").build(),
-                                        new GenericKafkaListenerConfigurationBrokerBuilder().withBroker(1).withHost("broker-1.my-domain.tld").build(),
-                                        new GenericKafkaListenerConfigurationBrokerBuilder().withBroker(2).withHost("broker-2.my-domain.tld").build(),
-                                        new GenericKafkaListenerConfigurationBrokerBuilder().withBroker(10).withHost("broker-10.my-domain.tld").build(),
-                                        new GenericKafkaListenerConfigurationBrokerBuilder().withBroker(11).withHost("broker-11.my-domain.tld").build())
+                                .withBrokers(new GenericKafkaListenerConfigurationBrokerBuilder().withBroker(1000).withHost("broker-1000.my-domain.tld").build(),
+                                        new GenericKafkaListenerConfigurationBrokerBuilder().withBroker(1001).withHost("broker-1001.my-domain.tld").build(),
+                                        new GenericKafkaListenerConfigurationBrokerBuilder().withBroker(1002).withHost("broker-1002.my-domain.tld").build())
                                 .endConfiguration()
                                 .build())
                     .endKafka()
@@ -257,19 +258,20 @@ public class KafkaClusterWithPoolsTest {
         KafkaCluster kc = KafkaCluster.fromCrd(
                 Reconciliation.DUMMY_RECONCILIATION,
                 kafka,
-                List.of(KAFKA_POOL_A, KAFKA_POOL_B),
+                List.of(KAFKA_POOL_CONTROLLERS, KAFKA_POOL_BROKERS),
                 VERSIONS,
-                false,
-                null, SHARED_ENV_PROVIDER
+                true,
+                null,
+                SHARED_ENV_PROVIDER
         );
 
         List<Service> services = kc.generatePerPodServices();
-        assertThat(services.size(), is(5));
-        assertThat(services.stream().map(s -> s.getMetadata().getName()).toList(), hasItems("my-cluster-pool-a-tls-0", "my-cluster-pool-a-tls-1", "my-cluster-pool-a-tls-2", "my-cluster-pool-b-tls-10", "my-cluster-pool-b-tls-11"));
+        assertThat(services.size(), is(3));
+        assertThat(services.stream().map(s -> s.getMetadata().getName()).toList(), hasItems("my-cluster-brokers-tls-1000", "my-cluster-brokers-tls-1001", "my-cluster-brokers-tls-1002"));
 
         List<Ingress> ingresses = kc.generateExternalIngresses();
-        assertThat(ingresses.size(), is(5));
-        assertThat(ingresses.stream().map(s -> s.getMetadata().getName()).toList(), hasItems("my-cluster-pool-a-tls-0", "my-cluster-pool-a-tls-1", "my-cluster-pool-a-tls-2", "my-cluster-pool-b-tls-10", "my-cluster-pool-b-tls-11"));
+        assertThat(ingresses.size(), is(3));
+        assertThat(ingresses.stream().map(s -> s.getMetadata().getName()).toList(), hasItems("my-cluster-brokers-tls-1000", "my-cluster-brokers-tls-1001", "my-cluster-brokers-tls-1002"));
     }
 
     @Test
@@ -285,108 +287,67 @@ public class KafkaClusterWithPoolsTest {
         KafkaCluster kc = KafkaCluster.fromCrd(
                 Reconciliation.DUMMY_RECONCILIATION,
                 kafka,
-                List.of(KAFKA_POOL_A, KAFKA_POOL_B),
+                List.of(KAFKA_POOL_CONTROLLERS, KAFKA_POOL_BROKERS),
                 VERSIONS,
-                false,
-                null, SHARED_ENV_PROVIDER
+                true,
+                null,
+                SHARED_ENV_PROVIDER
         );
 
         List<Service> services = kc.generatePerPodServices();
-        assertThat(services.size(), is(5));
-        assertThat(services.stream().map(s -> s.getMetadata().getName()).toList(), hasItems("my-cluster-pool-a-tls-0", "my-cluster-pool-a-tls-1", "my-cluster-pool-a-tls-2", "my-cluster-pool-b-tls-10", "my-cluster-pool-b-tls-11"));
+        assertThat(services.size(), is(3));
+        assertThat(services.stream().map(s -> s.getMetadata().getName()).toList(), hasItems("my-cluster-brokers-tls-1000", "my-cluster-brokers-tls-1001", "my-cluster-brokers-tls-1002"));
 
         List<Route> routes = kc.generateExternalRoutes();
-        assertThat(routes.size(), is(5));
-        assertThat(routes.stream().map(s -> s.getMetadata().getName()).toList(), hasItems("my-cluster-pool-a-tls-0", "my-cluster-pool-a-tls-1", "my-cluster-pool-a-tls-2", "my-cluster-pool-b-tls-10", "my-cluster-pool-b-tls-11"));
-    }
-
-    @Test
-    public void testPodDisruptionBudgets()  {
-        KafkaCluster kc = KafkaCluster.fromCrd(
-                Reconciliation.DUMMY_RECONCILIATION,
-                KAFKA,
-                List.of(KAFKA_POOL_A, KAFKA_POOL_B),
-                VERSIONS,
-                false,
-                null, SHARED_ENV_PROVIDER
-        );
-
-        PodDisruptionBudget pdb = kc.generatePodDisruptionBudget();
-        assertThat(pdb.getSpec().getMinAvailable().getIntVal(), is(4));
-    }
-
-    @Test
-    public void testPodSets()  {
-        KafkaCluster kc = KafkaCluster.fromCrd(
-                Reconciliation.DUMMY_RECONCILIATION,
-                KAFKA,
-                List.of(KAFKA_POOL_A, KAFKA_POOL_B),
-                VERSIONS,
-                false,
-                null, SHARED_ENV_PROVIDER
-        );
-
-        List<StrimziPodSet> podSets = kc.generatePodSets(false, null, null, i -> Map.of());
-        assertThat(podSets.size(), is(2));
-        assertThat(podSets.get(0).getMetadata().getName(), is("my-cluster-pool-a"));
-        assertThat(podSets.get(0).getSpec().getPods().size(), is(3));
-        assertThat(PodSetUtils.podNames(podSets.get(0)), hasItems("my-cluster-pool-a-0", "my-cluster-pool-a-1", "my-cluster-pool-a-2"));
-        assertThat(PodSetUtils.podSetToPods(podSets.get(0)).get(0).getSpec().getContainers().get(0).getResources().getRequests(), is(Map.of("cpu", new Quantity("4"), "memory", new Quantity("16Gi"))));
-
-        assertThat(podSets.get(1).getMetadata().getName(), is("my-cluster-pool-b"));
-        assertThat(podSets.get(1).getSpec().getPods().size(), is(2));
-        assertThat(PodSetUtils.podNames(podSets.get(1)), hasItems("my-cluster-pool-b-10", "my-cluster-pool-b-11"));
-        assertThat(PodSetUtils.podSetToPods(podSets.get(1)).get(0).getSpec().getContainers().get(0).getResources().getRequests(), is(Map.of("cpu", new Quantity("6"), "memory", new Quantity("20Gi"))));
+        assertThat(routes.size(), is(3));
+        assertThat(routes.stream().map(s -> s.getMetadata().getName()).toList(), hasItems("my-cluster-brokers-tls-1000", "my-cluster-brokers-tls-1001", "my-cluster-brokers-tls-1002"));
     }
 
     @Test
     public void testBrokerConfiguration()  {
         Map<Integer, Map<String, String>> advertisedHostnames = Map.of(
-                0, Map.of("TLS_9093", "broker-0"),
-                1, Map.of("TLS_9093", "broker-1"),
-                2, Map.of("TLS_9093", "broker-2"),
-                10, Map.of("TLS_9093", "broker-10"),
-                11, Map.of("TLS_9093", "broker-11")
+                1000, Map.of("TLS_9093", "broker-1000"),
+                1001, Map.of("TLS_9093", "broker-1001"),
+                1002, Map.of("TLS_9093", "broker-1002")
         );
         Map<Integer, Map<String, String>> advertisedPorts = Map.of(
-                0, Map.of("TLS_9093", "9093"),
-                1, Map.of("TLS_9093", "9093"),
-                2, Map.of("TLS_9093", "9093"),
-                10, Map.of("TLS_9093", "9093"),
-                11, Map.of("TLS_9093", "9093")
+                1000, Map.of("TLS_9093", "9093"),
+                1001, Map.of("TLS_9093", "9093"),
+                1002, Map.of("TLS_9093", "9093")
         );
 
         KafkaCluster kc = KafkaCluster.fromCrd(
                 Reconciliation.DUMMY_RECONCILIATION,
                 KAFKA,
-                List.of(KAFKA_POOL_A, KAFKA_POOL_B),
+                List.of(KAFKA_POOL_CONTROLLERS, KAFKA_POOL_BROKERS),
                 VERSIONS,
                 true,
-                null, SHARED_ENV_PROVIDER
+                null,
+                SHARED_ENV_PROVIDER
         );
 
-        String configuration = kc.generatePerBrokerBrokerConfiguration(2, advertisedHostnames, advertisedPorts);
+        String configuration = kc.generatePerBrokerBrokerConfiguration(2, Map.of(), Map.of());
         assertThat(configuration, containsString("broker.id=2\n"));
         assertThat(configuration, containsString("node.id=2\n"));
-        assertThat(configuration, containsString("process.roles=broker\n"));
+        assertThat(configuration, containsString("process.roles=controller\n"));
 
-        configuration = kc.generatePerBrokerBrokerConfiguration(10, advertisedHostnames, advertisedPorts);
-        assertThat(configuration, containsString("broker.id=10\n"));
-        assertThat(configuration, containsString("node.id=10\n"));
+        configuration = kc.generatePerBrokerBrokerConfiguration(1001, advertisedHostnames, advertisedPorts);
+        assertThat(configuration, containsString("broker.id=1001\n"));
+        assertThat(configuration, containsString("node.id=1001\n"));
         assertThat(configuration, containsString("process.roles=broker\n"));
 
         List<ConfigMap> configMaps = kc.generatePerBrokerConfigurationConfigMaps(new MetricsAndLogging(null, null), advertisedHostnames, advertisedPorts);
-        assertThat(configMaps.size(), is(5));
-        assertThat(configMaps.stream().map(s -> s.getMetadata().getName()).toList(), hasItems("my-cluster-pool-a-0", "my-cluster-pool-a-1", "my-cluster-pool-a-2", "my-cluster-pool-b-10", "my-cluster-pool-b-11"));
+        assertThat(configMaps.size(), is(6));
+        assertThat(configMaps.stream().map(s -> s.getMetadata().getName()).toList(), hasItems("my-cluster-controllers-0", "my-cluster-controllers-1", "my-cluster-controllers-2", "my-cluster-brokers-1000", "my-cluster-brokers-1001", "my-cluster-brokers-1002"));
 
-        ConfigMap broker2 = configMaps.stream().filter(cm -> "my-cluster-pool-a-2".equals(cm.getMetadata().getName())).findFirst().orElseThrow();
+        ConfigMap broker2 = configMaps.stream().filter(cm -> "my-cluster-controllers-2".equals(cm.getMetadata().getName())).findFirst().orElseThrow();
         assertThat(broker2.getData().get("server.config"), containsString("broker.id=2\n"));
         assertThat(broker2.getData().get("server.config"), containsString("node.id=2\n"));
-        assertThat(broker2.getData().get("server.config"), containsString("process.roles=broker\n"));
+        assertThat(broker2.getData().get("server.config"), containsString("process.roles=controller\n"));
 
-        ConfigMap broker10 = configMaps.stream().filter(cm -> "my-cluster-pool-b-10".equals(cm.getMetadata().getName())).findFirst().orElseThrow();
-        assertThat(broker10.getData().get("server.config"), containsString("broker.id=10\n"));
-        assertThat(broker10.getData().get("server.config"), containsString("node.id=10\n"));
+        ConfigMap broker10 = configMaps.stream().filter(cm -> "my-cluster-brokers-1001".equals(cm.getMetadata().getName())).findFirst().orElseThrow();
+        assertThat(broker10.getData().get("server.config"), containsString("broker.id=1001\n"));
+        assertThat(broker10.getData().get("server.config"), containsString("node.id=1001\n"));
         assertThat(broker10.getData().get("server.config"), containsString("process.roles=broker\n"));
     }
 
@@ -395,21 +356,21 @@ public class KafkaClusterWithPoolsTest {
         KafkaCluster kc = KafkaCluster.fromCrd(
                 Reconciliation.DUMMY_RECONCILIATION,
                 KAFKA,
-                List.of(KAFKA_POOL_A, KAFKA_POOL_B),
+                List.of(KAFKA_POOL_CONTROLLERS, KAFKA_POOL_BROKERS),
                 VERSIONS,
-                false,
+                true,
                 null, SHARED_ENV_PROVIDER
         );
 
         Map<String, Storage> storage = kc.getStorageByPoolName();
         assertThat(storage.size(), is(2));
-        assertThat(storage.get("pool-a"), is(new JbodStorageBuilder().withVolumes(new PersistentClaimStorageBuilder().withId(0).withSize("100Gi").build()).build()));
-        assertThat(storage.get("pool-b"), is(new JbodStorageBuilder().withVolumes(new PersistentClaimStorageBuilder().withId(0).withSize("200Gi").build()).build()));
+        assertThat(storage.get("controllers"), is(new JbodStorageBuilder().withVolumes(new PersistentClaimStorageBuilder().withId(0).withSize("100Gi").build()).build()));
+        assertThat(storage.get("brokers"), is(new JbodStorageBuilder().withVolumes(new PersistentClaimStorageBuilder().withId(0).withSize("100Gi").build()).build()));
 
         Map<String, ResourceRequirements> resources = kc.getResourceRequirementsByPoolName();
         assertThat(resources.size(), is(2));
-        assertThat(resources.get("pool-a").getRequests(), is(Map.of("cpu", new Quantity("4"), "memory", new Quantity("16Gi"))));
-        assertThat(resources.get("pool-b").getRequests(), is(Map.of("cpu", new Quantity("6"), "memory", new Quantity("20Gi"))));
+        assertThat(resources.get("controllers").getRequests(), is(Map.of("cpu", new Quantity("4"), "memory", new Quantity("16Gi"))));
+        assertThat(resources.get("brokers").getRequests(), is(Map.of("cpu", new Quantity("4"), "memory", new Quantity("16Gi"))));
     }
 
     @Test
@@ -419,8 +380,9 @@ public class KafkaClusterWithPoolsTest {
         config.put("transaction.state.log.replication.factor", 1);
         config.put("transaction.state.log.min.isr", 1);
 
-        KafkaNodePool poolA = new KafkaNodePoolBuilder(POOL_A)
+        KafkaNodePool poolBrokers = new KafkaNodePoolBuilder(POOL_BROKERS)
                 .editSpec()
+                    .withRoles(ProcessRoles.BROKER)
                     .withReplicas(1)
                 .endSpec()
                 .build();
@@ -438,24 +400,18 @@ public class KafkaClusterWithPoolsTest {
 
         // Test exception being raised when only one broker is present
         InvalidResourceException ex = assertThrows(InvalidResourceException.class, () -> {
-            List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, List.of(poolA), Map.of(), Map.of(), false, SHARED_ENV_PROVIDER);
-            KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, pools, VERSIONS, false, null, SHARED_ENV_PROVIDER);
+            List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, List.of(POOL_CONTROLLERS, poolBrokers), Map.of(), Map.of(), true, SHARED_ENV_PROVIDER);
+            KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, pools, VERSIONS, true, null, SHARED_ENV_PROVIDER);
         });
 
         assertThat(ex.getMessage(), is("Kafka " + NAMESPACE + "/" + CLUSTER_NAME + " has invalid configuration. " +
                 "Cruise Control cannot be deployed with a Kafka cluster which has only one broker. " +
                 "It requires at least two Kafka brokers."));
 
-        // Test if works fine with 2 brokers in 2 different pools
-        KafkaNodePool poolB = new KafkaNodePoolBuilder(POOL_B)
-                .editSpec()
-                    .withReplicas(1)
-                .endSpec()
-                .build();
-
+        // Test if works fine with controller pool and broker pool with more than 1 node
         assertDoesNotThrow(() -> {
-            List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, List.of(poolA, poolB), Map.of(), Map.of(), false, SHARED_ENV_PROVIDER);
-            KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, pools, VERSIONS, false, null, SHARED_ENV_PROVIDER);
+            List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, List.of(POOL_CONTROLLERS, POOL_BROKERS), Map.of(), Map.of(), true, SHARED_ENV_PROVIDER);
+            KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, pools, VERSIONS, true, null, SHARED_ENV_PROVIDER);
         });
     }
 }

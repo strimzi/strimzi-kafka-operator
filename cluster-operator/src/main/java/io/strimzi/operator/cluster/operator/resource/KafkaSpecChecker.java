@@ -84,14 +84,14 @@ public class KafkaSpecChecker {
         String defaultReplicationFactor = kafkaCluster.getConfiguration().getConfigOption(KafkaConfiguration.DEFAULT_REPLICATION_FACTOR);
         String minInsyncReplicas = kafkaCluster.getConfiguration().getConfigOption(KafkaConfiguration.MIN_INSYNC_REPLICAS);
 
-        if (defaultReplicationFactor == null && kafkaCluster.nodes().stream().filter(NodeRef::broker).count() > 1)   {
+        if (defaultReplicationFactor == null && kafkaCluster.brokerNodes().size() > 1)   {
             warnings.add(StatusUtils.buildWarningCondition("KafkaDefaultReplicationFactor",
                     "default.replication.factor option is not configured. " +
                             "It defaults to 1 which does not guarantee reliability and availability. " +
                             "You should configure this option in .spec.kafka.config."));
         }
 
-        if (minInsyncReplicas == null && kafkaCluster.nodes().stream().filter(NodeRef::broker).count() > 1)   {
+        if (minInsyncReplicas == null && kafkaCluster.brokerNodes().size() > 1)   {
             warnings.add(StatusUtils.buildWarningCondition("KafkaMinInsyncReplicas",
                     "min.insync.replicas option is not configured. " +
                             "It defaults to 1 which does not guarantee reliability and availability. " +
@@ -149,8 +149,8 @@ public class KafkaSpecChecker {
      * @param warnings List to add a warning to, if appropriate.
      */
     private void checkKafkaBrokersStorage(List<Condition> warnings) {
-        if (kafkaCluster.nodes().stream().filter(NodeRef::broker).count() == 1
-                && StorageUtils.usesEphemeral(kafkaCluster.getStorageByPoolName().get(kafkaCluster.nodes().stream().filter(NodeRef::broker).toList().toArray(new NodeRef[]{})[0].poolName()))) {
+        if (kafkaCluster.brokerNodes().size() == 1
+                && StorageUtils.usesEphemeral(kafkaCluster.getStorageByPoolName().get(kafkaCluster.brokerNodes().toArray(new NodeRef[]{})[0].poolName()))) {
             warnings.add(StatusUtils.buildWarningCondition("KafkaStorage",
                     "A Kafka cluster with a single broker node and ephemeral storage will lose topic messages after any restart or rolling update."));
         }
@@ -164,8 +164,8 @@ public class KafkaSpecChecker {
      * @param warnings List to add a warning to, if appropriate.
      */
     private void checkKRaftControllerStorage(List<Condition> warnings) {
-        if (kafkaCluster.nodes().stream().filter(NodeRef::controller).count() == 1
-                && StorageUtils.usesEphemeral(kafkaCluster.getStorageByPoolName().get(kafkaCluster.nodes().stream().filter(NodeRef::controller).toList().toArray(new NodeRef[]{})[0].poolName()))) {
+        if (kafkaCluster.controllerNodes().size() == 1
+                && StorageUtils.usesEphemeral(kafkaCluster.getStorageByPoolName().get(kafkaCluster.controllerNodes().toArray(new NodeRef[]{})[0].poolName()))) {
             warnings.add(StatusUtils.buildWarningCondition("KafkaStorage",
                     "A Kafka cluster with a single controller node and ephemeral storage will lose data after any restart or rolling update."));
         }
@@ -177,7 +177,7 @@ public class KafkaSpecChecker {
      * @param warnings List to add a warning to, if appropriate.
      */
     private void checkKRaftControllerCount(List<Condition> warnings)    {
-        long controllerCount = kafkaCluster.nodes().stream().filter(NodeRef::controller).count();
+        long controllerCount = kafkaCluster.controllerNodes().size();
 
         if (controllerCount == 2) {
             warnings.add(StatusUtils.buildWarningCondition("KafkaKRaftControllerNodeCount",

@@ -89,7 +89,9 @@ public class KafkaPoolTest {
 
         assertThat(kp, is(notNullValue()));
         assertThat(kp.componentName, is(CLUSTER_NAME + "-pool"));
-        assertThat(kp.kraftRoles, is(Set.of(ProcessRoles.BROKER)));
+        assertThat(kp.processRoles, is(Set.of(ProcessRoles.BROKER)));
+        assertThat(kp.isBroker(), is(true));
+        assertThat(kp.isController(), is(false));
         assertThat(kp.storage, is(new JbodStorageBuilder().withVolumes(new PersistentClaimStorageBuilder().withId(0).withSize("100Gi").build()).build()));
         assertThat(kp.resources, is(nullValue()));
         assertThat(kp.jvmOptions, is(nullValue()));
@@ -144,13 +146,46 @@ public class KafkaPoolTest {
 
         assertThat(kp, is(notNullValue()));
         assertThat(kp.componentName, is(CLUSTER_NAME + "-pool"));
-        assertThat(kp.kraftRoles, is(Set.of(ProcessRoles.CONTROLLER)));
+        assertThat(kp.processRoles, is(Set.of(ProcessRoles.CONTROLLER)));
+        assertThat(kp.isBroker(), is(false));
+        assertThat(kp.isController(), is(true));
 
         Set<NodeRef> nodes = kp.nodes();
         assertThat(nodes.size(), is(3));
         assertThat(nodes, hasItems(new NodeRef(CLUSTER_NAME + "-pool-10", 10, "pool", true, false),
                 new NodeRef(CLUSTER_NAME + "-pool-11", 11, "pool", true, false),
                 new NodeRef(CLUSTER_NAME + "-pool-13", 13, "pool", true, false)));
+    }
+
+    @Test
+    public void testKafkaPoolWithMixedRoles()  {
+        KafkaNodePool pool = new KafkaNodePoolBuilder(POOL)
+                .editSpec()
+                    .withRoles(ProcessRoles.CONTROLLER, ProcessRoles.BROKER)
+                .endSpec()
+                .build();
+
+        KafkaPool kp = KafkaPool.fromCrd(
+                Reconciliation.DUMMY_RECONCILIATION,
+                KAFKA,
+                pool,
+                new NodeIdAssignment(Set.of(10, 11, 13), Set.of(10, 11, 13), Set.of(), Set.of()),
+                new JbodStorageBuilder().withVolumes(new PersistentClaimStorageBuilder().withId(0).withSize("100Gi").build()).build(),
+                OWNER_REFERENCE,
+                SHARED_ENV_PROVIDER
+        );
+
+        assertThat(kp, is(notNullValue()));
+        assertThat(kp.componentName, is(CLUSTER_NAME + "-pool"));
+        assertThat(kp.processRoles, is(Set.of(ProcessRoles.CONTROLLER, ProcessRoles.BROKER)));
+        assertThat(kp.isBroker(), is(true));
+        assertThat(kp.isController(), is(true));
+
+        Set<NodeRef> nodes = kp.nodes();
+        assertThat(nodes.size(), is(3));
+        assertThat(nodes, hasItems(new NodeRef(CLUSTER_NAME + "-pool-10", 10, "pool", true, true),
+                new NodeRef(CLUSTER_NAME + "-pool-11", 11, "pool", true, true),
+                new NodeRef(CLUSTER_NAME + "-pool-13", 13, "pool", true, true)));
     }
 
     @Test

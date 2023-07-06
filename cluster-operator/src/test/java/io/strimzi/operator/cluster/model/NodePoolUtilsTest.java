@@ -85,7 +85,7 @@ public class NodePoolUtilsTest {
 
         assertThat(pools.size(), is(1));
         assertThat(pools.get(0).poolName, is(VirtualNodePoolConverter.DEFAULT_NODE_POOL_NAME));
-        assertThat(pools.get(0).kraftRoles, is(Set.of(ProcessRoles.BROKER)));
+        assertThat(pools.get(0).processRoles, is(Set.of(ProcessRoles.BROKER)));
         assertThat(pools.get(0).idAssignment.toBeAdded(), is(Set.of(0, 1, 2)));
         assertThat(pools.get(0).idAssignment.toBeRemoved(), is(Set.of()));
         assertThat(pools.get(0).idAssignment.current(), is(Set.of()));
@@ -107,7 +107,7 @@ public class NodePoolUtilsTest {
 
         assertThat(pools.size(), is(1));
         assertThat(pools.get(0).poolName, is(VirtualNodePoolConverter.DEFAULT_NODE_POOL_NAME));
-        assertThat(pools.get(0).kraftRoles, is(Set.of(ProcessRoles.BROKER)));
+        assertThat(pools.get(0).processRoles, is(Set.of(ProcessRoles.BROKER)));
         assertThat(pools.get(0).idAssignment.toBeAdded(), is(Set.of()));
         assertThat(pools.get(0).idAssignment.toBeRemoved(), is(Set.of()));
         assertThat(pools.get(0).idAssignment.current(), is(Set.of(0, 1, 2)));
@@ -128,7 +128,7 @@ public class NodePoolUtilsTest {
 
         assertThat(pools.size(), is(1));
         assertThat(pools.get(0).poolName, is(VirtualNodePoolConverter.DEFAULT_NODE_POOL_NAME));
-        assertThat(pools.get(0).kraftRoles, is(Set.of(ProcessRoles.BROKER)));
+        assertThat(pools.get(0).processRoles, is(Set.of(ProcessRoles.BROKER)));
         assertThat(pools.get(0).idAssignment.toBeAdded(), is(Set.of(2)));
         assertThat(pools.get(0).idAssignment.toBeRemoved(), is(Set.of()));
         assertThat(pools.get(0).idAssignment.current(), is(Set.of(0, 1)));
@@ -166,7 +166,7 @@ public class NodePoolUtilsTest {
 
         assertThat(pools.size(), is(1));
         assertThat(pools.get(0).poolName, is(VirtualNodePoolConverter.DEFAULT_NODE_POOL_NAME));
-        assertThat(pools.get(0).kraftRoles, is(Set.of(ProcessRoles.BROKER, ProcessRoles.CONTROLLER)));
+        assertThat(pools.get(0).processRoles, is(Set.of(ProcessRoles.BROKER, ProcessRoles.CONTROLLER)));
         assertThat(pools.get(0).idAssignment.toBeAdded(), is(Set.of(0, 1, 2)));
         assertThat(pools.get(0).idAssignment.toBeRemoved(), is(Set.of()));
         assertThat(pools.get(0).idAssignment.current(), is(Set.of()));
@@ -180,14 +180,14 @@ public class NodePoolUtilsTest {
         assertThat(pools.size(), is(2));
 
         assertThat(pools.get(0).poolName, is("pool-a"));
-        assertThat(pools.get(0).kraftRoles, is(Set.of(ProcessRoles.BROKER)));
+        assertThat(pools.get(0).processRoles, is(Set.of(ProcessRoles.BROKER)));
         assertThat(pools.get(0).idAssignment.toBeAdded(), is(Set.of(0, 1, 2)));
         assertThat(pools.get(0).idAssignment.toBeRemoved(), is(Set.of()));
         assertThat(pools.get(0).idAssignment.current(), is(Set.of()));
         assertThat(pools.get(0).idAssignment.desired(), is(Set.of(0, 1, 2)));
 
         assertThat(pools.get(1).poolName, is("pool-b"));
-        assertThat(pools.get(1).kraftRoles, is(Set.of(ProcessRoles.BROKER)));
+        assertThat(pools.get(1).processRoles, is(Set.of(ProcessRoles.BROKER)));
         assertThat(pools.get(1).idAssignment.toBeAdded(), is(Set.of(3, 4)));
         assertThat(pools.get(1).idAssignment.toBeRemoved(), is(Set.of()));
         assertThat(pools.get(1).idAssignment.current(), is(Set.of()));
@@ -220,7 +220,7 @@ public class NodePoolUtilsTest {
         assertThat(pools.size(), is(2));
 
         assertThat(pools.get(0).poolName, is("pool-a"));
-        assertThat(pools.get(0).kraftRoles, is(Set.of(ProcessRoles.BROKER)));
+        assertThat(pools.get(0).processRoles, is(Set.of(ProcessRoles.BROKER)));
         assertThat(pools.get(0).idAssignment.toBeAdded(), is(Set.of()));
         assertThat(pools.get(0).idAssignment.toBeRemoved(), is(Set.of()));
         assertThat(pools.get(0).idAssignment.current(), is(Set.of(0, 1, 2)));
@@ -230,7 +230,7 @@ public class NodePoolUtilsTest {
         assertThat(((PersistentClaimStorage) storage.getVolumes().get(0)).getSize(), is("100Gi"));
 
         assertThat(pools.get(1).poolName, is("pool-b"));
-        assertThat(pools.get(1).kraftRoles, is(Set.of(ProcessRoles.BROKER)));
+        assertThat(pools.get(1).processRoles, is(Set.of(ProcessRoles.BROKER)));
         assertThat(pools.get(1).idAssignment.toBeAdded(), is(Set.of()));
         assertThat(pools.get(1).idAssignment.toBeRemoved(), is(Set.of()));
         assertThat(pools.get(1).idAssignment.current(), is(Set.of(10, 11)));
@@ -265,14 +265,14 @@ public class NodePoolUtilsTest {
         assertThat(pools.size(), is(2));
 
         assertThat(pools.get(0).poolName, is("pool-a"));
-        assertThat(pools.get(0).kraftRoles, is(Set.of(ProcessRoles.BROKER)));
+        assertThat(pools.get(0).processRoles, is(Set.of(ProcessRoles.BROKER)));
         assertThat(pools.get(0).idAssignment.toBeAdded(), is(Set.of()));
         assertThat(pools.get(0).idAssignment.toBeRemoved(), is(Set.of(2)));
         assertThat(pools.get(0).idAssignment.current(), is(Set.of(0, 1, 2)));
         assertThat(pools.get(0).idAssignment.desired(), is(Set.of(0, 1)));
 
         assertThat(pools.get(1).poolName, is("pool-b"));
-        assertThat(pools.get(1).kraftRoles, is(Set.of(ProcessRoles.BROKER)));
+        assertThat(pools.get(1).processRoles, is(Set.of(ProcessRoles.BROKER)));
         assertThat(pools.get(1).idAssignment.toBeAdded(), is(Set.of(3)));
         assertThat(pools.get(1).idAssignment.toBeRemoved(), is(Set.of()));
         assertThat(pools.get(1).idAssignment.current(), is(Set.of(10, 11)));
@@ -312,14 +312,14 @@ public class NodePoolUtilsTest {
         assertThat(pools.size(), is(2));
 
         assertThat(pools.get(0).poolName, is("pool-a"));
-        assertThat(pools.get(0).kraftRoles, is(Set.of(ProcessRoles.BROKER)));
+        assertThat(pools.get(0).processRoles, is(Set.of(ProcessRoles.BROKER)));
         assertThat(pools.get(0).idAssignment.toBeAdded(), is(Set.of()));
         assertThat(pools.get(0).idAssignment.toBeRemoved(), is(Set.of(12)));
         assertThat(pools.get(0).idAssignment.current(), is(Set.of(10, 11, 12)));
         assertThat(pools.get(0).idAssignment.desired(), is(Set.of(10, 11)));
 
         assertThat(pools.get(1).poolName, is("pool-b"));
-        assertThat(pools.get(1).kraftRoles, is(Set.of(ProcessRoles.BROKER)));
+        assertThat(pools.get(1).processRoles, is(Set.of(ProcessRoles.BROKER)));
         assertThat(pools.get(1).idAssignment.toBeAdded(), is(Set.of(22)));
         assertThat(pools.get(1).idAssignment.toBeRemoved(), is(Set.of()));
         assertThat(pools.get(1).idAssignment.current(), is(Set.of(20, 21)));
@@ -345,10 +345,10 @@ public class NodePoolUtilsTest {
         assertThat(pools.size(), is(2));
 
         assertThat(pools.get(0).poolName, is("pool-a"));
-        assertThat(pools.get(0).kraftRoles, is(Set.of(ProcessRoles.BROKER, ProcessRoles.CONTROLLER)));
+        assertThat(pools.get(0).processRoles, is(Set.of(ProcessRoles.BROKER, ProcessRoles.CONTROLLER)));
 
         assertThat(pools.get(1).poolName, is("pool-b"));
-        assertThat(pools.get(1).kraftRoles, is(Set.of(ProcessRoles.BROKER, ProcessRoles.CONTROLLER)));
+        assertThat(pools.get(1).processRoles, is(Set.of(ProcessRoles.BROKER, ProcessRoles.CONTROLLER)));
     }
 
     @Test
@@ -370,10 +370,10 @@ public class NodePoolUtilsTest {
         assertThat(pools.size(), is(2));
 
         assertThat(pools.get(0).poolName, is("pool-a"));
-        assertThat(pools.get(0).kraftRoles, is(Set.of(ProcessRoles.CONTROLLER)));
+        assertThat(pools.get(0).processRoles, is(Set.of(ProcessRoles.CONTROLLER)));
 
         assertThat(pools.get(1).poolName, is("pool-b"));
-        assertThat(pools.get(1).kraftRoles, is(Set.of(ProcessRoles.BROKER)));
+        assertThat(pools.get(1).processRoles, is(Set.of(ProcessRoles.BROKER)));
     }
 
     @Test
@@ -402,7 +402,7 @@ public class NodePoolUtilsTest {
         assertThat(pools.size(), is(2));
 
         assertThat(pools.get(0).poolName, is("pool-a"));
-        assertThat(pools.get(0).kraftRoles, is(Set.of(ProcessRoles.BROKER)));
+        assertThat(pools.get(0).processRoles, is(Set.of(ProcessRoles.BROKER)));
         assertThat(pools.get(0).idAssignment.toBeAdded(), is(Set.of()));
         assertThat(pools.get(0).idAssignment.toBeRemoved(), is(Set.of()));
         assertThat(pools.get(0).idAssignment.current(), is(Set.of(0, 1, 2)));
@@ -412,7 +412,7 @@ public class NodePoolUtilsTest {
         assertThat(((PersistentClaimStorage) storage.getVolumes().get(0)).getSize(), is("100Gi"));
 
         assertThat(pools.get(1).poolName, is("pool-b"));
-        assertThat(pools.get(1).kraftRoles, is(Set.of(ProcessRoles.BROKER)));
+        assertThat(pools.get(1).processRoles, is(Set.of(ProcessRoles.BROKER)));
         assertThat(pools.get(1).idAssignment.toBeAdded(), is(Set.of()));
         assertThat(pools.get(1).idAssignment.toBeRemoved(), is(Set.of()));
         assertThat(pools.get(1).idAssignment.current(), is(Set.of(10, 11)));

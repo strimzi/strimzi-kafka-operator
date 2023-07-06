@@ -291,7 +291,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
         result.kafkaVersion = versions.supportedVersion(kafkaClusterSpec.getVersion());
 
         // Number of broker nodes => used later in various validation methods
-        long numberOfBrokers = result.nodes().stream().filter(NodeRef::broker).count();
+        long numberOfBrokers = result.brokerNodes().size();
 
         ModelUtils.validateComputeResources(kafkaClusterSpec.getResources(), ".spec.kafka.resources");
         validateIntConfigProperty("default.replication.factor", kafkaClusterSpec, numberOfBrokers);
@@ -333,7 +333,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
             throw new InvalidResourceException("The required field .spec.kafka.listeners is missing");
         }
         List<GenericKafkaListener> listeners = kafkaClusterSpec.getListeners();
-        ListenersValidator.validate(reconciliation, result.nodes(), listeners);
+        ListenersValidator.validate(reconciliation, result.brokerNodes(), listeners);
         result.listeners = listeners;
 
         // Set authorization
@@ -385,6 +385,42 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
         }
 
         return nodes;
+    }
+
+    /**
+     * Generates list of references to Kafka nodes for this Kafka cluster which have the broker role. The references
+     * contain both the pod name and the ID of the Kafka node.
+     *
+     * @return  Set of Kafka node references with broker role
+     */
+    public Set<NodeRef> brokerNodes() {
+        Set<NodeRef> brokers = new LinkedHashSet<>();
+
+        for (KafkaPool pool : nodePools)    {
+            if (pool.isBroker()) {
+                brokers.addAll(pool.nodes());
+            }
+        }
+
+        return brokers;
+    }
+
+    /**
+     * Generates list of references to Kafka nodes for this Kafka cluster which have the controller role. The references
+     * contain both the pod name and the ID of the Kafka node.
+     *
+     * @return  Set of Kafka node references with controller role
+     */
+    public Set<NodeRef> controllerNodes() {
+        Set<NodeRef> controllers = new LinkedHashSet<>();
+
+        for (KafkaPool pool : nodePools)    {
+            if (pool.isController()) {
+                controllers.addAll(pool.nodes());
+            }
+        }
+
+        return controllers;
     }
 
     /**
@@ -692,67 +728,69 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
 
         for (GenericKafkaListener listener : externalListeners)   {
             for (KafkaPool pool : nodePools)    {
-                for (NodeRef node : pool.nodes())   {
-                    String serviceName = ListenersUtils.backwardsCompatiblePerBrokerServiceName(pool.componentName, node.nodeId(), listener);
+                if (pool.isBroker()) {
+                    for (NodeRef node : pool.nodes()) {
+                        String serviceName = ListenersUtils.backwardsCompatiblePerBrokerServiceName(pool.componentName, node.nodeId(), listener);
 
-                    List<ServicePort> ports = Collections.singletonList(
-                            ServiceUtils.createServicePort(
-                                    ListenersUtils.backwardsCompatiblePortName(listener),
-                                    listener.getPort(),
-                                    listener.getPort(),
-                                    ListenersUtils.brokerNodePort(listener, node.nodeId()),
-                                    "TCP")
-                    );
+                        List<ServicePort> ports = Collections.singletonList(
+                                ServiceUtils.createServicePort(
+                                        ListenersUtils.backwardsCompatiblePortName(listener),
+                                        listener.getPort(),
+                                        listener.getPort(),
+                                        ListenersUtils.brokerNodePort(listener, node.nodeId()),
+                                        "TCP")
+                        );
 
-                    Service service = ServiceUtils.createService(
-                            serviceName,
-                            namespace,
-                            pool.labels,
-                            pool.ownerReference,
-                            pool.templatePerBrokerService,
-                            ports,
-                            pool.labels.strimziSelectorLabels().withStatefulSetPod(node.podName()),
-                            ListenersUtils.serviceType(listener),
-                            ListenersUtils.brokerLabels(listener, node.nodeId()),
-                            ListenersUtils.brokerAnnotations(listener, node.nodeId()),
-                            ListenersUtils.ipFamilyPolicy(listener),
-                            ListenersUtils.ipFamilies(listener)
-                    );
+                        Service service = ServiceUtils.createService(
+                                serviceName,
+                                namespace,
+                                pool.labels,
+                                pool.ownerReference,
+                                pool.templatePerBrokerService,
+                                ports,
+                                pool.labels.strimziSelectorLabels().withStatefulSetPod(node.podName()),
+                                ListenersUtils.serviceType(listener),
+                                ListenersUtils.brokerLabels(listener, node.nodeId()),
+                                ListenersUtils.brokerAnnotations(listener, node.nodeId()),
+                                ListenersUtils.ipFamilyPolicy(listener),
+                                ListenersUtils.ipFamilies(listener)
+                        );
 
-                    if (KafkaListenerType.LOADBALANCER == listener.getType()) {
-                        String loadBalancerIP = ListenersUtils.brokerLoadBalancerIP(listener, node.nodeId());
-                        if (loadBalancerIP != null) {
-                            service.getSpec().setLoadBalancerIP(loadBalancerIP);
+                        if (KafkaListenerType.LOADBALANCER == listener.getType()) {
+                            String loadBalancerIP = ListenersUtils.brokerLoadBalancerIP(listener, node.nodeId());
+                            if (loadBalancerIP != null) {
+                                service.getSpec().setLoadBalancerIP(loadBalancerIP);
+                            }
+
+                            List<String> loadBalancerSourceRanges = ListenersUtils.loadBalancerSourceRanges(listener);
+                            if (loadBalancerSourceRanges != null
+                                    && !loadBalancerSourceRanges.isEmpty()) {
+                                service.getSpec().setLoadBalancerSourceRanges(loadBalancerSourceRanges);
+                            }
+
+                            List<String> finalizers = ListenersUtils.finalizers(listener);
+                            if (finalizers != null
+                                    && !finalizers.isEmpty()) {
+                                service.getMetadata().setFinalizers(finalizers);
+                            }
+
+                            String loadBalancerClass = ListenersUtils.controllerClass(listener);
+                            if (loadBalancerClass != null) {
+                                service.getSpec().setLoadBalancerClass(loadBalancerClass);
+                            }
                         }
 
-                        List<String> loadBalancerSourceRanges = ListenersUtils.loadBalancerSourceRanges(listener);
-                        if (loadBalancerSourceRanges != null
-                                && !loadBalancerSourceRanges.isEmpty()) {
-                            service.getSpec().setLoadBalancerSourceRanges(loadBalancerSourceRanges);
+                        if (KafkaListenerType.LOADBALANCER == listener.getType() || KafkaListenerType.NODEPORT == listener.getType()) {
+                            ExternalTrafficPolicy etp = ListenersUtils.externalTrafficPolicy(listener);
+                            if (etp != null) {
+                                service.getSpec().setExternalTrafficPolicy(etp.toValue());
+                            } else {
+                                service.getSpec().setExternalTrafficPolicy(ExternalTrafficPolicy.CLUSTER.toValue());
+                            }
                         }
 
-                        List<String> finalizers = ListenersUtils.finalizers(listener);
-                        if (finalizers != null
-                                && !finalizers.isEmpty()) {
-                            service.getMetadata().setFinalizers(finalizers);
-                        }
-
-                        String loadBalancerClass = ListenersUtils.controllerClass(listener);
-                        if (loadBalancerClass != null) {
-                            service.getSpec().setLoadBalancerClass(loadBalancerClass);
-                        }
+                        services.add(service);
                     }
-
-                    if (KafkaListenerType.LOADBALANCER == listener.getType() || KafkaListenerType.NODEPORT == listener.getType()) {
-                        ExternalTrafficPolicy etp = ListenersUtils.externalTrafficPolicy(listener);
-                        if (etp != null) {
-                            service.getSpec().setExternalTrafficPolicy(etp.toValue());
-                        } else {
-                            service.getSpec().setExternalTrafficPolicy(ExternalTrafficPolicy.CLUSTER.toValue());
-                        }
-                    }
-
-                    services.add(service);
                 }
             }
         }
@@ -817,36 +855,38 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
 
         for (GenericKafkaListener listener : routeListeners)   {
             for (KafkaPool pool : nodePools)    {
-                for (NodeRef node : pool.nodes())   {
-                    String routeName = ListenersUtils.backwardsCompatiblePerBrokerServiceName(pool.componentName, node.nodeId(), listener);
-                    Route route = new RouteBuilder()
-                            .withNewMetadata()
-                                .withName(routeName)
-                                .withLabels(pool.labels.withAdditionalLabels(Util.mergeLabelsOrAnnotations(TemplateUtils.labels(pool.templatePerBrokerRoute), ListenersUtils.brokerLabels(listener, node.nodeId()))).toMap())
-                                .withAnnotations(Util.mergeLabelsOrAnnotations(TemplateUtils.annotations(pool.templatePerBrokerRoute), ListenersUtils.brokerAnnotations(listener, node.nodeId())))
-                                .withNamespace(namespace)
-                                .withOwnerReferences(pool.ownerReference)
-                            .endMetadata()
-                            .withNewSpec()
-                                .withNewTo()
-                                    .withKind("Service")
+                if (pool.isBroker()) {
+                    for (NodeRef node : pool.nodes()) {
+                        String routeName = ListenersUtils.backwardsCompatiblePerBrokerServiceName(pool.componentName, node.nodeId(), listener);
+                        Route route = new RouteBuilder()
+                                .withNewMetadata()
                                     .withName(routeName)
-                                .endTo()
-                                .withNewPort()
-                                    .withNewTargetPort(listener.getPort())
-                                .endPort()
-                                .withNewTls()
-                                    .withTermination("passthrough")
-                                .endTls()
-                            .endSpec()
-                            .build();
+                                    .withLabels(pool.labels.withAdditionalLabels(Util.mergeLabelsOrAnnotations(TemplateUtils.labels(pool.templatePerBrokerRoute), ListenersUtils.brokerLabels(listener, node.nodeId()))).toMap())
+                                    .withAnnotations(Util.mergeLabelsOrAnnotations(TemplateUtils.annotations(pool.templatePerBrokerRoute), ListenersUtils.brokerAnnotations(listener, node.nodeId())))
+                                    .withNamespace(namespace)
+                                    .withOwnerReferences(pool.ownerReference)
+                                .endMetadata()
+                                .withNewSpec()
+                                    .withNewTo()
+                                        .withKind("Service")
+                                        .withName(routeName)
+                                    .endTo()
+                                    .withNewPort()
+                                        .withNewTargetPort(listener.getPort())
+                                    .endPort()
+                                    .withNewTls()
+                                        .withTermination("passthrough")
+                                    .endTls()
+                                .endSpec()
+                                .build();
 
-                    String host = ListenersUtils.brokerHost(listener, node.nodeId());
-                    if (host != null)   {
-                        route.getSpec().setHost(host);
+                        String host = ListenersUtils.brokerHost(listener, node.nodeId());
+                        if (host != null) {
+                            route.getSpec().setHost(host);
+                        }
+
+                        routes.add(route);
                     }
-
-                    routes.add(route);
                 }
             }
         }
@@ -926,51 +966,53 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
 
         for (GenericKafkaListener listener : ingressListeners)   {
             for (KafkaPool pool : nodePools)    {
-                for (NodeRef node : pool.nodes())   {
-                    String ingressName = ListenersUtils.backwardsCompatiblePerBrokerServiceName(pool.componentName, node.nodeId(), listener);
-                    String host = ListenersUtils.brokerHost(listener, node.nodeId());
-                    String ingressClass = ListenersUtils.controllerClass(listener);
+                if (pool.isBroker()) {
+                    for (NodeRef node : pool.nodes()) {
+                        String ingressName = ListenersUtils.backwardsCompatiblePerBrokerServiceName(pool.componentName, node.nodeId(), listener);
+                        String host = ListenersUtils.brokerHost(listener, node.nodeId());
+                        String ingressClass = ListenersUtils.controllerClass(listener);
 
-                    HTTPIngressPath path = new HTTPIngressPathBuilder()
-                            .withPath("/")
-                            .withPathType("Prefix")
-                            .withNewBackend()
-                                .withNewService()
+                        HTTPIngressPath path = new HTTPIngressPathBuilder()
+                                .withPath("/")
+                                .withPathType("Prefix")
+                                .withNewBackend()
+                                    .withNewService()
+                                        .withName(ingressName)
+                                        .withNewPort()
+                                            .withNumber(listener.getPort())
+                                        .endPort()
+                                    .endService()
+                                .endBackend()
+                                .build();
+
+                        IngressRule rule = new IngressRuleBuilder()
+                                .withHost(host)
+                                .withNewHttp()
+                                    .withPaths(path)
+                                .endHttp()
+                                .build();
+
+                        IngressTLS tls = new IngressTLSBuilder()
+                                .withHosts(host)
+                                .build();
+
+                        Ingress ingress = new IngressBuilder()
+                                .withNewMetadata()
                                     .withName(ingressName)
-                                    .withNewPort()
-                                        .withNumber(listener.getPort())
-                                    .endPort()
-                                .endService()
-                            .endBackend()
-                            .build();
+                                    .withLabels(pool.labels.withAdditionalLabels(Util.mergeLabelsOrAnnotations(TemplateUtils.labels(pool.templatePerBrokerIngress), ListenersUtils.brokerLabels(listener, node.nodeId()))).toMap())
+                                    .withAnnotations(Util.mergeLabelsOrAnnotations(generateInternalIngressAnnotations(), TemplateUtils.annotations(pool.templatePerBrokerIngress), ListenersUtils.brokerAnnotations(listener, node.nodeId())))
+                                    .withNamespace(namespace)
+                                    .withOwnerReferences(pool.ownerReference)
+                                .endMetadata()
+                                .withNewSpec()
+                                    .withIngressClassName(ingressClass)
+                                    .withRules(rule)
+                                    .withTls(tls)
+                                .endSpec()
+                                .build();
 
-                    IngressRule rule = new IngressRuleBuilder()
-                            .withHost(host)
-                            .withNewHttp()
-                                .withPaths(path)
-                            .endHttp()
-                            .build();
-
-                    IngressTLS tls = new IngressTLSBuilder()
-                            .withHosts(host)
-                            .build();
-
-                    Ingress ingress = new IngressBuilder()
-                            .withNewMetadata()
-                                .withName(ingressName)
-                                .withLabels(pool.labels.withAdditionalLabels(Util.mergeLabelsOrAnnotations(TemplateUtils.labels(pool.templatePerBrokerIngress), ListenersUtils.brokerLabels(listener, node.nodeId()))).toMap())
-                                .withAnnotations(Util.mergeLabelsOrAnnotations(generateInternalIngressAnnotations(), TemplateUtils.annotations(pool.templatePerBrokerIngress), ListenersUtils.brokerAnnotations(listener, node.nodeId())))
-                                .withNamespace(namespace)
-                                .withOwnerReferences(pool.ownerReference)
-                            .endMetadata()
-                            .withNewSpec()
-                                .withIngressClassName(ingressClass)
-                                .withRules(rule)
-                                .withTls(tls)
-                            .endSpec()
-                            .build();
-
-                    ingresses.add(ingress);
+                        ingresses.add(ingress);
+                    }
                 }
             }
         }
@@ -1628,7 +1670,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
         if (useKRaft) {
             return new KafkaBrokerConfigurationBuilder(reconciliation, String.valueOf(node.nodeId()))
                     .withRackId(rack)
-                    .withKRaft(cluster, namespace, pool.kraftRoles, nodes())
+                    .withKRaft(cluster, namespace, pool.processRoles, nodes())
                     .withLogDirs(VolumeUtils.createVolumeMounts(pool.storage, DATA_VOLUME_MOUNT_PATH, false))
                     .withListeners(cluster,
                             namespace,
