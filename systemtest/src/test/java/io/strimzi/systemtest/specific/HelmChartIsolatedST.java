@@ -9,19 +9,16 @@ import io.strimzi.operator.common.Annotations;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.AbstractST;
-import io.strimzi.systemtest.resources.operator.specific.HelmResource;
 import io.strimzi.systemtest.templates.crd.KafkaBridgeTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaConnectTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaConnectorTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
-import io.strimzi.systemtest.utils.StUtils;
-import io.strimzi.test.logs.CollectorElement;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtensionContext;
+
+import java.util.Collections;
 
 import static io.strimzi.systemtest.Constants.HELM;
 import static io.strimzi.systemtest.Constants.REGRESSION;
@@ -29,9 +26,6 @@ import static io.strimzi.systemtest.Constants.REGRESSION;
 @Tag(HELM)
 @Tag(REGRESSION)
 class HelmChartIsolatedST extends AbstractST {
-
-    private static final Logger LOGGER = LogManager.getLogger(HelmChartIsolatedST.class);
-    private HelmResource helmResource = new HelmResource(Constants.INFRA_NAMESPACE);
 
     @IsolatedTest
     void testStrimziComponentsViaHelmChart(ExtensionContext extensionContext) {
@@ -57,22 +51,14 @@ class HelmChartIsolatedST extends AbstractST {
 
     @BeforeAll
     void setup(ExtensionContext extensionContext) {
-        LOGGER.info("Creating resources before the test class");
-        cluster.createNamespace(CollectorElement.createCollectorElement(extensionContext.getRequiredTestClass().getName()), clusterOperator.getDeploymentNamespace());
-        StUtils.copyImagePullSecrets(clusterOperator.getDeploymentNamespace());
-        // Helm CO created
-        helmResource.create(extensionContext);
-    }
-
-    @Override
-    protected void afterAllMayOverride(ExtensionContext extensionContext) throws Exception {
-        // Helm CO deleted
-        helmResource.delete();
-
-        super.afterAllMayOverride(extensionContext);
-        // back to the old CO because we performed verification by Helm Chart Cluster Operator and now we continue with default.
-        clusterOperator.defaultInstallation(extensionContext)
+        clusterOperator = clusterOperator.defaultInstallation(extensionContext)
+            .withNamespace(Constants.INFRA_NAMESPACE)
+            .withWatchingNamespaces(Constants.INFRA_NAMESPACE)
+            .withBindingsNamespaces(Collections.singletonList(Constants.INFRA_NAMESPACE))
             .createInstallation()
-            .runInstallation();
+            // run always Helm installation
+            .runHelmInstallation();
+
+        cluster.setNamespace(Constants.INFRA_NAMESPACE);
     }
 }

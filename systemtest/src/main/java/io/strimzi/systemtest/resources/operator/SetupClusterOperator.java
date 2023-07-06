@@ -249,6 +249,12 @@ public class SetupClusterOperator {
         return this;
     }
 
+    public SetupClusterOperator runHelmInstallation() {
+        LOGGER.info("Cluster Operator installation configuration:\n{}", this::toString);
+        helmInstallation();
+        return this;
+    }
+
     @SuppressFBWarnings("ST_WRITE_TO_STATIC_FROM_INSTANCE_METHOD")
     public SetupClusterOperator runManualOlmInstallation(final String fromOlmChannelName, final String fromVersion) {
         createClusterOperatorNamespaceIfPossible();
