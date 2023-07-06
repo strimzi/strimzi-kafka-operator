@@ -182,7 +182,6 @@ pipeline {
             steps {
                 script {
                     //The next step is temporary
-                    //TODO: Skipping the keycloak image build, work is in progress. Images are required for systemtests
                     lib.buildKeycloakAndOpa_ppc64le(env.WORKSPACE)
                     lib.buildStrimziImages()
                     env.BUILD_DOCKER_IMAGE_STATUS = true
