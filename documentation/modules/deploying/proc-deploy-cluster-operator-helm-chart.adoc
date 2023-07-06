@@ -27,7 +27,7 @@ For information on upgrades, see xref:assembly-upgrade-cluster-operator-{context
 helm install strimzi-cluster-operator oci://quay.io/strimzi-helm/strimzi-kafka-operator
 ----
 +
-Alternatively, you can also install an exact version of the Cluster Operator or specify any changes to the default configuration as parameter values.
+Alternatively, you can use parameter values to install a specific version of the Cluster Operator or specify any changes to the default configuration.
 +
 .Example configuration that installs a specific version of the Cluster Operator and changes the number of replicas
 [source,shell]

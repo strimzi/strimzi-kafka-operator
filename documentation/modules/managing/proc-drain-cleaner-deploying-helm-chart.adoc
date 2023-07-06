@@ -91,7 +91,7 @@ For more information on how the environment variables work, see xref:proc-drain-
 helm install strimzi-drain-cleaner oci://quay.io/strimzi-helm/strimzi-drain-cleaner
 ----
 +
-Alternatively, you can also install an exact version of the Drain Cleaner or specify any changes to the default configuration as parameter values.
+Alternatively, you can use parameter values to install a specific version of the Drain Cleaner or specify any changes to the default configuration.
 +
 .Example configuration that installs a specific version of the Drain Cleaner and changes the number of replicas
 [source,shell]
