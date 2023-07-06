@@ -3566,8 +3566,8 @@ public class KafkaClusterTest {
                     .endKafka()
                 .endSpec()
                 .build();
-        InvalidResourceException ex = assertThrows(InvalidResourceException.class, () -> KafkaCluster.validateIntConfigProperty(propertyName, kafkaAssembly.getSpec().getKafka()));
-        assertThat(ex.getMessage().equals("Kafka configuration option '" + propertyName + "' should be set to " + REPLICAS + " or less because 'spec.kafka.replicas' is " + REPLICAS), is(true));
+        InvalidResourceException ex = assertThrows(InvalidResourceException.class, () -> KafkaCluster.validateIntConfigProperty(propertyName, kafkaAssembly.getSpec().getKafka(), REPLICAS));
+        assertThat(ex.getMessage(), is("Kafka configuration option '" + propertyName + "' should be set to " + REPLICAS + " or less because this cluster has only " + REPLICAS + " Kafka broker(s)."));
     }
 
     @ParallelTest
@@ -3580,7 +3580,7 @@ public class KafkaClusterTest {
                     .endKafka()
                 .endSpec()
                 .build();
-        KafkaCluster.validateIntConfigProperty("offsets.topic.replication.factor", kafkaAssembly.getSpec().getKafka());
+        KafkaCluster.validateIntConfigProperty("offsets.topic.replication.factor", kafkaAssembly.getSpec().getKafka(), REPLICAS);
     }
 
     @ParallelTest

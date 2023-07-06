@@ -290,11 +290,14 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
         // This also validates that the Kafka version is supported
         result.kafkaVersion = versions.supportedVersion(kafkaClusterSpec.getVersion());
 
+        // Number of broker nodes => used later in various validation methods
+        long numberOfBrokers = result.nodes().stream().filter(NodeRef::broker).count();
+
         ModelUtils.validateComputeResources(kafkaClusterSpec.getResources(), ".spec.kafka.resources");
-        validateIntConfigProperty("default.replication.factor", kafkaClusterSpec);
-        validateIntConfigProperty("offsets.topic.replication.factor", kafkaClusterSpec);
-        validateIntConfigProperty("transaction.state.log.replication.factor", kafkaClusterSpec);
-        validateIntConfigProperty("transaction.state.log.min.isr", kafkaClusterSpec);
+        validateIntConfigProperty("default.replication.factor", kafkaClusterSpec, numberOfBrokers);
+        validateIntConfigProperty("offsets.topic.replication.factor", kafkaClusterSpec, numberOfBrokers);
+        validateIntConfigProperty("transaction.state.log.replication.factor", kafkaClusterSpec, numberOfBrokers);
+        validateIntConfigProperty("transaction.state.log.min.isr", kafkaClusterSpec, numberOfBrokers);
 
         result.image = versions.kafkaImage(kafkaClusterSpec.getImage(), kafkaClusterSpec.getVersion());
         result.readinessProbeOptions = ProbeUtils.extractReadinessProbeOptionsOrDefault(kafkaClusterSpec, ProbeUtils.DEFAULT_HEALTHCHECK_OPTIONS);
@@ -320,7 +323,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
 
         // Handle Kafka broker configuration
         KafkaConfiguration configuration = new KafkaConfiguration(reconciliation, kafkaClusterSpec.getConfig().entrySet());
-        configureCruiseControlMetrics(kafka, result, configuration);
+        configureCruiseControlMetrics(kafka, result, numberOfBrokers, configuration);
         validateConfiguration(reconciliation, kafka, result.kafkaVersion, configuration);
         result.configuration = configuration;
 
@@ -330,7 +333,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
             throw new InvalidResourceException("The required field .spec.kafka.listeners is missing");
         }
         List<GenericKafkaListener> listeners = kafkaClusterSpec.getListeners();
-        ListenersValidator.validate(reconciliation, kafkaClusterSpec.getReplicas(), listeners);
+        ListenersValidator.validate(reconciliation, result.nodes(), listeners);
         result.listeners = listeners;
 
         // Set authorization
@@ -420,9 +423,10 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
      *
      * @param kafkaAssembly     Kafka custom resource
      * @param kafkaCluster      KafkaCluster instance
+     * @param numberOfBrokers   Number of broker nodes in the Kafka cluster
      * @param configuration     Kafka broker configuration
      */
-    private static void configureCruiseControlMetrics(Kafka kafkaAssembly, KafkaCluster kafkaCluster, KafkaConfiguration configuration) {
+    private static void configureCruiseControlMetrics(Kafka kafkaAssembly, KafkaCluster kafkaCluster, long numberOfBrokers, KafkaConfiguration configuration) {
         // If required Cruise Control metric reporter configurations are missing set them using Kafka defaults
         if (configuration.getConfigOption(CruiseControlConfigurationParameters.METRICS_TOPIC_NUM_PARTITIONS.getValue()) == null) {
             kafkaCluster.ccNumPartitions = configuration.getConfigOption(KAFKA_NUM_PARTITIONS_CONFIG_FIELD, CRUISE_CONTROL_DEFAULT_NUM_PARTITIONS);
@@ -452,7 +456,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
         }
 
         if (kafkaAssembly.getSpec().getCruiseControl() != null
-                && kafkaCluster.nodes().stream().filter(n -> n.broker()).count() < 2) {
+                && numberOfBrokers < 2) {
             throw new InvalidResourceException("Kafka " +
                     kafkaAssembly.getMetadata().getNamespace() + "/" + kafkaAssembly.getMetadata().getName() +
                     " has invalid configuration. Cruise Control cannot be deployed with a Kafka cluster which has only one broker. It requires at least two Kafka brokers.");
@@ -496,13 +500,13 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
         }
     }
 
-    protected static void validateIntConfigProperty(String propertyName, KafkaClusterSpec kafkaClusterSpec) {
-        String orLess = kafkaClusterSpec.getReplicas() > 1 ? " or less" : "";
+    protected static void validateIntConfigProperty(String propertyName, KafkaClusterSpec kafkaClusterSpec, long numberOfBrokers) {
+        String orLess = numberOfBrokers > 1 ? " or less" : "";
         if (kafkaClusterSpec.getConfig() != null && kafkaClusterSpec.getConfig().get(propertyName) != null) {
             try {
                 int propertyVal = Integer.parseInt(kafkaClusterSpec.getConfig().get(propertyName).toString());
-                if (propertyVal > kafkaClusterSpec.getReplicas()) {
-                    throw new InvalidResourceException("Kafka configuration option '" + propertyName + "' should be set to " + kafkaClusterSpec.getReplicas() + orLess + " because 'spec.kafka.replicas' is " + kafkaClusterSpec.getReplicas());
+                if (propertyVal > numberOfBrokers) {
+                    throw new InvalidResourceException("Kafka configuration option '" + propertyName + "' should be set to " + numberOfBrokers + orLess + " because this cluster has only " + numberOfBrokers + " Kafka broker(s).");
                 }
             } catch (NumberFormatException e) {
                 throw new InvalidResourceException("Property " + propertyName + " should be an integer");
