@@ -22,13 +22,17 @@ sealed interface TopicEvent permits TopicUpsert, TopicDelete {
     }
 }
 /**
- * The creation or update of a KafkaTopic.
+ * Event representing the creation or update of a KafkaTopic in Kube.
  * Note that this may include the change which adds a metadata.deletionTimestamp.
+ * @param nanosStartOffset The {@link System#nanoTime()} at the point when this event was received
+ * @param namespace The namespace of the KafkaTopic
+ * @param name The name of the KafkaTopic
+ * @param resourceVersion The resourceVersion of the KafkaTopic
  */
-record TopicUpsert(long nanos, String namespace, String name, String resourceVersion) implements TopicEvent {
+record TopicUpsert(long nanosStartOffset, String namespace, String name, String resourceVersion) implements TopicEvent {
     @Override
     public long ageNs() {
-        return System.nanoTime() - nanos;
+        return System.nanoTime() - nanosStartOffset;
     }
 
     @Override
@@ -55,9 +59,11 @@ record TopicUpsert(long nanos, String namespace, String name, String resourceVer
     }
 }
 /**
- * The deletion of a KafkaTopic
+ * Event representing the deletion of a KafkaTopic from Kube.
+ * @param nanosStartOffset The {@link System#nanoTime()} at the point when this event was received
+ * @param topic The topic that is being deleted
  */
-record TopicDelete(long nanos, KafkaTopic topic) implements TopicEvent {
+record TopicDelete(long nanosStartOffset, KafkaTopic topic) implements TopicEvent {
     @Override
     public String namespace() {
         return topic.getMetadata().getNamespace();
@@ -75,7 +81,7 @@ record TopicDelete(long nanos, KafkaTopic topic) implements TopicEvent {
 
     @Override
     public long ageNs() {
-        return System.nanoTime() - nanos;
+        return System.nanoTime() - nanosStartOffset;
     }
 
     @Override
