@@ -15,9 +15,7 @@ You can install the Drain Cleaner with `cert-manager` support or provide your ow
 
 .Prerequisites
 
-* You have xref:drain-cleaner-prereqs-str[downloaded the Strimzi Drain Cleaner deployment files].
 * The Helm client must be installed on a local machine.
-* Helm must be installed to the Kubernetes cluster.
 
 .Default configuration values
 Default configuration values are passed into the chart using parameters defined in a `values.yaml` file.  
@@ -86,29 +84,22 @@ For more information on how the environment variables work, see xref:proc-drain-
 
 .Procedure
 
-. Use the Helm command line tool to add the Strimzi Helm chart repository:
-+
-[source,shell,subs=attributes+]
-----
-helm repo add strimzi {ChartRepositoryUrl}
-----
-
 . Deploy the Drain Cleaner:
 +
 [source,shell]
 ----
-helm install drain-cleaner strimzi/strimzi-drain-cleaner
+helm install strimzi-drain-cleaner oci://quay.io/strimzi-helm/strimzi-drain-cleaner
 ----
 +
-Specify any changes to the default configuration as parameter values.
+Alternatively, you can use parameter values to install a specific version of the Drain Cleaner or specify any changes to the default configuration.
 +
-.Example configuration that changes the number of webhook replicas
+.Example configuration that installs a specific version of the Drain Cleaner and changes the number of replicas
 [source,shell]
 ----
-helm install drain-cleaner --set replicaCount=2 strimzi/strimzi-drain-cleaner
+helm install strimzi-drain-cleaner --set replicaCount=2 --version 0.5.0 oci://quay.io/strimzi-helm/strimzi-drain-cleaner
 ----
 
-. Verify that the Cluster Operator has been deployed successfully:
+. Verify that the Drain Cleaner has been deployed successfully:
 +
 [source,shell]
 ----

@@ -17,19 +17,23 @@ For information on upgrades, see xref:assembly-upgrade-cluster-operator-{context
 .Prerequisites
 
 * The Helm client must be installed on a local machine.
-* Helm must be installed to the Kubernetes cluster.
 
 .Procedure
 
-. Add the Strimzi Helm Chart repository:
+. Install the Strimzi Cluster Operator using the Helm command line tool:
 +
-[source,shell,subs=attributes+]
-helm repo add strimzi {ChartRepositoryUrl}
-
-. Deploy the Cluster Operator using the Helm command line tool:
+[source,shell]
+----
+helm install strimzi-cluster-operator oci://quay.io/strimzi-helm/strimzi-kafka-operator
+----
 +
-[source,shell,subs=attributes+]
-helm install strimzi-operator {ChartReleaseCoordinate}
+Alternatively, you can use parameter values to install a specific version of the Cluster Operator or specify any changes to the default configuration.
++
+.Example configuration that installs a specific version of the Cluster Operator and changes the number of replicas
+[source,shell]
+----
+helm install strimzi-cluster-operator --set replicas=2 --version 0.35.0 oci://quay.io/strimzi-helm/strimzi-kafka-operator
+----
 
 . Verify that the Cluster Operator has been deployed successfully using the Helm command line tool:
 +
