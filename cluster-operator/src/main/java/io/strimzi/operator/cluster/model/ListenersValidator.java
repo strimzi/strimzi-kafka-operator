@@ -35,12 +35,12 @@ public class ListenersValidator {
     /**
      * Validated the listener configuration. If the configuration is not valid, InvalidResourceException will be thrown.
      *
-     * @param reconciliation The reconciliation
-     * @param replicas   Number of replicas (required for Ingress validation)
-     * @param listeners  Listeners which should be validated
+     * @param reconciliation    The reconciliation
+     * @param nodes             Nodes which are part of this Kafka cluster
+     * @param listeners         Listeners which should be validated
      */
-    public static void validate(Reconciliation reconciliation, int replicas, List<GenericKafkaListener> listeners) throws InvalidResourceException {
-        Set<String> errors = validateAndGetErrorMessages(replicas, listeners);
+    public static void validate(Reconciliation reconciliation, Set<NodeRef> nodes, List<GenericKafkaListener> listeners) throws InvalidResourceException {
+        Set<String> errors = validateAndGetErrorMessages(nodes, listeners);
 
         if (!errors.isEmpty())  {
             LOGGER.errorCr(reconciliation, "Listener configuration is not valid: {}", errors);
@@ -48,7 +48,7 @@ public class ListenersValidator {
         }
     }
 
-    /*test*/ static Set<String> validateAndGetErrorMessages(int replicas, List<GenericKafkaListener> listeners)    {
+    /*test*/ static Set<String> validateAndGetErrorMessages(Set<NodeRef> nodes, List<GenericKafkaListener> listeners)    {
         Set<String> errors = new HashSet<>(0);
         List<Integer> ports = getPorts(listeners);
         List<String> names = getNames(listeners);
@@ -106,7 +106,7 @@ public class ListenersValidator {
             }
 
             if (KafkaListenerType.INGRESS.equals(listener.getType()))    {
-                validateIngress(errors, replicas, listener);
+                validateIngress(errors, nodes, listener);
             }
         }
 
@@ -155,10 +155,10 @@ public class ListenersValidator {
      * Validates that Ingress type listener has the right host configurations
      *
      * @param errors    List where any found errors will be added
-     * @param replicas  Number of Kafka replicas
+     * @param nodes     Nodes which are part of this Kafka cluster
      * @param listener  Listener which needs to be validated
      */
-    private static void validateIngress(Set<String> errors, int replicas, GenericKafkaListener listener) {
+    private static void validateIngress(Set<String> errors, Set<NodeRef> nodes, GenericKafkaListener listener) {
         if (listener.getConfiguration() != null)    {
             GenericKafkaListenerConfiguration conf = listener.getConfiguration();
 
@@ -168,12 +168,11 @@ public class ListenersValidator {
             }
 
             if (conf.getBrokers() != null) {
-                for (int i = 0; i < replicas; i++)  {
-                    final int id = i;
-                    GenericKafkaListenerConfigurationBroker broker = conf.getBrokers().stream().filter(b -> b.getBroker() == id).findFirst().orElse(null);
+                for (NodeRef node : nodes)  {
+                    GenericKafkaListenerConfigurationBroker broker = conf.getBrokers().stream().filter(b -> b.getBroker() == node.nodeId()).findFirst().orElse(null);
 
                     if (broker == null || broker.getHost() == null) {
-                        errors.add("listener " + listener.getName() + " is missing a broker host name for broker with ID " + i + " which is required for Ingress based listeners");
+                        errors.add("listener " + listener.getName() + " is missing a broker host name for broker with ID " + node.nodeId() + " which is required for Ingress based listeners");
                     }
                 }
             } else {
