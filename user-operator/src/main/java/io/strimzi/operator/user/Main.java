@@ -136,7 +136,7 @@ public class Main {
      * Creates the Kafka Admin API client
      *
      * @param config                User Operator configuration
-     * @param client                Kubernetes client
+     * @param secretOperator        Secret operator for managing secrets
      * @param adminClientProvider   Admin client provider
      *
      * @return  An instance of the Admin API client
