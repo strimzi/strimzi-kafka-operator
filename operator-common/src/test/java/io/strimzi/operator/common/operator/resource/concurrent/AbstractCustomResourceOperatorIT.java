@@ -24,8 +24,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 
 import java.util.Random;
-import java.util.concurrent.Executor;
-import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
@@ -58,7 +56,6 @@ public abstract class AbstractCustomResourceOperatorIT<
             .withStatus("True")
             .build();
 
-    protected static Executor asyncExecutor = ForkJoinPool.commonPool();
     protected static KubernetesClient client;
 
     protected abstract CrdOperator<C, T, L> operator();
@@ -130,8 +127,6 @@ public abstract class AbstractCustomResourceOperatorIT<
 
     /**
      * Tests what happens when the resource is deleted while updating the status
-     *
-     * @param context   Test context
      */
     @Test
     public void testUpdateStatusAfterResourceDeletedThrowsKubernetesClientException() {
@@ -165,8 +160,6 @@ public abstract class AbstractCustomResourceOperatorIT<
 
     /**
      * Tests what happens when the resource is modified while updating the status
-     *
-     * @param context   Test context
      */
     @Test
     public void testUpdateStatusAfterResourceUpdated() {
