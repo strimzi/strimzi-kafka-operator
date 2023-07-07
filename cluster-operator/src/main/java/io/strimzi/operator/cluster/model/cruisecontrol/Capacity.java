@@ -185,23 +185,23 @@ public class Capacity {
     /**
      * Constructor
      *
-     * @param reconciliation    Reconciliation marker
-     * @param spec              Spec of the Kafka custom resource
-     * @param kafkaNodes                List of the nodes which are part of the Kafka cluster
-     * @param kafkaStorage              A map with storage configuration used by the Kafka cluster and its node pools
-     * @param kafkaResources            A map with resource configuration used by the Kafka cluster and its node pools
+     * @param reconciliation        Reconciliation marker
+     * @param spec                  Spec of the Kafka custom resource
+     * @param kafkaBrokerNodes      List of the broker nodes which are part of the Kafka cluster
+     * @param kafkaStorage          A map with storage configuration used by the Kafka cluster and its node pools
+     * @param kafkaBrokerResources  A map with resource configuration used by the Kafka cluster and its broker pools
      */
     public Capacity(
             Reconciliation reconciliation,
             KafkaSpec spec,
-            Set<NodeRef> kafkaNodes,
+            Set<NodeRef> kafkaBrokerNodes,
             Map<String, Storage> kafkaStorage,
-            Map<String, ResourceRequirements> kafkaResources
+            Map<String, ResourceRequirements> kafkaBrokerResources
     ) {
         this.reconciliation = reconciliation;
         this.capacityEntries = new TreeMap<>();
 
-        processCapacityEntries(spec.getCruiseControl(), kafkaNodes, kafkaStorage, kafkaResources);
+        processCapacityEntries(spec.getCruiseControl(), kafkaBrokerNodes, kafkaStorage, kafkaBrokerResources);
     }
 
     private static Integer getResourceRequirement(ResourceRequirements resources, ResourceRequirementType requirementType) {
@@ -341,16 +341,16 @@ public class Capacity {
         return String.valueOf(StorageUtils.convertTo(size, "Ki"));
     }
 
-    private void processCapacityEntries(CruiseControlSpec spec, Set<NodeRef> kafkaNodes, Map<String, Storage> kafkaStorage, Map<String, ResourceRequirements> kafkaResources) {
+    private void processCapacityEntries(CruiseControlSpec spec, Set<NodeRef> kafkaBrokerNodes, Map<String, Storage> kafkaStorage, Map<String, ResourceRequirements> kafkaBrokerResources) {
         io.strimzi.api.kafka.model.balancing.BrokerCapacity brokerCapacity = spec.getBrokerCapacity();
 
         String inboundNetwork = processInboundNetwork(brokerCapacity, null);
         String outboundNetwork = processOutboundNetwork(brokerCapacity, null);
 
         // We create a capacity for each broker node
-        for (NodeRef node : kafkaNodes)   {
+        for (NodeRef node : kafkaBrokerNodes)   {
             DiskCapacity disk = processDisk(kafkaStorage.get(node.poolName()), node.nodeId());
-            CpuCapacity cpu = processCpu(brokerCapacity, null, getCpuBasedOnRequirements(kafkaResources.get(node.poolName())));
+            CpuCapacity cpu = processCpu(brokerCapacity, null, getCpuBasedOnRequirements(kafkaBrokerResources.get(node.poolName())));
 
             BrokerCapacity broker = new BrokerCapacity(node.nodeId(), cpu, disk, inboundNetwork, outboundNetwork);
             capacityEntries.put(node.nodeId(), broker);

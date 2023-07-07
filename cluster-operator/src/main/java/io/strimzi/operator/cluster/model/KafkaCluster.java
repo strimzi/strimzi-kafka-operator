@@ -1800,8 +1800,9 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
     }
 
     /**
-     * @return A Map with the storage configuration used by the different node pool. the key in the map is the name of
-     *         the node pool and the value is the storage configuration from the custom resource.
+     * @return A Map with the storage configuration used by the different node pools. The key in the map is the name of
+     *         the node pool and the value is the storage configuration from the custom resource. The map includes the
+     *         storage for both broker and controller pools as it is used also for Storage validation.
      */
     public Map<String, Storage> getStorageByPoolName() {
         Map<String, Storage> storage = new HashMap<>();
@@ -1814,17 +1815,20 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
     }
 
     /**
-     * @return A Map with the resources configuration used by the different node pool. the key in the map is the name of
-     *         the node pool and the value is the ResourceRequirements configuration from the custom resource.
+     * @return A Map with the resources configuration used by the different node pool with brokers. the key in the map
+     *         is the name of the node pool and the value is the ResourceRequirements configuration from the custom
+     *         resource. The map includes only pools with broker role. Controller-only node pools are not included.
      */
-    public Map<String, ResourceRequirements> getResourceRequirementsByPoolName() {
-        Map<String, ResourceRequirements> storage = new HashMap<>();
+    public Map<String, ResourceRequirements> getBrokerResourceRequirementsByPoolName() {
+        Map<String, ResourceRequirements> resources = new HashMap<>();
 
         for (KafkaPool pool : nodePools)    {
-            storage.put(pool.poolName, pool.resources);
+            if (pool.isBroker()) {
+                resources.put(pool.poolName, pool.resources);
+            }
         }
 
-        return storage;
+        return resources;
     }
 
     /**

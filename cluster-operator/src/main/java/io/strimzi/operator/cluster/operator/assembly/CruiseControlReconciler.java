@@ -74,9 +74,9 @@ public class CruiseControlReconciler {
      * @param supplier                  Supplier with Kubernetes Resource Operators
      * @param kafkaAssembly             The Kafka custom resource
      * @param versions                  The supported Kafka versions
-     * @param kafkaNodes                List of the nodes which are part of the Kafka cluster
-     * @param kafkaStorage              A map with storage configuration used by the Kafka cluster and its node pools
-     * @param kafkaResources            A map with resource configuration used by the Kafka cluster and its node pools
+     * @param kafkaBrokerNodes          List of the broker nodes which are part of the Kafka cluster
+     * @param kafkaBrokerStorage        A map with storage configuration used by the Kafka cluster and its broker pools
+     * @param kafkaBrokerResources      A map with resource configuration used by the Kafka cluster and its broker pools
      * @param clusterCa                 The Cluster CA instance
      */
     @SuppressWarnings({"checkstyle:ParameterNumber"})
@@ -86,13 +86,13 @@ public class CruiseControlReconciler {
             ResourceOperatorSupplier supplier,
             Kafka kafkaAssembly,
             KafkaVersion.Lookup versions,
-            Set<NodeRef> kafkaNodes,
-            Map<String, Storage> kafkaStorage,
-            Map<String, ResourceRequirements> kafkaResources,
+            Set<NodeRef> kafkaBrokerNodes,
+            Map<String, Storage> kafkaBrokerStorage,
+            Map<String, ResourceRequirements> kafkaBrokerResources,
             ClusterCa clusterCa
     ) {
         this.reconciliation = reconciliation;
-        this.cruiseControl = CruiseControl.fromCrd(reconciliation, kafkaAssembly, versions, kafkaNodes, kafkaStorage, kafkaResources, supplier.sharedEnvironmentProvider);
+        this.cruiseControl = CruiseControl.fromCrd(reconciliation, kafkaAssembly, versions, kafkaBrokerNodes, kafkaBrokerStorage, kafkaBrokerResources, supplier.sharedEnvironmentProvider);
         this.clusterCa = clusterCa;
         this.maintenanceWindows = kafkaAssembly.getSpec().getMaintenanceTimeWindows();
         this.operationTimeoutMs = config.getOperationTimeoutMs();
