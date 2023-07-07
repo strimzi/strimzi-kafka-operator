@@ -32,8 +32,8 @@ import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.Main;
 import io.strimzi.operator.cluster.model.securityprofiles.ContainerSecurityProviderContextImpl;
 import io.strimzi.operator.cluster.model.securityprofiles.PodSecurityProviderContextImpl;
-import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.cluster.operator.resource.SharedEnvironmentProvider;
+import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.Util;
 
 import java.io.BufferedReader;
@@ -85,6 +85,7 @@ public class EntityOperator extends AbstractModel {
     /* test */ String zookeeperConnect;
     private EntityTopicOperator topicOperator;
     private EntityUserOperator userOperator;
+    /* test */  boolean unidirectionalTopicOperator;
     private TlsSidecar tlsSidecar;
     private String tlsSidecarImage;
 
@@ -124,17 +125,37 @@ public class EntityOperator extends AbstractModel {
      * @return Entity Operator instance, null if not configured in the ConfigMap
      */
     public static EntityOperator fromCrd(Reconciliation reconciliation, Kafka kafkaAssembly, KafkaVersion.Lookup versions, SharedEnvironmentProvider sharedEnvironmentProvider) {
+        return fromCrd(reconciliation, kafkaAssembly, versions, sharedEnvironmentProvider, false);
+    }
+    
+    /**
+     * Create an Entity Operator from given desired resource
+     *
+     * @param reconciliation The reconciliation
+     * @param kafkaAssembly desired resource with cluster configuration containing the Entity Operator one
+     * @param versions The versions.
+     * @param sharedEnvironmentProvider     Shared environment provider.
+     * @param unidirectionalTopicOperator Indicates whether the UTO should be used.
+     *
+     * @return Entity Operator instance, null if not configured in the ConfigMap
+     */
+    public static EntityOperator fromCrd(Reconciliation reconciliation,
+                                         Kafka kafkaAssembly,
+                                         KafkaVersion.Lookup versions,
+                                         SharedEnvironmentProvider sharedEnvironmentProvider,
+                                         boolean unidirectionalTopicOperator) {
         EntityOperatorSpec entityOperatorSpec = kafkaAssembly.getSpec().getEntityOperator();
 
         if (entityOperatorSpec != null
                 && (entityOperatorSpec.getUserOperator() != null || entityOperatorSpec.getTopicOperator() != null)) {
             EntityOperator result = new EntityOperator(reconciliation, kafkaAssembly, sharedEnvironmentProvider);
 
-            EntityTopicOperator topicOperator = EntityTopicOperator.fromCrd(reconciliation, kafkaAssembly, sharedEnvironmentProvider);
+            EntityTopicOperator topicOperator = EntityTopicOperator.fromCrd(reconciliation, kafkaAssembly, sharedEnvironmentProvider, unidirectionalTopicOperator);
             EntityUserOperator userOperator = EntityUserOperator.fromCrd(reconciliation, kafkaAssembly, sharedEnvironmentProvider);
 
             result.tlsSidecar = entityOperatorSpec.getTlsSidecar();
             result.topicOperator = topicOperator;
+            result.unidirectionalTopicOperator = unidirectionalTopicOperator;
             result.userOperator = userOperator;
 
             String tlsSideCarImage = entityOperatorSpec.getTlsSidecar() != null ? entityOperatorSpec.getTlsSidecar().getImage() : null;
@@ -227,8 +248,9 @@ public class EntityOperator extends AbstractModel {
             containers.add(userOperator.createContainer(imagePullPolicy));
         }
 
-        // The TLS Sidecar is only used by the Topic Operator. Therefore, when the Topic Operator is disabled, the TLS side should also be disabled.
-        if (topicOperator != null) {
+        // The TLS Sidecar is only used by the Bidirectional Topic Operator.
+        // Therefore, when the Topic Operator is disabled, or we're using the Unidirectional TO, the TLS side should also be disabled.
+        if (topicOperator != null && !this.unidirectionalTopicOperator) {
             String tlsSidecarImage = this.tlsSidecarImage;
             if (tlsSidecar != null && tlsSidecar.getImage() != null) {
                 tlsSidecarImage = tlsSidecar.getImage();
@@ -286,7 +308,9 @@ public class EntityOperator extends AbstractModel {
             volumeList.add(VolumeUtils.createSecretVolume(EUO_CERTS_VOLUME_NAME, KafkaResources.entityUserOperatorSecretName(cluster), isOpenShift));
         }
 
-        volumeList.add(VolumeUtils.createTempDirVolume(TLS_SIDECAR_TMP_DIRECTORY_DEFAULT_VOLUME_NAME, templatePod));
+        if (!unidirectionalTopicOperator) {
+            volumeList.add(VolumeUtils.createTempDirVolume(TLS_SIDECAR_TMP_DIRECTORY_DEFAULT_VOLUME_NAME, templatePod));
+        }
         volumeList.add(VolumeUtils.createSecretVolume(TLS_SIDECAR_CA_CERTS_VOLUME_NAME, AbstractModel.clusterCaCertSecretName(cluster), isOpenShift));
         return volumeList;
     }

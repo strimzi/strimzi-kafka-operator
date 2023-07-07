@@ -21,7 +21,7 @@ import lombok.ToString;
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({ "conditions", "observedGeneration", "topicName" })
-@EqualsAndHashCode
+@EqualsAndHashCode(callSuper = true)
 @ToString(callSuper = true)
 public class KafkaTopicStatus extends Status {
     private static final long serialVersionUID = 1L;
