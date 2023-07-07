@@ -327,7 +327,7 @@ public class KafkaListenersReconciler {
             result.listenerStatuses.add(ls);
 
             // Set advertised hostnames and ports
-            for (NodeRef node : kafka.nodes()) {
+            for (NodeRef node : kafka.brokerNodes()) {
                 String brokerServiceName = ListenersUtils.backwardsCompatiblePerBrokerServiceName(ReconcilerUtils.getControllerNameFromPodName(node.podName()), node.nodeId(), listener);
                 String brokerAddress = getInternalServiceHostname(reconciliation.namespace(), brokerServiceName, useServiceDnsDomain);
                 if (listener.isTls()) {
@@ -391,7 +391,7 @@ public class KafkaListenersReconciler {
             }).compose(res -> {
                 List<Future<Void>> perPodFutures = new ArrayList<>();
 
-                for (NodeRef node : kafka.nodes()) {
+                for (NodeRef node : kafka.brokerNodes()) {
                     perPodFutures.add(
                             serviceOperator.hasIngressAddress(reconciliation, reconciliation.namespace(), ListenersUtils.backwardsCompatiblePerBrokerServiceName(ReconcilerUtils.getControllerNameFromPodName(node.podName()), node.nodeId(), listener), 1_000, operationTimeoutMs)
                     );
@@ -401,7 +401,7 @@ public class KafkaListenersReconciler {
             }).compose(res -> {
                 List<Future<Void>> perPodFutures = new ArrayList<>();
 
-                for (NodeRef node : kafka.nodes()) {
+                for (NodeRef node : kafka.brokerNodes()) {
                     Future<Void> perBrokerFut = serviceOperator.getAsync(reconciliation.namespace(), ListenersUtils.backwardsCompatiblePerBrokerServiceName(ReconcilerUtils.getControllerNameFromPodName(node.podName()), node.nodeId(), listener))
                             .compose(svc -> {
                                 String brokerAddress;
@@ -485,7 +485,7 @@ public class KafkaListenersReconciler {
                     .compose(res -> {
                         List<Future<Void>> perPodFutures = new ArrayList<>();
 
-                        for (NodeRef node : kafka.nodes()) {
+                        for (NodeRef node : kafka.brokerNodes()) {
                             perPodFutures.add(
                                     serviceOperator.hasNodePort(reconciliation, reconciliation.namespace(), ListenersUtils.backwardsCompatiblePerBrokerServiceName(ReconcilerUtils.getControllerNameFromPodName(node.podName()), node.nodeId(), listener), 1_000, operationTimeoutMs)
                             );
@@ -496,7 +496,7 @@ public class KafkaListenersReconciler {
                     .compose(res -> {
                         List<Future<Void>> perPodFutures = new ArrayList<>();
 
-                        for (NodeRef node : kafka.nodes()) {
+                        for (NodeRef node : kafka.brokerNodes()) {
                             Future<Void> perBrokerFut = serviceOperator.getAsync(reconciliation.namespace(), ListenersUtils.backwardsCompatiblePerBrokerServiceName(ReconcilerUtils.getControllerNameFromPodName(node.podName()), node.nodeId(), listener))
                                     .compose(svc -> {
                                         Integer externalBrokerNodePort = svc.getSpec().getPorts().get(0).getNodePort();
@@ -576,7 +576,7 @@ public class KafkaListenersReconciler {
                     .compose(res -> {
                         List<Future<Void>> perPodFutures = new ArrayList<>();
 
-                        for (NodeRef node : kafka.nodes()) {
+                        for (NodeRef node : kafka.brokerNodes()) {
                             perPodFutures.add(
                                     routeOperator.hasAddress(reconciliation, reconciliation.namespace(), ListenersUtils.backwardsCompatiblePerBrokerServiceName(ReconcilerUtils.getControllerNameFromPodName(node.podName()), node.nodeId(), listener), 1_000, operationTimeoutMs)
                             );
@@ -587,7 +587,7 @@ public class KafkaListenersReconciler {
                     .compose(res -> {
                         List<Future<Void>> perPodFutures = new ArrayList<>();
 
-                        for (NodeRef node : kafka.nodes()) {
+                        for (NodeRef node : kafka.brokerNodes()) {
                             //final int finalBrokerId = brokerId;
                             Future<Void> perBrokerFut = routeOperator.getAsync(reconciliation.namespace(), ListenersUtils.backwardsCompatiblePerBrokerServiceName(ReconcilerUtils.getControllerNameFromPodName(node.podName()), node.nodeId(), listener))
                                     .compose(route -> {
@@ -658,7 +658,7 @@ public class KafkaListenersReconciler {
                         // Check if broker ingresses are ready
                         List<Future<Void>> perPodFutures = new ArrayList<>();
 
-                        for (NodeRef node : kafka.nodes()) {
+                        for (NodeRef node : kafka.brokerNodes()) {
                             perPodFutures.add(
                                     ingressOperator.hasIngressAddress(reconciliation, reconciliation.namespace(), ListenersUtils.backwardsCompatiblePerBrokerServiceName(ReconcilerUtils.getControllerNameFromPodName(node.podName()), node.nodeId(), listener), 1_000, operationTimeoutMs)
                             );
@@ -667,7 +667,7 @@ public class KafkaListenersReconciler {
                         return Future.join(perPodFutures);
                     })
                     .compose(res -> {
-                        for (NodeRef node : kafka.nodes()) {
+                        for (NodeRef node : kafka.brokerNodes()) {
                             //final int finalBrokerId = brokerId;
                             String brokerAddress = listener.getConfiguration().getBrokers().stream()
                                     .filter(broker -> broker.getBroker() == node.nodeId())

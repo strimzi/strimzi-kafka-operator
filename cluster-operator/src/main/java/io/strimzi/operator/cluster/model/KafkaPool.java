@@ -54,10 +54,11 @@ public class KafkaPool extends AbstractModel {
     protected Storage storage;
 
     /**
-     * KRaft process roles the nodes in this pool will take. This field is set in the fromCrd method, here it is only
-     * set to null to avoid spotbugs complains.
+     * Process roles the nodes in this pool will take. This field is set in the fromCrd method, here it is only
+     * set to null to avoid spotbugs complains. For KRaft based cluster, the nodes in this pool might be brokers,
+     * controllers or both. For ZooKeeper based clusters, nodes can be only brokers.
      */
-    protected Set<ProcessRoles> kraftRoles = null;
+    protected Set<ProcessRoles> processRoles = null;
 
     /**
      * Warning conditions generated from the Custom Resource
@@ -152,7 +153,7 @@ public class KafkaPool extends AbstractModel {
         result.gcLoggingEnabled = isGcLoggingEnabled(kafka, pool);
         result.jvmOptions = pool.getSpec().getJvmOptions() != null ? pool.getSpec().getJvmOptions() : kafka.getSpec().getKafka().getJvmOptions();
         result.resources = pool.getSpec().getResources() != null ? pool.getSpec().getResources() : kafka.getSpec().getKafka().getResources();
-        result.kraftRoles = new HashSet<>(pool.getSpec().getRoles());
+        result.processRoles = new HashSet<>(pool.getSpec().getRoles());
 
         if (oldStorage != null) {
             Storage newStorage = pool.getSpec().getStorage();
@@ -261,7 +262,7 @@ public class KafkaPool extends AbstractModel {
      * @return  Node reference created based on the node ID
      */
     public NodeRef nodeRef(int nodeId)  {
-        return new NodeRef(componentName + "-" + nodeId, nodeId, poolName, kraftRoles.contains(ProcessRoles.CONTROLLER), kraftRoles.contains(ProcessRoles.BROKER));
+        return new NodeRef(componentName + "-" + nodeId, nodeId, poolName, isController(), isBroker());
     }
 
     /**
@@ -273,6 +274,20 @@ public class KafkaPool extends AbstractModel {
      */
     public boolean containsNodeId(int nodeId) {
         return idAssignment.desired().contains(nodeId);
+    }
+
+    /**
+     * @return  True if this node pool has the broker role assigned. False otherwise.
+     */
+    public boolean isBroker()   {
+        return processRoles.contains(ProcessRoles.BROKER);
+    }
+
+    /**
+     * @return  True if this node pool has the controller role assigned. False otherwise.
+     */
+    public boolean isController()   {
+        return processRoles.contains(ProcessRoles.CONTROLLER);
     }
 
     /**

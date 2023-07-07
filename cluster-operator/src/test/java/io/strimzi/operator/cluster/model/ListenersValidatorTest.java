@@ -44,7 +44,7 @@ public class ListenersValidatorTest {
             new NodeRef("name-kafka-0", 0, "kafka", false, true),
             new NodeRef("name-kafka-1", 1, "kafka", false, true));
     private final static Set<NodeRef> NODE_POOL_NODES = Set.of(
-            new NodeRef("foo-kafka-1000", 1000, "kafka", false, true),
+            new NodeRef("foo-kafka-1000", 1000, "kafka", true, true),
             new NodeRef("bar-kafka-2000", 2000, "kafka", false, true),
             new NodeRef("bar-kafka-2001", 2001, "kafka", false, true));
 
