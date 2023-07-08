@@ -6,8 +6,6 @@ package io.strimzi.operator.cluster.model;
 
 import io.strimzi.api.kafka.model.CertSecretSource;
 import io.strimzi.api.kafka.model.CertSecretSourceBuilder;
-import io.strimzi.api.kafka.model.CruiseControlSpec;
-import io.strimzi.api.kafka.model.CruiseControlSpecBuilder;
 import io.strimzi.api.kafka.model.KafkaAuthorization;
 import io.strimzi.api.kafka.model.KafkaAuthorizationKeycloakBuilder;
 import io.strimzi.api.kafka.model.KafkaAuthorizationOpaBuilder;
@@ -28,6 +26,7 @@ import io.strimzi.api.kafka.model.storage.PersistentClaimStorageBuilder;
 import io.strimzi.api.kafka.model.storage.SingleVolumeStorage;
 import io.strimzi.api.kafka.model.storage.Storage;
 import io.strimzi.kafka.oauth.server.ServerConfig;
+import io.strimzi.operator.cluster.model.cruisecontrol.CruiseControlMetricsReporter;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlConfigurationParameters;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.test.annotations.ParallelSuite;
@@ -124,7 +123,7 @@ public class KafkaBrokerConfigurationBuilderTest {
     @ParallelTest
     public void testNoCruiseControl()  {
         String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, "2")
-                .withCruiseControl("my-cluster", null, "1", "1", "1")
+                .withCruiseControl("my-cluster", null, true)
                 .build();
 
         assertThat(configuration, isEquivalent("broker.id=2",
@@ -133,10 +132,11 @@ public class KafkaBrokerConfigurationBuilderTest {
 
     @ParallelTest
     public void testCruiseControl()  {
-        CruiseControlSpec cruiseControlSpec = new CruiseControlSpecBuilder().build();
+        CruiseControlMetricsReporter ccMetricsReporter = new CruiseControlMetricsReporter("strimzi.cruisecontrol.metrics", 1, 1, 1);
 
+        // Broker configuration
         String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, "2")
-                .withCruiseControl("my-cluster", cruiseControlSpec, "1", "1", "1")
+                .withCruiseControl("my-cluster", ccMetricsReporter, true)
                 .build();
 
         assertThat(configuration, isEquivalent("broker.id=2",
@@ -155,22 +155,27 @@ public class KafkaBrokerConfigurationBuilderTest {
                 CruiseControlConfigurationParameters.METRICS_TOPIC_NUM_PARTITIONS + "=1",
                 CruiseControlConfigurationParameters.METRICS_TOPIC_REPLICATION_FACTOR + "=1",
                 CruiseControlConfigurationParameters.METRICS_TOPIC_MIN_ISR + "=1"));
+
+        // Controller configuration
+        configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, "2")
+                .withCruiseControl("my-cluster", ccMetricsReporter, false)
+                .build();
+
+        assertThat(configuration, isEquivalent("broker.id=2",
+                "node.id=2"));
     }
 
     @ParallelTest
     public void testCruiseControlCustomMetricReporterTopic()  {
-        String metricReporterTopicName = "metric-reporter-topic";
-        Map<String, Object> config = new HashMap<>();
-        config.put(CruiseControlConfigurationParameters.METRIC_REPORTER_TOPIC_NAME.getValue(), metricReporterTopicName);
-        CruiseControlSpec cruiseControlSpec = new CruiseControlSpecBuilder().withConfig(config).build();
+        CruiseControlMetricsReporter ccMetricsReporter = new CruiseControlMetricsReporter("metric-reporter-topic", 2, 3, 4);
 
         String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, "2")
-                .withCruiseControl("my-cluster", cruiseControlSpec, "1", "1", "1")
+                .withCruiseControl("my-cluster", ccMetricsReporter, true)
                 .build();
 
         assertThat(configuration, isEquivalent("broker.id=2",
                 "node.id=2",
-                CruiseControlConfigurationParameters.METRICS_TOPIC_NAME + "=" + metricReporterTopicName,
+                CruiseControlConfigurationParameters.METRICS_TOPIC_NAME + "=metric-reporter-topic",
                 CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_ENDPOINT_ID_ALGO + "=HTTPS",
                 CruiseControlConfigurationParameters.METRICS_REPORTER_BOOTSTRAP_SERVERS + "=my-cluster-kafka-brokers:9091",
                 CruiseControlConfigurationParameters.METRICS_REPORTER_SECURITY_PROTOCOL + "=SSL",
@@ -181,9 +186,9 @@ public class KafkaBrokerConfigurationBuilderTest {
                 CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_TRUSTSTORE_LOCATION + "=/tmp/kafka/cluster.truststore.p12",
                 CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_TRUSTSTORE_PASSWORD + "=${CERTS_STORE_PASSWORD}",
                 CruiseControlConfigurationParameters.METRICS_TOPIC_AUTO_CREATE + "=true",
-                CruiseControlConfigurationParameters.METRICS_TOPIC_NUM_PARTITIONS + "=1",
-                CruiseControlConfigurationParameters.METRICS_TOPIC_REPLICATION_FACTOR + "=1",
-                CruiseControlConfigurationParameters.METRICS_TOPIC_MIN_ISR + "=1"));
+                CruiseControlConfigurationParameters.METRICS_TOPIC_NUM_PARTITIONS + "=2",
+                CruiseControlConfigurationParameters.METRICS_TOPIC_REPLICATION_FACTOR + "=3",
+                CruiseControlConfigurationParameters.METRICS_TOPIC_MIN_ISR + "=4"));
     }
 
     @ParallelTest
@@ -461,11 +466,22 @@ public class KafkaBrokerConfigurationBuilderTest {
     @ParallelTest
     public void testNullUserConfiguration()  {
         String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, "2")
-                .withUserConfiguration(null)
+                .withUserConfiguration(null, false)
                 .build();
 
         assertThat(configuration, isEquivalent("broker.id=2",
                 "node.id=2"));
+    }
+
+    @ParallelTest
+    public void testNullUserConfigurationAndCCReporter()  {
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, "2")
+                .withUserConfiguration(null, true)
+                .build();
+
+        assertThat(configuration, isEquivalent("broker.id=2",
+                "node.id=2",
+                "metric.reporters=com.linkedin.kafka.cruisecontrol.metricsreporter.CruiseControlMetricsReporter"));
     }
 
     @ParallelTest
@@ -474,7 +490,7 @@ public class KafkaBrokerConfigurationBuilderTest {
         KafkaConfiguration kafkaConfiguration = new KafkaConfiguration(Reconciliation.DUMMY_RECONCILIATION, userConfiguration.entrySet());
 
         String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, "2")
-                .withUserConfiguration(kafkaConfiguration)
+                .withUserConfiguration(kafkaConfiguration, false)
                 .build();
 
         assertThat(configuration, isEquivalent("broker.id=2",
@@ -492,15 +508,54 @@ public class KafkaBrokerConfigurationBuilderTest {
         KafkaConfiguration kafkaConfiguration = new KafkaConfiguration(Reconciliation.DUMMY_RECONCILIATION, userConfiguration.entrySet());
 
         String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, "2")
-                .withUserConfiguration(kafkaConfiguration)
+                .withUserConfiguration(kafkaConfiguration, false)
                 .build();
 
         assertThat(configuration, isEquivalent("broker.id=2",
                 "node.id=2",
                 "auto.create.topics.enable=false",
-                                                            "offsets.topic.replication.factor=3",
-                                                            "transaction.state.log.replication.factor=3",
-                                                            "transaction.state.log.min.isr=2"));
+                "offsets.topic.replication.factor=3",
+                "transaction.state.log.replication.factor=3",
+                "transaction.state.log.min.isr=2"));
+    }
+
+    @ParallelTest
+    public void testUserConfigurationWithCCMetricsReporter()  {
+        Map<String, Object> userConfiguration = new HashMap<>();
+        userConfiguration.put("auto.create.topics.enable", "false");
+        userConfiguration.put("offsets.topic.replication.factor", 3);
+        userConfiguration.put("transaction.state.log.replication.factor", 3);
+        userConfiguration.put("transaction.state.log.min.isr", 2);
+
+        KafkaConfiguration kafkaConfiguration = new KafkaConfiguration(Reconciliation.DUMMY_RECONCILIATION, userConfiguration.entrySet());
+
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, "2")
+                .withUserConfiguration(kafkaConfiguration, true)
+                .build();
+
+        assertThat(configuration, isEquivalent("broker.id=2",
+                "node.id=2",
+                "auto.create.topics.enable=false",
+                "offsets.topic.replication.factor=3",
+                "transaction.state.log.replication.factor=3",
+                "transaction.state.log.min.isr=2",
+                "metric.reporters=com.linkedin.kafka.cruisecontrol.metricsreporter.CruiseControlMetricsReporter"));
+    }
+
+    @ParallelTest
+    public void testUserConfigurationWithCCMetricsReporterAndOtherMetricReporters()  {
+        Map<String, Object> userConfiguration = new HashMap<>();
+        userConfiguration.put("metric.reporters", "my.domain.CustomMetricReporter");
+
+        KafkaConfiguration kafkaConfiguration = new KafkaConfiguration(Reconciliation.DUMMY_RECONCILIATION, userConfiguration.entrySet());
+
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, "2")
+                .withUserConfiguration(kafkaConfiguration, true)
+                .build();
+
+        assertThat(configuration, isEquivalent("broker.id=2",
+                "node.id=2",
+                "metric.reporters=my.domain.CustomMetricReporter,com.linkedin.kafka.cruisecontrol.metricsreporter.CruiseControlMetricsReporter"));
     }
 
     @ParallelTest

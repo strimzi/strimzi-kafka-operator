@@ -25,6 +25,16 @@ public abstract class AbstractConfiguration {
     private final OrderedProperties options = new OrderedProperties();
 
     /**
+     * Copy constructor which creates new instance of the Abstract Configuration from existing configuration. It is
+     * useful when you need to modify an instance of the configuration without permanently changing the original.
+     *
+     * @param configuration     Existing configuration
+     */
+    public AbstractConfiguration(AbstractConfiguration configuration)   {
+        options.addMapPairs(configuration.asOrderedProperties().asMap());
+    }
+
+    /**
      * Constructor used to instantiate this class from String configuration. Should be used to create configuration
      * from the Assembly.
      *

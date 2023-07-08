@@ -70,7 +70,6 @@ import static io.strimzi.operator.cluster.model.VolumeUtils.createVolumeMount;
  */
 public class CruiseControl extends AbstractModel implements SupportsMetrics, SupportsLogging {
     protected static final String COMPONENT_TYPE = "cruise-control";
-    protected static final String CRUISE_CONTROL_METRIC_REPORTER = "com.linkedin.kafka.cruisecontrol.metricsreporter.CruiseControlMetricsReporter";
     protected static final String CRUISE_CONTROL_CONTAINER_NAME = "cruise-control";
 
     // Fields used for Cruise Control API authentication
