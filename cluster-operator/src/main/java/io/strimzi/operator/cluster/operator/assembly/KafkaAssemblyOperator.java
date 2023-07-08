@@ -166,7 +166,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         // Validates features which are currently not supported in KRaft mode
         if (featureGates.useKRaftEnabled()) {
             try {
-                KRaftUtils.validateKafkaCrForKRaft(reconcileState.kafkaAssembly.getSpec());
+                KRaftUtils.validateKafkaCrForKRaft(reconcileState.kafkaAssembly.getSpec(), featureGates.unidirectionalTopicOperatorEnabled());
             } catch (InvalidResourceException e)    {
                 return Future.failedFuture(e);
             }
