@@ -370,30 +370,30 @@ public class UserOperatorConfig {
     @Override
     public String toString() {
         return "UserOperatorBuilderConfig{" +
-                "namespace='" + getNamespace() + '\'' +
-                ", reconciliationIntervalMs=" + getReconciliationIntervalMs() +
-                ", kafkaBootstrapServers='" + getKafkaBootstrapServers() + '\'' +
-                ", labels=" + getLabels() +
-                ", caCertSecretName='" + getCaCertSecretName() + '\'' +
-                ", caKeySecretName='" + getCaKeySecretName() + '\'' +
-                ", clusterCaCertSecretName='" + getClusterCaCertSecretName() + '\'' +
-                ", euoKeySecretName='" + getEuoKeySecretName() + '\'' +
-                ", caNamespace='" + getCaNamespaceOrNamespace() + '\'' +
-                ", secretPrefix='" + getSecretPrefix() + '\'' +
-                ", clientsCaValidityDays=" + getClientsCaValidityDays() +
-                ", clientsCaRenewalDays=" + getClientsCaRenewalDays() +
-                ", aclsAdminApiSupported=" + isAclsAdminApiSupported() +
-                ", scramPasswordLength=" + getScramPasswordLength() +
-                ", maintenanceWindows=" + getMaintenanceWindows() +
-                ", kafkaAdminClientConfiguration=" + getKafkaAdminClientConfiguration() +
-                ", operationTimeoutMs=" + getOperationTimeoutMs() +
-                ", workQueueSize=" + getWorkQueueSize() +
-                ", controllerThreadPoolSize=" + getControllerThreadPoolSize() +
-                ", cacheRefresh=" + getCacheRefresh() +
-                ", batchQueueSize=" + getBatchQueueSize() +
-                ", batchMaxBlockSize=" + getBatchMaxBlockSize() +
-                ", batchMaxBlockTime=" + getBatchMaxBlockTime() +
-                ", userOperationsThreadPoolSize=" + getUserOperationsThreadPoolSize() +
+                "\n\tnamespace='" + getNamespace() + '\'' +
+                "\n\treconciliationIntervalMs=" + getReconciliationIntervalMs() +
+                "\n\tkafkaBootstrapServers='" + getKafkaBootstrapServers() + '\'' +
+                "\n\tlabels=`" + getLabels() + '\'' +
+                "\n\tcaCertSecretName='" + getCaCertSecretName() + '\'' +
+                "\n\tcaKeySecretName='" + getCaKeySecretName() + '\'' +
+                "\n\tclusterCaCertSecretName='" + getClusterCaCertSecretName() + '\'' +
+                "\n\teuoKeySecretName='" + getEuoKeySecretName() + '\'' +
+                "\n\tcaNamespace='" + getCaNamespaceOrNamespace() + '\'' +
+                "\n\tsecretPrefix='" + getSecretPrefix() + '\'' +
+                "\n\tclientsCaValidityDays=" + getClientsCaValidityDays() +
+                "\n\tclientsCaRenewalDays=" + getClientsCaRenewalDays() +
+                "\n\taclsAdminApiSupported=" + isAclsAdminApiSupported() +
+                "\n\tscramPasswordLength=" + getScramPasswordLength() +
+                "\n\tmaintenanceWindows=`" + getMaintenanceWindows() + '\'' +
+                "\n\tkafkaAdminClientConfiguration=`" + getKafkaAdminClientConfiguration() + '\'' +
+                "\n\toperationTimeoutMs=" + getOperationTimeoutMs() +
+                "\n\tworkQueueSize=" + getWorkQueueSize() +
+                "\n\tcontrollerThreadPoolSize=" + getControllerThreadPoolSize() +
+                "\n\tcacheRefresh=" + getCacheRefresh() +
+                "\n\tbatchQueueSize=" + getBatchQueueSize() +
+                "\n\tbatchMaxBlockSize=" + getBatchMaxBlockSize() +
+                "\n\tbatchMaxBlockTime=" + getBatchMaxBlockTime() +
+                "\n\tuserOperationsThreadPoolSize=" + getUserOperationsThreadPoolSize() +
                 '}';
     }
 }
