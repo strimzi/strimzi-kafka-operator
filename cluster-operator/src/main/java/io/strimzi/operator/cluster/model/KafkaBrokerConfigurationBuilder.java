@@ -695,10 +695,14 @@ public class KafkaBrokerConfigurationBuilder {
         writer.println("strimzi.authorization.delegate.to.kafka.acl=" + authorization.isDelegateToKafkaAcls());
         addOption(writer, "strimzi.authorization.grants.refresh.period.seconds", authorization.getGrantsRefreshPeriodSeconds());
         addOption(writer, "strimzi.authorization.grants.refresh.pool.size", authorization.getGrantsRefreshPoolSize());
+        addOption(writer, "strimzi.authorization.grants.max.idle.time.seconds", authorization.getGrantsMaxIdleTimeSeconds());
+        addOption(writer, "strimzi.authorization.grants.gc.period.seconds", authorization.getGrantsGcPeriodSeconds());
         addOption(writer, "strimzi.authorization.connect.timeout.seconds", authorization.getConnectTimeoutSeconds());
         addOption(writer, "strimzi.authorization.read.timeout.seconds", authorization.getReadTimeoutSeconds());
         addOption(writer, "strimzi.authorization.http.retries", authorization.getHttpRetries());
-
+        if (authorization.isGrantsAlwaysLatest()) {
+            writer.println("strimzi.authorization.reuse.grants=false");
+        }
         if (authorization.isEnableMetrics()) {
             writer.println("strimzi.authorization.enable.metrics=true");
         }

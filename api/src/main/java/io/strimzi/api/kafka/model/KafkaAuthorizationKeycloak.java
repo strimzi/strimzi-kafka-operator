@@ -25,9 +25,10 @@ import java.util.List;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({"type", "clientId", "tokenEndpointUri",
     "tlsTrustedCertificates", "disableTlsHostnameVerification",
-    "delegateToKafkaAcls", "grantsRefreshPeriodSeconds", "grantsRefreshPoolSize", "superUsers",
+    "delegateToKafkaAcls", "grantsRefreshPeriodSeconds", "grantsRefreshPoolSize",
+    "grantsMaxIdleSeconds", "grantsGcPeriodSeconds", "grantsAlwaysLatest", "superUsers",
     "connectTimeoutSeconds", "readTimeoutSeconds", "httpRetries", "enableMetrics"})
-@EqualsAndHashCode
+@EqualsAndHashCode(callSuper = true)
 public class KafkaAuthorizationKeycloak extends KafkaAuthorization {
     private static final long serialVersionUID = 1L;
 
@@ -42,6 +43,9 @@ public class KafkaAuthorizationKeycloak extends KafkaAuthorization {
     private boolean delegateToKafkaAcls = false;
     private Integer grantsRefreshPeriodSeconds;
     private Integer grantsRefreshPoolSize;
+    private Integer grantsMaxIdleTimeSeconds;
+    private Integer grantsGcPeriodSeconds;
+    private boolean grantsAlwaysLatest = false;
     private Integer connectTimeoutSeconds;
     private Integer readTimeoutSeconds;
     private Integer httpRetries;
@@ -138,6 +142,38 @@ public class KafkaAuthorizationKeycloak extends KafkaAuthorization {
         this.grantsRefreshPoolSize = grantsRefreshPoolSize;
     }
 
+    @Description("The time in seconds after which an idle grant in the cache can be evicted. The fefault value is 300.")
+    @Minimum(1)
+    @JsonProperty(defaultValue = "300")
+    public Integer getGrantsMaxIdleTimeSeconds() {
+        return grantsMaxIdleTimeSeconds;
+    }
+
+    public void setGrantsMaxIdleTimeSeconds(Integer grantsMaxIdleTimeSeconds) {
+        this.grantsMaxIdleTimeSeconds = grantsMaxIdleTimeSeconds;
+    }
+
+    @Description("A period in seconds in which cleaning of stale grants from cache is performed. The default value is 300.")
+    @Minimum(1)
+    @JsonProperty(defaultValue = "300")
+    public Integer getGrantsGcPeriodSeconds() {
+        return grantsGcPeriodSeconds;
+    }
+
+    public void setGrantsGcPeriodSeconds(Integer grantsGcPeriodSeconds) {
+        this.grantsGcPeriodSeconds = grantsGcPeriodSeconds;
+    }
+
+    @Description("Enable or disable fetching the latest grants for a new session. When enabled, grants will be fetched anew from Keycloak and cached for the user. The default value is `false`.")
+    @JsonInclude(JsonInclude.Include.NON_DEFAULT)
+    public boolean isGrantsAlwaysLatest() {
+        return grantsAlwaysLatest;
+    }
+
+    public void setGrantsAlwaysLatest(boolean grantsAlwaysLatest) {
+        this.grantsAlwaysLatest = grantsAlwaysLatest;
+    }
+
     @Description("List of super users. Should contain list of user principals which should get unlimited access rights.")
     @Example("- CN=my-user\n" +
             "- CN=my-other-user")
@@ -183,7 +219,7 @@ public class KafkaAuthorizationKeycloak extends KafkaAuthorization {
         this.httpRetries = httpRetries;
     }
 
-    @Description("Enable or disable OAuth metrics. Default value is `false`.")
+    @Description("Enable or disable OAuth metrics. The default value is `false`.")
     @JsonInclude(JsonInclude.Include.NON_DEFAULT)
     public boolean isEnableMetrics() {
         return enableMetrics;

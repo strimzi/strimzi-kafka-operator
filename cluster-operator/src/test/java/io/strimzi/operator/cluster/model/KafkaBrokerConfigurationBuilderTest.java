@@ -307,6 +307,9 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .withDelegateToKafkaAcls(false)
                 .withGrantsRefreshPeriodSeconds(120)
                 .withGrantsRefreshPoolSize(10)
+                .withGrantsMaxIdleTimeSeconds(600)
+                .withGrantsGcPeriodSeconds(120)
+                .withGrantsAlwaysLatest(true)
                 .withTlsTrustedCertificates(cert)
                 .withDisableTlsHostnameVerification(true)
                 .addToSuperUsers("giada", "CN=paccu")
@@ -333,6 +336,9 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "strimzi.authorization.ssl.endpoint.identification.algorithm=",
                 "strimzi.authorization.grants.refresh.period.seconds=120",
                 "strimzi.authorization.grants.refresh.pool.size=10",
+                "strimzi.authorization.grants.max.idle.time.seconds=600",
+                "strimzi.authorization.grants.gc.period.seconds=120",
+                "strimzi.authorization.reuse.grants=false",
                 "strimzi.authorization.connect.timeout.seconds=30",
                 "strimzi.authorization.read.timeout.seconds=10",
                 "strimzi.authorization.http.retries=2",
