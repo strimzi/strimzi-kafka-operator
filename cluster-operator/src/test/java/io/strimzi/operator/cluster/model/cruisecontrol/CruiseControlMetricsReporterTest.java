@@ -134,6 +134,6 @@ public class CruiseControlMetricsReporterTest {
 
         IllegalArgumentException e = assertThrows(IllegalArgumentException.class, () -> CruiseControlMetricsReporter.fromCrd(KAFKA, new KafkaConfiguration(Reconciliation.DUMMY_RECONCILIATION, userConfiguration.entrySet()), 3));
 
-        assertThat(e.getMessage(), is("The Cruise Control metric topic minISR was set to a value (4) which is higher than the number of replicas for that topic (3). Please ensure that the CC metrics topic minISR is <= to the topic's replication factor."));
+        assertThat(e.getMessage(), is("The Cruise Control metric topic minISR was set to a value (4) which is higher than the number of replicas for that topic (3). Please ensure that the Cruise Control metrics topic minISR is <= to the topic's replication factor."));
     }
 }

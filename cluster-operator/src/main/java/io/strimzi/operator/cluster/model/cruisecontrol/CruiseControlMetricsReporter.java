@@ -16,7 +16,7 @@ import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControl
  * @param topicName             Name of the Metrics Reporter topic
  * @param numPartitions         Number of partitions of the Metrics Reporter topic
  * @param replicationFactor     Replication factor of the Metrics Reporter topic
- * @param minInSyncReplicas     Minimal number of in sync replicas in the of the metrics reporter topic
+ * @param minInSyncReplicas     Minimal number of in sync replicas of the metrics reporter topic
  */
 public record CruiseControlMetricsReporter(String topicName, Integer numPartitions, Integer replicationFactor, Integer minInSyncReplicas) {
     // Configuration field names
@@ -101,7 +101,7 @@ public record CruiseControlMetricsReporter(String topicName, Integer numPartitio
                 throw new IllegalArgumentException(
                         "The Cruise Control metric topic minISR was set to a value (" + userConfiguredMinInSync + ") " +
                                 "which is higher than the number of replicas for that topic (" + configuredCcReplicationFactor + "). " +
-                                "Please ensure that the CC metrics topic minISR is <= to the topic's replication factor."
+                                "Please ensure that the Cruise Control metrics topic minISR is <= to the topic's replication factor."
                 );
             }
         }
