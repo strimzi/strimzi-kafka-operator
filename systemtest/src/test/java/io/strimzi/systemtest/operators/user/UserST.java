@@ -19,7 +19,7 @@ import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
-import io.strimzi.systemtest.annotations.KRaftNotSupported;
+import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.cli.KafkaCmdClient;
@@ -33,6 +33,7 @@ import io.strimzi.systemtest.templates.crd.KafkaUserTemplates;
 import io.strimzi.systemtest.templates.specific.ScraperTemplates;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.StUtils;
+import io.strimzi.systemtest.utils.TestKafkaVersion;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
 import io.strimzi.test.TestUtils;
@@ -57,6 +58,7 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 import static org.valid4j.matchers.jsonpath.JsonPathMatchers.hasJsonPath;
 
 @Tag(REGRESSION)
@@ -149,16 +151,18 @@ class UserST extends AbstractST {
     }
 
     @ParallelTest
-    @KRaftNotSupported("Probably bug in Kafka - https://issues.apache.org/jira/browse/KAFKA-13964 with fix available in kafka 3.5.0")
     void testTlsUserWithQuotas(ExtensionContext extensionContext) {
+        assumeTrue(Environment.isKRaftModeEnabled() && TestKafkaVersion.compareDottedVersions("3.5.0", Environment.ST_KAFKA_VERSION) != 1);
+
         KafkaUser user = KafkaUserTemplates.tlsUser(clusterOperator.getDeploymentNamespace(), userClusterName, "encrypted-arnost").build();
 
         testUserWithQuotas(extensionContext, user);
     }
 
     @ParallelTest
-    @KRaftNotSupported("Probably bug in Kafka - https://issues.apache.org/jira/browse/KAFKA-13964 with fix available in kafka 3.5.0")
     void testTlsExternalUserWithQuotas(ExtensionContext extensionContext) {
+        assumeTrue(Environment.isKRaftModeEnabled() && TestKafkaVersion.compareDottedVersions("3.5.0", Environment.ST_KAFKA_VERSION) != 1);
+
         final String kafkaUserName = mapWithTestUsers.get(extensionContext.getDisplayName());
         final KafkaUser tlsExternalUser = KafkaUserTemplates.tlsExternalUser(clusterOperator.getDeploymentNamespace(), userClusterName, kafkaUserName).build();
 
@@ -403,8 +407,9 @@ class UserST extends AbstractST {
      *  - secrets
      */
     @ParallelTest
-    @KRaftNotSupported("Probably bug in Kafka - https://issues.apache.org/jira/browse/KAFKA-13964 with fix available in kafka 3.5.0")
     void testUOListeningOnlyUsersInSameCluster(ExtensionContext extensionContext) {
+        assumeTrue(Environment.isKRaftModeEnabled() && TestKafkaVersion.compareDottedVersions("3.5.0", Environment.ST_KAFKA_VERSION) != 1);
+
         final TestStorage testStorage = new TestStorage(extensionContext, clusterOperator.getDeploymentNamespace());
         final String userListeningClusterName = "user-listening-cluster";
         final String userIgnoringClusterName = userClusterName; // pre-created shared Kafka will be used as the secondary cluster (its UO ignoring KafkaUser with diff label)
