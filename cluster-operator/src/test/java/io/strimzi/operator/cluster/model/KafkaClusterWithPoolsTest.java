@@ -406,7 +406,7 @@ public class KafkaClusterWithPoolsTest {
         assertThat(storage.get("pool-a"), is(new JbodStorageBuilder().withVolumes(new PersistentClaimStorageBuilder().withId(0).withSize("100Gi").build()).build()));
         assertThat(storage.get("pool-b"), is(new JbodStorageBuilder().withVolumes(new PersistentClaimStorageBuilder().withId(0).withSize("200Gi").build()).build()));
 
-        Map<String, ResourceRequirements> resources = kc.getResourceRequirementsByPoolName();
+        Map<String, ResourceRequirements> resources = kc.getBrokerResourceRequirementsByPoolName();
         assertThat(resources.size(), is(2));
         assertThat(resources.get("pool-a").getRequests(), is(Map.of("cpu", new Quantity("4"), "memory", new Quantity("16Gi"))));
         assertThat(resources.get("pool-b").getRequests(), is(Map.of("cpu", new Quantity("6"), "memory", new Quantity("20Gi"))));

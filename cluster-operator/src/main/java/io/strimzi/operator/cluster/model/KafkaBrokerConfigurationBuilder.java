@@ -6,7 +6,6 @@ package io.strimzi.operator.cluster.model;
 
 import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.strimzi.api.kafka.model.CertAndKeySecretSource;
-import io.strimzi.api.kafka.model.CruiseControlSpec;
 import io.strimzi.api.kafka.model.KafkaAuthorization;
 import io.strimzi.api.kafka.model.KafkaAuthorizationCustom;
 import io.strimzi.api.kafka.model.KafkaAuthorizationKeycloak;
@@ -24,6 +23,7 @@ import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerCon
 import io.strimzi.api.kafka.model.nodepool.ProcessRoles;
 import io.strimzi.kafka.oauth.server.ServerConfig;
 import io.strimzi.kafka.oauth.server.plain.ServerPlainConfig;
+import io.strimzi.operator.cluster.model.cruisecontrol.CruiseControlMetricsReporter;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlConfigurationParameters;
 import io.strimzi.operator.common.Reconciliation;
 
@@ -34,7 +34,6 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
-import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -100,24 +99,17 @@ public class KafkaBrokerConfigurationBuilder {
     /**
      * Configures the Cruise Control metric reporter. It is set only if user enabled the Cruise Control.
      *
-     * @param clusterName Name of the cluster
-     * @param cruiseControl The Cruise Control configuration from the Kafka CR
-     * @param numPartitions The number of partitions specified in the Kafka config
-     * @param replicationFactor The replication factor specified in the Kafka config
-     * @param minInSyncReplicas The minimum number of in-sync replicas that are needed in order for messages to be
-     *                          acknowledged.
+     * @param clusterName           Name of the Kafka cluster used to build the bootstrp address
+     * @param ccMetricsReporter     Cruise Control Metrics Reporter configuration
+     * @param isBroker              Flag indicating if this is broker (or controller)
      *
      * @return Returns the builder instance
      */
-    public KafkaBrokerConfigurationBuilder withCruiseControl(String clusterName, CruiseControlSpec cruiseControl, String numPartitions,
-                                                             String replicationFactor, String minInSyncReplicas)   {
-        if (cruiseControl != null) {
+    public KafkaBrokerConfigurationBuilder withCruiseControl(String clusterName, CruiseControlMetricsReporter ccMetricsReporter, boolean isBroker)   {
+        if (ccMetricsReporter != null && isBroker) {
             printSectionHeader("Cruise Control configuration");
-            String metricsTopicName = Optional.ofNullable(cruiseControl.getConfig())
-                    .map(config -> config.get(CruiseControlConfigurationParameters.METRIC_REPORTER_TOPIC_NAME.getValue()))
-                    .map(Object::toString)
-                    .orElse(CruiseControlConfigurationParameters.DEFAULT_METRIC_REPORTER_TOPIC_NAME);
-            writer.println(CruiseControlConfigurationParameters.METRICS_TOPIC_NAME + "=" + metricsTopicName);
+            writer.println(CruiseControlConfigurationParameters.METRICS_TOPIC_NAME + "=" + ccMetricsReporter.topicName());
+
             writer.println(CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_ENDPOINT_ID_ALGO + "=HTTPS");
             // using the brokers service because the Admin client, in the Cruise Control metrics reporter, is not able to connect
             // to the pods behind the bootstrap one when they are not ready during startup.
@@ -130,20 +122,25 @@ public class KafkaBrokerConfigurationBuilder {
             writer.println(CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_TRUSTSTORE_LOCATION + "=/tmp/kafka/cluster.truststore.p12");
             writer.println(CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_TRUSTSTORE_PASSWORD + "=" + PLACEHOLDER_CERT_STORE_PASSWORD);
             writer.println(CruiseControlConfigurationParameters.METRICS_TOPIC_AUTO_CREATE + "=true");
-            if (numPartitions != null) {
-                writer.println(CruiseControlConfigurationParameters.METRICS_TOPIC_NUM_PARTITIONS + "=" + numPartitions);
+
+            if (ccMetricsReporter.numPartitions() != null) {
+                writer.println(CruiseControlConfigurationParameters.METRICS_TOPIC_NUM_PARTITIONS + "=" + ccMetricsReporter.numPartitions());
             }
-            if (replicationFactor != null) {
-                writer.println(CruiseControlConfigurationParameters.METRICS_TOPIC_REPLICATION_FACTOR + "=" + replicationFactor);
+
+            if (ccMetricsReporter.replicationFactor() != null) {
+                writer.println(CruiseControlConfigurationParameters.METRICS_TOPIC_REPLICATION_FACTOR + "=" + ccMetricsReporter.replicationFactor());
             }
-            if (minInSyncReplicas != null) {
-                writer.println(CruiseControlConfigurationParameters.METRICS_TOPIC_MIN_ISR + "=" + minInSyncReplicas);
+
+            if (ccMetricsReporter.minInSyncReplicas() != null) {
+                writer.println(CruiseControlConfigurationParameters.METRICS_TOPIC_MIN_ISR + "=" + ccMetricsReporter.minInSyncReplicas());
             }
+
             writer.println();
         }
 
         return this;
     }
+
     /**
      * Adds the template for the {@code rack.id}. The rack ID will be set in the container based on the value of the
      * {@code STRIMZI_RACK_ID} env var. It is set only if user enabled the rack awareness-
@@ -737,14 +734,34 @@ public class KafkaBrokerConfigurationBuilder {
     /**
      * Configures the configuration options passed by the user in the Kafka CR.
      *
-     * @param userConfig    The User configuration - Kafka broker configuration options specified by the user in the Kafka custom resource
+     * @param userConfig                The User configuration - Kafka broker configuration options specified by the user in the Kafka custom resource
+     * @param injectCcMetricsReporter   Inject the Cruise Control Metrics Reporter into the configuration
      *
-     * @return  Returns the builder instance
+     * @return Returns the builder instance
      */
-    public KafkaBrokerConfigurationBuilder withUserConfiguration(AbstractConfiguration userConfig)  {
+    public KafkaBrokerConfigurationBuilder withUserConfiguration(KafkaConfiguration userConfig, boolean injectCcMetricsReporter)  {
         if (userConfig != null && !userConfig.getConfiguration().isEmpty()) {
+            if (injectCcMetricsReporter)  {
+                // We have to create a copy of the configuration before we modify it
+                userConfig = new KafkaConfiguration(userConfig);
+
+                // We configure the Cruise Control Metrics Reporter is needed
+                if (userConfig.getConfigOption(CruiseControlMetricsReporter.KAFKA_METRIC_REPORTERS_CONFIG_FIELD) != null) {
+                    if (!userConfig.getConfigOption(CruiseControlMetricsReporter.KAFKA_METRIC_REPORTERS_CONFIG_FIELD).contains(CruiseControlMetricsReporter.CRUISE_CONTROL_METRIC_REPORTER)) {
+                        userConfig.setConfigOption(CruiseControlMetricsReporter.KAFKA_METRIC_REPORTERS_CONFIG_FIELD, userConfig.getConfigOption(CruiseControlMetricsReporter.KAFKA_METRIC_REPORTERS_CONFIG_FIELD) + "," + CruiseControlMetricsReporter.CRUISE_CONTROL_METRIC_REPORTER);
+                    }
+                } else {
+                    userConfig.setConfigOption(CruiseControlMetricsReporter.KAFKA_METRIC_REPORTERS_CONFIG_FIELD, CruiseControlMetricsReporter.CRUISE_CONTROL_METRIC_REPORTER);
+                }
+            }
+
             printSectionHeader("User provided configuration");
             writer.println(userConfig.getConfiguration());
+            writer.println();
+        } else if (injectCcMetricsReporter) {
+            // There is no user provided configuration. But we still need to inject the Cruise Control Metrics Reporter
+            printSectionHeader("Cruise Control Metrics Reporter");
+            writer.println(CruiseControlMetricsReporter.KAFKA_METRIC_REPORTERS_CONFIG_FIELD + "=" + CruiseControlMetricsReporter.CRUISE_CONTROL_METRIC_REPORTER);
             writer.println();
         }
 

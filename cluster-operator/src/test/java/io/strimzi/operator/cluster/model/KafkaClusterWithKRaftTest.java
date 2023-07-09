@@ -367,9 +367,8 @@ public class KafkaClusterWithKRaftTest {
         assertThat(storage.get("controllers"), is(new JbodStorageBuilder().withVolumes(new PersistentClaimStorageBuilder().withId(0).withSize("100Gi").build()).build()));
         assertThat(storage.get("brokers"), is(new JbodStorageBuilder().withVolumes(new PersistentClaimStorageBuilder().withId(0).withSize("100Gi").build()).build()));
 
-        Map<String, ResourceRequirements> resources = kc.getResourceRequirementsByPoolName();
-        assertThat(resources.size(), is(2));
-        assertThat(resources.get("controllers").getRequests(), is(Map.of("cpu", new Quantity("4"), "memory", new Quantity("16Gi"))));
+        Map<String, ResourceRequirements> resources = kc.getBrokerResourceRequirementsByPoolName();
+        assertThat(resources.size(), is(1));
         assertThat(resources.get("brokers").getRequests(), is(Map.of("cpu", new Quantity("4"), "memory", new Quantity("16Gi"))));
     }
 

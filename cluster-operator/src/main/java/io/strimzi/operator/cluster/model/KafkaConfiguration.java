@@ -54,6 +54,16 @@ public class KafkaConfiguration extends AbstractConfiguration {
     }
 
     /**
+     * Copy constructor which creates new instance of the Kafka Configuration from existing configuration. It is
+     * useful when you need to modify an instance of the configuration without permanently changing the original.
+     *
+     * @param configuration     Existing configuration
+     */
+    public KafkaConfiguration(KafkaConfiguration configuration)   {
+        super(configuration);
+    }
+
+    /**
      * Constructor used to instantiate this class from JsonObject. Should be used to create configuration from
      * ConfigMap / CRD.
      *

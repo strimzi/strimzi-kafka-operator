@@ -70,7 +70,6 @@ import static io.strimzi.operator.cluster.model.VolumeUtils.createVolumeMount;
  */
 public class CruiseControl extends AbstractModel implements SupportsMetrics, SupportsLogging {
     protected static final String COMPONENT_TYPE = "cruise-control";
-    protected static final String CRUISE_CONTROL_METRIC_REPORTER = "com.linkedin.kafka.cruisecontrol.metricsreporter.CruiseControlMetricsReporter";
     protected static final String CRUISE_CONTROL_CONTAINER_NAME = "cruise-control";
 
     // Fields used for Cruise Control API authentication
@@ -168,24 +167,24 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
      * Creates an instance of the Cruise Control model from the custom resource. When Cruise Control is not enabled,
      * this will return null.
      *
-     * @param reconciliation    Reconciliation marker used for logging
-     * @param kafkaCr           The Kafka custom resource
-     * @param versions          Supported Kafka versions
-     * @param kafkaNodes                List of the nodes which are part of the Kafka cluster
-     * @param kafkaStorage              A map with storage configuration used by the Kafka cluster and its node pools
-     * @param kafkaResources            A map with resource configuration used by the Kafka cluster and its node pools
-     * @param sharedEnvironmentProvider Shared environment provider
+     * @param reconciliation                Reconciliation marker used for logging
+     * @param kafkaCr                       The Kafka custom resource
+     * @param versions                      Supported Kafka versions
+     * @param kafkaBrokerNodes              List of the broker nodes which are part of the Kafka cluster
+     * @param kafkaStorage                  A map with storage configuration used by the Kafka cluster and its node pools
+     * @param kafkaBrokerResources          A map with resource configuration used by the Kafka cluster and its broker pools
+     * @param sharedEnvironmentProvider     Shared environment provider
      *
-     * @return                  Instance of the Cruise Control model
+     * @return  Instance of the Cruise Control model
      */
     @SuppressWarnings({"checkstyle:NPathComplexity", "checkstyle:CyclomaticComplexity"})
     public static CruiseControl fromCrd(
             Reconciliation reconciliation,
             Kafka kafkaCr,
             KafkaVersion.Lookup versions,
-            Set<NodeRef> kafkaNodes,
+            Set<NodeRef> kafkaBrokerNodes,
             Map<String, Storage> kafkaStorage,
-            Map<String, ResourceRequirements> kafkaResources,
+            Map<String, ResourceRequirements> kafkaBrokerResources,
             SharedEnvironmentProvider sharedEnvironmentProvider
     ) {
         CruiseControlSpec ccSpec = kafkaCr.getSpec().getCruiseControl();
@@ -212,7 +211,7 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
 
             // To avoid illegal storage configurations provided by the user,
             // we rely on the storage configuration provided by the KafkaAssemblyOperator
-            result.capacity = new Capacity(reconciliation, kafkaCr.getSpec(), kafkaNodes, kafkaStorage, kafkaResources);
+            result.capacity = new Capacity(reconciliation, kafkaCr.getSpec(), kafkaBrokerNodes, kafkaStorage, kafkaBrokerResources);
             result.readinessProbeOptions = ProbeUtils.extractReadinessProbeOptionsOrDefault(ccSpec, ProbeUtils.DEFAULT_HEALTHCHECK_OPTIONS);
             result.livenessProbeOptions = ProbeUtils.extractLivenessProbeOptionsOrDefault(ccSpec, ProbeUtils.DEFAULT_HEALTHCHECK_OPTIONS);
             result.gcLoggingEnabled = ccSpec.getJvmOptions() == null ? JvmOptions.DEFAULT_GC_LOGGING_ENABLED : ccSpec.getJvmOptions().isGcLoggingEnabled();

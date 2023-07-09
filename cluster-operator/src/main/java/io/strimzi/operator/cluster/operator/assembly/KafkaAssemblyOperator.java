@@ -211,9 +211,9 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         /* test */ ClientsCa clientsCa;
 
         // Needed by Cruise control to configure the cluster, its nodes and their storage and resource configuration
-        private Set<NodeRef> kafkaNodes;
-        private Map<String, Storage> kafkaStorage;
-        private Map<String, ResourceRequirements> kafkaResources;
+        private Set<NodeRef> kafkaBrokerNodes;
+        private Map<String, Storage> kafkaBrokerStorage;
+        private Map<String, ResourceRequirements> kafkaBrokerResources;
 
         /* test */ KafkaStatus kafkaStatus = new KafkaStatus();
 
@@ -570,9 +570,9 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                         KafkaReconciler reconciler = kafkaReconciler(nodePools, oldStorage, currentPods);
 
                         // We store this for use with Cruise Control later
-                        kafkaNodes = reconciler.kafkaNodes();
-                        kafkaStorage = reconciler.kafkaStorage();
-                        kafkaResources = reconciler.kafkaResourceRequirements();
+                        kafkaBrokerNodes = reconciler.kafkaBrokerNodes();
+                        kafkaBrokerStorage = reconciler.kafkaStorage();
+                        kafkaBrokerResources = reconciler.kafkaBrokerResourceRequirements();
 
                         return Future.succeededFuture(reconciler);
                     });
@@ -657,9 +657,9 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     supplier,
                     kafkaAssembly,
                     versions,
-                    kafkaNodes,
-                    kafkaStorage,
-                    kafkaResources,
+                    kafkaBrokerNodes,
+                    kafkaBrokerStorage,
+                    kafkaBrokerResources,
                     clusterCa
             );
         }

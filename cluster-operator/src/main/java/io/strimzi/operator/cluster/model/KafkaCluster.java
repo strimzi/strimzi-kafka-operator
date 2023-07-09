@@ -40,7 +40,6 @@ import io.fabric8.openshift.api.model.Route;
 import io.fabric8.openshift.api.model.RouteBuilder;
 import io.strimzi.api.kafka.model.CertAndKeySecretSource;
 import io.strimzi.api.kafka.model.CruiseControlResources;
-import io.strimzi.api.kafka.model.CruiseControlSpec;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaAuthorization;
 import io.strimzi.api.kafka.model.KafkaAuthorizationKeycloak;
@@ -66,6 +65,7 @@ import io.strimzi.api.kafka.model.template.PodTemplate;
 import io.strimzi.api.kafka.model.template.ResourceTemplate;
 import io.strimzi.certs.CertAndKey;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
+import io.strimzi.operator.cluster.model.cruisecontrol.CruiseControlMetricsReporter;
 import io.strimzi.operator.cluster.model.jmx.JmxModel;
 import io.strimzi.operator.cluster.model.jmx.SupportsJmx;
 import io.strimzi.operator.cluster.model.logging.LoggingModel;
@@ -75,11 +75,10 @@ import io.strimzi.operator.cluster.model.metrics.SupportsMetrics;
 import io.strimzi.operator.cluster.model.securityprofiles.ContainerSecurityProviderContextImpl;
 import io.strimzi.operator.cluster.model.securityprofiles.PodSecurityProviderContextImpl;
 import io.strimzi.operator.cluster.operator.resource.KafkaSpecChecker;
-import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlConfigurationParameters;
+import io.strimzi.operator.cluster.operator.resource.SharedEnvironmentProvider;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.MetricsAndLogging;
 import io.strimzi.operator.common.Reconciliation;
-import io.strimzi.operator.cluster.operator.resource.SharedEnvironmentProvider;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
 import io.vertx.core.json.JsonArray;
@@ -89,7 +88,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -97,10 +95,8 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import static io.strimzi.operator.cluster.model.CruiseControl.CRUISE_CONTROL_METRIC_REPORTER;
 import static io.strimzi.operator.cluster.model.ListenersUtils.isListenerWithCustomAuth;
 import static io.strimzi.operator.cluster.model.ListenersUtils.isListenerWithOAuth;
-import static java.util.Collections.addAll;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonMap;
 
@@ -153,10 +149,6 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
     private static final String LOG_AND_METRICS_CONFIG_VOLUME_NAME = "kafka-metrics-and-logging";
     private static final String LOG_AND_METRICS_CONFIG_VOLUME_MOUNT = "/opt/kafka/custom-config/";
 
-    private static final String KAFKA_METRIC_REPORTERS_CONFIG_FIELD = "metric.reporters";
-    private static final String KAFKA_NUM_PARTITIONS_CONFIG_FIELD = "num.partitions";
-    private static final String KAFKA_REPLICATION_FACTOR_CONFIG_FIELD = "default.replication.factor";
-
     protected static final String CO_ENV_VAR_CUSTOM_KAFKA_POD_LABELS = "STRIMZI_CUSTOM_KAFKA_LABELS";
 
     /**
@@ -204,23 +196,16 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
      */
     public static final String BROKER_LISTENERS_FILENAME = "listeners.config";
 
-    // Cruise Control defaults
-    private static final String CRUISE_CONTROL_DEFAULT_NUM_PARTITIONS = "1";
-    private static final String CRUISE_CONTROL_DEFAULT_REPLICATION_FACTOR = "1";
-
     // Kafka configuration
     private Rack rack;
     private String initImage;
     private List<GenericKafkaListener> listeners;
     private KafkaAuthorization authorization;
     private KafkaVersion kafkaVersion;
-    private CruiseControlSpec cruiseControlSpec;
-    private String ccNumPartitions = null;
-    private String ccReplicationFactor = null;
-    private String ccMinInSyncReplicas = null;
     private boolean useKRaft = false;
     private String clusterId;
     private JmxModel jmx;
+    private CruiseControlMetricsReporter ccMetricsReporter;
     private MetricsModel metrics;
     private LoggingModel logging;
     /* test */ KafkaConfiguration configuration;
@@ -323,9 +308,10 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
 
         // Handle Kafka broker configuration
         KafkaConfiguration configuration = new KafkaConfiguration(reconciliation, kafkaClusterSpec.getConfig().entrySet());
-        configureCruiseControlMetrics(kafka, result, numberOfBrokers, configuration);
         validateConfiguration(reconciliation, kafka, result.kafkaVersion, configuration);
         result.configuration = configuration;
+
+        result.ccMetricsReporter = CruiseControlMetricsReporter.fromCrd(kafka, configuration, numberOfBrokers);
 
         // Configure listeners
         if (kafkaClusterSpec.getListeners() == null || kafkaClusterSpec.getListeners().isEmpty()) {
@@ -451,63 +437,6 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
         }
 
         throw new RuntimeException("Node ID " + nodeId + " does not belong to any known node pool!");
-    }
-
-    /**
-     * Depending on the Cruise Control configuration, it enhances the Kafka configuration to enable the Cruise Control
-     * metric reporter and the configuration of its topics.
-     *
-     * @param kafkaAssembly     Kafka custom resource
-     * @param kafkaCluster      KafkaCluster instance
-     * @param numberOfBrokers   Number of broker nodes in the Kafka cluster
-     * @param configuration     Kafka broker configuration
-     */
-    private static void configureCruiseControlMetrics(Kafka kafkaAssembly, KafkaCluster kafkaCluster, long numberOfBrokers, KafkaConfiguration configuration) {
-        // If required Cruise Control metric reporter configurations are missing set them using Kafka defaults
-        if (configuration.getConfigOption(CruiseControlConfigurationParameters.METRICS_TOPIC_NUM_PARTITIONS.getValue()) == null) {
-            kafkaCluster.ccNumPartitions = configuration.getConfigOption(KAFKA_NUM_PARTITIONS_CONFIG_FIELD, CRUISE_CONTROL_DEFAULT_NUM_PARTITIONS);
-        }
-        if (configuration.getConfigOption(CruiseControlConfigurationParameters.METRICS_TOPIC_REPLICATION_FACTOR.getValue()) == null) {
-            kafkaCluster.ccReplicationFactor = configuration.getConfigOption(KAFKA_REPLICATION_FACTOR_CONFIG_FIELD, CRUISE_CONTROL_DEFAULT_REPLICATION_FACTOR);
-        }
-        if (configuration.getConfigOption(CruiseControlConfigurationParameters.METRICS_TOPIC_MIN_ISR.getValue()) == null) {
-            kafkaCluster.ccMinInSyncReplicas = "1";
-        } else {
-            // If the user has set the CC minISR, but it is higher than the set number of replicas for the metrics topics then we need to abort and make
-            // sure that the user sets minISR <= replicationFactor
-            int userConfiguredMinInsync = Integer.parseInt(configuration.getConfigOption(CruiseControlConfigurationParameters.METRICS_TOPIC_MIN_ISR.getValue()));
-            int configuredCcReplicationFactor = Integer.parseInt(kafkaCluster.ccReplicationFactor != null ? kafkaCluster.ccReplicationFactor : configuration.getConfigOption(CruiseControlConfigurationParameters.METRICS_TOPIC_REPLICATION_FACTOR.getValue()));
-            if (userConfiguredMinInsync > configuredCcReplicationFactor) {
-                throw new IllegalArgumentException(
-                        "The Cruise Control metric topic minISR was set to a value (" + userConfiguredMinInsync + ") " +
-                                "which is higher than the number of replicas for that topic (" + configuredCcReplicationFactor + "). " +
-                                "Please ensure that the CC metrics topic minISR is <= to the topic's replication factor."
-                );
-            }
-        }
-        String metricReporters = configuration.getConfigOption(KAFKA_METRIC_REPORTERS_CONFIG_FIELD);
-        Set<String> metricReporterList = new HashSet<>();
-        if (metricReporters != null) {
-            addAll(metricReporterList, configuration.getConfigOption(KAFKA_METRIC_REPORTERS_CONFIG_FIELD).split(","));
-        }
-
-        if (kafkaAssembly.getSpec().getCruiseControl() != null
-                && numberOfBrokers < 2) {
-            throw new InvalidResourceException("Kafka " +
-                    kafkaAssembly.getMetadata().getNamespace() + "/" + kafkaAssembly.getMetadata().getName() +
-                    " has invalid configuration. Cruise Control cannot be deployed with a Kafka cluster which has only one broker. It requires at least two Kafka brokers.");
-        }
-        kafkaCluster.cruiseControlSpec = kafkaAssembly.getSpec().getCruiseControl();
-        if (kafkaCluster.cruiseControlSpec != null) {
-            metricReporterList.add(CRUISE_CONTROL_METRIC_REPORTER);
-        } else {
-            metricReporterList.remove(CRUISE_CONTROL_METRIC_REPORTER);
-        }
-        if (!metricReporterList.isEmpty()) {
-            configuration.setConfigOption(KAFKA_METRIC_REPORTERS_CONFIG_FIELD, String.join(",", metricReporterList));
-        } else {
-            configuration.removeConfigOption(KAFKA_METRIC_REPORTERS_CONFIG_FIELD);
-        }
     }
 
     /**
@@ -1680,8 +1609,8 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
                             listenerId -> advertisedPorts.get(node.nodeId()).get(listenerId),
                             true)
                     .withAuthorization(cluster, authorization, true)
-                    .withCruiseControl(cluster, cruiseControlSpec, ccNumPartitions, ccReplicationFactor, ccMinInSyncReplicas)
-                    .withUserConfiguration(configuration)
+                    .withCruiseControl(cluster, ccMetricsReporter, node.broker())
+                    .withUserConfiguration(configuration, node.broker() && ccMetricsReporter != null)
                     .build().trim();
         } else {
             return new KafkaBrokerConfigurationBuilder(reconciliation, String.valueOf(node.nodeId()))
@@ -1696,8 +1625,8 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
                             listenerId -> advertisedPorts.get(node.nodeId()).get(listenerId),
                             false)
                     .withAuthorization(cluster, authorization, false)
-                    .withCruiseControl(cluster, cruiseControlSpec, ccNumPartitions, ccReplicationFactor, ccMinInSyncReplicas)
-                    .withUserConfiguration(configuration)
+                    .withCruiseControl(cluster, ccMetricsReporter, node.broker())
+                    .withUserConfiguration(configuration, node.broker() && ccMetricsReporter != null)
                     .build().trim();
         }
     }
@@ -1800,8 +1729,9 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
     }
 
     /**
-     * @return A Map with the storage configuration used by the different node pool. the key in the map is the name of
-     *         the node pool and the value is the storage configuration from the custom resource.
+     * @return A Map with the storage configuration used by the different node pools. The key in the map is the name of
+     *         the node pool and the value is the storage configuration from the custom resource. The map includes the
+     *         storage for both broker and controller pools as it is used also for Storage validation.
      */
     public Map<String, Storage> getStorageByPoolName() {
         Map<String, Storage> storage = new HashMap<>();
@@ -1814,17 +1744,20 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
     }
 
     /**
-     * @return A Map with the resources configuration used by the different node pool. the key in the map is the name of
-     *         the node pool and the value is the ResourceRequirements configuration from the custom resource.
+     * @return A Map with the resources configuration used by the different node pool with brokers. the key in the map
+     *         is the name of the node pool and the value is the ResourceRequirements configuration from the custom
+     *         resource. The map includes only pools with broker role. Controller-only node pools are not included.
      */
-    public Map<String, ResourceRequirements> getResourceRequirementsByPoolName() {
-        Map<String, ResourceRequirements> storage = new HashMap<>();
+    public Map<String, ResourceRequirements> getBrokerResourceRequirementsByPoolName() {
+        Map<String, ResourceRequirements> resources = new HashMap<>();
 
         for (KafkaPool pool : nodePools)    {
-            storage.put(pool.poolName, pool.resources);
+            if (pool.isBroker()) {
+                resources.put(pool.poolName, pool.resources);
+            }
         }
 
-        return storage;
+        return resources;
     }
 
     /**

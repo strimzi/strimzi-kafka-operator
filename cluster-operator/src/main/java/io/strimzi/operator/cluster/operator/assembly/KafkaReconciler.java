@@ -1047,7 +1047,7 @@ public class KafkaReconciler {
     }
 
     /**
-     * This is used to get the Storage configuration used by the Kafka brokers. The storage configuration is needed by
+     * This is used to get the Storage configuration used by the Kafka nodes. The storage configuration is needed by
      * Cruise Control. But collecting it directly in Cruise Control from the custom resources would be complicated as
      * it would need to figure out the node pools and the node IDs belonging to them. In addition, the storage
      * configuration might change (in case of un-allowed changes), but due to the possibility of illegal storage changes
@@ -1062,21 +1062,23 @@ public class KafkaReconciler {
     /**
      * This is used to get the resource configuration used by the Kafka brokers. The resource configuration is needed by
      * Cruise Control. But collecting it directly in Cruise Control from the custom resources would be complicated as
-     * it would need to figure out the node pools and the node IDs belonging to them.
+     * it would need to figure out the node pools and the node IDs belonging to them. This includes only the broker
+     * nodes. Controller nodes are not included in this map.
      *
      * @return  Map with the pool names as the keys and resource requirements for given pools as the values
      */
-    public Map<String, ResourceRequirements> kafkaResourceRequirements()   {
-        return kafka.getResourceRequirementsByPoolName();
+    public Map<String, ResourceRequirements> kafkaBrokerResourceRequirements()   {
+        return kafka.getBrokerResourceRequirementsByPoolName();
     }
 
     /**
-     * This returns the list of Kafka nodes which will be later used for Cruise Control configuration so that Cruise
-     * Control does not need to collect it itself from the different custom resources.
+     * This returns the list of Kafka brokers which will be later used for Cruise Control configuration so that Cruise
+     * Control does not need to collect it itself from the different custom resources. This includes only the broker
+     * nodes. Controller nodes are not included in this set.
      *
      * @return  Set with node references for the Kafka nodes
      */
-    public Set<NodeRef> kafkaNodes()   {
-        return kafka.nodes();
+    public Set<NodeRef> kafkaBrokerNodes()   {
+        return kafka.brokerNodes();
     }
 }
