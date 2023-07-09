@@ -1136,7 +1136,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
      *
      * @return  List of PVCs
      */
-    public List<PersistentVolumeClaim> generatePersistentVolumeClaimsForPool(KafkaPool pool, Storage storage)  {
+    private List<PersistentVolumeClaim> generatePersistentVolumeClaimsForPool(KafkaPool pool, Storage storage)  {
         return PersistentVolumeClaimUtils
                 .createPersistentVolumeClaims(
                         namespace,
@@ -1530,7 +1530,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
      *
      * @return true when the Kafka cluster is exposed to the outside using NodePort.
      */
-    public boolean isExposedWithNodePort() {
+    private boolean isExposedWithNodePort() {
         return ListenersUtils.hasNodePortListener(listeners);
     }
 
@@ -1539,7 +1539,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
      *
      * @return true when the Kafka cluster is exposed using Kubernetes Ingress.
      */
-    public boolean isExposedWithIngress() {
+    /* test */ boolean isExposedWithIngress() {
         return ListenersUtils.hasIngressListener(listeners);
     }
 
@@ -1548,7 +1548,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
      *
      * @return true when the Kafka cluster is exposed using Kubernetes Ingress with TCP mode.
      */
-    public boolean isExposedWithClusterIP() {
+    /* test */ boolean isExposedWithClusterIP() {
         return ListenersUtils.hasClusterIPListener(listeners);
     }
 
