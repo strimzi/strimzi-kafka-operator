@@ -388,7 +388,7 @@ public class ClusterOperatorConfig {
 
     static ConfigParameterParser<FeatureGates> parseFeatureGates() {
         return FeatureGates::new;
-    };
+    }
 
     static ConfigParameterParser<ImagePullPolicy> parseImagePullPolicy() {
         return imagePullPolicyEnvVar -> {
@@ -423,7 +423,7 @@ public class ClusterOperatorConfig {
         KafkaVersion.Lookup versions;
 
         /**
-         * Cosntructor
+         * Constructor
          *
          * @param config Existing ClusterOperatorConfig object
          * @param lookup Configured version
@@ -437,7 +437,7 @@ public class ClusterOperatorConfig {
          * Adds/updates the configuration parameter to the existing ClusterOperatorConfig object
          *
          * @param key     Configuration name
-         * @param value   Configuartion value
+         * @param value   Configuration value
          * @return ClusterOperatorConfigBuilder object
          */
         public ClusterOperatorConfigBuilder with(String key, String value) {
@@ -506,7 +506,7 @@ public class ClusterOperatorConfig {
     }
 
     /**
-     * @return  Supported Kafka versions and informations about them
+     * @return  Supported Kafka versions and information about them
      */
     public KafkaVersion.Lookup versions() {
         return versions;
@@ -609,27 +609,27 @@ public class ClusterOperatorConfig {
 
     @Override
     public String toString() {
-        return "ClusterOperatorConfig(" +
-                "namespaces=" + getNamespaces() +
-                ",reconciliationIntervalMs=" + getReconciliationIntervalMs() +
-                ",operationTimeoutMs=" + getOperationTimeoutMs() +
-                ",connectBuildTimeoutMs=" + getConnectBuildTimeoutMs() +
-                ",createClusterRoles=" + isCreateClusterRoles() +
-                ",networkPolicyGeneration=" + isNetworkPolicyGeneration() +
-                ",versions=" + versions() +
-                ",imagePullPolicy=" + getImagePullPolicy() +
-                ",imagePullSecrets=" + getImagePullSecrets() +
-                ",operatorNamespace=" + getOperatorNamespace() +
-                ",operatorNamespaceLabels=" + getOperatorNamespaceLabels() +
-                ",customResourceSelector=" + getCustomResourceSelector() +
-                ",featureGates=" + featureGates() +
-                ",zkAdminSessionTimeoutMs=" + getZkAdminSessionTimeoutMs() +
-                ",dnsCacheTtlSec=" + getDnsCacheTtlSec() +
-                ",podSetReconciliationOnly=" + isPodSetReconciliationOnly() +
-                ",podSetControllerWorkQueueSize=" + getPodSetControllerWorkQueueSize() +
-                ",operatorName=" + getOperatorName() +
-                ",podSecurityProviderClass=" + getPodSecurityProviderClass() +
-                ",leaderElectionConfig=" + getLeaderElectionConfig() +
-                ")";
+        return "ClusterOperatorConfig{" +
+                "\n\tnamespaces='" + getNamespaces() + '\'' +
+                "\n\treconciliationIntervalMs=" + getReconciliationIntervalMs() +
+                "\n\toperationTimeoutMs=" + getOperationTimeoutMs() +
+                "\n\tconnectBuildTimeoutMs=" + getConnectBuildTimeoutMs() +
+                "\n\tcreateClusterRoles=" + isCreateClusterRoles() +
+                "\n\tnetworkPolicyGeneration=" + isNetworkPolicyGeneration() +
+                "\n\tversions='" + versions() + '\'' +
+                "\n\timagePullPolicy='" + getImagePullPolicy() + '\'' +
+                "\n\timagePullSecrets='" + getImagePullSecrets() + '\'' +
+                "\n\toperatorNamespace='" + getOperatorNamespace() + '\'' +
+                "\n\toperatorNamespaceLabels='" + getOperatorNamespaceLabels() + '\'' +
+                "\n\tcustomResourceSelector='" + getCustomResourceSelector() + '\'' +
+                "\n\tfeatureGates='" + featureGates() + '\'' +
+                "\n\tzkAdminSessionTimeoutMs=" + getZkAdminSessionTimeoutMs() +
+                "\n\tdnsCacheTtlSec=" + getDnsCacheTtlSec() +
+                "\n\tpodSetReconciliationOnly=" + isPodSetReconciliationOnly() +
+                "\n\tpodSetControllerWorkQueueSize=" + getPodSetControllerWorkQueueSize() +
+                "\n\toperatorName='" + getOperatorName() + '\'' +
+                "\n\tpodSecurityProviderClass='" + getPodSecurityProviderClass() + '\'' +
+                "\n\tleaderElectionConfig='" + getLeaderElectionConfig() + '\'' +
+                "}";
     }
 }
