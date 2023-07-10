@@ -9,7 +9,6 @@ import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import io.kroxylicious.testing.kafka.api.KafkaCluster;
 import io.kroxylicious.testing.kafka.common.BrokerCluster;
 import io.kroxylicious.testing.kafka.junit5ext.KafkaClusterExtension;
-import io.kroxylicious.testing.kafka.testcontainers.TestcontainersKafkaCluster;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaTopicBuilder;
@@ -200,7 +199,7 @@ class BatchingTopicControllerTest {
     @Test
     public void shouldHandleInterruptedExceptionFromListReassignments(
             @BrokerCluster(numBrokers = 2)
-            TestcontainersKafkaCluster cluster) throws ExecutionException, InterruptedException {
+            KafkaCluster cluster) throws ExecutionException, InterruptedException {
         admin[0] = Admin.create(Map.of(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, cluster.getBootstrapServers()));
         admin[0].createTopics(List.of(new NewTopic(NAME, 2, (short) 2))).all().get();
 

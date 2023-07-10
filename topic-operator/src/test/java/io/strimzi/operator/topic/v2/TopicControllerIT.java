@@ -11,7 +11,6 @@ import io.kroxylicious.testing.kafka.api.KafkaCluster;
 import io.kroxylicious.testing.kafka.common.BrokerCluster;
 import io.kroxylicious.testing.kafka.common.BrokerConfig;
 import io.kroxylicious.testing.kafka.junit5ext.KafkaClusterExtension;
-import io.kroxylicious.testing.kafka.testcontainers.TestcontainersKafkaCluster;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaTopicBuilder;
@@ -1451,7 +1450,7 @@ class TopicControllerIT {
     public void shouldAccountForReassigningPartitionsNoRfChange(
             @BrokerCluster(numBrokers = 3)
             @BrokerConfig(name = "auto.create.topics.enable", value = "false")
-            TestcontainersKafkaCluster kafkaCluster,
+            KafkaCluster kafkaCluster,
             Producer<String, String> producer)
             throws ExecutionException, InterruptedException, TimeoutException {
         var kt = kafkaTopic("ns", "foo", true, "foo", 1, 1);
@@ -1469,7 +1468,7 @@ class TopicControllerIT {
     public void shouldAccountForReassigningPartitionsIncreasingRf(
             @BrokerCluster(numBrokers = 3)
             @BrokerConfig(name = "auto.create.topics.enable", value = "false")
-            TestcontainersKafkaCluster kafkaCluster,
+            KafkaCluster kafkaCluster,
             Producer<String, String> producer)
             throws ExecutionException, InterruptedException, TimeoutException {
         var kt = kafkaTopic("ns", "foo", true, "foo", 1, 1);
@@ -1489,7 +1488,7 @@ class TopicControllerIT {
     public void shouldAccountForReassigningPartitionsDecreasingRf(
             @BrokerCluster(numBrokers = 3)
             @BrokerConfig(name = "auto.create.topics.enable", value = "false")
-            TestcontainersKafkaCluster kafkaCluster,
+            KafkaCluster kafkaCluster,
             Producer<String, String> producer)
             throws ExecutionException, InterruptedException, TimeoutException {
         var kt = kafkaTopic("ns", "foo", true, "foo", 1, 2);
@@ -1505,7 +1504,7 @@ class TopicControllerIT {
     private void accountForReassigningPartitions(
             @BrokerCluster(numBrokers = 3)
             @BrokerConfig(name = "auto.create.topics.enable", value = "false")
-            TestcontainersKafkaCluster kafkaCluster,
+            KafkaCluster kafkaCluster,
             Producer<String, String> producer,
             KafkaTopic kt,
             Function<List<Integer>, List<Integer>> newReplicasFn,
