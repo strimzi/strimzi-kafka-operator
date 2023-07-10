@@ -11,7 +11,7 @@ import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBui
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
-import io.strimzi.systemtest.annotations.KRaftNotSupported;
+import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 import io.strimzi.systemtest.storage.TestStorage;
@@ -29,6 +29,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import static io.strimzi.systemtest.Constants.KAFKA_SMOKE;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 @Tag(KAFKA_SMOKE)
 public class KafkaVersionsST extends AbstractST {
@@ -48,8 +49,10 @@ public class KafkaVersionsST extends AbstractST {
      */
     @ParameterizedTest(name = "Kafka version: {0}.version()")
     @MethodSource("io.strimzi.systemtest.utils.TestKafkaVersion#getSupportedKafkaVersions")
-    @KRaftNotSupported("Kafka 3.4.0 and 3.4.1 does not support SCRAM-SHA authentication. This test should be enabled once we support only Kafka 3.5.0 and newer.")
     void testKafkaWithVersion(final TestKafkaVersion testKafkaVersion, ExtensionContext extensionContext) {
+        // skip test if KRaft mode is enabled and Kafka version is lower than 3.5.0 - https://github.com/strimzi/strimzi-kafka-operator/issues/8806
+        assumeTrue(Environment.isKRaftModeEnabled() && TestKafkaVersion.compareDottedVersions("3.5.0", testKafkaVersion.version()) != 1);
+
         final TestStorage testStorage = new TestStorage(extensionContext);
 
         final String kafkaUserRead = testStorage.getUsername() + "-read";
@@ -66,6 +69,7 @@ public class KafkaVersionsST extends AbstractST {
             .editOrNewSpec()
                 .editOrNewKafka()
                     .withVersion(testKafkaVersion.version())
+                    .addToConfig("auto.create.topics.enable", "true")
                     .addToConfig("inter.broker.protocol.version", testKafkaVersion.protocolVersion())
                     .addToConfig("log.message.format.version", testKafkaVersion.messageVersion())
                     .withNewKafkaAuthorizationSimple()
@@ -100,7 +104,8 @@ public class KafkaVersionsST extends AbstractST {
                         .withNewAclRuleTopicResource()
                             .withName(testStorage.getTopicName())
                         .endAclRuleTopicResource()
-                        .withOperations(AclOperation.WRITE, AclOperation.DESCRIBE)
+                        // we need CREATE for topic creation in Kafka (auto.create.topics.enable - true)
+                        .withOperations(AclOperation.WRITE, AclOperation.DESCRIBE, AclOperation.CREATE)
                     .endAcl()
                 .endKafkaUserAuthorizationSimple()
             .endSpec()
