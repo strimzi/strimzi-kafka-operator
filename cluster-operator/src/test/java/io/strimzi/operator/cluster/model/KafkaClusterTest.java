@@ -2348,7 +2348,7 @@ public class KafkaClusterTest {
                 "foo-kafka-1.crt", "foo-kafka-1.key", "foo-kafka-1.p12", "foo-kafka-1.password",
                 "foo-kafka-2.crt", "foo-kafka-2.key", "foo-kafka-2.p12", "foo-kafka-2.password")));
         X509Certificate cert = Ca.cert(secret, "foo-kafka-0.crt");
-        assertThat(cert.getSubjectDN().getName(), is("CN=foo-kafka, O=io.strimzi"));
+        assertThat(cert.getSubjectX500Principal().getName(), is("CN=foo-kafka,O=io.strimzi"));
         assertThat(new HashSet<Object>(cert.getSubjectAlternativeNames()), is(set(
                 asList(2, "foo-kafka-0.foo-kafka-brokers.test.svc.cluster.local"),
                 asList(2, "foo-kafka-0.foo-kafka-brokers.test.svc"),
@@ -2375,7 +2375,7 @@ public class KafkaClusterTest {
                 "foo-kafka-1.crt", "foo-kafka-1.key", "foo-kafka-1.p12", "foo-kafka-1.password",
                 "foo-kafka-2.crt", "foo-kafka-2.key", "foo-kafka-2.p12", "foo-kafka-2.password")));
         X509Certificate cert = Ca.cert(secret, "foo-kafka-0.crt");
-        assertThat(cert.getSubjectDN().getName(), is("CN=foo-kafka, O=io.strimzi"));
+        assertThat(cert.getSubjectX500Principal().getName(), is("CN=foo-kafka,O=io.strimzi"));
         assertThat(new HashSet<Object>(cert.getSubjectAlternativeNames()), is(set(
                 asList(2, "foo-kafka-0.foo-kafka-brokers.test.svc.cluster.local"),
                 asList(2, "foo-kafka-0.foo-kafka-brokers.test.svc"),
@@ -2404,7 +2404,7 @@ public class KafkaClusterTest {
                 "foo-kafka-1.crt", "foo-kafka-1.key", "foo-kafka-1.p12", "foo-kafka-1.password",
                 "foo-kafka-2.crt", "foo-kafka-2.key", "foo-kafka-2.p12", "foo-kafka-2.password")));
         X509Certificate cert = Ca.cert(secret, "foo-kafka-0.crt");
-        assertThat(cert.getSubjectDN().getName(), is("CN=foo-kafka, O=io.strimzi"));
+        assertThat(cert.getSubjectX500Principal().getName(), is("CN=foo-kafka,O=io.strimzi"));
         assertThat(new HashSet<Object>(cert.getSubjectAlternativeNames()), is(set(
                 asList(2, "foo-kafka-0.foo-kafka-brokers.test.svc.cluster.local"),
                 asList(2, "foo-kafka-0.foo-kafka-brokers.test.svc"),
@@ -2891,7 +2891,7 @@ public class KafkaClusterTest {
 
         Storage persistent = new PersistentClaimStorageBuilder().withStorageClass("gp2-ssd").withDeleteClaim(false).withId(0).withSize("100Gi").build();
 
-        // Test Storage changes and how the are reverted
+        // Test Storage changes and how they are reverted
 
         Kafka kafkaAssembly = new KafkaBuilder(KAFKA)
                 .editSpec()
@@ -3175,7 +3175,7 @@ public class KafkaClusterTest {
 
         assertThrows(InvalidResourceException.class, () -> {
             List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, null, Map.of(), Map.of(), false, SHARED_ENV_PROVIDER);
-            KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, pools, VERSIONS, false, null, SHARED_ENV_PROVIDER);
+            KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, pools, VERSIONS, false, null, SHARED_ENV_PROVIDER);
         });
     }
 
@@ -3282,7 +3282,7 @@ public class KafkaClusterTest {
 
         assertThrows(InvalidResourceException.class, () -> {
             List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, null, Map.of(), Map.of(), false, SHARED_ENV_PROVIDER);
-            KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, pools, VERSIONS, false, null, SHARED_ENV_PROVIDER);
+            KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, pools, VERSIONS, false, null, SHARED_ENV_PROVIDER);
         });
     }
     @ParallelTest
@@ -3552,7 +3552,7 @@ public class KafkaClusterTest {
                     .build();
 
             List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, null, Map.of(), Map.of(), false, SHARED_ENV_PROVIDER);
-            KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, pools, VERSIONS, false, null, SHARED_ENV_PROVIDER);
+            KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, pools, VERSIONS, false, null, SHARED_ENV_PROVIDER);
         });
     }
 
@@ -3733,7 +3733,7 @@ public class KafkaClusterTest {
 
         assertThrows(IllegalArgumentException.class, () -> {
             List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, null, Map.of(), Map.of(), false, SHARED_ENV_PROVIDER);
-            KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, pools, VERSIONS, false, null, SHARED_ENV_PROVIDER);
+            KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, pools, VERSIONS, false, null, SHARED_ENV_PROVIDER);
         });
     }
 
@@ -3755,7 +3755,7 @@ public class KafkaClusterTest {
 
         assertThrows(IllegalArgumentException.class, () -> {
             List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, null, Map.of(), Map.of(), false, SHARED_ENV_PROVIDER);
-            KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, pools, VERSIONS, false, null, SHARED_ENV_PROVIDER);
+            KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, pools, VERSIONS, false, null, SHARED_ENV_PROVIDER);
         });
     }
 
@@ -3835,7 +3835,7 @@ public class KafkaClusterTest {
 
         InvalidResourceException exc = assertThrows(KafkaVersion.UnsupportedKafkaVersionException.class, () -> {
             List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, null, Map.of(), Map.of(), false, SHARED_ENV_PROVIDER);
-            KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, pools, VERSIONS, false, null, SHARED_ENV_PROVIDER);
+            KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, pools, VERSIONS, false, null, SHARED_ENV_PROVIDER);
         });
 
         assertThat(exc.getMessage(), containsString("Unsupported Kafka.spec.kafka.version: 6.6.6. Supported versions are:"));
@@ -3853,7 +3853,7 @@ public class KafkaClusterTest {
 
         InvalidResourceException exc = assertThrows(KafkaVersion.UnsupportedKafkaVersionException.class, () -> {
             List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, null, Map.of(), Map.of(), false, SHARED_ENV_PROVIDER);
-            KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, pools, VERSIONS, false, null, SHARED_ENV_PROVIDER);
+            KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, pools, VERSIONS, false, null, SHARED_ENV_PROVIDER);
         });
 
         assertThat(exc.getMessage(), containsString("Unsupported Kafka.spec.kafka.version: 2.6.0. Supported versions are:"));
@@ -3872,7 +3872,7 @@ public class KafkaClusterTest {
 
         InvalidResourceException exc = assertThrows(KafkaVersion.UnsupportedKafkaVersionException.class, () -> {
             List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, null, Map.of(), Map.of(), false, SHARED_ENV_PROVIDER);
-            KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, pools, VERSIONS, false, null, SHARED_ENV_PROVIDER);
+            KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, pools, VERSIONS, false, null, SHARED_ENV_PROVIDER);
         });
 
         assertThat(exc.getMessage(), containsString("Unsupported Kafka.spec.kafka.version: 2.6.0. Supported versions are:"));
