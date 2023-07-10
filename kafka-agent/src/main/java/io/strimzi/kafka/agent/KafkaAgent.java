@@ -97,7 +97,6 @@ public class KafkaAgent {
         this.sslTruststorePassword = sslTruststorePass;
     }
 
-    // public for testing
     /**
      * Constructor of the KafkaAgent
      *
@@ -105,7 +104,7 @@ public class KafkaAgent {
      * @param remainingLogsToRecover      Number of remaining logs to recover
      * @param remainingSegmentsToRecover  Number of remaining segments to recover
      */
-    public KafkaAgent(Gauge brokerState, Gauge remainingLogsToRecover, Gauge remainingSegmentsToRecover) {
+    /* test */ KafkaAgent(Gauge brokerState, Gauge remainingLogsToRecover, Gauge remainingSegmentsToRecover) {
         this.brokerState = brokerState;
         this.remainingLogsToRecover = remainingLogsToRecover;
         this.remainingSegmentsToRecover = remainingSegmentsToRecover;
@@ -236,8 +235,7 @@ public class KafkaAgent {
      *
      * @return Handler
      */
-    // public for testing
-    public Handler getServerHandler() {
+    /* test */ Handler getServerHandler() {
         return new AbstractHandler() {
             @Override
             public void handle(String s, Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws IOException {
