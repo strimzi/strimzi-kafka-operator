@@ -60,6 +60,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Stack;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -381,11 +382,24 @@ public class SetupClusterOperator {
     private void createClusterOperatorNamespaceIfPossible() {
         if (this.isClusterOperatorNamespaceNotCreated()) {
             cluster.setNamespace(namespaceInstallTo);
+
+            if (this.extensionContext != null) {
+                ResourceManager.STORED_RESOURCES.computeIfAbsent(this.extensionContext.getDisplayName(), k -> new Stack<>());
+                ResourceManager.STORED_RESOURCES.get(this.extensionContext.getDisplayName()).push(
+                    new ResourceItem<>(this::deleteClusterOperatorNamespace));
+            }
+
             cluster.createNamespaces(CollectorElement.createCollectorElement(testClassName, testMethodName), namespaceInstallTo, bindingsNamespaces);
             StUtils.copyImagePullSecrets(namespaceInstallTo);
 
             extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.PREPARE_OPERATOR_ENV_KEY + namespaceInstallTo, true);
         }
+    }
+
+    private void deleteClusterOperatorNamespace() {
+        LOGGER.info("Deleting of Namespace " + this.namespaceInstallTo);
+        cluster.deleteNamespace(CollectorElement.createCollectorElement(testClassName, testMethodName),
+                this.namespaceInstallTo);
     }
 
     private void createClusterRoleBindings() {
