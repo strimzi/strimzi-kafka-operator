@@ -88,7 +88,7 @@ Default is `false`.
 <9> (Optional) The number of threads to use to refresh (in parallel) the grants for the active sessions. The default value is 5.
 <10> (Optional) The time in seconds after which an idle grant in the cache can be evicted. The default value is 300.
 <11> (Optional) A period in seconds in which cleaning of stale grants from cache is performed. The default value is 300.
-<12> (Optional) Whether latest grants should be fetched for a new session. Grants will be fetched anew from Keycloak and cached for the user. The default value is `false`.
+<12> (Optional) Controls whether the latest grants are fetched for a new session. When enabled, grants are retrieved from Keycloak and cached for the user. The default value is `false`.
 <13> (Optional) The connect timeout in seconds when connecting to the Keycloak token endpoint. The default value is 60.
 <14> (Optional) The read timeout in seconds when connecting to the Keycloak token endpoint. The default value is 60.
 <15> (Optional) The maximum number of times to retry (without pausing) a failed HTTP request to the authorization server. The default value is `0`, meaning that no retries are performed. To use this option effectively, consider reducing the timeout times for the `connectTimeoutSeconds` and `readTimeoutSeconds` options. However, note that retries may prevent the current worker thread from being available to other requests, and if too many requests stall, it could make the Kafka broker unresponsive.

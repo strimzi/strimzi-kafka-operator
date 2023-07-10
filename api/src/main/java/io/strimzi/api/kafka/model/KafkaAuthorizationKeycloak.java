@@ -164,7 +164,7 @@ public class KafkaAuthorizationKeycloak extends KafkaAuthorization {
         this.grantsGcPeriodSeconds = grantsGcPeriodSeconds;
     }
 
-    @Description("Enable or disable fetching the latest grants for a new session. When enabled, grants will be fetched anew from Keycloak and cached for the user. The default value is `false`.")
+    @Description("Controls whether the latest grants are fetched for a new session. When enabled, grants are retrieved from Keycloak and cached for the user. The default value is `false`.")
     @JsonInclude(JsonInclude.Include.NON_DEFAULT)
     public boolean isGrantsAlwaysLatest() {
         return grantsAlwaysLatest;
