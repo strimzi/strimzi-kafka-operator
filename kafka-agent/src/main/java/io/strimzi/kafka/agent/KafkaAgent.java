@@ -235,8 +235,7 @@ public class KafkaAgent {
      *
      * @return Handler
      */
-    // public for testing
-    public Handler getServerHandler() {
+    /* test */ Handler getServerHandler() {
         return new AbstractHandler() {
             @Override
             public void handle(String s, Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws IOException {
