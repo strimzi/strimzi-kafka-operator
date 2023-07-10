@@ -165,19 +165,10 @@ public class KafkaAgent {
         });
 
         LOGGER.info("Loading node configuration");
-        FileInputStream fis = null;
-        try {
-            fis = new FileInputStream(NODE_CONFIG_FILE_PATH);
+        try (FileInputStream fis = new FileInputStream(NODE_CONFIG_FILE_PATH)) {
             this.nodeConfig = new Properties();
             this.nodeConfig.load(fis);
             LOGGER.trace("Node config={}", this.nodeConfig);
-        } catch (Exception e) {
-            LOGGER.error("Could not load the node configuration: ", e);
-            throw new RuntimeException(e);
-        } finally {
-            if (fis != null) {
-                fis.close();
-            }
         }
     }
 
