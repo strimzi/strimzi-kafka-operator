@@ -77,8 +77,9 @@ Currently, the KRaft mode in Strimzi has the following major limitations:
 * Controller-only nodes cannot undergo rolling updates or be updated individually.
 * Upgrades and downgrades of Apache Kafka versions or the Strimzi operator are not supported.
   Users might need to delete the cluster, upgrade the operator and deploy a new Kafka cluster.
-* The Topic Operator is not supported.
-  The `spec.entityOperator.topicOperator` property *must be removed* from the `Kafka` custom resource.
+* Only the _Unidirectional_ Topic Operator is supported in KRaft mode.
+  You can enable it using the `UnidirectionalTopicOperator` feature gate.
+  The _Bidirectional_ Topic Operator is not supported and when the `UnidirectionalTopicOperator` feature gate is not enabled, the `spec.entityOperator.topicOperator` property *must be removed* from the `Kafka` custom resource.
 * JBOD storage is not supported. 
   The `type: jbod` storage can be used, but the JBOD array can contain only one disk.
 

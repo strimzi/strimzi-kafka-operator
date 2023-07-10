@@ -47,7 +47,7 @@ public class KRaftUtilsTest {
                 .endKafka()
                 .build();
 
-        assertDoesNotThrow(() -> KRaftUtils.validateKafkaCrForKRaft(spec));
+        assertDoesNotThrow(() -> KRaftUtils.validateKafkaCrForKRaft(spec, false));
     }
 
     @ParallelTest
@@ -71,7 +71,7 @@ public class KRaftUtilsTest {
                 .endKafka()
                 .build();
 
-        InvalidResourceException ex = assertThrows(InvalidResourceException.class, () -> KRaftUtils.validateKafkaCrForKRaft(spec));
+        InvalidResourceException ex = assertThrows(InvalidResourceException.class, () -> KRaftUtils.validateKafkaCrForKRaft(spec, false));
 
         assertThat(ex.getMessage(), is("Kafka configuration is not valid: [Using more than one disk in a JBOD storage is currently not supported when the UseKRaft feature gate is enabled]"));
     }
@@ -79,7 +79,7 @@ public class KRaftUtilsTest {
     @ParallelTest
     public void testNoEntityOperator() {
         Set<String> errors = new HashSet<>(0);
-        KRaftUtils.validateEntityOperatorSpec(errors, null);
+        KRaftUtils.validateEntityOperatorSpec(errors, null, false);
 
         assertThat(errors, is(Collections.emptySet()));
     }
@@ -92,7 +92,7 @@ public class KRaftUtilsTest {
                 .endUserOperator()
                 .build();
 
-        KRaftUtils.validateEntityOperatorSpec(errors, eo);
+        KRaftUtils.validateEntityOperatorSpec(errors, eo, false);
         assertThat(errors, is(Collections.emptySet()));
     }
 
@@ -106,9 +106,24 @@ public class KRaftUtilsTest {
                 .endTopicOperator()
                 .build();
 
-        KRaftUtils.validateEntityOperatorSpec(errors, eo);
+        KRaftUtils.validateEntityOperatorSpec(errors, eo, false);
 
-        assertThat(errors, is(Set.of("Topic Operator is currently not supported when the UseKRaft feature gate is enabled")));
+        assertThat(errors, is(Set.of("Only Unidirectional Topic Operator is supported when the UseKRaft feature gate is enabled. You can enable it using the UnidirectionalTopicOperator feature gate.")));
+    }
+
+    @ParallelTest
+    public void testEnabledUnidirectionalTopicOperator() {
+        Set<String> errors = new HashSet<>(0);
+        EntityOperatorSpec eo = new EntityOperatorSpecBuilder()
+                .withNewUserOperator()
+                .endUserOperator()
+                .withNewTopicOperator()
+                .endTopicOperator()
+                .build();
+
+        KRaftUtils.validateEntityOperatorSpec(errors, eo, true);
+
+        assertThat(errors.size(), is(0));
     }
 
     @ParallelTest
@@ -119,9 +134,9 @@ public class KRaftUtilsTest {
                 .endTopicOperator()
                 .build();
 
-        KRaftUtils.validateEntityOperatorSpec(errors, eo);
+        KRaftUtils.validateEntityOperatorSpec(errors, eo, false);
 
-        assertThat(errors, is(Set.of("Topic Operator is currently not supported when the UseKRaft feature gate is enabled")));
+        assertThat(errors, is(Set.of("Only Unidirectional Topic Operator is supported when the UseKRaft feature gate is enabled. You can enable it using the UnidirectionalTopicOperator feature gate.")));
     }
 
     @ParallelTest
