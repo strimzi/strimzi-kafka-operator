@@ -78,7 +78,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Random;
 import java.util.Stack;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
@@ -101,7 +100,6 @@ public class ResourceManager {
 
     private static String coDeploymentName = Constants.STRIMZI_DEPLOYMENT_NAME;
     private static ResourceManager instance;
-    private static final Random RANDOM = new Random();
 
     public static synchronized ResourceManager getInstance() {
         if (instance == null) {
