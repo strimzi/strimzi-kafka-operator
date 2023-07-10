@@ -21,18 +21,22 @@ import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.SslConnectionFactory;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.eclipse.jetty.server.handler.ContextHandler;
+import org.eclipse.jetty.server.handler.ContextHandlerCollection;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Properties;
 
 /**
  * A very simple Java agent which polls the value of the {@code kafka.server:type=KafkaServer,name=BrokerState}
@@ -55,6 +59,8 @@ import java.util.Map;
 public class KafkaAgent {
     private static final Logger LOGGER = LoggerFactory.getLogger(KafkaAgent.class);
     private static final String BROKER_STATE_PATH = "/v1/broker-state";
+    private static final String NODE_CONFIG_PATH = "/v1/node-config";
+    private static final String NODE_CONFIG_FILE_PATH = "/tmp/strimzi.properties";
     private static final int HTTPS_PORT = 8443;
     private static final long GRACEFUL_SHUTDOWN_TIMEOUT_MS = 30 * 1000;
 
@@ -77,6 +83,7 @@ public class KafkaAgent {
     private MetricName sessionStateName;
     private Gauge sessionState;
     private boolean pollerRunning;
+    private Properties nodeConfig;
 
     /**
      * Constructor of the KafkaAgent
@@ -97,21 +104,22 @@ public class KafkaAgent {
         this.sslTruststorePassword = sslTruststorePass;
     }
 
-    // public for testing
     /**
      * Constructor of the KafkaAgent
      *
      * @param brokerState                 Current state of the broker
      * @param remainingLogsToRecover      Number of remaining logs to recover
      * @param remainingSegmentsToRecover  Number of remaining segments to recover
+     * @param nodeConfig                  Node configuration
      */
-    public KafkaAgent(Gauge brokerState, Gauge remainingLogsToRecover, Gauge remainingSegmentsToRecover) {
+    /* test */ KafkaAgent(Gauge brokerState, Gauge remainingLogsToRecover, Gauge remainingSegmentsToRecover, Properties nodeConfig) {
         this.brokerState = brokerState;
         this.remainingLogsToRecover = remainingLogsToRecover;
         this.remainingSegmentsToRecover = remainingSegmentsToRecover;
+        this.nodeConfig = nodeConfig;
     }
 
-    private void run() {
+    private void run() throws IOException {
         Thread pollerThread = new Thread(poller(),
                 "KafkaAgentPoller");
         pollerThread.setDaemon(true);
@@ -147,13 +155,30 @@ public class KafkaAgent {
                     sessionState = (Gauge) metric;
                 }
 
-                if (brokerState != null && sessionState != null && !pollerRunning) {
+                // starting the poller to create the broker ready and ZooKeeper session connected files on if not KRaft mode
+                if (!isKRaftMode() && brokerState != null && sessionState != null && !pollerRunning) {
                     LOGGER.info("Starting poller");
                     pollerThread.start();
                     pollerRunning = true;
                 }
             }
         });
+
+        LOGGER.info("Loading node configuration");
+        FileInputStream fis = null;
+        try {
+            fis = new FileInputStream(NODE_CONFIG_FILE_PATH);
+            this.nodeConfig = new Properties();
+            this.nodeConfig.load(fis);
+            LOGGER.trace("Node config={}", this.nodeConfig);
+        } catch (Exception e) {
+            LOGGER.error("Could not load the node configuration: ", e);
+            throw new RuntimeException(e);
+        } finally {
+            if (fis != null) {
+                fis.close();
+            }
+        }
     }
 
     /**
@@ -221,23 +246,26 @@ public class KafkaAgent {
                 new HttpConnectionFactory(https));
         conn.setPort(HTTPS_PORT);
 
-        ContextHandler context = new ContextHandler(BROKER_STATE_PATH);
-        context.setHandler(getServerHandler());
+        ContextHandler ctxBrokerState = new ContextHandler(BROKER_STATE_PATH);
+        ctxBrokerState.setHandler(getBrokerStateHandler());
+
+        ContextHandler ctxNodeConfig = new ContextHandler(NODE_CONFIG_PATH);
+        ctxNodeConfig.setHandler(getNodeConfigHandler());
 
         server.setConnectors(new Connector[]{conn});
-        server.setHandler(context);
+        server.setHandler(new ContextHandlerCollection(ctxBrokerState, ctxNodeConfig));
         server.setStopTimeout(GRACEFUL_SHUTDOWN_TIMEOUT_MS);
         server.setStopAtShutdown(true);
         server.start();
     }
 
     /**
-     * Creates a Handler instance to handle incoming HTTP requests
+     * Creates a Handler instance to handle incoming HTTP requests for the broker state
      *
      * @return Handler
      */
     // public for testing
-    public Handler getServerHandler() {
+    public Handler getBrokerStateHandler() {
         return new AbstractHandler() {
             @Override
             public void handle(String s, Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws IOException {
@@ -263,6 +291,31 @@ public class KafkaAgent {
                 } else {
                     response.setStatus(HttpServletResponse.SC_NOT_FOUND);
                     response.getWriter().print("Broker state metric not found");
+                }
+            }
+        };
+    }
+
+    /**
+     * Creates a Handler instance to handle incoming HTTP requests for the node configuration
+     *
+     * @return Handler
+     */
+    /* test */ Handler getNodeConfigHandler() {
+        return new AbstractHandler() {
+            @Override
+            public void handle(String s, Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws IOException {
+                response.setContentType("application/json");
+                response.setCharacterEncoding("UTF-8");
+                baseRequest.setHandled(true);
+
+                if (nodeConfig != null && !nodeConfig.isEmpty()) {
+                    response.setStatus(HttpServletResponse.SC_OK);
+                    String json = new ObjectMapper().writeValueAsString(nodeConfig);
+                    response.getWriter().print(json);
+                } else {
+                    response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+                    response.getWriter().print("Node configuration not found");
                 }
             }
         };
@@ -355,29 +408,43 @@ public class KafkaAgent {
         }
     }
 
+    private boolean isKRaftMode() {
+        return this.brokerReadyFile == null && this.sessionConnectedFile == null;
+    }
+
     /**
      * Agent entry point
      * @param agentArgs The agent arguments
+     * @throws IOException if any errors while reading the node configuration file
      */
-    public static void premain(String agentArgs) {
+    public static void premain(String agentArgs) throws IOException {
         String[] args = agentArgs.split(":");
         if (args.length < 6) {
             LOGGER.error("Not enough arguments to parse {}", agentArgs);
             System.exit(1);
         } else {
-            File brokerReadyFile = new File(args[0]);
-            File sessionConnectedFile = new File(args[1]);
+            // broker ready and ZooKeeper session connected files arguments are empty when in KRaft mode
+            File brokerReadyFile = null;
+            File sessionConnectedFile = null;
+            if (!args[0].isEmpty() && !args[1].isEmpty()) {
+                brokerReadyFile = new File(args[0]);
+                sessionConnectedFile = new File(args[1]);
+
+                if (brokerReadyFile.exists() && !brokerReadyFile.delete()) {
+                    LOGGER.error("Broker readiness file already exists and could not be deleted: {}", brokerReadyFile);
+                    System.exit(1);
+                } else if (sessionConnectedFile.exists() && !sessionConnectedFile.delete()) {
+                    LOGGER.error("Session connected file already exists and could not be deleted: {}", sessionConnectedFile);
+                    System.exit(1);
+                }
+            }
+
             String sslKeyStorePath = args[2];
             String sslKeyStorePass = args[3];
             String sslTrustStorePath = args[4];
             String sslTrustStorePass = args[5];
-            if (brokerReadyFile.exists() && !brokerReadyFile.delete()) {
-                LOGGER.error("Broker readiness file already exists and could not be deleted: {}", brokerReadyFile);
-                System.exit(1);
-            } else if (sessionConnectedFile.exists() && !sessionConnectedFile.delete()) {
-                LOGGER.error("Session connected file already exists and could not be deleted: {}", sessionConnectedFile);
-                System.exit(1);
-            } else if (sslKeyStorePath.isEmpty() || sslTrustStorePath.isEmpty()) {
+
+            if (sslKeyStorePath.isEmpty() || sslTrustStorePath.isEmpty()) {
                 LOGGER.error("SSLKeyStorePath or SSLTrustStorePath is empty: sslKeyStorePath={} sslTrustStore={} ", sslKeyStorePath, sslTrustStorePath);
                 System.exit(1);
             } else if (sslKeyStorePass.isEmpty()) {

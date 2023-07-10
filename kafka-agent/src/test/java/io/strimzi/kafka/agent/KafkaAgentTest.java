@@ -10,6 +10,7 @@ import java.net.URISyntaxException;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.util.Properties;
 import javax.servlet.http.HttpServletResponse;
 import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.Server;
@@ -53,8 +54,8 @@ public class KafkaAgentTest {
     public void testBrokerRunningState() throws Exception {
         final Gauge brokerState = mock(Gauge.class);
         when(brokerState.value()).thenReturn((byte) 3);
-        KafkaAgent agent = new KafkaAgent(brokerState, null, null);
-        context.setHandler(agent.getServerHandler());
+        KafkaAgent agent = new KafkaAgent(brokerState, null, null, null);
+        context.setHandler(agent.getBrokerStateHandler());
         server.setHandler(context);
         server.start();
 
@@ -78,8 +79,8 @@ public class KafkaAgentTest {
         final Gauge remainingSegments = mock(Gauge.class);
         when(remainingSegments.value()).thenReturn((byte) 100);
 
-        KafkaAgent agent = new KafkaAgent(brokerState, remainingLogs, remainingSegments);
-        context.setHandler(agent.getServerHandler());
+        KafkaAgent agent = new KafkaAgent(brokerState, remainingLogs, remainingSegments, null);
+        context.setHandler(agent.getBrokerStateHandler());
         server.setHandler(context);
         server.start();
 
@@ -94,8 +95,8 @@ public class KafkaAgentTest {
 
     @Test
     public void testBrokerMetricNotFound() throws Exception {
-        KafkaAgent agent = new KafkaAgent(null, null, null);
-        context.setHandler(agent.getServerHandler());
+        KafkaAgent agent = new KafkaAgent(null, null, null, null);
+        context.setHandler(agent.getBrokerStateHandler());
         server.setHandler(context);
         server.start();
 
@@ -104,6 +105,37 @@ public class KafkaAgentTest {
                 .send(req, HttpResponse.BodyHandlers.ofString());
         assertEquals(HttpServletResponse.SC_NOT_FOUND, response.statusCode());
 
+    }
+
+    @Test
+    public void testNodeConfiguration() throws Exception {
+        Properties nodeConfig = new Properties();
+        nodeConfig.put("node.id", "0");
+        nodeConfig.put("process.roles", "controller");
+        KafkaAgent agent = new KafkaAgent(null, null, null, nodeConfig);
+        context.setHandler(agent.getNodeConfigHandler());
+        server.setHandler(context);
+        server.start();
+
+        HttpResponse<String> response = HttpClient.newBuilder()
+                .build()
+                .send(req, HttpResponse.BodyHandlers.ofString());
+
+        String expectedResponse = "{\"node.id\":\"0\",\"process.roles\":\"controller\"}";
+        assertEquals(expectedResponse, response.body());
+    }
+
+    @Test
+    public void testNodeConfigurationNotFound() throws Exception {
+        KafkaAgent agent = new KafkaAgent(null, null, null, null);
+        context.setHandler(agent.getNodeConfigHandler());
+        server.setHandler(context);
+        server.start();
+
+        HttpResponse<String> response = HttpClient.newBuilder()
+                .build()
+                .send(req, HttpResponse.BodyHandlers.ofString());
+        assertEquals(HttpServletResponse.SC_NOT_FOUND, response.statusCode());
     }
 
 }
