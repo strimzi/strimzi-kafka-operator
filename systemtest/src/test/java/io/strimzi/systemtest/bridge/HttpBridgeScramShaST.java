@@ -108,6 +108,7 @@ class HttpBridgeScramShaST extends AbstractST {
 
     @BeforeAll
     void setUp(ExtensionContext extensionContext) {
+        // skip test if KRaft mode is enabled and Kafka version is lower than 3.5.0 - https://github.com/strimzi/strimzi-kafka-operator/issues/8806
         assumeTrue(Environment.isKRaftModeEnabled() && TestKafkaVersion.compareDottedVersions("3.5.0", Environment.ST_KAFKA_VERSION) != 1);
 
         clusterOperator = clusterOperator.defaultInstallation(extensionContext)

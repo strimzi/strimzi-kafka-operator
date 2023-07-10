@@ -50,7 +50,7 @@ public class KafkaVersionsST extends AbstractST {
     @ParameterizedTest(name = "Kafka version: {0}.version()")
     @MethodSource("io.strimzi.systemtest.utils.TestKafkaVersion#getSupportedKafkaVersions")
     void testKafkaWithVersion(final TestKafkaVersion testKafkaVersion, ExtensionContext extensionContext) {
-        // skip test if KRaft mode is enabled and Kafka version is lower than 3.5.0
+        // skip test if KRaft mode is enabled and Kafka version is lower than 3.5.0 - https://github.com/strimzi/strimzi-kafka-operator/issues/8806
         assumeTrue(Environment.isKRaftModeEnabled() && TestKafkaVersion.compareDottedVersions("3.5.0", testKafkaVersion.version()) != 1);
 
         final TestStorage testStorage = new TestStorage(extensionContext);
