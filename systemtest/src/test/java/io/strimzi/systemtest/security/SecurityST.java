@@ -1132,7 +1132,7 @@ class SecurityST extends AbstractST {
             .addToRequests("cpu", new Quantity("100000m"))
             .build();
 
-        if (Environment.isKafkaNodePoolEnabled()) {
+        if (Environment.isKafkaNodePoolsEnabled()) {
             KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(testStorage.getKafkaNodePoolName(), knp -> knp.getSpec().setResources(requirements), testStorage.getNamespaceName());
         }
 
@@ -1172,7 +1172,7 @@ class SecurityST extends AbstractST {
             .addToRequests("cpu", new Quantity("200m"))
             .build();
 
-        if (Environment.isKafkaNodePoolEnabled()) {
+        if (Environment.isKafkaNodePoolsEnabled()) {
             KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(testStorage.getKafkaNodePoolName(),
                 knp -> knp.getSpec().setResources(correctRequirements), testStorage.getNamespaceName());
         }

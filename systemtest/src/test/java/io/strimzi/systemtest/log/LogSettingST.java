@@ -227,7 +227,7 @@ class LogSettingST extends AbstractST {
         assertThat("UO GC logging is enabled", checkGcLoggingDeployments(clusterOperator.getDeploymentNamespace(), eoDepName, "user-operator"), is(true));
 
         LOGGER.info("Changing JVM options - setting GC logging to false");
-        if (Environment.isKafkaNodePoolEnabled()) {
+        if (Environment.isKafkaNodePoolsEnabled()) {
             KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(KafkaResource.getNodePoolName(LOG_SETTING_CLUSTER_NAME), knp ->
                 knp.getSpec().setJvmOptions(JVM_OPTIONS), clusterOperator.getDeploymentNamespace());
         }

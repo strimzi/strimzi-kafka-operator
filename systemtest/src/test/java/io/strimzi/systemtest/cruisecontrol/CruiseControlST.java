@@ -222,7 +222,7 @@ public class CruiseControlST extends AbstractST {
 
         int scaleTo = 3;
 
-        if (Environment.isKafkaNodePoolEnabled()) {
+        if (Environment.isKafkaNodePoolsEnabled()) {
             KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(KafkaResource.getNodePoolName(clusterName), knp ->
                 knp.getSpec().setReplicas(scaleTo), namespaceName);
         }
@@ -390,7 +390,7 @@ public class CruiseControlST extends AbstractST {
 
         LOGGER.info("Scaling Kafka up to {}", scaleTo);
 
-        if (Environment.isKafkaNodePoolEnabled()) {
+        if (Environment.isKafkaNodePoolsEnabled()) {
             KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(testStorage.getKafkaNodePoolName(), knp ->
                 knp.getSpec().setReplicas(scaleTo), testStorage.getNamespaceName());
         } else {
@@ -446,7 +446,7 @@ public class CruiseControlST extends AbstractST {
 
         LOGGER.info("Scaling Kafka down to {}", initialReplicas);
 
-        if (Environment.isKafkaNodePoolEnabled()) {
+        if (Environment.isKafkaNodePoolsEnabled()) {
             KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(testStorage.getKafkaNodePoolName(), knp ->
                 knp.getSpec().setReplicas(initialReplicas), testStorage.getNamespaceName());
         } else {

@@ -17,7 +17,7 @@ public class NodePoolsNotSupportedCondition implements ExecutionCondition {
 
     @Override
     public ConditionEvaluationResult evaluateExecutionCondition(ExtensionContext extensionContext) {
-        if (!Environment.isKafkaNodePoolEnabled()) {
+        if (!Environment.isKafkaNodePoolsEnabled()) {
             return ConditionEvaluationResult.enabled("Test is enabled");
         } else {
             LOGGER.warn("According to {} env variable with value: {}, the KafkaNodePools are used, skipping this test because is not KafkaNodePools compliant",

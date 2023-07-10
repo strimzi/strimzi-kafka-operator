@@ -264,7 +264,7 @@ public class Environment {
         return STRIMZI_FEATURE_GATES.contains(Constants.USE_KRAFT_MODE);
     }
 
-    public static boolean isKafkaNodePoolEnabled() {
+    public static boolean isKafkaNodePoolsEnabled() {
         return STRIMZI_FEATURE_GATES.contains(Constants.USE_KAFKA_NODE_POOLS);
     }
 

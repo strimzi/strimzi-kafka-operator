@@ -256,7 +256,7 @@ class RecoveryIsolatedST extends AbstractST {
             .withRequests(requests)
             .build();
 
-        if (Environment.isKafkaNodePoolEnabled()) {
+        if (Environment.isKafkaNodePoolsEnabled()) {
             KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(KafkaResource.getNodePoolName(sharedClusterName), knp ->
                 knp.getSpec().setResources(resourceReq), clusterOperator.getDeploymentNamespace());
         } else {
@@ -269,7 +269,7 @@ class RecoveryIsolatedST extends AbstractST {
         requests.put("memory", new Quantity("512Mi"));
         resourceReq.setRequests(requests);
 
-        if (Environment.isKafkaNodePoolEnabled()) {
+        if (Environment.isKafkaNodePoolsEnabled()) {
             KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(KafkaResource.getNodePoolName(sharedClusterName), knp ->
                 knp.getSpec().setResources(resourceReq), clusterOperator.getDeploymentNamespace());
         } else {

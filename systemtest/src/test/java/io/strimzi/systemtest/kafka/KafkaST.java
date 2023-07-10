@@ -381,7 +381,7 @@ class KafkaST extends AbstractST {
         //change value of first PVC to delete its claim once Kafka is deleted.
         LOGGER.info("Update Volume with id=0 in Kafka CR by setting 'Delete Claim' property to false");
 
-        if (Environment.isKafkaNodePoolEnabled()) {
+        if (Environment.isKafkaNodePoolsEnabled()) {
             KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(testStorage.getKafkaNodePoolName(), resource -> {
                 LOGGER.debug(resource.getMetadata().getName());
                 JbodStorage jBODVolumeStorage = (JbodStorage) resource.getSpec().getStorage();
@@ -406,7 +406,7 @@ class KafkaST extends AbstractST {
         LOGGER.info("Deleting Kafka: {}/{} cluster", testStorage.getNamespaceName(), testStorage.getClusterName());
         resourceManager.deleteResource();
         cmdKubeClient(testStorage.getNamespaceName()).deleteByName("kafka", testStorage.getClusterName());
-        if (Environment.isKafkaNodePoolEnabled()) {
+        if (Environment.isKafkaNodePoolsEnabled()) {
             cmdKubeClient(testStorage.getNamespaceName()).deleteByName("kafkanodepool", testStorage.getKafkaNodePoolName());
         }
 
@@ -684,7 +684,7 @@ class KafkaST extends AbstractST {
         LOGGER.info("New values of labels which are to modify label and annotation of PVC present in Kafka CR, with following values {}", customSpecifiedLabelOrAnnotationPvc);
 
         LOGGER.info("Edit Kafka labels in Kafka CR,as well as labels, and annotations of PVCs");
-        if (Environment.isKafkaNodePoolEnabled()) {
+        if (Environment.isKafkaNodePoolsEnabled()) {
             KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(testStorage.getKafkaNodePoolName(), resource -> {
                 for (Map.Entry<String, String> label : customSpecifiedLabels.entrySet()) {
                     resource.getMetadata().getLabels().put(label.getKey(), label.getValue());

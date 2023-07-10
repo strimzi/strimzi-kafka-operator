@@ -103,7 +103,7 @@ public class KafkaRollerIsolatedST extends AbstractST {
         // Now that KafkaStreamsTopicStore topic is set on the first 3 brokers, lets spin-up another one.
         int scaledUpReplicas = 4;
 
-        if (Environment.isKafkaNodePoolEnabled()) {
+        if (Environment.isKafkaNodePoolsEnabled()) {
             KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(KafkaResource.getNodePoolName(clusterName), knp -> knp.getSpec().setReplicas(scaledUpReplicas), namespaceName);
         } else {
             KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, k -> k.getSpec().getKafka().setReplicas(scaledUpReplicas), namespaceName);
@@ -122,7 +122,7 @@ public class KafkaRollerIsolatedST extends AbstractST {
         final int scaledDownReplicas = 3;
         LOGGER.info("Scaling down to {}", scaledDownReplicas);
 
-        if (Environment.isKafkaNodePoolEnabled()) {
+        if (Environment.isKafkaNodePoolsEnabled()) {
             KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(KafkaResource.getNodePoolName(clusterName), knp -> knp.getSpec().setReplicas(scaledDownReplicas), namespaceName);
         } else {
             KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, k -> k.getSpec().getKafka().setReplicas(scaledDownReplicas), namespaceName);
@@ -184,7 +184,7 @@ public class KafkaRollerIsolatedST extends AbstractST {
             .endSpec()
             .build());
 
-        if (Environment.isKafkaNodePoolEnabled()) {
+        if (Environment.isKafkaNodePoolsEnabled()) {
             KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(KafkaResource.getNodePoolName(clusterName), knp ->
                 knp.getSpec().getJvmOptions().setXx(Collections.singletonMap("UseParNewGC", "true")), namespaceName);
         } else {
@@ -194,7 +194,7 @@ public class KafkaRollerIsolatedST extends AbstractST {
 
         KafkaUtils.waitForKafkaNotReady(namespaceName, clusterName);
 
-        if (Environment.isKafkaNodePoolEnabled()) {
+        if (Environment.isKafkaNodePoolsEnabled()) {
             KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(KafkaResource.getNodePoolName(clusterName), knp ->
                 knp.getSpec().getJvmOptions().setXx(Collections.emptyMap()), namespaceName);
         } else {
@@ -256,7 +256,7 @@ public class KafkaRollerIsolatedST extends AbstractST {
         requests.put("cpu", new Quantity("123456"));
         requests.put("memory", new Quantity("128Mi"));
 
-        if (Environment.isKafkaNodePoolEnabled()) {
+        if (Environment.isKafkaNodePoolsEnabled()) {
             KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(KafkaResource.getNodePoolName(clusterName), knp ->
                 knp.getSpec().getResources().setRequests(requests), namespaceName);
         } else {
@@ -270,7 +270,7 @@ public class KafkaRollerIsolatedST extends AbstractST {
 
         requests.put("cpu", new Quantity("100m"));
 
-        if (Environment.isKafkaNodePoolEnabled()) {
+        if (Environment.isKafkaNodePoolsEnabled()) {
             KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(KafkaResource.getNodePoolName(clusterName), knp ->
                 knp.getSpec().getResources().setRequests(requests), namespaceName);
         } else {
@@ -331,7 +331,7 @@ public class KafkaRollerIsolatedST extends AbstractST {
         PodUtils.waitUntilPodStabilityReplicasCount(namespaceName, KafkaResource.getStrimziPodSetName(clusterName), 3);
 
         LOGGER.info("Removing requirement for the affinity");
-        if (Environment.isKafkaNodePoolEnabled()) {
+        if (Environment.isKafkaNodePoolsEnabled()) {
             KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(KafkaResource.getNodePoolName(clusterName), knp ->
                 knp.getSpec().getTemplate().getPod().setAffinity(null), namespaceName);
         } else {

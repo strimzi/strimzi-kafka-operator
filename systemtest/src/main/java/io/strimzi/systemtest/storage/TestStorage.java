@@ -75,7 +75,7 @@ final public class TestStorage {
         this.adminName = clusterName + "-" + ADMIN;
         this.username = clusterName + "-" + USER;
         this.eoDeploymentName = KafkaResources.entityOperatorDeploymentName(clusterName);
-        this.kafkaStatefulSetName = Environment.isKafkaNodePoolEnabled() ?
+        this.kafkaStatefulSetName = Environment.isKafkaNodePoolsEnabled() ?
             this.clusterName + "-" + this.kafkaNodePoolName : KafkaResources.kafkaStatefulSetName(clusterName);
         this.zkStatefulSetName = KafkaResources.zookeeperStatefulSetName(clusterName);
         this.kafkaSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.kafkaStatefulSetName(clusterName));

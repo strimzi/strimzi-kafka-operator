@@ -172,7 +172,7 @@ public class ResourceManager {
 
             if (resource.getKind().equals(Kafka.RESOURCE_KIND)) {
                 // in case we want to run tests with KafkaNodePools enabled, we want to use it for all the Kafka resources
-                if (Environment.isKafkaNodePoolEnabled()) {
+                if (Environment.isKafkaNodePoolsEnabled()) {
                     Map<String, String> annotations = resource.getMetadata().getAnnotations();
                     annotations.put(Annotations.ANNO_STRIMZI_IO_NODE_POOLS, "enabled");
                     resource.getMetadata().setAnnotations(annotations);

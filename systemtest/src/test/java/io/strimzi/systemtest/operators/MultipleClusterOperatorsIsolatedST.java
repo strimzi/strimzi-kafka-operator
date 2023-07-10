@@ -283,7 +283,7 @@ public class MultipleClusterOperatorsIsolatedST extends AbstractST {
             .build());
 
         LOGGER.info("Removing CR selector from Kafka and increasing number of replicas to 4, new Pod should not appear");
-        if (Environment.isKafkaNodePoolEnabled()) {
+        if (Environment.isKafkaNodePoolsEnabled()) {
             KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(testStorage.getKafkaNodePoolName(), knp -> {
                 Map<String, String> labels = knp.getMetadata().getLabels();
                 labels.put("app.kubernetes.io/operator", "random-operator-value");
@@ -322,7 +322,7 @@ public class MultipleClusterOperatorsIsolatedST extends AbstractST {
         assertNull(KafkaRebalanceResource.kafkaRebalanceClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get().getStatus());
 
         LOGGER.info("Adding {} selector of {} to Kafka", SECOND_CO_SELECTOR, SECOND_CO_NAME);
-        if (Environment.isKafkaNodePoolEnabled()) {
+        if (Environment.isKafkaNodePoolsEnabled()) {
             KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(testStorage.getKafkaNodePoolName(),
                 knp -> knp.getMetadata().getLabels().putAll(SECOND_CO_SELECTOR), testStorage.getNamespaceName());
         }

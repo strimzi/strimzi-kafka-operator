@@ -140,7 +140,7 @@ public class KafkaResource implements ResourceType<Kafka> {
     }
 
     public static String getStrimziPodSetName(String clusterName, String nodePoolName) {
-        if (Environment.isKafkaNodePoolEnabled()) {
+        if (Environment.isKafkaNodePoolsEnabled()) {
             if (nodePoolName == null) {
                 return String.join("-", clusterName, getKafkaNodePoolName(clusterName));
             }
@@ -155,7 +155,7 @@ public class KafkaResource implements ResourceType<Kafka> {
     }
 
     public static String getKafkaPodName(String clusterName, String nodePoolName, int podNum) {
-        if (Environment.isKafkaNodePoolEnabled()) {
+        if (Environment.isKafkaNodePoolsEnabled()) {
             if (nodePoolName == null) {
                 return String.join("-", clusterName, getKafkaNodePoolName(clusterName), String.valueOf(podNum));
             }

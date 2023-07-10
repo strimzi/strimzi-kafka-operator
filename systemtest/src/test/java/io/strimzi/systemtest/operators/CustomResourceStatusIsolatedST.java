@@ -130,7 +130,7 @@ class CustomResourceStatusIsolatedST extends AbstractST {
             .addToRequests("cpu", new Quantity("100000m"))
             .build();
 
-        if (Environment.isKafkaNodePoolEnabled()) {
+        if (Environment.isKafkaNodePoolsEnabled()) {
             KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(KafkaResource.getNodePoolName(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME), knp ->
                 knp.getSpec().setResources(resources), clusterOperator.getDeploymentNamespace());
         } else {
@@ -145,7 +145,7 @@ class CustomResourceStatusIsolatedST extends AbstractST {
         LOGGER.info("Recover cluster to Ready state");
         resources.setRequests(Collections.singletonMap("cpu", new Quantity("100m")));
 
-        if (Environment.isKafkaNodePoolEnabled()) {
+        if (Environment.isKafkaNodePoolsEnabled()) {
             KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(KafkaResource.getNodePoolName(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME), knp ->
                 knp.getSpec().setResources(resources), clusterOperator.getDeploymentNamespace());
         } else {
@@ -484,7 +484,7 @@ class CustomResourceStatusIsolatedST extends AbstractST {
 
         KafkaStatus kafkaStatus = KafkaResource.kafkaClient().inNamespace(clusterOperator.getDeploymentNamespace()).withName(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME).get().getStatus();
 
-        if (Environment.isKafkaNodePoolEnabled()) {
+        if (Environment.isKafkaNodePoolsEnabled()) {
             String nodePoolName = KafkaResource.getNodePoolName(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME);
             observedGeneration = KafkaNodePoolResource.kafkaNodePoolClient().inNamespace(clusterOperator.getDeploymentNamespace()).withName(nodePoolName).get().getStatus().getObservedGeneration();
         } else {

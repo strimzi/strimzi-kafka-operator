@@ -181,7 +181,7 @@ class RollingUpdateST extends AbstractST {
 
         LOGGER.info("Update resources for Pods");
 
-        if (Environment.isKafkaNodePoolEnabled()) {
+        if (Environment.isKafkaNodePoolsEnabled()) {
             KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(testStorage.getKafkaNodePoolName(), knp ->
                 knp.getSpec().setResources(new ResourceRequirementsBuilder()
                     .addToRequests("cpu", new Quantity("100000m"))
@@ -215,7 +215,7 @@ class RollingUpdateST extends AbstractST {
         resourceManager.createResource(extensionContext, clients.consumerTlsStrimzi(testStorage.getClusterName()));
         ClientUtils.waitForConsumerClientSuccess(testStorage);
 
-        if (Environment.isKafkaNodePoolEnabled()) {
+        if (Environment.isKafkaNodePoolsEnabled()) {
             KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(testStorage.getKafkaNodePoolName(), knp ->
                 knp.getSpec().setResources(new ResourceRequirementsBuilder()
                     .addToRequests("cpu", new Quantity("200m"))
@@ -303,7 +303,7 @@ class RollingUpdateST extends AbstractST {
         final int scaleTo = initialReplicas + 4;
         LOGGER.info("Scale up Kafka to {}", scaleTo);
 
-        if (Environment.isKafkaNodePoolEnabled()) {
+        if (Environment.isKafkaNodePoolsEnabled()) {
             KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(testStorage.getKafkaNodePoolName(), knp ->
                 knp.getSpec().setReplicas(scaleTo), testStorage.getNamespaceName());
         } else {
@@ -349,7 +349,7 @@ class RollingUpdateST extends AbstractST {
 
         // scale down
         LOGGER.info("Scale down Kafka to {}", initialReplicas);
-        if (Environment.isKafkaNodePoolEnabled()) {
+        if (Environment.isKafkaNodePoolsEnabled()) {
             KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(testStorage.getKafkaNodePoolName(), knp ->
                 knp.getSpec().setReplicas(initialReplicas), testStorage.getNamespaceName());
         } else {
