@@ -10,6 +10,7 @@
 * Added support for Kafka Exporter topic exclude and consumer group exclude parameters
 * Update Kaniko container builder to 1.12.1
 * Add support for _Kafka node pools_ according to [Strimzi Proposal #50](https://github.com/strimzi/proposals/blob/main/050-Kafka-Node-Pools.md)
+* Add support for _Unidirectional Topic Operator_ according to [Strimzi Proposal #51](https://github.com/strimzi/proposals/blob/main/051-unidirectional-topic-operator.md)
 * Update OpenTelemetry 1.19.0
 * Fixed ordering of JVM performance options [#8579](https://github.com/strimzi/strimzi-kafka-operator/issues/8579)
 * Log a warning when a KafkaTopic has no spec [#8465](https://github.com/strimzi/strimzi-kafka-operator/issues/8465)
