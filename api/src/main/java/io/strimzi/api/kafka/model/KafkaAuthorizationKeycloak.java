@@ -153,7 +153,7 @@ public class KafkaAuthorizationKeycloak extends KafkaAuthorization {
         this.grantsMaxIdleTimeSeconds = grantsMaxIdleTimeSeconds;
     }
 
-    @Description("A period in seconds in which cleaning of stale grants from cache is performed. The default value is 300.")
+    @Description("The time, in seconds, between consecutive runs of a job that cleans stale grants from the cache. The default value is 300.")
     @Minimum(1)
     @JsonProperty(defaultValue = "300")
     public Integer getGrantsGcPeriodSeconds() {

@@ -589,15 +589,15 @@ spec:
                         description: The expiration of the records kept in the local cache to avoid querying the Open Policy Agent for every request. Defines how often the cached authorization decisions are reloaded from the Open Policy Agent server. In milliseconds. Defaults to `3600000`.
                       grantsAlwaysLatest:
                         type: boolean
-                        description: "Enable or disable fetching the latest grants for a new session. When enabled, grants will be fetched anew from Keycloak and cached for the user. The default value is `false`."
+                        description: "Controls whether the latest grants are fetched for a new session. When enabled, grants are retrieved from Keycloak and cached for the user. The default value is `false`."
                       grantsGcPeriodSeconds:
                         type: integer
                         minimum: 1
-                        description: A period in seconds in which cleaning of stale grants from cache is performed. The default value is 300.
+                        description: "The time, in seconds, between consecutive runs of a job that cleans stale grants from the cache. The default value is 300."
                       grantsMaxIdleTimeSeconds:
                         type: integer
                         minimum: 1
-                        description: The time in seconds after which an idle grant in the cache can be evicted. The fefault value is 300.
+                        description: The time in seconds after which an idle grant can be evicted from the cache. The default value is 300.
                       grantsRefreshPeriodSeconds:
                         type: integer
                         minimum: 0
