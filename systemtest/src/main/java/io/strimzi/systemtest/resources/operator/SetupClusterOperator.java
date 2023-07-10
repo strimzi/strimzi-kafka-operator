@@ -387,12 +387,12 @@ public class SetupClusterOperator {
                 ResourceManager.STORED_RESOURCES.computeIfAbsent(this.extensionContext.getDisplayName(), k -> new Stack<>());
                 ResourceManager.STORED_RESOURCES.get(this.extensionContext.getDisplayName()).push(
                     new ResourceItem<>(this::deleteClusterOperatorNamespace));
+
+                cluster.createNamespaces(CollectorElement.createCollectorElement(testClassName, testMethodName), namespaceInstallTo, bindingsNamespaces);
+                StUtils.copyImagePullSecrets(namespaceInstallTo);
+
+                this.extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.PREPARE_OPERATOR_ENV_KEY + namespaceInstallTo, true);
             }
-
-            cluster.createNamespaces(CollectorElement.createCollectorElement(testClassName, testMethodName), namespaceInstallTo, bindingsNamespaces);
-            StUtils.copyImagePullSecrets(namespaceInstallTo);
-
-            extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.PREPARE_OPERATOR_ENV_KEY + namespaceInstallTo, true);
         }
     }
 
