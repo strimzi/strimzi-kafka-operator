@@ -34,7 +34,7 @@ public class KafkaAuthorizationKeycloak extends KafkaAuthorization {
 
     public static final String TYPE_KEYCLOAK = "keycloak";
 
-    public static final String AUTHORIZER_CLASS_NAME = "io.strimzi.kafka.oauth.server.authorizer.KeycloakRBACAuthorizer";
+    public static final String AUTHORIZER_CLASS_NAME = "io.strimzi.kafka.oauth.server.authorizer.KeycloakAuthorizer";
 
     private String clientId;
     private String tokenEndpointUri;
@@ -142,7 +142,7 @@ public class KafkaAuthorizationKeycloak extends KafkaAuthorization {
         this.grantsRefreshPoolSize = grantsRefreshPoolSize;
     }
 
-    @Description("The time in seconds after which an idle grant in the cache can be evicted. The fefault value is 300.")
+    @Description("The time in seconds after which an idle grant can be evicted from the cache. The default value is 300.")
     @Minimum(1)
     @JsonProperty(defaultValue = "300")
     public Integer getGrantsMaxIdleTimeSeconds() {

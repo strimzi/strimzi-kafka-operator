@@ -13,6 +13,7 @@
 * Update OpenTelemetry 1.19.0
 * Fixed ordering of JVM performance options [#8579](https://github.com/strimzi/strimzi-kafka-operator/issues/8579)
 * Log a warning when a KafkaTopic has no spec [#8465](https://github.com/strimzi/strimzi-kafka-operator/issues/8465)
+* Update Strimzi OAuth library to 0.13.0
 
 ### Changes, deprecations and removals
 
@@ -20,6 +21,7 @@
   Kubernetes 1.19 and 1.20 are not supported anymore.
 * The Helm Chart repository at `https://strimzi.io/charts/` is now deprecated.
   Please use the Helm Chart OCI artifacts from our [Helm Chart OCI repository instead](https://quay.io/organization/strimzi-helm).
+* Option `customClaimCheck` of 'oauth' authentication which relies on JsonPath changed the handling of equal comparison against `null` as the behaviour was buggy and is now fixed in the updated version of JsonPath library [OAuth #196](https://github.com/strimzi/strimzi-kafka-oauth/pull/196)
 
 ## 0.35.0
 

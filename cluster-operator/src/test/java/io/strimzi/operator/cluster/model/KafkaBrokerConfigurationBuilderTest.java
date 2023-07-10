@@ -325,7 +325,7 @@ public class KafkaBrokerConfigurationBuilderTest {
 
         assertThat(configuration, isEquivalent("broker.id=2",
                 "node.id=2",
-                "authorizer.class.name=io.strimzi.kafka.oauth.server.authorizer.KeycloakRBACAuthorizer",
+                "authorizer.class.name=io.strimzi.kafka.oauth.server.authorizer.KeycloakAuthorizer",
                 "strimzi.authorization.token.endpoint.uri=http://token-endpoint-uri",
                 "strimzi.authorization.client.id=my-client-id",
                 "strimzi.authorization.delegate.to.kafka.acl=false",
@@ -366,7 +366,7 @@ public class KafkaBrokerConfigurationBuilderTest {
 
         assertThat(configuration, isEquivalent("broker.id=2",
                 "node.id=2",
-                "authorizer.class.name=io.strimzi.kafka.oauth.server.authorizer.KeycloakRBACAuthorizer",
+                "authorizer.class.name=io.strimzi.kafka.oauth.server.authorizer.KeycloakAuthorizer",
                 "strimzi.authorization.token.endpoint.uri=http://token-endpoint-uri",
                 "strimzi.authorization.client.id=my-client-id",
                 "strimzi.authorization.delegate.to.kafka.acl=false",
