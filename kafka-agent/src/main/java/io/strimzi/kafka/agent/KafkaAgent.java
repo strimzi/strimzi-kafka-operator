@@ -97,7 +97,6 @@ public class KafkaAgent {
         this.sslTruststorePassword = sslTruststorePass;
     }
 
-    // public for testing
     /**
      * Constructor of the KafkaAgent
      *
@@ -105,7 +104,7 @@ public class KafkaAgent {
      * @param remainingLogsToRecover      Number of remaining logs to recover
      * @param remainingSegmentsToRecover  Number of remaining segments to recover
      */
-    public KafkaAgent(Gauge brokerState, Gauge remainingLogsToRecover, Gauge remainingSegmentsToRecover) {
+    /* test */ KafkaAgent(Gauge brokerState, Gauge remainingLogsToRecover, Gauge remainingSegmentsToRecover) {
         this.brokerState = brokerState;
         this.remainingLogsToRecover = remainingLogsToRecover;
         this.remainingSegmentsToRecover = remainingSegmentsToRecover;
