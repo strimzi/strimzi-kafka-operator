@@ -50,7 +50,7 @@ public class UserScalabilityIsolatedST extends AbstractST {
     }
 
     void testCreateAndAlterBigAmountOfUsers(ExtensionContext extensionContext, final TestStorage testStorage, final UserAuthType authType) {
-        int numberOfUsers = 10;
+        int numberOfUsers = 1000;
 
         List<KafkaUser> usersList = getListOfKafkaUsers(testStorage.getUsername(), numberOfUsers, authType);
 
@@ -112,7 +112,11 @@ public class UserScalabilityIsolatedST extends AbstractST {
             .endAcl()
             .build();
 
-        listOfUsers.forEach(kafkaUser -> new KafkaUserBuilder(kafkaUser).editOrNewSpec().withKafkaUserAuthorizationSimple(updatedAcl).endSpec().build());
+        listOfUsers.replaceAll(kafkaUser -> new KafkaUserBuilder(kafkaUser)
+                .editSpec()
+                    .withKafkaUserAuthorizationSimple(updatedAcl)
+                .endSpec()
+                .build());
 
         // get one user spec as the template for wait
         KafkaUserSpec kafkaUserSpec = listOfUsers.stream().findFirst().get().getSpec();

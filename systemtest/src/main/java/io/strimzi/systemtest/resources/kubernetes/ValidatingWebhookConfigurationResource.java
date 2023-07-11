@@ -34,10 +34,8 @@ public class ValidatingWebhookConfigurationResource implements ResourceType<Vali
     }
 
     @Override
-    @Deprecated
     public void update(ValidatingWebhookConfiguration resource) {
-        // ValidatingWebhookConfiguration cannot be updated, only deleted and created
-        kubeClient(KubeClusterResource.getInstance().defaultNamespace()).createValidatingWebhookConfiguration(resource);
+        kubeClient(KubeClusterResource.getInstance().defaultNamespace()).updateValidatingWebhookConfiguration(resource);
     }
 
     @Override

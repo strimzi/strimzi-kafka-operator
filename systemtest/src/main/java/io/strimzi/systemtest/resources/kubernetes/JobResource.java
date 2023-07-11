@@ -30,10 +30,8 @@ public class JobResource implements ResourceType<Job> {
     }
 
     @Override
-    @Deprecated
     public void update(Job resource) {
-        // Job cannot be updated, only created
-        ResourceManager.kubeClient().createJob(resource);
+        ResourceManager.kubeClient().updateJob(resource);
     }
 
     @Override

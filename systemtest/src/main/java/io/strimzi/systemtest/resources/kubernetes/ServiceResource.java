@@ -36,7 +36,6 @@ public class ServiceResource implements ResourceType<Service> {
     @Override
     @Deprecated
     public void update(Service resource) {
-        // Service cannot be updated, only created or deleted
         ResourceManager.kubeClient().namespace(resource.getMetadata().getNamespace()).createService(resource);
     }
 
