@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# Self contained Strimzi reporting tool.
 set -Eeuo pipefail
 if [[ $(uname -s) == "Darwin" ]]; then
   shopt -s expand_aliases
@@ -23,9 +24,18 @@ SD=$(echo -en "\001") && readonly SD
 SE="s${SD}^\(\s*.*\password\s*:\s*\).*${SD}\1\[hidden\]${SD}; s${SD}^\(\s*.*\.key\s*:\s*\).*${SD}\1\[hidden\]${SD}" && readonly SE
 
 error() {
-  echo -n "$@" 1>&2 && exit 1
+  echo "$@" 1>&2 && exit 1
 }
 
+# bash version check
+if [[ -z ${BASH_VERSINFO+x} ]]; then
+  error "No bash version information available, aborting"
+fi
+if [[ "$BASH_VERSINFO" -lt 4 ]]; then
+  error "You need bash version >= 4 to run the script"
+fi
+
+# kube client check
 if [[ -x "$(command -v kubectl)" ]]; then
   KUBECTL_INSTALLED=true
 else
@@ -34,12 +44,11 @@ else
     KUBE_CLIENT="oc"
   fi
 fi
-
 if [[ $OC_INSTALLED = false && $KUBECTL_INSTALLED = false ]]; then
   error "There is no kubectl or oc installed"
 fi
 
-# check kube connectivity
+# kube connectivity check
 $KUBE_CLIENT version -o yaml --request-timeout=5s 1>/dev/null
 
 readonly USAGE="
