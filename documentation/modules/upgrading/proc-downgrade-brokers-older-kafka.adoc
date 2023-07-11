@@ -85,7 +85,3 @@ The Kafka cluster and clients are now using the previous Kafka version.
 ----
 kubectl run kafka-admin -ti --image={DockerKafkaImageCurrent} --rm=true --restart=Never -- ./bin/kafka-topics.sh --bootstrap-server localhost:9092 --topic __strimzi-topic-operator-kstreams-topic-store-changelog --delete && ./bin/kafka-topics.sh --bootstrap-server localhost:9092 --topic __strimzi_store_topic --delete
 ----
-
-[role="_additional-resources"]
-.Additional resources
-* xref:ref-topic-operator-store-{context}[]

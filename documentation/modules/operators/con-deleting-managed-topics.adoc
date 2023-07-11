@@ -54,3 +54,5 @@ If the deletion fails, it is shown in the status of the resource.
 
 When the finalization tasks are successfully executed, the finalizer is removed from the metadata, and the resource is fully deleted.  
 
+Finalizers also prevent related resources from being deleted. 
+For example, the namespace that contains a `KafkaTopic` resource that has a finalizer cannot be deleted until `metadata.finalizer` is empty. 

@@ -181,7 +181,9 @@ The deployment is successful when the `AVAILABLE` output shows `1`.
 Unidirectional topic management maintains topics solely through `KafkaTopic` resources.
 For more information on unidirectional topic management, see xref:ref-operator-topic-{context}[].
 
-If you want to try the preview of unidirectional topic management, follow these steps to deploy the standalone Topic Operator:
+If you want to try the preview of unidirectional topic management, follow these steps to deploy the standalone Topic Operator.
+
+.Procedure
 
 . Undeploy the current standalone Topic Operator.
 +
@@ -194,7 +196,10 @@ Retain the `KafkaTopic` resources, which are picked up by the Topic Operator whe
 * `TC_ZK_CONNECTION_TIMEOUT_MS`
 * `STRIMZI_USE_ZOOKEEPER_TOPIC_STORE`
 +
+It is the presence or absence of the ZooKeeper variables that defines whether the unidirectional Topic Operator is used.
 Unidirectional topic management does not use ZooKeeper.
+If ZooKeeper environment variables are not present, the unidirectional Topic Operator is used.
+Otherwise, the bidirectional Topic Operator is used. 
 +
 Other unused environment variables that can be removed if present:
 +
@@ -207,7 +212,7 @@ Other unused environment variables that can be removed if present:
 * `STRIMZI_APPLICATION_ID`
 * `STRIMZI_STALE_RESULT_TIMEOUT_MS`
 
-. (Optional) Set the `STRIMZI_USE_FINALIZERS` environment variable to `true`:
+. (Optional) Set the `STRIMZI_USE_FINALIZERS` environment variable to `false`:
 +
 .Additional configuration for unidirectional topic management
 [source,shell,subs=+quotes]
@@ -215,10 +220,10 @@ Other unused environment variables that can be removed if present:
 # ...
 env:
   - name: STRIMZI_USE_FINALIZERS
-    value: "true"
+    value: "false"
 ----
 +
-Use this environment variable if you want to use finalizers to control xref:con-deleting-managed-topics-{context}[topic deletion].
+Set this environment variable to `false` if you do not want to use finalizers to control xref:con-deleting-managed-topics-{context}[topic deletion].
 +
 .Example standalone Topic Operator deployment configuration for unidirectional topic management
 [source,shell,subs=+quotes]

@@ -31,9 +31,9 @@ These environment variables do not need to be set if you are deploying the Topic
 include::../../modules/operators/ref-operator-topic.adoc[leveloffset=+1]
 //topic naming conventions
 include::../../modules/operators/con-operator-topic-names.adoc[leveloffset=+1]
-include::../../modules/operators/con-topic-operator-store.adoc[leveloffset=+1]
 include::../../modules/operators/con-application-topic-handling.adoc[leveloffset=+1]
 include::../../modules/operators/proc-configuring-kafka-topic.adoc[leveloffset=+1]
+include::../../modules/operators/con-topic-replication.adoc[leveloffset=+1]
 //converting managed topics to make changes to KafkaTopic resources
 include::../../modules/operators/proc-converting-managed-topics.adoc[leveloffset=+1]
 //converting non-managed topics so they are managed by KafkaTopic resources

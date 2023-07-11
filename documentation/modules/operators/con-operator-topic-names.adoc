@@ -21,10 +21,8 @@ spec:
 ----
 
 The label provides the cluster name of the `Kafka` resource.
+The Topic Operator uses the label as a mechanism for determining which `KafkaTopic` resources to manage.
 If the label does not match the Kafka cluster, the Topic Operator cannot see the `KafkaTopic`, and the topic is not created.
-
-NOTE: The label is only used when deploying the Topic Operator with the `Kafka` resource.
-When deploying the standalone Topic Operator, you specify a connection to a Kafka cluster instead.
 
 Kafka and Kubernetes have their own naming validation rules, and a Kafka topic name might not be a valid resource name in Kubernetes.
 If possible, try and stick to a naming convention that works for both.
@@ -56,7 +54,7 @@ spec:
 <2> A Kafka topic name that uses upper case and periods, which are invalid in Kubernetes.
 
 If more than one `KafkaTopic` resource refers to the same Kafka topic, the resource that was created first is considered to be the one managing the topic. 
-The status of the newer resources is updated to indicate a conflict, and their status is changed to `False`.
+The status of the newer resources is updated to indicate a conflict, and their `Ready` status is changed to `False`.
 
 If a Kafka client application, such as Kafka Streams, automatically creates topics with invalid Kubernetes resource names, the Topic Operator generates a valid `metadata.name` when used in bidirectional mode. 
 It replaces invalid characters and appends a hash to the name. 

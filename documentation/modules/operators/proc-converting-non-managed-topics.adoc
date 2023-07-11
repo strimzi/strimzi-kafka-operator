@@ -22,6 +22,8 @@ Unidirectional topic management is not enabled by default, so you must xref:ref-
 
 . Create a `KafkaTopic` resource with a `metadata.name` that is the same as the Kafka topic.
 +
+Or use `spec.topicName` if the name of the topic in Kafka would not be a legal Kubernetes resource name.
++
 .Example Kafka topic configuration
 [source,yaml,subs="attributes+"]
 ----
@@ -38,7 +40,7 @@ spec:
 +
 In this example, the Kafka topic is named `my-topic-1`.
 +
-The Topic Operator checks if the topic is managed by another `KafkaTopic` resource.
+The Topic Operator checks whether the topic is managed by another `KafkaTopic` resource.
 If it is, the older resource takes precedence and a resource conflict error is returned in the status of the new resource.
 
 . Apply the `KafkaTopic` resource:
