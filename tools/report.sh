@@ -127,7 +127,7 @@ if [[ -z $NAMESPACE ]]; then
   error "$USAGE"
 fi
 
-if [[ $($KUBE_CLIENT get ns "$NAMESPACE" &>/dev/null) == "1" ]]; then
+if [[ -z $($KUBE_CLIENT get ns "$NAMESPACE" -o name --ignore-not-found) ]]; then
   error "Namespace $NAMESPACE not found! Exiting"
 fi
 
