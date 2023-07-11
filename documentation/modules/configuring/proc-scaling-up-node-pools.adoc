@@ -8,9 +8,6 @@
 [role="_abstract"]
 This procedure describes how to scale up a node pool to add new nodes.
 
-The steps assume that you are using ZooKeeper for cluster management. 
-The operation is not possible for clusters using KRaft mode.
-
 In this procedure, we start with three nodes for node pool `pool-a`:
 
 .Kafka nodes in the node pool
@@ -63,6 +60,6 @@ my-cluster-pool-a-kafka-2  1/1    Running  0
 my-cluster-pool-a-kafka-3  1/1    Running  0
 ---- 
 
-. Reassign the partitions after increasing the number of nodes in the node pool using the `kafka-reassign-partitions.sh` tool.
+. Reassign the partitions after increasing the number of nodes in the node pool.
 +
-For more information, see xref:proc-scaling-up-a-kafka-cluster-{context}[]. 
+After scaling up a node pool, you can use the Cruise Control `add-brokers` mode to move partition replicas from existing brokers to the newly added brokers.

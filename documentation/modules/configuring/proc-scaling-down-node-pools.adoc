@@ -35,9 +35,9 @@ Otherwise, the node with the highest available ID in the node pool is removed.
 
 .Procedure
 
-. Reassign the partitions before decreasing the number of nodes in the node pool using the `kafka-reassign-partitions.sh` tool.
+. Reassign the partitions before decreasing the number of nodes in the node pool.
 +
-For more information, see xref:proc-scaling-down-a-kafka-cluster-{context}[]. 
+Before scaling down a node pool, you can use the Cruise Control `remove-brokers` mode to move partition replicas off the brokers that are going to be removed.
 
 . After the reassignment process is complete, and the node being removed has no live partitions, reduce the number of Kafka nodes in the node pool.
 +

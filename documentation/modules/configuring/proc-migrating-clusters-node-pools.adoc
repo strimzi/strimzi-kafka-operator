@@ -9,9 +9,6 @@
 This procedure describes how to migrate existing Kafka clusters to use Kafka node pools.
 After you have updated the Kafka cluster, you can use the node pools to manage the configuration of nodes within each pool.
 
-The steps assume that you are using ZooKeeper for cluster management. 
-The operation is not possible for clusters using KRaft mode.
-
 NOTE: While the `KafkaNodePools` feature gate that enables node pools is in alpha phase, replica and storage configuration in the `KafkaNodePool` resource must also be present in the `Kafka` resource. The configuration is ignored when node pools are being used. 
 
 .Prerequisites

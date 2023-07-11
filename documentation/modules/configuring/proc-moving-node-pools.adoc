@@ -10,9 +10,6 @@ This procedure describes how to move nodes between source and target Kafka node 
 You create a new node on the target node pool and reassign partitions to move data from the old node on the source node pool.
 When the replicas on the new node are in-sync, you can delete the old node.
 
-The steps assume that you are using ZooKeeper for cluster management. 
-The operation is not possible for clusters using KRaft mode.
-
 In this procedure, we start with two node pools:
 
 * `pool-a` with three replicas is the target node pool
@@ -64,9 +61,9 @@ my-cluster-pool-a-kafka-5  1/1    Running  0
 Node IDs are appended to the name of the node on creation.
 We add node `my-cluster-pool-a-kafka-5`, which has a node ID of `5`.
 
-. Reassign the partitions from the old node to the new node using the `kafka-reassign-partitions.sh` tool.
+. Reassign the partitions from the old node to the new node.
 +
-For more information, see xref:proc-scaling-down-a-kafka-cluster-str[].
+Before scaling down the source node pool, you can use the Cruise Control `remove-brokers` mode to move partition replicas off the brokers that are going to be removed.
 
 . After the reassignment process is complete, reduce the number of Kafka nodes in the source node pool.
 +
