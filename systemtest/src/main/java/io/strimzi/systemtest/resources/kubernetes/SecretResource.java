@@ -32,6 +32,11 @@ public class SecretResource implements ResourceType<Secret> {
     }
 
     @Override
+    public void update(Secret resource) {
+        ResourceManager.kubeClient().namespace(resource.getMetadata().getNamespace()).updateSecret(resource);
+    }
+
+    @Override
     public boolean waitForReadiness(Secret resource) {
         return resource != null;
     }

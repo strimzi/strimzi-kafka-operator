@@ -37,6 +37,12 @@ public class KafkaMirrorMakerResource implements ResourceType<KafkaMirrorMaker> 
         kafkaMirrorMakerClient().inNamespace(resource.getMetadata().getNamespace()).withName(
             resource.getMetadata().getName()).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
     }
+
+    @Override
+    public void update(KafkaMirrorMaker resource) {
+        kafkaMirrorMakerClient().inNamespace(resource.getMetadata().getNamespace()).resource(resource).update();
+    }
+
     @Override
     public boolean waitForReadiness(KafkaMirrorMaker resource) {
         return ResourceManager.waitForResourceStatus(kafkaMirrorMakerClient(), resource, CustomResourceStatus.Ready);

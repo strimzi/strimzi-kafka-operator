@@ -94,6 +94,11 @@ public class KafkaResource implements ResourceType<Kafka> {
     }
 
     @Override
+    public void update(Kafka resource) {
+        kafkaClient().inNamespace(resource.getMetadata().getNamespace()).resource(resource).update();
+    }
+
+    @Override
     public boolean waitForReadiness(Kafka resource) {
         long timeout = ResourceOperation.getTimeoutForResourceReadiness(resource.getKind());
 

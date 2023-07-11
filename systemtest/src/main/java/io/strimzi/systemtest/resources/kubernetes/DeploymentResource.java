@@ -35,6 +35,11 @@ public class DeploymentResource implements ResourceType<Deployment> {
     }
 
     @Override
+    public void update(Deployment resource) {
+        ResourceManager.kubeClient().updateDeployment(resource);
+    }
+
+    @Override
     public boolean waitForReadiness(Deployment resource) {
         return DeploymentUtils.waitForDeploymentAndPodsReady(resource.getMetadata().getNamespace(), resource.getMetadata().getName(), resource.getSpec().getReplicas());
     }

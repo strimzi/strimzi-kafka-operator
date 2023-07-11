@@ -38,6 +38,12 @@ public class KafkaConnectorResource implements ResourceType<KafkaConnector> {
         kafkaConnectorClient().inNamespace(resource.getMetadata().getNamespace()).withName(
             resource.getMetadata().getName()).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
     }
+
+    @Override
+    public void update(KafkaConnector resource) {
+        kafkaConnectorClient().inNamespace(resource.getMetadata().getNamespace()).resource(resource).update();
+    }
+
     @Override
     public boolean waitForReadiness(KafkaConnector resource) {
         return KafkaConnectorUtils.waitForConnectorReady(resource.getMetadata().getNamespace(), resource.getMetadata().getName());

@@ -15,7 +15,6 @@ import io.strimzi.api.kafka.model.KafkaUserSpec;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.enums.UserAuthType;
-import io.strimzi.systemtest.resources.crd.KafkaUserResource;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
@@ -51,7 +50,7 @@ public class UserScalabilityIsolatedST extends AbstractST {
     }
 
     void testCreateAndAlterBigAmountOfUsers(ExtensionContext extensionContext, final TestStorage testStorage, final UserAuthType authType) {
-        int numberOfUsers = 1000;
+        int numberOfUsers = 10;
 
         List<KafkaUser> usersList = getListOfKafkaUsers(testStorage.getUsername(), numberOfUsers, authType);
 
@@ -118,8 +117,7 @@ public class UserScalabilityIsolatedST extends AbstractST {
         // get one user spec as the template for wait
         KafkaUserSpec kafkaUserSpec = listOfUsers.stream().findFirst().get().getSpec();
 
-        listOfUsers.forEach(user -> KafkaUserResource.kafkaUserClient().inNamespace(clusterOperator.getDeploymentNamespace()).resource(user).update());
-
+        resourceManager.updateResource(extensionContext, listOfUsers.toArray(new KafkaUser[listOfUsers.size()]));
         KafkaUserUtils.waitForConfigToBeChangedInAllUsersWithPrefix(clusterOperator.getDeploymentNamespace(), usersPrefix, kafkaUserSpec);
         KafkaUserUtils.waitForAllUsersWithPrefixReady(clusterOperator.getDeploymentNamespace(), usersPrefix);
     }

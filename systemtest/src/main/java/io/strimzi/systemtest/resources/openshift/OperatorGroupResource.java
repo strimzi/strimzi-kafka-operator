@@ -36,6 +36,11 @@ public class OperatorGroupResource implements ResourceType<OperatorGroup> {
     }
 
     @Override
+    public void update(OperatorGroup resource) {
+        operatorGroupClient().inNamespace(resource.getMetadata().getNamespace()).resource(resource).update();
+    }
+
+    @Override
     public boolean waitForReadiness(OperatorGroup resource) {
         return resource != null;
     }

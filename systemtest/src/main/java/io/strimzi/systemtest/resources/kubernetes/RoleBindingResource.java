@@ -34,6 +34,12 @@ public class RoleBindingResource implements ResourceType<RoleBinding> {
     public void delete(RoleBinding resource) {
         ResourceManager.kubeClient().namespace(resource.getMetadata().getNamespace()).deleteRoleBinding(resource.getMetadata().getNamespace(), resource.getMetadata().getName());
     }
+
+    @Override
+    public void update(RoleBinding resource) {
+        ResourceManager.kubeClient().namespace(resource.getMetadata().getNamespace()).createOrUpdateRoleBinding(resource);
+    }
+
     @Override
     public boolean waitForReadiness(RoleBinding resource) {
         return resource != null;

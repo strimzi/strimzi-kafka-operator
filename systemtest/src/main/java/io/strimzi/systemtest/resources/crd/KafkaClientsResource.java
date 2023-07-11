@@ -34,6 +34,11 @@ public class KafkaClientsResource implements ResourceType<Deployment> {
     }
 
     @Override
+    public void update(Deployment resource) {
+        ResourceManager.kubeClient().namespace(resource.getMetadata().getNamespace()).updateDeployment(resource);
+    }
+
+    @Override
     public boolean waitForReadiness(Deployment resource) {
         return DeploymentUtils.waitForDeploymentReady(resource.getMetadata().getNamespace(), resource.getMetadata().getName());
     }

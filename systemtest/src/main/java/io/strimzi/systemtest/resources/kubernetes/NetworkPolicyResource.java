@@ -51,6 +51,14 @@ public class NetworkPolicyResource implements ResourceType<NetworkPolicy> {
     public void delete(NetworkPolicy resource) {
         ResourceManager.kubeClient().namespace(resource.getMetadata().getNamespace()).deleteNetworkPolicy(resource.getMetadata().getName());
     }
+
+    @Override
+    @Deprecated
+    public void update(NetworkPolicy resource) {
+        // Network policy cannot be updated, only deleted and created
+        ResourceManager.kubeClient().namespace(resource.getMetadata().getNamespace()).createNetworkPolicy(resource);
+    }
+
     @Override
     public boolean waitForReadiness(NetworkPolicy resource) {
         return resource != null;

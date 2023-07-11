@@ -28,6 +28,14 @@ public class JobResource implements ResourceType<Job> {
     public void delete(Job resource) {
         ResourceManager.kubeClient().namespace(resource.getMetadata().getNamespace()).deleteJob(resource.getMetadata().getName());
     }
+
+    @Override
+    @Deprecated
+    public void update(Job resource) {
+        // Job cannot be updated, only created
+        ResourceManager.kubeClient().createJob(resource);
+    }
+
     @Override
     public boolean waitForReadiness(Job resource) {
         return JobUtils.waitForJobRunning(resource.getMetadata().getName(), resource.getMetadata().getNamespace());

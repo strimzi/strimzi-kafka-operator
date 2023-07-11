@@ -30,6 +30,11 @@ public class ServiceAccountResource implements ResourceType<ServiceAccount> {
     }
 
     @Override
+    public void update(ServiceAccount resource) {
+        kubeClient().createOrUpdateServiceAccount(resource);
+    }
+
+    @Override
     public boolean waitForReadiness(ServiceAccount resource) {
         return resource != null;
     }

@@ -61,6 +61,11 @@ public class BundleResource implements ResourceType<Deployment> {
     }
 
     @Override
+    public void update(Deployment resource) {
+        ResourceManager.kubeClient().updateDeployment(resource);
+    }
+
+    @Override
     @SuppressFBWarnings(value = "RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE")
     public boolean waitForReadiness(Deployment resource) {
         return resource != null
