@@ -27,6 +27,7 @@ import io.strimzi.systemtest.annotations.KRaftNotSupported;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
+import io.strimzi.systemtest.resources.crd.KafkaUserResource;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.cli.KafkaCmdClient;
@@ -972,6 +973,9 @@ class MirrorMaker2IsolatedST extends AbstractST {
         String kafkaUserSourceName = testStorage.getUsername() + "-source";
         String kafkaUserTargetName = testStorage.getUsername() + "-target";
 
+        final String customSecretSource = "custom-secret-source";
+        final String customSecretTarget = "custom-secret-target";
+
         // Deploy source kafka with tls listener and SCRAM-SHA authentication
         resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaPersistent(kafkaClusterSourceName, 1, 1)
             .editSpec()
@@ -1085,25 +1089,13 @@ class MirrorMaker2IsolatedST extends AbstractST {
 
         LOGGER.info("Changing KafkaUser sha-password on MirrorMaker2 Source and make sure it rolled");
 
-        Secret passwordSource = new SecretBuilder()
-            .withNewMetadata()
-                .withName(kafkaUserSourceName)
-            .endMetadata()
-            .addToData("password", "c291cmNlLXBhc3N3b3Jk")
-            .build();
+        modifyKafkaUserPasswordWithNewSecret(testStorage.getNamespaceName(), kafkaUserSourceName, customSecretSource, "c291cmNlLXBhc3N3b3Jk");
+        RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), mmSelector, 1, mmSnapshot);
+        mmSnapshot = PodUtils.podSnapshot(testStorage.getNamespaceName(), mmSelector);
 
-        kubeClient().patchSecret(testStorage.getNamespaceName(), kafkaUserSourceName, passwordSource);
-        mmSnapshot = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), mmSelector, 1, mmSnapshot);
+        modifyKafkaUserPasswordWithNewSecret(testStorage.getNamespaceName(), kafkaUserTargetName, customSecretTarget, "dGFyZ2V0LXBhc3N3b3Jk");
+        RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), mmSelector, 1, mmSnapshot);
 
-        LOGGER.info("Changing KafkaUser sha-password on MirrorMaker2 Target");
-        Secret passwordTarget = new SecretBuilder()
-            .withNewMetadata()
-                .withName(kafkaUserTargetName)
-            .endMetadata()
-            .addToData("password", "dGFyZ2V0LXBhc3N3b3Jk")
-            .build();
-
-        kubeClient().patchSecret(testStorage.getNamespaceName(), kafkaUserTargetName, passwordTarget);
         RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), mmSelector, 1, mmSnapshot);
 
         clients = new KafkaClientsBuilder(clients)
@@ -1127,6 +1119,28 @@ class MirrorMaker2IsolatedST extends AbstractST {
         ClientUtils.waitForConsumerClientSuccess(testStorage);
 
         LOGGER.info("Messages successfully mirrored");
+    }
+
+    private static void modifyKafkaUserPasswordWithNewSecret(String namespace, String kafkaUserSourceName, String customSecretSource, String customPassword) {
+        Secret userDefinedSecret = new SecretBuilder()
+            .withNewMetadata()
+                .withName(customSecretSource)
+                .withNamespace(namespace)
+            .endMetadata()
+            .addToData("password", customPassword)
+            .build();
+        kubeClient().createSecret(userDefinedSecret);
+
+        KafkaUserResource.replaceUserResourceInSpecificNamespace(kafkaUserSourceName, ku -> {
+            ku.getSpec().getAuthentication()
+                .setAdditionalProperty(
+                    "password", Map.of(
+                        "valueFrom", Map.of(
+                            "secretKeyRef", Map.of(
+                                "name", customSecretSource,
+                                "key", "password"
+            ))));
+        }, namespace);
     }
 
     @ParallelNamespaceTest
