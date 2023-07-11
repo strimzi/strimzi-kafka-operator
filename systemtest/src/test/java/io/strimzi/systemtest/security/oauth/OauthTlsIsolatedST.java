@@ -26,6 +26,7 @@ import io.strimzi.systemtest.kafkaclients.internalClients.KafkaOauthClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaOauthClientsBuilder;
 import io.strimzi.systemtest.keycloak.KeycloakInstance;
 import io.strimzi.systemtest.resources.kubernetes.NetworkPolicyResource;
+import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaBridgeTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaConnectTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaMirrorMakerTemplates;
@@ -261,19 +262,19 @@ public class OauthTlsIsolatedST extends OauthAbstractST {
     void testMirrorMaker(ExtensionContext extensionContext) {
         // Nodeport needs cluster wide rights to work properly which is not possible with STRIMZI_RBAC_SCOPE=NAMESPACE
         assumeFalse(Environment.isNamespaceRbacScope());
-        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
-        String producerName = OAUTH_PRODUCER_NAME + "-" + clusterName;
-        String consumerName = OAUTH_CONSUMER_NAME + "-" + clusterName;
-        String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
+        final TestStorage testStorage = new TestStorage(extensionContext, clusterOperator.getDeploymentNamespace());
 
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(oauthClusterName, topicName, clusterOperator.getDeploymentNamespace()).build());
+        String producerName = OAUTH_PRODUCER_NAME + "-" + testStorage.getClusterName();
+        String consumerName = OAUTH_CONSUMER_NAME + "-" + testStorage.getClusterName();
+
+        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(oauthClusterName, testStorage.getTopicName(), clusterOperator.getDeploymentNamespace()).build());
 
         KafkaOauthClients oauthExampleClients = new KafkaOauthClientsBuilder()
             .withNamespaceName(clusterOperator.getDeploymentNamespace())
             .withProducerName(producerName)
             .withConsumerName(consumerName)
             .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(oauthClusterName))
-            .withTopicName(topicName)
+            .withTopicName(testStorage.getTopicName())
             .withMessageCount(MESSAGE_COUNT)
             .withOauthClientId(OAUTH_CLIENT_NAME)
             .withOauthClientSecret(OAUTH_CLIENT_SECRET)
@@ -395,7 +396,7 @@ public class OauthTlsIsolatedST extends OauthAbstractST {
             .withConsumerName(consumerName)
             .withClientUserName(USER_NAME)
             .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(targetKafkaCluster))
-            .withTopicName(topicName)
+            .withTopicName(testStorage.getTopicName())
             .withMessageCount(MESSAGE_COUNT)
             .withOauthClientId(OAUTH_CLIENT_NAME)
             .withOauthClientSecret(OAUTH_CLIENT_SECRET)

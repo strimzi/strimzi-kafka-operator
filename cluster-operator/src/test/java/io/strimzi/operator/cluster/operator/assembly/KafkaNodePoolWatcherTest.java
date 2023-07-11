@@ -18,7 +18,7 @@ import io.strimzi.api.kafka.model.nodepool.KafkaNodePool;
 import io.strimzi.api.kafka.model.nodepool.KafkaNodePoolBuilder;
 import io.strimzi.api.kafka.model.nodepool.ProcessRoles;
 import io.strimzi.api.kafka.model.storage.PersistentClaimStorageBuilder;
-import io.strimzi.operator.cluster.model.KafkaCluster;
+import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.resource.CrdOperator;
@@ -48,7 +48,7 @@ public class KafkaNodePoolWatcherTest {
                     .withName(CLUSTER_NAME)
                     .withNamespace(NAMESPACE)
                     .withLabels(Map.of("selector", "matching"))
-                    .withAnnotations(Map.of(KafkaCluster.ANNO_STRIMZI_IO_NODE_POOLS, "enabled"))
+                    .withAnnotations(Map.of(Annotations.ANNO_STRIMZI_IO_NODE_POOLS, "enabled"))
                 .endMetadata()
                 .withNewSpec()
                     .withNewKafka()
@@ -163,7 +163,7 @@ public class KafkaNodePoolWatcherTest {
     public void testEnqueueingResourceWithMissingAnnotation()    {
         Kafka kafka = new KafkaBuilder(KAFKA)
                 .editMetadata()
-                    .withAnnotations(Map.of(KafkaCluster.ANNO_STRIMZI_IO_NODE_POOLS, "not-enabled"))
+                    .withAnnotations(Map.of(Annotations.ANNO_STRIMZI_IO_NODE_POOLS, "not-enabled"))
                 .endMetadata()
                 .build();
 

@@ -6,6 +6,7 @@ package io.strimzi.systemtest.operators;
 
 import io.fabric8.kubernetes.api.model.DeletionPropagation;
 import io.fabric8.kubernetes.api.model.Quantity;
+import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.fabric8.kubernetes.api.model.Service;
 import io.strimzi.api.kafka.model.KafkaBridgeResources;
@@ -32,15 +33,16 @@ import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.kafkaclients.externalClients.ExternalKafkaClient;
-import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
-import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.resources.crd.KafkaBridgeResource;
 import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
 import io.strimzi.systemtest.resources.crd.KafkaConnectorResource;
 import io.strimzi.systemtest.resources.crd.KafkaMirrorMaker2Resource;
 import io.strimzi.systemtest.resources.crd.KafkaMirrorMakerResource;
+import io.strimzi.systemtest.resources.crd.KafkaNodePoolResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaUserResource;
+import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
+import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaBridgeTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaConnectTemplates;
@@ -124,21 +126,33 @@ class CustomResourceStatusIsolatedST extends AbstractST {
 
         assertKafkaStatus(1, KafkaResources.bootstrapServiceName(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME) + "." + clusterOperator.getDeploymentNamespace() + ".svc");
 
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME, k -> {
-            k.getSpec().getKafka().setResources(new ResourceRequirementsBuilder()
-                    .addToRequests("cpu", new Quantity("100000m"))
-                    .build());
-        }, clusterOperator.getDeploymentNamespace());
+        ResourceRequirements resources = new ResourceRequirementsBuilder()
+            .addToRequests("cpu", new Quantity("100000m"))
+            .build();
+
+        if (Environment.isKafkaNodePoolsEnabled()) {
+            KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(KafkaResource.getNodePoolName(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME), knp ->
+                knp.getSpec().setResources(resources), clusterOperator.getDeploymentNamespace());
+        } else {
+            KafkaResource.replaceKafkaResourceInSpecificNamespace(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME, k -> {
+                k.getSpec().getKafka().setResources(resources);
+            }, clusterOperator.getDeploymentNamespace());
+        }
 
         LOGGER.info("Waiting for cluster to be in NotReady state");
         KafkaUtils.waitForKafkaNotReady(clusterOperator.getDeploymentNamespace(), CUSTOM_RESOURCE_STATUS_CLUSTER_NAME);
 
         LOGGER.info("Recover cluster to Ready state");
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME, k -> {
-            k.getSpec().getKafka().setResources(new ResourceRequirementsBuilder()
-                    .addToRequests("cpu", new Quantity("100m"))
-                    .build());
-        }, clusterOperator.getDeploymentNamespace());
+        resources.setRequests(Collections.singletonMap("cpu", new Quantity("100m")));
+
+        if (Environment.isKafkaNodePoolsEnabled()) {
+            KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(KafkaResource.getNodePoolName(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME), knp ->
+                knp.getSpec().setResources(resources), clusterOperator.getDeploymentNamespace());
+        } else {
+            KafkaResource.replaceKafkaResourceInSpecificNamespace(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME, k -> {
+                k.getSpec().getKafka().setResources(resources);
+            }, clusterOperator.getDeploymentNamespace());
+        }
 
         KafkaUtils.waitForKafkaReady(clusterOperator.getDeploymentNamespace(), CUSTOM_RESOURCE_STATUS_CLUSTER_NAME);
         assertKafkaStatus(3, KafkaResources.bootstrapServiceName(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME) + "." + clusterOperator.getDeploymentNamespace() + ".svc");
@@ -466,8 +480,18 @@ class CustomResourceStatusIsolatedST extends AbstractST {
     }
 
     void assertKafkaStatus(long expectedObservedGeneration, String internalAddress) {
+        long observedGeneration = 0;
+
         KafkaStatus kafkaStatus = KafkaResource.kafkaClient().inNamespace(clusterOperator.getDeploymentNamespace()).withName(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME).get().getStatus();
-        assertThat("Kafka cluster status has incorrect Observed Generation", kafkaStatus.getObservedGeneration(), is(expectedObservedGeneration));
+
+        if (Environment.isKafkaNodePoolsEnabled()) {
+            String nodePoolName = KafkaResource.getNodePoolName(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME);
+            observedGeneration = KafkaNodePoolResource.kafkaNodePoolClient().inNamespace(clusterOperator.getDeploymentNamespace()).withName(nodePoolName).get().getStatus().getObservedGeneration();
+        } else {
+            observedGeneration = kafkaStatus.getObservedGeneration();
+        }
+
+        assertThat("Kafka cluster status has incorrect Observed Generation", observedGeneration, is(expectedObservedGeneration));
 
         for (ListenerStatus listener : kafkaStatus.getListeners()) {
             switch (listener.getType()) {

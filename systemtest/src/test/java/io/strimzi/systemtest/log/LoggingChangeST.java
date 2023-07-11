@@ -1344,7 +1344,7 @@ class LoggingChangeST extends AbstractST {
         String kafkaSsName = KafkaResources.kafkaStatefulSetName(clusterName);
         Map<String, String> kafkaPods = PodUtils.podSnapshot(namespaceName, kafkaSelector);
 
-        String log4jFile =  cmdKubeClient().namespace(namespaceName).execInPodContainer(Level.DEBUG, KafkaResources.kafkaPodName(clusterName, 0),
+        String log4jFile =  cmdKubeClient().namespace(namespaceName).execInPodContainer(Level.DEBUG, KafkaResource.getKafkaPodName(clusterName, 0),
             "kafka", "/bin/bash", "-c", "cat custom-config/log4j.properties").out();
         assertTrue(log4jFile.contains(cmData));
 
@@ -1363,7 +1363,7 @@ class LoggingChangeST extends AbstractST {
         RollingUpdateUtils.waitForNoRollingUpdate(namespaceName, kafkaSelector, kafkaPods);
 
         LOGGER.info("Checking that log4j.properties in custom-config isn't empty and configuration is default");
-        log4jFile = cmdKubeClient().namespace(namespaceName).execInPodContainer(Level.DEBUG, KafkaResources.kafkaPodName(clusterName, 0),
+        log4jFile = cmdKubeClient().namespace(namespaceName).execInPodContainer(Level.DEBUG, KafkaResource.getKafkaPodName(clusterName, 0),
             "kafka", "/bin/bash", "-c", "cat custom-config/log4j.properties").out();
 
         assertFalse(log4jFile.isEmpty());

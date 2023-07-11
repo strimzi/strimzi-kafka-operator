@@ -13,9 +13,11 @@ import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.KafkaList;
 import io.strimzi.api.kafka.model.Kafka;
+import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.status.KafkaStatus;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.ResourceOperation;
 import io.strimzi.systemtest.resources.ResourceType;
@@ -30,6 +32,7 @@ import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
+import static io.strimzi.operator.common.Util.hashStub;
 import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
@@ -126,5 +129,43 @@ public class KafkaResource implements ResourceType<Kafka> {
         return new LabelSelectorBuilder()
             .withMatchLabels(matchLabels)
             .build();
+    }
+
+    public static String getKafkaNodePoolName(String clusterName) {
+        return Constants.KAFKA_NODE_POOL_PREFIX + hashStub(clusterName);
+    }
+
+    public static String getStrimziPodSetName(String clusterName) {
+        return getStrimziPodSetName(clusterName, null);
+    }
+
+    public static String getStrimziPodSetName(String clusterName, String nodePoolName) {
+        if (Environment.isKafkaNodePoolsEnabled()) {
+            if (nodePoolName == null) {
+                return String.join("-", clusterName, getKafkaNodePoolName(clusterName));
+            }
+            return String.join("-", clusterName, nodePoolName);
+        }
+
+        return KafkaResources.kafkaStatefulSetName(clusterName);
+    }
+
+    public static String getKafkaPodName(String clusterName, int podNum) {
+        return getKafkaPodName(clusterName, null, podNum);
+    }
+
+    public static String getKafkaPodName(String clusterName, String nodePoolName, int podNum) {
+        if (Environment.isKafkaNodePoolsEnabled()) {
+            if (nodePoolName == null) {
+                return String.join("-", clusterName, getKafkaNodePoolName(clusterName), String.valueOf(podNum));
+            }
+            return String.join("-", clusterName, nodePoolName, String.valueOf(podNum));
+        }
+
+        return KafkaResources.kafkaPodName(clusterName, podNum);
+    }
+
+    public static String getNodePoolName(String clusterName) {
+        return Constants.KAFKA_NODE_POOL_PREFIX + hashStub(clusterName);
     }
 }

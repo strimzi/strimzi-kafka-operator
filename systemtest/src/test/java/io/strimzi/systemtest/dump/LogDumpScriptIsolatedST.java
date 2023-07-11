@@ -11,6 +11,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.AbstractST;
+import io.strimzi.systemtest.annotations.NodePoolsNotSupported;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 import io.strimzi.systemtest.storage.TestStorage;
@@ -31,6 +32,7 @@ import java.nio.file.Paths;
 
 @Tag(REGRESSION)
 @Tag(INTERNAL_CLIENTS_USED)
+@NodePoolsNotSupported("Log-dump script is not working with KafkaNodePools - https://github.com/strimzi/strimzi-kafka-operator/issues/8769")
 public class LogDumpScriptIsolatedST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(LogDumpScriptIsolatedST.class);
 

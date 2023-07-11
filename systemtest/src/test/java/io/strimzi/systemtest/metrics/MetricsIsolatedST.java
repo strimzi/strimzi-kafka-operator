@@ -668,6 +668,7 @@ public class MetricsIsolatedST extends AbstractST {
                     .withConfigMapKeyRef(cmks)
                 .endValueFrom()
                 .build();
+
         KafkaResource.replaceKafkaResourceInSpecificNamespace(kafkaClusterSecondName, k -> {
             k.getSpec().getKafka().setMetricsConfig(jmxPrometheusExporterMetrics);
         }, namespaceSecond);

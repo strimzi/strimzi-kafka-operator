@@ -12,6 +12,7 @@ import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.annotations.RequiredMinKubeApiVersion;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
+import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.draincleaner.SetupDrainCleaner;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.storage.TestStorage;
@@ -90,7 +91,7 @@ public class DrainCleanerIsolatedST extends AbstractST {
 
         for (int i = 0; i < replicas; i++) {
             String zkPodName = KafkaResources.zookeeperPodName(testStorage.getClusterName(), i);
-            String kafkaPodName = KafkaResources.kafkaPodName(testStorage.getClusterName(), i);
+            String kafkaPodName = KafkaResource.getKafkaPodName(testStorage.getClusterName(), i);
 
             Map<String, String> zkPod = null;
             if (!Environment.isKRaftModeEnabled()) {

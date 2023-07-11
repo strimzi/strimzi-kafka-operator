@@ -19,6 +19,7 @@ import io.strimzi.systemtest.interfaces.IndicativeSentences;
 import io.strimzi.systemtest.logs.TestExecutionWatcher;
 import io.strimzi.systemtest.parallel.TestSuiteNamespaceManager;
 import io.strimzi.systemtest.parallel.SuiteThreadController;
+import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.storage.TestStorage;
@@ -475,7 +476,7 @@ public abstract class AbstractST implements TestSeparator {
 
         //Verifying docker image for kafka pods
         for (int i = 0; i < kafkaPods; i++) {
-            String imgFromPod = PodUtils.getContainerImageNameFromPod(kafkaNamespaceName, KafkaResources.kafkaPodName(clusterName, i), "kafka");
+            String imgFromPod = PodUtils.getContainerImageNameFromPod(kafkaNamespaceName, KafkaResource.getKafkaPodName(clusterName, i), "kafka");
             assertThat("Kafka Pod: " + i + " uses wrong image", imgFromPod, containsString(TestUtils.parseImageMap(imgFromDeplConf.get(KAFKA_IMAGE_MAP)).get(kafkaVersion)));
             if (rackAwareEnabled) {
                 String initContainerImage = PodUtils.getInitContainerImageName(KafkaResources.kafkaPodName(clusterName, i));

@@ -74,9 +74,9 @@ public class StrimziPodSetUtils {
      * @param spsName The name of the StrimziPodSet
      * @param expectPods The number of pods expected.
      */
-    public static void waitForAllStrimziPodSetAndPodsReady(String namespaceName, String spsName, int expectPods, long timeout) {
-        String resourceName = spsName.contains("-kafka") ? spsName.replace("-kafka", "") : spsName.replace("-zookeeper", "");
-        LabelSelector labelSelector = KafkaResource.getLabelSelector(resourceName, spsName);
+    public static void waitForAllStrimziPodSetAndPodsReady(String namespaceName, String spsName, String componentName, int expectPods, long timeout) {
+        String resourceName = componentName.contains("-kafka") ? componentName.replace("-kafka", "") : componentName.replace("-zookeeper", "");
+        LabelSelector labelSelector = KafkaResource.getLabelSelector(resourceName, componentName);
 
         LOGGER.info("Waiting for StrimziPodSet: {}/{} to be ready", namespaceName, spsName);
         TestUtils.waitFor("readiness of StrimziPodSet: " + namespaceName + "/" + spsName, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, timeout,
@@ -92,8 +92,8 @@ public class StrimziPodSetUtils {
         LOGGER.info("StrimziPodSet: {}/{} is ready", namespaceName, spsName);
     }
 
-    public static void waitForAllStrimziPodSetAndPodsReady(String namespaceName, String spsName, int expectPods) {
-        waitForAllStrimziPodSetAndPodsReady(namespaceName, spsName, expectPods, READINESS_TIMEOUT);
+    public static void waitForAllStrimziPodSetAndPodsReady(String namespaceName, String spsName, String componentName, int expectPods) {
+        waitForAllStrimziPodSetAndPodsReady(namespaceName, spsName, componentName, expectPods, READINESS_TIMEOUT);
     }
 
     /**

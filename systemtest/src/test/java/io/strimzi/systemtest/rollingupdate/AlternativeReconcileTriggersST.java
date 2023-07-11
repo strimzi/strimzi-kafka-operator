@@ -23,6 +23,7 @@ import io.strimzi.systemtest.annotations.KRaftNotSupported;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
+import io.strimzi.systemtest.resources.crd.KafkaNodePoolResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
@@ -263,7 +264,7 @@ class AlternativeReconcileTriggersST extends AbstractST {
 
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(clusterName, 3).build());
 
-        Pod kafkaPod = kubeClient(namespaceName).getPod(KafkaResources.kafkaPodName(clusterName, 0));
+        Pod kafkaPod = kubeClient(namespaceName).getPod(KafkaResource.getKafkaPodName(clusterName, 0));
         // snapshot of one single Kafka pod
         Map<String, String> kafkaSnapshot = Collections.singletonMap(kafkaPod.getMetadata().getName(), kafkaPod.getMetadata().getUid());
         Map<String, String> zkSnapshot = null;
@@ -274,7 +275,7 @@ class AlternativeReconcileTriggersST extends AbstractST {
         }
 
         LOGGER.info("Trying to roll just single Kafka and single ZK Pod");
-        kubeClient(namespaceName).editPod(KafkaResources.kafkaPodName(clusterName, 0)).edit(pod -> new PodBuilder(pod)
+        kubeClient(namespaceName).editPod(KafkaResource.getKafkaPodName(clusterName, 0)).edit(pod -> new PodBuilder(pod)
             .editMetadata()
                 .addToAnnotations(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "true")
             .endMetadata()
@@ -393,10 +394,17 @@ class AlternativeReconcileTriggersST extends AbstractST {
         // Add Jbod volume to Kafka => triggers RU
         LOGGER.info("Add JBOD volume to the Kafka cluster {}", kafkaName);
 
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), kafka -> {
-            JbodStorage storage = (JbodStorage) kafka.getSpec().getKafka().getStorage();
-            storage.getVolumes().add(vol1);
-        }, testStorage.getNamespaceName());
+        if (Environment.isKafkaNodePoolsEnabled()) {
+            KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(testStorage.getKafkaNodePoolName(), kafkaNodePool -> {
+                JbodStorage storage = (JbodStorage) kafkaNodePool.getSpec().getStorage();
+                storage.getVolumes().add(vol1);
+            }, testStorage.getNamespaceName());
+        } else {
+            KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), kafka -> {
+                JbodStorage storage = (JbodStorage) kafka.getSpec().getKafka().getStorage();
+                storage.getVolumes().add(vol1);
+            }, testStorage.getNamespaceName());
+        }
 
         // Wait util it rolls
         kafkaPods = RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getKafkaSelector(), 3, kafkaPods);
@@ -404,10 +412,17 @@ class AlternativeReconcileTriggersST extends AbstractST {
         // Remove Jbod volume to Kafka => triggers RU
         LOGGER.info("Remove JBOD volume to the Kafka cluster {}", kafkaName);
 
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), kafka -> {
-            JbodStorage storage = (JbodStorage) kafka.getSpec().getKafka().getStorage();
-            storage.getVolumes().remove(vol1);
-        }, testStorage.getNamespaceName());
+        if (Environment.isKafkaNodePoolsEnabled()) {
+            KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(testStorage.getKafkaNodePoolName(), kafkaNodePool -> {
+                JbodStorage storage = (JbodStorage) kafkaNodePool.getSpec().getStorage();
+                storage.getVolumes().remove(vol1);
+            }, testStorage.getNamespaceName());
+        } else {
+            KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), kafka -> {
+                JbodStorage storage = (JbodStorage) kafka.getSpec().getKafka().getStorage();
+                storage.getVolumes().remove(vol1);
+            }, testStorage.getNamespaceName());
+        }
 
         // Wait util it rolls
         RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getKafkaSelector(), 3, kafkaPods);
