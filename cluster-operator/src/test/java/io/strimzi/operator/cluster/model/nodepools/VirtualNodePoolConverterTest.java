@@ -162,7 +162,7 @@ public class VirtualNodePoolConverterTest {
                 .endSpec()
                 .build();
 
-        KafkaNodePool pool = VirtualNodePoolConverter.convertKafkaToVirtualNodePool(kafka, null, false);
+        KafkaNodePool pool = VirtualNodePoolConverter.convertKafkaToVirtualNodePool(kafka, null);
 
         // Metadata
         assertThat(pool.getMetadata().getName(), is(VirtualNodePoolConverter.DEFAULT_NODE_POOL_NAME));
@@ -201,7 +201,7 @@ public class VirtualNodePoolConverterTest {
                 .endSpec()
                 .build();
 
-        KafkaNodePool pool = VirtualNodePoolConverter.convertKafkaToVirtualNodePool(kafka, 3, false);
+        KafkaNodePool pool = VirtualNodePoolConverter.convertKafkaToVirtualNodePool(kafka, 3);
 
         // Status
         assertThat(pool.getStatus().getNodeIds().size(), is(3));
@@ -237,7 +237,7 @@ public class VirtualNodePoolConverterTest {
                 .endSpec()
                 .build();
 
-        KafkaNodePool pool = VirtualNodePoolConverter.convertKafkaToVirtualNodePool(kafka, 3, false);
+        KafkaNodePool pool = VirtualNodePoolConverter.convertKafkaToVirtualNodePool(kafka, 3);
 
         // Metadata
         assertThat(pool.getMetadata().getName(), is(VirtualNodePoolConverter.DEFAULT_NODE_POOL_NAME));
@@ -267,46 +267,5 @@ public class VirtualNodePoolConverterTest {
         // Status
         assertThat(pool.getStatus().getNodeIds().size(), is(3));
         assertThat(pool.getStatus().getNodeIds(), hasItems(0, 1, 2));
-    }
-
-    @Test
-    public void testConvertKRaftKafka()  {
-        Kafka kafka = new KafkaBuilder()
-                .withNewMetadata()
-                    .withName("my-cluster")
-                    .withNamespace("my-namespace")
-                    .withLabels(Map.of("custom-label", "custom-label-value"))
-                    .withAnnotations(Map.of("custom-anno", "custom-anno-value"))
-                .endMetadata()
-                .withNewSpec()
-                    .withNewKafka()
-                        .withReplicas(3)
-                        .withNewJbodStorage()
-                            .withVolumes(new PersistentClaimStorageBuilder().withId(0).withSize("100Gi").build())
-                        .endJbodStorage()
-                    .endKafka()
-                .endSpec()
-                .build();
-
-        KafkaNodePool pool = VirtualNodePoolConverter.convertKafkaToVirtualNodePool(kafka, null, true);
-
-        // Metadata
-        assertThat(pool.getMetadata().getName(), is(VirtualNodePoolConverter.DEFAULT_NODE_POOL_NAME));
-        assertThat(pool.getMetadata().getNamespace(), is("my-namespace"));
-        assertThat(pool.getMetadata().getLabels(), is(Map.of("custom-label", "custom-label-value")));
-        assertThat(pool.getMetadata().getAnnotations().size(), is(0));
-
-        // Spec
-        assertThat(pool.getSpec().getReplicas(), is(3));
-
-        JbodStorage storage = (JbodStorage) pool.getSpec().getStorage();
-        assertThat(storage.getVolumes().size(), is(1));
-        assertThat(storage.getVolumes().get(0).getId(), is(0));
-        assertThat(((PersistentClaimStorage) storage.getVolumes().get(0)).getSize(), is("100Gi"));
-
-        assertThat(pool.getSpec().getRoles(), is(List.of(ProcessRoles.BROKER, ProcessRoles.CONTROLLER)));
-
-        // Status
-        assertThat(pool.getStatus().getNodeIds(), is(nullValue()));
     }
 }

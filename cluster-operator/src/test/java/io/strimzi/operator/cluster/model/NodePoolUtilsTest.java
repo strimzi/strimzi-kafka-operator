@@ -161,19 +161,6 @@ public class NodePoolUtilsTest {
     }
 
     @Test
-    public void testNewVirtualNodePoolWithKRaft()  {
-        List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, KAFKA, null, Map.of(), Map.of(), true, SHARED_ENV_PROVIDER);
-
-        assertThat(pools.size(), is(1));
-        assertThat(pools.get(0).poolName, is(VirtualNodePoolConverter.DEFAULT_NODE_POOL_NAME));
-        assertThat(pools.get(0).processRoles, is(Set.of(ProcessRoles.BROKER, ProcessRoles.CONTROLLER)));
-        assertThat(pools.get(0).idAssignment.toBeAdded(), is(Set.of(0, 1, 2)));
-        assertThat(pools.get(0).idAssignment.toBeRemoved(), is(Set.of()));
-        assertThat(pools.get(0).idAssignment.current(), is(Set.of()));
-        assertThat(pools.get(0).idAssignment.desired(), is(Set.of(0, 1, 2)));
-    }
-
-    @Test
     public void testNewNodePools()  {
         List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, KAFKA, List.of(POOL_A, POOL_B), Map.of(), Map.of(), false, SHARED_ENV_PROVIDER);
 

@@ -30,12 +30,10 @@ public class VirtualNodePoolConverter {
      *
      * @param kafka             The Kafka custom resource
      * @param existingReplicas  Existing number of replicas which is used to generate the Node IDs
-     * @param useKRaft          Flag indicating whether this is a KRaft cluster or not. This influences the roles which
-     *                          this node pool will have.
      *
-     * @return The newly generated node pool
+     * @return  The newly generated node pool
      */
-    public static KafkaNodePool convertKafkaToVirtualNodePool(Kafka kafka, Integer existingReplicas, boolean useKRaft) {
+    public static KafkaNodePool convertKafkaToVirtualNodePool(Kafka kafka, Integer existingReplicas) {
         List<Integer> nodeIds = null;
 
         if (existingReplicas != null && existingReplicas > 0)   {
@@ -52,11 +50,7 @@ public class VirtualNodePoolConverter {
                 .withNewSpec()
                     .withReplicas(kafka.getSpec().getKafka().getReplicas())
                     .withStorage(kafka.getSpec().getKafka().getStorage())
-                    // TODO: In the future, KRaft should be usable only with Node Pools - this is not enabled now since
-                    //       it would break all system tests. This should be enabled only once the system tests are
-                    //       updated. This is tracked in https://github.com/strimzi/strimzi-kafka-operator/issues/8592.
-                    //       Once it is enabled, only the BROKER role should be set here.
-                    .withRoles(useKRaft ? List.of(ProcessRoles.BROKER, ProcessRoles.CONTROLLER) : List.of(ProcessRoles.BROKER))
+                    .withRoles(List.of(ProcessRoles.BROKER)) // We do not need to care about the controller role here since this is only used with ZooKeeper based clusters
                     .withResources(kafka.getSpec().getKafka().getResources())
                     .withJvmOptions(kafka.getSpec().getKafka().getJvmOptions())
                     .withTemplate(convertTemplate(kafka.getSpec().getKafka().getTemplate()))

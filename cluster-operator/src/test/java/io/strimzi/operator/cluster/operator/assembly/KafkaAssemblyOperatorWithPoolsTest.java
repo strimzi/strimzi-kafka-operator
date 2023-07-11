@@ -48,6 +48,7 @@ import io.strimzi.operator.cluster.model.nodepools.NodePoolUtils;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.StatefulSetOperator;
 import io.strimzi.operator.common.Annotations;
+import io.strimzi.operator.common.InvalidConfigurationException;
 import io.strimzi.operator.common.MetricsAndLogging;
 import io.strimzi.operator.cluster.operator.resource.MockSharedEnvironmentProvider;
 import io.strimzi.operator.common.PasswordGenerator;
@@ -83,6 +84,7 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.IntStream;
 
+import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -1302,6 +1304,45 @@ public class KafkaAssemblyOperatorWithPoolsTest {
                     assertThat(kr.kafkaBrokerResourceRequirements().size(), is(2));
                     assertThat(kr.kafkaBrokerResourceRequirements().get("pool-a"), is(new ResourceRequirementsBuilder().withRequests(Map.of("cpu", new Quantity("4"))).build()));
                     assertThat(kr.kafkaBrokerResourceRequirements().get("pool-b"), is(new ResourceRequirementsBuilder().withRequests(Map.of("cpu", new Quantity("6"))).build()));
+
+                    async.flag();
+                })));
+    }
+
+    /**
+     * Tests that KRaft cluster cannot be deployed without using NodePools
+     *
+     * @param context   Test context
+     */
+    @Test
+    public void testKRaftClusterWithoutNodePools(VertxTestContext context)  {
+        Kafka kafka = new KafkaBuilder(KAFKA)
+                .editMetadata()
+                .withAnnotations(Map.of())
+                .endMetadata()
+                .build();
+
+        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
+
+        CrdOperator<KubernetesClient, Kafka, KafkaList> mockKafkaOps = supplier.kafkaOperator;
+        when(mockKafkaOps.getAsync(eq(NAMESPACE), eq(CLUSTER_NAME))).thenReturn(Future.succeededFuture(kafka));
+
+        ClusterOperatorConfig config = new ClusterOperatorConfig.ClusterOperatorConfigBuilder(ResourceUtils.dummyClusterOperatorConfig(), VERSIONS)
+                .with(ClusterOperatorConfig.FEATURE_GATES.key(), "+KafkaNodePools,+UseKRaft")
+                .build();
+
+        KafkaAssemblyOperator kao = new KafkaAssemblyOperator(
+                vertx, new PlatformFeaturesAvailability(false, KUBERNETES_VERSION),
+                CERT_MANAGER,
+                PASSWORD_GENERATOR,
+                supplier,
+                config);
+
+        Checkpoint async = context.checkpoint();
+        kao.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME))
+                .onComplete(context.failing(v -> context.verify(() -> {
+                    assertThat(v, instanceOf(InvalidConfigurationException.class));
+                    assertThat(v.getMessage(), is("The UseKRaft feature gate can be used only together with a Kafka cluster based on the KafkaNodePool resources."));
 
                     async.flag();
                 })));
