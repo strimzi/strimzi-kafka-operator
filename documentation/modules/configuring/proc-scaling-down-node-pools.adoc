@@ -1,0 +1,58 @@
+// Module included in the following assemblies:
+//
+// assembly-config.adoc
+
+[id='proc-scaling-down-node-pools-{context}']
+= (Preview) Removing nodes from a node pool
+
+[role="_abstract"]
+This procedure describes how to scale down a node pool to remove nodes.
+
+In this procedure, we start with four nodes for node pool `pool-a`:
+
+.Kafka nodes in the node pool
+[source,shell,subs="+quotes"]
+----
+NAME                       READY  STATUS   RESTARTS
+my-cluster-pool-a-kafka-0  1/1    Running  0
+my-cluster-pool-a-kafka-1  1/1    Running  0
+my-cluster-pool-a-kafka-2  1/1    Running  0
+my-cluster-pool-a-kafka-3  1/1    Running  0
+----
+
+Node IDs are appended to the name of the node on creation.
+We remove node `my-cluster-pool-a-kafka-3`, which has a node ID of `3`.
+
+NOTE: During this process, the ID of the node that holds the partition replicas changes. Consider any dependencies that reference the node ID.
+
+.Prerequisites
+
+* xref:deploying-cluster-operator-str[The Cluster Operator must be deployed.]
+* (Optional) For scale down operations, xref:proc-managing-node-pools-ids-{context}[you can specify the range of node IDs to use in the operation].
++
+If you have assigned a range of node IDs for the operation, the ID of the node being removed is determined by the sequence of nodes given. 
+Otherwise, the node with the highest available ID in the node pool is removed.  
+
+.Procedure
+
+. Reassign the partitions before decreasing the number of nodes in the node pool.
++
+Before scaling down a node pool, you can use the Cruise Control `remove-brokers` mode to move partition replicas off the brokers that are going to be removed.
+
+. After the reassignment process is complete, and the node being removed has no live partitions, reduce the number of Kafka nodes in the node pool.
++
+For example, node pool `pool-a` has four replicas. We remove a node by decreasing the number of replicas:
++
+[source,shell]
+----
+kubectl scale kafkanodepool pool-a --replicas=3
+----
++
+.Output shows three Kafka nodes in the node pool
+[source,shell]
+----
+NAME                        READY   STATUS    RESTARTS
+my-cluster-pool-b-kafka-0   1/1     Running   0
+my-cluster-pool-b-kafka-1   1/1     Running   0
+my-cluster-pool-b-kafka-2   1/1     Running   0
+----

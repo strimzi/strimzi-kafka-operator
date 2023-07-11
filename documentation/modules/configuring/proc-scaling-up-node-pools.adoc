@@ -1,0 +1,65 @@
+// Module included in the following assemblies:
+//
+// assembly-config.adoc
+
+[id='proc-scaling-up-node-pools-{context}']
+= (Preview) Adding nodes to a node pool
+
+[role="_abstract"]
+This procedure describes how to scale up a node pool to add new nodes.
+
+In this procedure, we start with three nodes for node pool `pool-a`:
+
+.Kafka nodes in the node pool
+[source,shell]
+----
+NAME                       READY  STATUS   RESTARTS
+my-cluster-pool-a-kafka-0  1/1    Running  0
+my-cluster-pool-a-kafka-1  1/1    Running  0
+my-cluster-pool-a-kafka-2  1/1    Running  0
+----
+
+Node IDs are appended to the name of the node on creation.
+We add node `my-cluster-pool-a-kafka-3`, which has a node ID of `3`.
+
+NOTE: During this process, the ID of the node that holds the partition replicas changes. Consider any dependencies that reference the node ID.
+
+.Prerequisites
+
+* xref:deploying-cluster-operator-str[The Cluster Operator must be deployed.]
+* (Optional) For scale up operations, xref:proc-managing-node-pools-ids-{context}[you can specify the range of node IDs to use].
++
+If you have assigned a range of node IDs for the operation, the ID of the node being added is determined by the sequence of nodes given. 
+Otherwise, the lowest available node ID across the cluster is used.  
+
+.Procedure
+
+. Create a new node in the node pool.
++
+For example, node pool `pool-a` has three replicas. We add a node by increasing the number of replicas:
++
+[source,shell]
+----
+kubectl scale kafkanodepool pool-a --replicas=4
+----
+
+. Check the status of the deployment and wait for the pods in the node pool to be created and have a status of `READY`.
++
+[source,shell]
+----
+kubectl get pods -n <my_cluster_operator_namespace>
+----
++
+.Output shows four Kafka nodes in the node pool
+[source,shell]
+----
+NAME                       READY  STATUS   RESTARTS
+my-cluster-pool-a-kafka-0  1/1    Running  0
+my-cluster-pool-a-kafka-1  1/1    Running  0
+my-cluster-pool-a-kafka-2  1/1    Running  0
+my-cluster-pool-a-kafka-3  1/1    Running  0
+---- 
+
+. Reassign the partitions after increasing the number of nodes in the node pool.
++
+After scaling up a node pool, you can use the Cruise Control `add-brokers` mode to move partition replicas from existing brokers to the newly added brokers.
