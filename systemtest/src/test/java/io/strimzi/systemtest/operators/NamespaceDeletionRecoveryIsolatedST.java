@@ -12,6 +12,7 @@ import io.strimzi.api.kafka.model.EntityOperatorSpecBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.systemtest.AbstractST;
+import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.cli.KafkaCmdClient;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
@@ -28,6 +29,7 @@ import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.NamespaceUtils;
+import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterAll;
@@ -147,18 +149,6 @@ class NamespaceDeletionRecoveryIsolatedST extends AbstractST {
         LOGGER.info("Recreating Kafka cluster without Topic Operator");
         resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), 3, 3)
             .editSpec()
-                .editKafka()
-                    .withNewPersistentClaimStorage()
-                        .withSize("1Gi")
-                        .withStorageClass(storageClassName)
-                    .endPersistentClaimStorage()
-                .endKafka()
-                .editZookeeper()
-                    .withNewPersistentClaimStorage()
-                        .withSize("1Gi")
-                        .withStorageClass(storageClassName)
-                    .endPersistentClaimStorage()
-                .endZookeeper()
                 .withNewEntityOperator()
                 .endEntityOperator()
             .endSpec()
@@ -170,8 +160,6 @@ class NamespaceDeletionRecoveryIsolatedST extends AbstractST {
 
         LOGGER.info("Currently present Topics inside Kafka: {}/{} are: {}", testStorage.getNamespaceName(), kafkaPodName,
             KafkaCmdClient.listTopicsUsingPodCli(testStorage.getNamespaceName(), kafkaPodName, KafkaResources.plainBootstrapAddress(testStorage.getClusterName())));
-        LOGGER.info("Currently present Topics inside Scraper: {}/{} are: {}", testStorage.getNamespaceName(), scraperPodName,
-            KafkaCmdClient.listTopicsUsingPodCli(testStorage.getNamespaceName(), scraperPodName, KafkaResources.plainBootstrapAddress(testStorage.getClusterName())));
 
         LOGGER.info("Removing store Topics before deploying Topic Operator");
         // Remove all topic data from topic store and wait for the deletion -> must do before deploying topic operator
@@ -269,6 +257,13 @@ class NamespaceDeletionRecoveryIsolatedST extends AbstractST {
             PersistentVolume pv = kubeClient().getPersistentVolumeWithName(pvc.getSpec().getVolumeName());
             pv.getSpec().setClaimRef(null);
             kubeClient().updatePersistentVolume(pv);
+
+            TestUtils.waitFor("PV to have status Bound", Constants.RECONCILIATION_INTERVAL, Constants.GLOBAL_TIMEOUT,
+                () -> {
+                    PersistentVolume updatedPv = kubeClient().getPersistentVolumeWithName(pvc.getSpec().getVolumeName());
+                    LOGGER.info("PV: {} has status: {}", updatedPv.getMetadata().getName(), updatedPv.getStatus().getPhase());
+                    return updatedPv.getStatus().getPhase().equals("Bound");
+                });
         }
     }
 
