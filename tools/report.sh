@@ -5,7 +5,7 @@ if [[ $(uname -s) == "Darwin" ]]; then
   alias echo="gecho"; alias grep="ggrep"; alias sed="gsed"; alias date="gdate"
 fi
 
-{ # this ensures the entire script is downloaded #
+{ # this ensures that the entire script is downloaded #
 NAMESPACE=""
 CLUSTER=""
 BRIDGE=""
@@ -296,42 +296,77 @@ fi
 
 echo "podlogs"
 mkdir -p "$OUT_DIR"/reports/configs
-PODS=$($KUBE_CLIENT get po -l strimzi.io/cluster="$CLUSTER" -o name -n "$NAMESPACE" | cut -d "/" -f 2)
-PODS="$PODS $($KUBE_CLIENT get po -l strimzi.io/cluster="$BRIDGE" -o name -n "$NAMESPACE" | cut -d "/" -f 2)"
-PODS="$PODS $($KUBE_CLIENT get po -l strimzi.io/cluster="$CONNECT" -o name -n "$NAMESPACE" | cut -d "/" -f 2)"
-PODS="$PODS $($KUBE_CLIENT get po -l strimzi.io/cluster="$MM2" -o name -n "$NAMESPACE" | cut -d "/" -f 2)"
-readonly PODS
-for POD in $PODS; do
-  echo "    $POD"
-  if [[ "$POD" =~ .*-zookeeper-[0-9]+ ]]; then
-    get_pod_logs "$POD" zookeeper
-    get_pod_logs "$POD" tls-sidecar
-    $KUBE_CLIENT exec -i "$POD" -n "$NAMESPACE" -c zookeeper -- \
-      cat /tmp/zookeeper.properties > "$OUT_DIR"/reports/configs/"$POD".cfg \
-      2>/dev/null||true
-  elif [[ "$POD" =~ .*-kafka-[0-9]+ ]]; then
-    get_pod_logs "$POD" kafka
-    get_pod_logs "$POD" tls-sidecar
-    $KUBE_CLIENT exec -i "$POD" -n "$NAMESPACE" -c kafka -- \
-      cat /tmp/strimzi.properties > "$OUT_DIR"/reports/configs/"$POD".cfg \
-      2>/dev/null||true
-  elif [[ "$POD" == *"-entity-operator-"* ]]; then
-    get_pod_logs "$POD" topic-operator
-    get_pod_logs "$POD" user-operator
-    get_pod_logs "$POD" tls-sidecar
-  elif [[ "$POD" == *"-kafka-exporter-"* ]]; then
-    get_pod_logs "$POD"
-  elif [[ "$POD" == *"-bridge-"* ]]; then
-    get_pod_logs "$POD"
-  elif [[ "$POD" == *"-connect-"* ]]; then
-    get_pod_logs "$POD"
-  elif [[ "$POD" == *"-mirrormaker2-"* ]]; then
-    get_pod_logs "$POD"
-  elif [[ "$POD" == *"-cruise-control-"* ]]; then
-    get_pod_logs "$POD" cruise-control
-    get_pod_logs "$POD" tls-sidecar
+mapfile -t KAFKA_PODS < <($KUBE_CLIENT -n "$NAMESPACE" get po -l strimzi.io/kind=Kafka,strimzi.io/name="$CLUSTER-kafka" --ignore-not-found --no-headers -o=custom-columns=NAME:.metadata.name)
+if [[ ${#KAFKA_PODS[@]} -ne 0 ]]; then
+  for pod in "${KAFKA_PODS[@]}"; do
+    echo "    $pod"
+    get_pod_logs "$pod" kafka
+    get_pod_logs "$pod" tls-sidecar # for old Strimzi releases
+    $KUBE_CLIENT -n "$NAMESPACE" exec -i "$pod" -c kafka -- \
+      cat /tmp/strimzi.properties > "$OUT_DIR"/reports/configs/"$pod".cfg 2>/dev/null||true
+  done
+fi
+mapfile -t ZOO_PODS < <($KUBE_CLIENT -n "$NAMESPACE" get po -l strimzi.io/kind=Kafka,strimzi.io/name="$CLUSTER-zookeeper" --ignore-not-found --no-headers -o=custom-columns=NAME:.metadata.name)
+if [[ ${#ZOO_PODS[@]} -ne 0 ]]; then
+  for pod in "${ZOO_PODS[@]}"; do
+    echo "    $pod"
+    get_pod_logs "$pod" zookeeper
+    get_pod_logs "$pod" tls-sidecar # for old Strimzi releases
+    $KUBE_CLIENT exec -i "$pod" -n "$NAMESPACE" -c zookeeper -- \
+      cat /tmp/zookeeper.properties > "$OUT_DIR"/reports/configs/"$pod".cfg 2>/dev/null||true
+  done
+fi
+mapfile -t ENTITY_PODS < <($KUBE_CLIENT -n "$NAMESPACE" get po -l strimzi.io/kind=Kafka,strimzi.io/name="$CLUSTER-entity-operator" --ignore-not-found --no-headers -o=custom-columns=NAME:.metadata.name)
+if [[ ${#ENTITY_PODS[@]} -ne 0 ]]; then
+  for pod in "${ENTITY_PODS[@]}"; do
+    echo "    $pod"
+    get_pod_logs "$pod" topic-operator
+    get_pod_logs "$pod" user-operator
+    get_pod_logs "$pod" tls-sidecar
+  done
+fi
+mapfile -t CC_PODS < <($KUBE_CLIENT -n "$NAMESPACE" get po -l strimzi.io/kind=Kafka,strimzi.io/name="$CLUSTER-cruise-control" --ignore-not-found --no-headers -o=custom-columns=NAME:.metadata.name)
+if [[ ${#CC_PODS[@]} -ne 0 ]]; then
+  for pod in "${CC_PODS[@]}"; do
+    echo "    $pod"
+    get_pod_logs "$pod"
+    get_pod_logs "$pod" tls-sidecar # for old Strimzi releases
+  done
+fi
+mapfile -t EXPORTER_PODS < <($KUBE_CLIENT -n "$NAMESPACE" get po -l strimzi.io/kind=Kafka,strimzi.io/name="$CLUSTER-kafka-exporter" --ignore-not-found --no-headers -o=custom-columns=NAME:.metadata.name)
+if [[ ${#EXPORTER_PODS[@]} -ne 0 ]]; then
+  for pod in "${EXPORTER_PODS[@]}"; do
+    echo "    $pod"
+    get_pod_logs "$pod"
+  done
+fi
+if [[ -n $BRIDGE ]]; then
+  mapfile -t BRIDGE_PODS < <($KUBE_CLIENT -n "$NAMESPACE" get po -l strimzi.io/kind=KafkaBridge,strimzi.io/name="$BRIDGE-bridge" --ignore-not-found --no-headers -o=custom-columns=NAME:.metadata.name)
+  if [[ ${#BRIDGE_PODS[@]} -ne 0 ]]; then
+    for pod in "${BRIDGE_PODS[@]}"; do
+      echo "    $pod"
+      get_pod_logs "$pod"
+    done
   fi
-done
+fi
+if [[ -n $CONNECT ]]; then
+  mapfile -t CONNECT_PODS < <($KUBE_CLIENT -n "$NAMESPACE" get po -l strimzi.io/kind=KafkaConnect,strimzi.io/name="$CONNECT-connect" --ignore-not-found --no-headers -o=custom-columns=NAME:.metadata.name)
+  if [[ ${#CONNECT_PODS[@]} -ne 0 ]]; then
+    for pod in "${CONNECT_PODS[@]}"; do
+      echo "    $pod"
+      get_pod_logs "$pod"
+    done
+  fi
+fi
+if [[ -n $MM2 ]]; then
+  mapfile -t MM2_PODS < <($KUBE_CLIENT -n "$NAMESPACE" get po -l strimzi.io/kind=KafkaMirrorMaker2,strimzi.io/name="$MM2-mirrormaker2" --ignore-not-found --no-headers -o=custom-columns=NAME:.metadata.name)
+  if [[ ${#MM2_PODS[@]} -ne 0 ]]; then
+    for pod in "${MM2_PODS[@]}"; do
+      echo "    $pod"
+      get_pod_logs "$pod"
+    done
+  fi
+fi
 
 FILENAME="report-$(date +"%d-%m-%Y_%H-%M-%S")"
 OLD_DIR="$(pwd)"
@@ -339,8 +374,8 @@ cd "$OUT_DIR" || exit
 zip -qr "$FILENAME".zip ./reports/
 cd "$OLD_DIR" || exit
 if [[ $OUT_DIR == *"tmp."* ]]; then
-  # let's keep the old behavior when --out-dir is not specified
+  # keeping the old behavior when --out-dir is not specified
   mv "$OUT_DIR"/"$FILENAME".zip ./
 fi
 echo "Report file $FILENAME.zip created"
-} # this ensures the entire script is downloaded #
+} # this ensures that the entire script is downloaded #
