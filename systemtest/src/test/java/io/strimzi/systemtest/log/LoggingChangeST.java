@@ -520,7 +520,7 @@ class LoggingChangeST extends AbstractST {
                     "appender.console.type = Console\n" +
                     "appender.console.name = STDOUT\n" +
                     "appender.console.layout.type = PatternLayout\n" +
-                    "appender.console.layout.pattern = %d{yyyy-MM-dd HH:mm:ss} %-5p %c{1}:%L - %m%n\n" +
+                    "appender.console.layout.pattern = %d{yyyy-MM-dd HH:mm:ss} %-5p [%t] %c{1}:%L - %m%n\n" +
                     "\n" +
                     "rootLogger.level = OFF\n" +
                     "rootLogger.appenderRefs = console\n" +

@@ -56,7 +56,7 @@ public class GenericKafkaListenerConfigurationBroker implements Serializable, Un
         this.broker = broker;
     }
 
-    @Description("The host name which will be used in the brokers' `advertised.brokers`")
+    @Description("The host name used in the brokers' `advertised.listeners`.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     public String getAdvertisedHost() {
         return advertisedHost;
@@ -66,7 +66,7 @@ public class GenericKafkaListenerConfigurationBroker implements Serializable, Un
         this.advertisedHost = advertisedHost;
     }
 
-    @Description("The port number which will be used in the brokers' `advertised.brokers`")
+    @Description("The port number used in the brokers' `advertised.listeners`.")
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public Integer getAdvertisedPort() {
         return advertisedPort;

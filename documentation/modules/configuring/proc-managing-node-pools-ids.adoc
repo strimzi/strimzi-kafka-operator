@@ -1,0 +1,89 @@
+// Module included in the following assemblies:
+//
+// assembly-config.adoc
+
+[id='proc-managing-node-pools-ids-{context}']
+= (Preview) Assigning IDs to node pools for scaling operations
+
+[role="_abstract"]
+This procedure describes how to use annotations for advanced node ID handling by the Cluster Operator when performing scaling operations on node pools. 
+You specify the node IDs to use, rather than the Cluster Operator using the next ID in sequence.
+Management of node IDs in this way gives greater control.
+
+To add a range of IDs, you assign the following annotations to the `KafkaNodePool` resource:
+
+* `strimzi.io/next-node-ids` to add a range of IDs that are used for new brokers
+* `strimzi.io/remove-node-ids` to add a range of IDs for removing existing brokers
+
+You can specify an array of individual node IDs, ID ranges, or a combination of both.
+For example, you can specify the following range of IDs: `[0, 1, 2, 10-20, 30]` for scaling up the Kafka node pool.
+This format allows you to specify a combination of individual node IDs (`0`, `1`, `2`, `30`) as well as a range of IDs (`10-20`).
+
+In a typical scenario, you might specify a range of IDs for scaling up and a single node ID to remove a specific node when scaling down.
+
+In this procedure, we add the scaling annotations to node pools as follows:
+
+* `pool-a` is assigned a range of IDs for scaling up 
+* `pool-b` is assigned a range of IDs for scaling down
+
+During the scaling operation, IDs are used as follows: 
+
+* Scale up picks up the lowest available ID in the range for the new node.
+* Scale down removes the node with the highest available ID in the range. 
+
+If there are gaps in the sequence of node IDs assigned in the node pool, the next node to be added is assigned an ID that fills the gap.
+
+The annotations don't need to be updated after every scaling operation.
+Any unused IDs are still valid for the next scaling event. 
+
+The Cluster Operator allows you to specify a range of IDs in either ascending or descending order, so you can define them in the order the nodes are scaled. 
+For example, when scaling up, you can specify a range such as `[1000-1999]`, and the new nodes are assigned the next lowest IDs: `1000`, `1001`, `1002`, `1003`, and so on. 
+Conversely, when scaling down, you can specify a range like `[1999-1000]`, ensuring that nodes with the next highest IDs are removed: `1003`, `1002`, `1001`, `1000`, and so on.
+
+If you don't specify an ID range using the annotations, the Cluster Operator follows its default behavior for handling IDs during scaling operations. 
+Node IDs start at 0 (zero) and run sequentially across the Kafka cluster. 
+The next lowest ID is assigned to a new node. 
+Gaps to node IDs are filled across the cluster.
+This means that they might not run sequentially within a node pool. 
+The default behavior for scaling up is to add the next lowest available node ID across the cluster; and for scaling down, it is to remove the node in the node pool with the highest available node ID. 
+The default approach is also applied if the assigned range of IDs is misformatted, the scaling up range runs out of IDs, or the scaling down range does not apply to any in-use nodes. 
+
+.Prerequisites
+
+* xref:deploying-cluster-operator-str[The Cluster Operator must be deployed.]
+
+.Procedure
+
+. Annotate the node pool with the IDs to use when scaling up or scaling down, as shown in the following examples.
++
+IDs for scaling up are assigned to node pool `pool-a`:
++
+.Assigning IDs for scaling up 
+[source,shell,subs="+quotes"]
+----
+kubectl annotate kafkanodepool pool-a strimzi.io/next-node-ids="[0,1,2,10-20,30]"
+----
++
+The lowest available ID from this range is used when adding a node to `pool-a`.
++
+IDs for scaling down are assigned to node pool `pool-b`:
++
+.Assigning IDs for scaling down 
+[source,shell,subs="+quotes"]
+----
+kubectl annotate kafkanodepool pool-b strimzi.io/remove-node-ids="[60-50,9,8,7]"
+----
++
+The highest available ID from this range is removed when scaling down `pool-b`.
+
+. You can now scale the node pool.
++
+--
+For more information, see the following:
+
+* xref:proc-scaling-up-node-pools-{context}[]
+* xref:proc-scaling-down-node-pools-{context}[]
+* xref:proc-moving-node-pools-{context}[]
+--
++
+On reconciliation, a warning is given if the annotations are misformatted. 

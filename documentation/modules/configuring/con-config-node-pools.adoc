@@ -45,50 +45,19 @@ NOTE: While the `KafkaNodePools` feature gate that enables node pools is in alph
 apiVersion: {KafkaNodePoolApiVersion}
 kind: KafkaNodePool
 metadata:
-  name: pool-a
-  labels:
-    strimzi.io/cluster: my-cluster
-spec:
-  replicas: 3
-  roles:
-    - broker # <1>
-  storage:
-    type: jbod
-    volumes:
-      - id: 0
-        type: persistent-claim
-        size: 100Gi
-        deleteClaim: false
-  resources:
-      requests:
-        memory: 64Gi
-        cpu: "8"
-      limits:
-        memory: 64Gi
-        cpu: "12"      
-----
-<1> Roles for the nodes in the node pool, which can only be `broker` when using Kafka with ZooKeeper.
-
-.Example configuration for a node pool in a cluster using KRaft mode 
-[source,yaml,subs="+attributes"]
-----
-apiVersion: {KafkaNodePoolApiVersion}
-kind: KafkaNodePool
-metadata:
-  name: kraft-dual-role # <1>
+  name: pool-a # <1>
   labels:
     strimzi.io/cluster: my-cluster # <2>
 spec:
   replicas: 3 # <3>
-  roles: # <4>
-    - controller
-    - broker
+  roles:
+    - broker # <4>
   storage: # <5>
     type: jbod
     volumes:
       - id: 0
         type: persistent-claim
-        size: 20Gi
+        size: 100Gi
         deleteClaim: false
   resources: # <6>
       requests:
@@ -101,9 +70,40 @@ spec:
 <1> Unique name for the node pool.
 <2> The Kafka cluster the node pool belongs to. A node pool can only belong to a single cluster.
 <3> Number of replicas for the nodes. 
-<4> Roles for the nodes in the node pool. In this example, the nodes have dual roles as controllers and brokers.
+<4> Roles for the nodes in the node pool, which can only be `broker` when using Kafka with ZooKeeper.
 <5> Storage specification for the nodes. 
 <6> Requests for reservation of supported resources, currently `cpu` and `memory`, and limits to specify the maximum resources that can be consumed.
+
+.Example configuration for a node pool in a cluster using KRaft mode 
+[source,yaml,subs="+attributes"]
+----
+apiVersion: {KafkaNodePoolApiVersion}
+kind: KafkaNodePool
+metadata:
+  name: kraft-dual-role
+  labels:
+    strimzi.io/cluster: my-cluster
+spec:
+  replicas: 3
+  roles: # <1>
+    - controller
+    - broker
+  storage:
+    type: jbod
+    volumes:
+      - id: 0
+        type: persistent-claim
+        size: 20Gi
+        deleteClaim: false
+  resources:
+      requests:
+        memory: 64Gi
+        cpu: "8"
+      limits:
+        memory: 64Gi
+        cpu: "12"      
+----
+<1> Roles for the nodes in the node pool. In this example, the nodes have dual roles as controllers and brokers.
 
 NOTE: The configuration for the `Kafka` resource must be suitable for KRaft mode. Currently, KRaft mode has xref:ref-operator-use-kraft-feature-gate-str[a number of limitations]. 
 
