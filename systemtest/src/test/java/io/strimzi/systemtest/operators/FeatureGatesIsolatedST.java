@@ -37,6 +37,7 @@ import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.test.annotations.IsolatedTest;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
@@ -66,6 +67,7 @@ public class FeatureGatesIsolatedST extends AbstractST {
      */
     @IsolatedTest("Feature Gates test for enabled UseKRaft gate")
     @Tag(INTERNAL_CLIENTS_USED)
+    @Disabled("Does not use KafkaNodePools for KRaft. Needs to be updated. This is tracked in https://github.com/strimzi/strimzi-kafka-operator/issues/8827")
     public void testKRaftMode(ExtensionContext extensionContext) {
         assumeFalse(Environment.isOlmInstall() || Environment.isHelmInstall());
         final TestStorage testStorage = new TestStorage(extensionContext);
@@ -82,7 +84,7 @@ public class FeatureGatesIsolatedST extends AbstractST {
         List<EnvVar> testEnvVars = new ArrayList<>();
         int kafkaReplicas = 3;
 
-        testEnvVars.add(new EnvVar(Environment.STRIMZI_FEATURE_GATES_ENV, "+UseKRaft,+KafkaNodePools", null));
+        testEnvVars.add(new EnvVar(Environment.STRIMZI_FEATURE_GATES_ENV, "+UseKRaft", null));
 
         clusterOperator = new SetupClusterOperator.SetupClusterOperatorBuilder()
                 .withExtensionContext(extensionContext)
@@ -152,7 +154,6 @@ public class FeatureGatesIsolatedST extends AbstractST {
         LOGGER.info("Waiting for clients to finish sending/receiving messages");
         ClientUtils.waitForClientsSuccess(producerName, consumerName, INFRA_NAMESPACE, MESSAGE_COUNT);
     }
-
     @IsolatedTest
     void testSwitchingConnectStabilityIdentifiesFeatureGateOnAndOff(ExtensionContext extensionContext) {
         assumeFalse(Environment.isOlmInstall() || Environment.isHelmInstall());

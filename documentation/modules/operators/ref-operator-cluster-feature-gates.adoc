@@ -64,9 +64,9 @@ This feature gate is currently intended only for development and testing.
 
 IMPORTANT: **KRaft mode is not ready for production in Apache Kafka or in Strimzi.**
 
-Enabling the `UseKRaft` feature gate is possible only together with the `KafkaNodePools` feature gate.
-To deploy a Kafka cluster in the KRaft mode, you have to use the `KafkaNodePool` resources.
-More details and examples can be found in the xref:deploying-kafka-node-pools-{context}[Deploying Kafka node pools procedure].
+Enabling the `UseKRaft` feature gate requires the `KafkaNodePools` feature gate to be enabled as well.
+To deploy a Kafka cluster in KRaft mode, you must use the `KafkaNodePool` resources.
+For more details and examples, see xref:deploying-kafka-node-pools-{context}[].
 
 When the `UseKRaft` feature gate is enabled, the Kafka cluster is deployed without ZooKeeper.
 *The `.spec.zookeeper` properties in the `Kafka` custom resource are ignored, but still need to be present.*
