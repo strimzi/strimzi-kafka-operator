@@ -616,6 +616,10 @@ It must have the value `keycloak` for the type `KafkaAuthorizationKeycloak`.
 |integer
 |grantsRefreshPoolSize           1.2+<.<a|The number of threads to use to refresh grants for active sessions. The more threads, the more parallelism, so the sooner the job completes. However, using more threads places a heavier load on the authorization server. The default value is 5.
 |integer
+|grantsGcPeriodSeconds           1.2+<.<a|The time, in seconds, between consecutive runs of a job that cleans stale grants from the cache. The default value is 300.
+|integer
+|grantsAlwaysLatest              1.2+<.<a|Controls whether the latest grants are fetched for a new session. When enabled, grants are retrieved from Keycloak and cached for the user. The default value is `false`.
+|boolean
 |superUsers                      1.2+<.<a|List of super users. Should contain list of user principals which should get unlimited access rights.
 |string array
 |connectTimeoutSeconds           1.2+<.<a|The connect timeout in seconds when connecting to authorization server. If not set, the effective connect timeout is 60 seconds.
@@ -624,8 +628,10 @@ It must have the value `keycloak` for the type `KafkaAuthorizationKeycloak`.
 |integer
 |httpRetries                     1.2+<.<a|The maximum number of retries to attempt if an initial HTTP request fails. If not set, the default is to not attempt any retries.
 |integer
-|enableMetrics                   1.2+<.<a|Enable or disable OAuth metrics. Default value is `false`.
+|enableMetrics                   1.2+<.<a|Enable or disable OAuth metrics. The default value is `false`.
 |boolean
+|grantsMaxIdleTimeSeconds        1.2+<.<a|The time, in seconds, after which an idle grant can be evicted from the cache. The default value is 300.
+|integer
 |====
 
 [id='type-KafkaAuthorizationCustom-{context}']

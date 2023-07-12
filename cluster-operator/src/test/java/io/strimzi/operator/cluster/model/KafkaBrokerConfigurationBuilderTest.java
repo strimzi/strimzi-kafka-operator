@@ -312,6 +312,9 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .withDelegateToKafkaAcls(false)
                 .withGrantsRefreshPeriodSeconds(120)
                 .withGrantsRefreshPoolSize(10)
+                .withGrantsMaxIdleTimeSeconds(600)
+                .withGrantsGcPeriodSeconds(120)
+                .withGrantsAlwaysLatest(true)
                 .withTlsTrustedCertificates(cert)
                 .withDisableTlsHostnameVerification(true)
                 .addToSuperUsers("giada", "CN=paccu")
@@ -327,7 +330,7 @@ public class KafkaBrokerConfigurationBuilderTest {
 
         assertThat(configuration, isEquivalent("broker.id=2",
                 "node.id=2",
-                "authorizer.class.name=io.strimzi.kafka.oauth.server.authorizer.KeycloakRBACAuthorizer",
+                "authorizer.class.name=io.strimzi.kafka.oauth.server.authorizer.KeycloakAuthorizer",
                 "strimzi.authorization.token.endpoint.uri=http://token-endpoint-uri",
                 "strimzi.authorization.client.id=my-client-id",
                 "strimzi.authorization.delegate.to.kafka.acl=false",
@@ -338,6 +341,9 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "strimzi.authorization.ssl.endpoint.identification.algorithm=",
                 "strimzi.authorization.grants.refresh.period.seconds=120",
                 "strimzi.authorization.grants.refresh.pool.size=10",
+                "strimzi.authorization.grants.max.idle.time.seconds=600",
+                "strimzi.authorization.grants.gc.period.seconds=120",
+                "strimzi.authorization.reuse.grants=false",
                 "strimzi.authorization.connect.timeout.seconds=30",
                 "strimzi.authorization.read.timeout.seconds=10",
                 "strimzi.authorization.http.retries=2",
@@ -365,7 +371,7 @@ public class KafkaBrokerConfigurationBuilderTest {
 
         assertThat(configuration, isEquivalent("broker.id=2",
                 "node.id=2",
-                "authorizer.class.name=io.strimzi.kafka.oauth.server.authorizer.KeycloakRBACAuthorizer",
+                "authorizer.class.name=io.strimzi.kafka.oauth.server.authorizer.KeycloakAuthorizer",
                 "strimzi.authorization.token.endpoint.uri=http://token-endpoint-uri",
                 "strimzi.authorization.client.id=my-client-id",
                 "strimzi.authorization.delegate.to.kafka.acl=false",

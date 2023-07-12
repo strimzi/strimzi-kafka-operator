@@ -77,7 +77,7 @@ The OAuth 2.0 client definition must have the _Authorization Enabled_ option act
 
 All permissions exist within the scope of this OAuth 2.0 client, which means that if you have different Kafka clusters configured with different OAuth 2.0 client IDs they would each have a separate set of permissions even though they are part of the same realm.
 
-When the Kafka client use the _SASL OAUTHBEARER_ mechanism, the Keycloak authorizer (`KeycloakRBACAuthorizer`) retrieves the list of grants for the current session from the Keycloak server using the access token of the current session.
+When the Kafka client use the _SASL OAUTHBEARER_ mechanism, the Keycloak authorizer (`KeycloakAuthorizer`) retrieves the list of grants for the current session from the Keycloak server using the access token of the current session.
 This list of grants is the result of evaluating the Keycloak Authorization Services policies and permissions.
 
 .Introducing authorization scopes
