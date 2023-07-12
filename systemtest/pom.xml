@@ -546,11 +546,12 @@
         </profile>
 
         <profile>
-            <id>scalability</id>
+            <id>scalability_recovery</id>
             <properties>
                 <skipTests>false</skipTests>
                 <groups>
-                    all,scalability
+                    scalability,
+                    recovery
                 </groups>
             </properties>
         </profile>
