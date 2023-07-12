@@ -13,6 +13,7 @@ import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.annotations.KRaftNotSupported;
 import io.strimzi.systemtest.cli.KafkaCmdClient;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
@@ -29,7 +30,7 @@ import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.NamespaceUtils;
-import io.strimzi.test.TestUtils;
+import io.strimzi.systemtest.utils.kubeUtils.objects.PersistentVolumeClaimUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterAll;
@@ -115,6 +116,7 @@ class NamespaceDeletionRecoveryIsolatedST extends AbstractST {
      */
     @IsolatedTest("We need for each test case its own Cluster Operator")
     @Tag(INTERNAL_CLIENTS_USED)
+    @KRaftNotSupported("Topic Operator is not supported by KRaft mode and is used in this test class")
     void testTopicNotAvailable(ExtensionContext extensionContext) throws InterruptedException {
         final TestStorage testStorage = new TestStorage(extensionContext, clusterOperator.getDeploymentNamespace());
 
@@ -265,12 +267,7 @@ class NamespaceDeletionRecoveryIsolatedST extends AbstractST {
             pv.getSpec().setClaimRef(null);
             kubeClient().updatePersistentVolume(pv);
 
-            TestUtils.waitFor("PV to have status Bound", Constants.RECONCILIATION_INTERVAL, Constants.GLOBAL_TIMEOUT,
-                () -> {
-                    PersistentVolume updatedPv = kubeClient().getPersistentVolumeWithName(pvc.getSpec().getVolumeName());
-                    LOGGER.info("PV: {} has status: {}", updatedPv.getMetadata().getName(), updatedPv.getStatus().getPhase());
-                    return updatedPv.getStatus().getPhase().equals("Bound");
-                });
+            PersistentVolumeClaimUtils.waitForPersistentVolumeClaimPhase(pv.getMetadata().getName(), Constants.PVC_PHASE_BOUND);
         }
     }
 
