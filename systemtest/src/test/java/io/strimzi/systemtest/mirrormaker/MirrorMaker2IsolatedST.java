@@ -12,6 +12,8 @@ import io.strimzi.api.kafka.model.KafkaMirrorMaker2;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2Resources;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaTopic;
+import io.strimzi.api.kafka.model.KafkaUserScramSha512ClientAuthenticationBuilder;
+import io.strimzi.api.kafka.model.PasswordBuilder;
 import io.strimzi.api.kafka.model.PasswordSecretSource;
 import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationScramSha512;
 import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationTls;
@@ -1121,7 +1123,7 @@ class MirrorMaker2IsolatedST extends AbstractST {
         LOGGER.info("Messages successfully mirrored");
     }
 
-    private static void modifyKafkaUserPasswordWithNewSecret(String namespace, String kafkaUserSourceName, String customSecretSource, String customPassword) {
+    private static void modifyKafkaUserPasswordWithNewSecret(String namespace, String kafkaUserResourceName, String customSecretSource, String customPassword) {
         Secret userDefinedSecret = new SecretBuilder()
             .withNewMetadata()
                 .withName(customSecretSource)
@@ -1131,15 +1133,18 @@ class MirrorMaker2IsolatedST extends AbstractST {
             .build();
         kubeClient().createSecret(userDefinedSecret);
 
-        KafkaUserResource.replaceUserResourceInSpecificNamespace(kafkaUserSourceName, ku -> {
-            ku.getSpec().getAuthentication()
-                .setAdditionalProperty(
-                    "password", Map.of(
-                        "valueFrom", Map.of(
-                            "secretKeyRef", Map.of(
-                                "name", customSecretSource,
-                                "key", "password"
-            ))));
+        KafkaUserResource.replaceUserResourceInSpecificNamespace(kafkaUserResourceName, ku -> {
+
+            ku.getSpec().setAuthentication(
+                new KafkaUserScramSha512ClientAuthenticationBuilder()
+                    .withPassword(
+                        new PasswordBuilder()
+                            .editOrNewValueFrom()
+                            .withNewSecretKeyRef("password", customSecretSource, false)
+                            .and().build()
+                    )
+                    .build()
+            );
         }, namespace);
     }
 
