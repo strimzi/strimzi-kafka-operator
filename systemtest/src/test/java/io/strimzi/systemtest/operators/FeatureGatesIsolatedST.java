@@ -82,7 +82,7 @@ public class FeatureGatesIsolatedST extends AbstractST {
         List<EnvVar> testEnvVars = new ArrayList<>();
         int kafkaReplicas = 3;
 
-        testEnvVars.add(new EnvVar(Environment.STRIMZI_FEATURE_GATES_ENV, "+UseKRaft", null));
+        testEnvVars.add(new EnvVar(Environment.STRIMZI_FEATURE_GATES_ENV, "+UseKRaft,+KafkaNodePools", null));
 
         clusterOperator = new SetupClusterOperator.SetupClusterOperatorBuilder()
                 .withExtensionContext(extensionContext)
@@ -152,6 +152,7 @@ public class FeatureGatesIsolatedST extends AbstractST {
         LOGGER.info("Waiting for clients to finish sending/receiving messages");
         ClientUtils.waitForClientsSuccess(producerName, consumerName, INFRA_NAMESPACE, MESSAGE_COUNT);
     }
+
     @IsolatedTest
     void testSwitchingConnectStabilityIdentifiesFeatureGateOnAndOff(ExtensionContext extensionContext) {
         assumeFalse(Environment.isOlmInstall() || Environment.isHelmInstall());
