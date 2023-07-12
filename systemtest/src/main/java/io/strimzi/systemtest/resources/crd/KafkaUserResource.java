@@ -47,6 +47,8 @@ public class KafkaUserResource implements ResourceType<KafkaUser> {
     public static MixedOperation<KafkaUser, KafkaUserList, Resource<KafkaUser>> kafkaUserClient() {
         return Crds.kafkaUserOperation(ResourceManager.kubeClient().getClient());
     }
+
+    @Override
     public void update(KafkaUser kafkaUser) {
         kafkaUserClient().inNamespace(kafkaUser.getMetadata().getNamespace()).resource(kafkaUser).update();
     }
