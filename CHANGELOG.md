@@ -13,7 +13,7 @@
 * Update OpenTelemetry 1.19.0
 * Fixed ordering of JVM performance options [#8579](https://github.com/strimzi/strimzi-kafka-operator/issues/8579)
 * Log a warning when a KafkaTopic has no spec [#8465](https://github.com/strimzi/strimzi-kafka-operator/issues/8465)
-* Update Strimzi OAuth library to 0.13.0
+* Updated Strimzi OAuth library to 0.13.0 with better support for KRaft
 
 ### Changes, deprecations and removals
 
