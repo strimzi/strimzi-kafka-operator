@@ -397,7 +397,7 @@ public class SetupClusterOperator {
     }
 
     private void deleteClusterOperatorNamespace() {
-        LOGGER.info("Deleting of Namespace " + this.namespaceInstallTo);
+        LOGGER.info("Deleting Namespace {}", this.namespaceInstallTo);
         cluster.deleteNamespace(CollectorElement.createCollectorElement(testClassName, testMethodName),
                 this.namespaceInstallTo);
     }
