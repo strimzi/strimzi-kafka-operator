@@ -8,7 +8,6 @@
 [role="_abstract"]
 This procedure describes how to deploy the Topic Operator using the Cluster Operator.
 The Topic Operator can be deployed for use in either bidirectional mode or unidirectional mode.
-In unidirectional mode, topic management is exclusively handled through `KafkaTopic` resources. 
 To learn more about bidirectional and unidirectional topic management, see xref:ref-operator-topic-{context}[].
 
 NOTE: Unidirectional topic management is available as a preview. 

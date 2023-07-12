@@ -3,7 +3,7 @@
 // assembly-using-the-topic-operator.adoc
 
 [id='ref-topic-replication-{context}']
-= Configuring topics for replication and scaling
+= Configuring topics for replication and number of partitions
 
 The recommended configuration for topics managed by the Topic Operator is a topic replication factor of 3, and a minimum of 2 in-sync replicas.
 
