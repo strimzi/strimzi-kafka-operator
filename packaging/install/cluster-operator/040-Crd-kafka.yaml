@@ -597,7 +597,7 @@ spec:
                       grantsMaxIdleTimeSeconds:
                         type: integer
                         minimum: 1
-                        description: The time in seconds after which an idle grant can be evicted from the cache. The default value is 300.
+                        description: "The time, in seconds, after which an idle grant can be evicted from the cache. The default value is 300."
                       grantsRefreshPeriodSeconds:
                         type: integer
                         minimum: 0

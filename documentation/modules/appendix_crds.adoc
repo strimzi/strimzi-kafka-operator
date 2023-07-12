@@ -630,7 +630,7 @@ It must have the value `keycloak` for the type `KafkaAuthorizationKeycloak`.
 |integer
 |enableMetrics                   1.2+<.<a|Enable or disable OAuth metrics. The default value is `false`.
 |boolean
-|grantsMaxIdleTimeSeconds        1.2+<.<a|The time in seconds after which an idle grant can be evicted from the cache. The default value is 300.
+|grantsMaxIdleTimeSeconds        1.2+<.<a|The time, in seconds, after which an idle grant can be evicted from the cache. The default value is 300.
 |integer
 |====
 
