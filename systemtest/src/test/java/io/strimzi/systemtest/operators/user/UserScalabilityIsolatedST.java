@@ -113,10 +113,10 @@ public class UserScalabilityIsolatedST extends AbstractST {
             .build();
 
         listOfUsers.replaceAll(kafkaUser -> new KafkaUserBuilder(kafkaUser)
-                .editSpec()
-                    .withKafkaUserAuthorizationSimple(updatedAcl)
-                .endSpec()
-                .build());
+            .editSpec()
+                .withKafkaUserAuthorizationSimple(updatedAcl)
+            .endSpec()
+            .build());
 
         // get one user spec as the template for wait
         KafkaUserSpec kafkaUserSpec = listOfUsers.stream().findFirst().get().getSpec();
