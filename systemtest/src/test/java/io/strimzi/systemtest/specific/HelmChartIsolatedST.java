@@ -33,9 +33,9 @@ class HelmChartIsolatedST extends AbstractST {
         String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
 
         // Deploy Kafka and wait for readiness
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3).build());
+        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3).build());
 
-        resourceManager.createResource(extensionContext,
+        resourceManager.createResourceWithWait(extensionContext,
             KafkaTopicTemplates.topic(clusterName, topicName, clusterOperator.getDeploymentNamespace()).build(),
             // Deploy KafkaConnect and wait for readiness
             KafkaConnectTemplates.kafkaConnectWithFilePlugin(clusterName, clusterOperator.getDeploymentNamespace(), 1)
@@ -46,7 +46,7 @@ class HelmChartIsolatedST extends AbstractST {
             // Deploy KafkaBridge (different image than Kafka) and wait for readiness
             KafkaBridgeTemplates.kafkaBridge(clusterName, KafkaResources.plainBootstrapAddress(clusterName), 1).build());
 
-        resourceManager.createResource(extensionContext, KafkaConnectorTemplates.kafkaConnector(clusterName).build());
+        resourceManager.createResourceWithWait(extensionContext, KafkaConnectorTemplates.kafkaConnector(clusterName).build());
     }
 
     @BeforeAll

@@ -302,7 +302,7 @@ public class CustomCaST extends AbstractST {
         }
 
         // 2. Create a Kafka cluster without implicit generation of CA
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), 3)
+        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), 3)
             .editOrNewSpec()
                 .withNewClientsCa()
                     .withRenewalDays(5)
@@ -343,8 +343,8 @@ public class CustomCaST extends AbstractST {
             .withDelayMs(10)
             .build();
 
-        resourceManager.createResource(extensionContext, KafkaUserTemplates.tlsUser(testStorage).build());
-        resourceManager.createResource(extensionContext, kafkaBasicClientJob.producerTlsStrimzi(testStorage.getClusterName()));
+        resourceManager.createResourceWithWait(extensionContext, KafkaUserTemplates.tlsUser(testStorage).build());
+        resourceManager.createResourceWithWait(extensionContext, kafkaBasicClientJob.producerTlsStrimzi(testStorage.getClusterName()));
 
         ClientUtils.waitForClientSuccess(testStorage.getProducerName(), testStorage.getNamespaceName(), testStorage.getMessageCount());
     }
@@ -376,7 +376,7 @@ public class CustomCaST extends AbstractST {
         checkCustomCaCorrectness(clusterCa, clusterCert);
 
         LOGGER.info("Deploying Kafka with new certs, Secrets");
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3, 3)
+        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3, 3)
             .editSpec()
                 .withNewClusterCa()
                     .withGenerateCertificateAuthority(false)
@@ -401,11 +401,11 @@ public class CustomCaST extends AbstractST {
                     SystemTestCertManager.containsAllDN(zookeeperCert.getIssuerX500Principal().getName(), clusterCa.getSubjectDn()));
         }
 
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(testStorage).build());
+        resourceManager.createResourceWithWait(extensionContext, KafkaTopicTemplates.topic(testStorage).build());
 
         LOGGER.info("Check KafkaUser certificate");
         final KafkaUser user = KafkaUserTemplates.tlsUser(testStorage).build();
-        resourceManager.createResource(extensionContext, user);
+        resourceManager.createResourceWithWait(extensionContext, user);
         final X509Certificate userCert = SecretUtils.getCertificateFromSecret(kubeClient(testStorage.getNamespaceName()).getSecret(testStorage.getNamespaceName(),
             testStorage.getUsername()), "user.crt");
         assertThat("Generated ClientsCA does not have expected test Subject: " + userCert.getIssuerDN(),
@@ -424,7 +424,7 @@ public class CustomCaST extends AbstractST {
             .build();
 
         LOGGER.info("Checking produced and consumed messages via TLS");
-        resourceManager.createResource(extensionContext, kafkaClients.producerTlsStrimzi(testStorage.getClusterName()), kafkaClients.consumerTlsStrimzi(testStorage.getClusterName()));
+        resourceManager.createResourceWithWait(extensionContext, kafkaClients.producerTlsStrimzi(testStorage.getClusterName()), kafkaClients.consumerTlsStrimzi(testStorage.getClusterName()));
         ClientUtils.waitForClientsSuccess(testStorage, false);
     }
 
@@ -462,7 +462,7 @@ public class CustomCaST extends AbstractST {
 
         checkCustomCaCorrectness(clusterCa, clusterCert);
 
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3)
+        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3)
             .editOrNewSpec()
                 // Note: Clients Ca is generated automatically
                 .withNewClusterCa()
@@ -581,7 +581,7 @@ public class CustomCaST extends AbstractST {
 
         checkCustomCaCorrectness(clientsCa, clientsCert);
 
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3)
+        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3)
             .editOrNewSpec()
                 // Note: Cluster Ca is generated automatically
                 .withNewClientsCa()
@@ -592,7 +592,7 @@ public class CustomCaST extends AbstractST {
             .endSpec()
             .build());
 
-        resourceManager.createResource(extensionContext, KafkaUserTemplates.tlsUser(testStorage).build());
+        resourceManager.createResourceWithWait(extensionContext, KafkaUserTemplates.tlsUser(testStorage).build());
         final Map<String, String> entityPods = DeploymentUtils.depSnapshot(testStorage.getNamespaceName(), KafkaResources.entityOperatorDeploymentName(testStorage.getClusterName()));
 
         // Check initial clientsCA validity days

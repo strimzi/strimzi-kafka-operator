@@ -102,7 +102,7 @@ public class SpecificIsolatedST extends AbstractST {
             .createInstallation()
             .runBundleInstallation();
 
-        resourceManager.createResource(extensionContext, false, KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3)
+        resourceManager.createResourceWithoutWait(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3)
                 .editMetadata()
                 // this should not work
                     .withNamespace(clusterOperator.getDeploymentNamespace())
@@ -111,7 +111,7 @@ public class SpecificIsolatedST extends AbstractST {
 
         // implicit verification that a user is able to deploy Kafka cluster in namespace <example-1>, where we are allowed
         // to create Custom Resources because of `*-namespaced Role`
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3)
+        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3)
                 .editMetadata()
                 // this should work
                     .withNamespace(namespaceWhereCreationOfCustomResourcesIsApproved)

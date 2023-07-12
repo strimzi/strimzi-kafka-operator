@@ -42,7 +42,7 @@ public class QuotasST extends AbstractST {
         final String producerName = "quotas-producer";
         final String consumerName = "quotas-consumer";
 
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(clusterName, 1)
+        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaPersistent(clusterName, 1)
             .editSpec()
                 .editKafka()
                     .addToConfig("client.quota.callback.class", "io.strimzi.kafka.quotas.StaticQuotaCallback")
@@ -55,7 +55,7 @@ public class QuotasST extends AbstractST {
                 .endKafka()
             .endSpec()
             .build());
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(clusterName, topicName, namespaceName).build());
+        resourceManager.createResourceWithWait(extensionContext, KafkaTopicTemplates.topic(clusterName, topicName, namespaceName).build());
 
         // Send more messages than disk can store to see if the integration works
         KafkaClients basicClients = new KafkaClientsBuilder()
@@ -68,7 +68,7 @@ public class QuotasST extends AbstractST {
             .withMessage(String.join("", Collections.nCopies(1000, "#")))
             .build();
 
-        resourceManager.createResource(extensionContext, basicClients.producerStrimzi());
+        resourceManager.createResourceWithWait(extensionContext, basicClients.producerStrimzi());
         // Kafka Quotas Plugin should stop producer in around 10-20 seconds with configured throughput
         assertThrows(WaitException.class, () -> JobUtils.waitForJobFailure(producerName, clusterOperator.getDeploymentNamespace(), 120_000));
 

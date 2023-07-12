@@ -138,7 +138,7 @@ public class MultipleClusterOperatorsIsolatedST extends AbstractST {
         deployCOInNamespace(extensionContext, SECOND_CO_NAME, SECOND_NAMESPACE, Collections.singletonList(SECOND_CO_SELECTOR_ENV), true);
 
         LOGGER.info("Deploying scraper Pods: {}, {} for later metrics retrieval", firstCOScraperName, secondCOScraperName);
-        resourceManager.createResource(extensionContext, true,
+        resourceManager.createResourceWithoutWait(extensionContext,
             ScraperTemplates.scraperPod(FIRST_NAMESPACE, firstCOScraperName).build(),
             ScraperTemplates.scraperPod(SECOND_NAMESPACE, secondCOScraperName).build()
         );
@@ -157,7 +157,7 @@ public class MultipleClusterOperatorsIsolatedST extends AbstractST {
         cluster.setNamespace(testStorage.getNamespaceName());
 
         LOGGER.info("Deploying Kafka: {}/{} without CR selector", testStorage.getNamespaceName(), testStorage.getClusterName());
-        resourceManager.createResource(extensionContext, false, KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3, 3).build());
+        resourceManager.createResourceWithoutWait(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3, 3).build());
 
         // checking that no pods with prefix 'clusterName' will be created in some time
         PodUtils.waitUntilPodStabilityReplicasCount(testStorage.getNamespaceName(), testStorage.getClusterName(), 0);
@@ -170,7 +170,7 @@ public class MultipleClusterOperatorsIsolatedST extends AbstractST {
         KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), kafka -> kafka.getMetadata().setLabels(FIRST_CO_SELECTOR), testStorage.getNamespaceName());
         KafkaUtils.waitForKafkaReady(testStorage.getNamespaceName(), testStorage.getClusterName());
 
-        resourceManager.createResource(extensionContext,
+        resourceManager.createResourceWithWait(extensionContext,
             KafkaTopicTemplates.topic(testStorage).build(),
             KafkaConnectTemplates.kafkaConnectWithFilePlugin(testStorage.getClusterName(), testStorage.getNamespaceName(), 1)
                 .editOrNewMetadata()
@@ -182,7 +182,7 @@ public class MultipleClusterOperatorsIsolatedST extends AbstractST {
         String kafkaConnectPodName = kubeClient().listPods(testStorage.getNamespaceName(), testStorage.getClusterName(), Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND).get(0).getMetadata().getName();
 
         LOGGER.info("Deploying KafkaConnector with file sink and CR selector - {} - different than selector in Kafka", SECOND_CO_SELECTOR);
-        resourceManager.createResource(extensionContext, KafkaConnectorTemplates.kafkaConnector(testStorage.getClusterName())
+        resourceManager.createResourceWithWait(extensionContext, KafkaConnectorTemplates.kafkaConnector(testStorage.getClusterName())
             .editSpec()
                 .withClassName("org.apache.kafka.connect.file.FileStreamSinkConnector")
                 .addToConfig("file", Constants.DEFAULT_SINK_FILE_PATH)
@@ -201,7 +201,7 @@ public class MultipleClusterOperatorsIsolatedST extends AbstractST {
             .withMessageCount(MESSAGE_COUNT)
             .build();
 
-        resourceManager.createResource(extensionContext, basicClients.producerStrimzi());
+        resourceManager.createResourceWithWait(extensionContext, basicClients.producerStrimzi());
         ClientUtils.waitForClientSuccess(testStorage.getProducerName(), testStorage.getNamespaceName(), MESSAGE_COUNT);
 
         KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(testStorage.getNamespaceName(), kafkaConnectPodName, Constants.DEFAULT_SINK_FILE_PATH, "Hello-world - 99");
@@ -268,14 +268,14 @@ public class MultipleClusterOperatorsIsolatedST extends AbstractST {
         String secondCOScraperName = testStorage.getNamespaceName() + "-" + Constants.SCRAPER_NAME;
 
         LOGGER.info("Deploying scraper Pod: {}, for later metrics retrieval", secondCOScraperName);
-        resourceManager.createResource(extensionContext, true, ScraperTemplates.scraperPod(testStorage.getNamespaceName(), secondCOScraperName).build());
+        resourceManager.createResourceWithoutWait(extensionContext, ScraperTemplates.scraperPod(testStorage.getNamespaceName(), secondCOScraperName).build());
 
         LOGGER.info("Setting up metric collectors targeting Cluster Operator: {}", SECOND_CO_NAME);
         String coScraperName = testStorage.getNamespaceName() + "-" + Constants.SCRAPER_NAME;
         MetricsCollector secondCoMetricsCollector = setupCOMetricsCollectorInNamespace(SECOND_CO_NAME, testStorage.getNamespaceName(), coScraperName);
 
         LOGGER.info("Deploying Kafka with {} selector of {}", FIRST_CO_NAME, FIRST_CO_SELECTOR);
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaWithCruiseControl(testStorage.getClusterName(), 3, 3)
+        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaWithCruiseControl(testStorage.getClusterName(), 3, 3)
             .editOrNewMetadata()
                 .addToLabels(FIRST_CO_SELECTOR)
                 .withNamespace(testStorage.getNamespaceName())
@@ -301,7 +301,7 @@ public class MultipleClusterOperatorsIsolatedST extends AbstractST {
         // because KafkaRebalance is pointing to Kafka with CC cluster, we need to create KR before adding the label back
         // to test if KR will be ignored
         LOGGER.info("Creating KafkaRebalance when CC doesn't have label for CO, the KR should be ignored");
-        resourceManager.createResource(extensionContext, false, KafkaRebalanceTemplates.kafkaRebalance(testStorage.getClusterName())
+        resourceManager.createResourceWithoutWait(extensionContext, KafkaRebalanceTemplates.kafkaRebalance(testStorage.getClusterName())
             .editMetadata()
                 .withNamespace(testStorage.getNamespaceName())
             .endMetadata()
@@ -348,7 +348,7 @@ public class MultipleClusterOperatorsIsolatedST extends AbstractST {
             // Create ClusterRoleBindings that grant cluster-wide access to all OpenShift projects
             List<ClusterRoleBinding> clusterRoleBindingList = ClusterRoleBindingTemplates.clusterRoleBindingsForAllNamespaces(coNamespace, coName);
             clusterRoleBindingList.forEach(
-                clusterRoleBinding -> ResourceManager.getInstance().createResource(extensionContext, clusterRoleBinding));
+                clusterRoleBinding -> ResourceManager.getInstance().createResourceWithWait(extensionContext, clusterRoleBinding));
         }
 
         LOGGER.info("Creating: {} in Namespace: {}", coName, coNamespace);
