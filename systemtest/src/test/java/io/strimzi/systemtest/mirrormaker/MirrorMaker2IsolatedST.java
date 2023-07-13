@@ -1008,6 +1008,40 @@ class MirrorMaker2IsolatedST extends AbstractST {
             .endSpec()
             .build());
 
+        // Deploy source and target kafkas with tls listener and SCRAM-SHA authentication
+        resourceManager.createResourceWithWait(extensionContext,
+            KafkaTemplates.kafkaPersistent(kafkaClusterSourceName, 1, 1)
+                .editSpec()
+                    .editKafka()
+                        .withListeners(
+                            new GenericKafkaListenerBuilder()
+                                .withName(Constants.TLS_LISTENER_DEFAULT_NAME)
+                                .withPort(9093)
+                                .withType(KafkaListenerType.INTERNAL)
+                                .withTls(true)
+                                .withAuth(new KafkaListenerAuthenticationScramSha512())
+                                .build()
+                        )
+                    .endKafka()
+                .endSpec()
+                .build(),
+            KafkaTemplates.kafkaPersistent(kafkaClusterTargetName, 1, 1)
+                .editSpec()
+                    .editKafka()
+                        .withListeners(
+                            new GenericKafkaListenerBuilder()
+                                .withName(Constants.TLS_LISTENER_DEFAULT_NAME)
+                                .withPort(9093)
+                                .withType(KafkaListenerType.INTERNAL)
+                                .withTls(true)
+                                .withAuth(new KafkaListenerAuthenticationScramSha512())
+                                .build()
+                        )
+                    .endKafka()
+                .endSpec()
+                .build()
+        );
+
         resourceManager.createResourceWithWait(extensionContext,
             KafkaTopicTemplates.topic(kafkaClusterSourceName, testStorage.getTopicName(), testStorage.getNamespaceName()).build(),
             KafkaUserTemplates.scramShaUser(testStorage.getNamespaceName(), kafkaClusterSourceName, kafkaUserSourceName).build(),
