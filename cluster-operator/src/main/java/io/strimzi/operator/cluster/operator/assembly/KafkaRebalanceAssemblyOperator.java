@@ -9,7 +9,7 @@ import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.fabric8.kubernetes.client.KubernetesClientException;
+import io.fabric8.kubernetes.client.Watch;
 import io.fabric8.kubernetes.client.Watcher;
 import io.fabric8.kubernetes.client.WatcherException;
 import io.fabric8.kubernetes.client.dsl.Resource;
@@ -48,6 +48,7 @@ import io.strimzi.operator.cluster.operator.resource.cruisecontrol.RebalanceOpti
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.RemoveBrokerOptions;
 import io.strimzi.operator.common.AbstractOperator;
 import io.strimzi.operator.common.Annotations;
+import io.strimzi.operator.common.OperatorWatcher;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.Util;
@@ -74,6 +75,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -162,6 +164,7 @@ public class KafkaRebalanceAssemblyOperator
     private final SecretOperator secretOperations;
     private final Optional<LabelSelector> kafkaSelector;
     private boolean usingJbodStorage;
+    private OperatorWatcher<KafkaRebalance> watcher;
 
     private final ConfigMapOperator configMapOperator;
     /**
@@ -206,42 +209,6 @@ public class KafkaRebalanceAssemblyOperator
      */
     protected String cruiseControlHost(String clusterName, String clusterNamespace) {
         return CruiseControlResources.qualifiedServiceName(clusterName, clusterNamespace);
-    }
-
-    /**
-     * Create a watch on {@code KafkaRebalance} in the given {@code watchNamespaceOrWildcard}.
-     *
-     * @param watchNamespaceOrWildcard The namespace to watch, or "*" to watch all namespaces.
-     * @return A future which completes when the watch has been set up.
-     */
-    public Future<Void> createRebalanceWatch(String watchNamespaceOrWildcard) {
-
-        return VertxUtil.async(this.vertx, () -> {
-            kafkaRebalanceOperator.watch(watchNamespaceOrWildcard, selector(), new Watcher<>() {
-                @Override
-                public void eventReceived(Action action, KafkaRebalance kafkaRebalance) {
-                    Reconciliation reconciliation = new Reconciliation("kafkarebalance-watch", kafkaRebalance.getKind(),
-                            kafkaRebalance.getMetadata().getNamespace(), kafkaRebalance.getMetadata().getName());
-
-                    LOGGER.debugCr(reconciliation, "EventReceived {} on {} with status [{}] and {}={}", action,
-                            kafkaRebalance.getMetadata().getName(),
-                            kafkaRebalance.getStatus() != null ? rebalanceStateConditionType(kafkaRebalance.getStatus()) : null,
-                            ANNO_STRIMZI_IO_REBALANCE, rawRebalanceAnnotation(kafkaRebalance));
-
-                    withLock(reconciliation, LOCK_TIMEOUT_MS,
-                        () -> reconcileRebalance(reconciliation, action == Action.DELETED ? null : kafkaRebalance));
-                }
-
-                @Override
-                public void onClose(WatcherException e) {
-                    if (e != null) {
-                        throw new KubernetesClientException(e.getMessage());
-                    }
-                }
-
-            });
-            return null;
-        });
     }
 
     /**
@@ -1462,5 +1429,41 @@ public class KafkaRebalanceAssemblyOperator
     @Override
     protected KafkaRebalanceStatus createStatus(KafkaRebalance ignored) {
         return new KafkaRebalanceStatus();
+    }
+
+    /**
+     * Create a watch on {@code KafkaRebalance} in the given {@code namespace}.
+     *
+     * @param namespace The namespace to watch, or "*" to watch all namespaces.
+     * @param onClose Callback called when the watch is closed.
+     *
+     * @return A future which completes when the watcher has been created.
+     */
+    @Override
+    public Future<Watch> createWatch(String namespace, Consumer<WatcherException> onClose) {
+        watcher =  new OperatorWatcher<KafkaRebalance>(this, namespace, onClose) {
+            public void eventReceived(Action action, KafkaRebalance kafkaRebalance) {
+                Reconciliation reconciliation = new Reconciliation("kafkarebalance-watch", kafkaRebalance.getKind(),
+                        kafkaRebalance.getMetadata().getNamespace(), kafkaRebalance.getMetadata().getName());
+
+                LOGGER.debugCr(reconciliation, "EventReceived {} on {} with status [{}] and {}={}", action,
+                        kafkaRebalance.getMetadata().getName(),
+                        kafkaRebalance.getStatus() != null ? rebalanceStateConditionType(kafkaRebalance.getStatus()) : null,
+                        ANNO_STRIMZI_IO_REBALANCE, rawRebalanceAnnotation(kafkaRebalance));
+
+                withLock(reconciliation, LOCK_TIMEOUT_MS,
+                        () -> reconcileRebalance(reconciliation, action == Action.DELETED ? null : kafkaRebalance));
+            }
+        };
+        return VertxUtil.async(vertx, () -> resourceOperator.watch(namespace, selector(), watcher));
+    }
+
+    /**
+     * Get watcher.
+     *
+     * @return watcher.
+     */
+    public Watcher getWatcher() {
+        return watcher;
     }
 }

@@ -14,13 +14,20 @@ import java.util.function.Consumer;
  * The fabric8 Watcher used to trigger reconciliation of an {@link Operator}.
  * @param <T> The resource type
  */
-class OperatorWatcher<T extends HasMetadata> implements Watcher<T> {
+public class OperatorWatcher<T extends HasMetadata> implements Watcher<T> {
     private final String namespace;
     private final Consumer<WatcherException> onClose;
     private Operator operator;
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(OperatorWatcher.class);
 
-    OperatorWatcher(Operator operator, String namespace, Consumer<WatcherException> onClose) {
+    /**
+     * The constructor
+     *
+     * @param operator The operator to reconcile
+     * @param namespace The namespace
+     * @param onClose Callback called when the watch is closed.
+     */
+    public OperatorWatcher(Operator operator, String namespace, Consumer<WatcherException> onClose) {
         this.namespace = namespace;
         this.onClose = onClose;
         this.operator = operator;

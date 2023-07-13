@@ -7,6 +7,7 @@ package io.strimzi.operator.cluster.operator.assembly;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.WatcherException;
 import io.fabric8.kubernetes.client.server.mock.EnableKubernetesMockClient;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.KafkaList;
@@ -192,6 +193,21 @@ public class KafkaRebalanceAssemblyOperatorTest {
                 .thenReturn(Future.succeededFuture(MockCruiseControl.CC_SECRET));
         when(mockSecretOps.getAsync(CLUSTER_NAMESPACE, CruiseControlResources.apiSecretName(CLUSTER_NAME)))
                 .thenReturn(Future.succeededFuture(MockCruiseControl.CC_API_SECRET));
+    }
+
+    /**
+     * Tests that KafkaRebalance watch is recreated after being closed with an exception.
+     */
+    @Test
+    public void testKafkaRebalanceWatchClosedWithException(VertxTestContext context) throws IOException, URISyntaxException {
+        KafkaRebalance kr = createKafkaRebalance(CLUSTER_NAMESPACE, CLUSTER_NAME, RESOURCE_NAME, EMPTY_KAFKA_REBALANCE_SPEC, false);
+        kcrao.createWatch(CLUSTER_NAMESPACE, kcrao.recreateWatch(CLUSTER_NAMESPACE));
+
+        // Test what happens when watcher is closed with an exception
+        WatcherException e = new WatcherException("WatcherException");
+        kcrao.getWatcher().onClose(e);
+
+        this.krNewToProposalReady(context, 0, CruiseControlEndpoints.REBALANCE, kr);
     }
 
     /**

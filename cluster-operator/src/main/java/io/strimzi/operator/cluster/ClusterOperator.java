@@ -6,8 +6,8 @@ package io.strimzi.operator.cluster;
 
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.Watch;
+import io.strimzi.api.kafka.model.KafkaConnector;
 import io.strimzi.api.kafka.model.nodepool.KafkaNodePool;
-import io.strimzi.operator.cluster.operator.assembly.AbstractConnectOperator;
 import io.strimzi.operator.cluster.operator.assembly.KafkaAssemblyOperator;
 import io.strimzi.operator.cluster.operator.assembly.KafkaBridgeAssemblyOperator;
 import io.strimzi.operator.cluster.operator.assembly.KafkaConnectAssemblyOperator;
@@ -117,7 +117,8 @@ public class ClusterOperator extends AbstractVerticle {
         if (!config.isPodSetReconciliationOnly()) {
             List<AbstractOperator<?, ?, ?, ?>> operators = new ArrayList<>(asList(
                     kafkaAssemblyOperator, kafkaMirrorMakerAssemblyOperator,
-                    kafkaConnectAssemblyOperator, kafkaBridgeAssemblyOperator, kafkaMirrorMaker2AssemblyOperator));
+                    kafkaConnectAssemblyOperator, kafkaBridgeAssemblyOperator, kafkaMirrorMaker2AssemblyOperator,
+                    kafkaRebalanceAssemblyOperator));
             for (AbstractOperator<?, ?, ?, ?> operator : operators) {
                 startFutures.add(operator.createWatch(namespace, operator.recreateWatch(namespace)).compose(w -> {
                     LOGGER.info("Opened watch for {} operator", operator.kind());
@@ -135,8 +136,11 @@ public class ClusterOperator extends AbstractVerticle {
                 }));
             }
 
-            startFutures.add(AbstractConnectOperator.createConnectorWatch(kafkaConnectAssemblyOperator, namespace, config.getCustomResourceSelector()));
-            startFutures.add(kafkaRebalanceAssemblyOperator.createRebalanceWatch(namespace));
+            startFutures.add(kafkaConnectAssemblyOperator.createConnectorWatch(namespace, kafkaConnectAssemblyOperator.recreateWatch(namespace)).compose(w -> {
+                LOGGER.info("Opened KafkaConnector watch for {} operator", kafkaConnectAssemblyOperator.kind());
+                watchByKind.put(KafkaConnector.RESOURCE_KIND, w);
+                return Future.succeededFuture();
+            }));
         }
 
         Future.join(startFutures)

@@ -10,6 +10,9 @@ import io.fabric8.kubernetes.api.model.LabelSelectorRequirement;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.Watch;
+import io.fabric8.kubernetes.client.Watcher;
+import io.fabric8.kubernetes.client.WatcherException;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.api.kafka.KafkaConnectList;
 import io.strimzi.api.kafka.model.CertSecretSource;
@@ -27,6 +30,7 @@ import io.strimzi.operator.cluster.model.KafkaConnectCluster;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.Annotations;
+import io.strimzi.operator.common.OperatorWatcher;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationException;
 import io.strimzi.operator.common.ReconciliationLogger;
@@ -52,6 +56,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -70,6 +75,7 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
     private final KafkaVersion.Lookup versions;
     private final boolean stableIdentities;
     private final SharedEnvironmentProvider sharedEnvironmentProvider;
+    private Watcher<KafkaConnect> watcher;
 
     /**
      * Constructor
@@ -358,5 +364,27 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
 
     private boolean isPaused(KafkaConnectorStatus status) {
         return status != null && status.getConditions().stream().anyMatch(condition -> "ReconciliationPaused".equals(condition.getType()));
+    }
+
+    /**
+     * Create Kubernetes watch.
+     *
+     * @param namespace Namespace where to watch.
+     * @param onClose Callback called when the watch is closed.
+     *
+     * @return A future which completes when the watcher has been created.
+     */
+    public Future<Watch> createWatch(String namespace, Consumer<WatcherException> onClose) {
+        watcher = new OperatorWatcher<KafkaConnect>(this, namespace, onClose);
+        return VertxUtil.async(vertx, () -> resourceOperator.watch(namespace, selector(), watcher));
+    }
+
+    /**
+     * Get watcher.
+     *
+     * @return watcher.
+     */
+    public Watcher getWatcher() {
+        return watcher;
     }
 }
