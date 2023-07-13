@@ -74,15 +74,13 @@ public class SystemTestCertAndKeyBuilder {
     private X500Name issuer;
     private X500Name subject;
 
-    // Suppresses the deprecation warning about getSubjectDN()
-    @SuppressWarnings("deprecation")
     private SystemTestCertAndKeyBuilder(KeyPair keyPair, SystemTestCertAndKey caCert, List<Extension> extensions) {
         this.keyPair = keyPair;
         this.caCert = caCert;
         if (caCert != null) {
-            // getSubjectDN is deprecated, but BouncyCastle does not seem to work well with getSubjectX500Principal which replaces it
-            // The fix for this issue is tracked in https://github.com/strimzi/strimzi-kafka-operator/issues/7698
-            this.issuer = new X500Name(caCert.getCertificate().getSubjectDN().getName());
+            // getSubjectX500Principal().getName() applies additional formatting such as omitting spaces between DNs which would result
+            // in a breaking change instead of we use getSubjectX500Principal().toString()
+            this.issuer = new X500Name(caCert.getCertificate().getSubjectX500Principal().toString());
         }
         this.extensions = new ArrayList<>(extensions);
     }
