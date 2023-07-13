@@ -90,6 +90,7 @@ public class ServiceOperator extends AbstractNamespacedResourceOperator<Kubernet
                     patchNodePorts(current, desired);
                     patchHealthCheckPorts(current, desired);
                     patchAnnotations(current, desired);
+                    patchLoadBalancerClass(current, desired);
                 }
 
                 patchDualStackNetworking(current, desired);
@@ -178,6 +179,20 @@ public class ServiceOperator extends AbstractNamespacedResourceOperator<Kubernet
 
         if (desired.getSpec().getIpFamilyPolicy() == null) {
             desired.getSpec().setIpFamilyPolicy(current.getSpec().getIpFamilyPolicy());
+        }
+    }
+
+    /**
+     * In some environments, the loadBalancerClass field of a LoadBalancer type service gets set automatically. When
+     * patching the service, we keep the original class set by the infrastructure instead of overriding it.
+     *
+     * @param current   Current Service
+     * @param desired   Desired Service
+     */
+    protected void patchLoadBalancerClass(Service current, Service desired) {
+        if (current.getSpec().getLoadBalancerClass() != null
+                && desired.getSpec().getLoadBalancerClass() == null) {
+            desired.getSpec().setLoadBalancerClass(current.getSpec().getLoadBalancerClass());
         }
     }
 

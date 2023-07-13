@@ -312,4 +312,45 @@ public class ServiceOperatorTest extends AbstractNamespacedResourceOperatorTest<
         assertThat(current2.getSpec().getIpFamilyPolicy(), is(not(desired2.getSpec().getIpFamilyPolicy())));
         assertThat(current2.getSpec().getIpFamilies(), is(desired2.getSpec().getIpFamilies()));
     }
+
+    @Test
+    public void testLoadBalancerClassPatching()  {
+        KubernetesClient client = mock(KubernetesClient.class);
+
+        Service current = new ServiceBuilder()
+                .withNewMetadata()
+                    .withNamespace(NAMESPACE)
+                    .withName(RESOURCE_NAME)
+                .endMetadata()
+                .withNewSpec()
+                    .withType("LoadBalancer")
+                    .withPorts(new ServicePortBuilder()
+                            .withName("port1")
+                            .withPort(1234)
+                            .withTargetPort(new IntOrString(1234))
+                            .build())
+                    .withLoadBalancerClass("service.k8s.aws/nlb")
+                .endSpec()
+                .build();
+
+        Service desired = new ServiceBuilder()
+                .withNewMetadata()
+                    .withNamespace(NAMESPACE)
+                    .withName(RESOURCE_NAME)
+                .endMetadata()
+                .withNewSpec()
+                    .withType("LoadBalancer")
+                    .withPorts(new ServicePortBuilder()
+                            .withName("port1")
+                            .withPort(1234)
+                            .withTargetPort(new IntOrString(1234))
+                            .build())
+                .endSpec()
+                .build();
+
+        ServiceOperator op = new ServiceOperator(vertx, client);
+        op.patchLoadBalancerClass(current, desired);
+
+        assertThat(current.getSpec().getLoadBalancerClass(), is(desired.getSpec().getLoadBalancerClass()));
+    }
 }
