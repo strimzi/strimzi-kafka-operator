@@ -52,3 +52,7 @@ include::assembly-metrics-config-files.adoc[leveloffset=+1]
 include::assembly_metrics-prometheus-setup.adoc[leveloffset=+1]
 //How to add Grafana dashboards
 include::../../modules/metrics/proc_metrics-grafana-dashboard.adoc[leveloffset=+1]
+//minikube metrics
+ifdef::InstallationAppendix[]
+include::../../modules/metrics/con_metrics-kafka-mini-kube.adoc[leveloffset=+1]
+endif::InstallationAppendix[]

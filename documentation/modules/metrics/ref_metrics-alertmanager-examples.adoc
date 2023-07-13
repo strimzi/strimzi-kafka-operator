@@ -10,6 +10,18 @@
 Example Prometheus rules for alert notifications are provided with the xref:assembly-metrics-config-files-{context}[example metrics configuration files] provided by Strimzi.
 The rules are specified in the example `prometheus-rules.yaml` file for use in a xref:proc-metrics-deploying-prometheus-{context}[Prometheus deployment].
 
+The `prometheus-rules.yaml` file contains example rules for the following components:
+
+* Kafka
+* ZooKeeper
+* Entity Operator
+* Kafka Connect
+* Kafka Bridge
+* MirrorMaker
+* Kafka Exporter
+
+A description of each of the example rules is provided in the file.
+
 Alerting rules provide notifications about specific conditions observed in metrics.
 Rules are declared on the Prometheus server, but Prometheus Alertmanager is responsible for alert notifications.
 
@@ -26,17 +38,3 @@ General points about the alerting rule definitions:
 
 Alertmanager can be configured to use email, chat messages or other notification methods.
 Adapt the default configuration of the example rules according to your specific needs.
-
-== Example alerting rules
-
-The `prometheus-rules.yaml` file contains example rules for the following components:
-
-* Kafka
-* ZooKeeper
-* Entity Operator
-* Kafka Connect
-* Kafka Bridge
-* MirrorMaker
-* Kafka Exporter
-
-A description of each of the example rules is provided in the file.
