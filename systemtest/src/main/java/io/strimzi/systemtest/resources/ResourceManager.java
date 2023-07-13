@@ -28,6 +28,7 @@ import io.strimzi.api.kafka.model.nodepool.KafkaNodePool;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.api.kafka.model.status.Status;
 import io.strimzi.operator.common.Annotations;
+import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.enums.DeploymentTypes;
@@ -234,6 +235,18 @@ public class ResourceManager {
             KafkaNodePool nodePool = KafkaNodePoolResource.convertKafkaResourceToKafkaNodePool(resource);
 
             setNamespaceInResource(testContext, resource);
+
+            boolean nodePoolAlreadyExists = KafkaNodePoolResource.kafkaNodePoolClient().inNamespace(resource.getMetadata().getNamespace()).list().getItems()
+                .stream()
+                .anyMatch(knp -> {
+                    Map<String, String> labels = knp.getMetadata().getLabels();
+                    return labels.containsKey(Labels.STRIMZI_CLUSTER_LABEL) && labels.get(Labels.STRIMZI_CLUSTER_LABEL).equals(resource.getMetadata().getName());
+                });
+
+            if (nodePoolAlreadyExists) {
+                LOGGER.info("Node pool will not be created as part of process of creation of Kafka instance as it already exists");
+                return;
+            }
 
             labelResource(testContext, resource);
 
