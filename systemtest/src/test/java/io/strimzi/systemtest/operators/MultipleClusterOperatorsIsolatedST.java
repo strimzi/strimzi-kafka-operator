@@ -138,7 +138,7 @@ public class MultipleClusterOperatorsIsolatedST extends AbstractST {
         deployCOInNamespace(extensionContext, SECOND_CO_NAME, SECOND_NAMESPACE, Collections.singletonList(SECOND_CO_SELECTOR_ENV), true);
 
         LOGGER.info("Deploying scraper Pods: {}, {} for later metrics retrieval", firstCOScraperName, secondCOScraperName);
-        resourceManager.createResourceWithoutWait(extensionContext,
+        resourceManager.createResourceWithWait(extensionContext,
             ScraperTemplates.scraperPod(FIRST_NAMESPACE, firstCOScraperName).build(),
             ScraperTemplates.scraperPod(SECOND_NAMESPACE, secondCOScraperName).build()
         );
@@ -268,7 +268,7 @@ public class MultipleClusterOperatorsIsolatedST extends AbstractST {
         String secondCOScraperName = testStorage.getNamespaceName() + "-" + Constants.SCRAPER_NAME;
 
         LOGGER.info("Deploying scraper Pod: {}, for later metrics retrieval", secondCOScraperName);
-        resourceManager.createResourceWithoutWait(extensionContext, ScraperTemplates.scraperPod(testStorage.getNamespaceName(), secondCOScraperName).build());
+        resourceManager.createResourceWithWait(extensionContext, ScraperTemplates.scraperPod(testStorage.getNamespaceName(), secondCOScraperName).build());
 
         LOGGER.info("Setting up metric collectors targeting Cluster Operator: {}", SECOND_CO_NAME);
         String coScraperName = testStorage.getNamespaceName() + "-" + Constants.SCRAPER_NAME;
