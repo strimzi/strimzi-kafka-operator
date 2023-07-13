@@ -12,7 +12,7 @@ OAuth 2.0 authorization enforces permissions locally based on the received list 
 
 == Kafka broker custom authorizer
 
-A Keycloak _authorizer_ (`KeycloakRBACAuthorizer`) is provided with Strimzi.
+A Keycloak _authorizer_ (`KeycloakAuthorizer`) is provided with Strimzi.
 To be able to use the Keycloak REST endpoints for Authorization Services provided by Keycloak,
 you configure a custom authorizer on the Kafka broker.
 

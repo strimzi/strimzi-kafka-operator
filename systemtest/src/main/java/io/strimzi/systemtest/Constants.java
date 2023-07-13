@@ -485,4 +485,9 @@ public interface Constants {
      * KafkaNodePools constants
      */
     String KAFKA_NODE_POOL_PREFIX = "kafka-pool-";
+
+    /**
+     * Persistent Volume related
+     */
+    String PVC_PHASE_BOUND = "Bound";
 }

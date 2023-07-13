@@ -163,8 +163,14 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
     Future<Void> reconcile(ReconciliationState reconcileState)  {
         Promise<Void> chainPromise = Promise.promise();
 
-        // Validates features which are currently not supported in KRaft mode
         if (featureGates.useKRaftEnabled()) {
+            // Makes sure KRaft is used only with KafkaNodePool custom resources and not with virtual node pools
+            if (featureGates.kafkaNodePoolsEnabled()
+                    && !ReconcilerUtils.nodePoolsEnabled(reconcileState.kafkaAssembly))  {
+                throw new InvalidConfigurationException("The UseKRaft feature gate can be used only together with a Kafka cluster based on the KafkaNodePool resources.");
+            }
+
+            // Validates features which are currently not supported in KRaft mode
             try {
                 KRaftUtils.validateKafkaCrForKRaft(reconcileState.kafkaAssembly.getSpec(), featureGates.unidirectionalTopicOperatorEnabled());
             } catch (InvalidResourceException e)    {
@@ -526,12 +532,6 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     && ReconcilerUtils.nodePoolsEnabled(kafkaAssembly)) {
                 // Node Pools are enabled
                 nodePoolFuture = nodePoolOperator.listAsync(namespace, Labels.fromMap(Map.of(Labels.STRIMZI_CLUSTER_LABEL, name)));
-            // TODO: In the future, KRaft should be usable only with Node Pools - this is not enabled now since it would
-            //       break all system tests. This should be enabled only once the system tests are updated. This is
-            //       tracked in https://github.com/strimzi/strimzi-kafka-operator/issues/8592.
-            //} else if (featureGates.useKRaftEnabled()) {
-            //    // KRaft is enabled, but Node Pools are not activated => throw an error as UseKRaft now requires node pools
-            //    throw new InvalidConfigurationException("The UseKRaft feature gate can be enabled only together with KafkaNodePool resources.");
             } else {
                 nodePoolFuture = Future.succeededFuture(null);
             }

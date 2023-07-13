@@ -71,12 +71,14 @@ public class FeatureGates {
     }
 
     /**
-     * Validates any dependencies between various feature gates. For example, in the past, the UseKRaft feature gate
-     * could be enabled only when UseStrimziPodSets was enabled as well. When the dependencies are not satisfied,
+     * Validates any dependencies between various feature gates. For example, the UseKRaft feature gate can be enabled
+     * only when KafkaNodePools feature gate is enabled as well. When the dependencies are not satisfied,
      * InvalidConfigurationException is thrown.
      */
     private void validateInterDependencies()    {
-        // Currently, there are no interdependencies between different feature gates
+        if (useKRaftEnabled() && !kafkaNodePoolsEnabled())  {
+            throw new InvalidConfigurationException("The UseKRaft feature gate can be enabled only together with the KafkaNodePools feature gate.");
+        }
     }
 
     /**

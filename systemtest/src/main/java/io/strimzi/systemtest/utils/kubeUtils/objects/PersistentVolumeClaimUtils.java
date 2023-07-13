@@ -69,6 +69,14 @@ public class PersistentVolumeClaimUtils {
         LOGGER.info("PVC annotation changed {}", newAnnotation.toString());
     }
 
+    public static void waitForPersistentVolumeClaimPhase(String persistentVolumeName, String wantedPhase) {
+        TestUtils.waitFor("PV: " + persistentVolumeName + " to be in phase: " + wantedPhase, Constants.RECONCILIATION_INTERVAL, Constants.GLOBAL_TIMEOUT, () -> {
+            String currentPhase = kubeClient().getPersistentVolumeWithName(persistentVolumeName).getStatus().getPhase();
+            LOGGER.info("PV: {} is in phase: {}", persistentVolumeName, currentPhase);
+            return currentPhase.equals(wantedPhase);
+        });
+    }
+
     public static void waitForPersistentVolumeClaimDeletion(String namespaceName, String pvcName) {
         TestUtils.waitFor("PVC deletion", Constants.POLL_INTERVAL_FOR_RESOURCE_DELETION, Constants.GLOBAL_TIMEOUT_SHORT, () -> {
             if (kubeClient().getPersistentVolumeClaim(namespaceName, pvcName) != null) {
