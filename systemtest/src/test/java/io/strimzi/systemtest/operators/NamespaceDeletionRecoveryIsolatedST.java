@@ -35,6 +35,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
@@ -52,6 +53,7 @@ import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
  */
 @Tag(RECOVERY)
 @Tag(REGRESSION)
+@Disabled("Tests are not working on Minikube at the moment")
 @KRaftNotSupported("Topic Operator is not supported by KRaft mode and is used in this test class")
 class NamespaceDeletionRecoveryIsolatedST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(NamespaceDeletionRecoveryIsolatedST.class);
