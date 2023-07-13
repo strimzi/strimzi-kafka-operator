@@ -31,7 +31,7 @@ error() {
 if [[ -z ${BASH_VERSINFO+x} ]]; then
   error "No bash version information available, aborting"
 fi
-if [[ "${BASH_VERSINFO[*]}" -lt 4 ]]; then
+if [[ "${BASH_VERSINFO[0]}" -lt 4 ]]; then
   error "You need bash version >= 4 to run the script"
 fi
 
