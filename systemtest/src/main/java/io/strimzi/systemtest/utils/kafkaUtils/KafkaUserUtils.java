@@ -7,9 +7,13 @@ package io.strimzi.systemtest.utils.kafkaUtils;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
+import io.fabric8.kubernetes.api.model.Secret;
+import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaUser;
+import io.strimzi.api.kafka.model.KafkaUserScramSha512ClientAuthenticationBuilder;
 import io.strimzi.api.kafka.model.KafkaUserSpec;
+import io.strimzi.api.kafka.model.PasswordBuilder;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.cli.KafkaCmdClient;
 import io.strimzi.systemtest.resources.ResourceManager;
@@ -19,6 +23,7 @@ import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.io.File;
 import java.io.IOException;
@@ -185,5 +190,34 @@ public class KafkaUserUtils {
                 String getUserResult = KafkaCmdClient.describeUserUsingPodCli(namespace, scraperPodName, KafkaResources.plainBootstrapAddress(clusterName), "CN=" + userName);
                 return getUserResult.contains(userName);
             });
+    }
+
+    public static void modifyKafkaUserPasswordWithNewSecret(
+        String ns, String kafkaUserResourceName, String customSecretSource, String customPassword,
+        ResourceManager resourceManager, ExtensionContext extensionContext) {
+
+        Secret userDefinedSecret = new SecretBuilder()
+            .withNewMetadata()
+            .withName(customSecretSource)
+            .withNamespace(ns)
+            .endMetadata()
+            .addToData("password", customPassword)
+            .build();
+
+        resourceManager.createResource(extensionContext, userDefinedSecret);
+
+        KafkaUserResource.replaceUserResourceInSpecificNamespace(kafkaUserResourceName, ku -> {
+
+            ku.getSpec().setAuthentication(
+                new KafkaUserScramSha512ClientAuthenticationBuilder()
+                    .withPassword(
+                        new PasswordBuilder()
+                            .editOrNewValueFrom()
+                            .withNewSecretKeyRef("password", customSecretSource, false)
+                            .and().build()
+                    )
+                    .build()
+            );
+        }, ns);
     }
 }

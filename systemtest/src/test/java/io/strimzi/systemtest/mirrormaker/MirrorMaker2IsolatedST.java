@@ -5,15 +5,11 @@
 package io.strimzi.systemtest.mirrormaker;
 
 import io.fabric8.kubernetes.api.model.LabelSelector;
-import io.fabric8.kubernetes.api.model.Secret;
-import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.strimzi.api.kafka.model.CertSecretSource;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2Resources;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaTopic;
-import io.strimzi.api.kafka.model.KafkaUserScramSha512ClientAuthenticationBuilder;
-import io.strimzi.api.kafka.model.PasswordBuilder;
 import io.strimzi.api.kafka.model.PasswordSecretSource;
 import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationScramSha512;
 import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationTls;
@@ -29,7 +25,6 @@ import io.strimzi.systemtest.annotations.KRaftNotSupported;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
-import io.strimzi.systemtest.resources.crd.KafkaUserResource;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.cli.KafkaCmdClient;
@@ -47,6 +42,7 @@ import io.strimzi.systemtest.utils.RollingUpdateUtils;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaMirrorMaker2Utils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
+import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
@@ -1091,11 +1087,11 @@ class MirrorMaker2IsolatedST extends AbstractST {
 
         LOGGER.info("Changing KafkaUser sha-password on MirrorMaker2 Source and make sure it rolled");
 
-        modifyKafkaUserPasswordWithNewSecret(testStorage.getNamespaceName(), kafkaUserSourceName, customSecretSource, "c291cmNlLXBhc3N3b3Jk");
+        KafkaUserUtils.modifyKafkaUserPasswordWithNewSecret(testStorage.getNamespaceName(), kafkaUserSourceName, customSecretSource, "c291cmNlLXBhc3N3b3Jk", resourceManager, extensionContext);
         RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), mmSelector, 1, mmSnapshot);
         mmSnapshot = PodUtils.podSnapshot(testStorage.getNamespaceName(), mmSelector);
 
-        modifyKafkaUserPasswordWithNewSecret(testStorage.getNamespaceName(), kafkaUserTargetName, customSecretTarget, "dGFyZ2V0LXBhc3N3b3Jk");
+        KafkaUserUtils.modifyKafkaUserPasswordWithNewSecret(testStorage.getNamespaceName(), kafkaUserTargetName, customSecretTarget, "dGFyZ2V0LXBhc3N3b3Jk", resourceManager, extensionContext);
         RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), mmSelector, 1, mmSnapshot);
 
         RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), mmSelector, 1, mmSnapshot);
@@ -1121,31 +1117,6 @@ class MirrorMaker2IsolatedST extends AbstractST {
         ClientUtils.waitForConsumerClientSuccess(testStorage);
 
         LOGGER.info("Messages successfully mirrored");
-    }
-
-    private static void modifyKafkaUserPasswordWithNewSecret(String namespace, String kafkaUserResourceName, String customSecretSource, String customPassword) {
-        Secret userDefinedSecret = new SecretBuilder()
-            .withNewMetadata()
-                .withName(customSecretSource)
-                .withNamespace(namespace)
-            .endMetadata()
-            .addToData("password", customPassword)
-            .build();
-        kubeClient().createSecret(userDefinedSecret);
-
-        KafkaUserResource.replaceUserResourceInSpecificNamespace(kafkaUserResourceName, ku -> {
-
-            ku.getSpec().setAuthentication(
-                new KafkaUserScramSha512ClientAuthenticationBuilder()
-                    .withPassword(
-                        new PasswordBuilder()
-                            .editOrNewValueFrom()
-                            .withNewSecretKeyRef("password", customSecretSource, false)
-                            .and().build()
-                    )
-                    .build()
-            );
-        }, namespace);
     }
 
     @ParallelNamespaceTest
