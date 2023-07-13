@@ -20,6 +20,8 @@
 
 * **From Strimzi 0.36.0 on, we support only Kubernetes 1.21 and newer.**
   Kubernetes 1.19 and 1.20 are not supported anymore.
+* Enabling the `UseKRaft` feature gate is now possible only together with the `KafkaNodePools` feature gate.
+  To deploy a Kafka cluster in the KRaft mode, you have to use the `KafkaNodePool` resources.
 * The Helm Chart repository at `https://strimzi.io/charts/` is now deprecated.
   Please use the Helm Chart OCI artifacts from our [Helm Chart OCI repository instead](https://quay.io/organization/strimzi-helm).
 * Option `customClaimCheck` of 'oauth' authentication which relies on JsonPath changed the handling of equal comparison against `null` as the behaviour was buggy and is now fixed in the updated version of JsonPath library [OAuth #196](https://github.com/strimzi/strimzi-kafka-oauth/pull/196)

@@ -68,7 +68,7 @@ public class NodePoolUtils {
             }
 
             // We create the virtual KafkaNodePool custom resource
-            KafkaNodePool virtualNodePool = VirtualNodePoolConverter.convertKafkaToVirtualNodePool(kafka, currentReplicas, useKRaft);
+            KafkaNodePool virtualNodePool = VirtualNodePoolConverter.convertKafkaToVirtualNodePool(kafka, currentReplicas);
 
             // We prepare ID Assignment
             NodeIdAssignor assignor = new NodeIdAssignor(reconciliation, List.of(virtualNodePool));
