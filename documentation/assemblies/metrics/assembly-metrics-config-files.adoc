@@ -33,7 +33,7 @@ metrics
 │    ├── alert-manager.yaml <5>
 │    ├── prometheus-rules.yaml <6>
 │    ├── prometheus.yaml <7>
-│    ├── strimzi-pod-monitor.yaml <8>
+│    └── strimzi-pod-monitor.yaml <8>
 ├── kafka-bridge-metrics.yaml <9>
 ├── kafka-connect-metrics.yaml <10>
 ├── kafka-cruise-control-metrics.yaml <11>
