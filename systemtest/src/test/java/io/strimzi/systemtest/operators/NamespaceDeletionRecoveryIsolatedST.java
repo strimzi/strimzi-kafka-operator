@@ -14,6 +14,7 @@ import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.annotations.KRaftNotSupported;
+import io.strimzi.systemtest.annotations.OpenShiftOnly;
 import io.strimzi.systemtest.cli.KafkaCmdClient;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
@@ -31,6 +32,8 @@ import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.NamespaceUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PersistentVolumeClaimUtils;
+import java.lang.annotation.Annotation;
+import java.util.Map;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterAll;
@@ -50,10 +53,9 @@ import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 /**
  * Suite for testing topic recovery in case of namespace deletion.
  * Procedure described in documentation  https://strimzi.io/docs/master/#namespace-deletion_str
+ * Note: Suite can be run on minikube only with previously created PVs and StorageClass using local provisioner. *
  */
 @Tag(RECOVERY)
-@Tag(REGRESSION)
-@Disabled("Tests are not working on Minikube at the moment")
 @KRaftNotSupported("Topic Operator is not supported by KRaft mode and is used in this test class")
 class NamespaceDeletionRecoveryIsolatedST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(NamespaceDeletionRecoveryIsolatedST.class);
@@ -95,13 +97,11 @@ class NamespaceDeletionRecoveryIsolatedST extends AbstractST {
                 .editKafka()
                     .withNewPersistentClaimStorage()
                         .withSize("1Gi")
-                        .withStorageClass(storageClassName)
                     .endPersistentClaimStorage()
                 .endKafka()
                 .editZookeeper()
                     .withNewPersistentClaimStorage()
                         .withSize("1Gi")
-                        .withStorageClass(storageClassName)
                     .endPersistentClaimStorage()
                 .endZookeeper()
             .endSpec()
@@ -293,16 +293,24 @@ class NamespaceDeletionRecoveryIsolatedST extends AbstractST {
 
     @BeforeAll
     void createStorageClass() {
+        // Delete specific StorageClass if present from previous
         kubeClient().getClient().storage().v1().storageClasses().withName(storageClassName).delete();
-        StorageClass storageClass = new StorageClassBuilder()
+
+        // Get default StorageClass and change reclaim policy
+        StorageClass defaultStorageClass =  kubeClient().getClient().storage().v1().storageClasses().list().getItems().stream().filter( sg -> {
+            Map<String, String> annotations = sg.getMetadata().getAnnotations();
+            return annotations.get("storageclass.kubernetes.io/is-default-class").equals("true");
+            }).findFirst().get();
+
+        StorageClass retainStorageClass = new StorageClassBuilder(defaultStorageClass)
             .withNewMetadata()
                 .withName(storageClassName)
             .endMetadata()
-            .withProvisioner("kubernetes.io/cinder")
             .withReclaimPolicy("Retain")
+            .withVolumeBindingMode("WaitForFirstConsumer")
             .build();
 
-        kubeClient().createStorageClass(storageClass);
+        kubeClient().createStorageClass(retainStorageClass);
     }
 
     @AfterAll
