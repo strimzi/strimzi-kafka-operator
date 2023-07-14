@@ -87,6 +87,9 @@ public abstract class AbstractST implements TestSeparator {
     protected static Map<String, String> mapWithTestTopics = new HashMap<>();
     protected static Map<String, String> mapWithTestUsers = new HashMap<>();
     protected static Map<String, String> mapWithScraperNames = new HashMap<>();
+
+    // This variable makes sure the assertNoCoErrorsLogged performed as afterEach
+    // does not take all the Cluster Operator logs from the beginning, but only from the time when the test execution started
     protected static Map<String, Long> mapWithTestExecutionStartTimes = new HashMap<>();
     protected static ConcurrentHashMap<ExtensionContext, TestStorage> storageMap = new ConcurrentHashMap<>();
     protected static final String CLUSTER_NAME_PREFIX = "my-cluster-";
