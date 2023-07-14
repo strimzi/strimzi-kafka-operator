@@ -15,7 +15,7 @@ import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
-import io.strimzi.systemtest.annotations.KRaftNotSupported;
+import io.strimzi.systemtest.annotations.KRaftWithoutUTONotSupported;
 import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.cli.KafkaCmdClient;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
@@ -135,7 +135,7 @@ public abstract class AbstractNamespaceST extends AbstractST {
      *  - topic-operator-watcher
      */
     @ParallelTest
-    @KRaftNotSupported("Topic Operator is not supported by KRaft mode and is used in this test case")
+    @KRaftWithoutUTONotSupported
     final void testTopicOperatorWatchingOtherNamespace(ExtensionContext extensionContext) {
 
         LOGGER.info("Topic Operator in Kafka: {}/{} watches KafkaTopics in (different) Namespace: {}", MAIN_TEST_NAMESPACE, PRIMARY_KAFKA_NAME, PRIMARY_KAFKA_WATCHED_NAMESPACE);

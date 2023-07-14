@@ -193,6 +193,7 @@ public interface Constants {
     String USE_KRAFT_MODE = "+UseKRaft";
     String USE_STABLE_CONNECT_IDENTITIES = "+StableConnectIdentities";
     String USE_KAFKA_NODE_POOLS = "+KafkaNodePools";
+    String UNIDIRECTIONAL_TOPIC_OPERATOR = "+UnidirectionalTopicOperator";
 
     /**
      * Default value which allows execution of tests with any tags

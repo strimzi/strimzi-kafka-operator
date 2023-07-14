@@ -25,7 +25,7 @@ import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.IsolatedTest;
-import io.strimzi.systemtest.annotations.KRaftNotSupported;
+import io.strimzi.systemtest.annotations.KRaftWithoutUTONotSupported;
 import io.strimzi.systemtest.cli.KafkaCmdClient;
 import io.strimzi.systemtest.enums.CustomResourceStatus;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
@@ -257,7 +257,7 @@ class LoggingChangeST extends AbstractST {
 
     @ParallelNamespaceTest
     @Tag(ROLLING_UPDATE)
-    @KRaftNotSupported("Topic Operator is not supported by KRaft mode and is used in this test class")
+    @KRaftWithoutUTONotSupported
     @SuppressWarnings({"checkstyle:MethodLength", "checkstyle:CyclomaticComplexity"})
     void testDynamicallySetEOloggingLevels(ExtensionContext extensionContext) {
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(clusterOperator.getDeploymentNamespace(), extensionContext);

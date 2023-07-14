@@ -13,7 +13,8 @@ import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
-import io.strimzi.systemtest.annotations.KRaftNotSupported;
+import io.strimzi.systemtest.annotations.KRaftWithoutUTONotSupported;
+import io.strimzi.systemtest.annotations.UTONotSupported;
 import io.strimzi.systemtest.cli.KafkaCmdClient;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
@@ -54,7 +55,7 @@ import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
  * These tests does not have to be run every time with PRs and so on, the nature of the tests is sufficient for recovery profile only.
  */
 @Tag(RECOVERY)
-@KRaftNotSupported("Topic Operator is not supported by KRaft mode and is used in this test class")
+@KRaftWithoutUTONotSupported
 class NamespaceDeletionRecoveryST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(NamespaceDeletionRecoveryST.class);
     private String storageClassName = "retain";
@@ -66,6 +67,7 @@ class NamespaceDeletionRecoveryST extends AbstractST {
      */
     @IsolatedTest("We need for each test case its own Cluster Operator")
     @Tag(INTERNAL_CLIENTS_USED)
+    @UTONotSupported("https://github.com/strimzi/strimzi-kafka-operator/issues/8864")
     void testTopicAvailable(ExtensionContext extensionContext) {
         final TestStorage testStorage = new TestStorage(extensionContext, clusterOperator.getDeploymentNamespace());
 
@@ -117,7 +119,8 @@ class NamespaceDeletionRecoveryST extends AbstractST {
      */
     @IsolatedTest("We need for each test case its own Cluster Operator")
     @Tag(INTERNAL_CLIENTS_USED)
-    void testTopicNotAvailable(ExtensionContext extensionContext) throws InterruptedException {
+    @UTONotSupported("https://github.com/strimzi/strimzi-kafka-operator/issues/8864")
+    void testTopicNotAvailable(ExtensionContext extensionContext) {
         final TestStorage testStorage = new TestStorage(extensionContext, clusterOperator.getDeploymentNamespace());
 
         final List<String> topicsToRemove = List.of("__strimzi-topic-operator-kstreams-topic-store-changelog", "__strimzi_store_topic");

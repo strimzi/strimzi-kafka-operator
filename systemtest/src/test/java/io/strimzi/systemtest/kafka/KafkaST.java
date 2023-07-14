@@ -33,6 +33,7 @@ import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.KRaftNotSupported;
+import io.strimzi.systemtest.annotations.KRaftWithoutUTONotSupported;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
@@ -105,7 +106,7 @@ class KafkaST extends AbstractST {
      *  - environment variables
      */
     @ParallelNamespaceTest
-    @KRaftNotSupported("Entity Operator is not supported by KRaft mode and is used in this test class")
+    @KRaftWithoutUTONotSupported
     void testJvmAndResources(ExtensionContext extensionContext) {
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(clusterOperator.getDeploymentNamespace(), extensionContext);
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
@@ -193,11 +194,13 @@ class KafkaST extends AbstractST {
         assertExpectedJavaOpts(namespaceName, KafkaResource.getKafkaPodName(clusterName, 0), "kafka",
                 "-Xmx1g", "-Xms512m", "-XX:+UseG1GC");
 
-        LOGGER.info("Verifying resources and JVM configuration of ZooKeeper Broker Pod");
-        assertResources(namespaceName, KafkaResources.zookeeperPodName(clusterName, 0), "zookeeper",
+        if (!Environment.isKRaftModeEnabled()) {
+            LOGGER.info("Verifying resources and JVM configuration of ZooKeeper Broker Pod");
+            assertResources(namespaceName, KafkaResources.zookeeperPodName(clusterName, 0), "zookeeper",
                 "1G", "500m", "500M", "25m");
-        assertExpectedJavaOpts(namespaceName, KafkaResources.zookeeperPodName(clusterName, 0), "zookeeper",
+            assertExpectedJavaOpts(namespaceName, KafkaResources.zookeeperPodName(clusterName, 0), "zookeeper",
                 "-Xmx1G", "-Xms512M", "-XX:+UseG1GC");
+        }
 
         LOGGER.info("Verifying resources, JVM configuration, and environment variables of Entity Operator's components");
 
@@ -238,7 +241,9 @@ class KafkaST extends AbstractST {
         });
 
         LOGGER.info("Checking no rolling update for Kafka cluster");
-        RollingUpdateUtils.waitForNoRollingUpdate(namespaceName, zkSelector, zkPods);
+        if (!Environment.isKRaftModeEnabled()) {
+            RollingUpdateUtils.waitForNoRollingUpdate(namespaceName, zkSelector, zkPods);
+        }
         RollingUpdateUtils.waitForNoRollingUpdate(namespaceName, kafkaSelector, kafkaPods);
         DeploymentUtils.waitForNoRollingUpdate(namespaceName, eoDepName, eoPods);
     }
@@ -274,30 +279,44 @@ class KafkaST extends AbstractST {
 
         resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3).build());
 
+        Map<String, String> eoSnapshot = DeploymentUtils.depSnapshot(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName));
+
         LOGGER.info("Remove User Operator from Entity Operator");
         KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, k -> k.getSpec().getEntityOperator().setUserOperator(null), namespaceName);
 
-        if (!Environment.isKRaftModeEnabled()) {
-            //Waiting when EO pod will be recreated without UO
-            DeploymentUtils.waitForDeploymentAndPodsReady(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName), 1);
-            PodUtils.waitUntilPodContainersCount(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName), 2);
+        if (Environment.isKRaftModeEnabled() && !Environment.isUnidirectionalTopicOperatorEnabled()) {
+            DeploymentUtils.waitForDeploymentDeletion(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName));
+        } else {
+            // Waiting when EO pod will be recreated without UO
+            eoSnapshot = DeploymentUtils.waitTillDepHasRolled(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName), 1, eoSnapshot);
 
-            //Checking that UO was removed
+            if (Environment.isUnidirectionalTopicOperatorEnabled()) {
+                PodUtils.waitUntilPodContainersCount(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName), 1);
+            } else {
+                PodUtils.waitUntilPodContainersCount(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName), 2);
+            }
+
+            // Checking that UO was removed
             kubeClient().listPodsByPrefixInName(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName)).forEach(pod -> {
                 pod.getSpec().getContainers().forEach(container -> {
                     assertThat(container.getName(), not(containsString("user-operator")));
                 });
             });
-        } else {
-            DeploymentUtils.waitForDeploymentDeletion(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName));
         }
 
         LOGGER.info("Recreate User Operator");
         KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, k -> k.getSpec().getEntityOperator().setUserOperator(new EntityUserOperatorSpec()), namespaceName);
         //Waiting when EO pod will be recreated with UO
-        DeploymentUtils.waitForDeploymentAndPodsReady(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName), 1);
+        eoSnapshot = DeploymentUtils.waitTillDepHasRolled(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName), 1, eoSnapshot);
 
-        int expectedEOContainerCount = Environment.isKRaftModeEnabled() ? 1 : 3;
+        int expectedEOContainerCount = 3;
+
+        if (Environment.isUnidirectionalTopicOperatorEnabled()) {
+            expectedEOContainerCount = 2;
+        } else if (Environment.isKRaftModeEnabled()) {
+            expectedEOContainerCount = 1;
+        }
+
         PodUtils.waitUntilPodContainersCount(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName), expectedEOContainerCount);
 
         LOGGER.info("Verifying that Entity Operator and all its component are correctly recreated");
@@ -311,13 +330,15 @@ class KafkaST extends AbstractST {
         assertThat("user-operator container is not present in EO", entityOperatorContainerNames.stream().anyMatch(name -> name.contains("user-operator")));
 
         // kraft does not support Topic Operator, therefore removal and recreation of User Operator is all to be tested with kraft enabled, rest of test is without kraft
-        if (!Environment.isKRaftModeEnabled()) {
-            assertThat("tls-sidecar container is not present in EO", entityOperatorContainerNames.stream().anyMatch(name -> name.contains("tls-sidecar")));
+        if (!Environment.isKRaftModeEnabled() || Environment.isUnidirectionalTopicOperatorEnabled()) {
+            if (!Environment.isUnidirectionalTopicOperatorEnabled()) {
+                assertThat("tls-sidecar container is not present in EO", entityOperatorContainerNames.stream().anyMatch(name -> name.contains("tls-sidecar")));
+            }
             assertThat("topic-operator container is not present in EO", entityOperatorContainerNames.stream().anyMatch(name -> name.contains("topic-operator")));
 
             LOGGER.info("Remove Topic Operator from Entity Operator");
             KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, k -> k.getSpec().getEntityOperator().setTopicOperator(null), namespaceName);
-            DeploymentUtils.waitForDeploymentAndPodsReady(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName), 1);
+            DeploymentUtils.waitTillDepHasRolled(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName), 1, eoSnapshot);
             PodUtils.waitUntilPodContainersCount(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName), 1);
 
             //Checking that TO was removed
@@ -792,7 +813,7 @@ class KafkaST extends AbstractST {
      */
     @ParallelNamespaceTest
     @Tag(INTERNAL_CLIENTS_USED)
-    @KRaftNotSupported("Topic Operator is not supported by KRaft mode and is used in this test class")
+    @KRaftWithoutUTONotSupported
     void testMessagesAndConsumerOffsetFilesOnDisk(ExtensionContext extensionContext) {
         final TestStorage testStorage = new TestStorage(extensionContext);
 

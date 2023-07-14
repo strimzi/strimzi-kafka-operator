@@ -16,7 +16,7 @@ import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControl
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
-import io.strimzi.systemtest.annotations.KRaftNotSupported;
+import io.strimzi.systemtest.annotations.KRaftWithoutUTONotSupported;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
@@ -110,7 +110,7 @@ public class CruiseControlConfigurationST extends AbstractST {
     }
 
     @ParallelNamespaceTest
-    @KRaftNotSupported("Topic Operator is not supported by KRaft mode and is used in this test class")
+    @KRaftWithoutUTONotSupported
     void testConfigurationDiskChangeDoNotTriggersRollingUpdateOfKafkaPods(ExtensionContext extensionContext) {
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(clusterOperator.getDeploymentNamespace(), extensionContext);
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
@@ -145,7 +145,10 @@ public class CruiseControlConfigurationST extends AbstractST {
         assertThat(KafkaResource.kafkaClient().inNamespace(namespaceName).withName(clusterName).get().getSpec()
             .getCruiseControl().getBrokerCapacity().getOutboundNetwork(), is("20KB/s"));
 
-        CruiseControlUtils.verifyThatCruiseControlTopicsArePresent(namespaceName);
+        // https://github.com/strimzi/strimzi-kafka-operator/issues/8864
+        if (!Environment.isUnidirectionalTopicOperatorEnabled()) {
+            CruiseControlUtils.verifyThatCruiseControlTopicsArePresent(namespaceName);
+        }
     }
 
     @ParallelNamespaceTest

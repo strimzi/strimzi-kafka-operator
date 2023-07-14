@@ -22,6 +22,7 @@ import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.KRaftNotSupported;
+import io.strimzi.systemtest.annotations.KRaftWithoutUTONotSupported;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
@@ -320,7 +321,7 @@ class MirrorMaker2ST extends AbstractST {
      * Test mirroring messages by MirrorMaker 2 over tls transport using scram-sha-512 auth
      */
     @ParallelNamespaceTest
-    @KRaftNotSupported("TopicOperator is not supported by KRaft mode and is used in this test class")
+    @KRaftWithoutUTONotSupported
     void testMirrorMaker2TlsAndScramSha512Auth(ExtensionContext extensionContext) {
         final TestStorage testStorage = new TestStorage(extensionContext, clusterOperator.getDeploymentNamespace());
 
@@ -440,11 +441,14 @@ class MirrorMaker2ST extends AbstractST {
         ClientUtils.waitForConsumerClientSuccess(testStorage);
         LOGGER.info("Messages successfully mirrored");
 
-        KafkaTopicUtils.waitForKafkaTopicCreation(testStorage.getNamespaceName(), sourceMirroredTopicName);
-        KafkaTopic mirroredTopic = KafkaTopicResource.kafkaTopicClient().inNamespace(testStorage.getNamespaceName()).withName(sourceMirroredTopicName).get();
+        // https://github.com/strimzi/strimzi-kafka-operator/issues/8864
+        if (!Environment.isUnidirectionalTopicOperatorEnabled()) {
+            KafkaTopicUtils.waitForKafkaTopicCreation(testStorage.getNamespaceName(), sourceMirroredTopicName);
+            KafkaTopic mirroredTopic = KafkaTopicResource.kafkaTopicClient().inNamespace(testStorage.getNamespaceName()).withName(sourceMirroredTopicName).get();
 
-        assertThat(mirroredTopic.getSpec().getPartitions(), is(3));
-        assertThat(mirroredTopic.getMetadata().getLabels().get(Labels.STRIMZI_CLUSTER_LABEL), is(kafkaClusterTargetName));
+            assertThat(mirroredTopic.getSpec().getPartitions(), is(3));
+            assertThat(mirroredTopic.getMetadata().getLabels().get(Labels.STRIMZI_CLUSTER_LABEL), is(kafkaClusterTargetName));
+        }
     }
 
     @ParallelNamespaceTest
@@ -958,7 +962,7 @@ class MirrorMaker2ST extends AbstractST {
      * while user Scram passwords, CA cluster and clients certificates are changed.
      */
     @ParallelNamespaceTest
-    @KRaftNotSupported("TopicOperator is not supported by KRaft mode and is used in this test class")
+    @KRaftWithoutUTONotSupported
     @SuppressWarnings({"checkstyle:MethodLength"})
     void testKMM2RollAfterSecretsCertsUpdateScramSha(ExtensionContext extensionContext) {
         TestStorage testStorage = new TestStorage(extensionContext);

@@ -5,6 +5,8 @@
 package io.strimzi.systemtest.utils.kafkaUtils;
 
 import io.strimzi.api.kafka.model.KafkaTopicSpec;
+import io.strimzi.systemtest.Environment;
+import io.strimzi.systemtest.enums.ConditionStatus;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import org.apache.logging.log4j.Logger;
@@ -39,14 +41,18 @@ public class KafkaTopicScalabilityUtils {
         }
     }
 
-    public static void waitForTopicStatus(String namespaceName, String topicPrefix, int numberOfTopics, Enum<?> state) {
-        LOGGER.info("Verifying that {} Topics are in {} state", numberOfTopics, state.toString());
+    public static void waitForTopicStatus(String namespaceName, String topicPrefix, int numberOfTopics, Enum<?> conditionType) {
+        waitForTopicStatus(namespaceName, topicPrefix, numberOfTopics, conditionType, ConditionStatus.True);
+    }
+
+    public static void waitForTopicStatus(String namespaceName, String topicPrefix, int numberOfTopics, Enum<?> conditionType, ConditionStatus conditionStatus) {
+        LOGGER.info("Verifying that {} Topics are in {} state", numberOfTopics, conditionType.toString());
         List<CompletableFuture<?>> topics = new ArrayList<>();
 
         for (int i = 0; i < numberOfTopics; i++) {
             String currentTopic = topicPrefix + i;
             topics.add(CompletableFuture.runAsync(() ->
-                    KafkaTopicUtils.waitForKafkaTopicStatus(namespaceName, currentTopic, state)
+                KafkaTopicUtils.waitForKafkaTopicStatus(namespaceName, currentTopic, conditionType, conditionStatus)
             ));
         }
 
@@ -57,11 +63,15 @@ public class KafkaTopicScalabilityUtils {
     }
 
     public static void waitForTopicsNotReady(String namespaceName, String topicPrefix, int numberOfTopics) {
-        KafkaTopicScalabilityUtils.waitForTopicStatus(namespaceName, topicPrefix, numberOfTopics, CustomResourceStatus.NotReady);
+        if (Environment.isUnidirectionalTopicOperatorEnabled()) {
+            waitForTopicStatus(namespaceName, topicPrefix, numberOfTopics, CustomResourceStatus.Ready, ConditionStatus.False);
+        } else {
+            waitForTopicStatus(namespaceName, topicPrefix, numberOfTopics, CustomResourceStatus.NotReady);
+        }
     }
 
     public static void waitForTopicsReady(String namespaceName, String topicPrefix, int numberOfTopics) {
-        KafkaTopicScalabilityUtils.waitForTopicStatus(namespaceName, topicPrefix, numberOfTopics, CustomResourceStatus.Ready);
+        waitForTopicStatus(namespaceName, topicPrefix, numberOfTopics, CustomResourceStatus.Ready);
     }
 
     public static void waitForTopicsContainConfig(String namespaceName, String topicPrefix, int numberOfTopics, Map<String, Object> config) {
