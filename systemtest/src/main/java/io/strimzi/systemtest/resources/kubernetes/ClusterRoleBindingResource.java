@@ -39,6 +39,12 @@ public class ClusterRoleBindingResource implements ResourceType<ClusterRoleBindi
         // ClusterRoleBinding his operation namespace is only 'default'
         kubeClient(KubeClusterResource.getInstance().defaultNamespace()).deleteClusterRoleBinding(resource);
     }
+
+    @Override
+    public void update(ClusterRoleBinding resource) {
+        kubeClient(KubeClusterResource.getInstance().defaultNamespace()).createOrUpdateClusterRoleBinding(resource);
+    }
+
     @Override
     public boolean waitForReadiness(ClusterRoleBinding resource) {
         return resource != null;

@@ -34,6 +34,12 @@ public class RoleResource implements ResourceType<Role> {
     public void delete(Role resource) {
         ResourceManager.kubeClient().namespace(resource.getMetadata().getNamespace()).deleteRole(resource.getMetadata().getNamespace(), resource.getMetadata().getName());
     }
+
+    @Override
+    public void update(Role resource) {
+        ResourceManager.kubeClient().namespace(resource.getMetadata().getNamespace()).createOrUpdateRole(resource);
+    }
+
     @Override
     public boolean waitForReadiness(Role resource) {
         return resource != null && get(resource.getMetadata().getNamespace(), resource.getMetadata().getName()) != null;

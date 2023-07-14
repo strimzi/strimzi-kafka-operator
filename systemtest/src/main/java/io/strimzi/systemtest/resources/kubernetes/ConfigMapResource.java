@@ -28,6 +28,12 @@ public class ConfigMapResource implements ResourceType<ConfigMap> {
     public void delete(ConfigMap resource) {
         kubeClient().deleteConfigMap(resource);
     }
+
+    @Override
+    public void update(ConfigMap resource) {
+        kubeClient().updateConfigMapInNamespace(resource.getMetadata().getNamespace(), resource);
+    }
+
     @Override
     public boolean waitForReadiness(ConfigMap resource) {
         return resource != null;

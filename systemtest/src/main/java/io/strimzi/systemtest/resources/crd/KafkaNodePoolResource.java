@@ -47,6 +47,11 @@ public class KafkaNodePoolResource implements ResourceType<KafkaNodePool> {
     }
 
     @Override
+    public void update(KafkaNodePool resource) {
+        kafkaNodePoolClient().inNamespace(resource.getMetadata().getNamespace()).resource(resource).update();
+    }
+
+    @Override
     public boolean waitForReadiness(KafkaNodePool resource) {
         return resource != null;
     }

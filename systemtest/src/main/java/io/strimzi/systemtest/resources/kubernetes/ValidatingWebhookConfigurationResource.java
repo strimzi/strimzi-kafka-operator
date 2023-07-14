@@ -34,6 +34,11 @@ public class ValidatingWebhookConfigurationResource implements ResourceType<Vali
     }
 
     @Override
+    public void update(ValidatingWebhookConfiguration resource) {
+        kubeClient(KubeClusterResource.getInstance().defaultNamespace()).updateValidatingWebhookConfiguration(resource);
+    }
+
+    @Override
     public boolean waitForReadiness(ValidatingWebhookConfiguration resource) {
         return resource != null;
     }

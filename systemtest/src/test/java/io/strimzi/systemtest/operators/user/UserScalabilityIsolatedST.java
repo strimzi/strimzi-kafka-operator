@@ -112,12 +112,16 @@ public class UserScalabilityIsolatedST extends AbstractST {
             .endAcl()
             .build();
 
-        listOfUsers.forEach(kafkaUser -> new KafkaUserBuilder(kafkaUser).editOrNewSpec().withKafkaUserAuthorizationSimple(updatedAcl).endSpec().build());
+        listOfUsers.replaceAll(kafkaUser -> new KafkaUserBuilder(kafkaUser)
+            .editSpec()
+                .withKafkaUserAuthorizationSimple(updatedAcl)
+            .endSpec()
+            .build());
 
         // get one user spec as the template for wait
         KafkaUserSpec kafkaUserSpec = listOfUsers.stream().findFirst().get().getSpec();
 
-        resourceManager.createResource(extensionContext, false, listOfUsers.toArray(new KafkaUser[listOfUsers.size()]));
+        resourceManager.updateResource(extensionContext, listOfUsers.toArray(new KafkaUser[listOfUsers.size()]));
         KafkaUserUtils.waitForConfigToBeChangedInAllUsersWithPrefix(clusterOperator.getDeploymentNamespace(), usersPrefix, kafkaUserSpec);
         KafkaUserUtils.waitForAllUsersWithPrefixReady(clusterOperator.getDeploymentNamespace(), usersPrefix);
     }

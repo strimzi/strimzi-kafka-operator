@@ -39,6 +39,11 @@ public class SubscriptionResource implements ResourceType<Subscription> {
     }
 
     @Override
+    public void update(Subscription resource) {
+        subscriptionClient().inNamespace(resource.getMetadata().getNamespace()).resource(resource).update();
+    }
+
+    @Override
     public boolean waitForReadiness(Subscription resource) {
         return resource != null;
     }

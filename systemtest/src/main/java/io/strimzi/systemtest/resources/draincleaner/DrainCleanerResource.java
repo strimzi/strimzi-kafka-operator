@@ -39,6 +39,11 @@ public class DrainCleanerResource implements ResourceType<Deployment> {
     }
 
     @Override
+    public void update(Deployment resource) {
+        ResourceManager.kubeClient().updateDeployment(resource);
+    }
+
+    @Override
     public boolean waitForReadiness(Deployment resource) {
         return resource != null
             && resource.getMetadata() != null

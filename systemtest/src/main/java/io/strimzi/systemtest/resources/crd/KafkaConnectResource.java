@@ -42,6 +42,12 @@ public class KafkaConnectResource implements ResourceType<KafkaConnect> {
         kafkaConnectClient().inNamespace(resource.getMetadata().getNamespace()).withName(
             resource.getMetadata().getName()).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
     }
+
+    @Override
+    public void update(KafkaConnect resource) {
+        kafkaConnectClient().inNamespace(resource.getMetadata().getNamespace()).resource(resource).update();
+    }
+
     @Override
     public boolean waitForReadiness(KafkaConnect resource) {
         return KafkaConnectUtils.waitForConnectReady(resource.getMetadata().getNamespace(), resource.getMetadata().getName());

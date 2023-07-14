@@ -38,6 +38,11 @@ public class StrimziPodSetResource implements ResourceType<StrimziPodSet> {
     }
 
     @Override
+    public void update(StrimziPodSet resource) {
+        strimziPodSetClient().inNamespace(resource.getMetadata().getNamespace()).resource(resource).update();
+    }
+
+    @Override
     public boolean waitForReadiness(StrimziPodSet resource) {
         return ResourceManager.waitForResourceStatus(strimziPodSetClient(), resource, Ready);
     }

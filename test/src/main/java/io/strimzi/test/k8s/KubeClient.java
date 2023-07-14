@@ -481,6 +481,10 @@ public class KubeClient {
         client.batch().v1().jobs().inNamespace(getNamespace()).withName(jobName).delete();
     }
 
+    public void updateJob(Job job) {
+        client.batch().v1().jobs().inNamespace(job.getMetadata().getNamespace()).resource(job).update();
+    }
+
     public void deleteJob(final String namespaceName, String jobName) {
         client.batch().v1().jobs().inNamespace(namespaceName).withName(jobName).delete();
     }
@@ -864,6 +868,10 @@ public class KubeClient {
         client.network().networkPolicies().inNamespace(getNamespace()).withName(name).delete();
     }
 
+    public void updateNetworkPolicy(NetworkPolicy networkPolicy) {
+        client.network().networkPolicies().inNamespace(getNamespace()).resource(networkPolicy).update();
+    }
+
     // =====================================
     // ---> CUSTOM RESOURCE DEFINITIONS <---
     // =====================================
@@ -949,6 +957,10 @@ public class KubeClient {
 
     public void deleteValidatingWebhookConfiguration(ValidatingWebhookConfiguration validatingWebhookConfiguration) {
         client.admissionRegistration().v1().validatingWebhookConfigurations().resource(validatingWebhookConfiguration).delete();
+    }
+
+    public void updateValidatingWebhookConfiguration(ValidatingWebhookConfiguration validatingWebhookConfiguration) {
+        client.admissionRegistration().v1().validatingWebhookConfigurations().resource(validatingWebhookConfiguration).update();
     }
 
     // =====================================================

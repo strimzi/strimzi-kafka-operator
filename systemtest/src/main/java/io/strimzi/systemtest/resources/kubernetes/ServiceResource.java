@@ -32,6 +32,13 @@ public class ServiceResource implements ResourceType<Service> {
     public void delete(Service resource) {
         ResourceManager.kubeClient().namespace(resource.getMetadata().getNamespace()).deleteService(resource);
     }
+
+    @Override
+    @Deprecated
+    public void update(Service resource) {
+        ResourceManager.kubeClient().namespace(resource.getMetadata().getNamespace()).createService(resource);
+    }
+
     @Override
     public boolean waitForReadiness(Service resource) {
         return resource != null;

@@ -32,6 +32,11 @@ public class LeaseResource implements ResourceType<Lease> {
     }
 
     @Override
+    public void update(Lease resource) {
+        kubeClient().getClient().leases().resource(resource).update();
+    }
+
+    @Override
     public boolean waitForReadiness(Lease resource) {
         return resource != null;
     }
