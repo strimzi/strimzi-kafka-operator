@@ -12,7 +12,11 @@ import io.strimzi.api.kafka.model.KafkaConnectResources;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
+import io.strimzi.api.kafka.model.nodepool.KafkaNodePool;
+import io.strimzi.api.kafka.model.nodepool.KafkaNodePoolBuilder;
+import io.strimzi.api.kafka.model.nodepool.ProcessRoles;
 import io.strimzi.operator.common.Annotations;
+import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
@@ -20,6 +24,7 @@ import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
+import io.strimzi.systemtest.resources.crd.KafkaNodePoolResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.storage.TestStorage;
@@ -37,7 +42,6 @@ import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.test.annotations.IsolatedTest;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
@@ -67,7 +71,6 @@ public class FeatureGatesIsolatedST extends AbstractST {
      */
     @IsolatedTest("Feature Gates test for enabled UseKRaft gate")
     @Tag(INTERNAL_CLIENTS_USED)
-    @Disabled("Does not use KafkaNodePools for KRaft. Needs to be updated. This is tracked in https://github.com/strimzi/strimzi-kafka-operator/issues/8827")
     public void testKRaftMode(ExtensionContext extensionContext) {
         assumeFalse(Environment.isOlmInstall() || Environment.isHelmInstall());
         final TestStorage testStorage = new TestStorage(extensionContext);
@@ -84,7 +87,7 @@ public class FeatureGatesIsolatedST extends AbstractST {
         List<EnvVar> testEnvVars = new ArrayList<>();
         int kafkaReplicas = 3;
 
-        testEnvVars.add(new EnvVar(Environment.STRIMZI_FEATURE_GATES_ENV, "+UseKRaft", null));
+        testEnvVars.add(new EnvVar(Environment.STRIMZI_FEATURE_GATES_ENV, "+UseKRaft,+KafkaNodePools", null));
 
         clusterOperator = new SetupClusterOperator.SetupClusterOperatorBuilder()
                 .withExtensionContext(extensionContext)
@@ -95,6 +98,9 @@ public class FeatureGatesIsolatedST extends AbstractST {
                 .runInstallation();
 
         Kafka kafka = KafkaTemplates.kafkaPersistent(clusterName, kafkaReplicas)
+            .editOrNewMetadata()
+                .addToAnnotations(Annotations.ANNO_STRIMZI_IO_NODE_POOLS, "enabled")
+            .endMetadata()
             .editSpec()
                 .editKafka()
                 .withListeners(
@@ -117,7 +123,21 @@ public class FeatureGatesIsolatedST extends AbstractST {
             .endSpec()
             .build();
         kafka.getSpec().getEntityOperator().setTopicOperator(null); // The builder cannot disable the EO. It has to be done this way.
-        resourceManager.createResource(extensionContext, kafka);
+
+        KafkaNodePool kafkaNodePool = KafkaNodePoolResource.convertKafkaResourceToKafkaNodePool(kafka);
+        kafkaNodePool = new KafkaNodePoolBuilder(kafkaNodePool)
+            .editOrNewMetadata()
+                .addToLabels(Labels.STRIMZI_CLUSTER_LABEL, testStorage.getClusterName())
+            .endMetadata()
+            .editOrNewSpec()
+                .addToRoles(ProcessRoles.BROKER, ProcessRoles.CONTROLLER)
+            .endSpec()
+            .build();
+
+        resourceManager.createResource(extensionContext,
+            kafkaNodePool,
+            kafka
+        );
 
         resourceManager.createResource(extensionContext,
             KafkaUserTemplates.tlsUser(testStorage).build()
