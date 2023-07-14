@@ -8,7 +8,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.fabric8.kubernetes.api.model.Service;
 import io.strimzi.systemtest.enums.ClusterOperatorInstallType;
-import io.strimzi.systemtest.utils.TestKafkaVersion;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.KubeClusterResource;
 import io.strimzi.test.k8s.cluster.OpenShift;
@@ -171,7 +170,7 @@ public class Environment {
     private static final String STRIMZI_FEATURE_GATES_DEFAULT = "";
     private static final String RESOURCE_ALLOCATION_STRATEGY_DEFAULT = "SHARE_MEMORY_FOR_ALL_COMPONENTS";
 
-    private static final String ST_KAFKA_VERSION_DEFAULT = TestKafkaVersion.getDefaultSupportedKafkaVersion();
+    private static final String ST_KAFKA_VERSION_DEFAULT = "3.4.0";
     private static final String ST_CLIENTS_KAFKA_VERSION_DEFAULT = "3.4.0";
     public static final String TEST_CLIENTS_VERSION_DEFAULT = "0.5.2";
     public static final String ST_FILE_PLUGIN_URL_DEFAULT = "https://repo1.maven.org/maven2/org/apache/kafka/connect-file/" + ST_KAFKA_VERSION_DEFAULT + "/connect-file-" + ST_KAFKA_VERSION_DEFAULT + ".jar";

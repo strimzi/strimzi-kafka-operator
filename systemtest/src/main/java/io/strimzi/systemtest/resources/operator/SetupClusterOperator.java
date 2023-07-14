@@ -201,13 +201,6 @@ public class SetupClusterOperator {
         if (Environment.isNamespaceRbacScope() && !Environment.isHelmInstall()) {
             clusterOperatorBuilder = clusterOperatorBuilder.withNamespace(Constants.INFRA_NAMESPACE);
             return clusterOperatorBuilder;
-        // OLM cluster wide must use KubeClusterResource.getInstance().getDefaultOlmNamespace() namespace
-        } else if (Environment.isOlmInstall() && !Environment.isNamespaceRbacScope()) {
-            clusterOperatorBuilder = clusterOperatorBuilder
-                .withNamespace(cluster.getDefaultOlmNamespace())
-                .withBindingsNamespaces(Collections.emptyList())
-                .withWatchingNamespaces(Constants.WATCH_ALL_NAMESPACES);
-            return clusterOperatorBuilder;
         }
         // otherwise
         return clusterOperatorBuilder
@@ -334,25 +327,24 @@ public class SetupClusterOperator {
         if (IS_OLM_CLUSTER_WIDE.test(namespaceToWatch)) {
             // if RBAC is enable we don't run tests in parallel mode and with that said we don't create another namespaces
             if (!Environment.isNamespaceRbacScope()) {
-                bindingsNamespaces = bindingsNamespaces.contains(Constants.INFRA_NAMESPACE) ? Collections.singletonList(cluster.getDefaultOlmNamespace()) : bindingsNamespaces;
-                namespaceInstallTo = cluster.getDefaultOlmNamespace();
-
-                // if OLM is cluster-wide we do not re-create default OLM namespace because it will also delete
-                // the global OperatorGroup resource. Thus we remove such namespace from the collection avoiding failing tests.
-                if (bindingsNamespaces.contains(namespaceInstallTo)) {
-                    bindingsNamespaces = new ArrayList<>(bindingsNamespaces).stream()
-                        .filter(n -> !n.equals(namespaceInstallTo))
-                        .collect(Collectors.toList());
-                }
+                bindingsNamespaces = bindingsNamespaces.contains(Constants.INFRA_NAMESPACE) ? Collections.singletonList(Constants.INFRA_NAMESPACE) : bindingsNamespaces;
 
                 createClusterOperatorNamespaceIfPossible();
                 createClusterRoleBindings();
+
+                // watch all namespaces
+                olmConfiguration.withNamespaceToWatch(Constants.WATCH_ALL_NAMESPACES);
+
                 olmResource = new OlmResource(olmConfiguration.withNamespaceName(namespaceInstallTo).build());
                 olmResource.create();
             }
-            // single-namespace olm co-operator
         } else {
+            // single-namespace olm co-operator
             createClusterOperatorNamespaceIfPossible();
+
+            // watch same namespace, where operator is installed
+            olmConfiguration.withNamespaceToWatch(namespaceInstallTo);
+
             olmResource = new OlmResource(olmConfiguration.withNamespaceName(namespaceInstallTo).build());
             olmResource.create();
         }
@@ -959,9 +951,6 @@ public class SetupClusterOperator {
      *    2. Helm &amp; installation    :   return @code{namespaceInstallTo}
      */
     public String getDeploymentNamespace() {
-        if (Environment.isOlmInstall() && !Environment.isNamespaceRbacScope()) {
-            return namespaceInstallTo == null ? cluster.getDefaultOlmNamespace() : namespaceInstallTo;
-        }
         return namespaceInstallTo == null ? Constants.INFRA_NAMESPACE : namespaceInstallTo;
     }
 
@@ -970,6 +959,9 @@ public class SetupClusterOperator {
     }
 
     public String getClusterOperatorName() {
+        if (Environment.isOlmInstall()) {
+            return olmResource.getOlmConfiguration().getOlmOperatorDeploymentName();
+        }
         return clusterOperatorName;
     }
 

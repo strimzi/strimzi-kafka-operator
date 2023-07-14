@@ -82,7 +82,6 @@ public class OlmAllNamespaceIsolatedST extends OlmAbstractST {
     @BeforeAll
     void setup(ExtensionContext extensionContext) {
         clusterOperator = clusterOperator.defaultInstallation(extensionContext)
-            .withNamespace(cluster.getDefaultOlmNamespace())
             .withWatchingNamespaces(WATCH_ALL_NAMESPACES)
             .createInstallation()
             // run always OLM installation

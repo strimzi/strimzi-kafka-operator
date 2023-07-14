@@ -92,8 +92,4 @@ public interface KubeCluster {
         logger.info("Using cluster: {}", cluster);
         return cluster;
     }
-
-
-    /** Return default OLM namespace */
-    String defaultOlmNamespace();
 }

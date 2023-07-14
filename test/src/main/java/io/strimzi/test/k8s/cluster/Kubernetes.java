@@ -22,7 +22,6 @@ import java.util.List;
 public class Kubernetes implements KubeCluster {
 
     public static final String CMD = "kubectl";
-    private static final String OLM_NAMESPACE = "operators";
     private static final Logger LOGGER = LogManager.getLogger(Kubernetes.class);
 
     @Override
@@ -54,10 +53,5 @@ public class Kubernetes implements KubeCluster {
 
     public String toString() {
         return CMD;
-    }
-
-    @Override
-    public String defaultOlmNamespace() {
-        return OLM_NAMESPACE;
     }
 }

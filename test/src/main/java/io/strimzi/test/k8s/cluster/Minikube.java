@@ -22,9 +22,7 @@ import java.util.List;
 public class Minikube implements KubeCluster {
 
     public static final String CMD = "minikube";
-    private static final String OLM_NAMESPACE = "operators";
     private static final Logger LOGGER = LogManager.getLogger(Minikube.class);
-
 
     @Override
     public boolean isAvailable() {
@@ -55,10 +53,5 @@ public class Minikube implements KubeCluster {
 
     public String toString() {
         return CMD;
-    }
-
-    @Override
-    public String defaultOlmNamespace() {
-        return OLM_NAMESPACE;
     }
 }
