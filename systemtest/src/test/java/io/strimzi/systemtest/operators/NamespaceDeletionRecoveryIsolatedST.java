@@ -14,7 +14,6 @@ import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.annotations.KRaftNotSupported;
-import io.strimzi.systemtest.annotations.OpenShiftOnly;
 import io.strimzi.systemtest.cli.KafkaCmdClient;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
@@ -32,13 +31,11 @@ import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.NamespaceUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PersistentVolumeClaimUtils;
-import java.lang.annotation.Annotation;
 import java.util.Map;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
@@ -46,14 +43,15 @@ import java.util.List;
 
 import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.RECOVERY;
-import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.systemtest.Constants.INFRA_NAMESPACE;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 /**
  * Suite for testing topic recovery in case of namespace deletion.
  * Procedure described in documentation  https://strimzi.io/docs/master/#namespace-deletion_str
- * Note: Suite can be run on minikube only with previously created PVs and StorageClass using local provisioner. *
+ * Note: Suite can be run on minikube only with previously created PVs and StorageClass using local provisioner.
+ * Reason why this test class is not part of regression:
+ * These tests does not have to be run every time with PRs and so on, the nature of the tests is sufficient for recovery profile only.
  */
 @Tag(RECOVERY)
 @KRaftNotSupported("Topic Operator is not supported by KRaft mode and is used in this test class")
@@ -297,10 +295,10 @@ class NamespaceDeletionRecoveryIsolatedST extends AbstractST {
         kubeClient().getClient().storage().v1().storageClasses().withName(storageClassName).delete();
 
         // Get default StorageClass and change reclaim policy
-        StorageClass defaultStorageClass =  kubeClient().getClient().storage().v1().storageClasses().list().getItems().stream().filter( sg -> {
+        StorageClass defaultStorageClass =  kubeClient().getClient().storage().v1().storageClasses().list().getItems().stream().filter(sg -> {
             Map<String, String> annotations = sg.getMetadata().getAnnotations();
             return annotations.get("storageclass.kubernetes.io/is-default-class").equals("true");
-            }).findFirst().get();
+        }).findFirst().get();
 
         StorageClass retainStorageClass = new StorageClassBuilder(defaultStorageClass)
             .withNewMetadata()
