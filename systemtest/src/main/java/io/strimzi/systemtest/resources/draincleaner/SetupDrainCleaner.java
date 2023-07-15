@@ -74,7 +74,7 @@ public class SetupDrainCleaner {
                 switch (resourceType) {
                     case Constants.ROLE:
                         Role role = TestUtils.configFromYaml(file, Role.class);
-                        ResourceManager.getInstance().createResource(extensionContext, new RoleBuilder(role)
+                        ResourceManager.getInstance().createResourceWithWait(extensionContext, new RoleBuilder(role)
                             .editMetadata()
                                 .withNamespace(Constants.DRAIN_CLEANER_NAMESPACE)
                             .endMetadata()
@@ -82,7 +82,7 @@ public class SetupDrainCleaner {
                         break;
                     case Constants.ROLE_BINDING:
                         RoleBinding roleBinding = TestUtils.configFromYaml(file, RoleBinding.class);
-                        ResourceManager.getInstance().createResource(extensionContext, new RoleBindingBuilder(roleBinding)
+                        ResourceManager.getInstance().createResourceWithWait(extensionContext, new RoleBindingBuilder(roleBinding)
                             .editMetadata()
                                 .withNamespace(Constants.DRAIN_CLEANER_NAMESPACE)
                             .endMetadata()
@@ -93,11 +93,11 @@ public class SetupDrainCleaner {
                         break;
                     case Constants.CLUSTER_ROLE:
                         ClusterRole clusterRole = TestUtils.configFromYaml(file, ClusterRole.class);
-                        ResourceManager.getInstance().createResource(extensionContext, clusterRole);
+                        ResourceManager.getInstance().createResourceWithWait(extensionContext, clusterRole);
                         break;
                     case Constants.SERVICE_ACCOUNT:
                         ServiceAccount serviceAccount = TestUtils.configFromYaml(file, ServiceAccount.class);
-                        ResourceManager.getInstance().createResource(extensionContext, new ServiceAccountBuilder(serviceAccount)
+                        ResourceManager.getInstance().createResourceWithWait(extensionContext, new ServiceAccountBuilder(serviceAccount)
                             .editMetadata()
                                 .withNamespace(Constants.DRAIN_CLEANER_NAMESPACE)
                             .endMetadata()
@@ -105,14 +105,14 @@ public class SetupDrainCleaner {
                         break;
                     case Constants.CLUSTER_ROLE_BINDING:
                         ClusterRoleBinding clusterRoleBinding = TestUtils.configFromYaml(file, ClusterRoleBinding.class);
-                        ResourceManager.getInstance().createResource(extensionContext, new ClusterRoleBindingBuilder(clusterRoleBinding).build());
+                        ResourceManager.getInstance().createResourceWithWait(extensionContext, new ClusterRoleBindingBuilder(clusterRoleBinding).build());
                         break;
                     case Constants.SECRET:
-                        ResourceManager.getInstance().createResource(extensionContext, customDrainCleanerSecretBuilder.build());
+                        ResourceManager.getInstance().createResourceWithWait(extensionContext, customDrainCleanerSecretBuilder.build());
                         break;
                     case Constants.SERVICE:
                         Service service = TestUtils.configFromYaml(file, Service.class);
-                        ResourceManager.getInstance().createResource(extensionContext, service);
+                        ResourceManager.getInstance().createResourceWithWait(extensionContext, service);
                         break;
                     case Constants.VALIDATION_WEBHOOK_CONFIG:
                         ValidatingWebhookConfiguration webhookConfiguration = TestUtils.configFromYaml(file, ValidatingWebhookConfiguration.class);
@@ -120,7 +120,7 @@ public class SetupDrainCleaner {
                         // we fetch public key from strimzi-drain-cleaner Secret and then patch ValidationWebhookConfiguration.
                         webhookConfiguration.getWebhooks().stream().findFirst().get().getClientConfig().setCaBundle(customDrainCleanerSecretBuilder.getData().get("tls.crt"));
 
-                        ResourceManager.getInstance().createResource(extensionContext, webhookConfiguration);
+                        ResourceManager.getInstance().createResourceWithWait(extensionContext, webhookConfiguration);
                         break;
                     default:
                         LOGGER.error("Unknown installation resource type: {}", resourceType);
@@ -132,6 +132,6 @@ public class SetupDrainCleaner {
 
     public void createDrainCleaner(ExtensionContext extensionContext) {
         applyInstallFiles(extensionContext);
-        ResourceManager.getInstance().createResource(extensionContext, new DrainCleanerResource().buildDrainCleanerDeployment().build());
+        ResourceManager.getInstance().createResourceWithWait(extensionContext, new DrainCleanerResource().buildDrainCleanerDeployment().build());
     }
 }

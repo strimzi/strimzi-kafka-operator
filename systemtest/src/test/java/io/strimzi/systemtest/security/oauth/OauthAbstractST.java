@@ -127,7 +127,7 @@ public class OauthAbstractST extends AbstractST {
     protected void setupCoAndKeycloak(ExtensionContext extensionContext, String namespace) {
         clusterOperator.defaultInstallation(extensionContext).createInstallation().runInstallation();
 
-        resourceManager.createResource(extensionContext, NetworkPolicyTemplates.applyDefaultNetworkPolicy(extensionContext, namespace, DefaultNetworkPolicy.DEFAULT_TO_ALLOW));
+        resourceManager.createResourceWithWait(extensionContext, NetworkPolicyTemplates.applyDefaultNetworkPolicy(extensionContext, namespace, DefaultNetworkPolicy.DEFAULT_TO_ALLOW));
 
         LOGGER.info("Deploying keycloak");
 

@@ -64,7 +64,7 @@ public class OauthScopeIsolatedST extends OauthAbstractST {
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
         // SCOPE TESTING
-        resourceManager.createResource(extensionContext, false, KafkaConnectTemplates.kafkaConnect(clusterName, clusterName, 1)
+        resourceManager.createResourceWithoutWait(extensionContext, KafkaConnectTemplates.kafkaConnect(clusterName, clusterName, 1)
             .editMetadata()
                 .withNamespace(clusterOperator.getDeploymentNamespace())
             .endMetadata()
@@ -102,7 +102,7 @@ public class OauthScopeIsolatedST extends OauthAbstractST {
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
         // SCOPE TESTING
-        resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnect(clusterName, clusterName, 1)
+        resourceManager.createResourceWithWait(extensionContext, KafkaConnectTemplates.kafkaConnect(clusterName, clusterName, 1)
             .editMetadata()
                 .withNamespace(clusterOperator.getDeploymentNamespace())
             .endMetadata()
@@ -161,9 +161,9 @@ public class OauthScopeIsolatedST extends OauthAbstractST {
         // clientScope is set to 'test' by default
 
         // verification phase the KafkaClient to authenticate.
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(oauthClusterName, topicName, clusterOperator.getDeploymentNamespace()).build());
+        resourceManager.createResourceWithWait(extensionContext, KafkaTopicTemplates.topic(oauthClusterName, topicName, clusterOperator.getDeploymentNamespace()).build());
 
-        resourceManager.createResource(extensionContext, oauthInternalClientChecksJob.producerStrimzi());
+        resourceManager.createResourceWithWait(extensionContext, oauthInternalClientChecksJob.producerStrimzi());
         // client should succeeded because we set to `clientScope=test` and also Kafka has `scope=test`
         ClientUtils.waitForClientSuccess(producerName, clusterOperator.getDeploymentNamespace(), MESSAGE_COUNT);
     }
@@ -203,9 +203,9 @@ public class OauthScopeIsolatedST extends OauthAbstractST {
         kafkaPods = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(clusterOperator.getDeploymentNamespace(), kafkaSelector, 3, kafkaPods);
 
         // verification phase client should fail here because clientScope is set to 'null'
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(oauthClusterName, topicName, clusterOperator.getDeploymentNamespace()).build());
+        resourceManager.createResourceWithWait(extensionContext, KafkaTopicTemplates.topic(oauthClusterName, topicName, clusterOperator.getDeploymentNamespace()).build());
 
-        resourceManager.createResource(extensionContext, oauthInternalClientChecksJob.producerStrimzi());
+        resourceManager.createResourceWithWait(extensionContext, oauthInternalClientChecksJob.producerStrimzi());
         // client should fail because the listener requires scope: 'test' in JWT token but was (the listener) temporarily
         // configured without clientScope resulting in a JWT token without the scope claim when using the clientId and
         // secret passed via SASL/PLAIN to obtain an access token in client's name.
@@ -233,7 +233,7 @@ public class OauthScopeIsolatedST extends OauthAbstractST {
 
         keycloakInstance.setRealm("scope-test", false);
 
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(oauthClusterName, 3)
+        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaPersistent(oauthClusterName, 3)
             .editMetadata()
                 .withNamespace(clusterOperator.getDeploymentNamespace())
             .endMetadata()

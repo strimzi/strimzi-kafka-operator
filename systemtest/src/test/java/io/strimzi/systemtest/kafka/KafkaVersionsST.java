@@ -62,7 +62,7 @@ public class KafkaVersionsST extends AbstractST {
 
         LOGGER.info("Deploying Kafka with version: {}", testKafkaVersion.version());
 
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3)
+        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3)
             .editMetadata()
                 .withNamespace(testStorage.getNamespaceName())
             .endMetadata()
@@ -149,7 +149,7 @@ public class KafkaVersionsST extends AbstractST {
                 .endSpec()
                 .build();
 
-        resourceManager.createResource(extensionContext,
+        resourceManager.createResourceWithWait(extensionContext,
             KafkaTopicTemplates.topic(testStorage).build(),
             readUser,
             writeUser,
@@ -169,14 +169,14 @@ public class KafkaVersionsST extends AbstractST {
             .withConsumerGroup(readConsumerGroup)
             .build();
 
-        resourceManager.createResource(extensionContext, kafkaClients.producerScramShaPlainStrimzi());
+        resourceManager.createResourceWithWait(extensionContext, kafkaClients.producerScramShaPlainStrimzi());
         ClientUtils.waitForProducerClientSuccess(testStorage);
 
         kafkaClients = new KafkaClientsBuilder(kafkaClients)
                 .withUsername(kafkaUserRead)
                 .build();
 
-        resourceManager.createResource(extensionContext, kafkaClients.consumerScramShaPlainStrimzi());
+        resourceManager.createResourceWithWait(extensionContext, kafkaClients.consumerScramShaPlainStrimzi());
         ClientUtils.waitForConsumerClientSuccess(testStorage);
 
         LOGGER.info("Sending and receiving messages via TLS");
@@ -186,7 +186,7 @@ public class KafkaVersionsST extends AbstractST {
             .withUsername(kafkaUserReadWriteTls)
             .build();
 
-        resourceManager.createResource(extensionContext,
+        resourceManager.createResourceWithWait(extensionContext,
             kafkaClients.producerTlsStrimzi(testStorage.getClusterName()),
             kafkaClients.consumerTlsStrimzi(testStorage.getClusterName())
         );

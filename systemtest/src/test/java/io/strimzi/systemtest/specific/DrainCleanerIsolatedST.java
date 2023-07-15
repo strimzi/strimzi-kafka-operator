@@ -50,7 +50,7 @@ public class DrainCleanerIsolatedST extends AbstractST {
 
         final int replicas = 3;
 
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), replicas)
+        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), replicas)
             .editMetadata()
                 .withNamespace(Constants.DRAIN_CLEANER_NAMESPACE)
             .endMetadata()
@@ -72,7 +72,7 @@ public class DrainCleanerIsolatedST extends AbstractST {
             .endSpec()
             .build());
 
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getTopicName(), Constants.DRAIN_CLEANER_NAMESPACE).build());
+        resourceManager.createResourceWithWait(extensionContext, KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getTopicName(), Constants.DRAIN_CLEANER_NAMESPACE).build());
         drainCleaner.createDrainCleaner(extensionContext);
 
         KafkaClients kafkaBasicExampleClients = new KafkaClientsBuilder()
@@ -85,7 +85,7 @@ public class DrainCleanerIsolatedST extends AbstractST {
             .withDelayMs(1000)
             .build();
 
-        resourceManager.createResource(extensionContext,
+        resourceManager.createResourceWithWait(extensionContext,
             kafkaBasicExampleClients.producerStrimzi(),
             kafkaBasicExampleClients.consumerStrimzi());
 

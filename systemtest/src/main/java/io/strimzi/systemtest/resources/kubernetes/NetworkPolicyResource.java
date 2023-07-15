@@ -89,7 +89,7 @@ public class NetworkPolicyResource implements ResourceType<NetworkPolicy> {
             .build();
 
         LOGGER.debug("Creating NetworkPolicy: {}", networkPolicy.toString());
-        ResourceManager.getInstance().createResource(extensionContext, networkPolicy);
+        ResourceManager.getInstance().createResourceWithWait(extensionContext, networkPolicy);
         LOGGER.info("Network policy for LabelSelector {} successfully created", labelSelector);
     }
 
@@ -123,7 +123,7 @@ public class NetworkPolicyResource implements ResourceType<NetworkPolicy> {
             .build();
 
         LOGGER.debug("Creating NetworkPolicy: {}", networkPolicy.toString());
-        ResourceManager.getInstance().createResource(extensionContext, networkPolicy);
+        ResourceManager.getInstance().createResourceWithWait(extensionContext, networkPolicy);
         LOGGER.info("Network policy for LabelSelector {} successfully created", labelSelector);
     }
 
@@ -152,7 +152,7 @@ public class NetworkPolicyResource implements ResourceType<NetworkPolicy> {
             .build();
 
         LOGGER.debug("Creating NetworkPolicy: {}", networkPolicy.toString());
-        ResourceManager.getInstance().createResource(extensionContext, networkPolicy);
+        ResourceManager.getInstance().createResourceWithWait(extensionContext, networkPolicy);
         LOGGER.info("Network policy for LabelSelector {} successfully created", labelSelector);
     }
 
@@ -220,7 +220,7 @@ public class NetworkPolicyResource implements ResourceType<NetworkPolicy> {
             .build();
 
         LOGGER.debug("Creating NetworkPolicy: {}", networkPolicy.toString());
-        ResourceManager.getInstance().createResource(extensionContext, networkPolicy);
+        ResourceManager.getInstance().createResourceWithWait(extensionContext, networkPolicy);
         LOGGER.info("Network policy for LabelSelector {} successfully created", labelSelector);
     }
 

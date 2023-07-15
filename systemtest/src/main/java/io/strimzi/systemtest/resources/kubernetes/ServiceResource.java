@@ -46,7 +46,7 @@ public class ServiceResource implements ResourceType<Service> {
 
     public static Service createServiceResource(ExtensionContext extensionContext, Service service, String clientNamespace) {
         LOGGER.info("Creating Service: {}/{}", clientNamespace, service.getMetadata().getName());
-        ResourceManager.getInstance().createResource(extensionContext, service);
+        ResourceManager.getInstance().createResourceWithWait(extensionContext, service);
         return service;
     }
 }

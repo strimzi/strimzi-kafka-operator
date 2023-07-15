@@ -207,13 +207,13 @@ public class KafkaUpgradeDowngradeIsolatedST extends AbstractUpgradeST {
                         .endKafka()
                     .endSpec();
             }
-            resourceManager.createResource(testContext, kafka.build());
+            resourceManager.createResourceWithWait(testContext, kafka.build());
 
             // ##############################
             // Attach clients which will continuously produce/consume messages to/from Kafka brokers during rolling update
             // ##############################
             // Setup topic, which has 3 replicas and 2 min.isr to see if producer will be able to work during rolling update
-            resourceManager.createResource(testContext, KafkaTopicTemplates.topic(clusterName, continuousTopicName, 3, 3, 2, clusterOperator.getDeploymentNamespace()).build());
+            resourceManager.createResourceWithWait(testContext, KafkaTopicTemplates.topic(clusterName, continuousTopicName, 3, 3, 2, clusterOperator.getDeploymentNamespace()).build());
             String producerAdditionConfiguration = "delivery.timeout.ms=20000\nrequest.timeout.ms=20000";
 
             KafkaClients kafkaBasicClientJob = new KafkaClientsBuilder()
@@ -226,8 +226,8 @@ public class KafkaUpgradeDowngradeIsolatedST extends AbstractUpgradeST {
                 .withDelayMs(1000)
                 .build();
 
-            resourceManager.createResource(testContext, kafkaBasicClientJob.producerStrimzi());
-            resourceManager.createResource(testContext, kafkaBasicClientJob.consumerStrimzi());
+            resourceManager.createResourceWithWait(testContext, kafkaBasicClientJob.producerStrimzi());
+            resourceManager.createResourceWithWait(testContext, kafkaBasicClientJob.consumerStrimzi());
             // ##############################
 
         } else {

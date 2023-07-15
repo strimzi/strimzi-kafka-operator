@@ -71,7 +71,7 @@ public class ReconciliationST extends AbstractST {
 
         final LabelSelector kafkaSelector = KafkaResource.getLabelSelector(clusterName, kafkaSsName);
 
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(clusterName, 3).build());
+        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaPersistent(clusterName, 3).build());
 
         LOGGER.info("Adding pause annotation into Kafka resource and also scaling replicas to 4, new Pod should not appear");
         KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, kafka -> {
@@ -88,7 +88,7 @@ public class ReconciliationST extends AbstractST {
         RollingUpdateUtils.waitForComponentAndPodsReady(namespaceName, kafkaSelector, SCALE_TO);
 
         LOGGER.info("Deploying KafkaConnect with pause annotation from the start, no Pods should appear");
-        resourceManager.createResource(extensionContext, false, KafkaConnectTemplates.kafkaConnectWithFilePlugin(clusterName, namespaceName, 1)
+        resourceManager.createResourceWithoutWait(extensionContext, KafkaConnectTemplates.kafkaConnectWithFilePlugin(clusterName, namespaceName, 1)
             .editOrNewMetadata()
                 .addToAnnotations(PAUSE_ANNO)
                 .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
@@ -106,7 +106,7 @@ public class ReconciliationST extends AbstractST {
             kc -> kc.getMetadata().getAnnotations().replace(Annotations.ANNO_STRIMZI_IO_PAUSE_RECONCILIATION, "true", "false"), namespaceName);
         RollingUpdateUtils.waitForComponentAndPodsReady(namespaceName, labelSelector, 1);
 
-        resourceManager.createResource(extensionContext, KafkaConnectorTemplates.kafkaConnector(clusterName).build());
+        resourceManager.createResourceWithWait(extensionContext, KafkaConnectorTemplates.kafkaConnector(clusterName).build());
 
         String connectPodName = kubeClient(namespaceName).listPods(clusterName, Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND).get(0).getMetadata().getName();
         String connectorSpec = KafkaConnectorUtils.getConnectorSpecFromConnectAPI(namespaceName, connectPodName, clusterName);
@@ -139,14 +139,14 @@ public class ReconciliationST extends AbstractST {
         final String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
         final String scraperName = mapWithScraperNames.get(extensionContext.getDisplayName());
 
-        resourceManager.createResource(extensionContext,
+        resourceManager.createResourceWithWait(extensionContext,
             KafkaTemplates.kafkaWithCruiseControl(clusterName, 3, 1).build(),
             ScraperTemplates.scraperPod(namespaceName, scraperName).build()
         );
 
         final String scraperPodName = kubeClient().listPodsByPrefixInName(namespaceName, scraperName).get(0).getMetadata().getName();
 
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(clusterName, topicName, namespaceName).build());
+        resourceManager.createResourceWithWait(extensionContext, KafkaTopicTemplates.topic(clusterName, topicName, namespaceName).build());
 
         // to prevent race condition when reconciliation is paused before KafkaTopic is actually created in Kafka
         KafkaTopicUtils.waitForTopicWillBePresentInKafka(namespaceName, topicName, KafkaResources.plainBootstrapAddress(clusterName), scraperPodName);
@@ -166,7 +166,7 @@ public class ReconciliationST extends AbstractST {
             namespaceName);
         KafkaTopicUtils.waitForKafkaTopicPartitionChange(namespaceName, topicName, SCALE_TO);
 
-        resourceManager.createResource(extensionContext, KafkaRebalanceTemplates.kafkaRebalance(clusterName).build());
+        resourceManager.createResourceWithWait(extensionContext, KafkaRebalanceTemplates.kafkaRebalance(clusterName).build());
 
         LOGGER.info("Waiting for {}, then add pause and rebalance annotation, rebalancing should not be triggered", KafkaRebalanceState.ProposalReady);
 

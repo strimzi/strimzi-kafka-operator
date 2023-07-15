@@ -124,7 +124,7 @@ public class HttpBridgeCorsST extends AbstractST {
 
         String httpBridgeCorsClusterName = "http-bridge-cors-cluster-name";
 
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(httpBridgeCorsClusterName, 1, 1)
+        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(httpBridgeCorsClusterName, 1, 1)
             .editMetadata()
                 .withNamespace(clusterOperator.getDeploymentNamespace())
             .endMetadata()
@@ -132,10 +132,10 @@ public class HttpBridgeCorsST extends AbstractST {
 
         String scraperName = clusterOperator.getDeploymentNamespace() + "-shared-" + Constants.SCRAPER_NAME;
 
-        resourceManager.createResource(extensionContext, ScraperTemplates.scraperPod(clusterOperator.getDeploymentNamespace(), scraperName).build());
+        resourceManager.createResourceWithWait(extensionContext, ScraperTemplates.scraperPod(clusterOperator.getDeploymentNamespace(), scraperName).build());
         scraperPodName = kubeClient(clusterOperator.getDeploymentNamespace()).listPodsByPrefixInName(clusterOperator.getDeploymentNamespace(), scraperName).get(0).getMetadata().getName();
 
-        resourceManager.createResource(extensionContext, KafkaBridgeTemplates.kafkaBridgeWithCors(httpBridgeCorsClusterName, KafkaResources.plainBootstrapAddress(httpBridgeCorsClusterName),
+        resourceManager.createResourceWithWait(extensionContext, KafkaBridgeTemplates.kafkaBridgeWithCors(httpBridgeCorsClusterName, KafkaResources.plainBootstrapAddress(httpBridgeCorsClusterName),
             1, ALLOWED_ORIGIN, null)
             .editMetadata()
                 .withNamespace(clusterOperator.getDeploymentNamespace())

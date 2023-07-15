@@ -50,8 +50,8 @@ public class OpaIntegrationST extends AbstractST {
         KafkaUser goodUser = KafkaUserTemplates.tlsUser(testStorage.getNamespaceName(), CLUSTER_NAME, OPA_GOOD_USER).build();
         KafkaUser badUser = KafkaUserTemplates.tlsUser(testStorage.getNamespaceName(), CLUSTER_NAME, OPA_BAD_USER).build();
 
-        resourceManager.createResource(extensionContext, goodUser);
-        resourceManager.createResource(extensionContext, badUser);
+        resourceManager.createResourceWithWait(extensionContext, goodUser);
+        resourceManager.createResourceWithWait(extensionContext, badUser);
 
         LOGGER.info("Checking KafkaUser: {}/{} that is able to send and receive messages to/from Topic: {}/{}", testStorage.getNamespaceName(), OPA_GOOD_USER, testStorage.getNamespaceName(), testStorage.getTopicName());
 
@@ -65,7 +65,7 @@ public class OpaIntegrationST extends AbstractST {
             .withUsername(OPA_GOOD_USER)
             .build();
 
-        resourceManager.createResource(extensionContext, kafkaClients.producerTlsStrimzi(CLUSTER_NAME), kafkaClients.consumerTlsStrimzi(CLUSTER_NAME));
+        resourceManager.createResourceWithWait(extensionContext, kafkaClients.producerTlsStrimzi(CLUSTER_NAME), kafkaClients.consumerTlsStrimzi(CLUSTER_NAME));
         ClientUtils.waitForClientsSuccess(testStorage);
 
         LOGGER.info("Checking KafkaUser: {}/{} that is not able to send or receive messages to/from Topic: {}/{}", testStorage.getNamespaceName(), OPA_BAD_USER, testStorage.getNamespaceName(), testStorage.getTopicName());
@@ -74,7 +74,7 @@ public class OpaIntegrationST extends AbstractST {
             .withUsername(OPA_BAD_USER)
             .build();
 
-        resourceManager.createResource(extensionContext, kafkaClients.producerTlsStrimzi(CLUSTER_NAME), kafkaClients.consumerTlsStrimzi(CLUSTER_NAME));
+        resourceManager.createResourceWithWait(extensionContext, kafkaClients.producerTlsStrimzi(CLUSTER_NAME), kafkaClients.consumerTlsStrimzi(CLUSTER_NAME));
         ClientUtils.waitForClientsTimeout(testStorage);
     }
 
@@ -84,8 +84,8 @@ public class OpaIntegrationST extends AbstractST {
 
         KafkaUser superuser = KafkaUserTemplates.tlsUser(testStorage.getNamespaceName(), CLUSTER_NAME, OPA_SUPERUSER).build();
 
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(CLUSTER_NAME, testStorage.getTopicName(), testStorage.getNamespaceName()).build());
-        resourceManager.createResource(extensionContext, superuser);
+        resourceManager.createResourceWithWait(extensionContext, KafkaTopicTemplates.topic(CLUSTER_NAME, testStorage.getTopicName(), testStorage.getNamespaceName()).build());
+        resourceManager.createResourceWithWait(extensionContext, superuser);
 
         LOGGER.info("Checking KafkaUser: {}/{} that is able to send and receive messages to/from Topic: {}/{}", testStorage.getNamespaceName(), OPA_GOOD_USER, testStorage.getNamespaceName(), testStorage.getTopicName());
 
@@ -99,7 +99,7 @@ public class OpaIntegrationST extends AbstractST {
             .withUsername(OPA_SUPERUSER)
             .build();
 
-        resourceManager.createResource(extensionContext, kafkaClients.producerTlsStrimzi(CLUSTER_NAME), kafkaClients.consumerTlsStrimzi(CLUSTER_NAME));
+        resourceManager.createResourceWithWait(extensionContext, kafkaClients.producerTlsStrimzi(CLUSTER_NAME), kafkaClients.consumerTlsStrimzi(CLUSTER_NAME));
         ClientUtils.waitForClientsSuccess(testStorage);
     }
 
@@ -113,7 +113,7 @@ public class OpaIntegrationST extends AbstractST {
         // Install OPA
         cmdKubeClient().apply(FileUtils.updateNamespaceOfYamlFile(TestUtils.USER_PATH + "/../systemtest/src/test/resources/opa/opa.yaml", clusterOperator.getDeploymentNamespace()));
 
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(CLUSTER_NAME, 3, 1)
+        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(CLUSTER_NAME, 3, 1)
             .editMetadata()
                 .withNamespace(clusterOperator.getDeploymentNamespace())
             .endMetadata()

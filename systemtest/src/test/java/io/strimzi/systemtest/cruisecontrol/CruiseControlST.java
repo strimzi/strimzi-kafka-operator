@@ -84,7 +84,7 @@ public class CruiseControlST extends AbstractST {
     void testAutoCreationOfCruiseControlTopicsWithResources(ExtensionContext extensionContext) {
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaWithCruiseControl(clusterName, 3, 3)
+        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaWithCruiseControl(clusterName, 3, 3)
             .editMetadata()
                 .withNamespace(clusterOperator.getDeploymentNamespace())
             .endMetadata()
@@ -142,7 +142,7 @@ public class CruiseControlST extends AbstractST {
     void testCruiseControlWithApiSecurityDisabled(ExtensionContext extensionContext) {
         String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaWithCruiseControl(clusterName, 3, 3)
+        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaWithCruiseControl(clusterName, 3, 3)
                 .editMetadata()
                 .withNamespace(clusterOperator.getDeploymentNamespace())
                 .endMetadata()
@@ -153,7 +153,7 @@ public class CruiseControlST extends AbstractST {
                     .endCruiseControl()
                 .endSpec()
                 .build());
-        resourceManager.createResource(extensionContext, KafkaRebalanceTemplates.kafkaRebalance(clusterName)
+        resourceManager.createResourceWithWait(extensionContext, KafkaRebalanceTemplates.kafkaRebalance(clusterName)
             .editMetadata()
                 .withNamespace(clusterOperator.getDeploymentNamespace())
             .endMetadata()
@@ -168,12 +168,12 @@ public class CruiseControlST extends AbstractST {
     void testCruiseControlWithRebalanceResourceAndRefreshAnnotation(ExtensionContext extensionContext) {
         String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3, 3)
+        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3, 3)
                 .editMetadata()
                     .withNamespace(clusterOperator.getDeploymentNamespace())
                 .endMetadata()
                 .build());
-        resourceManager.createResource(extensionContext, false,  KafkaRebalanceTemplates.kafkaRebalance(clusterName)
+        resourceManager.createResourceWithoutWait(extensionContext,  KafkaRebalanceTemplates.kafkaRebalance(clusterName)
                 .editMetadata()
                     .withNamespace(clusterOperator.getDeploymentNamespace())
                 .endMetadata()
@@ -210,7 +210,7 @@ public class CruiseControlST extends AbstractST {
                 "It requires at least two Kafka brokers.";
 
         LOGGER.info("Deploying single node Kafka with CruiseControl");
-        resourceManager.createResource(extensionContext, false, KafkaTemplates.kafkaWithCruiseControl(clusterName, 1, 1).build());
+        resourceManager.createResourceWithoutWait(extensionContext, KafkaTemplates.kafkaWithCruiseControl(clusterName, 1, 1).build());
 
         KafkaUtils.waitUntilKafkaStatusConditionContainsMessage(clusterName, namespaceName, errMessage, Duration.ofMinutes(6).toMillis());
 
@@ -244,12 +244,12 @@ public class CruiseControlST extends AbstractST {
         final String excludedTopic2 = "excluded-topic-2";
         final String includedTopic = "included-topic";
 
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaWithCruiseControl(clusterName, 3, 1).build());
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(clusterName, excludedTopic1, namespaceName).build());
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(clusterName, excludedTopic2, namespaceName).build());
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(clusterName, includedTopic, namespaceName).build());
+        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaWithCruiseControl(clusterName, 3, 1).build());
+        resourceManager.createResourceWithWait(extensionContext, KafkaTopicTemplates.topic(clusterName, excludedTopic1, namespaceName).build());
+        resourceManager.createResourceWithWait(extensionContext, KafkaTopicTemplates.topic(clusterName, excludedTopic2, namespaceName).build());
+        resourceManager.createResourceWithWait(extensionContext, KafkaTopicTemplates.topic(clusterName, includedTopic, namespaceName).build());
 
-        resourceManager.createResource(extensionContext,  KafkaRebalanceTemplates.kafkaRebalance(clusterName)
+        resourceManager.createResourceWithWait(extensionContext,  KafkaRebalanceTemplates.kafkaRebalance(clusterName)
             .editOrNewSpec()
                 .withExcludedTopics("excluded-.*")
             .endSpec()
@@ -277,7 +277,7 @@ public class CruiseControlST extends AbstractST {
             "com.linkedin.kafka.cruisecontrol.executor.strategy.PrioritizeLargeReplicaMovementStrategy," +
             "com.linkedin.kafka.cruisecontrol.executor.strategy.PostponeUrpReplicaMovementStrategy";
 
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaWithCruiseControl(clusterName, 3, 3).build());
+        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaWithCruiseControl(clusterName, 3, 3).build());
 
         String ccPodName = kubeClient().listPodsByPrefixInName(namespaceName, CruiseControlResources.deploymentName(clusterName)).get(0).getMetadata().getName();
 
@@ -320,7 +320,7 @@ public class CruiseControlST extends AbstractST {
                         new PersistentClaimStorageBuilder().withDeleteClaim(true).withId(1).withSize(diskSize).build()
                 ).build();
 
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaWithCruiseControl(testStorage.getClusterName(), 3, 3)
+        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaWithCruiseControl(testStorage.getClusterName(), 3, 3)
                 .editMetadata()
                 .withNamespace(testStorage.getNamespaceName())
                 .endMetadata()
@@ -330,7 +330,7 @@ public class CruiseControlST extends AbstractST {
                         .endKafka()
                     .endSpec()
                 .build());
-        resourceManager.createResource(extensionContext, KafkaRebalanceTemplates.kafkaRebalance(testStorage.getClusterName())
+        resourceManager.createResourceWithWait(extensionContext, KafkaRebalanceTemplates.kafkaRebalance(testStorage.getClusterName())
                 .editMetadata()
                 .withNamespace(testStorage.getNamespaceName())
                 .endMetadata()
@@ -351,8 +351,8 @@ public class CruiseControlST extends AbstractST {
     void testCruiseControlIntraBrokerBalancingWithoutSpecifyingJBODStorage(ExtensionContext extensionContext) {
         final TestStorage testStorage = new TestStorage(extensionContext);
 
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaWithCruiseControl(testStorage.getClusterName(), 3, 3).build());
-        resourceManager.createResource(extensionContext, false, KafkaRebalanceTemplates.kafkaRebalance(testStorage.getClusterName())
+        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaWithCruiseControl(testStorage.getClusterName(), 3, 3).build());
+        resourceManager.createResourceWithoutWait(extensionContext, KafkaRebalanceTemplates.kafkaRebalance(testStorage.getClusterName())
             .editOrNewSpec()
                 .withRebalanceDisk(true)
             .endSpec()
@@ -372,7 +372,7 @@ public class CruiseControlST extends AbstractST {
         final int initialReplicas = 3;
         final int scaleTo = 5;
 
-        resourceManager.createResource(extensionContext,
+        resourceManager.createResourceWithWait(extensionContext,
             KafkaTemplates.kafkaWithCruiseControl(testStorage.getClusterName(), initialReplicas, initialReplicas)
                 .editOrNewMetadata()
                     .withNamespace(clusterOperator.getDeploymentNamespace())
@@ -402,7 +402,7 @@ public class CruiseControlST extends AbstractST {
         LOGGER.info("Creating KafkaRebalance with add_brokers mode");
 
         // when using add_brokers mode, we can hit `ProposalReady` right after KR creation - that's why `waitReady` is set to `false` here
-        resourceManager.createResource(extensionContext, false,
+        resourceManager.createResourceWithoutWait(extensionContext,
             KafkaRebalanceTemplates.kafkaRebalance(testStorage.getClusterName())
                 .editOrNewMetadata()
                     .withNamespace(clusterOperator.getDeploymentNamespace())
@@ -425,7 +425,7 @@ public class CruiseControlST extends AbstractST {
         LOGGER.info("Creating KafkaRebalance with remove_brokers mode - it needs to be done before actual scaling down of Kafka Pods");
 
         // when using remove_brokers mode, we can hit `ProposalReady` right after KR creation - that's why `waitReady` is set to `false` here
-        resourceManager.createResource(extensionContext, false,
+        resourceManager.createResourceWithoutWait(extensionContext,
             KafkaRebalanceTemplates.kafkaRebalance(testStorage.getClusterName())
                 .editOrNewMetadata()
                     .withNamespace(clusterOperator.getDeploymentNamespace())

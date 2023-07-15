@@ -48,7 +48,7 @@ public class CruiseControlApiST extends AbstractST {
     void testCruiseControlBasicAPIRequests(ExtensionContext extensionContext)  {
         final TestStorage testStorage = new TestStorage(extensionContext);
 
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaWithCruiseControl(testStorage.getClusterName(), 3, 3).build());
+        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaWithCruiseControl(testStorage.getClusterName(), 3, 3).build());
 
         LOGGER.info("----> CRUISE CONTROL DEPLOYMENT STATE ENDPOINT <----");
 
@@ -134,7 +134,7 @@ public class CruiseControlApiST extends AbstractST {
         config.put("webserver.security.enable", "false");
         config.put("webserver.ssl.enable", "false");
 
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaWithCruiseControl(cruiseControlApiClusterName, 3, 3)
+        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaWithCruiseControl(cruiseControlApiClusterName, 3, 3)
             .editOrNewSpec()
                 .withNewCruiseControl()
                     .withConfig(config)
@@ -157,7 +157,7 @@ public class CruiseControlApiST extends AbstractST {
     void testCruiseControlAPIForScalingBrokersUpAndDown(ExtensionContext extensionContext) {
         final TestStorage testStorage = new TestStorage(extensionContext);
 
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaWithCruiseControl(testStorage.getClusterName(), 5, 3).build());
+        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaWithCruiseControl(testStorage.getClusterName(), 5, 3).build());
 
         LOGGER.info("Checking if we are able to execute GET request on {} and {} endpoints", CruiseControlEndpoints.ADD_BROKER, CruiseControlEndpoints.REMOVE_BROKER);
 
@@ -189,10 +189,10 @@ public class CruiseControlApiST extends AbstractST {
     void testKafkaRebalanceAutoApprovalMechanism(ExtensionContext extensionContext) {
         final TestStorage testStorage = new TestStorage(extensionContext);
 
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaWithCruiseControl(testStorage.getClusterName(), 3, 3).build());
+        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaWithCruiseControl(testStorage.getClusterName(), 3, 3).build());
 
         // KafkaRebalance with auto-approval
-        resourceManager.createResource(extensionContext, KafkaRebalanceTemplates.kafkaRebalance(testStorage.getClusterName())
+        resourceManager.createResourceWithWait(extensionContext, KafkaRebalanceTemplates.kafkaRebalance(testStorage.getClusterName())
             .editMetadata()
                 .addToAnnotations(Annotations.ANNO_STRIMZI_IO_REBALANCE_AUTOAPPROVAL, "true")
             .endMetadata()

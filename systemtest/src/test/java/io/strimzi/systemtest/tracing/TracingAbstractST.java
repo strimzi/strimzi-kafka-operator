@@ -97,29 +97,29 @@ public abstract class TracingAbstractST extends AbstractST {
         // Current implementation of Jaeger deployment and test parallelism does not allow to run this test with STRIMZI_RBAC_SCOPE=NAMESPACE`
         assumeFalse(Environment.isNamespaceRbacScope());
 
-        resourceManager.createResource(extensionContext,
+        resourceManager.createResourceWithWait(extensionContext,
             KafkaTemplates.kafkaEphemeral(
                 storageMap.get(extensionContext).getClusterName(), 3, 1).build());
 
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(storageMap.get(extensionContext).getClusterName(), storageMap.get(extensionContext).getTopicName(), 12, 3, storageMap.get(extensionContext).getNamespaceName()).build());
+        resourceManager.createResourceWithWait(extensionContext, KafkaTopicTemplates.topic(storageMap.get(extensionContext).getClusterName(), storageMap.get(extensionContext).getTopicName(), 12, 3, storageMap.get(extensionContext).getNamespaceName()).build());
 
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(storageMap.get(extensionContext).getClusterName(), storageMap.get(extensionContext).retrieveFromTestStorage(Constants.STREAM_TOPIC_KEY).toString(), 12, 3, storageMap.get(extensionContext).getNamespaceName()).build());
+        resourceManager.createResourceWithWait(extensionContext, KafkaTopicTemplates.topic(storageMap.get(extensionContext).getClusterName(), storageMap.get(extensionContext).retrieveFromTestStorage(Constants.STREAM_TOPIC_KEY).toString(), 12, 3, storageMap.get(extensionContext).getNamespaceName()).build());
 
-        resourceManager.createResource(extensionContext, ((KafkaTracingClients) storageMap.get(extensionContext).retrieveFromTestStorage(KAFKA_TRACING_CLIENT_KEY)).producerWithTracing());
+        resourceManager.createResourceWithWait(extensionContext, ((KafkaTracingClients) storageMap.get(extensionContext).retrieveFromTestStorage(KAFKA_TRACING_CLIENT_KEY)).producerWithTracing());
 
         TracingUtils.verify(storageMap.get(extensionContext).getNamespaceName(),
             JAEGER_PRODUCER_SERVICE,
             storageMap.get(extensionContext).retrieveFromTestStorage(Constants.SCRAPER_POD_KEY).toString(),
             JAEGER_QUERY_SERVICE);
 
-        resourceManager.createResource(extensionContext, ((KafkaTracingClients) storageMap.get(extensionContext).retrieveFromTestStorage(KAFKA_TRACING_CLIENT_KEY)).consumerWithTracing());
+        resourceManager.createResourceWithWait(extensionContext, ((KafkaTracingClients) storageMap.get(extensionContext).retrieveFromTestStorage(KAFKA_TRACING_CLIENT_KEY)).consumerWithTracing());
 
         TracingUtils.verify(storageMap.get(extensionContext).getNamespaceName(),
             JAEGER_CONSUMER_SERVICE,
             storageMap.get(extensionContext).retrieveFromTestStorage(Constants.SCRAPER_POD_KEY).toString(),
             JAEGER_QUERY_SERVICE);
 
-        resourceManager.createResource(extensionContext, ((KafkaTracingClients) storageMap.get(extensionContext).retrieveFromTestStorage(KAFKA_TRACING_CLIENT_KEY)).kafkaStreamsWithTracing());
+        resourceManager.createResourceWithWait(extensionContext, ((KafkaTracingClients) storageMap.get(extensionContext).retrieveFromTestStorage(KAFKA_TRACING_CLIENT_KEY)).kafkaStreamsWithTracing());
 
         // Disabled for OpenTracing, because of issue with Streams API and tracing https://github.com/strimzi/strimzi-kafka-operator/issues/5680
         if (this.getClass().getSimpleName().contains(TracingConstants.OPEN_TELEMETRY)) {
@@ -137,13 +137,13 @@ public abstract class TracingAbstractST extends AbstractST {
         final String kafkaClusterSourceName = storageMap.get(extensionContext).getClusterName();
         final String kafkaClusterTargetName = storageMap.get(extensionContext).getClusterName() + "-target";
 
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(kafkaClusterSourceName, 3, 1).build());
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(kafkaClusterTargetName, 3, 1).build());
+        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(kafkaClusterSourceName, 3, 1).build());
+        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(kafkaClusterTargetName, 3, 1).build());
 
         // Create topic and deploy clients before Mirror Maker to not wait for MM to find the new topics
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(kafkaClusterSourceName, storageMap.get(extensionContext).getTopicName(), 12, 3, storageMap.get(extensionContext).getNamespaceName()).build());
+        resourceManager.createResourceWithWait(extensionContext, KafkaTopicTemplates.topic(kafkaClusterSourceName, storageMap.get(extensionContext).getTopicName(), 12, 3, storageMap.get(extensionContext).getNamespaceName()).build());
 
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(kafkaClusterTargetName, kafkaClusterSourceName + "." + storageMap.get(extensionContext).getTopicName(), 12, 3, storageMap.get(extensionContext).getNamespaceName()).build());
+        resourceManager.createResourceWithWait(extensionContext, KafkaTopicTemplates.topic(kafkaClusterTargetName, kafkaClusterSourceName + "." + storageMap.get(extensionContext).getTopicName(), 12, 3, storageMap.get(extensionContext).getNamespaceName()).build());
 
         LOGGER.info("Setting for Kafka source plain bootstrap: {}", KafkaResources.plainBootstrapAddress(kafkaClusterSourceName));
 
@@ -152,7 +152,7 @@ public abstract class TracingAbstractST extends AbstractST {
             .withBootstrapAddress(KafkaResources.plainBootstrapAddress(kafkaClusterSourceName))
             .build();
 
-        resourceManager.createResource(extensionContext, sourceKafkaTracingClient.producerWithTracing());
+        resourceManager.createResourceWithWait(extensionContext, sourceKafkaTracingClient.producerWithTracing());
 
         LOGGER.info("Setting for Kafka target plain bootstrap: {}", KafkaResources.plainBootstrapAddress(kafkaClusterTargetName));
 
@@ -161,9 +161,9 @@ public abstract class TracingAbstractST extends AbstractST {
             .withTopicName(kafkaClusterSourceName + "." + storageMap.get(extensionContext).getTopicName())
             .build();
 
-        resourceManager.createResource(extensionContext, targetKafkaTracingClient.consumerWithTracing());
+        resourceManager.createResourceWithWait(extensionContext, targetKafkaTracingClient.consumerWithTracing());
 
-        resourceManager.createResource(extensionContext, KafkaMirrorMaker2Templates.kafkaMirrorMaker2(storageMap.get(extensionContext).getClusterName(), kafkaClusterTargetName, kafkaClusterSourceName, 1, false)
+        resourceManager.createResourceWithWait(extensionContext, KafkaMirrorMaker2Templates.kafkaMirrorMaker2(storageMap.get(extensionContext).getClusterName(), kafkaClusterTargetName, kafkaClusterSourceName, 1, false)
             .editSpec()
             .withTracing(tracing())
                 .withNewTemplate()
@@ -217,14 +217,14 @@ public abstract class TracingAbstractST extends AbstractST {
         final String kafkaClusterSourceName = storageMap.get(extensionContext).getClusterName();
         final String kafkaClusterTargetName = storageMap.get(extensionContext).getClusterName() + "-target";
 
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(kafkaClusterSourceName, 3, 1).build());
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(kafkaClusterTargetName, 3, 1).build());
+        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(kafkaClusterSourceName, 3, 1).build());
+        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(kafkaClusterTargetName, 3, 1).build());
 
         // Create topic and deploy clients before Mirror Maker to not wait for MM to find the new topics
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(kafkaClusterSourceName, storageMap.get(extensionContext).getTopicName(), 12, 3, storageMap.get(extensionContext).getNamespaceName()).build());
+        resourceManager.createResourceWithWait(extensionContext, KafkaTopicTemplates.topic(kafkaClusterSourceName, storageMap.get(extensionContext).getTopicName(), 12, 3, storageMap.get(extensionContext).getNamespaceName()).build());
 
 
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(kafkaClusterTargetName, storageMap.get(extensionContext).getTopicName() + "-target", 12, 3, storageMap.get(extensionContext).getTopicName()).build());
+        resourceManager.createResourceWithWait(extensionContext, KafkaTopicTemplates.topic(kafkaClusterTargetName, storageMap.get(extensionContext).getTopicName() + "-target", 12, 3, storageMap.get(extensionContext).getTopicName()).build());
 
         LOGGER.info("Setting for Kafka source plain bootstrap: {}", KafkaResources.plainBootstrapAddress(kafkaClusterSourceName));
 
@@ -233,7 +233,7 @@ public abstract class TracingAbstractST extends AbstractST {
                 .withBootstrapAddress(KafkaResources.plainBootstrapAddress(kafkaClusterSourceName))
                 .build();
 
-        resourceManager.createResource(extensionContext, sourceKafkaTracingClient.producerWithTracing());
+        resourceManager.createResourceWithWait(extensionContext, sourceKafkaTracingClient.producerWithTracing());
 
         LOGGER.info("Setting for Kafka target plain bootstrap: {}", KafkaResources.plainBootstrapAddress(kafkaClusterTargetName));
 
@@ -241,9 +241,9 @@ public abstract class TracingAbstractST extends AbstractST {
             .withBootstrapAddress(KafkaResources.plainBootstrapAddress(kafkaClusterTargetName))
             .build();
 
-        resourceManager.createResource(extensionContext, targetKafkaTracingClient.consumerWithTracing());
+        resourceManager.createResourceWithWait(extensionContext, targetKafkaTracingClient.consumerWithTracing());
 
-        resourceManager.createResource(extensionContext, KafkaMirrorMakerTemplates.kafkaMirrorMaker(storageMap.get(extensionContext).getClusterName(), kafkaClusterSourceName, kafkaClusterTargetName,
+        resourceManager.createResourceWithWait(extensionContext, KafkaMirrorMakerTemplates.kafkaMirrorMaker(storageMap.get(extensionContext).getClusterName(), kafkaClusterSourceName, kafkaClusterTargetName,
                 ClientUtils.generateRandomConsumerGroup(), 1, false)
             .editSpec()
             .withTracing(tracing())
@@ -286,13 +286,13 @@ public abstract class TracingAbstractST extends AbstractST {
 
         final String imageFullPath = Environment.getImageOutputRegistry(storageMap.get(extensionContext).getNamespaceName(), Constants.ST_CONNECT_BUILD_IMAGE_NAME, String.valueOf(new Random().nextInt(Integer.MAX_VALUE)));
 
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(storageMap.get(extensionContext).getClusterName(), 3, 1).build());
+        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(storageMap.get(extensionContext).getClusterName(), 3, 1).build());
 
         // Create topic and deploy clients before MirrorMaker to not wait for MM to find the new topics
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(storageMap.get(extensionContext).getClusterName(), storageMap.get(extensionContext).getTopicName(), 12, 3, storageMap.get(extensionContext).getNamespaceName()).build());
+        resourceManager.createResourceWithWait(extensionContext, KafkaTopicTemplates.topic(storageMap.get(extensionContext).getClusterName(), storageMap.get(extensionContext).getTopicName(), 12, 3, storageMap.get(extensionContext).getNamespaceName()).build());
 
 
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(storageMap.get(extensionContext).getClusterName(), storageMap.get(extensionContext).retrieveFromTestStorage(Constants.STREAM_TOPIC_KEY).toString(), 12, 3, storageMap.get(extensionContext).getNamespaceName()).build());
+        resourceManager.createResourceWithWait(extensionContext, KafkaTopicTemplates.topic(storageMap.get(extensionContext).getClusterName(), storageMap.get(extensionContext).retrieveFromTestStorage(Constants.STREAM_TOPIC_KEY).toString(), 12, 3, storageMap.get(extensionContext).getNamespaceName()).build());
 
         final Map<String, Object> configOfKafkaConnect = new HashMap<>();
         configOfKafkaConnect.put("config.storage.replication.factor", "-1");
@@ -303,7 +303,7 @@ public abstract class TracingAbstractST extends AbstractST {
         configOfKafkaConnect.put("key.converter.schemas.enable", "false");
         configOfKafkaConnect.put("value.converter.schemas.enable", "false");
 
-        resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnect(storageMap.get(extensionContext).getClusterName(), clusterOperator.getDeploymentNamespace(), 1)
+        resourceManager.createResourceWithWait(extensionContext, KafkaConnectTemplates.kafkaConnect(storageMap.get(extensionContext).getClusterName(), clusterOperator.getDeploymentNamespace(), 1)
             .editMetadata()
                 .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
             .endMetadata()
@@ -352,7 +352,7 @@ public abstract class TracingAbstractST extends AbstractST {
             .endSpec()
             .build());
 
-        resourceManager.createResource(extensionContext, KafkaConnectorTemplates.kafkaConnector(storageMap.get(extensionContext).getClusterName())
+        resourceManager.createResourceWithWait(extensionContext, KafkaConnectorTemplates.kafkaConnector(storageMap.get(extensionContext).getClusterName())
             .editSpec()
                 .withClassName("org.apache.kafka.connect.file.FileStreamSinkConnector")
                 .addToConfig("file", Constants.DEFAULT_SINK_FILE_PATH)
@@ -362,9 +362,9 @@ public abstract class TracingAbstractST extends AbstractST {
             .endSpec()
             .build());
 
-        resourceManager.createResource(extensionContext, ((KafkaTracingClients) extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(KAFKA_TRACING_CLIENT_KEY)).producerWithTracing());
-        resourceManager.createResource(extensionContext, ((KafkaTracingClients) extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(KAFKA_TRACING_CLIENT_KEY)).consumerWithTracing());
-        resourceManager.createResource(extensionContext, ((KafkaTracingClients) extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(KAFKA_TRACING_CLIENT_KEY)).kafkaStreamsWithTracing());
+        resourceManager.createResourceWithWait(extensionContext, ((KafkaTracingClients) extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(KAFKA_TRACING_CLIENT_KEY)).producerWithTracing());
+        resourceManager.createResourceWithWait(extensionContext, ((KafkaTracingClients) extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(KAFKA_TRACING_CLIENT_KEY)).consumerWithTracing());
+        resourceManager.createResourceWithWait(extensionContext, ((KafkaTracingClients) extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(KAFKA_TRACING_CLIENT_KEY)).kafkaStreamsWithTracing());
 
         ClientUtils.waitForClientsSuccess(
             storageMap.get(extensionContext).getProducerName(),
@@ -382,9 +382,9 @@ public abstract class TracingAbstractST extends AbstractST {
     }
 
     void doTestKafkaBridgeService(final ExtensionContext extensionContext) {
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(storageMap.get(extensionContext).getClusterName(), 3, 1).build());
+        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(storageMap.get(extensionContext).getClusterName(), 3, 1).build());
         // Deploy http bridge
-        resourceManager.createResource(extensionContext, KafkaBridgeTemplates.kafkaBridge(storageMap.get(extensionContext).getClusterName(), KafkaResources.plainBootstrapAddress(storageMap.get(extensionContext).getClusterName()), 1)
+        resourceManager.createResourceWithWait(extensionContext, KafkaBridgeTemplates.kafkaBridge(storageMap.get(extensionContext).getClusterName(), KafkaResources.plainBootstrapAddress(storageMap.get(extensionContext).getClusterName()), 1)
             .editSpec()
                 .withTracing(tracing())
                 .withNewTemplate()
@@ -419,7 +419,7 @@ public abstract class TracingAbstractST extends AbstractST {
             .build());
 
         final String bridgeProducer = "bridge-producer";
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(storageMap.get(extensionContext).getClusterName(), storageMap.get(extensionContext).getTopicName(), storageMap.get(extensionContext).getNamespaceName()).build());
+        resourceManager.createResourceWithWait(extensionContext, KafkaTopicTemplates.topic(storageMap.get(extensionContext).getClusterName(), storageMap.get(extensionContext).getTopicName(), storageMap.get(extensionContext).getNamespaceName()).build());
 
         final BridgeTracingClientsBuilder kafkaBridgeClientJobBuilder = new BridgeTracingClientsBuilder()
             .withTracingServiceNameEnvVar(this.serviceNameEnvVar())
@@ -433,17 +433,17 @@ public abstract class TracingAbstractST extends AbstractST {
             .withPollInterval(1000);
         final BridgeTracingClients bridgeTracingClientJob = (BridgeTracingClients) this.configureProperTracingType(kafkaBridgeClientJobBuilder.build());
 
-        resourceManager.createResource(extensionContext, bridgeTracingClientJob.producerStrimziBridgeWithTracing());
-        resourceManager.createResource(extensionContext, ((KafkaTracingClients) storageMap.get(extensionContext).retrieveFromTestStorage(KAFKA_TRACING_CLIENT_KEY)).consumerWithTracing());
+        resourceManager.createResourceWithWait(extensionContext, bridgeTracingClientJob.producerStrimziBridgeWithTracing());
+        resourceManager.createResourceWithWait(extensionContext, ((KafkaTracingClients) storageMap.get(extensionContext).retrieveFromTestStorage(KAFKA_TRACING_CLIENT_KEY)).consumerWithTracing());
         ClientUtils.waitForClientSuccess(bridgeProducer, storageMap.get(extensionContext).getNamespaceName(), MESSAGE_COUNT);
 
         TracingUtils.verify(storageMap.get(extensionContext).getNamespaceName(), JAEGER_KAFKA_BRIDGE_SERVICE, storageMap.get(extensionContext).retrieveFromTestStorage(Constants.SCRAPER_POD_KEY).toString(), JAEGER_QUERY_SERVICE);
     }
 
     void doTestKafkaBridgeServiceWithHttpTracing(final ExtensionContext extensionContext) {
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(storageMap.get(extensionContext).getClusterName(), 3, 1).build());
+        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(storageMap.get(extensionContext).getClusterName(), 3, 1).build());
         // Deploy http bridge
-        resourceManager.createResource(extensionContext, KafkaBridgeTemplates.kafkaBridge(storageMap.get(extensionContext).getClusterName(), KafkaResources.plainBootstrapAddress(storageMap.get(extensionContext).getClusterName()), 1)
+        resourceManager.createResourceWithWait(extensionContext, KafkaBridgeTemplates.kafkaBridge(storageMap.get(extensionContext).getClusterName(), KafkaResources.plainBootstrapAddress(storageMap.get(extensionContext).getClusterName()), 1)
             .editSpec()
             .withTracing(tracing())
             .withNewTemplate()
@@ -477,7 +477,7 @@ public abstract class TracingAbstractST extends AbstractST {
             .endSpec()
             .build());
 
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(storageMap.get(extensionContext).getClusterName(), storageMap.get(extensionContext).getTopicName(), storageMap.get(extensionContext).getNamespaceName()).build());
+        resourceManager.createResourceWithWait(extensionContext, KafkaTopicTemplates.topic(storageMap.get(extensionContext).getClusterName(), storageMap.get(extensionContext).getTopicName(), storageMap.get(extensionContext).getNamespaceName()).build());
 
         final String bridgeProducer = "bridge-producer";
         final BridgeTracingClientsBuilder kafkaBridgeClientJobBuilder = new BridgeTracingClientsBuilder()
@@ -492,8 +492,8 @@ public abstract class TracingAbstractST extends AbstractST {
             .withPollInterval(1000);
         final BridgeTracingClients bridgeTracingClients = (BridgeTracingClients) this.configureProperTracingType(kafkaBridgeClientJobBuilder.build());
 
-        resourceManager.createResource(extensionContext, bridgeTracingClients.producerStrimziBridgeWithTracing());
-        resourceManager.createResource(extensionContext, ((KafkaTracingClients) storageMap.get(extensionContext).retrieveFromTestStorage(KAFKA_TRACING_CLIENT_KEY)).consumerWithTracing());
+        resourceManager.createResourceWithWait(extensionContext, bridgeTracingClients.producerStrimziBridgeWithTracing());
+        resourceManager.createResourceWithWait(extensionContext, ((KafkaTracingClients) storageMap.get(extensionContext).retrieveFromTestStorage(KAFKA_TRACING_CLIENT_KEY)).consumerWithTracing());
         ClientUtils.waitForClientSuccess(bridgeProducer, storageMap.get(extensionContext).getNamespaceName(), MESSAGE_COUNT);
 
         TracingUtils.verify(storageMap.get(extensionContext).getNamespaceName(), JAEGER_KAFKA_BRIDGE_SERVICE, storageMap.get(extensionContext).retrieveFromTestStorage(Constants.SCRAPER_POD_KEY).toString(), JAEGER_QUERY_SERVICE);
@@ -578,7 +578,7 @@ public abstract class TracingAbstractST extends AbstractST {
             .build();
 
         LOGGER.debug("Creating NetworkPolicy: {}", networkPolicy.toString());
-        resourceManager.createResource(extensionContext, networkPolicy);
+        resourceManager.createResourceWithWait(extensionContext, networkPolicy);
         LOGGER.info("Network policy for jaeger successfully created");
     }
 
@@ -603,7 +603,7 @@ public abstract class TracingAbstractST extends AbstractST {
 
         this.deployJaegerInstance(extensionContext, storageMap.get(extensionContext).getNamespaceName());
 
-        resourceManager.createResource(extensionContext, ScraperTemplates.scraperPod(storageMap.get(extensionContext).getNamespaceName(), storageMap.get(extensionContext).getScraperName()).build());
+        resourceManager.createResourceWithWait(extensionContext, ScraperTemplates.scraperPod(storageMap.get(extensionContext).getNamespaceName(), storageMap.get(extensionContext).getScraperName()).build());
         testStorage.addToTestStorage(Constants.SCRAPER_POD_KEY, kubeClient().listPodsByPrefixInName(storageMap.get(extensionContext).getNamespaceName(), storageMap.get(extensionContext).getScraperName()).get(0).getMetadata().getName());
 
         storageMap.put(extensionContext, testStorage);

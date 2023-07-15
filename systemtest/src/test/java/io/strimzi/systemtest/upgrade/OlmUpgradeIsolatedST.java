@@ -95,7 +95,7 @@ public class OlmUpgradeIsolatedST extends AbstractUpgradeST {
             .endSpec()
             .build();
 
-        resourceManager.createResource(extensionContext, kafkaUpgradeTopic);
+        resourceManager.createResourceWithWait(extensionContext, kafkaUpgradeTopic);
 
         KafkaClients kafkaBasicClientJob = new KafkaClientsBuilder()
             .withProducerName(testStorage.getProducerName())
@@ -107,7 +107,7 @@ public class OlmUpgradeIsolatedST extends AbstractUpgradeST {
             .withDelayMs(1000)
             .build();
 
-        resourceManager.createResource(extensionContext, kafkaBasicClientJob.producerStrimzi(), kafkaBasicClientJob.consumerStrimzi());
+        resourceManager.createResourceWithWait(extensionContext, kafkaBasicClientJob.producerStrimzi(), kafkaBasicClientJob.consumerStrimzi());
 
         String clusterOperatorDeploymentName = ResourceManager.kubeClient().getDeploymentNameByPrefix(Environment.OLM_OPERATOR_DEPLOYMENT_NAME);
         LOGGER.info("Old deployment name of Cluster Operator is {}", clusterOperatorDeploymentName);

@@ -51,7 +51,7 @@ public class ConfigProviderST extends AbstractST {
         final String producerName = "producer-" + ClientUtils.generateRandomConsumerGroup();
         final String customFileSinkPath = "/tmp/my-own-path.txt";
 
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3).build());
+        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3).build());
 
         Map<String, String> configData = new HashMap<>();
         configData.put("topics", topicName);
@@ -71,7 +71,7 @@ public class ConfigProviderST extends AbstractST {
 
         kubeClient().getClient().configMaps().inNamespace(namespaceName).resource(connectorConfig).create();
 
-        resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnectWithFilePlugin(clusterName, namespaceName, 1)
+        resourceManager.createResourceWithWait(extensionContext, KafkaConnectTemplates.kafkaConnectWithFilePlugin(clusterName, namespaceName, 1)
             .editOrNewMetadata()
                 .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
             .endMetadata()
@@ -96,7 +96,7 @@ public class ConfigProviderST extends AbstractST {
 
         LOGGER.info("Creating needed RoleBinding and Role for Kubernetes Config Provider");
 
-        ResourceManager.getInstance().createResource(extensionContext, 
+        ResourceManager.getInstance().createResourceWithWait(extensionContext,
             new RoleBindingBuilder()
                 .editOrNewMetadata()
                     .withName("connector-config-rb")
@@ -135,7 +135,7 @@ public class ConfigProviderST extends AbstractST {
 
         String configPrefix = "configmaps:" + namespaceName + "/connector-config:";
 
-        resourceManager.createResource(extensionContext, KafkaConnectorTemplates.kafkaConnector(clusterName)
+        resourceManager.createResourceWithWait(extensionContext, KafkaConnectorTemplates.kafkaConnector(clusterName)
             .editSpec()
                 .withClassName("org.apache.kafka.connect.file.FileStreamSinkConnector")
                 .addToConfig("file", "${env:FILE_SINK_FILE}")
@@ -154,7 +154,7 @@ public class ConfigProviderST extends AbstractST {
             .withNamespaceName(namespaceName)
             .build();
 
-        resourceManager.createResource(extensionContext, kafkaBasicClientJob.producerStrimzi());
+        resourceManager.createResourceWithWait(extensionContext, kafkaBasicClientJob.producerStrimzi());
 
         String kafkaConnectPodName = kubeClient().listPods(namespaceName, clusterName, Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND).get(0).getMetadata().getName();
         KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(namespaceName, kafkaConnectPodName, customFileSinkPath, "Hello-world - 99");

@@ -41,7 +41,7 @@ class NamespaceRbacScopeOperatorIsolatedST extends AbstractST {
             .createInstallation()
             .runInstallation();
 
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3, 3)
+        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3, 3)
             .editMetadata()
                 .addToLabels("app", "strimzi")
             .endMetadata()

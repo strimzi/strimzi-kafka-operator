@@ -79,7 +79,7 @@ public class NetworkPoliciesIsolatedST extends AbstractST {
             .createInstallation()
             .runInstallation();
 
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 1, 1)
+        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 1, 1)
             .editSpec()
                 .editKafka()
                     .withListeners(new GenericKafkaListenerBuilder()
@@ -128,7 +128,7 @@ public class NetworkPoliciesIsolatedST extends AbstractST {
             .withUsername(testStorage.getUsername())
             .build();
 
-        resourceManager.createResource(extensionContext, kafkaClients.producerScramShaPlainStrimzi(), kafkaClients.consumerScramShaPlainStrimzi());
+        resourceManager.createResourceWithWait(extensionContext, kafkaClients.producerScramShaPlainStrimzi(), kafkaClients.consumerScramShaPlainStrimzi());
         ClientUtils.waitForClientsSuccess(testStorage);
 
         kafkaClients = new KafkaClientsBuilder(kafkaClients)
@@ -138,7 +138,7 @@ public class NetworkPoliciesIsolatedST extends AbstractST {
             .build();
 
         LOGGER.info("Verifying that producer/consumer: {}/{} are not able to exchange messages", deniedProducerName, deniedConsumerName);
-        resourceManager.createResource(extensionContext, kafkaClients.producerStrimzi(), kafkaClients.consumerStrimzi());
+        resourceManager.createResourceWithWait(extensionContext, kafkaClients.producerStrimzi(), kafkaClients.consumerStrimzi());
         ClientUtils.waitForClientsTimeout(testStorage);
 
         LOGGER.info("Check metrics exported by KafkaExporter");
@@ -176,7 +176,7 @@ public class NetworkPoliciesIsolatedST extends AbstractST {
             .createInstallation()
             .runInstallation();
 
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 1, 1)
+        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 1, 1)
             .editSpec()
                 .editKafka()
                     .withListeners(new GenericKafkaListenerBuilder()
@@ -219,7 +219,7 @@ public class NetworkPoliciesIsolatedST extends AbstractST {
             .withUsername(testStorage.getUsername())
             .build();
 
-        resourceManager.createResource(extensionContext, kafkaClients.producerScramShaTlsStrimzi(testStorage.getClusterName()), kafkaClients.consumerScramShaTlsStrimzi(testStorage.getClusterName()));
+        resourceManager.createResourceWithWait(extensionContext, kafkaClients.producerScramShaTlsStrimzi(testStorage.getClusterName()), kafkaClients.consumerScramShaTlsStrimzi(testStorage.getClusterName()));
         ClientUtils.waitForClientsSuccess(testStorage);
 
         kafkaClients = new KafkaClientsBuilder(kafkaClients)
@@ -229,7 +229,7 @@ public class NetworkPoliciesIsolatedST extends AbstractST {
             .build();
 
         LOGGER.info("Verifying that producer/consumer: {}/{} are not able to exchange messages", deniedProducerName, deniedConsumerName);
-        resourceManager.createResource(extensionContext, kafkaClients.producerStrimzi(), kafkaClients.consumerStrimzi());
+        resourceManager.createResourceWithWait(extensionContext, kafkaClients.producerStrimzi(), kafkaClients.consumerStrimzi());
         ClientUtils.waitForClientsTimeout(testStorage);
     }
 
@@ -245,7 +245,7 @@ public class NetworkPoliciesIsolatedST extends AbstractST {
             .createInstallation()
             .runInstallation();
 
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3).build());
+        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3).build());
 
         checkNetworkPoliciesInNamespace(clusterName, clusterOperator.getDeploymentNamespace());
         changeKafkaConfigurationAndCheckObservedGeneration(clusterName, clusterOperator.getDeploymentNamespace());
@@ -284,7 +284,7 @@ public class NetworkPoliciesIsolatedST extends AbstractST {
 
         cluster.setNamespace(secondNamespace);
 
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaWithMetrics(clusterName, secondNamespace, 3, 3)
+        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaWithMetrics(clusterName, secondNamespace, 3, 3)
             .editMetadata()
                 .addToLabels(labels)
             .endMetadata()
@@ -314,10 +314,10 @@ public class NetworkPoliciesIsolatedST extends AbstractST {
             .createInstallation()
             .runInstallation();
 
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaWithCruiseControl(clusterName, 3, 3)
+        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaWithCruiseControl(clusterName, 3, 3)
             .build());
 
-        resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnect(clusterName, clusterOperator.getDeploymentNamespace(), 1)
+        resourceManager.createResourceWithWait(extensionContext, KafkaConnectTemplates.kafkaConnect(clusterName, clusterOperator.getDeploymentNamespace(), 1)
                 .build());
 
         List<NetworkPolicy> networkPolicyList = kubeClient().getClient().network().networkPolicies().list().getItems().stream()

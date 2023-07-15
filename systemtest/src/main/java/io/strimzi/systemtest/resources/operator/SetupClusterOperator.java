@@ -297,7 +297,7 @@ public class SetupClusterOperator {
                 .flatMap(Collection::stream)
                 .collect(Collectors.toList());
             for (final HasMetadata itemRoleOrBinding : listOfRolesAndBindings) {
-                ResourceManager.getInstance().createResource(extensionContext, itemRoleOrBinding);
+                ResourceManager.getInstance().createResourceWithWait(extensionContext, itemRoleOrBinding);
             }
         } else {
             LOGGER.info("Install default bindings");
@@ -306,7 +306,7 @@ public class SetupClusterOperator {
 
         // 060-Deployment
         ResourceManager.setCoDeploymentName(clusterOperatorName);
-        ResourceManager.getInstance().createResource(extensionContext,
+        ResourceManager.getInstance().createResourceWithWait(extensionContext,
             new BundleResource.BundleResourceBuilder()
                 .withReplicas(replicas)
                 .withName(clusterOperatorName)
@@ -406,7 +406,7 @@ public class SetupClusterOperator {
         // Create ClusterRoleBindings that grant cluster-wide access to all OpenShift projects
         List<ClusterRoleBinding> clusterRoleBindingList = ClusterRoleBindingTemplates.clusterRoleBindingsForAllNamespaces(namespaceInstallTo);
         clusterRoleBindingList.forEach(clusterRoleBinding ->
-            ResourceManager.getInstance().createResource(extensionContext, clusterRoleBinding));
+            ResourceManager.getInstance().createResourceWithWait(extensionContext, clusterRoleBinding));
     }
 
     public static class SetupClusterOperatorBuilder {
@@ -638,7 +638,7 @@ public class SetupClusterOperator {
                 case Constants.ROLE:
                     if (!this.isRolesAndBindingsManagedByAnUser()) {
                         Role role = TestUtils.configFromYaml(createFile, Role.class);
-                        ResourceManager.getInstance().createResource(extensionContext, new RoleBuilder(role)
+                        ResourceManager.getInstance().createResourceWithWait(extensionContext, new RoleBuilder(role)
                             .editMetadata()
                                 .withNamespace(namespace)
                             .endMetadata()
@@ -648,12 +648,12 @@ public class SetupClusterOperator {
                 case Constants.CLUSTER_ROLE:
                     if (!this.isRolesAndBindingsManagedByAnUser()) {
                         ClusterRole clusterRole = TestUtils.configFromYaml(changeLeaseNameInResourceIfNeeded(createFile.getAbsolutePath()), ClusterRole.class);
-                        ResourceManager.getInstance().createResource(extensionContext, clusterRole);
+                        ResourceManager.getInstance().createResourceWithWait(extensionContext, clusterRole);
                     }
                     break;
                 case Constants.SERVICE_ACCOUNT:
                     ServiceAccount serviceAccount = TestUtils.configFromYaml(createFile, ServiceAccount.class);
-                    ResourceManager.getInstance().createResource(extensionContext, new ServiceAccountBuilder(serviceAccount)
+                    ResourceManager.getInstance().createResourceWithWait(extensionContext, new ServiceAccountBuilder(serviceAccount)
                         .editMetadata()
                             .withNamespace(namespace)
                         .endMetadata()
@@ -661,7 +661,7 @@ public class SetupClusterOperator {
                     break;
                 case Constants.CONFIG_MAP:
                     ConfigMap configMap = TestUtils.configFromYaml(createFile, ConfigMap.class);
-                    ResourceManager.getInstance().createResource(extensionContext, new ConfigMapBuilder(configMap)
+                    ResourceManager.getInstance().createResourceWithWait(extensionContext, new ConfigMapBuilder(configMap)
                         .editMetadata()
                             .withNamespace(namespace)
                             .withName(clusterOperatorName)
@@ -672,7 +672,7 @@ public class SetupClusterOperator {
                     // Loads the resource through Fabric8 Kubernetes Client => that way we do not need to add a direct
                     // dependency on Jackson Datatype JSR310 to decode the Lease resource
                     Lease lease = kubeClient().getClient().leases().load(createFile).item();
-                    ResourceManager.getInstance().createResource(extensionContext, new LeaseBuilder(lease)
+                    ResourceManager.getInstance().createResourceWithWait(extensionContext, new LeaseBuilder(lease)
                             .editMetadata()
                                 .withNamespace(namespace)
                                 .withName(clusterOperatorName)
@@ -681,7 +681,7 @@ public class SetupClusterOperator {
                     break;
                 case Constants.CUSTOM_RESOURCE_DEFINITION_SHORT:
                     CustomResourceDefinition customResourceDefinition = TestUtils.configFromYaml(createFile, CustomResourceDefinition.class);
-                    ResourceManager.getInstance().createResource(extensionContext, customResourceDefinition);
+                    ResourceManager.getInstance().createResourceWithWait(extensionContext, customResourceDefinition);
                     break;
                 default:
                     LOGGER.error("Unknown installation resource type: {}", resourceType);

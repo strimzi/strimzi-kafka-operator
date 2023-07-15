@@ -59,13 +59,13 @@ public class ClusterRoleBindingResource implements ResourceType<ClusterRoleBindi
             .withNamespace(namespace)
             .endSubject().build();
 
-        ResourceManager.getInstance().createResource(extensionContext, clusterRoleBinding);
+        ResourceManager.getInstance().createResourceWithWait(extensionContext, clusterRoleBinding);
 
         return clusterRoleBinding;
     }
 
     public static ClusterRoleBinding clusterRoleBinding(ExtensionContext extensionContext, ClusterRoleBinding clusterRoleBinding) {
-        ResourceManager.getInstance().createResource(extensionContext, clusterRoleBinding);
+        ResourceManager.getInstance().createResourceWithWait(extensionContext, clusterRoleBinding);
         return clusterRoleBinding;
     }
 

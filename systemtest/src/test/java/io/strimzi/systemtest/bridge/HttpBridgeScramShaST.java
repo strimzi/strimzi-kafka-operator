@@ -60,9 +60,9 @@ class HttpBridgeScramShaST extends AbstractST {
             .build();
 
         // Create topic
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(httpBridgeScramShaClusterName, topicName, clusterOperator.getDeploymentNamespace()).build());
+        resourceManager.createResourceWithWait(extensionContext, KafkaTopicTemplates.topic(httpBridgeScramShaClusterName, topicName, clusterOperator.getDeploymentNamespace()).build());
 
-        resourceManager.createResource(extensionContext, kafkaBridgeClientJb.producerStrimziBridge());
+        resourceManager.createResourceWithWait(extensionContext, kafkaBridgeClientJb.producerStrimziBridge());
         ClientUtils.waitForClientSuccess(producerName, clusterOperator.getDeploymentNamespace(), MESSAGE_COUNT);
 
         KafkaClients kafkaClients = new KafkaClientsBuilder()
@@ -74,7 +74,7 @@ class HttpBridgeScramShaST extends AbstractST {
             .withUsername(USER_NAME)
             .build();
 
-        resourceManager.createResource(extensionContext, kafkaClients.consumerScramShaTlsStrimzi(httpBridgeScramShaClusterName));
+        resourceManager.createResourceWithWait(extensionContext, kafkaClients.consumerScramShaTlsStrimzi(httpBridgeScramShaClusterName));
         ClientUtils.waitForClientSuccess(consumerName, clusterOperator.getDeploymentNamespace(), MESSAGE_COUNT);
     }
 
@@ -89,8 +89,8 @@ class HttpBridgeScramShaST extends AbstractST {
             .withConsumerName(consumerName)
             .build();
 
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(httpBridgeScramShaClusterName, TOPIC_NAME, clusterOperator.getDeploymentNamespace()).build());
-        resourceManager.createResource(extensionContext, kafkaBridgeClientJb.consumerStrimziBridge());
+        resourceManager.createResourceWithWait(extensionContext, KafkaTopicTemplates.topic(httpBridgeScramShaClusterName, TOPIC_NAME, clusterOperator.getDeploymentNamespace()).build());
+        resourceManager.createResourceWithWait(extensionContext, kafkaBridgeClientJb.consumerStrimziBridge());
 
         // Send messages to Kafka
         KafkaClients kafkaClients = new KafkaClientsBuilder()
@@ -102,7 +102,7 @@ class HttpBridgeScramShaST extends AbstractST {
             .withUsername(USER_NAME)
             .build();
 
-        resourceManager.createResource(extensionContext, kafkaClients.producerScramShaTlsStrimzi(httpBridgeScramShaClusterName));
+        resourceManager.createResourceWithWait(extensionContext, kafkaClients.producerScramShaTlsStrimzi(httpBridgeScramShaClusterName));
         ClientUtils.waitForClientsSuccess(producerName, consumerName, clusterOperator.getDeploymentNamespace(), MESSAGE_COUNT);
     }
 
@@ -118,7 +118,7 @@ class HttpBridgeScramShaST extends AbstractST {
         LOGGER.info("Deploying Kafka and KafkaBridge before tests");
 
         // Deploy kafka
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(httpBridgeScramShaClusterName, 1, 1)
+        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(httpBridgeScramShaClusterName, 1, 1)
             .editMetadata()
                 .withNamespace(clusterOperator.getDeploymentNamespace())
             .endMetadata()
@@ -142,7 +142,7 @@ class HttpBridgeScramShaST extends AbstractST {
             .endMetadata()
             .build();
 
-        resourceManager.createResource(extensionContext, scramShaUser);
+        resourceManager.createResourceWithWait(extensionContext, scramShaUser);
 
         // Initialize PasswordSecret to set this as PasswordSecret in MirrorMaker spec
         PasswordSecretSource passwordSecret = new PasswordSecretSource();
@@ -155,7 +155,7 @@ class HttpBridgeScramShaST extends AbstractST {
         certSecret.setSecretName(KafkaResources.clusterCaCertificateSecretName(httpBridgeScramShaClusterName));
 
         // Deploy http bridge
-        resourceManager.createResource(extensionContext, KafkaBridgeTemplates.kafkaBridge(httpBridgeScramShaClusterName,
+        resourceManager.createResourceWithWait(extensionContext, KafkaBridgeTemplates.kafkaBridge(httpBridgeScramShaClusterName,
             KafkaResources.tlsBootstrapAddress(httpBridgeScramShaClusterName), 1)
             .editMetadata()
                 .withNamespace(clusterOperator.getDeploymentNamespace())

@@ -58,7 +58,7 @@ public class JmxIsolatedST extends AbstractST {
         Map<String, String> jmxSecretLabels = Collections.singletonMap("my-label", "my-value");
         Map<String, String> jmxSecretAnnotations = Collections.singletonMap("my-annotation", "some-value");
 
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3)
+        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3)
             .editOrNewSpec()
                 .editKafka()
                     .withNewJmxOptions()
@@ -81,11 +81,11 @@ public class JmxIsolatedST extends AbstractST {
             .endSpec()
             .build());
 
-        resourceManager.createResource(extensionContext, ScraperTemplates.scraperPod(namespaceName, scraperName).build());
+        resourceManager.createResourceWithWait(extensionContext, ScraperTemplates.scraperPod(namespaceName, scraperName).build());
         String scraperPodName = kubeClient().listPodsByPrefixInName(scraperName).get(0).getMetadata().getName();
         JmxUtils.downloadJmxTermToPod(namespaceName, scraperPodName);
 
-        resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnect(clusterName, namespaceName, 1)
+        resourceManager.createResourceWithWait(extensionContext, KafkaConnectTemplates.kafkaConnect(clusterName, namespaceName, 1)
             .editOrNewSpec()
                 .withNewJmxOptions()
                     .withAuthentication(new KafkaJmxAuthenticationPassword())

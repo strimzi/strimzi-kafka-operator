@@ -58,14 +58,14 @@ public class ClusterOperatorRbacIsolatedST extends AbstractST {
         String coPodName = kubeClient().getClusterOperatorPodName(clusterOperator.getDeploymentNamespace());
         LOGGER.info("Deploying Kafka: {}, which should be deployed even the CRBs are not present", clusterName);
 
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3).build());
+        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3).build());
 
         LOGGER.info("CO log should contain some information about ignoring forbidden access to CRB for Kafka");
         String log = cmdKubeClient().execInCurrentNamespace(Level.DEBUG, "logs", coPodName).out();
         assertTrue(log.contains("Kafka(" + cmdKubeClient().namespace() + "/" + clusterName + "): Ignoring forbidden access to ClusterRoleBindings resource which does not seem to be required."));
 
         LOGGER.info("Deploying KafkaConnect: {} without rack awareness, the CR should be deployed without error", clusterName);
-        resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnect(clusterName, clusterOperator.getDeploymentNamespace(), 1).build());
+        resourceManager.createResourceWithWait(extensionContext, KafkaConnectTemplates.kafkaConnect(clusterName, clusterOperator.getDeploymentNamespace(), 1).build());
 
         LOGGER.info("CO log should contain some information about ignoring forbidden access to CRB for KafkaConnect");
         log = cmdKubeClient().execInCurrentNamespace(Level.DEBUG, "logs", coPodName).out();
@@ -91,7 +91,7 @@ public class ClusterOperatorRbacIsolatedST extends AbstractST {
         String rackKey = "rack-key";
 
         LOGGER.info("Deploying Kafka: {}, which should not be deployed and error should be present in CR status message", clusterName);
-        resourceManager.createResource(extensionContext, false, KafkaTemplates.kafkaEphemeral(clusterName, 3, 3)
+        resourceManager.createResourceWithoutWait(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3, 3)
             .editOrNewSpec()
                 .editOrNewKafka()
                     .withNewRack()
@@ -106,7 +106,7 @@ public class ClusterOperatorRbacIsolatedST extends AbstractST {
         assertThat(kafkaStatusCondition, is(notNullValue()));
         assertTrue(kafkaStatusCondition.getMessage().contains("Configured service account doesn't have access."));
 
-        resourceManager.createResource(extensionContext, false, KafkaConnectTemplates.kafkaConnect(clusterName, clusterOperator.getDeploymentNamespace(), clusterName, 1)
+        resourceManager.createResourceWithoutWait(extensionContext, KafkaConnectTemplates.kafkaConnect(clusterName, clusterOperator.getDeploymentNamespace(), clusterName, 1)
             .editSpec()
                 .withNewRack(rackKey)
             .endSpec()

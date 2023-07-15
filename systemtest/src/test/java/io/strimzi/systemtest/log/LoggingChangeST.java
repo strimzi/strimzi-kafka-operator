@@ -201,7 +201,7 @@ class LoggingChangeST extends AbstractST {
         kubeClient().createConfigMapInNamespace(namespaceName, configMapZookeeper);
         kubeClient().updateConfigMapInNamespace(clusterOperator.getDeploymentNamespace(), configMapCO);
 
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(clusterName, 3, 3)
+        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaPersistent(clusterName, 3, 3)
             .editOrNewSpec()
                 .editKafka()
                     //.withLogging(new ExternalLoggingBuilder().withName(configMapKafkaName).build())
@@ -266,7 +266,7 @@ class LoggingChangeST extends AbstractST {
         InlineLogging ilOff = new InlineLogging();
         ilOff.setLoggers(Collections.singletonMap("rootLogger.level", "OFF"));
 
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(clusterName, 1, 1)
+        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaPersistent(clusterName, 1, 1)
             .editSpec()
                 .editEntityOperator()
                     .editTopicOperator()
@@ -466,7 +466,7 @@ class LoggingChangeST extends AbstractST {
         ilOff.setLoggers(loggers);
 
         // create resources async
-        resourceManager.createResource(extensionContext, false,
+        resourceManager.createResourceWithoutWait(extensionContext,
             KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), 1, 1).build(),
             ScraperTemplates.scraperPod(testStorage.getNamespaceName(), testStorage.getScraperName()).build(),
             KafkaBridgeTemplates.kafkaBridge(testStorage.getClusterName(), KafkaResources.tlsBootstrapAddress(testStorage.getClusterName()), 1)
@@ -688,7 +688,7 @@ class LoggingChangeST extends AbstractST {
             .endMetadata()
             .build();
 
-        resourceManager.createResource(extensionContext, false,
+        resourceManager.createResourceWithoutWait(extensionContext,
             KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3).build(),
             connect,
             ScraperTemplates.scraperPod(testStorage.getNamespaceName(), testStorage.getScraperName()).build()
@@ -807,7 +807,7 @@ class LoggingChangeST extends AbstractST {
 
         ilOff.setLoggers(log4jConfig);
 
-        resourceManager.createResource(extensionContext,
+        resourceManager.createResourceWithWait(extensionContext,
             KafkaTemplates.kafkaEphemeral(clusterName, 3, 1)
                 .editSpec()
                     .editKafka()
@@ -925,7 +925,7 @@ class LoggingChangeST extends AbstractST {
 
         final LabelSelector kafkaSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.kafkaStatefulSetName(clusterName));
 
-        resourceManager.createResource(extensionContext,
+        resourceManager.createResourceWithWait(extensionContext,
             KafkaTemplates.kafkaPersistent(clusterName, 3, 1).build(),
             ScraperTemplates.scraperPod(namespaceName, scraperName).build()
         );
@@ -951,7 +951,7 @@ class LoggingChangeST extends AbstractST {
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         final LabelSelector kafkaSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.kafkaStatefulSetName(clusterName));
 
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(clusterName, 3, 1).build());
+        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaPersistent(clusterName, 3, 1).build());
 
         Map<String, String> kafkaPods = PodUtils.podSnapshot(namespaceName, kafkaSelector);
 
@@ -1012,7 +1012,7 @@ class LoggingChangeST extends AbstractST {
             .endValueFrom()
             .build();
 
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(clusterName, 3, 1)
+        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaPersistent(clusterName, 3, 1)
             .editOrNewSpec()
                 .editKafka()
                     .withExternalLogging(el)
@@ -1107,9 +1107,9 @@ class LoggingChangeST extends AbstractST {
 
         ilOff.setLoggers(loggers);
 
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName + "-source", 1).build());
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName + "-target", 1).build());
-        resourceManager.createResource(extensionContext,
+        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName + "-source", 1).build());
+        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName + "-target", 1).build());
+        resourceManager.createResourceWithWait(extensionContext,
             KafkaMirrorMaker2Templates.kafkaMirrorMaker2(clusterName, clusterName + "-target", clusterName + "-source", 1, false)
                 .editOrNewSpec()
                     .withInlineLogging(ilOff)
@@ -1207,8 +1207,8 @@ class LoggingChangeST extends AbstractST {
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         LabelSelector labelSelector = KafkaMirrorMaker2Resource.getLabelSelector(clusterName, KafkaMirrorMaker2Resources.deploymentName(clusterName));
 
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName + "-source", 1).build());
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName + "-target", 1).build());
+        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName + "-source", 1).build());
+        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName + "-target", 1).build());
 
         String log4jConfig =
                 "log4j.appender.CONSOLE=org.apache.log4j.ConsoleAppender\n" +
@@ -1246,7 +1246,7 @@ class LoggingChangeST extends AbstractST {
                 .endValueFrom()
                 .build();
 
-        resourceManager.createResource(extensionContext,
+        resourceManager.createResourceWithWait(extensionContext,
             KafkaMirrorMaker2Templates.kafkaMirrorMaker2(clusterName, clusterName + "-target", clusterName + "-source", 1, false)
                 .editOrNewSpec()
                     .withLogging(mm2XternalLogging)
@@ -1325,7 +1325,7 @@ class LoggingChangeST extends AbstractST {
         kubeClient().createConfigMapInNamespace(namespaceName, configMap);
 
         LOGGER.info("Deploying Kafka with custom logging");
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(clusterName, 3, 1)
+        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaPersistent(clusterName, 3, 1)
             .editOrNewSpec()
                 .editKafka()
                 .withExternalLogging(new ExternalLoggingBuilder()
@@ -1380,7 +1380,7 @@ class LoggingChangeST extends AbstractST {
     void testLoggingHierarchy(ExtensionContext extensionContext) {
         TestStorage testStorage = new TestStorage(extensionContext);
 
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3).build());
+        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3).build());
 
         KafkaConnect connect = KafkaConnectTemplates.kafkaConnectWithFilePlugin(testStorage.getClusterName(), testStorage.getNamespaceName(), 1)
             .editMetadata()
@@ -1394,7 +1394,7 @@ class LoggingChangeST extends AbstractST {
             .endSpec()
             .build();
 
-        resourceManager.createResource(extensionContext,
+        resourceManager.createResourceWithWait(extensionContext,
             connect,
             ScraperTemplates.scraperPod(testStorage.getNamespaceName(), testStorage.getScraperName()).build(),
             KafkaConnectorTemplates.defaultKafkaConnector(testStorage.getClusterName(), testStorage.getClusterName(), 1).build()

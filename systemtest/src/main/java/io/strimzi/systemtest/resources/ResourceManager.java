@@ -151,9 +151,13 @@ public class ResourceManager {
         new OperatorGroupResource(),
         new KafkaNodePoolResource()
     };
+    @SafeVarargs
+    public final <T extends HasMetadata> void createResourceWithoutWait(ExtensionContext testContext, T... resources) {
+        createResource(testContext, false, resources);
+    }
 
     @SafeVarargs
-    public final <T extends HasMetadata> void createResource(ExtensionContext testContext, T... resources) {
+    public final <T extends HasMetadata> void createResourceWithWait(ExtensionContext testContext, T... resources) {
         createResource(testContext, true, resources);
     }
 

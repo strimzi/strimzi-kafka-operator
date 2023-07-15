@@ -237,13 +237,13 @@ public class MetricsIsolatedST extends AbstractST {
     @Tag(CONNECT)
     @Tag(CONNECT_COMPONENTS)
     void testKafkaConnectAndConnectorMetrics(ExtensionContext extensionContext) {
-        resourceManager.createResource(extensionContext,
+        resourceManager.createResourceWithWait(extensionContext,
             KafkaConnectTemplates.kafkaConnectWithMetricsAndFileSinkPlugin(kafkaClusterFirstName, namespaceFirst, kafkaClusterFirstName, 1)
                 .editMetadata()
                     .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
                 .endMetadata()
                 .build());
-        resourceManager.createResource(extensionContext, KafkaConnectorTemplates.kafkaConnector(kafkaClusterFirstName).build());
+        resourceManager.createResourceWithWait(extensionContext, KafkaConnectorTemplates.kafkaConnector(kafkaClusterFirstName).build());
 
         MetricsCollector kafkaConnectCollector = kafkaCollector.toBuilder()
                 .withComponentType(ComponentType.KafkaConnect)
@@ -303,7 +303,7 @@ public class MetricsIsolatedST extends AbstractST {
             .withConsumerName(consumerName)
             .build();
 
-        resourceManager.createResource(extensionContext, kafkaClients.producerStrimzi(), kafkaClients.consumerStrimzi());
+        resourceManager.createResourceWithWait(extensionContext, kafkaClients.producerStrimzi(), kafkaClients.consumerStrimzi());
         ClientUtils.waitForClientsSuccess(producerName, consumerName, namespaceFirst, MESSAGE_COUNT, false);
 
         assertMetricValueNotNull(kafkaExporterCollector, "kafka_consumergroup_current_offset\\{.*\\}");
@@ -487,7 +487,7 @@ public class MetricsIsolatedST extends AbstractST {
     @Tag(MIRROR_MAKER2)
     @Tag(CONNECT_COMPONENTS)
     void testMirrorMaker2Metrics(ExtensionContext extensionContext) {
-        resourceManager.createResource(extensionContext,
+        resourceManager.createResourceWithWait(extensionContext,
                 KafkaMirrorMaker2Templates.kafkaMirrorMaker2WithMetrics(namespaceFirst, mm2ClusterName, kafkaClusterFirstName, kafkaClusterSecondName, 1, namespaceSecond, namespaceFirst)
                     .editMetadata()
                         .withNamespace(namespaceFirst)
@@ -542,7 +542,7 @@ public class MetricsIsolatedST extends AbstractST {
         String producerName = "bridge-producer";
         String consumerName = "bridge-consumer";
 
-        resourceManager.createResource(extensionContext,
+        resourceManager.createResourceWithWait(extensionContext,
                 KafkaBridgeTemplates.kafkaBridgeWithMetrics(bridgeClusterName, kafkaClusterFirstName, KafkaResources.plainBootstrapAddress(kafkaClusterFirstName), 1)
                     .editMetadata()
                         .withNamespace(namespaceFirst)
@@ -568,7 +568,7 @@ public class MetricsIsolatedST extends AbstractST {
             .build();
 
         // we cannot wait for producer and consumer to complete to see all needed metrics - especially `strimzi_bridge_kafka_producer_count`
-        resourceManager.createResource(extensionContext, kafkaBridgeClientJob.producerStrimziBridge(), kafkaBridgeClientJob.consumerStrimziBridge());
+        resourceManager.createResourceWithWait(extensionContext, kafkaBridgeClientJob.producerStrimziBridge(), kafkaBridgeClientJob.consumerStrimziBridge());
 
         bridgeCollector.collectMetricsFromPods();
         assertMetricValueNotNull(bridgeCollector, "strimzi_bridge_kafka_producer_count\\{.*,}");
@@ -718,7 +718,7 @@ public class MetricsIsolatedST extends AbstractST {
         cluster.setNamespace(namespaceFirst);
 
         // create resources without wait to deploy them simultaneously
-        resourceManager.createResource(extensionContext, false,
+        resourceManager.createResourceWithoutWait(extensionContext,
             // Kafka with CruiseControl and metrics
             KafkaTemplates.kafkaWithMetricsAndCruiseControlWithMetrics(kafkaClusterFirstName, namespaceFirst, 3, 3)
                 .editOrNewSpec()
@@ -741,11 +741,11 @@ public class MetricsIsolatedST extends AbstractST {
         // sync resources
         resourceManager.synchronizeResources(extensionContext);
 
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(kafkaClusterFirstName, topicName, 7, 2, namespaceFirst).build());
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(kafkaClusterFirstName, kafkaExporterTopicName, 7, 2, namespaceFirst).build());
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(kafkaClusterFirstName, bridgeTopicName, namespaceFirst).build());
-        resourceManager.createResource(extensionContext, KafkaUserTemplates.tlsUser(namespaceFirst, kafkaClusterFirstName, KafkaUserUtils.generateRandomNameOfKafkaUser()).build());
-        resourceManager.createResource(extensionContext, KafkaUserTemplates.tlsUser(namespaceFirst, kafkaClusterFirstName, KafkaUserUtils.generateRandomNameOfKafkaUser()).build());
+        resourceManager.createResourceWithWait(extensionContext, KafkaTopicTemplates.topic(kafkaClusterFirstName, topicName, 7, 2, namespaceFirst).build());
+        resourceManager.createResourceWithWait(extensionContext, KafkaTopicTemplates.topic(kafkaClusterFirstName, kafkaExporterTopicName, 7, 2, namespaceFirst).build());
+        resourceManager.createResourceWithWait(extensionContext, KafkaTopicTemplates.topic(kafkaClusterFirstName, bridgeTopicName, namespaceFirst).build());
+        resourceManager.createResourceWithWait(extensionContext, KafkaUserTemplates.tlsUser(namespaceFirst, kafkaClusterFirstName, KafkaUserUtils.generateRandomNameOfKafkaUser()).build());
+        resourceManager.createResourceWithWait(extensionContext, KafkaUserTemplates.tlsUser(namespaceFirst, kafkaClusterFirstName, KafkaUserUtils.generateRandomNameOfKafkaUser()).build());
 
         coScraperPodName = ResourceManager.kubeClient().listPodsByPrefixInName(clusterOperator.getDeploymentNamespace(), coScraperName).get(0).getMetadata().getName();
         scraperPodName = ResourceManager.kubeClient().listPodsByPrefixInName(namespaceFirst, scraperName).get(0).getMetadata().getName();

@@ -114,7 +114,7 @@ public class HttpBridgeKafkaExternalListenersST extends AbstractST {
     @SuppressWarnings({"checkstyle:MethodLength"})
     private void testWeirdUsername(ExtensionContext extensionContext, String weirdUserName, KafkaListenerAuthentication auth,
                                    KafkaBridgeSpec spec, TestStorage ts) {
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(ts.getClusterName(), 3, 1)
+        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(ts.getClusterName(), 3, 1)
             .editMetadata()
                 .withNamespace(ts.getNamespaceName())
             .endMetadata()
@@ -149,17 +149,17 @@ public class HttpBridgeKafkaExternalListenersST extends AbstractST {
             .build();
 
         // Create topic
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(ts).build());
+        resourceManager.createResourceWithWait(extensionContext, KafkaTopicTemplates.topic(ts).build());
 
         // Create user
         if (auth.getType().equals(Constants.TLS_LISTENER_DEFAULT_NAME)) {
-            resourceManager.createResource(extensionContext, KafkaUserTemplates.tlsUser(ts.getNamespaceName(), ts.getClusterName(), weirdUserName)
+            resourceManager.createResourceWithWait(extensionContext, KafkaUserTemplates.tlsUser(ts.getNamespaceName(), ts.getClusterName(), weirdUserName)
                 .editMetadata()
                     .withNamespace(ts.getNamespaceName())
                 .endMetadata()
                 .build());
         } else {
-            resourceManager.createResource(extensionContext, KafkaUserTemplates.scramShaUser(ts.getNamespaceName(), ts.getClusterName(), weirdUserName)
+            resourceManager.createResourceWithWait(extensionContext, KafkaUserTemplates.scramShaUser(ts.getNamespaceName(), ts.getClusterName(), weirdUserName)
                 .editMetadata()
                     .withNamespace(ts.getNamespaceName())
                 .endMetadata()
@@ -167,7 +167,7 @@ public class HttpBridgeKafkaExternalListenersST extends AbstractST {
         }
 
         // Deploy http bridge
-        resourceManager.createResource(extensionContext, KafkaBridgeTemplates.kafkaBridge(ts.getClusterName(), KafkaResources.tlsBootstrapAddress(ts.getClusterName()), 1)
+        resourceManager.createResourceWithWait(extensionContext, KafkaBridgeTemplates.kafkaBridge(ts.getClusterName(), KafkaResources.tlsBootstrapAddress(ts.getClusterName()), 1)
                 .editMetadata()
                     .withNamespace(ts.getNamespaceName())
                 .endMetadata()
@@ -183,7 +183,7 @@ public class HttpBridgeKafkaExternalListenersST extends AbstractST {
         final Service service = KafkaBridgeUtils.createBridgeNodePortService(ts.getClusterName(), ts.getNamespaceName(), BRIDGE_EXTERNAL_SERVICE);
         ServiceResource.createServiceResource(extensionContext, service, ts.getNamespaceName());
 
-        resourceManager.createResource(extensionContext, kafkaBridgeClientJob.consumerStrimziBridge());
+        resourceManager.createResourceWithWait(extensionContext, kafkaBridgeClientJob.consumerStrimziBridge());
 
         final String kafkaProducerExternalName = "kafka-producer-external" + new Random().nextInt(Integer.MAX_VALUE);
 
@@ -207,10 +207,10 @@ public class HttpBridgeKafkaExternalListenersST extends AbstractST {
 
         if (auth.getType().equals(Constants.TLS_LISTENER_DEFAULT_NAME)) {
             // tls producer
-            resourceManager.createResource(extensionContext, externalKafkaProducer.producerTlsStrimzi(ts.getClusterName()));
+            resourceManager.createResourceWithWait(extensionContext, externalKafkaProducer.producerTlsStrimzi(ts.getClusterName()));
         } else {
             // scram-sha producer
-            resourceManager.createResource(extensionContext, externalKafkaProducer.producerScramShaTlsStrimzi(ts.getClusterName()));
+            resourceManager.createResourceWithWait(extensionContext, externalKafkaProducer.producerScramShaTlsStrimzi(ts.getClusterName()));
         }
 
         ClientUtils.waitForClientSuccess(kafkaProducerExternalName, ts.getNamespaceName(), MESSAGE_COUNT);

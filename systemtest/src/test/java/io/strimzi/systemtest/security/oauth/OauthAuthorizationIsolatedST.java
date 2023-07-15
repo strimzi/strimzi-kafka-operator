@@ -96,7 +96,7 @@ public class OauthAuthorizationIsolatedST extends OauthAbstractST {
         String topicName = TOPIC_A + "-" + mapWithTestTopics.get(extensionContext.getDisplayName());
         String consumerGroup = "a-consumer_group-" + clusterName;
 
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(oauthClusterName, topicName, clusterOperator.getDeploymentNamespace()).build());
+        resourceManager.createResourceWithWait(extensionContext, KafkaTopicTemplates.topic(oauthClusterName, topicName, clusterOperator.getDeploymentNamespace()).build());
 
         KafkaOauthClients teamAOauthClientJob = new KafkaOauthClientsBuilder()
             .withNamespaceName(clusterOperator.getDeploymentNamespace())
@@ -111,9 +111,9 @@ public class OauthAuthorizationIsolatedST extends OauthAbstractST {
             .withOauthTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
             .build();
 
-        resourceManager.createResource(extensionContext, teamAOauthClientJob.producerStrimziOauthTls(oauthClusterName));
+        resourceManager.createResourceWithWait(extensionContext, teamAOauthClientJob.producerStrimziOauthTls(oauthClusterName));
         ClientUtils.waitForClientSuccess(teamAProducerName, clusterOperator.getDeploymentNamespace(), MESSAGE_COUNT);
-        resourceManager.createResource(extensionContext, teamAOauthClientJob.consumerStrimziOauthTls(oauthClusterName));
+        resourceManager.createResourceWithWait(extensionContext, teamAOauthClientJob.consumerStrimziOauthTls(oauthClusterName));
         ClientUtils.waitForClientSuccess(teamAConsumerName, clusterOperator.getDeploymentNamespace(), MESSAGE_COUNT);
     }
 
@@ -128,7 +128,7 @@ public class OauthAuthorizationIsolatedST extends OauthAbstractST {
         String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
         String consumerGroup = "a-consumer_group-" + clusterName;
 
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(oauthClusterName, topicName, clusterOperator.getDeploymentNamespace()).build());
+        resourceManager.createResourceWithWait(extensionContext, KafkaTopicTemplates.topic(oauthClusterName, topicName, clusterOperator.getDeploymentNamespace()).build());
 
         KafkaOauthClients teamAOauthClientJob = new KafkaOauthClientsBuilder()
             .withNamespaceName(clusterOperator.getDeploymentNamespace())
@@ -146,7 +146,7 @@ public class OauthAuthorizationIsolatedST extends OauthAbstractST {
         LOGGER.info("Sending {} messages to Broker with Topic name {}", MESSAGE_COUNT, topicName);
         LOGGER.info("Producer will not produce messages because authorization Topic will failed. Team A can write only to Topic starting with 'x-'");
 
-        resourceManager.createResource(extensionContext, teamAOauthClientJob.producerStrimziOauthTls(oauthClusterName));
+        resourceManager.createResourceWithWait(extensionContext, teamAOauthClientJob.producerStrimziOauthTls(oauthClusterName));
         JobUtils.waitForJobFailure(teamAProducerName, clusterOperator.getDeploymentNamespace(), 30_000);
         JobUtils.deleteJobWithWait(clusterOperator.getDeploymentNamespace(), teamAProducerName);
 
@@ -158,13 +158,13 @@ public class OauthAuthorizationIsolatedST extends OauthAbstractST {
             .withTopicName(topicXName)
             .build();
 
-        resourceManager.createResource(extensionContext, teamAOauthClientJob.producerStrimziOauthTls(oauthClusterName));
+        resourceManager.createResourceWithWait(extensionContext, teamAOauthClientJob.producerStrimziOauthTls(oauthClusterName));
         JobUtils.waitForJobFailure(teamAProducerName, clusterOperator.getDeploymentNamespace(), 30_000);
         JobUtils.deleteJobWithWait(clusterOperator.getDeploymentNamespace(), teamAProducerName);
 
         // Team A can not create topic starting with 'x-' only write to existing on
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(oauthClusterName, topicXName, clusterOperator.getDeploymentNamespace()).build());
-        resourceManager.createResource(extensionContext, teamAOauthClientJob.producerStrimziOauthTls(oauthClusterName));
+        resourceManager.createResourceWithWait(extensionContext, KafkaTopicTemplates.topic(oauthClusterName, topicXName, clusterOperator.getDeploymentNamespace()).build());
+        resourceManager.createResourceWithWait(extensionContext, teamAOauthClientJob.producerStrimziOauthTls(oauthClusterName));
         ClientUtils.waitForClientSuccess(teamAProducerName, clusterOperator.getDeploymentNamespace(), MESSAGE_COUNT);
 
         String topicAName = TOPIC_A + "-" + clusterName;
@@ -176,7 +176,7 @@ public class OauthAuthorizationIsolatedST extends OauthAbstractST {
             .withTopicName(topicAName)
             .build();
 
-        resourceManager.createResource(extensionContext, teamAOauthClientJob.producerStrimziOauthTls(oauthClusterName));
+        resourceManager.createResourceWithWait(extensionContext, teamAOauthClientJob.producerStrimziOauthTls(oauthClusterName));
         ClientUtils.waitForClientSuccess(teamAProducerName, clusterOperator.getDeploymentNamespace(), MESSAGE_COUNT);
     }
 
@@ -190,7 +190,7 @@ public class OauthAuthorizationIsolatedST extends OauthAbstractST {
         String topicAName = TOPIC_A + "-" + mapWithTestTopics.get(extensionContext.getDisplayName());
         String consumerGroup = "a-consumer_group-" + clusterName;
 
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(oauthClusterName, topicAName, clusterOperator.getDeploymentNamespace()).build());
+        resourceManager.createResourceWithWait(extensionContext, KafkaTopicTemplates.topic(oauthClusterName, topicAName, clusterOperator.getDeploymentNamespace()).build());
 
         KafkaOauthClients teamAOauthClientJob = new KafkaOauthClientsBuilder()
             .withNamespaceName(clusterOperator.getDeploymentNamespace())
@@ -206,7 +206,7 @@ public class OauthAuthorizationIsolatedST extends OauthAbstractST {
             .build();
 
         LOGGER.info("Sending {} messages to Broker with Topic name {}", MESSAGE_COUNT, topicAName);
-        resourceManager.createResource(extensionContext, teamAOauthClientJob.producerStrimziOauthTls(oauthClusterName));
+        resourceManager.createResourceWithWait(extensionContext, teamAOauthClientJob.producerStrimziOauthTls(oauthClusterName));
         ClientUtils.waitForClientSuccess(teamAProducerName, clusterOperator.getDeploymentNamespace(), MESSAGE_COUNT);
 
         // team A client shouldn't be able to consume messages with wrong consumer group
@@ -216,7 +216,7 @@ public class OauthAuthorizationIsolatedST extends OauthAbstractST {
             .withTopicName(topicAName)
             .build();
 
-        resourceManager.createResource(extensionContext, teamAOauthClientJob.consumerStrimziOauthTls(oauthClusterName));
+        resourceManager.createResourceWithWait(extensionContext, teamAOauthClientJob.consumerStrimziOauthTls(oauthClusterName));
         JobUtils.waitForJobFailure(teamAConsumerName, clusterOperator.getDeploymentNamespace(), 30_000);
         JobUtils.deleteJobWithWait(clusterOperator.getDeploymentNamespace(), teamAProducerName);
 
@@ -227,7 +227,7 @@ public class OauthAuthorizationIsolatedST extends OauthAbstractST {
             .withTopicName(topicAName)
             .build();
 
-        resourceManager.createResource(extensionContext, teamAOauthClientJob.producerStrimziOauthTls(oauthClusterName));
+        resourceManager.createResourceWithWait(extensionContext, teamAOauthClientJob.producerStrimziOauthTls(oauthClusterName));
         ClientUtils.waitForClientSuccess(teamAProducerName, clusterOperator.getDeploymentNamespace(), MESSAGE_COUNT);
     }
 
@@ -241,7 +241,7 @@ public class OauthAuthorizationIsolatedST extends OauthAbstractST {
         String teamBProducerName = TEAM_B_PRODUCER_NAME + "-" + clusterName;
         String teamBConsumerName = TEAM_B_CONSUMER_NAME + "-" + clusterName;
 
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(oauthClusterName, topicName, clusterOperator.getDeploymentNamespace()).build());
+        resourceManager.createResourceWithWait(extensionContext, KafkaTopicTemplates.topic(oauthClusterName, topicName, clusterOperator.getDeploymentNamespace()).build());
 
         KafkaOauthClients teamBOauthClientJob = new KafkaOauthClientsBuilder()
             .withNamespaceName(clusterOperator.getDeploymentNamespace())
@@ -258,7 +258,7 @@ public class OauthAuthorizationIsolatedST extends OauthAbstractST {
 
         LOGGER.info("Sending {} messages to Broker with Topic name {}", MESSAGE_COUNT, TOPIC_NAME);
         // Producer will not produce messages because authorization topic will failed. Team A can write only to topic starting with 'x-'
-        resourceManager.createResource(extensionContext, teamBOauthClientJob.producerStrimziOauthTls(oauthClusterName));
+        resourceManager.createResourceWithWait(extensionContext, teamBOauthClientJob.producerStrimziOauthTls(oauthClusterName));
         JobUtils.waitForJobFailure(teamBProducerName, clusterOperator.getDeploymentNamespace(), 30_000);
         JobUtils.deleteJobWithWait(clusterOperator.getDeploymentNamespace(), teamBProducerName);
 
@@ -269,8 +269,8 @@ public class OauthAuthorizationIsolatedST extends OauthAbstractST {
             .withTopicName(TOPIC_B)
             .build();
 
-        resourceManager.createResource(extensionContext, teamBOauthClientJob.producerStrimziOauthTls(oauthClusterName));
-        resourceManager.createResource(extensionContext, teamBOauthClientJob.consumerStrimziOauthTls(oauthClusterName));
+        resourceManager.createResourceWithWait(extensionContext, teamBOauthClientJob.producerStrimziOauthTls(oauthClusterName));
+        resourceManager.createResourceWithWait(extensionContext, teamBOauthClientJob.consumerStrimziOauthTls(oauthClusterName));
         ClientUtils.waitForClientsSuccess(teamBProducerName, teamBConsumerName, clusterOperator.getDeploymentNamespace(), MESSAGE_COUNT);
     }
 
@@ -288,7 +288,7 @@ public class OauthAuthorizationIsolatedST extends OauthAbstractST {
         String topicXName = TOPIC_X + mapWithTestTopics.get(extensionContext.getDisplayName());
         String consumerGroup = "x-" + clusterName;
 
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(oauthClusterName, topicXName, clusterOperator.getDeploymentNamespace()).build());
+        resourceManager.createResourceWithWait(extensionContext, KafkaTopicTemplates.topic(oauthClusterName, topicXName, clusterOperator.getDeploymentNamespace()).build());
 
         KafkaOauthClients teamAOauthClientJob = new KafkaOauthClientsBuilder()
             .withNamespaceName(clusterOperator.getDeploymentNamespace())
@@ -308,7 +308,7 @@ public class OauthAuthorizationIsolatedST extends OauthAbstractST {
             .withTopicName(topicXName)
             .build();
 
-        resourceManager.createResource(extensionContext, teamAOauthClientJob.producerStrimziOauthTls(oauthClusterName));
+        resourceManager.createResourceWithWait(extensionContext, teamAOauthClientJob.producerStrimziOauthTls(oauthClusterName));
         ClientUtils.waitForClientSuccess(teamAProducerName, clusterOperator.getDeploymentNamespace(), MESSAGE_COUNT);
 
         KafkaOauthClients teamBOauthClientJob = new KafkaOauthClientsBuilder()
@@ -324,7 +324,7 @@ public class OauthAuthorizationIsolatedST extends OauthAbstractST {
             .withOauthTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
             .build();
 
-        resourceManager.createResource(extensionContext, teamBOauthClientJob.consumerStrimziOauthTls(oauthClusterName));
+        resourceManager.createResourceWithWait(extensionContext, teamBOauthClientJob.consumerStrimziOauthTls(oauthClusterName));
         ClientUtils.waitForClientSuccess(teamBConsumerName, clusterOperator.getDeploymentNamespace(), MESSAGE_COUNT);
     }
 
@@ -342,12 +342,12 @@ public class OauthAuthorizationIsolatedST extends OauthAbstractST {
         String topicXName = TOPIC_X + mapWithTestTopics.get(extensionContext.getDisplayName());
         LabelSelector kafkaSelector = KafkaResource.getLabelSelector(oauthClusterName, KafkaResources.kafkaStatefulSetName(oauthClusterName));
 
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(oauthClusterName, topicXName, clusterOperator.getDeploymentNamespace()).build());
+        resourceManager.createResourceWithWait(extensionContext, KafkaTopicTemplates.topic(oauthClusterName, topicXName, clusterOperator.getDeploymentNamespace()).build());
 
         LOGGER.info("Verifying that team B is not able write to Topic starting with 'x-' because in Kafka cluster" +
                 "does not have super-users to break authorization rules");
 
-        resourceManager.createResource(extensionContext, KafkaUserTemplates.tlsUser(clusterOperator.getDeploymentNamespace(), oauthClusterName, userName).build());
+        resourceManager.createResourceWithWait(extensionContext, KafkaUserTemplates.tlsUser(clusterOperator.getDeploymentNamespace(), oauthClusterName, userName).build());
 
         KafkaOauthClients teamBOauthClientJob = new KafkaOauthClientsBuilder()
             .withNamespaceName(clusterOperator.getDeploymentNamespace())
@@ -363,7 +363,7 @@ public class OauthAuthorizationIsolatedST extends OauthAbstractST {
             .withClientUserName(userName)
             .build();
 
-        resourceManager.createResource(extensionContext, teamBOauthClientJob.producerStrimziOauthTls(oauthClusterName));
+        resourceManager.createResourceWithWait(extensionContext, teamBOauthClientJob.producerStrimziOauthTls(oauthClusterName));
         JobUtils.waitForJobFailure(teamBProducerName, clusterOperator.getDeploymentNamespace(), 30_000);
         JobUtils.deleteJobWithWait(clusterOperator.getDeploymentNamespace(), teamBProducerName);
 
@@ -384,7 +384,7 @@ public class OauthAuthorizationIsolatedST extends OauthAbstractST {
             .withClientUserName(userName)
             .build();
 
-        resourceManager.createResource(extensionContext, teamAOauthClientJob.consumerStrimziOauthTls(oauthClusterName));
+        resourceManager.createResourceWithWait(extensionContext, teamAOauthClientJob.consumerStrimziOauthTls(oauthClusterName));
         JobUtils.waitForJobFailure(teamAConsumerName, clusterOperator.getDeploymentNamespace(), 30_000);
         JobUtils.deleteJobWithWait(clusterOperator.getDeploymentNamespace(), teamAConsumerName);
 
@@ -403,7 +403,7 @@ public class OauthAuthorizationIsolatedST extends OauthAbstractST {
 
         LOGGER.info("Verifying that team B is able to write to Topic starting with 'x-' and break authorization rule");
 
-        resourceManager.createResource(extensionContext, teamBOauthClientJob.producerStrimziOauthTls(oauthClusterName));
+        resourceManager.createResourceWithWait(extensionContext, teamBOauthClientJob.producerStrimziOauthTls(oauthClusterName));
         ClientUtils.waitForClientSuccess(teamBProducerName, clusterOperator.getDeploymentNamespace(), MESSAGE_COUNT);
 
         LOGGER.info("Verifying that team A is able to write to Topic starting with 'x-' and break authorization rule");
@@ -413,7 +413,7 @@ public class OauthAuthorizationIsolatedST extends OauthAbstractST {
             .withTopicName(topicXName)
             .build();
 
-        resourceManager.createResource(extensionContext, teamAOauthClientJob.consumerStrimziOauthTls(oauthClusterName));
+        resourceManager.createResourceWithWait(extensionContext, teamAOauthClientJob.consumerStrimziOauthTls(oauthClusterName));
         ClientUtils.waitForClientSuccess(teamAConsumerName, clusterOperator.getDeploymentNamespace(), MESSAGE_COUNT);
     }
 
@@ -442,8 +442,8 @@ public class OauthAuthorizationIsolatedST extends OauthAbstractST {
 
         LOGGER.info("Verifying that team A producer is able to send messages to the {} Topic -> the Topic starting with 'x'", topicXName);
 
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(oauthClusterName, topicXName, clusterOperator.getDeploymentNamespace()).build());
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(oauthClusterName, topicAName, clusterOperator.getDeploymentNamespace()).build());
+        resourceManager.createResourceWithWait(extensionContext, KafkaTopicTemplates.topic(oauthClusterName, topicXName, clusterOperator.getDeploymentNamespace()).build());
+        resourceManager.createResourceWithWait(extensionContext, KafkaTopicTemplates.topic(oauthClusterName, topicAName, clusterOperator.getDeploymentNamespace()).build());
 
         KafkaOauthClients teamAOauthClientJob = new KafkaOauthClientsBuilder()
             .withNamespaceName(clusterOperator.getDeploymentNamespace())
@@ -459,7 +459,7 @@ public class OauthAuthorizationIsolatedST extends OauthAbstractST {
             .withOauthTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
             .build();
 
-        resourceManager.createResource(extensionContext, teamAOauthClientJob.producerStrimziOauthTls(oauthClusterName));
+        resourceManager.createResourceWithWait(extensionContext, teamAOauthClientJob.producerStrimziOauthTls(oauthClusterName));
         ClientUtils.waitForClientSuccess(teamAProducerName, clusterOperator.getDeploymentNamespace(), MESSAGE_COUNT);
 
         LOGGER.info("Adding the maxSecondsWithoutReauthentication to Kafka listener with OAuth authentication");
@@ -546,7 +546,7 @@ public class OauthAuthorizationIsolatedST extends OauthAbstractST {
             .withTopicName(topicAName)
             .build();
 
-        resourceManager.createResource(extensionContext, teamAOauthClientJob.producerStrimziOauthTls(oauthClusterName));
+        resourceManager.createResourceWithWait(extensionContext, teamAOauthClientJob.producerStrimziOauthTls(oauthClusterName));
         ClientUtils.waitForClientSuccess(teamAProducerName, clusterOperator.getDeploymentNamespace(), MESSAGE_COUNT);
 
         LOGGER.info("Changing back to the original settings and checking, if the producer will be successful");
@@ -560,7 +560,7 @@ public class OauthAuthorizationIsolatedST extends OauthAbstractST {
             .withDelayMs(1000)
             .build();
 
-        resourceManager.createResource(extensionContext, teamAOauthClientJob.producerStrimziOauthTls(oauthClusterName));
+        resourceManager.createResourceWithWait(extensionContext, teamAOauthClientJob.producerStrimziOauthTls(oauthClusterName));
         ClientUtils.waitForClientSuccess(teamAProducerName, clusterOperator.getDeploymentNamespace(), MESSAGE_COUNT);
 
         LOGGER.info("Changing configuration of Kafka back to it's original form");
@@ -591,11 +591,11 @@ public class OauthAuthorizationIsolatedST extends OauthAbstractST {
         TestStorage testStorage = new TestStorage(extensionContext);
 
         // we have to create keycloak, team-a-client and team-b-client secret from `infra-namespace` to the new namespace
-        resourceManager.createResource(extensionContext, SecretUtils.createCopyOfSecret(clusterOperator.getDeploymentNamespace(), testStorage.getNamespaceName(), KeycloakInstance.KEYCLOAK_SECRET_NAME).build());
-        resourceManager.createResource(extensionContext, SecretUtils.createCopyOfSecret(clusterOperator.getDeploymentNamespace(), testStorage.getNamespaceName(), TEAM_A_CLIENT_SECRET).build());
-        resourceManager.createResource(extensionContext, SecretUtils.createCopyOfSecret(clusterOperator.getDeploymentNamespace(), testStorage.getNamespaceName(), TEAM_B_CLIENT_SECRET).build());
+        resourceManager.createResourceWithWait(extensionContext, SecretUtils.createCopyOfSecret(clusterOperator.getDeploymentNamespace(), testStorage.getNamespaceName(), KeycloakInstance.KEYCLOAK_SECRET_NAME).build());
+        resourceManager.createResourceWithWait(extensionContext, SecretUtils.createCopyOfSecret(clusterOperator.getDeploymentNamespace(), testStorage.getNamespaceName(), TEAM_A_CLIENT_SECRET).build());
+        resourceManager.createResourceWithWait(extensionContext, SecretUtils.createCopyOfSecret(clusterOperator.getDeploymentNamespace(), testStorage.getNamespaceName(), TEAM_B_CLIENT_SECRET).build());
 
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 1, 1)
+        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 1, 1)
             .editSpec()
                 .editKafka()
                     .withListeners(OauthAbstractST.BUILD_OAUTH_TLS_LISTENER.apply(keycloakInstance))
@@ -616,15 +616,15 @@ public class OauthAuthorizationIsolatedST extends OauthAbstractST {
             .endSpec()
             .build());
 
-        resourceManager.createResource(extensionContext, KafkaUserTemplates.tlsUser(testStorage.getNamespaceName(), testStorage.getClusterName(), TEAM_A_CLIENT).build());
-        resourceManager.createResource(extensionContext, KafkaUserTemplates.tlsUser(testStorage.getNamespaceName(), testStorage.getClusterName(), TEAM_B_CLIENT).build());
+        resourceManager.createResourceWithWait(extensionContext, KafkaUserTemplates.tlsUser(testStorage.getNamespaceName(), testStorage.getClusterName(), TEAM_A_CLIENT).build());
+        resourceManager.createResourceWithWait(extensionContext, KafkaUserTemplates.tlsUser(testStorage.getNamespaceName(), testStorage.getClusterName(), TEAM_B_CLIENT).build());
 
         final String teamAProducerName = TEAM_A_PRODUCER_NAME + "-" + testStorage.getClusterName();
         final String teamAConsumerName = TEAM_A_CONSUMER_NAME + "-" + testStorage.getClusterName();
         final String topicName = TOPIC_A + "-" + testStorage.getTopicName();
         final String consumerGroup = "a-consumer_group-" + testStorage.getConsumerName();
 
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(testStorage.getClusterName(), topicName, testStorage.getNamespaceName()).build());
+        resourceManager.createResourceWithWait(extensionContext, KafkaTopicTemplates.topic(testStorage.getClusterName(), topicName, testStorage.getNamespaceName()).build());
 
         KafkaOauthClients teamAOauthClientJob = new KafkaOauthClientsBuilder()
             .withNamespaceName(testStorage.getNamespaceName())
@@ -639,9 +639,9 @@ public class OauthAuthorizationIsolatedST extends OauthAbstractST {
             .withOauthTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
             .build();
 
-        resourceManager.createResource(extensionContext, teamAOauthClientJob.producerStrimziOauthTls(testStorage.getClusterName()));
+        resourceManager.createResourceWithWait(extensionContext, teamAOauthClientJob.producerStrimziOauthTls(testStorage.getClusterName()));
         ClientUtils.waitForClientSuccess(teamAProducerName, testStorage.getNamespaceName(), MESSAGE_COUNT);
-        resourceManager.createResource(extensionContext, teamAOauthClientJob.consumerStrimziOauthTls(testStorage.getClusterName()));
+        resourceManager.createResourceWithWait(extensionContext, teamAOauthClientJob.consumerStrimziOauthTls(testStorage.getClusterName()));
         ClientUtils.waitForClientSuccess(teamAConsumerName, testStorage.getNamespaceName(), MESSAGE_COUNT);
     }
 
@@ -651,7 +651,7 @@ public class OauthAuthorizationIsolatedST extends OauthAbstractST {
 
         keycloakInstance.setRealm(TEST_REALM, true);
 
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(oauthClusterName, 1, 1)
+        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(oauthClusterName, 1, 1)
             .editMetadata()
                 .withNamespace(clusterOperator.getDeploymentNamespace())
             .endMetadata()
@@ -677,7 +677,7 @@ public class OauthAuthorizationIsolatedST extends OauthAbstractST {
 
         LOGGER.info("Setting producer and consumer properties");
 
-        resourceManager.createResource(extensionContext, KafkaUserTemplates.tlsUser(clusterOperator.getDeploymentNamespace(), oauthClusterName, TEAM_A_CLIENT).build());
-        resourceManager.createResource(extensionContext, KafkaUserTemplates.tlsUser(clusterOperator.getDeploymentNamespace(), oauthClusterName, TEAM_B_CLIENT).build());
+        resourceManager.createResourceWithWait(extensionContext, KafkaUserTemplates.tlsUser(clusterOperator.getDeploymentNamespace(), oauthClusterName, TEAM_A_CLIENT).build());
+        resourceManager.createResourceWithWait(extensionContext, KafkaUserTemplates.tlsUser(clusterOperator.getDeploymentNamespace(), oauthClusterName, TEAM_B_CLIENT).build());
     }
 }

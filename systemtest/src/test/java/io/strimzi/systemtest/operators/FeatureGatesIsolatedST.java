@@ -134,12 +134,12 @@ public class FeatureGatesIsolatedST extends AbstractST {
             .endSpec()
             .build();
 
-        resourceManager.createResource(extensionContext,
+        resourceManager.createResourceWithWait(extensionContext,
             kafkaNodePool,
             kafka
         );
 
-        resourceManager.createResource(extensionContext,
+        resourceManager.createResourceWithWait(extensionContext,
             KafkaUserTemplates.tlsUser(testStorage).build()
         );
 
@@ -156,8 +156,8 @@ public class FeatureGatesIsolatedST extends AbstractST {
                 .withNamespaceName(INFRA_NAMESPACE)
                 .build();
 
-        resourceManager.createResource(extensionContext, kafkaClients.producerTlsStrimzi(clusterName));
-        resourceManager.createResource(extensionContext, kafkaClients.consumerTlsStrimzi(clusterName));
+        resourceManager.createResourceWithWait(extensionContext, kafkaClients.producerTlsStrimzi(clusterName));
+        resourceManager.createResourceWithWait(extensionContext, kafkaClients.consumerTlsStrimzi(clusterName));
 
         // Check that there is no ZooKeeper
         Map<String, String> zkPods = PodUtils.podSnapshot(INFRA_NAMESPACE, zkSelector);
@@ -197,9 +197,9 @@ public class FeatureGatesIsolatedST extends AbstractST {
                 .createInstallation()
                 .runInstallation();
 
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), 3, 1).build());
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(testStorage).build());
-        resourceManager.createResource(extensionContext, KafkaConnectTemplates.kafkaConnectWithFilePlugin(testStorage.getClusterName(), clusterOperator.getDeploymentNamespace(), connectReplicas)
+        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), 3, 1).build());
+        resourceManager.createResourceWithWait(extensionContext, KafkaTopicTemplates.topic(testStorage).build());
+        resourceManager.createResourceWithWait(extensionContext, KafkaConnectTemplates.kafkaConnectWithFilePlugin(testStorage.getClusterName(), clusterOperator.getDeploymentNamespace(), connectReplicas)
                 .editMetadata()
                     .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
                 .endMetadata()
@@ -210,7 +210,7 @@ public class FeatureGatesIsolatedST extends AbstractST {
                     .addToConfig("value.converter", "org.apache.kafka.connect.storage.StringConverter")
                 .endSpec()
                 .build());
-        resourceManager.createResource(extensionContext, KafkaConnectorTemplates.kafkaConnector(testStorage.getClusterName())
+        resourceManager.createResourceWithWait(extensionContext, KafkaConnectorTemplates.kafkaConnector(testStorage.getClusterName())
                 .editMetadata()
                     .withNamespace(testStorage.getNamespaceName())
                 .endMetadata()
@@ -239,7 +239,7 @@ public class FeatureGatesIsolatedST extends AbstractST {
         String connectorPodName = kubeClient().listPods(testStorage.getNamespaceName(), connectLabelSelector).get(0).getMetadata().getName();
 
         // we are sending messages continuously throughout the test to check that connector is working
-        resourceManager.createResource(extensionContext, clients.producerStrimzi());
+        resourceManager.createResourceWithWait(extensionContext, clients.producerStrimzi());
 
         LOGGER.info("Verifying that KafkaConnector is able to sink the messages to the file-sink file");
         KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(testStorage.getNamespaceName(), connectorPodName, Constants.DEFAULT_SINK_FILE_PATH, "Hello-world");

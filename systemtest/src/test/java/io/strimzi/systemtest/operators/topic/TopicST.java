@@ -95,7 +95,7 @@ public class TopicST extends AbstractST {
         int topicPartitions = 5;
 
         KafkaTopic kafkaTopic = KafkaTopicTemplates.topic(KAFKA_CLUSTER_NAME, topicName, topicPartitions, topicReplicationFactor, 1, clusterOperator.getDeploymentNamespace()).build();
-        resourceManager.createResource(extensionContext, false, kafkaTopic);
+        resourceManager.createResourceWithoutWait(extensionContext, kafkaTopic);
 
         assertThat("Topic exists in Kafka CR (Kubernetes)", hasTopicInCRK8s(kafkaTopic, topicName));
         assertThat("Topic doesn't exists in Kafka itself", !hasTopicInKafka(topicName, KAFKA_CLUSTER_NAME));
@@ -116,7 +116,7 @@ public class TopicST extends AbstractST {
         final String newTopicName = "topic-example-new";
 
         kafkaTopic = KafkaTopicTemplates.topic(KAFKA_CLUSTER_NAME, newTopicName, topicPartitions, topicReplicationFactor, clusterOperator.getDeploymentNamespace()).build();
-        resourceManager.createResource(extensionContext, kafkaTopic);
+        resourceManager.createResourceWithWait(extensionContext, kafkaTopic);
 
         assertThat("Topic exists in Kafka itself", hasTopicInKafka(newTopicName, KAFKA_CLUSTER_NAME));
         assertThat("Topic exists in Kafka CR (Kubernetes)", hasTopicInCRK8s(kafkaTopic, newTopicName));
@@ -150,7 +150,7 @@ public class TopicST extends AbstractST {
         String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
 
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3, 3)
+        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3, 3)
             .editMetadata()
                 .withNamespace(clusterOperator.getDeploymentNamespace())
             .endMetadata()
@@ -215,7 +215,7 @@ public class TopicST extends AbstractST {
     void testCreateDeleteCreate(ExtensionContext extensionContext) throws InterruptedException {
         String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3, 3)
+        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3, 3)
             .editMetadata()
                 .withNamespace(clusterOperator.getDeploymentNamespace())
             .endMetadata()
@@ -249,7 +249,7 @@ public class TopicST extends AbstractST {
 
             String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
 
-            resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(clusterName, topicName, clusterOperator.getDeploymentNamespace())
+            resourceManager.createResourceWithWait(extensionContext, KafkaTopicTemplates.topic(clusterName, topicName, clusterOperator.getDeploymentNamespace())
                 .editSpec()
                     .withReplicas(3)
                 .endSpec()
@@ -273,7 +273,7 @@ public class TopicST extends AbstractST {
                 Thread.sleep(2_000);
                 long t0 = System.currentTimeMillis();
                 LOGGER.info("Iteration {}: Recreating {}", i, topicName);
-                resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(clusterName, topicName, clusterOperator.getDeploymentNamespace())
+                resourceManager.createResourceWithWait(extensionContext, KafkaTopicTemplates.topic(clusterName, topicName, clusterOperator.getDeploymentNamespace())
                     .editSpec()
                         .withReplicas(3)
                     .endSpec()
@@ -313,7 +313,7 @@ public class TopicST extends AbstractST {
 
         LOGGER.info("Trying to send messages to non-existing Topic: {}", testStorage.getTopicName());
 
-        resourceManager.createResource(extensionContext, clients.producerStrimzi(), clients.consumerStrimzi());
+        resourceManager.createResourceWithWait(extensionContext, clients.producerStrimzi(), clients.consumerStrimzi());
         ClientUtils.waitForClientsSuccess(testStorage);
 
         LOGGER.info("Checking if {} is on Topic list", testStorage.getTopicName());
@@ -335,7 +335,7 @@ public class TopicST extends AbstractST {
     void testDeleteTopicEnableFalse(ExtensionContext extensionContext) {
         final TestStorage testStorage = new TestStorage(extensionContext, clusterOperator.getDeploymentNamespace());
 
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 1, 1)
+        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 1, 1)
             .editMetadata()
                 .withNamespace(clusterOperator.getDeploymentNamespace())
             .endMetadata()
@@ -355,7 +355,7 @@ public class TopicST extends AbstractST {
             .withMessageCount(testStorage.getMessageCount())
             .build();
 
-        resourceManager.createResource(extensionContext, clients.producerStrimzi());
+        resourceManager.createResourceWithWait(extensionContext, clients.producerStrimzi());
         ClientUtils.waitForProducerClientSuccess(testStorage);
 
         String topicUid = KafkaTopicUtils.topicSnapshot(clusterOperator.getDeploymentNamespace(), testStorage.getTopicName());
@@ -369,7 +369,7 @@ public class TopicST extends AbstractST {
         KafkaTopicUtils.waitForKafkaTopicCreation(clusterOperator.getDeploymentNamespace(), testStorage.getTopicName());
         LOGGER.info("KafkaTopic: {}/{} recreated", clusterOperator.getDeploymentNamespace(), testStorage.getTopicName());
 
-        resourceManager.createResource(extensionContext, clients.consumerStrimzi());
+        resourceManager.createResourceWithWait(extensionContext, clients.consumerStrimzi());
         ClientUtils.waitForConsumerClientSuccess(testStorage);
     }
 
@@ -385,7 +385,7 @@ public class TopicST extends AbstractST {
             .endSpec()
             .build();
 
-        resourceManager.createResource(extensionContext, kafkaTopic);
+        resourceManager.createResourceWithWait(extensionContext, kafkaTopic);
         KafkaTopicUtils.waitForKafkaTopicReady(clusterOperator.getDeploymentNamespace(), topicName);
 
         KafkaTopicResource.replaceTopicResourceInSpecificNamespace(topicName, t -> {
@@ -403,7 +403,7 @@ public class TopicST extends AbstractST {
 
         KafkaTopic newKafkaTopic = KafkaTopicTemplates.topic(KAFKA_CLUSTER_NAME, newTopicName, 1, 1, clusterOperator.getDeploymentNamespace()).build();
 
-        resourceManager.createResource(extensionContext, newKafkaTopic);
+        resourceManager.createResourceWithWait(extensionContext, newKafkaTopic);
 
         assertThat("Topic exists in Kafka itself", hasTopicInKafka(topicName, KAFKA_CLUSTER_NAME));
         assertThat("Topic exists in Kafka CR (Kubernetes)", hasTopicInCRK8s(kafkaTopic, topicName));
@@ -458,7 +458,7 @@ public class TopicST extends AbstractST {
         int initialPartitions = 5;
         int decreasePartitions = 1;
 
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(KAFKA_CLUSTER_NAME, topicName, initialPartitions, initialReplicas, clusterOperator.getDeploymentNamespace()).build());
+        resourceManager.createResourceWithWait(extensionContext, KafkaTopicTemplates.topic(KAFKA_CLUSTER_NAME, topicName, initialPartitions, initialReplicas, clusterOperator.getDeploymentNamespace()).build());
         KafkaTopicUtils.waitForKafkaTopicReady(clusterOperator.getDeploymentNamespace(), topicName);
 
         LOGGER.info("Found the following Topics:");
@@ -552,7 +552,7 @@ public class TopicST extends AbstractST {
     void testKafkaTopicChangingMinInSyncReplicas(ExtensionContext extensionContext) throws InterruptedException {
         String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
 
-        resourceManager.createResource(extensionContext, KafkaTopicTemplates.topic(KAFKA_CLUSTER_NAME, topicName, 5, clusterOperator.getDeploymentNamespace()).build());
+        resourceManager.createResourceWithWait(extensionContext, KafkaTopicTemplates.topic(KAFKA_CLUSTER_NAME, topicName, 5, clusterOperator.getDeploymentNamespace()).build());
         KafkaTopicUtils.waitForKafkaTopicReady(clusterOperator.getDeploymentNamespace(), topicName);
         String invalidValue = "x";
         String reason = "InvalidConfigurationException";
@@ -601,7 +601,7 @@ public class TopicST extends AbstractST {
         final int topicOperatorReconciliationSeconds = 10;
 
         // Negative scenario: creating topic without any labels and make sure that TO can't handle this topic
-        resourceManager.createResource(extensionContext,
+        resourceManager.createResourceWithWait(extensionContext,
             ScraperTemplates.scraperPod(namespaceName, scraperName).build(),
             KafkaTemplates.kafkaEphemeral(clusterName, 3)
                 .editSpec()
@@ -616,7 +616,7 @@ public class TopicST extends AbstractST {
         final String scraperPodName =  kubeClient().listPodsByPrefixInName(namespaceName, scraperName).get(0).getMetadata().getName();
 
         LOGGER.info("Creating KafkaTopic: {}/{} in without any label", namespaceName, kafkaTopicName);
-        resourceManager.createResource(extensionContext, false, KafkaTopicTemplates.topic(clusterName, kafkaTopicName, 1, 1, 1, namespaceName)
+        resourceManager.createResourceWithoutWait(extensionContext, KafkaTopicTemplates.topic(clusterName, kafkaTopicName, 1, 1, 1, namespaceName)
             .editMetadata()
                 .withLabels(null)
             .endMetadata().build()
@@ -707,7 +707,7 @@ public class TopicST extends AbstractST {
 
         LOGGER.info("Deploying shared Kafka: {}/{} across all test cases", clusterOperator.getDeploymentNamespace(), KAFKA_CLUSTER_NAME);
 
-        resourceManager.createResource(extensionContext, KafkaTemplates.kafkaEphemeral(KAFKA_CLUSTER_NAME, 3, 1)
+        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(KAFKA_CLUSTER_NAME, 3, 1)
             .editMetadata()
                 .withNamespace(clusterOperator.getDeploymentNamespace())
             .endMetadata()
