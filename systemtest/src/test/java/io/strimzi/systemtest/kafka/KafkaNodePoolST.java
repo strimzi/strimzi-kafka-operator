@@ -11,6 +11,7 @@ import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.nodepool.KafkaNodePool;
 import io.strimzi.api.kafka.model.nodepool.KafkaNodePoolBuilder;
+import io.strimzi.api.kafka.model.nodepool.ProcessRoles;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
@@ -108,6 +109,10 @@ public class KafkaNodePoolST extends AbstractST {
                 .withName(kafkaNodePoolName)
                 .addToLabels(Labels.STRIMZI_CLUSTER_LABEL, testStorage.getClusterName())
             .endMetadata()
+            .editOrNewSpec()
+                .removeFromRoles(ProcessRoles.CONTROLLER)
+                .addToRoles(ProcessRoles.BROKER)
+            .endSpec()
             .build();
 
         resourceManager.createResource(extensionContext,

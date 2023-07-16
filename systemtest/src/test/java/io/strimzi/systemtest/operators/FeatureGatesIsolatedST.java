@@ -320,7 +320,12 @@ public class FeatureGatesIsolatedST extends AbstractST {
             .endMetadata()
             .build();
         KafkaNodePool kafkaNodePoolCr = KafkaNodePoolResource.convertKafkaResourceToKafkaNodePool(kafkaCr);
-        kafkaNodePoolCr.getMetadata().getLabels().put(Labels.STRIMZI_CLUSTER_LABEL, testStorage.getClusterName());
+        kafkaNodePoolCr = new KafkaNodePoolBuilder(kafkaNodePoolCr)
+            .editOrNewSpec()
+                .addToRoles(ProcessRoles.BROKER)
+                .removeFromRoles(ProcessRoles.CONTROLLER)
+            .endSpec()
+            .build();
 
         resourceManager.createResource(extensionContext, kafkaNodePoolCr);
         resourceManager.createResource(extensionContext, kafkaCr);
