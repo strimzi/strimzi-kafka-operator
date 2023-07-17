@@ -974,40 +974,6 @@ class MirrorMaker2IsolatedST extends AbstractST {
         final String customSecretSource = "custom-secret-source";
         final String customSecretTarget = "custom-secret-target";
 
-        // Deploy source kafka with tls listener and SCRAM-SHA authentication
-        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaPersistent(kafkaClusterSourceName, 1, 1)
-            .editSpec()
-                .editKafka()
-                    .withListeners(
-                        new GenericKafkaListenerBuilder()
-                            .withName(Constants.TLS_LISTENER_DEFAULT_NAME)
-                            .withPort(9093)
-                            .withType(KafkaListenerType.INTERNAL)
-                            .withTls(true)
-                            .withAuth(new KafkaListenerAuthenticationScramSha512())
-                            .build()
-                    )
-                .endKafka()
-            .endSpec()
-            .build());
-
-        // Deploy target kafka with tls listeners with tls and SCRAM-SHA authentication
-        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaPersistent(kafkaClusterTargetName, 1, 1)
-            .editSpec()
-                .editKafka()
-                    .withListeners(
-                        new GenericKafkaListenerBuilder()
-                            .withName(Constants.TLS_LISTENER_DEFAULT_NAME)
-                            .withPort(9093)
-                            .withType(KafkaListenerType.INTERNAL)
-                            .withTls(true)
-                            .withAuth(new KafkaListenerAuthenticationScramSha512())
-                            .build()
-                    )
-                .endKafka()
-            .endSpec()
-            .build());
-
         // Deploy source and target kafkas with tls listener and SCRAM-SHA authentication
         resourceManager.createResourceWithWait(extensionContext,
             KafkaTemplates.kafkaPersistent(kafkaClusterSourceName, 1, 1)
@@ -1019,7 +985,8 @@ class MirrorMaker2IsolatedST extends AbstractST {
                                 .withPort(9093)
                                 .withType(KafkaListenerType.INTERNAL)
                                 .withTls(true)
-                                .withAuth(new KafkaListenerAuthenticationScramSha512())
+                                .withNewKafkaListenerAuthenticationScramSha512Auth()
+                                .endKafkaListenerAuthenticationScramSha512Auth()
                                 .build()
                         )
                     .endKafka()
@@ -1034,7 +1001,8 @@ class MirrorMaker2IsolatedST extends AbstractST {
                                 .withPort(9093)
                                 .withType(KafkaListenerType.INTERNAL)
                                 .withTls(true)
-                                .withAuth(new KafkaListenerAuthenticationScramSha512())
+                                .withNewKafkaListenerAuthenticationScramSha512Auth()
+                                .endKafkaListenerAuthenticationScramSha512Auth()
                                 .build()
                         )
                     .endKafka()
@@ -1121,11 +1089,11 @@ class MirrorMaker2IsolatedST extends AbstractST {
 
         LOGGER.info("Changing KafkaUser sha-password on MirrorMaker2 Source and make sure it rolled");
 
-        KafkaUserUtils.modifyKafkaUserPasswordWithNewSecret(testStorage.getNamespaceName(), kafkaUserSourceName, customSecretSource, "c291cmNlLXBhc3N3b3Jk", resourceManager, extensionContext);
+        KafkaUserUtils.modifyKafkaUserPasswordWithNewSecret(testStorage.getNamespaceName(), kafkaUserSourceName, customSecretSource, "c291cmNlLXBhc3N3b3Jk", extensionContext);
         RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), mmSelector, 1, mmSnapshot);
         mmSnapshot = PodUtils.podSnapshot(testStorage.getNamespaceName(), mmSelector);
 
-        KafkaUserUtils.modifyKafkaUserPasswordWithNewSecret(testStorage.getNamespaceName(), kafkaUserTargetName, customSecretTarget, "dGFyZ2V0LXBhc3N3b3Jk", resourceManager, extensionContext);
+        KafkaUserUtils.modifyKafkaUserPasswordWithNewSecret(testStorage.getNamespaceName(), kafkaUserTargetName, customSecretTarget, "dGFyZ2V0LXBhc3N3b3Jk", extensionContext);
         RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), mmSelector, 1, mmSnapshot);
 
         RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), mmSelector, 1, mmSnapshot);

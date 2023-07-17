@@ -192,19 +192,17 @@ public class KafkaUserUtils {
             });
     }
 
-    public static void modifyKafkaUserPasswordWithNewSecret(
-        String ns, String kafkaUserResourceName, String customSecretSource, String customPassword,
-        ResourceManager resourceManager, ExtensionContext extensionContext) {
+    public static void modifyKafkaUserPasswordWithNewSecret(String ns, String kafkaUserResourceName, String customSecretSource, String customPassword, ExtensionContext extensionContext) {
 
         Secret userDefinedSecret = new SecretBuilder()
             .withNewMetadata()
-            .withName(customSecretSource)
-            .withNamespace(ns)
+                .withName(customSecretSource)
+                .withNamespace(ns)
             .endMetadata()
             .addToData("password", customPassword)
             .build();
 
-        resourceManager.createResource(extensionContext, userDefinedSecret);
+        ResourceManager.getInstance().createResourceWithWait(extensionContext, userDefinedSecret);
 
         KafkaUserResource.replaceUserResourceInSpecificNamespace(kafkaUserResourceName, ku -> {
 
@@ -213,8 +211,9 @@ public class KafkaUserUtils {
                     .withPassword(
                         new PasswordBuilder()
                             .editOrNewValueFrom()
-                            .withNewSecretKeyRef("password", customSecretSource, false)
-                            .and().build()
+                                .withNewSecretKeyRef("password", customSecretSource, false)
+                            .endValueFrom()
+                            .build()
                     )
                     .build()
             );
