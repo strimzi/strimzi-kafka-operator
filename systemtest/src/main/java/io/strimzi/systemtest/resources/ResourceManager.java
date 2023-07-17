@@ -335,7 +335,7 @@ public class ResourceManager {
     }
 
     @SafeVarargs
-    public final <T extends HasMetadata> void updateResource(ExtensionContext testContext, T... resources) {
+    public final <T extends HasMetadata> void updateResource(T... resources) {
         for (T resource : resources) {
             ResourceType<T> type = findResourceType(resource);
             type.update(resource);
