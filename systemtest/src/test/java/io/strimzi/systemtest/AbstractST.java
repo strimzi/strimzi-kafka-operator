@@ -531,6 +531,7 @@ public abstract class AbstractST implements TestSeparator {
     protected synchronized void afterAllMayOverride(ExtensionContext extensionContext) throws Exception {
         if (!Environment.SKIP_TEARDOWN) {
             ResourceManager.getInstance().deleteResources(extensionContext);
+            KubeClusterResource.getInstance().deleteAllSetNamespaces();
         }
     }
 

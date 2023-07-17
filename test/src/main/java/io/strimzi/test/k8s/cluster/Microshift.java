@@ -22,7 +22,6 @@ import java.util.List;
 public class Microshift implements KubeCluster {
 
     public static final String CMD = "oc";
-    private static final String OLM_NAMESPACE = "openshift-operators";
     private static final Logger LOGGER = LogManager.getLogger(Microshift.class);
 
     @Override
@@ -54,10 +53,5 @@ public class Microshift implements KubeCluster {
 
     public String toString() {
         return "microshift";
-    }
-
-    @Override
-    public String defaultOlmNamespace() {
-        return OLM_NAMESPACE;
     }
 }

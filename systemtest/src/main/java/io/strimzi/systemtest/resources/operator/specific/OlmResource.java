@@ -8,7 +8,6 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
-import io.fabric8.openshift.api.model.operatorhub.v1.OperatorGroup;
 import io.fabric8.openshift.api.model.operatorhub.v1.OperatorGroupBuilder;
 import io.fabric8.openshift.api.model.operatorhub.v1alpha1.Subscription;
 import io.fabric8.openshift.api.model.operatorhub.v1alpha1.SubscriptionBuilder;
@@ -56,10 +55,7 @@ public class OlmResource implements SpecificResourceType {
     public void create() {
         ResourceManager.STORED_RESOURCES.computeIfAbsent(olmConfiguration.getExtensionContext().getDisplayName(), k -> new Stack<>());
 
-        // Apply Operator Group in OLM namespace if the default OLM namespace is missing
-        if (!KubeClusterResource.getInstance().getDefaultOlmNamespace().equals(olmConfiguration.getNamespaceName())) {
-            createOperatorGroup();
-        }
+        createOperatorGroup();
 
         ResourceManager.STORED_RESOURCES.get(olmConfiguration.getExtensionContext().getDisplayName()).push(new ResourceItem(this::deleteCSV));
 
@@ -93,18 +89,22 @@ public class OlmResource implements SpecificResourceType {
      * Creates OperatorGroup in specific namespace
      */
     private void createOperatorGroup() {
-        OperatorGroup operatorGroup = new OperatorGroupBuilder()
+        OperatorGroupBuilder operatorGroup = new OperatorGroupBuilder()
             .editOrNewMetadata()
                 .withName("strimzi-group")
                 .withNamespace(olmConfiguration.getNamespaceName())
                 .withLabels(Collections.singletonMap("app", "strimzi"))
-            .endMetadata()
-            .editOrNewSpec()
-                .withTargetNamespaces(olmConfiguration.getNamespaceName())
-            .endSpec()
-            .build();
+            .endMetadata();
 
-        ResourceManager.getInstance().createResourceWithWait(olmConfiguration.getExtensionContext(), operatorGroup);
+        // single or multiple specific namespaces to watch
+        if (!olmConfiguration.getNamespaceToWatch().equals(Constants.WATCH_ALL_NAMESPACES)) {
+            operatorGroup
+                .editOrNewSpec()
+                    .withTargetNamespaces(olmConfiguration.getNamespaceToWatch())
+                .endSpec();
+        }
+
+        ResourceManager.getInstance().createResourceWithWait(olmConfiguration.getExtensionContext(), operatorGroup.build());
     }
 
     /**

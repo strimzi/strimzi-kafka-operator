@@ -29,16 +29,6 @@ public class Oc extends BaseCmdKubeClient<Oc> {
     }
 
     @Override
-    public String defaultOlmNamespace() {
-        return OpenShift.OLM_NAMESPACE;
-    }
-
-    @Override
-    public String defaultOlmSourceNamespace() {
-        return OpenShift.OLM_SOURCE_NAMESPACE;
-    }
-
-    @Override
     public Oc namespace(String namespace) {
         return new Oc(namespace);
     }

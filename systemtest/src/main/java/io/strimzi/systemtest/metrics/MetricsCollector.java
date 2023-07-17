@@ -170,16 +170,16 @@ public class MetricsCollector {
             case KafkaConnect:
                 return KafkaConnectResource.getLabelSelector(componentName, KafkaConnectResources.deploymentName(componentName));
             case KafkaExporter:
-                return kubeClient(namespaceName).getDeploymentSelectors(KafkaExporterResources.deploymentName(componentName));
+                return kubeClient().getDeploymentSelectors(namespaceName, KafkaExporterResources.deploymentName(componentName));
             case KafkaMirrorMaker2:
                 return KafkaMirrorMaker2Resource.getLabelSelector(componentName, KafkaMirrorMaker2Resources.deploymentName(componentName));
             case UserOperator:
             case TopicOperator:
-                return kubeClient(namespaceName).getDeploymentSelectors(KafkaResources.entityOperatorDeploymentName(componentName));
+                return kubeClient().getDeploymentSelectors(namespaceName, KafkaResources.entityOperatorDeploymentName(componentName));
             case ClusterOperator:
-                return kubeClient(namespaceName).getDeploymentSelectors(componentName);
+                return kubeClient().getDeploymentSelectors(namespaceName, componentName);
             case KafkaBridge:
-                return kubeClient(namespaceName).getDeploymentSelectors(KafkaBridgeResources.deploymentName(componentName));
+                return kubeClient().getDeploymentSelectors(namespaceName, KafkaBridgeResources.deploymentName(componentName));
             default:
                 return new LabelSelector();
         }

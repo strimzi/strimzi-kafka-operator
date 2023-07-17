@@ -17,6 +17,7 @@ import java.util.List;
 public class OlmConfiguration {
     private ExtensionContext extensionContext;
     private String namespaceName;
+    private String namespaceToWatch;
     private String featureGates = Environment.STRIMZI_FEATURE_GATES;
     private String olmAppBundlePrefix = Environment.OLM_APP_BUNDLE_PREFIX;
     private String olmOperatorName = Environment.OLM_OPERATOR_NAME;
@@ -48,6 +49,14 @@ public class OlmConfiguration {
 
     public String getNamespaceName() {
         return namespaceName;
+    }
+
+    public void setNamespaceToWatch(String namespaceToWatch) {
+        this.namespaceToWatch = namespaceToWatch;
+    }
+
+    public String getNamespaceToWatch() {
+        return namespaceToWatch;
     }
 
     public void setOlmInstallationStrategy(OlmInstallationStrategy olmInstallationStrategy) {

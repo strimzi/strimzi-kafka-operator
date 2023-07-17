@@ -362,10 +362,6 @@ public class KubeClusterResource {
         return kubeCluster;
     }
 
-    public String getDefaultOlmNamespace() {
-        return cluster().defaultOlmNamespace();
-    }
-
     public boolean isOpenShift() {
         return kubeClusterResource.cluster() instanceof OpenShift;
     }
