@@ -31,6 +31,7 @@ import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaConnectTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaConnectorTemplates;
+import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaUserTemplates;
@@ -316,19 +317,25 @@ public class FeatureGatesIsolatedST extends AbstractST {
         LOGGER.info("Deploying Kafka Cluster: {}/{} controlled by KafkaNodePool: {}", testStorage.getNamespaceName(), testStorage.getClusterName(), testStorage.getKafkaNodePoolName());
         Kafka kafkaCr = KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), 3, 1)
             .editOrNewMetadata()
+                .withNamespace(testStorage.getNamespaceName())
                 .addToAnnotations(Annotations.ANNO_STRIMZI_IO_NODE_POOLS, "enabled")
             .endMetadata()
             .build();
-        KafkaNodePool kafkaNodePoolCr = KafkaNodePoolResource.convertKafkaResourceToKafkaNodePool(kafkaCr);
-        kafkaNodePoolCr = new KafkaNodePoolBuilder(kafkaNodePoolCr)
+
+        KafkaNodePool kafkaNodePoolCr =  KafkaNodePoolTemplates.defaultKafkaNodePool(testStorage.getKafkaNodePoolName(), testStorage.getClusterName(), 3)
+            .editOrNewMetadata()
+                .withNamespace(testStorage.getNamespaceName())
+            .endMetadata()
             .editOrNewSpec()
                 .addToRoles(ProcessRoles.BROKER)
-                .removeFromRoles(ProcessRoles.CONTROLLER)
+                .withStorage(kafkaCr.getSpec().getKafka().getStorage())
+                .withJvmOptions(kafkaCr.getSpec().getKafka().getJvmOptions())
+                .withResources(kafkaCr.getSpec().getKafka().getResources())
             .endSpec()
             .build();
 
-        resourceManager.createResource(extensionContext, kafkaNodePoolCr);
-        resourceManager.createResource(extensionContext, kafkaCr);
+        resourceManager.createResourceWithWait(extensionContext, kafkaNodePoolCr);
+        resourceManager.createResourceWithWait(extensionContext, kafkaCr);
 
         // setup clients
         KafkaClients clients = new KafkaClientsBuilder()
@@ -342,7 +349,7 @@ public class FeatureGatesIsolatedST extends AbstractST {
             .build();
 
         LOGGER.info("Producing and Consuming messages with clients: {}, {} in Namespace {}", testStorage.getProducerName(), testStorage.getConsumerName(), testStorage.getNamespaceName());
-        resourceManager.createResource(extensionContext,
+        resourceManager.createResourceWithWait(extensionContext,
             clients.producerStrimzi(),
             clients.consumerStrimzi()
         );

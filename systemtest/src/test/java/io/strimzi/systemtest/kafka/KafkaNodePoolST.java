@@ -10,10 +10,8 @@ import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.nodepool.KafkaNodePool;
-import io.strimzi.api.kafka.model.nodepool.KafkaNodePoolBuilder;
 import io.strimzi.api.kafka.model.nodepool.ProcessRoles;
 import io.strimzi.operator.common.Annotations;
-import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
@@ -25,6 +23,7 @@ import io.strimzi.systemtest.resources.crd.KafkaNodePoolResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.storage.TestStorage;
+import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
@@ -103,19 +102,19 @@ public class KafkaNodePoolST extends AbstractST {
             .endMetadata()
             .build();
 
-        KafkaNodePool kafkaNodePoolCr = KafkaNodePoolResource.convertKafkaResourceToKafkaNodePool(kafkaCr);
-        kafkaNodePoolCr = new KafkaNodePoolBuilder(kafkaNodePoolCr)
+        KafkaNodePool kafkaNodePoolCr =  KafkaNodePoolTemplates.defaultKafkaNodePool(kafkaNodePoolName, testStorage.getClusterName(), 3)
             .editOrNewMetadata()
-                .withName(kafkaNodePoolName)
-                .addToLabels(Labels.STRIMZI_CLUSTER_LABEL, testStorage.getClusterName())
+                .withNamespace(testStorage.getNamespaceName())
             .endMetadata()
             .editOrNewSpec()
-                .removeFromRoles(ProcessRoles.CONTROLLER)
                 .addToRoles(ProcessRoles.BROKER)
+                .withStorage(kafkaCr.getSpec().getKafka().getStorage())
+                .withJvmOptions(kafkaCr.getSpec().getKafka().getJvmOptions())
+                .withResources(kafkaCr.getSpec().getKafka().getResources())
             .endSpec()
             .build();
 
-        resourceManager.createResource(extensionContext,
+        resourceManager.createResourceWithWait(extensionContext,
             kafkaNodePoolCr,
             kafkaCr);
 
@@ -133,7 +132,7 @@ public class KafkaNodePoolST extends AbstractST {
         );
 
         LOGGER.info("Producing and Consuming messages with clients: {}, {} in Namespace {}", testStorage.getProducerName(), testStorage.getConsumerName(), testStorage.getNamespaceName());
-        resourceManager.createResource(extensionContext,
+        resourceManager.createResourceWithWait(extensionContext,
             clients.producerStrimzi(),
             clients.consumerStrimzi()
         );
@@ -164,7 +163,7 @@ public class KafkaNodePoolST extends AbstractST {
         PodUtils.waitUntilPodStabilityReplicasCount(testStorage.getNamespaceName(), KafkaResources.kafkaStatefulSetName(testStorage.getClusterName()), originalKafkaReplicaCount);
 
         LOGGER.info("Producing and Consuming messages with clients: {}, {} in Namespace {}", testStorage.getProducerName(), testStorage.getConsumerName(), testStorage.getNamespaceName());
-        resourceManager.createResource(extensionContext,
+        resourceManager.createResourceWithWait(extensionContext,
             clients.producerStrimzi(),
             clients.consumerStrimzi()
         );
@@ -196,7 +195,7 @@ public class KafkaNodePoolST extends AbstractST {
         PodUtils.waitUntilPodStabilityReplicasCount(testStorage.getNamespaceName(), KafkaResources.kafkaStatefulSetName(testStorage.getClusterName()), nodePoolIncreasedKafkaReplicaCount);
 
         LOGGER.info("Producing and Consuming messages with clients: {}, {} in Namespace {}", testStorage.getProducerName(), testStorage.getConsumerName(), testStorage.getNamespaceName());
-        resourceManager.createResource(extensionContext,
+        resourceManager.createResourceWithWait(extensionContext,
             clients.producerStrimzi(),
             clients.consumerStrimzi()
         );
