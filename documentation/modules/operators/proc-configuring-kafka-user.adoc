@@ -37,7 +37,7 @@ This example specifies mTLS authentication and simple authorization using ACLs.
 apiVersion: {KafkaUserApiVersion}
 kind: KafkaUser
 metadata:
-  name: my-user
+  name: my-user-1
   labels:
     strimzi.io/cluster: my-cluster
 spec:

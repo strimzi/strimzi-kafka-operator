@@ -52,43 +52,43 @@ spec:
         - name: strimzi-topic-operator
           # ...
           env:
-            - name: STRIMZI_NAMESPACE <1>
+            - name: STRIMZI_NAMESPACE # <1>
               valueFrom:
                 fieldRef:
                   fieldPath: metadata.namespace
-            - name: STRIMZI_KAFKA_BOOTSTRAP_SERVERS <2>
+            - name: STRIMZI_KAFKA_BOOTSTRAP_SERVERS # <2>
               value: my-kafka-bootstrap-address:9092
-            - name: STRIMZI_RESOURCE_LABELS <3>
+            - name: STRIMZI_RESOURCE_LABELS # <3>
               value: "strimzi.io/cluster=my-cluster"
-            - name: STRIMZI_ZOOKEEPER_CONNECT <4>
+            - name: STRIMZI_ZOOKEEPER_CONNECT # <4>
               value: my-cluster-zookeeper-client:2181
-            - name: STRIMZI_ZOOKEEPER_SESSION_TIMEOUT_MS <5>
+            - name: STRIMZI_ZOOKEEPER_SESSION_TIMEOUT_MS # <5>
               value: "18000"
-            - name: STRIMZI_FULL_RECONCILIATION_INTERVAL_MS <6>
+            - name: STRIMZI_FULL_RECONCILIATION_INTERVAL_MS # <6>
               value: "120000"
-            - name: STRIMZI_TOPIC_METADATA_MAX_ATTEMPTS <7>
+            - name: STRIMZI_TOPIC_METADATA_MAX_ATTEMPTS # <7>
               value: "6"
-            - name: STRIMZI_LOG_LEVEL <8>
+            - name: STRIMZI_LOG_LEVEL # <8>
               value: INFO
-            - name: STRIMZI_TLS_ENABLED <9>
+            - name: STRIMZI_TLS_ENABLED # <9>
               value: "false"
-            - name: STRIMZI_JAVA_OPTS <10>
+            - name: STRIMZI_JAVA_OPTS # <10>
               value: "-Xmx=512M -Xms=256M"
-            - name: STRIMZI_JAVA_SYSTEM_PROPERTIES <11>
+            - name: STRIMZI_JAVA_SYSTEM_PROPERTIES # <11>
               value: "-Djavax.net.debug=verbose -DpropertyName=value"
-            - name: STRIMZI_PUBLIC_CA <12>
+            - name: STRIMZI_PUBLIC_CA # <12>
               value: "false"
-            - name: STRIMZI_TLS_AUTH_ENABLED <13>
+            - name: STRIMZI_TLS_AUTH_ENABLED # <13>
               value: "false"
-            - name: STRIMZI_SASL_ENABLED <14>
+            - name: STRIMZI_SASL_ENABLED # <14>
               value: "false"
-            - name: STRIMZI_SASL_USERNAME <15>
+            - name: STRIMZI_SASL_USERNAME # <15>
               value: "admin"
-            - name: STRIMZI_SASL_PASSWORD <16>
+            - name: STRIMZI_SASL_PASSWORD # <16>
               value: "password"
-            - name: STRIMZI_SASL_MECHANISM <17>
+            - name: STRIMZI_SASL_MECHANISM # <17>
               value: "scram-sha-512"
-            - name: STRIMZI_SECURITY_PROTOCOL <18>
+            - name: STRIMZI_SECURITY_PROTOCOL # <18>
               value: "SSL"
 ----
 <1> The Kubernetes namespace for the Topic Operator to watch for `KafkaTopic` resources. Specify the namespace of the Kafka cluster.
@@ -99,9 +99,9 @@ This does not have to be the name of the Kafka cluster.
 It can be the label assigned to the `KafkaTopic` resource.
 If you deploy more than one Topic Operator, the labels must be unique for each.
 That is, the operators cannot manage the same resources.
-<4> The host and port pair of the address to connect to the ZooKeeper cluster.
+<4> (ZooKeeper) The host and port pair of the address to connect to the ZooKeeper cluster.
 This must be the same ZooKeeper cluster that your Kafka cluster is using.
-<5> The ZooKeeper session timeout, in milliseconds.
+<5> (ZooKeeper) The ZooKeeper session timeout, in milliseconds.
 The default is `18000` (18 seconds).
 <6> The interval between periodic reconciliations, in milliseconds.
 The default is `120000` (2 minutes).
@@ -139,13 +139,13 @@ You can set the value to `PLAINTEXT`, `SSL`, `SASL_PLAINTEXT`, or `SASL_SSL`.
 ----
 # ....
 env:
-  - name: STRIMZI_TRUSTSTORE_LOCATION <1>
+  - name: STRIMZI_TRUSTSTORE_LOCATION # <1>
     value: "/path/to/truststore.p12"
-  - name: STRIMZI_TRUSTSTORE_PASSWORD <2>
+  - name: STRIMZI_TRUSTSTORE_PASSWORD # <2>
     value: "__TRUSTSTORE-PASSWORD__"
-  - name: STRIMZI_KEYSTORE_LOCATION <3>
+  - name: STRIMZI_KEYSTORE_LOCATION # <3>
     value: "/path/to/keystore.p12"
-  - name: STRIMZI_KEYSTORE_PASSWORD <4>
+  - name: STRIMZI_KEYSTORE_PASSWORD # <4>
     value: "__KEYSTORE-PASSWORD__"
 # ...
 ----
@@ -175,3 +175,109 @@ strimzi-topic-operator  1/1    1           1
 +
 `READY` shows the number of replicas that are ready/expected.
 The deployment is successful when the `AVAILABLE` output shows `1`.
+
+== (Preview) Deploying the standalone Topic Operator for unidirectional topic management
+
+Unidirectional topic management maintains topics solely through `KafkaTopic` resources.
+For more information on unidirectional topic management, see xref:ref-operator-topic-{context}[].
+
+If you want to try the preview of unidirectional topic management, follow these steps to deploy the standalone Topic Operator.
+
+.Procedure
+
+. Undeploy the current standalone Topic Operator.
++
+Retain the `KafkaTopic` resources, which are picked up by the Topic Operator when it is deployed again.
+
+. Edit the `Deployment` configuration for the standalone Topic Operator to remove any ZooKeeper-related environment variables:
++
+* `STRIMZI_ZOOKEEPER_CONNECT`
+* `STRIMZI_ZOOKEEPER_SESSION_TIMEOUT_MS`
+* `TC_ZK_CONNECTION_TIMEOUT_MS`
+* `STRIMZI_USE_ZOOKEEPER_TOPIC_STORE`
++
+It is the presence or absence of the ZooKeeper variables that defines whether the unidirectional Topic Operator is used.
+Unidirectional topic management does not use ZooKeeper.
+If ZooKeeper environment variables are not present, the unidirectional Topic Operator is used.
+Otherwise, the bidirectional Topic Operator is used. 
++
+Other unused environment variables that can be removed if present:
++
+* `STRIMZI_REASSIGN_THROTTLE`
+* `STRIMZI_REASSIGN_VERIFY_INTERVAL_MS`
+* `STRIMZI_TOPIC_METADATA_MAX_ATTEMPTS`
+* `STRIMZI_TOPICS_PATH`
+* `STRIMZI_STORE_TOPIC`
+* `STRIMZI_STORE_NAME`
+* `STRIMZI_APPLICATION_ID`
+* `STRIMZI_STALE_RESULT_TIMEOUT_MS`
+
+. (Optional) Set the `STRIMZI_USE_FINALIZERS` environment variable to `false`:
++
+.Additional configuration for unidirectional topic management
+[source,shell,subs=+quotes]
+----
+# ...
+env:
+  - name: STRIMZI_USE_FINALIZERS
+    value: "false"
+----
++
+Set this environment variable to `false` if you do not want to use finalizers to control xref:con-deleting-managed-topics-{context}[topic deletion].
++
+.Example standalone Topic Operator deployment configuration for unidirectional topic management
+[source,shell,subs=+quotes]
+----
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: strimzi-topic-operator
+  labels:
+    app: strimzi
+spec:
+  # ...
+  template:
+    # ...
+    spec:
+      # ...
+      containers:
+        - name: strimzi-topic-operator
+          # ...
+          env:
+            - name: STRIMZI_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: STRIMZI_KAFKA_BOOTSTRAP_SERVERS
+              value: my-kafka-bootstrap-address:9092
+            - name: STRIMZI_RESOURCE_LABELS
+              value: "strimzi.io/cluster=my-cluster"
+            - name: STRIMZI_FULL_RECONCILIATION_INTERVAL_MS
+              value: "120000"
+            - name: STRIMZI_LOG_LEVEL
+              value: INFO
+            - name: STRIMZI_TLS_ENABLED
+              value: "false"
+            - name: STRIMZI_JAVA_OPTS
+              value: "-Xmx=512M -Xms=256M"
+            - name: STRIMZI_JAVA_SYSTEM_PROPERTIES
+              value: "-Djavax.net.debug=verbose -DpropertyName=value"
+            - name: STRIMZI_PUBLIC_CA
+              value: "false"
+            - name: STRIMZI_TLS_AUTH_ENABLED
+              value: "false"
+            - name: STRIMZI_SASL_ENABLED
+              value: "false"
+            - name: STRIMZI_SASL_USERNAME
+              value: "admin"
+            - name: STRIMZI_SASL_PASSWORD
+              value: "password"
+            - name: STRIMZI_SASL_MECHANISM
+              value: "scram-sha-512"
+            - name: STRIMZI_SECURITY_PROTOCOL
+              value: "SSL"
+            - name: STRIMZI_USE_FINALIZERS
+              value: "true"  
+----
+
+. Deploy the standalone Topic Operator in the standard way.

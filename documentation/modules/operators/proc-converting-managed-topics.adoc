@@ -1,0 +1,85 @@
+// Module included in the following assemblies:
+//
+// assembly-using-the-topic-operator.adoc
+
+[id='proc-converting-managed-topics-{context}']
+= (Preview) Managing KafkaTopic resources without impacting Kafka topics
+
+[role="_abstract"]
+This procedure describes how to convert Kafka topics that are currently managed through the `KafkaTopic` resource into non-managed topics.
+This capability can be useful in various scenarios. 
+For instance, you might want to update the `metadata.name` of a `KafkaTopic` resource.
+You can only do that by deleting the original `KafkaTopic` resource and recreating a new one.
+
+By annotating a `KafkaTopic` resource with `strimzi.io/managed=false`, you indicate that the Topic Operator should no longer manage that particular topic. 
+This allows you to retain the Kafka topic while making changes to the resource's configuration or other administrative tasks.
+
+You can perform this task if you are using unidirectional topic management.
+
+NOTE: Unidirectional topic management is available as a preview. 
+Unidirectional topic management is not enabled by default, so you must xref:ref-operator-unidirectional-topic-operator-feature-gate-{context}[enable the `UnidirectionalTopicOperator` feature gate] to be able to use it.
+
+.Prerequisites
+
+* xref:deploying-cluster-operator-str[The Cluster Operator must be deployed.]
+
+.Procedure
+
+. Annotate the `KafkaTopic` resource in Kubernetes, setting `strimzi.io/managed` to `false`:
++
+[source,shell,subs="+quotes"]
+----
+kubectl annotate kafkatopic my-topic-1 strimzi.io/managed=false
+----
++
+Specify the `metadata.name` of the topic in your `KafkaTopic` resource, which is `my-topic-1` in this example.
+
+. Check the status of the `KafkaTopic` resource to make sure the request was successful:
++
+[source,shell,subs="+quotes"]
+----
+oc get kafkatopics my-topic-1 -o yaml
+----
++
+.Example topic with a `Ready` status
+[source,shell,subs="+quotes"]
+----
+apiVersion: {KafkaTopicApiVersion}
+kind: KafkaTopic
+metadata:
+  generation: 124
+  name: my-topic-1
+  finalizer: 
+    strimzi.io/topic-operator
+  labels:
+    strimzi.io/cluster: my-cluster
+spec:
+  partitions: 10
+  replicas: 2
+
+# ...
+status: 
+  observedGeneration: 124 # <1>
+  topicName: my-topic-1
+  conditions:
+  - type: Ready
+    status: True
+    lastTransitionTime: 20230301T103000Z  
+----
+<1> Successful reconciliation of the resource means the topic is no longer managed.
++
+The value of `metadata.generation` (the current version of the deployment) must `match status.observedGeneration` (the latest reconciliation of the resource).
+
+. You can now make changes to the `KafkaTopic` resource without it affecting the Kafka topic it was managing.
++
+For example, to change the `metadata.name`, do as follows:
++
+.. Delete the original `KafkTopic` resource:
++
+[source,shell,subs="+quotes"]
+----
+kubectl delete kafkatopic <kafka_topic_name>
+----
+.. Recreate the `KafkTopic` resource with a different `metadata.name`, but use `spec.topicName` to refer to the same topic that was managed by the original 
+
+. If you haven't deleted the original `KafkaTopic` resource, and you wish to resume management of the Kafka topic again, set the `strimzi.io/managed` annotation to `true` or remove the annotation.

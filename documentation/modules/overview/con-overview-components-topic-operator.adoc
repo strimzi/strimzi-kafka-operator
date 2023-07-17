@@ -6,29 +6,31 @@
 [id='overview-concepts-topic-operator-{context}']
 = Topic Operator
 
-The Topic Operator provides a way of managing topics in a Kafka cluster through Kubernetes resources.
+[role="_abstract"]
+The Topic Operator provides a way of managing topics in a Kafka cluster through `KafkaTopic` resources.
 
 .Example architecture for the Topic Operator
 
 image:topic-operator.png[The Topic Operator manages topics for a Kafka cluster via KafkaTopic resources]
 
-The role of the Topic Operator is to keep a set of `KafkaTopic` Kubernetes resources describing Kafka topics in-sync with corresponding Kafka topics.
+The Topic Operator manages Kafka topics by watching for `KafkaTopic` resources that describe Kafka topics, and ensuring that they are configured properly in the Kafka cluster.
 
-Specifically, if a `KafkaTopic` is:
+When a `KafkaTopic` is created, deleted, or changed, the Topic Operator performs the corresponding action on the Kafka topic.
 
-* Created, the Topic Operator creates the topic
-* Deleted, the Topic Operator deletes the topic
-* Changed, the Topic Operator updates the topic
+You can declare a `KafkaTopic` as part of your application's deployment and the Topic Operator manages the Kafka topic for you.
 
-Working in the other direction, if a topic is:
+The Topic Operator operates in the following modes: 
 
-* Created within the Kafka cluster, the Operator creates a `KafkaTopic`
-* Deleted from the Kafka cluster, the Operator deletes the `KafkaTopic`
-* Changed in the Kafka cluster, the Operator updates the `KafkaTopic`
-
-This allows you to declare a `KafkaTopic` as part of your application's deployment and the Topic Operator will take care of creating the topic for you.
-Your application just needs to deal with producing or consuming from the necessary topics.
-
-The Topic Operator maintains information about each topic in a _topic store_, which is continually synchronized with updates from Kafka topics or Kubernetes `KafkaTopic` custom resources.
+Bidirectional mode:: Bidirectional mode means that the Topic Operator can reconcile changes to a `KafkaTopic` resource to and from a Kafka cluster.
+This means that you can update topics either through the `KafkaTopic` resource or directly in Kafka, and the Topic Operator will ensure that both sources are updated to reflect the changes. This mode requires ZooKeeper for cluster management. 
++
+The Topic Operator maintains information about each topic in a _topic store_, which is continually synchronized with updates from Kubernetes `KafkaTopic` custom resources or Kafka topics.
 Updates from operations applied to a local in-memory topic store are persisted to a backup topic store on disk.
-If a topic is reconfigured or reassigned to other brokers, the `KafkaTopic` will always be up to date.
+
+Unidirectional mode (preview):: Unidirectional mode means that the Topic Operator solely manages topics through the `KafkaTopic` resource. This mode does not require ZooKeeper and is compatible with using Strimzi in KRaft mode.
+
+
+
+
+
+
