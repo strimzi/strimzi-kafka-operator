@@ -918,7 +918,7 @@ spec:
                             enum:
                               - IPv4
                               - IPv6
-                          description: "Specifies the IP Families used by the service. Available options are `IPv4` and `IPv6. If unspecified, Kubernetes will choose the default value based on the `ipFamilyPolicy` setting."
+                          description: "Specifies the IP Families used by the service. Available options are `IPv4` and `IPv6`. If unspecified, Kubernetes will choose the default value based on the `ipFamilyPolicy` setting."
                       description: Template for Kafka Bridge API `Service`.
                     podDisruptionBudget:
                       type: object
