@@ -17,6 +17,7 @@ import org.bouncycastle.asn1.x509.KeyPurposeId;
 import org.bouncycastle.asn1.x509.KeyUsage;
 import org.bouncycastle.cert.CertIOException;
 import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
+import org.bouncycastle.cert.jcajce.JcaX509CertificateHolder;
 import org.bouncycastle.cert.jcajce.JcaX509ExtensionUtils;
 import org.bouncycastle.cert.jcajce.JcaX509v3CertificateBuilder;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
@@ -32,6 +33,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.PublicKey;
 import java.security.Security;
+import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.time.Duration;
@@ -74,18 +76,16 @@ public class SystemTestCertAndKeyBuilder {
     private X500Name issuer;
     private X500Name subject;
 
-    private SystemTestCertAndKeyBuilder(KeyPair keyPair, SystemTestCertAndKey caCert, List<Extension> extensions) {
+    private SystemTestCertAndKeyBuilder(KeyPair keyPair, SystemTestCertAndKey caCert, List<Extension> extensions) throws CertificateEncodingException {
         this.keyPair = keyPair;
         this.caCert = caCert;
         if (caCert != null) {
-            // getSubjectX500Principal().getName() applies additional formatting such as omitting spaces between DNs which would result
-            // in a breaking change instead of we use getSubjectX500Principal().toString()
-            this.issuer = new X500Name(caCert.getCertificate().getSubjectX500Principal().toString());
+            this.issuer = new JcaX509CertificateHolder(caCert.getCertificate()).getSubject();
         }
         this.extensions = new ArrayList<>(extensions);
     }
 
-    public static SystemTestCertAndKeyBuilder rootCaCertBuilder() {
+    public static SystemTestCertAndKeyBuilder rootCaCertBuilder() throws CertificateEncodingException {
         KeyPair keyPair = generateKeyPair();
         return new SystemTestCertAndKeyBuilder(
                 keyPair,
@@ -98,7 +98,7 @@ public class SystemTestCertAndKeyBuilder {
         );
     }
 
-    public static SystemTestCertAndKeyBuilder intermediateCaCertBuilder(SystemTestCertAndKey caCert) {
+    public static SystemTestCertAndKeyBuilder intermediateCaCertBuilder(SystemTestCertAndKey caCert) throws CertificateEncodingException {
         KeyPair keyPair = generateKeyPair();
         return new SystemTestCertAndKeyBuilder(
                 keyPair,
@@ -112,7 +112,7 @@ public class SystemTestCertAndKeyBuilder {
         );
     }
 
-    public static SystemTestCertAndKeyBuilder strimziCaCertBuilder(SystemTestCertAndKey caCert) {
+    public static SystemTestCertAndKeyBuilder strimziCaCertBuilder(SystemTestCertAndKey caCert) throws CertificateEncodingException {
         KeyPair keyPair = generateKeyPair();
         return new SystemTestCertAndKeyBuilder(
                 keyPair,
@@ -125,7 +125,7 @@ public class SystemTestCertAndKeyBuilder {
         );
     }
 
-    public static SystemTestCertAndKeyBuilder endEntityCertBuilder(SystemTestCertAndKey caCert) {
+    public static SystemTestCertAndKeyBuilder endEntityCertBuilder(SystemTestCertAndKey caCert) throws CertificateEncodingException {
         KeyPair keyPair = generateKeyPair();
         return new SystemTestCertAndKeyBuilder(
                 keyPair,
