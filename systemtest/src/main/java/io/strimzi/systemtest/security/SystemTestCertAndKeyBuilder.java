@@ -76,16 +76,20 @@ public class SystemTestCertAndKeyBuilder {
     private X500Name issuer;
     private X500Name subject;
 
-    private SystemTestCertAndKeyBuilder(KeyPair keyPair, SystemTestCertAndKey caCert, List<Extension> extensions) throws CertificateEncodingException {
+    private SystemTestCertAndKeyBuilder(KeyPair keyPair, SystemTestCertAndKey caCert, List<Extension> extensions) {
         this.keyPair = keyPair;
         this.caCert = caCert;
         if (caCert != null) {
-            this.issuer = new JcaX509CertificateHolder(caCert.getCertificate()).getSubject();
+            try {
+                this.issuer = new JcaX509CertificateHolder(caCert.getCertificate()).getSubject();
+            } catch (CertificateEncodingException e) {
+                throw new RuntimeException(e);
+            }
         }
         this.extensions = new ArrayList<>(extensions);
     }
 
-    public static SystemTestCertAndKeyBuilder rootCaCertBuilder() throws CertificateEncodingException {
+    public static SystemTestCertAndKeyBuilder rootCaCertBuilder() {
         KeyPair keyPair = generateKeyPair();
         return new SystemTestCertAndKeyBuilder(
                 keyPair,
@@ -98,7 +102,7 @@ public class SystemTestCertAndKeyBuilder {
         );
     }
 
-    public static SystemTestCertAndKeyBuilder intermediateCaCertBuilder(SystemTestCertAndKey caCert) throws CertificateEncodingException {
+    public static SystemTestCertAndKeyBuilder intermediateCaCertBuilder(SystemTestCertAndKey caCert) {
         KeyPair keyPair = generateKeyPair();
         return new SystemTestCertAndKeyBuilder(
                 keyPair,
@@ -112,7 +116,7 @@ public class SystemTestCertAndKeyBuilder {
         );
     }
 
-    public static SystemTestCertAndKeyBuilder strimziCaCertBuilder(SystemTestCertAndKey caCert) throws CertificateEncodingException {
+    public static SystemTestCertAndKeyBuilder strimziCaCertBuilder(SystemTestCertAndKey caCert) {
         KeyPair keyPair = generateKeyPair();
         return new SystemTestCertAndKeyBuilder(
                 keyPair,
@@ -125,7 +129,7 @@ public class SystemTestCertAndKeyBuilder {
         );
     }
 
-    public static SystemTestCertAndKeyBuilder endEntityCertBuilder(SystemTestCertAndKey caCert) throws CertificateEncodingException {
+    public static SystemTestCertAndKeyBuilder endEntityCertBuilder(SystemTestCertAndKey caCert) {
         KeyPair keyPair = generateKeyPair();
         return new SystemTestCertAndKeyBuilder(
                 keyPair,
