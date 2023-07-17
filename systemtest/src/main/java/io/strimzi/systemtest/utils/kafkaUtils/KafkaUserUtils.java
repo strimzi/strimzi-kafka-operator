@@ -218,5 +218,7 @@ public class KafkaUserUtils {
                     .build()
             );
         }, ns);
+
+        waitForKafkaUserReady(ns, kafkaUserResourceName);
     }
 }
