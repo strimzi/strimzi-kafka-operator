@@ -217,7 +217,7 @@ public class GenericKafkaListenerConfiguration implements Serializable, UnknownP
     }
 
     @Description("Specifies the IP Families used by the service. " +
-            "Available options are `IPv4` and `IPv6. " +
+            "Available options are `IPv4` and `IPv6`. " +
             "If unspecified, Kubernetes will choose the default value based on the `ipFamilyPolicy` setting.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     @PresentInVersions("v1beta2+")
