@@ -492,16 +492,19 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
             String clientAuthType = authProperties.get(AuthenticationUtils.SASL_MECHANISM);
             if (KafkaClientAuthenticationPlain.TYPE_PLAIN.equals(clientAuthType)) {
                 saslMechanism = "PLAIN";
-                jaasConfig = JaasConfig.plain(authProperties.get(AuthenticationUtils.SASL_USERNAME),
-                        "${file:" + CONNECTORS_CONFIG_FILE + ":" + cluster.getAlias() + ".sasl.password}");
+                jaasConfig = JaasConfig.config("org.apache.kafka.common.security.plain.PlainLoginModule",
+                        Map.of("username", authProperties.get(AuthenticationUtils.SASL_USERNAME),
+                                "password", "${file:" + CONNECTORS_CONFIG_FILE + ":" + cluster.getAlias() + ".sasl.password}"));
             } else if (KafkaClientAuthenticationScramSha256.TYPE_SCRAM_SHA_256.equals(clientAuthType)) {
                 saslMechanism = "SCRAM-SHA-256";
-                jaasConfig = JaasConfig.scram(authProperties.get(AuthenticationUtils.SASL_USERNAME),
-                        "${file:" + CONNECTORS_CONFIG_FILE + ":" + cluster.getAlias() + ".sasl.password}");
+                jaasConfig = JaasConfig.config("org.apache.kafka.common.security.scram.ScramLoginModule",
+                        Map.of("username", authProperties.get(AuthenticationUtils.SASL_USERNAME),
+                                "password", "${file:" + CONNECTORS_CONFIG_FILE + ":" + cluster.getAlias() + ".sasl.password}"));
             } else if (KafkaClientAuthenticationScramSha512.TYPE_SCRAM_SHA_512.equals(clientAuthType)) {
                 saslMechanism = "SCRAM-SHA-512";
-                jaasConfig = JaasConfig.scram(authProperties.get(AuthenticationUtils.SASL_USERNAME),
-                        "${file:" + CONNECTORS_CONFIG_FILE + ":" + cluster.getAlias() + ".sasl.password}");
+                jaasConfig = JaasConfig.config("org.apache.kafka.common.security.scram.ScramLoginModule",
+                        Map.of("username", authProperties.get(AuthenticationUtils.SASL_USERNAME),
+                                "password", "${file:" + CONNECTORS_CONFIG_FILE + ":" + cluster.getAlias() + ".sasl.password}"));
             } else if (KafkaClientAuthenticationOAuth.TYPE_OAUTH.equals(clientAuthType)) {
                 KafkaClientAuthenticationOAuth oauth  = (KafkaClientAuthenticationOAuth) cluster.getAuthentication();
                 jaasConfig = oauth(cluster, authProperties, oauth);
@@ -529,18 +532,29 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
     private static String oauth(KafkaMirrorMaker2ClusterSpec cluster,
                                 Map<String, String> authProperties,
                                 KafkaClientAuthenticationOAuth oauth) {
-        String jaasConfig;
-        var hasTrustedCerts = oauth.getTlsTrustedCertificates() != null && !oauth.getTlsTrustedCertificates().isEmpty();
-        jaasConfig = JaasConfig.oauth(
-                authProperties.get("OAUTH_CONFIG"),
-                oauth.getClientSecret() == null ? null : "${file:" + CONNECTORS_CONFIG_FILE + ":" + cluster.getAlias() + ".oauth.client.secret}",
-                oauth.getAccessToken() == null ? null : "${file:" + CONNECTORS_CONFIG_FILE + ":" + cluster.getAlias() + ".oauth.access.token}",
-                oauth.getRefreshToken() == null ? null : "${file:" + CONNECTORS_CONFIG_FILE + ":" + cluster.getAlias() + ".oauth.refresh.token}",
-                oauth.getPasswordSecret() == null ? null : "${file:" + CONNECTORS_CONFIG_FILE + ":" + cluster.getAlias() + ".oauth.password.grant.password}",
-                !hasTrustedCerts ? null : "/tmp/kafka/clusters/\"" + cluster.getAlias() + "\"-oauth.truststore.p12",
-                !hasTrustedCerts ? null : "\"${file:" + CONNECTORS_CONFIG_FILE + ":oauth.ssl.truststore.password}\"",
-                !hasTrustedCerts ? null : "PKCS12");
-        return jaasConfig;
+        Map<String, String> jaasOptions = new HashMap<>();
+        String oauthConfig = authProperties.get("OAUTH_CONFIG");
+        var index = oauthConfig.indexOf("=");
+        jaasOptions.put(oauthConfig.substring(0, index), oauthConfig.substring(index + 1));
+        if (oauth.getClientSecret() != null) {
+            jaasOptions.put("oauth.client.secret", "${file:" + CONNECTORS_CONFIG_FILE + ":" + cluster.getAlias() + ".oauth.client.secret}");
+        }
+        if (oauth.getAccessToken() != null) {
+            jaasOptions.put("oauth.access.token", "${file:" + CONNECTORS_CONFIG_FILE + ":" + cluster.getAlias() + ".oauth.access.token}");
+        }
+        if (oauth.getRefreshToken() != null) {
+            jaasOptions.put("oauth.refresh.token", "${file:" + CONNECTORS_CONFIG_FILE + ":" + cluster.getAlias() + ".oauth.refresh.token}");
+        }
+        if (oauth.getPasswordSecret() != null) {
+            jaasOptions.put("oauth.password.grant.password", "${file:" + CONNECTORS_CONFIG_FILE + ":" + cluster.getAlias() + ".oauth.password.grant.password}");
+        }
+        if (oauth.getTlsTrustedCertificates() != null && !oauth.getTlsTrustedCertificates().isEmpty()) {
+            jaasOptions.put("oauth.ssl.truststore.location", "/tmp/kafka/clusters/\"" + cluster.getAlias() + "\"-oauth.truststore.p12");
+            jaasOptions.put("oauth.ssl.truststore.password", "\"${file:" + CONNECTORS_CONFIG_FILE + ":oauth.ssl.truststore.password}\"");
+            jaasOptions.put("oauth.ssl.truststore.type", "PKCS12");
+        }
+
+        return JaasConfig.config("org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule", jaasOptions);
     }
 
     private static String addTLSConfigToMirrorMaker2ConnectorConfig(Map<String, Object> config, KafkaMirrorMaker2ClusterSpec cluster, String configPrefix) {
