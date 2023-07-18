@@ -68,7 +68,7 @@ public class HelmClient {
      */
     public HelmClient delete(String namespace, String releaseName) {
         LOGGER.info("Deleting helm-chart:{} in namespace:{}", releaseName, namespace);
-        Exec.exec(null, command("delete", releaseName, "--namespace", namespace), 0, Level.DEBUG, false);
+        Exec.exec(null, command("uninstall", releaseName, "--namespace", namespace, "--wait"), 0, Level.DEBUG, true);
         return this;
     }
 

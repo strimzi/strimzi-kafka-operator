@@ -12,6 +12,8 @@ import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.specific.BridgeUtils;
 import io.strimzi.test.TestUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.io.File;
@@ -25,6 +27,8 @@ public class HelmResource implements SpecificResourceType {
 
     public static final String HELM_CHART = TestUtils.USER_PATH + "/../packaging/helm-charts/helm3/strimzi-kafka-operator/";
     public static final String HELM_RELEASE_NAME = "strimzi-systemtests";
+
+    private static final Logger LOGGER = LogManager.getLogger(HelmResource.class);
 
     private String namespaceToWatch;
     private String namespaceInstallTo;
@@ -120,9 +124,20 @@ public class HelmResource implements SpecificResourceType {
 
     /**
      * Delete CO deployed via helm chart.
+     * NOTE: CRDs are not deleted as part of the uninstallation:
+     * <a href="https://github.com/helm/community/blob/f9e06c16d89ccea1bea77c01a6a96ae3b309f823/architecture/crds.md#deleting-crds">CRDs architecture in Helm</a>
      */
     private void deleteClusterOperator() {
         ResourceManager.helmClient().delete(namespaceInstallTo, HELM_RELEASE_NAME);
-        DeploymentUtils.waitForDeploymentDeletion(namespaceInstallTo, ResourceManager.getCoDeploymentName());
+        waitForResourcesDeletion();
     }
+
+    private void waitForResourcesDeletion() {
+        String label = "release=" + HELM_RELEASE_NAME;
+
+        LOGGER.info("Waiting for all resources with label: {} to be deleted", label);
+        List<String> resourcesToBeDeleted = List.of(Constants.DEPLOYMENT, Constants.CLUSTER_ROLE, Constants.CLUSTER_ROLE_BINDING, Constants.ROLE, Constants.ROLE_BINDING, Constants.SERVICE_ACCOUNT);
+        ResourceManager.cmdKubeClient().namespace(namespaceInstallTo).waitForResourcesWithLabelSelectorDeletion(resourcesToBeDeleted, label);
+    }
+
 }
