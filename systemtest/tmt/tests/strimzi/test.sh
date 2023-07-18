@@ -13,7 +13,7 @@ mvn verify -pl systemtest -P ${TEST_PROFILE} \
     $([[ "${TESTS}" != "" ]] && echo "-Dit.test=${TESTS}" || echo "") \
     -DexcludedGroups="${EXCLUDED_TEST_GROUPS}" \
     -Dmaven.javadoc.skip=true \
-    -Dfailsafe.rerunFailingTestsCount=1 \
+    -Dfailsafe.rerunFailingTestsCount="${RERUN_FAILED_TEST_COUNT}" \
     -Djunit.jupiter.execution.parallel.enabled=true \
-    -Djunit.jupiter.execution.parallel.config.fixed.parallelism=3 \
+    -Djunit.jupiter.execution.parallel.config.fixed.parallelism="${PARALLEL_TEST_COUNT}" \
     --no-transfer-progress
