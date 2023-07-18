@@ -76,7 +76,9 @@ The default Grafana user name and password are both `admin`. After logging in fo
 +
 * Specify a name
 * Add _Prometheus_ as the type
-* Specify a Prometheus server URL (\http://prometheus-operated:9090)
+* Specify a Prometheus server URL
++
+The Prometheus operator service (`prometheus-operated`) is accessible internally within the Kubernetes cluster on port 9090: `\http://prometheus-operated:9090`.
 +
 Save and test the connection when you have added the details.
 
