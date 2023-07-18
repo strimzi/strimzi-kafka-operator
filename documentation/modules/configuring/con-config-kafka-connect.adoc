@@ -154,7 +154,7 @@ spec:
 <3> The number of replica nodes for the workers that run tasks.
 <4> Authentication for the Kafka Connect cluster, specified as mTLS, token-based OAuth, SASL-based SCRAM-SHA-256/SCRAM-SHA-512, or PLAIN.
 By default, Kafka Connect connects to Kafka brokers using a plain text connection.
-<5> Bootstrap server for connection to the Kafka Connect cluster.
+<5> Bootstrap server for connection to the Kafka cluster.
 <6> TLS encryption with key names under which TLS certificates are stored in X.509 format for the cluster. If certificates are stored in the same secret, it can be listed multiple times.
 <7> Kafka Connect configuration of workers (not connectors).
 Standard Apache Kafka configuration may be provided, restricted to those properties not managed directly by Strimzi.
