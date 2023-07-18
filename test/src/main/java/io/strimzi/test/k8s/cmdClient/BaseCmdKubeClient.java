@@ -381,11 +381,6 @@ public abstract class BaseCmdKubeClient<K extends BaseCmdKubeClient<K>> implemen
     }
 
     @Override
-    public void waitForResourcesWithLabelSelectorDeletion(List<String> resourceTypes, String labelSelector) {
-        Exec.exec(namespacedCommand("wait", "--for", "delete", String.join(",", resourceTypes), "--selector", labelSelector));
-    }
-
-    @Override
     @SuppressWarnings("unchecked")
     public K waitForResourceDeletion(String resourceType, String resourceName) {
         TestUtils.waitFor(resourceType + " " + resourceName + " removal",

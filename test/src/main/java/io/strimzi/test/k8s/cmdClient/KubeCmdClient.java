@@ -175,8 +175,6 @@ public interface KubeCmdClient<K extends KubeCmdClient<K>> {
      */
     K waitForResourceCreation(String resourceType, String resourceName);
 
-    void waitForResourcesWithLabelSelectorDeletion(List<String> resourceTypes, String labelSelector);
-
     /**
      * Get the content of the given {@code resource} with the given {@code name} as YAML.
      * @param resource The type of resource (e.g. "cm").
