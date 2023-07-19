@@ -4,6 +4,7 @@
  */
 package io.strimzi.systemtest.utils.kubeUtils.objects;
 
+import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.strimzi.api.kafka.model.storage.PersistentClaimStorage;
 import io.strimzi.api.kafka.model.storage.SingleVolumeStorage;
 import io.strimzi.systemtest.Constants;
@@ -111,5 +112,17 @@ public class PersistentVolumeClaimUtils {
             // pvcs must be deleted (1 storage -> 2 pvcs)
             return volumesCount - (numberOfPVCWhichShouldBeDeleted * 2) == pvcs.size();
         });
+    }
+
+    public static void deletePvcsByPrefixWithWait(String namespaceName, String prefix) {
+        List<PersistentVolumeClaim> persistentVolumeClaimsList = kubeClient().listPersistentVolumeClaims(namespaceName, prefix);
+
+        for (PersistentVolumeClaim persistentVolumeClaim : persistentVolumeClaimsList) {
+            kubeClient().deletePersistentVolumeClaim(namespaceName, persistentVolumeClaim.getMetadata().getName());
+        }
+
+        for (PersistentVolumeClaim persistentVolumeClaim : persistentVolumeClaimsList) {
+            waitForPersistentVolumeClaimDeletion(namespaceName, persistentVolumeClaim.getMetadata().getName());
+        }
     }
 }

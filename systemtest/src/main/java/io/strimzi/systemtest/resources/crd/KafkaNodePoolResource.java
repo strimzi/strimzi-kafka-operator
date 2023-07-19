@@ -12,17 +12,20 @@ import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.nodepool.KafkaNodePool;
 import io.strimzi.api.kafka.model.nodepool.KafkaNodePoolBuilder;
 import io.strimzi.api.kafka.model.nodepool.ProcessRoles;
+import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.ResourceType;
 import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
+import io.strimzi.systemtest.utils.kubeUtils.objects.PersistentVolumeClaimUtils;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
 import static io.strimzi.operator.common.Util.hashStub;
+import static io.strimzi.systemtest.resources.ResourceManager.kubeClient;
 
 public class KafkaNodePoolResource implements ResourceType<KafkaNodePool> {
 
@@ -43,7 +46,16 @@ public class KafkaNodePoolResource implements ResourceType<KafkaNodePool> {
 
     @Override
     public void delete(KafkaNodePool resource) {
+        String namespaceName = resource.getMetadata().getNamespace();
+        String clusterName = resource.getMetadata().getLabels().get(Labels.STRIMZI_CLUSTER_LABEL);
+
         kafkaNodePoolClient().inNamespace(resource.getMetadata().getNamespace()).resource(resource).delete();
+
+        // once KafkaNodePool is deleted, we should delete PVCs and wait for the deletion to be completed
+        // the Kafka pods will not be deleted during Kafka resource deletion -> so if we would delete PVCs during Kafka deletion
+        // they will not be deleted too
+        // additional deletion of pvcs with specification deleteClaim set to false which were not deleted prior this method
+        PersistentVolumeClaimUtils.deletePvcsByPrefixWithWait(namespaceName, clusterName);
     }
 
     @Override
@@ -57,7 +69,7 @@ public class KafkaNodePoolResource implements ResourceType<KafkaNodePool> {
     }
 
     public static MixedOperation<KafkaNodePool, KafkaNodePoolList, Resource<KafkaNodePool>> kafkaNodePoolClient() {
-        return Crds.kafkaNodePoolOperation(ResourceManager.kubeClient().getClient());
+        return Crds.kafkaNodePoolOperation(kubeClient().getClient());
     }
 
     public static void replaceKafkaNodePoolResourceInSpecificNamespace(String resourceName, Consumer<KafkaNodePool> editor, String namespaceName) {

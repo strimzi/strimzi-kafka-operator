@@ -120,6 +120,8 @@ public class HelmResource implements SpecificResourceType {
 
     /**
      * Delete CO deployed via helm chart.
+     * NOTE: CRDs are not deleted as part of the uninstallation:
+     * <a href="https://github.com/helm/community/blob/f9e06c16d89ccea1bea77c01a6a96ae3b309f823/architecture/crds.md#deleting-crds">CRDs architecture in Helm</a>
      */
     private void deleteClusterOperator() {
         ResourceManager.helmClient().delete(namespaceInstallTo, HELM_RELEASE_NAME);

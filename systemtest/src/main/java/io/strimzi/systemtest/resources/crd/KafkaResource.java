@@ -7,7 +7,6 @@ package io.strimzi.systemtest.resources.crd;
 import io.fabric8.kubernetes.api.model.DeletionPropagation;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
-import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.api.kafka.Crds;
@@ -15,6 +14,7 @@ import io.strimzi.api.kafka.KafkaList;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.status.KafkaStatus;
+import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
@@ -27,14 +27,12 @@ import org.apache.logging.log4j.Logger;
 import org.junit.platform.commons.util.Preconditions;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
 import static io.strimzi.operator.common.Util.hashStub;
 import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
-import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 public class KafkaResource implements ResourceType<Kafka> {
 
@@ -78,18 +76,17 @@ public class KafkaResource implements ResourceType<Kafka> {
                 .allMatch(result -> true);
         }
 
+        // load current Kafka's annotations to obtain information, if KafkaNodePools are used for this Kafka
+        Map<String, String> annotations = kafkaClient().inNamespace(namespaceName)
+            .withName(resource.getMetadata().getName()).get().getMetadata().getAnnotations();
+
         kafkaClient().inNamespace(namespaceName).withName(
             resource.getMetadata().getName()).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
 
-        // additional deletion of pvcs with specification deleteClaim set to false which were not deleted prior this method
-        List<PersistentVolumeClaim> persistentVolumeClaimsList = kubeClient().listPersistentVolumeClaims(namespaceName, clusterName);
-
-        for (PersistentVolumeClaim persistentVolumeClaim : persistentVolumeClaimsList) {
-            kubeClient().deletePersistentVolumeClaim(namespaceName, persistentVolumeClaim.getMetadata().getName());
-        }
-
-        for (PersistentVolumeClaim persistentVolumeClaim : persistentVolumeClaimsList) {
-            PersistentVolumeClaimUtils.waitForPersistentVolumeClaimDeletion(namespaceName, persistentVolumeClaim.getMetadata().getName());
+        if (annotations.get(Annotations.ANNO_STRIMZI_IO_NODE_POOLS) == null
+            || annotations.get(Annotations.ANNO_STRIMZI_IO_NODE_POOLS).equals("disabled")) {
+            // additional deletion of pvcs with specification deleteClaim set to false which were not deleted prior this method
+            PersistentVolumeClaimUtils.deletePvcsByPrefixWithWait(namespaceName, clusterName);
         }
     }
 

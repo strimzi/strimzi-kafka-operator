@@ -442,7 +442,7 @@ public class ResourceManager {
         Crds.operation(kubeClient().getClient(), crdClass, listClass).inNamespace(namespace).resource(toBeReplaced).update();
     }
 
-    public void deleteResources(ExtensionContext testContext) throws Exception {
+    public void deleteResources(ExtensionContext testContext) {
         LOGGER.info(String.join("", Collections.nCopies(76, "#")));
         if (!STORED_RESOURCES.containsKey(testContext.getDisplayName()) || STORED_RESOURCES.get(testContext.getDisplayName()).isEmpty()) {
             LOGGER.info("In context {} is everything deleted", testContext.getDisplayName());
@@ -456,16 +456,18 @@ public class ResourceManager {
             // stack has no elements
             new AtomicInteger(0);
         while (STORED_RESOURCES.containsKey(testContext.getDisplayName()) && numberOfResources.get() > 0) {
-            STORED_RESOURCES.get(testContext.getDisplayName()).parallelStream().parallel().forEach(
-                resourceItem -> {
-                    try {
-                        resourceItem.getThrowableRunner().run();
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-                    numberOfResources.decrementAndGet();
+            Stack<ResourceItem> s = STORED_RESOURCES.get(testContext.getDisplayName());
+
+            while (!s.isEmpty()) {
+                ResourceItem resourceItem = s.pop();
+
+                try {
+                    resourceItem.getThrowableRunner().run();
+                } catch (Exception e) {
+                    e.printStackTrace();
                 }
-            );
+                numberOfResources.decrementAndGet();
+            }
         }
         STORED_RESOURCES.remove(testContext.getDisplayName());
         LOGGER.info(String.join("", Collections.nCopies(76, "#")));
