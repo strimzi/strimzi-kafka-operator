@@ -39,7 +39,6 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -50,9 +49,7 @@ import static io.strimzi.operator.cluster.model.KafkaBrokerConfigurationBuilderT
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
-import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.equalTo;
 
 @ParallelSuite
 public class KafkaBrokerConfigurationBuilderTest {
@@ -931,7 +928,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "inter.broker.listener.name=REPLICATION-9091",
                 "sasl.enabled.mechanisms=",
                 "ssl.endpoint.identification.algorithm=HTTPS",
-                "listener.name.plain-9092.scram-sha-512.sasl.jaas.config=org.apache.kafka.common.security.scram.ScramLoginModule required;",
+                "listener.name.plain-9092.scram-sha-512.sasl.jaas.config=org.apache.kafka.common.security.scram.ScramLoginModule required ;",
                 "listener.name.plain-9092.sasl.enabled.mechanisms=SCRAM-SHA-512"));
     }
 
@@ -1197,7 +1194,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "inter.broker.listener.name=REPLICATION-9091",
                 "sasl.enabled.mechanisms=",
                 "ssl.endpoint.identification.algorithm=HTTPS",
-                "listener.name.external-9094.scram-sha-512.sasl.jaas.config=org.apache.kafka.common.security.scram.ScramLoginModule required;",
+                "listener.name.external-9094.scram-sha-512.sasl.jaas.config=org.apache.kafka.common.security.scram.ScramLoginModule required ;",
                 "listener.name.external-9094.sasl.enabled.mechanisms=SCRAM-SHA-512",
                 "listener.name.external-9094.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12",
                 "listener.name.external-9094.ssl.keystore.password=${CERTS_STORE_PASSWORD}",

@@ -431,7 +431,7 @@ public class KafkaBrokerConfigurationBuilder {
         if (auth instanceof KafkaListenerAuthenticationOAuth oauth) {
             securityProtocol.add(String.format("%s:%s", listenerName, getSecurityProtocol(tls, true)));
 
-            Map<String, String> jaasOptions = new HashMap<>(getOAuthOptions(oauth));
+            Map<String, String> jaasOptions = new LinkedHashMap<>(getOAuthOptions(oauth));
             addOption(jaasOptions,"oauth.config.id", listenerName);
 
             if (oauth.getClientSecret() != null)    {
@@ -447,12 +447,11 @@ public class KafkaBrokerConfigurationBuilder {
             StringBuilder enabledMechanisms = new StringBuilder();
             if (oauth.isEnableOauthBearer()) {
                 writer.println(String.format("listener.name.%s.oauthbearer.sasl.server.callback.handler.class=io.strimzi.kafka.oauth.server.JaasServerOauthValidatorCallbackHandler", listenerNameInProperty));
-                //main code
-                //writer.println(String.format("listener.name.%s.oauthbearer.sasl.jaas.config=org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required unsecuredLoginStringClaim_sub=\"thePrincipalName\" %s;"
-                // , listenerNameInProperty, String.join(" ", options)));
-
+                var oauthBearerOptions = new LinkedHashMap<String, String>();
+                addOption(oauthBearerOptions, "unsecuredLoginStringClaim_sub", "thePrincipalName");
+                oauthBearerOptions.putAll(jaasOptions);
                 writer.println(String.format("listener.name.%s.oauthbearer.sasl.jaas.config=%s", listenerNameInProperty,
-                        JaasConfig.config("org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule", jaasOptions)));
+                        JaasConfig.config("org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule", oauthBearerOptions)));
                 enabledMechanisms.append("OAUTHBEARER");
             }
 
@@ -460,7 +459,7 @@ public class KafkaBrokerConfigurationBuilder {
                 addOption(jaasOptions, ServerPlainConfig.OAUTH_TOKEN_ENDPOINT_URI, oauth.getTokenEndpointUri());
                 writer.println(String.format("listener.name.%s.plain.sasl.server.callback.handler.class=io.strimzi.kafka.oauth.server.plain.JaasServerOauthOverPlainValidatorCallbackHandler", listenerNameInProperty));
                 writer.println(String.format("listener.name.%s.plain.sasl.jaas.config=%s", listenerNameInProperty,
-                        JaasConfig.config("org.apache.kafka.common.security.plain.PlainLoginModule",jaasOptions)));
+                        JaasConfig.config("org.apache.kafka.common.security.plain.PlainLoginModule", jaasOptions)));
                 if (enabledMechanisms.length() > 0) {
                     enabledMechanisms.append(",");
                 }
@@ -476,10 +475,8 @@ public class KafkaBrokerConfigurationBuilder {
             writer.println();
         } else if (auth instanceof KafkaListenerAuthenticationScramSha512) {
             securityProtocol.add(String.format("%s:%s", listenerName, getSecurityProtocol(tls, true)));
-//            writer.println(String.format("listener.name.%s.scram-sha-512.sasl.jaas.config=%s", listenerNameInProperty, "org.apache.kafka.common.security.scram.ScramLoginModule required;"));
-            //this is what we have in the main origin.
-            // writer.println(String.format("listener.name.%s.scram-sha-512.sasl.jaas.config=org.apache.kafka.common.security.scram.ScramLoginModule required;", listenerNameInProperty));
-            writer.println(String.format("listener.name.%s.scram-sha-512.sasl.jaas.config=%s", listenerNameInProperty, JaasConfig.scram(username, password)));
+            writer.println(String.format("listener.name.%s.scram-sha-512.sasl.jaas.config=%s", listenerNameInProperty,
+                    JaasConfig.config("org.apache.kafka.common.security.scram.ScramLoginModule", Map.of())));
             writer.println(String.format("listener.name.%s.sasl.enabled.mechanisms=SCRAM-SHA-512", listenerNameInProperty));
             writer.println();
         } else if (auth instanceof KafkaListenerAuthenticationTls) {
@@ -520,7 +517,7 @@ public class KafkaBrokerConfigurationBuilder {
      * @return  Returns the builder instance
      */
     /*test*/ static Map<String, String> getOAuthOptions(KafkaListenerAuthenticationOAuth oauth)  {
-        Map<String, String> options = new HashMap<>();
+        Map<String, String> options = new LinkedHashMap<>();
 
         addOption(options, ServerConfig.OAUTH_CLIENT_ID, oauth.getClientId());
         addOption(options, ServerConfig.OAUTH_VALID_ISSUER_URI, oauth.getValidIssuerUri());

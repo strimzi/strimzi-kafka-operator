@@ -15,7 +15,7 @@ public class JaasConfig {
         for (Map.Entry<String, String> entry : options.entrySet()) {
             Objects.requireNonNull(entry.getKey());
             Objects.requireNonNull(entry.getValue());
-            String s = entry.getKey() + "=" + entry.getValue();
+            String s = entry.getKey() + "=\"" + entry.getValue() + "\"";
             joiner.add(s);
         }
         var stringStream = joiner.toString();
