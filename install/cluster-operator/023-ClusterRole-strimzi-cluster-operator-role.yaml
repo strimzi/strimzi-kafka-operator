@@ -23,6 +23,9 @@ rules:
       # The cluster operator runs the KafkaAssemblyOperator, which needs to access and manage Kafka resources
       - kafkas
       - kafkas/status
+      # The cluster operator runs the KafkaAssemblyOperator, which needs to access and manage KafkaNodePool resources
+      - kafkanodepools
+      - kafkanodepools/status
       # The cluster operator runs the KafkaConnectAssemblyOperator, which needs to access and manage KafkaConnect resources
       - kafkaconnects
       - kafkaconnects/status

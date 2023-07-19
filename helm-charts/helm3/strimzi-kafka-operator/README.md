@@ -9,8 +9,8 @@ Upgrading to Strimzi 0.32 and newer directly from Strimzi 0.22 and earlier is no
 Please follow the [documentation](https://strimzi.io/docs/operators/latest/full/deploying.html#assembly-upgrade-str) for more details.
 
 **!!! IMPORTANT !!!**
-From Strimzi 0.32, we support only Kubernetes 1.19 and newer.
-Kubernetes versions 1.16, 1.17, and 1.18 are no longer supported.
+From Strimzi 0.36 on, we support only Kubernetes 1.21 and newer.
+Kubernetes versions 1.19 and 1.20 are no longer supported.
 
 ## Introduction
 
@@ -40,7 +40,7 @@ You can access the CRDs from our [GitHub release page](https://github.com/strimz
 
 The Strimzi Operator understands how to run and upgrade between a set of Kafka versions.
 When specifying a new version in your config, check to make sure you aren't using any features that may have been removed.
-See [the upgrade guide](https://strimzi.io/docs/latest/#assembly-upgrading-kafka-versions-str) for more information.
+See [the upgrade guide](https://strimzi.io/docs/operators/latest/deploying.html#assembly-upgrading-kafka-versions-str) for more information.
 
 ### Documentation
 
@@ -51,6 +51,7 @@ Documentation to all releases can be found on our [website](https://strimzi.io/d
 If you encounter any issues while using Strimzi, you can get help using:
 * [Strimzi mailing list on CNCF](https://lists.cncf.io/g/cncf-strimzi-users/topics)
 * [Strimzi Slack channel on CNCF workspace](https://cloud-native.slack.com/messages/strimzi)
+* [GitHub Discussions](https://github.com/strimzi/strimzi-kafka-operator/discussions)
 
 ### License
 
@@ -58,20 +59,14 @@ Strimzi is licensed under the [Apache License, Version 2.0](https://github.com/s
 
 ## Prerequisites
 
-- Kubernetes 1.19+
+- Kubernetes 1.21+
 
 ## Installing the Chart
 
-Add the Strimzi Helm Chart repository:
+To install the chart with the release name `my-strimzi-cluster-operator`:
 
 ```bash
-$ helm repo add strimzi https://strimzi.io/charts/
-```
-
-To install the chart with the release name `my-release`:
-
-```bash
-$ helm install my-release strimzi/strimzi-kafka-operator
+$ helm install my-strimzi-cluster-operator oci://quay.io/strimzi-helm/strimzi-kafka-operator
 ```
 
 The command deploys the Strimzi Cluster Operator on the Kubernetes cluster with the default configuration.
@@ -79,10 +74,10 @@ The [configuration](#configuration) section lists the parameters that can be con
 
 ## Uninstalling the Chart
 
-To uninstall/delete the `my-release` deployment:
+To uninstall/delete the `my-strimzi-cluster-operator` deployment:
 
 ```bash
-$ helm delete my-release
+$ helm delete my-strimzi-cluster-operator
 ```
 
 The command removes all the Kubernetes components associated with the operator and deletes the release.
@@ -93,133 +88,133 @@ The following table lists the configurable parameters of the Strimzi chart and t
 configuration of Kafka and other components are defined within their respective Custom Resource Definitions.  See
 the documentation for more details.
 
-| Parameter                            | Description                               | Default                                              |
-| ------------------------------------ | ----------------------------------------- | ---------------------------------------------------- |
-| `replicas`                           | Number of replicas of the cluster operator | 1                                                   |
-| `watchNamespaces`                    | Comma separated list of additional namespaces for the strimzi-operator to watch | []             |
-| `watchAnyNamespace`                  | Watch the whole Kubernetes cluster (all namespaces) | `false`                                    |
-| `defaultImageRegistry`               | Default image registry for all the images | `quay.io`                                            |
-| `defaultImageRepository`             | Default image registry for all the images | `strimzi`                                            |
-| `defaultImageTag`                    | Default image tag for all the images except Kafka Bridge | `0.35.1`                              |
-| `image.registry`                     | Override default Cluster Operator image registry  | `nil`                                        |
-| `image.repository`                   | Override default Cluster Operator image repository  | `nil`                                      |
-| `image.name`                         | Cluster Operator image name               | `cluster-operator`                                   |
-| `image.tag`                          | Override default Cluster Operator image tag       | `nil`                                        |
-| `image.digest`                       | Override Cluster Operator image tag with digest     | `nil`                                      |
-| `image.imagePullPolicy`              | Image pull policy for all pods deployed by Cluster Operator       | `IfNotPresent`               |
-| `image.imagePullSecrets`             | List of Docker registry pull secrets               | `[]`                                                |
-| `fullReconciliationIntervalMs`       | Full reconciliation interval in milliseconds | 120000                                            |
-| `operationTimeoutMs`                 | Operation timeout in milliseconds         | 300000                                               |
-| `operatorNamespaceLabels`            | Labels of the namespace where the operator runs | `nil`                                          |
-| `podSecurityContext`                 | Cluster Operator pod's security context    | `nil`                                               |
-| `priorityClassName`                  | Cluster Operator pod's priority class name | `nil`                                               |
-| `securityContext`                    | Cluster Operator container's security context |  `nil`                                           |
-| `rbac.create`                        | Whether to create RBAC related resources |  `yes`                                                |
-| `serviceAccountCreate`               | Whether to create a serviceaccount |  `yes`                                                      |
-| `serviceAccount`                     | Cluster Operator's service account |  `strimzi-cluster-operator`                                 |
-| `extraEnvs`                          | Extra environment variables for the Cluster operator container | `[]`                            |
-| `kafka.image.registry`               | Override default Kafka image registry                      | `nil`                               |
-| `kafka.image.repository`             | Override default Kafka image repository                    | `nil`                               |
-| `kafka.image.name`                   | Kafka image name                          | `kafka`                                              |
-| `kafka.image.tagPrefix`              | Override default Kafka image tag prefix                    | `nil`                               |
-| `kafka.image.tag`                    | Override default Kafka image tag and ignore suffix         | `nil`                               |
-| `kafka.image.digest`                 | Override Kafka image tag with digest                       | `nil`                               |
-| `kafkaConnect.image.registry`        | Override default Kafka Connect image registry              | `nil`                               |
-| `kafkaConnect.image.repository`      | Override default Kafka Connect image repository            | `nil`                               |
-| `kafkaConnect.image.name`            | Kafka Connect image name                  | `kafka`                                              |
-| `kafkaConnect.image.tagPrefix`       | Override default Kafka Connect image tag prefix            | `nil`                               |
-| `kafkaConnect.image.tag`             | Override default Kafka Connect image tag and ignore suffix | `nil`                               |
-| `kafkaConnect.image.digest`          | Override Kafka Connect image tag with digest               | `nil`                               |
-| `kafkaMirrorMaker.image.registry`    | Override default Kafka Mirror Maker image registry         | `nil`                               |
-| `kafkaMirrorMaker.image.repository`  | Override default Kafka Mirror Maker image repository       | `nil`                               |
-| `kafkaMirrorMaker.image.name`        | Kafka Mirror Maker image name             | `kafka`                                              |
-| `kafkaMirrorMaker.image.tagPrefix`   | Override default Kafka Mirror Maker image tag prefix       | `nil`                               |
-| `kafkaMirrorMaker.image.tag`         | Override default Kafka Mirror Maker image tag and ignore suffix | `nil`                          |
-| `kafkaMirrorMaker.image.digest`      | Override Kafka Mirror Maker image tag with digest          | `nil`                               |
-| `cruiseControl.image.registry`       | Override default Cruise Control image registry             | `nil`                               |
-| `cruiseControl.image.repository`     | Override default Cruise Control image repository           | `nil`                               |
-| `cruiseControl.image.name`           | Cruise Control image name                 | `kafka`                                              |
-| `cruiseControl.image.tagPrefix`      | Override default Cruise Control image tag prefix           | `nil`                               |
-| `cruiseControl.image.tag`            | Override default Cruise Control image tag and ignore suffix | `nil`                              |
-| `cruiseControl.image.digest`         | Override Cruise Control image tag with digest              | `nil`                               |
-| `topicOperator.image.registry`       | Override default Topic Operator image registry             | `nil`                               |
-| `topicOperator.image.repository`     | Override default  Topic Operator image repository          | `nil`                               |
-| `topicOperator.image.name`           | Topic Operator image name                 | `operator`                                           |
-| `topicOperator.image.tag`            | Override default Topic Operator image tag                  | `nil`                               |
-| `topicOperator.image.digest`         | Override Topic Operator image tag with digest              | `nil`                               |
-| `userOperator.image.registry`        | Override default User Operator image registry              | `nil`                               |
-| `userOperator.image.repository`      | Override default User Operator image repository            | `nil`                               |
-| `userOperator.image.name`            | User Operator image name                  | `operator`                                           |
-| `userOperator.image.tag`             | Override default User Operator image tag                   | `nil`                               |
-| `userOperator.image.digest`          | Override User Operator image tag with digest               | `nil`                               |
-| `kafkaInit.image.registry`           | Override default Init Kafka image registry                 | `nil`                               |
-| `kafkaInit.image.repository`         | Override default Init Kafka image repository               | `nil`                               |
-| `kafkaInit.image.name`               | Init Kafka image name                     | `operator`                                           |
-| `kafkaInit.image.tag`                | Override default Init Kafka image tag                      | `nil`                               |
-| `kafkaInit.image.digest`             | Override Init Kafka image tag with digest                  | `nil`                               |
-| `tlsSidecarEntityOperator.image.registry` | Override default TLS Sidecar Entity Operator image registry | `nil`                         |
-| `tlsSidecarEntityOperator.image.repository` | Override default TLS Sidecar Entity Operator image repository | `nil`                     |
-| `tlsSidecarEntityOperator.image.name` | TLS Sidecar Entity Operator image name | `kafka`                                                |
-| `tlsSidecarEntityOperator.image.tagPrefix` | Override default TLS Sidecar Entity Operator image tag prefix | `nil`                      |
-| `tlsSidecarEntityOperator.image.tag`       | Override default TLS Sidecar Entity Operator image tag and ignore suffix | `nil`           |
-| `tlsSidecarEntityOperator.image.digest` | Override TLS Sidecar Entity Operator image tag with digest | `nil`                            |
-| `kafkaBridge.image.registry`         | Override default Kafka Bridge image registry               | `quay.io`                           |
-| `kafkaBridge.image.repository`       | Override default Kafka Bridge image repository             | `strimzi`                           |
-| `kafkaBridge.image.name`             | Kafka Bridge image name                   | `kafka-bridge`                                       |
-| `kafkaBridge.image.tag`              | Override default Kafka Bridge image tag                    | `0.25.0`                            |
-| `kafkaBridge.image.digest`           | Override Kafka Bridge image tag with digest                | `nil`                               |
-| `kafkaExporter.image.registry`       | Override default Kafka Exporter image registry             | `nil`                               |
-| `kafkaExporter.image.repository`     | Override default Kafka Exporter image repository           | `nil`                               |
-| `kafkaExporter.image.name`           | Kafka Exporter image name                 | `kafka`                                              |
-| `kafkaExporter.image.tagPrefix`      | Override default Kafka Exporter image tag prefix           | `nil`                               |
-| `kafkaExporter.image.tag`            | Override default Kafka Exporter image tag and ignore suffix | `nil`                              |
-| `kafkaExporter.image.digest`         | Override Kafka Exporter image tag with digest              | `nil`                               |
-| `kafkaMirrorMaker2.image.registry`   | Override default Kafka Mirror Maker 2 image registry       | `nil`                               |
-| `kafkaMirrorMaker2.image.repository` | Override default Kafka Mirror Maker 2 image repository     | `nil`                               |
-| `kafkaMirrorMaker2.image.name`       | Kafka Mirror Maker 2 image name           | `kafka`                                              |
-| `kafkaMirrorMaker2.image.tagPrefix`  | Override default Kafka Mirror Maker 2 image tag prefix     | `nil`                               |
-| `kafkaMirrorMaker2.image.tag`        | Override default Kafka Mirror Maker 2 image tag and ignore suffix | `nil`                        |
-| `kafkaMirrorMaker2.image.digest`     | Override Kafka Mirror Maker 2 image tag with digest        | `nil`                               |
-| `kanikoExecutor.image.registry`      | Override default Kaniko Executor image registry            | `nil`                               |
-| `kanikoExecutor.image.repository`    | Override default Kaniko Executor image repository          | `nil`                               |
-| `kanikoExecutor.image.name`          | Kaniko Executor image name                | `kaniko-executor`                                    |
-| `kanikoExecutor.image.tag`           | Override default Kaniko Executor image tag                 | `nil`                               |
-| `kanikoExecutor.image.digest`        | Override Kaniko Executor image tag with digest             | `nil`                               |
-| `resources.limits.memory`            | Memory constraint for limits              | `256Mi`                                              |
-| `resources.limits.cpu`               | CPU constraint for limits                 | `1000m`                                              |
-| `resources.requests.memory`          | Memory constraint for requests            | `256Mi`                                              |
-| `livenessProbe.initialDelaySeconds`  | Liveness probe initial delay in seconds   | 10                                                   |
-| `livenessProbe.periodSeconds`        | Liveness probe period in seconds          | 30                                                   |
-| `readinessProbe.initialDelaySeconds` | Readiness probe initial delay in seconds  | 10                                                   |
-| `readinessProbe.periodSeconds`       | Readiness probe period in seconds         | 30                                                   |
-| `imageTagOverride`                   | Override all image tag config             | `nil`                                                |
-| `createGlobalResources`              | Allow creation of cluster-scoped resources| `true`                                               |
-| `createAggregateRoles`               | Create clusterroles that extend aggregated roles to use strimzi crds  | `false`                  |
-| `tolerations`                        | Add tolerations to Operator Pod           | `[]`                                                 |
-| `affinity`                           | Add affinities to Operator Pod            | `{}`                                                 |
-| `annotations`                        | Add annotations to Operator Pod           | `{}`                                                 |
-| `labels`                             | Add labels to Operator Pod                | `{}`                                                 |
-| `nodeSelector`                       | Add a node selector to Operator Pod       | `{}`                                                 |
-| `featureGates`                       | Feature Gates configuration               | `nil`                                                |
-| `tmpDirSizeLimit`                    | Set the `sizeLimit` for the tmp dir volume used by the operator  | `1Mi`                         |
-| `labelsExclusionPattern`             | Override the exclude pattern for exclude some labels             | `""`                          |
-| `generateNetworkPolicy`              | Controls whether Strimzi generates network policy resources      | `true`                        |
-| `connectBuildTimeoutMs`              | Overrides the default timeout value for building new Kafka Connect    | `300000`                 |
-| `mavenBuilder.image.registry`        | Override default Maven Builder image registry              | `nil`                               |
-| `mavenBuilder.image.repository`      | Maven Builder image repository            | `nil`                                                |
-| `mavenBuilder.image.name`            | Override default Maven Builder image name                  | `maven-builder`                     |
-| `mavenBuilder.image.tag`             | Override default Maven Builder image tag                   | `nil`                               |
-| `mavenBuilder.image.digest`          | Override Maven Builder image tag with digest               | `nil`                               |
-| `logConfiguration`                   | Override default `log4j.properties` content                | `nil`                               |
-| `dashboards.enable`                  | Generate configmaps containing the dashboards | `false`                                          |
-| `dashboards.label`                   | How should the dashboards be labeled for the sidecar | `grafana_dashboard`                       |
-| `dashboards.labelValue`              | What should the dashboards label value be for the sidecar | `"1"`                                |
-| `dashboards.extraLabels`             | Any additional labels you would like on the dashboards | `{}`                                    |
-| `dashboards.namespace`               | What namespace should the dashboards be loaded into | `Follows toplevel Namespace`               |
-| `dashboards.annotations`             | Any custom annotations (such as folder for the sidecar) | `{}`                                   |
+| Parameter                                   | Description                                                                     | Default                      |
+|---------------------------------------------|---------------------------------------------------------------------------------|------------------------------|
+| `replicas`                                  | Number of replicas of the cluster operator                                      | 1                            |
+| `watchNamespaces`                           | Comma separated list of additional namespaces for the strimzi-operator to watch | []                           |
+| `watchAnyNamespace`                         | Watch the whole Kubernetes cluster (all namespaces)                             | `false`                      |
+| `defaultImageRegistry`                      | Default image registry for all the images                                       | `quay.io`                    |
+| `defaultImageRepository`                    | Default image registry for all the images                                       | `strimzi`                    |
+| `defaultImageTag`                           | Default image tag for all the images except Kafka Bridge                        | `0.36.0`                     |
+| `image.registry`                            | Override default Cluster Operator image registry                                | `nil`                        |
+| `image.repository`                          | Override default Cluster Operator image repository                              | `nil`                        |
+| `image.name`                                | Cluster Operator image name                                                     | `cluster-operator`           |
+| `image.tag`                                 | Override default Cluster Operator image tag                                     | `nil`                        |
+| `image.digest`                              | Override Cluster Operator image tag with digest                                 | `nil`                        |
+| `image.imagePullPolicy`                     | Image pull policy for all pods deployed by Cluster Operator                     | `IfNotPresent`               |
+| `image.imagePullSecrets`                    | List of Docker registry pull secrets                                            | `[]`                         |
+| `fullReconciliationIntervalMs`              | Full reconciliation interval in milliseconds                                    | 120000                       |
+| `operationTimeoutMs`                        | Operation timeout in milliseconds                                               | 300000                       |
+| `operatorNamespaceLabels`                   | Labels of the namespace where the operator runs                                 | `nil`                        |
+| `podSecurityContext`                        | Cluster Operator pod's security context                                         | `nil`                        |
+| `priorityClassName`                         | Cluster Operator pod's priority class name                                      | `nil`                        |
+| `securityContext`                           | Cluster Operator container's security context                                   | `nil`                        |
+| `rbac.create`                               | Whether to create RBAC related resources                                        | `yes`                        |
+| `serviceAccountCreate`                      | Whether to create a service account                                             | `yes`                        |
+| `serviceAccount`                            | Cluster Operator's service account                                              | `strimzi-cluster-operator`   |
+| `extraEnvs`                                 | Extra environment variables for the Cluster operator container                  | `[]`                         |
+| `kafka.image.registry`                      | Override default Kafka image registry                                           | `nil`                        |
+| `kafka.image.repository`                    | Override default Kafka image repository                                         | `nil`                        |
+| `kafka.image.name`                          | Kafka image name                                                                | `kafka`                      |
+| `kafka.image.tagPrefix`                     | Override default Kafka image tag prefix                                         | `nil`                        |
+| `kafka.image.tag`                           | Override default Kafka image tag and ignore suffix                              | `nil`                        |
+| `kafka.image.digest`                        | Override Kafka image tag with digest                                            | `nil`                        |
+| `kafkaConnect.image.registry`               | Override default Kafka Connect image registry                                   | `nil`                        |
+| `kafkaConnect.image.repository`             | Override default Kafka Connect image repository                                 | `nil`                        |
+| `kafkaConnect.image.name`                   | Kafka Connect image name                                                        | `kafka`                      |
+| `kafkaConnect.image.tagPrefix`              | Override default Kafka Connect image tag prefix                                 | `nil`                        |
+| `kafkaConnect.image.tag`                    | Override default Kafka Connect image tag and ignore suffix                      | `nil`                        |
+| `kafkaConnect.image.digest`                 | Override Kafka Connect image tag with digest                                    | `nil`                        |
+| `kafkaMirrorMaker.image.registry`           | Override default Kafka Mirror Maker image registry                              | `nil`                        |
+| `kafkaMirrorMaker.image.repository`         | Override default Kafka Mirror Maker image repository                            | `nil`                        |
+| `kafkaMirrorMaker.image.name`               | Kafka Mirror Maker image name                                                   | `kafka`                      |
+| `kafkaMirrorMaker.image.tagPrefix`          | Override default Kafka Mirror Maker image tag prefix                            | `nil`                        |
+| `kafkaMirrorMaker.image.tag`                | Override default Kafka Mirror Maker image tag and ignore suffix                 | `nil`                        |
+| `kafkaMirrorMaker.image.digest`             | Override Kafka Mirror Maker image tag with digest                               | `nil`                        |
+| `cruiseControl.image.registry`              | Override default Cruise Control image registry                                  | `nil`                        |
+| `cruiseControl.image.repository`            | Override default Cruise Control image repository                                | `nil`                        |
+| `cruiseControl.image.name`                  | Cruise Control image name                                                       | `kafka`                      |
+| `cruiseControl.image.tagPrefix`             | Override default Cruise Control image tag prefix                                | `nil`                        |
+| `cruiseControl.image.tag`                   | Override default Cruise Control image tag and ignore suffix                     | `nil`                        |
+| `cruiseControl.image.digest`                | Override Cruise Control image tag with digest                                   | `nil`                        |
+| `topicOperator.image.registry`              | Override default Topic Operator image registry                                  | `nil`                        |
+| `topicOperator.image.repository`            | Override default  Topic Operator image repository                               | `nil`                        |
+| `topicOperator.image.name`                  | Topic Operator image name                                                       | `operator`                   |
+| `topicOperator.image.tag`                   | Override default Topic Operator image tag                                       | `nil`                        |
+| `topicOperator.image.digest`                | Override Topic Operator image tag with digest                                   | `nil`                        |
+| `userOperator.image.registry`               | Override default User Operator image registry                                   | `nil`                        |
+| `userOperator.image.repository`             | Override default User Operator image repository                                 | `nil`                        |
+| `userOperator.image.name`                   | User Operator image name                                                        | `operator`                   |
+| `userOperator.image.tag`                    | Override default User Operator image tag                                        | `nil`                        |
+| `userOperator.image.digest`                 | Override User Operator image tag with digest                                    | `nil`                        |
+| `kafkaInit.image.registry`                  | Override default Init Kafka image registry                                      | `nil`                        |
+| `kafkaInit.image.repository`                | Override default Init Kafka image repository                                    | `nil`                        |
+| `kafkaInit.image.name`                      | Init Kafka image name                                                           | `operator`                   |
+| `kafkaInit.image.tag`                       | Override default Init Kafka image tag                                           | `nil`                        |
+| `kafkaInit.image.digest`                    | Override Init Kafka image tag with digest                                       | `nil`                        |
+| `tlsSidecarEntityOperator.image.registry`   | Override default TLS Sidecar Entity Operator image registry                     | `nil`                        |
+| `tlsSidecarEntityOperator.image.repository` | Override default TLS Sidecar Entity Operator image repository                   | `nil`                        |
+| `tlsSidecarEntityOperator.image.name`       | TLS Sidecar Entity Operator image name                                          | `kafka`                      |
+| `tlsSidecarEntityOperator.image.tagPrefix`  | Override default TLS Sidecar Entity Operator image tag prefix                   | `nil`                        |
+| `tlsSidecarEntityOperator.image.tag`        | Override default TLS Sidecar Entity Operator image tag and ignore suffix        | `nil`                        |
+| `tlsSidecarEntityOperator.image.digest`     | Override TLS Sidecar Entity Operator image tag with digest                      | `nil`                        |
+| `kafkaBridge.image.registry`                | Override default Kafka Bridge image registry                                    | `quay.io`                    |
+| `kafkaBridge.image.repository`              | Override default Kafka Bridge image repository                                  | `strimzi`                    |
+| `kafkaBridge.image.name`                    | Kafka Bridge image name                                                         | `kafka-bridge`               |
+| `kafkaBridge.image.tag`                     | Override default Kafka Bridge image tag                                         | `0.26.0`                     |
+| `kafkaBridge.image.digest`                  | Override Kafka Bridge image tag with digest                                     | `nil`                        |
+| `kafkaExporter.image.registry`              | Override default Kafka Exporter image registry                                  | `nil`                        |
+| `kafkaExporter.image.repository`            | Override default Kafka Exporter image repository                                | `nil`                        |
+| `kafkaExporter.image.name`                  | Kafka Exporter image name                                                       | `kafka`                      |
+| `kafkaExporter.image.tagPrefix`             | Override default Kafka Exporter image tag prefix                                | `nil`                        |
+| `kafkaExporter.image.tag`                   | Override default Kafka Exporter image tag and ignore suffix                     | `nil`                        |
+| `kafkaExporter.image.digest`                | Override Kafka Exporter image tag with digest                                   | `nil`                        |
+| `kafkaMirrorMaker2.image.registry`          | Override default Kafka Mirror Maker 2 image registry                            | `nil`                        |
+| `kafkaMirrorMaker2.image.repository`        | Override default Kafka Mirror Maker 2 image repository                          | `nil`                        |
+| `kafkaMirrorMaker2.image.name`              | Kafka Mirror Maker 2 image name                                                 | `kafka`                      |
+| `kafkaMirrorMaker2.image.tagPrefix`         | Override default Kafka Mirror Maker 2 image tag prefix                          | `nil`                        |
+| `kafkaMirrorMaker2.image.tag`               | Override default Kafka Mirror Maker 2 image tag and ignore suffix               | `nil`                        |
+| `kafkaMirrorMaker2.image.digest`            | Override Kafka Mirror Maker 2 image tag with digest                             | `nil`                        |
+| `kanikoExecutor.image.registry`             | Override default Kaniko Executor image registry                                 | `nil`                        |
+| `kanikoExecutor.image.repository`           | Override default Kaniko Executor image repository                               | `nil`                        |
+| `kanikoExecutor.image.name`                 | Kaniko Executor image name                                                      | `kaniko-executor`            |
+| `kanikoExecutor.image.tag`                  | Override default Kaniko Executor image tag                                      | `nil`                        |
+| `kanikoExecutor.image.digest`               | Override Kaniko Executor image tag with digest                                  | `nil`                        |
+| `resources.limits.memory`                   | Memory constraint for limits                                                    | `256Mi`                      |
+| `resources.limits.cpu`                      | CPU constraint for limits                                                       | `1000m`                      |
+| `resources.requests.memory`                 | Memory constraint for requests                                                  | `256Mi`                      |
+| `livenessProbe.initialDelaySeconds`         | Liveness probe initial delay in seconds                                         | 10                           |
+| `livenessProbe.periodSeconds`               | Liveness probe period in seconds                                                | 30                           |
+| `readinessProbe.initialDelaySeconds`        | Readiness probe initial delay in seconds                                        | 10                           |
+| `readinessProbe.periodSeconds`              | Readiness probe period in seconds                                               | 30                           |
+| `imageTagOverride`                          | Override all image tag config                                                   | `nil`                        |
+| `createGlobalResources`                     | Allow creation of cluster-scoped resources                                      | `true`                       |
+| `createAggregateRoles`                      | Create cluster roles that extend aggregated roles to use Strimzi CRDs           | `false`                      |
+| `tolerations`                               | Add tolerations to Operator Pod                                                 | `[]`                         |
+| `affinity`                                  | Add affinities to Operator Pod                                                  | `{}`                         |
+| `annotations`                               | Add annotations to Operator Pod                                                 | `{}`                         |
+| `labels`                                    | Add labels to Operator Pod                                                      | `{}`                         |
+| `nodeSelector`                              | Add a node selector to Operator Pod                                             | `{}`                         |
+| `featureGates`                              | Feature Gates configuration                                                     | `nil`                        |
+| `tmpDirSizeLimit`                           | Set the `sizeLimit` for the tmp dir volume used by the operator                 | `1Mi`                        |
+| `labelsExclusionPattern`                    | Override the exclude pattern for exclude some labels                            | `""`                         |
+| `generateNetworkPolicy`                     | Controls whether Strimzi generates network policy resources                     | `true`                       |
+| `connectBuildTimeoutMs`                     | Overrides the default timeout value for building new Kafka Connect              | `300000`                     |
+| `mavenBuilder.image.registry`               | Override default Maven Builder image registry                                   | `nil`                        |
+| `mavenBuilder.image.repository`             | Maven Builder image repository                                                  | `nil`                        |
+| `mavenBuilder.image.name`                   | Override default Maven Builder image name                                       | `maven-builder`              |
+| `mavenBuilder.image.tag`                    | Override default Maven Builder image tag                                        | `nil`                        |
+| `mavenBuilder.image.digest`                 | Override Maven Builder image tag with digest                                    | `nil`                        |
+| `logConfiguration`                          | Override default `log4j.properties` content                                     | `nil`                        |
+| `dashboards.enable`                         | Generate configmaps containing the dashboards                                   | `false`                      |
+| `dashboards.label`                          | How should the dashboards be labeled for the sidecar                            | `grafana_dashboard`          |
+| `dashboards.labelValue`                     | What should the dashboards label value be for the sidecar                       | `"1"`                        |
+| `dashboards.extraLabels`                    | Any additional labels you would like on the dashboards                          | `{}`                         |
+| `dashboards.namespace`                      | What namespace should the dashboards be loaded into                             | `Follows toplevel Namespace` |
+| `dashboards.annotations`                    | Any custom annotations (such as folder for the sidecar)                         | `{}`                         |
 
 Specify each parameter using the `--set key=value[,key=value]` argument to `helm install`. For example,
 
 ```bash
-$ helm install my-release --set logLevel=DEBUG,fullReconciliationIntervalMs=240000 strimzi/strimzi-kafka-operator
+$ helm install my-strimzi-cluster-operator --set replicas=2 oci://quay.io/strimzi-helm/strimzi-kafka-operator
 ```
