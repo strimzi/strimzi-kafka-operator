@@ -46,7 +46,7 @@ public enum KafkaRebalanceState {
      *     <dt>Ready</dt><dd>Once the rebalancing is complete.</dd>
      * </dl>
      */
-    Rebalancing(List.of(KafkaRebalanceAnnotation.stop)),
+    Rebalancing(List.of(KafkaRebalanceAnnotation.stop, KafkaRebalanceAnnotation.refresh)),
     /**
      * The user has stopped the actual rebalancing by setting annotation strimzi.io/rebalance=stop
      * May transition back to:
