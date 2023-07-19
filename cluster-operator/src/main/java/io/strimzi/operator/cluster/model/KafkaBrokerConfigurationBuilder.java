@@ -24,6 +24,7 @@ import io.strimzi.api.kafka.model.nodepool.ProcessRoles;
 import io.strimzi.kafka.oauth.server.ServerConfig;
 import io.strimzi.kafka.oauth.server.plain.ServerPlainConfig;
 import io.strimzi.operator.cluster.model.cruisecontrol.CruiseControlMetricsReporter;
+import io.strimzi.operator.cluster.operator.assembly.JaasConfig;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlConfigurationParameters;
 import io.strimzi.operator.common.Reconciliation;
 
@@ -35,6 +36,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -429,38 +431,41 @@ public class KafkaBrokerConfigurationBuilder {
         if (auth instanceof KafkaListenerAuthenticationOAuth oauth) {
             securityProtocol.add(String.format("%s:%s", listenerName, getSecurityProtocol(tls, true)));
 
-            List<String> options = new ArrayList<>(getOAuthOptions(oauth));
-            options.add("oauth.config.id=\"" + listenerName + "\"");
+            Map<String, String> jaasOptions = new HashMap<>(getOAuthOptions(oauth));
+            addOption(jaasOptions,"oauth.config.id", listenerName);
 
             if (oauth.getClientSecret() != null)    {
-                options.add(String.format("oauth.client.secret=\"" + PLACEHOLDER_OAUTH_CLIENT_SECRET + "\"", listenerNameInEnvVar));
+                addOption(jaasOptions,"oauth.client.secret", String.format(PLACEHOLDER_OAUTH_CLIENT_SECRET, listenerNameInEnvVar));
             }
 
             if (oauth.getTlsTrustedCertificates() != null && oauth.getTlsTrustedCertificates().size() > 0)    {
-                options.add(String.format("oauth.ssl.truststore.location=\"/tmp/kafka/oauth-%s.truststore.p12\"", listenerNameInProperty));
-                options.add("oauth.ssl.truststore.password=\"" + PLACEHOLDER_CERT_STORE_PASSWORD + "\"");
-                options.add("oauth.ssl.truststore.type=\"PKCS12\"");
+                addOption(jaasOptions,"oauth.ssl.truststore.location", String.format("/tmp/kafka/oauth-%s.truststore.p12", listenerNameInProperty));
+                addOption(jaasOptions,"oauth.ssl.truststore.password", PLACEHOLDER_CERT_STORE_PASSWORD);
+                addOption(jaasOptions,"oauth.ssl.truststore.type", "PKCS12");
             }
 
             StringBuilder enabledMechanisms = new StringBuilder();
             if (oauth.isEnableOauthBearer()) {
                 writer.println(String.format("listener.name.%s.oauthbearer.sasl.server.callback.handler.class=io.strimzi.kafka.oauth.server.JaasServerOauthValidatorCallbackHandler", listenerNameInProperty));
+                //main code
+                //writer.println(String.format("listener.name.%s.oauthbearer.sasl.jaas.config=org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required unsecuredLoginStringClaim_sub=\"thePrincipalName\" %s;"
+                // , listenerNameInProperty, String.join(" ", options)));
+
                 writer.println(String.format("listener.name.%s.oauthbearer.sasl.jaas.config=%s", listenerNameInProperty,
-                        String.format("org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required unsecuredLoginStringClaim_sub=\"thePrincipalName\" %s;",
-                                String.join(" ", options))));
+                        JaasConfig.config("org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule", jaasOptions)));
                 enabledMechanisms.append("OAUTHBEARER");
             }
 
             if (oauth.isEnablePlain()) {
-                addOption(options, ServerPlainConfig.OAUTH_TOKEN_ENDPOINT_URI, oauth.getTokenEndpointUri());
+                addOption(jaasOptions, ServerPlainConfig.OAUTH_TOKEN_ENDPOINT_URI, oauth.getTokenEndpointUri());
                 writer.println(String.format("listener.name.%s.plain.sasl.server.callback.handler.class=io.strimzi.kafka.oauth.server.plain.JaasServerOauthOverPlainValidatorCallbackHandler", listenerNameInProperty));
                 writer.println(String.format("listener.name.%s.plain.sasl.jaas.config=%s", listenerNameInProperty,
-                        String.format("org.apache.kafka.common.security.plain.PlainLoginModule required %s;",
-                                String.join(" ", options))));
+                        JaasConfig.config("org.apache.kafka.common.security.plain.PlainLoginModule",jaasOptions)));
                 if (enabledMechanisms.length() > 0) {
                     enabledMechanisms.append(",");
                 }
                 enabledMechanisms.append("PLAIN");
+
             }
 
             writer.println(String.format("listener.name.%s.sasl.enabled.mechanisms=%s", listenerNameInProperty, enabledMechanisms));
@@ -471,8 +476,10 @@ public class KafkaBrokerConfigurationBuilder {
             writer.println();
         } else if (auth instanceof KafkaListenerAuthenticationScramSha512) {
             securityProtocol.add(String.format("%s:%s", listenerName, getSecurityProtocol(tls, true)));
-
-            writer.println(String.format("listener.name.%s.scram-sha-512.sasl.jaas.config=%s", listenerNameInProperty, "org.apache.kafka.common.security.scram.ScramLoginModule required;"));
+//            writer.println(String.format("listener.name.%s.scram-sha-512.sasl.jaas.config=%s", listenerNameInProperty, "org.apache.kafka.common.security.scram.ScramLoginModule required;"));
+            //this is what we have in the main origin.
+            // writer.println(String.format("listener.name.%s.scram-sha-512.sasl.jaas.config=org.apache.kafka.common.security.scram.ScramLoginModule required;", listenerNameInProperty));
+            writer.println(String.format("listener.name.%s.scram-sha-512.sasl.jaas.config=%s", listenerNameInProperty, JaasConfig.scram(username, password)));
             writer.println(String.format("listener.name.%s.sasl.enabled.mechanisms=SCRAM-SHA-512", listenerNameInProperty));
             writer.println();
         } else if (auth instanceof KafkaListenerAuthenticationTls) {
@@ -512,8 +519,8 @@ public class KafkaBrokerConfigurationBuilder {
      * @param oauth     OAuth type authentication object
      * @return  Returns the builder instance
      */
-    /*test*/ static List<String> getOAuthOptions(KafkaListenerAuthenticationOAuth oauth)  {
-        List<String> options = new ArrayList<>(5);
+    /*test*/ static Map<String, String> getOAuthOptions(KafkaListenerAuthenticationOAuth oauth)  {
+        Map<String, String> options = new HashMap<>();
 
         addOption(options, ServerConfig.OAUTH_CLIENT_ID, oauth.getClientId());
         addOption(options, ServerConfig.OAUTH_VALID_ISSUER_URI, oauth.getValidIssuerUri());
@@ -567,20 +574,28 @@ public class KafkaBrokerConfigurationBuilder {
         return options;
     }
 
-    static void addOption(List<String> options, String option, String value) {
-        if (value != null) options.add(String.format("%s=\"%s\"", option, value));
+    static void addOption(Map<String, String> options, String option, String value) {
+        if (value != null) {
+            options.put(option, value);
+        }
     }
 
-    static void addBooleanOptionIfTrue(List<String> options, String option, boolean value) {
-        if (value) options.add(String.format("%s=\"%s\"", option, true));
+    static void addBooleanOptionIfTrue(Map<String, String> options, String option, boolean value) {
+        if (value) {
+            options.put(option, String.valueOf(true));
+        }
     }
 
-    static void addBooleanOptionIfFalse(List<String> options, String option, boolean value) {
-        if (!value) options.add(String.format("%s=\"%s\"", option, false));
+    static void addBooleanOptionIfFalse(Map<String, String> options, String option, boolean value) {
+        if (!value) {
+            options.put(option, String.valueOf(false));
+        }
     }
 
     static void addOption(PrintWriter writer, String name, Object value) {
-        if (value != null) writer.println(name + "=" + value);
+        if (value != null) {
+            writer.println(name + "=" + value);
+        }
     }
 
     /**

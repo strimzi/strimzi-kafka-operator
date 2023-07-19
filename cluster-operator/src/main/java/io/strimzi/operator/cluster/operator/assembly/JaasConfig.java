@@ -22,10 +22,4 @@ public class JaasConfig {
 
         return moduleName + " required " + stringStream + ";";
     }
-
-
-
-    // TODO scram
-    // TODO oauth
-    //
 }
