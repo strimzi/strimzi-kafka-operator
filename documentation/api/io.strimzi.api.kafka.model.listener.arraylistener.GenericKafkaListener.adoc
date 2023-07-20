@@ -62,11 +62,28 @@ listeners:
 ----
 
 The name and port must be unique within the Kafka cluster.
-The name can be up to 25 characters long, comprising lower-case letters and numbers.
-Allowed port numbers are 9092 and higher with the exception of ports 9404 and 9999, which are already used for Prometheus and JMX.
-
 By specifying a unique name and port for each listener,
 you can configure multiple listeners.
+The name can be up to 25 characters long, comprising lower-case letters and numbers.
+
+[id='property-listener-port-{context}']
+= `port`
+
+The port number is the port used in the Kafka cluster, which might not be the same port used for access by a client.
+
+* `loadbalancer` listeners use the specified port number, as do `internal` and `cluster-ip` listeners
+* `ingress` and `route` listeners use port 443 for access
+* `nodeport` listeners use the port number assigned by Kubernetes
+
+For client connection, use the address and port for the bootstrap service of the listener.
+You can retrieve this from the status of the `Kafka` resource.
+
+.Example command to retrieve the address and port for client connection
+[source,shell,subs=+quotes]
+kubectl get kafka _<kafka_cluster_name>_ -o=jsonpath='{.status.listeners[?(@.name=="_<listener_name>_")].bootstrapServers}{"\n"}'
+
+IMPORTANT: When configuring listeners for client access to brokers, you can use port 9092 or higher (9093, 9094, and so on), but with a few exceptions.
+The listeners cannot be configured to use the ports reserved for interbroker communication (9090 and 9091), Prometheus metrics (9404), and JMX (Java Management Extensions) monitoring (9999).
 
 = `type`
 
@@ -241,24 +258,6 @@ spec:
     #...
 
 ----
-
-[id='property-listener-port-{context}']
-= `port`
-
-The port number is the port used in the Kafka cluster, which might not be the same port used for access by a client.
-
-* `loadbalancer` listeners use the specified port number, as do `internal` and `cluster-ip` listeners
-* `ingress` and `route` listeners use port 443 for access
-* `nodeport` listeners use the port number assigned by Kubernetes
-
-For client connection, use the address and port for the bootstrap service of the listener.
-You can retrieve this from the status of the `Kafka` resource.
-
-.Example command to retrieve the address and port for client connection
-[source,shell,subs=+quotes]
-kubectl get kafka _<kafka_cluster_name>_ -o=jsonpath='{.status.listeners[?(@.name=="_<listener_name>_")].bootstrapServers}{"\n"}'
-
-NOTE: Listeners cannot be configured to use the ports set aside for interbroker communication (9090 and 9091) and metrics (9404).
 
 [id='property-listener-tls-{context}']
 = `tls`

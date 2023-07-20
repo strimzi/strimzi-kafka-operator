@@ -16,7 +16,9 @@ The following components require `metricsConfig` configuration to expose metrics
 * Cruise Control
 * ZooKeeper
 
-This configuration enables the {JMXExporter} to expose metrics through an HTTP endpoint, which is scraped by the Prometheus server.
+This configuration enables the {JMXExporter} to expose metrics through an HTTP endpoint.
+The port for the JMX exporter HTTP endpoint is 9404. 
+Prometheus scrapes this endpoint to collect Kafka metrics.
 
 You set the `enableMetrics` property to `true` in order to expose metrics for these components:
 
