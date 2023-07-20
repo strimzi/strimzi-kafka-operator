@@ -46,7 +46,8 @@ The following example shows:
 
 Each listener is configured with a unique name and port within a Kafka cluster.
 
-NOTE: Listeners cannot be configured to use the ports reserved for inter-broker communication (9091 or 9090) and metrics (9404).
+IMPORTANT: When configuring listeners for client access to brokers, you can use port 9092 or higher (9093, 9094, and so on), but with a few exceptions.
+The listeners cannot be configured to use the ports reserved for interbroker communication (9090 and 9091), Prometheus metrics (9404), and JMX (Java Management Extensions) monitoring (9999).
 
 .Example listener authentication configuration
 [source,yaml,subs="attributes+"]
