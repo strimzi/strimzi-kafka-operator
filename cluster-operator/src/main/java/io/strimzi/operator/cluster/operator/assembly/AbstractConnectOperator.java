@@ -7,7 +7,6 @@ package io.strimzi.operator.cluster.operator.assembly;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.DefaultKubernetesResourceList;
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.ServiceAccount;
@@ -15,9 +14,6 @@ import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.fabric8.kubernetes.client.Watch;
-import io.fabric8.kubernetes.client.Watcher;
-import io.fabric8.kubernetes.client.WatcherException;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.micrometer.core.instrument.Timer;
 import io.netty.channel.ConnectTimeoutException;
@@ -48,11 +44,8 @@ import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.AbstractOperator;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.BackOff;
-import io.strimzi.operator.common.OperatorWatcher;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
-import io.strimzi.operator.common.Util;
-import io.strimzi.operator.common.VertxUtil;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.OrderedProperties;
 import io.strimzi.operator.common.model.ResourceVisitor;
@@ -83,7 +76,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.function.BiFunction;
-import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -110,7 +102,10 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(AbstractConnectOperator.class.getName());
 
     private final boolean isNetworkPolicyGeneration;
-    private final Function<Vertx, KafkaConnectApi> connectClientProvider;
+    /**
+     * Provider of the Kafka Connect REST API client
+     */
+    public final Function<Vertx, KafkaConnectApi> connectClientProvider;
     protected final CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList> connectorOperator;
     protected final ImagePullPolicy imagePullPolicy;
     protected final ConfigMapOperator configMapOperations;
@@ -126,8 +121,6 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
     protected final PlatformFeaturesAvailability pfa;
     protected final ServiceAccountOperator serviceAccountOperations;
     private final int port;
-    private final ClusterOperatorConfig config;
-    private Watcher<KafkaConnector> connectorWatcher;
 
     /**
      * Constructor
@@ -165,7 +158,6 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
         this.operatorNamespaceLabels = config.getOperatorNamespaceLabels();
         this.pfa = pfa;
         this.port = port;
-        this.config = config;
     }
 
     @Override
@@ -192,97 +184,6 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
     }
 
     /**
-     * Create a watch on {@code KafkaConnector} in the given {@code namespace}.
-     * The watcher will:
-     * <ul>
-     * <li>{@linkplain #reconcileConnectors(Reconciliation, CustomResource, KafkaConnectStatus, boolean, String, OrderedProperties)} on the KafkaConnect
-     * identified by {@code KafkaConnector.metadata.labels[strimzi.io/cluster]}.</li>
-     * <li>The {@code KafkaConnector} status is updated with the result.</li>
-     * </ul>
-     *
-     * @param namespace Namespace where to watch.
-     * @param onClose Callback called when the watch is closed.
-     *
-     * @return A future which completes when the watch has been set up.
-     */
-    public Future<Watch> createConnectorWatch(String namespace, Consumer<WatcherException> onClose) {
-        Labels selectorLabels =  config.getCustomResourceSelector();
-        Optional<LabelSelector> selector = (selectorLabels == null || selectorLabels.toMap().isEmpty()) ? Optional.empty() : Optional.of(new LabelSelector(null, selectorLabels.toMap()));
-
-        connectorWatcher =  new OperatorWatcher<KafkaConnector>(this, namespace, onClose) {
-            public void eventReceived(Action action, KafkaConnector kafkaConnector) {
-                String connectorName = kafkaConnector.getMetadata().getName();
-                String connectorNamespace = kafkaConnector.getMetadata().getNamespace();
-                String connectorKind = kafkaConnector.getKind();
-                String connectName = kafkaConnector.getMetadata().getLabels() == null ? null : kafkaConnector.getMetadata().getLabels().get(Labels.STRIMZI_CLUSTER_LABEL);
-                String connectNamespace = connectorNamespace;
-
-                switch (action) {
-                    case ADDED:
-                    case DELETED:
-                    case MODIFIED:
-                        if (connectName != null) {
-                            // Check whether a KafkaConnect exists
-                            resourceOperator.getAsync(connectNamespace, connectName)
-                                    .compose(connect -> {
-                                        KafkaConnectApi apiClient = connectClientProvider.apply(vertx);
-                                        if (connect == null) {
-                                            Reconciliation r = new Reconciliation("connector-watch", kind(),
-                                                    kafkaConnector.getMetadata().getNamespace(), connectName);
-                                            updateStatus(r, noConnectCluster(connectNamespace, connectName), kafkaConnector, connectorOperator);
-                                            LOGGER.infoCr(r, "{} {} in namespace {} was {}, but Connect cluster {} does not exist", connectorKind, connectorName, connectorNamespace, action, connectName);
-                                            return Future.succeededFuture();
-                                        } else {
-                                            // grab the lock and call reconcileConnectors()
-                                            // (i.e. short circuit doing a whole KafkaConnect reconciliation).
-                                            Reconciliation reconciliation = new Reconciliation("connector-watch", kind(),
-                                                    kafkaConnector.getMetadata().getNamespace(), connectName);
-
-                                            if (!Util.matchesSelector(selector, connect))   {
-                                                LOGGER.debugCr(reconciliation, "{} {} in namespace {} was {}, but Connect cluster {} does not match label selector {} and will be ignored", connectorKind, connectorName, connectorNamespace, action, connectName, selectorLabels);
-                                                return Future.succeededFuture();
-                                            } else if (connect.getSpec() != null && connect.getSpec().getReplicas() == 0)  {
-                                                LOGGER.infoCr(reconciliation, "{} {} in namespace {} was {}, but Connect cluster {} has 0 replicas", connectorKind, connectorName, connectorNamespace, action, connectName);
-                                                updateStatus(reconciliation, zeroReplicas(connectNamespace, connectName), kafkaConnector, connectorOperator);
-                                                return Future.succeededFuture();
-                                            } else {
-                                                LOGGER.infoCr(reconciliation, "{} {} in namespace {} was {}", connectorKind, connectorName, connectorNamespace, action);
-
-                                                return withLock(reconciliation, LOCK_TIMEOUT_MS,
-                                                        () -> reconcileConnectorAndHandleResult(reconciliation,
-                                                                        KafkaConnectResources.qualifiedServiceName(connectName, connectNamespace), apiClient,
-                                                                        isUseResources(connect),
-                                                                        kafkaConnector.getMetadata().getName(), action == Action.DELETED ? null : kafkaConnector)
-                                                                .compose(reconcileResult -> {
-                                                                    LOGGER.infoCr(reconciliation, "reconciled");
-                                                                    return Future.succeededFuture(reconcileResult);
-                                                                }));
-                                            }
-                                        }
-                                    });
-                        } else {
-                            updateStatus(new Reconciliation("connector-watch", kind(),
-                                            kafkaConnector.getMetadata().getNamespace(), null),
-                                    new InvalidResourceException("Resource lacks label '"
-                                            + Labels.STRIMZI_CLUSTER_LABEL
-                                            + "': No connect cluster in which to create this connector."),
-                                    kafkaConnector, connectorOperator);
-                        }
-
-                        break;
-                    case ERROR:
-                        LOGGER.errorCr(new Reconciliation("connector-watch", connectorKind, connectName, connectorNamespace), "Failed {} {} in namespace {} ", connectorKind, connectorName, connectorNamespace);
-                        break;
-                    default:
-                        LOGGER.errorCr(new Reconciliation("connector-watch", connectorKind, connectName, connectorNamespace), "Unknown action: {} {} in namespace {}", connectorKind, connectorName, connectorNamespace);
-                }
-            }
-        };
-
-        return VertxUtil.async(vertx, () -> connectorOperator.watch(namespace, selector(), connectorWatcher));
-    }
-
-    /**
      * Checks whether the use of KafkaConnector resources is enabled for this cluster or not
      *
      * @param connect   The Connect custom resource
@@ -293,12 +194,28 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
         return Annotations.booleanAnnotation(connect, Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, false);
     }
 
-    private static NoSuchResourceException noConnectCluster(String connectNamespace, String connectName) {
+    /**
+     * Returns NoSuchResourceException for a Connect resource with given name and namespace.
+     *
+     * @param connectNamespace The namespace of Connect custom resource
+     * @param connectName   The name of Connect resource
+     *
+     * @return NoSuchResourceException
+     */
+    public static NoSuchResourceException noConnectCluster(String connectNamespace, String connectName) {
         return new NoSuchResourceException(
                 "KafkaConnect resource '" + connectName + "' identified by label '" + Labels.STRIMZI_CLUSTER_LABEL + "' does not exist in namespace " + connectNamespace + ".");
     }
 
-    private static RuntimeException zeroReplicas(String connectNamespace, String connectName) {
+    /**
+     * Returns RuntimeException for a Connect resource with given name and namespace.
+     *
+     * @param connectNamespace The namespace of Connect custom resource
+     * @param connectName   The name of Connect resource
+     *
+     * @return RuntimeException
+     */
+    public static RuntimeException zeroReplicas(String connectNamespace, String connectName) {
         return new RuntimeException(
                 "Kafka Connect cluster '" + connectName + "' in namespace " + connectNamespace + " has 0 replicas.");
     }
@@ -1117,14 +1034,5 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
      */
     protected Future<ReconcileResult<ClusterRoleBinding>> connectInitClusterRoleBinding(Reconciliation reconciliation, String crbName, ClusterRoleBinding crb) {
         return ReconcilerUtils.withIgnoreRbacError(reconciliation, clusterRoleBindingOperations.reconcile(reconciliation, crbName, crb), crb);
-    }
-
-    /**
-     * Get connector watcher
-     *
-     * @return connector watcher
-     */
-    public Watcher getConnectorWatcher() {
-        return connectorWatcher;
     }
 }

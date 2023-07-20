@@ -9,7 +9,6 @@ import io.fabric8.kubernetes.api.model.StatusDetails;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.Watch;
-import io.fabric8.kubernetes.client.WatcherException;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.dsl.base.PatchContext;
 import io.fabric8.kubernetes.client.dsl.base.PatchType;
@@ -28,7 +27,6 @@ import io.strimzi.api.kafka.model.connect.ConnectorPlugin;
 import io.strimzi.api.kafka.model.connect.ConnectorPluginBuilder;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.api.kafka.model.status.Status;
-import io.strimzi.operator.common.OperatorWatcher;
 import io.strimzi.platform.KubernetesVersion;
 import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
@@ -120,7 +118,6 @@ public class ConnectorMockTest {
     @SuppressWarnings("unused")
     private KubernetesClient client;
     private MockKube2 mockKube;
-    public OperatorWatcher<io.fabric8.kubernetes.api.model.HasMetadata> connectWatcher;
     private Watch connectWatch;
     private Watch connectorWatch;
     private KafkaConnectApi api;
@@ -189,56 +186,17 @@ public class ConnectorMockTest {
             x -> api));
 
         Checkpoint async = testContext.checkpoint();
-
-        kafkaConnectOperator.createWatch(NAMESPACE, kafkaConnectOperator.recreateWatch(NAMESPACE))
+        // Fail test if watcher closes for any reason
+        kafkaConnectOperator.createWatch(NAMESPACE, e -> testContext.failNow(e))
             .onComplete(testContext.succeeding(i -> { }))
             .compose(watch -> {
                 connectWatch = watch;
-                return kafkaConnectOperator.createConnectorWatch(NAMESPACE, kafkaConnectOperator.recreateWatch(NAMESPACE));
+                return kafkaConnectOperator.createKafkaConnectorWatch(NAMESPACE, null);
             }).compose(watch -> {
                 connectorWatch = watch;
                 //async.flag();
                 return Future.succeededFuture();
             }).onComplete(testContext.succeeding(v -> async.flag()));
-    }
-
-    @Test
-    public void testKafkaConnectWatchClosedWithException() throws WatcherException {
-        String connectName = "cluster";
-        String connectorName = "connector";
-        WatcherException e = new WatcherException("WatcherException");
-
-        KafkaConnect connect = new KafkaConnectBuilder()
-                .withNewMetadata()
-                    .withNamespace(NAMESPACE)
-                    .withName(connectName)
-                    .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
-                .endMetadata()
-                .withNewSpec()
-                    .withReplicas(1)
-                .endSpec()
-                .build();
-        Crds.kafkaConnectOperation(client).inNamespace(NAMESPACE).resource(connect).create();
-
-        kafkaConnectOperator.getWatcher().onClose(e);
-        waitForConnectReady(connectName);
-
-        // Create KafkaConnector and wait till it's ready
-        KafkaConnector connector = new KafkaConnectorBuilder()
-                .withNewMetadata()
-                    .withName(connectorName)
-                    .withNamespace(NAMESPACE)
-                    .addToLabels(Labels.STRIMZI_CLUSTER_LABEL, connectName)
-                .endMetadata()
-                .withNewSpec()
-                    .withTasksMax(1)
-                    .withClassName("Dummy")
-                .endSpec()
-                .build();
-        Crds.kafkaConnectorOperation(client).inNamespace(NAMESPACE).resource(connector).create();
-
-        kafkaConnectOperator.getConnectorWatcher().onClose(e);
-        waitForConnectorReady(connectorName);
     }
 
     private void setupMockConnectAPI() {

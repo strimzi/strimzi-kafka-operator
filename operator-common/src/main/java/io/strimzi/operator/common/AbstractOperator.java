@@ -67,15 +67,24 @@ public abstract class AbstractOperator<
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(AbstractOperator.class);
 
     private static final long PROGRESS_WARNING = 60_000L;
-    protected static final int LOCK_TIMEOUT_MS = 10000;
+    /**
+     * Lock timeout
+     */
+    public static final int LOCK_TIMEOUT_MS = 10000;
 
     /**
      * Prefix used for metrics provided by Strimzi operators
      */
     public static final String METRICS_PREFIX = "strimzi.";
 
-    protected final Vertx vertx;
-    protected final O resourceOperator;
+    /**
+     * Vert.x instance
+     */
+    public final Vertx vertx;
+    /**
+     * Resource operator for given custom resource
+     */
+    public final O resourceOperator;
     private final String kind;
 
     private final Optional<LabelSelector> selector;
@@ -358,12 +367,14 @@ public abstract class AbstractOperator<
      * and call the given {@code callable} with the lock held.
      * Once the callable returns (or if it throws) release the lock and complete the returned Future.
      * If the lock cannot be acquired the given {@code callable} is not called and the returned Future is completed with {@link UnableToAcquireLockException}.
-     * @param reconciliation
-     * @param callable
-     * @param <T>
-     * @return
+     * @param reconciliation The reconciliation
+     * @param lockTimeoutMs The timeout for the lock
+     * @param callable The callable routine for processing the reconciliation
+     * @param <T> The custom resource type
+     *
+     * @return A Future that completes lock operation has completed.
      */
-    protected final <T> Future<T> withLock(Reconciliation reconciliation, long lockTimeoutMs, Callable<Future<T>> callable) {
+    public final <T> Future<T> withLock(Reconciliation reconciliation, long lockTimeoutMs, Callable<Future<T>> callable) {
         Promise<T> handler = Promise.promise();
         String namespace = reconciliation.namespace();
         String name = reconciliation.name();

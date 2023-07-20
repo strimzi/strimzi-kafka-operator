@@ -11,7 +11,6 @@ import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.Watch;
-import io.fabric8.kubernetes.client.Watcher;
 import io.fabric8.kubernetes.client.WatcherException;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.api.kafka.KafkaConnectList;
@@ -30,7 +29,6 @@ import io.strimzi.operator.cluster.model.KafkaConnectCluster;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.Annotations;
-import io.strimzi.operator.common.OperatorWatcher;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationException;
 import io.strimzi.operator.common.ReconciliationLogger;
@@ -60,6 +58,8 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import static io.strimzi.operator.common.VertxUtil.async;
+
 /**
  * <p>Assembly operator for a "Kafka Connect" assembly, which manages:</p>
  * <ul>
@@ -75,7 +75,6 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
     private final KafkaVersion.Lookup versions;
     private final boolean stableIdentities;
     private final SharedEnvironmentProvider sharedEnvironmentProvider;
-    private Watcher<KafkaConnect> watcher;
 
     /**
      * Constructor
@@ -367,24 +366,35 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
     }
 
     /**
-     * Create Kubernetes watch.
+     * Create Kubernetes watch for KafkaConnector resources.
      *
-     * @param namespace Namespace where to watch.
-     * @param onClose Callback called when the watch is closed.
+     * @param namespace       Namespace where to watch for the resources.
+     * @param selectorLabels  Selector labels for filtering the custom resources
      *
-     * @return A future which completes when the watcher has been created.
+     * @return  A future which completes when the watcher has been created.
      */
-    public Future<Watch> createWatch(String namespace, Consumer<WatcherException> onClose) {
-        watcher = new OperatorWatcher<KafkaConnect>(this, namespace, onClose);
-        return VertxUtil.async(vertx, () -> resourceOperator.watch(namespace, selector(), watcher));
+    public Future<Watch> createKafkaConnectorWatch(String namespace, Labels selectorLabels) {
+        return async(vertx, () -> connectorOperator.watch(namespace, Optional.empty(), new KafkaConnectorWatcher(namespace, selector(), this, recreateKafkaConnectorWatch(namespace), selectorLabels)));
     }
 
     /**
-     * Get watcher.
+     * Recreates a Kubernetes watch for KafkaConnector resources
      *
-     * @return watcher.
+     * @param namespace     Namespace which should be watched
+     *
+     * @return  Consumer for a Watched exception
      */
-    public Watcher getWatcher() {
-        return watcher;
+    public Consumer<WatcherException> recreateKafkaConnectorWatch(String namespace) {
+        return new Consumer<>() {
+            @Override
+            public void accept(WatcherException e) {
+                if (e != null) {
+                    LOGGER.errorOp("KafkaConnector watcher closed with exception in namespace {}", namespace, e);
+                    createWatch(namespace, this);
+                } else {
+                    LOGGER.infoOp("KafkaConnector watcher closed in namespace {}", namespace);
+                }
+            }
+        };
     }
 }

@@ -10,7 +10,6 @@ import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.Watch;
-import io.fabric8.kubernetes.client.Watcher;
 import io.fabric8.kubernetes.client.WatcherException;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.api.kafka.KafkaRebalanceList;
@@ -164,7 +163,6 @@ public class KafkaRebalanceAssemblyOperator
     private final SecretOperator secretOperations;
     private final Optional<LabelSelector> kafkaSelector;
     private boolean usingJbodStorage;
-    private OperatorWatcher<KafkaRebalance> watcher;
 
     private final ConfigMapOperator configMapOperator;
     /**
@@ -209,6 +207,78 @@ public class KafkaRebalanceAssemblyOperator
      */
     protected String cruiseControlHost(String clusterName, String clusterNamespace) {
         return CruiseControlResources.qualifiedServiceName(clusterName, clusterNamespace);
+    }
+
+    /**
+     * Recreates a Kubernetes watch
+     *
+     * @param namespace Namespace which should be watched
+     *
+     * @return  Consumer for a Watched exception
+     */
+    public Consumer<WatcherException> recreateWatch(String namespace) {
+        Consumer<WatcherException> kubernetesClientExceptionConsumer = new Consumer<WatcherException>() {
+            @Override
+            public void accept(WatcherException e) {
+                if (e != null) {
+                    LOGGER.errorOp("Watcher closed with exception in namespace {}", namespace, e);
+                    createWatch(namespace, this);
+                } else {
+                    LOGGER.infoOp("Watcher closed in namespace {}", namespace);
+                }
+            }
+        };
+        return kubernetesClientExceptionConsumer;
+    }
+
+    /**
+     * Create a watch on {@code KafkaRebalance} in the given {@code watchNamespaceOrWildcard}.
+     *
+     * @param watchNamespaceOrWildcard The namespace to watch, or "*" to watch all namespaces.
+     * @param onClose                  Selector labels for filtering the custom resources
+     *
+     * @return A future which completes when the watch has been set up.
+     */
+    public Future<Watch> createRebalanceWatch(String watchNamespaceOrWildcard, Consumer<WatcherException> onClose) {
+
+        return VertxUtil.async(this.vertx, () ->
+            kafkaRebalanceOperator.watch(watchNamespaceOrWildcard, selector(), new OperatorWatcher<>(this, watchNamespaceOrWildcard, onClose) {
+                @Override
+                public void eventReceived(Action action, KafkaRebalance kafkaRebalance) {
+                    Reconciliation reconciliation = new Reconciliation("kafkarebalance-watch", kafkaRebalance.getKind(),
+                            kafkaRebalance.getMetadata().getNamespace(), kafkaRebalance.getMetadata().getName());
+
+                    LOGGER.debugCr(reconciliation, "EventReceived {} on {} with status [{}] and {}={}", action,
+                            kafkaRebalance.getMetadata().getName(),
+                            kafkaRebalance.getStatus() != null ? rebalanceStateConditionType(kafkaRebalance.getStatus()) : null,
+                            ANNO_STRIMZI_IO_REBALANCE, rawRebalanceAnnotation(kafkaRebalance));
+
+                    withLock(reconciliation, LOCK_TIMEOUT_MS,
+                        () -> reconcileRebalance(reconciliation, action == Action.DELETED ? null : kafkaRebalance));
+                }
+            }));
+    }
+
+    /**
+     * Recreates a KafkaRebalance Kubernetes watch
+     *
+     * @param namespace Namespace which should be watched
+     *
+     * @return  Consumer for a Watched exception
+     */
+    public Consumer<WatcherException> recreateRebalanceWatch(String namespace) {
+        Consumer<WatcherException> kubernetesClientExceptionConsumer = new Consumer<WatcherException>() {
+            @Override
+            public void accept(WatcherException e) {
+                if (e != null) {
+                    LOGGER.errorOp("Watcher closed with exception in namespace {}", namespace, e);
+                    createRebalanceWatch(namespace, this);
+                } else {
+                    LOGGER.infoOp("Watcher closed in namespace {}", namespace);
+                }
+            }
+        };
+        return kubernetesClientExceptionConsumer;
     }
 
     /**
@@ -1429,41 +1499,5 @@ public class KafkaRebalanceAssemblyOperator
     @Override
     protected KafkaRebalanceStatus createStatus(KafkaRebalance ignored) {
         return new KafkaRebalanceStatus();
-    }
-
-    /**
-     * Create a watch on {@code KafkaRebalance} in the given {@code namespace}.
-     *
-     * @param namespace The namespace to watch, or "*" to watch all namespaces.
-     * @param onClose Callback called when the watch is closed.
-     *
-     * @return A future which completes when the watcher has been created.
-     */
-    @Override
-    public Future<Watch> createWatch(String namespace, Consumer<WatcherException> onClose) {
-        watcher =  new OperatorWatcher<KafkaRebalance>(this, namespace, onClose) {
-            public void eventReceived(Action action, KafkaRebalance kafkaRebalance) {
-                Reconciliation reconciliation = new Reconciliation("kafkarebalance-watch", kafkaRebalance.getKind(),
-                        kafkaRebalance.getMetadata().getNamespace(), kafkaRebalance.getMetadata().getName());
-
-                LOGGER.debugCr(reconciliation, "EventReceived {} on {} with status [{}] and {}={}", action,
-                        kafkaRebalance.getMetadata().getName(),
-                        kafkaRebalance.getStatus() != null ? rebalanceStateConditionType(kafkaRebalance.getStatus()) : null,
-                        ANNO_STRIMZI_IO_REBALANCE, rawRebalanceAnnotation(kafkaRebalance));
-
-                withLock(reconciliation, LOCK_TIMEOUT_MS,
-                        () -> reconcileRebalance(reconciliation, action == Action.DELETED ? null : kafkaRebalance));
-            }
-        };
-        return VertxUtil.async(vertx, () -> resourceOperator.watch(namespace, selector(), watcher));
-    }
-
-    /**
-     * Get watcher.
-     *
-     * @return watcher.
-     */
-    public Watcher getWatcher() {
-        return watcher;
     }
 }
