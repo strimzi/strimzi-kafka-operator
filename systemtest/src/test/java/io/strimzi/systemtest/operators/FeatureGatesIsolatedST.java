@@ -79,6 +79,7 @@ public class FeatureGatesIsolatedST extends AbstractST {
     @Tag(INTERNAL_CLIENTS_USED)
     public void testKRaftMode(ExtensionContext extensionContext) {
         assumeFalse(Environment.isOlmInstall() || Environment.isHelmInstall());
+        // skip test if KRaft mode is enabled and Kafka version is lower than 3.5.0 - https://github.com/strimzi/strimzi-kafka-operator/issues/8806
         assumeTrue(TestKafkaVersion.compareDottedVersions("3.5.0", Environment.ST_KAFKA_VERSION) != 1);
 
         final TestStorage testStorage = new TestStorage(extensionContext);
