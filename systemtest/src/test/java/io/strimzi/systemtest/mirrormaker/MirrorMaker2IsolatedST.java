@@ -5,8 +5,6 @@
 package io.strimzi.systemtest.mirrormaker;
 
 import io.fabric8.kubernetes.api.model.LabelSelector;
-import io.fabric8.kubernetes.api.model.Secret;
-import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.strimzi.api.kafka.model.CertSecretSource;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2Resources;
@@ -44,6 +42,7 @@ import io.strimzi.systemtest.utils.RollingUpdateUtils;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaMirrorMaker2Utils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
+import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
@@ -972,39 +971,44 @@ class MirrorMaker2IsolatedST extends AbstractST {
         String kafkaUserSourceName = testStorage.getUsername() + "-source";
         String kafkaUserTargetName = testStorage.getUsername() + "-target";
 
-        // Deploy source kafka with tls listener and SCRAM-SHA authentication
-        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaPersistent(kafkaClusterSourceName, 1, 1)
-            .editSpec()
-                .editKafka()
-                    .withListeners(
-                        new GenericKafkaListenerBuilder()
-                            .withName(Constants.TLS_LISTENER_DEFAULT_NAME)
-                            .withPort(9093)
-                            .withType(KafkaListenerType.INTERNAL)
-                            .withTls(true)
-                            .withAuth(new KafkaListenerAuthenticationScramSha512())
-                            .build()
-                    )
-                .endKafka()
-            .endSpec()
-            .build());
+        final String customSecretSource = "custom-secret-source";
+        final String customSecretTarget = "custom-secret-target";
 
-        // Deploy target kafka with tls listeners with tls and SCRAM-SHA authentication
-        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaPersistent(kafkaClusterTargetName, 1, 1)
-            .editSpec()
-                .editKafka()
-                    .withListeners(
-                        new GenericKafkaListenerBuilder()
-                            .withName(Constants.TLS_LISTENER_DEFAULT_NAME)
-                            .withPort(9093)
-                            .withType(KafkaListenerType.INTERNAL)
-                            .withTls(true)
-                            .withAuth(new KafkaListenerAuthenticationScramSha512())
-                            .build()
-                    )
-                .endKafka()
-            .endSpec()
-            .build());
+        // Deploy source and target kafkas with tls listener and SCRAM-SHA authentication
+        resourceManager.createResourceWithWait(extensionContext,
+            KafkaTemplates.kafkaPersistent(kafkaClusterSourceName, 1, 1)
+                .editSpec()
+                    .editKafka()
+                        .withListeners(
+                            new GenericKafkaListenerBuilder()
+                                .withName(Constants.TLS_LISTENER_DEFAULT_NAME)
+                                .withPort(9093)
+                                .withType(KafkaListenerType.INTERNAL)
+                                .withTls(true)
+                                .withNewKafkaListenerAuthenticationScramSha512Auth()
+                                .endKafkaListenerAuthenticationScramSha512Auth()
+                                .build()
+                        )
+                    .endKafka()
+                .endSpec()
+                .build(),
+            KafkaTemplates.kafkaPersistent(kafkaClusterTargetName, 1, 1)
+                .editSpec()
+                    .editKafka()
+                        .withListeners(
+                            new GenericKafkaListenerBuilder()
+                                .withName(Constants.TLS_LISTENER_DEFAULT_NAME)
+                                .withPort(9093)
+                                .withType(KafkaListenerType.INTERNAL)
+                                .withTls(true)
+                                .withNewKafkaListenerAuthenticationScramSha512Auth()
+                                .endKafkaListenerAuthenticationScramSha512Auth()
+                                .build()
+                        )
+                    .endKafka()
+                .endSpec()
+                .build()
+        );
 
         resourceManager.createResourceWithWait(extensionContext,
             KafkaTopicTemplates.topic(kafkaClusterSourceName, testStorage.getTopicName(), testStorage.getNamespaceName()).build(),
@@ -1085,25 +1089,13 @@ class MirrorMaker2IsolatedST extends AbstractST {
 
         LOGGER.info("Changing KafkaUser sha-password on MirrorMaker2 Source and make sure it rolled");
 
-        Secret passwordSource = new SecretBuilder()
-            .withNewMetadata()
-                .withName(kafkaUserSourceName)
-            .endMetadata()
-            .addToData("password", "c291cmNlLXBhc3N3b3Jk")
-            .build();
+        KafkaUserUtils.modifyKafkaUserPasswordWithNewSecret(testStorage.getNamespaceName(), kafkaUserSourceName, customSecretSource, "c291cmNlLXBhc3N3b3Jk", extensionContext);
+        RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), mmSelector, 1, mmSnapshot);
+        mmSnapshot = PodUtils.podSnapshot(testStorage.getNamespaceName(), mmSelector);
 
-        kubeClient().patchSecret(testStorage.getNamespaceName(), kafkaUserSourceName, passwordSource);
-        mmSnapshot = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), mmSelector, 1, mmSnapshot);
+        KafkaUserUtils.modifyKafkaUserPasswordWithNewSecret(testStorage.getNamespaceName(), kafkaUserTargetName, customSecretTarget, "dGFyZ2V0LXBhc3N3b3Jk", extensionContext);
+        RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), mmSelector, 1, mmSnapshot);
 
-        LOGGER.info("Changing KafkaUser sha-password on MirrorMaker2 Target");
-        Secret passwordTarget = new SecretBuilder()
-            .withNewMetadata()
-                .withName(kafkaUserTargetName)
-            .endMetadata()
-            .addToData("password", "dGFyZ2V0LXBhc3N3b3Jk")
-            .build();
-
-        kubeClient().patchSecret(testStorage.getNamespaceName(), kafkaUserTargetName, passwordTarget);
         RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), mmSelector, 1, mmSnapshot);
 
         clients = new KafkaClientsBuilder(clients)
