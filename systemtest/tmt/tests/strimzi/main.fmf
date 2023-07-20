@@ -20,7 +20,7 @@ adjust:
 /smoke:
   summary: Run smoke strimzi test suite
   tags: [smoke]
-  duration: 20m
+  duration: 40m
   tier: 1
   environment+:
     TEST_PROFILE: smoke
