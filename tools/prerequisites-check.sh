@@ -38,3 +38,12 @@ if [[ ${YQ_ARRAY[0]} -eq 4  ]] && [[ ${YQ_ARRAY[1]} -eq 2 ]] && [[ ${YQ_ARRAY[2]
   echo -e "$yq_err_msg"
   exit 1
 fi
+
+# avoids make clean "could not find artifact" error after a version bump without a previous build
+# make clean command fails also when there is no strimzi artifact in the local Maven report
+PC_RELVER="$(cat ./release.version)"
+PC_M2HOME="$(mvn help:evaluate -Dexpression=settings.localRepository | grep -v '\[INFO\]')"
+if [[ ! -d "$PC_M2HOME/io/strimzi/config-model/$PC_RELVER" ]]; then
+  echo "Installing parent" && mvn install -N -q
+  echo "Installing config-model" && mvn install -pl config-model -DskipTests -q
+fi
