@@ -221,7 +221,11 @@ public class Capacity {
         if (limit != null) {
             if (request == null || limit.intValue() == request.intValue()) {
                 return new CpuCapacity(CpuCapacity.milliCpuToCpu(limit));
+            } else {
+                return new CpuCapacity(CpuCapacity.milliCpuToCpu(request));
             }
+        } else if (request != null) {
+            return new CpuCapacity(CpuCapacity.milliCpuToCpu(request));
         }
 
         return null;
