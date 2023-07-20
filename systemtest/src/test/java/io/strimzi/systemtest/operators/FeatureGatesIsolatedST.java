@@ -37,6 +37,7 @@ import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaUserTemplates;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.RollingUpdateUtils;
+import io.strimzi.systemtest.utils.TestKafkaVersion;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectorUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
@@ -60,6 +61,7 @@ import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assumptions.assumeFalse;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 /**
  * Feature Gates should give us additional options on
@@ -77,6 +79,9 @@ public class FeatureGatesIsolatedST extends AbstractST {
     @Tag(INTERNAL_CLIENTS_USED)
     public void testKRaftMode(ExtensionContext extensionContext) {
         assumeFalse(Environment.isOlmInstall() || Environment.isHelmInstall());
+        // skip test if KRaft mode is enabled and Kafka version is lower than 3.5.0 - https://github.com/strimzi/strimzi-kafka-operator/issues/8806
+        assumeTrue(TestKafkaVersion.compareDottedVersions("3.5.0", Environment.ST_KAFKA_VERSION) != 1);
+
         final TestStorage testStorage = new TestStorage(extensionContext);
 
         final String clusterName = testStorage.getClusterName();
