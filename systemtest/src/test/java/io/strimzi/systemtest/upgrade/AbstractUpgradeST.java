@@ -623,7 +623,5 @@ public class AbstractUpgradeST extends AbstractST {
 
         // Verify that pods are stable
         PodUtils.verifyThatRunningPodsAreStable(testStorage.getNamespaceName(), clusterName);
-        // Check errors in CO log
-        assertNoCoErrorsLogged(testStorage.getNamespaceName(), 0);
     }
 }

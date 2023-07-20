@@ -87,6 +87,10 @@ public abstract class AbstractST implements TestSeparator {
     protected static Map<String, String> mapWithTestTopics = new HashMap<>();
     protected static Map<String, String> mapWithTestUsers = new HashMap<>();
     protected static Map<String, String> mapWithScraperNames = new HashMap<>();
+
+    // This variable makes sure the assertNoCoErrorsLogged performed as afterEach
+    // does not take all the Cluster Operator logs from the beginning, but only from the time when the test execution started
+    protected static Map<String, Long> mapWithTestExecutionStartTimes = new HashMap<>();
     protected static ConcurrentHashMap<ExtensionContext, TestStorage> storageMap = new ConcurrentHashMap<>();
     protected static final String CLUSTER_NAME_PREFIX = "my-cluster-";
     protected static final String KAFKA_IMAGE_MAP = "STRIMZI_KAFKA_IMAGES";
@@ -450,7 +454,7 @@ public abstract class AbstractST implements TestSeparator {
 
     protected void assertNoCoErrorsLogged(String namespaceName, long sinceSeconds) {
         LOGGER.info("Search in strimzi-cluster-operator log for errors in last {} second(s)", sinceSeconds);
-        String clusterOperatorLog = cmdKubeClient(namespaceName).searchInLog("deploy", ResourceManager.getCoDeploymentName(), sinceSeconds, "Exception", "Error", "Throwable");
+        String clusterOperatorLog = cmdKubeClient(namespaceName).searchInLog(Constants.DEPLOYMENT, ResourceManager.getCoDeploymentName(), sinceSeconds, "Exception", "Error", "Throwable", "OOM");
         assertThat(clusterOperatorLog, logHasNoUnexpectedErrors());
     }
 
@@ -559,6 +563,7 @@ public abstract class AbstractST implements TestSeparator {
             mapWithTestTopics.put(testName, KafkaTopicUtils.generateRandomNameOfTopic());
             mapWithTestUsers.put(testName, KafkaUserUtils.generateRandomNameOfKafkaUser());
             mapWithScraperNames.put(testName, clusterName + "-" + Constants.SCRAPER_NAME);
+            mapWithTestExecutionStartTimes.put(testName, System.currentTimeMillis());
 
             LOGGER.trace("CLUSTER_NAMES_MAP: {}", mapWithClusterNames);
             LOGGER.trace("USERS_NAME_MAP: {}", mapWithTestUsers);
@@ -621,7 +626,9 @@ public abstract class AbstractST implements TestSeparator {
         // does not proceed with the next method (i.e., afterEachMustExecute()). This ensures that if such problem happen
         // it will always execute the second method.
         try {
+            assertNoCoErrorsLogged(clusterOperator.getDeploymentNamespace(), mapWithTestExecutionStartTimes.get(extensionContext.getTestMethod().get().getName()));
             afterEachMayOverride(extensionContext);
+            mapWithTestExecutionStartTimes.remove(extensionContext.getTestMethod().get().getName());
         } finally {
             afterEachMustExecute(extensionContext);
         }

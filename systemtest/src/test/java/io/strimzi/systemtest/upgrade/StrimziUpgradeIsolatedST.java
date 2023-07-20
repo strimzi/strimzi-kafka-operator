@@ -94,8 +94,6 @@ public class StrimziUpgradeIsolatedST extends AbstractUpgradeST {
         // Verify upgrade
         verifyProcedure(acrossUpgradeData, testStorage.getProducerName(), testStorage.getConsumerName(), clusterOperator.getDeploymentNamespace());
         assertThat(KafkaUtils.getVersionFromKafkaPodLibs(KafkaResources.kafkaPodName(clusterName, 0)), containsString(acrossUpgradeData.getProcedures().getVersion()));
-        // Check errors in CO log
-        assertNoCoErrorsLogged(clusterOperator.getDeploymentNamespace(), 0);
     }
 
     @Test
@@ -120,8 +118,6 @@ public class StrimziUpgradeIsolatedST extends AbstractUpgradeST {
         PodUtils.verifyThatRunningPodsAreStable(clusterOperator.getDeploymentNamespace(), clusterName);
         // Verify upgrade
         verifyProcedure(acrossUpgradeData, testStorage.getProducerName(), testStorage.getConsumerName(), clusterOperator.getDeploymentNamespace());
-        // Check errors in CO log
-        assertNoCoErrorsLogged(clusterOperator.getDeploymentNamespace(), 0);
     }
 
     @Test
@@ -146,9 +142,6 @@ public class StrimziUpgradeIsolatedST extends AbstractUpgradeST {
         PodUtils.verifyThatRunningPodsAreStable(clusterOperator.getDeploymentNamespace(), clusterName);
         // Verify upgrade
         verifyProcedure(acrossUpgradeData, testStorage.getProducerName(), testStorage.getConsumerName(), clusterOperator.getDeploymentNamespace());
-
-        // Check errors in CO log
-        assertNoCoErrorsLogged(clusterOperator.getDeploymentNamespace(), 0);
     }
 
     @Test
@@ -185,9 +178,6 @@ public class StrimziUpgradeIsolatedST extends AbstractUpgradeST {
         PodUtils.verifyThatRunningPodsAreStable(clusterOperator.getDeploymentNamespace(), clusterName);
         // Verify upgrade
         verifyProcedure(upgradeData, testStorage.getProducerName(), testStorage.getConsumerName(), clusterOperator.getDeploymentNamespace());
-
-        // Check errors in CO log
-        assertNoCoErrorsLogged(clusterOperator.getDeploymentNamespace(), 0);
     }
 
     @BeforeEach

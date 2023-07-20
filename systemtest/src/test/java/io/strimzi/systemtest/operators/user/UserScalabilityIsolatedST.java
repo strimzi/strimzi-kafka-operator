@@ -121,7 +121,7 @@ public class UserScalabilityIsolatedST extends AbstractST {
         // get one user spec as the template for wait
         KafkaUserSpec kafkaUserSpec = listOfUsers.stream().findFirst().get().getSpec();
 
-        resourceManager.updateResource(extensionContext, listOfUsers.toArray(new KafkaUser[listOfUsers.size()]));
+        resourceManager.updateResource(listOfUsers.toArray(new KafkaUser[listOfUsers.size()]));
         KafkaUserUtils.waitForConfigToBeChangedInAllUsersWithPrefix(clusterOperator.getDeploymentNamespace(), usersPrefix, kafkaUserSpec);
         KafkaUserUtils.waitForAllUsersWithPrefixReady(clusterOperator.getDeploymentNamespace(), usersPrefix);
     }
