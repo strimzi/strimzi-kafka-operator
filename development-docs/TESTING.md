@@ -62,7 +62,6 @@ Notable classes:
   values decide how Cluster Operator should be installed (i.e., Olm, Helm, Bundle). Moreover, it provides `rollbackToDefaultConfiguration()`
   method, which basically re-install Cluster Operator to the default values. In case user wants to edit specific installation,
   one can use `defaultInstallation()`, which returns `SetupClusterOperatorBuilder`.
-* **BeforeAllOnce** - custom extension which executes code only once before all tests are started and after all tests finished.
 * **storage/TestStorage** - generate and stores values in the specific `ExtensionContext`. This ensures that if one want to retrieve data from
   `TestStorage` it can be done via `ExtensionContext` (with help of ConcurrentHashMap) inside `AbstractST`.
 * **parallel/TestSuiteNamespaceManager** - This class contains additional namespaces will are needed for test suite before the execution of `@BeforeAll`. 
@@ -70,58 +69,34 @@ Notable classes:
 
 ## Test Phases
 
-We generally use classic test phases: `setup`, `exercise`, `test` and `teardown`. Additionally, we use also `setupOnce` phase, which is needed because of the shared ClusterOperator.
-
-### Setup once
-
-This phase creates a complete installation of ClusterOperator with default values (not including env variables). 
-Furthermore, it should be noted that this installation is generic because it encapsulates the complexity of selecting the type of installation (i.e., `Helm`, `Olm`, `Bundle`). 
-All this is transparent to the user, and the only thing he has to set is the env variables `CLUSTER_OPERATOR_INSTALL_TYPE=[HELM|OLM|BUNDLE]`. 
-To guarantee that the given resources will not be deleted after the given test suite, we use the `root ExtensionContext`, which ensures that the given resources will be deleted only after the whole execution of tests.
-
-```java
-void setupOnce(ExtensionContext extensionContext) {
-    // ensures that Cluster Operator is up across all test suites
-    sharedExtensionContext = extensionContext.getRoot();
-    
-    // setup cluster operator before all suites only once
-    clusterOperator = new SetupClusterOperator.SetupClusterOperatorBuilder()
-        .withExtensionContext(sharedExtensionContext)
-        .withNamespace(Constants.INFRA_NAMESPACE)
-        .withWatchingNamespaces(Constants.WATCH_ALL_NAMESPACES)
-        .withBindingsNamespaces(ParallelNamespacesSuitesNames.getBindingNamespaces())
-        .createInstallation()
-        .runInstallation();
-}
-```
+We generally use classic test phases: `setup`, `exercise`, `test` and `teardown`.
 
 ### Setup
 
 In this phase, we perform:
 
-* Change configuration of shared Cluster Operator (optional)
+* Setup Cluster Operator 
 * Deploy the shared Kafka cluster and other components (optional)
 
-Both points are optional because we have some test cases where you want to have a different Kafka or Cluster Operator configuration for each test scenario, so creating the Kafka cluster or Cluster Operator  and other resources is done in the test phase .
-Here is an example how to make change of Cluster Operator configuration:
+The second point is optional because we have some test cases where you want to have a different Kafka configuration for 
+each test scenario, so creating the Kafka cluster and other resources is done in the test phase.
+Here is an example how to create an instance of Cluster Operator:
 ```java
 @BeforeAll
 void setup(ExtensionContext extensionContext){
-    clusterOperator.unInstall(); // un-install current Cluster Operator
-    clusterOperator = new SetupClusterOperator.SetupClusterOperatorBuilder()
-        // build your new configuration using chain (fluent) methods
-        .withExtensionContext(BeforeAllOnce.getSharedExtensionContext())
-        .withWatchingNamespaces(Constants.WATCH_ALL_NAMESPACES)
-        .withOperationTimeout(Constants.CO_OPERATION_TIMEOUT_SHORT)
+    // deploy Cluster Operator using default configuration
+    clusterOperator = clusterOperator.defaultInstallation(extensionContext)
         .createInstallation()
         .runInstallation();
 }
 ```
 
-We create resources in the Kubernetes cluster via classes in the `resources` package, which allows you to deploy all components and, if needed, change them from their default configuration using a builder.
-You can create resources anywhere you want. Our resource lifecycle implementation will handle insertion of the resource on top of the stack and deletion at the end of the test method/class.
-Moreover, you should always use `Templates` classes for pre-defined resources. For instance, when one want deploy Kafka cluster
-with tree nodes it can be simply done by following code:
+We create resources in the Kubernetes cluster via classes in the `resources` package, which allows you to deploy all 
+components and, if needed, change them from their default configuration using a builder.
+You can create resources anywhere you want. Our resource lifecycle implementation will handle insertion of the resource 
+on top of the stack and deletion at the end of the test method/class.
+Moreover, you should always use `Templates` classes for pre-defined resources. 
+For instance, when one want deploy Kafka cluster with tree nodes it can be simply done by following code:
 ```java
 final int numberOfKafkaBrokers = 3;
 final int numberOfZooKeeperNodes = 1;
@@ -135,7 +110,8 @@ resourceManager.createResourceWithWait(extensionContext,
     );
 ```
 
-`ResourceManager` has Map<String, Stack<ResourceItem>>, which means that for each test case, we have a brand-new stack that stores all resources needed for specific tests. An important aspect is also the `ExtensionContext.class` with which
+`ResourceManager` has Map<String, Stack<ResourceItem>>, which means that for each test case, we have a brand-new stack 
+that stores all resources needed for specific tests. An important aspect is also the `ExtensionContext.class` with which
 we can know which stack is associated with which test uniquely.
 
 Example of setup shared resources in scope of the test suite:
@@ -201,27 +177,33 @@ related to `myNewTestName` test.
 ## Adding brand-new test suite 
 
 When you need to create a new test suite, firstly, make sure that it has the suffix `ST` (i.e., KafkaST, ConnectBuilderST).
-Secondly, if that certain test suite must run in isolation (it needs its own Cluster Operator configuration, which differs from the default one
-or other possible case), you must also add `Isolated` before `ST` (i.e., `ListenersIsolatedST`, `JmxIsolatedST`).
 
 ## Parallel execution of tests
 
 If you want to run system tests locally in parallel, you need to take a few additional steps. You have to modify
-two JUnit properties which are located `systemtests/src/test/resources/junit-platform.properties`:
-- junit.jupiter.execution.parallel.enabled=true
-- junit.jupiter.execution.parallel.config.fixed.parallelism=5 <- specify any number; you just have to be sure that your cluster can take it
+two JUnit properties and there are two approaches how to do it:
+1) Using IDE (InteliJ)
+   1. on the left side between build project and run buttons you click on edit configuration
+   2. then only one thing is to modify VM options and add these two:
+      - `-Djunit.jupiter.execution.parallel.enabled=true`
+      - `-Djunit.jupiter.execution.parallel.config.fixed.parallelism=4` 
 
-On the other hand you can also override it in mvn command using additional parameters:
-- -Djunit.jupiter.execution.parallel.enabled=true
-- -Djunit.jupiter.execution.parallel.config.fixed.parallelism=5
+2. Using Maven
+- override it in mvn command using additional parameters:
+  - `-Djunit.jupiter.execution.parallel.enabled=true`
+  - `-Djunit.jupiter.execution.parallel.config.fixed.parallelism=4`
+- for instance 
+```
+// to run 4 test cases in parallel in ListenersST test class
+mvn verify -pl systemtest -P all -Dit.test=ListenersST -Djunit.jupiter.execution.parallel.enabled=true -Djunit.jupiter.execution.parallel.config.fixed.parallelism=4
+```
 
 ### Parallelism architecture
 
 Key aspects:
 1. [JUnit5 parallelism](https://junit.org/junit5/docs/snapshot/user-guide/#writing-tests-parallel-execution)
-2. **annotations** = overrides parallelism configuration in runtime phase (i.e., @IsolatedTest, @ParallelTest,
-   @ParallelNamespaceTest, @IsolatedSuite, @ParallelSuite).
-3. **auxiliary classes** (i.e., `SuiteThreadController`, `TestSuiteNamespaceManager`, `BeforeAllOnce`)
+2. **annotations** = overrides parallelism configuration in runtime phase (i.e., @IsolatedTest, @ParallelTest, @ParallelNamespaceTest).
+3. **auxiliary classes** (i.e., `SuiteThreadController`, `TestSuiteNamespaceManager`)
 
 #### 1. JUnit5 parallelism
 
@@ -235,20 +217,10 @@ class spawns as many threads as we specify in the `JUnit-platform.properties`.
   run simultaneously with other parallel tests
 - **@ParallelNamespaceTest** = same as @ParallelTest but with additional change. This type of test automatically creates
   its namespace where all resources will be deployed (f.e., needed where we deploy `Kafka` or `KafkaMirrorMaker`).
-- **@IsolatedSuite** = used for identification such test class/suite and synchronization.
-- **@ParallelSuite** = overrides parallelism configuration by `@Execution(ExecutionMode.CONCURRENT)`, which provides
-  package-wide parallelism with multiple test classes/suites. Moreover, used for identification.
 
 #### 3. Auxiliary classes
 
-- **BeforeAllOnce** = responsible for **setup** and **teardown** shared Cluster Operator across all test suites.
-    1. **setup phase** - based on generated [TestPlan](https://junit.org/junit5/docs/5.0.3/api/org/junit/platform/launcher/TestPlan.html)
-       it chooses a test suite, which will run @BeforeAllCallback. If it's `@ParallelSuite`, it deploys a shared Cluster Operator.
-       Otherwise (i.e., `@IsolatedSuite`), will create Cluster Operator inside a specific test suite with different CO configuration.
-    2. **teardown phase** - we use [ExtensionContext.Store.CloseableResource](https://junit.org/junit5/docs/5.6.2/api/org.junit.jupiter.api/org/junit/jupiter/api/extension/ExtensionContext.Store.CloseableResource.html),
-       which ensures that `close()` implemented in this class is called after all execution. Moreover, we need to put inside
-       class object inside store and thus such method will be invoked (i.e., `sharedExtensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(SYSTEM_RESOURCES, new BeforeAllOnce());`).
-- **TestSuiteNamespaceManager** = provides complete management of namespaces for specific test suites.
+-- **TestSuiteNamespaceManager** = provides complete management of namespaces for specific test suites.
     1. **@ParallelSuite** - such a test suite creates its namespace (f.e., for TracingST creates `tracing-st` namespace).
        This is needed because we must ensure that each parallel suite runs in a separate namespace and thus runs in isolation.
     2. **@ParallelNamespaceTest** = responsible for creating and deleting auxiliary namespaces for such test cases.
