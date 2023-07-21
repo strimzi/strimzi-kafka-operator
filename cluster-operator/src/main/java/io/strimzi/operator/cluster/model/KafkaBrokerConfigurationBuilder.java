@@ -36,7 +36,8 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
-import java.util.*;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -432,16 +433,16 @@ public class KafkaBrokerConfigurationBuilder {
             securityProtocol.add(String.format("%s:%s", listenerName, getSecurityProtocol(tls, true)));
 
             Map<String, String> jaasOptions = new LinkedHashMap<>(getOAuthOptions(oauth));
-            addOption(jaasOptions,"oauth.config.id", listenerName);
+            addOption(jaasOptions, "oauth.config.id", listenerName);
 
             if (oauth.getClientSecret() != null)    {
-                addOption(jaasOptions,"oauth.client.secret", String.format(PLACEHOLDER_OAUTH_CLIENT_SECRET, listenerNameInEnvVar));
+                addOption(jaasOptions, "oauth.client.secret", String.format(PLACEHOLDER_OAUTH_CLIENT_SECRET, listenerNameInEnvVar));
             }
 
             if (oauth.getTlsTrustedCertificates() != null && oauth.getTlsTrustedCertificates().size() > 0)    {
-                addOption(jaasOptions,"oauth.ssl.truststore.location", String.format("/tmp/kafka/oauth-%s.truststore.p12", listenerNameInProperty));
-                addOption(jaasOptions,"oauth.ssl.truststore.password", PLACEHOLDER_CERT_STORE_PASSWORD);
-                addOption(jaasOptions,"oauth.ssl.truststore.type", "PKCS12");
+                addOption(jaasOptions, "oauth.ssl.truststore.location", String.format("/tmp/kafka/oauth-%s.truststore.p12", listenerNameInProperty));
+                addOption(jaasOptions, "oauth.ssl.truststore.password", PLACEHOLDER_CERT_STORE_PASSWORD);
+                addOption(jaasOptions, "oauth.ssl.truststore.type", "PKCS12");
             }
 
             StringBuilder enabledMechanisms = new StringBuilder();
