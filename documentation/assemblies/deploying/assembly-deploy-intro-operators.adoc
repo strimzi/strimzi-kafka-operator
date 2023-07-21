@@ -1,0 +1,36 @@
+// This assembly is included in the following assemblies:
+//
+// assembly-deploy-intro.adoc
+
+[id='assembly-operators-{context}']
+
+= Strimzi operators
+
+[role="_abstract"]
+Strimzi operators are fundamental to the running of Strimzi.
+The operators are purpose-built with specialist operational knowledge to effectively manage Kafka on Kubernetes.
+Each operator performs a distinct function.
+
+Cluster Operator:: The Cluster Operator handles the deployment and management of Apache Kafka clusters on Kubernetes. 
+It automates the setup of Kafka brokers, and other Kafka components and resources.
+Topic Operator:: The Topic Operator manages the creation, configuration, and deletion of topics within Kafka clusters. 
+User Operator:: The User Operator manages Kafka users that require access to Kafka brokers. 
+
+When you deploy Strimzi, you first deploy the Cluster Operator.
+The Cluster Operator is then ready to handle the deployment of Kafka.
+You can also deploy the Topic Operator and User Operator using the Cluster Operator (recommended) or as standalone operators.
+You would use a standalone operator with a Kafka cluster that is not managed by the Cluster Operator.
+
+The Topic Operator and User Operator are part of the Entity Operator.
+The Cluster Operator can deploy one or both operators based on the Entity Operator configuration.
+
+[IMPORTANT]
+====
+To deploy the standalone operators, you need to set environment variables to connect to a Kafka cluster.
+These environment variables do not need to be set if you are deploying the operators using the Cluster Operator as they will be set by the Cluster Operator.
+====
+
+//operator namespace 
+include::../../modules/operators/con-operators-namespaces.adoc[leveloffset=+1]
+//cluster operator's management of rbac resources
+include::../../modules/operators/ref-operator-cluster-rbac-resources.adoc[leveloffset=+1]

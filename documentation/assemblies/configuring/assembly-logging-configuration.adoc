@@ -3,10 +3,10 @@
 // assembly-config.adoc
 
 [id='external-logging_{context}']
-= Configuring log levels
+= Configuring logging levels
 
 [role="_abstract"]
-Configure logging levels in the custom resources of Kafka components and Strimzi Operators.
+Configure logging levels in the custom resources of Kafka components and Strimzi operators.
 You can specify the logging levels directly in the `spec.logging` property of the custom resource.
 Or you can define the logging properties in a ConfigMap that's referenced in the custom resource using the `configMapKeyRef` property.
 
@@ -67,4 +67,5 @@ For more information on configuring logging for specific Kafka components or ope
 * link:{BookURLConfiguring}#property-user-operator-logging-reference[User Operator logging^]
 
 include::../../modules/configuring/proc-creating-configmap.adoc[leveloffset=+1]
+include::../../modules/operators/ref-operator-cluster-logging-configmap.adoc[leveloffset=+1]
 include::../../modules/configuring/proc-creating-logging-filters.adoc[leveloffset=+1]

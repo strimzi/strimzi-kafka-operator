@@ -1,16 +1,16 @@
 // Module included in the following assemblies:
 //
-// assembly-using-the-cluster-operator.adoc
+// assembly-deploy-intro-operators.adoc
 
 [id='ref-operator-cluster-rbac-resources-{context}']
-= Role-Based Access Control (RBAC) resources 
+= Managing RBAC resources 
 
 [role="_abstract"]
-The Cluster Operator creates and manages RBAC resources for Strimzi components that need access to Kubernetes resources.
+The Cluster Operator creates and manages role-based access control (RBAC) resources for Strimzi components that need access to Kubernetes resources.
 
 For the Cluster Operator to function, it needs permission within the Kubernetes cluster to interact with Kafka resources, such as `Kafka` and `KafkaConnect`, as well as managed resources like `ConfigMap`, `Pod`, `Deployment`, and `Service`.
 
-Permission is specified through Kubernetes role-based access control (RBAC) resources:
+Permission is specified through the following Kubernetes RBAC resources:
 
 * `ServiceAccount`
 * `Role` and `ClusterRole`
@@ -108,7 +108,7 @@ The following tables describe the RBAC resources created by the Cluster Operator
 
 == Running the Cluster Operator using a `ServiceAccount`
 
-The Cluster Operator is best run using a `ServiceAccount`:
+The Cluster Operator is best run using a `ServiceAccount`.
 
 [source,yaml,options="nowrap"]
 .Example `ServiceAccount` for the Cluster Operator
@@ -116,16 +116,14 @@ The Cluster Operator is best run using a `ServiceAccount`:
 include::../install/cluster-operator/010-ServiceAccount-strimzi-cluster-operator.yaml[]
 ----
 
-The `Deployment` of the operator then needs to specify this in its `spec.template.spec.serviceAccountName`:
+The `Deployment` of the operator then needs to specify this in its `spec.template.spec.serviceAccountName`.
 
 [source,yaml,numbered,options="nowrap",highlight='12']
 .Partial example of `Deployment` for the Cluster Operator
 ----
-include::../install/cluster-operator/060-Deployment-strimzi-cluster-operator.yaml[lines=1..13]
+include::../install/cluster-operator/060-Deployment-strimzi-cluster-operator.yaml[lines=1..19]
       # ...
 ----
-
-Note line 12, where `strimzi-cluster-operator` is specified as the `serviceAccountName`.
 
 == `ClusterRole` resources
 

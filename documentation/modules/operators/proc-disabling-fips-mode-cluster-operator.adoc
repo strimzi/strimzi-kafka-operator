@@ -1,9 +1,9 @@
 // Module included in the following assemblies:
 //
-// assembly-using-the-cluster-operator.adoc
+// assembly-config.adoc
 
 [id='proc-disabling-fips-mode-cluster-operator-{context}']
-= Disabling FIPS mode
+= Disabling FIPS mode using Cluster Operator configuration
 
 [role="_abstract"]
 Strimzi automatically switches to FIPS mode when running on a FIPS-enabled Kubernetes cluster.

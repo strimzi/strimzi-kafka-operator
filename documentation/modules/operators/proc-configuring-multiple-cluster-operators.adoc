@@ -70,7 +70,7 @@ spec
                 fieldPath: metadata.name
 ----
 +
-For a description of the available environment variables, see xref:ref-operator-cluster-leader-election-{context}[].
+For a description of the available environment variables, see xref:con-configuring-cluster-operator-leader-election-{context}[].
 +
 If you specified a different name or namespace for the `Lease` resource used in leader election, update the RBAC resources.
 

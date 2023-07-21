@@ -9,8 +9,16 @@
 Collecting metrics is critical for understanding the health and performance of your Kafka deployment. 
 By monitoring metrics, you can actively identify issues before they become critical and make informed decisions about resource allocation and capacity planning. Without metrics, you may be left with limited visibility into the behavior of your Kafka deployment, which can make troubleshooting more difficult and time-consuming. Setting up metrics can save you time and resources in the long run, and help ensure the reliability of your Kafka deployment.
 
-Metrics are available for each Strimzi component, allowing you to gain insights into their individual performance. 
-Additionally, you can collect metrics specific to `oauth` authentication and `opa` or `keycloak` authorization by enabling the `enableMetrics` property in the listener or authorization configuration of the `Kafka` resource.
+Metrics are available for each component in Strimzi, providing valuable insights into their individual performance. 
+While other components require configuration to expose metrics metric exposure, Strimzi operators automatically expose Prometheus metrics by default. 
+These metrics include:
+
+* Reconciliation count
+* Custom Resource count being processed
+* Reconciliation duration
+* JVM metrics
+
+You can also collect metrics specific to `oauth` authentication and `opa` or `keycloak` authorization by enabling the `enableMetrics` property in the listener or authorization configuration of the `Kafka` resource.
 Similarly, you can enable metrics for `oauth` authentication in custom resources such as `KafkaBridge`, `KafkaConnect`, `KafkaMirrorMaker`, and `KafkaMirrorMaker2`.
 
 You can use Prometheus and Grafana to monitor Strimzi.

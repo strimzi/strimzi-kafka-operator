@@ -1,15 +1,15 @@
 // Module included in the following assemblies:
 //
-// assembly-using-the-cluster-operator.adoc
+// deploying/deploying.adoc
 
 [id='ref-operator-cluster-feature-gates-{context}']
-= Configuring feature gates
+= Enabling Strimzi feature gates
 
 [role="_abstract"]
-Strimzi operators support _feature gates_ to enable or disable certain features and functionality.
-Enabling a feature gate changes the behavior of the relevant operator and introduces the feature to your Strimzi deployment.
+Strimzi operators use feature gates to enable or disable specific features and functions. 
+By enabling a feature gate, you alter the behavior of the corresponding operator, thereby introducing the feature to your Strimzi deployment.
 
-Feature gates have a default state of either _enabled_ or _disabled_.
+A feature gate might be enabled or disabled by default, depending on its level of maturity.
 
 To modify a feature gate's default state, use the `STRIMZI_FEATURE_GATES` environment variable in the operator's configuration.
 You can modify multiple feature gates using this single environment variable.
