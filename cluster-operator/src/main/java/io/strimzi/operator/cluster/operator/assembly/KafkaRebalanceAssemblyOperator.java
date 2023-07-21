@@ -210,28 +210,6 @@ public class KafkaRebalanceAssemblyOperator
     }
 
     /**
-     * Recreates a Kubernetes watch
-     *
-     * @param namespace Namespace which should be watched
-     *
-     * @return  Consumer for a Watched exception
-     */
-    public Consumer<WatcherException> recreateWatch(String namespace) {
-        Consumer<WatcherException> kubernetesClientExceptionConsumer = new Consumer<WatcherException>() {
-            @Override
-            public void accept(WatcherException e) {
-                if (e != null) {
-                    LOGGER.errorOp("Watcher closed with exception in namespace {}", namespace, e);
-                    createWatch(namespace, this);
-                } else {
-                    LOGGER.infoOp("Watcher closed in namespace {}", namespace);
-                }
-            }
-        };
-        return kubernetesClientExceptionConsumer;
-    }
-
-    /**
      * Create a watch on {@code KafkaRebalance} in the given {@code watchNamespaceOrWildcard}.
      *
      * @param watchNamespaceOrWildcard The namespace to watch, or "*" to watch all namespaces.

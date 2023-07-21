@@ -34,8 +34,8 @@ import static io.strimzi.operator.cluster.operator.assembly.AbstractConnectOpera
 import static io.strimzi.operator.common.AbstractOperator.LOCK_TIMEOUT_MS;
 
 /**
- * Watcher implementation for watching node pools and triggering Kafka reconciliations based on changes to node pool
- * configurations.
+ * Watcher implementation for watching Kafka connectors and triggering reconciliations based on changes to Kafka
+ * Connector configurations.
  */
 public class KafkaConnectorWatcher implements Watcher<KafkaConnector> {
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(KafkaNodePoolWatcher.class);
@@ -46,7 +46,7 @@ public class KafkaConnectorWatcher implements Watcher<KafkaConnector> {
     private final Labels selectorLabels;
 
     /**
-     * Constructs the KafkaNodePool watcher
+     * Constructs the KafkaConnector watcher
      *
      * @param namespace                 Namespace to watch (or asterisk for all namespaces)
      * @param selector                  The selector to check if the Kafka cluster is operated by this instance of the CLuster Operator
@@ -67,7 +67,7 @@ public class KafkaConnectorWatcher implements Watcher<KafkaConnector> {
      * Handles the event received from the watch
      *
      * @param action    Action describing the event
-     * @param kafkaConnector  KafkaConnectorPool resource to which the event happened
+     * @param kafkaConnector  KafkaConnector resource to which the event happened
      */
     public void eventReceived(Action action, KafkaConnector kafkaConnector) {
         String connectorName = kafkaConnector.getMetadata().getName();
