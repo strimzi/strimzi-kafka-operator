@@ -8,7 +8,9 @@ environment:
   TESTS: ""
   TEST_GROUPS: ""
   EXCLUDED_TEST_GROUPS: "loadbalancer"
-  CLUSTER_OPERATOR_INSTALLTYPE: bundle
+  CLUSTER_OPERATOR_INSTALL_TYPE: bundle
+  PARALLEL_TEST_COUNT: 2
+  RERUN_FAILED_TEST_COUNT: 2
 adjust:
   - environment+:
       EXCLUDED_TEST_GROUPS: "loadbalancer,arm64unsupported"
@@ -17,7 +19,7 @@ adjust:
 /smoke:
   summary: Run smoke strimzi test suite
   tags: [smoke]
-  duration: 20m
+  duration: 40m
   tier: 1
   environment+:
     TEST_PROFILE: smoke
