@@ -6,15 +6,13 @@
 = Configuring MirrorMaker 2 connectors
 
 [role="_abstract"]
-Use Mirrormaker 2 connector configuration for the internal connectors that orchestrate the synchronization of data between Kafka clusters.
+Use MirrorMaker 2 connector configuration for the internal connectors that orchestrate the synchronization of data between Kafka clusters.
 
 MirrorMaker 2 consists of the following connectors:
 
 `MirrorSourceConnector`:: The source connector replicates topics from a source cluster to a target cluster. It also replicates ACLs and is necessary for the `MirrorCheckpointConnector` to run. 
 `MirrorCheckpointConnector`:: The checkpoint connector periodically tracks offsets. If enabled, it also synchronizes consumer group offsets between the source and target cluster.
 `MirrorHeartbeatConnector`:: The heartbeat connector periodically checks connectivity between the source and target cluster.
-
-NOTE: ACL replication through the connector is not possible if you are xref:con-mirrormaker-acls-{context}[using the User Operator].
 
 The following table describes connector properties and the connectors you configure to use them.
 
@@ -96,7 +94,7 @@ You can change the frequency by adding `refresh.topics.interval.seconds` to the 
 |
 |
 
-|sync.topic.acls.enabled:: Enables synchronization of ACLs from the source cluster. Default is `true`. Not compatible with the User Operator.
+|sync.topic.acls.enabled:: Enables synchronization of ACLs from the source cluster. Default is `true`. For more information, see xref:con-mirrormaker-acls-{context}[].
 |✓
 |
 |
