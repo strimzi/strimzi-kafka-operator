@@ -4,6 +4,7 @@
  */
 package io.strimzi.systemtest.upgrade;
 
+import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.annotations.KRaftNotSupported;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.utils.StUtils;
@@ -67,29 +68,29 @@ public class StrimziDowngradeST extends AbstractUpgradeST {
         // Setup env
         // We support downgrade only when you didn't upgrade to new inter.broker.protocol.version and log.message.format.version
         // https://strimzi.io/docs/operators/latest/full/deploying.html#con-target-downgrade-version-str
-        setupEnvAndUpgradeClusterOperator(extensionContext, downgradeData, testStorage, testUpgradeKafkaVersion, clusterOperator.getDeploymentNamespace());
+        setupEnvAndUpgradeClusterOperator(extensionContext, downgradeData, testStorage, testUpgradeKafkaVersion, Constants.TEST_SUITE_NAMESPACE);
         logPodImages(clusterName);
         // Downgrade CO
-        changeClusterOperator(downgradeData, clusterOperator.getDeploymentNamespace(), extensionContext);
+        changeClusterOperator(downgradeData, Constants.TEST_SUITE_NAMESPACE, extensionContext);
         // Wait for Kafka cluster rolling update
         waitForKafkaClusterRollingUpdate();
         logPodImages(clusterName);
         // Verify that pods are stable
-        PodUtils.verifyThatRunningPodsAreStable(clusterOperator.getDeploymentNamespace(), clusterName);
-        checkAllImages(downgradeData, clusterOperator.getDeploymentNamespace());
+        PodUtils.verifyThatRunningPodsAreStable(Constants.TEST_SUITE_NAMESPACE, clusterName);
+        checkAllImages(downgradeData, Constants.TEST_SUITE_NAMESPACE);
         // Verify upgrade
-        verifyProcedure(downgradeData, testStorage.getProducerName(), testStorage.getConsumerName(), clusterOperator.getDeploymentNamespace());
+        verifyProcedure(downgradeData, testStorage.getProducerName(), testStorage.getConsumerName(), Constants.TEST_SUITE_NAMESPACE);
     }
 
     @BeforeEach
     void setupEnvironment() {
-        cluster.createNamespace(clusterOperator.getDeploymentNamespace());
-        StUtils.copyImagePullSecrets(clusterOperator.getDeploymentNamespace());
+        cluster.createNamespace(Constants.TEST_SUITE_NAMESPACE);
+        StUtils.copyImagePullSecrets(Constants.TEST_SUITE_NAMESPACE);
     }
 
     @AfterEach
     void afterEach() {
-        deleteInstalledYamls(coDir, clusterOperator.getDeploymentNamespace());
+        deleteInstalledYamls(coDir, Constants.TEST_SUITE_NAMESPACE);
         cluster.deleteNamespaces();
     }
 }

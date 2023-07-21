@@ -69,11 +69,11 @@ public class SpecificST extends AbstractST {
 
         // specify explicit namespace for RoleBindings
         strimziClusterOperator020Namespaced.getMetadata().setNamespace(namespaceWhereCreationOfCustomResourcesIsApproved);
-        strimziClusterOperator022LeaderElection.getMetadata().setNamespace(clusterOperator.getDeploymentNamespace());
+        strimziClusterOperator022LeaderElection.getMetadata().setNamespace(Constants.TEST_SUITE_NAMESPACE);
 
         // reference Cluster Operator service account in RoleBindings
-        strimziClusterOperator020Namespaced.getSubjects().stream().findFirst().get().setNamespace(clusterOperator.getDeploymentNamespace());
-        strimziClusterOperator022LeaderElection.getSubjects().stream().findFirst().get().setNamespace(clusterOperator.getDeploymentNamespace());
+        strimziClusterOperator020Namespaced.getSubjects().stream().findFirst().get().setNamespace(Constants.TEST_SUITE_NAMESPACE);
+        strimziClusterOperator022LeaderElection.getSubjects().stream().findFirst().get().setNamespace(Constants.TEST_SUITE_NAMESPACE);
 
         final List<RoleBinding> roleBindings = Arrays.asList(
                 strimziClusterOperator020Namespaced,
@@ -82,8 +82,8 @@ public class SpecificST extends AbstractST {
 
         // ---- c) defining ClusterRoleBindings
         final List<ClusterRoleBinding> clusterRoleBindings = Arrays.asList(
-            ClusterRoleBindingTemplates.getClusterOperatorWatchedCrb(clusterOperator.getClusterOperatorName(), clusterOperator.getDeploymentNamespace()),
-            ClusterRoleBindingTemplates.getClusterOperatorEntityOperatorCrb(clusterOperator.getClusterOperatorName(), clusterOperator.getDeploymentNamespace())
+            ClusterRoleBindingTemplates.getClusterOperatorWatchedCrb(clusterOperator.getClusterOperatorName(), Constants.TEST_SUITE_NAMESPACE),
+            ClusterRoleBindingTemplates.getClusterOperatorEntityOperatorCrb(clusterOperator.getClusterOperatorName(), Constants.TEST_SUITE_NAMESPACE)
         );
 
         clusterOperator.unInstall();
@@ -105,7 +105,7 @@ public class SpecificST extends AbstractST {
         resourceManager.createResourceWithoutWait(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3)
                 .editMetadata()
                 // this should not work
-                    .withNamespace(clusterOperator.getDeploymentNamespace())
+                    .withNamespace(Constants.TEST_SUITE_NAMESPACE)
                 .endMetadata()
                 .build());
 
@@ -119,10 +119,10 @@ public class SpecificST extends AbstractST {
                 .build());
 
         // verify that in `infra-namespace` we are not able to deploy Kafka cluster
-        KafkaUtils.waitUntilKafkaStatusConditionContainsMessage(testStorage.getClusterName(), clusterOperator.getDeploymentNamespace(),
+        KafkaUtils.waitUntilKafkaStatusConditionContainsMessage(testStorage.getClusterName(), Constants.TEST_SUITE_NAMESPACE,
                 ".*code=403.*");
 
-        final Condition condition = KafkaResource.kafkaClient().inNamespace(clusterOperator.getDeploymentNamespace()).withName(testStorage.getClusterName()).get().getStatus().getConditions().stream().findFirst().get();
+        final Condition condition = KafkaResource.kafkaClient().inNamespace(Constants.TEST_SUITE_NAMESPACE).withName(testStorage.getClusterName()).get().getStatus().getConditions().stream().findFirst().get();
 
         assertThat(condition.getReason(), CoreMatchers.is("KubernetesClientException"));
         assertThat(condition.getStatus(), CoreMatchers.is("True"));

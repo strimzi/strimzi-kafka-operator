@@ -44,7 +44,7 @@ import java.util.List;
 
 import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.RECOVERY;
-import static io.strimzi.systemtest.Constants.INFRA_NAMESPACE;
+import static io.strimzi.systemtest.Constants.CO_NAMESPACE;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 /**
@@ -69,7 +69,7 @@ class NamespaceDeletionRecoveryST extends AbstractST {
     @Tag(INTERNAL_CLIENTS_USED)
     @UTONotSupported("https://github.com/strimzi/strimzi-kafka-operator/issues/8864")
     void testTopicAvailable(ExtensionContext extensionContext) {
-        final TestStorage testStorage = new TestStorage(extensionContext, clusterOperator.getDeploymentNamespace());
+        final TestStorage testStorage = new TestStorage(extensionContext, Constants.TEST_SUITE_NAMESPACE);
 
         prepareEnvironmentForRecovery(extensionContext, testStorage);
 
@@ -121,7 +121,7 @@ class NamespaceDeletionRecoveryST extends AbstractST {
     @Tag(INTERNAL_CLIENTS_USED)
     @UTONotSupported("https://github.com/strimzi/strimzi-kafka-operator/issues/8864")
     void testTopicNotAvailable(ExtensionContext extensionContext) {
-        final TestStorage testStorage = new TestStorage(extensionContext, clusterOperator.getDeploymentNamespace());
+        final TestStorage testStorage = new TestStorage(extensionContext, Constants.TEST_SUITE_NAMESPACE);
 
         final List<String> topicsToRemove = List.of("__strimzi-topic-operator-kstreams-topic-store-changelog", "__strimzi_store_topic");
 
@@ -264,7 +264,7 @@ class NamespaceDeletionRecoveryST extends AbstractST {
     private void recreatePvcAndUpdatePv(List<PersistentVolumeClaim> persistentVolumeClaimList) {
         for (PersistentVolumeClaim pvc : persistentVolumeClaimList) {
             pvc.getMetadata().setResourceVersion(null);
-            kubeClient().createPersistentVolumeClaim(clusterOperator.getDeploymentNamespace(), pvc);
+            kubeClient().createPersistentVolumeClaim(Constants.TEST_SUITE_NAMESPACE, pvc);
 
             PersistentVolume pv = kubeClient().getPersistentVolumeWithName(pvc.getSpec().getVolumeName());
             pv.getSpec().setClaimRef(null);
@@ -277,19 +277,19 @@ class NamespaceDeletionRecoveryST extends AbstractST {
     private void recreateClusterOperator(ExtensionContext extensionContext) {
         clusterOperator = new SetupClusterOperator.SetupClusterOperatorBuilder()
             .withExtensionContext(extensionContext)
-            .withNamespace(INFRA_NAMESPACE)
+            .withNamespace(CO_NAMESPACE)
             .createInstallation()
             .runInstallation();
     }
 
     private void deleteAndRecreateNamespace() {
         // Delete namespace with all resources
-        kubeClient().deleteNamespace(clusterOperator.getDeploymentNamespace());
-        NamespaceUtils.waitForNamespaceDeletion(clusterOperator.getDeploymentNamespace());
+        kubeClient().deleteNamespace(Constants.TEST_SUITE_NAMESPACE);
+        NamespaceUtils.waitForNamespaceDeletion(Constants.TEST_SUITE_NAMESPACE);
 
         // Recreate namespace
-        cluster.createNamespace(clusterOperator.getDeploymentNamespace());
-        StUtils.copyImagePullSecrets(clusterOperator.getDeploymentNamespace());
+        cluster.createNamespace(Constants.TEST_SUITE_NAMESPACE);
+        StUtils.copyImagePullSecrets(Constants.TEST_SUITE_NAMESPACE);
     }
 
     @BeforeAll

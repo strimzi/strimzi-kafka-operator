@@ -34,7 +34,7 @@ import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 
-import static io.strimzi.systemtest.Constants.INFRA_NAMESPACE;
+import static io.strimzi.systemtest.Constants.CO_NAMESPACE;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.junit.jupiter.api.Assumptions.assumeFalse;
@@ -212,7 +212,7 @@ public class KafkaNodePoolST extends AbstractST {
 
         clusterOperator = new SetupClusterOperator.SetupClusterOperatorBuilder()
             .withExtensionContext(extensionContext)
-            .withNamespace(INFRA_NAMESPACE)
+            .withNamespace(CO_NAMESPACE)
             .withExtraEnvVars(coEnvVars)
             .withWatchingNamespaces(Constants.WATCH_ALL_NAMESPACES)
             .createInstallation()

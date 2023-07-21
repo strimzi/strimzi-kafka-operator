@@ -78,27 +78,27 @@ class UserST extends AbstractST {
         String saslUserWithLongName = "sasl-user" + "abcdefghijklmnopqrstuvxyzabcdefghijklmnopqrstuvxyzabcdef"; // 65 character username
 
         // Create user with correct name
-        resourceManager.createResourceWithWait(extensionContext, KafkaUserTemplates.tlsUser(clusterOperator.getDeploymentNamespace(), userClusterName, userWithCorrectName).build());
+        resourceManager.createResourceWithWait(extensionContext, KafkaUserTemplates.tlsUser(Constants.TEST_SUITE_NAMESPACE, userClusterName, userWithCorrectName).build());
 
-        KafkaUserUtils.waitUntilKafkaUserStatusConditionIsPresent(clusterOperator.getDeploymentNamespace(), userWithCorrectName);
+        KafkaUserUtils.waitUntilKafkaUserStatusConditionIsPresent(Constants.TEST_SUITE_NAMESPACE, userWithCorrectName);
 
-        Condition condition = KafkaUserResource.kafkaUserClient().inNamespace(clusterOperator.getDeploymentNamespace()).withName(userWithCorrectName).get().getStatus().getConditions().get(0);
+        Condition condition = KafkaUserResource.kafkaUserClient().inNamespace(Constants.TEST_SUITE_NAMESPACE).withName(userWithCorrectName).get().getStatus().getConditions().get(0);
 
         verifyCRStatusCondition(condition, "True", Ready);
 
         // Create sasl user with long name, shouldn't fail
-        resourceManager.createResourceWithWait(extensionContext, KafkaUserTemplates.scramShaUser(clusterOperator.getDeploymentNamespace(), userClusterName, saslUserWithLongName).build());
+        resourceManager.createResourceWithWait(extensionContext, KafkaUserTemplates.scramShaUser(Constants.TEST_SUITE_NAMESPACE, userClusterName, saslUserWithLongName).build());
 
-        resourceManager.createResourceWithoutWait(extensionContext, KafkaUserTemplates.defaultUser(clusterOperator.getDeploymentNamespace(), userClusterName, userWithLongName)
+        resourceManager.createResourceWithoutWait(extensionContext, KafkaUserTemplates.defaultUser(Constants.TEST_SUITE_NAMESPACE, userClusterName, userWithLongName)
             .withNewSpec()
                 .withNewKafkaUserTlsClientAuthentication()
                 .endKafkaUserTlsClientAuthentication()
             .endSpec()
             .build());
 
-        KafkaUserUtils.waitUntilKafkaUserStatusConditionIsPresent(clusterOperator.getDeploymentNamespace(), userWithLongName);
+        KafkaUserUtils.waitUntilKafkaUserStatusConditionIsPresent(Constants.TEST_SUITE_NAMESPACE, userWithLongName);
 
-        condition = KafkaUserResource.kafkaUserClient().inNamespace(clusterOperator.getDeploymentNamespace()).withName(userWithLongName).get().getStatus().getConditions().get(0);
+        condition = KafkaUserResource.kafkaUserClient().inNamespace(Constants.TEST_SUITE_NAMESPACE).withName(userWithLongName).get().getStatus().getConditions().get(0);
 
         verifyCRStatusCondition(condition,
                 "only up to 64 characters",
@@ -110,44 +110,44 @@ class UserST extends AbstractST {
     void testUpdateUser(ExtensionContext extensionContext) {
         String userName = mapWithTestUsers.get(extensionContext.getDisplayName());
 
-        resourceManager.createResourceWithWait(extensionContext, KafkaUserTemplates.tlsUser(clusterOperator.getDeploymentNamespace(), userClusterName, userName).build());
+        resourceManager.createResourceWithWait(extensionContext, KafkaUserTemplates.tlsUser(Constants.TEST_SUITE_NAMESPACE, userClusterName, userName).build());
 
-        String kafkaUserSecret = TestUtils.toJsonString(kubeClient(clusterOperator.getDeploymentNamespace()).getSecret(userName));
+        String kafkaUserSecret = TestUtils.toJsonString(kubeClient(Constants.TEST_SUITE_NAMESPACE).getSecret(userName));
         assertThat(kafkaUserSecret, hasJsonPath("$.data['ca.crt']", notNullValue()));
         assertThat(kafkaUserSecret, hasJsonPath("$.data['user.crt']", notNullValue()));
         assertThat(kafkaUserSecret, hasJsonPath("$.data['user.key']", notNullValue()));
         assertThat(kafkaUserSecret, hasJsonPath("$.metadata.name", equalTo(userName)));
-        assertThat(kafkaUserSecret, hasJsonPath("$.metadata.namespace", equalTo(clusterOperator.getDeploymentNamespace())));
+        assertThat(kafkaUserSecret, hasJsonPath("$.metadata.namespace", equalTo(Constants.TEST_SUITE_NAMESPACE)));
 
-        KafkaUser kUser = KafkaUserResource.kafkaUserClient().inNamespace(clusterOperator.getDeploymentNamespace()).withName(userName).get();
+        KafkaUser kUser = KafkaUserResource.kafkaUserClient().inNamespace(Constants.TEST_SUITE_NAMESPACE).withName(userName).get();
         String kafkaUserAsJson = TestUtils.toJsonString(kUser);
 
         assertThat(kafkaUserAsJson, hasJsonPath("$.metadata.name", equalTo(userName)));
-        assertThat(kafkaUserAsJson, hasJsonPath("$.metadata.namespace", equalTo(clusterOperator.getDeploymentNamespace())));
+        assertThat(kafkaUserAsJson, hasJsonPath("$.metadata.namespace", equalTo(Constants.TEST_SUITE_NAMESPACE)));
         assertThat(kafkaUserAsJson, hasJsonPath("$.spec.authentication.type", equalTo(Constants.TLS_LISTENER_DEFAULT_NAME)));
 
-        long observedGeneration = KafkaUserResource.kafkaUserClient().inNamespace(clusterOperator.getDeploymentNamespace()).withName(userName).get().getStatus().getObservedGeneration();
+        long observedGeneration = KafkaUserResource.kafkaUserClient().inNamespace(Constants.TEST_SUITE_NAMESPACE).withName(userName).get().getStatus().getObservedGeneration();
 
         KafkaUserResource.replaceUserResourceInSpecificNamespace(userName, ku -> {
             ku.getMetadata().setResourceVersion(null);
             ku.getSpec().setAuthentication(new KafkaUserScramSha512ClientAuthentication());
-        }, clusterOperator.getDeploymentNamespace());
+        }, Constants.TEST_SUITE_NAMESPACE);
 
-        KafkaUserUtils.waitForKafkaUserIncreaseObserverGeneration(clusterOperator.getDeploymentNamespace(), observedGeneration, userName);
-        KafkaUserUtils.waitForKafkaUserCreation(clusterOperator.getDeploymentNamespace(), userName);
+        KafkaUserUtils.waitForKafkaUserIncreaseObserverGeneration(Constants.TEST_SUITE_NAMESPACE, observedGeneration, userName);
+        KafkaUserUtils.waitForKafkaUserCreation(Constants.TEST_SUITE_NAMESPACE, userName);
 
-        String anotherKafkaUserSecret = TestUtils.toJsonString(kubeClient(clusterOperator.getDeploymentNamespace()).getSecret(clusterOperator.getDeploymentNamespace(), userName));
+        String anotherKafkaUserSecret = TestUtils.toJsonString(kubeClient(Constants.TEST_SUITE_NAMESPACE).getSecret(Constants.TEST_SUITE_NAMESPACE, userName));
 
         assertThat(anotherKafkaUserSecret, hasJsonPath("$.data.password", notNullValue()));
 
-        kUser = Crds.kafkaUserOperation(kubeClient().getClient()).inNamespace(clusterOperator.getDeploymentNamespace()).withName(userName).get();
+        kUser = Crds.kafkaUserOperation(kubeClient().getClient()).inNamespace(Constants.TEST_SUITE_NAMESPACE).withName(userName).get();
         kafkaUserAsJson = TestUtils.toJsonString(kUser);
         assertThat(kafkaUserAsJson, hasJsonPath("$.metadata.name", equalTo(userName)));
-        assertThat(kafkaUserAsJson, hasJsonPath("$.metadata.namespace", equalTo(clusterOperator.getDeploymentNamespace())));
+        assertThat(kafkaUserAsJson, hasJsonPath("$.metadata.namespace", equalTo(Constants.TEST_SUITE_NAMESPACE)));
         assertThat(kafkaUserAsJson, hasJsonPath("$.spec.authentication.type", equalTo("scram-sha-512")));
 
-        Crds.kafkaUserOperation(kubeClient().getClient()).inNamespace(clusterOperator.getDeploymentNamespace()).resource(kUser).delete();
-        KafkaUserUtils.waitForKafkaUserDeletion(clusterOperator.getDeploymentNamespace(), userName);
+        Crds.kafkaUserOperation(kubeClient().getClient()).inNamespace(Constants.TEST_SUITE_NAMESPACE).resource(kUser).delete();
+        KafkaUserUtils.waitForKafkaUserDeletion(Constants.TEST_SUITE_NAMESPACE, userName);
     }
 
     @ParallelTest
@@ -155,7 +155,7 @@ class UserST extends AbstractST {
         // skip test if KRaft mode is enabled and Kafka version is lower than 3.5.0 - https://github.com/strimzi/strimzi-kafka-operator/issues/8806
         assumeTrue(Environment.isKRaftModeEnabled() && TestKafkaVersion.compareDottedVersions("3.5.0", Environment.ST_KAFKA_VERSION) != 1);
 
-        KafkaUser user = KafkaUserTemplates.tlsUser(clusterOperator.getDeploymentNamespace(), userClusterName, "encrypted-arnost").build();
+        KafkaUser user = KafkaUserTemplates.tlsUser(Constants.TEST_SUITE_NAMESPACE, userClusterName, "encrypted-arnost").build();
 
         testUserWithQuotas(extensionContext, user);
     }
@@ -166,14 +166,14 @@ class UserST extends AbstractST {
         assumeTrue(Environment.isKRaftModeEnabled() && TestKafkaVersion.compareDottedVersions("3.5.0", Environment.ST_KAFKA_VERSION) != 1);
 
         final String kafkaUserName = mapWithTestUsers.get(extensionContext.getDisplayName());
-        final KafkaUser tlsExternalUser = KafkaUserTemplates.tlsExternalUser(clusterOperator.getDeploymentNamespace(), userClusterName, kafkaUserName).build();
+        final KafkaUser tlsExternalUser = KafkaUserTemplates.tlsExternalUser(Constants.TEST_SUITE_NAMESPACE, userClusterName, kafkaUserName).build();
 
         testUserWithQuotas(extensionContext, tlsExternalUser);
     }
 
     @ParallelTest
     void testScramUserWithQuotas(ExtensionContext extensionContext) {
-        KafkaUser user = KafkaUserTemplates.scramShaUser(clusterOperator.getDeploymentNamespace(), userClusterName, "scramed-arnost").build();
+        KafkaUser user = KafkaUserTemplates.scramShaUser(Constants.TEST_SUITE_NAMESPACE, userClusterName, "scramed-arnost").build();
 
         testUserWithQuotas(extensionContext, user);
     }
@@ -187,7 +187,7 @@ class UserST extends AbstractST {
         String annotationKey = "test-annotation-key";
         String annotationValue = "test-annotation-value";
 
-        resourceManager.createResourceWithWait(extensionContext, KafkaUserTemplates.tlsUser(clusterOperator.getDeploymentNamespace(), userClusterName, userName)
+        resourceManager.createResourceWithWait(extensionContext, KafkaUserTemplates.tlsUser(Constants.TEST_SUITE_NAMESPACE, userClusterName, userName)
             .editSpec()
                 .editOrNewTemplate()
                     .editOrNewSecret()
@@ -200,7 +200,7 @@ class UserST extends AbstractST {
             .endSpec()
             .build());
 
-        Secret userSecret = kubeClient(clusterOperator.getDeploymentNamespace()).getSecret(userName);
+        Secret userSecret = kubeClient(Constants.TEST_SUITE_NAMESPACE).getSecret(userName);
         assertThat(userSecret.getMetadata().getLabels().get(labelKey), is(labelValue));
         assertThat(userSecret.getMetadata().getAnnotations().get(annotationKey), is(annotationValue));
     }
@@ -214,15 +214,15 @@ class UserST extends AbstractST {
         // Create user with correct name
         resourceManager.createResourceWithWait(extensionContext, KafkaUserTemplates.userWithQuotas(user, prodRate, consRate, reqPerc, mutRate)
             .editMetadata()
-                .withNamespace(clusterOperator.getDeploymentNamespace())
+                .withNamespace(Constants.TEST_SUITE_NAMESPACE)
             .endMetadata()
             .build());
 
-        final String userName = KafkaUserResource.kafkaUserClient().inNamespace(clusterOperator.getDeploymentNamespace()).withName(user.getMetadata().getName()).get().getStatus().getUsername();
+        final String userName = KafkaUserResource.kafkaUserClient().inNamespace(Constants.TEST_SUITE_NAMESPACE).withName(user.getMetadata().getName()).get().getStatus().getUsername();
 
         TestUtils.waitFor("all KafkaUser " + userName + " attributes are present", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
             () -> {
-                String result = KafkaCmdClient.describeUserUsingPodCli(clusterOperator.getDeploymentNamespace(), scraperPodName, KafkaResources.plainBootstrapAddress(userClusterName), userName);
+                String result = KafkaCmdClient.describeUserUsingPodCli(Constants.TEST_SUITE_NAMESPACE, scraperPodName, KafkaResources.plainBootstrapAddress(userClusterName), userName);
                 return result.contains("Quota configs for user-principal '" + userName + "' are") &&
                     result.contains("request_percentage=" + reqPerc) &&
                     result.contains("producer_byte_rate=" + prodRate) &&
@@ -231,12 +231,12 @@ class UserST extends AbstractST {
             });
 
         // delete user
-        KafkaUserResource.kafkaUserClient().inNamespace(clusterOperator.getDeploymentNamespace()).withName(user.getMetadata().getName()).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
-        KafkaUserUtils.waitForKafkaUserDeletion(clusterOperator.getDeploymentNamespace(), user.getMetadata().getName());
+        KafkaUserResource.kafkaUserClient().inNamespace(Constants.TEST_SUITE_NAMESPACE).withName(user.getMetadata().getName()).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
+        KafkaUserUtils.waitForKafkaUserDeletion(Constants.TEST_SUITE_NAMESPACE, user.getMetadata().getName());
 
         TestUtils.waitFor("all attributes of KafkaUser: " + userName + " to be cleaned", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
             () -> {
-                String resultAfterDelete = KafkaCmdClient.describeUserUsingPodCli(clusterOperator.getDeploymentNamespace(), scraperPodName, KafkaResources.plainBootstrapAddress(userClusterName), userName);
+                String resultAfterDelete = KafkaCmdClient.describeUserUsingPodCli(Constants.TEST_SUITE_NAMESPACE, scraperPodName, KafkaResources.plainBootstrapAddress(userClusterName), userName);
 
                 return
                     !resultAfterDelete.contains(userName) &&
@@ -249,7 +249,7 @@ class UserST extends AbstractST {
 
     @ParallelNamespaceTest
     void testCreatingUsersWithSecretPrefix(ExtensionContext extensionContext) {
-        final TestStorage testStorage = new TestStorage(extensionContext, clusterOperator.getDeploymentNamespace());
+        final TestStorage testStorage = new TestStorage(extensionContext, Constants.TEST_SUITE_NAMESPACE);
 
         final String secretPrefix = "top-secret-";
         final String tlsUserName = "encrypted-leopold";
@@ -338,7 +338,7 @@ class UserST extends AbstractST {
 
     @ParallelNamespaceTest
     void testTlsExternalUser(ExtensionContext extensionContext) {
-        final String namespaceName = StUtils.getNamespaceBasedOnRbac(clusterOperator.getDeploymentNamespace(), extensionContext);
+        final String namespaceName = StUtils.getNamespaceBasedOnRbac(Constants.TEST_SUITE_NAMESPACE, extensionContext);
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         final String userName = mapWithTestUsers.get(extensionContext.getDisplayName());
         final String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
@@ -413,45 +413,45 @@ class UserST extends AbstractST {
         // skip test if KRaft mode is enabled and Kafka version is lower than 3.5.0 - https://github.com/strimzi/strimzi-kafka-operator/issues/8806
         assumeTrue(Environment.isKRaftModeEnabled() && TestKafkaVersion.compareDottedVersions("3.5.0", Environment.ST_KAFKA_VERSION) != 1);
 
-        final TestStorage testStorage = new TestStorage(extensionContext, clusterOperator.getDeploymentNamespace());
+        final TestStorage testStorage = new TestStorage(extensionContext, Constants.TEST_SUITE_NAMESPACE);
         final String userListeningClusterName = "user-listening-cluster";
         final String userIgnoringClusterName = userClusterName; // pre-created shared Kafka will be used as the secondary cluster (its UO ignoring KafkaUser with diff label)
 
-        LOGGER.info("Creating new Kafka: {}/{}, whose TO will listen to soon to be created KafkaUser CR", clusterOperator.getDeploymentNamespace(), userListeningClusterName);
+        LOGGER.info("Creating new Kafka: {}/{}, whose TO will listen to soon to be created KafkaUser CR", Constants.TEST_SUITE_NAMESPACE, userListeningClusterName);
         resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(userListeningClusterName, 3, 1)
             .editMetadata()
-                .withNamespace(clusterOperator.getDeploymentNamespace())
+                .withNamespace(Constants.TEST_SUITE_NAMESPACE)
             .endMetadata()
             .build());
 
-        LOGGER.info("Creating new KafkaUser: {}/{}", clusterOperator.getDeploymentNamespace(), testStorage.getUsername());
-        final KafkaUser user = KafkaUserTemplates.tlsUser(clusterOperator.getDeploymentNamespace(), userListeningClusterName, testStorage.getUsername()).build();
+        LOGGER.info("Creating new KafkaUser: {}/{}", Constants.TEST_SUITE_NAMESPACE, testStorage.getUsername());
+        final KafkaUser user = KafkaUserTemplates.tlsUser(Constants.TEST_SUITE_NAMESPACE, userListeningClusterName, testStorage.getUsername()).build();
         resourceManager.createResourceWithWait(extensionContext, KafkaUserTemplates.userWithQuotas(user, 123, 123, 12, 10d)
             .editMetadata()
-                .withNamespace(clusterOperator.getDeploymentNamespace())
+                .withNamespace(Constants.TEST_SUITE_NAMESPACE)
             .endMetadata()
             .build());
 
-        LOGGER.info("Verifying KafkaUser: {}/{} is created in Kafka: {}/{} ", clusterOperator.getDeploymentNamespace(), testStorage.getUsername(), clusterOperator.getDeploymentNamespace(), userListeningClusterName);
-        String entityOperatorPodName = kubeClient().listPodNamesInSpecificNamespace(clusterOperator.getDeploymentNamespace(), Labels.STRIMZI_NAME_LABEL, KafkaResources.entityOperatorDeploymentName(userListeningClusterName)).get(0);
-        String uOLogs = kubeClient().logsInSpecificNamespace(clusterOperator.getDeploymentNamespace(), entityOperatorPodName, "user-operator");
-        assertThat(uOLogs, containsString("KafkaUser " + testStorage.getUsername() + " in namespace " + clusterOperator.getDeploymentNamespace() + " was ADDED"));
+        LOGGER.info("Verifying KafkaUser: {}/{} is created in Kafka: {}/{} ", Constants.TEST_SUITE_NAMESPACE, testStorage.getUsername(), Constants.TEST_SUITE_NAMESPACE, userListeningClusterName);
+        String entityOperatorPodName = kubeClient().listPodNamesInSpecificNamespace(Constants.TEST_SUITE_NAMESPACE, Labels.STRIMZI_NAME_LABEL, KafkaResources.entityOperatorDeploymentName(userListeningClusterName)).get(0);
+        String uOLogs = kubeClient().logsInSpecificNamespace(Constants.TEST_SUITE_NAMESPACE, entityOperatorPodName, "user-operator");
+        assertThat(uOLogs, containsString("KafkaUser " + testStorage.getUsername() + " in namespace " + Constants.TEST_SUITE_NAMESPACE + " was ADDED"));
 
-        LOGGER.info("Verifying KafkaUser: {}/{} is not created in Kafka: {}/{}", clusterOperator.getDeploymentNamespace(), testStorage.getUsername(), clusterOperator.getDeploymentNamespace(), userIgnoringClusterName);
-        entityOperatorPodName = kubeClient().listPodNamesInSpecificNamespace(clusterOperator.getDeploymentNamespace(), Labels.STRIMZI_NAME_LABEL, KafkaResources.entityOperatorDeploymentName(userIgnoringClusterName)).get(0);
-        uOLogs = kubeClient().logsInSpecificNamespace(clusterOperator.getDeploymentNamespace(), entityOperatorPodName, "user-operator");
-        assertThat(uOLogs, not(containsString("KafkaUser " + testStorage.getUsername() + " in namespace " + clusterOperator.getDeploymentNamespace() + " was ADDED")));
+        LOGGER.info("Verifying KafkaUser: {}/{} is not created in Kafka: {}/{}", Constants.TEST_SUITE_NAMESPACE, testStorage.getUsername(), Constants.TEST_SUITE_NAMESPACE, userIgnoringClusterName);
+        entityOperatorPodName = kubeClient().listPodNamesInSpecificNamespace(Constants.TEST_SUITE_NAMESPACE, Labels.STRIMZI_NAME_LABEL, KafkaResources.entityOperatorDeploymentName(userIgnoringClusterName)).get(0);
+        uOLogs = kubeClient().logsInSpecificNamespace(Constants.TEST_SUITE_NAMESPACE, entityOperatorPodName, "user-operator");
+        assertThat(uOLogs, not(containsString("KafkaUser " + testStorage.getUsername() + " in namespace " + Constants.TEST_SUITE_NAMESPACE + " was ADDED")));
 
-        LOGGER.info("Verifying KafkaUser: {}/{} has label: {}={} corresponding to Kafka cluster it belongs to", clusterOperator.getDeploymentNamespace(), testStorage.getUsername(), Labels.STRIMZI_CLUSTER_LABEL, userListeningClusterName);
-        String kafkaUserResource = cmdKubeClient(clusterOperator.getDeploymentNamespace()).getResourceAsYaml("kafkauser", testStorage.getUsername());
+        LOGGER.info("Verifying KafkaUser: {}/{} has label: {}={} corresponding to Kafka cluster it belongs to", Constants.TEST_SUITE_NAMESPACE, testStorage.getUsername(), Labels.STRIMZI_CLUSTER_LABEL, userListeningClusterName);
+        String kafkaUserResource = cmdKubeClient(Constants.TEST_SUITE_NAMESPACE).getResourceAsYaml("kafkauser", testStorage.getUsername());
         assertThat(kafkaUserResource, containsString(Labels.STRIMZI_CLUSTER_LABEL + ": " + userListeningClusterName));
 
-        SecretUtils.waitForSpecificLabelKeyValue(testStorage.getUsername(), clusterOperator.getDeploymentNamespace(), Labels.STRIMZI_CLUSTER_LABEL, userListeningClusterName);
+        SecretUtils.waitForSpecificLabelKeyValue(testStorage.getUsername(), Constants.TEST_SUITE_NAMESPACE, Labels.STRIMZI_CLUSTER_LABEL, userListeningClusterName);
 
-        KafkaUserUtils.waitForKafkaUserMappingIntoKafkaResource(clusterOperator.getDeploymentNamespace(), testStorage.getUsername(), userListeningClusterName, scraperPodName);
+        KafkaUserUtils.waitForKafkaUserMappingIntoKafkaResource(Constants.TEST_SUITE_NAMESPACE, testStorage.getUsername(), userListeningClusterName, scraperPodName);
 
-        LOGGER.info("Verifying KafkaUser: {}/{} is not present in Kafka ecosystem in Kafka/{}", clusterOperator.getDeploymentNamespace(), testStorage.getUsername(), userIgnoringClusterName);
-        String getUserResult = KafkaCmdClient.describeUserUsingPodCli(clusterOperator.getDeploymentNamespace(), scraperPodName, KafkaResources.plainBootstrapAddress(userIgnoringClusterName), "CN=" + testStorage.getUsername());
+        LOGGER.info("Verifying KafkaUser: {}/{} is not present in Kafka ecosystem in Kafka/{}", Constants.TEST_SUITE_NAMESPACE, testStorage.getUsername(), userIgnoringClusterName);
+        String getUserResult = KafkaCmdClient.describeUserUsingPodCli(Constants.TEST_SUITE_NAMESPACE, scraperPodName, KafkaResources.plainBootstrapAddress(userIgnoringClusterName), "CN=" + testStorage.getUsername());
         assertThat("KafkaUser CR is not mapped as Kafka resource user", getUserResult, not(containsString(testStorage.getUsername())));
     }
 
@@ -464,12 +464,12 @@ class UserST extends AbstractST {
 
         resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(userClusterName, 1, 1)
             .editMetadata()
-                .withNamespace(clusterOperator.getDeploymentNamespace())
+                .withNamespace(Constants.TEST_SUITE_NAMESPACE)
             .endMetadata()
             .build(),
-            ScraperTemplates.scraperPod(clusterOperator.getDeploymentNamespace(), scraperName).build()
+            ScraperTemplates.scraperPod(Constants.TEST_SUITE_NAMESPACE, scraperName).build()
         );
 
-        scraperPodName = kubeClient().listPodsByPrefixInName(clusterOperator.getDeploymentNamespace(), scraperName).get(0).getMetadata().getName();
+        scraperPodName = kubeClient().listPodsByPrefixInName(Constants.TEST_SUITE_NAMESPACE, scraperName).get(0).getMetadata().getName();
     }
 }

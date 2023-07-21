@@ -36,9 +36,9 @@ class HelmChartST extends AbstractST {
         resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3).build());
 
         resourceManager.createResourceWithWait(extensionContext,
-            KafkaTopicTemplates.topic(clusterName, topicName, clusterOperator.getDeploymentNamespace()).build(),
+            KafkaTopicTemplates.topic(clusterName, topicName, Constants.TEST_SUITE_NAMESPACE).build(),
             // Deploy KafkaConnect and wait for readiness
-            KafkaConnectTemplates.kafkaConnectWithFilePlugin(clusterName, clusterOperator.getDeploymentNamespace(), 1)
+            KafkaConnectTemplates.kafkaConnectWithFilePlugin(clusterName, Constants.TEST_SUITE_NAMESPACE, 1)
                 .editMetadata()
                     .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
                 .endMetadata()
@@ -52,13 +52,13 @@ class HelmChartST extends AbstractST {
     @BeforeAll
     void setup(ExtensionContext extensionContext) {
         clusterOperator = clusterOperator.defaultInstallation(extensionContext)
-            .withNamespace(Constants.INFRA_NAMESPACE)
-            .withWatchingNamespaces(Constants.INFRA_NAMESPACE)
-            .withBindingsNamespaces(Collections.singletonList(Constants.INFRA_NAMESPACE))
+            .withNamespace(Constants.CO_NAMESPACE)
+            .withWatchingNamespaces(Constants.CO_NAMESPACE)
+            .withBindingsNamespaces(Collections.singletonList(Constants.CO_NAMESPACE))
             .createInstallation()
             // run always Helm installation
             .runHelmInstallation();
 
-        cluster.setNamespace(Constants.INFRA_NAMESPACE);
+        cluster.setNamespace(Constants.CO_NAMESPACE);
     }
 }

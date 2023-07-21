@@ -44,12 +44,12 @@ public class PodSetST extends AbstractST {
     @IsolatedTest("We are changing CO env variables in this test")
     void testPodSetOnlyReconciliation(ExtensionContext extensionContext) {
         final TestStorage testStorage = new TestStorage(extensionContext);
-        final Map<String, String> coPod = DeploymentUtils.depSnapshot(clusterOperator.getDeploymentNamespace(), STRIMZI_DEPLOYMENT_NAME);
+        final Map<String, String> coPod = DeploymentUtils.depSnapshot(Constants.TEST_SUITE_NAMESPACE, STRIMZI_DEPLOYMENT_NAME);
         final int replicas = 3;
         final int probeTimeoutSeconds = 6;
 
         EnvVar reconciliationEnv = new EnvVar(Environment.STRIMZI_POD_SET_RECONCILIATION_ONLY_ENV, "true", null);
-        List<EnvVar> envVars = kubeClient().getDeployment(clusterOperator.getDeploymentNamespace(), Constants.STRIMZI_DEPLOYMENT_NAME).getSpec().getTemplate().getSpec().getContainers().get(0).getEnv();
+        List<EnvVar> envVars = kubeClient().getDeployment(Constants.TEST_SUITE_NAMESPACE, Constants.STRIMZI_DEPLOYMENT_NAME).getSpec().getTemplate().getSpec().getContainers().get(0).getEnv();
         envVars.add(reconciliationEnv);
 
         resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), replicas).build());
@@ -57,9 +57,9 @@ public class PodSetST extends AbstractST {
         LOGGER.info("Changing {} to 'true', so only SPS will be reconciled", Environment.STRIMZI_POD_SET_RECONCILIATION_ONLY_ENV);
 
         DeploymentResource.replaceDeployment(Constants.STRIMZI_DEPLOYMENT_NAME,
-            coDep -> coDep.getSpec().getTemplate().getSpec().getContainers().get(0).setEnv(envVars), clusterOperator.getDeploymentNamespace());
+            coDep -> coDep.getSpec().getTemplate().getSpec().getContainers().get(0).setEnv(envVars), Constants.TEST_SUITE_NAMESPACE);
 
-        DeploymentUtils.waitTillDepHasRolled(clusterOperator.getDeploymentNamespace(), STRIMZI_DEPLOYMENT_NAME, 1, coPod);
+        DeploymentUtils.waitTillDepHasRolled(Constants.TEST_SUITE_NAMESPACE, STRIMZI_DEPLOYMENT_NAME, 1, coPod);
 
         Map<String, String> kafkaPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getKafkaSelector());
 
@@ -82,9 +82,9 @@ public class PodSetST extends AbstractST {
 
         envVars.remove(reconciliationEnv);
         DeploymentResource.replaceDeployment(Constants.STRIMZI_DEPLOYMENT_NAME,
-            coDep -> coDep.getSpec().getTemplate().getSpec().getContainers().get(0).setEnv(envVars), clusterOperator.getDeploymentNamespace());
+            coDep -> coDep.getSpec().getTemplate().getSpec().getContainers().get(0).setEnv(envVars), Constants.TEST_SUITE_NAMESPACE);
 
-        DeploymentUtils.waitTillDepHasRolled(clusterOperator.getDeploymentNamespace(), STRIMZI_DEPLOYMENT_NAME, 1, coPod);
+        DeploymentUtils.waitTillDepHasRolled(Constants.TEST_SUITE_NAMESPACE, STRIMZI_DEPLOYMENT_NAME, 1, coPod);
 
         LOGGER.info("Because the configuration was changed, Pods should be rolled");
 

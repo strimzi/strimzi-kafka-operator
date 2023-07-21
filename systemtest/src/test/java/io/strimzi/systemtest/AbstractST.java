@@ -527,6 +527,7 @@ public abstract class AbstractST implements TestSeparator {
     private void afterAllMustExecute(ExtensionContext extensionContext)  {
         if (cluster.cluster().isClusterUp()) {
             clusterOperator = SetupClusterOperator.getInstance();
+            testSuiteNamespaceManager.deleteTestSuiteNamespace(extensionContext);
         } else {
             throw new KubernetesClusterUnstableException("Cluster is not responding and its probably un-stable (i.e., caused by network, OOM problem)");
         }
@@ -586,7 +587,9 @@ public abstract class AbstractST implements TestSeparator {
     }
 
     private void beforeAllMustExecute(ExtensionContext extensionContext) {
-        if (!cluster.cluster().isClusterUp()) {
+        if (cluster.cluster().isClusterUp()) {
+            testSuiteNamespaceManager.createTestSuiteNamespace(extensionContext);
+        } else {
             throw new KubernetesClusterUnstableException("Cluster is not responding and its probably un-stable (i.e., caused by network, OOM problem)");
         }
     }

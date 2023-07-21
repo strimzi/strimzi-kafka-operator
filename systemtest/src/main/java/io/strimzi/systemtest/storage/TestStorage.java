@@ -16,7 +16,7 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 import java.util.Random;
 
 import static io.strimzi.operator.common.Util.hashStub;
-import static io.strimzi.systemtest.Constants.INFRA_NAMESPACE;
+import static io.strimzi.systemtest.Constants.CO_NAMESPACE;
 import static io.strimzi.systemtest.Constants.MESSAGE_COUNT;
 
 /**
@@ -53,7 +53,7 @@ final public class TestStorage {
     private int messageCount;
 
     public TestStorage(ExtensionContext extensionContext) {
-        this(extensionContext, INFRA_NAMESPACE);
+        this(extensionContext, CO_NAMESPACE);
     }
 
     public TestStorage(ExtensionContext extensionContext, String namespaceName) {

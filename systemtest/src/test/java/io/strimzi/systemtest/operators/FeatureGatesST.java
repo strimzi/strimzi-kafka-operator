@@ -54,7 +54,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-import static io.strimzi.systemtest.Constants.INFRA_NAMESPACE;
+import static io.strimzi.systemtest.Constants.CO_NAMESPACE;
 import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
@@ -100,7 +100,7 @@ public class FeatureGatesST extends AbstractST {
 
         clusterOperator = new SetupClusterOperator.SetupClusterOperatorBuilder()
                 .withExtensionContext(extensionContext)
-                .withNamespace(INFRA_NAMESPACE)
+                .withNamespace(CO_NAMESPACE)
                 .withWatchingNamespaces(Constants.WATCH_ALL_NAMESPACES)
                 .withExtraEnvVars(testEnvVars)
                 .createInstallation()
@@ -162,26 +162,26 @@ public class FeatureGatesST extends AbstractST {
                 .withTopicName(topicName)
                 .withMessageCount(messageCount)
                 .withDelayMs(500)
-                .withNamespaceName(INFRA_NAMESPACE)
+                .withNamespaceName(CO_NAMESPACE)
                 .build();
 
         resourceManager.createResourceWithWait(extensionContext, kafkaClients.producerTlsStrimzi(clusterName));
         resourceManager.createResourceWithWait(extensionContext, kafkaClients.consumerTlsStrimzi(clusterName));
 
         // Check that there is no ZooKeeper
-        Map<String, String> zkPods = PodUtils.podSnapshot(INFRA_NAMESPACE, zkSelector);
+        Map<String, String> zkPods = PodUtils.podSnapshot(CO_NAMESPACE, zkSelector);
         assertThat("No ZooKeeper Pods should exist", zkPods.size(), is(0));
 
         // Roll Kafka
         LOGGER.info("Forcing rolling update of Kafka via read-only configuration change");
-        Map<String, String> kafkaPods = PodUtils.podSnapshot(INFRA_NAMESPACE, kafkaSelector);
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, k -> k.getSpec().getKafka().getConfig().put("log.retention.hours", 72), INFRA_NAMESPACE);
+        Map<String, String> kafkaPods = PodUtils.podSnapshot(CO_NAMESPACE, kafkaSelector);
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, k -> k.getSpec().getKafka().getConfig().put("log.retention.hours", 72), CO_NAMESPACE);
 
         LOGGER.info("Waiting for the next reconciliation to happen");
-        RollingUpdateUtils.waitTillComponentHasRolled(INFRA_NAMESPACE, kafkaSelector, kafkaReplicas, kafkaPods);
+        RollingUpdateUtils.waitTillComponentHasRolled(CO_NAMESPACE, kafkaSelector, kafkaReplicas, kafkaPods);
 
         LOGGER.info("Waiting for clients to finish sending/receiving messages");
-        ClientUtils.waitForClientsSuccess(producerName, consumerName, INFRA_NAMESPACE, MESSAGE_COUNT);
+        ClientUtils.waitForClientsSuccess(producerName, consumerName, CO_NAMESPACE, MESSAGE_COUNT);
     }
     @IsolatedTest
     void testSwitchingConnectStabilityIdentifiesFeatureGateOnAndOff(ExtensionContext extensionContext) {
@@ -305,7 +305,7 @@ public class FeatureGatesST extends AbstractST {
     void testKafkaNodePoolFeatureGate(ExtensionContext extensionContext) {
         assumeFalse(Environment.isOlmInstall() || Environment.isHelmInstall());
 
-        final TestStorage testStorage = new TestStorage(extensionContext, INFRA_NAMESPACE);
+        final TestStorage testStorage = new TestStorage(extensionContext, CO_NAMESPACE);
 
         List<EnvVar> coEnvVars = new ArrayList<>();
         coEnvVars.add(new EnvVar(Environment.STRIMZI_FEATURE_GATES_ENV, "+KafkaNodePools", null));

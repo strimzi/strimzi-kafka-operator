@@ -6,6 +6,7 @@ package io.strimzi.systemtest.parallel;
 
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
+import io.strimzi.systemtest.listeners.ExecutionListener;
 import io.strimzi.systemtest.resources.kubernetes.NetworkPolicyResource;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.test.k8s.KubeClusterResource;
@@ -34,6 +35,49 @@ public class TestSuiteNamespaceManager {
             counterOfNamespaces = new AtomicInteger(0);
         }
         return instance;
+    }
+
+    /**
+     * Creates a test suite namespace {@code Constants.TEST_SUITE_NAMESPACE} if conditions are met (e.g., the test class
+     * contains {@link io.strimzi.systemtest.annotations.IsolatedTest} or {@link io.strimzi.systemtest.annotations.ParallelTest}
+     * test cases we will create such namespace, otherwise not). When we have test class, which only contains
+     *  {@link io.strimzi.systemtest.annotations.ParallelNamespaceTest}, which creates its own namespace it does not
+     *  make sense to provide another auxiliary namespace (because it will be not used) and thus we are skip such creation.
+     *
+     * @param extensionContext      extension context for test class
+     */
+    public void createTestSuiteNamespace(ExtensionContext extensionContext) {
+        final String simpleClassName = extensionContext.getRequiredTestClass().getSimpleName();
+
+        if (ExecutionListener.hasSuiteParallelOrIsolatedTest(extensionContext)) {
+            // if RBAC is enabled we don't run tests in parallel mode and with that said we don't create another namespaces
+            if (!Environment.isNamespaceRbacScope()) {
+                KubeClusterResource.getInstance().createNamespace(CollectorElement.createCollectorElement(simpleClassName), Constants.TEST_SUITE_NAMESPACE);
+                NetworkPolicyResource.applyDefaultNetworkPolicySettings(extensionContext, Collections.singletonList(Constants.TEST_SUITE_NAMESPACE));
+                StUtils.copyImagePullSecrets(Constants.TEST_SUITE_NAMESPACE);
+            } else {
+                LOGGER.info("We are not gonna create additional namespace: {}, because test suite: {} does not " +
+                        "contains @ParallelTest or @IsolatedTest.", Constants.TEST_SUITE_NAMESPACE, simpleClassName);
+            }
+        }
+    }
+
+    /**
+     * Analogically, inverse method to {@link #createTestSuiteNamespace(ExtensionContext)}.
+     *
+     * @param extensionContext      extension context for test class
+     */
+    public void deleteTestSuiteNamespace(ExtensionContext extensionContext) {
+        if (ExecutionListener.hasSuiteParallelOrIsolatedTest(extensionContext)) {
+            // if RBAC is enabled we don't run tests in parallel mode and with that said we don't create another namespaces
+            if (!Environment.isNamespaceRbacScope()) {
+                final String simpleClassName = extensionContext.getRequiredTestClass().getSimpleName();
+
+                LOGGER.info("Deleting Namespace: {} for TestSuite: {}", Constants.TEST_SUITE_NAMESPACE, simpleClassName);
+                KubeClusterResource.getInstance().deleteNamespace(CollectorElement.createCollectorElement(simpleClassName), Constants.TEST_SUITE_NAMESPACE);
+            }
+        }
+
     }
 
     /**

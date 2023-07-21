@@ -409,8 +409,8 @@ public interface Constants {
     String LOAD_BALANCER_CLEANUP = "service.kubernetes.io/load-balancer-cleanup";
 
     // main namespace for Cluster Operator deployment
-    String INFRA_NAMESPACE = "infra-namespace";
-    String METRICS_SECOND_NAMESPACE = "second-metrics-cluster-test";
+    String CO_NAMESPACE = "co-namespace";
+    String TEST_SUITE_NAMESPACE = "test-suite-namespace";
 
     /**
      * Auxiliary variables for storing data across our tests

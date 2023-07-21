@@ -702,7 +702,7 @@ public class MetricsST extends AbstractST {
     void setupEnvironment(ExtensionContext extensionContext) throws Exception {
         // Metrics tests are not designed to run with namespace RBAC scope.
         assumeFalse(Environment.isNamespaceRbacScope());
-        cluster.createNamespaces(CollectorElement.createCollectorElement(this.getClass().getName()), clusterOperator.getDeploymentNamespace(), Arrays.asList(namespaceFirst, namespaceSecond));
+        cluster.createNamespaces(CollectorElement.createCollectorElement(this.getClass().getName()), Constants.TEST_SUITE_NAMESPACE, Arrays.asList(namespaceFirst, namespaceSecond));
         // Copy pull secret into newly created namespaces
         StUtils.copyImagePullSecrets(namespaceFirst);
         StUtils.copyImagePullSecrets(namespaceSecond);
@@ -711,7 +711,7 @@ public class MetricsST extends AbstractST {
             .createInstallation()
             .runInstallation();
 
-        final String coScraperName = clusterOperator.getDeploymentNamespace() + "-" + Constants.SCRAPER_NAME;
+        final String coScraperName = Constants.TEST_SUITE_NAMESPACE + "-" + Constants.SCRAPER_NAME;
         final String scraperName = namespaceFirst + "-" + Constants.SCRAPER_NAME;
         final String secondScraperName = namespaceSecond + "-" + Constants.SCRAPER_NAME;
 
@@ -733,7 +733,7 @@ public class MetricsST extends AbstractST {
                 .endSpec()
                 .build(),
             KafkaTemplates.kafkaWithMetrics(kafkaClusterSecondName, namespaceSecond, 1, 1).build(),
-            ScraperTemplates.scraperPod(clusterOperator.getDeploymentNamespace(), coScraperName).build(),
+            ScraperTemplates.scraperPod(Constants.TEST_SUITE_NAMESPACE, coScraperName).build(),
             ScraperTemplates.scraperPod(namespaceFirst, scraperName).build(),
             ScraperTemplates.scraperPod(namespaceSecond, secondScraperName).build()
         );
@@ -747,12 +747,12 @@ public class MetricsST extends AbstractST {
         resourceManager.createResourceWithWait(extensionContext, KafkaUserTemplates.tlsUser(namespaceFirst, kafkaClusterFirstName, KafkaUserUtils.generateRandomNameOfKafkaUser()).build());
         resourceManager.createResourceWithWait(extensionContext, KafkaUserTemplates.tlsUser(namespaceFirst, kafkaClusterFirstName, KafkaUserUtils.generateRandomNameOfKafkaUser()).build());
 
-        coScraperPodName = ResourceManager.kubeClient().listPodsByPrefixInName(clusterOperator.getDeploymentNamespace(), coScraperName).get(0).getMetadata().getName();
+        coScraperPodName = ResourceManager.kubeClient().listPodsByPrefixInName(Constants.TEST_SUITE_NAMESPACE, coScraperName).get(0).getMetadata().getName();
         scraperPodName = ResourceManager.kubeClient().listPodsByPrefixInName(namespaceFirst, scraperName).get(0).getMetadata().getName();
         secondNamespaceScraperPodName = ResourceManager.kubeClient().listPodsByPrefixInName(namespaceSecond, secondScraperName).get(0).getMetadata().getName();
 
         // Allow connections from clients to operators pods when NetworkPolicies are set to denied by default
-        NetworkPolicyResource.allowNetworkPolicySettingsForClusterOperator(extensionContext, clusterOperator.getDeploymentNamespace());
+        NetworkPolicyResource.allowNetworkPolicySettingsForClusterOperator(extensionContext, Constants.TEST_SUITE_NAMESPACE);
 
         // wait some time for metrics to be stable - at least reconciliation interval + 10s
         LOGGER.info("Sleeping for {} to give operators and operands some time to stable the metrics values before collecting",
@@ -779,7 +779,7 @@ public class MetricsST extends AbstractST {
 
         clusterOperatorCollector = new MetricsCollector.Builder()
             .withScraperPodName(coScraperPodName)
-            .withNamespaceName(clusterOperator.getDeploymentNamespace())
+            .withNamespaceName(Constants.TEST_SUITE_NAMESPACE)
             .withComponentType(ComponentType.ClusterOperator)
             .withComponentName(clusterOperator.getClusterOperatorName())
             .build();

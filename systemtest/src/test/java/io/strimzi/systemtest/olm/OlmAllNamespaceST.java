@@ -4,6 +4,7 @@
  */
 package io.strimzi.systemtest.olm;
 
+import io.strimzi.systemtest.Constants;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
@@ -87,6 +88,6 @@ public class OlmAllNamespaceST extends OlmAbstractST {
             // run always OLM installation
             .runOlmInstallation();
 
-        cluster.setNamespace(clusterOperator.getDeploymentNamespace());
+        cluster.setNamespace(Constants.TEST_SUITE_NAMESPACE);
     }
 }

@@ -15,6 +15,7 @@ import io.strimzi.api.kafka.model.KafkaMirrorMaker2;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
+import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.annotations.RequiredMinKubeOrOcpBasedKubeVersion;
 import io.strimzi.systemtest.enums.PodSecurityProfile;
@@ -208,7 +209,7 @@ public class PodSecurityProfilesST extends AbstractST {
             .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
             .withConsumerName(testStorage.getConsumerName())
             .withProducerName(testStorage.getProducerName())
-            .withNamespaceName(clusterOperator.getDeploymentNamespace())
+            .withNamespaceName(Constants.TEST_SUITE_NAMESPACE)
             // we set DEFAULT, which is in this case incorrect and client should crash
             .withPodSecurityPolicy(PodSecurityProfile.DEFAULT)
             .build();
@@ -279,7 +280,7 @@ public class PodSecurityProfilesST extends AbstractST {
             .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
             .withConsumerName(testStorage.getConsumerName())
             .withProducerName(testStorage.getProducerName())
-            .withNamespaceName(clusterOperator.getDeploymentNamespace())
+            .withNamespaceName(Constants.TEST_SUITE_NAMESPACE)
             .withPodSecurityPolicy(PodSecurityProfile.RESTRICTED)
             .build();
 

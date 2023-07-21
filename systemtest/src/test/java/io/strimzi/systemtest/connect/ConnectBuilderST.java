@@ -140,7 +140,7 @@ class ConnectBuilderST extends AbstractST {
 
     @ParallelTest
     void testBuildFailsWithWrongChecksumOfArtifact(ExtensionContext extensionContext) {
-        TestStorage testStorage = new TestStorage(extensionContext, clusterOperator.getDeploymentNamespace());
+        TestStorage testStorage = new TestStorage(extensionContext, Constants.TEST_SUITE_NAMESPACE);
 
         final String imageName = getImageNameForTestCase();
 
@@ -210,7 +210,7 @@ class ConnectBuilderST extends AbstractST {
 
     @ParallelTest
     void testBuildWithJarTgzAndZip(ExtensionContext extensionContext) {
-        TestStorage testStorage = new TestStorage(extensionContext, clusterOperator.getDeploymentNamespace());
+        TestStorage testStorage = new TestStorage(extensionContext, Constants.TEST_SUITE_NAMESPACE);
 
         // this test also testing push into Docker output
         final String imageName = getImageNameForTestCase();
@@ -268,7 +268,7 @@ class ConnectBuilderST extends AbstractST {
     @OpenShiftOnly
     @ParallelTest
     void testPushIntoImageStream(ExtensionContext extensionContext) {
-        TestStorage testStorage = new TestStorage(extensionContext, clusterOperator.getDeploymentNamespace());
+        TestStorage testStorage = new TestStorage(extensionContext, Constants.TEST_SUITE_NAMESPACE);
 
         String imageStreamName = "custom-image-stream";
         ImageStream imageStream = new ImageStreamBuilder()
@@ -308,7 +308,7 @@ class ConnectBuilderST extends AbstractST {
 
     @ParallelTest
     void testUpdateConnectWithAnotherPlugin(ExtensionContext extensionContext) {
-        TestStorage testStorage = new TestStorage(extensionContext, clusterOperator.getDeploymentNamespace());
+        TestStorage testStorage = new TestStorage(extensionContext, Constants.TEST_SUITE_NAMESPACE);
 
         String camelConnector = "camel-http-connector";
         final String imageName = getImageNameForTestCase();
@@ -401,7 +401,7 @@ class ConnectBuilderST extends AbstractST {
 
     @ParallelTest
     void testBuildOtherPluginTypeWithAndWithoutFileName(ExtensionContext extensionContext) {
-        TestStorage testStorage = new TestStorage(extensionContext, clusterOperator.getDeploymentNamespace());
+        TestStorage testStorage = new TestStorage(extensionContext, Constants.TEST_SUITE_NAMESPACE);
 
         final String imageName = getImageNameForTestCase();
 
@@ -460,7 +460,7 @@ class ConnectBuilderST extends AbstractST {
     @Tag(ACCEPTANCE)
     @ParallelTest
     void testBuildPluginUsingMavenCoordinatesArtifacts(ExtensionContext extensionContext) {
-        TestStorage testStorage = new TestStorage(extensionContext, clusterOperator.getDeploymentNamespace());
+        TestStorage testStorage = new TestStorage(extensionContext, Constants.TEST_SUITE_NAMESPACE);
 
         final String imageName = getImageNameForTestCase();
         final String connectorName = testStorage.getClusterName() + "-camel-connector";
@@ -513,7 +513,7 @@ class ConnectBuilderST extends AbstractST {
 
     private String getImageNameForTestCase() {
         int randomNum = new Random().nextInt(Integer.MAX_VALUE);
-        return Environment.getImageOutputRegistry(clusterOperator.getDeploymentNamespace(), Constants.ST_CONNECT_BUILD_IMAGE_NAME, String.valueOf(randomNum));
+        return Environment.getImageOutputRegistry(Constants.TEST_SUITE_NAMESPACE, Constants.ST_CONNECT_BUILD_IMAGE_NAME, String.valueOf(randomNum));
 
     }
 
@@ -524,6 +524,6 @@ class ConnectBuilderST extends AbstractST {
             .createInstallation()
             .runInstallation();
 
-        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(clusterOperator.getDeploymentNamespace(), 3).build());
+        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(Constants.TEST_SUITE_NAMESPACE, 3).build());
     }
 }

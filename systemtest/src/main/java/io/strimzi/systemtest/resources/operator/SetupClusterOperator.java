@@ -145,7 +145,7 @@ public class SetupClusterOperator {
         }
         // if namespace is not set we install operator to 'infra-namespace'
         if (this.namespaceInstallTo == null || this.namespaceInstallTo.isEmpty()) {
-            this.namespaceInstallTo = Constants.INFRA_NAMESPACE;
+            this.namespaceInstallTo = Constants.CO_NAMESPACE;
         }
         if (this.namespaceToWatch == null) {
             this.namespaceToWatch = this.namespaceInstallTo;
@@ -197,12 +197,12 @@ public class SetupClusterOperator {
 
         // RBAC set to `NAMESPACE`
         if (Environment.isNamespaceRbacScope() && !Environment.isHelmInstall()) {
-            clusterOperatorBuilder = clusterOperatorBuilder.withNamespace(Constants.INFRA_NAMESPACE);
+            clusterOperatorBuilder = clusterOperatorBuilder.withNamespace(Constants.CO_NAMESPACE);
             return clusterOperatorBuilder;
         }
         // otherwise
         return clusterOperatorBuilder
-            .withNamespace(Constants.INFRA_NAMESPACE)
+            .withNamespace(Constants.CO_NAMESPACE)
             .withWatchingNamespaces(Constants.WATCH_ALL_NAMESPACES);
     }
 
@@ -325,7 +325,7 @@ public class SetupClusterOperator {
         if (IS_OLM_CLUSTER_WIDE.test(namespaceToWatch)) {
             // if RBAC is enable we don't run tests in parallel mode and with that said we don't create another namespaces
             if (!Environment.isNamespaceRbacScope()) {
-                bindingsNamespaces = bindingsNamespaces.contains(Constants.INFRA_NAMESPACE) ? Collections.singletonList(Constants.INFRA_NAMESPACE) : bindingsNamespaces;
+                bindingsNamespaces = bindingsNamespaces.contains(Constants.CO_NAMESPACE) ? Collections.singletonList(Constants.CO_NAMESPACE) : bindingsNamespaces;
 
                 createClusterOperatorNamespaceIfPossible();
                 createClusterRoleBindings();
@@ -949,7 +949,7 @@ public class SetupClusterOperator {
      *    2. Helm &amp; installation    :   return @code{namespaceInstallTo}
      */
     public String getDeploymentNamespace() {
-        return namespaceInstallTo == null ? Constants.INFRA_NAMESPACE : namespaceInstallTo;
+        return namespaceInstallTo == null ? Constants.CO_NAMESPACE : namespaceInstallTo;
     }
 
     public OlmResource getOlmResource() {

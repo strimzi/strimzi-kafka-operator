@@ -50,12 +50,12 @@ public class ClusterOperatorRbacST extends AbstractST {
         // 060-Deployment
         clusterOperator = new SetupClusterOperator.SetupClusterOperatorBuilder()
             .withExtensionContext(extensionContext)
-            .withNamespace(Constants.INFRA_NAMESPACE)
+            .withNamespace(Constants.CO_NAMESPACE)
             .withClusterOperatorRBACType(ClusterOperatorRBACType.NAMESPACE)
             .createInstallation()
             .runBundleInstallation();
 
-        String coPodName = kubeClient().getClusterOperatorPodName(clusterOperator.getDeploymentNamespace());
+        String coPodName = kubeClient().getClusterOperatorPodName(Constants.TEST_SUITE_NAMESPACE);
         LOGGER.info("Deploying Kafka: {}, which should be deployed even the CRBs are not present", clusterName);
 
         resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3).build());
@@ -65,7 +65,7 @@ public class ClusterOperatorRbacST extends AbstractST {
         assertTrue(log.contains("Kafka(" + cmdKubeClient().namespace() + "/" + clusterName + "): Ignoring forbidden access to ClusterRoleBindings resource which does not seem to be required."));
 
         LOGGER.info("Deploying KafkaConnect: {} without rack awareness, the CR should be deployed without error", clusterName);
-        resourceManager.createResourceWithWait(extensionContext, KafkaConnectTemplates.kafkaConnect(clusterName, clusterOperator.getDeploymentNamespace(), 1).build());
+        resourceManager.createResourceWithWait(extensionContext, KafkaConnectTemplates.kafkaConnect(clusterName, Constants.TEST_SUITE_NAMESPACE, 1).build());
 
         LOGGER.info("CO log should contain some information about ignoring forbidden access to CRB for KafkaConnect");
         log = cmdKubeClient().execInCurrentNamespace(Level.DEBUG, "logs", coPodName).out();
@@ -83,7 +83,7 @@ public class ClusterOperatorRbacST extends AbstractST {
         // 060-Deployment
         clusterOperator = new SetupClusterOperator.SetupClusterOperatorBuilder()
             .withExtensionContext(extensionContext)
-            .withNamespace(Constants.INFRA_NAMESPACE)
+            .withNamespace(Constants.CO_NAMESPACE)
             .withClusterOperatorRBACType(ClusterOperatorRBACType.NAMESPACE)
             .createInstallation()
             .runBundleInstallation();
@@ -101,19 +101,19 @@ public class ClusterOperatorRbacST extends AbstractST {
             .endSpec()
             .build());
 
-        KafkaUtils.waitUntilKafkaStatusConditionContainsMessage(clusterName, clusterOperator.getDeploymentNamespace(), ".*code=403.*");
-        Condition kafkaStatusCondition = KafkaResource.kafkaClient().inNamespace(clusterOperator.getDeploymentNamespace()).withName(clusterName).get().getStatus().getConditions().stream().filter(con -> NotReady.toString().equals(con.getType())).findFirst().orElse(null);
+        KafkaUtils.waitUntilKafkaStatusConditionContainsMessage(clusterName, Constants.TEST_SUITE_NAMESPACE, ".*code=403!.*");
+        Condition kafkaStatusCondition = KafkaResource.kafkaClient().inNamespace(Constants.TEST_SUITE_NAMESPACE).withName(clusterName).get().getStatus().getConditions().stream().filter(con -> NotReady.toString().equals(con.getType())).findFirst().orElse(null);
         assertThat(kafkaStatusCondition, is(notNullValue()));
         assertTrue(kafkaStatusCondition.getMessage().contains("code=403"));
 
-        resourceManager.createResourceWithoutWait(extensionContext, KafkaConnectTemplates.kafkaConnect(clusterName, clusterOperator.getDeploymentNamespace(), clusterName, 1)
+        resourceManager.createResourceWithoutWait(extensionContext, KafkaConnectTemplates.kafkaConnect(clusterName, Constants.TEST_SUITE_NAMESPACE, clusterName, 1)
             .editSpec()
                 .withNewRack(rackKey)
             .endSpec()
             .build());
 
-        KafkaConnectUtils.waitUntilKafkaConnectStatusConditionContainsMessage(clusterName, clusterOperator.getDeploymentNamespace(), ".*code=403.*");
-        Condition kafkaConnectStatusCondition = KafkaConnectResource.kafkaConnectClient().inNamespace(clusterOperator.getDeploymentNamespace()).withName(clusterName).get().getStatus().getConditions().stream().filter(con -> NotReady.toString().equals(con.getType())).findFirst().orElse(null);
+        KafkaConnectUtils.waitUntilKafkaConnectStatusConditionContainsMessage(clusterName, Constants.TEST_SUITE_NAMESPACE, ".*code=403!.*");
+        Condition kafkaConnectStatusCondition = KafkaConnectResource.kafkaConnectClient().inNamespace(Constants.TEST_SUITE_NAMESPACE).withName(clusterName).get().getStatus().getConditions().stream().filter(con -> NotReady.toString().equals(con.getType())).findFirst().orElse(null);
         assertThat(kafkaConnectStatusCondition, is(notNullValue()));
         assertTrue(kafkaConnectStatusCondition.getMessage().contains("code=403"));
     }
