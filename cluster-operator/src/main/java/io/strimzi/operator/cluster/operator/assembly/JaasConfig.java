@@ -23,3 +23,5 @@ public class JaasConfig {
         return moduleName + " required " + stringStream + ";";
     }
 }
+//verify key doesn't have = or value  ", module no spaces
+//
