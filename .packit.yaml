@@ -133,13 +133,15 @@ jobs:
   ###############################################################################################
 
   - job: tests
-    trigger: commit
-    branch: main
+    trigger: pull_request
     identifier: "sanity"
     targets:
       - centos-stream-9-x86_64
       - centos-stream-9-aarch64
     skip_build: true
+    manual_trigger: true
+    labels:
+      - sanity
     tf_extra_params:
       test:
         fmf:
