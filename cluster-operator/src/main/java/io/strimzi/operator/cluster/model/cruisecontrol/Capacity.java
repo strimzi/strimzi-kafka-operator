@@ -232,15 +232,12 @@ public class Capacity {
     }
 
     private CpuCapacity processCpu(io.strimzi.api.kafka.model.balancing.BrokerCapacity bc, BrokerCapacityOverride override, CpuCapacity cpuBasedOnRequirements) {
-        if (cpuBasedOnRequirements != null) {
-            if ((override != null && override.getCpu() != null) || (bc != null && bc.getCpu() != null)) {
-                LOGGER.warnCr(reconciliation, "Ignoring CPU capacity override settings since they are automatically set to resource limits");
-            }
-            return cpuBasedOnRequirements;
-        } else if (override != null && override.getCpu() != null) {
+        if (override != null && override.getCpu() != null) {
             return new CpuCapacity(override.getCpu());
         } else if (bc != null && bc.getCpu() != null) {
             return new CpuCapacity(bc.getCpu());
+        } else if (cpuBasedOnRequirements != null) {
+            return cpuBasedOnRequirements;
         } else {
             return new CpuCapacity(BrokerCapacity.DEFAULT_CPU_CORE_CAPACITY);
         }
