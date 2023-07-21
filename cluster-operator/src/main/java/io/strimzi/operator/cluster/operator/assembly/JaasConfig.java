@@ -13,10 +13,19 @@ public class JaasConfig {
     public static String config(String moduleName, Map<String, String> options) {
         StringJoiner joiner = new StringJoiner(" ");
         for (Map.Entry<String, String> entry : options.entrySet()) {
-            Objects.requireNonNull(entry.getKey());
-            Objects.requireNonNull(entry.getValue());
-            String s = entry.getKey() + "=\"" + entry.getValue() + "\"";
-            joiner.add(s);
+            String key = entry.getKey();
+            String value = entry.getValue();
+            Objects.requireNonNull(key);
+            Objects.requireNonNull(value);
+            // Check if the key or value contains invalid characters and if moduleName is empty
+            if (key.contains("=") || key.contains(";") || value.contains("=") || value.contains(";")){
+                throw new IllegalArgumentException("Keys and values must not contain '=' or ';'");
+            }if(moduleName.contains("=") || moduleName.contains(";") || moduleName.isEmpty()) {
+                throw new IllegalArgumentException("module name must be not empty and must not contain '=' or ';'");
+            } else{
+                String s = key + "=\"" + value + "\"";
+                joiner.add(s);
+            }
         }
         var stringStream = joiner.toString();
 
