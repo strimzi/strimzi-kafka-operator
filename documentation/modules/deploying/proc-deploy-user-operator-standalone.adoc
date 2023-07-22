@@ -94,8 +94,6 @@ spec:
               value: |
                 default.api.timeout.ms=120000
                 request.timeout.ms=60000
-            - name: STRIMZI_KRAFT_ENABLED <20>
-              value: "false"
 ----
 <1> The Kubernetes namespace for the User Operator to watch for `KafkaUser` resources. Only one namespace can be specified.
 <2>  The host and port pair of the bootstrap broker address to discover and connect to all brokers in the Kafka cluster.
@@ -135,11 +133,6 @@ This helps to avoid unnecessary exceptions in the Kafka cluster logs.
 The default is `true`.
 <18> (Optional) Semi-colon separated list of Cron Expressions defining the maintenance time windows during which the expiring user certificates will be renewed.
 <19> (Optional) Configuration options for configuring the Kafka Admin client used by the User Operator in the properties format.
-<20> (Optional) Indicates whether the Kafka cluster the User Operator is connecting to is using KRaft instead of ZooKeeper.
-Set this variable to `true` if the Kafka cluster uses KRaft.
-The default is `false`.
-Note that some features are not available when running against KRaft clusters. 
-For example, management of SCRAM-SHA-512 users is disabled because Apache Kafka currently does not support it.
 
 . If you are using mTLS to connect to the Kafka cluster, specify the secrets used to authenticate connection.
 Otherwise, go to the next step.
