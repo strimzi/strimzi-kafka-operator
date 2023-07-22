@@ -61,6 +61,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Stack;
+import java.util.TreeMap;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -143,7 +144,7 @@ public class SetupClusterOperator {
         if (this.clusterOperatorName == null || this.clusterOperatorName.isEmpty()) {
             this.clusterOperatorName = Constants.STRIMZI_DEPLOYMENT_NAME;
         }
-        // if namespace is not set we install operator to 'infra-namespace'
+        // if namespace is not set we install operator to 'co-namespace'
         if (this.namespaceInstallTo == null || this.namespaceInstallTo.isEmpty()) {
             this.namespaceInstallTo = Constants.CO_NAMESPACE;
         }
