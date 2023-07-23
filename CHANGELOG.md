@@ -2,6 +2,7 @@
 
 ## 0.37.0
 
+* Add support for Apache Kafka 3.5.1
 
 ## 0.36.0
 
