@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 0.36.1
+
+* Add support for Apache Kafka 3.5.1
+
 ## 0.36.0
 
 * Add support for Apache Kafka 3.4.1 and 3.5.0, and remove support for 3.3.1 and 3.3.2

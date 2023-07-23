@@ -20,7 +20,7 @@ public class KafkaVersionTestUtils {
 
     private static final Set<String> SUPPORTED_VERSIONS = new KafkaVersion.Lookup(Collections.emptyMap(), Collections.emptyMap(), Collections.emptyMap(), Collections.emptyMap()).supportedVersions();
 
-    public static final String LATEST_KAFKA_VERSION = "3.5.0";
+    public static final String LATEST_KAFKA_VERSION = "3.5.1";
     public static final String LATEST_FORMAT_VERSION = "3.5";
     public static final String LATEST_PROTOCOL_VERSION = "3.5";
     public static final String LATEST_ZOOKEEPER_VERSION = "3.6.4";
