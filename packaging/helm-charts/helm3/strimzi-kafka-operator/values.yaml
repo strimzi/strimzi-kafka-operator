@@ -50,6 +50,9 @@ rbac:
 serviceAccountCreate: yes
 serviceAccount: strimzi-cluster-operator
 
+leaderElection:
+  enable: true
+
 # If you are using the grafana dashboard sidecar,
 # you can import some default dashboards here
 dashboards:
