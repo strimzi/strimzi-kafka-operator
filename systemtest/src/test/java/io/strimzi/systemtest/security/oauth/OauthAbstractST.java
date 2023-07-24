@@ -124,25 +124,25 @@ public class OauthAbstractST extends AbstractST {
             .build();
     };
 
-    protected void setupCoAndKeycloak(ExtensionContext extensionContext, String namespace) {
+    protected void setupCoAndKeycloak(ExtensionContext extensionContext, String keycloakNamespace) {
         clusterOperator.defaultInstallation(extensionContext).createInstallation().runInstallation();
 
-        resourceManager.createResourceWithWait(extensionContext, NetworkPolicyTemplates.applyDefaultNetworkPolicy(extensionContext, namespace, DefaultNetworkPolicy.DEFAULT_TO_ALLOW));
+        resourceManager.createResourceWithWait(extensionContext, NetworkPolicyTemplates.applyDefaultNetworkPolicy(extensionContext, keycloakNamespace, DefaultNetworkPolicy.DEFAULT_TO_ALLOW));
 
         LOGGER.info("Deploying keycloak");
 
         // this is need for cluster-wide OLM (creating `infra-namespace` for Keycloak)
-        // Keycloak do not support cluster-wide namespace and thus we need it to deploy in non-OLM cluster wide namespace
+        // Keycloak do not support cluster-wide namespace, and thus we need it to deploy in non-OLM cluster wide namespace
         // (f.e., our `infra-namespace`)
         if (kubeClient().getNamespace(Constants.TEST_SUITE_NAMESPACE) == null) {
             cluster.createNamespace(CollectorElement.createCollectorElement(extensionContext.getRequiredTestClass().getName()), Constants.TEST_SUITE_NAMESPACE);
             StUtils.copyImagePullSecrets(Constants.TEST_SUITE_NAMESPACE);
         }
 
-        SetupKeycloak.deployKeycloakOperator(extensionContext, Constants.TEST_SUITE_NAMESPACE, namespace);
-        keycloakInstance = SetupKeycloak.deployKeycloakAndImportRealms(extensionContext, namespace);
+        SetupKeycloak.deployKeycloakOperator(extensionContext, Constants.TEST_SUITE_NAMESPACE, keycloakNamespace);
+        keycloakInstance = SetupKeycloak.deployKeycloakAndImportRealms(extensionContext, Constants.CO_NAMESPACE, keycloakNamespace);
 
-        createSecretsForDeployments(namespace);
+        createSecretsForDeployments(keycloakNamespace);
     }
 
     @AfterEach

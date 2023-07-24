@@ -18,16 +18,17 @@ public class KeycloakUtils {
 
     /**
      * Returns token from Keycloak API
-     * @param namespaceName
-     * @param baseURI base uri for accessing Keycloak API
-     * @param userName name of user
-     * @param password password of user
+     * @param clusterOperatorNamespace  namespace where cluster operator is located
+     * @param keycloakNamespace         namespace where keycloak instance is located
+     * @param baseURI                   base uri for accessing Keycloak API
+     * @param userName                  name of user
+     * @param password                  password of user
      * @return user token
      */
-    public static String getToken(String namespaceName, String baseURI, String userName, String password) {
-        String coPodName = kubeClient().getClusterOperatorPodName(namespaceName);
+    public static String getToken(String clusterOperatorNamespace, String keycloakNamespace, String baseURI, String userName, String password) {
+        String coPodName = kubeClient().getClusterOperatorPodName(clusterOperatorNamespace);
         return new JsonObject(
-            cmdKubeClient(namespaceName).execInPod(
+            cmdKubeClient(keycloakNamespace).execInPod(
                 coPodName,
                 "curl",
                 "-v",

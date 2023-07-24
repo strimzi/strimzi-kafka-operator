@@ -524,6 +524,10 @@ class ConnectBuilderST extends AbstractST {
             .createInstallation()
             .runInstallation();
 
-        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(Constants.TEST_SUITE_NAMESPACE, 3).build());
+        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(Constants.TEST_SUITE_NAMESPACE, 3)
+            .editMetadata()
+                .withNamespace(Constants.TEST_SUITE_NAMESPACE)
+            .endMetadata()
+            .build());
     }
 }
