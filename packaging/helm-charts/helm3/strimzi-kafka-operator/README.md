@@ -104,6 +104,7 @@ the documentation for more details.
 | `image.imagePullPolicy`                     | Image pull policy for all pods deployed by Cluster Operator                     | `IfNotPresent`               |
 | `image.imagePullSecrets`                    | List of Docker registry pull secrets                                            | `[]`                         |
 | `fullReconciliationIntervalMs`              | Full reconciliation interval in milliseconds                                    | 120000                       |
+| `leaderElection.enable`                     | Whether to enable leader election                                               | `true`                       |
 | `operationTimeoutMs`                        | Operation timeout in milliseconds                                               | 300000                       |
 | `operatorNamespaceLabels`                   | Labels of the namespace where the operator runs                                 | `nil`                        |
 | `podSecurityContext`                        | Cluster Operator pod's security context                                         | `nil`                        |
