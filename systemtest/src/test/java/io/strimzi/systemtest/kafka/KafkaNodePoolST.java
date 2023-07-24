@@ -26,11 +26,13 @@ import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.utils.ClientUtils;
+import io.strimzi.systemtest.utils.kafkaUtils.KafkaNodePoolUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StrimziPodSetUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 
@@ -201,6 +203,58 @@ public class KafkaNodePoolST extends AbstractST {
         );
         ClientUtils.waitForClientsSuccess(testStorage);
 
+    }
+
+    @ParallelNamespaceTest
+    void testKafkaNodePoolBrokerIdsManagementUsingAnnotations(ExtensionContext extensionContext) {
+
+        final TestStorage testStorage = new TestStorage(extensionContext);
+        final int originalReplicaCount = 3;
+        final int scaledReplicaCount = 6;
+        String nodePoolAnnoIdsWithRange = "[20-21, 99]";
+
+        Kafka kafka = KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), 2, 1)
+            .editOrNewMetadata()
+                .addToAnnotations(Annotations.ANNO_STRIMZI_IO_NODE_POOLS, "enabled")
+            .endMetadata()
+            .build();
+
+        KafkaNodePool kafkaNodePool =  KafkaNodePoolTemplates.defaultKafkaNodePool(testStorage.getKafkaNodePoolName(), testStorage.getClusterName(), 2)
+            .editOrNewMetadata()
+                .withNamespace(testStorage.getNamespaceName())
+            .endMetadata()
+            .editOrNewSpec()
+                .addToRoles(ProcessRoles.BROKER)
+                .withStorage(kafka.getSpec().getKafka().getStorage())
+                .withJvmOptions(kafka.getSpec().getKafka().getJvmOptions())
+                .withResources(kafka.getSpec().getKafka().getResources())
+            .endSpec()
+            .build();
+
+        resourceManager.createResourceWithWait(extensionContext,
+            kafkaNodePool,
+            kafka);
+
+        // Save for later comparison
+        List<Integer> originalNodePoolIds = KafkaNodePoolUtils.getCurrentKafkaNodePoolIds(testStorage.getNamespaceName(), testStorage.getKafkaNodePoolName());
+
+        // Annotate NodePool for scale-up
+        KafkaNodePoolUtils.annotateKafkaNodePoolNextNodeIds(testStorage.getNamespaceName(), testStorage.getKafkaNodePoolName(), nodePoolAnnoIdsWithRange);
+
+        // Scale-up
+        KafkaNodePoolUtils.scaleKafkaNodePool(testStorage.getNamespaceName(), testStorage.getKafkaNodePoolName(), scaledReplicaCount);
+        KafkaNodePoolUtils.waitForKafkaNodePoolStablePodReplicasCount(testStorage, scaledReplicaCount);
+
+        // Check correct IDS
+        List<Integer> expectedNodePoolIds = KafkaNodePoolUtils.parseNodePoolIdWithRangeStringToIntegerList(nodePoolAnnoIdsWithRange);
+        assertTrue(KafkaNodePoolUtils.getCurrentKafkaNodePoolIds(testStorage.getNamespaceName(), testStorage.getKafkaNodePoolName()).containsAll(expectedNodePoolIds));
+
+        // Annotate NodePool for scale-down
+        KafkaNodePoolUtils.annotateKafkaNodePoolNextNodeIds(testStorage.getNamespaceName(), testStorage.getKafkaNodePoolName(), nodePoolAnnoIdsWithRange);
+        // Scale-down
+        KafkaNodePoolUtils.scaleKafkaNodePool(testStorage.getNamespaceName(), testStorage.getKafkaNodePoolName(), originalReplicaCount);
+        KafkaNodePoolUtils.waitForKafkaNodePoolStablePodReplicasCount(testStorage, scaledReplicaCount);
+        assertTrue(KafkaNodePoolUtils.getCurrentKafkaNodePoolIds(testStorage.getNamespaceName(), testStorage.getKafkaNodePoolName()).containsAll(originalNodePoolIds));
     }
 
     @BeforeAll
