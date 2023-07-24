@@ -46,12 +46,9 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 /**
  *
- * PodSecurityProfilesIsolatedST provides tests for Pod Security profiles. In short, Pod security profiles are a mechanism used
+ * PodSecurityProfilesST provides tests for Pod Security profiles. In short, Pod security profiles are a mechanism used
  * in Pods or containers, which may prohibit some set of operations (e.g., running only as a non-root user, allowing
  * only some Volume types etc.).
- *
- * Reason why is this test suite has to run in complete isolation (i.e., {@link IsolatedSuite})
- * is that we need to modify Cluster Operator configuration, specifically env {@code STRIMZI_POD_SECURITY_PROVIDER_CLASS} to restricted.
  *
  * Test cases are design to verify common behaviour of Pod Security profiles. Specifically, (i.) we check if containers such
  * as Kafka, ZooKeeper, Entity Operator, KafkaBridge has properly set .securityContext (ii.) then we check if these

@@ -183,9 +183,7 @@ public class SetupClusterOperator {
     /**
      * Auxiliary method, which provides default Cluster Operator instance. By default we mean using in all cases
      * @code{BeforeAllOnce.getSharedExtensionContext())} and other attributes are dependent base on the installation type
-     * (i.e., Olm, Helm, Bundle) and RBAC setup (i.e., Cluster, Namespace). This method used across whole systemtest
-     * module, with combination of {@link #rollbackToDefaultConfiguration()} or in @IsolatedSuites where we are forced
-     * to build more comprehensive deployment of CLuster Operator.
+     * (i.e., Olm, Helm, Bundle) and RBAC setup (i.e., Cluster, Namespace).
      *
      * @param extensionContext test context, which primary responsibility is to create unique resource and delete after
      *                         such resource is no longer neeeded (e.g., after test class)
