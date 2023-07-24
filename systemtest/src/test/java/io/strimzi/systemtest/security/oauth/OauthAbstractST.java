@@ -15,6 +15,7 @@ import io.strimzi.systemtest.enums.DefaultNetworkPolicy;
 import io.strimzi.systemtest.keycloak.KeycloakInstance;
 import io.strimzi.systemtest.resources.keycloak.SetupKeycloak;
 import io.strimzi.systemtest.templates.kubernetes.NetworkPolicyTemplates;
+import io.strimzi.systemtest.templates.specific.ScraperTemplates;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.JobUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
@@ -128,6 +129,7 @@ public class OauthAbstractST extends AbstractST {
         clusterOperator.defaultInstallation(extensionContext).createInstallation().runInstallation();
 
         resourceManager.createResourceWithWait(extensionContext, NetworkPolicyTemplates.applyDefaultNetworkPolicy(extensionContext, keycloakNamespace, DefaultNetworkPolicy.DEFAULT_TO_ALLOW));
+        resourceManager.createResourceWithoutWait(extensionContext, ScraperTemplates.scraperPod(Constants.TEST_SUITE_NAMESPACE, Constants.SCRAPER_NAME).build());
 
         LOGGER.info("Deploying keycloak");
 
@@ -140,7 +142,8 @@ public class OauthAbstractST extends AbstractST {
         }
 
         SetupKeycloak.deployKeycloakOperator(extensionContext, Constants.TEST_SUITE_NAMESPACE, keycloakNamespace);
-        keycloakInstance = SetupKeycloak.deployKeycloakAndImportRealms(extensionContext, Constants.CO_NAMESPACE, keycloakNamespace);
+
+        keycloakInstance = SetupKeycloak.deployKeycloakAndImportRealms(extensionContext, keycloakNamespace);
 
         createSecretsForDeployments(keycloakNamespace);
     }

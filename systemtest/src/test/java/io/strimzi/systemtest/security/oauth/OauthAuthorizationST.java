@@ -494,7 +494,7 @@ public class OauthAuthorizationST extends OauthAbstractST {
         LOGGER.info("Setting the master realm token's lifespan to 3600s");
 
         // get admin token for all operation on realms
-        String token = KeycloakUtils.getToken(Constants.CO_NAMESPACE, Constants.TEST_SUITE_NAMESPACE, baseUri, keycloakInstance.getUsername(), keycloakInstance.getPassword());
+        String token = KeycloakUtils.getToken(Constants.TEST_SUITE_NAMESPACE, baseUri, keycloakInstance.getUsername(), keycloakInstance.getPassword());
 
         // firstly we will increase token lifespan
         JsonObject masterRealm = KeycloakUtils.getKeycloakRealm(Constants.TEST_SUITE_NAMESPACE, baseUri, token, "master");
@@ -502,7 +502,7 @@ public class OauthAuthorizationST extends OauthAbstractST {
         KeycloakUtils.putConfigurationToRealm(Constants.TEST_SUITE_NAMESPACE, baseUri, token, masterRealm, "master");
 
         // now we need to get the token with new lifespan
-        token = KeycloakUtils.getToken(Constants.CO_NAMESPACE, Constants.TEST_SUITE_NAMESPACE, baseUri, keycloakInstance.getUsername(), keycloakInstance.getPassword());
+        token = KeycloakUtils.getToken(Constants.TEST_SUITE_NAMESPACE, baseUri, keycloakInstance.getUsername(), keycloakInstance.getPassword());
 
         LOGGER.info("Getting the {} Kafka client for obtaining the Dev A Team policy for the x Topics", TEST_REALM);
         // we need to get clients for kafka-authz realm to access auth policies in kafka client
