@@ -117,7 +117,7 @@ public class KafkaConnectTemplates {
             .editOrNewSpec()
                 .editOrNewBuild()
                     .withPlugins(fileSinkPlugin)
-                    .withDockerOutput(dockerOutput(imageFullPath))
+                    .withOutput(dockerOutput(imageFullPath))
                 .endBuild()
             .endSpec();
 

@@ -8,7 +8,7 @@ import io.fabric8.kubernetes.api.model.ServiceAccount;
 import io.fabric8.kubernetes.api.model.ServiceAccountList;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
-import io.fabric8.kubernetes.client.dsl.Resource;
+import io.fabric8.kubernetes.client.dsl.ServiceAccountResource;
 import io.strimzi.operator.common.Reconciliation;
 import io.vertx.core.Future;
 import io.vertx.core.Vertx;
@@ -16,7 +16,7 @@ import io.vertx.core.Vertx;
 /**
  * Operator for managing Service Accounts
  */
-public class ServiceAccountOperator extends AbstractNamespacedResourceOperator<KubernetesClient, ServiceAccount, ServiceAccountList, Resource<ServiceAccount>> {
+public class ServiceAccountOperator extends AbstractNamespacedResourceOperator<KubernetesClient, ServiceAccount, ServiceAccountList, ServiceAccountResource> {
     /**
      * Constructor
      * @param vertx The Vertx instance
@@ -27,7 +27,7 @@ public class ServiceAccountOperator extends AbstractNamespacedResourceOperator<K
     }
 
     @Override
-    protected MixedOperation<ServiceAccount, ServiceAccountList, Resource<ServiceAccount>> operation() {
+    protected MixedOperation<ServiceAccount, ServiceAccountList, ServiceAccountResource> operation() {
         return client.serviceAccounts();
     }
 

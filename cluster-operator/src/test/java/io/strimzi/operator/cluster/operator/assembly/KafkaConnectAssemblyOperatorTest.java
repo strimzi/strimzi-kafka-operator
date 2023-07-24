@@ -12,6 +12,7 @@ import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy;
 import io.fabric8.kubernetes.api.model.policy.v1.PodDisruptionBudget;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.strimzi.api.kafka.KafkaConnectorList;
 import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnectResources;
@@ -104,7 +105,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-@SuppressWarnings({"unchecked", "ClassFanOutComplexity"})
+@SuppressWarnings({"unchecked", "ClassFanOutComplexity", "checkstyle:ClassDataAbstractionCoupling"})
 @ExtendWith(VertxExtension.class)
 public class KafkaConnectAssemblyOperatorTest {
 
@@ -934,7 +935,7 @@ public class KafkaConnectAssemblyOperatorTest {
 
         when(mockPodSetOps.getAsync(any(), any())).thenReturn(Future.succeededFuture());
 
-        when(mockCrbOps.reconcile(any(), any(), any())).thenReturn(Future.failedFuture("Message: Forbidden!"));
+        when(mockCrbOps.reconcile(any(), any(), any())).thenReturn(Future.failedFuture(new KubernetesClientException("Forbidden!", 403, null)));
         when(mockServiceOps.reconcile(any(), any(), any(), any())).thenReturn(Future.succeededFuture());
         when(mockDcOps.reconcile(any(), any(), any(), any())).thenReturn(Future.succeededFuture());
         when(mockDcOps.scaleUp(any(), any(), any(), anyInt(), anyLong())).thenReturn(Future.succeededFuture());
