@@ -230,7 +230,7 @@ class spawns as many threads as we specify in the `JUnit-platform.properties`.
     - synchronize point where test suite end it in a situation when `ForkJoinPool` spawn additional threads,
       which can exceed the limit specified. Thus many threads can start executing test suites which could potentially
       destroy clusters. This mechanism will put all other threads (i.e., not needed) into the waiting room.
-      After one of the `ParalleTest` is done with execution we release `notifyParallelTestToAllowExecution()`one test case
+      After one of the `ParallelTest` is done with execution we release `notifyParallelTestToAllowExecution()`one test case
       setting `isParallelTestReleased` flag. This ensures that only one test case will continue execution, and others
       will still wait.
 
