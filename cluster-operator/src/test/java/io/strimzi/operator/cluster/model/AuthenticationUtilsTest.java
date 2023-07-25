@@ -2,8 +2,9 @@
  * Copyright Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.strimzi.operator.cluster.operator.assembly;
+package io.strimzi.operator.cluster.model;
 
+import io.strimzi.operator.cluster.model.AuthenticationUtils;
 import org.junit.jupiter.api.Test;
 
 //import javax.security.auth.login.Configuration;
@@ -22,7 +23,7 @@ public class JaasConfigTest {
 
         String moduleName = "Module";
         String expected = "Module required key1=\"value1\" key2=\"value2\";";
-        assertEquals(expected, JaasConfig.config(moduleName, options));
+        assertEquals(expected, AuthenticationUtils.config(moduleName, options));
     }
 
     @Test
@@ -31,7 +32,7 @@ public class JaasConfigTest {
         options.put("key1", "value1");
 
         String moduleName = "";
-        assertThrows(IllegalArgumentException.class, () -> JaasConfig.config(moduleName, options));
+        assertThrows(IllegalArgumentException.class, () -> AuthenticationUtils.config(moduleName, options));
     }
 
     @Test
@@ -40,7 +41,7 @@ public class JaasConfigTest {
         Map<String, String> options = new HashMap<>();
         options.put(null, "value1");
 
-        assertThrows(NullPointerException.class, () -> JaasConfig.config(moduleName, options));
+        assertThrows(NullPointerException.class, () -> AuthenticationUtils.config(moduleName, options));
     }
 
     @Test
@@ -49,7 +50,7 @@ public class JaasConfigTest {
         Map<String, String> options = new HashMap<>();
         options.put("option1", null);
 
-        assertThrows(NullPointerException.class, () -> JaasConfig.config(moduleName, options));
+        assertThrows(NullPointerException.class, () -> AuthenticationUtils.config(moduleName, options));
     }
 
     @Test
@@ -58,7 +59,7 @@ public class JaasConfigTest {
         options.put("key1", "value1");
 
         String moduleName = "Module=";
-        assertThrows(IllegalArgumentException.class, () -> JaasConfig.config(moduleName, options));
+        assertThrows(IllegalArgumentException.class, () -> AuthenticationUtils.config(moduleName, options));
     }
 
     @Test
@@ -67,7 +68,7 @@ public class JaasConfigTest {
         options.put("key1", "value1");
 
         String moduleName = "Module;";
-        assertThrows(IllegalArgumentException.class, () -> JaasConfig.config(moduleName, options));
+        assertThrows(IllegalArgumentException.class, () -> AuthenticationUtils.config(moduleName, options));
     }
 
     @Test
@@ -76,7 +77,7 @@ public class JaasConfigTest {
         options.put("key1=", "value1");
 
         String moduleName = "Module";
-        assertThrows(IllegalArgumentException.class, () -> JaasConfig.config(moduleName, options));
+        assertThrows(IllegalArgumentException.class, () -> AuthenticationUtils.config(moduleName, options));
     }
 
     @Test
@@ -85,7 +86,7 @@ public class JaasConfigTest {
         options.put("key1;", "value1");
 
         String moduleName = "Module";
-        assertThrows(IllegalArgumentException.class, () -> JaasConfig.config(moduleName, options));
+        assertThrows(IllegalArgumentException.class, () -> AuthenticationUtils.config(moduleName, options));
     }
 
     @Test
@@ -94,7 +95,7 @@ public class JaasConfigTest {
         options.put("key1", "value=1");
 
         String moduleName = "Module";
-        assertThrows(IllegalArgumentException.class, () -> JaasConfig.config(moduleName, options));
+        assertThrows(IllegalArgumentException.class, () -> AuthenticationUtils.config(moduleName, options));
     }
 
     @Test
@@ -103,7 +104,7 @@ public class JaasConfigTest {
         options.put("key1", "value;1");
 
         String moduleName = "Module";
-        assertThrows(IllegalArgumentException.class, () -> JaasConfig.config(moduleName, options));
+        assertThrows(IllegalArgumentException.class, () -> AuthenticationUtils.config(moduleName, options));
     }
 
     @Test
@@ -112,7 +113,7 @@ public class JaasConfigTest {
         Map<String, String> options = new HashMap<>();
 
         String expectedOutput = "ExampleModule required ;";
-        String result = JaasConfig.config(moduleName, options);
+        String result = AuthenticationUtils.config(moduleName, options);
 
         assertEquals(expectedOutput, result);
     }
