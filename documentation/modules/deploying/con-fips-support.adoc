@@ -3,7 +3,7 @@
 // assembly-deploy-intro.adoc
 
 [id='assembly-fips-support-{context}']
-= Automatic FIPS support
+= Seamless FIPS support
 
 [role="_abstract"]
 Federal Information Processing Standards (FIPS) are standards for computer security and interoperability.

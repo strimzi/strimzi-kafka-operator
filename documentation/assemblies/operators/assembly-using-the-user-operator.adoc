@@ -3,7 +3,7 @@
 // assembly-operators.adoc
 
 [id='assembly-using-the-user-operator-{context}']
-= Using the User Operator to manage users
+= Using the User Operator to manage Kafka users
 
 [role="_abstract"]
 When you create, modify or delete a user using the `KafkaUser` resource,

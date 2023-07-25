@@ -3,7 +3,7 @@
 // assembly-operators.adoc
 
 [id='using-the-topic-operator-{context}']
-= Using the Topic Operator to manage topics
+= Using the Topic Operator to manage Kafka topics
 
 [role="_abstract"]
 The `KafkaTopic` resource configures topics, including partition and replication factor settings. 
