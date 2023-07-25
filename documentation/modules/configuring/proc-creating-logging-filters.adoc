@@ -3,10 +3,10 @@
 // assembly-logging-configuration.adoc
 
 [id='creating-logging-filters_{context}']
-= Adding logging filters to Operators
+= Adding logging filters to Strimzi operators
 
 [role="_abstract"]
-If you are using a ConfigMap to configure the (log4j2) logging levels for Strimzi Operators,
+If you are using a ConfigMap to configure the (log4j2) logging levels for Strimzi operators,
 you can also define logging filters to limit what's returned in the log.
 
 Logging filters are useful when you have a large number of logging messages.

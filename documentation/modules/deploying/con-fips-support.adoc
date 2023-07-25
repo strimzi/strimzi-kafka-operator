@@ -1,9 +1,9 @@
 // This assembly is included in the following assemblies:
 //
-// assembly-using-the-cluster-operator.adoc
+// assembly-deploy-intro.adoc
 
 [id='assembly-fips-support-{context}']
-= FIPS support
+= Seamless FIPS support
 
 [role="_abstract"]
 Federal Information Processing Standards (FIPS) are standards for computer security and interoperability.
@@ -24,7 +24,5 @@ To avoid any issues, we suggest increasing the memory request to at least 512Mi.
 [role="_additional-resources"]
 .Additional resources
 
+* xref:proc-disabling-fips-mode-cluster-operator-{context}[Disabling FIPS mode using Cluster Operator configuration]
 * link:https://www.nist.gov/standardsgov/compliance-faqs-federal-information-processing-standards-fips[What are Federal Information Processing Standards (FIPS)^]
-
-// Configuring Cluster Operator replicas
-include::../../modules/operators/proc-disabling-fips-mode-cluster-operator.adoc[leveloffset=+1]

@@ -23,7 +23,8 @@ To learn more, refer to the information provided on link:{BookURLConfiguring}#co
 
 `resources`::
 The `resources` property configures the amount of resources allocated to the User Operator.
-To learn more, refer to the information provided on link:{BookURLConfiguring}#con-common-configuration-resources-reference[setting appropriate requests and limits^].
+You can specify requests and limits for `memory` and `cpu` resources. 
+The requests should be enough to ensure a stable performance of the operator.
 
 `logging`::
 The `logging` property configures the logging of the User Operator.
@@ -49,5 +50,12 @@ spec:
     userOperator:
       watchedNamespace: my-user-namespace
       reconciliationIntervalSeconds: 60
+      resources:
+        requests:
+          cpu: "1"
+          memory: 500Mi
+        limits:
+          cpu: "1"
+          memory: 500Mi
     # ...
 ----

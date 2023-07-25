@@ -6,9 +6,8 @@
 [id="key-features-product_{context}"]
 = How Strimzi supports Kafka
 
-Strimzi provides container images and Operators for running Kafka on Kubernetes.
-Strimzi Operators are fundamental to the running of Strimzi.
-The Operators provided with Strimzi are purpose-built with specialist operational knowledge to effectively manage Kafka.
+Strimzi provides container images and operators for running Kafka on Kubernetes.
+Strimzi operators are purpose-built with specialist operational knowledge to effectively manage Kafka on Kubernetes.
 
 Operators simplify the process of:
 

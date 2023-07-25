@@ -1,16 +1,18 @@
 // Module included in the following assemblies:
 //
-// assembly-using-the-cluster-operator.adoc
+// assembly-config.adoc
 
 [id='ref-operator-cluster-{context}']
-= Configuring the Cluster Operator with environment variables
+= Configuring the Cluster Operator
 
 [role="_abstract"]
-You can configure the Cluster Operator using environment variables.
-The supported environment variables are listed here. 
+Use environment variables to configure the Cluster Operator.
+Specify the environment variables for the container image of the Cluster Operator in its `Deployment` configuration file.
 
-NOTE: The environment variables are specified for the container image of the Cluster Operator in its `Deployment` configuration file. 
-(`install/cluster-operator/060-Deployment-strimzi-cluster-operator.yaml`)
+NOTE: The `Deployment` configuration file provided with the Strimzi release artifacts is `install/cluster-operator/060-Deployment-strimzi-cluster-operator.yaml`.
+
+You can use the following environment variables to configure the Cluster Operator.
+If you are running Cluster Operator replicas in standby mode, there are additional xref:con-configuring-cluster-operator-leader-election-{context}[environment variables for enabling leader election].  
 
 `STRIMZI_NAMESPACE`:: A comma-separated list of namespaces that the operator operates in.
 When not set, set to empty string, or set to `*`, the Cluster Operator operates in all namespaces.
@@ -219,59 +221,8 @@ Enables or disables the features and functionality controlled by xref:ref-operat
 `STRIMZI_POD_SECURITY_PROVIDER_CLASS`:: Optional.
 Configuration for the pluggable `PodSecurityProvider` class, which can be used to provide the security context configuration for Pods and containers.
 
-[id='ref-operator-cluster-leader-election-{context}']
-== Leader election environment variables 
-
-Use leader election environment variables when xref:assembly-using-multiple-cluster-operator-replicas-{context}[running additional Cluster Operator replicas].
-You might run additional replicas to safeguard against disruption caused by major failure.
-
-`STRIMZI_LEADER_ELECTION_ENABLED`:: Optional, disabled (`false`) by default.
-Enables or disables leader election, which allows additional Cluster Operator replicas to run on standby.
-
-NOTE: Leader election is disabled by default.
-It is only enabled when applying this environment variable on installation.  
-
-`STRIMZI_LEADER_ELECTION_LEASE_NAME`:: Required when leader election is enabled.
-The name of the Kubernetes `Lease` resource that is used for the leader election.
-
-`STRIMZI_LEADER_ELECTION_LEASE_NAMESPACE`:: Required when leader election is enabled.
-The namespace where the Kubernetes `Lease` resource used for leader election is created.
-You can use the downward API to configure it to the namespace where the Cluster Operator is deployed.
-+
-[source,yaml,options="nowrap"]
-----
-env:
-  - name: STRIMZI_LEADER_ELECTION_LEASE_NAMESPACE
-    valueFrom:
-      fieldRef:
-        fieldPath: metadata.namespace
-----
-
-`STRIMZI_LEADER_ELECTION_IDENTITY`:: Required when leader election is enabled.
-Configures the identity of a given Cluster Operator instance used during the leader election.
-The identity must be unique for each operator instance.
-You can use the downward API to configure it to the name of the pod where the Cluster Operator is deployed.
-+
-[source,yaml,options="nowrap"]
-----
-env:
-  - name: STRIMZI_LEADER_ELECTION_IDENTITY
-    valueFrom:
-      fieldRef:
-        fieldPath: metadata.name
-----
-
-`STRIMZI_LEADER_ELECTION_LEASE_DURATION_MS`:: Optional, default 15000 ms.
-Specifies the duration the acquired lease is valid.
-
-`STRIMZI_LEADER_ELECTION_RENEW_DEADLINE_MS`:: Optional, default 10000 ms.
-Specifies the period the leader should try to maintain leadership.
-
-`STRIMZI_LEADER_ELECTION_RETRY_PERIOD_MS`:: Optional, default 2000 ms.
-Specifies the frequency of updates to the lease lock by the leader.
-
 [id='ref-operator-cluster-network-policy-{context}']
-== Restricting Cluster Operator access with network policy
+== Restricting access to the Cluster Operator using network policy
 
 Use the `STRIMZI_OPERATOR_NAMESPACE_LABELS` environment variable to establish network policy for the Cluster Operator using namespace labels.
 
@@ -294,9 +245,21 @@ env:
 ----
 
 [id='ref-operator-cluster-periodic-reconciliation-{context}']
-== Setting the time interval for periodic reconciliation
+== Configuring periodic reconciliation by the Cluster Operator
 
-Use the `STRIMZI_FULL_RECONCILIATION_INTERVAL_MS` variable to set the time interval for periodic reconciliations.
+Use the `STRIMZI_FULL_RECONCILIATION_INTERVAL_MS` variable to set the time interval for periodic reconciliations by the Cluster Operator.
+Replace its value with the required interval in milliseconds.
+
+.Reconciliation period configured for the Cluster Operator deployment
+[source,yaml,options="nowrap"]
+----
+#...
+env:
+  # ...
+  - name: STRIMZI_FULL_RECONCILIATION_INTERVAL_MS
+    value: "120000"
+  #...
+----
 
 The Cluster Operator reacts to all notifications about applicable cluster resources received from the Kubernetes cluster.
 If the operator is not running, or if a notification is not received for any reason, resources will get out of sync with the state of the running Kubernetes cluster.

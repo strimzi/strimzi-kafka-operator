@@ -1,0 +1,55 @@
+// Module included in the following assemblies:
+//
+// assembly-config.adoc
+
+[id='con-configuring-cluster-operator-leader-election-{context}']
+= Enabling leader election for Cluster Operator replicas 
+
+[role="_abstract"]
+Configure leader election environment variables when running additional Cluster Operator replicas.
+The following environment variables are supported:
+
+`STRIMZI_LEADER_ELECTION_ENABLED`:: Optional, disabled (`false`) by default.
+Enables or disables leader election, which allows additional Cluster Operator replicas to run on standby.
+
+NOTE: Leader election is disabled by default.
+It is only enabled when applying this environment variable on installation.  
+
+`STRIMZI_LEADER_ELECTION_LEASE_NAME`:: Required when leader election is enabled.
+The name of the Kubernetes `Lease` resource that is used for the leader election.
+
+`STRIMZI_LEADER_ELECTION_LEASE_NAMESPACE`:: Required when leader election is enabled.
+The namespace where the Kubernetes `Lease` resource used for leader election is created.
+You can use the downward API to configure it to the namespace where the Cluster Operator is deployed.
++
+[source,yaml,options="nowrap"]
+----
+env:
+  - name: STRIMZI_LEADER_ELECTION_LEASE_NAMESPACE
+    valueFrom:
+      fieldRef:
+        fieldPath: metadata.namespace
+----
+
+`STRIMZI_LEADER_ELECTION_IDENTITY`:: Required when leader election is enabled.
+Configures the identity of a given Cluster Operator instance used during the leader election.
+The identity must be unique for each operator instance.
+You can use the downward API to configure it to the name of the pod where the Cluster Operator is deployed.
++
+[source,yaml,options="nowrap"]
+----
+env:
+  - name: STRIMZI_LEADER_ELECTION_IDENTITY
+    valueFrom:
+      fieldRef:
+        fieldPath: metadata.name
+----
+
+`STRIMZI_LEADER_ELECTION_LEASE_DURATION_MS`:: Optional, default 15000 ms.
+Specifies the duration the acquired lease is valid.
+
+`STRIMZI_LEADER_ELECTION_RENEW_DEADLINE_MS`:: Optional, default 10000 ms.
+Specifies the period the leader should try to maintain leadership.
+
+`STRIMZI_LEADER_ELECTION_RETRY_PERIOD_MS`:: Optional, default 2000 ms.
+Specifies the frequency of updates to the lease lock by the leader.

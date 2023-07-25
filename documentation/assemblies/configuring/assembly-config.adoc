@@ -74,6 +74,15 @@ include::../../modules/configuring/con-configuring-topic-operator.adoc[leveloffs
 //user operator config
 include::../../modules/configuring/con-configuring-user-operator.adoc[leveloffset=+2]
 
+//cluster operator config env vars
+include::../../modules/operators/con-configuring-cluster-operator.adoc[leveloffset=+1]
+//enabling leader election
+include::../../assemblies/operators/assembly-using-multiple-cluster-operators.adoc[leveloffset=+2]
+//cluster operator proxy config
+include::../../modules/operators/proc-configuring-proxy-config-cluster-operator.adoc[leveloffset=+2]
+//disabling FIPS mode
+include::../../modules/operators/proc-disabling-fips-mode-cluster-operator.adoc[leveloffset=+2]
+
 //`KafkaConnect` resource config
 include::../../modules/configuring/con-config-kafka-connect.adoc[leveloffset=+1]
 //if authorization is enabled, configure the Kafka Connect user for read/write access rights
@@ -106,9 +115,6 @@ include::../../assemblies/configuring/assembly-storage.adoc[leveloffset=+1]
 //configuring CPU and memory resources and limits
 include::../../modules/configuring/con-config-resources.adoc[leveloffset=+1]
 
-//customizing Kubernetes resources like Deployment etc
-include::assembly-customizing-kubernetes-resources.adoc[leveloffset=+1]
-
 //scheduling separate Kafka pods 
 include::assembly-scheduling.adoc[leveloffset=+1]
 
@@ -120,3 +126,6 @@ include::../../modules/configuring/con-configuration-points-configmaps.adoc[leve
 
 //loading configuration from external sources for all Kafka components
 include::assembly-external-config.adoc[leveloffset=+1]
+
+//customizing Kubernetes resources like Deployment etc
+include::assembly-customizing-kubernetes-resources.adoc[leveloffset=+1]

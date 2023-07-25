@@ -1,9 +1,9 @@
 // Module included in the following assemblies:
 //
-// assembly-using-the-cluster-operator.adoc
+// assembly-config.adoc
 
 [id='proc-configuring-proxy-config-cluster-operator-{context}']
-= Configuring the Cluster Operator with default proxy settings
+= Configuring Cluster Operator HTTP proxy settings
 
 [role="_abstract"]
 If you are running a Kafka cluster behind a HTTP proxy, you can still pass data in and out of the cluster.
@@ -14,8 +14,8 @@ Configure the Cluster Operator deployment to specify the proxy environment varia
 The Cluster Operator accepts standard proxy configuration (`HTTP_PROXY`, `HTTPS_PROXY` and `NO_PROXY`) as environment variables.
 The proxy settings are applied to all Strimzi containers.
 
-The format for a proxy address is _\http://IP-ADDRESS:PORT-NUMBER_.
-To set up a proxy with a name and password, the format is _\http://USERNAME:PASSWORD@IP-ADDRESS:PORT-NUMBER_.
+The format for a proxy address is \http://<ip_address>:<port_number>.
+To set up a proxy with a name and password, the format is \http://<username>:<password>@<ip-address>:<port_number>.
 
 .Prerequisites
 
