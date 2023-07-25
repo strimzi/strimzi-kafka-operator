@@ -179,7 +179,7 @@ spec:
   # ...
 ----
 
-.Enabling metrics for OAUth 2.0 and OPA 
+.Enabling metrics for OAuth 2.0 and OPA 
 
 To expose metrics for OAuth 2.0 or OPA, set the `enableMetrics` property to `true` in the appropriate custom resource.
 
@@ -218,6 +218,6 @@ spec:
 ----
 
 To use the OAuth 2.0 metrics with Prometheus, you can use the `oauth-metrics.yaml` file to deploy example Prometheus metrics configuration.
-Copy the `ConfigMap` configuration the `oauth-metrics.yaml` file contains to the same `Kafka` resource configuration file where you enabled metrics for OAUth 2.0.
+Copy the `ConfigMap` configuration the `oauth-metrics.yaml` file contains to the same `Kafka` resource configuration file where you enabled metrics for OAuth 2.0.
 
 
