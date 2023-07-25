@@ -66,6 +66,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.Stack;
+import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -883,9 +884,9 @@ class TopicControllerIT {
                 Map.of("flush.messages", "1234"));
         var barKt = createTopic(kafkaCluster, kt);
         assertCreateSuccess(kt, barKt, Map.of("flush.messages", "1234"));
+        postSyncBarrier();
 
         // when: resync
-
         try (var logCaptor = LogCaptor.logMessageMatches(BatchingLoop.LoopRunnable.LOGGER,
                 Level.DEBUG,
                 "\\[Batch #[0-9]+\\] Reconciled batch",
@@ -897,6 +898,17 @@ class TopicControllerIT {
         // then: verify that only the expected methods were called on the admin (e.g. no incrementalAlterConfigs)
         Mockito.verify(operatorAdmin[0], Mockito.never()).incrementalAlterConfigs(any());
         Mockito.verify(operatorAdmin[0], Mockito.never()).incrementalAlterConfigs(any(), any());
+    }
+
+    private static void postSyncBarrier() throws TimeoutException, InterruptedException {
+        var uuid = UUID.randomUUID();
+        try (var logCaptor = LogCaptor.logEventMatches(LOGGER,
+                Level.DEBUG,
+                LogCaptor.messageContainsMatch("Post sync barrier " + uuid),
+                5L,
+                TimeUnit.SECONDS)) {
+            LOGGER.debug("Post sync barrier {}", uuid);
+        }
     }
 
     @ParameterizedTest
@@ -1066,7 +1078,6 @@ class TopicControllerIT {
         // then
         assertNotExistsInKafka(expectedTopicName(kt));
 
-        Thread.sleep(5_000);
     }
 
     @ParameterizedTest
@@ -1145,18 +1156,26 @@ class TopicControllerIT {
         maybeStartOperator(topicOperatorConfig(kt.getMetadata().getNamespace(), kafkaCluster, false));
         createTopicAndAssertSuccess(kafkaCluster, kt);
 
+        postSyncBarrier();
+
         // when
         try (var logCaptor = LogCaptor.logMessageMatches(BatchingLoop.LoopRunnable.LOGGER,
                 Level.DEBUG,
                 "\\[Batch #[0-9]+\\] Reconciled batch",
                 5L,
                 TimeUnit.SECONDS)) {
+            try (var logCaptor2 = LogCaptor.logMessageMatches(BatchingTopicController.LOGGER,
+                    Level.WARN,
+                    "Unable to delete topic '" + expectedTopicName(kt) + "' from Kafka because topic deletion is disabled on the Kafka controller.",
+                    5L,
+                    TimeUnit.SECONDS)) {
 
-            Crds.topicOperation(client).resource(kt).delete();
-            LOGGER.info("Test deleted KafkaTopic {} with resourceVersion {}",
-                    kt.getMetadata().getName(), BatchingTopicController.resourceVersion(kt));
-            Resource<KafkaTopic> resource = Crds.topicOperation(client).resource(kt);
-            TopicOperatorTestUtil.waitUntilCondition(resource, Objects::isNull);
+                Crds.topicOperation(client).resource(kt).delete();
+                LOGGER.info("Test deleted KafkaTopic {} with resourceVersion {}",
+                        kt.getMetadata().getName(), BatchingTopicController.resourceVersion(kt));
+                Resource<KafkaTopic> resource = Crds.topicOperation(client).resource(kt);
+                TopicOperatorTestUtil.waitUntilCondition(resource, Objects::isNull);
+            }
         }
 
         // then

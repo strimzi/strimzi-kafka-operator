@@ -35,6 +35,7 @@ import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.TopicPartitionInfo;
 import org.apache.kafka.common.config.ConfigResource;
 import org.apache.kafka.common.errors.ApiException;
+import org.apache.kafka.common.errors.TopicDeletionDisabledException;
 import org.apache.kafka.common.errors.UnknownTopicOrPartitionException;
 
 import java.io.InterruptedIOException;
@@ -821,8 +822,21 @@ public class BatchingTopicController {
         });
 
         // join that to fail
-        deleteResult.errors().forEach(entry ->
-                updateStatusForException(entry.getKey(), entry.getValue()));
+        deleteResult.errors().forEach(entry -> {
+            if (!this.useFinalizer
+                    && onDeletePath) {
+                // When not using finalizers and a topic is deleted there will be no KafkaTopic to update
+                // the status of, so we have to log expected errors here.
+                // Unexpected errors will propagate and be logged by the BatchingLoop.
+                if (entry.getValue().getCause() instanceof TopicDeletionDisabledException) {
+                    LOGGER.warnCr(entry.getKey().reconciliation(),
+                            "Unable to delete topic '{}' from Kafka because topic deletion is disabled on the Kafka controller.",
+                            entry.getKey().topicName());
+                }
+            } else {
+                updateStatusForException(entry.getKey(), entry.getValue());
+            }
+        });
 
     }
 
