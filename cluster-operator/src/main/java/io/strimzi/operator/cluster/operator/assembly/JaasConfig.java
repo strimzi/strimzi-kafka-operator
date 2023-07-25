@@ -32,11 +32,12 @@ public class JaasConfig {
             String value = entry.getValue();
             Objects.requireNonNull(key);
             Objects.requireNonNull(value);
-            if (key.contains("=") || key.contains(";") || value.contains("=") || value.contains(";")){
+            if (key.contains("=") || key.contains(";") || value.contains("=") || value.contains(";")) {
                 throw new IllegalArgumentException("Keys and values must not contain '=' or ';'");
-            }if(moduleName.contains("=") || moduleName.contains(";") || moduleName.isEmpty()) {
+            }
+            if (moduleName.contains("=") || moduleName.contains(";") || moduleName.isEmpty()) {
                 throw new IllegalArgumentException("module name must be not empty and must not contain '=' or ';'");
-            } else{
+            } else {
                 String s = key + "=\"" + value + "\"";
                 joiner.add(s);
             }

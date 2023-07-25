@@ -1,9 +1,13 @@
+/*
+ * Copyright Strimzi authors.
+ * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
+ */
 package io.strimzi.operator.cluster.operator.assembly;
 
 import org.junit.jupiter.api.Test;
 
-import javax.security.auth.login.Configuration;
-import java.lang.reflect.Constructor;
+//import javax.security.auth.login.Configuration;
+//import java.lang.reflect.Constructor;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -36,9 +40,7 @@ public class JaasConfigTest {
         Map<String, String> options = new HashMap<>();
         options.put(null, "value1");
 
-        assertThrows(NullPointerException.class, () -> {
-            JaasConfig.config(moduleName, options);
-        });
+        assertThrows(NullPointerException.class, () -> JaasConfig.config(moduleName, options));
     }
 
     @Test
@@ -47,9 +49,7 @@ public class JaasConfigTest {
         Map<String, String> options = new HashMap<>();
         options.put("option1", null);
 
-        assertThrows(NullPointerException.class, () -> {
-            JaasConfig.config(moduleName, options);
-        });
+        assertThrows(NullPointerException.class, () -> JaasConfig.config(moduleName, options));
     }
 
     @Test
@@ -116,13 +116,13 @@ public class JaasConfigTest {
 
         assertEquals(expectedOutput, result);
     }
-    public static void main(String[] a) throws Exception {
-        //org.apache.kafka.common.security.JaasConfig jaasConfig = new org.apache.kafka.common.security.JaasConfig();
-        Class<?> aClass = Class.forName("org.apache.kafka.common.security.JaasConfig");
-
-        Constructor<?> declaredConstructor = aClass.getDeclaredConstructor(String.class, String.class);
-        declaredConstructor.setAccessible(true);
-        Configuration o = (Configuration)declaredConstructor.newInstance("==","foo required foo=\"value\"with\\\"quote\";");
-//        AppConfigurationEntry[] appConfigurationEntry = o.getAppConfigurationEntry();
-    }
+//    public static void main(String[] a) throws Exception {
+//        //org.apache.kafka.common.security.JaasConfig jaasConfig = new org.apache.kafka.common.security.JaasConfig();
+//        Class<?> aClass = Class.forName("org.apache.kafka.common.security.JaasConfig");
+//
+//        Constructor<?> declaredConstructor = aClass.getDeclaredConstructor(String.class, String.class);
+//        declaredConstructor.setAccessible(true);
+//        Configuration o = (Configuration) declaredConstructor.newInstance("==", "foo required foo=\"value\"with\\\"quote\";");
+////        AppConfigurationEntry[] appConfigurationEntry = o.getAppConfigurationEntry();
+//    }
 }
