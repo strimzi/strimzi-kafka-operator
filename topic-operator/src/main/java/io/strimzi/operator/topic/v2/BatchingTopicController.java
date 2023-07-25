@@ -826,12 +826,16 @@ public class BatchingTopicController {
             if (!this.useFinalizer
                     && onDeletePath) {
                 // When not using finalizers and a topic is deleted there will be no KafkaTopic to update
-                // the status of, so we have to log expected errors here.
-                // Unexpected errors will propagate and be logged by the BatchingLoop.
+                // the status of, so we have to log errors here.
                 if (entry.getValue().getCause() instanceof TopicDeletionDisabledException) {
                     LOGGER.warnCr(entry.getKey().reconciliation(),
                             "Unable to delete topic '{}' from Kafka because topic deletion is disabled on the Kafka controller.",
                             entry.getKey().topicName());
+                } else {
+                    LOGGER.warnCr(entry.getKey().reconciliation(),
+                            "Unable to delete topic '{}' from Kafka.",
+                            entry.getKey().topicName(),
+                            entry.getValue());
                 }
             } else {
                 updateStatusForException(entry.getKey(), entry.getValue());
