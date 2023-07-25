@@ -92,7 +92,7 @@ release_single_file:
 	$(FIND) ./strimzi-$(RELEASE_VERSION)/install/user-operator/ -type f -exec cat {} \; -exec printf "\n---\n" \; > strimzi-user-operator-$(RELEASE_VERSION).yaml
 	$(FIND) ./strimzi-$(RELEASE_VERSION)/install/cluster-operator/*-Crd-*.yaml -type f -exec cat {} \; -exec printf "\n---\n" \; > strimzi-crds-$(RELEASE_VERSION).yaml
 
-helm_pkg:
+helm_pkg: dashboard_install
 	# Copying unarchived Helm Chart to release directory
 	mkdir -p strimzi-$(RELEASE_VERSION)/helm3-charts/
 	helm package --version $(CHART_SEMANTIC_RELEASE_VERSION) --app-version $(CHART_SEMANTIC_RELEASE_VERSION) --destination ./ ./packaging/helm-charts/helm3/strimzi-kafka-operator/
