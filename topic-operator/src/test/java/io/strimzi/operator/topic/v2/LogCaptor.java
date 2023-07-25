@@ -151,8 +151,14 @@ public class LogCaptor implements AutoCloseable {
                                               String messageRegex,
                                               long timeout,
                                               TimeUnit unit) {
-        var pattern = Pattern.compile(messageRegex);
-        var logEventPredicate = new Predicate<LogEvent>() {
+
+        Predicate<LogEvent> logEventPredicate = messageContainsMatch(messageRegex);
+        return logEventMatches(logger, level, logEventPredicate, timeout, unit);
+    }
+
+    public static Predicate<LogEvent> messageContainsMatch(String messageRegex) {
+        return new Predicate<>() {
+            private final Pattern pattern = Pattern.compile(messageRegex);
             @Override
             public boolean test(LogEvent le) {
                 return pattern.matcher(le.getMessage().getFormattedMessage()).find();
@@ -163,7 +169,6 @@ public class LogCaptor implements AutoCloseable {
                 return "with a message containing a substring matching '" + messageRegex + "'";
             }
         };
-        return logEventMatches(logger, level, logEventPredicate, timeout, unit);
     }
 
     /**
