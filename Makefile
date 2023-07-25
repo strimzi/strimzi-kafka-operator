@@ -167,11 +167,14 @@ docu_htmlnoheaderclean:
 docu_pdfclean:
 	rm -rf documentation/pdf
 
-helm_install: packaging/helm-charts/helm3
+helm_install:
+	$(MAKE) -C packaging/helm-charts/helm3 helm_install
 
-crd_install: packaging/install
+crd_install:
+	$(MAKE) -C packaging/install crd_install
 
-dashboard_install: packaging/examples
+dashboard_install:
+	$(MAKE) -C packaging/examples dashboard_install
 
 $(SUBDIRS):
 	$(MAKE) -C $@ $(MAKECMDGOALS)
