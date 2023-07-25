@@ -253,7 +253,7 @@ public class Environment {
     }
 
     public static boolean isStableConnectIdentitiesEnabled() {
-        return STRIMZI_FEATURE_GATES.contains(Constants.USE_STABLE_CONNECT_IDENTITIES);
+        return !STRIMZI_FEATURE_GATES.contains(Constants.DONT_USE_STABLE_CONNECT_IDENTITIES);
     }
 
     /**

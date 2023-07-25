@@ -6,6 +6,9 @@
 ## 0.36.1
 
 * Add support for Apache Kafka 3.5.1
+* The `StableConnectIdentites` feature gate moves to beta stage.
+  By default, StrimziPodSets are used for Kafka Connect and Kafka Mirror Maker 2.
+  If needed, `StableConnectIdentites` can be disabled in the feature gates configuration in the Cluster Operator.
 
 ## 0.36.0
 

@@ -118,6 +118,7 @@ public class ConnectorMockTest {
     @SuppressWarnings("unused")
     private KubernetesClient client;
     private MockKube2 mockKube;
+    private StrimziPodSetController podSetController;
     private Watch connectWatch;
     private Watch connectorWatch;
     private KafkaConnectApi api;
@@ -155,24 +156,29 @@ public class ConnectorMockTest {
 
         // Configure the Kubernetes Mock
         mockKube = new MockKube2.MockKube2Builder(client)
+                .withKafkaCrd()
                 .withKafkaConnectCrd()
                 .withKafkaConnectorCrd()
-                .withDeploymentController()
+                .withPodController()
                 .build();
         mockKube.start();
 
         PlatformFeaturesAvailability pfa = new PlatformFeaturesAvailability(false, KubernetesVersion.MINIMAL_SUPPORTED_VERSION);
-        setupMockConnectAPI();
-
         metricsProvider = ResourceUtils.metricsProvider();
         ResourceOperatorSupplier ros = new ResourceOperatorSupplier(vertx, client,
                 new ZookeeperLeaderFinder(vertx,
-                    // Retry up to 3 times (4 attempts), with overall max delay of 35000ms
-                    () -> new BackOff(5_000, 2, 4)),
+                        // Retry up to 3 times (4 attempts), with overall max delay of 35000ms
+                        () -> new BackOff(5_000, 2, 4)),
                 new DefaultAdminClientProvider(),
                 new DefaultZookeeperScalerProvider(),
                 metricsProvider,
                 pfa, 10_000);
+
+        podSetController = new StrimziPodSetController(NAMESPACE, Labels.EMPTY, ros.kafkaOperator, ros.connectOperator, ros.mirrorMaker2Operator, ros.strimziPodSetOperator, ros.podOperations, ros.metricsProvider, Integer.parseInt(ClusterOperatorConfig.POD_SET_CONTROLLER_WORK_QUEUE_SIZE.defaultValue()));
+        podSetController.start();
+
+        setupMockConnectAPI();
+
         ClusterOperatorConfig config = ClusterOperatorConfig.buildFromMap(map(
             ClusterOperatorConfig.STRIMZI_KAFKA_IMAGES, KafkaVersionTestUtils.getKafkaImagesEnvVarString(),
             ClusterOperatorConfig.STRIMZI_KAFKA_CONNECT_IMAGES, KafkaVersionTestUtils.getKafkaConnectImagesEnvVarString(),
@@ -332,6 +338,7 @@ public class ConnectorMockTest {
 
     @AfterEach
     public void teardown() {
+        podSetController.stop();
         mockKube.stop();
         connectWatch.close();
         connectorWatch.close();

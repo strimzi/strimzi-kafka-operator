@@ -47,7 +47,7 @@
     flakyEnvVariable: none
     reason: Test is working on all environment used by QE.
   featureGatesBefore: "+StableConnectIdentities"
-  featureGatesAfter: ""
+  featureGatesAfter: "-StableConnectIdentities"
 - fromVersion: HEAD
   toVersion: 0.36.1
   fromExamples: HEAD
