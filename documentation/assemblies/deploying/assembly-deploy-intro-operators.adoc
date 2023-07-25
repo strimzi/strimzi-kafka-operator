@@ -7,8 +7,7 @@
 = Strimzi operators
 
 [role="_abstract"]
-Strimzi operators are fundamental to the running of Strimzi.
-The operators are purpose-built with specialist operational knowledge to effectively manage Kafka on Kubernetes.
+Strimzi operators are purpose-built with specialist operational knowledge to effectively manage Kafka on Kubernetes.
 Each operator performs a distinct function.
 
 Cluster Operator:: The Cluster Operator handles the deployment and management of Apache Kafka clusters on Kubernetes. 
