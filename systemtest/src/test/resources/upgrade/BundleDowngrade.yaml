@@ -26,19 +26,19 @@
 # --- Structure ---
   
 - fromVersion: HEAD
-  toVersion: 0.35.1
+  toVersion: 0.36.0
   fromExamples: HEAD
-  toExamples: strimzi-0.35.1
+  toExamples: strimzi-0.36.0
   fromUrl: HEAD
-  toUrl: https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.35.1/strimzi-0.35.1.zip
+  toUrl: https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.36.0/strimzi-0.36.0.zip
   fromKafkaVersionsUrl: HEAD
   additionalTopics: 2
   imagesAfterOperations:
-    zookeeper: strimzi/kafka:0.35.1-kafka-3.4.0
-    kafka: strimzi/kafka:0.35.1-kafka-3.4.0
-    topicOperator: strimzi/operator:0.35.1
-    userOperator: strimzi/operator:0.35.1
-  deployKafkaVersion: 3.4.0
+    zookeeper: strimzi/kafka:0.36.0-kafka-3.5.0
+    kafka: strimzi/kafka:0.36.0-kafka-3.5.0
+    topicOperator: strimzi/operator:0.36.0
+    userOperator: strimzi/operator:0.36.0
+  deployKafkaVersion: 3.5.0
   client:
     continuousClientsMessages: 500
   environmentInfo:
@@ -49,19 +49,19 @@
   featureGatesBefore: "+StableConnectIdentities"
   featureGatesAfter: ""
 - fromVersion: HEAD
-  toVersion: 0.35.1
+  toVersion: 0.36.0
   fromExamples: HEAD
-  toExamples: strimzi-0.35.1
+  toExamples: strimzi-0.36.0
   fromUrl: HEAD
-  toUrl: https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.35.1/strimzi-0.35.1.zip
+  toUrl: https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.36.0/strimzi-0.36.0.zip
   fromKafkaVersionsUrl: HEAD
   additionalTopics: 2
   imagesAfterOperations:
-    zookeeper: strimzi/kafka:0.35.1-kafka-3.4.0
-    kafka: strimzi/kafka:0.35.1-kafka-3.4.0
-    topicOperator: strimzi/operator:0.35.1
-    userOperator: strimzi/operator:0.35.1
-  deployKafkaVersion: 3.4.0
+    zookeeper: strimzi/kafka:0.36.0-kafka-3.5.0
+    kafka: strimzi/kafka:0.36.0-kafka-3.5.0
+    topicOperator: strimzi/operator:0.36.0
+    userOperator: strimzi/operator:0.36.0
+  deployKafkaVersion: 3.5.0
   client:
     continuousClientsMessages: 500
   environmentInfo:
