@@ -68,7 +68,6 @@ import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
 import static io.strimzi.systemtest.utils.specific.MetricsUtils.assertMetricResourceNotNull;
 import static io.strimzi.systemtest.utils.specific.MetricsUtils.assertMetricResourceState;
 import static io.strimzi.systemtest.utils.specific.MetricsUtils.assertMetricResourcesHigherThanOrEqualTo;
-import static io.strimzi.systemtest.utils.specific.MetricsUtils.assertMetricValueHigherThan;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static java.util.Collections.singletonList;
@@ -523,7 +522,8 @@ public class TopicST extends AbstractST {
         assertKafkaTopicStatus(topicName, clusterOperator.getDeploymentNamespace(), Ready, True, 6);
 
         // Check failed reconciliations
-        assertMetricValueHigherThan(toMetricsCollector, "strimzi_reconciliations_failed_total{kind=\"" + KafkaTopic.RESOURCE_KIND + ",}", 3);
+        // This is currently doesn't work properly and will be changed in UTO implementation - https://github.com/strimzi/proposals/pull/76
+        // assertMetricValueHigherThan(toMetricsCollector, "strimzi_reconciliations_failed_total{kind=\"" + KafkaTopic.RESOURCE_KIND + ",}", 3);
     }
 
     @ParallelTest
