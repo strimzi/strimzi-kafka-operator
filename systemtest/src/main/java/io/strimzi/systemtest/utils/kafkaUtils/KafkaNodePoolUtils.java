@@ -46,7 +46,7 @@ public class KafkaNodePoolUtils {
 
     // This method takes into account all possible annotation formats [0, 1, 2, 10-20, 30].
     public static String annotateKafkaNodePoolRemoveNodeIds(String namespaceName, String resourceName, String annotationValue) {
-        return annotateKafkaNodePool(namespaceName, resourceName, Annotations.ANNO_STRIMZI_IO_REMOVE_NODE_IDS, annotationValue.toString());
+        return annotateKafkaNodePool(namespaceName, resourceName, Annotations.ANNO_STRIMZI_IO_REMOVE_NODE_IDS, annotationValue);
     }
 
     // In case we want to set IDs for some reason in list of integers [0, 1, 2, 10, 30] format. This method does not represent all possibilities of this annotation.
