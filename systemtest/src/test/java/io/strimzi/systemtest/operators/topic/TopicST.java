@@ -22,11 +22,13 @@ import io.strimzi.systemtest.annotations.UTONotSupported;
 import io.strimzi.systemtest.cli.KafkaCmdClient;
 import io.strimzi.systemtest.enums.ConditionStatus;
 import io.strimzi.systemtest.enums.CustomResourceStatus;
+import io.strimzi.systemtest.kafkaclients.internalClients.AdminClientOperation;
+import io.strimzi.systemtest.kafkaclients.internalClients.KafkaAdminClients;
+import io.strimzi.systemtest.kafkaclients.internalClients.KafkaAdminClientsBuilder;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 import io.strimzi.systemtest.metrics.MetricsCollector;
 import io.strimzi.systemtest.resources.ComponentType;
-import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.storage.TestStorage;
@@ -79,7 +81,6 @@ import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
 
 @Tag(REGRESSION)
 @KRaftWithoutUTONotSupported
@@ -219,86 +220,49 @@ public class TopicST extends AbstractST {
         assertThat(kafkaTopic.getSpec().getReplicas(), is(1));
     }
 
-    @Tag(NODEPORT_SUPPORTED)
-    @IsolatedTest("Using more tha one Kafka cluster in one namespace")
+    @ParallelTest
     void testCreateDeleteCreate(ExtensionContext extensionContext) throws InterruptedException {
-        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        final TestStorage testStorage = new TestStorage(extensionContext, clusterOperator.getDeploymentNamespace());
 
-        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3, 3)
-            .editMetadata()
-                .withNamespace(clusterOperator.getDeploymentNamespace())
-            .endMetadata()
+        KafkaAdminClients listTopicJob = new KafkaAdminClientsBuilder()
+            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(KAFKA_CLUSTER_NAME))
+            .withNamespaceName(testStorage.getNamespaceName())
+            .withAdminName(testStorage.getAdminName())
+            .withTopicName("")
+            .withAdminOperation(AdminClientOperation.LIST_TOPICS)
+            .build();
+
+        resourceManager.createResourceWithWait(extensionContext, KafkaTopicTemplates.topic(KAFKA_CLUSTER_NAME, testStorage.getTopicName(), clusterOperator.getDeploymentNamespace())
             .editSpec()
-                    .editKafka()
-                        .withListeners(new GenericKafkaListenerBuilder()
-                                .withName(Constants.EXTERNAL_LISTENER_DEFAULT_NAME)
-                                .withPort(9094)
-                                .withType(KafkaListenerType.NODEPORT)
-                                .withTls(false)
-                                .build())
-                    .endKafka()
-                    .editEntityOperator()
-                        .editTopicOperator()
-                            .withReconciliationIntervalSeconds(120)
-                        .endTopicOperator()
-                    .endEntityOperator()
-                .endSpec()
-                .build());
+                .withReplicas(3)
+            .endSpec()
+            .build());
 
-        Properties properties = new Properties();
+        resourceManager.createResourceWithWait(extensionContext, listTopicJob.defaultAdmin());
+        ClientUtils.waitForClientContainsMessage(testStorage.getAdminName(), testStorage.getNamespaceName(), testStorage.getTopicName());
 
-        properties.setProperty(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, KafkaResource.kafkaClient().inNamespace(clusterOperator.getDeploymentNamespace())
-                .withName(clusterName).get().getStatus().getListeners().stream()
-                .filter(listener -> listener.getType().equals(Constants.EXTERNAL_LISTENER_DEFAULT_NAME))
-                .findFirst()
-                .orElseThrow(RuntimeException::new)
-                .getBootstrapServers());
+        for (int i = 0; i < 10; i++) {
+            Thread.sleep(2_000);
 
-        try (AdminClient adminClient = AdminClient.create(properties)) {
+            LOGGER.info("Iteration {}: Deleting {}", i, testStorage.getTopicName());
+            cmdKubeClient(clusterOperator.getDeploymentNamespace()).deleteByName(KafkaTopic.RESOURCE_KIND, testStorage.getTopicName());
+            KafkaTopicUtils.waitForKafkaTopicDeletion(clusterOperator.getDeploymentNamespace(), testStorage.getTopicName());
 
-            String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
+            resourceManager.createResourceWithWait(extensionContext, listTopicJob.defaultAdmin());
+            ClientUtils.waitForClientNotContainsMessage(testStorage.getAdminName(), testStorage.getNamespaceName(), testStorage.getTopicName());
 
-            resourceManager.createResourceWithWait(extensionContext, KafkaTopicTemplates.topic(clusterName, topicName, clusterOperator.getDeploymentNamespace())
+            Thread.sleep(2_000);
+            long t0 = System.currentTimeMillis();
+
+            LOGGER.info("Iteration {}: Recreating {}", i, testStorage.getTopicName());
+            resourceManager.createResourceWithWait(extensionContext, KafkaTopicTemplates.topic(KAFKA_CLUSTER_NAME, testStorage.getTopicName(), clusterOperator.getDeploymentNamespace())
                 .editSpec()
                     .withReplicas(3)
                 .endSpec()
                 .build());
-            KafkaTopicUtils.waitForKafkaTopicReady(clusterOperator.getDeploymentNamespace(), topicName);
 
-            adminClient.describeTopics(singletonList(topicName)).topicNameValues().get(topicName);
-
-            for (int i = 0; i < 10; i++) {
-                Thread.sleep(2_000);
-                LOGGER.info("Iteration {}: Deleting {}", i, topicName);
-                cmdKubeClient(clusterOperator.getDeploymentNamespace()).deleteByName(KafkaTopic.RESOURCE_KIND, topicName);
-                KafkaTopicUtils.waitForKafkaTopicDeletion(clusterOperator.getDeploymentNamespace(), topicName);
-                TestUtils.waitFor("Deletion of Topic: " + topicName, 1000, 15_000, () -> {
-                    try {
-                        return !adminClient.listTopics().names().get().contains(topicName);
-                    } catch (ExecutionException | InterruptedException e) {
-                        return false;
-                    }
-                });
-                Thread.sleep(2_000);
-                long t0 = System.currentTimeMillis();
-                LOGGER.info("Iteration {}: Recreating {}", i, topicName);
-                resourceManager.createResourceWithWait(extensionContext, KafkaTopicTemplates.topic(clusterName, topicName, clusterOperator.getDeploymentNamespace())
-                    .editSpec()
-                        .withReplicas(3)
-                    .endSpec()
-                    .build());
-                ResourceManager.waitForResourceStatus(KafkaTopicResource.kafkaTopicClient(), "KafkaTopic", clusterOperator.getDeploymentNamespace(), topicName, Ready, 15_000);
-                TestUtils.waitFor("Recreation of Topic: " + topicName, 1000, 2_000, () -> {
-                    try {
-                        return adminClient.listTopics().names().get().contains(topicName);
-                    } catch (ExecutionException | InterruptedException e) {
-                        return false;
-                    }
-                });
-                if (System.currentTimeMillis() - t0 > 10_000) {
-                    fail("Took too long to recreate");
-                }
-            }
+            resourceManager.createResourceWithWait(extensionContext, listTopicJob.defaultAdmin());
+            ClientUtils.waitForClientContainsMessage(testStorage.getAdminName(), testStorage.getNamespaceName(), testStorage.getTopicName());
         }
     }
 
