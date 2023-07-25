@@ -56,21 +56,11 @@ public class KafkaNodePoolUtils {
         return annotateKafkaNodePoolRemoveNodeIds(namespaceName, resourceName, annotationValue.toString());
     }
 
-    public static void waitForKafkaNodePoolStablePodReplicasCount(TestStorage testStorage, int expectedReplicas) {
-        PodUtils.waitUntilPodStabilityReplicasCount(testStorage.getNamespaceName(), KafkaResources.kafkaStatefulSetName(testStorage.getClusterName()), expectedReplicas);
-    }
-
     public static void scaleKafkaNodePool(String namespaceName, String kafkaNodePoolName, int scaleToReplicas) {
         LOGGER.info("Scaling KafkaNodePool: {}/{} to {} replicas", namespaceName, kafkaNodePoolName, scaleToReplicas);
         KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(kafkaNodePoolName, nodePool -> {
             nodePool.getSpec().setReplicas(scaleToReplicas);
         }, namespaceName);
-    }
-
-    public static boolean kafkaNodePoolIdsContainOnly(String namespaceName, String kafkaNodePoolName, List<Integer> expectedNodePoolIds) {
-        LOGGER.info("Checking that KafkaNodePool: {}/{} contains IDs: {}", namespaceName, kafkaNodePoolName, expectedNodePoolIds);
-        List<Integer> currentIds = getCurrentKafkaNodePoolIds(namespaceName, kafkaNodePoolName);
-        return  currentIds.containsAll(expectedNodePoolIds) && currentIds.size() == expectedNodePoolIds.size();
     }
 
     // Format for parsing must be similar to this -> "[2, 3, 50-52, 88]" then it can return a list of integers [2,3,50,51,52,88]

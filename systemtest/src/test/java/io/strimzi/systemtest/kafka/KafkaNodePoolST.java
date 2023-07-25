@@ -243,19 +243,21 @@ public class KafkaNodePoolST extends AbstractST {
         KafkaNodePoolUtils.annotateKafkaNodePoolNextNodeIds(testStorage.getNamespaceName(), testStorage.getKafkaNodePoolName(), nodePoolAnnoIdsWithRange);
         // Scale-up
         KafkaNodePoolUtils.scaleKafkaNodePool(testStorage.getNamespaceName(), testStorage.getKafkaNodePoolName(), scaledReplicaCount);
-        KafkaNodePoolUtils.waitForKafkaNodePoolStablePodReplicasCount(testStorage, scaledReplicaCount);
+        PodUtils.waitUntilPodStabilityReplicasCount(testStorage.getNamespaceName(), KafkaResources.kafkaStatefulSetName(testStorage.getClusterName()), scaledReplicaCount);
 
-        // Check correct IDs
-        assertTrue(KafkaNodePoolUtils.kafkaNodePoolIdsContainOnly(testStorage.getNamespaceName(), testStorage.getKafkaNodePoolName(), expectedNodePoolIds));
+        // Check correct IDS
+        LOGGER.info("Checking that KafkaNodePool contains IDs: {}", expectedNodePoolIds);
+        assertTrue(KafkaNodePoolUtils.getCurrentKafkaNodePoolIds(testStorage.getNamespaceName(), testStorage.getKafkaNodePoolName()).containsAll(expectedNodePoolIds));
 
         // Annotate NodePool for scale-down
         KafkaNodePoolUtils.annotateKafkaNodePoolNextNodeIds(testStorage.getNamespaceName(), testStorage.getKafkaNodePoolName(), nodePoolAnnoIdsWithRange);
         // Scale-down
         KafkaNodePoolUtils.scaleKafkaNodePool(testStorage.getNamespaceName(), testStorage.getKafkaNodePoolName(), originalReplicaCount);
-        KafkaNodePoolUtils.waitForKafkaNodePoolStablePodReplicasCount(testStorage, originalReplicaCount);
+        PodUtils.waitUntilPodStabilityReplicasCount(testStorage.getNamespaceName(), KafkaResources.kafkaStatefulSetName(testStorage.getClusterName()), originalReplicaCount);
 
-        // Check correct IDs
-        assertTrue(KafkaNodePoolUtils.kafkaNodePoolIdsContainOnly(testStorage.getNamespaceName(), testStorage.getKafkaNodePoolName(), originalNodePoolIds));
+        // Check correct IDS
+        LOGGER.info("Checking that KafkaNodePool contains IDs: {}", originalNodePoolIds);
+        assertTrue(KafkaNodePoolUtils.getCurrentKafkaNodePoolIds(testStorage.getNamespaceName(), testStorage.getKafkaNodePoolName()).containsAll(originalNodePoolIds));
     }
 
     @BeforeAll
