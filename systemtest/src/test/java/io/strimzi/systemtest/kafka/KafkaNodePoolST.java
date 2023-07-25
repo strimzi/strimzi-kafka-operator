@@ -209,18 +209,17 @@ public class KafkaNodePoolST extends AbstractST {
     void testKafkaNodePoolBrokerIdsManagementUsingAnnotations(ExtensionContext extensionContext) {
 
         final TestStorage testStorage = new TestStorage(extensionContext);
-        final int kafkaReplicas = 2;
-        final int originalReplicaCount = 3;
-        final int scaledReplicaCount = 6;
+        final int originalReplicaCount = 2;
+        final int scaledReplicaCount = 5;
         String nodePoolAnnoIdsWithRange = "[20-21, 99]";
 
-        Kafka kafka = KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), kafkaReplicas, 1)
+        Kafka kafka = KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), originalReplicaCount, 1)
             .editOrNewMetadata()
                 .addToAnnotations(Annotations.ANNO_STRIMZI_IO_NODE_POOLS, "enabled")
             .endMetadata()
             .build();
 
-        KafkaNodePool kafkaNodePool =  KafkaNodePoolTemplates.defaultKafkaNodePool(testStorage.getKafkaNodePoolName(), testStorage.getClusterName(), kafkaReplicas)
+        KafkaNodePool kafkaNodePool =  KafkaNodePoolTemplates.defaultKafkaNodePool(testStorage.getKafkaNodePoolName(), testStorage.getClusterName(), originalReplicaCount)
             .editOrNewMetadata()
                 .withNamespace(testStorage.getNamespaceName())
             .endMetadata()
@@ -238,6 +237,7 @@ public class KafkaNodePoolST extends AbstractST {
 
         // Save for later comparison
         List<Integer> originalNodePoolIds = KafkaNodePoolUtils.getCurrentKafkaNodePoolIds(testStorage.getNamespaceName(), testStorage.getKafkaNodePoolName());
+        List<Integer> expectedNodePoolIds = KafkaNodePoolUtils.parseNodePoolIdsWithRangeStringToIntegerList(nodePoolAnnoIdsWithRange);
 
         // Annotate NodePool for scale-up
         KafkaNodePoolUtils.annotateKafkaNodePoolNextNodeIds(testStorage.getNamespaceName(), testStorage.getKafkaNodePoolName(), nodePoolAnnoIdsWithRange);
@@ -245,10 +245,8 @@ public class KafkaNodePoolST extends AbstractST {
         KafkaNodePoolUtils.scaleKafkaNodePool(testStorage.getNamespaceName(), testStorage.getKafkaNodePoolName(), scaledReplicaCount);
         KafkaNodePoolUtils.waitForKafkaNodePoolStablePodReplicasCount(testStorage, scaledReplicaCount);
 
-        // Check correct IDS
-        List<Integer> expectedNodePoolIds = KafkaNodePoolUtils.parseNodePoolIdsWithRangeStringToIntegerList(nodePoolAnnoIdsWithRange);
-        LOGGER.info("Checking that KafkaNodePool contains IDs: {}", expectedNodePoolIds);
-        assertTrue(KafkaNodePoolUtils.getCurrentKafkaNodePoolIds(testStorage.getNamespaceName(), testStorage.getKafkaNodePoolName()).containsAll(expectedNodePoolIds));
+        // Check correct IDs
+        assertTrue(KafkaNodePoolUtils.kafkaNodePoolIdsContainOnly(testStorage.getNamespaceName(), testStorage.getKafkaNodePoolName(), expectedNodePoolIds));
 
         // Annotate NodePool for scale-down
         KafkaNodePoolUtils.annotateKafkaNodePoolNextNodeIds(testStorage.getNamespaceName(), testStorage.getKafkaNodePoolName(), nodePoolAnnoIdsWithRange);
@@ -256,8 +254,8 @@ public class KafkaNodePoolST extends AbstractST {
         KafkaNodePoolUtils.scaleKafkaNodePool(testStorage.getNamespaceName(), testStorage.getKafkaNodePoolName(), originalReplicaCount);
         KafkaNodePoolUtils.waitForKafkaNodePoolStablePodReplicasCount(testStorage, originalReplicaCount);
 
-        LOGGER.info("Checking that KafkaNodePool contains IDs: {}", originalNodePoolIds);
-        assertTrue(KafkaNodePoolUtils.getCurrentKafkaNodePoolIds(testStorage.getNamespaceName(), testStorage.getKafkaNodePoolName()).containsAll(originalNodePoolIds));
+        // Check correct IDs
+        assertTrue(KafkaNodePoolUtils.kafkaNodePoolIdsContainOnly(testStorage.getNamespaceName(), testStorage.getKafkaNodePoolName(), originalNodePoolIds));
     }
 
     @BeforeAll

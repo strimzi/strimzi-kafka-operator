@@ -67,6 +67,12 @@ public class KafkaNodePoolUtils {
         }, namespaceName);
     }
 
+    public static boolean kafkaNodePoolIdsContainOnly(String namespaceName, String kafkaNodePoolName, List<Integer> expectedNodePoolIds) {
+        LOGGER.info("Checking that KafkaNodePool: {}/{} contains IDs: {}", namespaceName, kafkaNodePoolName, expectedNodePoolIds);
+        List<Integer> currentIds = getCurrentKafkaNodePoolIds(namespaceName, kafkaNodePoolName);
+        return  currentIds.containsAll(expectedNodePoolIds) && currentIds.size() == expectedNodePoolIds.size();
+    }
+
     // Format for parsing must be similar to this -> "[2, 3, 50-52, 88]" then it can return a list of integers [2,3,50,51,52,88]
     public static List<Integer> parseNodePoolIdsWithRangeStringToIntegerList(String inputString) {
         List<Integer> outputList = new ArrayList<>();
