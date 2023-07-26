@@ -87,7 +87,7 @@ public class OlmUpgradeST extends AbstractUpgradeST {
         KafkaTopic kafkaUpgradeTopic = new YAMLMapper().readValue(new File(dir, olmUpgradeData.getFromExamples() + "/examples/topic/kafka-topic.yaml"), KafkaTopic.class);
         kafkaUpgradeTopic = new KafkaTopicBuilder(kafkaUpgradeTopic)
             .editMetadata()
-                .withNamespace(Constants.TEST_SUITE_NAMESPACE)
+                .withNamespace(Constants.CO_NAMESPACE)
                 .withName(topicUpgradeName)
             .endMetadata()
             .editSpec()
@@ -129,13 +129,13 @@ public class OlmUpgradeST extends AbstractUpgradeST {
         ResourceManager.setCoDeploymentName(clusterOperatorDeploymentName);
 
         // Verification that Cluster Operator has been upgraded to a correct version
-        String afterUpgradeVersionOfCo = kubeClient().getCsvWithPrefix(Constants.TEST_SUITE_NAMESPACE, upgradeOlmConfig.getOlmAppBundlePrefix()).getSpec().getVersion();
+        String afterUpgradeVersionOfCo = kubeClient().getCsvWithPrefix(Constants.CO_NAMESPACE, upgradeOlmConfig.getOlmAppBundlePrefix()).getSpec().getVersion();
         assertThat(afterUpgradeVersionOfCo, is(toVersion));
 
         // Wait for Rolling Update to finish
-        zkPods = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(Constants.TEST_SUITE_NAMESPACE, zkSelector, 3, zkPods);
-        kafkaPods = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(Constants.TEST_SUITE_NAMESPACE, kafkaSelector, 3, kafkaPods);
-        eoPods = DeploymentUtils.waitTillDepHasRolled(Constants.TEST_SUITE_NAMESPACE, KafkaResources.entityOperatorDeploymentName(clusterName), 1, eoPods);
+        zkPods = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(Constants.CO_NAMESPACE, zkSelector, 3, zkPods);
+        kafkaPods = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(Constants.CO_NAMESPACE, kafkaSelector, 3, kafkaPods);
+        eoPods = DeploymentUtils.waitTillDepHasRolled(Constants.CO_NAMESPACE, KafkaResources.entityOperatorDeploymentName(clusterName), 1, eoPods);
         // ======== Cluster Operator upgrade ends ========
 
         // ======== Kafka upgrade starts ========
@@ -145,7 +145,7 @@ public class OlmUpgradeST extends AbstractUpgradeST {
         // ======== Kafka upgrade ends ========
 
         // Wait for messages of previously created clients
-        ClientUtils.waitForClientsSuccess(testStorage.getProducerName(), testStorage.getConsumerName(), Constants.TEST_SUITE_NAMESPACE, testStorage.getMessageCount());
+        ClientUtils.waitForClientsSuccess(testStorage.getProducerName(), testStorage.getConsumerName(), Constants.CO_NAMESPACE, testStorage.getMessageCount());
     }
 
     @BeforeAll

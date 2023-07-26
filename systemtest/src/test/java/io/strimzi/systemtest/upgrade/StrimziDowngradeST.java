@@ -68,29 +68,29 @@ public class StrimziDowngradeST extends AbstractUpgradeST {
         // Setup env
         // We support downgrade only when you didn't upgrade to new inter.broker.protocol.version and log.message.format.version
         // https://strimzi.io/docs/operators/latest/full/deploying.html#con-target-downgrade-version-str
-        setupEnvAndUpgradeClusterOperator(extensionContext, downgradeData, testStorage, testUpgradeKafkaVersion, Constants.TEST_SUITE_NAMESPACE);
+        setupEnvAndUpgradeClusterOperator(extensionContext, downgradeData, testStorage, testUpgradeKafkaVersion, Constants.CO_NAMESPACE);
         logPodImages(clusterName);
         // Downgrade CO
-        changeClusterOperator(downgradeData, Constants.TEST_SUITE_NAMESPACE, extensionContext);
+        changeClusterOperator(downgradeData, Constants.CO_NAMESPACE, extensionContext);
         // Wait for Kafka cluster rolling update
         waitForKafkaClusterRollingUpdate();
         logPodImages(clusterName);
         // Verify that pods are stable
-        PodUtils.verifyThatRunningPodsAreStable(Constants.TEST_SUITE_NAMESPACE, clusterName);
-        checkAllImages(downgradeData, Constants.TEST_SUITE_NAMESPACE);
+        PodUtils.verifyThatRunningPodsAreStable(Constants.CO_NAMESPACE, clusterName);
+        checkAllImages(downgradeData, Constants.CO_NAMESPACE);
         // Verify upgrade
-        verifyProcedure(downgradeData, testStorage.getProducerName(), testStorage.getConsumerName(), Constants.TEST_SUITE_NAMESPACE);
+        verifyProcedure(downgradeData, testStorage.getProducerName(), testStorage.getConsumerName(), Constants.CO_NAMESPACE);
     }
 
     @BeforeEach
     void setupEnvironment() {
-        cluster.createNamespace(Constants.TEST_SUITE_NAMESPACE);
-        StUtils.copyImagePullSecrets(Constants.TEST_SUITE_NAMESPACE);
+        cluster.createNamespace(Constants.CO_NAMESPACE);
+        StUtils.copyImagePullSecrets(Constants.CO_NAMESPACE);
     }
 
     @AfterEach
     void afterEach() {
-        deleteInstalledYamls(coDir, Constants.TEST_SUITE_NAMESPACE);
+        deleteInstalledYamls(coDir, Constants.CO_NAMESPACE);
         cluster.deleteNamespaces();
     }
 }

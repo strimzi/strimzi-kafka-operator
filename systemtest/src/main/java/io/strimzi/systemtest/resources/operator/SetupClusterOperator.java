@@ -378,6 +378,17 @@ public class SetupClusterOperator {
                 ResourceManager.STORED_RESOURCES.get(this.extensionContext.getDisplayName()).push(
                     new ResourceItem<>(this::deleteClusterOperatorNamespace));
 
+
+                // when RBAC=NAMESPACE, we need to add a binding namespace Constants.TEST_SUITE_NAMESPACE, because now,
+                // we always has two namespaces (i.e., co-namespace and test-suite-namespace)
+                if (Environment.isNamespaceRbacScope() || this.clusterOperatorRBACType.equals(ClusterOperatorRBACType.NAMESPACE)) {
+                    if (!this.bindingsNamespaces.contains(Constants.TEST_SUITE_NAMESPACE)) {
+                        this.bindingsNamespaces.add(Constants.TEST_SUITE_NAMESPACE);
+                    }
+                    if (!this.namespaceToWatch.contains(Constants.TEST_SUITE_NAMESPACE)) {
+                        this.namespaceToWatch += "," + Constants.TEST_SUITE_NAMESPACE;
+                    }
+                }
                 cluster.createNamespaces(CollectorElement.createCollectorElement(testClassName, testMethodName), namespaceInstallTo, bindingsNamespaces);
                 StUtils.copyImagePullSecrets(namespaceInstallTo);
 
