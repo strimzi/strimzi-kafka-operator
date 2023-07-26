@@ -216,7 +216,7 @@ class HttpBridgeST extends AbstractST {
 
         LOGGER.info("Check if actual env variable {} has different value than {}", usedVariable, "test.value");
         assertThat(
-                StUtils.checkEnvVarInPod(Constants.TEST_SUITE_NAMESPACE, kubeClient().listPods(Labels.STRIMZI_KIND_LABEL, KafkaBridge.RESOURCE_KIND).get(0).getMetadata().getName(), usedVariable),
+                StUtils.checkEnvVarInPod(Constants.TEST_SUITE_NAMESPACE, kubeClient().listPods(Constants.TEST_SUITE_NAMESPACE, httpBridgeClusterName, Labels.STRIMZI_KIND_LABEL, KafkaBridge.RESOURCE_KIND).get(0).getMetadata().getName(), usedVariable),
                 is(not("test.value"))
         );
 
@@ -273,7 +273,7 @@ class HttpBridgeST extends AbstractST {
         KafkaBridgeResource.replaceBridgeResourceInSpecificNamespace(bridgeName, kafkaBridge -> kafkaBridge.getSpec().setReplicas(0), Constants.TEST_SUITE_NAMESPACE);
 
         KafkaBridgeUtils.waitForKafkaBridgeReady(Constants.TEST_SUITE_NAMESPACE, httpBridgeClusterName);
-        PodUtils.waitForPodsReady(Constants.TEST_SUITE_NAMESPACE, kubeClient().getDeploymentSelectors(deploymentName), 0, true);
+        PodUtils.waitForPodsReady(Constants.TEST_SUITE_NAMESPACE, kubeClient().getDeploymentSelectors(Constants.TEST_SUITE_NAMESPACE, deploymentName), 0, true);
 
         bridgePods = kubeClient().listPodNames(Constants.TEST_SUITE_NAMESPACE, httpBridgeClusterName, Labels.STRIMZI_CLUSTER_LABEL, bridgeName);
         KafkaBridgeStatus bridgeStatus = KafkaBridgeResource.kafkaBridgeClient().inNamespace(Constants.TEST_SUITE_NAMESPACE).withName(bridgeName).get().getStatus();

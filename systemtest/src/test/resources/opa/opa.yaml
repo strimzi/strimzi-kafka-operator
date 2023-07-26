@@ -1,153 +1,148 @@
 apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: opa
-  labels:
-    app: opa
----
-
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: opa
-  labels:
-    app: opa
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: opa
-  template:
+kind: List
+items:
+  - apiVersion: v1
+    kind: ServiceAccount
     metadata:
+      name: opa
       labels:
         app: opa
+  - apiVersion: apps/v1
+    kind: Deployment
+    metadata:
       name: opa
+      labels:
+        app: opa
     spec:
-      serviceAccountName: opa
-      containers:
-        - name: opa
-          image: openpolicyagent/opa:latest-static
-          ports:
-            - name: http
-              containerPort: 8181
-          args:
-            - "run"
-            - "--ignore=.*"  # exclude hidden dirs created by Kubernetes
-            - "--log-level=debug"
-            - "--server"
-            - "--set=decision_logs.console=true"
-            - "/policies"
-          volumeMounts:
-            - readOnly: true
-              mountPath: /policies
-              name: opa-policies
-      volumes:
-        - name: opa-policies
-          configMap:
-            name: opa-policies
----
+      replicas: 1
+      selector:
+        matchLabels:
+          app: opa
+      template:
+        metadata:
+          labels:
+            app: opa
+          name: opa
+        spec:
+          serviceAccountName: opa
+          containers:
+            - name: opa
+              image: openpolicyagent/opa:latest-static
+              ports:
+                - name: http
+                  containerPort: 8181
+              args:
+                - "run"
+                - "--ignore=.*"  # exclude hidden dirs created by Kubernetes
+                - "--log-level=debug"
+                - "--server"
+                - "--set=decision_logs.console=true"
+                - "/policies"
+              volumeMounts:
+                - readOnly: true
+                  mountPath: /policies
+                  name: opa-policies
+          volumes:
+            - name: opa-policies
+              configMap:
+                name: opa-policies
+  - kind: Service
+    apiVersion: v1
+    metadata:
+      name: opa
+      labels:
+        app: opa
+    spec:
+      type: ClusterIP
+      selector:
+        app: opa
+      ports:
+        - name: http
+          protocol: TCP
+          port: 8181
+          targetPort: 8181
+  - apiVersion: networking.k8s.io/v1
+    kind: NetworkPolicy
+    metadata:
+      name: opa-network-policy
+    spec:
+      podSelector:
+        matchLabels:
+          app: opa
+      policyTypes:
+        - Ingress
+      ingress:
+        - { }
 
-kind: Service
-apiVersion: v1
-metadata:
-  name: opa
-  labels:
-    app: opa
-spec:
-  type: ClusterIP
-  selector:
-    app: opa
-  ports:
-    - name: http
-      protocol: TCP
-      port: 8181
-      targetPort: 8181
----
-
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
-metadata:
-  name: opa-network-policy
-spec:
-  podSelector:
-    matchLabels:
-      app: opa
-  policyTypes:
-    - Ingress
-  ingress:
-    - {}
-
----
-
-kind: ConfigMap
-apiVersion: v1
-metadata:
-  name: opa-policies
-data:
-  kafka_simple_authz.rego: |
-    package kafka.simple.authz
-
-    default allow = false
-
-    allow {
-      not deny
-    }
-
-    deny {
-      is_topic_resource
-      is_read_operation
-      not consumer_is_on_allowlist
-    }
-
-    deny {
-      is_topic_resource
-      is_write_operation
-      not producer_is_on_allowlist
-    }
-
-    ###############################################################################
-    # Example allowlists. For conciseness in the tutorial, the allowlists are
-    # hardcoded inside the policy. In real-world deployments, the allowlists could
-    # be loaded into OPA as raw JSON data.
-    ###############################################################################
-
-    producer_allowlist = ["good-user"]
-
-    consumer_allowlist = ["good-user"]
-
-    ###############################################################################
-    # Helper rules for checking allowlists.
-    ###############################################################################
-
-    consumer_is_on_allowlist {
-      consumer_allowlist[_] == principal.name
-    }
-
-    producer_is_on_allowlist {
-      producer_allowlist[_] == principal.name
-    }
-
-    ###############################################################################
-    # Helper rules for input processing.
-    ###############################################################################
-
-    is_write_operation {
-      input.action.operation == "WRITE"
-    }
-
-    is_read_operation {
-      input.action.operation == "READ"
-    }
-
-    is_topic_resource {
-      input.action.resourcePattern.resourceType == "TOPIC"
-    }
-
-    principal = {"name": parsed.CN} {
-      parsed := parse_user(urlquery.decode(input.requestContext.principal.name))
-    }
-
-    parse_user(user) = {key: value |
-      parts := split(user, ",")
-      [key, value] := split(parts[_], "=")
-    }
+  - kind: ConfigMap
+    apiVersion: v1
+    metadata:
+      name: opa-policies
+    data:
+      kafka_simple_authz.rego: |
+        package kafka.simple.authz
+        
+        default allow = false
+        
+        allow {
+          not deny
+        }
+        
+        deny {
+          is_topic_resource
+          is_read_operation
+          not consumer_is_on_allowlist
+        }
+        
+        deny {
+          is_topic_resource
+          is_write_operation
+          not producer_is_on_allowlist
+        }
+        
+        ###############################################################################
+        # Example allowlists. For conciseness in the tutorial, the allowlists are
+        # hardcoded inside the policy. In real-world deployments, the allowlists could
+        # be loaded into OPA as raw JSON data.
+        ###############################################################################
+        
+        producer_allowlist = ["good-user"]
+        
+        consumer_allowlist = ["good-user"]
+        
+        ###############################################################################
+        # Helper rules for checking allowlists.
+        ###############################################################################
+        
+        consumer_is_on_allowlist {
+          consumer_allowlist[_] == principal.name
+        }
+        
+        producer_is_on_allowlist {
+          producer_allowlist[_] == principal.name
+        }
+        
+        ###############################################################################
+        # Helper rules for input processing.
+        ###############################################################################
+        
+        is_write_operation {
+          input.action.operation == "WRITE"
+        }
+        
+        is_read_operation {
+          input.action.operation == "READ"
+        }
+        
+        is_topic_resource {
+          input.action.resourcePattern.resourceType == "TOPIC"
+        }
+        
+        principal = {"name": parsed.CN} {
+          parsed := parse_user(urlquery.decode(input.requestContext.principal.name))
+        }
+        
+        parse_user(user) = {key: value |
+          parts := split(user, ",")
+          [key, value] := split(parts[_], "=")
+        }

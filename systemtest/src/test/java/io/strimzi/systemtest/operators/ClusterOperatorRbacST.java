@@ -12,7 +12,6 @@ import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.enums.ClusterOperatorRBACType;
 import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
-import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.templates.crd.KafkaConnectTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
@@ -22,6 +21,8 @@ import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.Level;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtensionContext;
+
+import java.util.Arrays;
 
 import static io.strimzi.systemtest.Constants.CONNECT;
 import static io.strimzi.systemtest.Constants.CONNECT_COMPONENTS;
@@ -48,27 +49,28 @@ public class ClusterOperatorRbacST extends AbstractST {
         String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
         // 060-Deployment
-        clusterOperator = new SetupClusterOperator.SetupClusterOperatorBuilder()
-            .withExtensionContext(extensionContext)
-            .withNamespace(Constants.CO_NAMESPACE)
+        this.clusterOperator = this.clusterOperator.defaultInstallation(extensionContext)
             .withClusterOperatorRBACType(ClusterOperatorRBACType.NAMESPACE)
+            .withWatchingNamespaces(Constants.TEST_SUITE_NAMESPACE)
+            .withBindingsNamespaces(Arrays.asList(Constants.CO_NAMESPACE, Constants.TEST_SUITE_NAMESPACE))
             .createInstallation()
             .runBundleInstallation();
 
-        String coPodName = kubeClient().getClusterOperatorPodName(Constants.TEST_SUITE_NAMESPACE);
+        cluster.setNamespace(Constants.TEST_SUITE_NAMESPACE);
+
+        String coPodName = kubeClient().getClusterOperatorPodName(clusterOperator.getDeploymentNamespace());
         LOGGER.info("Deploying Kafka: {}, which should be deployed even the CRBs are not present", clusterName);
 
         resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3).build());
-
         LOGGER.info("CO log should contain some information about ignoring forbidden access to CRB for Kafka");
-        String log = cmdKubeClient().execInCurrentNamespace(Level.DEBUG, "logs", coPodName).out();
+        String log = cmdKubeClient().namespace(clusterOperator.getDeploymentNamespace()).execInCurrentNamespace(Level.DEBUG, "logs", coPodName).out();
         assertTrue(log.contains("Kafka(" + cmdKubeClient().namespace() + "/" + clusterName + "): Ignoring forbidden access to ClusterRoleBindings resource which does not seem to be required."));
 
         LOGGER.info("Deploying KafkaConnect: {} without rack awareness, the CR should be deployed without error", clusterName);
         resourceManager.createResourceWithWait(extensionContext, KafkaConnectTemplates.kafkaConnect(clusterName, Constants.TEST_SUITE_NAMESPACE, 1).build());
 
         LOGGER.info("CO log should contain some information about ignoring forbidden access to CRB for KafkaConnect");
-        log = cmdKubeClient().execInCurrentNamespace(Level.DEBUG, "logs", coPodName).out();
+        log = cmdKubeClient().namespace(clusterOperator.getDeploymentNamespace()).execInCurrentNamespace(Level.DEBUG, "logs", coPodName).out();
         assertTrue(log.contains("KafkaConnect(" + cmdKubeClient().namespace() + "/" + clusterName + "): Ignoring forbidden access to ClusterRoleBindings resource which does not seem to be required."));
     }
 
@@ -81,10 +83,10 @@ public class ClusterOperatorRbacST extends AbstractST {
         String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
         // 060-Deployment
-        clusterOperator = new SetupClusterOperator.SetupClusterOperatorBuilder()
-            .withExtensionContext(extensionContext)
-            .withNamespace(Constants.CO_NAMESPACE)
+        this.clusterOperator = this.clusterOperator.defaultInstallation(extensionContext)
             .withClusterOperatorRBACType(ClusterOperatorRBACType.NAMESPACE)
+            .withWatchingNamespaces(Constants.TEST_SUITE_NAMESPACE)
+            .withBindingsNamespaces(Arrays.asList(Constants.CO_NAMESPACE, Constants.TEST_SUITE_NAMESPACE))
             .createInstallation()
             .runBundleInstallation();
 
@@ -92,6 +94,9 @@ public class ClusterOperatorRbacST extends AbstractST {
 
         LOGGER.info("Deploying Kafka: {}, which should not be deployed and error should be present in CR status message", clusterName);
         resourceManager.createResourceWithoutWait(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3, 3)
+            .editMetadata()
+                .withNamespace(Constants.TEST_SUITE_NAMESPACE)
+            .endMetadata()
             .editOrNewSpec()
                 .editOrNewKafka()
                     .withNewRack()

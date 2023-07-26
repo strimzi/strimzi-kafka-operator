@@ -27,7 +27,6 @@ import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
 import io.strimzi.systemtest.resources.crd.KafkaNodePoolResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
-import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaConnectTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaConnectorTemplates;
@@ -98,13 +97,12 @@ public class FeatureGatesST extends AbstractST {
 
         testEnvVars.add(new EnvVar(Environment.STRIMZI_FEATURE_GATES_ENV, "+UseKRaft,+KafkaNodePools", null));
 
-        clusterOperator = new SetupClusterOperator.SetupClusterOperatorBuilder()
-                .withExtensionContext(extensionContext)
-                .withNamespace(CO_NAMESPACE)
-                .withWatchingNamespaces(Constants.WATCH_ALL_NAMESPACES)
-                .withExtraEnvVars(testEnvVars)
-                .createInstallation()
-                .runInstallation();
+        this.clusterOperator = this.clusterOperator.defaultInstallation(extensionContext)
+            .withNamespace(CO_NAMESPACE)
+            .withWatchingNamespaces(Constants.WATCH_ALL_NAMESPACES)
+            .withExtraEnvVars(testEnvVars)
+            .createInstallation()
+            .runInstallation();
 
         Kafka kafka = KafkaTemplates.kafkaPersistent(clusterName, kafkaReplicas)
             .editOrNewMetadata()
@@ -198,13 +196,12 @@ public class FeatureGatesST extends AbstractST {
 
         LOGGER.info("Deploying CO without Stable Connect Identities");
 
-        clusterOperator = new SetupClusterOperator.SetupClusterOperatorBuilder()
-                .withExtensionContext(extensionContext)
-                .withNamespace(testStorage.getNamespaceName())
-                .withWatchingNamespaces(Constants.WATCH_ALL_NAMESPACES)
-                .withExtraEnvVars(coEnvVars)
-                .createInstallation()
-                .runInstallation();
+        clusterOperator = this.clusterOperator.defaultInstallation(extensionContext)
+            .withNamespace(testStorage.getNamespaceName())
+            .withWatchingNamespaces(Constants.WATCH_ALL_NAMESPACES)
+            .withExtraEnvVars(coEnvVars)
+            .createInstallation()
+            .runInstallation();
 
         resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), 3, 1).build());
         resourceManager.createResourceWithWait(extensionContext, KafkaTopicTemplates.topic(testStorage).build());
@@ -309,10 +306,8 @@ public class FeatureGatesST extends AbstractST {
 
         List<EnvVar> coEnvVars = new ArrayList<>();
         coEnvVars.add(new EnvVar(Environment.STRIMZI_FEATURE_GATES_ENV, "+KafkaNodePools", null));
-
-        clusterOperator.unInstall();
-        clusterOperator = new SetupClusterOperator.SetupClusterOperatorBuilder()
-            .withExtensionContext(extensionContext)
+        
+        clusterOperator = this.clusterOperator.defaultInstallation(extensionContext)
             .withNamespace(testStorage.getNamespaceName())
             .withWatchingNamespaces(Constants.WATCH_ALL_NAMESPACES)
             .withExtraEnvVars(coEnvVars)

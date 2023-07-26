@@ -111,7 +111,7 @@ public class OpaIntegrationST extends AbstractST {
             .runInstallation();
 
         // Install OPA
-        cmdKubeClient().apply(FileUtils.updateNamespaceOfYamlFile(TestUtils.USER_PATH + "/../systemtest/src/test/resources/opa/opa.yaml", Constants.TEST_SUITE_NAMESPACE));
+        cmdKubeClient(Constants.TEST_SUITE_NAMESPACE).apply(FileUtils.updateNamespaceOfYamlFile(TestUtils.USER_PATH + "/../systemtest/src/test/resources/opa/opa.yaml", Constants.TEST_SUITE_NAMESPACE));
 
         resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(CLUSTER_NAME, 3, 1)
             .editMetadata()

@@ -652,9 +652,9 @@ class RollingUpdateST extends AbstractST {
             () -> kubeClient(Constants.TEST_SUITE_NAMESPACE).listPods(Constants.TEST_SUITE_NAMESPACE).stream().filter(pod -> pod.getStatus().getPhase().equals("Running"))
                     .map(pod -> pod.getStatus().getPhase()).collect(Collectors.toList()).size() < kubeClient().listPods(Constants.TEST_SUITE_NAMESPACE).size());
 
-        LabelSelector coLabelSelector = kubeClient().getDeployment(Constants.TEST_SUITE_NAMESPACE, ResourceManager.getCoDeploymentName()).getSpec().getSelector();
+        LabelSelector coLabelSelector = kubeClient().getDeployment(clusterOperator.getDeploymentNamespace(), ResourceManager.getCoDeploymentName()).getSpec().getSelector();
         LOGGER.info("Deleting Cluster Operator Pod with labels {}", coLabelSelector);
-        kubeClient(Constants.TEST_SUITE_NAMESPACE).deletePodsByLabelSelector(coLabelSelector);
+        kubeClient(clusterOperator.getDeploymentNamespace()).deletePodsByLabelSelector(coLabelSelector);
         LOGGER.info("Cluster Operator Pod deleted");
 
         if (!Environment.isKRaftModeEnabled()) {
@@ -665,7 +665,7 @@ class RollingUpdateST extends AbstractST {
             () -> kubeClient(Constants.TEST_SUITE_NAMESPACE).listPods(Constants.TEST_SUITE_NAMESPACE).stream().map(pod -> pod.getStatus().getPhase()).collect(Collectors.toList()).contains("Pending"));
 
         LOGGER.info("Deleting Cluster Operator Pod with labels {}", coLabelSelector);
-        kubeClient(Constants.TEST_SUITE_NAMESPACE).deletePodsByLabelSelector(coLabelSelector);
+        kubeClient(clusterOperator.getDeploymentNamespace()).deletePodsByLabelSelector(coLabelSelector);
         LOGGER.info("Cluster Operator Pod deleted");
 
         RollingUpdateUtils.waitTillComponentHasRolled(Constants.TEST_SUITE_NAMESPACE, kafkaSelector, 3, kafkaPods);

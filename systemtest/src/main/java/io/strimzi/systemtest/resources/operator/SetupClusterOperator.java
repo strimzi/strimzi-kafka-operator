@@ -825,8 +825,6 @@ public class SetupClusterOperator {
                     Thread.currentThread().interrupt();
                     e.printStackTrace();
                 }
-
-                KubeClusterResource.getInstance().deleteAllSetNamespaces();
             }
         }
     }

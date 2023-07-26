@@ -169,7 +169,6 @@ public class KafkaUpgradeDowngradeST extends AbstractUpgradeST {
 
     @BeforeAll
     void setupEnvironment(final ExtensionContext extensionContext) {
-        clusterOperator.unInstall();
         clusterOperator.defaultInstallation(extensionContext).createInstallation().runInstallation();
     }
 

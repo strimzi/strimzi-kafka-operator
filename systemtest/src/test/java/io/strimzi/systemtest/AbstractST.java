@@ -638,7 +638,7 @@ public abstract class AbstractST implements TestSeparator {
     }
 
     @AfterAll
-    void tearDownTestSuite(ExtensionContext extensionContext) throws Exception {
+    void tearDownTestSuite(ExtensionContext extensionContext) {
         LOGGER.debug(String.join("", Collections.nCopies(76, "=")));
         LOGGER.debug("———————————— {}@After All - Clean up after TestSuite ———————————— ", StUtils.removePackageName(this.getClass().getName()));
         afterAllMayOverride(extensionContext);
