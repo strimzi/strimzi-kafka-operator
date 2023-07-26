@@ -24,6 +24,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
+import java.util.StringJoiner;
 import java.util.function.Function;
 
 /**
@@ -429,7 +431,35 @@ public class AuthenticationUtils {
                 i++;
             }
         }
-
         return newVolumeMounts;
+    }
+
+    /**
+     * Generates a JAAS configuration string based on the provided module name and options.
+     *
+     * @param moduleName The name of the JAAS module to be configured.
+     * @param options A Map containing the options to be set for the JAAS module.
+     *               The options are represented as key-value pairs, where both the key and
+     *               the value must be non-null String objects.
+     * @return A String representing the JAAS configuration.
+     * @throws IllegalArgumentException If the moduleName is empty, or it contains '=' or ';',
+     *                                  or if any key or value in the options map is empty,
+     *                                  or they contain '=' or ';'.
+     */
+    public static String JaasConfig(String moduleName, Map<String, String> options) {
+        StringJoiner joiner = new StringJoiner(" ");
+        for (Entry<String, String> entry : options.entrySet()) {
+            String key = Objects.requireNonNull(entry.getKey());
+            String value = Objects.requireNonNull(entry.getValue());
+            if (key.contains("=") || key.contains(";")) {
+                throw new IllegalArgumentException("Keys must not contain '=' or ';'");
+            }
+            if (moduleName.contains("=") || moduleName.contains(";") || moduleName.isEmpty()) {
+                throw new IllegalArgumentException("module name must be not empty and must not contain '=' or ';'");
+            } else {
+                joiner.add(key + "=\"" + value + "\"");
+            }
+        }
+        return moduleName + " required " + joiner + ";";
     }
 }

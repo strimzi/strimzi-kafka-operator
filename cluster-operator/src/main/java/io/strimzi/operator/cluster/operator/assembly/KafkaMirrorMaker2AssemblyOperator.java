@@ -492,17 +492,17 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
             String clientAuthType = authProperties.get(AuthenticationUtils.SASL_MECHANISM);
             if (KafkaClientAuthenticationPlain.TYPE_PLAIN.equals(clientAuthType)) {
                 saslMechanism = "PLAIN";
-                jaasConfig = JaasConfig.config("org.apache.kafka.common.security.plain.PlainLoginModule",
+                jaasConfig = AuthenticationUtils.JaasConfig("org.apache.kafka.common.security.plain.PlainLoginModule",
                         Map.of("username", authProperties.get(AuthenticationUtils.SASL_USERNAME),
                                 "password", "${file:" + CONNECTORS_CONFIG_FILE + ":" + cluster.getAlias() + ".sasl.password}"));
             } else if (KafkaClientAuthenticationScramSha256.TYPE_SCRAM_SHA_256.equals(clientAuthType)) {
                 saslMechanism = "SCRAM-SHA-256";
-                jaasConfig = JaasConfig.config("org.apache.kafka.common.security.scram.ScramLoginModule",
+                jaasConfig = AuthenticationUtils.JaasConfig("org.apache.kafka.common.security.scram.ScramLoginModule",
                         Map.of("username", authProperties.get(AuthenticationUtils.SASL_USERNAME),
                                 "password", "${file:" + CONNECTORS_CONFIG_FILE + ":" + cluster.getAlias() + ".sasl.password}"));
             } else if (KafkaClientAuthenticationScramSha512.TYPE_SCRAM_SHA_512.equals(clientAuthType)) {
                 saslMechanism = "SCRAM-SHA-512";
-                jaasConfig = JaasConfig.config("org.apache.kafka.common.security.scram.ScramLoginModule",
+                jaasConfig = AuthenticationUtils.JaasConfig("org.apache.kafka.common.security.scram.ScramLoginModule",
                         Map.of("username", authProperties.get(AuthenticationUtils.SASL_USERNAME),
                                 "password", "${file:" + CONNECTORS_CONFIG_FILE + ":" + cluster.getAlias() + ".sasl.password}"));
             } else if (KafkaClientAuthenticationOAuth.TYPE_OAUTH.equals(clientAuthType)) {
@@ -554,7 +554,7 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
             jaasOptions.put("oauth.ssl.truststore.type", "PKCS12");
         }
 
-        return JaasConfig.config("org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule", jaasOptions);
+        return AuthenticationUtils.JaasConfig("org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule", jaasOptions);
     }
 
     private static String addTLSConfigToMirrorMaker2ConnectorConfig(Map<String, Object> config, KafkaMirrorMaker2ClusterSpec cluster, String configPrefix) {

@@ -33,7 +33,6 @@ import io.strimzi.test.annotations.ParallelSuite;
 import io.strimzi.test.annotations.ParallelTest;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
-import org.hamcrest.Matchers;
 import org.hamcrest.TypeSafeMatcher;
 
 import java.io.PrintWriter;
@@ -51,6 +50,9 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.CoreMatchers.is;
+
 
 @ParallelSuite
 public class KafkaBrokerConfigurationBuilderTest {
@@ -434,37 +436,37 @@ public class KafkaBrokerConfigurationBuilderTest {
     @ParallelTest
     public void testOpaAuthorizationWithTls() {
         CertSecretSource cert = new CertSecretSourceBuilder()
-                .withSecretName("my-secret")
-                .withCertificate("my.crt")
-                .build();
+            .withSecretName("my-secret")
+            .withCertificate("my.crt")
+            .build();
 
         KafkaAuthorization auth = new KafkaAuthorizationOpaBuilder()
-                .withUrl("https://opa:8181/v1/data/kafka/allow")
-                .withAllowOnError(true)
-                .withInitialCacheCapacity(1000)
-                .withMaximumCacheSize(10000)
-                .withExpireAfterMs(60000)
-                .withTlsTrustedCertificates(cert)
-                .addToSuperUsers("jack", "CN=conor")
-                .build();
+            .withUrl("https://opa:8181/v1/data/kafka/allow")
+            .withAllowOnError(true)
+            .withInitialCacheCapacity(1000)
+            .withMaximumCacheSize(10000)
+            .withExpireAfterMs(60000)
+            .withTlsTrustedCertificates(cert)
+            .addToSuperUsers("jack", "CN=conor")
+            .build();
 
         String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, "2")
-                .withAuthorization("my-cluster", auth, false)
-                .build();
+            .withAuthorization("my-cluster", auth, false)
+            .build();
 
         assertThat(configuration, isEquivalent("broker.id=2",
                 "node.id=2",
                 "authorizer.class.name=org.openpolicyagent.kafka.OpaAuthorizer",
-                "opa.authorizer.url=https://opa:8181/v1/data/kafka/allow",
-                "opa.authorizer.allow.on.error=true",
-                "opa.authorizer.metrics.enabled=false",
-                "opa.authorizer.cache.initial.capacity=1000",
-                "opa.authorizer.cache.maximum.size=10000",
-                "opa.authorizer.cache.expire.after.seconds=60",
-                "opa.authorizer.truststore.path=/tmp/kafka/authz-opa.truststore.p12",
-                "opa.authorizer.truststore.password=${CERTS_STORE_PASSWORD}",
-                "opa.authorizer.truststore.type=PKCS12",
-                "super.users=User:CN=my-cluster-kafka,O=io.strimzi;User:CN=my-cluster-entity-topic-operator,O=io.strimzi;User:CN=my-cluster-entity-user-operator,O=io.strimzi;User:CN=my-cluster-kafka-exporter,O=io.strimzi;User:CN=my-cluster-cruise-control,O=io.strimzi;User:CN=cluster-operator,O=io.strimzi;User:jack;User:CN=conor"));
+            "opa.authorizer.url=https://opa:8181/v1/data/kafka/allow",
+            "opa.authorizer.allow.on.error=true",
+            "opa.authorizer.metrics.enabled=false",
+            "opa.authorizer.cache.initial.capacity=1000",
+            "opa.authorizer.cache.maximum.size=10000",
+            "opa.authorizer.cache.expire.after.seconds=60",
+            "opa.authorizer.truststore.path=/tmp/kafka/authz-opa.truststore.p12",
+            "opa.authorizer.truststore.password=${CERTS_STORE_PASSWORD}",
+            "opa.authorizer.truststore.type=PKCS12",
+            "super.users=User:CN=my-cluster-kafka,O=io.strimzi;User:CN=my-cluster-entity-topic-operator,O=io.strimzi;User:CN=my-cluster-entity-user-operator,O=io.strimzi;User:CN=my-cluster-kafka-exporter,O=io.strimzi;User:CN=my-cluster-cruise-control,O=io.strimzi;User:CN=cluster-operator,O=io.strimzi;User:jack;User:CN=conor"));
     }
 
     @ParallelTest
@@ -667,8 +669,8 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .withType(KafkaListenerType.INTERNAL)
                 .withTls(false)
                 .withNewConfiguration()
-                .withMaxConnections(100)
-                .withMaxConnectionCreationRate(10)
+                    .withMaxConnections(100)
+                    .withMaxConnectionCreationRate(10)
                 .endConfiguration()
                 .build();
 
@@ -678,8 +680,8 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .withType(KafkaListenerType.INTERNAL)
                 .withTls(false)
                 .withNewConfiguration()
-                .withMaxConnections(1000)
-                .withMaxConnectionCreationRate(50)
+                    .withMaxConnections(1000)
+                    .withMaxConnectionCreationRate(50)
                 .endConfiguration()
                 .build();
 
@@ -1029,11 +1031,11 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .withType(KafkaListenerType.INTERNAL)
                 .withTls(true)
                 .withNewConfiguration()
-                .withNewBrokerCertChainAndKey()
-                .withSecretName("my-secret")
-                .withKey("my.key")
-                .withCertificate("my.crt")
-                .endBrokerCertChainAndKey()
+                    .withNewBrokerCertChainAndKey()
+                        .withSecretName("my-secret")
+                        .withKey("my.key")
+                        .withCertificate("my.crt")
+                    .endBrokerCertChainAndKey()
                 .endConfiguration()
                 .build();
 
@@ -1210,11 +1212,11 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .withType(KafkaListenerType.ROUTE)
                 .withTls(true)
                 .withNewConfiguration()
-                .withNewBrokerCertChainAndKey()
-                .withSecretName("my-secret")
-                .withKey("my.key")
-                .withCertificate("my.crt")
-                .endBrokerCertChainAndKey()
+                    .withNewBrokerCertChainAndKey()
+                        .withSecretName("my-secret")
+                        .withKey("my.key")
+                        .withCertificate("my.crt")
+                    .endBrokerCertChainAndKey()
                 .endConfiguration()
                 .build();
 
@@ -1500,11 +1502,11 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .withType(KafkaListenerType.INGRESS)
                 .withTls(true)
                 .withNewConfiguration()
-                .withControllerClass("nginx-ingress")
-                .withNewBootstrap()
-                .withHost("bootstrap.mytld.com")
-                .endBootstrap()
-                .withBrokers(broker)
+                    .withControllerClass("nginx-ingress")
+                    .withNewBootstrap()
+                        .withHost("bootstrap.mytld.com")
+                    .endBootstrap()
+                    .withBrokers(broker)
                 .endConfiguration()
                 .build();
 
@@ -1645,19 +1647,19 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .withType(KafkaListenerType.INTERNAL)
                 .withTls(false)
                 .withNewKafkaListenerAuthenticationOAuth()
-                .withValidIssuerUri("http://valid-issuer")
-                .withJwksEndpointUri("http://jwks")
-                .withEnableECDSA(true)
-                .withUserNameClaim("preferred_username")
-                .withGroupsClaim("$.groups")
-                .withGroupsClaimDelimiter(";")
-                .withMaxSecondsWithoutReauthentication(3600)
-                .withJwksMinRefreshPauseSeconds(5)
-                .withEnablePlain(true)
-                .withTokenEndpointUri("http://token")
-                .withConnectTimeoutSeconds(30)
-                .withReadTimeoutSeconds(30)
-                .withEnableMetrics(true)
+                    .withValidIssuerUri("http://valid-issuer")
+                    .withJwksEndpointUri("http://jwks")
+                    .withEnableECDSA(true)
+                    .withUserNameClaim("preferred_username")
+                    .withGroupsClaim("$.groups")
+                    .withGroupsClaimDelimiter(";")
+                    .withMaxSecondsWithoutReauthentication(3600)
+                    .withJwksMinRefreshPauseSeconds(5)
+                    .withEnablePlain(true)
+                    .withTokenEndpointUri("http://token")
+                    .withConnectTimeoutSeconds(30)
+                    .withReadTimeoutSeconds(30)
+                    .withEnableMetrics(true)
                 .endKafkaListenerAuthenticationOAuth()
                 .build();
 
@@ -1811,12 +1813,12 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .withType(KafkaListenerType.INTERNAL)
                 .withTls(false)
                 .withNewKafkaListenerAuthenticationOAuth()
-                .withValidIssuerUri("https://valid-issuer")
-                .withJwksEndpointUri("https://jwks")
-                .withEnableECDSA(true)
-                .withUserNameClaim("preferred_username")
-                .withDisableTlsHostnameVerification(true)
-                .withTlsTrustedCertificates(cert)
+                    .withValidIssuerUri("https://valid-issuer")
+                    .withJwksEndpointUri("https://jwks")
+                    .withEnableECDSA(true)
+                    .withUserNameClaim("preferred_username")
+                    .withDisableTlsHostnameVerification(true)
+                    .withTlsTrustedCertificates(cert)
                 .endKafkaListenerAuthenticationOAuth()
                 .build();
 
@@ -1861,15 +1863,15 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .withType(KafkaListenerType.INTERNAL)
                 .withTls(false)
                 .withNewKafkaListenerAuthenticationOAuth()
-                .withValidIssuerUri("https://valid-issuer")
-                .withIntrospectionEndpointUri("https://intro")
-                .withCheckAudience(true)
-                .withCustomClaimCheck("'kafka-user' in @.roles.client-roles.kafka")
-                .withClientId("my-oauth-client")
-                .withNewClientSecret()
-                .withSecretName("my-secret")
-                .withKey("client-secret")
-                .endClientSecret()
+                    .withValidIssuerUri("https://valid-issuer")
+                    .withIntrospectionEndpointUri("https://intro")
+                    .withCheckAudience(true)
+                    .withCustomClaimCheck("'kafka-user' in @.roles.client-roles.kafka")
+                    .withClientId("my-oauth-client")
+                    .withNewClientSecret()
+                        .withSecretName("my-secret")
+                        .withKey("client-secret")
+                    .endClientSecret()
                 .endKafkaListenerAuthenticationOAuth()
                 .build();
 
@@ -1974,7 +1976,7 @@ public class KafkaBrokerConfigurationBuilderTest {
         // enablePlain and tokenEndpointUri are handled separately from getOAuthOptions
         Map<String, String> actualOptions = KafkaBrokerConfigurationBuilder.getOAuthOptions(auth);
 
-        assertThat(actualOptions, Matchers.equalTo(expectedOptions));
+        assertThat(actualOptions, is(equalTo(expectedOptions)));
     }
 
     @ParallelTest
@@ -2121,7 +2123,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .build();
 
         Map<String, String> actualOptions = KafkaBrokerConfigurationBuilder.getOAuthOptions(auth);
-        assertThat(actualOptions, Matchers.equalTo(Collections.emptyMap()));
+        assertThat(actualOptions, is(equalTo(Collections.emptyMap())));
     }
 
     static class IsEquivalent extends TypeSafeMatcher<String> {
