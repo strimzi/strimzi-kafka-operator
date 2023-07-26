@@ -73,9 +73,6 @@ public class TestSuiteNamespaceManager {
             if (!Environment.isNamespaceRbacScope()) {
                 final String simpleClassName = extensionContext.getRequiredTestClass().getSimpleName();
 
-                if (KubeClusterResource.getMapWithSuiteNamespaces().get(CollectorElement.createCollectorElement(simpleClassName)).size() > 0) {
-                    // delete...
-                }
                 LOGGER.info("Deleting Namespace: {} for TestSuite: {}", Constants.TEST_SUITE_NAMESPACE, simpleClassName);
                 KubeClusterResource.getInstance().deleteNamespace(CollectorElement.createCollectorElement(simpleClassName), Constants.TEST_SUITE_NAMESPACE);
             }
