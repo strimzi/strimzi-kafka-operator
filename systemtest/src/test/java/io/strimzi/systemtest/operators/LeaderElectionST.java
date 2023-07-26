@@ -9,7 +9,6 @@ import io.fabric8.kubernetes.api.model.EnvVarBuilder;
 import io.fabric8.kubernetes.api.model.PodBuilder;
 import io.fabric8.kubernetes.api.model.coordination.v1.Lease;
 import io.strimzi.systemtest.AbstractST;
-import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.resources.operator.BundleResource;
 import io.strimzi.systemtest.resources.operator.specific.HelmResource;
@@ -74,12 +73,12 @@ public class LeaderElectionST extends AbstractST {
             .createInstallation()
             .runInstallation();
 
-        Lease oldLease = kubeClient().getClient().leases().inNamespace(testStorage.getNamespaceName()).withName(Constants.STRIMZI_DEPLOYMENT_NAME).get();
+        Lease oldLease = kubeClient().getClient().leases().inNamespace(clusterOperator.getDeploymentNamespace()).withName(clusterOperator.getClusterOperatorName()).get();
         String oldLeaderPodName = oldLease.getSpec().getHolderIdentity();
 
         LOGGER.info("Changing image of the leader pod: {} to not available image - to cause CrashLoopBackOff and change of leader to second Pod (failover)", oldLeaderPodName);
 
-        kubeClient().editPod(testStorage.getNamespaceName(), oldLeaderPodName).edit(pod -> new PodBuilder(pod)
+        kubeClient().editPod(clusterOperator.getDeploymentNamespace(), oldLeaderPodName).edit(pod -> new PodBuilder(pod)
             .editOrNewSpec()
                 .editContainer(0)
                     .withImage("wrong-image/name:latest")
@@ -88,12 +87,12 @@ public class LeaderElectionST extends AbstractST {
             .build()
         );
 
-        PodUtils.waitUntilPodIsInCrashLoopBackOff(testStorage.getNamespaceName(), oldLeaderPodName);
+        PodUtils.waitUntilPodIsInCrashLoopBackOff(clusterOperator.getDeploymentNamespace(), oldLeaderPodName);
 
-        Lease currentLease = kubeClient().getClient().leases().inNamespace(testStorage.getNamespaceName()).withName(Constants.STRIMZI_DEPLOYMENT_NAME).get();
+        Lease currentLease = kubeClient().getClient().leases().inNamespace(clusterOperator.getDeploymentNamespace()).withName(clusterOperator.getClusterOperatorName()).get();
         String currentLeaderPodName = currentLease.getSpec().getHolderIdentity();
 
-        String logFromNewLeader = StUtils.getLogFromPodByTime(testStorage.getNamespaceName(), currentLeaderPodName, Constants.STRIMZI_DEPLOYMENT_NAME, "300s");
+        String logFromNewLeader = StUtils.getLogFromPodByTime(clusterOperator.getDeploymentNamespace(), currentLeaderPodName, clusterOperator.getClusterOperatorName(), "300s");
 
         LOGGER.info("Checking if the new leader is elected");
         assertThat("Log doesn't contains mention about election of the new leader", logFromNewLeader, containsString(LEADER_MESSAGE));
@@ -114,9 +113,9 @@ public class LeaderElectionST extends AbstractST {
             .createInstallation()
             .runInstallation();
 
-        String coPodName = kubeClient().listPodsByPrefixInName(testStorage.getNamespaceName(), Constants.STRIMZI_DEPLOYMENT_NAME).get(0).getMetadata().getName();
-        Lease notExistingLease = kubeClient().getClient().leases().inNamespace(testStorage.getNamespaceName()).withName(Constants.STRIMZI_DEPLOYMENT_NAME).get();
-        String logFromCoPod = StUtils.getLogFromPodByTime(testStorage.getNamespaceName(), coPodName, Constants.STRIMZI_DEPLOYMENT_NAME, "300s");
+        String coPodName = kubeClient().listPodsByPrefixInName(clusterOperator.getDeploymentNamespace(), clusterOperator.getClusterOperatorName()).get(0).getMetadata().getName();
+        Lease notExistingLease = kubeClient().getClient().leases().inNamespace(clusterOperator.getDeploymentNamespace()).withName(clusterOperator.getClusterOperatorName()).get();
+        String logFromCoPod = StUtils.getLogFromPodByTime(clusterOperator.getDeploymentNamespace(), coPodName, clusterOperator.getClusterOperatorName(), "300s");
 
         // Assert that the Lease does not exist
         assertThat("Lease for CO exists", notExistingLease, is(nullValue()));

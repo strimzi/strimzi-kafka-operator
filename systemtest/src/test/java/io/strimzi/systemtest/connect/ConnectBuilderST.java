@@ -94,6 +94,8 @@ class ConnectBuilderST extends AbstractST {
     private static final String PLUGIN_WITH_OTHER_TYPE_NAME = "plugin-with-other-type";
     private static final String PLUGIN_WITH_MAVEN_NAME = "connector-from-maven";
 
+    private static final String SHARED_KAFKA_CLUSTER = "shared-kafka-connect";
+
     private static final Plugin PLUGIN_WITH_TAR_AND_JAR = new PluginBuilder()
         .withName(PLUGIN_WITH_TAR_AND_JAR_NAME)
         .withArtifacts(
@@ -154,7 +156,7 @@ class ConnectBuilderST extends AbstractST {
 
         resourceManager.createResourceWithWait(extensionContext, ScraperTemplates.scraperPod(testStorage.getNamespaceName(), testStorage.getScraperName()).build());
 
-        resourceManager.createResourceWithoutWait(extensionContext, KafkaConnectTemplates.kafkaConnect(testStorage.getClusterName(), testStorage.getNamespaceName(), testStorage.getNamespaceName(), 1)
+        resourceManager.createResourceWithoutWait(extensionContext, KafkaConnectTemplates.kafkaConnect(testStorage.getClusterName(), testStorage.getNamespaceName(), SHARED_KAFKA_CLUSTER, 1)
             .editMetadata()
                 .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
             .endMetadata()
@@ -215,8 +217,8 @@ class ConnectBuilderST extends AbstractST {
         // this test also testing push into Docker output
         final String imageName = getImageNameForTestCase();
 
-        resourceManager.createResourceWithWait(extensionContext, KafkaTopicTemplates.topic(testStorage.getNamespaceName(), testStorage.getTopicName(), testStorage.getNamespaceName()).build());
-        resourceManager.createResourceWithWait(extensionContext, KafkaConnectTemplates.kafkaConnect(testStorage.getClusterName(), testStorage.getNamespaceName(), testStorage.getNamespaceName(), 1)
+        resourceManager.createResourceWithWait(extensionContext, KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getTopicName(), testStorage.getNamespaceName()).build());
+        resourceManager.createResourceWithWait(extensionContext, KafkaConnectTemplates.kafkaConnect(testStorage.getClusterName(), testStorage.getNamespaceName(), SHARED_KAFKA_CLUSTER, 1)
             .editMetadata()
                 .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
             .endMetadata()
@@ -241,7 +243,7 @@ class ConnectBuilderST extends AbstractST {
 
         resourceManager.createResourceWithWait(extensionContext, KafkaConnectorTemplates.kafkaConnector(testStorage.getClusterName())
             .editMetadata()
-                .withName(testStorage.getNamespaceName())
+                .withNamespace(testStorage.getNamespaceName())
             .endMetadata()
             .editOrNewSpec()
                 .withClassName(Constants.ECHO_SINK_CLASS_NAME)
@@ -255,7 +257,7 @@ class ConnectBuilderST extends AbstractST {
         KafkaClients kafkaClients = new KafkaClientsBuilder()
             .withTopicName(testStorage.getTopicName())
             .withMessageCount(testStorage.getMessageCount())
-            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getNamespaceName()))
+            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(SHARED_KAFKA_CLUSTER))
             .withProducerName(testStorage.getProducerName())
             .withNamespaceName(testStorage.getNamespaceName())
             .build();
@@ -283,7 +285,7 @@ class ConnectBuilderST extends AbstractST {
 
         kubeClient().getClient().adapt(OpenShiftClient.class).imageStreams().inNamespace(testStorage.getNamespaceName()).resource(imageStream).create();
 
-        resourceManager.createResourceWithWait(extensionContext, KafkaConnectTemplates.kafkaConnect(testStorage.getClusterName(), testStorage.getNamespaceName(), testStorage.getNamespaceName(), 1)
+        resourceManager.createResourceWithWait(extensionContext, KafkaConnectTemplates.kafkaConnect(testStorage.getClusterName(), testStorage.getNamespaceName(), SHARED_KAFKA_CLUSTER, 1)
             .editMetadata()
                 .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
             .endMetadata()
@@ -328,7 +330,7 @@ class ConnectBuilderST extends AbstractST {
         String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
         resourceManager.createResourceWithWait(extensionContext, KafkaTopicTemplates.topic(testStorage.getNamespaceName(), topicName, testStorage.getNamespaceName()).build());
 
-        KafkaConnect connect = KafkaConnectTemplates.kafkaConnect(testStorage.getClusterName(), testStorage.getNamespaceName(), testStorage.getNamespaceName(), 1)
+        KafkaConnect connect = KafkaConnectTemplates.kafkaConnect(testStorage.getClusterName(), testStorage.getNamespaceName(), SHARED_KAFKA_CLUSTER, 1)
             .editMetadata()
                 .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
             .endMetadata()
@@ -418,7 +420,7 @@ class ConnectBuilderST extends AbstractST {
 
         resourceManager.createResourceWithWait(extensionContext, KafkaTopicTemplates.topic(testStorage.getNamespaceName(), topicName, testStorage.getNamespaceName()).build());
 
-        resourceManager.createResourceWithWait(extensionContext, KafkaConnectTemplates.kafkaConnect(testStorage.getClusterName(), testStorage.getNamespaceName(), testStorage.getNamespaceName(), 1)
+        resourceManager.createResourceWithWait(extensionContext, KafkaConnectTemplates.kafkaConnect(testStorage.getClusterName(), testStorage.getNamespaceName(), SHARED_KAFKA_CLUSTER, 1)
             .editMetadata()
                 .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
             .endMetadata()
@@ -439,7 +441,7 @@ class ConnectBuilderST extends AbstractST {
         String connectPodName = kubeClient().listPods(testStorage.getNamespaceName(), testStorage.getClusterName(), Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND).get(0).getMetadata().getName();
 
         LOGGER.info("Checking that plugin has correct file name: {}", Constants.ECHO_SINK_FILE_NAME);
-        assertEquals(getPluginFileNameFromConnectPod(connectPodName), Constants.ECHO_SINK_FILE_NAME);
+        assertEquals(getPluginFileNameFromConnectPod(testStorage.getNamespaceName(), connectPodName), Constants.ECHO_SINK_FILE_NAME);
 
         final Plugin pluginWithoutFileName = new PluginBuilder()
             .withName(PLUGIN_WITH_OTHER_TYPE_NAME)
@@ -460,7 +462,7 @@ class ConnectBuilderST extends AbstractST {
 
         LOGGER.info("Checking that plugin has different name than before");
         connectPodName = kubeClient().listPods(testStorage.getNamespaceName(), testStorage.getClusterName(), Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND).get(0).getMetadata().getName();
-        String fileName = getPluginFileNameFromConnectPod(connectPodName);
+        String fileName = getPluginFileNameFromConnectPod(testStorage.getNamespaceName(), connectPodName);
         assertNotEquals(fileName, Constants.ECHO_SINK_FILE_NAME);
         assertEquals(fileName, Util.hashStub(Constants.ECHO_SINK_JAR_URL));
     }
@@ -476,7 +478,7 @@ class ConnectBuilderST extends AbstractST {
 
         resourceManager.createResourceWithWait(extensionContext,
             KafkaTopicTemplates.topic(testStorage.getNamespaceName(), testStorage.getTopicName(), testStorage.getNamespaceName()).build(),
-            KafkaConnectTemplates.kafkaConnect(testStorage.getClusterName(), testStorage.getNamespaceName(), testStorage.getNamespaceName(), 1)
+            KafkaConnectTemplates.kafkaConnect(testStorage.getClusterName(), testStorage.getNamespaceName(), SHARED_KAFKA_CLUSTER, 1)
                 .editMetadata()
                     .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
                 .endMetadata()
@@ -508,7 +510,7 @@ class ConnectBuilderST extends AbstractST {
 
         KafkaClients kafkaClient = new KafkaClientsBuilder()
             .withConsumerName(testStorage.getConsumerName())
-            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getNamespaceName()))
+            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(SHARED_KAFKA_CLUSTER))
             .withNamespaceName(Constants.TEST_SUITE_NAMESPACE)
             .withTopicName(testStorage.getTopicName())
             .withMessageCount(testStorage.getMessageCount())
@@ -519,8 +521,8 @@ class ConnectBuilderST extends AbstractST {
         ClientUtils.waitForConsumerClientSuccess(testStorage);
     }
 
-    private String getPluginFileNameFromConnectPod(String connectPodName) {
-        return cmdKubeClient().execInPod(connectPodName,
+    private String getPluginFileNameFromConnectPod(final String namespaceName, final String connectPodName) {
+        return cmdKubeClient(namespaceName).execInPod(connectPodName,
             "/bin/bash", "-c", "ls plugins/plugin-with-other-type/*").out().trim();
     }
 
@@ -537,7 +539,7 @@ class ConnectBuilderST extends AbstractST {
             .createInstallation()
             .runInstallation();
 
-        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(Constants.TEST_SUITE_NAMESPACE, 3)
+        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(SHARED_KAFKA_CLUSTER, 3)
             .editMetadata()
                 .withNamespace(Constants.TEST_SUITE_NAMESPACE)
             .endMetadata()

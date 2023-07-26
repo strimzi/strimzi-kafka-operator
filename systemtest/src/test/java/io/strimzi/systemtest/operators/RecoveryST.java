@@ -249,18 +249,11 @@ class RecoveryST extends AbstractST {
             .withReconciliationInterval(Constants.CO_OPERATION_TIMEOUT_SHORT)
             .createInstallation()
             .runInstallation();
+        cluster.setNamespace(Constants.TEST_SUITE_NAMESPACE);
 
         sharedClusterName = generateRandomNameOfKafka("recovery-cluster");
 
-        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaPersistent(sharedClusterName, KAFKA_REPLICAS)
-            .editMetadata()
-                .withNamespace(Constants.TEST_SUITE_NAMESPACE)
-            .endMetadata()
-            .build());
-        resourceManager.createResourceWithWait(extensionContext, KafkaBridgeTemplates.kafkaBridge(sharedClusterName, KafkaResources.plainBootstrapAddress(sharedClusterName), 1)
-            .editMetadata()
-                .withNamespace(Constants.TEST_SUITE_NAMESPACE)
-            .endMetadata()
-            .build());
+        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaPersistent(sharedClusterName, KAFKA_REPLICAS).build());
+        resourceManager.createResourceWithWait(extensionContext, KafkaBridgeTemplates.kafkaBridge(sharedClusterName, KafkaResources.plainBootstrapAddress(sharedClusterName), 1).build());
     }
 }

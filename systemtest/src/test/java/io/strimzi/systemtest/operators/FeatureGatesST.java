@@ -49,6 +49,7 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -98,8 +99,8 @@ public class FeatureGatesST extends AbstractST {
         testEnvVars.add(new EnvVar(Environment.STRIMZI_FEATURE_GATES_ENV, "+UseKRaft,+KafkaNodePools", null));
 
         this.clusterOperator = this.clusterOperator.defaultInstallation(extensionContext)
-            .withNamespace(CO_NAMESPACE)
-            .withWatchingNamespaces(Constants.WATCH_ALL_NAMESPACES)
+            .withNamespace(Constants.CO_NAMESPACE)
+            .withBindingsNamespaces(Arrays.asList(Constants.CO_NAMESPACE, Constants.TEST_SUITE_NAMESPACE))
             .withExtraEnvVars(testEnvVars)
             .createInstallation()
             .runInstallation();
@@ -107,6 +108,7 @@ public class FeatureGatesST extends AbstractST {
         Kafka kafka = KafkaTemplates.kafkaPersistent(clusterName, kafkaReplicas)
             .editOrNewMetadata()
                 .addToAnnotations(Annotations.ANNO_STRIMZI_IO_NODE_POOLS, "enabled")
+                .withNamespace(testStorage.getNamespaceName())
             .endMetadata()
             .editSpec()
                 .editKafka()
@@ -135,6 +137,7 @@ public class FeatureGatesST extends AbstractST {
         kafkaNodePool = new KafkaNodePoolBuilder(kafkaNodePool)
             .editOrNewMetadata()
                 .addToLabels(Labels.STRIMZI_CLUSTER_LABEL, testStorage.getClusterName())
+                .withNamespace(testStorage.getNamespaceName())
             .endMetadata()
             .editOrNewSpec()
                 .addToRoles(ProcessRoles.BROKER, ProcessRoles.CONTROLLER)
@@ -153,33 +156,33 @@ public class FeatureGatesST extends AbstractST {
         LOGGER.info("Trying to send some messages to Kafka in next few minutes");
 
         KafkaClients kafkaClients = new KafkaClientsBuilder()
-                .withProducerName(producerName)
-                .withConsumerName(consumerName)
-                .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(testStorage.getClusterName()))
-                .withUsername(testStorage.getUsername())
-                .withTopicName(topicName)
-                .withMessageCount(messageCount)
-                .withDelayMs(500)
-                .withNamespaceName(CO_NAMESPACE)
-                .build();
+            .withProducerName(producerName)
+            .withConsumerName(consumerName)
+            .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(testStorage.getClusterName()))
+            .withUsername(testStorage.getUsername())
+            .withTopicName(topicName)
+            .withMessageCount(messageCount)
+            .withDelayMs(500)
+            .withNamespaceName(testStorage.getNamespaceName())
+            .build();
 
         resourceManager.createResourceWithWait(extensionContext, kafkaClients.producerTlsStrimzi(clusterName));
         resourceManager.createResourceWithWait(extensionContext, kafkaClients.consumerTlsStrimzi(clusterName));
 
         // Check that there is no ZooKeeper
-        Map<String, String> zkPods = PodUtils.podSnapshot(CO_NAMESPACE, zkSelector);
+        Map<String, String> zkPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), zkSelector);
         assertThat("No ZooKeeper Pods should exist", zkPods.size(), is(0));
 
         // Roll Kafka
         LOGGER.info("Forcing rolling update of Kafka via read-only configuration change");
-        Map<String, String> kafkaPods = PodUtils.podSnapshot(CO_NAMESPACE, kafkaSelector);
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, k -> k.getSpec().getKafka().getConfig().put("log.retention.hours", 72), CO_NAMESPACE);
+        Map<String, String> kafkaPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), kafkaSelector);
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, k -> k.getSpec().getKafka().getConfig().put("log.retention.hours", 72), testStorage.getNamespaceName());
 
         LOGGER.info("Waiting for the next reconciliation to happen");
-        RollingUpdateUtils.waitTillComponentHasRolled(CO_NAMESPACE, kafkaSelector, kafkaReplicas, kafkaPods);
+        RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), kafkaSelector, kafkaReplicas, kafkaPods);
 
         LOGGER.info("Waiting for clients to finish sending/receiving messages");
-        ClientUtils.waitForClientsSuccess(producerName, consumerName, CO_NAMESPACE, MESSAGE_COUNT);
+        ClientUtils.waitForClientsSuccess(producerName, consumerName, testStorage.getNamespaceName(), MESSAGE_COUNT);
     }
     @IsolatedTest
     void testSwitchingConnectStabilityIdentifiesFeatureGateOnAndOff(ExtensionContext extensionContext) {

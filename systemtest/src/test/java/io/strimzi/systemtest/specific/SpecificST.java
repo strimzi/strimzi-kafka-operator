@@ -69,11 +69,11 @@ public class SpecificST extends AbstractST {
 
         // specify explicit namespace for RoleBindings
         strimziClusterOperator020Namespaced.getMetadata().setNamespace(namespaceWhereCreationOfCustomResourcesIsApproved);
-        strimziClusterOperator022LeaderElection.getMetadata().setNamespace(Constants.TEST_SUITE_NAMESPACE);
+        strimziClusterOperator022LeaderElection.getMetadata().setNamespace(clusterOperator.getDeploymentNamespace());
 
         // reference Cluster Operator service account in RoleBindings
-        strimziClusterOperator020Namespaced.getSubjects().stream().findFirst().get().setNamespace(Constants.TEST_SUITE_NAMESPACE);
-        strimziClusterOperator022LeaderElection.getSubjects().stream().findFirst().get().setNamespace(Constants.TEST_SUITE_NAMESPACE);
+        strimziClusterOperator020Namespaced.getSubjects().stream().findFirst().get().setNamespace(clusterOperator.getDeploymentNamespace());
+        strimziClusterOperator022LeaderElection.getSubjects().stream().findFirst().get().setNamespace(clusterOperator.getDeploymentNamespace());
 
         final List<RoleBinding> roleBindings = Arrays.asList(
                 strimziClusterOperator020Namespaced,
@@ -82,8 +82,8 @@ public class SpecificST extends AbstractST {
 
         // ---- c) defining ClusterRoleBindings
         final List<ClusterRoleBinding> clusterRoleBindings = Arrays.asList(
-            ClusterRoleBindingTemplates.getClusterOperatorWatchedCrb(clusterOperator.getClusterOperatorName(), Constants.TEST_SUITE_NAMESPACE),
-            ClusterRoleBindingTemplates.getClusterOperatorEntityOperatorCrb(clusterOperator.getClusterOperatorName(), Constants.TEST_SUITE_NAMESPACE)
+            ClusterRoleBindingTemplates.getClusterOperatorWatchedCrb(clusterOperator.getClusterOperatorName(), clusterOperator.getDeploymentNamespace()),
+            ClusterRoleBindingTemplates.getClusterOperatorEntityOperatorCrb(clusterOperator.getClusterOperatorName(), clusterOperator.getDeploymentNamespace())
         );
 
         clusterOperator.unInstall();
