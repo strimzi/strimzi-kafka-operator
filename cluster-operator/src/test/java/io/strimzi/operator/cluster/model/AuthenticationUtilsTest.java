@@ -6,6 +6,7 @@ package io.strimzi.operator.cluster.model;
 
 import org.junit.jupiter.api.Test;
 
+
 import javax.security.auth.login.Configuration;
 import java.lang.reflect.Constructor;
 import java.util.HashMap;
