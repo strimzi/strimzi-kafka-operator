@@ -75,7 +75,9 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlApiImpl.HTTP_DEFAULT_IDLE_TIMEOUT_SECONDS;
-import static io.strimzi.operator.common.Annotations.*;
+import static io.strimzi.operator.common.Annotations.ANNO_STRIMZI_IO_REBALANCE;
+import static io.strimzi.operator.common.Annotations.ANNO_STRIMZI_IO_REBALANCE_AUTOAPPROVAL;
+import static io.strimzi.operator.common.Annotations.ANNO_KUBE_GENERATION;
 
 /**
  * <p>Assembly operator for a "KafkaRebalance" assembly, which interacts with the Cruise Control REST API</p>
