@@ -30,9 +30,11 @@ import io.strimzi.systemtest.utils.kafkaUtils.KafkaNodePoolUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StrimziPodSetUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
+import java.util.Arrays;
+import java.util.Collections;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.hamcrest.MatcherAssert.assertThat;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 
@@ -205,59 +207,96 @@ public class KafkaNodePoolST extends AbstractST {
 
     }
 
+    /**
+     * @description This test case verifies KafkaNodePools scaling up and down with correct NodePool IDs, with different NodePools.
+     * @param extensionContext
+     */
     @ParallelNamespaceTest
     void testKafkaNodePoolBrokerIdsManagementUsingAnnotations(ExtensionContext extensionContext) {
 
         final TestStorage testStorage = new TestStorage(extensionContext);
-        final int originalReplicaCount = 2;
-        final int scaledReplicaCount = 5;
-        String nodePoolAnnoIdsWithRange = "[20-21, 99]";
+        String nodePoolNameA = testStorage.getKafkaNodePoolName() + "-a";
+        String nodePoolNameB = testStorage.getKafkaNodePoolName() + "-b";
 
-        Kafka kafka = KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), originalReplicaCount, 1)
+        Kafka kafka = KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), 1, 1)
             .editOrNewMetadata()
                 .addToAnnotations(Annotations.ANNO_STRIMZI_IO_NODE_POOLS, "enabled")
             .endMetadata()
             .build();
 
-        KafkaNodePool kafkaNodePool =  KafkaNodePoolTemplates.defaultKafkaNodePool(testStorage.getKafkaNodePoolName(), testStorage.getClusterName(), originalReplicaCount)
+        // Deploy KafkaNodePools with annotation for creation IDs
+        // Start with 1 replica for NodePool A and with 2 replicas for NodePool B
+        // Set ID list with 2 values only - so that each NodePool takes only one ID and B overflows and creates one with ID -> 0
+        KafkaNodePool poolA =  KafkaNodePoolTemplates.kafkaNodePoolBroker(testStorage.getNamespaceName(), nodePoolNameA, testStorage.getClusterName(), 1)
             .editOrNewMetadata()
-                .withNamespace(testStorage.getNamespaceName())
+                .withAnnotations(Map.of(Annotations.ANNO_STRIMZI_IO_NEXT_NODE_IDS, "[5, 6]"))
             .endMetadata()
             .editOrNewSpec()
-                .addToRoles(ProcessRoles.BROKER)
                 .withStorage(kafka.getSpec().getKafka().getStorage())
                 .withJvmOptions(kafka.getSpec().getKafka().getJvmOptions())
                 .withResources(kafka.getSpec().getKafka().getResources())
             .endSpec()
             .build();
 
-        resourceManager.createResourceWithWait(extensionContext,
-            kafkaNodePool,
-            kafka);
+        KafkaNodePool poolB =  KafkaNodePoolTemplates.kafkaNodePoolBroker(testStorage.getNamespaceName(), nodePoolNameB, testStorage.getClusterName(), 2)
+            .editOrNewMetadata()
+                .withAnnotations(Map.of(Annotations.ANNO_STRIMZI_IO_NEXT_NODE_IDS, "[5, 6]"))
+            .endMetadata()
+            .editOrNewSpec()
+                .withStorage(kafka.getSpec().getKafka().getStorage())
+                .withJvmOptions(kafka.getSpec().getKafka().getJvmOptions())
+                .withResources(kafka.getSpec().getKafka().getResources())
+            .endSpec()
+            .build();
 
-        // Save for later comparison
-        List<Integer> originalNodePoolIds = KafkaNodePoolUtils.getCurrentKafkaNodePoolIds(testStorage.getNamespaceName(), testStorage.getKafkaNodePoolName());
-        List<Integer> expectedNodePoolIds = KafkaNodePoolUtils.parseNodePoolIdsWithRangeStringToIntegerList(nodePoolAnnoIdsWithRange);
+        // Create in order NodePool A, B and then Kafka
+        resourceManager.createResourceWithWait(extensionContext, poolA, poolB, kafka);
 
-        // Annotate NodePool for scale-up
-        KafkaNodePoolUtils.annotateKafkaNodePoolNextNodeIds(testStorage.getNamespaceName(), testStorage.getKafkaNodePoolName(), nodePoolAnnoIdsWithRange);
-        // Scale-up
-        KafkaNodePoolUtils.scaleKafkaNodePool(testStorage.getNamespaceName(), testStorage.getKafkaNodePoolName(), scaledReplicaCount);
-        PodUtils.waitUntilPodStabilityReplicasCount(testStorage.getNamespaceName(), KafkaResources.kafkaStatefulSetName(testStorage.getClusterName()), scaledReplicaCount);
+        // 1. Case - IDs of two NodePools annotated at creation
+        // Wait for NodePool replicas
+        PodUtils.waitUntilPodStabilityReplicasCount(testStorage.getNamespaceName(), KafkaResource.getStrimziPodSetName(testStorage.getClusterName(), nodePoolNameA), 1);
+        PodUtils.waitUntilPodStabilityReplicasCount(testStorage.getNamespaceName(), KafkaResource.getStrimziPodSetName(testStorage.getClusterName(), nodePoolNameB), 2);
+        // Verify NodePool IDs, they should create Pods with IDs in ASC order, so first deployed NodePool A gets ID 5, NodePool B gets ID 6 + one overflown starting from 0
+        assertThat(KafkaNodePoolUtils.getCurrentKafkaNodePoolIds(testStorage.getNamespaceName(), nodePoolNameA).get(0).equals(5));
+        assertThat(KafkaNodePoolUtils.getCurrentKafkaNodePoolIds(testStorage.getNamespaceName(), nodePoolNameB).equals(Arrays.asList(0, 6)));
 
-        // Check correct IDS
-        LOGGER.info("Checking that KafkaNodePool contains IDs: {}", expectedNodePoolIds);
-        assertTrue(KafkaNodePoolUtils.getCurrentKafkaNodePoolIds(testStorage.getNamespaceName(), testStorage.getKafkaNodePoolName()).containsAll(expectedNodePoolIds));
+        // 2. Case (A-missing IDs for upscale, B-redundant ID for downscale, that is not even present)
+        // Annotate NodePool A for scale up with fewer IDs than needed -> this should cause addition of unused ID ASC from 0 which is in this case 1
+        KafkaNodePoolUtils.setKafkaNodePoolAnnotation(testStorage.getNamespaceName(), nodePoolNameA, Collections.singletonMap(Annotations.ANNO_STRIMZI_IO_NEXT_NODE_IDS,  "[20-21]"));
+        // Annotate NodePool B for scale down with more IDs than needed - > this should not matter as ID 99 is not present so only ID 6 should be removed
+        KafkaNodePoolUtils.setKafkaNodePoolAnnotation(testStorage.getNamespaceName(), nodePoolNameB, Collections.singletonMap(Annotations.ANNO_STRIMZI_IO_REMOVE_NODE_IDS, "[6, 99]"));
+        // Scale NodePool A up
+        KafkaNodePoolUtils.scaleKafkaNodePool(testStorage.getNamespaceName(), nodePoolNameA, 4);
+        // Scale NodePool B down
+        KafkaNodePoolUtils.scaleKafkaNodePool(testStorage.getNamespaceName(), nodePoolNameB, 1);
+        // Wait for NodePool replicas
+        PodUtils.waitUntilPodStabilityReplicasCount(testStorage.getNamespaceName(), KafkaResource.getStrimziPodSetName(testStorage.getClusterName(), nodePoolNameA), 4);
+        PodUtils.waitUntilPodStabilityReplicasCount(testStorage.getNamespaceName(), KafkaResource.getStrimziPodSetName(testStorage.getClusterName(), nodePoolNameB), 1);
+        // Verify NodePool IDs
+        // NodePool A should add IDs [20, 21] + non-used ID from 0 -> 1 as [0] is already taken-> NodePool should contain [1, 5, 20, 21]
+        assertThat(KafkaNodePoolUtils.getCurrentKafkaNodePoolIds(testStorage.getNamespaceName(), nodePoolNameA).equals(Arrays.asList(1, 5, 20, 21)));
+        // NodePool B should remove ID 6 as annotated -> should contain only [0]
+        assertThat(KafkaNodePoolUtils.getCurrentKafkaNodePoolIds(testStorage.getNamespaceName(), nodePoolNameB).get(0).equals(0));
 
-        // Annotate NodePool for scale-down
-        KafkaNodePoolUtils.annotateKafkaNodePoolNextNodeIds(testStorage.getNamespaceName(), testStorage.getKafkaNodePoolName(), nodePoolAnnoIdsWithRange);
-        // Scale-down
-        KafkaNodePoolUtils.scaleKafkaNodePool(testStorage.getNamespaceName(), testStorage.getKafkaNodePoolName(), originalReplicaCount);
-        PodUtils.waitUntilPodStabilityReplicasCount(testStorage.getNamespaceName(), KafkaResources.kafkaStatefulSetName(testStorage.getClusterName()), originalReplicaCount);
+        // 3. Case (A-missing ID for downscale, B-already used ID for upscale)
+        // Annotate NodePool A for scale down with fewer IDs than needed
+        KafkaNodePoolUtils.setKafkaNodePoolAnnotation(testStorage.getNamespaceName(), nodePoolNameA, Collections.singletonMap(Annotations.ANNO_STRIMZI_IO_REMOVE_NODE_IDS,  "[20]"));
+        // Annotate NodePool B for scale up with ID already in use -> 1
+        KafkaNodePoolUtils.setKafkaNodePoolAnnotation(testStorage.getNamespaceName(), nodePoolNameB, Collections.singletonMap(Annotations.ANNO_STRIMZI_IO_NEXT_NODE_IDS, "[1]"));
+        // Scale NodePool A down more than defined annotation IDs, this should cause removal of IDs in DESC order after the annotated ID is deleted
+        KafkaNodePoolUtils.scaleKafkaNodePool(testStorage.getNamespaceName(), nodePoolNameA, 2);
+        // Scale NodePool B up by 4 replicas to interfere with already used IDs
+        KafkaNodePoolUtils.scaleKafkaNodePool(testStorage.getNamespaceName(), nodePoolNameB, 6);
+        // Wait for NodePool replicas
+        PodUtils.waitUntilPodStabilityReplicasCount(testStorage.getNamespaceName(), KafkaResource.getStrimziPodSetName(testStorage.getClusterName(), nodePoolNameA), 2);
+        PodUtils.waitUntilPodStabilityReplicasCount(testStorage.getNamespaceName(), KafkaResource.getStrimziPodSetName(testStorage.getClusterName(), nodePoolNameB), 6);
+        // Verify NodePool IDs
+        // NodePool B should contain -> [0, 2, 3, 4, 6, 7] as [1, 5] is already taken by NodePool A
+        assertThat(KafkaNodePoolUtils.getCurrentKafkaNodePoolIds(testStorage.getNamespaceName(), nodePoolNameA).equals(Arrays.asList(1, 5)));
+        assertThat(KafkaNodePoolUtils.getCurrentKafkaNodePoolIds(testStorage.getNamespaceName(), nodePoolNameB).equals(Arrays.asList(0, 2, 3, 4, 6, 7)));
+    }
 
-        // Check correct IDS
-        LOGGER.info("Checking that KafkaNodePool contains IDs: {}", originalNodePoolIds);
-        assertTrue(KafkaNodePoolUtils.getCurrentKafkaNodePoolIds(testStorage.getNamespaceName(), testStorage.getKafkaNodePoolName()).containsAll(originalNodePoolIds));
+    private void assertThat(boolean equals) {
     }
 
     @BeforeAll
