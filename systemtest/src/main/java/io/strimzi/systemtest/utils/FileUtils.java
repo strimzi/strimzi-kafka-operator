@@ -18,6 +18,7 @@ import java.io.OutputStreamWriter;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
@@ -115,5 +116,17 @@ public class FileUtils {
             e.printStackTrace();
         }
         return null;
+    }
+
+    public static boolean exists(String path) {
+        return Files.exists(Path.of(path));
+    }
+
+    public static File[] listFilesWithPrefix(String path, String prefix) {
+        return new File(path).listFiles(file -> file.getName().startsWith(prefix));
+    }
+
+    public static File[] listFilesWithSuffix(String path, String suffix) {
+        return new File(path).listFiles(file -> file.getName().endsWith(suffix));
     }
 }
