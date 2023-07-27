@@ -4,6 +4,8 @@
  */
 package io.strimzi.api.kafka.model;
 
+import io.strimzi.api.kafka.model.bridge.KafkaBridge;
+
 /**
  * The purpose of this test is to ensure:
  *

@@ -4,7 +4,7 @@
  */
 package io.strimzi.operator.cluster.operator.assembly;
 
-import io.strimzi.api.kafka.model.JmxTransResources;
+import io.strimzi.api.kafka.model.jmx.JmxTransResources;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.operator.resource.ConfigMapOperator;

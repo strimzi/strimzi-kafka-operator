@@ -4,9 +4,9 @@
  */
 package io.strimzi.operator.user.model.acl;
 
-import io.strimzi.api.kafka.model.AclOperation;
-import io.strimzi.api.kafka.model.AclRule;
-import io.strimzi.api.kafka.model.AclRuleType;
+import io.strimzi.api.kafka.model.acl.AclOperation;
+import io.strimzi.api.kafka.model.acl.AclRule;
+import io.strimzi.api.kafka.model.acl.AclRuleType;
 
 import io.strimzi.operator.cluster.model.InvalidResourceException;
 

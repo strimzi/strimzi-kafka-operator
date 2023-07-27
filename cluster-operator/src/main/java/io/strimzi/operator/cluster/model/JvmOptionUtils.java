@@ -14,12 +14,12 @@ import java.util.Set;
 
 import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
-import io.strimzi.api.kafka.model.JvmOptions;
-import io.strimzi.api.kafka.model.SystemProperty;
+import io.strimzi.api.kafka.model.common.JvmOptions;
+import io.strimzi.api.kafka.model.common.SystemProperty;
 
 
 /**
- * Utility for {@link io.strimzi.api.kafka.model.JvmOptions} object.
+ * Utility for {@link JvmOptions} object.
  */
 public final class JvmOptionUtils  {
     /**

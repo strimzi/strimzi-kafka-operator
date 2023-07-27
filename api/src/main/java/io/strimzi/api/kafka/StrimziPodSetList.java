@@ -5,7 +5,7 @@
 package io.strimzi.api.kafka;
 
 import io.fabric8.kubernetes.api.model.DefaultKubernetesResourceList;
-import io.strimzi.api.kafka.model.StrimziPodSet;
+import io.strimzi.api.kafka.model.podset.StrimziPodSet;
 
 /**
  * A {@code DefaultKubernetesResourceList<StrimziPodSet>} required for using Fabric8 CRD support.

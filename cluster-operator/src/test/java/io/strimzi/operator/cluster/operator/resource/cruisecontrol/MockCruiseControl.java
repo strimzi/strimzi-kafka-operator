@@ -7,7 +7,7 @@ package io.strimzi.operator.cluster.operator.resource.cruisecontrol;
 import io.fabric8.kubernetes.api.model.HTTPHeader;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
-import io.strimzi.api.kafka.model.CruiseControlResources;
+import io.strimzi.api.kafka.model.cruise_control.CruiseControlResources;
 import io.strimzi.certs.Subject;
 import io.strimzi.operator.cluster.model.CruiseControl;
 import io.strimzi.operator.cluster.model.ModelUtils;

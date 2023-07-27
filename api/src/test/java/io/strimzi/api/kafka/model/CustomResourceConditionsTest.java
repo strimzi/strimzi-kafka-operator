@@ -4,7 +4,14 @@
  */
 package io.strimzi.api.kafka.model;
 
-import io.strimzi.api.kafka.model.balancing.KafkaRebalanceState;
+import io.strimzi.api.kafka.model.common.CustomResourceConditions;
+import io.strimzi.api.kafka.model.connector.KafkaConnector;
+import io.strimzi.api.kafka.model.cruise_control.KafkaRebalance;
+import io.strimzi.api.kafka.model.cruise_control.KafkaRebalanceState;
+import io.strimzi.api.kafka.model.bridge.KafkaBridge;
+import io.strimzi.api.kafka.model.connect.KafkaConnect;
+import io.strimzi.api.kafka.model.mirror_maker2.KafkaMirrorMaker2;
+import io.strimzi.api.kafka.model.user.KafkaUser;
 import org.junit.jupiter.api.Test;
 
 import java.util.function.Predicate;

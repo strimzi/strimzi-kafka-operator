@@ -5,7 +5,7 @@
 package io.strimzi.api.kafka;
 
 import io.fabric8.kubernetes.api.model.DefaultKubernetesResourceList;
-import io.strimzi.api.kafka.model.KafkaBridge;
+import io.strimzi.api.kafka.model.bridge.KafkaBridge;
 
 /**
  * A {@code DefaultKubernetesResourceList<KafkaBridge>} required for using Fabric8 CRD support.

@@ -5,7 +5,7 @@
 package io.strimzi.api.kafka.model.authentication;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import io.strimzi.api.kafka.model.PasswordSecretSource;
+import io.strimzi.api.kafka.model.common.PasswordSecretSource;
 import io.strimzi.crdgenerator.annotations.Description;
 import lombok.EqualsAndHashCode;
 

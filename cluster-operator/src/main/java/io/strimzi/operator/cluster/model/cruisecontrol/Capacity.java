@@ -6,9 +6,9 @@ package io.strimzi.operator.cluster.model.cruisecontrol;
 
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
-import io.strimzi.api.kafka.model.CruiseControlSpec;
+import io.strimzi.api.kafka.model.cruise_control.CruiseControlSpec;
 import io.strimzi.api.kafka.model.KafkaSpec;
-import io.strimzi.api.kafka.model.balancing.BrokerCapacityOverride;
+import io.strimzi.api.kafka.model.cruise_control.BrokerCapacityOverride;
 import io.strimzi.api.kafka.model.storage.EphemeralStorage;
 import io.strimzi.api.kafka.model.storage.JbodStorage;
 import io.strimzi.api.kafka.model.storage.PersistentClaimStorage;
@@ -227,7 +227,7 @@ public class Capacity {
         return null;
     }
 
-    private CpuCapacity processCpu(io.strimzi.api.kafka.model.balancing.BrokerCapacity bc, BrokerCapacityOverride override, CpuCapacity cpuBasedOnRequirements) {
+    private CpuCapacity processCpu(io.strimzi.api.kafka.model.cruise_control.BrokerCapacity bc, BrokerCapacityOverride override, CpuCapacity cpuBasedOnRequirements) {
         if (cpuBasedOnRequirements != null) {
             if ((override != null && override.getCpu() != null) || (bc != null && bc.getCpu() != null)) {
                 LOGGER.warnCr(reconciliation, "Ignoring CPU capacity override settings since they are automatically set to resource limits");
@@ -250,7 +250,7 @@ public class Capacity {
         }
     }
 
-    private static String processInboundNetwork(io.strimzi.api.kafka.model.balancing.BrokerCapacity bc, BrokerCapacityOverride override) {
+    private static String processInboundNetwork(io.strimzi.api.kafka.model.cruise_control.BrokerCapacity bc, BrokerCapacityOverride override) {
         if (override != null && override.getInboundNetwork() != null) {
             return getThroughputInKiB(override.getInboundNetwork());
         } else if (bc != null && bc.getInboundNetwork() != null) {
@@ -260,7 +260,7 @@ public class Capacity {
         }
     }
 
-    private static String processOutboundNetwork(io.strimzi.api.kafka.model.balancing.BrokerCapacity bc, BrokerCapacityOverride override) {
+    private static String processOutboundNetwork(io.strimzi.api.kafka.model.cruise_control.BrokerCapacity bc, BrokerCapacityOverride override) {
         if (override != null && override.getOutboundNetwork() != null) {
             return getThroughputInKiB(override.getOutboundNetwork());
         } else if (bc != null && bc.getOutboundNetwork() != null) {
@@ -342,7 +342,7 @@ public class Capacity {
     }
 
     private void processCapacityEntries(CruiseControlSpec spec, Set<NodeRef> kafkaBrokerNodes, Map<String, Storage> kafkaStorage, Map<String, ResourceRequirements> kafkaBrokerResources) {
-        io.strimzi.api.kafka.model.balancing.BrokerCapacity brokerCapacity = spec.getBrokerCapacity();
+        io.strimzi.api.kafka.model.cruise_control.BrokerCapacity brokerCapacity = spec.getBrokerCapacity();
 
         String inboundNetwork = processInboundNetwork(brokerCapacity, null);
         String outboundNetwork = processOutboundNetwork(brokerCapacity, null);

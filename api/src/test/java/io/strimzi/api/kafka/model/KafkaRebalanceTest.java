@@ -4,6 +4,8 @@
  */
 package io.strimzi.api.kafka.model;
 
+import io.strimzi.api.kafka.model.cruise_control.KafkaRebalance;
+
 /**
  * The purpose of this test is to ensure:
  *

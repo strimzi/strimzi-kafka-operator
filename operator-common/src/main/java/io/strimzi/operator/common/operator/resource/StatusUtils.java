@@ -6,7 +6,7 @@
 package io.strimzi.operator.common.operator.resource;
 
 import io.fabric8.kubernetes.client.CustomResource;
-import io.strimzi.api.kafka.model.Spec;
+import io.strimzi.api.kafka.model.common.Spec;
 import io.strimzi.api.kafka.model.status.AutoRestartStatus;
 import io.strimzi.api.kafka.model.status.AutoRestartStatusBuilder;
 import io.strimzi.api.kafka.model.status.Condition;

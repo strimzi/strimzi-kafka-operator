@@ -646,7 +646,7 @@ class CrdGenerator {
         }
         checkInherits(crdClass, "java.io.Serializable");
         if (crdClass.getName().startsWith("io.strimzi.api.")) {
-            checkInherits(crdClass, "io.strimzi.api.kafka.model.UnknownPropertyPreserving");
+            checkInherits(crdClass, "io.strimzi.api.kafka.model.common.UnknownPropertyPreserving");
         }
         if (!Modifier.isAbstract(crdClass.getModifiers())) {
             checkClassOverrides(crdClass, "hashCode");
@@ -1118,6 +1118,7 @@ class CrdGenerator {
                     String className = arg.substring(0, arg.indexOf('='));
                     String fileName = arg.substring(arg.indexOf('=') + 1).replace("/", File.separator);
                     Class<?> cls = Class.forName(className);
+                    System.out.println(cls + "hite");
                     if (!CustomResource.class.equals(cls)
                             && CustomResource.class.isAssignableFrom(cls)) {
                         classes.put(fileName, (Class<? extends CustomResource>) cls);

@@ -4,6 +4,7 @@
  */
 package io.strimzi.api.kafka.model;
 
+import io.strimzi.api.kafka.model.mirror_maker.KafkaMirrorMaker;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import io.strimzi.test.TestUtils;

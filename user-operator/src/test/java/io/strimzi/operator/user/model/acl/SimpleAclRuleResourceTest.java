@@ -4,10 +4,10 @@
  */
 package io.strimzi.operator.user.model.acl;
 
-import io.strimzi.api.kafka.model.AclResourcePatternType;
-import io.strimzi.api.kafka.model.AclRuleClusterResource;
+import io.strimzi.api.kafka.model.acl.AclResourcePatternType;
+import io.strimzi.api.kafka.model.acl.AclRuleClusterResource;
 import io.strimzi.api.kafka.model.AclRuleGroupResourceBuilder;
-import io.strimzi.api.kafka.model.AclRuleResource;
+import io.strimzi.api.kafka.model.acl.AclRuleResource;
 import io.strimzi.api.kafka.model.AclRuleTopicResourceBuilder;
 import io.strimzi.api.kafka.model.AclRuleTransactionalIdResourceBuilder;
 import org.apache.kafka.common.resource.PatternType;

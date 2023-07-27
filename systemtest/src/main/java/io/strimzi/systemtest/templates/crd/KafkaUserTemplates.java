@@ -4,7 +4,7 @@
  */
 package io.strimzi.systemtest.templates.crd;
 
-import io.strimzi.api.kafka.model.KafkaUser;
+import io.strimzi.api.kafka.model.user.KafkaUser;
 import io.strimzi.api.kafka.model.KafkaUserBuilder;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.storage.TestStorage;

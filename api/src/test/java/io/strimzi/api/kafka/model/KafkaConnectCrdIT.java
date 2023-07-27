@@ -4,6 +4,7 @@
  */
 package io.strimzi.api.kafka.model;
 
+import io.strimzi.api.kafka.model.connect.KafkaConnect;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.exceptions.KubeClusterException;
 import org.junit.jupiter.api.AfterAll;

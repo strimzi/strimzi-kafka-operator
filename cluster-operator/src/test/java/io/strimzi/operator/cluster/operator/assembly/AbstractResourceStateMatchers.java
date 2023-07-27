@@ -4,8 +4,8 @@
  */
 package io.strimzi.operator.cluster.operator.assembly;
 
-import io.strimzi.api.kafka.model.KafkaRebalance;
-import io.strimzi.api.kafka.model.balancing.KafkaRebalanceState;
+import io.strimzi.api.kafka.model.cruise_control.KafkaRebalance;
+import io.strimzi.api.kafka.model.cruise_control.KafkaRebalanceState;
 import io.strimzi.api.kafka.model.status.Condition;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;

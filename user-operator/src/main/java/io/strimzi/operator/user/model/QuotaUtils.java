@@ -4,7 +4,7 @@
  */
 package io.strimzi.operator.user.model;
 
-import io.strimzi.api.kafka.model.KafkaUserQuotas;
+import io.strimzi.api.kafka.model.user.KafkaUserQuotas;
 import org.apache.kafka.common.quota.ClientQuotaAlteration;
 
 import java.util.HashSet;

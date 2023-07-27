@@ -4,6 +4,8 @@
  */
 package io.strimzi.api.kafka.model;
 
+import io.strimzi.api.kafka.model.mirror_maker2.KafkaMirrorMaker2;
+
 /**
  * This test ensures we get a correct tree of POJOs when reading a JSON/YAML `KafkaMirrorMaker2` resource.
  */

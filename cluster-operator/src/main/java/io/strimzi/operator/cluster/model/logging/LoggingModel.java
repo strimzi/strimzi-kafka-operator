@@ -5,8 +5,8 @@
 package io.strimzi.operator.cluster.model.logging;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
-import io.strimzi.api.kafka.model.HasConfigurableLogging;
-import io.strimzi.api.kafka.model.Logging;
+import io.strimzi.api.kafka.model.common.HasConfigurableLogging;
+import io.strimzi.api.kafka.model.common.Logging;
 import io.strimzi.operator.common.Reconciliation;
 
 /**

@@ -4,10 +4,10 @@
  */
 package io.strimzi.systemtest.security.custom;
 
-import io.strimzi.api.kafka.model.AclOperation;
-import io.strimzi.api.kafka.model.KafkaAuthorizationSimple;
+import io.strimzi.api.kafka.model.acl.AclOperation;
+import io.strimzi.api.kafka.model.authorization.KafkaAuthorizationSimple;
 import io.strimzi.api.kafka.model.KafkaResources;
-import io.strimzi.api.kafka.model.KafkaUser;
+import io.strimzi.api.kafka.model.user.KafkaUser;
 import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationTls;
 import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;

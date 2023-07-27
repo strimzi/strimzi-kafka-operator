@@ -243,16 +243,16 @@
                                 <argument>https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.23/</argument>
                                 <argument>modules/appendix_crds.adoc</argument>
                                 <argument>io.strimzi.api.kafka.model.Kafka</argument>
-                                <argument>io.strimzi.api.kafka.model.KafkaConnect</argument>
+                                <argument>io.strimzi.api.kafka.model.connect.KafkaConnect</argument>
                                 <argument>io.strimzi.api.kafka.model.KafkaTopic</argument>
-                                <argument>io.strimzi.api.kafka.model.KafkaUser</argument>
-                                <argument>io.strimzi.api.kafka.model.KafkaMirrorMaker</argument>
-                                <argument>io.strimzi.api.kafka.model.KafkaBridge</argument>
-                                <argument>io.strimzi.api.kafka.model.KafkaConnector</argument>
-                                <argument>io.strimzi.api.kafka.model.KafkaMirrorMaker2</argument>
-                                <argument>io.strimzi.api.kafka.model.KafkaRebalance</argument>
+                                <argument>io.strimzi.api.kafka.model.user.KafkaUser</argument>
+                                <argument>io.strimzi.api.kafka.model.mirror_maker.KafkaMirrorMaker</argument>
+                                <argument>io.strimzi.api.kafka.model.bridge.KafkaBridge</argument>
+                                <argument>io.strimzi.api.kafka.model.connector.KafkaConnector</argument>
+                                <argument>io.strimzi.api.kafka.model.mirror_maker2.KafkaMirrorMaker2</argument>
+                                <argument>io.strimzi.api.kafka.model.cruise_control.KafkaRebalance</argument>
                                 <argument>io.strimzi.api.kafka.model.nodepool.KafkaNodePool</argument>
-                                <argument>io.strimzi.api.kafka.model.StrimziPodSet</argument>
+                                <argument>io.strimzi.api.kafka.model.podset.StrimziPodSet</argument>
                             </arguments>
                             <workingDirectory>${project.basedir}${file.separator}..${file.separator}documentation</workingDirectory>
                         </configuration>

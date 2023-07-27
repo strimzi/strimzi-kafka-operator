@@ -5,14 +5,14 @@
 package io.strimzi.operator.cluster.model;
 
 import io.fabric8.kubernetes.api.model.VolumeMount;
-import io.strimzi.api.kafka.model.CertAndKeySecretSource;
-import io.strimzi.api.kafka.model.KafkaAuthorization;
-import io.strimzi.api.kafka.model.KafkaAuthorizationCustom;
-import io.strimzi.api.kafka.model.KafkaAuthorizationKeycloak;
-import io.strimzi.api.kafka.model.KafkaAuthorizationOpa;
-import io.strimzi.api.kafka.model.KafkaAuthorizationSimple;
+import io.strimzi.api.kafka.model.common.CertAndKeySecretSource;
+import io.strimzi.api.kafka.model.authorization.KafkaAuthorization;
+import io.strimzi.api.kafka.model.authorization.KafkaAuthorizationCustom;
+import io.strimzi.api.kafka.model.authorization.KafkaAuthorizationKeycloak;
+import io.strimzi.api.kafka.model.authorization.KafkaAuthorizationOpa;
+import io.strimzi.api.kafka.model.authorization.KafkaAuthorizationSimple;
 import io.strimzi.api.kafka.model.KafkaResources;
-import io.strimzi.api.kafka.model.Rack;
+import io.strimzi.api.kafka.model.common.Rack;
 import io.strimzi.api.kafka.model.listener.KafkaListenerAuthentication;
 import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationCustom;
 import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationOAuth;

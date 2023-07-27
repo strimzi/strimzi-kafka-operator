@@ -4,6 +4,7 @@
  */
 package io.strimzi.api.kafka.model;
 
+import io.strimzi.api.kafka.model.mirror_maker2.KafkaMirrorMaker2;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.exceptions.KubeClusterException;
 

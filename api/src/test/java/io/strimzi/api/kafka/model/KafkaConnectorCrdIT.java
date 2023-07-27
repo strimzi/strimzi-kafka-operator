@@ -4,6 +4,7 @@
  */
 package io.strimzi.api.kafka.model;
 
+import io.strimzi.api.kafka.model.connector.KafkaConnector;
 import io.strimzi.test.TestUtils;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;

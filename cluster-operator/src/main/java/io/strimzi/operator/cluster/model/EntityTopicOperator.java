@@ -16,8 +16,9 @@ import io.fabric8.kubernetes.api.model.rbac.RoleRef;
 import io.fabric8.kubernetes.api.model.rbac.RoleRefBuilder;
 import io.fabric8.kubernetes.api.model.rbac.Subject;
 import io.fabric8.kubernetes.api.model.rbac.SubjectBuilder;
-import io.strimzi.api.kafka.model.EntityTopicOperatorSpec;
-import io.strimzi.api.kafka.model.JvmOptions;
+import io.strimzi.api.kafka.model.entity_operator.EntityTopicOperatorSpec;
+import io.strimzi.api.kafka.model.common.JvmOptions;
+import io.strimzi.api.kafka.model.common.Probe;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.ProbeBuilder;
@@ -81,7 +82,7 @@ public class EntityTopicOperator extends AbstractModel implements SupportsLoggin
 
     private LoggingModel logging;
 
-    private io.strimzi.api.kafka.model.Probe startupProbeOptions;
+    private Probe startupProbeOptions;
 
     /**
      * @param reconciliation   The reconciliation

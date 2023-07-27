@@ -4,7 +4,7 @@
  */
 package io.strimzi.operator.user.operator;
 
-import io.strimzi.api.kafka.model.KafkaUserQuotas;
+import io.strimzi.api.kafka.model.user.KafkaUserQuotas;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;

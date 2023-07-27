@@ -4,6 +4,8 @@
  */
 package io.strimzi.api.kafka.model;
 
+import io.strimzi.api.kafka.model.jmx.kafka.KafkaJmxAuthenticationPassword;
+import io.strimzi.api.kafka.model.jmx.kafka.KafkaJmxOptions;
 import io.strimzi.test.TestUtils;
 import org.junit.jupiter.api.Test;
 
