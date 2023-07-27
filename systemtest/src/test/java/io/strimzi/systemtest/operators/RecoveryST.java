@@ -58,11 +58,11 @@ class RecoveryST extends AbstractST {
         String kafkaName = KafkaResource.getStrimziPodSetName(sharedClusterName);
         String kafkaUid = StrimziPodSetUtils.getStrimziPodSetUID(Constants.TEST_SUITE_NAMESPACE, kafkaName);
 
-        kubeClient().getClient().apps().deployments().inNamespace(Constants.TEST_SUITE_NAMESPACE).withName(Constants.STRIMZI_DEPLOYMENT_NAME).withTimeoutInMillis(600_000L).scale(0);
+        kubeClient().getClient().apps().deployments().inNamespace(clusterOperator.getDeploymentNamespace()).withName(clusterOperator.getClusterOperatorName()).withTimeoutInMillis(600_000L).scale(0);
         StrimziPodSetUtils.deleteStrimziPodSet(Constants.TEST_SUITE_NAMESPACE, kafkaName);
 
         PodUtils.waitForPodsWithPrefixDeletion(kafkaName);
-        kubeClient().getClient().apps().deployments().inNamespace(Constants.TEST_SUITE_NAMESPACE).withName(Constants.STRIMZI_DEPLOYMENT_NAME).withTimeoutInMillis(600_000L).scale(1);
+        kubeClient().getClient().apps().deployments().inNamespace(clusterOperator.getDeploymentNamespace()).withName(clusterOperator.getClusterOperatorName()).withTimeoutInMillis(600_000L).scale(1);
 
         LOGGER.info("Waiting for recovery {}", kafkaName);
         StrimziPodSetUtils.waitForStrimziPodSetRecovery(Constants.TEST_SUITE_NAMESPACE, kafkaName, kafkaUid);
@@ -76,11 +76,11 @@ class RecoveryST extends AbstractST {
         String zookeeperName = KafkaResources.zookeeperStatefulSetName(sharedClusterName);
         String zookeeperUid = StrimziPodSetUtils.getStrimziPodSetUID(Constants.TEST_SUITE_NAMESPACE, zookeeperName);
 
-        kubeClient().getClient().apps().deployments().inNamespace(Constants.TEST_SUITE_NAMESPACE).withName(Constants.STRIMZI_DEPLOYMENT_NAME).withTimeoutInMillis(600_000L).scale(0);
+        kubeClient().getClient().apps().deployments().inNamespace(clusterOperator.getDeploymentNamespace()).withName(clusterOperator.getClusterOperatorName()).withTimeoutInMillis(600_000L).scale(0);
         StrimziPodSetUtils.deleteStrimziPodSet(Constants.TEST_SUITE_NAMESPACE, zookeeperName);
 
         PodUtils.waitForPodsWithPrefixDeletion(zookeeperName);
-        kubeClient().getClient().apps().deployments().inNamespace(Constants.TEST_SUITE_NAMESPACE).withName(Constants.STRIMZI_DEPLOYMENT_NAME).withTimeoutInMillis(600_000L).scale(1);
+        kubeClient().getClient().apps().deployments().inNamespace(clusterOperator.getDeploymentNamespace()).withName(clusterOperator.getClusterOperatorName()).withTimeoutInMillis(600_000L).scale(1);
 
         LOGGER.info("Waiting for recovery {}", zookeeperName);
         StrimziPodSetUtils.waitForStrimziPodSetRecovery(Constants.TEST_SUITE_NAMESPACE, zookeeperName, zookeeperUid);

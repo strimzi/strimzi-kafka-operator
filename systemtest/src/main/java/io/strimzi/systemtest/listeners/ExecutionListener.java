@@ -66,7 +66,9 @@ public class ExecutionListener implements TestExecutionListener {
                         // Dynamic configuration also because in DynamicConfSharedST we use @TestFactory
                         testTag.getName().equals(Constants.DYNAMIC_CONFIGURATION) ||
                         // Tracing, because we deploy Jaeger operator inside additional namespace
-                        testTag.getName().equals(Constants.TRACING)) {
+                        testTag.getName().equals(Constants.TRACING) ||
+                        // KafkaVersionsST, because here we use @ParameterizedTest
+                        testTag.getName().equals(Constants.KAFKA_SMOKE)) {
                     return true;
                 }
             }
