@@ -249,7 +249,6 @@ public class KafkaNodePoolST extends AbstractST {
             .endSpec()
             .build();
 
-        // Create in order NodePool A, B and then Kafka
         resourceManager.createResourceWithWait(extensionContext, poolA, poolB, kafka);
         PodUtils.waitUntilPodStabilityReplicasCount(testStorage.getNamespaceName(), KafkaResource.getStrimziPodSetName(testStorage.getClusterName(), nodePoolNameA), 1);
         PodUtils.waitUntilPodStabilityReplicasCount(testStorage.getNamespaceName(), KafkaResource.getStrimziPodSetName(testStorage.getClusterName(), nodePoolNameB), 2);
