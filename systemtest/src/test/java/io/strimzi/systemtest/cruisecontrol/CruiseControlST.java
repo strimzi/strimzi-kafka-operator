@@ -27,7 +27,9 @@ import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.annotations.KRaftNotSupported;
+import io.strimzi.systemtest.annotations.KRaftWithoutUTONotSupported;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
+import io.strimzi.systemtest.annotations.UTONotSupported;
 import io.strimzi.systemtest.resources.crd.KafkaNodePoolResource;
 import io.strimzi.systemtest.resources.crd.KafkaRebalanceResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
@@ -80,7 +82,8 @@ public class CruiseControlST extends AbstractST {
     private static final String CRUISE_CONTROL_PARTITION_METRICS_SAMPLES_TOPIC = "strimzi.cruisecontrol.partitionmetricsamples"; // partitions 32 , rf - 2
 
     @IsolatedTest
-    @KRaftNotSupported("Topic Operator is not supported by KRaft mode and is used in this test class")
+    @KRaftWithoutUTONotSupported
+    @UTONotSupported("https://github.com/strimzi/strimzi-kafka-operator/issues/8864")
     void testAutoCreationOfCruiseControlTopicsWithResources(ExtensionContext extensionContext) {
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
 
@@ -235,7 +238,7 @@ public class CruiseControlST extends AbstractST {
     }
 
     @ParallelNamespaceTest
-    @KRaftNotSupported("Topic Operator is not supported by KRaft mode and is used in this test class")
+    @KRaftWithoutUTONotSupported
     void testCruiseControlTopicExclusion(ExtensionContext extensionContext) {
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(clusterOperator.getDeploymentNamespace(), extensionContext);
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());

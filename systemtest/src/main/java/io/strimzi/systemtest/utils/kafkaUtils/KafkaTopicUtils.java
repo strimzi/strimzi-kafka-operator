@@ -7,7 +7,9 @@ package io.strimzi.systemtest.utils.kafkaUtils;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.cli.KafkaCmdClient;
+import io.strimzi.systemtest.enums.ConditionStatus;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.ResourceOperation;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
@@ -126,11 +128,15 @@ public class KafkaTopicUtils {
      * Wait until KafkaTopic is in desired status
      * @param namespaceName Namespace name
      * @param topicName name of KafkaTopic
-     * @param state desired state
+     * @param conditionType desired state
      */
-    public static boolean waitForKafkaTopicStatus(String namespaceName, String topicName, Enum<?> state) {
+    public static boolean waitForKafkaTopicStatus(String namespaceName, String topicName, Enum<?> conditionType) {
+        return waitForKafkaTopicStatus(namespaceName, topicName, conditionType, ConditionStatus.True);
+    }
+
+    public static boolean waitForKafkaTopicStatus(String namespaceName, String topicName, Enum<?> conditionType, ConditionStatus conditionStatus) {
         return ResourceManager.waitForResourceStatus(KafkaTopicResource.kafkaTopicClient(), KafkaTopic.RESOURCE_KIND,
-            namespaceName, topicName, state, ResourceOperation.getTimeoutForResourceReadiness(KafkaTopic.RESOURCE_KIND));
+            namespaceName, topicName, conditionType, conditionStatus, ResourceOperation.getTimeoutForResourceReadiness(KafkaTopic.RESOURCE_KIND));
     }
 
     public static boolean waitForKafkaTopicReady(String namespaceName, String topicName) {
@@ -138,6 +144,9 @@ public class KafkaTopicUtils {
     }
 
     public static boolean waitForKafkaTopicNotReady(final String namespaceName, String topicName) {
+        if (Environment.isUnidirectionalTopicOperatorEnabled()) {
+            return waitForKafkaTopicStatus(namespaceName, topicName, Ready, ConditionStatus.False);
+        }
         return waitForKafkaTopicStatus(namespaceName, topicName, NotReady);
     }
 

@@ -10,7 +10,8 @@ import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControl
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.systemtest.AbstractST;
-import io.strimzi.systemtest.annotations.KRaftNotSupported;
+import io.strimzi.systemtest.Environment;
+import io.strimzi.systemtest.annotations.KRaftWithoutUTONotSupported;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaRebalanceTemplates;
@@ -44,7 +45,7 @@ public class CruiseControlApiST extends AbstractST {
     private final String cruiseControlApiClusterName = "cruise-control-api-cluster-name";
 
     @ParallelNamespaceTest
-    @KRaftNotSupported("Topic Operator is not supported by KRaft mode and is used in this test class")
+    @KRaftWithoutUTONotSupported()
     void testCruiseControlBasicAPIRequests(ExtensionContext extensionContext)  {
         final TestStorage testStorage = new TestStorage(extensionContext);
 
@@ -66,8 +67,10 @@ public class CruiseControlApiST extends AbstractST {
         assertThat(response, containsString("RUNNING"));
         assertThat(response, containsString("NO_TASK_IN_PROGRESS"));
 
-        CruiseControlUtils.verifyThatCruiseControlTopicsArePresent(testStorage.getNamespaceName());
-
+        // https://github.com/strimzi/strimzi-kafka-operator/issues/8864
+        if (!Environment.isUnidirectionalTopicOperatorEnabled()) {
+            CruiseControlUtils.verifyThatCruiseControlTopicsArePresent(testStorage.getNamespaceName());
+        }
         LOGGER.info("----> KAFKA REBALANCE <----");
 
         response = CruiseControlUtils.callApi(testStorage.getNamespaceName(), CruiseControlUtils.SupportedHttpMethods.GET, CruiseControlEndpoints.REBALANCE,  CruiseControlUtils.SupportedSchemes.HTTPS, true);

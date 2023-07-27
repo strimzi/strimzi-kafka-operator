@@ -268,6 +268,10 @@ public class Environment {
         return STRIMZI_FEATURE_GATES.contains(Constants.USE_KAFKA_NODE_POOLS);
     }
 
+    public static boolean isUnidirectionalTopicOperatorEnabled() {
+        return STRIMZI_FEATURE_GATES.contains(Constants.UNIDIRECTIONAL_TOPIC_OPERATOR);
+    }
+
     /**
      * Provides boolean information, if testing environment support shared memory (i.e., environment, where all
      * components share memory). In general, we use {@link Environment#RESOURCE_ALLOCATION_STRATEGY_DEFAULT} if env {@link Environment#RESOURCE_ALLOCATION_STRATEGY_ENV}

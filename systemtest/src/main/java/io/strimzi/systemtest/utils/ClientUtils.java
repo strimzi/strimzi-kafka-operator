@@ -183,6 +183,23 @@ public class ClientUtils {
         }
     }
 
+    public static void waitForClientNotContainsMessage(String jobName, String namespace, String message) {
+        waitForClientNotContainsMessage(jobName, namespace, message, true);
+    }
+
+    public static void waitForClientNotContainsMessage(String jobName, String namespace, String message, boolean deleteAfterSuccess) {
+        String jobPodName = PodUtils.getPodNameByPrefix(namespace, jobName);
+        LOGGER.info("Waiting for client Job: {}/{} to not contain message: [{}]", namespace, jobName, message);
+
+        TestUtils.waitFor("client Job to contain message: [" + message + "]", Constants.GLOBAL_POLL_INTERVAL, Constants.THROTTLING_EXCEPTION_TIMEOUT,
+            () -> !kubeClient().logsInSpecificNamespace(namespace, jobPodName).contains(message),
+            () -> JobUtils.logCurrentJobStatus(jobName, namespace));
+
+        if (deleteAfterSuccess) {
+            JobUtils.deleteJobWithWait(namespace, jobName);
+        }
+    }
+
     private static long timeoutForClientFinishJob(int messagesCount) {
         // need to add at least 2minutes for finishing the job
         return (long) messagesCount * 1000 + Duration.ofMinutes(2).toMillis();
