@@ -625,7 +625,7 @@ class ConnectST extends AbstractST {
                 .addToConfig("value.converter", "org.apache.kafka.connect.storage.StringConverter")
                 .withNewBuild()
                     .withPlugins(echoSinkPlugin)
-                    .withDockerOutput(KafkaConnectTemplates.dockerOutput(imageFullPath))
+                    .withOutput(KafkaConnectTemplates.dockerOutput(imageFullPath))
                 .endBuild()
             .endSpec()
             .build();

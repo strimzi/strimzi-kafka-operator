@@ -101,10 +101,10 @@ public class ClusterOperatorRbacST extends AbstractST {
             .endSpec()
             .build());
 
-        KafkaUtils.waitUntilKafkaStatusConditionContainsMessage(clusterName, clusterOperator.getDeploymentNamespace(), ".*Forbidden!.*");
+        KafkaUtils.waitUntilKafkaStatusConditionContainsMessage(clusterName, clusterOperator.getDeploymentNamespace(), ".*code=403.*");
         Condition kafkaStatusCondition = KafkaResource.kafkaClient().inNamespace(clusterOperator.getDeploymentNamespace()).withName(clusterName).get().getStatus().getConditions().stream().filter(con -> NotReady.toString().equals(con.getType())).findFirst().orElse(null);
         assertThat(kafkaStatusCondition, is(notNullValue()));
-        assertTrue(kafkaStatusCondition.getMessage().contains("Configured service account doesn't have access."));
+        assertTrue(kafkaStatusCondition.getMessage().contains("code=403"));
 
         resourceManager.createResourceWithoutWait(extensionContext, KafkaConnectTemplates.kafkaConnect(clusterName, clusterOperator.getDeploymentNamespace(), clusterName, 1)
             .editSpec()
@@ -112,9 +112,9 @@ public class ClusterOperatorRbacST extends AbstractST {
             .endSpec()
             .build());
 
-        KafkaConnectUtils.waitUntilKafkaConnectStatusConditionContainsMessage(clusterName, clusterOperator.getDeploymentNamespace(), ".*Forbidden!.*");
+        KafkaConnectUtils.waitUntilKafkaConnectStatusConditionContainsMessage(clusterName, clusterOperator.getDeploymentNamespace(), ".*code=403.*");
         Condition kafkaConnectStatusCondition = KafkaConnectResource.kafkaConnectClient().inNamespace(clusterOperator.getDeploymentNamespace()).withName(clusterName).get().getStatus().getConditions().stream().filter(con -> NotReady.toString().equals(con.getType())).findFirst().orElse(null);
         assertThat(kafkaConnectStatusCondition, is(notNullValue()));
-        assertTrue(kafkaConnectStatusCondition.getMessage().contains("Configured service account doesn't have access."));
+        assertTrue(kafkaConnectStatusCondition.getMessage().contains("code=403"));
     }
 }

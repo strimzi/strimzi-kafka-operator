@@ -347,7 +347,7 @@ public abstract class TracingAbstractST extends AbstractST {
                                 .build()
                         )
                         .build())
-                    .withDockerOutput(KafkaConnectTemplates.dockerOutput(imageFullPath))
+                    .withOutput(KafkaConnectTemplates.dockerOutput(imageFullPath))
                 .endBuild()
             .endSpec()
             .build());

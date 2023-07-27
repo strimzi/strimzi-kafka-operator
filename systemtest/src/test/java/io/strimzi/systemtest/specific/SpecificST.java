@@ -120,7 +120,7 @@ public class SpecificST extends AbstractST {
 
         // verify that in `infra-namespace` we are not able to deploy Kafka cluster
         KafkaUtils.waitUntilKafkaStatusConditionContainsMessage(testStorage.getClusterName(), clusterOperator.getDeploymentNamespace(),
-                ".*Forbidden!Configured service account doesn't have access.*");
+                ".*code=403.*");
 
         final Condition condition = KafkaResource.kafkaClient().inNamespace(clusterOperator.getDeploymentNamespace()).withName(testStorage.getClusterName()).get().getStatus().getConditions().stream().findFirst().get();
 

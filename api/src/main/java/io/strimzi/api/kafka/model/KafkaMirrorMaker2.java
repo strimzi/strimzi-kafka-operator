@@ -66,7 +66,7 @@ import java.util.function.Predicate;
         editableEnabled = false,
         generateBuilderPackage = false,
         builderPackage = Constants.FABRIC8_KUBERNETES_API,
-        refs = {@BuildableReference(CustomResource.class)}
+        refs = {@BuildableReference(CustomResource.class), @BuildableReference(io.fabric8.kubernetes.api.model.ObjectMeta.class)}
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({ "apiVersion", "kind", "metadata", "spec", "status" })

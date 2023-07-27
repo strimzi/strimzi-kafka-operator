@@ -8,6 +8,7 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
+import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.StrimziPodSet;
@@ -63,8 +64,8 @@ public class ReconcilerUtils {
                 rr -> Future.succeededFuture(),
                 e -> {
                     if (desired == null
-                            && e.getMessage() != null
-                            && e.getMessage().contains("Message: Forbidden!")) {
+                            && e instanceof KubernetesClientException kce
+                            && kce.getCode() == 403) {
                         LOGGER.debugCr(reconciliation, "Ignoring forbidden access to ClusterRoleBindings resource which does not seem to be required.");
                         return Future.succeededFuture();
                     }

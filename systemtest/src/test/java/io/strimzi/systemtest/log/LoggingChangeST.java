@@ -270,10 +270,10 @@ class LoggingChangeST extends AbstractST {
             .editSpec()
                 .editEntityOperator()
                     .editTopicOperator()
-                        .withInlineLogging(ilOff)
+                        .withLogging(ilOff)
                     .endTopicOperator()
                     .editUserOperator()
-                        .withInlineLogging(ilOff)
+                        .withLogging(ilOff)
                     .endUserOperator()
                 .endEntityOperator()
             .endSpec()
@@ -471,7 +471,7 @@ class LoggingChangeST extends AbstractST {
             ScraperTemplates.scraperPod(testStorage.getNamespaceName(), testStorage.getScraperName()).build(),
             KafkaBridgeTemplates.kafkaBridge(testStorage.getClusterName(), KafkaResources.tlsBootstrapAddress(testStorage.getClusterName()), 1)
                 .editSpec()
-                    .withInlineLogging(ilOff)
+                    .withLogging(ilOff)
                 .endSpec()
                 .build());
 
@@ -681,7 +681,7 @@ class LoggingChangeST extends AbstractST {
 
         KafkaConnect connect = KafkaConnectTemplates.kafkaConnect(testStorage.getClusterName(), testStorage.getNamespaceName(), 1)
             .editSpec()
-                .withInlineLogging(ilOff)
+                .withLogging(ilOff)
             .endSpec()
             .editMetadata()
                 .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
@@ -811,7 +811,7 @@ class LoggingChangeST extends AbstractST {
             KafkaTemplates.kafkaEphemeral(clusterName, 3, 1)
                 .editSpec()
                     .editKafka()
-                        .withInlineLogging(ilOff)
+                        .withLogging(ilOff)
                     .endKafka()
                 .endSpec()
                 .build(),
@@ -1015,7 +1015,7 @@ class LoggingChangeST extends AbstractST {
         resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaPersistent(clusterName, 3, 1)
             .editOrNewSpec()
                 .editKafka()
-                    .withExternalLogging(el)
+                    .withLogging(el)
                 .endKafka()
             .endSpec()
             .build(),
@@ -1112,7 +1112,7 @@ class LoggingChangeST extends AbstractST {
         resourceManager.createResourceWithWait(extensionContext,
             KafkaMirrorMaker2Templates.kafkaMirrorMaker2(clusterName, clusterName + "-target", clusterName + "-source", 1, false)
                 .editOrNewSpec()
-                    .withInlineLogging(ilOff)
+                    .withLogging(ilOff)
                 .endSpec()
                 .build());
 
@@ -1328,7 +1328,7 @@ class LoggingChangeST extends AbstractST {
         resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaPersistent(clusterName, 3, 1)
             .editOrNewSpec()
                 .editKafka()
-                .withExternalLogging(new ExternalLoggingBuilder()
+                .withLogging(new ExternalLoggingBuilder()
                     .withNewValueFrom()
                         .withConfigMapKeyRef(new ConfigMapKeySelectorBuilder()
                                 .withKey("log4j.properties")

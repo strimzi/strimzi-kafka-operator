@@ -75,7 +75,7 @@ public class UserScalabilityST extends AbstractST {
                 usersList.add(
                     KafkaUserTemplates.tlsUser(clusterOperator.getDeploymentNamespace(), clusterName, userName + "-" + i)
                         .editOrNewSpec()
-                            .withKafkaUserAuthorizationSimple(usersAcl)
+                            .withAuthorization(usersAcl)
                         .endSpec()
                         .build()
                 );
@@ -83,7 +83,7 @@ public class UserScalabilityST extends AbstractST {
                 usersList.add(
                     KafkaUserTemplates.scramShaUser(clusterOperator.getDeploymentNamespace(), clusterName, userName + "-" + i)
                         .editOrNewSpec()
-                            .withKafkaUserAuthorizationSimple(usersAcl)
+                            .withAuthorization(usersAcl)
                         .endSpec()
                         .build()
                 );
@@ -114,7 +114,7 @@ public class UserScalabilityST extends AbstractST {
 
         listOfUsers.replaceAll(kafkaUser -> new KafkaUserBuilder(kafkaUser)
             .editSpec()
-                .withKafkaUserAuthorizationSimple(updatedAcl)
+                .withAuthorization(updatedAcl)
             .endSpec()
             .build());
 

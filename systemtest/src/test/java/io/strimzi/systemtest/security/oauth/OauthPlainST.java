@@ -348,7 +348,7 @@ public class OauthPlainST extends OauthAbstractST {
                     // needed for a verification of oauth configuration
                     .addToLoggers("connect.root.logger.level", "DEBUG")
                 .endInlineLogging()
-                .withJmxPrometheusExporterMetricsConfig(OAUTH_METRICS)
+                .withMetricsConfig(OAUTH_METRICS)
             .endSpec()
             .build();
         // This is required to be able to remove the TLS setting, the builder cannot remove it
@@ -628,7 +628,7 @@ public class OauthPlainST extends OauthAbstractST {
                 .withNamespace(clusterOperator.getDeploymentNamespace())
             .endMetadata()
             .editSpec()
-                .withJmxPrometheusExporterMetricsConfig(OAUTH_METRICS)
+                .withMetricsConfig(OAUTH_METRICS)
                 .withClusters(sourceClusterWithOauth, targetClusterWithOauth)
                 .editFirstMirror()
                     .withSourceCluster(kafkaSourceClusterName)
@@ -864,7 +864,7 @@ public class OauthPlainST extends OauthAbstractST {
                                     .withClientId("kafka-component")
                                 .endKafkaListenerAuthenticationOAuth()
                                 .build())
-                    .withJmxPrometheusExporterMetricsConfig(OAUTH_METRICS)
+                    .withMetricsConfig(OAUTH_METRICS)
                 .endKafka()
             .endSpec()
             .build());

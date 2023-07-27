@@ -543,7 +543,7 @@ public class AbstractUpgradeST extends AbstractST {
                     .editSpec()
                         .editOrNewBuild()
                             .withPlugins(fileSinkPlugin)
-                            .withDockerOutput(KafkaConnectTemplates.dockerOutput(imageFullPath))
+                            .withOutput(KafkaConnectTemplates.dockerOutput(imageFullPath))
                         .endBuild()
                         .addToConfig("key.converter.schemas.enable", false)
                         .addToConfig("value.converter.schemas.enable", false)
