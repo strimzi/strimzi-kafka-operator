@@ -72,7 +72,7 @@ The examples here show the configuration options as configured for external list
 <1> Listener type set to `oauth`.
 <2> URI of the token issuer used for authentication.
 <3> URI of the JWKS certificate endpoint used for local JWT validation.
-<4> The token claim (or key) that contains the actual username used to identify the user. Its value depends on the authorization server. If necessary, a JsonPath expression like `['user.info'].['user.id']` can be used to retrieve the username from a nested JSON structure. 
+<4> The token claim (or key) that contains the actual username used to identify the user. Its value depends on the authorization server. If necessary, a JsonPath expression like `['user.info'].['user.id']` can be used to retrieve the username from a token with a nested JSON structure. 
 <5> (Optional) Activates the Kafka re-authentication mechanism that enforces session expiry to the same length of time as the access token. If the specified value is less than the time left for the access token to expire, then the client will have to re-authenticate before the actual token expiry. By default, the session does not expire when the access token expires, and the client does not attempt re-authentication.
 <6> (Optional) Trusted certificates for TLS connection to the authorization server.
 <7> (Optional) Disable TLS hostname verification. Default is `false`.
@@ -103,7 +103,7 @@ The examples here show the configuration options as configured for external list
 <1> URI of the token introspection endpoint.
 <2> Client ID to identify the client.
 <3> Client Secret and client ID is used for authentication.
-<4> The token claim (or key) that contains the actual username used to identify the user. Its value depends on the authorization server. If necessary, a JsonPath expression like `['user.info'].['user.id']` can be used to retrieve the username from a nested JSON structure. 
+<4> The token claim (or key) that contains the actual username used to identify the user. Its value depends on the authorization server. If necessary, a JsonPath expression like `['user.info'].['user.id']` can be used to retrieve the username from a token with a nested JSON structure. 
 <5> (Optional) Activates the Kafka re-authentication mechanism that enforces session expiry to the same length of time as the access token. If the specified value is less than the time left for the access token to expire, then the client will have to re-authenticate before the actual token expiry. By default, the session does not expire when the access token expires, and the client does not attempt re-authentication.
 +
 Depending on how you apply OAuth 2.0 authentication, and the type of authorization server, there are additional (optional) configuration settings you can use:
