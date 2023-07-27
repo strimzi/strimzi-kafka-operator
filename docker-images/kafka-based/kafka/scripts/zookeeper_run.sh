@@ -37,6 +37,23 @@ export CERTS_STORE_PASSWORD
 
 mkdir -p /tmp/zookeeper
 
+# If it should run a check on DNS name resolving before starting ZooKeeper
+# This is useful in environment (i.e. minikube) where DNS registration is slow
+# It is also related to https://issues.apache.org/jira/browse/ZOOKEEPER-4708
+if [ -z "$ZOOKEEPER_DNS_CHECKS_DISABLED" ] || [ "$ZOOKEEPER_DNS_CHECKS_DISABLED" = "false" ]; then
+  echo "Trying to resolve ${BASE_HOSTNAME}-$((ZOOKEEPER_ID-1)).${BASE_FQDN} ..."
+  ipaddress=$(nslookup "${BASE_HOSTNAME}"-$((ZOOKEEPER_ID-1))."${BASE_FQDN}" | grep "Address" | awk '{print $2}' | sed -n 2p)
+
+  # check IP address is resolved and not 127.0.0.1, we want a "valid" Pod one
+  while [ -z "$ipaddress" ] || [ "$ipaddress" = "127.0.0.1" ]; do
+    sleep 1
+    echo "Trying to resolve ${BASE_HOSTNAME}-$((ZOOKEEPER_ID-1)).${BASE_FQDN} ..."
+    ipaddress=$(nslookup "${BASE_HOSTNAME}"-$((ZOOKEEPER_ID-1))."${BASE_FQDN}" | grep "Address" | awk '{print $2}' | sed -n 2p)
+  done
+fi
+
+echo "Resolved IP address $ipaddress"
+
 # Import certificates into keystore and truststore
 ./zookeeper_tls_prepare_certificates.sh
 
