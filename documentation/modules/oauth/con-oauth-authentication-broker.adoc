@@ -93,6 +93,8 @@ NOTE: All communication with the authorization server should be performed using 
 You can configure a certificate truststore as a Kubernetes Secret in your Strimzi project namespace, and use a `tlsTrustedCertificates` attribute to point to the Kubernetes Secret containing the truststore file.
 
 You might want to configure a `userNameClaim` to properly extract a username from the JWT token.
+If required, you can use a JsonPath expression like `['user.info'].['user.id']` to retrieve the username from a nested JSON structure.  
+
 If you want to use Kafka ACL authorization, you need to identify the user by their username during authentication.
 (The `sub` claim in JWT tokens is typically a unique ID, not a username.)
 
@@ -111,8 +113,8 @@ spec:
         tls: true
         authentication:
           type: *oauth*
-          validIssuerUri: <__https://<auth-server-address>/auth/realms/tls__>
-          jwksEndpointUri: <__https://<auth-server-address>/auth/realms/tls/protocol/openid-connect/certs__>
+          validIssuerUri: <https://<auth_server_address>/auth/realms/tls>
+          jwksEndpointUri: <https://<auth_server_address>/auth/realms/tls/protocol/openid-connect/certs>
           userNameClaim: preferred_username
           maxSecondsWithoutReauthentication: 3600
           tlsTrustedCertificates:
@@ -149,8 +151,8 @@ spec:
           clientSecret:
             secretName: my-cluster-oauth
             key: clientSecret
-          validIssuerUri: <__https://<auth-server-address>/auth/realms/tls__>
-          introspectionEndpointUri: <__https://<auth-server-address>/auth/realms/tls/protocol/openid-connect/token/introspect__>
+          validIssuerUri: <https://<auth_server_-_address>/auth/realms/tls>
+          introspectionEndpointUri: <https://<auth_server_address>/auth/realms/tls/protocol/openid-connect/token/introspect>
           userNameClaim: preferred_username
           maxSecondsWithoutReauthentication: 3600
           tlsTrustedCertificates:
