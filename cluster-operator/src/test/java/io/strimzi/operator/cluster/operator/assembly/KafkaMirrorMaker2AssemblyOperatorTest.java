@@ -64,6 +64,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.concurrent.CopyOnWriteArraySet;
 
 import static java.util.Arrays.asList;
@@ -1082,12 +1083,12 @@ public class KafkaMirrorMaker2AssemblyOperatorTest {
 
         KafkaMirrorMaker2AssemblyOperator.addClusterToMirrorMaker2ConnectorConfig(config, cluster, prefix);
 
-        assertEquals(Map.of("prefixalias", "sourceClusterAlias",
+        assertEquals(new TreeMap(Map.of("prefixalias", "sourceClusterAlias",
                 "prefixsasl.jaas.config", "org.apache.kafka.common.security.plain.PlainLoginModule required username=\"shaza\" password=\"${file:/tmp/strimzi-mirrormaker2-connector.properties:sourceClusterAlias.sasl.password}\";",
                 "prefixsecurity.protocol", "SASL_PLAINTEXT",
                         "prefixsasl.mechanism", "PLAIN",
-                "prefixbootstrap.servers", "sourceClusterAlias.sourceNamespace.svc:9092"),
-                config);
+                "prefixbootstrap.servers", "sourceClusterAlias.sourceNamespace.svc:9092")),
+                new TreeMap(config));
     }
 
     @Test
@@ -1108,12 +1109,12 @@ public class KafkaMirrorMaker2AssemblyOperatorTest {
 
         KafkaMirrorMaker2AssemblyOperator.addClusterToMirrorMaker2ConnectorConfig(config, cluster, prefix);
 
-        assertEquals(Map.of("prefixalias", "sourceClusterAlias",
+        assertEquals(new TreeMap(Map.of("prefixalias", "sourceClusterAlias",
                         "prefixsasl.jaas.config", "org.apache.kafka.common.security.scram.ScramLoginModule required username=\"shaza\" password=\"${file:/tmp/strimzi-mirrormaker2-connector.properties:sourceClusterAlias.sasl.password}\";",
                         "prefixsecurity.protocol", "SASL_PLAINTEXT",
                         "prefixsasl.mechanism", "SCRAM-SHA-512",
-                        "prefixbootstrap.servers", "sourceClusterAlias.sourceNamespace.svc:9092"),
-                config);
+                        "prefixbootstrap.servers", "sourceClusterAlias.sourceNamespace.svc:9092")),
+                new TreeMap(config));
     }
 
     @Test
@@ -1149,7 +1150,7 @@ public class KafkaMirrorMaker2AssemblyOperatorTest {
         assertEquals(Map.of(
                 "prefixalias", "sourceClusterAlias",
                 "prefixbootstrap.servers", "sourceClusterAlias.sourceNamespace.svc:9092",
-                "prefixsasl.jaas.config", "org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required  oauth.client.secret=\"${file:/tmp/strimzi-mirrormaker2-connector.properties:sourceClusterAlias.oauth.client.secret}\" oauth.access.token=\"${file:/tmp/strimzi-mirrormaker2-connector.properties:sourceClusterAlias.oauth.access.token}\" oauth.refresh.token=\"${file:/tmp/strimzi-mirrormaker2-connector.properties:sourceClusterAlias.oauth.refresh.token}\" oauth.password.grant.password=\"${file:/tmp/strimzi-mirrormaker2-connector.properties:sourceClusterAlias.oauth.password.grant.password}\";",
+                "prefixsasl.jaas.config", "org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required oauth.client.secret=\"${file:/tmp/strimzi-mirrormaker2-connector.properties:sourceClusterAlias.oauth.client.secret}\" oauth.access.token=\"${file:/tmp/strimzi-mirrormaker2-connector.properties:sourceClusterAlias.oauth.access.token}\" oauth.refresh.token=\"${file:/tmp/strimzi-mirrormaker2-connector.properties:sourceClusterAlias.oauth.refresh.token}\" oauth.password.grant.password=\"${file:/tmp/strimzi-mirrormaker2-connector.properties:sourceClusterAlias.oauth.password.grant.password}\";",
                 "prefixsasl.login.callback.handler.class", "io.strimzi.kafka.oauth.client.JaasClientOauthLoginCallbackHandler",
                 "prefixsasl.mechanism", "OAUTHBEARER",
                 "prefixsecurity.protocol", "SASL_PLAINTEXT"),

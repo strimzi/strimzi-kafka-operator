@@ -63,6 +63,7 @@ import java.io.Serializable;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
@@ -532,10 +533,12 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
     private static String oauth(KafkaMirrorMaker2ClusterSpec cluster,
                                 Map<String, String> authProperties,
                                 KafkaClientAuthenticationOAuth oauth) {
-        Map<String, String> jaasOptions = new HashMap<>();
+        Map<String, String> jaasOptions = new LinkedHashMap<>();
         String oauthConfig = authProperties.get("OAUTH_CONFIG");
         var index = oauthConfig.indexOf("=");
-        jaasOptions.put(oauthConfig.substring(0, index), oauthConfig.substring(index + 1));
+        if (index != -1) {
+            jaasOptions.put(oauthConfig.substring(0, index), oauthConfig.substring(index + 1));
+        }
         if (oauth.getClientSecret() != null) {
             jaasOptions.put("oauth.client.secret", "${file:" + CONNECTORS_CONFIG_FILE + ":" + cluster.getAlias() + ".oauth.client.secret}");
         }
@@ -553,9 +556,9 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
             jaasOptions.put("oauth.ssl.truststore.password", "\"${file:" + CONNECTORS_CONFIG_FILE + ":oauth.ssl.truststore.password}\"");
             jaasOptions.put("oauth.ssl.truststore.type", "PKCS12");
         }
-
         return AuthenticationUtils.JaasConfig("org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule", jaasOptions);
     }
+
 
     private static String addTLSConfigToMirrorMaker2ConnectorConfig(Map<String, Object> config, KafkaMirrorMaker2ClusterSpec cluster, String configPrefix) {
         String securityProtocol = null;
