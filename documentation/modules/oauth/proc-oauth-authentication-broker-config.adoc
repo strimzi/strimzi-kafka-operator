@@ -56,23 +56,23 @@ The examples here show the configuration options as configured for external list
   type: loadbalancer
   tls: true
   authentication:
-    type: oauth <1>
-    validIssuerUri: <__https://<auth-server-address>/auth/realms/external__> <2>
-    jwksEndpointUri: <__https://<auth-server-address>/auth/realms/external/protocol/openid-connect/certs__> <3>
-    userNameClaim: preferred_username <4>
-    maxSecondsWithoutReauthentication: 3600 <5>
-    tlsTrustedCertificates: <6>
+    type: oauth # <1>
+    validIssuerUri: https://<auth_server_address>/auth/realms/external # <2>
+    jwksEndpointUri: https://<auth_server_address>/auth/realms/external/protocol/openid-connect/certs # <3>
+    userNameClaim: preferred_username # <4>
+    maxSecondsWithoutReauthentication: 3600 # <5>
+    tlsTrustedCertificates: # <6>
     - secretName: oauth-server-cert
       certificate: ca.crt
-    disableTlsHostnameVerification: true <7>
-    jwksExpirySeconds: 360 <8>
-    jwksRefreshSeconds: 300 <9>
-    jwksMinRefreshPauseSeconds: 1 <10>
+    disableTlsHostnameVerification: true # <7>
+    jwksExpirySeconds: 360 # <8>
+    jwksRefreshSeconds: 300 # <9>
+    jwksMinRefreshPauseSeconds: 1 # <10>
 ----
 <1> Listener type set to `oauth`.
 <2> URI of the token issuer used for authentication.
 <3> URI of the JWKS certificate endpoint used for local JWT validation.
-<4> The token claim (or key) that contains the actual user name in the token. The user name is the _principal_ used to identify the user. The `userNameClaim` value will depend on the authentication flow and the authorization server used.
+<4> The token claim (or key) that contains the actual username used to identify the user. Its value depends on the authorization server. If necessary, a JsonPath expression like `"['user.info'].['user.id']"` can be used to retrieve the username from nested JSON attributes within a token. 
 <5> (Optional) Activates the Kafka re-authentication mechanism that enforces session expiry to the same length of time as the access token. If the specified value is less than the time left for the access token to expire, then the client will have to re-authenticate before the actual token expiry. By default, the session does not expire when the access token expires, and the client does not attempt re-authentication.
 <6> (Optional) Trusted certificates for TLS connection to the authorization server.
 <7> (Optional) Disable TLS hostname verification. Default is `false`.
@@ -90,20 +90,20 @@ The examples here show the configuration options as configured for external list
   tls: true
   authentication:
     type: oauth
-    validIssuerUri: <__https://<auth-server-address>/auth/realms/external__>
-    introspectionEndpointUri: <__https://<auth-server-address>/auth/realms/external/protocol/openid-connect/token/introspect__> <1>
-    clientId: kafka-broker <2>
-    clientSecret: <3>
+    validIssuerUri: https://<auth_server_address>/auth/realms/external
+    introspectionEndpointUri: https://<auth_server_address>/auth/realms/external/protocol/openid-connect/token/introspect # <1>
+    clientId: kafka-broker # <2>
+    clientSecret: # <3>
       secretName: my-cluster-oauth
       key: clientSecret
-    userNameClaim: preferred_username <4>
-    maxSecondsWithoutReauthentication: 3600 <5>
+    userNameClaim: preferred_username # <4>
+    maxSecondsWithoutReauthentication: 3600 # <5>
 ----
 --
 <1> URI of the token introspection endpoint.
 <2> Client ID to identify the client.
 <3> Client Secret and client ID is used for authentication.
-<4> The token claim (or key) that contains the actual user name in the token. The user name is the _principal_ used to identify the user. The `userNameClaim` value will depend on the authorization server used.
+<4> The token claim (or key) that contains the actual username used to identify the user. Its value depends on the authorization server. If necessary, a JsonPath expression like `"['user.info'].['user.id']"` can be used to retrieve the username from nested JSON attributes within a token. 
 <5> (Optional) Activates the Kafka re-authentication mechanism that enforces session expiry to the same length of time as the access token. If the specified value is less than the time left for the access token to expire, then the client will have to re-authenticate before the actual token expiry. By default, the session does not expire when the access token expires, and the client does not attempt re-authentication.
 +
 Depending on how you apply OAuth 2.0 authentication, and the type of authorization server, there are additional (optional) configuration settings you can use:
@@ -114,28 +114,28 @@ Depending on how you apply OAuth 2.0 authentication, and the type of authorizati
   authentication:
     type: oauth
     # ...
-    checkIssuer: false <1>
-    checkAudience: true <2>
-    fallbackUserNameClaim: client_id <3>
-    fallbackUserNamePrefix: client-account- <4>
-    validTokenType: bearer <5>
-    userInfoEndpointUri: __https://OAUTH-SERVER-ADDRESS/auth/realms/external/protocol/openid-connect/userinfo__ <6>
-    enableOauthBearer: false <7>
-    enablePlain: true <8>
-    tokenEndpointUri: __https://OAUTH-SERVER-ADDRESS/auth/realms/external/protocol/openid-connect/token__ <9>
-    customClaimCheck: "@.custom == 'custom-value'" <10>
-    clientAudience: __AUDIENCE__ <11>
-    clientScope: __SCOPE__ <12>
-    connectTimeoutSeconds: 60 <13>
-    readTimeoutSeconds: 60 <14>
-    httpRetries: 2 <15>
-    httpRetryPauseMs: 300 <16>
-    groupsClaim: "$.groups" <17>
-    groupsClaimDelimiter: "," <18>
+    checkIssuer: false # <1>
+    checkAudience: true # <2>
+    fallbackUserNameClaim: client_id # <3>
+    fallbackUserNamePrefix: client-account- # <4>
+    validTokenType: bearer # <5>
+    userInfoEndpointUri: https://<auth_server_address>/auth/realms/external/protocol/openid-connect/userinfo # <6>
+    enableOauthBearer: false # <7>
+    enablePlain: true # <8>
+    tokenEndpointUri: https://<auth_server_address>/auth/realms/external/protocol/openid-connect/token # <9>
+    customClaimCheck: "@.custom == 'custom-value'" # <10>
+    clientAudience: audience # <11>
+    clientScope: scope # <12>
+    connectTimeoutSeconds: 60 # <13>
+    readTimeoutSeconds: 60 # <14>
+    httpRetries: 2 # <15>
+    httpRetryPauseMs: 300 # <16>
+    groupsClaim: "$.groups" # <17>
+    groupsClaimDelimiter: "," # <18>
 ----
 <1> If your authorization server does not provide an `iss` claim, it is not possible to perform an issuer check. In this situation, set `checkIssuer` to `false` and do not specify a `validIssuerUri`. Default is `true`.
 <2> If your authorization server provides an `aud` (audience) claim, and you want to enforce an audience check, set `checkAudience` to `true`. Audience checks identify the intended recipients of tokens. As a result, the Kafka broker will reject tokens that do not have its `clientId` in their `aud` claim. Default is `false`.
-<3> An authorization server may not provide a single attribute to identify both regular users and clients. When a client authenticates in its own name, the server might provide a _client ID_. When a user authenticates using a username and password, to obtain a refresh token or an access token, the server might provide a _username_ attribute in addition to a client ID. Use this fallback option to specify the username claim (attribute) to use if a primary user ID attribute is not available.
+<3> An authorization server may not provide a single attribute to identify both regular users and clients. When a client authenticates in its own name, the server might provide a _client ID_. When a user authenticates using a username and password to obtain a refresh token or an access token, the server might provide a _username_ attribute in addition to a client ID. Use this fallback option to specify the username claim (attribute) to use if a primary user ID attribute is not available. If necessary, a JsonPath expression like `"['client.info'].['client.id']"` can be used to retrieve the fallback username  to retrieve the username from nested JSON attributes within a token.
 <4> In situations where `fallbackUserNameClaim` is applicable, it may also be necessary to prevent name collisions between the values of the username claim, and those of the fallback username claim. Consider a situation where a client called `producer` exists, but also a regular user called `producer` exists. In order to differentiate between the two, you can use this property to add a prefix to the user ID of the client.
 <5> (Only applicable when using `introspectionEndpointUri`) Depending on the authorization server you are using, the introspection endpoint may or may not return the _token type_ attribute, or it may contain different values. You can specify a valid token type value that the response from the introspection endpoint has to contain.
 <6> (Only applicable when using `introspectionEndpointUri`) The authorization server may be configured or implemented in such a way to not provide any identifiable information in an Introspection Endpoint response. In order to obtain the user ID, you can configure the URI of the `userinfo` endpoint as a fallback. The `userNameClaim`, `fallbackUserNameClaim`, and `fallbackUserNamePrefix` settings are applied to the response of `userinfo` endpoint.
