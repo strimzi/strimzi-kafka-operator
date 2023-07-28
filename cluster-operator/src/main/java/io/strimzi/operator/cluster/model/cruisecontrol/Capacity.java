@@ -219,7 +219,7 @@ public class Capacity {
         Integer limit = getResourceRequirement(resourceRequirements, ResourceRequirementType.LIMIT);
 
         if (limit != null) {
-            if (request == null || limit.intValue() == request.intValue()) {
+            if (request == null) {
                 return new CpuCapacity(CpuCapacity.milliCpuToCpu(limit));
             } else {
                 return new CpuCapacity(CpuCapacity.milliCpuToCpu(request));
