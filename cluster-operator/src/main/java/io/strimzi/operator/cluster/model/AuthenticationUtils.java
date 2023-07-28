@@ -458,7 +458,7 @@ public class AuthenticationUtils {
             if (key.contains("=") || key.contains(";")) {
                 throw new IllegalArgumentException("Keys must not contain '=' or ';'");
             }
-            if (moduleName.contains("=") || moduleName.contains(";") || moduleName.isEmpty()) {
+            if (moduleName.isEmpty() || moduleName.contains(";") || moduleName.contains("=")) {
                 throw new IllegalArgumentException("module name must be not empty and must not contain '=' or ';'");
             } else {
                 joiner.add(key + "=\"" + value + "\"");
