@@ -451,7 +451,7 @@ public class KafkaBrokerConfigurationBuilder {
                 addOption(oauthBearerOptions, "unsecuredLoginStringClaim_sub", "thePrincipalName");
                 oauthBearerOptions.putAll(jaasOptions);
                 writer.println(String.format("listener.name.%s.oauthbearer.sasl.jaas.config=%s", listenerNameInProperty,
-                        AuthenticationUtils.JaasConfig("org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule", oauthBearerOptions)));
+                        AuthenticationUtils.jaasConfig("org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule", oauthBearerOptions)));
                 enabledMechanisms.append("OAUTHBEARER");
             }
 
@@ -459,7 +459,7 @@ public class KafkaBrokerConfigurationBuilder {
                 addOption(jaasOptions, ServerPlainConfig.OAUTH_TOKEN_ENDPOINT_URI, oauth.getTokenEndpointUri());
                 writer.println(String.format("listener.name.%s.plain.sasl.server.callback.handler.class=io.strimzi.kafka.oauth.server.plain.JaasServerOauthOverPlainValidatorCallbackHandler", listenerNameInProperty));
                 writer.println(String.format("listener.name.%s.plain.sasl.jaas.config=%s", listenerNameInProperty,
-                        AuthenticationUtils.JaasConfig("org.apache.kafka.common.security.plain.PlainLoginModule", jaasOptions)));
+                        AuthenticationUtils.jaasConfig("org.apache.kafka.common.security.plain.PlainLoginModule", jaasOptions)));
                 if (enabledMechanisms.length() > 0) {
                     enabledMechanisms.append(",");
                 }
@@ -476,7 +476,7 @@ public class KafkaBrokerConfigurationBuilder {
         } else if (auth instanceof KafkaListenerAuthenticationScramSha512) {
             securityProtocol.add(String.format("%s:%s", listenerName, getSecurityProtocol(tls, true)));
             writer.println(String.format("listener.name.%s.scram-sha-512.sasl.jaas.config=%s", listenerNameInProperty,
-                    AuthenticationUtils.JaasConfig("org.apache.kafka.common.security.scram.ScramLoginModule", Map.of())));
+                    AuthenticationUtils.jaasConfig("org.apache.kafka.common.security.scram.ScramLoginModule", Map.of())));
             writer.println(String.format("listener.name.%s.sasl.enabled.mechanisms=SCRAM-SHA-512", listenerNameInProperty));
             writer.println();
         } else if (auth instanceof KafkaListenerAuthenticationTls) {
