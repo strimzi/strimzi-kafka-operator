@@ -465,7 +465,7 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
         config.putAll(mirror.getAdditionalProperties());
     }
 
-    static void addClusterToMirrorMaker2ConnectorConfig(Map<String, Object> config, KafkaMirrorMaker2ClusterSpec cluster, String configPrefix) {
+    /* test */ static void addClusterToMirrorMaker2ConnectorConfig(Map<String, Object> config, KafkaMirrorMaker2ClusterSpec cluster, String configPrefix) {
         config.put(configPrefix + "alias", cluster.getAlias());
         config.put(configPrefix + AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, cluster.getBootstrapServers());
 
