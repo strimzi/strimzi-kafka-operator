@@ -1,14 +1,4 @@
 {
-  "__inputs": [
-    {
-      "name": "DS_PROMETHEUS",
-      "label": "Prometheus",
-      "description": "",
-      "type": "datasource",
-      "pluginId": "prometheus",
-      "pluginName": "Prometheus"
-    }
-  ],
   "__requires": [
     {
       "type": "grafana",
@@ -52,7 +42,7 @@
   "gnetId": null,
   "graphTooltip": 0,
   "id": null,
-  "iteration": 1596037257491,
+  "iteration": 1687297471450,
   "links": [],
   "panels": [
     {
@@ -66,6 +56,12 @@
       ],
       "datasource": "${DS_PROMETHEUS}",
       "description": "The number of snapshot windows that are monitored",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {}
+        },
+        "overrides": []
+      },
       "format": "none",
       "gauge": {
         "maxValue": 100,
@@ -122,8 +118,8 @@
         {
           "expr": "kafka_cruisecontrol_loadmonitor_total_monitored_windows_value{namespace=\"$kubernetes_namespace\",strimzi_io_cluster=\"$strimzi_cluster_name\"}",
           "format": "time_series",
-          "instant": true,
           "hide": false,
+          "instant": true,
           "intervalFactor": 1,
           "legendFormat": "",
           "refId": "A"
@@ -153,6 +149,12 @@
       ],
       "datasource": "${DS_PROMETHEUS}",
       "description": "Number of time windows considered to be valid because of enough samples for computing a proposal.",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {}
+        },
+        "overrides": []
+      },
       "format": "none",
       "gauge": {
         "maxValue": 100,
@@ -207,8 +209,8 @@
         {
           "expr": "kafka_cruisecontrol_loadmonitor_valid_windows_value{namespace=\"$kubernetes_namespace\",strimzi_io_cluster=\"$strimzi_cluster_name\"}",
           "format": "time_series",
-          "instant": true,
           "hide": false,
+          "instant": true,
           "intervalFactor": 1,
           "refId": "A"
         }
@@ -237,6 +239,12 @@
       ],
       "datasource": "${DS_PROMETHEUS}",
       "description": "Number of ongoing executions running for proposals or rebalance",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {}
+        },
+        "overrides": []
+      },
       "format": "none",
       "gauge": {
         "maxValue": 100,
@@ -291,8 +299,8 @@
         {
           "expr": "kafka_cruisecontrol_executor_ongoing_execution_non_kafka_assigner_value{namespace=\"$kubernetes_namespace\",strimzi_io_cluster=\"$strimzi_cluster_name\"}",
           "format": "time_series",
-          "instant": true,
           "hide": false,
+          "instant": true,
           "intervalFactor": 1,
           "refId": "A"
         }
@@ -321,6 +329,12 @@
       ],
       "datasource": "${DS_PROMETHEUS}",
       "description": "The current balancedness score of the Kafka cluster as calculated by the anomaly detector (every 5 minutes by default)",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {}
+        },
+        "overrides": []
+      },
       "format": "none",
       "gauge": {
         "maxValue": 100,
@@ -375,8 +389,8 @@
         {
           "expr": "kafka_cruisecontrol_anomalydetector_balancedness_score_value{namespace=\"$kubernetes_namespace\",strimzi_io_cluster=\"$strimzi_cluster_name\"}",
           "format": "time_series",
-          "instant": true,
           "hide": false,
+          "instant": true,
           "intervalFactor": 1,
           "refId": "A"
         }
@@ -405,6 +419,12 @@
       ],
       "datasource": "${DS_PROMETHEUS}",
       "description": "Monitored Partition Percentage",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {}
+        },
+        "overrides": []
+      },
       "format": "percentunit",
       "gauge": {
         "maxValue": 100,
@@ -459,8 +479,8 @@
         {
           "expr": "kafka_cruisecontrol_loadmonitor_monitored_partitions_percentage_value{namespace=\"$kubernetes_namespace\",strimzi_io_cluster=\"$strimzi_cluster_name\"}",
           "format": "time_series",
-          "instant": true,
           "hide": false,
+          "instant": true,
           "intervalFactor": 1,
           "refId": "A"
         }
@@ -479,6 +499,7 @@
       "valueName": "current"
     },
     {
+      "datasource": null,
       "gridPos": {
         "h": 1,
         "w": 24,
@@ -496,6 +517,13 @@
       "dashes": false,
       "datasource": "${DS_PROMETHEUS}",
       "description": "Goal Violation Rate",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {},
+          "links": []
+        },
+        "overrides": []
+      },
       "fill": 1,
       "fillGradient": 0,
       "gridPos": {
@@ -504,6 +532,7 @@
         "x": 0,
         "y": 5
       },
+      "hiddenSeries": false,
       "id": 106,
       "legend": {
         "alignAsTable": false,
@@ -523,10 +552,12 @@
       "links": [],
       "nullPointMode": "null",
       "options": {
+        "alertThreshold": true,
         "dataLinks": []
       },
       "paceLength": 10,
       "percentage": false,
+      "pluginVersion": "7.3.7",
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
@@ -595,6 +626,13 @@
       "dashes": false,
       "datasource": "${DS_PROMETHEUS}",
       "description": "Disk read failures reported by Kafka",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {},
+          "links": []
+        },
+        "overrides": []
+      },
       "fill": 1,
       "fillGradient": 0,
       "gridPos": {
@@ -603,6 +641,7 @@
         "x": 12,
         "y": 5
       },
+      "hiddenSeries": false,
       "id": 107,
       "legend": {
         "alignAsTable": false,
@@ -622,10 +661,12 @@
       "links": [],
       "nullPointMode": "null",
       "options": {
+        "alertThreshold": true,
         "dataLinks": []
       },
       "paceLength": 10,
       "percentage": false,
+      "pluginVersion": "7.3.7",
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
@@ -694,6 +735,13 @@
       "dashes": false,
       "datasource": "${DS_PROMETHEUS}",
       "description": "Partition Samples Fetcher Failure Rate",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {},
+          "links": []
+        },
+        "overrides": []
+      },
       "fill": 1,
       "fillGradient": 0,
       "gridPos": {
@@ -702,6 +750,7 @@
         "x": 0,
         "y": 13
       },
+      "hiddenSeries": false,
       "id": 117,
       "legend": {
         "alignAsTable": false,
@@ -721,10 +770,12 @@
       "links": [],
       "nullPointMode": "null",
       "options": {
+        "alertThreshold": true,
         "dataLinks": []
       },
       "paceLength": 10,
       "percentage": false,
+      "pluginVersion": "7.3.7",
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
@@ -793,6 +844,13 @@
       "dashes": false,
       "datasource": "${DS_PROMETHEUS}",
       "description": "Training Samples Fetcher Failure Rate",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {},
+          "links": []
+        },
+        "overrides": []
+      },
       "fill": 1,
       "fillGradient": 0,
       "gridPos": {
@@ -801,6 +859,7 @@
         "x": 12,
         "y": 13
       },
+      "hiddenSeries": false,
       "id": 118,
       "legend": {
         "alignAsTable": false,
@@ -820,10 +879,12 @@
       "links": [],
       "nullPointMode": "null",
       "options": {
+        "alertThreshold": true,
         "dataLinks": []
       },
       "paceLength": 10,
       "percentage": false,
+      "pluginVersion": "7.3.7",
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
@@ -892,6 +953,13 @@
       "dashes": false,
       "datasource": "${DS_PROMETHEUS}",
       "description": "Proposal Computation Time",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {},
+          "links": []
+        },
+        "overrides": []
+      },
       "fill": 1,
       "fillGradient": 0,
       "gridPos": {
@@ -900,6 +968,7 @@
         "x": 0,
         "y": 21
       },
+      "hiddenSeries": false,
       "id": 109,
       "legend": {
         "alignAsTable": false,
@@ -919,10 +988,12 @@
       "links": [],
       "nullPointMode": "null",
       "options": {
+        "alertThreshold": true,
         "dataLinks": []
       },
       "paceLength": 10,
       "percentage": false,
+      "pluginVersion": "7.3.7",
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
@@ -1008,6 +1079,13 @@
       "dashes": false,
       "datasource": "${DS_PROMETHEUS}",
       "description": "Cluster Model Creation Time",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {},
+          "links": []
+        },
+        "overrides": []
+      },
       "fill": 1,
       "fillGradient": 0,
       "gridPos": {
@@ -1016,6 +1094,7 @@
         "x": 12,
         "y": 21
       },
+      "hiddenSeries": false,
       "id": 111,
       "legend": {
         "alignAsTable": false,
@@ -1035,10 +1114,12 @@
       "links": [],
       "nullPointMode": "null",
       "options": {
+        "alertThreshold": true,
         "dataLinks": []
       },
       "paceLength": 10,
       "percentage": false,
+      "pluginVersion": "7.3.7",
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
@@ -1117,6 +1198,7 @@
     },
     {
       "collapsed": false,
+      "datasource": null,
       "gridPos": {
         "h": 1,
         "w": 24,
@@ -1135,6 +1217,13 @@
       "dashes": false,
       "datasource": "${DS_PROMETHEUS}",
       "description": "Rebalance Request Rate",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {},
+          "links": []
+        },
+        "overrides": []
+      },
       "fill": 1,
       "fillGradient": 0,
       "gridPos": {
@@ -1166,6 +1255,7 @@
       },
       "paceLength": 10,
       "percentage": false,
+      "pluginVersion": "7.3.7",
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
@@ -1234,6 +1324,13 @@
       "dashes": false,
       "datasource": "${DS_PROMETHEUS}",
       "description": "User Tasks Request Rate",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {},
+          "links": []
+        },
+        "overrides": []
+      },
       "fill": 1,
       "fillGradient": 0,
       "gridPos": {
@@ -1261,6 +1358,7 @@
       },
       "paceLength": 10,
       "percentage": false,
+      "pluginVersion": "7.3.7",
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
@@ -1325,6 +1423,13 @@
       "dashes": false,
       "datasource": "${DS_PROMETHEUS}",
       "description": "Proposal Request Rate",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {},
+          "links": []
+        },
+        "overrides": []
+      },
       "fill": 1,
       "fillGradient": 0,
       "gridPos": {
@@ -1356,6 +1461,7 @@
       },
       "paceLength": 10,
       "percentage": false,
+      "pluginVersion": "7.3.7",
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
@@ -1423,6 +1529,13 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "${DS_PROMETHEUS}",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {},
+          "links": []
+        },
+        "overrides": []
+      },
       "fill": 1,
       "fillGradient": 0,
       "gridPos": {
@@ -1451,6 +1564,7 @@
       },
       "paceLength": 10,
       "percentage": false,
+      "pluginVersion": "7.3.7",
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
@@ -1510,6 +1624,7 @@
     },
     {
       "collapsed": false,
+      "datasource": null,
       "gridPos": {
         "h": 1,
         "w": 24,
@@ -1527,6 +1642,13 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "${DS_PROMETHEUS}",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {},
+          "links": []
+        },
+        "overrides": []
+      },
       "fill": 1,
       "fillGradient": 0,
       "gridPos": {
@@ -1554,6 +1676,7 @@
       },
       "paceLength": 10,
       "percentage": false,
+      "pluginVersion": "7.3.7",
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
@@ -1617,6 +1740,13 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "${DS_PROMETHEUS}",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {},
+          "links": []
+        },
+        "overrides": []
+      },
       "fill": 1,
       "fillGradient": 0,
       "gridPos": {
@@ -1644,6 +1774,7 @@
       },
       "paceLength": 10,
       "percentage": false,
+      "pluginVersion": "7.3.7",
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
@@ -1707,6 +1838,13 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "${DS_PROMETHEUS}",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {},
+          "links": []
+        },
+        "overrides": []
+      },
       "fill": 1,
       "fillGradient": 0,
       "gridPos": {
@@ -1734,6 +1872,7 @@
       },
       "paceLength": 10,
       "percentage": false,
+      "pluginVersion": "7.3.7",
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
@@ -1798,6 +1937,13 @@
       "dashes": false,
       "datasource": "${DS_PROMETHEUS}",
       "description": "Kafka broker pods memory usage",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {},
+          "links": []
+        },
+        "overrides": []
+      },
       "fill": 1,
       "fillGradient": 0,
       "gridPos": {
@@ -1825,6 +1971,7 @@
       },
       "paceLength": 10,
       "percentage": false,
+      "pluginVersion": "7.3.7",
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
@@ -1890,6 +2037,13 @@
       "dashes": false,
       "datasource": "${DS_PROMETHEUS}",
       "description": "Aggregated Kafka broker pods CPU usage",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {},
+          "links": []
+        },
+        "overrides": []
+      },
       "fill": 1,
       "fillGradient": 0,
       "gridPos": {
@@ -1917,6 +2071,7 @@
       },
       "paceLength": 10,
       "percentage": false,
+      "pluginVersion": "7.3.7",
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
@@ -1977,7 +2132,7 @@
     }
   ],
   "refresh": "5s",
-  "schemaVersion": 19,
+  "schemaVersion": 26,
   "style": "dark",
   "tags": [
     "Strimzi",
@@ -1986,10 +2141,26 @@
   "templating": {
     "list": [
       {
+        "current": {},
+        "error": null,
+        "hide": 0,
+        "includeAll": false,
+        "label": "datasource",
+        "multi": false,
+        "name": "DS_PROMETHEUS",
+        "options": [],
+        "query": "prometheus",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "type": "datasource"
+      },
+      {
         "allValue": null,
         "current": {},
         "datasource": "${DS_PROMETHEUS}",
         "definition": "query_result(kafka_cruisecontrol_loadmonitor_valid_windows_value)",
+        "error": null,
         "hide": 0,
         "includeAll": false,
         "label": "Namespace",
@@ -2012,6 +2183,7 @@
         "current": {},
         "datasource": "${DS_PROMETHEUS}",
         "definition": "query_result(kafka_cruisecontrol_loadmonitor_valid_windows_value{namespace=\"$kubernetes_namespace\"})",
+        "error": null,
         "hide": 0,
         "includeAll": false,
         "label": "Cluster Name",
@@ -2063,5 +2235,5 @@
   "timezone": "",
   "title": "Strimzi Cruise Control",
   "uid": "8wCTC5Tmq",
-  "version": 2
+  "version": 3
 }
