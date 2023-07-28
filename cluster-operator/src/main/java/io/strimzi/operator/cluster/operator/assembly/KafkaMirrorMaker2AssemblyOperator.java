@@ -31,8 +31,8 @@ import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.api.kafka.model.status.KafkaMirrorMaker2Status;
 import io.strimzi.api.kafka.model.tracing.JaegerTracing;
 import io.strimzi.api.kafka.model.tracing.OpenTelemetryTracing;
-import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
+import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.model.AuthenticationUtils;
 import io.strimzi.operator.cluster.model.InvalidResourceException;
 import io.strimzi.operator.cluster.model.KafkaConnectCluster;
@@ -40,11 +40,11 @@ import io.strimzi.operator.cluster.model.KafkaMirrorMaker2Cluster;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.ModelUtils;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
+import io.strimzi.operator.cluster.operator.resource.SharedEnvironmentProvider;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationException;
 import io.strimzi.operator.common.ReconciliationLogger;
-import io.strimzi.operator.cluster.operator.resource.SharedEnvironmentProvider;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.VertxUtil;
 import io.strimzi.operator.common.operator.resource.DeploymentOperator;
@@ -63,7 +63,6 @@ import java.io.Serializable;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
@@ -493,22 +492,22 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
             String clientAuthType = authProperties.get(AuthenticationUtils.SASL_MECHANISM);
             if (KafkaClientAuthenticationPlain.TYPE_PLAIN.equals(clientAuthType)) {
                 saslMechanism = "PLAIN";
-                jaasConfig = AuthenticationUtils.JaasConfig("org.apache.kafka.common.security.plain.PlainLoginModule",
+                jaasConfig = AuthenticationUtils.jaasConfig("org.apache.kafka.common.security.plain.PlainLoginModule",
                         Map.of("username", authProperties.get(AuthenticationUtils.SASL_USERNAME),
                                 "password", "${file:" + CONNECTORS_CONFIG_FILE + ":" + cluster.getAlias() + ".sasl.password}"));
             } else if (KafkaClientAuthenticationScramSha256.TYPE_SCRAM_SHA_256.equals(clientAuthType)) {
                 saslMechanism = "SCRAM-SHA-256";
-                jaasConfig = AuthenticationUtils.JaasConfig("org.apache.kafka.common.security.scram.ScramLoginModule",
+                jaasConfig = AuthenticationUtils.jaasConfig("org.apache.kafka.common.security.scram.ScramLoginModule",
                         Map.of("username", authProperties.get(AuthenticationUtils.SASL_USERNAME),
                                 "password", "${file:" + CONNECTORS_CONFIG_FILE + ":" + cluster.getAlias() + ".sasl.password}"));
             } else if (KafkaClientAuthenticationScramSha512.TYPE_SCRAM_SHA_512.equals(clientAuthType)) {
                 saslMechanism = "SCRAM-SHA-512";
-                jaasConfig = AuthenticationUtils.JaasConfig("org.apache.kafka.common.security.scram.ScramLoginModule",
+                jaasConfig = AuthenticationUtils.jaasConfig("org.apache.kafka.common.security.scram.ScramLoginModule",
                         Map.of("username", authProperties.get(AuthenticationUtils.SASL_USERNAME),
                                 "password", "${file:" + CONNECTORS_CONFIG_FILE + ":" + cluster.getAlias() + ".sasl.password}"));
             } else if (KafkaClientAuthenticationOAuth.TYPE_OAUTH.equals(clientAuthType)) {
                 KafkaClientAuthenticationOAuth oauth  = (KafkaClientAuthenticationOAuth) cluster.getAuthentication();
-                jaasConfig = oauth(cluster, authProperties, oauth);
+                jaasConfig = oauthJaasConfig(cluster, authProperties, oauth);
                 saslMechanism = "OAUTHBEARER";
                 config.put(configPrefix + SaslConfigs.SASL_LOGIN_CALLBACK_HANDLER_CLASS, "io.strimzi.kafka.oauth.client.JaasClientOauthLoginCallbackHandler");
             }
@@ -530,11 +529,11 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
         config.putAll(cluster.getAdditionalProperties());
     }
 
-    private static String oauth(KafkaMirrorMaker2ClusterSpec cluster,
-                                Map<String, String> authProperties,
-                                KafkaClientAuthenticationOAuth oauth) {
-        Map<String, String> jaasOptions = new LinkedHashMap<>();
-        String oauthConfig = authProperties.get("OAUTH_CONFIG");
+    private static String oauthJaasConfig(KafkaMirrorMaker2ClusterSpec cluster,
+                                          Map<String, String> authProperties,
+                                          KafkaClientAuthenticationOAuth oauth) {
+        Map<String, String> jaasOptions = new HashMap<>();
+        String oauthConfig = authProperties.get(AuthenticationUtils.OAUTH_CONFIG);
         var index = oauthConfig.indexOf("=");
         if (index != -1) {
             jaasOptions.put(oauthConfig.substring(0, index), oauthConfig.substring(index + 1));
@@ -556,7 +555,7 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
             jaasOptions.put("oauth.ssl.truststore.password", "\"${file:" + CONNECTORS_CONFIG_FILE + ":oauth.ssl.truststore.password}\"");
             jaasOptions.put("oauth.ssl.truststore.type", "PKCS12");
         }
-        return AuthenticationUtils.JaasConfig("org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule", jaasOptions);
+        return AuthenticationUtils.jaasConfig("org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule", jaasOptions);
     }
 
 

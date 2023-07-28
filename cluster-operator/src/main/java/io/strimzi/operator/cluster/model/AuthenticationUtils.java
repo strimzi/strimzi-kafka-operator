@@ -45,7 +45,10 @@ public class AuthenticationUtils {
     private static final String TLS_AUTH_CERT = "TLS_AUTH_CERT";
     private static final String TLS_AUTH_KEY = "TLS_AUTH_KEY";
     private static final String SASL_PASSWORD_FILE = "SASL_PASSWORD_FILE";
-    private static final String OAUTH_CONFIG = "OAUTH_CONFIG";
+    /**
+     * Key for OAuth config
+     */
+    public static final String OAUTH_CONFIG = "OAUTH_CONFIG";
 
     /**
      * Validates Kafka client authentication for all components based on Apache Kafka clients.
@@ -436,17 +439,18 @@ public class AuthenticationUtils {
 
     /**
      * Generates a JAAS configuration string based on the provided module name and options.
+     * The flag will always be "required".
      *
      * @param moduleName The name of the JAAS module to be configured.
      * @param options A Map containing the options to be set for the JAAS module.
      *               The options are represented as key-value pairs, where both the key and
      *               the value must be non-null String objects.
-     * @return A String representing the JAAS configuration.
+     * @return The JAAS configuration.
      * @throws IllegalArgumentException If the moduleName is empty, or it contains '=' or ';',
      *                                  or if any key or value in the options map is empty,
      *                                  or they contain '=' or ';'.
      */
-    public static String JaasConfig(String moduleName, Map<String, String> options) {
+    public static String jaasConfig(String moduleName, Map<String, String> options) {
         StringJoiner joiner = new StringJoiner(" ");
         for (Entry<String, String> entry : options.entrySet()) {
             String key = Objects.requireNonNull(entry.getKey());
