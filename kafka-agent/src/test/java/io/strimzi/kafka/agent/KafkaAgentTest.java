@@ -54,7 +54,7 @@ public class KafkaAgentTest {
         final Gauge brokerState = mock(Gauge.class);
         when(brokerState.value()).thenReturn((byte) 3);
         KafkaAgent agent = new KafkaAgent(brokerState, null, null);
-        context.setHandler(agent.getServerHandler());
+        context.setHandler(agent.getBrokerStateHandler());
         server.setHandler(context);
         server.start();
 
@@ -79,7 +79,7 @@ public class KafkaAgentTest {
         when(remainingSegments.value()).thenReturn((byte) 100);
 
         KafkaAgent agent = new KafkaAgent(brokerState, remainingLogs, remainingSegments);
-        context.setHandler(agent.getServerHandler());
+        context.setHandler(agent.getBrokerStateHandler());
         server.setHandler(context);
         server.start();
 
@@ -95,7 +95,7 @@ public class KafkaAgentTest {
     @Test
     public void testBrokerMetricNotFound() throws Exception {
         KafkaAgent agent = new KafkaAgent(null, null, null);
-        context.setHandler(agent.getServerHandler());
+        context.setHandler(agent.getBrokerStateHandler());
         server.setHandler(context);
         server.start();
 
