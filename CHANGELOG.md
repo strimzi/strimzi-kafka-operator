@@ -1,7 +1,7 @@
 # CHANGELOG
 
 ## 0.37.0
-
+* Support for the ppc64le platform
 
 ## 0.36.1
 
