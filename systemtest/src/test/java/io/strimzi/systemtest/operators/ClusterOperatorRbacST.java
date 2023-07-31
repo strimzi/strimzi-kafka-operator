@@ -106,7 +106,7 @@ public class ClusterOperatorRbacST extends AbstractST {
             .endSpec()
             .build());
 
-        KafkaUtils.waitUntilKafkaStatusConditionContainsMessage(clusterName, Constants.TEST_SUITE_NAMESPACE, ".*code=403!.*");
+        KafkaUtils.waitUntilKafkaStatusConditionContainsMessage(clusterName, clusterOperator.getDeploymentNamespace(), ".*code=403.*");
         Condition kafkaStatusCondition = KafkaResource.kafkaClient().inNamespace(Constants.TEST_SUITE_NAMESPACE).withName(clusterName).get().getStatus().getConditions().stream().filter(con -> NotReady.toString().equals(con.getType())).findFirst().orElse(null);
         assertThat(kafkaStatusCondition, is(notNullValue()));
         assertTrue(kafkaStatusCondition.getMessage().contains("code=403"));
