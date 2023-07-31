@@ -327,7 +327,7 @@ public class FeatureGatesST extends AbstractST {
             .endMetadata()
             .build();
 
-        KafkaNodePool kafkaNodePoolCr =  KafkaNodePoolTemplates.defaultKafkaNodePool(testStorage.getKafkaNodePoolName(), testStorage.getClusterName(), 3)
+        KafkaNodePool kafkaNodePoolCr =  KafkaNodePoolTemplates.defaultKafkaNodePool(testStorage.getNamespaceName(), testStorage.getKafkaNodePoolName(), testStorage.getClusterName(), 3)
             .editOrNewMetadata()
                 .withNamespace(testStorage.getNamespaceName())
             .endMetadata()

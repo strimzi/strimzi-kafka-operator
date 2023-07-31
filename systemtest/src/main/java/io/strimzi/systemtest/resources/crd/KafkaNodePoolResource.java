@@ -87,7 +87,7 @@ public class KafkaNodePoolResource implements ResourceType<KafkaNodePool> {
 
         String nodePoolName = Constants.KAFKA_NODE_POOL_PREFIX + hashStub(resource.getMetadata().getName());
 
-        KafkaNodePoolBuilder builder = KafkaNodePoolTemplates.defaultKafkaNodePool(nodePoolName, resource.getMetadata().getName(), resource.getSpec().getKafka().getReplicas())
+        KafkaNodePoolBuilder builder = KafkaNodePoolTemplates.defaultKafkaNodePool(resource.getMetadata().getNamespace(), nodePoolName, resource.getMetadata().getName(), resource.getSpec().getKafka().getReplicas())
             .editOrNewMetadata()
                 .withNamespace(resource.getMetadata().getNamespace())
                 .addToLabels(resource.getMetadata().getLabels())

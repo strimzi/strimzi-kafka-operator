@@ -106,7 +106,7 @@ public class KafkaNodePoolST extends AbstractST {
             .endMetadata()
             .build();
 
-        KafkaNodePool kafkaNodePoolCr =  KafkaNodePoolTemplates.defaultKafkaNodePool(kafkaNodePoolName, testStorage.getClusterName(), 3)
+        KafkaNodePool kafkaNodePoolCr =  KafkaNodePoolTemplates.defaultKafkaNodePool(testStorage.getNamespaceName(), kafkaNodePoolName, testStorage.getClusterName(), 3)
             .editOrNewMetadata()
                 .withNamespace(testStorage.getNamespaceName())
             .endMetadata()
@@ -226,7 +226,7 @@ public class KafkaNodePoolST extends AbstractST {
 
         LOGGER.info("Testing deployment of NodePools with pre-configured annotation: {} is creating Brokers with correct IDs", Annotations.ANNO_STRIMZI_IO_NODE_POOLS);
         // Deploy NodePool A with only 1 replica and give it annotation with 1 ID
-        KafkaNodePool poolA =  KafkaNodePoolTemplates.kafkaNodePoolBroker(testStorage.getNamespaceName(), nodePoolNameA, testStorage.getClusterName(), 1)
+        KafkaNodePool poolA =  KafkaNodePoolTemplates.kafkaNodePoolWithBrokerRole(testStorage.getNamespaceName(), nodePoolNameA, testStorage.getClusterName(), 1)
             .editOrNewMetadata()
                 .withAnnotations(Map.of(Annotations.ANNO_STRIMZI_IO_NEXT_NODE_IDS, "[5]"))
             .endMetadata()
@@ -238,7 +238,7 @@ public class KafkaNodePoolST extends AbstractST {
             .build();
 
         // Deploy NodePool B with 2 replicas and give it annotation with only  1 ID
-        KafkaNodePool poolB =  KafkaNodePoolTemplates.kafkaNodePoolBroker(testStorage.getNamespaceName(), nodePoolNameB, testStorage.getClusterName(), 2)
+        KafkaNodePool poolB =  KafkaNodePoolTemplates.kafkaNodePoolWithBrokerRole(testStorage.getNamespaceName(), nodePoolNameB, testStorage.getClusterName(), 2)
             .editOrNewMetadata()
                 .withAnnotations(Map.of(Annotations.ANNO_STRIMZI_IO_NEXT_NODE_IDS, "[6]"))
             .endMetadata()
