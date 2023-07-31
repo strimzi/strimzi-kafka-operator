@@ -94,24 +94,11 @@ prepare:
     script: |
       ./.azure/scripts/setup_shellcheck.sh
 
-  - name: Build strimzi images
+  - name: Build strimzi
     how: shell
     script: |
-      # build images
-      eval $(minikube docker-env)
-      ARCH=$(uname -m)
-      if [[ ${ARCH} == "aarch64" ]]; then
-        export DOCKER_BUILD_ARGS="--platform linux/arm64 --build-arg TARGETPLATFORM=linux/arm64"
-      fi
       export MVN_ARGS="-B -DskipTests -Dmaven.javadoc.skip=true --no-transfer-progress"
-      export DOCKER_REGISTRY="localhost:5000"
-      export DOCKER_ORG="strimzi"
-      export DOCKER_TAG="test"
-      
       make java_install
-      make docker_build
-      make docker_tag
-      make docker_push
 
 # Discover tmt defined tests in tests/ folder
 execute:
