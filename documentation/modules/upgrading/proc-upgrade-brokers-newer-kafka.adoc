@@ -145,5 +145,3 @@ IMPORTANT: From Kafka 3.0.0, when the `inter.broker.protocol.version` is set to 
 +
 * The Kafka cluster and clients are now using the new Kafka version.
 * The brokers are configured to send messages using the inter-broker protocol version and message format version of the new version of Kafka.
-
-Following the Kafka upgrade, if required, you can xref:proc-upgrading-consumers-streams-cooperative-rebalancing_{context}[upgrade consumers to use the incremental cooperative rebalance protocol].

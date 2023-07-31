@@ -17,5 +17,3 @@ You can xref:con-upgrade-cluster-{context}[upgrade Kubernetes with minimal downt
 . xref:assembly-upgrade-cluster-operator-{context}[Upgrade the Cluster Operator].
 
 . xref:assembly-upgrading-kafka-versions-{context}[Upgrade all Kafka brokers and client applications] to the latest supported Kafka version.
-
-. Optional: Upgrade consumers and Kafka Streams applications xref:proc-upgrading-consumers-streams-cooperative-rebalancing_{context}[to use the _incremental cooperative rebalance_ protocol] for partition rebalances.
