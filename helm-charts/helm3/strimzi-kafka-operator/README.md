@@ -95,7 +95,7 @@ the documentation for more details.
 | `watchAnyNamespace`                         | Watch the whole Kubernetes cluster (all namespaces)                             | `false`                      |
 | `defaultImageRegistry`                      | Default image registry for all the images                                       | `quay.io`                    |
 | `defaultImageRepository`                    | Default image registry for all the images                                       | `strimzi`                    |
-| `defaultImageTag`                           | Default image tag for all the images except Kafka Bridge                        | `0.36.0`                     |
+| `defaultImageTag`                           | Default image tag for all the images except Kafka Bridge                        | `0.36.1`                     |
 | `image.registry`                            | Override default Cluster Operator image registry                                | `nil`                        |
 | `image.repository`                          | Override default Cluster Operator image repository                              | `nil`                        |
 | `image.name`                                | Cluster Operator image name                                                     | `cluster-operator`           |
@@ -161,7 +161,7 @@ the documentation for more details.
 | `kafkaBridge.image.registry`                | Override default Kafka Bridge image registry                                    | `quay.io`                    |
 | `kafkaBridge.image.repository`              | Override default Kafka Bridge image repository                                  | `strimzi`                    |
 | `kafkaBridge.image.name`                    | Kafka Bridge image name                                                         | `kafka-bridge`               |
-| `kafkaBridge.image.tag`                     | Override default Kafka Bridge image tag                                         | `0.26.0`                     |
+| `kafkaBridge.image.tag`                     | Override default Kafka Bridge image tag                                         | `0.26.1`                     |
 | `kafkaBridge.image.digest`                  | Override Kafka Bridge image tag with digest                                     | `nil`                        |
 | `kafkaExporter.image.registry`              | Override default Kafka Exporter image registry                                  | `nil`                        |
 | `kafkaExporter.image.repository`            | Override default Kafka Exporter image repository                                | `nil`                        |

@@ -1,14 +1,4 @@
 {
-  "__inputs": [
-    {
-      "name": "DS_PROMETHEUS",
-      "label": "Prometheus",
-      "description": "",
-      "type": "datasource",
-      "pluginId": "prometheus",
-      "pluginName": "Prometheus"
-    }
-  ],
   "__requires": [
     {
       "type": "grafana",
@@ -51,7 +41,7 @@
   "editable": true,
   "gnetId": null,
   "graphTooltip": 0,
-  "iteration": 1600633283203,
+  "iteration": 1687301303076,
   "links": [],
   "panels": [
     {
@@ -77,6 +67,7 @@
       "description": "",
       "fieldConfig": {
         "defaults": {
+          "custom": {},
           "unit": "none"
         },
         "overrides": []
@@ -109,7 +100,7 @@
       },
       "paceLength": 10,
       "percentage": false,
-      "pluginVersion": "8.2.6",
+      "pluginVersion": "7.3.7",
       "pointradius": 2,
       "points": false,
       "renderer": "flot",
@@ -182,6 +173,7 @@
       "description": "",
       "fieldConfig": {
         "defaults": {
+          "custom": {},
           "unit": "none"
         },
         "overrides": []
@@ -214,7 +206,7 @@
       },
       "paceLength": 10,
       "percentage": false,
-      "pluginVersion": "8.2.6",
+      "pluginVersion": "7.3.7",
       "pointradius": 2,
       "points": false,
       "renderer": "flot",
@@ -287,6 +279,7 @@
       "description": "",
       "fieldConfig": {
         "defaults": {
+          "custom": {},
           "unit": "none"
         },
         "overrides": []
@@ -319,7 +312,7 @@
       },
       "paceLength": 10,
       "percentage": false,
-      "pluginVersion": "8.2.6",
+      "pluginVersion": "7.3.7",
       "pointradius": 2,
       "points": false,
       "renderer": "flot",
@@ -392,6 +385,7 @@
       "description": "",
       "fieldConfig": {
         "defaults": {
+          "custom": {},
           "unit": "none"
         },
         "overrides": []
@@ -424,7 +418,7 @@
       },
       "paceLength": 10,
       "percentage": false,
-      "pluginVersion": "8.2.6",
+      "pluginVersion": "7.3.7",
       "pointradius": 2,
       "points": false,
       "renderer": "flot",
@@ -495,6 +489,12 @@
       "dashes": false,
       "datasource": "${DS_PROMETHEUS}",
       "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {}
+        },
+        "overrides": []
+      },
       "fill": 1,
       "fillGradient": 0,
       "gridPos": {
@@ -523,7 +523,7 @@
       },
       "paceLength": 10,
       "percentage": false,
-      "pluginVersion": "8.2.6",
+      "pluginVersion": "7.3.7",
       "pointradius": 2,
       "points": false,
       "renderer": "flot",
@@ -594,6 +594,12 @@
       "dashes": false,
       "datasource": "${DS_PROMETHEUS}",
       "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {}
+        },
+        "overrides": []
+      },
       "fill": 1,
       "fillGradient": 0,
       "gridPos": {
@@ -622,7 +628,7 @@
       },
       "paceLength": 10,
       "percentage": false,
-      "pluginVersion": "8.2.6",
+      "pluginVersion": "7.3.7",
       "pointradius": 2,
       "points": false,
       "renderer": "flot",
@@ -688,7 +694,7 @@
     }
   ],
   "refresh": "5s",
-  "schemaVersion": 1,
+  "schemaVersion": 26,
   "style": "dark",
   "tags": [
     "Strimzi",
@@ -697,10 +703,27 @@
   "templating": {
     "list": [
       {
+        "current": {},
+        "error": null,
+        "hide": 0,
+        "includeAll": false,
+        "label": "datasource",
+        "multi": false,
+        "name": "DS_PROMETHEUS",
+        "options": [],
+        "query": "prometheus",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "type": "datasource"
+      },
+      {
+        "allFormat": "glob",
         "allValue": null,
         "current": {},
         "datasource": "${DS_PROMETHEUS}",
         "definition": "",
+        "error": null,
         "hide": 0,
         "includeAll": false,
         "label": "Namespace",
@@ -719,10 +742,12 @@
         "useTags": false
       },
       {
+        "allFormat": "glob",
         "allValue": null,
         "current": {},
         "datasource": "${DS_PROMETHEUS}",
         "definition": "",
+        "error": null,
         "hide": 0,
         "includeAll": false,
         "label": "Cluster Name",
@@ -741,10 +766,12 @@
         "useTags": false
       },
       {
+        "allFormat": "glob",
         "allValue": ".*",
         "current": {},
         "datasource": "${DS_PROMETHEUS}",
         "definition": "",
+        "error": null,
         "hide": 0,
         "includeAll": true,
         "label": "Broker",
@@ -757,6 +784,7 @@
         "skipUrlSync": false,
         "sort": 0,
         "tagValuesQuery": "",
+        "tags": [],
         "tagsQuery": "",
         "type": "query",
         "useTags": false
@@ -795,5 +823,5 @@
   "timezone": "",
   "title": "Strimzi Kafka OAuth",
   "uid": "aa66282eda2b42a2b9304fb2934f940f",
-  "version": 1
+  "version": 2
 }
