@@ -34,11 +34,11 @@
   fromKafkaVersionsUrl: HEAD
   additionalTopics: 2
   imagesAfterOperations:
-    zookeeper: strimzi/kafka:0.36.1-kafka-3.5.0
-    kafka: strimzi/kafka:0.36.1-kafka-3.5.0
+    zookeeper: strimzi/kafka:0.36.1-kafka-3.5.1
+    kafka: strimzi/kafka:0.36.1-kafka-3.5.1
     topicOperator: strimzi/operator:0.36.1
     userOperator: strimzi/operator:0.36.1
-  deployKafkaVersion: 3.5.0
+  deployKafkaVersion: 3.5.1
   client:
     continuousClientsMessages: 500
   environmentInfo:
@@ -57,11 +57,11 @@
   fromKafkaVersionsUrl: HEAD
   additionalTopics: 2
   imagesAfterOperations:
-    zookeeper: strimzi/kafka:0.36.1-kafka-3.5.0
-    kafka: strimzi/kafka:0.36.1-kafka-3.5.0
+    zookeeper: strimzi/kafka:0.36.1-kafka-3.5.1
+    kafka: strimzi/kafka:0.36.1-kafka-3.5.1
     topicOperator: strimzi/operator:0.36.1
     userOperator: strimzi/operator:0.36.1
-  deployKafkaVersion: 3.5.0
+  deployKafkaVersion: 3.5.1
   client:
     continuousClientsMessages: 500
   environmentInfo:
