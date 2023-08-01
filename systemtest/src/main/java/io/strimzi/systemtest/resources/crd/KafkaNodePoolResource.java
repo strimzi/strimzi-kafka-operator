@@ -48,6 +48,7 @@ public class KafkaNodePoolResource implements ResourceType<KafkaNodePool> {
     public void delete(KafkaNodePool resource) {
         String namespaceName = resource.getMetadata().getNamespace();
         String clusterName = resource.getMetadata().getLabels().get(Labels.STRIMZI_CLUSTER_LABEL);
+        String podsetName = String.join("-", clusterName, resource.getMetadata().getName());
 
         kafkaNodePoolClient().inNamespace(resource.getMetadata().getNamespace()).resource(resource).delete();
 
@@ -55,7 +56,7 @@ public class KafkaNodePoolResource implements ResourceType<KafkaNodePool> {
         // the Kafka pods will not be deleted during Kafka resource deletion -> so if we would delete PVCs during Kafka deletion
         // they will not be deleted too
         // additional deletion of pvcs with specification deleteClaim set to false which were not deleted prior this method
-        PersistentVolumeClaimUtils.deletePvcsByPrefixWithWait(namespaceName, clusterName);
+        PersistentVolumeClaimUtils.deletePvcsByPrefixWithWait(namespaceName, podsetName);
     }
 
     @Override
@@ -86,7 +87,7 @@ public class KafkaNodePoolResource implements ResourceType<KafkaNodePool> {
 
         String nodePoolName = Constants.KAFKA_NODE_POOL_PREFIX + hashStub(resource.getMetadata().getName());
 
-        KafkaNodePoolBuilder builder = KafkaNodePoolTemplates.defaultKafkaNodePool(nodePoolName, resource.getMetadata().getName(), resource.getSpec().getKafka().getReplicas())
+        KafkaNodePoolBuilder builder = KafkaNodePoolTemplates.defaultKafkaNodePool(resource.getMetadata().getNamespace(), nodePoolName, resource.getMetadata().getName(), resource.getSpec().getKafka().getReplicas())
             .editOrNewMetadata()
                 .withNamespace(resource.getMetadata().getNamespace())
                 .addToLabels(resource.getMetadata().getLabels())
