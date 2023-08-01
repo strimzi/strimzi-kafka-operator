@@ -2,8 +2,6 @@ test:
   ./test.sh
 duration: 2h
 environment:
-  DOCKER_ORG: "strimzi"
-  DOCKER_TAG: "test"
   TEST_LOG_DIR: "systemtest/target/logs"
   TESTS: ""
   TEST_GROUPS: ""
