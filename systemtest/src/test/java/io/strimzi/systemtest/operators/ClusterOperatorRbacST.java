@@ -106,7 +106,7 @@ public class ClusterOperatorRbacST extends AbstractST {
             .endSpec()
             .build());
 
-        KafkaUtils.waitUntilKafkaStatusConditionContainsMessage(clusterName, clusterOperator.getDeploymentNamespace(), ".*code=403.*");
+        KafkaUtils.waitUntilKafkaStatusConditionContainsMessage(clusterName, Constants.TEST_SUITE_NAMESPACE, ".*code=403.*");
         Condition kafkaStatusCondition = KafkaResource.kafkaClient().inNamespace(Constants.TEST_SUITE_NAMESPACE).withName(clusterName).get().getStatus().getConditions().stream().filter(con -> NotReady.toString().equals(con.getType())).findFirst().orElse(null);
         assertThat(kafkaStatusCondition, is(notNullValue()));
         assertTrue(kafkaStatusCondition.getMessage().contains("code=403"));
@@ -117,7 +117,7 @@ public class ClusterOperatorRbacST extends AbstractST {
             .endSpec()
             .build());
 
-        KafkaConnectUtils.waitUntilKafkaConnectStatusConditionContainsMessage(clusterName, Constants.TEST_SUITE_NAMESPACE, ".*code=403!.*");
+        KafkaConnectUtils.waitUntilKafkaConnectStatusConditionContainsMessage(clusterName, Constants.TEST_SUITE_NAMESPACE, ".*code=403.*");
         Condition kafkaConnectStatusCondition = KafkaConnectResource.kafkaConnectClient().inNamespace(Constants.TEST_SUITE_NAMESPACE).withName(clusterName).get().getStatus().getConditions().stream().filter(con -> NotReady.toString().equals(con.getType())).findFirst().orElse(null);
         assertThat(kafkaConnectStatusCondition, is(notNullValue()));
         assertTrue(kafkaConnectStatusCondition.getMessage().contains("code=403"));
