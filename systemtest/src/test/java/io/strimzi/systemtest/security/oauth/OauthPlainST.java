@@ -113,10 +113,11 @@ public class OauthPlainST extends OauthAbstractST {
     @ParallelTest
     @Tag(METRICS)
     void testProducerConsumerWithOauthMetrics(ExtensionContext extensionContext) {
-        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        final TestStorage testStorage = storageMap.get(extensionContext);
+        String clusterName = testStorage.getClusterName();
         String producerName = OAUTH_PRODUCER_NAME + "-" + clusterName;
         String consumerName = OAUTH_CONSUMER_NAME + "-" + clusterName;
-        String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
+        String topicName = testStorage.getTopicName();
 
         resourceManager.createResourceWithWait(extensionContext, KafkaTopicTemplates.topic(oauthClusterName, topicName, Constants.TEST_SUITE_NAMESPACE).build());
 
@@ -147,10 +148,11 @@ public class OauthPlainST extends OauthAbstractST {
 
     @ParallelTest
     void testSaslPlainProducerConsumer(ExtensionContext extensionContext) {
-        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        final TestStorage testStorage = storageMap.get(extensionContext);
+        String clusterName = testStorage.getClusterName();
         String audienceProducerName = OAUTH_CLIENT_AUDIENCE_PRODUCER + "-" + clusterName;
         String audienceConsumerName = OAUTH_CLIENT_AUDIENCE_CONSUMER + "-" + clusterName;
-        String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
+        String topicName = testStorage.getTopicName();
 
         String plainAdditionalConfig =
             "sasl.jaas.config=org.apache.kafka.common.security.plain.PlainLoginModule required username=%s password=%s;\n" +
@@ -189,12 +191,13 @@ public class OauthPlainST extends OauthAbstractST {
 
     @ParallelTest
     void testProducerConsumerAudienceTokenChecks(ExtensionContext extensionContext) {
-        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        final TestStorage testStorage = storageMap.get(extensionContext);
+        String clusterName = testStorage.getClusterName();
         String producerName = OAUTH_PRODUCER_NAME + "-" + clusterName;
         String consumerName = OAUTH_CONSUMER_NAME + "-" + clusterName;
         String audienceProducerName = OAUTH_CLIENT_AUDIENCE_PRODUCER + "-" + clusterName;
         String audienceConsumerName = OAUTH_CLIENT_AUDIENCE_CONSUMER + "-" + clusterName;
-        String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
+        String topicName = testStorage.getTopicName();
 
         LOGGER.info("Setting producer and consumer properties");
         KafkaOauthClients oauthInternalClientJob = new KafkaOauthClientsBuilder()
@@ -241,12 +244,13 @@ public class OauthPlainST extends OauthAbstractST {
 
     @ParallelTest
     void testAccessTokenClaimCheck(ExtensionContext extensionContext) {
-        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        final TestStorage testStorage = storageMap.get(extensionContext);
+        String clusterName = testStorage.getClusterName();
         String producerName = OAUTH_PRODUCER_NAME + "-" + clusterName;
         String consumerName = OAUTH_CONSUMER_NAME + "-" + clusterName;
         String audienceProducerName = OAUTH_CLIENT_AUDIENCE_PRODUCER + "-" + clusterName;
         String audienceConsumerName = OAUTH_CLIENT_AUDIENCE_CONSUMER + "-" + clusterName;
-        String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
+        String topicName = testStorage.getTopicName();
 
         LOGGER.info("Use clients with clientId not containing 'hello-world' in access token");
 
@@ -297,10 +301,11 @@ public class OauthPlainST extends OauthAbstractST {
     @Tag(CONNECT_COMPONENTS)
     @Tag(METRICS)
     void testProducerConsumerConnectWithOauthMetrics(ExtensionContext extensionContext) {
-        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        final TestStorage testStorage = storageMap.get(extensionContext);
+        String clusterName = testStorage.getClusterName();
         String producerName = OAUTH_PRODUCER_NAME + "-" + clusterName;
         String consumerName = OAUTH_CONSUMER_NAME + "-" + clusterName;
-        String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
+        String topicName = testStorage.getTopicName();
 
         KafkaOauthClients oauthExampleClients = new KafkaOauthClientsBuilder()
             .withNamespaceName(Constants.TEST_SUITE_NAMESPACE)
@@ -379,10 +384,11 @@ public class OauthPlainST extends OauthAbstractST {
     @Tag(MIRROR_MAKER)
     @Tag(NODEPORT_SUPPORTED)
     void testProducerConsumerMirrorMaker(ExtensionContext extensionContext) {
-        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        final TestStorage testStorage = storageMap.get(extensionContext);
+        String clusterName = testStorage.getClusterName();
         String producerName = OAUTH_PRODUCER_NAME + "-" + clusterName;
         String consumerName = OAUTH_CONSUMER_NAME + "-" + clusterName;
-        String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
+        String topicName = testStorage.getTopicName();
 
         KafkaOauthClients oauthExampleClients = new KafkaOauthClientsBuilder()
             .withNamespaceName(Constants.TEST_SUITE_NAMESPACE)
@@ -523,10 +529,11 @@ public class OauthPlainST extends OauthAbstractST {
     @Tag(METRICS)
     @SuppressWarnings({"checkstyle:MethodLength"})
     void testProducerConsumerMirrorMaker2WithOauthMetrics(ExtensionContext extensionContext) {
-        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        final TestStorage testStorage = storageMap.get(extensionContext);
+        String clusterName = testStorage.getClusterName();
         String producerName = OAUTH_PRODUCER_NAME + "-" + clusterName;
         String consumerName = OAUTH_CONSUMER_NAME + "-" + clusterName;
-        String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
+        String topicName = testStorage.getTopicName();
 
         KafkaOauthClients oauthExampleClients = new KafkaOauthClientsBuilder()
             .withNamespaceName(Constants.TEST_SUITE_NAMESPACE)
@@ -683,10 +690,11 @@ public class OauthPlainST extends OauthAbstractST {
     @Tag(BRIDGE)
     @Tag(METRICS)
     void testProducerConsumerBridgeWithOauthMetrics(ExtensionContext extensionContext) {
-        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        final TestStorage testStorage = storageMap.get(extensionContext);
+        String clusterName = testStorage.getClusterName();
         String producerName = OAUTH_PRODUCER_NAME + "-" + clusterName;
         String consumerName = OAUTH_CONSUMER_NAME + "-" + clusterName;
-        String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
+        String topicName = testStorage.getTopicName();
 
         KafkaOauthClients oauthExampleClients = new KafkaOauthClientsBuilder()
             .withNamespaceName(Constants.TEST_SUITE_NAMESPACE)

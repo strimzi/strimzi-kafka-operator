@@ -492,8 +492,9 @@ class RollingUpdateST extends AbstractST {
     @ParallelNamespaceTest
     @Tag(ROLLING_UPDATE)
     void testBrokerConfigurationChangeTriggerRollingUpdate(ExtensionContext extensionContext) {
+        final TestStorage testStorage = storageMap.get(extensionContext);
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(Constants.TEST_SUITE_NAMESPACE, extensionContext);
-        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        final String clusterName = testStorage.getClusterName();
         final LabelSelector kafkaSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.kafkaStatefulSetName(clusterName));
         final LabelSelector zkSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.zookeeperStatefulSetName(clusterName));
 
@@ -519,8 +520,9 @@ class RollingUpdateST extends AbstractST {
     @ParallelNamespaceTest
     @Tag(ROLLING_UPDATE)
     void testManualKafkaConfigMapChangeDontTriggerRollingUpdate(ExtensionContext extensionContext) {
+        final TestStorage testStorage = storageMap.get(extensionContext);
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(Constants.TEST_SUITE_NAMESPACE, extensionContext);
-        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        final String clusterName = testStorage.getClusterName();
         final LabelSelector kafkaSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.kafkaStatefulSetName(clusterName));
         final LabelSelector zkSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.zookeeperStatefulSetName(clusterName));
 
@@ -544,8 +546,9 @@ class RollingUpdateST extends AbstractST {
     @ParallelNamespaceTest
     @Tag(ROLLING_UPDATE)
     void testExternalLoggingChangeTriggerRollingUpdate(ExtensionContext extensionContext) {
+        final TestStorage testStorage = storageMap.get(extensionContext);
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(Constants.TEST_SUITE_NAMESPACE, extensionContext);
-        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        final String clusterName = testStorage.getClusterName();
         final LabelSelector kafkaSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.kafkaStatefulSetName(clusterName));
         final LabelSelector zkSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.zookeeperStatefulSetName(clusterName));
 
@@ -624,7 +627,8 @@ class RollingUpdateST extends AbstractST {
     @IsolatedTest("Deleting Pod of Shared Cluster Operator")
     @Tag(ROLLING_UPDATE)
     void testClusterOperatorFinishAllRollingUpdates(ExtensionContext extensionContext) {
-        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        final TestStorage testStorage = storageMap.get(extensionContext);
+        final String clusterName = testStorage.getClusterName();
         final LabelSelector kafkaSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.kafkaStatefulSetName(clusterName));
         final LabelSelector zkSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.zookeeperStatefulSetName(clusterName));
 

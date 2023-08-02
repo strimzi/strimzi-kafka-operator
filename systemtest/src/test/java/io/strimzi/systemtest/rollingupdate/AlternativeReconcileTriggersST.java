@@ -203,8 +203,9 @@ class AlternativeReconcileTriggersST extends AbstractST {
     @ParallelNamespaceTest
     @Tag(ROLLING_UPDATE)
     void testTriggerRollingUpdateAfterOverrideBootstrap(ExtensionContext extensionContext) throws CertificateException {
+        final TestStorage testStorage = storageMap.get(extensionContext);
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(Constants.TEST_SUITE_NAMESPACE, extensionContext);
-        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        final String clusterName = testStorage.getClusterName();
         final String bootstrapDns = "kafka-test.XXXX.azure.XXXX.net";
 
         resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaPersistent(clusterName, 3, 3).build());
@@ -256,8 +257,9 @@ class AlternativeReconcileTriggersST extends AbstractST {
 
     @ParallelNamespaceTest
     void testManualRollingUpdateForSinglePod(ExtensionContext extensionContext) {
+        final TestStorage testStorage = storageMap.get(extensionContext);
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(Constants.TEST_SUITE_NAMESPACE, extensionContext);
-        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        final String clusterName = testStorage.getClusterName();
 
         final LabelSelector kafkaSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.kafkaStatefulSetName(clusterName));
         final LabelSelector zkSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.zookeeperStatefulSetName(clusterName));

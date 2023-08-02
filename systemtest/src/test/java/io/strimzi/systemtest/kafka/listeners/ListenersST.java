@@ -392,9 +392,10 @@ public class ListenersST extends AbstractST {
     @Tag(NODEPORT_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
     void testNodePort(ExtensionContext extensionContext) {
+        final TestStorage testStorage = storageMap.get(extensionContext);
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(Constants.TEST_SUITE_NAMESPACE, extensionContext);
-        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
-        final String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
+        final String clusterName = testStorage.getClusterName();
+        final String topicName = testStorage.getTopicName();
         final Map<String, String> label = Collections.singletonMap("my-label", "value");
         final Map<String, String> anno = Collections.singletonMap("my-annotation", "value");
 
@@ -470,9 +471,10 @@ public class ListenersST extends AbstractST {
     @Tag(NODEPORT_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
     void testOverrideNodePortConfiguration(ExtensionContext extensionContext) {
+        final TestStorage testStorage = storageMap.get(extensionContext);
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(Constants.TEST_SUITE_NAMESPACE, extensionContext);
-        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
-        final String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
+        final String clusterName = testStorage.getClusterName();
+        final String topicName = testStorage.getTopicName();
 
         final int brokerNodePort = 32000;
         final int brokerId = 0;
@@ -533,10 +535,11 @@ public class ListenersST extends AbstractST {
     @Tag(NODEPORT_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
     void testNodePortTls(ExtensionContext extensionContext) {
+        final TestStorage testStorage = storageMap.get(extensionContext);
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(Constants.TEST_SUITE_NAMESPACE, extensionContext);
-        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
-        final String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
-        final String userName = mapWithTestUsers.get(extensionContext.getDisplayName());
+        final String clusterName = testStorage.getClusterName();
+        final String topicName = testStorage.getTopicName();
+        final String userName = testStorage.getKafkaUsername();
 
         resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3, 1)
             .editSpec()
@@ -576,9 +579,10 @@ public class ListenersST extends AbstractST {
     @Tag(LOADBALANCER_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
     void testLoadBalancer(ExtensionContext extensionContext) {
+        final TestStorage testStorage = storageMap.get(extensionContext);
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(Constants.TEST_SUITE_NAMESPACE, extensionContext);
-        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
-        final String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
+        final String clusterName = testStorage.getClusterName();
+        final String topicName = testStorage.getTopicName();
 
         resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3)
             .editSpec()
@@ -619,10 +623,11 @@ public class ListenersST extends AbstractST {
     @Tag(LOADBALANCER_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
     void testLoadBalancerTls(ExtensionContext extensionContext) {
+        final TestStorage testStorage = storageMap.get(extensionContext);
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(Constants.TEST_SUITE_NAMESPACE, extensionContext);
-        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
-        final String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
-        final String userName = mapWithTestUsers.get(extensionContext.getDisplayName());
+        final String clusterName = testStorage.getClusterName();
+        final String topicName = testStorage.getTopicName();
+        final String userName = testStorage.getKafkaUsername();
 
         resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3)
             .editSpec()
@@ -2073,8 +2078,9 @@ public class ListenersST extends AbstractST {
 
     @ParallelNamespaceTest
     void testNonExistingCustomCertificate(ExtensionContext extensionContext) {
+        final TestStorage testStorage = storageMap.get(extensionContext);
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(Constants.TEST_SUITE_NAMESPACE, extensionContext);
-        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        final String clusterName = testStorage.getClusterName();
         final String nonExistingCertName = "non-existing-certificate";
         final LabelSelector zkSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.zookeeperStatefulSetName(clusterName));
 
@@ -2109,8 +2115,9 @@ public class ListenersST extends AbstractST {
 
     @ParallelNamespaceTest
     void testCertificateWithNonExistingDataCrt(ExtensionContext extensionContext) {
+        final TestStorage testStorage = storageMap.get(extensionContext);
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(Constants.TEST_SUITE_NAMESPACE, extensionContext);
-        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        final String clusterName = testStorage.getClusterName();
         final String nonExistingCertName = "non-existing-crt";
         final String clusterCustomCertServer1 = clusterName + "-" + customCertServer1;
         final LabelSelector zkSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.zookeeperStatefulSetName(clusterName));
@@ -2149,8 +2156,9 @@ public class ListenersST extends AbstractST {
 
     @ParallelNamespaceTest
     void testCertificateWithNonExistingDataKey(ExtensionContext extensionContext) {
+        final TestStorage testStorage = storageMap.get(extensionContext);
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(Constants.TEST_SUITE_NAMESPACE, extensionContext);
-        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        final String clusterName = testStorage.getClusterName();
         final String nonExistingCertKey = "non-existing-key";
         final String clusterCustomCertServer1 = clusterName + "-" + customCertServer1;
         final LabelSelector zkSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.zookeeperStatefulSetName(clusterName));
@@ -2282,7 +2290,8 @@ public class ListenersST extends AbstractST {
     @Tag(NODEPORT_SUPPORTED)
     @ParallelNamespaceTest
     void testAdvertisedHostNamesAppearsInBrokerCerts(ExtensionContext extensionContext) throws CertificateException, CertificateException {
-        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        final TestStorage testStorage = storageMap.get(extensionContext);
+        final String clusterName = testStorage.getClusterName();
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(Constants.TEST_SUITE_NAMESPACE, extensionContext);
 
         final String advertHostInternal0 = "kafka-test.internal.0.net";

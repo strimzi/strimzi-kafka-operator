@@ -237,7 +237,8 @@ public class NetworkPoliciesST extends AbstractST {
     void testNPWhenOperatorIsInSameNamespaceAsOperand(ExtensionContext extensionContext) {
         assumeTrue(!Environment.isHelmInstall() && !Environment.isOlmInstall());
 
-        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        final TestStorage testStorage = storageMap.get(extensionContext);
+        String clusterName = testStorage.getClusterName();
 
         clusterOperator = new SetupClusterOperator.SetupClusterOperatorBuilder()
             .withExtensionContext(extensionContext)
@@ -255,7 +256,8 @@ public class NetworkPoliciesST extends AbstractST {
     void testNPWhenOperatorIsInDifferentNamespaceThanOperand(ExtensionContext extensionContext) {
         assumeTrue(!Environment.isHelmInstall() && !Environment.isOlmInstall());
 
-        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        final TestStorage testStorage = storageMap.get(extensionContext);
+        String clusterName = testStorage.getClusterName();
         String secondNamespace = "second-" + Constants.TEST_SUITE_NAMESPACE;
 
         Map<String, String> labels = new HashMap<>();
@@ -300,7 +302,8 @@ public class NetworkPoliciesST extends AbstractST {
     void testNPGenerationEnvironmentVariable(ExtensionContext extensionContext) {
         assumeTrue(!Environment.isHelmInstall() && !Environment.isOlmInstall());
 
-        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        final TestStorage testStorage = storageMap.get(extensionContext);
+        final String clusterName = testStorage.getClusterName();
 
         EnvVar networkPolicyGenerationEnv = new EnvVarBuilder()
             .withName("STRIMZI_NETWORK_POLICY_GENERATION")

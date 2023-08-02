@@ -21,6 +21,7 @@ import io.strimzi.systemtest.kafkaclients.internalClients.BridgeClientsBuilder;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 import io.strimzi.systemtest.resources.crd.KafkaBridgeResource;
+import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaBridgeTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
@@ -70,7 +71,8 @@ class HttpBridgeST extends AbstractST {
 
     @ParallelTest
     void testSendSimpleMessage(ExtensionContext extensionContext) {
-        final String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
+        final TestStorage testStorage = new TestStorage(extensionContext);
+        final String topicName = testStorage.getTopicName();
         final String producerName = "producer-" + new Random().nextInt(Integer.MAX_VALUE);
         final String consumerName = "consumer-" + new Random().nextInt(Integer.MAX_VALUE);
 
@@ -111,7 +113,8 @@ class HttpBridgeST extends AbstractST {
 
     @ParallelTest
     void testReceiveSimpleMessage(ExtensionContext extensionContext) {
-        final String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
+        final TestStorage testStorage = storageMap.get(extensionContext);
+        final String topicName = testStorage.getTopicName();
         final String producerName = "producer-" + new Random().nextInt(Integer.MAX_VALUE);
         final String consumerName = "consumer-" + new Random().nextInt(Integer.MAX_VALUE);
 
@@ -374,7 +377,8 @@ class HttpBridgeST extends AbstractST {
 
     @ParallelTest
     void testCustomBridgeLabelsAreProperlySet(ExtensionContext extensionContext) {
-        final String bridgeName = "bridge-" + mapWithClusterNames.get(extensionContext.getDisplayName());
+        final TestStorage testStorage = storageMap.get(extensionContext);
+        final String bridgeName = "bridge-" + testStorage.getClusterName();
 
         resourceManager.createResourceWithWait(extensionContext, KafkaBridgeTemplates.kafkaBridge(bridgeName, KafkaResources.plainBootstrapAddress(httpBridgeClusterName), 1)
             .editMetadata()

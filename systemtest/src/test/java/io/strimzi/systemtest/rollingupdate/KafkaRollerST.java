@@ -32,6 +32,7 @@ import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
+import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.utils.RollingUpdateUtils;
@@ -77,9 +78,10 @@ public class KafkaRollerST extends AbstractST {
     @ParallelNamespaceTest
     @KRaftWithoutUTONotSupported
     void testKafkaRollsWhenTopicIsUnderReplicated(ExtensionContext extensionContext) {
+        final TestStorage testStorage = storageMap.get(extensionContext);
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(Constants.TEST_SUITE_NAMESPACE, extensionContext);
-        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
-        final String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
+        final String clusterName = testStorage.getClusterName();
+        final String topicName = testStorage.getTopicName();
         final String kafkaStsName = KafkaResources.kafkaStatefulSetName(clusterName);
         final LabelSelector kafkaSelector = KafkaResource.getLabelSelector(clusterName, kafkaStsName);
 
@@ -145,9 +147,10 @@ public class KafkaRollerST extends AbstractST {
     @ParallelNamespaceTest
     @KRaftWithoutUTONotSupported
     void testKafkaTopicRFLowerThanMinInSyncReplicas(ExtensionContext extensionContext) {
+        final TestStorage testStorage = storageMap.get(extensionContext);
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(Constants.TEST_SUITE_NAMESPACE, extensionContext);
-        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
-        final String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
+        final String clusterName = testStorage.getClusterName();
+        final String topicName = testStorage.getTopicName();
         final String kafkaName = KafkaResources.kafkaStatefulSetName(clusterName);
         final LabelSelector kafkaSelector = KafkaResource.getLabelSelector(clusterName, kafkaName);
 
@@ -171,8 +174,9 @@ public class KafkaRollerST extends AbstractST {
 
     @ParallelNamespaceTest
     void testKafkaPodCrashLooping(ExtensionContext extensionContext) {
+        final TestStorage testStorage = storageMap.get(extensionContext);
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(Constants.TEST_SUITE_NAMESPACE, extensionContext);
-        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        final String clusterName = testStorage.getClusterName();
 
         resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaPersistent(clusterName, 3, 3)
             .editSpec()
@@ -210,8 +214,9 @@ public class KafkaRollerST extends AbstractST {
 
     @ParallelNamespaceTest
     void testKafkaPodImagePullBackOff(ExtensionContext extensionContext) {
+        final TestStorage testStorage = storageMap.get(extensionContext);
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(Constants.TEST_SUITE_NAMESPACE, extensionContext);
-        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        final String clusterName = testStorage.getClusterName();
         final LabelSelector kafkaSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.kafkaStatefulSetName(clusterName));
 
         resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaPersistent(clusterName, 3, 3).build());
@@ -237,8 +242,9 @@ public class KafkaRollerST extends AbstractST {
 
     @ParallelNamespaceTest
     public void testKafkaPodPending(ExtensionContext extensionContext) {
+        final TestStorage testStorage = storageMap.get(extensionContext);
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(Constants.TEST_SUITE_NAMESPACE, extensionContext);
-        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        final String clusterName = testStorage.getClusterName();
 
         ResourceRequirements rr = new ResourceRequirementsBuilder()
             .withRequests(Collections.emptyMap())
@@ -291,8 +297,9 @@ public class KafkaRollerST extends AbstractST {
         // 2. wait for Kafka not ready, kafka pods should be in the pending state
         // 3. fix the Kafka CR, kafka pods should be in the pending state
         // 4. wait for Kafka ready, kafka pods should NOT be in the pending state
+        final TestStorage testStorage = storageMap.get(extensionContext);
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(Constants.TEST_SUITE_NAMESPACE, extensionContext);
-        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        final String clusterName = testStorage.getClusterName();
 
         NodeSelectorRequirement nsr = new NodeSelectorRequirementBuilder()
                 .withKey("dedicated_test")

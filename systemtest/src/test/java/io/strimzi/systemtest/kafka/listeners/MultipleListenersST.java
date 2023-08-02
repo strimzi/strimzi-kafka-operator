@@ -17,6 +17,7 @@ import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.annotations.OpenShiftOnly;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
+import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaUserTemplates;
@@ -57,7 +58,8 @@ public class MultipleListenersST extends AbstractST {
     @Tag(EXTERNAL_CLIENTS_USED)
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testMultipleNodePorts(ExtensionContext extensionContext) throws Exception {
-        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        final TestStorage testStorage = storageMap.get(extensionContext);
+        String clusterName = testStorage.getClusterName();
 
         runListenersTest(extensionContext, testCases.get(KafkaListenerType.NODEPORT), clusterName);
     }
@@ -65,7 +67,8 @@ public class MultipleListenersST extends AbstractST {
     @Tag(INTERNAL_CLIENTS_USED)
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testMultipleInternal(ExtensionContext extensionContext) throws Exception {
-        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        final TestStorage testStorage = storageMap.get(extensionContext);
+        String clusterName = testStorage.getClusterName();
 
         runListenersTest(extensionContext, testCases.get(KafkaListenerType.INTERNAL), clusterName);
     }
@@ -78,8 +81,8 @@ public class MultipleListenersST extends AbstractST {
     void testCombinationOfInternalAndExternalListeners(ExtensionContext extensionContext) throws Exception {
         // Nodeport needs cluster wide rights to work properly which is not possible with STRIMZI_RBAC_SCOPE=NAMESPACE
         assumeFalse(Environment.isNamespaceRbacScope());
-
-        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        final TestStorage testStorage = storageMap.get(extensionContext);
+        String clusterName = testStorage.getClusterName();
 
         List<GenericKafkaListener> multipleDifferentListeners = new ArrayList<>();
 
@@ -97,7 +100,8 @@ public class MultipleListenersST extends AbstractST {
     @Tag(EXTERNAL_CLIENTS_USED)
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testMultipleLoadBalancers(ExtensionContext extensionContext) throws Exception {
-        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        final TestStorage testStorage = storageMap.get(extensionContext);
+        String clusterName = testStorage.getClusterName();
 
         runListenersTest(extensionContext, testCases.get(KafkaListenerType.LOADBALANCER), clusterName);
     }
@@ -106,7 +110,8 @@ public class MultipleListenersST extends AbstractST {
     @Tag(EXTERNAL_CLIENTS_USED)
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testMultipleRoutes(ExtensionContext extensionContext) throws Exception {
-        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        final TestStorage testStorage = storageMap.get(extensionContext);
+        final String clusterName = testStorage.getClusterName();
 
         runListenersTest(extensionContext, testCases.get(KafkaListenerType.ROUTE), clusterName);
     }
@@ -117,7 +122,8 @@ public class MultipleListenersST extends AbstractST {
     @Tag(INTERNAL_CLIENTS_USED)
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testMixtureOfExternalListeners(ExtensionContext extensionContext) throws Exception {
-        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        final TestStorage testStorage = storageMap.get(extensionContext);
+        final String clusterName = testStorage.getClusterName();
 
         List<GenericKafkaListener> multipleDifferentListeners = new ArrayList<>();
 
@@ -138,7 +144,8 @@ public class MultipleListenersST extends AbstractST {
     @Tag(INTERNAL_CLIENTS_USED)
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testCombinationOfEveryKindOfListener(ExtensionContext extensionContext) throws Exception {
-        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        final TestStorage testStorage = storageMap.get(extensionContext);
+        final String clusterName = testStorage.getClusterName();
 
         List<GenericKafkaListener> multipleDifferentListeners = new ArrayList<>();
 

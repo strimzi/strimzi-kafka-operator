@@ -153,7 +153,7 @@ public class OauthAbstractST extends AbstractST {
         List<Job> clusterJobList = kubeClient().getJobList().getItems()
             .stream()
             .filter(
-                job -> job.getMetadata().getName().contains(mapWithClusterNames.get(extensionContext.getDisplayName())))
+                job -> job.getMetadata().getName().contains(storageMap.get(extensionContext).getClusterName()))
             .collect(Collectors.toList());
 
         for (Job job : clusterJobList) {

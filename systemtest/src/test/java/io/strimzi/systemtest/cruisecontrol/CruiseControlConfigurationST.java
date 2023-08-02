@@ -19,6 +19,7 @@ import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.KRaftWithoutUTONotSupported;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
+import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.utils.RollingUpdateUtils;
 import io.strimzi.systemtest.utils.StUtils;
@@ -63,8 +64,9 @@ public class CruiseControlConfigurationST extends AbstractST {
 
     @ParallelNamespaceTest
     void testDeployAndUnDeployCruiseControl(ExtensionContext extensionContext) throws IOException {
+        final TestStorage testStorage = storageMap.get(extensionContext);
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(Constants.TEST_SUITE_NAMESPACE, extensionContext);
-        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        final String clusterName = testStorage.getClusterName();
         final LabelSelector kafkaSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.kafkaStatefulSetName(clusterName));
 
         resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaWithCruiseControl(clusterName, 3, 3).build());
@@ -112,8 +114,9 @@ public class CruiseControlConfigurationST extends AbstractST {
     @ParallelNamespaceTest
     @KRaftWithoutUTONotSupported
     void testConfigurationDiskChangeDoNotTriggersRollingUpdateOfKafkaPods(ExtensionContext extensionContext) {
+        final TestStorage testStorage = storageMap.get(extensionContext);
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(Constants.TEST_SUITE_NAMESPACE, extensionContext);
-        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        final String clusterName = testStorage.getClusterName();
         final LabelSelector kafkaSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.kafkaStatefulSetName(clusterName));
 
         resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaWithCruiseControl(clusterName, 3, 3).build());
@@ -153,8 +156,9 @@ public class CruiseControlConfigurationST extends AbstractST {
 
     @ParallelNamespaceTest
     void testConfigurationReflection(ExtensionContext extensionContext) throws IOException {
+        final TestStorage testStorage = storageMap.get(extensionContext);
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(Constants.TEST_SUITE_NAMESPACE, extensionContext);
-        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        final String clusterName = testStorage.getClusterName();
 
         resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaWithCruiseControl(clusterName, 3, 3).build());
 
@@ -207,8 +211,9 @@ public class CruiseControlConfigurationST extends AbstractST {
 
     @ParallelNamespaceTest
     void testConfigurationFileIsCreated(ExtensionContext extensionContext) {
+        final TestStorage testStorage = storageMap.get(extensionContext);
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(Constants.TEST_SUITE_NAMESPACE, extensionContext);
-        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        final String clusterName = testStorage.getClusterName();
 
         resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaWithCruiseControl(clusterName, 3, 3).build());
 
@@ -221,8 +226,9 @@ public class CruiseControlConfigurationST extends AbstractST {
 
     @ParallelNamespaceTest
     void testConfigurationPerformanceOptions(ExtensionContext extensionContext) throws IOException {
+        final TestStorage testStorage = storageMap.get(extensionContext);
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(Constants.TEST_SUITE_NAMESPACE, extensionContext);
-        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        final String clusterName = testStorage.getClusterName();
         final LabelSelector kafkaSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.kafkaStatefulSetName(clusterName));
 
         resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaWithCruiseControl(clusterName, 3, 3).build());

@@ -95,7 +95,8 @@ public class TopicST extends AbstractST {
 
     @ParallelTest
     void testMoreReplicasThanAvailableBrokers(ExtensionContext extensionContext) {
-        final String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
+        final TestStorage testStorage = storageMap.get(extensionContext);
+        final String topicName = testStorage.getTopicName();
         int topicReplicationFactor = 5;
         int topicPartitions = 5;
 
@@ -132,7 +133,8 @@ public class TopicST extends AbstractST {
     @ParallelTest
     @UTONotSupported
     void testCreateTopicViaKafka(ExtensionContext extensionContext) {
-        String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
+        final TestStorage testStorage = storageMap.get(extensionContext);
+        String topicName = testStorage.getTopicName();
         int topicPartitions = 3;
 
         LOGGER.debug("Creating Topic: {} with {} replicas and {} partitions", topicName, 3, topicPartitions);
@@ -156,8 +158,9 @@ public class TopicST extends AbstractST {
     @Tag(NODEPORT_SUPPORTED)
     @UTONotSupported
     void testCreateTopicViaAdminClient(ExtensionContext extensionContext) throws ExecutionException, InterruptedException, TimeoutException {
-        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
-        String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
+        final TestStorage testStorage = storageMap.get(extensionContext);
+        String clusterName = testStorage.getClusterName();
+        String topicName = testStorage.getTopicName();
 
         resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3, 3)
             .editMetadata()
@@ -435,7 +438,8 @@ public class TopicST extends AbstractST {
     @KRaftWithoutUTONotSupported
     @UTONotSupported("UTO has currently no metrics")
     void testKafkaTopicDifferentStates(ExtensionContext extensionContext) throws InterruptedException {
-        String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
+        final TestStorage testStorage = storageMap.get(extensionContext);
+        String topicName = testStorage.getTopicName();
         int initialReplicas = 1;
         int initialPartitions = 5;
         int decreasePartitions = 1;
@@ -531,7 +535,8 @@ public class TopicST extends AbstractST {
 
     @ParallelTest
     void testKafkaTopicChangingMinInSyncReplicas(ExtensionContext extensionContext) throws InterruptedException {
-        String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
+        final TestStorage testStorage = storageMap.get(extensionContext);
+        String topicName = testStorage.getTopicName();
 
         resourceManager.createResourceWithWait(extensionContext, KafkaTopicTemplates.topic(KAFKA_CLUSTER_NAME, topicName, 5, Constants.TEST_SUITE_NAMESPACE).build());
         KafkaTopicUtils.waitForKafkaTopicReady(Constants.TEST_SUITE_NAMESPACE, topicName);

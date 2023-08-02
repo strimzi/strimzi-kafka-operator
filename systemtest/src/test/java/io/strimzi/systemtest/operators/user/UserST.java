@@ -108,7 +108,8 @@ class UserST extends AbstractST {
     @ParallelTest
     @Tag(ACCEPTANCE)
     void testUpdateUser(ExtensionContext extensionContext) {
-        String userName = mapWithTestUsers.get(extensionContext.getDisplayName());
+        final TestStorage testStorage = storageMap.get(extensionContext);
+        String userName = testStorage.getKafkaUsername();
 
         resourceManager.createResourceWithWait(extensionContext, KafkaUserTemplates.tlsUser(Constants.TEST_SUITE_NAMESPACE, userClusterName, userName).build());
 
@@ -162,10 +163,11 @@ class UserST extends AbstractST {
 
     @ParallelTest
     void testTlsExternalUserWithQuotas(ExtensionContext extensionContext) {
+        final TestStorage testStorage = storageMap.get(extensionContext);
         // skip test if KRaft mode is enabled and Kafka version is lower than 3.5.0 - https://github.com/strimzi/strimzi-kafka-operator/issues/8806
         assumeTrue(Environment.isKRaftModeEnabled() && TestKafkaVersion.compareDottedVersions("3.5.0", Environment.ST_KAFKA_VERSION) != 1);
 
-        final String kafkaUserName = mapWithTestUsers.get(extensionContext.getDisplayName());
+        final String kafkaUserName = testStorage.getKafkaUsername();
         final KafkaUser tlsExternalUser = KafkaUserTemplates.tlsExternalUser(Constants.TEST_SUITE_NAMESPACE, userClusterName, kafkaUserName).build();
 
         testUserWithQuotas(extensionContext, tlsExternalUser);
@@ -180,7 +182,8 @@ class UserST extends AbstractST {
 
     @ParallelTest
     void testUserTemplate(ExtensionContext extensionContext) {
-        String userName = mapWithTestUsers.get(extensionContext.getDisplayName());
+        final TestStorage testStorage = storageMap.get(extensionContext);
+        String userName = testStorage.getKafkaUsername();
 
         String labelKey = "test-label-key";
         String labelValue = "test-label-value";
@@ -338,10 +341,11 @@ class UserST extends AbstractST {
 
     @ParallelNamespaceTest
     void testTlsExternalUser(ExtensionContext extensionContext) {
+        final TestStorage testStorage = storageMap.get(extensionContext);
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(Constants.TEST_SUITE_NAMESPACE, extensionContext);
-        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
-        final String userName = mapWithTestUsers.get(extensionContext.getDisplayName());
-        final String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
+        final String clusterName = testStorage.getClusterName();
+        final String userName = testStorage.getKafkaUsername();
+        final String topicName = testStorage.getTopicName();
 
         final AclRule aclRule = new AclRuleBuilder()
             .withNewAclRuleTopicResource()

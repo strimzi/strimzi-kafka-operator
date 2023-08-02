@@ -26,6 +26,7 @@ import io.strimzi.systemtest.resources.crd.KafkaConnectorResource;
 import io.strimzi.systemtest.resources.crd.KafkaRebalanceResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
+import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaConnectTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaConnectorTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaRebalanceTemplates;
@@ -68,8 +69,9 @@ public class ReconciliationST extends AbstractST {
     @Tag(CONNECT_COMPONENTS)
     @KRaftNotSupported("Probably bug - https://github.com/strimzi/strimzi-kafka-operator/issues/6862")
     void testPauseReconciliationInKafkaAndKafkaConnectWithConnector(ExtensionContext extensionContext) {
+        final TestStorage testStorage = storageMap.get(extensionContext);
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(Constants.TEST_SUITE_NAMESPACE, extensionContext);
-        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        final String clusterName = testStorage.getClusterName();
         String kafkaSsName = KafkaResources.kafkaStatefulSetName(clusterName);
 
         final LabelSelector kafkaSelector = KafkaResource.getLabelSelector(clusterName, kafkaSsName);
@@ -138,10 +140,11 @@ public class ReconciliationST extends AbstractST {
     @KRaftWithoutUTONotSupported
     @UTONotSupported("strimzi.io/pause-reconciliation is not supported in UTO, we should use strimzi.io/managed")
     void testPauseReconciliationInKafkaRebalanceAndTopic(ExtensionContext extensionContext) {
+        final TestStorage testStorage = storageMap.get(extensionContext);
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(Constants.TEST_SUITE_NAMESPACE, extensionContext);
-        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
-        final String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
-        final String scraperName = mapWithScraperNames.get(extensionContext.getDisplayName());
+        final String clusterName = testStorage.getClusterName();
+        final String topicName = testStorage.getTopicName();
+        final String scraperName = testStorage.getScraperName();
 
         resourceManager.createResourceWithWait(extensionContext,
             KafkaTemplates.kafkaWithCruiseControl(clusterName, 3, 1).build(),

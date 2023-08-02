@@ -121,6 +121,10 @@ final public class TestStorage {
         return extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(key);
     }
 
+    public String getTestName() {
+        return extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.TEST_NAME_KEY).toString();
+    }
+
     public String getNamespaceName() {
         return extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
     }
@@ -165,6 +169,10 @@ final public class TestStorage {
         return extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.USER_NAME_KEY).toString();
     }
 
+    public String getKafkaUsername() {
+        return extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.KAFKA_USER_NAME_KEY).toString();
+    }
+
     public String getEoDeploymentName() {
         return extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.ENTITY_OPERATOR_NAME_KEY).toString();
     }
@@ -186,6 +194,10 @@ final public class TestStorage {
 
     public int getMessageCount() {
         return (int) extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.MESSAGE_COUNT_KEY);
+    }
+
+    public long getTestExecutionStartTime() {
+        return (long) extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.TEST_EXECUTION_START_TIME_KEY);
     }
 
 }
