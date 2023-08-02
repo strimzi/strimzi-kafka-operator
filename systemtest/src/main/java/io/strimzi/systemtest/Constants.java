@@ -426,6 +426,7 @@ public interface Constants {
      */
     String WATCH_ALL_NAMESPACES = "*";
 
+    String TEST_NAME_KEY = "TEST_NAME";
     String CLUSTER_KEY = "CLUSTER_NAME";
     String KAFKA_NODE_POOL_KEY = "KAFKA_NODE_POOL";
     String TARGET_CLUSTER_KEY = "TARGET_CLUSTER_NAME";
@@ -437,6 +438,7 @@ public interface Constants {
     String CONSUMER_KEY = "CONSUMER_NAME";
     String ADMIN_KEY = "ADMIN_NAME";
     String USER_NAME_KEY = "USER_NAME";
+    String KAFKA_USER_NAME_KEY = "KAFKA_USER_NAME";
     String ENTITY_OPERATOR_NAME_KEY = "ENTITY_OPERATOR_NAME";
     String KAFKA_STATEFULSET_NAME_KEY = "KAFKA_STATEFULSET_NAME";
     String ZOOKEEPER_STATEFULSET_NAME_KEY = "ZOOKEEPER_STATEFULSET_NAME";
@@ -445,6 +447,7 @@ public interface Constants {
     String KAFKA_SELECTOR = "KAFKA_SELECTOR";
     String ZOOKEEPER_SELECTOR = "ZOOKEEPER_SELECTOR";
     String MESSAGE_COUNT_KEY = "MESSAGE_COUNT";
+    String TEST_EXECUTION_START_TIME_KEY = "TEST_EXECUTION_START_TIME";
 
     /**
      * Lease related resources - ClusterRole, Role, RoleBinding

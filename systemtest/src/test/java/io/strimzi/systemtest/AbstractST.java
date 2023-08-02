@@ -37,6 +37,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayNameGeneration;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.ExtensionContext;
@@ -549,27 +550,22 @@ public abstract class AbstractST implements TestSeparator {
     protected void beforeEachMayOverride(ExtensionContext extensionContext) {
         // this is because we need to have different clusterName and kafkaClientsName in each test case without
         // synchronization it can produce `data-race`
-        String testName = null;
 
         synchronized (LOCK) {
-            if (extensionContext.getTestMethod().isPresent()) {
-                testName = extensionContext.getTestMethod().get().getName();
-            }
+            // This can be removed TestStorage does it inside constructor
+            // String clusterName = CLUSTER_NAME_PREFIX + hashStub(String.valueOf(new Random().nextInt(Integer.MAX_VALUE)));
+            // mapWithClusterNames.put(testName, clusterName);
+            // mapWithScraperNames.put(testName, clusterName + "-" + Constants.SCRAPER_NAME);
+            // mapWithTestTopics.put(testName, KafkaTopicUtils.generateRandomNameOfTopic());
 
+            // This will be added to TestStorage
+            // if (extensionContext.getTestMethod().isPresent()) {
+            //      testName = extensionContext.getTestMethod().get().getName();
+            // }
+            // mapWithTestUsers.put(testName, KafkaUserUtils.generateRandomNameOfKafkaUser());
+            // mapWithTestExecutionStartTimes.put(testName, System.currentTimeMillis());
             LOGGER.info("Not first test we are gonna generate cluster name");
-
-            String clusterName = CLUSTER_NAME_PREFIX + hashStub(String.valueOf(new Random().nextInt(Integer.MAX_VALUE)));
-
-            mapWithClusterNames.put(testName, clusterName);
-            mapWithTestTopics.put(testName, KafkaTopicUtils.generateRandomNameOfTopic());
-            mapWithTestUsers.put(testName, KafkaUserUtils.generateRandomNameOfKafkaUser());
-            mapWithScraperNames.put(testName, clusterName + "-" + Constants.SCRAPER_NAME);
-            mapWithTestExecutionStartTimes.put(testName, System.currentTimeMillis());
-
-            LOGGER.trace("CLUSTER_NAMES_MAP: {}", mapWithClusterNames);
-            LOGGER.trace("USERS_NAME_MAP: {}", mapWithTestUsers);
-            LOGGER.trace("TOPIC_NAMES_MAP: {}", mapWithTestTopics);
-            LOGGER.trace("THIS IS CLIENTS MAP: {}", mapWithScraperNames);
+            storageMap.put(extensionContext, new TestStorage(extensionContext));
             testSuiteNamespaceManager.createParallelNamespace(extensionContext);
         }
     }
