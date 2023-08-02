@@ -108,6 +108,7 @@ public class NodePoolsClusterReportST extends AbstractClusterReportST {
         assertValidStrimziPodSets(outPath, testStorage.getClusterName());
 
         assertValidConfigs(outPath, testStorage.getClusterName());
+        assertValidEvents(outPath);
         assertValidLogs(outPath, testStorage.getClusterName());
 
         Secret clusterCaSecret = getSecretWithKeyFromFile(secretPath, secretKey);
@@ -466,8 +467,11 @@ public class NodePoolsClusterReportST extends AbstractClusterReportST {
         }
     }
 
+    private void assertValidEvents(String outPath) {
+        assertValidFiles(outPath + "/reports/events", "events.txt", 1);
+    }
+
     private void assertValidLogs(String outPath, String clusterName) {
-        assertValidFiles(outPath + "/reports/logs", "events.txt", 1);
         for (String s : Arrays.asList(
             clusterName + "-pool-a-0.log",
             clusterName + "-pool-a-1.log",

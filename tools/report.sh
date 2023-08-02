@@ -301,8 +301,8 @@ done
 echo "events"
 EVENTS=$($KUBE_CLIENT get event -n "$NAMESPACE" --ignore-not-found) && readonly EVENTS
 if [[ -n $EVENTS ]]; then
-  mkdir -p "$OUT_DIR"/reports/logs
-  echo "$EVENTS" > "$OUT_DIR"/reports/logs/events.txt
+  mkdir -p "$OUT_DIR"/reports/events
+  echo "$EVENTS" > "$OUT_DIR"/reports/events/events.txt
 fi
 
 echo "logs"

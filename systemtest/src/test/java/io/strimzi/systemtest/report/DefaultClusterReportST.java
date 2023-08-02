@@ -101,6 +101,7 @@ public class DefaultClusterReportST extends AbstractClusterReportST {
         assertValidStrimziPodSets(outPath, testStorage.getClusterName());
 
         assertValidConfigs(outPath, testStorage.getClusterName());
+        assertValidEvents(outPath);
         assertValidLogs(outPath, testStorage.getClusterName());
 
         Secret clusterCaSecret = getSecretWithKeyFromFile(secretPath, secretKey);
@@ -426,8 +427,11 @@ public class DefaultClusterReportST extends AbstractClusterReportST {
         }
     }
 
+    private void assertValidEvents(String outPath) {
+        assertValidFiles(outPath + "/reports/events", "events.txt", 1);
+    }
+
     private void assertValidLogs(String outPath, String clusterName) {
-        assertValidFiles(outPath + "/reports/logs", "events.txt", 1);
         for (String s : Arrays.asList(
             clusterName + "-kafka-0.log",
             clusterName + "-kafka-1.log",
