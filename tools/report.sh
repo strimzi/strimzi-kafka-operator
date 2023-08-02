@@ -265,6 +265,12 @@ if [[ -n $CO_DEPLOY ]]; then
       get_pod_logs "$CO_POD"
     done
   fi
+  CO_CM=$($KUBE_CLIENT get cm strimzi-cluster-operator -o name -n "$NAMESPACE" --ignore-not-found)
+  if [[ -n $CO_CM ]]; then
+    echo "    $CO_CM"
+    CO_CM=$(echo "$CO_CM" | cut -d "/" -f 2) && readonly CO_CM
+    $KUBE_CLIENT get cm "$CO_CM" -o yaml -n "$NAMESPACE" > "$OUT_DIR"/reports/configmaps/"$CO_CM".yaml
+  fi
 fi
 
 echo "draincleaner"

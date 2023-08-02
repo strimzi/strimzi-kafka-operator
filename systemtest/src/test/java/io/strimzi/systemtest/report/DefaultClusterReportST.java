@@ -221,6 +221,7 @@ public class DefaultClusterReportST extends AbstractClusterReportST {
     private void assertValidConfigMaps(String outPath, String clusterName) throws IOException {
         for (String s : Arrays.asList(
             "my-bridge-bridge-config.yaml",
+            "strimzi-cluster-operator.yaml",
             clusterName + "-cruise-control-config.yaml",
             clusterName + "-entity-topic-operator-config.yaml",
             clusterName + "-entity-user-operator-config.yaml",

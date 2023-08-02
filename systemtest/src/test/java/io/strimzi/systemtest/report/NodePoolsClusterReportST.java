@@ -211,8 +211,9 @@ public class NodePoolsClusterReportST extends AbstractClusterReportST {
                     .withResources(kafkaMainCr.getSpec().getKafka().getResources())
                 .endSpec()
             .build();
-        Kafka kafkaTargetCr = KafkaTemplates.kafkaEphemeral(testStorage.getClusterName() + "-tgt", 3).build();
-        resourceManager.createResourceWithWait(extensionContext, kafkaNodePoolACr, kafkaNodePoolBCr, kafkaMainCr, kafkaTargetCr);
+        resourceManager.createResourceWithWait(extensionContext, kafkaNodePoolACr);
+        resourceManager.createResourceWithWait(extensionContext, kafkaNodePoolBCr, kafkaMainCr,
+            KafkaTemplates.kafkaEphemeral(testStorage.getClusterName() + "-tgt", 3).build());
         resourceManager.createResourceWithWait(extensionContext,
             KafkaTopicTemplates.topic(testStorage.getClusterName(), "my-topic", 1, 1, testStorage.getNamespaceName()).build(),
             KafkaUserTemplates.tlsUser(testStorage.getNamespaceName(), testStorage.getClusterName(), "my-user").build(),
@@ -250,6 +251,7 @@ public class NodePoolsClusterReportST extends AbstractClusterReportST {
     private void assertValidConfigMaps(String outPath, String clusterName) throws IOException {
         for (String s : Arrays.asList(
             "my-bridge-bridge-config.yaml",
+            "strimzi-cluster-operator.yaml",
             clusterName + "-cruise-control-config.yaml",
             clusterName + "-entity-topic-operator-config.yaml",
             clusterName + "-entity-user-operator-config.yaml",
