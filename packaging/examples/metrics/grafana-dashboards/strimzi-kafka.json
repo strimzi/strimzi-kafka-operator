@@ -2975,7 +2975,7 @@
       },
       {
         "current": {},
-        "datasource": "${DS_THANOS}",
+        "datasource": "${DS_PROMETHEUS}",
         "definition": "",
         "hide": 2,
         "includeAll": true,
@@ -2983,7 +2983,7 @@
         "multi": true,
         "name": "pool_name",
         "options": [],
-        "query": "query_result(kafka_server_replicamanager_leadercount{namespace=\"$kubernetes_namespace\", clusterName=~\"$OPENSHIFT_CLUSTER\"})",
+        "query": "query_result(kafka_server_replicamanager_leadercount{namespace=\"$kubernetes_namespace\"})",
         "refresh": 1,
         "regex": "/.*strimzi_io_pool_name=\"([^\"]*).*/",
         "skipUrlSync": false,
