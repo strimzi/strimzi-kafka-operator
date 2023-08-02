@@ -19,14 +19,12 @@ public class FeatureGates {
     private static final String USE_KRAFT = "UseKRaft";
     private static final String STABLE_CONNECT_IDENTITIES = "StableConnectIdentities";
     private static final String KAFKA_NODE_POOLS = "KafkaNodePools";
-
     private static final String UNIDIRECTIONAL_TOPIC_OPERATOR = "UnidirectionalTopicOperator";
 
     // When adding new feature gates, do not forget to add them to allFeatureGates() and toString() methods
     private final FeatureGate useKRaft = new FeatureGate(USE_KRAFT, false);
-    private final FeatureGate stableConnectIdentities = new FeatureGate(STABLE_CONNECT_IDENTITIES, false);
+    private final FeatureGate stableConnectIdentities = new FeatureGate(STABLE_CONNECT_IDENTITIES, true);
     private final FeatureGate kafkaNodePools = new FeatureGate(KAFKA_NODE_POOLS, false);
-
     private final FeatureGate unidirectionalTopicOperator = new FeatureGate(UNIDIRECTIONAL_TOPIC_OPERATOR, false);
 
     /**

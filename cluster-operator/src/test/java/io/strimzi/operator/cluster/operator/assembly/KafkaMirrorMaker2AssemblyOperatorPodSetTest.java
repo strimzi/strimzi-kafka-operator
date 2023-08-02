@@ -4,17 +4,23 @@
  */
 package io.strimzi.operator.cluster.operator.assembly;
 
+import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
+import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy;
 import io.fabric8.kubernetes.api.model.policy.v1.PodDisruptionBudget;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.api.kafka.KafkaMirrorMaker2List;
 import io.strimzi.api.kafka.model.KafkaConnectResources;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2Builder;
+import io.strimzi.api.kafka.model.KafkaMirrorMaker2ClusterSpec;
+import io.strimzi.api.kafka.model.KafkaMirrorMaker2ClusterSpecBuilder;
+import io.strimzi.api.kafka.model.KafkaMirrorMaker2MirrorSpec;
+import io.strimzi.api.kafka.model.KafkaMirrorMaker2MirrorSpecBuilder;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2Resources;
 import io.strimzi.api.kafka.model.StrimziPodSet;
 import io.strimzi.api.kafka.model.status.KafkaMirrorMaker2Status;
@@ -635,5 +641,153 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
 
                     async.flag();
                 })));
+    }
+
+    @Test
+    public void testTopicsGroupsExclude(VertxTestContext context) {
+        String kmm2Name = "foo";
+        String sourceNamespace = "source-ns";
+        String targetNamespace = "target-ns";
+        String sourceClusterAlias = "my-cluster-src";
+        String targetClusterAlias = "my-cluster-tgt";
+        String excludedTopicList = "excludedTopic0,excludedTopic1";
+        String excludedGroupList = "excludedGroup0,excludedGroup1";
+
+        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
+        KafkaMirrorMaker2 kmm2 = ResourceUtils.createEmptyKafkaMirrorMaker2(targetNamespace, kmm2Name);
+        ArgumentCaptor<KafkaMirrorMaker2> mirrorMaker2Captor = createMirrorMaker2CaptorMock(targetNamespace, kmm2Name, kmm2, supplier);
+        KafkaConnectApi mockConnectClient = createConnectClientMock();
+
+        KafkaMirrorMaker2ClusterSpec sourceCluster =
+                new KafkaMirrorMaker2ClusterSpecBuilder(true)
+                        .withAlias(sourceClusterAlias)
+                        .withBootstrapServers(sourceClusterAlias + "." + sourceNamespace + ".svc:9092")
+                        .build();
+        KafkaMirrorMaker2ClusterSpec targetCluster =
+                new KafkaMirrorMaker2ClusterSpecBuilder(true)
+                        .withAlias(targetClusterAlias)
+                        .withBootstrapServers(targetClusterAlias + "." + targetNamespace + ".svc:9092")
+                        .build();
+        kmm2.getSpec().setClusters(List.of(sourceCluster, targetCluster));
+
+        KafkaMirrorMaker2MirrorSpec deprecatedMirrorConnector = new KafkaMirrorMaker2MirrorSpecBuilder()
+                .withSourceCluster(sourceClusterAlias)
+                .withTargetCluster(targetClusterAlias)
+                .withTopicsExcludePattern(excludedTopicList)
+                .withGroupsExcludePattern(excludedGroupList)
+                .build();
+        kmm2.getSpec().setMirrors(List.of(deprecatedMirrorConnector));
+
+        KafkaMirrorMaker2AssemblyOperator mm2AssemblyOperator = new KafkaMirrorMaker2AssemblyOperator(vertx, new PlatformFeaturesAvailability(true, KubernetesVersion.MINIMAL_SUPPORTED_VERSION),
+                supplier, ResourceUtils.dummyClusterOperatorConfig(), x -> mockConnectClient);
+
+        Checkpoint async = context.checkpoint();
+        KafkaMirrorMaker2Cluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kmm2, VERSIONS, supplier.sharedEnvironmentProvider);
+        mm2AssemblyOperator.reconcile(new Reconciliation("test-exclude", KafkaMirrorMaker2.RESOURCE_KIND, targetNamespace, kmm2Name))
+                .onComplete(context.succeeding(v -> context.verify(() -> {
+                    KafkaMirrorMaker2MirrorSpec capturedMirrorConnector = mirrorMaker2Captor.getAllValues().get(0).getSpec().getMirrors().get(0);
+                    assertThat(capturedMirrorConnector.getTopicsExcludePattern(), is(excludedTopicList));
+                    assertThat(capturedMirrorConnector.getGroupsExcludePattern(), is(excludedGroupList));
+                    async.flag();
+                })));
+    }
+
+    @Test
+    @SuppressWarnings("deprecation")
+    public void testTopicsGroupsBlacklist(VertxTestContext context) {
+        String kmm2Name = "foo";
+        String sourceNamespace = "source-ns";
+        String targetNamespace = "target-ns";
+        String sourceClusterAlias = "my-cluster-src";
+        String targetClusterAlias = "my-cluster-tgt";
+        String excludedTopicList = "excludedTopic0,excludedTopic1";
+        String excludedGroupList = "excludedGroup0,excludedGroup1";
+
+        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
+        KafkaMirrorMaker2 kmm2 = ResourceUtils.createEmptyKafkaMirrorMaker2(targetNamespace, kmm2Name);
+        ArgumentCaptor<KafkaMirrorMaker2> mirrorMaker2Captor = createMirrorMaker2CaptorMock(targetNamespace, kmm2Name, kmm2, supplier);
+        KafkaConnectApi mockConnectClient = createConnectClientMock();
+
+        KafkaMirrorMaker2ClusterSpec sourceCluster =
+                new KafkaMirrorMaker2ClusterSpecBuilder(true)
+                        .withAlias(sourceClusterAlias)
+                        .withBootstrapServers(sourceClusterAlias + "." + sourceNamespace + ".svc:9092")
+                        .build();
+        KafkaMirrorMaker2ClusterSpec targetCluster =
+                new KafkaMirrorMaker2ClusterSpecBuilder(true)
+                        .withAlias(targetClusterAlias)
+                        .withBootstrapServers(targetClusterAlias + "." + targetNamespace + ".svc:9092")
+                        .build();
+        kmm2.getSpec().setClusters(List.of(sourceCluster, targetCluster));
+
+        KafkaMirrorMaker2MirrorSpec deprecatedMirrorConnector = new KafkaMirrorMaker2MirrorSpecBuilder()
+                .withSourceCluster(sourceClusterAlias)
+                .withTargetCluster(targetClusterAlias)
+                .withTopicsBlacklistPattern(excludedTopicList)
+                .withGroupsBlacklistPattern(excludedGroupList)
+                .build();
+        kmm2.getSpec().setMirrors(List.of(deprecatedMirrorConnector));
+
+        KafkaMirrorMaker2AssemblyOperator mm2AssemblyOperator = new KafkaMirrorMaker2AssemblyOperator(vertx, new PlatformFeaturesAvailability(true, KubernetesVersion.MINIMAL_SUPPORTED_VERSION),
+                supplier, ResourceUtils.dummyClusterOperatorConfig(), x -> mockConnectClient);
+
+        Checkpoint async = context.checkpoint();
+        KafkaMirrorMaker2Cluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kmm2, VERSIONS, supplier.sharedEnvironmentProvider);
+        mm2AssemblyOperator.reconcile(new Reconciliation("test-blacklist", KafkaMirrorMaker2.RESOURCE_KIND, targetNamespace, kmm2Name))
+                .onComplete(context.succeeding(v -> context.verify(() -> {
+                    KafkaMirrorMaker2MirrorSpec capturedMirrorConnector = mirrorMaker2Captor.getAllValues().get(0).getSpec().getMirrors().get(0);
+                    assertThat(capturedMirrorConnector.getTopicsBlacklistPattern(), is(excludedTopicList));
+                    assertThat(capturedMirrorConnector.getGroupsBlacklistPattern(), is(excludedGroupList));
+                    async.flag();
+                })));
+    }
+
+    private ArgumentCaptor<KafkaMirrorMaker2> createMirrorMaker2CaptorMock(String targetNamespace, String kmm2Name, KafkaMirrorMaker2 kmm2, ResourceOperatorSupplier supplier) {
+        CrdOperator<KubernetesClient, KafkaMirrorMaker2, KafkaMirrorMaker2List> mockMirrorMaker2Ops = supplier.mirrorMaker2Operator;
+        DeploymentOperator mockDcOps = supplier.deploymentOperations;
+        StrimziPodSetOperator mockPodSetOps = supplier.strimziPodSetOperator;
+        PodOperator mockPodOps = supplier.podOperations;
+        PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
+        ConfigMapOperator mockCmOps = supplier.configMapOperations;
+        ServiceOperator mockServiceOps = supplier.serviceOperations;
+        NetworkPolicyOperator mockNetPolOps = supplier.networkPolicyOperator;
+        SecretOperator mockSecretOps = supplier.secretOperations;
+
+        when(mockMirrorMaker2Ops.get(targetNamespace, kmm2Name)).thenReturn(kmm2);
+        when(mockMirrorMaker2Ops.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(kmm2));
+
+        when(mockServiceOps.reconcile(any(), anyString(), anyString(), any())).thenReturn(Future.succeededFuture());
+
+        when(mockDcOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture());
+
+        when(mockCmOps.reconcile(any(), anyString(), any(), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new ConfigMap())));
+
+        when(mockNetPolOps.reconcile(any(), eq(kmm2.getMetadata().getNamespace()), eq(KafkaMirrorMaker2Resources.deploymentName(
+                kmm2.getMetadata().getName())), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new NetworkPolicy())));
+
+        when(mockSecretOps.reconcile(any(), anyString(), any(), any())).thenReturn(Future.succeededFuture());
+
+        when(mockPodSetOps.getAsync(any(), any())).thenReturn(Future.succeededFuture());
+        when(mockPodSetOps.reconcile(any(), anyString(), anyString(), any())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.created(i.getArgument(3))));
+        when(mockPodSetOps.readiness(any(), anyString(), anyString(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+
+        when(mockPodOps.listAsync(any(), any(Labels.class))).thenReturn(Future.succeededFuture(List.of()));
+        when(mockPodOps.getAsync(any(), any())).thenReturn(Future.succeededFuture());
+        when(mockPodOps.readiness(any(), any(), any(), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+
+        ArgumentCaptor<PodDisruptionBudget> pdbCaptor = ArgumentCaptor.forClass(PodDisruptionBudget.class);
+        when(mockPdbOps.reconcile(any(), anyString(), any(), pdbCaptor.capture())).thenReturn(Future.succeededFuture());
+
+        ArgumentCaptor<KafkaMirrorMaker2> mirrorMaker2Captor = ArgumentCaptor.forClass(KafkaMirrorMaker2.class);
+        when(mockMirrorMaker2Ops.updateStatusAsync(any(), mirrorMaker2Captor.capture())).thenReturn(Future.succeededFuture());
+
+        return mirrorMaker2Captor;
+    }
+
+    private KafkaConnectApi createConnectClientMock() {
+        KafkaConnectApi mockConnectClient = mock(KafkaConnectApi.class);
+        when(mockConnectClient.list(any(), anyString(), anyInt())).thenReturn(Future.succeededFuture(emptyList()));
+        when(mockConnectClient.updateConnectLoggers(any(), anyString(), anyInt(), anyString(), any(OrderedProperties.class))).thenReturn(Future.succeededFuture());
+        return mockConnectClient;
     }
 }

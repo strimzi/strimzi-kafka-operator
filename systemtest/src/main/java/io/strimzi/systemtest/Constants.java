@@ -191,7 +191,7 @@ public interface Constants {
      * Feature gate related constants
      */
     String USE_KRAFT_MODE = "+UseKRaft";
-    String USE_STABLE_CONNECT_IDENTITIES = "+StableConnectIdentities";
+    String DONT_USE_STABLE_CONNECT_IDENTITIES = "-StableConnectIdentities";
     String USE_KAFKA_NODE_POOLS = "+KafkaNodePools";
     String UNIDIRECTIONAL_TOPIC_OPERATOR = "+UnidirectionalTopicOperator";
 
