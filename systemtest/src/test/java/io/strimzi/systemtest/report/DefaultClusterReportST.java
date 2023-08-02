@@ -292,23 +292,27 @@ public class DefaultClusterReportST extends AbstractClusterReportST {
             clusterName + "-kafka-2.yaml",
             clusterName + "-zookeeper-0.yaml",
             clusterName + "-zookeeper-1.yaml",
-            clusterName + "-zookeeper-2.yaml"
+            clusterName + "-zookeeper-2.yaml",
+            "my-bridge-bridge",
+            clusterName + "-cruise-control",
+            clusterName + "-entity-operator",
+            "my-connect-connect",
+            "my-mm2-mirrormaker2"
         )) {
             assertValidYamls(outPath + "/reports/pods", Pod.class, s, 1);
         }
-        assertValidYamls(outPath + "/reports/pods", Pod.class, "my-bridge-bridge", 1);
-        assertValidYamls(outPath + "/reports/pods", Pod.class, clusterName + "-cruise-control", 1);
-        assertValidYamls(outPath + "/reports/pods", Pod.class, clusterName + "-entity-operator", 1);
-        assertValidYamls(outPath + "/reports/pods", Pod.class, "my-connect-connect", 1);
-        assertValidYamls(outPath + "/reports/pods", Pod.class, "my-mm2-mirrormaker2", 1);
         assertValidYamls(outPath + "/reports/pods", Pod.class, "strimzi-cluster-operator", 2);
     }
 
     private void assertValidReplicaSets(String outPath, String clusterName) throws IOException {
-        assertValidYamls(outPath + "/reports/replicasets", ReplicaSet.class, "my-bridge-bridge", 1);
-        assertValidYamls(outPath + "/reports/replicasets", ReplicaSet.class, clusterName + "-cruise-control", 1);
-        assertValidYamls(outPath + "/reports/replicasets", ReplicaSet.class, clusterName + "-entity-operator", 1);
-        assertValidYamls(outPath + "/reports/replicasets", ReplicaSet.class, "strimzi-cluster-operator", 1);
+        for (String s : Arrays.asList(
+            "my-bridge-bridge",
+            clusterName + "-cruise-control",
+            clusterName + "-entity-operator",
+            "strimzi-cluster-operator"
+        )) {
+            assertValidYamls(outPath + "/reports/replicasets", ReplicaSet.class, s, 1);
+        }
     }
 
     private void assertValidRoleBindings(String outPath, String clusterName) throws IOException {
@@ -370,8 +374,7 @@ public class DefaultClusterReportST extends AbstractClusterReportST {
     }
 
     private void assertValidKafkaRebalances(String outPath, String clusterName) throws IOException {
-        assertValidYamls(outPath + "/reports/kafkarebalances",
-            KafkaRebalance.class, clusterName + ".yaml", 1);
+        assertValidYamls(outPath + "/reports/kafkarebalances", KafkaRebalance.class, clusterName + ".yaml", 1);
     }
 
     private void assertValidKafkas(String outPath, String clusterName) throws IOException {
@@ -389,7 +392,6 @@ public class DefaultClusterReportST extends AbstractClusterReportST {
     }
 
     private void assertValidKafkaUsers(String outPath) throws IOException {
-        // skipping internal topics as they will not be visible with the UTO by default
         assertValidYamls(outPath + "/reports/kafkausers", KafkaUser.class, "my-user.yaml", 1);
     }
 
@@ -428,15 +430,15 @@ public class DefaultClusterReportST extends AbstractClusterReportST {
             clusterName + "-kafka-2.log",
             clusterName + "-zookeeper-0.log",
             clusterName + "-zookeeper-1.log",
-            clusterName + "-zookeeper-2.log"
+            clusterName + "-zookeeper-2.log",
+            clusterName + "-cruise-control",
+            "my-bridge-bridge",
+            "my-connect-connect",
+            "my-mm2-mirrormaker2"
         )) {
             assertValidFiles(outPath + "/reports/logs", s, 1);
         }
-        assertValidFiles(outPath + "/reports/logs", clusterName + "-cruise-control", 1);
-        assertValidFiles(outPath + "/reports/logs", "my-bridge-bridge", 1);
         assertValidFiles(outPath + "/reports/logs", clusterName + "-entity-operator", 3);
-        assertValidFiles(outPath + "/reports/logs", "my-connect-connect", 1);
-        assertValidFiles(outPath + "/reports/logs", "my-mm2-mirrormaker2", 1);
         assertValidFiles(outPath + "/reports/logs", "strimzi-cluster-operator", 2);
     }
 }

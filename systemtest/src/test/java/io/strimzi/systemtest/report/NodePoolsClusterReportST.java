@@ -193,7 +193,7 @@ public class NodePoolsClusterReportST extends AbstractClusterReportST {
                 .addToAnnotations(Annotations.ANNO_STRIMZI_IO_NODE_POOLS, "enabled")
             .endMetadata()
             .build();
-        KafkaNodePool kafkaNodePoolACr =  KafkaNodePoolTemplates
+        KafkaNodePool kafkaNodePoolACr = KafkaNodePoolTemplates
             .defaultKafkaNodePool(testStorage.getNamespaceName(), "pool-a", testStorage.getClusterName(), 2)
                 .editOrNewSpec()
                     .addToRoles(ProcessRoles.BROKER)
@@ -202,7 +202,7 @@ public class NodePoolsClusterReportST extends AbstractClusterReportST {
                     .withResources(kafkaMainCr.getSpec().getKafka().getResources())
                 .endSpec()
             .build();
-        KafkaNodePool kafkaNodePoolBCr =  KafkaNodePoolTemplates
+        KafkaNodePool kafkaNodePoolBCr = KafkaNodePoolTemplates
             .defaultKafkaNodePool(testStorage.getNamespaceName(), "pool-b", testStorage.getClusterName(), 1)
                 .editOrNewSpec()
                     .addToRoles(ProcessRoles.BROKER)
@@ -324,21 +324,25 @@ public class NodePoolsClusterReportST extends AbstractClusterReportST {
             clusterName + "-zookeeper-1.yaml",
             clusterName + "-zookeeper-2.yaml",
             "my-connect-connect-0.yaml",
-            "my-mm2-mirrormaker2-0.yaml"
+            "my-mm2-mirrormaker2-0.yaml",
+            "my-bridge-bridge",
+            clusterName + "-cruise-control",
+            clusterName + "-entity-operator"
         )) {
             assertValidYamls(outPath + "/reports/pods", Pod.class, s, 1);
         }
-        assertValidYamls(outPath + "/reports/pods", Pod.class, "my-bridge-bridge", 1);
-        assertValidYamls(outPath + "/reports/pods", Pod.class, clusterName + "-cruise-control", 1);
-        assertValidYamls(outPath + "/reports/pods", Pod.class, clusterName + "-entity-operator", 1);
         assertValidYamls(outPath + "/reports/pods", Pod.class, "strimzi-cluster-operator", 2);
     }
 
     private void assertValidReplicaSets(String outPath, String clusterName) throws IOException {
-        assertValidYamls(outPath + "/reports/replicasets", ReplicaSet.class, "my-bridge-bridge", 1);
-        assertValidYamls(outPath + "/reports/replicasets", ReplicaSet.class, clusterName + "-cruise-control", 1);
-        assertValidYamls(outPath + "/reports/replicasets", ReplicaSet.class, clusterName + "-entity-operator", 1);
-        assertValidYamls(outPath + "/reports/replicasets", ReplicaSet.class, "strimzi-cluster-operator", 1);
+        for (String s : Arrays.asList(
+            "my-bridge-bridge",
+            clusterName + "-cruise-control",
+            clusterName + "-entity-operator",
+            "strimzi-cluster-operator"
+        )) {
+            assertValidYamls(outPath + "/reports/replicasets", ReplicaSet.class, s, 1);
+        }
     }
 
     private void assertValidRoleBindings(String outPath, String clusterName) throws IOException {
@@ -407,8 +411,7 @@ public class NodePoolsClusterReportST extends AbstractClusterReportST {
     }
 
     private void assertValidKafkaRebalances(String outPath, String clusterName) throws IOException {
-        assertValidYamls(outPath + "/reports/kafkarebalances",
-            KafkaRebalance.class, clusterName + ".yaml", 1);
+        assertValidYamls(outPath + "/reports/kafkarebalances", KafkaRebalance.class, clusterName + ".yaml", 1);
     }
 
     private void assertValidKafkas(String outPath, String clusterName) throws IOException {
@@ -426,7 +429,6 @@ public class NodePoolsClusterReportST extends AbstractClusterReportST {
     }
 
     private void assertValidKafkaUsers(String outPath) throws IOException {
-        // skipping internal topics as they will not be visible with the UTO by default
         assertValidYamls(outPath + "/reports/kafkausers", KafkaUser.class, "my-user.yaml", 1);
     }
 
@@ -470,12 +472,12 @@ public class NodePoolsClusterReportST extends AbstractClusterReportST {
             clusterName + "-zookeeper-1.log",
             clusterName + "-zookeeper-2.log",
             "my-connect-connect-0.log",
-            "my-mm2-mirrormaker2-0.log"
+            "my-mm2-mirrormaker2-0.log",
+            clusterName + "-cruise-control",
+            "my-bridge-bridge"
         )) {
             assertValidFiles(outPath + "/reports/logs", s, 1);
         }
-        assertValidFiles(outPath + "/reports/logs", clusterName + "-cruise-control", 1);
-        assertValidFiles(outPath + "/reports/logs", "my-bridge-bridge", 1);
         assertValidFiles(outPath + "/reports/logs", clusterName + "-entity-operator", 3);
         assertValidFiles(outPath + "/reports/logs", "strimzi-cluster-operator", 2);
     }
