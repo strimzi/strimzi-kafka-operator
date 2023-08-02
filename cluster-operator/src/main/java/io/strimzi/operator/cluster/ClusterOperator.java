@@ -4,7 +4,6 @@
  */
 package io.strimzi.operator.cluster;
 
-import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.Watch;
 import io.strimzi.api.kafka.model.nodepool.KafkaNodePool;
 import io.strimzi.operator.cluster.operator.assembly.AbstractConnectOperator;
@@ -46,7 +45,6 @@ public class ClusterOperator extends AbstractVerticle {
     private static final String NAME_SUFFIX = "-cluster-operator";
     private static final String CERTS_SUFFIX = NAME_SUFFIX + "-certs";
 
-    private final KubernetesClient client;
     private final String namespace;
     private final ClusterOperatorConfig config;
 
@@ -70,20 +68,18 @@ public class ClusterOperator extends AbstractVerticle {
     /**
      * Constructor
      *
-     * @param namespace                             Namespace which this operator instance manages
-     * @param config                                Cluster Operator configuration
-     * @param client                                Kubernetes client
-     * @param kafkaAssemblyOperator                 Kafka operator
-     * @param kafkaConnectAssemblyOperator          KafkaConnect operator
-     * @param kafkaMirrorMakerAssemblyOperator      KafkaMirrorMaker operator
-     * @param kafkaMirrorMaker2AssemblyOperator     KafkaMirrorMaker2 operator
-     * @param kafkaBridgeAssemblyOperator           KafkaBridge operator
-     * @param kafkaRebalanceAssemblyOperator        KafkaRebalance operator
-     * @param resourceOperatorSupplier              Resource operator supplier
+     * @param namespace                         Namespace which this operator instance manages
+     * @param config                            Cluster Operator configuration
+     * @param kafkaAssemblyOperator             Kafka operator
+     * @param kafkaConnectAssemblyOperator      KafkaConnect operator
+     * @param kafkaMirrorMakerAssemblyOperator  KafkaMirrorMaker operator
+     * @param kafkaMirrorMaker2AssemblyOperator KafkaMirrorMaker2 operator
+     * @param kafkaBridgeAssemblyOperator       KafkaBridge operator
+     * @param kafkaRebalanceAssemblyOperator    KafkaRebalance operator
+     * @param resourceOperatorSupplier          Resource operator supplier
      */
     public ClusterOperator(String namespace,
                            ClusterOperatorConfig config,
-                           KubernetesClient client,
                            KafkaAssemblyOperator kafkaAssemblyOperator,
                            KafkaConnectAssemblyOperator kafkaConnectAssemblyOperator,
                            KafkaMirrorMakerAssemblyOperator kafkaMirrorMakerAssemblyOperator,
@@ -94,7 +90,6 @@ public class ClusterOperator extends AbstractVerticle {
         LOGGER.info("Creating ClusterOperator for namespace {}", namespace);
         this.namespace = namespace;
         this.config = config;
-        this.client = client;
         this.kafkaAssemblyOperator = kafkaAssemblyOperator;
         this.kafkaConnectAssemblyOperator = kafkaConnectAssemblyOperator;
         this.kafkaMirrorMakerAssemblyOperator = kafkaMirrorMakerAssemblyOperator;
@@ -190,7 +185,6 @@ public class ClusterOperator extends AbstractVerticle {
         }
 
         strimziPodSetController.stop();
-        client.close();
         stop.complete();
     }
 
