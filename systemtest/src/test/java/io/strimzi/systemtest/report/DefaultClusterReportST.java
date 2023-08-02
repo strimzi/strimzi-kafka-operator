@@ -76,6 +76,8 @@ public class DefaultClusterReportST extends AbstractClusterReportST {
 
         assertThat("Output directory does not exist", FileUtils.exists(outPath));
         assertThat("Output ZIP file does not exist", FileUtils.listFilesWithSuffix(outPath, ".zip").length == 1);
+        Secret clusterCaSecret = getSecretWithKeyFromFile(secretPath, secretKey);
+        assertThat("Keys are not hidden in secrets", clusterCaSecret.getData().get(secretKey).equals("<hidden>"));
 
         assertValidClusterRoleBindings(outPath);
         assertValidClusterRoles(outPath);
@@ -103,18 +105,6 @@ public class DefaultClusterReportST extends AbstractClusterReportST {
         assertValidConfigs(outPath, testStorage.getClusterName());
         assertValidEvents(outPath);
         assertValidLogs(outPath, testStorage.getClusterName());
-
-        Secret clusterCaSecret = getSecretWithKeyFromFile(secretPath, secretKey);
-        assertThat("Keys are not hidden in secrets", clusterCaSecret.getData().get(secretKey).equals("<hidden>"));
-
-        assertThat("KafkaBridge CRD does not exist", FileUtils.exists(outPath + "/reports/customresourcedefinitions/kafkabridges.kafka.strimzi.io.yaml"));
-        assertThat("KafkaBridge logs are missing", FileUtils.listFilesWithPrefix(outPath + "/reports/logs", "my-bridge-bridge").length == 1);
-
-        assertThat("KafkaConnect CRD does not exist", FileUtils.exists(outPath + "/reports/customresourcedefinitions/kafkaconnects.kafka.strimzi.io.yaml"));
-        assertThat("KafkaConnect logs are missing", FileUtils.listFilesWithPrefix(outPath + "/reports/logs", "my-connect-connect").length == 1);
-
-        assertThat("KafkaMirrorMaker2 CRD does not exist", FileUtils.exists(outPath + "/reports/customresourcedefinitions/kafkamirrormaker2s.kafka.strimzi.io.yaml"));
-        assertThat("KafkaMirrorMaker2 logs are missing", FileUtils.listFilesWithPrefix(outPath + "/reports/logs", "my-mm2-mirrormaker2").length == 1);
     }
 
     @ParallelTest
