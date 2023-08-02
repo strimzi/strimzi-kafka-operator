@@ -28,23 +28,23 @@ class HelmChartST extends AbstractST {
 
     @IsolatedTest
     void testStrimziComponentsViaHelmChart(ExtensionContext extensionContext) {
-        final TestStorage ts = new TestStorage(extensionContext, Constants.TEST_SUITE_NAMESPACE);
+        final TestStorage testStorage = new TestStorage(extensionContext, Constants.TEST_SUITE_NAMESPACE);
 
         // Deploy Kafka and wait for readiness
-        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(ts.getClusterName(), 3).build());
+        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3).build());
 
         resourceManager.createResourceWithWait(extensionContext,
-            KafkaTopicTemplates.topic(ts.getClusterName(), ts.getTopicName(), Constants.TEST_SUITE_NAMESPACE).build(),
+            KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getTopicName(), Constants.TEST_SUITE_NAMESPACE).build(),
             // Deploy KafkaConnect and wait for readiness
-            KafkaConnectTemplates.kafkaConnectWithFilePlugin(ts.getClusterName(), Constants.TEST_SUITE_NAMESPACE, 1)
+            KafkaConnectTemplates.kafkaConnectWithFilePlugin(testStorage.getClusterName(), Constants.TEST_SUITE_NAMESPACE, 1)
                 .editMetadata()
                     .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
                 .endMetadata()
                 .build(),
             // Deploy KafkaBridge (different image than Kafka) and wait for readiness
-            KafkaBridgeTemplates.kafkaBridge(ts.getClusterName(), KafkaResources.plainBootstrapAddress(ts.getClusterName()), 1).build());
+            KafkaBridgeTemplates.kafkaBridge(testStorage.getClusterName(), KafkaResources.plainBootstrapAddress(testStorage.getClusterName()), 1).build());
 
-        resourceManager.createResourceWithWait(extensionContext, KafkaConnectorTemplates.kafkaConnector(ts.getClusterName()).build());
+        resourceManager.createResourceWithWait(extensionContext, KafkaConnectorTemplates.kafkaConnector(testStorage.getClusterName()).build());
     }
 
     @BeforeAll

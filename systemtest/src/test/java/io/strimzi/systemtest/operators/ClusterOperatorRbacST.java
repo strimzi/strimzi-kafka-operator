@@ -58,19 +58,19 @@ public class ClusterOperatorRbacST extends AbstractST {
 
         cluster.setNamespace(Constants.TEST_SUITE_NAMESPACE);
 
-        String coPodName = kubeClient().getClusterOperatorPodName(clusterOperator.getDeploymentNamespace());
+        String coPodName = kubeClient().getClusterOperatorPodName(Constants.CO_NAMESPACE);
         LOGGER.info("Deploying Kafka: {}, which should be deployed even the CRBs are not present", clusterName);
 
         resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3).build());
         LOGGER.info("CO log should contain some information about ignoring forbidden access to CRB for Kafka");
-        String log = cmdKubeClient().namespace(clusterOperator.getDeploymentNamespace()).execInCurrentNamespace(Level.DEBUG, "logs", coPodName).out();
+        String log = cmdKubeClient().namespace(Constants.CO_NAMESPACE).execInCurrentNamespace(Level.DEBUG, "logs", coPodName).out();
         assertTrue(log.contains("Kafka(" + cmdKubeClient().namespace() + "/" + clusterName + "): Ignoring forbidden access to ClusterRoleBindings resource which does not seem to be required."));
 
         LOGGER.info("Deploying KafkaConnect: {} without rack awareness, the CR should be deployed without error", clusterName);
         resourceManager.createResourceWithWait(extensionContext, KafkaConnectTemplates.kafkaConnect(clusterName, Constants.TEST_SUITE_NAMESPACE, 1).build());
 
         LOGGER.info("CO log should contain some information about ignoring forbidden access to CRB for KafkaConnect");
-        log = cmdKubeClient().namespace(clusterOperator.getDeploymentNamespace()).execInCurrentNamespace(Level.DEBUG, "logs", coPodName).out();
+        log = cmdKubeClient().namespace(Constants.CO_NAMESPACE).execInCurrentNamespace(Level.DEBUG, "logs", coPodName).out();
         assertTrue(log.contains("KafkaConnect(" + cmdKubeClient().namespace() + "/" + clusterName + "): Ignoring forbidden access to ClusterRoleBindings resource which does not seem to be required."));
     }
 
