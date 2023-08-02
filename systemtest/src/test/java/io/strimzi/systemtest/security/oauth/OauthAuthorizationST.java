@@ -12,7 +12,7 @@ import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBui
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.systemtest.annotations.FIPSNotSupported;
 import io.strimzi.systemtest.annotations.IsolatedTest;
-import io.strimzi.systemtest.annotations.KRaftNotSupported;
+import io.strimzi.systemtest.annotations.KRaftWithoutUTONotSupported;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaOauthClients;
@@ -61,7 +61,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 @Tag(INTERNAL_CLIENTS_USED)
 @Tag(ARM64_UNSUPPORTED)
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-@KRaftNotSupported("OAuth is not supported by KRaft mode and is used in this test case")
 @FIPSNotSupported("Keycloak is not customized to run on FIPS env - https://github.com/strimzi/strimzi-kafka-operator/issues/8331")
 public class OauthAuthorizationST extends OauthAbstractST {
     protected static final Logger LOGGER = LogManager.getLogger(OauthAuthorizationST.class);
@@ -121,6 +120,7 @@ public class OauthAuthorizationST extends OauthAbstractST {
             "and should also write and read to topics starting with 'a-'")
     @ParallelTest
     @Order(2)
+    @KRaftWithoutUTONotSupported
     void testTeamAWriteToTopic(ExtensionContext extensionContext) {
         String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         String teamAProducerName = TEAM_A_PRODUCER_NAME + "-" + clusterName;
@@ -278,6 +278,7 @@ public class OauthAuthorizationST extends OauthAbstractST {
             "as a member of team B can read from topics starting with 'x-'")
     @ParallelTest
     @Order(5)
+    @KRaftWithoutUTONotSupported
     void testTeamAWriteToTopicStartingWithXAndTeamBReadFromTopicStartingWithX(ExtensionContext extensionContext) {
         String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         String teamAProducerName = TEAM_A_PRODUCER_NAME + "-" + clusterName;
