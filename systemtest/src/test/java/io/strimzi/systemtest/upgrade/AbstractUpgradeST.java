@@ -97,11 +97,11 @@ public class AbstractUpgradeST extends AbstractST {
     protected File kafkaYaml;
 
     protected void makeSnapshots() {
-        coPods = DeploymentUtils.depSnapshot(clusterOperator.getDeploymentNamespace(), ResourceManager.getCoDeploymentName());
-        zkPods = PodUtils.podSnapshot(clusterOperator.getDeploymentNamespace(), zkSelector);
-        kafkaPods = PodUtils.podSnapshot(clusterOperator.getDeploymentNamespace(), kafkaSelector);
-        eoPods = DeploymentUtils.depSnapshot(clusterOperator.getDeploymentNamespace(), KafkaResources.entityOperatorDeploymentName(clusterName));
-        connectPods = PodUtils.podSnapshot(clusterOperator.getDeploymentNamespace(), connectLabelSelector);
+        coPods = DeploymentUtils.depSnapshot(io.strimzi.systemtest.Constants.CO_NAMESPACE, ResourceManager.getCoDeploymentName());
+        zkPods = PodUtils.podSnapshot(io.strimzi.systemtest.Constants.CO_NAMESPACE, zkSelector);
+        kafkaPods = PodUtils.podSnapshot(io.strimzi.systemtest.Constants.CO_NAMESPACE, kafkaSelector);
+        eoPods = DeploymentUtils.depSnapshot(io.strimzi.systemtest.Constants.CO_NAMESPACE, KafkaResources.entityOperatorDeploymentName(clusterName));
+        connectPods = PodUtils.podSnapshot(io.strimzi.systemtest.Constants.CO_NAMESPACE, connectLabelSelector);
     }
 
     @SuppressWarnings("CyclomaticComplexity")
@@ -147,7 +147,7 @@ public class AbstractUpgradeST extends AbstractST {
                 LOGGER.info("Set Kafka version to " + kafkaVersionFromProcedure);
                 cmdKubeClient().patchResource(getResourceApiVersion(Kafka.RESOURCE_PLURAL, operatorVersion), clusterName, "/spec/kafka/version", kafkaVersionFromProcedure);
                 LOGGER.info("Waiting for Kafka rolling update to finish");
-                kafkaPods = RollingUpdateUtils.waitTillComponentHasRolled(clusterOperator.getDeploymentNamespace(), kafkaSelector, 3, kafkaPods);
+                kafkaPods = RollingUpdateUtils.waitTillComponentHasRolled(io.strimzi.systemtest.Constants.CO_NAMESPACE, kafkaSelector, 3, kafkaPods);
             }
 
             String logMessageVersion = versionModificationData.getProcedures().getLogMessageVersion();
@@ -168,7 +168,7 @@ public class AbstractUpgradeST extends AbstractST {
                 if ((currentInterBrokerProtocol != null && !currentInterBrokerProtocol.equals(interBrokerProtocolVersion)) ||
                         (currentLogMessageFormat != null && !currentLogMessageFormat.isEmpty() && !currentLogMessageFormat.equals(logMessageVersion))) {
                     LOGGER.info("Waiting for Kafka rolling update to finish");
-                    kafkaPods = RollingUpdateUtils.waitTillComponentHasRolled(clusterOperator.getDeploymentNamespace(), kafkaSelector, 3, kafkaPods);
+                    kafkaPods = RollingUpdateUtils.waitTillComponentHasRolled(io.strimzi.systemtest.Constants.CO_NAMESPACE, kafkaSelector, 3, kafkaPods);
                 }
                 makeSnapshots();
             }
@@ -177,7 +177,7 @@ public class AbstractUpgradeST extends AbstractST {
                 LOGGER.info("Set Kafka version to " + kafkaVersionFromProcedure);
                 cmdKubeClient().patchResource(getResourceApiVersion(Kafka.RESOURCE_PLURAL, operatorVersion), clusterName, "/spec/kafka/version", kafkaVersionFromProcedure);
                 LOGGER.info("Waiting for Kafka rolling update to finish");
-                kafkaPods = RollingUpdateUtils.waitTillComponentHasRolled(clusterOperator.getDeploymentNamespace(), kafkaSelector, kafkaPods);
+                kafkaPods = RollingUpdateUtils.waitTillComponentHasRolled(io.strimzi.systemtest.Constants.CO_NAMESPACE, kafkaSelector, kafkaPods);
             }
         }
     }
@@ -200,21 +200,21 @@ public class AbstractUpgradeST extends AbstractST {
 
     protected void waitForKafkaClusterRollingUpdate() {
         LOGGER.info("Waiting for ZK StrimziPodSet roll");
-        zkPods = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(clusterOperator.getDeploymentNamespace(), zkSelector, 3, zkPods);
+        zkPods = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(io.strimzi.systemtest.Constants.CO_NAMESPACE, zkSelector, 3, zkPods);
         LOGGER.info("Waiting for Kafka StrimziPodSet roll");
-        kafkaPods = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(clusterOperator.getDeploymentNamespace(), kafkaSelector, 3, kafkaPods);
+        kafkaPods = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(io.strimzi.systemtest.Constants.CO_NAMESPACE, kafkaSelector, 3, kafkaPods);
         LOGGER.info("Waiting for EO Deployment roll");
         // Check the TO and UO also got upgraded
-        eoPods = DeploymentUtils.waitTillDepHasRolled(clusterOperator.getDeploymentNamespace(), KafkaResources.entityOperatorDeploymentName(clusterName), 1, eoPods);
+        eoPods = DeploymentUtils.waitTillDepHasRolled(io.strimzi.systemtest.Constants.CO_NAMESPACE, KafkaResources.entityOperatorDeploymentName(clusterName), 1, eoPods);
     }
 
     protected void waitForReadinessOfKafkaCluster() {
         LOGGER.info("Waiting for ZooKeeper StrimziPodSet");
-        RollingUpdateUtils.waitForComponentAndPodsReady(clusterOperator.getDeploymentNamespace(), zkSelector, 3);
+        RollingUpdateUtils.waitForComponentAndPodsReady(io.strimzi.systemtest.Constants.CO_NAMESPACE, zkSelector, 3);
         LOGGER.info("Waiting for Kafka StrimziPodSet");
-        RollingUpdateUtils.waitForComponentAndPodsReady(clusterOperator.getDeploymentNamespace(), kafkaSelector, 3);
+        RollingUpdateUtils.waitForComponentAndPodsReady(io.strimzi.systemtest.Constants.CO_NAMESPACE, kafkaSelector, 3);
         LOGGER.info("Waiting for EO Deployment");
-        DeploymentUtils.waitForDeploymentAndPodsReady(clusterOperator.getDeploymentNamespace(), KafkaResources.entityOperatorDeploymentName(clusterName), 1);
+        DeploymentUtils.waitForDeploymentAndPodsReady(io.strimzi.systemtest.Constants.CO_NAMESPACE, KafkaResources.entityOperatorDeploymentName(clusterName), 1);
     }
 
     protected void  changeClusterOperator(BundleVersionModificationData versionModificationData, String namespace, ExtensionContext extensionContext) throws IOException {

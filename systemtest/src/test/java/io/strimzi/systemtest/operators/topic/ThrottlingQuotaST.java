@@ -56,7 +56,7 @@ public class ThrottlingQuotaST extends AbstractST {
     @KRaftWithoutUTONotSupported
     @UTONotSupported("https://github.com/strimzi/strimzi-kafka-operator/issues/8864")
     void testThrottlingQuotasDuringAllTopicOperations(ExtensionContext extensionContext) {
-        final TestStorage testStorage = new TestStorage(extensionContext, clusterOperator.getDeploymentNamespace());
+        final TestStorage testStorage = new TestStorage(extensionContext, Constants.TEST_SUITE_NAMESPACE);
 
         final String createAdminName = "create-" + testStorage.getAdminName();
         final String alterAdminName = "alter-" + testStorage.getAdminName();
@@ -189,7 +189,7 @@ public class ThrottlingQuotaST extends AbstractST {
             .createInstallation()
             .runInstallation();
 
-        sharedTestStorage = new TestStorage(extensionContext, clusterOperator.getDeploymentNamespace());
+        sharedTestStorage = new TestStorage(extensionContext, Constants.TEST_SUITE_NAMESPACE);
 
         // Deploy kafka with ScramSHA512
         LOGGER.info("Deploying shared Kafka across all test cases in {} Namespace", sharedTestStorage.getNamespaceName());

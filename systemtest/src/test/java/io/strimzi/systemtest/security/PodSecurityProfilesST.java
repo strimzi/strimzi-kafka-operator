@@ -208,7 +208,7 @@ public class PodSecurityProfilesST extends AbstractST {
             .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
             .withConsumerName(testStorage.getConsumerName())
             .withProducerName(testStorage.getProducerName())
-            .withNamespaceName(clusterOperator.getDeploymentNamespace())
+            .withNamespaceName(testStorage.getNamespaceName())
             // we set DEFAULT, which is in this case incorrect and client should crash
             .withPodSecurityPolicy(PodSecurityProfile.DEFAULT)
             .build();
@@ -279,7 +279,7 @@ public class PodSecurityProfilesST extends AbstractST {
             .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
             .withConsumerName(testStorage.getConsumerName())
             .withProducerName(testStorage.getProducerName())
-            .withNamespaceName(clusterOperator.getDeploymentNamespace())
+            .withNamespaceName(testStorage.getNamespaceName())
             .withPodSecurityPolicy(PodSecurityProfile.RESTRICTED)
             .build();
 

@@ -15,7 +15,7 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 import java.util.Arrays;
 
 import static io.strimzi.systemtest.Constants.REGRESSION;
-import static io.strimzi.systemtest.Constants.INFRA_NAMESPACE;
+import static io.strimzi.systemtest.Constants.CO_NAMESPACE;
 
 @Tag(REGRESSION)
 class MultipleNamespaceST extends AbstractNamespaceST {
@@ -29,9 +29,9 @@ class MultipleNamespaceST extends AbstractNamespaceST {
 
         clusterOperator = new SetupClusterOperator.SetupClusterOperatorBuilder()
                 .withExtensionContext(extensionContext)
-                .withNamespace(INFRA_NAMESPACE)
-                .withWatchingNamespaces(String.join(",", INFRA_NAMESPACE, PRIMARY_KAFKA_WATCHED_NAMESPACE, MAIN_TEST_NAMESPACE))
-                .withBindingsNamespaces(Arrays.asList(INFRA_NAMESPACE, PRIMARY_KAFKA_WATCHED_NAMESPACE, MAIN_TEST_NAMESPACE))
+                .withNamespace(CO_NAMESPACE)
+                .withWatchingNamespaces(String.join(",", CO_NAMESPACE, PRIMARY_KAFKA_WATCHED_NAMESPACE, MAIN_TEST_NAMESPACE))
+                .withBindingsNamespaces(Arrays.asList(CO_NAMESPACE, PRIMARY_KAFKA_WATCHED_NAMESPACE, MAIN_TEST_NAMESPACE))
                 .createInstallation()
                 .runInstallation();
     }

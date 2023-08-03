@@ -45,7 +45,7 @@ public class OpaIntegrationST extends AbstractST {
 
     @ParallelTest
     void testOpaAuthorization(ExtensionContext extensionContext) {
-        final TestStorage testStorage = new TestStorage(extensionContext, clusterOperator.getDeploymentNamespace());
+        final TestStorage testStorage = new TestStorage(extensionContext, Constants.TEST_SUITE_NAMESPACE);
 
         KafkaUser goodUser = KafkaUserTemplates.tlsUser(testStorage.getNamespaceName(), CLUSTER_NAME, OPA_GOOD_USER).build();
         KafkaUser badUser = KafkaUserTemplates.tlsUser(testStorage.getNamespaceName(), CLUSTER_NAME, OPA_BAD_USER).build();
@@ -80,7 +80,7 @@ public class OpaIntegrationST extends AbstractST {
 
     @ParallelTest
     void testOpaAuthorizationSuperUser(ExtensionContext extensionContext) {
-        final TestStorage testStorage = new TestStorage(extensionContext, clusterOperator.getDeploymentNamespace());
+        final TestStorage testStorage = new TestStorage(extensionContext, Constants.TEST_SUITE_NAMESPACE);
 
         KafkaUser superuser = KafkaUserTemplates.tlsUser(testStorage.getNamespaceName(), CLUSTER_NAME, OPA_SUPERUSER).build();
 
@@ -111,11 +111,11 @@ public class OpaIntegrationST extends AbstractST {
             .runInstallation();
 
         // Install OPA
-        cmdKubeClient().apply(FileUtils.updateNamespaceOfYamlFile(TestUtils.USER_PATH + "/../systemtest/src/test/resources/opa/opa.yaml", clusterOperator.getDeploymentNamespace()));
+        cmdKubeClient(Constants.TEST_SUITE_NAMESPACE).apply(FileUtils.updateNamespaceOfYamlFile(TestUtils.USER_PATH + "/../systemtest/src/test/resources/opa/opa.yaml", Constants.TEST_SUITE_NAMESPACE));
 
         resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(CLUSTER_NAME, 3, 1)
             .editMetadata()
-                .withNamespace(clusterOperator.getDeploymentNamespace())
+                .withNamespace(Constants.TEST_SUITE_NAMESPACE)
             .endMetadata()
             .editSpec()
                 .editKafka()
@@ -138,6 +138,6 @@ public class OpaIntegrationST extends AbstractST {
     @AfterAll
     void teardown() throws IOException {
         // Delete OPA
-        cmdKubeClient().delete(FileUtils.updateNamespaceOfYamlFile(TestUtils.USER_PATH + "/../systemtest/src/test/resources/opa/opa.yaml", clusterOperator.getDeploymentNamespace()));
+        cmdKubeClient().delete(FileUtils.updateNamespaceOfYamlFile(TestUtils.USER_PATH + "/../systemtest/src/test/resources/opa/opa.yaml", Constants.TEST_SUITE_NAMESPACE));
     }
 }

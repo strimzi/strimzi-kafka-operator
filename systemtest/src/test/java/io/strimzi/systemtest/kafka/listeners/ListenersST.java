@@ -392,7 +392,7 @@ public class ListenersST extends AbstractST {
     @Tag(NODEPORT_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
     void testNodePort(ExtensionContext extensionContext) {
-        final String namespaceName = StUtils.getNamespaceBasedOnRbac(clusterOperator.getDeploymentNamespace(), extensionContext);
+        final String namespaceName = StUtils.getNamespaceBasedOnRbac(Constants.TEST_SUITE_NAMESPACE, extensionContext);
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         final String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
         final Map<String, String> label = Collections.singletonMap("my-label", "value");
@@ -470,7 +470,7 @@ public class ListenersST extends AbstractST {
     @Tag(NODEPORT_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
     void testOverrideNodePortConfiguration(ExtensionContext extensionContext) {
-        final String namespaceName = StUtils.getNamespaceBasedOnRbac(clusterOperator.getDeploymentNamespace(), extensionContext);
+        final String namespaceName = StUtils.getNamespaceBasedOnRbac(Constants.TEST_SUITE_NAMESPACE, extensionContext);
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         final String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
 
@@ -533,7 +533,7 @@ public class ListenersST extends AbstractST {
     @Tag(NODEPORT_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
     void testNodePortTls(ExtensionContext extensionContext) {
-        final String namespaceName = StUtils.getNamespaceBasedOnRbac(clusterOperator.getDeploymentNamespace(), extensionContext);
+        final String namespaceName = StUtils.getNamespaceBasedOnRbac(Constants.TEST_SUITE_NAMESPACE, extensionContext);
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         final String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
         final String userName = mapWithTestUsers.get(extensionContext.getDisplayName());
@@ -576,7 +576,7 @@ public class ListenersST extends AbstractST {
     @Tag(LOADBALANCER_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
     void testLoadBalancer(ExtensionContext extensionContext) {
-        final String namespaceName = StUtils.getNamespaceBasedOnRbac(clusterOperator.getDeploymentNamespace(), extensionContext);
+        final String namespaceName = StUtils.getNamespaceBasedOnRbac(Constants.TEST_SUITE_NAMESPACE, extensionContext);
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         final String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
 
@@ -619,7 +619,7 @@ public class ListenersST extends AbstractST {
     @Tag(LOADBALANCER_SUPPORTED)
     @Tag(EXTERNAL_CLIENTS_USED)
     void testLoadBalancerTls(ExtensionContext extensionContext) {
-        final String namespaceName = StUtils.getNamespaceBasedOnRbac(clusterOperator.getDeploymentNamespace(), extensionContext);
+        final String namespaceName = StUtils.getNamespaceBasedOnRbac(Constants.TEST_SUITE_NAMESPACE, extensionContext);
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         final String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
         final String userName = mapWithTestUsers.get(extensionContext.getDisplayName());
@@ -2073,7 +2073,7 @@ public class ListenersST extends AbstractST {
 
     @ParallelNamespaceTest
     void testNonExistingCustomCertificate(ExtensionContext extensionContext) {
-        final String namespaceName = StUtils.getNamespaceBasedOnRbac(clusterOperator.getDeploymentNamespace(), extensionContext);
+        final String namespaceName = StUtils.getNamespaceBasedOnRbac(Constants.TEST_SUITE_NAMESPACE, extensionContext);
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         final String nonExistingCertName = "non-existing-certificate";
         final LabelSelector zkSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.zookeeperStatefulSetName(clusterName));
@@ -2109,7 +2109,7 @@ public class ListenersST extends AbstractST {
 
     @ParallelNamespaceTest
     void testCertificateWithNonExistingDataCrt(ExtensionContext extensionContext) {
-        final String namespaceName = StUtils.getNamespaceBasedOnRbac(clusterOperator.getDeploymentNamespace(), extensionContext);
+        final String namespaceName = StUtils.getNamespaceBasedOnRbac(Constants.TEST_SUITE_NAMESPACE, extensionContext);
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         final String nonExistingCertName = "non-existing-crt";
         final String clusterCustomCertServer1 = clusterName + "-" + customCertServer1;
@@ -2149,7 +2149,7 @@ public class ListenersST extends AbstractST {
 
     @ParallelNamespaceTest
     void testCertificateWithNonExistingDataKey(ExtensionContext extensionContext) {
-        final String namespaceName = StUtils.getNamespaceBasedOnRbac(clusterOperator.getDeploymentNamespace(), extensionContext);
+        final String namespaceName = StUtils.getNamespaceBasedOnRbac(Constants.TEST_SUITE_NAMESPACE, extensionContext);
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         final String nonExistingCertKey = "non-existing-key";
         final String clusterCustomCertServer1 = clusterName + "-" + customCertServer1;
@@ -2283,7 +2283,7 @@ public class ListenersST extends AbstractST {
     @ParallelNamespaceTest
     void testAdvertisedHostNamesAppearsInBrokerCerts(ExtensionContext extensionContext) throws CertificateException, CertificateException {
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
-        final String namespaceName = StUtils.getNamespaceBasedOnRbac(clusterOperator.getDeploymentNamespace(), extensionContext);
+        final String namespaceName = StUtils.getNamespaceBasedOnRbac(Constants.TEST_SUITE_NAMESPACE, extensionContext);
 
         final String advertHostInternal0 = "kafka-test.internal.0.net";
         final String advertHostInternal1 = "kafka-test.internal.1.net";
@@ -2388,7 +2388,7 @@ public class ListenersST extends AbstractST {
 
     @AfterEach
     void afterEach(ExtensionContext extensionContext) {
-        final String namespaceName = StUtils.getNamespaceBasedOnRbac(clusterOperator.getDeploymentNamespace(), extensionContext);
+        final String namespaceName = StUtils.getNamespaceBasedOnRbac(Constants.TEST_SUITE_NAMESPACE, extensionContext);
         kubeClient(namespaceName).getClient().persistentVolumeClaims().inNamespace(namespaceName).delete();
     }
 

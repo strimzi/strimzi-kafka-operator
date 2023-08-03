@@ -4,31 +4,38 @@
  */
 package io.strimzi.systemtest.utils.specific;
 
+import io.fabric8.kubernetes.api.model.LabelSelector;
+import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.resources.ResourceManager;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
+import java.util.Map;
+
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
-import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 public class KeycloakUtils {
 
     public final static String LATEST_KEYCLOAK_VERSION = "21.0.0";
 
+    private final static LabelSelector SCRAPER_SELECTOR = new LabelSelector(null, Map.of(Constants.APP_POD_LABEL, Constants.SCRAPER_NAME));
+
     private KeycloakUtils() {}
 
     /**
      * Returns token from Keycloak API
-     * @param namespaceName
-     * @param baseURI base uri for accessing Keycloak API
-     * @param userName name of user
-     * @param password password of user
+     * @param keycloakNamespace         namespace where keycloak instance is located
+     * @param baseURI                   base uri for accessing Keycloak API
+     * @param userName                  name of user
+     * @param password                  password of user
      * @return user token
      */
-    public static String getToken(String namespaceName, String baseURI, String userName, String password) {
-        String coPodName = kubeClient().getClusterOperatorPodName(namespaceName);
+    public static String getToken(String keycloakNamespace, String baseURI, String userName, String password) {
+        final String testSuiteScraperPodName = ResourceManager.kubeClient().listPods(Constants.TEST_SUITE_NAMESPACE, SCRAPER_SELECTOR).get(0).getMetadata().getName();
+
         return new JsonObject(
-            cmdKubeClient(namespaceName).execInPod(
-                coPodName,
+            cmdKubeClient(keycloakNamespace).execInPod(
+                testSuiteScraperPodName,
                 "curl",
                 "-v",
                 "--insecure",
@@ -48,9 +55,10 @@ public class KeycloakUtils {
      * @return JsonObject with whole desired realm from Keycloak
      */
     public static JsonObject getKeycloakRealm(String namespaceName, String baseURI, String token, String desiredRealm) {
-        String coPodName = kubeClient(namespaceName).getClusterOperatorPodName();
+        final String testSuiteScraperPodName = ResourceManager.kubeClient().listPods(Constants.TEST_SUITE_NAMESPACE, SCRAPER_SELECTOR).get(0).getMetadata().getName();
+
         return new JsonObject(cmdKubeClient(namespaceName).execInPod(
-            coPodName,
+            testSuiteScraperPodName,
             "curl",
             "-v",
             "--insecure",
@@ -70,9 +78,10 @@ public class KeycloakUtils {
      * @return JsonArray with all clients set for the specific realm
      */
     public static JsonArray getKeycloakRealmClients(String namespaceName, String baseURI, String token, String desiredRealm) {
-        String coPodName = kubeClient(namespaceName).getClusterOperatorPodName();
+        final String testSuiteScraperPodName = ResourceManager.kubeClient().listPods(Constants.TEST_SUITE_NAMESPACE, SCRAPER_SELECTOR).get(0).getMetadata().getName();
+
         return new JsonArray(cmdKubeClient(namespaceName).execInPod(
-            coPodName,
+            testSuiteScraperPodName,
             "curl",
             "-v",
             "--insecure",
@@ -107,9 +116,10 @@ public class KeycloakUtils {
      * @return JsonArray with results from endpoint
      */
     private static JsonArray getConfigFromResourceServerOfRealm(String namespaceName, String baseURI, String token, String desiredRealm, String clientId, String endpoint) {
-        String coPodName = kubeClient(namespaceName).getClusterOperatorPodName();
+        final String testSuiteScraperPodName = ResourceManager.kubeClient().listPods(Constants.TEST_SUITE_NAMESPACE, SCRAPER_SELECTOR).get(0).getMetadata().getName();
+
         return new JsonArray(cmdKubeClient(namespaceName).execInPod(
-            coPodName,
+                testSuiteScraperPodName,
             "curl",
             "-v",
             "--insecure",
@@ -130,9 +140,10 @@ public class KeycloakUtils {
      * @return response from server
      */
     public static String putConfigurationToRealm(String namespaceName, String baseURI, String token, JsonObject config, String desiredRealm) {
-        String coPodName = kubeClient(namespaceName).getClusterOperatorPodName();
+        final String testSuiteScraperPodName = ResourceManager.kubeClient().listPods(Constants.TEST_SUITE_NAMESPACE, SCRAPER_SELECTOR).get(0).getMetadata().getName();
+
         return cmdKubeClient(namespaceName).execInPod(
-            coPodName,
+                testSuiteScraperPodName,
             "curl",
             "-v",
             "--insecure",
@@ -156,9 +167,10 @@ public class KeycloakUtils {
      * @return response from server
      */
     public static String updatePolicyOfRealmClient(String namespaceName, String baseURI, String token, JsonObject policy, String desiredRealm, String clientId) {
-        String coPodName = kubeClient(namespaceName).getClusterOperatorPodName();
+        final String testSuiteScraperPodName = ResourceManager.kubeClient().listPodsByPrefixInName(Constants.TEST_SUITE_NAMESPACE, Constants.SCRAPER_NAME).get(0).getMetadata().getName();
+
         return cmdKubeClient(namespaceName).execInPod(
-            coPodName,
+            testSuiteScraperPodName,
             "curl",
             "-v",
             "--insecure",
@@ -180,10 +192,10 @@ public class KeycloakUtils {
      * @return result of creation
      */
     public static String importRealm(String namespaceName, String baseURI, String token, String realmData) {
-        String coPodName = kubeClient(namespaceName).getClusterOperatorPodName();
+        final String testSuiteScraperPodName = ResourceManager.kubeClient().listPodsByPrefixInName(Constants.TEST_SUITE_NAMESPACE, Constants.SCRAPER_NAME).get(0).getMetadata().getName();
 
         return cmdKubeClient(namespaceName).execInPod(
-                coPodName,
+                testSuiteScraperPodName,
                 "curl",
                 "--insecure",
                 "-X",

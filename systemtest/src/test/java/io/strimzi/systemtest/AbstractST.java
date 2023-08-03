@@ -532,9 +532,10 @@ public abstract class AbstractST implements TestSeparator {
         }
     }
 
-    protected synchronized void afterAllMayOverride(ExtensionContext extensionContext) throws Exception {
+    protected synchronized void afterAllMayOverride(ExtensionContext extensionContext) {
         if (!Environment.SKIP_TEARDOWN) {
             ResourceManager.getInstance().deleteResources(extensionContext);
+            testSuiteNamespaceManager.deleteTestSuiteNamespace(extensionContext);
             KubeClusterResource.getInstance().deleteAllSetNamespaces();
         }
     }
@@ -586,7 +587,8 @@ public abstract class AbstractST implements TestSeparator {
     }
 
     private void beforeAllMustExecute(ExtensionContext extensionContext) {
-        if (!cluster.cluster().isClusterUp()) {
+        if (cluster.cluster().isClusterUp()) {
+        } else {
             throw new KubernetesClusterUnstableException("Cluster is not responding and its probably un-stable (i.e., caused by network, OOM problem)");
         }
     }
@@ -599,6 +601,7 @@ public abstract class AbstractST implements TestSeparator {
      */
     protected void beforeAllMayOverride(ExtensionContext extensionContext) {
         cluster = KubeClusterResource.getInstance();
+        testSuiteNamespaceManager.createTestSuiteNamespace(extensionContext);
     }
 
     @BeforeEach
@@ -635,7 +638,7 @@ public abstract class AbstractST implements TestSeparator {
     }
 
     @AfterAll
-    void tearDownTestSuite(ExtensionContext extensionContext) throws Exception {
+    void tearDownTestSuite(ExtensionContext extensionContext) {
         LOGGER.debug(String.join("", Collections.nCopies(76, "=")));
         LOGGER.debug("———————————— {}@After All - Clean up after TestSuite ———————————— ", StUtils.removePackageName(this.getClass().getName()));
         afterAllMayOverride(extensionContext);

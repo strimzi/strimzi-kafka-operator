@@ -6,6 +6,7 @@ package io.strimzi.systemtest.operators;
 
 import io.fabric8.kubernetes.api.model.rbac.ClusterRole;
 import io.strimzi.systemtest.AbstractST;
+import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.enums.ClusterOperatorRBACType;
 import io.strimzi.systemtest.annotations.IsolatedTest;
@@ -14,12 +15,12 @@ import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static io.strimzi.systemtest.Constants.INFRA_NAMESPACE;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.CoreMatchers.is;
@@ -37,18 +38,20 @@ class NamespaceRbacScopeOperatorST extends AbstractST {
 
         this.clusterOperator = this.clusterOperator.defaultInstallation(extensionContext)
             .withClusterOperatorRBACType(ClusterOperatorRBACType.NAMESPACE)
-            .withWatchingNamespaces(INFRA_NAMESPACE)
+            .withWatchingNamespaces(Constants.TEST_SUITE_NAMESPACE)
+            .withBindingsNamespaces(Arrays.asList(Constants.CO_NAMESPACE, Constants.TEST_SUITE_NAMESPACE))
             .createInstallation()
             .runInstallation();
 
         resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3, 3)
             .editMetadata()
                 .addToLabels("app", "strimzi")
+                .withNamespace(Constants.TEST_SUITE_NAMESPACE)
             .endMetadata()
             .build());
 
         // Wait for Kafka to be Ready to ensure all potentially erroneous ClusterRole applications have happened
-        KafkaUtils.waitForKafkaReady(clusterOperator.getDeploymentNamespace(), clusterName);
+        KafkaUtils.waitForKafkaReady(Constants.TEST_SUITE_NAMESPACE, clusterName);
 
         // Assert that no ClusterRoles are present on the server that have app strimzi
         // Naturally returns false positives if another Strimzi operator has been installed

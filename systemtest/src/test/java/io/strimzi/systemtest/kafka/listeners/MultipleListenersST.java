@@ -162,7 +162,7 @@ public class MultipleListenersST extends AbstractST {
         // exercise phase
         resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3)
             .editMetadata()
-                .withNamespace(clusterOperator.getDeploymentNamespace())
+                .withNamespace(Constants.TEST_SUITE_NAMESPACE)
             .endMetadata()
             .editSpec()
                 .editKafka()
@@ -174,7 +174,7 @@ public class MultipleListenersST extends AbstractST {
         // only on thread can access to verification phase (here is a lot of variables which can be modified in run-time (data-race))
         synchronized (lock) {
             String kafkaUsername = KafkaUserUtils.generateRandomNameOfKafkaUser();
-            KafkaUser kafkaUserInstance = KafkaUserTemplates.tlsUser(clusterOperator.getDeploymentNamespace(), clusterName, kafkaUsername).build();
+            KafkaUser kafkaUserInstance = KafkaUserTemplates.tlsUser(Constants.TEST_SUITE_NAMESPACE, clusterName, kafkaUsername).build();
 
             resourceManager.createResourceWithWait(extensionContext, kafkaUserInstance);
 
@@ -183,7 +183,7 @@ public class MultipleListenersST extends AbstractST {
                 final String consumerName = "consumer-" + new Random().nextInt(Integer.MAX_VALUE);
 
                 String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
-                resourceManager.createResourceWithWait(extensionContext, KafkaTopicTemplates.topic(clusterName, topicName, clusterOperator.getDeploymentNamespace()).build());
+                resourceManager.createResourceWithWait(extensionContext, KafkaTopicTemplates.topic(clusterName, topicName, Constants.TEST_SUITE_NAMESPACE).build());
 
                 boolean isTlsEnabled = listener.isTls();
 
@@ -191,7 +191,7 @@ public class MultipleListenersST extends AbstractST {
                     if (isTlsEnabled) {
                         ExternalKafkaClient externalTlsKafkaClient = new ExternalKafkaClient.Builder()
                             .withTopicName(topicName)
-                            .withNamespaceName(clusterOperator.getDeploymentNamespace())
+                            .withNamespaceName(Constants.TEST_SUITE_NAMESPACE)
                             .withClusterName(clusterName)
                             .withMessageCount(MESSAGE_COUNT)
                             .withKafkaUsername(kafkaUsername)
@@ -210,7 +210,7 @@ public class MultipleListenersST extends AbstractST {
                     } else {
                         ExternalKafkaClient externalPlainKafkaClient = new ExternalKafkaClient.Builder()
                             .withTopicName(topicName)
-                            .withNamespaceName(clusterOperator.getDeploymentNamespace())
+                            .withNamespaceName(Constants.TEST_SUITE_NAMESPACE)
                             .withClusterName(clusterName)
                             .withMessageCount(MESSAGE_COUNT)
                             .withSecurityProtocol(SecurityProtocol.PLAINTEXT)
@@ -233,7 +233,7 @@ public class MultipleListenersST extends AbstractST {
                         .withProducerName(producerName)
                         .withConsumerName(consumerName)
                         .withUsername(kafkaUsername)
-                        .withNamespaceName(clusterOperator.getDeploymentNamespace())
+                        .withNamespaceName(Constants.TEST_SUITE_NAMESPACE)
                         .withBootstrapAddress(KafkaResources.bootstrapServiceName(clusterName) + ":" + listener.getPort())
                         .build();
 
@@ -249,7 +249,7 @@ public class MultipleListenersST extends AbstractST {
                             kafkaClients.consumerStrimzi()
                         );
                     }
-                    ClientUtils.waitForClientsSuccess(producerName, consumerName, clusterOperator.getDeploymentNamespace(), MESSAGE_COUNT);
+                    ClientUtils.waitForClientsSuccess(producerName, consumerName, Constants.TEST_SUITE_NAMESPACE, MESSAGE_COUNT);
                 }
             }
         }

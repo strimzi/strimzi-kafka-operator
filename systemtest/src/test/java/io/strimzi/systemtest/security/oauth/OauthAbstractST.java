@@ -15,6 +15,7 @@ import io.strimzi.systemtest.enums.DefaultNetworkPolicy;
 import io.strimzi.systemtest.keycloak.KeycloakInstance;
 import io.strimzi.systemtest.resources.keycloak.SetupKeycloak;
 import io.strimzi.systemtest.templates.kubernetes.NetworkPolicyTemplates;
+import io.strimzi.systemtest.templates.specific.ScraperTemplates;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.JobUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
@@ -124,25 +125,27 @@ public class OauthAbstractST extends AbstractST {
             .build();
     };
 
-    protected void setupCoAndKeycloak(ExtensionContext extensionContext, String namespace) {
+    protected void setupCoAndKeycloak(ExtensionContext extensionContext, String keycloakNamespace) {
         clusterOperator.defaultInstallation(extensionContext).createInstallation().runInstallation();
 
-        resourceManager.createResourceWithWait(extensionContext, NetworkPolicyTemplates.applyDefaultNetworkPolicy(extensionContext, namespace, DefaultNetworkPolicy.DEFAULT_TO_ALLOW));
+        resourceManager.createResourceWithWait(extensionContext, NetworkPolicyTemplates.applyDefaultNetworkPolicy(extensionContext, keycloakNamespace, DefaultNetworkPolicy.DEFAULT_TO_ALLOW));
+        resourceManager.createResourceWithoutWait(extensionContext, ScraperTemplates.scraperPod(Constants.TEST_SUITE_NAMESPACE, Constants.SCRAPER_NAME).build());
 
         LOGGER.info("Deploying keycloak");
 
         // this is need for cluster-wide OLM (creating `infra-namespace` for Keycloak)
-        // Keycloak do not support cluster-wide namespace and thus we need it to deploy in non-OLM cluster wide namespace
+        // Keycloak do not support cluster-wide namespace, and thus we need it to deploy in non-OLM cluster wide namespace
         // (f.e., our `infra-namespace`)
-        if (kubeClient().getNamespace(clusterOperator.getDeploymentNamespace()) == null) {
-            cluster.createNamespace(CollectorElement.createCollectorElement(extensionContext.getRequiredTestClass().getName()), clusterOperator.getDeploymentNamespace());
-            StUtils.copyImagePullSecrets(clusterOperator.getDeploymentNamespace());
+        if (kubeClient().getNamespace(Constants.TEST_SUITE_NAMESPACE) == null) {
+            cluster.createNamespace(CollectorElement.createCollectorElement(extensionContext.getRequiredTestClass().getName()), Constants.TEST_SUITE_NAMESPACE);
+            StUtils.copyImagePullSecrets(Constants.TEST_SUITE_NAMESPACE);
         }
 
-        SetupKeycloak.deployKeycloakOperator(extensionContext, clusterOperator.getDeploymentNamespace(), namespace);
-        keycloakInstance = SetupKeycloak.deployKeycloakAndImportRealms(extensionContext, namespace);
+        SetupKeycloak.deployKeycloakOperator(extensionContext, Constants.TEST_SUITE_NAMESPACE, keycloakNamespace);
 
-        createSecretsForDeployments(namespace);
+        keycloakInstance = SetupKeycloak.deployKeycloakAndImportRealms(extensionContext, keycloakNamespace);
+
+        createSecretsForDeployments(keycloakNamespace);
     }
 
     @AfterEach

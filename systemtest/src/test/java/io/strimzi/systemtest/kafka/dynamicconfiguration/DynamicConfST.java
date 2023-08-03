@@ -73,7 +73,7 @@ public class DynamicConfST extends AbstractST {
 
         resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaPersistent(clusterName, KAFKA_REPLICAS, 1)
             .editMetadata()
-                .withNamespace(clusterOperator.getDeploymentNamespace())
+                .withNamespace(Constants.TEST_SUITE_NAMESPACE)
             .endMetadata()
             .editSpec()
                 .editKafka()
@@ -81,32 +81,32 @@ public class DynamicConfST extends AbstractST {
                 .endKafka()
             .endSpec()
             .build(),
-            ScraperTemplates.scraperPod(clusterOperator.getDeploymentNamespace(), scraperName).build()
+            ScraperTemplates.scraperPod(Constants.TEST_SUITE_NAMESPACE, scraperName).build()
         );
 
-        String scraperPodName = kubeClient().listPodsByPrefixInName(clusterOperator.getDeploymentNamespace(), scraperName).get(0).getMetadata().getName();
+        String scraperPodName = kubeClient().listPodsByPrefixInName(Constants.TEST_SUITE_NAMESPACE, scraperName).get(0).getMetadata().getName();
 
         for (String cmName : StUtils.getKafkaConfigurationConfigMaps(clusterName, KAFKA_REPLICAS)) {
-            String kafkaConfiguration = kubeClient().getConfigMap(clusterOperator.getDeploymentNamespace(), cmName).getData().get("server.config");
+            String kafkaConfiguration = kubeClient().getConfigMap(Constants.TEST_SUITE_NAMESPACE, cmName).getData().get("server.config");
             assertThat(kafkaConfiguration, containsString("offsets.topic.replication.factor=1"));
             assertThat(kafkaConfiguration, containsString("transaction.state.log.replication.factor=1"));
             assertThat(kafkaConfiguration, containsString("log.message.format.version=" + TestKafkaVersion.getKafkaVersionsInMap().get(Environment.ST_KAFKA_VERSION).messageVersion()));
         }
 
-        String kafkaConfigurationFromPod = KafkaCmdClient.describeKafkaBrokerUsingPodCli(clusterOperator.getDeploymentNamespace(), scraperPodName, KafkaResources.plainBootstrapAddress(clusterName), 0);
+        String kafkaConfigurationFromPod = KafkaCmdClient.describeKafkaBrokerUsingPodCli(Constants.TEST_SUITE_NAMESPACE, scraperPodName, KafkaResources.plainBootstrapAddress(clusterName), 0);
         assertThat(kafkaConfigurationFromPod, containsString("Dynamic configs for broker 0 are:\n"));
 
         deepCopyOfShardKafkaConfig.put("unclean.leader.election.enable", true);
 
-        updateAndVerifyDynConf(clusterOperator.getDeploymentNamespace(), clusterName, deepCopyOfShardKafkaConfig);
+        updateAndVerifyDynConf(Constants.TEST_SUITE_NAMESPACE, clusterName, deepCopyOfShardKafkaConfig);
 
-        kafkaConfigurationFromPod = KafkaCmdClient.describeKafkaBrokerUsingPodCli(clusterOperator.getDeploymentNamespace(), scraperPodName, KafkaResources.plainBootstrapAddress(clusterName), 0);
+        kafkaConfigurationFromPod = KafkaCmdClient.describeKafkaBrokerUsingPodCli(Constants.TEST_SUITE_NAMESPACE, scraperPodName, KafkaResources.plainBootstrapAddress(clusterName), 0);
         assertThat(kafkaConfigurationFromPod, containsString("unclean.leader.election.enable=" + true));
 
         LOGGER.info("Verifying values after update");
 
         for (String cmName : StUtils.getKafkaConfigurationConfigMaps(clusterName, KAFKA_REPLICAS)) {
-            String kafkaConfiguration = kubeClient().getConfigMap(clusterOperator.getDeploymentNamespace(), cmName).getData().get("server.config");
+            String kafkaConfiguration = kubeClient().getConfigMap(Constants.TEST_SUITE_NAMESPACE, cmName).getData().get("server.config");
             assertThat(kafkaConfiguration, containsString("offsets.topic.replication.factor=1"));
             assertThat(kafkaConfiguration, containsString("transaction.state.log.replication.factor=1"));
             assertThat(kafkaConfiguration, containsString("log.message.format.version=" + TestKafkaVersion.getKafkaVersionsInMap().get(Environment.ST_KAFKA_VERSION).messageVersion()));
@@ -127,7 +127,7 @@ public class DynamicConfST extends AbstractST {
 
         resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaPersistent(clusterName, KAFKA_REPLICAS, 1)
             .editMetadata()
-                .withNamespace(clusterOperator.getDeploymentNamespace())
+                .withNamespace(Constants.TEST_SUITE_NAMESPACE)
             .endMetadata()
             .editSpec()
                 .editKafka()
@@ -153,23 +153,23 @@ public class DynamicConfST extends AbstractST {
                 .endKafka()
             .endSpec()
             .build(),
-            ScraperTemplates.scraperPod(clusterOperator.getDeploymentNamespace(), scraperName).build()
+            ScraperTemplates.scraperPod(Constants.TEST_SUITE_NAMESPACE, scraperName).build()
         );
 
-        String scraperPodName = kubeClient().listPodsByPrefixInName(clusterOperator.getDeploymentNamespace(), scraperName).get(0).getMetadata().getName();
-        String kafkaConfigurationFromPod = KafkaCmdClient.describeKafkaBrokerUsingPodCli(clusterOperator.getDeploymentNamespace(), scraperPodName, KafkaResources.plainBootstrapAddress(clusterName), 0);
+        String scraperPodName = kubeClient().listPodsByPrefixInName(Constants.TEST_SUITE_NAMESPACE, scraperName).get(0).getMetadata().getName();
+        String kafkaConfigurationFromPod = KafkaCmdClient.describeKafkaBrokerUsingPodCli(Constants.TEST_SUITE_NAMESPACE, scraperPodName, KafkaResources.plainBootstrapAddress(clusterName), 0);
 
         assertThat(kafkaConfigurationFromPod, containsString("Dynamic configs for broker 0 are:\n"));
 
         deepCopyOfShardKafkaConfig.put("unclean.leader.election.enable", true);
 
-        updateAndVerifyDynConf(clusterOperator.getDeploymentNamespace(), clusterName, deepCopyOfShardKafkaConfig);
+        updateAndVerifyDynConf(Constants.TEST_SUITE_NAMESPACE, clusterName, deepCopyOfShardKafkaConfig);
 
-        kafkaConfigurationFromPod = KafkaCmdClient.describeKafkaBrokerUsingPodCli(clusterOperator.getDeploymentNamespace(), scraperPodName, KafkaResources.plainBootstrapAddress(clusterName), 0);
+        kafkaConfigurationFromPod = KafkaCmdClient.describeKafkaBrokerUsingPodCli(Constants.TEST_SUITE_NAMESPACE, scraperPodName, KafkaResources.plainBootstrapAddress(clusterName), 0);
         assertThat(kafkaConfigurationFromPod, containsString("unclean.leader.election.enable=" + true));
 
         // Edit listeners - this should cause RU (because of new crts)
-        Map<String, String> kafkaPods = PodUtils.podSnapshot(clusterOperator.getDeploymentNamespace(), kafkaSelector);
+        Map<String, String> kafkaPods = PodUtils.podSnapshot(Constants.TEST_SUITE_NAMESPACE, kafkaSelector);
         LOGGER.info("Updating listeners of Kafka cluster");
 
         KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, k -> {
@@ -193,34 +193,34 @@ public class DynamicConfST extends AbstractST {
                     .withTls(true)
                     .build()
             ));
-        }, clusterOperator.getDeploymentNamespace());
+        }, Constants.TEST_SUITE_NAMESPACE);
 
-        RollingUpdateUtils.waitTillComponentHasRolled(clusterOperator.getDeploymentNamespace(), kafkaSelector, KAFKA_REPLICAS, kafkaPods);
-        assertThat(RollingUpdateUtils.componentHasRolled(clusterOperator.getDeploymentNamespace(), kafkaSelector, kafkaPods), is(true));
+        RollingUpdateUtils.waitTillComponentHasRolled(Constants.TEST_SUITE_NAMESPACE, kafkaSelector, KAFKA_REPLICAS, kafkaPods);
+        assertThat(RollingUpdateUtils.componentHasRolled(Constants.TEST_SUITE_NAMESPACE, kafkaSelector, kafkaPods), is(true));
 
-        kafkaConfigurationFromPod = KafkaCmdClient.describeKafkaBrokerUsingPodCli(clusterOperator.getDeploymentNamespace(), scraperPodName, KafkaResources.plainBootstrapAddress(clusterName), 0);
+        kafkaConfigurationFromPod = KafkaCmdClient.describeKafkaBrokerUsingPodCli(Constants.TEST_SUITE_NAMESPACE, scraperPodName, KafkaResources.plainBootstrapAddress(clusterName), 0);
         assertThat(kafkaConfigurationFromPod, containsString("Dynamic configs for broker 0 are:\n"));
 
         deepCopyOfShardKafkaConfig.put("compression.type", "snappy");
 
-        updateAndVerifyDynConf(clusterOperator.getDeploymentNamespace(), clusterName, deepCopyOfShardKafkaConfig);
+        updateAndVerifyDynConf(Constants.TEST_SUITE_NAMESPACE, clusterName, deepCopyOfShardKafkaConfig);
 
-        kafkaConfigurationFromPod = KafkaCmdClient.describeKafkaBrokerUsingPodCli(clusterOperator.getDeploymentNamespace(), scraperPodName, KafkaResources.plainBootstrapAddress(clusterName), 0);
+        kafkaConfigurationFromPod = KafkaCmdClient.describeKafkaBrokerUsingPodCli(Constants.TEST_SUITE_NAMESPACE, scraperPodName, KafkaResources.plainBootstrapAddress(clusterName), 0);
         assertThat(kafkaConfigurationFromPod, containsString("compression.type=snappy"));
 
-        kafkaConfigurationFromPod = KafkaCmdClient.describeKafkaBrokerUsingPodCli(clusterOperator.getDeploymentNamespace(), scraperPodName, KafkaResources.plainBootstrapAddress(clusterName), 0);
+        kafkaConfigurationFromPod = KafkaCmdClient.describeKafkaBrokerUsingPodCli(Constants.TEST_SUITE_NAMESPACE, scraperPodName, KafkaResources.plainBootstrapAddress(clusterName), 0);
         assertThat(kafkaConfigurationFromPod, containsString("Dynamic configs for broker 0 are:\n"));
 
         deepCopyOfShardKafkaConfig.put("unclean.leader.election.enable", true);
 
-        updateAndVerifyDynConf(clusterOperator.getDeploymentNamespace(), clusterName, deepCopyOfShardKafkaConfig);
+        updateAndVerifyDynConf(Constants.TEST_SUITE_NAMESPACE, clusterName, deepCopyOfShardKafkaConfig);
 
-        kafkaConfigurationFromPod = KafkaCmdClient.describeKafkaBrokerUsingPodCli(clusterOperator.getDeploymentNamespace(), scraperPodName, KafkaResources.plainBootstrapAddress(clusterName), 0);
+        kafkaConfigurationFromPod = KafkaCmdClient.describeKafkaBrokerUsingPodCli(Constants.TEST_SUITE_NAMESPACE, scraperPodName, KafkaResources.plainBootstrapAddress(clusterName), 0);
         assertThat(kafkaConfigurationFromPod, containsString("unclean.leader.election.enable=" + true));
 
         // Remove external listeners (node port) - this should cause RU (we need to update advertised.listeners)
         // Other external listeners cases are rolling because of crts
-        kafkaPods = PodUtils.podSnapshot(clusterOperator.getDeploymentNamespace(), kafkaSelector);
+        kafkaPods = PodUtils.podSnapshot(Constants.TEST_SUITE_NAMESPACE, kafkaSelector);
         LOGGER.info("Updating listeners of Kafka cluster");
 
         KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, k -> {
@@ -238,19 +238,19 @@ public class DynamicConfST extends AbstractST {
                     .withTls(true)
                     .build()
             ));
-        }, clusterOperator.getDeploymentNamespace());
+        }, Constants.TEST_SUITE_NAMESPACE);
 
-        RollingUpdateUtils.waitTillComponentHasRolled(clusterOperator.getDeploymentNamespace(), kafkaSelector, KAFKA_REPLICAS, kafkaPods);
-        assertThat(RollingUpdateUtils.componentHasRolled(clusterOperator.getDeploymentNamespace(), kafkaSelector, kafkaPods), is(true));
+        RollingUpdateUtils.waitTillComponentHasRolled(Constants.TEST_SUITE_NAMESPACE, kafkaSelector, KAFKA_REPLICAS, kafkaPods);
+        assertThat(RollingUpdateUtils.componentHasRolled(Constants.TEST_SUITE_NAMESPACE, kafkaSelector, kafkaPods), is(true));
 
-        kafkaConfigurationFromPod = KafkaCmdClient.describeKafkaBrokerUsingPodCli(clusterOperator.getDeploymentNamespace(), scraperPodName, KafkaResources.plainBootstrapAddress(clusterName), 0);
+        kafkaConfigurationFromPod = KafkaCmdClient.describeKafkaBrokerUsingPodCli(Constants.TEST_SUITE_NAMESPACE, scraperPodName, KafkaResources.plainBootstrapAddress(clusterName), 0);
         assertThat(kafkaConfigurationFromPod, containsString("Dynamic configs for broker 0 are:\n"));
 
         deepCopyOfShardKafkaConfig.put("unclean.leader.election.enable", false);
 
-        updateAndVerifyDynConf(clusterOperator.getDeploymentNamespace(), clusterName, deepCopyOfShardKafkaConfig);
+        updateAndVerifyDynConf(Constants.TEST_SUITE_NAMESPACE, clusterName, deepCopyOfShardKafkaConfig);
 
-        kafkaConfigurationFromPod = KafkaCmdClient.describeKafkaBrokerUsingPodCli(clusterOperator.getDeploymentNamespace(), scraperPodName, KafkaResources.plainBootstrapAddress(clusterName), 0);
+        kafkaConfigurationFromPod = KafkaCmdClient.describeKafkaBrokerUsingPodCli(Constants.TEST_SUITE_NAMESPACE, scraperPodName, KafkaResources.plainBootstrapAddress(clusterName), 0);
         assertThat(kafkaConfigurationFromPod, containsString("unclean.leader.election.enable=" + false));
     }
 
@@ -268,7 +268,7 @@ public class DynamicConfST extends AbstractST {
 
         resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaPersistent(clusterName, KAFKA_REPLICAS, 1)
             .editMetadata()
-                .withNamespace(clusterOperator.getDeploymentNamespace())
+                .withNamespace(Constants.TEST_SUITE_NAMESPACE)
             .endMetadata()
             .editSpec()
                 .editKafka()
@@ -283,14 +283,14 @@ public class DynamicConfST extends AbstractST {
             .endSpec()
             .build());
 
-        Map<String, String> kafkaPods = PodUtils.podSnapshot(clusterOperator.getDeploymentNamespace(), kafkaSelector);
+        Map<String, String> kafkaPods = PodUtils.podSnapshot(Constants.TEST_SUITE_NAMESPACE, kafkaSelector);
 
-        resourceManager.createResourceWithWait(extensionContext, KafkaTopicTemplates.topic(clusterName, topicName, clusterOperator.getDeploymentNamespace()).build());
-        resourceManager.createResourceWithWait(extensionContext, KafkaUserTemplates.tlsUser(clusterOperator.getDeploymentNamespace(), clusterName, userName).build());
+        resourceManager.createResourceWithWait(extensionContext, KafkaTopicTemplates.topic(clusterName, topicName, Constants.TEST_SUITE_NAMESPACE).build());
+        resourceManager.createResourceWithWait(extensionContext, KafkaUserTemplates.tlsUser(Constants.TEST_SUITE_NAMESPACE, clusterName, userName).build());
 
         ExternalKafkaClient externalKafkaClientTls = new ExternalKafkaClient.Builder()
             .withTopicName(topicName)
-            .withNamespaceName(clusterOperator.getDeploymentNamespace())
+            .withNamespaceName(Constants.TEST_SUITE_NAMESPACE)
             .withClusterName(clusterName)
             .withMessageCount(MESSAGE_COUNT)
             .withKafkaUsername(userName)
@@ -300,7 +300,7 @@ public class DynamicConfST extends AbstractST {
 
         ExternalKafkaClient externalKafkaClientPlain = new ExternalKafkaClient.Builder()
             .withTopicName(topicName)
-            .withNamespaceName(clusterOperator.getDeploymentNamespace())
+            .withNamespaceName(Constants.TEST_SUITE_NAMESPACE)
             .withClusterName(clusterName)
             .withMessageCount(MESSAGE_COUNT)
             .withSecurityProtocol(SecurityProtocol.PLAINTEXT)
@@ -336,10 +336,10 @@ public class DynamicConfST extends AbstractST {
                     .endKafkaListenerAuthenticationTlsAuth()
                     .build()
             ));
-        }, clusterOperator.getDeploymentNamespace());
+        }, Constants.TEST_SUITE_NAMESPACE);
 
         // TODO: remove it ?
-        kafkaPods = RollingUpdateUtils.waitTillComponentHasRolled(clusterOperator.getDeploymentNamespace(), kafkaSelector, KAFKA_REPLICAS, kafkaPods);
+        kafkaPods = RollingUpdateUtils.waitTillComponentHasRolled(Constants.TEST_SUITE_NAMESPACE, kafkaSelector, KAFKA_REPLICAS, kafkaPods);
 
         externalKafkaClientTls.verifyProducedAndConsumedMessages(
             externalKafkaClientTls.sendMessagesTls() + MESSAGE_COUNT,
@@ -362,9 +362,9 @@ public class DynamicConfST extends AbstractST {
                     .withTls(false)
                     .build()
             ));
-        }, clusterOperator.getDeploymentNamespace());
+        }, Constants.TEST_SUITE_NAMESPACE);
 
-        RollingUpdateUtils.waitTillComponentHasRolled(clusterOperator.getDeploymentNamespace(), kafkaSelector, KAFKA_REPLICAS, kafkaPods);
+        RollingUpdateUtils.waitTillComponentHasRolled(Constants.TEST_SUITE_NAMESPACE, kafkaSelector, KAFKA_REPLICAS, kafkaPods);
 
         assertThrows(Exception.class, () -> {
             externalKafkaClientTls.sendMessagesTls();

@@ -6,6 +6,7 @@ package io.strimzi.systemtest.kafka;
 
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.AbstractST;
+import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
@@ -35,7 +36,7 @@ public class QuotasST extends AbstractST {
     @ParallelNamespaceTest
     @Tag(INTERNAL_CLIENTS_USED)
     void testKafkaQuotasPluginIntegration(ExtensionContext extensionContext) {
-        final String namespaceName = StUtils.getNamespaceBasedOnRbac(clusterOperator.getDeploymentNamespace(), extensionContext);
+        final String namespaceName = StUtils.getNamespaceBasedOnRbac(Constants.TEST_SUITE_NAMESPACE, extensionContext);
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         final String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
 
@@ -70,7 +71,7 @@ public class QuotasST extends AbstractST {
 
         resourceManager.createResourceWithWait(extensionContext, basicClients.producerStrimzi());
         // Kafka Quotas Plugin should stop producer in around 10-20 seconds with configured throughput
-        assertThrows(WaitException.class, () -> JobUtils.waitForJobFailure(producerName, clusterOperator.getDeploymentNamespace(), 120_000));
+        assertThrows(WaitException.class, () -> JobUtils.waitForJobFailure(producerName, Constants.TEST_SUITE_NAMESPACE, 120_000));
 
         String kafkaLog = kubeClient(namespaceName).logs(KafkaResources.kafkaPodName(clusterName, 0));
         String softLimitLog = "disk is beyond soft limit";
@@ -81,7 +82,7 @@ public class QuotasST extends AbstractST {
 
     @AfterEach
     void afterEach(ExtensionContext extensionContext) throws Exception {
-        final String namespaceName = StUtils.getNamespaceBasedOnRbac(clusterOperator.getDeploymentNamespace(), extensionContext);
+        final String namespaceName = StUtils.getNamespaceBasedOnRbac(Constants.TEST_SUITE_NAMESPACE, extensionContext);
         kubeClient(namespaceName).getClient().persistentVolumeClaims().inNamespace(namespaceName).delete();
     }
 

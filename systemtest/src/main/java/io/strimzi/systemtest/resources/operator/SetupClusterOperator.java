@@ -143,9 +143,9 @@ public class SetupClusterOperator {
         if (this.clusterOperatorName == null || this.clusterOperatorName.isEmpty()) {
             this.clusterOperatorName = Constants.STRIMZI_DEPLOYMENT_NAME;
         }
-        // if namespace is not set we install operator to 'infra-namespace'
+        // if namespace is not set we install operator to 'co-namespace'
         if (this.namespaceInstallTo == null || this.namespaceInstallTo.isEmpty()) {
-            this.namespaceInstallTo = Constants.INFRA_NAMESPACE;
+            this.namespaceInstallTo = Constants.CO_NAMESPACE;
         }
         if (this.namespaceToWatch == null) {
             this.namespaceToWatch = this.namespaceInstallTo;
@@ -197,12 +197,12 @@ public class SetupClusterOperator {
 
         // RBAC set to `NAMESPACE`
         if (Environment.isNamespaceRbacScope() && !Environment.isHelmInstall()) {
-            clusterOperatorBuilder = clusterOperatorBuilder.withNamespace(Constants.INFRA_NAMESPACE);
+            clusterOperatorBuilder = clusterOperatorBuilder.withNamespace(Constants.CO_NAMESPACE);
             return clusterOperatorBuilder;
         }
         // otherwise
         return clusterOperatorBuilder
-            .withNamespace(Constants.INFRA_NAMESPACE)
+            .withNamespace(Constants.CO_NAMESPACE)
             .withWatchingNamespaces(Constants.WATCH_ALL_NAMESPACES);
     }
 
@@ -325,7 +325,7 @@ public class SetupClusterOperator {
         if (IS_OLM_CLUSTER_WIDE.test(namespaceToWatch)) {
             // if RBAC is enable we don't run tests in parallel mode and with that said we don't create another namespaces
             if (!Environment.isNamespaceRbacScope()) {
-                bindingsNamespaces = bindingsNamespaces.contains(Constants.INFRA_NAMESPACE) ? Collections.singletonList(Constants.INFRA_NAMESPACE) : bindingsNamespaces;
+                bindingsNamespaces = bindingsNamespaces.contains(Constants.CO_NAMESPACE) ? Collections.singletonList(Constants.CO_NAMESPACE) : bindingsNamespaces;
 
                 createClusterOperatorNamespaceIfPossible();
                 createClusterRoleBindings();
@@ -378,6 +378,17 @@ public class SetupClusterOperator {
                 ResourceManager.STORED_RESOURCES.get(this.extensionContext.getDisplayName()).push(
                     new ResourceItem<>(this::deleteClusterOperatorNamespace));
 
+
+                // when RBAC=NAMESPACE, we need to add a binding namespace Constants.TEST_SUITE_NAMESPACE, because now,
+                // we always has two namespaces (i.e., co-namespace and test-suite-namespace)
+                if (Environment.isNamespaceRbacScope() || this.clusterOperatorRBACType.equals(ClusterOperatorRBACType.NAMESPACE)) {
+                    if (!this.bindingsNamespaces.contains(Constants.TEST_SUITE_NAMESPACE)) {
+                        this.bindingsNamespaces.add(Constants.TEST_SUITE_NAMESPACE);
+                    }
+                    if (!this.namespaceToWatch.contains(Constants.TEST_SUITE_NAMESPACE)) {
+                        this.namespaceToWatch += "," + Constants.TEST_SUITE_NAMESPACE;
+                    }
+                }
                 cluster.createNamespaces(CollectorElement.createCollectorElement(testClassName, testMethodName), namespaceInstallTo, bindingsNamespaces);
                 StUtils.copyImagePullSecrets(namespaceInstallTo);
 
@@ -825,8 +836,6 @@ public class SetupClusterOperator {
                     Thread.currentThread().interrupt();
                     e.printStackTrace();
                 }
-
-                KubeClusterResource.getInstance().deleteAllSetNamespaces();
             }
         }
     }
@@ -949,7 +958,7 @@ public class SetupClusterOperator {
      *    2. Helm &amp; installation    :   return @code{namespaceInstallTo}
      */
     public String getDeploymentNamespace() {
-        return namespaceInstallTo == null ? Constants.INFRA_NAMESPACE : namespaceInstallTo;
+        return namespaceInstallTo == null ? Constants.CO_NAMESPACE : namespaceInstallTo;
     }
 
     public OlmResource getOlmResource() {
