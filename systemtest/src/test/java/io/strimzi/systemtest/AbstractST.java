@@ -554,8 +554,8 @@ public abstract class AbstractST implements TestSeparator {
             // mapWithTestUsers.put(testName, KafkaUserUtils.generateRandomNameOfKafkaUser());
             // mapWithTestExecutionStartTimes.put(testName, System.currentTimeMillis());
             LOGGER.info("Not first test we are gonna generate cluster name");
-            storageMap.put(extensionContext, new TestStorage(extensionContext));
             testSuiteNamespaceManager.createParallelNamespace(extensionContext);
+            storageMap.put(extensionContext, new TestStorage(extensionContext));
         }
     }
 
