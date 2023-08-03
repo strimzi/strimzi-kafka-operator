@@ -28,6 +28,7 @@ public class ValidationVisitor implements ResourceVisitor.Visitor {
     private final ReconciliationLogger logger;
     private final HasMetadata resource;
     private final Set<Condition> warningConditions;
+    private final boolean printResourceName;
     private final String transitionTime = StatusUtils.iso8601Now();
 
     /**
@@ -36,11 +37,15 @@ public class ValidationVisitor implements ResourceVisitor.Visitor {
      * @param resource              Kubernetes resource
      * @param logger                Reconciliation logger
      * @param warningConditions     Warning conditions with validation warnings
+     * @param printResourceName     Flag indicating whether the warning messages should contain the resource
+     *                              identification or not. This is useful when the message is logged as a part of
+     *                              reconciliation of another resource.
      */
-    public ValidationVisitor(HasMetadata resource, ReconciliationLogger logger, Set<Condition> warningConditions) {
+    public ValidationVisitor(HasMetadata resource, ReconciliationLogger logger, Set<Condition> warningConditions, boolean printResourceName) {
         this.resource = resource;
         this.logger = logger;
         this.warningConditions = warningConditions;
+        this.printResourceName = printResourceName;
     }
 
     <M extends AnnotatedElement & Member> boolean isPresent(M member,
@@ -85,8 +90,8 @@ public class ValidationVisitor implements ResourceVisitor.Visitor {
         DeprecatedProperty deprecated = member.getAnnotation(DeprecatedProperty.class);
         if (deprecated != null
             && isPresent(member, propertyValue)) {
-            String msg = String.format("In API version %s the %s property at path %s has been deprecated",
-                    resource.getApiVersion(),
+            String msg = String.format("%s the %s property at path %s has been deprecated",
+                    resourceMarkerForDeprecation(),
                     propertyName,
                     path(path, propertyName));
             if (!deprecated.movedToPath().isEmpty()) {
@@ -110,8 +115,8 @@ public class ValidationVisitor implements ResourceVisitor.Visitor {
             DeprecatedType deprecatedType = propertyValue.getClass().getAnnotation(DeprecatedType.class);
             if (deprecatedType != null
                     && isPresent(member, propertyValue)) {
-                String msg = String.format("In API version %s the object %s at path %s has been deprecated. ",
-                        resource.getApiVersion(),
+                String msg = String.format("%s the object %s at path %s has been deprecated. ",
+                        resourceMarkerForDeprecation(),
                         propertyName,
                         path(path, propertyName));
                 if (deprecatedType.replacedWithType() != null) {
@@ -143,7 +148,8 @@ public class ValidationVisitor implements ResourceVisitor.Visitor {
         if (object instanceof UnknownPropertyPreserving) {
             Map<String, Object> properties = ((UnknownPropertyPreserving) object).getAdditionalProperties();
             if (properties != null && !properties.isEmpty()) {
-                String msg = String.format("Contains object at path %s with %s: %s",
+                String msg = String.format("%s object at path %s with %s: %s",
+                        resourceMarkerForUnknown(),
                         String.join(".", path),
                         properties.size() == 1 ? "an unknown property" : "unknown properties",
                         String.join(", ", properties.keySet()));
@@ -151,6 +157,38 @@ public class ValidationVisitor implements ResourceVisitor.Visitor {
                 logger.warnCr(reconciliation, msg);
                 warningConditions.add(StatusUtils.buildWarningCondition("UnknownFields", msg, transitionTime));
             }
+        }
+    }
+
+    /**
+     * @return  Generates the resource marker for deprecation warnings. If we want to print the resource name, it will
+     *          include the kind, namespace, name and API version. If not, it will be only API version.
+     */
+    private String resourceMarkerForDeprecation() {
+        if (printResourceName)  {
+            return String.format("In resource %s(%s/%s) in API version %s",
+                    resource.getKind(),
+                    resource.getMetadata().getNamespace(),
+                    resource.getMetadata().getName(),
+                    resource.getApiVersion());
+        } else {
+            return String.format("In API version %s",
+                    resource.getApiVersion());
+        }
+    }
+
+    /**
+     * @return  Generates the resource marker for unknown object warnings. If we want to print the resource name, it
+     *          will include the kind, namespace, name and API version. If not, it will be only API version.
+     */
+    private String resourceMarkerForUnknown() {
+        if (printResourceName)  {
+            return String.format("Resource %s(%s/%s) contains",
+                    resource.getKind(),
+                    resource.getMetadata().getNamespace(),
+                    resource.getMetadata().getName());
+        } else {
+            return "Contains";
         }
     }
 }

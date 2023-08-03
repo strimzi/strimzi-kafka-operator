@@ -25,6 +25,41 @@ import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 public class ValidationVisitorTest {
+    @Test
+    public void testValidationErrorsWithResourceNameAreLogged() {
+        Kafka k = TestUtils.fromYaml("/example.yaml", Kafka.class, true);
+        assertThat(k, is(notNullValue()));
+        TestLogger logger = TestLogger.create(ValidationVisitorTest.class);
+        HasMetadata resource = new KafkaBuilder()
+                .withNewMetadata()
+                    .withName("testname")
+                    .withNamespace("testnamespace")
+                .endMetadata()
+                .withApiVersion("v1beta2")
+            .build();
+
+        Set<Condition> warningConditions = new HashSet<>();
+
+        ResourceVisitor.visit(Reconciliation.DUMMY_RECONCILIATION, k, new ValidationVisitor(resource, logger, warningConditions, true));
+
+        List<String> warningMessages = warningConditions.stream().map(Condition::getMessage).collect(Collectors.toList());
+
+        assertThat(warningMessages, hasItem("Resource Kafka(testnamespace/testname) contains object at path spec.kafka with an unknown property: foo"));
+        assertThat(warningMessages, hasItem("In resource Kafka(testnamespace/testname) in API version kafka.strimzi.io/v1beta2 the enableECDSA property at path spec.kafka.listeners.auth.enableECDSA has been deprecated."));
+        assertThat(warningMessages, hasItem("In resource Kafka(testnamespace/testname) in API version kafka.strimzi.io/v1beta2 the service property at path spec.kafkaExporter.template.service has been deprecated. " +
+                "The Kafka Exporter service has been removed."));
+
+        logger.assertLoggedAtLeastOnce(lm -> lm.level() == Level.WARN
+                && lm.formattedMessage().matches("Reconciliation #[0-9]*\\(test\\) kind\\(namespace/name\\): " +
+                "Resource Kafka\\(testnamespace/testname\\) contains object at path spec.kafka with an unknown property: foo"));
+        logger.assertLoggedAtLeastOnce(lm -> lm.level() == Level.WARN
+                && lm.formattedMessage().matches("Reconciliation #[0-9]*\\(test\\) kind\\(namespace/name\\): " +
+                "In resource Kafka\\(testnamespace/testname\\) in API version kafka.strimzi.io/v1beta2 the enableECDSA property at path spec.kafka.listeners.auth.enableECDSA has been deprecated."));
+        logger.assertLoggedAtLeastOnce(lm -> lm.level() == Level.WARN
+                && lm.formattedMessage().matches("Reconciliation #[0-9]*\\(test\\) kind\\(namespace/name\\): " +
+                "In resource Kafka\\(testnamespace/testname\\) in API version kafka.strimzi.io/v1beta2 the service property at path spec.kafkaExporter.template.service has been deprecated. " +
+                "The Kafka Exporter service has been removed."));
+    }
 
     @Test
     public void testValidationErrorsAreLogged() {
@@ -41,7 +76,7 @@ public class ValidationVisitorTest {
 
         Set<Condition> warningConditions = new HashSet<>();
 
-        ResourceVisitor.visit(Reconciliation.DUMMY_RECONCILIATION, k, new ValidationVisitor(resource, logger, warningConditions));
+        ResourceVisitor.visit(Reconciliation.DUMMY_RECONCILIATION, k, new ValidationVisitor(resource, logger, warningConditions, false));
 
         List<String> warningMessages = warningConditions.stream().map(Condition::getMessage).collect(Collectors.toList());
 
@@ -51,13 +86,13 @@ public class ValidationVisitorTest {
                 "The Kafka Exporter service has been removed."));
 
         logger.assertLoggedAtLeastOnce(lm -> lm.level() == Level.WARN
-                && lm.formattedMessage().matches("Reconciliation #[0-9]*\\(test\\) kind\\(namespace\\/name\\): " +
+                && lm.formattedMessage().matches("Reconciliation #[0-9]*\\(test\\) kind\\(namespace/name\\): " +
                 "Contains object at path spec.kafka with an unknown property: foo"));
         logger.assertLoggedAtLeastOnce(lm -> lm.level() == Level.WARN
-                && lm.formattedMessage().matches("Reconciliation #[0-9]*\\(test\\) kind\\(namespace\\/name\\): " +
+                && lm.formattedMessage().matches("Reconciliation #[0-9]*\\(test\\) kind\\(namespace/name\\): " +
                 "In API version kafka.strimzi.io/v1beta2 the enableECDSA property at path spec.kafka.listeners.auth.enableECDSA has been deprecated."));
         logger.assertLoggedAtLeastOnce(lm -> lm.level() == Level.WARN
-                && lm.formattedMessage().matches("Reconciliation #[0-9]*\\(test\\) kind\\(namespace\\/name\\): " +
+                && lm.formattedMessage().matches("Reconciliation #[0-9]*\\(test\\) kind\\(namespace/name\\): " +
                 "In API version kafka.strimzi.io/v1beta2 the service property at path spec.kafkaExporter.template.service has been deprecated. " +
                 "The Kafka Exporter service has been removed."));
     }

@@ -28,7 +28,7 @@ public class UserControllerUtils {
     public static KafkaUserStatus pausedStatus(Reconciliation reconciliation, KafkaUser user)  {
         KafkaUserStatus status = new KafkaUserStatus();
 
-        Set<Condition> conditions = StatusUtils.validate(reconciliation, user);
+        Set<Condition> conditions = StatusUtils.validate(reconciliation, user, false);
         conditions.add(StatusUtils.getPausedCondition());
         status.setConditions(new ArrayList<>(conditions));
         status.setObservedGeneration(user.getStatus() != null ? user.getStatus().getObservedGeneration() : 0);

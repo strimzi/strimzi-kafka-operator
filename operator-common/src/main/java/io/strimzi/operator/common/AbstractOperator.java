@@ -49,7 +49,7 @@ import java.util.stream.Collectors;
  * {@link #reconcile(Reconciliation)} by delegating to abstract {@link #createOrUpdate(Reconciliation, CustomResource)}
  * and {@link #delete(Reconciliation)} methods for subclasses to implement.
  *
- * <li>add support for operator-side {@linkplain StatusUtils#validate(Reconciliation, CustomResource)} validation}.
+ * <li>add support for operator-side {@linkplain StatusUtils#validate(Reconciliation, CustomResource, boolean)} validation}.
  *     This can be used to automatically log warnings about source resources which used deprecated part of the CR API.
  *ą
  * </ul>
@@ -217,7 +217,7 @@ public abstract class AbstractOperator<
         Promise<Void> createOrUpdate = Promise.promise();
         if (Annotations.isReconciliationPausedWithAnnotation(cr)) {
             S status = createStatus(cr);
-            Set<Condition> conditions = StatusUtils.validate(reconciliation, cr);
+            Set<Condition> conditions = StatusUtils.validate(reconciliation, cr, false);
             conditions.add(StatusUtils.getPausedCondition());
             status.setConditions(new ArrayList<>(conditions));
             status.setObservedGeneration(cr.getStatus() != null ? cr.getStatus().getObservedGeneration() : 0);
@@ -252,7 +252,7 @@ public abstract class AbstractOperator<
             return createOrUpdate.future();
         }
 
-        Set<Condition> unknownAndDeprecatedConditions = StatusUtils.validate(reconciliation, cr);
+        Set<Condition> unknownAndDeprecatedConditions = StatusUtils.validate(reconciliation, cr, false);
 
         LOGGER.infoCr(reconciliation, "{} {} will be checked for creation or modification", kind, name);
 
