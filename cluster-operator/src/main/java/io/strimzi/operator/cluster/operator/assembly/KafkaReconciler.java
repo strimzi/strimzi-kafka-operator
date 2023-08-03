@@ -260,7 +260,7 @@ public class KafkaReconciler {
                     if (Annotations.booleanAnnotation(kafkaCr, Annotations.ANNO_STRIMZI_IO_BYPASS_BROKER_SCALEDOWN_CHECK, false)) {
                         return Future.succeededFuture();
                     } else
-                        return PreventBrokerScaleDownUtils.canScaleDownBrokers(vertx, reconciliation, kafka, kafkaStatus, secretOperator, adminClientProvider, currentReplicas);
+                        return PreventBrokerScaleDownUtils.canScaleDownBrokers(vertx, reconciliation, kafka, kafkaStatus, secretOperator, adminClientProvider, strimziPodSetOperator);
                 })
                 .compose(i -> manualPodCleaning())
                 .compose(i -> networkPolicy())

@@ -5,13 +5,17 @@
 package io.strimzi.operator.cluster.operator.assembly;
 
 import io.strimzi.api.kafka.model.KafkaResources;
+import io.strimzi.api.kafka.model.StrimziPodSet;
 import io.strimzi.api.kafka.model.status.KafkaStatus;
 import io.strimzi.operator.cluster.model.KafkaCluster;
+import io.strimzi.operator.cluster.model.NodeRef;
+import io.strimzi.operator.cluster.model.PodSetUtils;
 import io.strimzi.operator.common.AdminClientProvider;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.operator.resource.SecretOperator;
 import io.strimzi.operator.common.operator.resource.StatusUtils;
+import io.strimzi.operator.common.operator.resource.StrimziPodSetOperator;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
@@ -23,6 +27,11 @@ import org.apache.kafka.common.TopicPartitionInfo;
 
 import java.util.Collection;
 import java.util.Set;
+import java.util.List;
+import java.util.Map;
+import java.util.HashSet;
+import java.util.ArrayList;
+import static java.util.stream.Collectors.toList;
 
 /**
  * Class which contains several utility function which check if broker scale down can be done or not.
@@ -41,28 +50,49 @@ public class PreventBrokerScaleDownUtils {
      * @param kafkaStatus          The Kafka Status class for adding conditions to it during the reconciliation
      * @param secretOperator       Secret operator for working with Secrets
      * @param adminClientProvider  Used to create the Admin client instance
-     * @param currentReplicas      The current number of replicas
+     * @param strimziPodSetOperator podSet operator
      * @return  Future which completes when the check is complete
      */
     public static Future<Void> canScaleDownBrokers(Vertx vertx, Reconciliation reconciliation, KafkaCluster kafka, KafkaStatus kafkaStatus,
-                                                   SecretOperator secretOperator, AdminClientProvider adminClientProvider, int currentReplicas) {
+                                                   SecretOperator secretOperator, AdminClientProvider adminClientProvider, StrimziPodSetOperator strimziPodSetOperator) {
 
-        if (currentReplicas != 0 && kafka.getReplicas() != 0 && currentReplicas > kafka.getReplicas()) {
 
-            Future<Boolean> result = canScaleDownBrokerCheck(vertx, reconciliation, kafka, kafkaStatus, secretOperator, adminClientProvider, currentReplicas);
-
-            return result.compose(cannotScaleDown -> {
-                if (cannotScaleDown) {
-                    kafkaStatus.addCondition(StatusUtils.buildWarningCondition("ScaleDownException", "Cannot Scale down since broker contains partition replicas." +
-                                    " The `spec.kafka.replicas` should be reverted back to " + currentReplicas + " directly in the Kafka resource"));
-                    kafka.setReplicas(currentReplicas);
-                }
-                return Future.succeededFuture();
-            });
-        } else {
-            return Future.succeededFuture();
+        Set<String> desiredPodNames = new HashSet<>();
+        for (NodeRef node : kafka.nodes()) {
+            desiredPodNames.add(node.podName());
         }
+
+        return strimziPodSetOperator.listAsync(reconciliation.namespace(), kafka.getSelectorLabels())
+                .compose(podSets -> {
+                    if (podSets == null) {
+                        return Future.succeededFuture();
+                    } else {
+                        for (StrimziPodSet podSet : podSets) {
+                            List<Map<String, Object>> desiredPods = podSet.getSpec().getPods().stream()
+                                    .filter(pod -> desiredPodNames.contains(PodSetUtils.mapToPod(pod).getMetadata().getName()))
+                                    .collect(toList());
+
+
+                            if (podSet.getSpec().getPods().size() != 0 && podSet.getSpec().getPods().size() > desiredPods.size()) {
+                                Future<Boolean> result = canScaleDownBrokerCheck(vertx, reconciliation, kafka, kafkaStatus, secretOperator, adminClientProvider, desiredPodNames, podSet);
+
+                                return result.compose(cannotScaleDown -> {
+                                    if (cannotScaleDown) {
+                                        kafkaStatus.addCondition(StatusUtils.buildWarningCondition("ScaleDownException", "Cannot Scale down since broker contains partition replicas." +
+                                                " The `spec.kafka.replicas` should be reverted back to " + podSet.getSpec().getPods().size() + " directly in the Kafka resource"));
+
+                                        // TODO : Logic to revert the changes if brokers are found.
+                                    }
+                                    return Future.succeededFuture();
+                                });
+                            }
+                        }
+                    }
+
+                    return Future.succeededFuture();
+                });
     }
+
 
     /**
      * Checks if broker contains any partition replicas when scaling down
@@ -73,11 +103,12 @@ public class PreventBrokerScaleDownUtils {
      * @param kafkaStatus          The Kafka Status class for adding conditions to it during the reconciliation
      * @param secretOperator       Secret operator for working with Secrets
      * @param adminClientProvider  Used to create the Admin client instance
-     * @param currentReplicas      The current number of replicas
+     * @param desiredPodNames      pod names
+     * @param podSet               StrimziPodSet
      * @return  returns a boolean future based on the outcome of the check
      */
     public static Future<Boolean> canScaleDownBrokerCheck(Vertx vertx, Reconciliation reconciliation, KafkaCluster kafka, KafkaStatus kafkaStatus,
-                                                      SecretOperator secretOperator, AdminClientProvider adminClientProvider, int currentReplicas) {
+                                                      SecretOperator secretOperator, AdminClientProvider adminClientProvider, Set<String> desiredPodNames, StrimziPodSet podSet) {
 
         Promise<Boolean> cannotScaleDown = Promise.promise();
         ReconcilerUtils.clientSecrets(reconciliation, secretOperator)
@@ -102,8 +133,19 @@ public class PreventBrokerScaleDownUtils {
                                             .compose(topicDescriptions -> {
                                                 LOGGER.infoCr(reconciliation, "Got {} topic descriptions", topicDescriptions.size());
 
-                                                for (int i = 0; i < currentReplicas - kafka.getReplicas(); i++) {
-                                                    boolean result = brokerHasAnyReplicas(reconciliation, topicDescriptions, currentReplicas - i - 1);
+                                                List<String> podsToBeDeleted = new ArrayList<>();
+                                                List<Map<String, Object>> desiredPods = podSet.getSpec().getPods().stream()
+                                                        .filter(pod -> {
+                                                            if (!desiredPodNames.contains(PodSetUtils.mapToPod(pod).getMetadata().getName())) {
+                                                                podsToBeDeleted.add(PodSetUtils.mapToPod(pod).getMetadata().getName());
+                                                            }
+                                                            return !desiredPodNames.contains(PodSetUtils.mapToPod(pod).getMetadata().getName());
+                                                        })
+                                                        .toList();
+
+                                                for (int i = 0; i < podsToBeDeleted.size(); i++) {
+                                                    LOGGER.infoCr(reconciliation, Integer.parseInt(podsToBeDeleted.get(i).substring(podsToBeDeleted.get(i).lastIndexOf("-") + 1)) + "hihihihihihi");
+                                                    boolean result = brokerHasAnyReplicas(reconciliation, topicDescriptions, Integer.parseInt(podsToBeDeleted.get(i).substring(podsToBeDeleted.get(i).lastIndexOf("-") + 1)));
                                                     if (result) {
                                                         cannotScaleDown.complete(true);
                                                         break;
@@ -116,7 +158,6 @@ public class PreventBrokerScaleDownUtils {
                                             }).recover(error -> {
                                                 LOGGER.warnCr(reconciliation, "failed to get topic descriptions", error);
                                                 cannotScaleDown.fail(error);
-                                                kafka.setReplicas(currentReplicas);
                                                 return Future.failedFuture(error);
                                             });
 
