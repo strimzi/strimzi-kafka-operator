@@ -217,7 +217,7 @@ public class SetupClusterOperator {
         LOGGER.debug("Cluster Operator installation configuration:\n{}", this::toString);
 
         this.testClassName = this.extensionContext.getRequiredTestClass() != null ? this.extensionContext.getRequiredTestClass().getName() : "";
-        this.testMethodName = this.extensionContext.getDisplayName() != null ? this.extensionContext.getDisplayName() : "";
+        this.testMethodName = this.extensionContext.getRequiredTestMethod() != null ? this.extensionContext.getRequiredTestMethod().getName() : "";
 
         if (Environment.isOlmInstall()) {
             runOlmInstallation();
@@ -389,7 +389,12 @@ public class SetupClusterOperator {
                         this.namespaceToWatch += "," + Constants.TEST_SUITE_NAMESPACE;
                     }
                 }
-                cluster.createNamespaces(CollectorElement.createCollectorElement(testClassName, testMethodName), namespaceInstallTo, bindingsNamespaces);
+
+                final CollectorElement collectorElement = this.testMethodName == null || this.testMethodName.isEmpty() ?
+                    CollectorElement.createCollectorElement(this.testClassName) :
+                    CollectorElement.createCollectorElement(this.testClassName, this.testMethodName);
+
+                cluster.createNamespaces(collectorElement, namespaceInstallTo, bindingsNamespaces);
                 StUtils.copyImagePullSecrets(namespaceInstallTo);
 
                 this.extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.PREPARE_OPERATOR_ENV_KEY + namespaceInstallTo, true);
