@@ -26,7 +26,7 @@ import static org.hamcrest.Matchers.is;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @Tag(REGRESSION)
-public class AbstractClusterReportST extends AbstractST {
+public abstract class AbstractClusterReportST extends AbstractST {
     private static final ObjectMapper MAPPER = new ObjectMapper(new YAMLFactory());
 
     protected String buildOutPath(TestInfo testInfo, String clusterName) {
