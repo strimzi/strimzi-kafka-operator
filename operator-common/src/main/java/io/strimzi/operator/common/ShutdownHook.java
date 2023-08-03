@@ -44,10 +44,10 @@ public class ShutdownHook implements Runnable {
     /**
      * Registers a lambda which should be called during the shutdown
      *
-     * @param c     Function which should be called when shutting down
+     * @param shutdownFunction  Function which should be called when shutting down
      */
-    public void register(Runnable c)    {
-        shutdownStack.push(c);
+    public void register(Runnable shutdownFunction)    {
+        shutdownStack.push(shutdownFunction);
     }
 
     /**
@@ -63,17 +63,17 @@ public class ShutdownHook implements Runnable {
 
         vertx.close(ar -> {
             if (!ar.succeeded()) {
-                LOGGER.error("Vertx close failed", ar.cause());
+                LOGGER.error("Vert.x close failed", ar.cause());
             }
             latch.countDown();
         });
 
         try {
             if (!latch.await(timeoutMs, TimeUnit.MILLISECONDS)) {
-                LOGGER.error("Timed out while waiting for Vertx close");
+                LOGGER.error("Timed out while waiting for Vert.x close");
             }
         } catch (InterruptedException e) {
-            LOGGER.error("Interrupted while waiting for Vertx close");
+            LOGGER.error("Interrupted while waiting for Vert.x close");
         }
 
         LOGGER.info("Shutdown of Vert.x is complete");
@@ -91,7 +91,7 @@ public class ShutdownHook implements Runnable {
         CountDownLatch latch = new CountDownLatch(1);
         vertx.undeploy(verticleId, ar -> {
             if (!ar.succeeded()) {
-                LOGGER.error("Vertx verticle failed to undeploy", ar.cause());
+                LOGGER.error("Vert.x verticle failed to undeploy", ar.cause());
             }
 
             latch.countDown();
@@ -99,10 +99,10 @@ public class ShutdownHook implements Runnable {
 
         try {
             if (!latch.await(timeoutMs, TimeUnit.MILLISECONDS)) {
-                LOGGER.error("Timed out while waiting for Vertx verticle to undeploy");
+                LOGGER.error("Timed out while waiting for Vert.x verticle to undeploy");
             }
         } catch (InterruptedException e) {
-            LOGGER.error("Interrupted while waiting for Vertx verticle to undeploy");
+            LOGGER.error("Interrupted while waiting for Vert.x verticle to undeploy");
         }
 
         LOGGER.info("Shutdown of Vert.x verticle {} is complete", verticleId);

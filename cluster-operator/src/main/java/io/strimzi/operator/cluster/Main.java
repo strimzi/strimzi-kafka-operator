@@ -241,11 +241,11 @@ public class Main {
                         // Not a leader anymore
                         if (!isShuttingDown) {
                             // Exit only if this isn't called as part of a shutdown
-                            LOGGER.info("Unexpectedly stopped being a leader => exiting");
+                            LOGGER.warn("Stopped being a leader => exiting");
                             // Has to run asynchronously to not block the leader election from shutting down (the exit call is synchronous)
                             CompletableFuture.runAsync(() -> System.exit(1));
                         } else {
-                            LOGGER.info("Stopped being a leader");
+                            LOGGER.info("Stopped being a leader during a shutdown");
                         }
                     },
                     s -> {
