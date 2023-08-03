@@ -592,6 +592,12 @@ public class StrimziPodSetController implements Runnable {
         LOGGER.infoOp("Requesting the StrimziPodSet controller to stop");
         this.stop = true;
         controllerThread.interrupt();
+        try {
+            controllerThread.join();
+        } catch (InterruptedException e)    {
+            LOGGER.warnOp("Interrupted while waiting for the StrimziPodSet controller thread to stop");
+        }
+        LOGGER.infoOp("StrimziPodSet controller stopped");
     }
 
     /**

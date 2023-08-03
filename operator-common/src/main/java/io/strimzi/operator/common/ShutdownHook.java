@@ -5,64 +5,106 @@
 package io.strimzi.operator.common;
 
 import io.vertx.core.Vertx;
-import static java.util.Objects.requireNonNull;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.Stack;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 /**
- * This shutdown hook ensure that {@code Vertx.close()} is called on a clean shutdown,
- * which in turn calls the stop method of all running Verticles.
- * <p>
- * We add a fixed timeout because Vertx has none for stopping running Verticles.
+ * This shutdown hook executes the shutdown procedures. It allows shutdown procedures to be registered and executes
+ * them serially in the first-in last-out order. This allows us to build a hierarchy of steps executed in desired
+ * order (e.g. first stop the operators before releasing the leader election lock etc.). This is different from just
+ * registering multiple Java shutdown hooks because they would be executed in parallel / nondeterministic order.
  */
 public class ShutdownHook implements Runnable {
     private static final Logger LOGGER = LogManager.getLogger(ShutdownHook.class);
 
-    private Vertx vertx;
-    private long timeoutMs;
+    private final Stack<Runnable> shutdownStack;
 
     /**
      * Constructs the shutdown hook
-     *
-     * @param vertx     Vert.x instance
      */
-    public ShutdownHook(Vertx vertx) {
-        this(vertx, 120_000);
-    }
-
-    /**
-     * Constructs the shutdown hook
-     *
-     * @param vertx         Vert.x instance
-     * @param timeoutMs     Timeout in milliseconds
-     */
-    public ShutdownHook(Vertx vertx, long timeoutMs) {
-        this.vertx = requireNonNull(vertx, "Vertx can't be null");
-        this.timeoutMs = timeoutMs;
+    public ShutdownHook() {
+        this.shutdownStack = new Stack<>();
     }
 
     @Override
     public void run() {
-        LOGGER.info("Shutdown started");
-        if (vertx.deploymentIDs().size() > 0) {
-            CountDownLatch latch = new CountDownLatch(1);
-            vertx.close(ar -> {
-                if (!ar.succeeded()) {
-                    LOGGER.error("Vertx close failed", ar.cause());
-                }
-                latch.countDown();
-            });
-            try {
-                if (!latch.await(timeoutMs, TimeUnit.MILLISECONDS)) {
-                    LOGGER.error("Timed out while waiting for Vertx close");
-                }
-            } catch (InterruptedException e) {
-                LOGGER.error("Interrupted while waiting for Vertx close");
-            }
+        LOGGER.info("Shutdown hook started");
+
+        while (!shutdownStack.isEmpty()) {
+            shutdownStack.pop().run();
         }
-        LOGGER.info("Shutdown completed");
+
+        LOGGER.info("Shutdown hook completed");
+    }
+
+    /**
+     * Registers a lambda which should be called during the shutdown
+     *
+     * @param shutdownFunction  Function which should be called when shutting down
+     */
+    public void register(Runnable shutdownFunction)    {
+        shutdownStack.push(shutdownFunction);
+    }
+
+    /**
+     * Utility method which can be used to shut down Vert.x
+     *
+     * @param vertx         Vert.x instance
+     * @param timeoutMs     Timeout for the shutdown
+     */
+    public static void shutdownVertx(Vertx vertx, long timeoutMs) {
+        LOGGER.info("Shutting down Vert.x");
+
+        CountDownLatch latch = new CountDownLatch(1);
+
+        vertx.close(ar -> {
+            if (!ar.succeeded()) {
+                LOGGER.error("Vert.x close failed", ar.cause());
+            }
+            latch.countDown();
+        });
+
+        try {
+            if (!latch.await(timeoutMs, TimeUnit.MILLISECONDS)) {
+                LOGGER.error("Timed out while waiting for Vert.x close");
+            }
+        } catch (InterruptedException e) {
+            LOGGER.error("Interrupted while waiting for Vert.x close");
+        }
+
+        LOGGER.info("Shutdown of Vert.x is complete");
+    }
+
+    /**
+     * Utility method which can be used to undeploy verticle at shutdown
+     *
+     * @param vertx         Vert.x instance
+     * @param verticleId    ID of the verticle which should be undeployed
+     * @param timeoutMs     Timeout for the shutdown
+     */
+    public static void undeployVertxVerticle(Vertx vertx, String verticleId, long timeoutMs) {
+        LOGGER.info("Shutting down Vert.x verticle {}", verticleId);
+        CountDownLatch latch = new CountDownLatch(1);
+        vertx.undeploy(verticleId, ar -> {
+            if (!ar.succeeded()) {
+                LOGGER.error("Vert.x verticle failed to undeploy", ar.cause());
+            }
+
+            latch.countDown();
+        });
+
+        try {
+            if (!latch.await(timeoutMs, TimeUnit.MILLISECONDS)) {
+                LOGGER.error("Timed out while waiting for Vert.x verticle to undeploy");
+            }
+        } catch (InterruptedException e) {
+            LOGGER.error("Interrupted while waiting for Vert.x verticle to undeploy");
+        }
+
+        LOGGER.info("Shutdown of Vert.x verticle {} is complete", verticleId);
     }
 }
