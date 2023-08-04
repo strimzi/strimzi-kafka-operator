@@ -170,7 +170,7 @@
         <javax.json.version>1.1.4</javax.json.version>
         <rest-assured.version>4.4.0</rest-assured.version>
         <rest-assured-json-path.version>4.4.0</rest-assured-json-path.version>
-        <bouncycastle.version>1.69</bouncycastle.version>
+        <bouncycastle.version>1.76</bouncycastle.version>
         <kroxylicious-testing.version>0.4.0</kroxylicious-testing.version>
 
         <!-- properties to skip surefire tests during failsafe execution -->
