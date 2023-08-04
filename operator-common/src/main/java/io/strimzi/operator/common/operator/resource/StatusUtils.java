@@ -244,25 +244,22 @@ public class StatusUtils {
      * Validate the Custom Resource. This should log at the WARN level (rather than throwing) if the resource can safely
      * be reconciled (e.g. it merely using deprecated API).
      *
-     * @param <T>                   Custom Resource type
-     * @param <P>                   Custom Resource spec type
-     * @param <S>                   Custom Resource status type
+     * @param <T>               Custom Resource type
+     * @param <P>               Custom Resource spec type
+     * @param <S>               Custom Resource status type
      *
-     * @param reconciliation        The reconciliation
-     * @param resource              The custom resource
-     * @param printResourceName     Flag indicating whether the warning messages should contain the resource
-     *                              identification or not. This is useful when the message is logged as a part of
-     *                              reconciliation of another resource.
-     *
-     * @return  Set of conditions
+     * @param reconciliation    The reconciliation
+     * @param resource          The custom resource
      *
      * @throws InvalidResourceException if the resource cannot be safely reconciled.
+     *
+     * @return set of conditions
      */
-    public static <T extends CustomResource<P, S>, P extends Spec, S extends Status> Set<Condition> validate(Reconciliation reconciliation, T resource, boolean printResourceName) {
+    public static <T extends CustomResource<P, S>, P extends Spec, S extends Status> Set<Condition> validate(Reconciliation reconciliation, T resource) {
         if (resource != null) {
             Set<Condition> warningConditions = new LinkedHashSet<>(0); // LinkedHashSet is used to maintain ordering
 
-            ResourceVisitor.visit(reconciliation, resource, new ValidationVisitor(resource, LOGGER, warningConditions, printResourceName));
+            ResourceVisitor.visit(reconciliation, resource, new ValidationVisitor(resource, LOGGER, warningConditions));
 
             return warningConditions;
         }

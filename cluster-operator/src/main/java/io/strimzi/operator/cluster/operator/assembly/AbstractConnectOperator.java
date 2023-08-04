@@ -39,8 +39,8 @@ import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.api.kafka.model.status.KafkaConnectStatus;
 import io.strimzi.api.kafka.model.status.KafkaConnectorStatus;
 import io.strimzi.api.kafka.model.status.Status;
-import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
+import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.model.ImagePullPolicy;
 import io.strimzi.operator.cluster.model.InvalidResourceException;
 import io.strimzi.operator.cluster.model.KafkaConnectCluster;
@@ -921,7 +921,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
      */
     public Set<Condition> validate(Reconciliation reconciliation, KafkaConnector resource) {
         if (resource != null) {
-            return StatusUtils.validate(reconciliation, resource, true);
+            return StatusUtils.validate(reconciliation, resource);
         }
 
         return Collections.emptySet();

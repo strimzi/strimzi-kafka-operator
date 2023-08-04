@@ -909,7 +909,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
                     Optional<Condition> condition = kr1.getStatus().getConditions().stream().filter(cond -> "UnknownFields".equals(cond.getReason())).findFirst();
                     assertTrue(condition.isPresent());
                     assertThat(condition.get().getStatus(), is("True"));
-                    assertThat(condition.get().getMessage(), is("Contains object at path spec with an unknown property: unknown"));
+                    assertThat(condition.get().getMessage(), is("Resource KafkaRebalance(cruise-control-namespace/my-rebalance) contains object at path spec with an unknown property: unknown"));
                     assertThat(condition.get().getType(), is("Warning"));
                     checkpoint.flag();
                 })));

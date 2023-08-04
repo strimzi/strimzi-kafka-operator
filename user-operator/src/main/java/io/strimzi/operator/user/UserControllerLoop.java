@@ -116,7 +116,7 @@ public class UserControllerLoop extends AbstractControllerLoop {
 
             try {
                 KafkaUserStatus status = new KafkaUserStatus();
-                Set<Condition> unknownAndDeprecatedConditions = StatusUtils.validate(reconciliation, user, false);
+                Set<Condition> unknownAndDeprecatedConditions = StatusUtils.validate(reconciliation, user);
 
                 try {
                     status = reconciliationResult.toCompletableFuture().get(operationTimeoutMs, TimeUnit.MILLISECONDS);

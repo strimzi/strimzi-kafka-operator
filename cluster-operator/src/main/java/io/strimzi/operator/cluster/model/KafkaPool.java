@@ -185,7 +185,7 @@ public class KafkaPool extends AbstractModel {
         }
 
         // Adds the warnings about unknown or deprecated fields
-        result.warningConditions.addAll(StatusUtils.validate(reconciliation, pool, true));
+        result.warningConditions.addAll(StatusUtils.validate(reconciliation, pool));
 
         if (pool.getSpec().getTemplate() != null) {
             KafkaNodePoolTemplate template = pool.getSpec().getTemplate();
