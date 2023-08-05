@@ -48,6 +48,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.Level;
 import org.junit.jupiter.api.extension.ExtensionContext;
+import org.junit.platform.commons.PreconditionViolationException;
 
 import java.io.File;
 import java.io.IOException;
@@ -217,7 +218,16 @@ public class SetupClusterOperator {
         LOGGER.debug("Cluster Operator installation configuration:\n{}", this::toString);
 
         this.testClassName = this.extensionContext.getRequiredTestClass() != null ? this.extensionContext.getRequiredTestClass().getName() : "";
-        this.testMethodName = this.extensionContext.getDisplayName() != null ? this.extensionContext.getDisplayName() : "";
+
+        try {
+            if (this.extensionContext.getRequiredTestMethod() != null) {
+                this.testMethodName = this.extensionContext.getRequiredTestMethod().getName();
+            }
+        } catch (PreconditionViolationException e) {
+            LOGGER.debug("Test method is not present: {}\n{}", e.getMessage(), e.getCause());
+            // getRequiredTestMethod() is not present, in @BeforeAll scope so we're avoiding PreconditionViolationException exception
+            this.testMethodName = "";
+        }
 
         if (Environment.isOlmInstall()) {
             runOlmInstallation();
@@ -389,7 +399,12 @@ public class SetupClusterOperator {
                         this.namespaceToWatch += "," + Constants.TEST_SUITE_NAMESPACE;
                     }
                 }
-                cluster.createNamespaces(CollectorElement.createCollectorElement(testClassName, testMethodName), namespaceInstallTo, bindingsNamespaces);
+
+                final CollectorElement collectorElement = this.testMethodName == null || this.testMethodName.isEmpty() ?
+                    CollectorElement.createCollectorElement(this.testClassName) :
+                    CollectorElement.createCollectorElement(this.testClassName, this.testMethodName);
+
+                cluster.createNamespaces(collectorElement, namespaceInstallTo, bindingsNamespaces);
                 StUtils.copyImagePullSecrets(namespaceInstallTo);
 
                 this.extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.PREPARE_OPERATOR_ENV_KEY + namespaceInstallTo, true);
