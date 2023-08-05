@@ -12,7 +12,6 @@ import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.enums.ClusterOperatorRBACType;
 import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
-import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaConnectTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
