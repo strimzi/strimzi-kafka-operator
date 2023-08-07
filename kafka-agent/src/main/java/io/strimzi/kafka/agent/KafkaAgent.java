@@ -38,8 +38,8 @@ import java.util.Map;
  * A very simple Java agent which polls the value of the {@code kafka.server:type=KafkaServer,name=BrokerState}
  * Yammer Metric and once it reaches the value 3 (meaning "running as broker", see {@code kafka.server.BrokerState}),
  * creates a given file.
- * The presence of this file is tested via a Kube "exec" readiness probe to determine when the broker is ready.
- * It also exposes a REST endpoint for broker metrics.
+ * In zookeeper mode, the presence of this file is tested via a Kube "exec" readiness probe to determine when the broker is ready.
+ * It also exposes a REST endpoint for broker metrics and readiness check used by KRaft mode.
  * <dl>
  *     <dt>{@code GET /v1/broker-state}</dt>
  *     <dd>Reflects the BrokerState metric, returning a JSON response e.g. {"brokerState": 3}.
@@ -50,12 +50,17 @@ import java.util.Map;
  *          "remainingSegmentsToRecover": 456
  *        }
  *      }</dd>
+ *     <dt>{@code GET /v1/ready}</dt>
+ *     <dd>Returns HTTP code 200 if broker state is RUNNING(3). Otherwise returns non successful HTTP code.
+ *     </dd>
  * </dl>
  */
 public class KafkaAgent {
     private static final Logger LOGGER = LoggerFactory.getLogger(KafkaAgent.class);
     private static final String BROKER_STATE_PATH = "/v1/broker-state";
+    private static final String READINESS_ENDPOINT = "/v1/ready";
     private static final int HTTPS_PORT = 8443;
+    private static final int HTTP_PORT = 8080;
     private static final long GRACEFUL_SHUTDOWN_TIMEOUT_MS = 30 * 1000;
 
     // KafkaYammerMetrics class in Kafka 3.3+
@@ -88,7 +93,7 @@ public class KafkaAgent {
      * @param sslTruststorePath     Truststore containing CA certs for authenticating clients
      * @param sslTruststorePass     Password for truststore
      */
-    public KafkaAgent(File brokerReadyFile, File sessionConnectedFile, String sslKeyStorePath, String sslKeyStorePass, String sslTruststorePath, String sslTruststorePass) {
+    /* test */ KafkaAgent(File brokerReadyFile, File sessionConnectedFile, String sslKeyStorePath, String sslKeyStorePass, String sslTruststorePath, String sslTruststorePass) {
         this.brokerReadyFile = brokerReadyFile;
         this.sessionConnectedFile = sessionConnectedFile;
         this.sslKeyStorePath = sslKeyStorePath;
@@ -116,7 +121,14 @@ public class KafkaAgent {
         pollerThread.setDaemon(true);
 
         try {
-            startHttpServer();
+            startReadinessServer();
+        } catch (Exception e) {
+            LOGGER.error("Could not start the server for readiness endpoint: ", e);
+            throw new RuntimeException(e);
+        }
+
+        try {
+            startBrokerStateServer();
         } catch (Exception e) {
             LOGGER.error("Could not start the server for broker state: ", e);
             throw new RuntimeException(e);
@@ -210,7 +222,7 @@ public class KafkaAgent {
                 && "SessionExpireListener".equals(name.getType());
     }
 
-    private void startHttpServer() throws Exception {
+    private void startBrokerStateServer() throws Exception {
         Server server = new Server();
 
         HttpConfiguration https = new HttpConfiguration();
@@ -279,6 +291,49 @@ public class KafkaAgent {
         sslContextFactory.setTrustStorePassword(sslTruststorePassword);
         sslContextFactory.setNeedClientAuth(true);
         return  sslContextFactory;
+    }
+
+    private void startReadinessServer() throws Exception {
+        Server server = new Server();
+        ServerConnector conn = new ServerConnector(server);
+        conn.setPort(HTTP_PORT);
+        server.setConnectors(new Connector[] {conn});
+        ContextHandler readinessContext = new ContextHandler(READINESS_ENDPOINT);
+        readinessContext.setHandler(getReadinessHandler());
+        server.setHandler(readinessContext);
+        server.setStopTimeout(GRACEFUL_SHUTDOWN_TIMEOUT_MS);
+        server.setStopAtShutdown(true);
+        server.start();
+    }
+
+    /**
+     * Creates a Handler instance to handle incoming HTTP requests for readiness check
+     *
+     * @return Handler
+     */
+    /* test */ Handler getReadinessHandler() {
+        return new AbstractHandler() {
+            @Override
+            public void handle(String s, Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws IOException {
+                response.setContentType("application/json");
+                response.setCharacterEncoding("UTF-8");
+                baseRequest.setHandled(true);
+                if (brokerState != null) {
+                    byte observedState = (byte) brokerState.value();
+                    boolean stateIsRunning = BROKER_RUNNING_STATE <= observedState && BROKER_UNKNOWN_STATE != observedState;
+                    if (stateIsRunning) {
+                        response.setStatus(HttpServletResponse.SC_OK);
+                    } else {
+                        response.setStatus(HttpServletResponse.SC_NOT_ACCEPTABLE);
+                        response.getWriter().print("Readiness failed: brokerState is " + observedState);
+                    }
+                } else {
+                    response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+                    response.getWriter().print("Broker state metric not found");
+                }
+
+            }
+        };
     }
 
     private Runnable poller() {
