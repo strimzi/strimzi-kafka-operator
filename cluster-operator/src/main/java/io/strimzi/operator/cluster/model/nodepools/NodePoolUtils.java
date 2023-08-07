@@ -7,13 +7,14 @@ package io.strimzi.operator.cluster.model.nodepools;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.nodepool.KafkaNodePool;
 import io.strimzi.api.kafka.model.nodepool.ProcessRoles;
+import io.strimzi.api.kafka.model.storage.JbodStorage;
 import io.strimzi.api.kafka.model.storage.Storage;
 import io.strimzi.operator.cluster.model.InvalidResourceException;
 import io.strimzi.operator.cluster.model.KafkaPool;
 import io.strimzi.operator.cluster.model.ModelUtils;
+import io.strimzi.operator.cluster.operator.resource.SharedEnvironmentProvider;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
-import io.strimzi.operator.cluster.operator.resource.SharedEnvironmentProvider;
 import io.strimzi.operator.common.ReconciliationLogger;
 import org.apache.kafka.common.Uuid;
 
@@ -130,6 +131,9 @@ public class NodePoolUtils {
                 // Validate process roles
                 errors.addAll(validateKRaftProcessRoles(nodePools));
 
+                // Validate JBOD storage
+                errors.addAll(validateKRaftJbodStorage(nodePools));
+
                 // Validate cluster IDs
                 errors.addAll(validateKRaftClusterIds(reconciliation, kafka, nodePools));
             } else {
@@ -215,6 +219,30 @@ public class NodePoolUtils {
         return errors;
     }
 
+
+    /**
+     * In KRaft mode, JBOD storage with multiple disks is currently not supported. This method validates the
+     * KafkaNodePool resources whether they contain JBOD storage with multiple disks or not.
+     *
+     * @param nodePools   List of Kafka Node Pools
+     *
+     * @return  List with errors found during the validation
+     */
+    public static List<String> validateKRaftJbodStorage(List<KafkaNodePool> nodePools)   {
+        List<String> errors = new ArrayList<>();
+
+        for (KafkaNodePool pool : nodePools)    {
+            if (pool.getSpec().getStorage() != null
+                    && pool.getSpec().getStorage() instanceof JbodStorage jbod) {
+                if (jbod.getVolumes().size() > 1) {
+                    errors.add("Using more than one disk in a JBOD storage is currently not supported when the UseKRaft feature gate is enabled (in KafkaNodePool " + pool.getMetadata().getName() + ")");
+                }
+            }
+        }
+
+        return errors;
+    }
+
     /**
      * Extracts the cluster IDs found in the Kafka and KafkaNodePool custom resources and validates whether the
      * resources do not belong to different Kafka cluster. This method is used for ZooKeeper based Kafka clusters. In
@@ -222,7 +250,7 @@ public class NodePoolUtils {
      * before the Kafka cluster.
      *
      * @param reconciliation    Reconciliation marker
-     * @param kafka             The Kafka custom resource which should be validates
+     * @param kafka             The Kafka custom resource which should be validated
      * @param pools             The list of KafkaNodePool custom resources which should be validated
      *
      * @return  List with errors found while checking the cluster IDs or null if no issues found
@@ -298,7 +326,7 @@ public class NodePoolUtils {
      * Kafka clusters which have their own validation method.
      *
      * @param reconciliation    Reconciliation marker
-     * @param kafka             The Kafka custom resource which should be validates
+     * @param kafka             The Kafka custom resource which should be validated
      * @param pools             The list of KafkaNodePool custom resources which should be validated
      *
      * @return  List with errors found while checking the cluster IDs or null if no issues found
@@ -341,7 +369,7 @@ public class NodePoolUtils {
      * @return  The extracted cluster ID or null if it is not set
      */
     public static String getClusterIdIfSet(Kafka kafkaCr, List<KafkaNodePool> pools)   {
-        // This method expects the cluster IDs to be already validated with the validatio  methods in this class
+        // This method expects the cluster IDs to be already validated with the validation methods in this class
         if (kafkaCr.getStatus() != null && kafkaCr.getStatus().getClusterId() != null) {
             return kafkaCr.getStatus().getClusterId();
         } else if (pools != null)    {

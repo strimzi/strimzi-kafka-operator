@@ -449,7 +449,7 @@ public class NodePoolUtilsTest {
     public void testKRaftValidationWithNoRoles()   {
         KafkaNodePool poolA = new KafkaNodePoolBuilder(POOL_A)
                 .editSpec()
-                .withRoles()
+                    .withRoles()
                 .endSpec()
                 .build();
 
@@ -461,7 +461,7 @@ public class NodePoolUtilsTest {
     public void testKRaftValidationWithSeparateRoles()   {
         KafkaNodePool poolA = new KafkaNodePoolBuilder(POOL_A)
                 .editSpec()
-                .withRoles(ProcessRoles.CONTROLLER)
+                    .withRoles(ProcessRoles.CONTROLLER)
                 .endSpec()
                 .build();
 
@@ -541,6 +541,21 @@ public class NodePoolUtilsTest {
 
         InvalidResourceException ex = assertThrows(InvalidResourceException.class, () -> NodePoolUtils.validateNodePools(Reconciliation.DUMMY_RECONCILIATION, KAFKA, List.of(poolA), false));
         assertThat(ex.getMessage(), is("KafkaNodePools are enabled, but the KafkaNodePool for Kafka cluster my-cluster either don't exists or have 0 replicas. Please make sure at least one KafkaNodePool resource exists, is in the same namespace as the Kafka resource, has at least one replica, and has the strimzi.io/cluster label set to the name of the Kafka resource."));
+    }
+
+    @Test
+    public void testValidationKRaftJbodStorage()   {
+        KafkaNodePool poolA = new KafkaNodePoolBuilder(POOL_A)
+                .editSpec()
+                    .withNewJbodStorage()
+                        .withVolumes(new PersistentClaimStorageBuilder().withId(0).withSize("200Gi").build(),
+                                new PersistentClaimStorageBuilder().withId(1).withSize("200Gi").build())
+                    .endJbodStorage()
+                .endSpec()
+                .build();
+
+        InvalidResourceException ex = assertThrows(InvalidResourceException.class, () -> NodePoolUtils.validateNodePools(Reconciliation.DUMMY_RECONCILIATION, KAFKA, List.of(poolA, POOL_B), true));
+        assertThat(ex.getMessage(), containsString("Tha Kafka cluster my-cluster is invalid: [At least one KafkaNodePool with the controller role and at least one replica is required when KRaft mode is enabled, Using more than one disk in a JBOD storage is currently not supported when the UseKRaft feature gate is enabled (in KafkaNodePool pool-a)]"));
     }
 
     @Test
