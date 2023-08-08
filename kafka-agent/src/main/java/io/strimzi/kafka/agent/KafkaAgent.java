@@ -21,6 +21,7 @@ import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.SslConnectionFactory;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.eclipse.jetty.server.handler.ContextHandler;
+import org.eclipse.jetty.server.handler.ContextHandlerCollection;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -58,7 +59,7 @@ import java.util.Map;
 public class KafkaAgent {
     private static final Logger LOGGER = LoggerFactory.getLogger(KafkaAgent.class);
     private static final String BROKER_STATE_PATH = "/v1/broker-state";
-    private static final String READINESS_ENDPOINT = "/v1/ready";
+    private static final String READINESS_ENDPOINT_PATH = "/v1/ready";
     private static final int HTTPS_PORT = 8443;
     private static final int HTTP_PORT = 8080;
     private static final long GRACEFUL_SHUTDOWN_TIMEOUT_MS = 30 * 1000;
@@ -121,14 +122,7 @@ public class KafkaAgent {
         pollerThread.setDaemon(true);
 
         try {
-            startReadinessServer();
-        } catch (Exception e) {
-            LOGGER.error("Could not start the server for readiness endpoint: ", e);
-            throw new RuntimeException(e);
-        }
-
-        try {
-            startBrokerStateServer();
+            startHTTPServer();
         } catch (Exception e) {
             LOGGER.error("Could not start the server for broker state: ", e);
             throw new RuntimeException(e);
@@ -222,22 +216,28 @@ public class KafkaAgent {
                 && "SessionExpireListener".equals(name.getType());
     }
 
-    private void startBrokerStateServer() throws Exception {
+    private void startHTTPServer() throws Exception {
         Server server = new Server();
 
         HttpConfiguration https = new HttpConfiguration();
         https.addCustomizer(new SecureRequestCustomizer());
-
-        ServerConnector conn = new ServerConnector(server,
+        ServerConnector httpsConn = new ServerConnector(server,
                 new SslConnectionFactory(getSSLContextFactory(), "http/1.1"),
                 new HttpConnectionFactory(https));
-        conn.setPort(HTTPS_PORT);
+        httpsConn.setPort(HTTPS_PORT);
 
-        ContextHandler context = new ContextHandler(BROKER_STATE_PATH);
-        context.setHandler(getBrokerStateHandler());
+        ContextHandler brokerStateContext = new ContextHandler(BROKER_STATE_PATH);
+        brokerStateContext.setHandler(getBrokerStateHandler());
 
-        server.setConnectors(new Connector[]{conn});
-        server.setHandler(context);
+        ServerConnector httpConn  = new ServerConnector(server);
+        httpConn.setPort(HTTP_PORT);
+
+        ContextHandler readinessContext = new ContextHandler(READINESS_ENDPOINT_PATH);
+        readinessContext.setHandler(getReadinessHandler());
+
+        server.setConnectors(new Connector[] {httpsConn, httpConn});
+        server.setHandler(new ContextHandlerCollection(brokerStateContext, readinessContext));
+
         server.setStopTimeout(GRACEFUL_SHUTDOWN_TIMEOUT_MS);
         server.setStopAtShutdown(true);
         server.start();
@@ -293,19 +293,6 @@ public class KafkaAgent {
         return  sslContextFactory;
     }
 
-    private void startReadinessServer() throws Exception {
-        Server server = new Server();
-        ServerConnector conn = new ServerConnector(server);
-        conn.setPort(HTTP_PORT);
-        server.setConnectors(new Connector[] {conn});
-        ContextHandler readinessContext = new ContextHandler(READINESS_ENDPOINT);
-        readinessContext.setHandler(getReadinessHandler());
-        server.setHandler(readinessContext);
-        server.setStopTimeout(GRACEFUL_SHUTDOWN_TIMEOUT_MS);
-        server.setStopAtShutdown(true);
-        server.start();
-    }
-
     /**
      * Creates a Handler instance to handle incoming HTTP requests for readiness check
      *
@@ -322,16 +309,18 @@ public class KafkaAgent {
                     byte observedState = (byte) brokerState.value();
                     boolean stateIsRunning = BROKER_RUNNING_STATE <= observedState && BROKER_UNKNOWN_STATE != observedState;
                     if (stateIsRunning) {
+                        LOGGER.trace("Broker is in running according to {}. The current state is {}", brokerStateName, observedState);
                         response.setStatus(HttpServletResponse.SC_OK);
                     } else {
+                        LOGGER.trace("Broker is not running according to {}. The current state is {}", brokerStateName, observedState);
                         response.setStatus(HttpServletResponse.SC_NOT_ACCEPTABLE);
                         response.getWriter().print("Readiness failed: brokerState is " + observedState);
                     }
                 } else {
+                    LOGGER.warn("Broker state metric not found");
                     response.setStatus(HttpServletResponse.SC_NOT_FOUND);
                     response.getWriter().print("Broker state metric not found");
                 }
-
             }
         };
     }
