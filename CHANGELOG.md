@@ -6,6 +6,7 @@
   By default, StrimziPodSets are used for Kafka Connect and Kafka Mirror Maker 2.
   If needed, `StableConnectIdentites` can be disabled in the feature gates configuration in the Cluster Operator.
 * Support for the ppc64le platform
+* Refactor logic for Cruise Control cpu capacity settings
 
 ## 0.36.1
 

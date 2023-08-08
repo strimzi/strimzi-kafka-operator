@@ -231,17 +231,21 @@ public class Capacity {
         return null;
     }
 
-    private CpuCapacity processCpu(io.strimzi.api.kafka.model.balancing.BrokerCapacity bc, BrokerCapacityOverride override, CpuCapacity cpuBasedOnRequirements) {
+    private CpuCapacity processCpu(io.strimzi.api.kafka.model.balancing.BrokerCapacity bc, BrokerCapacityOverride override, ResourceRequirements resourceRequirements) {
         if (override != null && override.getCpu() != null) {
             return new CpuCapacity(override.getCpu());
         } else if (bc != null && bc.getCpu() != null) {
             return new CpuCapacity(bc.getCpu());
-        } else if (cpuBasedOnRequirements != null) {
-            return cpuBasedOnRequirements;
         } else {
-            return new CpuCapacity(BrokerCapacity.DEFAULT_CPU_CORE_CAPACITY);
+            CpuCapacity cpu = getCpuBasedOnRequirements(resourceRequirements);
+            if (cpu != null) {
+                return cpu;
+            } else {
+                return new CpuCapacity(BrokerCapacity.DEFAULT_CPU_CORE_CAPACITY);
+            }
         }
     }
+
 
     private static DiskCapacity processDisk(Storage storage, int brokerId) {
         if (storage instanceof JbodStorage) {
@@ -351,7 +355,7 @@ public class Capacity {
         // We create a capacity for each broker node
         for (NodeRef node : kafkaBrokerNodes)   {
             DiskCapacity disk = processDisk(kafkaStorage.get(node.poolName()), node.nodeId());
-            CpuCapacity cpu = processCpu(brokerCapacity, null, getCpuBasedOnRequirements(kafkaBrokerResources.get(node.poolName())));
+            CpuCapacity cpu = processCpu(brokerCapacity, null, kafkaBrokerResources.get(node.poolName()));
 
             BrokerCapacity broker = new BrokerCapacity(node.nodeId(), cpu, disk, inboundNetwork, outboundNetwork);
             capacityEntries.put(node.nodeId(), broker);
@@ -377,7 +381,7 @@ public class Capacity {
                                 if (capacityEntries.containsKey(id)) {
                                     if (overrideIds.add(id)) {
                                         BrokerCapacity brokerCapacityEntry = capacityEntries.get(id);
-                                        brokerCapacityEntry.setCpu(processCpu(brokerCapacity, override, capacityEntries.get(id).getCpu()));
+                                        brokerCapacityEntry.setCpu(processCpu(brokerCapacity, override, kafkaBrokerResources.get(id)));
                                         brokerCapacityEntry.setInboundNetwork(inboundNetwork);
                                         brokerCapacityEntry.setOutboundNetwork(outboundNetwork);
                                     } else {
