@@ -410,7 +410,7 @@ public interface Constants {
 
     // main namespace for Cluster Operator deployment
     String CO_NAMESPACE = "co-namespace";
-    String TEST_SUITE_NAMESPACE = "test-suite-namespace";
+    String TEST_SUITE_NAMESPACE = Environment.isNamespaceRbacScope() ? CO_NAMESPACE : "test-suite-namespace";
 
     /**
      * Auxiliary variables for storing data across our tests
