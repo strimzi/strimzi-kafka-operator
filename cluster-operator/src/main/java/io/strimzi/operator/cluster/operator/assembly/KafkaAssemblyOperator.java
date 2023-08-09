@@ -8,8 +8,7 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.fabric8.kubernetes.client.Watch;
-import io.fabric8.kubernetes.client.WatcherException;
+import io.fabric8.kubernetes.client.Watcher;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.api.kafka.KafkaList;
 import io.strimzi.api.kafka.KafkaNodePoolList;
@@ -26,9 +25,9 @@ import io.strimzi.api.kafka.model.status.KafkaStatus;
 import io.strimzi.api.kafka.model.status.KafkaStatusBuilder;
 import io.strimzi.api.kafka.model.storage.Storage;
 import io.strimzi.certs.CertManager;
-import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.FeatureGates;
+import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.model.ClientsCa;
 import io.strimzi.operator.cluster.model.ClusterCa;
 import io.strimzi.operator.cluster.model.InvalidResourceException;
@@ -46,6 +45,9 @@ import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationException;
 import io.strimzi.operator.common.ReconciliationLogger;
+import io.strimzi.operator.common.ReconnectingWatcher;
+import io.strimzi.operator.common.Util;
+import io.strimzi.operator.common.VertxUtil;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.resource.CrdOperator;
 import io.strimzi.operator.common.operator.resource.StatusUtils;
@@ -58,12 +60,8 @@ import java.time.Clock;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
-import java.util.function.Consumer;
 import java.util.stream.IntStream;
-
-import static io.strimzi.operator.common.VertxUtil.async;
 
 /**
  * Assembly operator for the Kafka custom resource. It manages the following components:
@@ -736,32 +734,77 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
     /**
      * Create Kubernetes watch for KafkaNodePool resources.
      *
-     * @param namespace     Namespace where to watch for the resources.
+     * @param namespace     Namespace where to watch for the resources
      *
-     * @return  A future which completes when the watcher has been created.
+     * @return  A future which completes when the watcher has been created
      */
-    public Future<Watch> createNodePoolWatch(String namespace) {
-        return async(vertx, () -> nodePoolOperator.watch(namespace, Optional.empty(), new KafkaNodePoolWatcher(namespace, selector(), this, kafkaOperator, recreateNodePoolWatch(namespace))));
+    public Future<ReconnectingWatcher<KafkaNodePool>> createNodePoolWatch(String namespace) {
+        return VertxUtil.async(vertx, () -> new ReconnectingWatcher<>(nodePoolOperator, KafkaNodePool.RESOURCE_KIND, namespace, null, this::nodePoolEventHandler));
     }
 
     /**
-     * Recreates a Kubernetes watch for KafkaNodePool resources
+     * Event handler called when the KafkaNodePool watch receives an event.
      *
-     * @param namespace     Namespace which should be watched
-     *
-     * @return  Consumer for a Watched exception
+     * @param action    An Action describing the type of the event
+     * @param resource  The resource for which the event was triggered
      */
-    public Consumer<WatcherException> recreateNodePoolWatch(String namespace) {
-        return new Consumer<>() {
-            @Override
-            public void accept(WatcherException e) {
-                if (e != null) {
-                    LOGGER.errorOp("KafkaNodePool watcher closed with exception in namespace {}", namespace, e);
-                    createWatch(namespace, this);
-                } else {
-                    LOGGER.infoOp("KafkaNodePool watcher closed in namespace {}", namespace);
-                }
+    /* test */ void nodePoolEventHandler(Watcher.Action action, KafkaNodePool resource) {
+        String name = resource.getMetadata().getName();
+        String namespace = resource.getMetadata().getNamespace();
+
+        switch (action) {
+            case ADDED, DELETED, MODIFIED -> maybeEnqueueReconciliation(action, resource);
+            case ERROR -> {
+                LOGGER.errorCr(new Reconciliation("watch", resource.getKind(), namespace, name), "Error action: {} {} in namespace {} ", resource.getKind(), namespace, name);
+                reconcileAll("watch error", namespace, ignored -> {
+                });
             }
-        };
+            default -> {
+                LOGGER.errorCr(new Reconciliation("watch", resource.getKind(), namespace, name), "Unknown action: {} in namespace {}", resource.getKind(), namespace, name);
+                reconcileAll("watch unknown", namespace, ignored -> {
+                });
+            }
+        }
+    }
+
+    /**
+     * Checks the KafkaNodePool resource and decides if a reconciliation should be triggered. This decision is based on
+     * whether there is a matching Kafka resource, if it matches the seelctor etc.
+     *
+     * @param action    Action describing the event
+     * @param resource  KafkaNodePool resource to which the event happened
+     */
+    private void maybeEnqueueReconciliation(Watcher.Action action, KafkaNodePool resource) {
+        if (resource.getMetadata().getLabels() != null
+                && resource.getMetadata().getLabels().get(Labels.STRIMZI_CLUSTER_LABEL) != null)    {
+            String kafkaName = resource.getMetadata().getLabels().get(Labels.STRIMZI_CLUSTER_LABEL);
+            Kafka kafka = kafkaOperator.get(resource.getMetadata().getNamespace(), kafkaName);
+
+            if (kafka != null
+                    && Util.matchesSelector(selector(), kafka)) {
+                if (ReconcilerUtils.nodePoolsEnabled(kafka)) {
+                    Reconciliation reconciliation = new Reconciliation("watch", kind(), kafka.getMetadata().getNamespace(), kafkaName);
+                    LOGGER.infoCr(reconciliation, "{} {} in namespace {} was {}", resource.getKind(), resource.getMetadata().getName(), resource.getMetadata().getNamespace(), action);
+                    enqueueReconciliation(reconciliation);
+                } else {
+                    LOGGER.warnOp("{} {} in namespace {} was {}, but the Kafka cluster {} to which it belongs does not have {} support enabled", resource.getKind(), resource.getMetadata().getName(), resource.getMetadata().getNamespace(), action, kafkaName, resource.getKind());
+                }
+            } else if (kafka == null) {
+                LOGGER.warnOp("{} {} in namespace {} was {}, but the Kafka cluster {} to which it belongs does not exist", resource.getKind(), resource.getMetadata().getName(), resource.getMetadata().getNamespace(), action, kafkaName);
+            } else {
+                LOGGER.debugOp("{} {} in namespace {} was {}, but the Kafka cluster {} to which it belongs is not managed by this operator instance", resource.getKind(), resource.getMetadata().getName(), resource.getMetadata().getNamespace(), action, kafkaName);
+            }
+        } else {
+            LOGGER.warnOp("{} {} in namespace {} was {}, but does not contain {} label", resource.getKind(), resource.getMetadata().getName(), resource.getMetadata().getNamespace(), action, Labels.STRIMZI_CLUSTER_LABEL);
+        }
+    }
+
+    /**
+     * Utility method for enqueueing reconciliation from he KafkaNodePool event handler. A separate method is used to allow testing of the enqueue handler.
+     *
+     * @param reconciliation    Reconciliation marker
+     */
+    /* test */ void enqueueReconciliation(Reconciliation reconciliation) {
+        reconcile(reconciliation);
     }
 }

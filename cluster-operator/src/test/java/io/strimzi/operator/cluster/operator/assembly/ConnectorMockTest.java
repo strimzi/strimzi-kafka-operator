@@ -8,7 +8,6 @@ import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.StatusDetails;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.fabric8.kubernetes.client.Watch;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.dsl.base.PatchContext;
 import io.fabric8.kubernetes.client.dsl.base.PatchType;
@@ -27,6 +26,7 @@ import io.strimzi.api.kafka.model.connect.ConnectorPlugin;
 import io.strimzi.api.kafka.model.connect.ConnectorPluginBuilder;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.api.kafka.model.status.Status;
+import io.strimzi.operator.common.ReconnectingWatcher;
 import io.strimzi.platform.KubernetesVersion;
 import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
@@ -119,8 +119,8 @@ public class ConnectorMockTest {
     private KubernetesClient client;
     private MockKube2 mockKube;
     private StrimziPodSetController podSetController;
-    private Watch connectWatch;
-    private Watch connectorWatch;
+    private ReconnectingWatcher<KafkaConnect> connectWatch;
+    private ReconnectingWatcher<KafkaConnector> connectorWatch;
     private KafkaConnectApi api;
     private HashMap<String, ConnectorState> runningConnectors;
     private KafkaConnectAssemblyOperator kafkaConnectOperator;
@@ -193,14 +193,13 @@ public class ConnectorMockTest {
 
         Checkpoint async = testContext.checkpoint();
         // Fail test if watcher closes for any reason
-        kafkaConnectOperator.createWatch(NAMESPACE, e -> testContext.failNow(e))
+        kafkaConnectOperator.createWatch(NAMESPACE)
             .onComplete(testContext.succeeding(i -> { }))
             .compose(watch -> {
                 connectWatch = watch;
-                return AbstractConnectOperator.createConnectorWatch(kafkaConnectOperator, NAMESPACE, null);
+                return kafkaConnectOperator.createConnectorWatch(NAMESPACE);
             }).compose(watch -> {
                 connectorWatch = watch;
-                //async.flag();
                 return Future.succeededFuture();
             }).onComplete(testContext.succeeding(v -> async.flag()));
     }

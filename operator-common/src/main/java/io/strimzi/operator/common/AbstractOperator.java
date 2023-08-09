@@ -6,8 +6,7 @@ package io.strimzi.operator.common;
 
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.client.CustomResource;
-import io.fabric8.kubernetes.client.Watch;
-import io.fabric8.kubernetes.client.WatcherException;
+import io.fabric8.kubernetes.client.Watcher;
 import io.micrometer.core.instrument.Meter;
 import io.micrometer.core.instrument.Tag;
 import io.micrometer.core.instrument.Tags;
@@ -38,7 +37,6 @@ import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 /**
@@ -467,7 +465,7 @@ public abstract class AbstractOperator<
     }
 
     /**
-     * A selector to narrow the scope of the {@linkplain #createWatch(String, Consumer) watch}
+     * A selector to narrow the scope of the {@linkplain #createWatch(String) watch}
      * and {@linkplain #allResourceNames(String) query}.
      * @return A selector.
      */
@@ -476,37 +474,43 @@ public abstract class AbstractOperator<
     }
 
     /**
-     * Create Kubernetes watch.
+     * Create Kubernetes watch
      *
-     * @param namespace Namespace where to watch for users.
-     * @param onClose Callback called when the watch is closed.
+     * @param namespace     Namespace where to watch for resources
      *
-     * @return A future which completes when the watcher has been created.
+     * @return  A future which completes when the watcher has been created
      */
-    public Future<Watch> createWatch(String namespace, Consumer<WatcherException> onClose) {
-        return VertxUtil.async(vertx, () -> resourceOperator.watch(namespace, selector(), new OperatorWatcher<>(this, namespace, onClose)));
+    public Future<ReconnectingWatcher<T>> createWatch(String namespace) {
+        return VertxUtil.async(vertx, () -> new ReconnectingWatcher<>(resourceOperator, kind(), namespace, selector().orElse(null), this::eventHandler));
     }
 
     /**
-     * Recreates a Kubernetes watch
+     * Event handler called when the watch receives an event.
      *
-     * @param namespace Namespace which should be watched
-     *
-     * @return  Consumer for a Watched exception
+     * @param action    An Action describing the type of the event
+     * @param resource  The resource for which the event was triggered
      */
-    public Consumer<WatcherException> recreateWatch(String namespace) {
-        Consumer<WatcherException> kubernetesClientExceptionConsumer = new Consumer<WatcherException>() {
-            @Override
-            public void accept(WatcherException e) {
-                if (e != null) {
-                    LOGGER.errorOp("Watcher closed with exception in namespace {}", namespace, e);
-                    createWatch(namespace, this);
-                } else {
-                    LOGGER.infoOp("Watcher closed in namespace {}", namespace);
-                }
+    private void eventHandler(Watcher.Action action, T resource) {
+        String name = resource.getMetadata().getName();
+        String namespace = resource.getMetadata().getNamespace();
+
+        switch (action) {
+            case ADDED, DELETED, MODIFIED -> {
+                Reconciliation reconciliation = new Reconciliation("watch", this.kind(), namespace, name);
+                LOGGER.infoCr(reconciliation, "{} {} in namespace {} was {}", this.kind(), name, namespace, action);
+                reconcile(reconciliation);
             }
-        };
-        return kubernetesClientExceptionConsumer;
+            case ERROR -> {
+                LOGGER.errorCr(new Reconciliation("watch", this.kind(), namespace, name), "Failed {} {} in namespace{} ", this.kind(), name, namespace);
+                reconcileAll("watch error", namespace, ignored -> {
+                });
+            }
+            default -> {
+                LOGGER.errorCr(new Reconciliation("watch", this.kind(), namespace, name), "Unknown action: {} in namespace {}", name, namespace);
+                reconcileAll("watch unknown", namespace, ignored -> {
+                });
+            }
+        }
     }
 
     /**

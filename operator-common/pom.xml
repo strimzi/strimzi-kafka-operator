@@ -158,6 +158,10 @@
             <scope>test</scope>
         </dependency>
         <dependency>
+            <groupId>io.strimzi</groupId>
+            <artifactId>mockkube</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.hamcrest</groupId>
             <artifactId>hamcrest</artifactId>
         </dependency>

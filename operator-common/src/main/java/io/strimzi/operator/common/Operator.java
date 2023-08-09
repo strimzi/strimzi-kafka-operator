@@ -20,7 +20,7 @@ import java.util.Set;
  * Abstraction of an operator which is driven by resources of a given {@link #kind()}.
  *
  * {@link #reconcile(Reconciliation)} triggers the asynchronous reconciliation of a named resource.
- * Reconciliation of a given resource may be triggered either by a Kubernetes watch event (see {@link OperatorWatcher}) or
+ * Reconciliation of a given resource may be triggered either by a Kubernetes watch event (see {@link ReconnectingWatcher}) or
  * on a regular schedule.
  * {@link #reconcileAll(String, String, Handler)} triggers reconciliation of all the resources that the operator consumes.
  * An operator instance is not bound to a particular namespace. Rather the namespace is passed as a parameter.

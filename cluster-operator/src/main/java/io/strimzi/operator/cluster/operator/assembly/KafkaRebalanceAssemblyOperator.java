@@ -4,28 +4,26 @@
  */
 package io.strimzi.operator.cluster.operator.assembly;
 
-import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
+import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.Watcher;
-import io.fabric8.kubernetes.client.WatcherException;
 import io.fabric8.kubernetes.client.dsl.Resource;
-import io.strimzi.api.kafka.KafkaRebalanceList;
 import io.strimzi.api.kafka.KafkaList;
+import io.strimzi.api.kafka.KafkaRebalanceList;
 import io.strimzi.api.kafka.model.CruiseControlResources;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaRebalance;
 import io.strimzi.api.kafka.model.KafkaRebalanceBuilder;
 import io.strimzi.api.kafka.model.KafkaRebalanceSpec;
+import io.strimzi.api.kafka.model.balancing.KafkaRebalanceAnnotation;
 import io.strimzi.api.kafka.model.balancing.KafkaRebalanceMode;
+import io.strimzi.api.kafka.model.balancing.KafkaRebalanceState;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.api.kafka.model.status.KafkaRebalanceStatus;
 import io.strimzi.api.kafka.model.status.KafkaRebalanceStatusBuilder;
-import io.strimzi.api.kafka.model.balancing.KafkaRebalanceAnnotation;
-import io.strimzi.api.kafka.model.balancing.KafkaRebalanceState;
 import io.strimzi.api.kafka.model.storage.JbodStorage;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.model.CruiseControl;
@@ -48,8 +46,9 @@ import io.strimzi.operator.cluster.operator.resource.cruisecontrol.RebalanceOpti
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.RemoveBrokerOptions;
 import io.strimzi.operator.common.AbstractOperator;
 import io.strimzi.operator.common.Annotations;
-import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.ReconciliationLogger;
+import io.strimzi.operator.common.ReconnectingWatcher;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.VertxUtil;
 import io.strimzi.operator.common.model.Labels;
@@ -65,10 +64,10 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -209,39 +208,37 @@ public class KafkaRebalanceAssemblyOperator
     }
 
     /**
-     * Create a watch on {@code KafkaRebalance} in the given {@code watchNamespaceOrWildcard}.
+     * Create Kubernetes watch for KafkaRebalance resources. KafkaRebalance resources have special event handler, so
+     * this method overrides the createWatch method from AbstractOperator class which is used by all other assembly
+     * operators.
      *
-     * @param watchNamespaceOrWildcard The namespace to watch, or "*" to watch all namespaces.
-     * @return A future which completes when the watch has been set up.
+     * @param namespace     Namespace where to watch for KafkaRebalance resources
+     *
+     * @return  A future which completes when the watcher has been created.
      */
-    public Future<Void> createRebalanceWatch(String watchNamespaceOrWildcard) {
+    @Override
+    public Future<ReconnectingWatcher<KafkaRebalance>> createWatch(String namespace) {
+        return VertxUtil.async(vertx, () -> new ReconnectingWatcher<>(resourceOperator, KafkaRebalance.RESOURCE_KIND, namespace, selector().orElse(null), this::eventHandler));
+    }
 
-        return VertxUtil.async(this.vertx, () -> {
-            kafkaRebalanceOperator.watch(watchNamespaceOrWildcard, selector(), new Watcher<>() {
-                @Override
-                public void eventReceived(Action action, KafkaRebalance kafkaRebalance) {
-                    Reconciliation reconciliation = new Reconciliation("kafkarebalance-watch", kafkaRebalance.getKind(),
-                            kafkaRebalance.getMetadata().getNamespace(), kafkaRebalance.getMetadata().getName());
+    /**
+     * Event handler called when the KafkaRebalance watch receives an event.
+     *
+     * @param action    An Action describing the type of the event
+     * @param resource  The resource for which the event was triggered
+     */
+    private void eventHandler(Watcher.Action action, KafkaRebalance resource) {
+        Reconciliation reconciliation = new Reconciliation("kafkarebalance-watch", resource.getKind(),
+                resource.getMetadata().getNamespace(), resource.getMetadata().getName());
 
-                    LOGGER.debugCr(reconciliation, "EventReceived {} on {} with status [{}] and {}={}", action,
-                            kafkaRebalance.getMetadata().getName(),
-                            kafkaRebalance.getStatus() != null ? rebalanceStateConditionType(kafkaRebalance.getStatus()) : null,
-                            ANNO_STRIMZI_IO_REBALANCE, rawRebalanceAnnotation(kafkaRebalance));
+        LOGGER.debugCr(reconciliation, "EventReceived {} on {} with status [{}] and {}={}",
+                action,
+                resource.getMetadata().getName(),
+                resource.getStatus() != null ? rebalanceStateConditionType(resource.getStatus()) : null,
+                ANNO_STRIMZI_IO_REBALANCE, rawRebalanceAnnotation(resource));
 
-                    withLock(reconciliation, LOCK_TIMEOUT_MS,
-                        () -> reconcileRebalance(reconciliation, action == Action.DELETED ? null : kafkaRebalance));
-                }
-
-                @Override
-                public void onClose(WatcherException e) {
-                    if (e != null) {
-                        throw new KubernetesClientException(e.getMessage());
-                    }
-                }
-
-            });
-            return null;
-        });
+        withLock(reconciliation, LOCK_TIMEOUT_MS,
+                () -> reconcileRebalance(reconciliation, action == Watcher.Action.DELETED ? null : resource));
     }
 
     /**
