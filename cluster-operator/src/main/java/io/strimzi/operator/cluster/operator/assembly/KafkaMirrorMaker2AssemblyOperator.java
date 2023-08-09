@@ -681,7 +681,7 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
 
     /**
      * Deletes the ClusterRoleBinding which as a cluster-scoped resource cannot be deleted by the ownerReference
-     * <p>
+     *
      * @param reconciliation    The Reconciliation identification
      * @return                  Future indicating the result of the deletion
      */
