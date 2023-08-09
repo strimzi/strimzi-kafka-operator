@@ -60,6 +60,7 @@ import org.apache.kafka.common.config.SslConfigs;
 
 import java.io.Serial;
 import java.io.Serializable;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -532,12 +533,15 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
     private static String oauthJaasConfig(KafkaMirrorMaker2ClusterSpec cluster,
                                           Map<String, String> authProperties,
                                           KafkaClientAuthenticationOAuth oauth) {
-        Map<String, String> jaasOptions = new HashMap<>();
         String oauthConfig = authProperties.get(AuthenticationUtils.OAUTH_CONFIG);
-        var index = oauthConfig.indexOf("=");
-        if (index != -1) {
-            jaasOptions.put(oauthConfig.substring(0, index), oauthConfig.substring(index + 1));
-        }
+        // convert the sasl.jaas.config string value to a map of jaas options
+        Map<String, String> jaasOptions = Arrays.stream(
+            oauthConfig.replace("\"", "").split(" "))
+                .map(option -> option.split("="))
+                .filter(entry -> entry.length == 2)
+                .collect(Collectors.toMap(entry -> entry[0], entry -> entry[1])
+        );
+        // integrate with the file based jaas options
         if (oauth.getClientSecret() != null) {
             jaasOptions.put("oauth.client.secret", "${file:" + CONNECTORS_CONFIG_FILE + ":" + cluster.getAlias() + ".oauth.client.secret}");
         }
@@ -551,10 +555,11 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
             jaasOptions.put("oauth.password.grant.password", "${file:" + CONNECTORS_CONFIG_FILE + ":" + cluster.getAlias() + ".oauth.password.grant.password}");
         }
         if (oauth.getTlsTrustedCertificates() != null && !oauth.getTlsTrustedCertificates().isEmpty()) {
-            jaasOptions.put("oauth.ssl.truststore.location", "/tmp/kafka/clusters/\"" + cluster.getAlias() + "\"-oauth.truststore.p12");
-            jaasOptions.put("oauth.ssl.truststore.password", "\"${file:" + CONNECTORS_CONFIG_FILE + ":oauth.ssl.truststore.password}\"");
+            jaasOptions.put("oauth.ssl.truststore.location", "/tmp/kafka/clusters/" + cluster.getAlias() + "-oauth.truststore.p12");
+            jaasOptions.put("oauth.ssl.truststore.password", "${file:" + CONNECTORS_CONFIG_FILE + ":oauth.ssl.truststore.password}");
             jaasOptions.put("oauth.ssl.truststore.type", "PKCS12");
         }
+        // build the new sasl.jaas.config string value
         return AuthenticationUtils.jaasConfig("org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule", jaasOptions);
     }
 
