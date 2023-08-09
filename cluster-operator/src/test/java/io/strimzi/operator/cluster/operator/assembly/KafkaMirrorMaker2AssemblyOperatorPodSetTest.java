@@ -12,6 +12,7 @@ import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy;
 import io.fabric8.kubernetes.api.model.policy.v1.PodDisruptionBudget;
+import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.api.kafka.KafkaMirrorMaker2List;
 import io.strimzi.api.kafka.model.KafkaConnectResources;
@@ -36,6 +37,7 @@ import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.cluster.operator.resource.SharedEnvironmentProvider;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.OrderedProperties;
+import io.strimzi.operator.common.operator.resource.ClusterRoleBindingOperator;
 import io.strimzi.operator.common.operator.resource.ConfigMapOperator;
 import io.strimzi.operator.common.operator.resource.CrdOperator;
 import io.strimzi.operator.common.operator.resource.DeploymentOperator;
@@ -57,6 +59,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
+import org.mockito.Mockito;
 
 import java.util.List;
 import java.util.Map;
@@ -738,6 +741,30 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
                     KafkaMirrorMaker2MirrorSpec capturedMirrorConnector = mirrorMaker2Captor.getAllValues().get(0).getSpec().getMirrors().get(0);
                     assertThat(capturedMirrorConnector.getTopicsBlacklistPattern(), is(excludedTopicList));
                     assertThat(capturedMirrorConnector.getGroupsBlacklistPattern(), is(excludedGroupList));
+                    async.flag();
+                })));
+    }
+
+    @Test
+    public void testDeleteClusterRoleBindings(VertxTestContext context) {
+        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
+
+        // Mock CRB resources
+        ClusterRoleBindingOperator mockCrbOps = supplier.clusterRoleBindingOperator;
+        ArgumentCaptor<ClusterRoleBinding> desiredCrb = ArgumentCaptor.forClass(ClusterRoleBinding.class);
+        when(mockCrbOps.reconcile(any(), eq(KafkaMirrorMaker2Resources.initContainerClusterRoleBindingName(NAME, NAMESPACE)), desiredCrb.capture())).thenReturn(Future.succeededFuture());
+
+        KafkaMirrorMaker2AssemblyOperator op = new KafkaMirrorMaker2AssemblyOperator(vertx, new PlatformFeaturesAvailability(true, KubernetesVersion.MINIMAL_SUPPORTED_VERSION),
+                supplier, ResourceUtils.dummyClusterOperatorConfig());
+        Reconciliation reconciliation = new Reconciliation("test-trigger", KafkaMirrorMaker2.RESOURCE_KIND, NAMESPACE, NAME);
+
+        Checkpoint async = context.checkpoint();
+
+        op.delete(reconciliation)
+                .onComplete(context.succeeding(c -> context.verify(() -> {
+                    assertThat(desiredCrb.getValue(), is(nullValue()));
+                    Mockito.verify(mockCrbOps, times(1)).reconcile(any(), eq(KafkaMirrorMaker2Resources.initContainerClusterRoleBindingName(NAME, NAMESPACE)), any());
+
                     async.flag();
                 })));
     }
