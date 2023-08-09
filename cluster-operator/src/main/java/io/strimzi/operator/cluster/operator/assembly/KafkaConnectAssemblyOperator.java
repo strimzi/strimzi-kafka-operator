@@ -16,6 +16,7 @@ import io.strimzi.api.kafka.model.CertSecretSource;
 import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnectResources;
 import io.strimzi.api.kafka.model.KafkaConnectSpec;
+import io.strimzi.api.kafka.model.KafkaConnector;
 import io.strimzi.api.kafka.model.StrimziPodSet;
 import io.strimzi.api.kafka.model.authentication.KafkaClientAuthentication;
 import io.strimzi.api.kafka.model.status.KafkaConnectStatus;
@@ -45,6 +46,7 @@ import io.vertx.core.Handler;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -331,16 +333,39 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
     }
 
     /**
-     * Deletes the ClusterRoleBinding which as a cluster-scoped resource cannot be deleted by the ownerReference
-     * <p>
+     * Deletes the ClusterRoleBinding which as a cluster-scoped resource cannot be deleted by the ownerReference and
+     * updates the status of all KafkaConnector resources to mark that they are now orphaned (have no matching Connect
+     * cluster).
+     *
      * @param reconciliation    The Reconciliation identification
+     *
      * @return                  Future indicating the result of the deletion
      */
     @Override
     protected Future<Boolean> delete(Reconciliation reconciliation) {
-        return super.delete(reconciliation)
+        return updateConnectorsThatConnectClusterWasDeleted(reconciliation)
                 .compose(i -> ReconcilerUtils.withIgnoreRbacError(reconciliation, clusterRoleBindingOperations.reconcile(reconciliation, KafkaConnectResources.initContainerClusterRoleBindingName(reconciliation.name(), reconciliation.namespace()), null), null))
                 .map(Boolean.FALSE); // Return FALSE since other resources are still deleted by garbage collection
+    }
+
+    /**
+     * When the KafkaConnect cluster is deleted, thi method updates all KafkaConnector resources belonging to it with
+     * the error that they do not have matching KafkaConnect cluster.
+     *
+     * @param reconciliation    Reconciliation marker
+     *
+     * @return  Future indicating that all connectors have been updated
+     */
+    private Future<Void> updateConnectorsThatConnectClusterWasDeleted(Reconciliation reconciliation) {
+        // When deleting KafkaConnect we need to update the status of all its KafkaConnector
+        return connectorOperator.listAsync(reconciliation.namespace(), Labels.forStrimziCluster(reconciliation.name())).compose(connectors -> {
+            List<Future<Void>> connectorFutures = new ArrayList<>();
+            for (KafkaConnector connector : connectors) {
+                connectorFutures.add(maybeUpdateConnectorStatus(reconciliation, connector, null,
+                        noConnectCluster(reconciliation.namespace(), reconciliation.name())));
+            }
+            return Future.join(connectorFutures);
+        }).map((Void) null);
     }
 
     /**

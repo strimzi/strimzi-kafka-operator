@@ -678,4 +678,16 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
         return resourceOperator.patchAsync(reconciliation, patchedKafkaMirrorMaker2)
             .compose(ignored -> Future.succeededFuture());
     }
+
+    /**
+     * Deletes the ClusterRoleBinding which as a cluster-scoped resource cannot be deleted by the ownerReference
+     *
+     * @param reconciliation    The Reconciliation identification
+     * @return                  Future indicating the result of the deletion
+     */
+    @Override
+    protected Future<Boolean> delete(Reconciliation reconciliation) {
+        return ReconcilerUtils.withIgnoreRbacError(reconciliation, clusterRoleBindingOperations.reconcile(reconciliation, KafkaMirrorMaker2Resources.initContainerClusterRoleBindingName(reconciliation.name(), reconciliation.namespace()), null), null)
+                .map(Boolean.FALSE); // Return FALSE since other resources are still deleted by garbage collection
+    }
 }

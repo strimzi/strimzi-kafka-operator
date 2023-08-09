@@ -165,19 +165,6 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
     }
 
     @Override
-    protected Future<Boolean> delete(Reconciliation reconciliation) {
-        // When deleting KafkaConnect we need to update the status of all selected KafkaConnector
-        return connectorOperator.listAsync(reconciliation.namespace(), Labels.forStrimziCluster(reconciliation.name())).compose(connectors -> {
-            List<Future<Void>> connectorFutures = new ArrayList<>();
-            for (KafkaConnector connector : connectors) {
-                connectorFutures.add(maybeUpdateConnectorStatus(reconciliation, connector, null,
-                        noConnectCluster(reconciliation.namespace(), reconciliation.name())));
-            }
-            return Future.join(connectorFutures);
-        }).map(ignored -> Boolean.FALSE);
-    }
-
-    @Override
     public ConnectOperatorMetricsHolder metrics()   {
         // We have to check the type because of Spotbugs
         if (metrics instanceof ConnectOperatorMetricsHolder) {
@@ -298,7 +285,16 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
         return Annotations.booleanAnnotation(connect, Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, false);
     }
 
-    private static NoSuchResourceException noConnectCluster(String connectNamespace, String connectName) {
+    /**
+     * Creates an exception indicating that the KafkaConnect resource which would match given KafkaConnector resource
+     * does not exist.
+     *
+     * @param connectNamespace  Namespace where the KafkaConnect resource is missing
+     * @param connectName       Name of the missing KafkaConnect resource
+     *
+     * @return  NoSuchResourceException indicating that the Connect cluster is missing
+     */
+    static NoSuchResourceException noConnectCluster(String connectNamespace, String connectName) {
         return new NoSuchResourceException(
                 "KafkaConnect resource '" + connectName + "' identified by label '" + Labels.STRIMZI_CLUSTER_LABEL + "' does not exist in namespace " + connectNamespace + ".");
     }
