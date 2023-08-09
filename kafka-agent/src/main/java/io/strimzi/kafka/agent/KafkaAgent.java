@@ -39,7 +39,7 @@ import java.util.Map;
  * A very simple Java agent which polls the value of the {@code kafka.server:type=KafkaServer,name=BrokerState}
  * Yammer Metric and once it reaches the value 3 (meaning "running as broker", see {@code kafka.server.BrokerState}),
  * creates a given file.
- * In zookeeper mode, the presence of this file is tested via a Kube "exec" readiness probe to determine when the broker is ready.
+ * In Zookeeper mode, the presence of this file is tested via a Kube "exec" readiness probe to determine when the broker is ready.
  * It also exposes a REST endpoint for broker metrics and readiness check used by KRaft mode.
  * <dl>
  *     <dt>{@code GET /v1/broker-state}</dt>
@@ -122,7 +122,7 @@ public class KafkaAgent {
         pollerThread.setDaemon(true);
 
         try {
-            startHTTPServer();
+            startHttpServer();
         } catch (Exception e) {
             LOGGER.error("Could not start the server for broker state: ", e);
             throw new RuntimeException(e);
@@ -216,7 +216,7 @@ public class KafkaAgent {
                 && "SessionExpireListener".equals(name.getType());
     }
 
-    private void startHTTPServer() throws Exception {
+    private void startHttpServer() throws Exception {
         Server server = new Server();
 
         HttpConfiguration https = new HttpConfiguration();
@@ -310,10 +310,10 @@ public class KafkaAgent {
                     boolean stateIsRunning = BROKER_RUNNING_STATE <= observedState && BROKER_UNKNOWN_STATE != observedState;
                     if (stateIsRunning) {
                         LOGGER.trace("Broker is in running according to {}. The current state is {}", brokerStateName, observedState);
-                        response.setStatus(HttpServletResponse.SC_OK);
+                        response.setStatus(HttpServletResponse.SC_NO_CONTENT);
                     } else {
                         LOGGER.trace("Broker is not running according to {}. The current state is {}", brokerStateName, observedState);
-                        response.setStatus(HttpServletResponse.SC_NOT_ACCEPTABLE);
+                        response.setStatus(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
                         response.getWriter().print("Readiness failed: brokerState is " + observedState);
                     }
                 } else {

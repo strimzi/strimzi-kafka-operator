@@ -120,7 +120,7 @@ public class KafkaAgentTest {
                 .build()
                 .send(req, HttpResponse.BodyHandlers.ofString());
 
-        assertEquals(HttpServletResponse.SC_OK, response.statusCode());
+        assertEquals(HttpServletResponse.SC_NO_CONTENT, response.statusCode());
     }
 
     @Test
@@ -137,7 +137,25 @@ public class KafkaAgentTest {
                 .build()
                 .send(req, HttpResponse.BodyHandlers.ofString());
 
-        assertEquals(HttpServletResponse.SC_NOT_ACCEPTABLE, response.statusCode());
+        assertEquals(HttpServletResponse.SC_SERVICE_UNAVAILABLE, response.statusCode());
+
+    }
+
+    @Test
+    public void testReadinessFailWithBrokerUnknownState() throws Exception {
+        final Gauge brokerState = mock(Gauge.class);
+        when(brokerState.value()).thenReturn((byte) 127);
+
+        KafkaAgent agent = new KafkaAgent(brokerState, null, null);
+        context.setHandler(agent.getReadinessHandler());
+        server.setHandler(context);
+        server.start();
+
+        HttpResponse<String> response = HttpClient.newBuilder()
+                .build()
+                .send(req, HttpResponse.BodyHandlers.ofString());
+
+        assertEquals(HttpServletResponse.SC_SERVICE_UNAVAILABLE, response.statusCode());
 
     }
 

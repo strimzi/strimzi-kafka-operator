@@ -10,5 +10,5 @@ if [[ "$roles" =~ "controller" ]] && [[ ! "$roles" =~ "broker" ]]; then
 else
   # For combined or broker only mode, check readiness via HTTP endpoint exposed by Kafka Agent.
   # The endpoint returns 200 when broker state is 3 (RUNNING).
-  curl http://localhost:8080/v1/ready/ -v --fail
+  curl http://localhost:8080/v1/ready/ --fail
 fi
