@@ -625,7 +625,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
     /* test */ Future<ConnectorStatusAndConditions> autoRestartFailedConnectorAndTasks(Reconciliation reconciliation, String host, KafkaConnectApi apiClient, String connectorName, KafkaConnectorSpec connectorSpec, ConnectorStatusAndConditions status, CustomResource resource) {
         JsonObject statusResultJson = new JsonObject(status.statusResult);
         if (connectorSpec.getAutoRestart() != null && connectorSpec.getAutoRestart().isEnabled()) {
-            return getPreviousKafkaConnectorStatus(connectorOperator, resource)
+            return getPreviousKafkaConnectorStatus(reconciliation, connectorOperator, resource)
                  .compose(previousStatus -> {
                      if (previousStatus == null) {
                          previousStatus = new KafkaConnectorStatus();
@@ -1029,11 +1029,21 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
     }
 
     @SuppressWarnings({ "rawtypes" })
-    protected Future<KafkaConnectorStatus> getPreviousKafkaConnectorStatus(CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList> resourceOperator,
+    protected Future<KafkaConnectorStatus> getPreviousKafkaConnectorStatus(Reconciliation reconciliation, CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList> resourceOperator,
                                                            CustomResource resource) {
         return resourceOperator
             .getAsync(resource.getMetadata().getNamespace(), resource.getMetadata().getName())
-            .compose(getRes -> Future.succeededFuture(getRes.getStatus()));
+            .compose(result -> {
+                if (result != null) {
+                    return Future.succeededFuture(result.getStatus());
+                } else {
+                    // This is unexpected, since we are reconciling the resource and therefore it should exist. So the
+                    // result being null suggests some race condition. We log a warning and return null which is handled
+                    // in the place calling this method.
+                    LOGGER.warnCr(reconciliation, "Previous Kafka Connector status was not found");
+                    return Future.succeededFuture(null);
+                }
+            });
     }
 
     /**
