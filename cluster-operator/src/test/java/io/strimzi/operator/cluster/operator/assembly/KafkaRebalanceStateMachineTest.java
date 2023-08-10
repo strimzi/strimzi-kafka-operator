@@ -931,6 +931,24 @@ public class KafkaRebalanceStateMachineTest {
                 .onComplete(result -> defaultStatusHandler(result, context));
     }
 
+
+    private void krPendingProposalToNotReadyOnIncorrectSpecChange(Vertx vertx, VertxTestContext context, CruiseControlEndpoints endpoint, KafkaRebalance kcRebalance) throws IOException, URISyntaxException {
+        // Test the case where the user asks for a rebalance with custom goals which do not contain all the configured hard goals
+        // In this case the computeNextStatus error will return a failed future with a message containing an illegal argument exception
+        MockCruiseControl.setupCCRebalanceBadGoalsError(ccServer, endpoint);
+
+        checkTransition(vertx, context,
+                KafkaRebalanceState.PendingProposal, KafkaRebalanceState.NotReady,
+                KafkaRebalanceAnnotation.none, kcRebalance)
+                .onComplete(context.failing(throwable -> {
+                    if (throwable.getMessage().contains("java.lang.IllegalArgumentException: Missing hard goals")) {
+                        context.completeNow();
+                    } else {
+                        context.failNow(new RuntimeException("This operation failed with an unexpected error: " + throwable.getMessage(), throwable));
+                    }
+                }));
+    }
+
     private static class StateMatchers extends AbstractResourceStateMatchers {
 
     }
