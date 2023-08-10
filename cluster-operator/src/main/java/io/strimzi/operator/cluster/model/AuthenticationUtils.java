@@ -13,6 +13,8 @@ import io.strimzi.api.kafka.model.authentication.KafkaClientAuthentication;
 import io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationOAuth;
 import io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationPlain;
 import io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationScram;
+import io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationScramSha256;
+import io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationScramSha512;
 import io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationTls;
 import io.strimzi.kafka.oauth.client.ClientConfig;
 import io.strimzi.kafka.oauth.server.ServerConfig;
@@ -20,6 +22,7 @@ import io.strimzi.kafka.oauth.server.ServerConfig;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -27,6 +30,7 @@ import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.StringJoiner;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * Utils for working with different authentication types
@@ -297,38 +301,104 @@ public class AuthenticationUtils {
                 properties.put(SASL_MECHANISM, scramAuth.getType());
             } else if (authentication instanceof KafkaClientAuthenticationOAuth oauth) {
                 properties.put(SASL_MECHANISM, KafkaClientAuthenticationOAuth.TYPE_OAUTH);
-
-                List<String> options = new ArrayList<>(13);
-                addOption(options, ClientConfig.OAUTH_CLIENT_ID, oauth.getClientId());
-                addOption(options, ClientConfig.OAUTH_PASSWORD_GRANT_USERNAME, oauth.getUsername());
-                addOption(options, ClientConfig.OAUTH_TOKEN_ENDPOINT_URI, oauth.getTokenEndpointUri());
-                addOption(options, ClientConfig.OAUTH_SCOPE, oauth.getScope());
-                addOption(options, ClientConfig.OAUTH_AUDIENCE, oauth.getAudience());
-                if (oauth.isDisableTlsHostnameVerification()) options.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM, ""));
-                if (!oauth.isAccessTokenIsJwt()) options.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_ACCESS_TOKEN_IS_JWT, false));
-                addOptionIfGreaterThanZero(options, ClientConfig.OAUTH_MAX_TOKEN_EXPIRY_SECONDS, oauth.getMaxTokenExpirySeconds());
-                addOptionIfGreaterThanZero(options, ClientConfig.OAUTH_CONNECT_TIMEOUT_SECONDS, oauth.getConnectTimeoutSeconds());
-                addOptionIfGreaterThanZero(options, ClientConfig.OAUTH_READ_TIMEOUT_SECONDS, oauth.getReadTimeoutSeconds());
-                addOptionIfGreaterThanZero(options, ClientConfig.OAUTH_HTTP_RETRIES, oauth.getHttpRetries());
-                addOptionIfGreaterThanZero(options, ClientConfig.OAUTH_HTTP_RETRY_PAUSE_MILLIS, oauth.getHttpRetryPauseMs());
-                if (oauth.isEnableMetrics()) options.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_ENABLE_METRICS, true));
-
-                properties.put(OAUTH_CONFIG, String.join(" ", options));
+                Map<String, String> options = oauthJaasOptions(oauth);
+                properties.put(OAUTH_CONFIG, options.entrySet().stream().map(e -> e.getKey() + "=\"" + e.getValue() + "\"").collect(Collectors.joining(" ")));
             }
         }
         
         return properties;
     }
 
-    private static void addOptionIfGreaterThanZero(List<String> options, String name, Integer value) {
+    /**
+     * @param oauth The client OAuth authentication configuration.
+     * @return The JAAS configuration options.
+     */
+    public static Map<String, String> oauthJaasOptions(KafkaClientAuthenticationOAuth oauth) {
+        Map<String, String> options = new LinkedHashMap<>(13);
+        addOption(options, ClientConfig.OAUTH_CLIENT_ID, oauth.getClientId());
+        addOption(options, ClientConfig.OAUTH_PASSWORD_GRANT_USERNAME, oauth.getUsername());
+        addOption(options, ClientConfig.OAUTH_TOKEN_ENDPOINT_URI, oauth.getTokenEndpointUri());
+        addOption(options, ClientConfig.OAUTH_SCOPE, oauth.getScope());
+        addOption(options, ClientConfig.OAUTH_AUDIENCE, oauth.getAudience());
+        if (oauth.isDisableTlsHostnameVerification()) {
+            options.put(ServerConfig.OAUTH_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM, "");
+        }
+        if (!oauth.isAccessTokenIsJwt()) {
+            options.put(ServerConfig.OAUTH_ACCESS_TOKEN_IS_JWT, "false");
+        }
+        addOptionIfGreaterThanZero(options, ClientConfig.OAUTH_MAX_TOKEN_EXPIRY_SECONDS, oauth.getMaxTokenExpirySeconds());
+        addOptionIfGreaterThanZero(options, ClientConfig.OAUTH_CONNECT_TIMEOUT_SECONDS, oauth.getConnectTimeoutSeconds());
+        addOptionIfGreaterThanZero(options, ClientConfig.OAUTH_READ_TIMEOUT_SECONDS, oauth.getReadTimeoutSeconds());
+        addOptionIfGreaterThanZero(options, ClientConfig.OAUTH_HTTP_RETRIES, oauth.getHttpRetries());
+        addOptionIfGreaterThanZero(options, ClientConfig.OAUTH_HTTP_RETRY_PAUSE_MILLIS, oauth.getHttpRetryPauseMs());
+        if (oauth.isEnableMetrics()) {
+            options.put(ServerConfig.OAUTH_ENABLE_METRICS, "true");
+        }
+        return options;
+    }
+
+    /**
+     * @param authentication The client authentication configuration, or null.
+     * @return The configured SASL authentication type, or null if there is no authentication, or the configured authentication is non-SASL.
+     */
+    public static String clientSaslAuthenticationType(KafkaClientAuthentication authentication) {
+        if (authentication != null) {
+            if (authentication instanceof KafkaClientAuthenticationTls) {
+                return null;
+            } else if (authentication instanceof KafkaClientAuthenticationPlain) {
+                return KafkaClientAuthenticationPlain.TYPE_PLAIN;
+            } else if (authentication instanceof KafkaClientAuthenticationScram scramAuth) {
+                return scramAuth.getType();
+            } else if (authentication instanceof KafkaClientAuthenticationOAuth) {
+                return KafkaClientAuthenticationOAuth.TYPE_OAUTH;
+            } else {
+                return null;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * @param authentication The client authentication configuration, or null.
+     * @return The configured SASL mechanism, or null if there is no authentication, or the configured authentication is non-SASL.
+     */
+    public static String clientAuthenticationSaslMechanism(KafkaClientAuthentication authentication) {
+        if (authentication != null) {
+            return switch (clientSaslAuthenticationType(authentication)) {
+                case KafkaClientAuthenticationPlain.TYPE_PLAIN -> "PLAIN";
+                case KafkaClientAuthenticationScramSha256.TYPE_SCRAM_SHA_256 -> "SCRAM-SHA-256";
+                case KafkaClientAuthenticationScramSha512.TYPE_SCRAM_SHA_512 -> "SCRAM-SHA-512";
+                case KafkaClientAuthenticationOAuth.TYPE_OAUTH -> "OAUTHBEARER";
+                default -> null;
+            };
+        }
+        return null;
+    }
+
+    /**
+     * @param authentication The client authentication configuration, or null.
+     * @return The configured SASL username, or null if there is no authentication, or the configured authentication is non-SASL.
+     */
+    public static String clientAuthenticationSaslUsername(KafkaClientAuthentication authentication) {
+        if (authentication != null) {
+            if (authentication instanceof KafkaClientAuthenticationPlain passwordAuth) {
+                return passwordAuth.getUsername();
+            } else if (authentication instanceof KafkaClientAuthenticationScram scramAuth) {
+                return scramAuth.getUsername();
+            }
+        }
+        return null;
+    }
+
+    private static void addOptionIfGreaterThanZero(Map<String, String> options, String name, Integer value) {
         if (value != null && value > 0) {
-            options.add(String.format("%s=\"%s\"", name, value));
+            options.put(name, value.toString());
         }
     }
 
-    private static void addOption(List<String> options, String name, String value) {
+    private static void addOption(Map<String, String> options, String name, String value) {
         if (value != null) {
-            options.add(String.format("%s=\"%s\"", name, value));
+            options.put(name, value);
         }
     }
 
