@@ -9,6 +9,6 @@ if [[ "$roles" =~ "controller" ]] && [[ ! "$roles" =~ "broker" ]]; then
   netstat -lnt | grep -E 'tcp?[[:space:]]+[0-9]+[[:space:]]+[0-9]+[[:space:]]+[^ ]+:9090+[[:space:]]+[^ ]+[[:space:]]+LISTEN*'
 else
   # For combined or broker only mode, check readiness via HTTP endpoint exposed by Kafka Agent.
-  # The endpoint returns 200 when broker state is 3 (RUNNING).
+  # The endpoint returns 204 when broker state is 3 (RUNNING).
   curl http://localhost:8080/v1/ready/ --fail
 fi

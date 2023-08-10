@@ -52,7 +52,7 @@ import java.util.Map;
  *        }
  *      }</dd>
  *     <dt>{@code GET /v1/ready}</dt>
- *     <dd>Returns HTTP code 200 if broker state is RUNNING(3). Otherwise returns non successful HTTP code.
+ *     <dd>Returns HTTP code 204 if broker state is RUNNING(3). Otherwise returns non successful HTTP code.
  *     </dd>
  * </dl>
  */
