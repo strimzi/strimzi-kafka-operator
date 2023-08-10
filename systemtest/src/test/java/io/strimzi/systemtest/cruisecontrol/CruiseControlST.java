@@ -203,6 +203,51 @@ public class CruiseControlST extends AbstractST {
         KafkaRebalanceUtils.doRebalancingProcess(new Reconciliation("test", KafkaRebalance.RESOURCE_KIND, Constants.TEST_SUITE_NAMESPACE, clusterName), Constants.TEST_SUITE_NAMESPACE, clusterName);
     }
 
+    @IsolatedTest
+    void testCruiseControlSpecChangesReflectedInStatusWhenSpecChanges(ExtensionContext extensionContext) {
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+
+        resourceManager.createResourceWithoutWait(extensionContext, KafkaTemplates.kafkaWithCruiseControl(clusterName, 3, 1).build());
+
+        resourceManager.createResourceWithoutWait(extensionContext,  KafkaRebalanceTemplates.kafkaRebalance(clusterName)
+                .editMetadata()
+                .withNamespace(clusterOperator.getDeploymentNamespace())
+                .endMetadata()
+                .build());
+
+        KafkaRebalanceUtils.waitForKafkaRebalanceCustomResourceState(clusterOperator.getDeploymentNamespace(), clusterName, KafkaRebalanceState.ProposalReady);
+
+        KafkaRebalanceResource.replaceKafkaRebalanceResourceInSpecificNamespace(clusterName, kafkaRebalance -> kafkaRebalance.getSpec().setGoals(List.of("custom-goal")), clusterOperator.getDeploymentNamespace());
+
+        KafkaRebalanceUtils.waitForKafkaRebalanceCustomResourceState(clusterOperator.getDeploymentNamespace(), clusterName, KafkaRebalanceState.NotReady);
+
+        KafkaRebalanceStatus kafkaRebalanceStatus = KafkaRebalanceResource.kafkaRebalanceClient().inNamespace(clusterOperator.getDeploymentNamespace()).withName(clusterName).get().getStatus();
+        assertThat(kafkaRebalanceStatus.getConditions().get(0).getReason(), is("CruiseControlRestException"));
+    }
+
+    @IsolatedTest
+    void testCruiseControlChangesFromRebalancingtoProposalReadyWhenSpecUpdated(ExtensionContext extensionContext) {
+        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+
+        resourceManager.createResourceWithoutWait(extensionContext, KafkaTemplates.kafkaWithCruiseControl(clusterName, 3, 1).build());
+
+        resourceManager.createResourceWithoutWait(extensionContext,  KafkaRebalanceTemplates.kafkaRebalance(clusterName)
+                .editMetadata()
+                .withNamespace(clusterOperator.getDeploymentNamespace())
+                .endMetadata()
+                .build());
+
+        KafkaRebalanceUtils.waitForKafkaRebalanceCustomResourceState(clusterOperator.getDeploymentNamespace(), clusterName, KafkaRebalanceState.ProposalReady);
+
+        LOGGER.info("Annotating KafkaRebalance: {} with 'approve' anno", clusterName);
+        KafkaRebalanceUtils.annotateKafkaRebalanceResource(new Reconciliation("test", KafkaRebalance.RESOURCE_KIND, clusterOperator.getDeploymentNamespace(), clusterName), clusterOperator.getDeploymentNamespace(), clusterName, KafkaRebalanceAnnotation.approve);
+        KafkaRebalanceUtils.waitForKafkaRebalanceCustomResourceState(clusterOperator.getDeploymentNamespace(), clusterName, KafkaRebalanceState.Rebalancing);
+
+        KafkaRebalanceResource.replaceKafkaRebalanceResourceInSpecificNamespace(clusterName, kafkaRebalance -> kafkaRebalance.getSpec().setReplicationThrottle(100000), clusterOperator.getDeploymentNamespace());
+
+        KafkaRebalanceUtils.waitForKafkaRebalanceCustomResourceState(clusterOperator.getDeploymentNamespace(), clusterName, KafkaRebalanceState.ProposalReady);
+    }
+
     @ParallelNamespaceTest
     void testCruiseControlWithSingleNodeKafka(ExtensionContext extensionContext) {
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(Constants.TEST_SUITE_NAMESPACE, extensionContext);
