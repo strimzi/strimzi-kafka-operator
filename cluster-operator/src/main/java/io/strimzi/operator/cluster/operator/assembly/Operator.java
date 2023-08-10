@@ -2,9 +2,10 @@
  * Copyright Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.strimzi.operator.common;
+package io.strimzi.operator.cluster.operator.assembly;
 
 import io.fabric8.kubernetes.api.model.LabelSelector;
+import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.metrics.OperatorMetricsHolder;
 import io.strimzi.operator.common.model.NamespaceAndName;
 import io.vertx.core.AsyncResult;
