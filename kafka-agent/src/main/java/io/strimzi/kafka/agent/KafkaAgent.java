@@ -21,18 +21,21 @@ import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.SslConnectionFactory;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.eclipse.jetty.server.handler.ContextHandler;
+import org.eclipse.jetty.server.handler.ContextHandlerCollection;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Properties;
 
 /**
  * A very simple Java agent which polls the value of the {@code kafka.server:type=KafkaServer,name=BrokerState}
@@ -55,6 +58,8 @@ import java.util.Map;
 public class KafkaAgent {
     private static final Logger LOGGER = LoggerFactory.getLogger(KafkaAgent.class);
     private static final String BROKER_STATE_PATH = "/v1/broker-state";
+    private static final String NODE_CONFIG_PATH = "/v1/node-config";
+    private static final String NODE_CONFIG_FILE_PATH = "/tmp/strimzi.properties";
     private static final int HTTPS_PORT = 8443;
     private static final long GRACEFUL_SHUTDOWN_TIMEOUT_MS = 30 * 1000;
 
@@ -77,6 +82,7 @@ public class KafkaAgent {
     private MetricName sessionStateName;
     private Gauge sessionState;
     private boolean pollerRunning;
+    private Properties nodeConfig;
 
     /**
      * Constructor of the KafkaAgent
@@ -103,14 +109,16 @@ public class KafkaAgent {
      * @param brokerState                 Current state of the broker
      * @param remainingLogsToRecover      Number of remaining logs to recover
      * @param remainingSegmentsToRecover  Number of remaining segments to recover
+     * @param nodeConfig                  Node configuration
      */
-    /* test */ KafkaAgent(Gauge brokerState, Gauge remainingLogsToRecover, Gauge remainingSegmentsToRecover) {
+    /* test */ KafkaAgent(Gauge brokerState, Gauge remainingLogsToRecover, Gauge remainingSegmentsToRecover, Properties nodeConfig) {
         this.brokerState = brokerState;
         this.remainingLogsToRecover = remainingLogsToRecover;
         this.remainingSegmentsToRecover = remainingSegmentsToRecover;
+        this.nodeConfig = nodeConfig;
     }
 
-    private void run() {
+    private void run() throws IOException {
         Thread pollerThread = new Thread(poller(),
                 "KafkaAgentPoller");
         pollerThread.setDaemon(true);
@@ -154,6 +162,13 @@ public class KafkaAgent {
                 }
             }
         });
+
+        LOGGER.info("Loading node configuration");
+        try (FileInputStream fis = new FileInputStream(NODE_CONFIG_FILE_PATH)) {
+            this.nodeConfig = new Properties();
+            this.nodeConfig.load(fis);
+            LOGGER.trace("Node config={}", this.nodeConfig);
+        }
     }
 
     /**
@@ -221,11 +236,14 @@ public class KafkaAgent {
                 new HttpConnectionFactory(https));
         conn.setPort(HTTPS_PORT);
 
-        ContextHandler context = new ContextHandler(BROKER_STATE_PATH);
-        context.setHandler(getBrokerStateHandler());
+        ContextHandler ctxBrokerState = new ContextHandler(BROKER_STATE_PATH);
+        ctxBrokerState.setHandler(getBrokerStateHandler());
+
+        ContextHandler ctxNodeConfig = new ContextHandler(NODE_CONFIG_PATH);
+        ctxNodeConfig.setHandler(getNodeConfigHandler());
 
         server.setConnectors(new Connector[]{conn});
-        server.setHandler(context);
+        server.setHandler(new ContextHandlerCollection(ctxBrokerState, ctxNodeConfig));
         server.setStopTimeout(GRACEFUL_SHUTDOWN_TIMEOUT_MS);
         server.setStopAtShutdown(true);
         server.start();
@@ -262,6 +280,31 @@ public class KafkaAgent {
                 } else {
                     response.setStatus(HttpServletResponse.SC_NOT_FOUND);
                     response.getWriter().print("Broker state metric not found");
+                }
+            }
+        };
+    }
+
+    /**
+     * Creates a Handler instance to handle incoming HTTP requests for the node configuration
+     *
+     * @return Handler
+     */
+    /* test */ Handler getNodeConfigHandler() {
+        return new AbstractHandler() {
+            @Override
+            public void handle(String s, Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws IOException {
+                response.setContentType("application/json");
+                response.setCharacterEncoding("UTF-8");
+                baseRequest.setHandled(true);
+
+                if (nodeConfig != null && !nodeConfig.isEmpty()) {
+                    response.setStatus(HttpServletResponse.SC_OK);
+                    String json = new ObjectMapper().writeValueAsString(nodeConfig);
+                    response.getWriter().print(json);
+                } else {
+                    response.setStatus(HttpServletResponse.SC_NOT_FOUND);
+                    response.getWriter().print("Node configuration not found");
                 }
             }
         };
@@ -361,8 +404,9 @@ public class KafkaAgent {
     /**
      * Agent entry point
      * @param agentArgs The agent arguments
+     * @throws IOException if any errors while reading the node configuration file in the {@code KafkaAgent.run}
      */
-    public static void premain(String agentArgs) {
+    public static void premain(String agentArgs) throws IOException {
         String[] args = agentArgs.split(":");
         if (args.length < 6) {
             LOGGER.error("Not enough arguments to parse {}", agentArgs);
