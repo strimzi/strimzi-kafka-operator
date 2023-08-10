@@ -22,6 +22,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.hamcrest.CoreMatchers.is;
@@ -100,15 +101,18 @@ public class ReconnectingWatcherMockTest {
 
         Crds.kafkaOperation(client).inNamespace(NAMESPACE).resource(kafka).create();
         Crds.kafkaOperation(client).inNamespace(NAMESPACE2).resource(kafka).create();
-        addedLatch.await();
+        boolean latched = addedLatch.await(5_000, TimeUnit.SECONDS);
+        assertThat(latched, is(true));
 
         Crds.kafkaOperation(client).inNamespace(NAMESPACE).withName(CLUSTER_NAME).edit(k -> new KafkaBuilder(k).editSpec().editKafka().withReplicas(3).endKafka().endSpec().build());
         Crds.kafkaOperation(client).inNamespace(NAMESPACE2).withName(CLUSTER_NAME).edit(k -> new KafkaBuilder(k).editSpec().editKafka().withReplicas(3).endKafka().endSpec().build());
-        modifiedLatch.await();
+        latched = modifiedLatch.await(5_000, TimeUnit.SECONDS);
+        assertThat(latched, is(true));
 
         Crds.kafkaOperation(client).inNamespace(NAMESPACE).withName(CLUSTER_NAME).delete();
         Crds.kafkaOperation(client).inNamespace(NAMESPACE2).withName(CLUSTER_NAME).delete();
-        deletedLatch.await();
+        latched = deletedLatch.await(5_000, TimeUnit.SECONDS);
+        assertThat(latched, is(true));
 
         assertThat(eventCounter.get(), is(3));
 
@@ -156,15 +160,18 @@ public class ReconnectingWatcherMockTest {
 
         Crds.kafkaOperation(client).inNamespace(NAMESPACE).resource(kafka).create();
         Crds.kafkaOperation(client).inNamespace(NAMESPACE2).resource(kafka).create();
-        addedLatch.await();
+        boolean latched = addedLatch.await(5_000, TimeUnit.SECONDS);
+        assertThat(latched, is(true));
 
         Crds.kafkaOperation(client).inNamespace(NAMESPACE).withName(CLUSTER_NAME).edit(k -> new KafkaBuilder(k).editSpec().editKafka().withReplicas(3).endKafka().endSpec().build());
         Crds.kafkaOperation(client).inNamespace(NAMESPACE2).withName(CLUSTER_NAME).edit(k -> new KafkaBuilder(k).editSpec().editKafka().withReplicas(3).endKafka().endSpec().build());
-        modifiedLatch.await();
+        latched = modifiedLatch.await(5_000, TimeUnit.SECONDS);
+        assertThat(latched, is(true));
 
         Crds.kafkaOperation(client).inNamespace(NAMESPACE).withName(CLUSTER_NAME).delete();
         Crds.kafkaOperation(client).inNamespace(NAMESPACE2).withName(CLUSTER_NAME).delete();
-        deletedLatch.await();
+        latched = deletedLatch.await(5_000, TimeUnit.SECONDS);
+        assertThat(latched, is(true));
 
         assertThat(eventCounter.get(), is(6));
 
@@ -227,15 +234,18 @@ public class ReconnectingWatcherMockTest {
 
         Crds.kafkaOperation(client).inNamespace(NAMESPACE).resource(kafka).create();
         Crds.kafkaOperation(client).inNamespace(NAMESPACE).resource(kafka2).create();
-        addedLatch.await();
+        boolean latched = addedLatch.await(5_000, TimeUnit.SECONDS);
+        assertThat(latched, is(true));
 
         Crds.kafkaOperation(client).inNamespace(NAMESPACE).withName(CLUSTER_NAME).edit(k -> new KafkaBuilder(k).editSpec().editKafka().withReplicas(3).endKafka().endSpec().build());
         Crds.kafkaOperation(client).inNamespace(NAMESPACE).withName(CLUSTER_NAME2).edit(k -> new KafkaBuilder(k).editSpec().editKafka().withReplicas(3).endKafka().endSpec().build());
-        modifiedLatch.await();
+        latched = modifiedLatch.await(5_000, TimeUnit.SECONDS);
+        assertThat(latched, is(true));
 
         Crds.kafkaOperation(client).inNamespace(NAMESPACE).withName(CLUSTER_NAME).delete();
         Crds.kafkaOperation(client).inNamespace(NAMESPACE).withName(CLUSTER_NAME2).delete();
-        deletedLatch.await();
+        latched = deletedLatch.await(5_000, TimeUnit.SECONDS);
+        assertThat(latched, is(true));
 
         assertThat(addedCounter.get(), is(1));
         assertThat(modifiedCounter.get(), is(1));
