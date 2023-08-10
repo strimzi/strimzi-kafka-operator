@@ -432,23 +432,23 @@ public class KafkaBrokerConfigurationBuilder {
             securityProtocol.add(String.format("%s:%s", listenerName, getSecurityProtocol(tls, true)));
 
             Map<String, String> jaasOptions = new LinkedHashMap<>(getOAuthOptions(oauth));
-            addOption(jaasOptions, "oauth.config.id", listenerName);
+            addOptionIfNotNull(jaasOptions, "oauth.config.id", listenerName);
 
             if (oauth.getClientSecret() != null)    {
-                addOption(jaasOptions, "oauth.client.secret", String.format(PLACEHOLDER_OAUTH_CLIENT_SECRET, listenerNameInEnvVar));
+                addOptionIfNotNull(jaasOptions, "oauth.client.secret", String.format(PLACEHOLDER_OAUTH_CLIENT_SECRET, listenerNameInEnvVar));
             }
 
             if (oauth.getTlsTrustedCertificates() != null && oauth.getTlsTrustedCertificates().size() > 0)    {
-                addOption(jaasOptions, "oauth.ssl.truststore.location", String.format("/tmp/kafka/oauth-%s.truststore.p12", listenerNameInProperty));
-                addOption(jaasOptions, "oauth.ssl.truststore.password", PLACEHOLDER_CERT_STORE_PASSWORD);
-                addOption(jaasOptions, "oauth.ssl.truststore.type", "PKCS12");
+                addOptionIfNotNull(jaasOptions, "oauth.ssl.truststore.location", String.format("/tmp/kafka/oauth-%s.truststore.p12", listenerNameInProperty));
+                addOptionIfNotNull(jaasOptions, "oauth.ssl.truststore.password", PLACEHOLDER_CERT_STORE_PASSWORD);
+                addOptionIfNotNull(jaasOptions, "oauth.ssl.truststore.type", "PKCS12");
             }
 
             StringBuilder enabledMechanisms = new StringBuilder();
             if (oauth.isEnableOauthBearer()) {
                 writer.println(String.format("listener.name.%s.oauthbearer.sasl.server.callback.handler.class=io.strimzi.kafka.oauth.server.JaasServerOauthValidatorCallbackHandler", listenerNameInProperty));
                 var oauthBearerOptions = new LinkedHashMap<String, String>();
-                addOption(oauthBearerOptions, "unsecuredLoginStringClaim_sub", "thePrincipalName");
+                addOptionIfNotNull(oauthBearerOptions, "unsecuredLoginStringClaim_sub", "thePrincipalName");
                 oauthBearerOptions.putAll(jaasOptions);
                 writer.println(String.format("listener.name.%s.oauthbearer.sasl.jaas.config=%s", listenerNameInProperty,
                         AuthenticationUtils.jaasConfig("org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule", oauthBearerOptions)));
@@ -456,7 +456,7 @@ public class KafkaBrokerConfigurationBuilder {
             }
 
             if (oauth.isEnablePlain()) {
-                addOption(jaasOptions, ServerPlainConfig.OAUTH_TOKEN_ENDPOINT_URI, oauth.getTokenEndpointUri());
+                addOptionIfNotNull(jaasOptions, ServerPlainConfig.OAUTH_TOKEN_ENDPOINT_URI, oauth.getTokenEndpointUri());
                 writer.println(String.format("listener.name.%s.plain.sasl.server.callback.handler.class=io.strimzi.kafka.oauth.server.plain.JaasServerOauthOverPlainValidatorCallbackHandler", listenerNameInProperty));
                 writer.println(String.format("listener.name.%s.plain.sasl.jaas.config=%s", listenerNameInProperty,
                         AuthenticationUtils.jaasConfig("org.apache.kafka.common.security.plain.PlainLoginModule", jaasOptions)));
@@ -519,50 +519,50 @@ public class KafkaBrokerConfigurationBuilder {
     /*test*/ static Map<String, String> getOAuthOptions(KafkaListenerAuthenticationOAuth oauth)  {
         Map<String, String> options = new LinkedHashMap<>();
 
-        addOption(options, ServerConfig.OAUTH_CLIENT_ID, oauth.getClientId());
-        addOption(options, ServerConfig.OAUTH_VALID_ISSUER_URI, oauth.getValidIssuerUri());
+        addOptionIfNotNull(options, ServerConfig.OAUTH_CLIENT_ID, oauth.getClientId());
+        addOptionIfNotNull(options, ServerConfig.OAUTH_VALID_ISSUER_URI, oauth.getValidIssuerUri());
         addBooleanOptionIfFalse(options, ServerConfig.OAUTH_CHECK_ISSUER, oauth.isCheckIssuer());
         addBooleanOptionIfTrue(options, ServerConfig.OAUTH_CHECK_AUDIENCE, oauth.isCheckAudience());
-        addOption(options, ServerConfig.OAUTH_CUSTOM_CLAIM_CHECK, oauth.getCustomClaimCheck());
-        addOption(options, ServerConfig.OAUTH_SCOPE, oauth.getClientScope());
-        addOption(options, ServerConfig.OAUTH_AUDIENCE, oauth.getClientAudience());
-        addOption(options, ServerConfig.OAUTH_JWKS_ENDPOINT_URI, oauth.getJwksEndpointUri());
+        addOptionIfNotNull(options, ServerConfig.OAUTH_CUSTOM_CLAIM_CHECK, oauth.getCustomClaimCheck());
+        addOptionIfNotNull(options, ServerConfig.OAUTH_SCOPE, oauth.getClientScope());
+        addOptionIfNotNull(options, ServerConfig.OAUTH_AUDIENCE, oauth.getClientAudience());
+        addOptionIfNotNull(options, ServerConfig.OAUTH_JWKS_ENDPOINT_URI, oauth.getJwksEndpointUri());
         if (oauth.getJwksRefreshSeconds() != null && oauth.getJwksRefreshSeconds() > 0) {
-            addOption(options, ServerConfig.OAUTH_JWKS_REFRESH_SECONDS, String.valueOf(oauth.getJwksRefreshSeconds()));
+            addOptionIfNotNull(options, ServerConfig.OAUTH_JWKS_REFRESH_SECONDS, String.valueOf(oauth.getJwksRefreshSeconds()));
         }
         if (oauth.getJwksRefreshSeconds() != null && oauth.getJwksExpirySeconds() > 0) {
-            addOption(options, ServerConfig.OAUTH_JWKS_EXPIRY_SECONDS, String.valueOf(oauth.getJwksExpirySeconds()));
+            addOptionIfNotNull(options, ServerConfig.OAUTH_JWKS_EXPIRY_SECONDS, String.valueOf(oauth.getJwksExpirySeconds()));
         }
         if (oauth.getJwksMinRefreshPauseSeconds() != null && oauth.getJwksMinRefreshPauseSeconds() >= 0) {
-            addOption(options, ServerConfig.OAUTH_JWKS_REFRESH_MIN_PAUSE_SECONDS, String.valueOf(oauth.getJwksMinRefreshPauseSeconds()));
+            addOptionIfNotNull(options, ServerConfig.OAUTH_JWKS_REFRESH_MIN_PAUSE_SECONDS, String.valueOf(oauth.getJwksMinRefreshPauseSeconds()));
         }
         addBooleanOptionIfTrue(options, ServerConfig.OAUTH_JWKS_IGNORE_KEY_USE, oauth.getJwksIgnoreKeyUse());
-        addOption(options, ServerConfig.OAUTH_INTROSPECTION_ENDPOINT_URI, oauth.getIntrospectionEndpointUri());
-        addOption(options, ServerConfig.OAUTH_USERINFO_ENDPOINT_URI, oauth.getUserInfoEndpointUri());
-        addOption(options, ServerConfig.OAUTH_USERNAME_CLAIM, oauth.getUserNameClaim());
-        addOption(options, ServerConfig.OAUTH_FALLBACK_USERNAME_CLAIM, oauth.getFallbackUserNameClaim());
-        addOption(options, ServerConfig.OAUTH_FALLBACK_USERNAME_PREFIX, oauth.getFallbackUserNamePrefix());
-        addOption(options, ServerConfig.OAUTH_GROUPS_CLAIM, oauth.getGroupsClaim());
-        addOption(options, ServerConfig.OAUTH_GROUPS_CLAIM_DELIMITER, oauth.getGroupsClaimDelimiter());
+        addOptionIfNotNull(options, ServerConfig.OAUTH_INTROSPECTION_ENDPOINT_URI, oauth.getIntrospectionEndpointUri());
+        addOptionIfNotNull(options, ServerConfig.OAUTH_USERINFO_ENDPOINT_URI, oauth.getUserInfoEndpointUri());
+        addOptionIfNotNull(options, ServerConfig.OAUTH_USERNAME_CLAIM, oauth.getUserNameClaim());
+        addOptionIfNotNull(options, ServerConfig.OAUTH_FALLBACK_USERNAME_CLAIM, oauth.getFallbackUserNameClaim());
+        addOptionIfNotNull(options, ServerConfig.OAUTH_FALLBACK_USERNAME_PREFIX, oauth.getFallbackUserNamePrefix());
+        addOptionIfNotNull(options, ServerConfig.OAUTH_GROUPS_CLAIM, oauth.getGroupsClaim());
+        addOptionIfNotNull(options, ServerConfig.OAUTH_GROUPS_CLAIM_DELIMITER, oauth.getGroupsClaimDelimiter());
         addBooleanOptionIfFalse(options, ServerConfig.OAUTH_ACCESS_TOKEN_IS_JWT, oauth.isAccessTokenIsJwt());
         addBooleanOptionIfFalse(options, ServerConfig.OAUTH_CHECK_ACCESS_TOKEN_TYPE, oauth.isCheckAccessTokenType());
-        addOption(options, ServerConfig.OAUTH_VALID_TOKEN_TYPE, oauth.getValidTokenType());
+        addOptionIfNotNull(options, ServerConfig.OAUTH_VALID_TOKEN_TYPE, oauth.getValidTokenType());
 
         if (oauth.isDisableTlsHostnameVerification()) {
-            addOption(options, ServerConfig.OAUTH_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM, "");
+            addOptionIfNotNull(options, ServerConfig.OAUTH_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM, "");
         }
 
         if (oauth.getConnectTimeoutSeconds() != null && oauth.getConnectTimeoutSeconds() > 0) {
-            addOption(options, ServerConfig.OAUTH_CONNECT_TIMEOUT_SECONDS, String.valueOf(oauth.getConnectTimeoutSeconds()));
+            addOptionIfNotNull(options, ServerConfig.OAUTH_CONNECT_TIMEOUT_SECONDS, String.valueOf(oauth.getConnectTimeoutSeconds()));
         }
         if (oauth.getReadTimeoutSeconds() != null && oauth.getReadTimeoutSeconds() > 0) {
-            addOption(options, ServerConfig.OAUTH_READ_TIMEOUT_SECONDS, String.valueOf(oauth.getReadTimeoutSeconds()));
+            addOptionIfNotNull(options, ServerConfig.OAUTH_READ_TIMEOUT_SECONDS, String.valueOf(oauth.getReadTimeoutSeconds()));
         }
         if (oauth.getHttpRetries() != null && oauth.getHttpRetries() > 0) {
-            addOption(options, ServerConfig.OAUTH_HTTP_RETRIES, String.valueOf(oauth.getHttpRetries()));
+            addOptionIfNotNull(options, ServerConfig.OAUTH_HTTP_RETRIES, String.valueOf(oauth.getHttpRetries()));
         }
         if (oauth.getHttpRetryPauseMs() != null && oauth.getHttpRetryPauseMs() > 0) {
-            addOption(options, ServerConfig.OAUTH_HTTP_RETRY_PAUSE_MILLIS, String.valueOf(oauth.getHttpRetryPauseMs()));
+            addOptionIfNotNull(options, ServerConfig.OAUTH_HTTP_RETRY_PAUSE_MILLIS, String.valueOf(oauth.getHttpRetryPauseMs()));
         }
 
         addBooleanOptionIfTrue(options, ServerConfig.OAUTH_ENABLE_METRICS, oauth.isEnableMetrics());
@@ -571,7 +571,7 @@ public class KafkaBrokerConfigurationBuilder {
         return options;
     }
 
-    static void addOption(Map<String, String> options, String option, String value) {
+    static void addOptionIfNotNull(Map<String, String> options, String option, String value) {
         if (value != null) {
             options.put(option, value);
         }
@@ -589,7 +589,7 @@ public class KafkaBrokerConfigurationBuilder {
         }
     }
 
-    static void addOption(PrintWriter writer, String name, Object value) {
+    static void addOptionIfNotNull(PrintWriter writer, String name, Object value) {
         if (value != null) {
             writer.println(name + "=" + value);
         }
@@ -706,13 +706,13 @@ public class KafkaBrokerConfigurationBuilder {
         writer.println("strimzi.authorization.token.endpoint.uri=" + authorization.getTokenEndpointUri());
         writer.println("strimzi.authorization.client.id=" + authorization.getClientId());
         writer.println("strimzi.authorization.delegate.to.kafka.acl=" + authorization.isDelegateToKafkaAcls());
-        addOption(writer, "strimzi.authorization.grants.refresh.period.seconds", authorization.getGrantsRefreshPeriodSeconds());
-        addOption(writer, "strimzi.authorization.grants.refresh.pool.size", authorization.getGrantsRefreshPoolSize());
-        addOption(writer, "strimzi.authorization.grants.max.idle.time.seconds", authorization.getGrantsMaxIdleTimeSeconds());
-        addOption(writer, "strimzi.authorization.grants.gc.period.seconds", authorization.getGrantsGcPeriodSeconds());
-        addOption(writer, "strimzi.authorization.connect.timeout.seconds", authorization.getConnectTimeoutSeconds());
-        addOption(writer, "strimzi.authorization.read.timeout.seconds", authorization.getReadTimeoutSeconds());
-        addOption(writer, "strimzi.authorization.http.retries", authorization.getHttpRetries());
+        addOptionIfNotNull(writer, "strimzi.authorization.grants.refresh.period.seconds", authorization.getGrantsRefreshPeriodSeconds());
+        addOptionIfNotNull(writer, "strimzi.authorization.grants.refresh.pool.size", authorization.getGrantsRefreshPoolSize());
+        addOptionIfNotNull(writer, "strimzi.authorization.grants.max.idle.time.seconds", authorization.getGrantsMaxIdleTimeSeconds());
+        addOptionIfNotNull(writer, "strimzi.authorization.grants.gc.period.seconds", authorization.getGrantsGcPeriodSeconds());
+        addOptionIfNotNull(writer, "strimzi.authorization.connect.timeout.seconds", authorization.getConnectTimeoutSeconds());
+        addOptionIfNotNull(writer, "strimzi.authorization.read.timeout.seconds", authorization.getReadTimeoutSeconds());
+        addOptionIfNotNull(writer, "strimzi.authorization.http.retries", authorization.getHttpRetries());
         if (authorization.isGrantsAlwaysLatest()) {
             writer.println("strimzi.authorization.reuse.grants=false");
         }
