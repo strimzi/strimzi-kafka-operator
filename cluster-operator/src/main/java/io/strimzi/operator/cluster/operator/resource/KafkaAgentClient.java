@@ -15,6 +15,7 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
 import java.security.KeyStore;
+import java.util.Properties;
 
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
@@ -38,7 +39,8 @@ class KafkaAgentClient {
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
     private static final String BROKER_STATE_REST_PATH = "/v1/broker-state/";
-    private static final int BROKER_STATE_HTTPS_PORT = 8443;
+    private static final String NODE_CONFIG_REST_PATH = "/v1/node-config";
+    private static final int KAFKA_AGENT_HTTPS_PORT = 8443;
 
     private String namespace;
     private Reconciliation reconciliation;
@@ -127,7 +129,7 @@ class KafkaAgentClient {
         BrokerState brokerstate = new BrokerState(-1, null);
         String host = DnsNameGenerator.podDnsName(namespace, KafkaResources.brokersServiceName(cluster), podName);
         try {
-            URI uri = new URI("https", null, host, BROKER_STATE_HTTPS_PORT, BROKER_STATE_REST_PATH, null, null);
+            URI uri = new URI("https", null, host, KAFKA_AGENT_HTTPS_PORT, BROKER_STATE_REST_PATH, null, null);
             brokerstate = MAPPER.readValue(doGet(uri), BrokerState.class);
         } catch (JsonProcessingException e) {
             LOGGER.warnCr(reconciliation, "Failed to parse broker state", e);
@@ -137,5 +139,27 @@ class KafkaAgentClient {
             LOGGER.warnCr(reconciliation, "Failed to get broker state", e);
         }
         return brokerstate;
+    }
+
+    /**
+     * Gets node configuration by sending HTTP request to the /v1/node-config endpoint of the KafkaAgent
+     *
+     * @param podName Name of the pod to interact with
+     * @return a Properties instance containing the node configuration
+     */
+    Properties getNodeConfiguration(String podName) {
+        Properties nodeConfig = null;
+        String host = DnsNameGenerator.podDnsName(namespace, KafkaResources.brokersServiceName(cluster), podName);
+        try {
+            URI uri = new URI("https", null, host, KAFKA_AGENT_HTTPS_PORT, NODE_CONFIG_REST_PATH, null, null);
+            nodeConfig = MAPPER.readValue(doGet(uri), Properties.class);
+        } catch (JsonProcessingException e) {
+            LOGGER.warnCr(reconciliation, "Failed to parse node configuration", e);
+        } catch (URISyntaxException e) {
+            LOGGER.warnCr(reconciliation, "Failed to get node configuration due to invalid URI", e);
+        } catch (RuntimeException e) {
+            LOGGER.warnCr(reconciliation, "Failed to get node configuration", e);
+        }
+        return nodeConfig;
     }
 }
