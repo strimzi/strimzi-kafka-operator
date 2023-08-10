@@ -4,9 +4,8 @@
  */
 package io.strimzi.operator.cluster;
 
-import io.fabric8.kubernetes.client.Watch;
+import io.strimzi.api.kafka.model.KafkaConnector;
 import io.strimzi.api.kafka.model.nodepool.KafkaNodePool;
-import io.strimzi.operator.cluster.operator.assembly.AbstractConnectOperator;
 import io.strimzi.operator.cluster.operator.assembly.KafkaAssemblyOperator;
 import io.strimzi.operator.cluster.operator.assembly.KafkaBridgeAssemblyOperator;
 import io.strimzi.operator.cluster.operator.assembly.KafkaConnectAssemblyOperator;
@@ -16,6 +15,7 @@ import io.strimzi.operator.cluster.operator.assembly.KafkaRebalanceAssemblyOpera
 import io.strimzi.operator.cluster.operator.assembly.StrimziPodSetController;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.AbstractOperator;
+import io.strimzi.operator.common.ReconnectingWatcher;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
@@ -48,7 +48,7 @@ public class ClusterOperator extends AbstractVerticle {
     private final String namespace;
     private final ClusterOperatorConfig config;
 
-    private final Map<String, Watch> watchByKind = new ConcurrentHashMap<>();
+    private final Map<String, ReconnectingWatcher<?>> watchByKind = new ConcurrentHashMap<>();
 
     private long reconcileTimer;
     private final KafkaAssemblyOperator kafkaAssemblyOperator;
@@ -111,10 +111,10 @@ public class ClusterOperator extends AbstractVerticle {
 
         if (!config.isPodSetReconciliationOnly()) {
             List<AbstractOperator<?, ?, ?, ?>> operators = new ArrayList<>(asList(
-                    kafkaAssemblyOperator, kafkaMirrorMakerAssemblyOperator,
-                    kafkaConnectAssemblyOperator, kafkaBridgeAssemblyOperator, kafkaMirrorMaker2AssemblyOperator));
+                    kafkaAssemblyOperator, kafkaMirrorMakerAssemblyOperator, kafkaConnectAssemblyOperator,
+                    kafkaBridgeAssemblyOperator, kafkaMirrorMaker2AssemblyOperator, kafkaRebalanceAssemblyOperator));
             for (AbstractOperator<?, ?, ?, ?> operator : operators) {
-                startFutures.add(operator.createWatch(namespace, operator.recreateWatch(namespace)).compose(w -> {
+                startFutures.add(operator.createWatch(namespace).compose(w -> {
                     LOGGER.info("Opened watch for {} operator", operator.kind());
                     watchByKind.put(operator.kind(), w);
                     return Future.succeededFuture();
@@ -124,14 +124,18 @@ public class ClusterOperator extends AbstractVerticle {
             if (config.featureGates().kafkaNodePoolsEnabled())  {
                 // When node pools are enabled, we create the NodePool watch
                 startFutures.add(kafkaAssemblyOperator.createNodePoolWatch(namespace).compose(w -> {
-                    LOGGER.info("Opened KafkaNodePool watch for {} operator", kafkaAssemblyOperator.kind());
+                    LOGGER.info("Opened watch for {} operator", KafkaNodePool.RESOURCE_KIND);
                     watchByKind.put(KafkaNodePool.RESOURCE_KIND, w);
                     return Future.succeededFuture();
                 }));
             }
 
-            startFutures.add(AbstractConnectOperator.createConnectorWatch(kafkaConnectAssemblyOperator, namespace, config.getCustomResourceSelector()));
-            startFutures.add(kafkaRebalanceAssemblyOperator.createRebalanceWatch(namespace));
+            // Start connector watch and add it to the map as well
+            startFutures.add(kafkaConnectAssemblyOperator.createConnectorWatch(namespace).compose(w -> {
+                LOGGER.info("Opened watch for {} operator", KafkaConnector.RESOURCE_KIND);
+                watchByKind.put(KafkaConnector.RESOURCE_KIND, w);
+                return Future.succeededFuture();
+            }));
         }
 
         Future.join(startFutures)
@@ -178,7 +182,7 @@ public class ClusterOperator extends AbstractVerticle {
     public void stop(Promise<Void> stop) {
         LOGGER.info("Stopping ClusterOperator for namespace {}", namespace);
         vertx.cancelTimer(reconcileTimer);
-        for (Watch watch : watchByKind.values()) {
+        for (ReconnectingWatcher<?> watch : watchByKind.values()) {
             if (watch != null) {
                 watch.close();
             }
