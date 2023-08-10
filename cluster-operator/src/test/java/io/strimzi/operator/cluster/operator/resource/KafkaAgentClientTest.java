@@ -4,6 +4,9 @@
  */
 package io.strimzi.operator.cluster.operator.resource;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -13,6 +16,8 @@ import static org.mockito.Mockito.spy;
 import org.junit.jupiter.api.Test;
 
 import io.strimzi.operator.common.Reconciliation;
+
+import java.util.Properties;
 
 public class KafkaAgentClientTest {
 
@@ -40,7 +45,7 @@ public class KafkaAgentClientTest {
     }
 
     @Test
-    public void testInvalidJsonResponse() {
+    public void testInvalidBrokerStateJsonResponse() {
         KafkaAgentClient kafkaAgentClient = spy(new KafkaAgentClient(RECONCILIATION, "my-cluster", "namespace"));
         doAnswer(invocation -> "&\"brokerState\":3&").when(kafkaAgentClient).doGet(any());
 
@@ -51,7 +56,7 @@ public class KafkaAgentClientTest {
     }
 
     @Test
-    public void testErrorResponse() {
+    public void testBrokerStateErrorResponse() {
         KafkaAgentClient kafkaAgentClient = spy(new KafkaAgentClient(RECONCILIATION, "my-cluster", "namespace"));
         doAnswer(invocation -> {
             throw new RuntimeException("Test failure");
@@ -61,5 +66,24 @@ public class KafkaAgentClientTest {
         assertEquals(-1, actual.code());
         assertEquals(0, actual.remainingLogsToRecover());
         assertEquals(0, actual.remainingSegmentsToRecover());
+    }
+
+    @Test
+    public void testNodeConfiguration() {
+        KafkaAgentClient kafkaAgentClient = spy(new KafkaAgentClient(RECONCILIATION, "my-cluster", "namespace"));
+        doAnswer(invocation -> "{\"node.id\":\"0\",\"process.roles\":\"controller\"}").when(kafkaAgentClient).doGet(any());
+
+        Properties actual = kafkaAgentClient.getNodeConfiguration("mypod");
+        assertThat(actual.get("node.id"), is("0"));
+        assertThat(actual.get("process.roles"), is("controller"));
+    }
+
+    @Test
+    public void testInvalidNodeConfigurationJsonResponse() {
+        KafkaAgentClient kafkaAgentClient = spy(new KafkaAgentClient(RECONCILIATION, "my-cluster", "namespace"));
+        doAnswer(invocation -> "&\"node.id\":1&").when(kafkaAgentClient).doGet(any());
+
+        Properties actual = kafkaAgentClient.getNodeConfiguration("mypod");
+        assertThat(actual, is(nullValue()));
     }
 }
