@@ -62,7 +62,7 @@ public class ReconnectingWatcherMockTest {
 
     @Test
     public void testWatch() throws InterruptedException {
-        CrdOperator<KubernetesClient, Kafka, KafkaList> kafkaOps = new CrdOperator(vertx, client, Kafka.class, KafkaList.class, Kafka.RESOURCE_KIND);
+        CrdOperator<KubernetesClient, Kafka, KafkaList> kafkaOps = new CrdOperator<>(vertx, client, Kafka.class, KafkaList.class, Kafka.RESOURCE_KIND);
 
         CountDownLatch addedLatch = new CountDownLatch(1);
         CountDownLatch modifiedLatch = new CountDownLatch(1);
@@ -70,7 +70,7 @@ public class ReconnectingWatcherMockTest {
         AtomicInteger eventCounter = new AtomicInteger(0);
 
         ReconnectingWatcher<Kafka> watcher = new ReconnectingWatcher<>(kafkaOps, Kafka.RESOURCE_KIND, NAMESPACE, null, (a, r) -> {
-            LOGGER.info("Received event {} about resource {}", a, r.getMetadata().getName());
+            LOGGER.info("Received event {} about resource {} in namespace {}", a, r.getMetadata().getName(), r.getMetadata().getNamespace());
 
             switch (a)  {
                 case ADDED -> {
@@ -101,17 +101,17 @@ public class ReconnectingWatcherMockTest {
 
         Crds.kafkaOperation(client).inNamespace(NAMESPACE).resource(kafka).create();
         Crds.kafkaOperation(client).inNamespace(NAMESPACE2).resource(kafka).create();
-        boolean latched = addedLatch.await(5_000, TimeUnit.SECONDS);
+        boolean latched = addedLatch.await(5_000, TimeUnit.MILLISECONDS);
         assertThat(latched, is(true));
 
         Crds.kafkaOperation(client).inNamespace(NAMESPACE).withName(CLUSTER_NAME).edit(k -> new KafkaBuilder(k).editSpec().editKafka().withReplicas(3).endKafka().endSpec().build());
         Crds.kafkaOperation(client).inNamespace(NAMESPACE2).withName(CLUSTER_NAME).edit(k -> new KafkaBuilder(k).editSpec().editKafka().withReplicas(3).endKafka().endSpec().build());
-        latched = modifiedLatch.await(5_000, TimeUnit.SECONDS);
+        latched = modifiedLatch.await(5_000, TimeUnit.MILLISECONDS);
         assertThat(latched, is(true));
 
         Crds.kafkaOperation(client).inNamespace(NAMESPACE).withName(CLUSTER_NAME).delete();
         Crds.kafkaOperation(client).inNamespace(NAMESPACE2).withName(CLUSTER_NAME).delete();
-        latched = deletedLatch.await(5_000, TimeUnit.SECONDS);
+        latched = deletedLatch.await(5_000, TimeUnit.MILLISECONDS);
         assertThat(latched, is(true));
 
         assertThat(eventCounter.get(), is(3));
@@ -121,7 +121,7 @@ public class ReconnectingWatcherMockTest {
 
     @Test
     public void testWatchAllNamespaces() throws InterruptedException {
-        CrdOperator<KubernetesClient, Kafka, KafkaList> kafkaOps = new CrdOperator(vertx, client, Kafka.class, KafkaList.class, Kafka.RESOURCE_KIND);
+        CrdOperator<KubernetesClient, Kafka, KafkaList> kafkaOps = new CrdOperator<>(vertx, client, Kafka.class, KafkaList.class, Kafka.RESOURCE_KIND);
 
         CountDownLatch addedLatch = new CountDownLatch(2);
         CountDownLatch modifiedLatch = new CountDownLatch(2);
@@ -129,7 +129,7 @@ public class ReconnectingWatcherMockTest {
         AtomicInteger eventCounter = new AtomicInteger(0);
 
         ReconnectingWatcher<Kafka> watcher = new ReconnectingWatcher<>(kafkaOps, Kafka.RESOURCE_KIND, "*", null, (a, r) -> {
-            LOGGER.info("Received event {} about resource {}", a, r.getMetadata().getName());
+            LOGGER.info("Received event {} about resource {} in namespace {}", a, r.getMetadata().getName(), r.getMetadata().getNamespace());
 
             switch (a)  {
                 case ADDED -> {
@@ -160,17 +160,17 @@ public class ReconnectingWatcherMockTest {
 
         Crds.kafkaOperation(client).inNamespace(NAMESPACE).resource(kafka).create();
         Crds.kafkaOperation(client).inNamespace(NAMESPACE2).resource(kafka).create();
-        boolean latched = addedLatch.await(5_000, TimeUnit.SECONDS);
+        boolean latched = addedLatch.await(5_000, TimeUnit.MILLISECONDS);
         assertThat(latched, is(true));
 
         Crds.kafkaOperation(client).inNamespace(NAMESPACE).withName(CLUSTER_NAME).edit(k -> new KafkaBuilder(k).editSpec().editKafka().withReplicas(3).endKafka().endSpec().build());
         Crds.kafkaOperation(client).inNamespace(NAMESPACE2).withName(CLUSTER_NAME).edit(k -> new KafkaBuilder(k).editSpec().editKafka().withReplicas(3).endKafka().endSpec().build());
-        latched = modifiedLatch.await(5_000, TimeUnit.SECONDS);
+        latched = modifiedLatch.await(5_000, TimeUnit.MILLISECONDS);
         assertThat(latched, is(true));
 
         Crds.kafkaOperation(client).inNamespace(NAMESPACE).withName(CLUSTER_NAME).delete();
         Crds.kafkaOperation(client).inNamespace(NAMESPACE2).withName(CLUSTER_NAME).delete();
-        latched = deletedLatch.await(5_000, TimeUnit.SECONDS);
+        latched = deletedLatch.await(5_000, TimeUnit.MILLISECONDS);
         assertThat(latched, is(true));
 
         assertThat(eventCounter.get(), is(6));
@@ -180,7 +180,7 @@ public class ReconnectingWatcherMockTest {
 
     @Test
     public void testWatchWithSelector() throws InterruptedException {
-        CrdOperator<KubernetesClient, Kafka, KafkaList> kafkaOps = new CrdOperator(vertx, client, Kafka.class, KafkaList.class, Kafka.RESOURCE_KIND);
+        CrdOperator<KubernetesClient, Kafka, KafkaList> kafkaOps = new CrdOperator<>(vertx, client, Kafka.class, KafkaList.class, Kafka.RESOURCE_KIND);
 
         CountDownLatch addedLatch = new CountDownLatch(1);
         CountDownLatch modifiedLatch = new CountDownLatch(1);
@@ -190,7 +190,7 @@ public class ReconnectingWatcherMockTest {
         AtomicInteger deletedCounter = new AtomicInteger(0);
 
         ReconnectingWatcher<Kafka> watcher = new ReconnectingWatcher<>(kafkaOps, Kafka.RESOURCE_KIND, NAMESPACE, new LabelSelectorBuilder().withMatchLabels(Map.of("selector", "matching")).build(), (a, r) -> {
-            LOGGER.info("Received event {} about resource {}", a, r.getMetadata().getName());
+            LOGGER.info("Received event {} about resource {} in namespace {}", a, r.getMetadata().getName(), r.getMetadata().getNamespace());
 
             switch (a)  {
                 case ADDED -> {
@@ -234,17 +234,17 @@ public class ReconnectingWatcherMockTest {
 
         Crds.kafkaOperation(client).inNamespace(NAMESPACE).resource(kafka).create();
         Crds.kafkaOperation(client).inNamespace(NAMESPACE).resource(kafka2).create();
-        boolean latched = addedLatch.await(5_000, TimeUnit.SECONDS);
+        boolean latched = addedLatch.await(5_000, TimeUnit.MILLISECONDS);
         assertThat(latched, is(true));
 
         Crds.kafkaOperation(client).inNamespace(NAMESPACE).withName(CLUSTER_NAME).edit(k -> new KafkaBuilder(k).editSpec().editKafka().withReplicas(3).endKafka().endSpec().build());
         Crds.kafkaOperation(client).inNamespace(NAMESPACE).withName(CLUSTER_NAME2).edit(k -> new KafkaBuilder(k).editSpec().editKafka().withReplicas(3).endKafka().endSpec().build());
-        latched = modifiedLatch.await(5_000, TimeUnit.SECONDS);
+        latched = modifiedLatch.await(5_000, TimeUnit.MILLISECONDS);
         assertThat(latched, is(true));
 
         Crds.kafkaOperation(client).inNamespace(NAMESPACE).withName(CLUSTER_NAME).delete();
         Crds.kafkaOperation(client).inNamespace(NAMESPACE).withName(CLUSTER_NAME2).delete();
-        latched = deletedLatch.await(5_000, TimeUnit.SECONDS);
+        latched = deletedLatch.await(5_000, TimeUnit.MILLISECONDS);
         assertThat(latched, is(true));
 
         assertThat(addedCounter.get(), is(1));
