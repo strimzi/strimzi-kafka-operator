@@ -44,7 +44,6 @@ import io.strimzi.api.kafka.model.template.ContainerTemplate;
 import io.strimzi.api.kafka.model.template.DeploymentStrategy;
 import io.strimzi.api.kafka.model.template.IpFamily;
 import io.strimzi.api.kafka.model.template.IpFamilyPolicy;
-import io.strimzi.api.kafka.model.tracing.JaegerTracing;
 import io.strimzi.api.kafka.model.tracing.OpenTelemetryTracing;
 import io.strimzi.kafka.oauth.client.ClientConfig;
 import io.strimzi.kafka.oauth.server.ServerConfig;
@@ -1234,12 +1233,6 @@ public class KafkaBridgeClusterTest {
         assertThat(cont.getReadinessProbe().getTimeoutSeconds(), is(32));
     }
 
-    @ParallelTest
-    public void testJaegerTracingConfiguration() {
-        testTracingConfiguration(JaegerTracing.TYPE_JAEGER);
-    }
-
-    @ParallelTest
     public void testOpenTelemetryTracingConfiguration() {
         testTracingConfiguration(OpenTelemetryTracing.TYPE_OPENTELEMETRY);
     }
@@ -1248,11 +1241,6 @@ public class KafkaBridgeClusterTest {
 
         KafkaBridgeBuilder builder = new KafkaBridgeBuilder(this.resource);
         switch (type) {
-            case JaegerTracing.TYPE_JAEGER:
-                builder.editSpec()
-                            .withTracing(new JaegerTracing())
-                        .endSpec();
-                break;
             case OpenTelemetryTracing.TYPE_OPENTELEMETRY:
                 builder.editSpec()
                             .withTracing(new OpenTelemetryTracing())

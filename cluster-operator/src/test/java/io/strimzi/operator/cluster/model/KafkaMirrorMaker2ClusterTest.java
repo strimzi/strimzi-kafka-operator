@@ -54,7 +54,6 @@ import io.strimzi.api.kafka.model.template.ContainerTemplate;
 import io.strimzi.api.kafka.model.template.DeploymentStrategy;
 import io.strimzi.api.kafka.model.template.IpFamily;
 import io.strimzi.api.kafka.model.template.IpFamilyPolicy;
-import io.strimzi.api.kafka.model.tracing.JaegerTracing;
 import io.strimzi.api.kafka.model.tracing.OpenTelemetryTracing;
 import io.strimzi.kafka.oauth.client.ClientConfig;
 import io.strimzi.kafka.oauth.server.ServerConfig;
@@ -1530,13 +1529,6 @@ public class KafkaMirrorMaker2ClusterTest {
     }
 
     @ParallelTest
-    public void testJaegerTracing() {
-        testTracing(JaegerTracing.TYPE_JAEGER,
-                JaegerTracing.CONSUMER_INTERCEPTOR_CLASS_NAME,
-                JaegerTracing.PRODUCER_INTERCEPTOR_CLASS_NAME);
-    }
-
-    @ParallelTest
     public void testOpenTelemetryTracing() {
         testTracing(OpenTelemetryTracing.TYPE_OPENTELEMETRY,
                 OpenTelemetryTracing.CONSUMER_INTERCEPTOR_CLASS_NAME,
@@ -1546,12 +1538,6 @@ public class KafkaMirrorMaker2ClusterTest {
     public void testTracing(String type, String consumerInterceptor, String producerInterceptor) {
         KafkaMirrorMaker2Builder builder = new KafkaMirrorMaker2Builder(this.resource);
         switch (type) {
-            case JaegerTracing.TYPE_JAEGER:
-                builder.editSpec()
-                            .withNewJaegerTracing()
-                            .endJaegerTracing()
-                        .endSpec();
-                break;
             case OpenTelemetryTracing.TYPE_OPENTELEMETRY:
                 builder.editSpec()
                             .withNewOpenTelemetryTracing()

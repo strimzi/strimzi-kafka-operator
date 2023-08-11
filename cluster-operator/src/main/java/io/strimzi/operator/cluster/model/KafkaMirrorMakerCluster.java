@@ -27,7 +27,6 @@ import io.strimzi.api.kafka.model.template.DeploymentTemplate;
 import io.strimzi.api.kafka.model.template.KafkaMirrorMakerTemplate;
 import io.strimzi.api.kafka.model.template.PodDisruptionBudgetTemplate;
 import io.strimzi.api.kafka.model.template.PodTemplate;
-import io.strimzi.api.kafka.model.tracing.JaegerTracing;
 import io.strimzi.api.kafka.model.tracing.OpenTelemetryTracing;
 import io.strimzi.api.kafka.model.tracing.Tracing;
 import io.strimzi.operator.cluster.model.logging.LoggingModel;
@@ -325,9 +324,7 @@ public class KafkaMirrorMakerCluster extends AbstractModel implements SupportsMe
         KafkaMirrorMakerConsumerConfiguration config = new KafkaMirrorMakerConsumerConfiguration(reconciliation, consumer.getConfig().entrySet());
 
         if (tracing != null) {
-            if (JaegerTracing.TYPE_JAEGER.equals(tracing.getType())) {
-                config.setConfigOption("interceptor.classes", JaegerTracing.CONSUMER_INTERCEPTOR_CLASS_NAME);
-            } else if (OpenTelemetryTracing.TYPE_OPENTELEMETRY.equals(tracing.getType())) {
+            if (OpenTelemetryTracing.TYPE_OPENTELEMETRY.equals(tracing.getType())) {
                 config.setConfigOption("interceptor.classes", OpenTelemetryTracing.CONSUMER_INTERCEPTOR_CLASS_NAME);
             }
         }
@@ -340,9 +337,7 @@ public class KafkaMirrorMakerCluster extends AbstractModel implements SupportsMe
         KafkaMirrorMakerProducerConfiguration config = new KafkaMirrorMakerProducerConfiguration(reconciliation, producer.getConfig().entrySet());
 
         if (tracing != null) {
-            if (JaegerTracing.TYPE_JAEGER.equals(tracing.getType())) {
-                config.setConfigOption("interceptor.classes", JaegerTracing.PRODUCER_INTERCEPTOR_CLASS_NAME);
-            } else if (OpenTelemetryTracing.TYPE_OPENTELEMETRY.equals(tracing.getType())) {
+            if (OpenTelemetryTracing.TYPE_OPENTELEMETRY.equals(tracing.getType())) {
                 config.setConfigOption("interceptor.classes", OpenTelemetryTracing.PRODUCER_INTERCEPTOR_CLASS_NAME);
             }
         }

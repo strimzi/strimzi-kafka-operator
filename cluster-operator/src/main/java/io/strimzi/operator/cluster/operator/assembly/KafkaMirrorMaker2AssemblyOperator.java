@@ -29,7 +29,6 @@ import io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationTls;
 import io.strimzi.api.kafka.model.status.AutoRestartStatus;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.api.kafka.model.status.KafkaMirrorMaker2Status;
-import io.strimzi.api.kafka.model.tracing.JaegerTracing;
 import io.strimzi.api.kafka.model.tracing.OpenTelemetryTracing;
 import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
@@ -449,10 +448,7 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
         }
 
         if (mirrorMaker2Cluster.getTracing() != null)   {
-            if (JaegerTracing.TYPE_JAEGER.equals(mirrorMaker2Cluster.getTracing().getType())) {
-                config.put("consumer.interceptor.classes", JaegerTracing.CONSUMER_INTERCEPTOR_CLASS_NAME);
-                config.put("producer.interceptor.classes", JaegerTracing.PRODUCER_INTERCEPTOR_CLASS_NAME);
-            } else if (OpenTelemetryTracing.TYPE_OPENTELEMETRY.equals(mirrorMaker2Cluster.getTracing().getType())) {
+            if (OpenTelemetryTracing.TYPE_OPENTELEMETRY.equals(mirrorMaker2Cluster.getTracing().getType())) {
                 config.put("consumer.interceptor.classes", OpenTelemetryTracing.CONSUMER_INTERCEPTOR_CLASS_NAME);
                 config.put("producer.interceptor.classes", OpenTelemetryTracing.PRODUCER_INTERCEPTOR_CLASS_NAME);
             }
