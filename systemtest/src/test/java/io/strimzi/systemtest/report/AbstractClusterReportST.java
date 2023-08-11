@@ -7,7 +7,6 @@ package io.strimzi.systemtest.report;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import io.fabric8.kubernetes.api.model.HasMetadata;
-import io.fabric8.kubernetes.api.model.Secret;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.utils.FileUtils;
 import org.junit.jupiter.api.Tag;
@@ -33,13 +32,6 @@ public abstract class AbstractClusterReportST extends AbstractST {
         String methodName = testInfo.getTestMethod().isPresent() ?
             testInfo.getTestMethod().get().getName() : UUID.randomUUID().toString();
         return USER_PATH + "/target/reports/" + clusterName + "/" + methodName;
-    }
-
-    protected static Secret getSecretWithKeyFromFile(String filePath, String key) throws IOException {
-        Secret secret = MAPPER.readValue(new File(filePath), Secret.class);
-        assertThat("The secret {} does not exist", FileUtils.exists(filePath));
-        assertThat("The key {} is not present", secret.getData().get(key) != null);
-        return secret;
     }
 
     protected <T> void assertValidYamls(String path, Class<T> clazz, String prefix, int num) throws IOException {

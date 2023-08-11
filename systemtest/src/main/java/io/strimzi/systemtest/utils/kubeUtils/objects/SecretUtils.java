@@ -4,6 +4,8 @@
  */
 package io.strimzi.systemtest.utils.kubeUtils.objects;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.strimzi.operator.common.model.Labels;
@@ -11,11 +13,13 @@ import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.ResourceOperation;
 import io.strimzi.systemtest.security.CertAndKeyFiles;
+import io.strimzi.systemtest.utils.FileUtils;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.ByteArrayInputStream;
+import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -29,12 +33,14 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
+import static java.lang.String.format;
 
 public class SecretUtils {
 
     private static final Logger LOGGER = LogManager.getLogger(SecretUtils.class);
     private static final long READINESS_TIMEOUT = ResourceOperation.getTimeoutForResourceReadiness(Constants.SECRET);
     private static final long DELETION_TIMEOUT = ResourceOperation.getTimeoutForResourceDeletion();
+    private static final ObjectMapper MAPPER = new ObjectMapper(new YAMLFactory());
 
     private SecretUtils() { }
 
@@ -99,6 +105,13 @@ public class SecretUtils {
             e.printStackTrace();
             return null;
         }
+    }
+
+    public static Secret getSecretFromFile(String filePath) throws IOException {
+        if (!FileUtils.fileExists(filePath)) {
+            throw new IllegalArgumentException(format("Secret file %s does not exists", filePath));
+        }
+        return MAPPER.readValue(new File(filePath), Secret.class);
     }
 
     public static SecretBuilder retrieveSecretBuilderFromFile(final Map<String, String> certFilesPath, final String name,
@@ -177,7 +190,7 @@ public class SecretUtils {
         kubeClient().getClient().secrets().inNamespace(namespace).withName(secretName).delete();
 
         LOGGER.info("Waiting for Secret: {}/{} to be deleted", namespace, secretName);
-        TestUtils.waitFor(String.format("Deletion of Secret %s#%s", namespace, secretName), Constants.GLOBAL_POLL_INTERVAL, DELETION_TIMEOUT,
+        TestUtils.waitFor(format("Deletion of Secret %s#%s", namespace, secretName), Constants.GLOBAL_POLL_INTERVAL, DELETION_TIMEOUT,
             () -> kubeClient().getSecret(namespace, secretName) == null);
 
         LOGGER.info("Secret: {}/{} successfully deleted", namespace, secretName);
@@ -198,7 +211,7 @@ public class SecretUtils {
 
     public static void waitForUserPasswordChange(String namespaceName, String secretName, String expectedEncodedPassword) {
         LOGGER.info("Waiting for user password will be changed to {} in Secret: {}/{}", expectedEncodedPassword, namespaceName, secretName);
-        TestUtils.waitFor(String.format("user password will be changed to: %s in secret: %s(%s)", expectedEncodedPassword, namespaceName, secretName),
+        TestUtils.waitFor(format("user password will be changed to: %s in secret: %s(%s)", expectedEncodedPassword, namespaceName, secretName),
             Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
             () -> kubeClient().namespace(namespaceName).getSecret(secretName).getData().get("password").equals(expectedEncodedPassword));
     }

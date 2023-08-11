@@ -118,7 +118,7 @@ public class FileUtils {
         return null;
     }
 
-    public static boolean exists(String path) {
+    public static boolean fileExists(String path) {
         return Files.exists(Path.of(path));
     }
 

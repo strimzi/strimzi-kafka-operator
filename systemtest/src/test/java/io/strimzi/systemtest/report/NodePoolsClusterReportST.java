@@ -42,6 +42,7 @@ import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaUserTemplates;
 import io.strimzi.systemtest.utils.FileUtils;
+import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
 import io.strimzi.test.executor.Exec;
 import io.strimzi.test.k8s.exceptions.KubeClusterException;
 import org.apache.logging.log4j.LogManager;
@@ -80,9 +81,10 @@ public class NodePoolsClusterReportST extends AbstractClusterReportST {
             "--mm2=my-mm2"
         );
 
-        assertThat("Output directory does not exist", FileUtils.exists(outPath));
+        assertThat("Output directory does not exist", FileUtils.fileExists(outPath));
         assertThat("Output ZIP file does not exist", FileUtils.listFilesWithSuffix(outPath, ".zip").length == 1);
-        Secret clusterCaSecret = getSecretWithKeyFromFile(secretPath, secretKey);
+        Secret clusterCaSecret = SecretUtils.getSecretFromFile(secretPath);
+        assertThat("The cluster-ca secret key {} is not present", clusterCaSecret.getData().get(secretKey) != null);
         assertThat("Keys are not hidden in secrets", clusterCaSecret.getData().get(secretKey).equals("<hidden>"));
 
         assertValidClusterRoleBindings(outPath);
@@ -127,7 +129,8 @@ public class NodePoolsClusterReportST extends AbstractClusterReportST {
             "--out-dir=" + outPath,
             "--secrets=all");
 
-        Secret clusterCaSecret = getSecretWithKeyFromFile(secretPath, secretKey);
+        Secret clusterCaSecret = SecretUtils.getSecretFromFile(secretPath);
+        assertThat("The cluster-ca secret key {} is not present", clusterCaSecret.getData().get(secretKey) != null);
         assertThat("Keys are hidden in secrets", !clusterCaSecret.getData().get(secretKey).equals("<hidden>"));
     }
 
@@ -143,7 +146,7 @@ public class NodePoolsClusterReportST extends AbstractClusterReportST {
             "--out-dir=" + outPath,
             "--secrets=off");
 
-        assertThat("Secrets are reported", !FileUtils.exists(secretPath));
+        assertThat("Secrets are reported", !FileUtils.fileExists(secretPath));
     }
 
     @ParallelTest
@@ -213,7 +216,7 @@ public class NodePoolsClusterReportST extends AbstractClusterReportST {
             .build();
         resourceManager.createResourceWithWait(extensionContext, kafkaNodePoolACr);
         resourceManager.createResourceWithWait(extensionContext, kafkaNodePoolBCr, kafkaMainCr,
-            KafkaTemplates.kafkaEphemeral(testStorage.getClusterName() + "-tgt", 3).build());
+            KafkaTemplates.kafkaEphemeral(testStorage.getClusterName() + "-tgt", 1).build());
         resourceManager.createResourceWithWait(extensionContext,
             KafkaTopicTemplates.topic(testStorage.getClusterName(), "my-topic", 1, 1, testStorage.getNamespaceName()).build(),
             KafkaUserTemplates.tlsUser(testStorage.getNamespaceName(), testStorage.getClusterName(), "my-user").build(),
