@@ -44,11 +44,9 @@ import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControl
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlUserTaskStatus;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.RebalanceOptions;
 import io.strimzi.operator.cluster.operator.resource.cruisecontrol.RemoveBrokerOptions;
-import io.strimzi.operator.common.AbstractOperator;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
-import io.strimzi.operator.common.ReconnectingWatcher;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.VertxUtil;
 import io.strimzi.operator.common.model.Labels;

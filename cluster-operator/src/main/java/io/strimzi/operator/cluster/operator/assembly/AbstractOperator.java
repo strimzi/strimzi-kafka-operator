@@ -2,7 +2,7 @@
  * Copyright Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.strimzi.operator.common;
+package io.strimzi.operator.cluster.operator.assembly;
 
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.client.CustomResource;
@@ -17,6 +17,14 @@ import io.strimzi.api.kafka.model.status.ConditionBuilder;
 import io.strimzi.api.kafka.model.status.Status;
 import io.strimzi.operator.cluster.model.InvalidResourceException;
 import io.strimzi.operator.cluster.model.StatusDiff;
+import io.strimzi.operator.common.Annotations;
+import io.strimzi.operator.common.InvalidConfigParameterException;
+import io.strimzi.operator.common.MetricsProvider;
+import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.ReconciliationException;
+import io.strimzi.operator.common.ReconciliationLogger;
+import io.strimzi.operator.common.Util;
+import io.strimzi.operator.common.VertxUtil;
 import io.strimzi.operator.common.metrics.OperatorMetricsHolder;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.NamespaceAndName;
@@ -52,7 +60,7 @@ import java.util.stream.Collectors;
  *ą
  * </ul>
  * @param <T> The Java representation of the Kubernetes resource, e.g. {@code Kafka} or {@code KafkaConnect}
- * @param <O> The "Resource Operator" for the source resource type. Typically this will be some instantiation of
+ * @param <O> The "Resource Operator" for the source resource type. Typically, this will be some instantiation of
  *           {@link io.strimzi.operator.common.operator.resource.CrdOperator}.
  */
 public abstract class AbstractOperator<
@@ -80,7 +88,7 @@ public abstract class AbstractOperator<
 
     protected final OperatorMetricsHolder metrics;
 
-    private Map<String, AtomicInteger> resourcesStateCounter = new ConcurrentHashMap<>(1);
+    private final Map<String, AtomicInteger> resourcesStateCounter = new ConcurrentHashMap<>(1);
 
     /**
      * Constructs the AbstractOperator. This constructor is used to construct the AbstractOperator using the
@@ -154,8 +162,10 @@ public abstract class AbstractOperator<
      * on Kubernetes Garbage Collection to handle deletion.
      * Such operators should return a Future which completes with {@code false}.
      * Operators which handle deletion themselves should return a Future which completes with {@code true}.
-     * @param reconciliation
-     * @return
+     *
+     * @param reconciliation    Reconciliation marker
+     *
+     * @return  Future which completes when the deletion is complete
      */
     protected abstract Future<Boolean> delete(Reconciliation reconciliation);
 
@@ -313,7 +323,7 @@ public abstract class AbstractOperator<
      * @param reconciliation the reconciliation identified
      * @param desiredStatus The KafkaStatus which should be set
      *
-     * @return
+     * @return  Future which completes when the status is updated
      */
     Future<Void> updateStatus(Reconciliation reconciliation, S desiredStatus) {
         if (desiredStatus == null)  {
@@ -368,10 +378,13 @@ public abstract class AbstractOperator<
      * and call the given {@code callable} with the lock held.
      * Once the callable returns (or if it throws) release the lock and complete the returned Future.
      * If the lock cannot be acquired the given {@code callable} is not called and the returned Future is completed with {@link UnableToAcquireLockException}.
-     * @param reconciliation
-     * @param callable
-     * @param <T>
-     * @return
+     *
+     * @param reconciliation    Reconciliation marker
+     * @param callable          Function which will be called when the lock is acquired
+     *
+     * @param <T>   Type of the custom resource managed by this operator
+     *
+     * @return  Future which completes when the callable is completed.
      */
     protected final <T> Future<T> withLock(Reconciliation reconciliation, long lockTimeoutMs, Callable<Future<T>> callable) {
         Promise<T> handler = Promise.promise();
@@ -384,9 +397,7 @@ public abstract class AbstractOperator<
                 LOGGER.debugCr(reconciliation, "Lock {} acquired", lockName);
 
                 Lock lock = res.result();
-                long timerId = vertx.setPeriodic(PROGRESS_WARNING, timer -> {
-                    LOGGER.infoCr(reconciliation, "Reconciliation is in progress");
-                });
+                long timerId = vertx.setPeriodic(PROGRESS_WARNING, timer -> LOGGER.infoCr(reconciliation, "Reconciliation is in progress"));
 
                 callSafely(reconciliation, callable)
                     .onSuccess(handleSafely(reconciliation, handler::complete))
@@ -583,7 +594,7 @@ public abstract class AbstractOperator<
             LOGGER.debugCr(reconciliation, "Removed metric " + METRICS_PREFIX + "resource.state{}", key);
         }
 
-        return resourceOperator.getAsync(reconciliation.namespace(), reconciliation.name()).<Void>map(cr -> {
+        return resourceOperator.getAsync(reconciliation.namespace(), reconciliation.name()).map(cr -> {
             if (cr != null && Util.matchesSelector(selector(), cr)) {
                 resourcesStateCounter.computeIfAbsent(key, tags ->
                         metrics().metricsProvider().gauge(METRICS_PREFIX + "resource.state", "Current state of the resource: 1 ready, 0 fail", metricTags)

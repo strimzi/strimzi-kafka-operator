@@ -26,7 +26,6 @@ import io.strimzi.api.kafka.model.connect.ConnectorPlugin;
 import io.strimzi.api.kafka.model.connect.ConnectorPluginBuilder;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.api.kafka.model.status.Status;
-import io.strimzi.operator.common.ReconnectingWatcher;
 import io.strimzi.platform.KubernetesVersion;
 import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;

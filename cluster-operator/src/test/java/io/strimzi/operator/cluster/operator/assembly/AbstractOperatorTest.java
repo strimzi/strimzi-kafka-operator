@@ -2,7 +2,7 @@
  * Copyright Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.strimzi.operator.common;
+package io.strimzi.operator.cluster.operator.assembly;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
@@ -12,6 +12,9 @@ import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.api.kafka.model.Spec;
 import io.strimzi.api.kafka.model.status.Status;
+import io.strimzi.operator.common.MetricsProvider;
+import io.strimzi.operator.common.MicrometerMetricsProvider;
+import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.resource.AbstractWatchableStatusedNamespacedResourceOperator;
 import io.vertx.core.Future;
@@ -53,11 +56,11 @@ class AbstractOperatorTest {
     }
 
     @Test
-    /**
+    /*
      * Verifies that the lock is released by a call to `releaseLockAndTimer`. 
      * The call is made through a chain of futures ending with `eventually` after a normal/successful execution of the `Callable`
      */
-    void testWithLockCallableSuccessfulReleasesLock(VertxTestContext context) throws Exception {
+    void testWithLockCallableSuccessfulReleasesLock(VertxTestContext context) {
         var resourceOperator = new DefaultWatchableStatusedResourceOperator<>(vertx, null, "TestResource");
         @SuppressWarnings({ "unchecked", "rawtypes" })
         var target = new DefaultOperator(vertx, "Test", resourceOperator, new MicrometerMetricsProvider(), null);
@@ -86,11 +89,11 @@ class AbstractOperatorTest {
     }
 
     @Test
-    /**
+    /*
      * Verifies that the lock is released by a call to `releaseLockAndTimer`. 
      * The call is made through a chain of futures ending with `eventually` after a failed execution via a handled exception in the `Callable`.
      */
-    void testWithLockCallableHandledExceptionReleasesLock(VertxTestContext context) throws Exception {
+    void testWithLockCallableHandledExceptionReleasesLock(VertxTestContext context) {
         var resourceOperator = new DefaultWatchableStatusedResourceOperator<>(vertx, null, "TestResource");
         @SuppressWarnings({ "unchecked", "rawtypes" })
         var target = new DefaultOperator(vertx, "Test", resourceOperator, new MicrometerMetricsProvider(), null);
@@ -121,11 +124,11 @@ class AbstractOperatorTest {
     }
 
     @Test
-    /**
+    /*
      * Verifies that the lock is released by a call to `releaseLockAndTimer`.
      * The call is made through a chain of futures ending with `eventually` after a failed execution via an unhandled exception in the `Callable`.
      */
-    void testWithLockCallableUnhandledExceptionReleasesLock(VertxTestContext context) throws Exception {
+    void testWithLockCallableUnhandledExceptionReleasesLock(VertxTestContext context) {
         var resourceOperator = new DefaultWatchableStatusedResourceOperator<>(vertx, null, "TestResource");
         @SuppressWarnings({ "unchecked", "rawtypes" })
         var target = new DefaultOperator(vertx, "Test", resourceOperator, new MicrometerMetricsProvider(), null);
@@ -158,12 +161,12 @@ class AbstractOperatorTest {
     }
 
     @Test
-    /**
+    /*
      * Verifies that lock is released by call to `releaseLockAndTimer`. 
      * The call is made through a chain of futures ending with `eventually` after a failed execution via an unhandled exception in the `Callable`, 
      * followed by an unhandled exception occurring in the `onFailure` handler.
      */
-    void testWithLockFailHandlerUnhandledExceptionReleasesLock(VertxTestContext context) throws Exception {
+    void testWithLockFailHandlerUnhandledExceptionReleasesLock(VertxTestContext context) {
         var resourceOperator = new DefaultWatchableStatusedResourceOperator<>(vertx, null, "TestResource");
         @SuppressWarnings({ "unchecked", "rawtypes" })
         var target = new DefaultOperator(vertx, "Test", resourceOperator, new MicrometerMetricsProvider(), null);

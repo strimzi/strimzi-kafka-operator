@@ -80,10 +80,6 @@
             <artifactId>zjsonpatch</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.fabric8</groupId>
-            <artifactId>kubernetes-model-common</artifactId>
-        </dependency>
-        <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-core</artifactId>
         </dependency>
@@ -156,10 +152,6 @@
             <groupId>io.vertx</groupId>
             <artifactId>vertx-junit5</artifactId>
             <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.strimzi</groupId>
-            <artifactId>mockkube</artifactId>
         </dependency>
         <dependency>
             <groupId>org.hamcrest</groupId>

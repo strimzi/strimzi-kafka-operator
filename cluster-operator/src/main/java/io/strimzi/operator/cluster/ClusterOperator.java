@@ -14,8 +14,8 @@ import io.strimzi.operator.cluster.operator.assembly.KafkaMirrorMakerAssemblyOpe
 import io.strimzi.operator.cluster.operator.assembly.KafkaRebalanceAssemblyOperator;
 import io.strimzi.operator.cluster.operator.assembly.StrimziPodSetController;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
-import io.strimzi.operator.common.AbstractOperator;
-import io.strimzi.operator.common.ReconnectingWatcher;
+import io.strimzi.operator.cluster.operator.assembly.AbstractOperator;
+import io.strimzi.operator.cluster.operator.assembly.ReconnectingWatcher;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
