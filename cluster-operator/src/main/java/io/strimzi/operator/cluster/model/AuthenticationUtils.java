@@ -13,15 +13,12 @@ import io.strimzi.api.kafka.model.authentication.KafkaClientAuthentication;
 import io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationOAuth;
 import io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationPlain;
 import io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationScram;
-import io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationScramSha256;
-import io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationScramSha512;
 import io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationTls;
 import io.strimzi.kafka.oauth.client.ClientConfig;
 import io.strimzi.kafka.oauth.server.ServerConfig;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -245,7 +242,7 @@ public class AuthenticationUtils {
     }
 
     /**
-     * Configured environment variables related to authentication in Kafka clients
+     * Configured environment variables related to authentication in Kafka clients within Strimzi-based containers
      *
      * @param authentication    Authentication object with auth configuration
      * @param varList   List where the new environment variables should be added
@@ -253,25 +250,33 @@ public class AuthenticationUtils {
      */
     public static void configureClientAuthenticationEnvVars(KafkaClientAuthentication authentication, List<EnvVar> varList, Function<String, String> envVarNamer)   {
         if (authentication != null) {
-
-            for (Entry<String, String> entry: getClientAuthenticationProperties(authentication).entrySet()) {
-                varList.add(ContainerUtils.createEnvVar(envVarNamer.apply(entry.getKey()), entry.getValue()));
-            }
-            
-            if (authentication instanceof KafkaClientAuthenticationOAuth oauth) {
-
-                if (oauth.getClientSecret() != null)    {
+            if (authentication instanceof KafkaClientAuthenticationTls tlsAuth) {
+                varList.add(ContainerUtils.createEnvVar(envVarNamer.apply(TLS_AUTH_CERT), String.format("%s/%s", tlsAuth.getCertificateAndKey().getSecretName(), tlsAuth.getCertificateAndKey().getCertificate())));
+                varList.add(ContainerUtils.createEnvVar(envVarNamer.apply(TLS_AUTH_KEY), String.format("%s/%s", tlsAuth.getCertificateAndKey().getSecretName(), tlsAuth.getCertificateAndKey().getKey())));
+            } else if (authentication instanceof KafkaClientAuthenticationPlain passwordAuth) {
+                varList.add(ContainerUtils.createEnvVar(envVarNamer.apply(SASL_USERNAME), passwordAuth.getUsername()));
+                varList.add(ContainerUtils.createEnvVar(envVarNamer.apply(SASL_PASSWORD_FILE), String.format("%s/%s", passwordAuth.getPasswordSecret().getSecretName(), passwordAuth.getPasswordSecret().getPassword())));
+                varList.add(ContainerUtils.createEnvVar(envVarNamer.apply(SASL_MECHANISM), KafkaClientAuthenticationPlain.TYPE_PLAIN));
+            } else if (authentication instanceof KafkaClientAuthenticationScram scramAuth) {
+                varList.add(ContainerUtils.createEnvVar(envVarNamer.apply(SASL_USERNAME), scramAuth.getUsername()));
+                varList.add(ContainerUtils.createEnvVar(envVarNamer.apply(SASL_PASSWORD_FILE), String.format("%s/%s", scramAuth.getPasswordSecret().getSecretName(), scramAuth.getPasswordSecret().getPassword())));
+                varList.add(ContainerUtils.createEnvVar(envVarNamer.apply(SASL_MECHANISM), scramAuth.getType()));
+            } else if (authentication instanceof KafkaClientAuthenticationOAuth oauth) {
+                varList.add(ContainerUtils.createEnvVar(envVarNamer.apply(SASL_MECHANISM), KafkaClientAuthenticationOAuth.TYPE_OAUTH));
+                varList.add(ContainerUtils.createEnvVar(envVarNamer.apply(OAUTH_CONFIG),
+                        oauthJaasOptions(oauth).entrySet().stream()
+                                .map(e -> e.getKey() + "=\"" + e.getValue() + "\"")
+                                .collect(Collectors.joining(" "))));
+                if (oauth.getClientSecret() != null) {
                     varList.add(ContainerUtils.createEnvVarFromSecret(envVarNamer.apply("OAUTH_CLIENT_SECRET"), oauth.getClientSecret().getSecretName(), oauth.getClientSecret().getKey()));
                 }
-
-                if (oauth.getAccessToken() != null)    {
+                if (oauth.getAccessToken() != null) {
                     varList.add(ContainerUtils.createEnvVarFromSecret(envVarNamer.apply("OAUTH_ACCESS_TOKEN"), oauth.getAccessToken().getSecretName(), oauth.getAccessToken().getKey()));
                 }
-
-                if (oauth.getRefreshToken() != null)    {
+                if (oauth.getRefreshToken() != null) {
                     varList.add(ContainerUtils.createEnvVarFromSecret(envVarNamer.apply("OAUTH_REFRESH_TOKEN"), oauth.getRefreshToken().getSecretName(), oauth.getRefreshToken().getKey()));
                 }
-                if (oauth.getPasswordSecret() != null)    {
+                if (oauth.getPasswordSecret() != null) {
                     varList.add(ContainerUtils.createEnvVarFromSecret(envVarNamer.apply("OAUTH_PASSWORD_GRANT_PASSWORD"), oauth.getPasswordSecret().getSecretName(), oauth.getPasswordSecret().getPassword()));
                 }
             }
@@ -279,39 +284,8 @@ public class AuthenticationUtils {
     }
 
     /**
-     * Get a map of properties related to authentication in Kafka clients.
-     *
-     * @param authentication    Authentication object with auth configuration
-     * @return Map of name/value pairs
-     */
-    public static Map<String, String> getClientAuthenticationProperties(KafkaClientAuthentication authentication) {
-        Map<String, String> properties = new HashMap<>(3);
-        
-        if (authentication != null) {
-            if (authentication instanceof KafkaClientAuthenticationTls tlsAuth) {
-                properties.put(TLS_AUTH_CERT, String.format("%s/%s", tlsAuth.getCertificateAndKey().getSecretName(), tlsAuth.getCertificateAndKey().getCertificate()));
-                properties.put(TLS_AUTH_KEY, String.format("%s/%s", tlsAuth.getCertificateAndKey().getSecretName(), tlsAuth.getCertificateAndKey().getKey()));
-            } else if (authentication instanceof KafkaClientAuthenticationPlain passwordAuth) {
-                properties.put(SASL_USERNAME, passwordAuth.getUsername());
-                properties.put(SASL_PASSWORD_FILE, String.format("%s/%s", passwordAuth.getPasswordSecret().getSecretName(), passwordAuth.getPasswordSecret().getPassword()));
-                properties.put(SASL_MECHANISM, KafkaClientAuthenticationPlain.TYPE_PLAIN);
-            } else if (authentication instanceof KafkaClientAuthenticationScram scramAuth) {
-                properties.put(SASL_USERNAME, scramAuth.getUsername());
-                properties.put(SASL_PASSWORD_FILE, String.format("%s/%s", scramAuth.getPasswordSecret().getSecretName(), scramAuth.getPasswordSecret().getPassword()));
-                properties.put(SASL_MECHANISM, scramAuth.getType());
-            } else if (authentication instanceof KafkaClientAuthenticationOAuth oauth) {
-                properties.put(SASL_MECHANISM, KafkaClientAuthenticationOAuth.TYPE_OAUTH);
-                Map<String, String> options = oauthJaasOptions(oauth);
-                properties.put(OAUTH_CONFIG, options.entrySet().stream().map(e -> e.getKey() + "=\"" + e.getValue() + "\"").collect(Collectors.joining(" ")));
-            }
-        }
-        
-        return properties;
-    }
-
-    /**
      * @param oauth The client OAuth authentication configuration.
-     * @return The JAAS configuration options.
+     * @return The OAuth JAAS configuration options.
      */
     public static Map<String, String> oauthJaasOptions(KafkaClientAuthenticationOAuth oauth) {
         Map<String, String> options = new LinkedHashMap<>(13);
@@ -335,59 +309,6 @@ public class AuthenticationUtils {
             options.put(ServerConfig.OAUTH_ENABLE_METRICS, "true");
         }
         return options;
-    }
-
-    /**
-     * @param authentication The client authentication configuration, or null.
-     * @return The configured SASL authentication type, or null if there is no authentication, or the configured authentication is non-SASL.
-     */
-    public static String clientSaslAuthenticationType(KafkaClientAuthentication authentication) {
-        if (authentication != null) {
-            if (authentication instanceof KafkaClientAuthenticationTls) {
-                return null;
-            } else if (authentication instanceof KafkaClientAuthenticationPlain) {
-                return KafkaClientAuthenticationPlain.TYPE_PLAIN;
-            } else if (authentication instanceof KafkaClientAuthenticationScram scramAuth) {
-                return scramAuth.getType();
-            } else if (authentication instanceof KafkaClientAuthenticationOAuth) {
-                return KafkaClientAuthenticationOAuth.TYPE_OAUTH;
-            } else {
-                return null;
-            }
-        }
-        return null;
-    }
-
-    /**
-     * @param authentication The client authentication configuration, or null.
-     * @return The configured SASL mechanism, or null if there is no authentication, or the configured authentication is non-SASL.
-     */
-    public static String clientAuthenticationSaslMechanism(KafkaClientAuthentication authentication) {
-        if (authentication != null) {
-            return switch (clientSaslAuthenticationType(authentication)) {
-                case KafkaClientAuthenticationPlain.TYPE_PLAIN -> "PLAIN";
-                case KafkaClientAuthenticationScramSha256.TYPE_SCRAM_SHA_256 -> "SCRAM-SHA-256";
-                case KafkaClientAuthenticationScramSha512.TYPE_SCRAM_SHA_512 -> "SCRAM-SHA-512";
-                case KafkaClientAuthenticationOAuth.TYPE_OAUTH -> "OAUTHBEARER";
-                default -> null;
-            };
-        }
-        return null;
-    }
-
-    /**
-     * @param authentication The client authentication configuration, or null.
-     * @return The configured SASL username, or null if there is no authentication, or the configured authentication is non-SASL.
-     */
-    public static String clientAuthenticationSaslUsername(KafkaClientAuthentication authentication) {
-        if (authentication != null) {
-            if (authentication instanceof KafkaClientAuthenticationPlain passwordAuth) {
-                return passwordAuth.getUsername();
-            } else if (authentication instanceof KafkaClientAuthenticationScram scramAuth) {
-                return scramAuth.getUsername();
-            }
-        }
-        return null;
     }
 
     private static void addOptionIfGreaterThanZero(Map<String, String> options, String name, Integer value) {

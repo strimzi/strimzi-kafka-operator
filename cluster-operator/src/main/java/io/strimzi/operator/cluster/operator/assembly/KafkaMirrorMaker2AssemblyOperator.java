@@ -23,8 +23,8 @@ import io.strimzi.api.kafka.model.KafkaMirrorMaker2Spec;
 import io.strimzi.api.kafka.model.StrimziPodSet;
 import io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationOAuth;
 import io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationPlain;
+import io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationScram;
 import io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationScramSha256;
-import io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationScramSha512;
 import io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationTls;
 import io.strimzi.api.kafka.model.status.AutoRestartStatus;
 import io.strimzi.api.kafka.model.status.Condition;
@@ -472,47 +472,30 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
         String securityProtocol = addTLSConfigToMirrorMaker2ConnectorConfig(config, cluster, configPrefix);
 
         if (cluster.getAuthentication() != null) {
-            String clientAuthType = AuthenticationUtils.clientSaslAuthenticationType(cluster.getAuthentication());
-            if (clientAuthType != null) {
-                if (cluster.getTls() != null) {
-                    securityProtocol = "SASL_SSL";
-                } else {
-                    securityProtocol = "SASL_PLAINTEXT";
-                }
-            }
-
             if (cluster.getAuthentication() instanceof KafkaClientAuthenticationTls) {
                 config.put(configPrefix + SslConfigs.SSL_KEYSTORE_TYPE_CONFIG, "PKCS12");
                 config.put(configPrefix + SslConfigs.SSL_KEYSTORE_LOCATION_CONFIG, STORE_LOCATION_ROOT + cluster.getAlias() + KEYSTORE_SUFFIX);
                 config.put(configPrefix + SslConfigs.SSL_KEYSTORE_PASSWORD_CONFIG, "${file:" + CONNECTORS_CONFIG_FILE + ":" + SslConfigs.SSL_KEYSTORE_PASSWORD_CONFIG + "}");
-            }
-
-            String jaasConfig = null;
-            String saslMechanism = AuthenticationUtils.clientAuthenticationSaslMechanism(cluster.getAuthentication());
-
-            if (KafkaClientAuthenticationPlain.TYPE_PLAIN.equals(clientAuthType)) {
-                jaasConfig = AuthenticationUtils.jaasConfig("org.apache.kafka.common.security.plain.PlainLoginModule",
-                        Map.of("username", AuthenticationUtils.clientAuthenticationSaslUsername(cluster.getAuthentication()),
-                                "password", "${file:" + CONNECTORS_CONFIG_FILE + ":" + cluster.getAlias() + ".sasl.password}"));
-            } else if (KafkaClientAuthenticationScramSha256.TYPE_SCRAM_SHA_256.equals(clientAuthType)) {
-                jaasConfig = AuthenticationUtils.jaasConfig("org.apache.kafka.common.security.scram.ScramLoginModule",
-                        Map.of("username", AuthenticationUtils.clientAuthenticationSaslUsername(cluster.getAuthentication()),
-                                "password", "${file:" + CONNECTORS_CONFIG_FILE + ":" + cluster.getAlias() + ".sasl.password}"));
-            } else if (KafkaClientAuthenticationScramSha512.TYPE_SCRAM_SHA_512.equals(clientAuthType)) {
-                jaasConfig = AuthenticationUtils.jaasConfig("org.apache.kafka.common.security.scram.ScramLoginModule",
-                        Map.of("username", AuthenticationUtils.clientAuthenticationSaslUsername(cluster.getAuthentication()),
-                                "password", "${file:" + CONNECTORS_CONFIG_FILE + ":" + cluster.getAlias() + ".sasl.password}"));
-            } else if (KafkaClientAuthenticationOAuth.TYPE_OAUTH.equals(clientAuthType)) {
-                KafkaClientAuthenticationOAuth oauth  = (KafkaClientAuthenticationOAuth) cluster.getAuthentication();
-                jaasConfig = oauthJaasConfig(cluster, oauth);
+            } else if (cluster.getAuthentication() instanceof KafkaClientAuthenticationPlain plainAuthentication) {
+                securityProtocol = cluster.getTls() != null ? "SASL_SSL" : "SASL_PLAINTEXT";
+                config.put(configPrefix + SaslConfigs.SASL_MECHANISM, "PLAIN");
+                config.put(configPrefix + SaslConfigs.SASL_JAAS_CONFIG,
+                        AuthenticationUtils.jaasConfig("org.apache.kafka.common.security.plain.PlainLoginModule",
+                                Map.of("username", plainAuthentication.getUsername(),
+                                        "password", "${file:" + CONNECTORS_CONFIG_FILE + ":" + cluster.getAlias() + ".sasl.password}")));
+            } else if (cluster.getAuthentication() instanceof KafkaClientAuthenticationScram scramAuthentication) {
+                securityProtocol = cluster.getTls() != null ? "SASL_SSL" : "SASL_PLAINTEXT";
+                config.put(configPrefix + SaslConfigs.SASL_MECHANISM, scramAuthentication instanceof KafkaClientAuthenticationScramSha256 ? "SCRAM-SHA-256" : "SCRAM-SHA-512");
+                config.put(configPrefix + SaslConfigs.SASL_JAAS_CONFIG,
+                        AuthenticationUtils.jaasConfig("org.apache.kafka.common.security.scram.ScramLoginModule",
+                                Map.of("username", scramAuthentication.getUsername(),
+                                        "password", "${file:" + CONNECTORS_CONFIG_FILE + ":" + cluster.getAlias() + ".sasl.password}")));
+            } else if (cluster.getAuthentication() instanceof KafkaClientAuthenticationOAuth oauthAuthentication) {
+                securityProtocol = cluster.getTls() != null ? "SASL_SSL" : "SASL_PLAINTEXT";
+                config.put(configPrefix + SaslConfigs.SASL_MECHANISM, "OAUTHBEARER");
+                config.put(configPrefix + SaslConfigs.SASL_JAAS_CONFIG,
+                        oauthJaasConfig(cluster, oauthAuthentication));
                 config.put(configPrefix + SaslConfigs.SASL_LOGIN_CALLBACK_HANDLER_CLASS, "io.strimzi.kafka.oauth.client.JaasClientOauthLoginCallbackHandler");
-            }
-
-            if (saslMechanism != null) {
-                config.put(configPrefix + SaslConfigs.SASL_MECHANISM, saslMechanism);
-            }
-            if (jaasConfig != null) {
-                config.put(configPrefix + SaslConfigs.SASL_JAAS_CONFIG, jaasConfig);
             }
         }
 
