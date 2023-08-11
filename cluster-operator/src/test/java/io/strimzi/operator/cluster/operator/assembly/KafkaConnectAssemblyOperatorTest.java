@@ -6,6 +6,7 @@ package io.strimzi.operator.cluster.operator.assembly;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
+import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy;
@@ -68,7 +69,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 
@@ -86,13 +86,14 @@ import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-@SuppressWarnings({"unchecked", "ClassFanOutComplexity", "checkstyle:ClassDataAbstractionCoupling"})
+@SuppressWarnings({"ClassFanOutComplexity", "checkstyle:ClassDataAbstractionCoupling"})
 @ExtendWith(VertxExtension.class)
 public class KafkaConnectAssemblyOperatorTest {
 
@@ -129,7 +130,7 @@ public class KafkaConnectAssemblyOperatorTest {
         SecretOperator mockSecretOps = supplier.secretOperations;
         CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList> mockConnectorOps = supplier.kafkaConnectorOperator;
 
-        when(mockConnectorOps.listAsync(anyString(), any(Optional.class))).thenReturn(Future.succeededFuture(emptyList()));
+        when(mockConnectorOps.listAsync(anyString(), any(LabelSelector.class))).thenReturn(Future.succeededFuture(emptyList()));
         when(mockConnectOps.get(kc.getMetadata().getNamespace(), kc.getMetadata().getName())).thenReturn(kc);
         when(mockConnectOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(kc));
 
@@ -274,7 +275,7 @@ public class KafkaConnectAssemblyOperatorTest {
 
         KafkaConnect kc = ResourceUtils.createEmptyKafkaConnect(kcNamespace, kcName);
         KafkaConnectCluster connect = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kc, VERSIONS, SHARED_ENV_PROVIDER);
-        when(mockConnectorOps.listAsync(anyString(), any(Optional.class))).thenReturn(Future.succeededFuture(emptyList()));
+        when(mockConnectorOps.listAsync(anyString(), any(LabelSelector.class))).thenReturn(Future.succeededFuture(emptyList()));
         when(mockConnectOps.get(kcNamespace, kcName)).thenReturn(kc);
         when(mockConnectOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(kc));
         when(mockConnectOps.updateStatusAsync(any(), any(KafkaConnect.class))).thenReturn(Future.succeededFuture());
@@ -373,7 +374,7 @@ public class KafkaConnectAssemblyOperatorTest {
         KafkaConnect kc = ResourceUtils.createEmptyKafkaConnect(kcNamespace, kcName);
         KafkaConnectCluster connect = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kc, VERSIONS, SHARED_ENV_PROVIDER);
         kc.getSpec().setImage("some/different:image"); // Change the image to generate some diff
-        when(mockConnectorOps.listAsync(anyString(), any(Optional.class))).thenReturn(Future.succeededFuture(emptyList()));
+        when(mockConnectorOps.listAsync(anyString(), any(LabelSelector.class))).thenReturn(Future.succeededFuture(emptyList()));
         when(mockConnectOps.get(kcNamespace, kcName)).thenReturn(kc);
         when(mockConnectOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(kc));
         when(mockConnectOps.updateStatusAsync(any(), any(KafkaConnect.class))).thenReturn(Future.succeededFuture());
@@ -584,7 +585,7 @@ public class KafkaConnectAssemblyOperatorTest {
         KafkaConnectCluster connect = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kc, VERSIONS, SHARED_ENV_PROVIDER);
         kc.getSpec().setReplicas(scaleTo); // Change replicas to create ScaleUp
 
-        when(mockConnectorOps.listAsync(anyString(), any(Optional.class))).thenReturn(Future.succeededFuture(emptyList()));
+        when(mockConnectorOps.listAsync(anyString(), any(LabelSelector.class))).thenReturn(Future.succeededFuture(emptyList()));
         when(mockConnectOps.get(kcNamespace, kcName)).thenReturn(kc);
         when(mockConnectOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(kc));
         when(mockConnectOps.updateStatusAsync(any(), any(KafkaConnect.class))).thenReturn(Future.succeededFuture());
@@ -660,7 +661,7 @@ public class KafkaConnectAssemblyOperatorTest {
         KafkaConnectCluster connect = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kc, VERSIONS, SHARED_ENV_PROVIDER);
         kc.getSpec().setReplicas(scaleTo); // Change replicas to create ScaleDown
 
-        when(mockConnectorOps.listAsync(anyString(), any(Optional.class))).thenReturn(Future.succeededFuture(emptyList()));
+        when(mockConnectorOps.listAsync(anyString(), any(LabelSelector.class))).thenReturn(Future.succeededFuture(emptyList()));
         when(mockConnectOps.get(kcNamespace, kcName)).thenReturn(kc);
         when(mockConnectOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(kc));
         when(mockConnectOps.updateStatusAsync(any(), any(KafkaConnect.class))).thenReturn(Future.succeededFuture());
@@ -727,12 +728,12 @@ public class KafkaConnectAssemblyOperatorTest {
         PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
         NetworkPolicyOperator mockNetPolOps = supplier.networkPolicyOperator;
 
-        when(mockConnectorOps.listAsync(any(), any(Optional.class))).thenReturn(Future.succeededFuture(List.of()));
+        when(mockConnectorOps.listAsync(any(), any(LabelSelector.class))).thenReturn(Future.succeededFuture(List.of()));
         String kcNamespace = "test";
 
         KafkaConnect foo = ResourceUtils.createEmptyKafkaConnect(kcNamespace, "foo");
         KafkaConnect bar = ResourceUtils.createEmptyKafkaConnect(kcNamespace, "bar");
-        when(mockConnectOps.listAsync(eq(kcNamespace), any(Optional.class))).thenReturn(Future.succeededFuture(asList(foo, bar)));
+        when(mockConnectOps.listAsync(eq(kcNamespace), isNull(LabelSelector.class))).thenReturn(Future.succeededFuture(asList(foo, bar)));
         // when requested ConfigMap for a specific Kafka Connect cluster
         when(mockConnectOps.getAsync(eq(kcNamespace), eq("foo"))).thenReturn(Future.succeededFuture(foo));
         when(mockConnectOps.getAsync(eq(kcNamespace), eq("bar"))).thenReturn(Future.succeededFuture(bar));

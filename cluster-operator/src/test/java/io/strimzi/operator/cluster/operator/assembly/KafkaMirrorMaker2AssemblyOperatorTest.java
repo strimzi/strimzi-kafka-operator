@@ -6,6 +6,7 @@ package io.strimzi.operator.cluster.operator.assembly;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
+import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy;
@@ -58,7 +59,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 
@@ -73,6 +73,7 @@ import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -613,7 +614,7 @@ public class KafkaMirrorMaker2AssemblyOperatorTest {
 
         KafkaMirrorMaker2 foo = ResourceUtils.createEmptyKafkaMirrorMaker2(kmm2Namespace, "foo");
         KafkaMirrorMaker2 bar = ResourceUtils.createEmptyKafkaMirrorMaker2(kmm2Namespace, "bar");
-        when(mockMirrorMaker2Ops.listAsync(eq(kmm2Namespace), any(Optional.class))).thenReturn(Future.succeededFuture(asList(foo, bar)));
+        when(mockMirrorMaker2Ops.listAsync(eq(kmm2Namespace), isNull(LabelSelector.class))).thenReturn(Future.succeededFuture(asList(foo, bar)));
         // when requested ConfigMap for a specific Kafka MirrorMaker 2 cluster
         when(mockMirrorMaker2Ops.getAsync(eq(kmm2Namespace), eq("foo"))).thenReturn(Future.succeededFuture(foo));
         when(mockMirrorMaker2Ops.getAsync(eq(kmm2Namespace), eq("bar"))).thenReturn(Future.succeededFuture(bar));

@@ -157,7 +157,7 @@ public class KafkaRebalanceAssemblyOperator
     private final CrdOperator<KubernetesClient, KafkaRebalance, KafkaRebalanceList> kafkaRebalanceOperator;
     private final CrdOperator<KubernetesClient, Kafka, KafkaList> kafkaOperator;
     private final SecretOperator secretOperations;
-    private final Optional<LabelSelector> kafkaSelector;
+    private final LabelSelector kafkaSelector;
     private boolean usingJbodStorage;
 
     private final ConfigMapOperator configMapOperator;
@@ -169,7 +169,7 @@ public class KafkaRebalanceAssemblyOperator
     public KafkaRebalanceAssemblyOperator(Vertx vertx,
                                           ResourceOperatorSupplier supplier, ClusterOperatorConfig config) {
         super(vertx, KafkaRebalance.RESOURCE_KIND, supplier.kafkaRebalanceOperator, supplier.metricsProvider, null);
-        this.kafkaSelector = (config.getCustomResourceSelector() == null || config.getCustomResourceSelector().toMap().isEmpty()) ? Optional.empty() : Optional.of(new LabelSelector(null, config.getCustomResourceSelector().toMap()));
+        this.kafkaSelector = (config.getCustomResourceSelector() == null || config.getCustomResourceSelector().toMap().isEmpty()) ? null : new LabelSelector(null, config.getCustomResourceSelector().toMap());
         this.kafkaRebalanceOperator = supplier.kafkaRebalanceOperator;
         this.kafkaOperator = supplier.kafkaOperator;
         this.configMapOperator = supplier.configMapOperations;
@@ -216,7 +216,7 @@ public class KafkaRebalanceAssemblyOperator
      */
     @Override
     public Future<ReconnectingWatcher<KafkaRebalance>> createWatch(String namespace) {
-        return VertxUtil.async(vertx, () -> new ReconnectingWatcher<>(resourceOperator, KafkaRebalance.RESOURCE_KIND, namespace, selector().orElse(null), this::eventHandler));
+        return VertxUtil.async(vertx, () -> new ReconnectingWatcher<>(resourceOperator, KafkaRebalance.RESOURCE_KIND, namespace, selector(), this::eventHandler));
     }
 
     /**
@@ -1171,7 +1171,7 @@ public class KafkaRebalanceAssemblyOperator
                         return updateStatus(reconciliation, kafkaRebalance, status,
                                 new RuntimeException(CruiseControlIssues.kafkaClusterNotReady.getMessage())).mapEmpty();
                     } else if (!Util.matchesSelector(kafkaSelector, kafka)) {
-                        LOGGER.debugCr(reconciliation, "{} {} in namespace {} belongs to a Kafka cluster {} which does not match label selector {} and will be ignored", kind(), kafkaRebalance.getMetadata().getName(), clusterNamespace, clusterName, kafkaSelector.get().getMatchLabels());
+                        LOGGER.debugCr(reconciliation, "{} {} in namespace {} belongs to a Kafka cluster {} which does not match label selector {} and will be ignored", kind(), kafkaRebalance.getMetadata().getName(), clusterNamespace, clusterName, kafkaSelector.getMatchLabels());
                         return Future.succeededFuture();
                     } else if (kafka.getSpec().getCruiseControl() == null) {
                         LOGGER.warnCr(reconciliation, "Kafka resource lacks 'cruiseControl' declaration" + ": No deployed Cruise Control for doing a rebalance.");

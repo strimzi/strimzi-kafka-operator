@@ -65,7 +65,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Predicate;
@@ -1927,7 +1926,7 @@ public class ConnectorMockTest {
         String connectorName1 = "connector1";
         String connectorName2 = "connector2";
 
-        when(kafkaConnectOperator.selector()).thenReturn(Optional.of(new LabelSelector(null, Map.of("foo", "bar"))));
+        when(kafkaConnectOperator.selector()).thenReturn(new LabelSelector(null, Map.of("foo", "bar")));
 
         KafkaConnect kafkaConnect = new KafkaConnectBuilder()
                 .withNewMetadata()
@@ -1995,7 +1994,7 @@ public class ConnectorMockTest {
         String connectorName1 = "connector1";
         String connectorName2 = "connector2";
 
-        when(kafkaConnectOperator.selector()).thenReturn(Optional.of(new LabelSelector(null, Map.of("foo", "bar"))));
+        when(kafkaConnectOperator.selector()).thenReturn(new LabelSelector(null, Map.of("foo", "bar")));
 
         KafkaConnect kafkaConnect1 = new KafkaConnectBuilder()
                 .withNewMetadata()

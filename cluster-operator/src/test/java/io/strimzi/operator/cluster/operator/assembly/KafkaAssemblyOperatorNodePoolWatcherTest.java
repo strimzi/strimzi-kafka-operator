@@ -31,7 +31,6 @@ import org.junit.jupiter.api.Test;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -91,7 +90,7 @@ public class KafkaAssemblyOperatorNodePoolWatcherTest {
         CrdOperator<KubernetesClient, Kafka, KafkaList> mockKafkaOps = supplier.kafkaOperator;
         when(mockKafkaOps.get(eq(NAMESPACE), eq(CLUSTER_NAME))).thenReturn(KAFKA);
 
-        MockKafkaAssemblyOperator mockKao = new MockKafkaAssemblyOperator(Optional.empty(), supplier);
+        MockKafkaAssemblyOperator mockKao = new MockKafkaAssemblyOperator(null, supplier);
         mockKao.nodePoolEventHandler(Watcher.Action.ADDED, POOL);
 
         assertThat(mockKao.reconciliations.size(), is(1));
@@ -106,7 +105,7 @@ public class KafkaAssemblyOperatorNodePoolWatcherTest {
         CrdOperator<KubernetesClient, Kafka, KafkaList> mockKafkaOps = supplier.kafkaOperator;
         when(mockKafkaOps.get(eq(NAMESPACE), eq(CLUSTER_NAME))).thenReturn(KAFKA);
 
-        MockKafkaAssemblyOperator mockKao = new MockKafkaAssemblyOperator(Optional.of(new LabelSelectorBuilder().withMatchLabels(Map.of("selector", "matching")).build()), supplier);
+        MockKafkaAssemblyOperator mockKao = new MockKafkaAssemblyOperator(new LabelSelectorBuilder().withMatchLabels(Map.of("selector", "matching")).build(), supplier);
         mockKao.nodePoolEventHandler(Watcher.Action.ADDED, POOL);
 
         assertThat(mockKao.reconciliations.size(), is(1));
@@ -121,7 +120,7 @@ public class KafkaAssemblyOperatorNodePoolWatcherTest {
         CrdOperator<KubernetesClient, Kafka, KafkaList> mockKafkaOps = supplier.kafkaOperator;
         when(mockKafkaOps.get(eq(NAMESPACE), eq(CLUSTER_NAME))).thenReturn(KAFKA);
 
-        MockKafkaAssemblyOperator mockKao = new MockKafkaAssemblyOperator(Optional.of(new LabelSelectorBuilder().withMatchLabels(Map.of("selector", "not-matching")).build()), supplier);
+        MockKafkaAssemblyOperator mockKao = new MockKafkaAssemblyOperator(new LabelSelectorBuilder().withMatchLabels(Map.of("selector", "not-matching")).build(), supplier);
         mockKao.nodePoolEventHandler(Watcher.Action.ADDED, POOL);
 
         assertThat(mockKao.reconciliations.size(), is(0));
@@ -133,7 +132,7 @@ public class KafkaAssemblyOperatorNodePoolWatcherTest {
         CrdOperator<KubernetesClient, Kafka, KafkaList> mockKafkaOps = supplier.kafkaOperator;
         when(mockKafkaOps.get(eq(NAMESPACE), eq(CLUSTER_NAME))).thenReturn(null);
 
-        MockKafkaAssemblyOperator mockKao = new MockKafkaAssemblyOperator(Optional.of(new LabelSelectorBuilder().withMatchLabels(Map.of("selector", "not-matching")).build()), supplier);
+        MockKafkaAssemblyOperator mockKao = new MockKafkaAssemblyOperator(new LabelSelectorBuilder().withMatchLabels(Map.of("selector", "not-matching")).build(), supplier);
         mockKao.nodePoolEventHandler(Watcher.Action.ADDED, POOL);
 
         assertThat(mockKao.reconciliations.size(), is(0));
@@ -151,7 +150,7 @@ public class KafkaAssemblyOperatorNodePoolWatcherTest {
         CrdOperator<KubernetesClient, Kafka, KafkaList> mockKafkaOps = supplier.kafkaOperator;
         when(mockKafkaOps.get(eq(NAMESPACE), eq(CLUSTER_NAME))).thenReturn(kafka);
 
-        MockKafkaAssemblyOperator mockKao = new MockKafkaAssemblyOperator(Optional.empty(), supplier);
+        MockKafkaAssemblyOperator mockKao = new MockKafkaAssemblyOperator(null, supplier);
         mockKao.nodePoolEventHandler(Watcher.Action.ADDED, POOL);
 
         assertThat(mockKao.reconciliations.size(), is(0));
@@ -169,7 +168,7 @@ public class KafkaAssemblyOperatorNodePoolWatcherTest {
         CrdOperator<KubernetesClient, Kafka, KafkaList> mockKafkaOps = supplier.kafkaOperator;
         when(mockKafkaOps.get(eq(NAMESPACE), eq(CLUSTER_NAME))).thenReturn(KAFKA);
 
-        MockKafkaAssemblyOperator mockKao = new MockKafkaAssemblyOperator(Optional.empty(), supplier);
+        MockKafkaAssemblyOperator mockKao = new MockKafkaAssemblyOperator(null, supplier);
         mockKao.nodePoolEventHandler(Watcher.Action.ADDED, pool);
 
         assertThat(mockKao.reconciliations.size(), is(0));
@@ -187,24 +186,24 @@ public class KafkaAssemblyOperatorNodePoolWatcherTest {
         CrdOperator<KubernetesClient, Kafka, KafkaList> mockKafkaOps = supplier.kafkaOperator;
         when(mockKafkaOps.get(eq(NAMESPACE), eq(CLUSTER_NAME))).thenReturn(KAFKA);
 
-        MockKafkaAssemblyOperator mockKao = new MockKafkaAssemblyOperator(Optional.empty(), supplier);
+        MockKafkaAssemblyOperator mockKao = new MockKafkaAssemblyOperator(null, supplier);
         mockKao.nodePoolEventHandler(Watcher.Action.ADDED, pool);
 
         assertThat(mockKao.reconciliations.size(), is(0));
     }
 
     static class MockKafkaAssemblyOperator extends KafkaAssemblyOperator  {
-        private final Optional<LabelSelector> selector;
+        private final LabelSelector selector;
 
         public List<Reconciliation> reconciliations = new ArrayList<>();
 
-        public MockKafkaAssemblyOperator(Optional<LabelSelector> selector, ResourceOperatorSupplier supplier) {
+        public MockKafkaAssemblyOperator(LabelSelector selector, ResourceOperatorSupplier supplier) {
             super(Vertx.vertx(), null, null, null, supplier, ResourceUtils.dummyClusterOperatorConfig());
             this.selector = selector;
         }
 
         @Override
-        public Optional<LabelSelector> selector() {
+        public LabelSelector selector() {
             return selector;
         }
 

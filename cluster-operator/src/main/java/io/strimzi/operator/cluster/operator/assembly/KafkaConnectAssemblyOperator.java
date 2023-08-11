@@ -53,7 +53,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
@@ -315,7 +314,7 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
         super.reconcileThese(trigger, desiredNames, namespace, ignore -> {
             List<String> connects = desiredNames.stream().map(NamespaceAndName::getName).collect(Collectors.toList());
             LabelSelectorRequirement requirement = new LabelSelectorRequirement(Labels.STRIMZI_CLUSTER_LABEL, "In", connects);
-            Optional<LabelSelector> connectorsSelector = Optional.of(new LabelSelector(List.of(requirement), null));
+            LabelSelector connectorsSelector = new LabelSelector(List.of(requirement), null);
             connectorOperator.listAsync(namespace, connectorsSelector)
                     .onComplete(ar -> {
                         if (ar.succeeded()) {

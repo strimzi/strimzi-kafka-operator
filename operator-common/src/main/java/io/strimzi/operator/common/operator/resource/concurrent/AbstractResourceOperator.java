@@ -6,7 +6,6 @@ package io.strimzi.operator.common.operator.resource.concurrent;
 
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Executor;
 import java.util.regex.Pattern;
@@ -149,9 +148,9 @@ public abstract class AbstractResourceOperator<C extends KubernetesClient,
      *
      * @return  Filtered operation
      */
-    protected FilterWatchListDeletable<T, L, R> applySelector(FilterWatchListDeletable<T, L, R> filterable, Optional<LabelSelector> selector)  {
-        if (selector.isPresent()) {
-            return filterable.withLabelSelector(selector.get());
+    protected FilterWatchListDeletable<T, L, R> applySelector(FilterWatchListDeletable<T, L, R> filterable, LabelSelector selector)  {
+        if (selector != null) {
+            return filterable.withLabelSelector(selector);
         } else {
             return filterable;
         }

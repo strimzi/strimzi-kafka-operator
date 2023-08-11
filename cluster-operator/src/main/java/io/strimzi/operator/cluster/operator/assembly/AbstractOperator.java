@@ -84,7 +84,7 @@ public abstract class AbstractOperator<
     protected final O resourceOperator;
     private final String kind;
 
-    private final Optional<LabelSelector> selector;
+    private final LabelSelector selector;
 
     protected final OperatorMetricsHolder metrics;
 
@@ -105,7 +105,7 @@ public abstract class AbstractOperator<
         this.vertx = vertx;
         this.kind = kind;
         this.resourceOperator = resourceOperator;
-        this.selector = (selectorLabels == null || selectorLabels.toMap().isEmpty()) ? Optional.empty() : Optional.of(new LabelSelector(null, selectorLabels.toMap()));
+        this.selector = (selectorLabels == null || selectorLabels.toMap().isEmpty()) ? null : new LabelSelector(null, selectorLabels.toMap());
         this.metrics = metrics;
     }
 
@@ -218,7 +218,7 @@ public abstract class AbstractOperator<
             // and might not be really deleted. We have to filter these situations out and ignore the
             // reconciliation because such resource might be already operated by another instance (where the
             // same change triggered ADDED event).
-            LOGGER.debugCr(reconciliation, "{} {} in namespace {} does not match label selector {} and will be ignored", kind(), name, namespace, selector().get().getMatchLabels());
+            LOGGER.debugCr(reconciliation, "{} {} in namespace {} does not match label selector {} and will be ignored", kind(), name, namespace, selector().getMatchLabels());
             return Future.succeededFuture();
         }
 
@@ -480,7 +480,7 @@ public abstract class AbstractOperator<
      * and {@linkplain #allResourceNames(String) query}.
      * @return A selector.
      */
-    public Optional<LabelSelector> selector() {
+    public LabelSelector selector() {
         return selector;
     }
 
@@ -492,7 +492,7 @@ public abstract class AbstractOperator<
      * @return  A future which completes when the watcher has been created
      */
     public Future<ReconnectingWatcher<T>> createWatch(String namespace) {
-        return VertxUtil.async(vertx, () -> new ReconnectingWatcher<>(resourceOperator, kind(), namespace, selector().orElse(null), this::eventHandler));
+        return VertxUtil.async(vertx, () -> new ReconnectingWatcher<>(resourceOperator, kind(), namespace, selector(), this::eventHandler));
     }
 
     /**

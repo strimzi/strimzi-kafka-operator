@@ -5,6 +5,7 @@
 package io.strimzi.operator.cluster.operator.assembly;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
+import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy;
 import io.fabric8.kubernetes.client.KubernetesClient;
@@ -64,7 +65,6 @@ import org.mockito.ArgumentCaptor;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.function.BiPredicate;
 
 import static java.util.Collections.emptyList;
@@ -149,7 +149,7 @@ public class KafkaConnectBuildAssemblyOperatorOpenShiftTest {
         CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList> mockConnectorOps = supplier.kafkaConnectorOperator;
 
         // Mock KafkaConnector ops
-        when(mockConnectorOps.listAsync(anyString(), any(Optional.class))).thenReturn(Future.succeededFuture(emptyList()));
+        when(mockConnectorOps.listAsync(anyString(), any(LabelSelector.class))).thenReturn(Future.succeededFuture(emptyList()));
 
         // Mock KafkaConnect ops
         when(mockConnectOps.get(NAMESPACE, NAME)).thenReturn(kc);
@@ -302,7 +302,7 @@ public class KafkaConnectBuildAssemblyOperatorOpenShiftTest {
         CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList> mockConnectorOps = supplier.kafkaConnectorOperator;
 
         // Mock KafkaConnector ops
-        when(mockConnectorOps.listAsync(anyString(), any(Optional.class))).thenReturn(Future.succeededFuture(emptyList()));
+        when(mockConnectorOps.listAsync(anyString(), any(LabelSelector.class))).thenReturn(Future.succeededFuture(emptyList()));
 
         // Mock KafkaConnect ops
         when(mockConnectOps.get(NAMESPACE, NAME)).thenReturn(kc);
@@ -440,7 +440,7 @@ public class KafkaConnectBuildAssemblyOperatorOpenShiftTest {
         CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList> mockConnectorOps = supplier.kafkaConnectorOperator;
 
         // Mock KafkaConnector ops
-        when(mockConnectorOps.listAsync(anyString(), any(Optional.class))).thenReturn(Future.succeededFuture(emptyList()));
+        when(mockConnectorOps.listAsync(anyString(), any(LabelSelector.class))).thenReturn(Future.succeededFuture(emptyList()));
 
         // Mock KafkaConnect ops
         when(mockConnectOps.get(NAMESPACE, NAME)).thenReturn(kc);
@@ -622,7 +622,7 @@ public class KafkaConnectBuildAssemblyOperatorOpenShiftTest {
         CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList> mockConnectorOps = supplier.kafkaConnectorOperator;
 
         // Mock KafkaConnector ops
-        when(mockConnectorOps.listAsync(anyString(), any(Optional.class))).thenReturn(Future.succeededFuture(emptyList()));
+        when(mockConnectorOps.listAsync(anyString(), any(LabelSelector.class))).thenReturn(Future.succeededFuture(emptyList()));
 
         // Mock KafkaConnect ops
         when(mockConnectOps.get(NAMESPACE, NAME)).thenReturn(kc);
@@ -789,7 +789,7 @@ public class KafkaConnectBuildAssemblyOperatorOpenShiftTest {
         CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList> mockConnectorOps = supplier.kafkaConnectorOperator;
 
         // Mock KafkaConnector ops
-        when(mockConnectorOps.listAsync(anyString(), any(Optional.class))).thenReturn(Future.succeededFuture(emptyList()));
+        when(mockConnectorOps.listAsync(anyString(), any(LabelSelector.class))).thenReturn(Future.succeededFuture(emptyList()));
 
         // Mock KafkaConnect ops
         when(mockConnectOps.get(NAMESPACE, NAME)).thenReturn(kc);
@@ -928,7 +928,7 @@ public class KafkaConnectBuildAssemblyOperatorOpenShiftTest {
         CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList> mockConnectorOps = supplier.kafkaConnectorOperator;
 
         // Mock KafkaConnector ops
-        when(mockConnectorOps.listAsync(anyString(), any(Optional.class))).thenReturn(Future.succeededFuture(emptyList()));
+        when(mockConnectorOps.listAsync(anyString(), any(LabelSelector.class))).thenReturn(Future.succeededFuture(emptyList()));
 
         // Mock KafkaConnect ops
         when(mockConnectOps.get(NAMESPACE, NAME)).thenReturn(kc);
@@ -1108,7 +1108,7 @@ public class KafkaConnectBuildAssemblyOperatorOpenShiftTest {
         CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList> mockConnectorOps = supplier.kafkaConnectorOperator;
 
         // Mock KafkaConnector ops
-        when(mockConnectorOps.listAsync(anyString(), any(Optional.class))).thenReturn(Future.succeededFuture(emptyList()));
+        when(mockConnectorOps.listAsync(anyString(), any(LabelSelector.class))).thenReturn(Future.succeededFuture(emptyList()));
 
         // Mock KafkaConnect ops
         when(mockConnectOps.get(NAMESPACE, NAME)).thenReturn(kc);
@@ -1312,7 +1312,7 @@ public class KafkaConnectBuildAssemblyOperatorOpenShiftTest {
         CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList> mockConnectorOps = supplier.kafkaConnectorOperator;
 
         // Mock KafkaConnector ops
-        when(mockConnectorOps.listAsync(anyString(), any(Optional.class))).thenReturn(Future.succeededFuture(emptyList()));
+        when(mockConnectorOps.listAsync(anyString(), any(LabelSelector.class))).thenReturn(Future.succeededFuture(emptyList()));
 
         // Mock KafkaConnect ops
         when(mockConnectOps.get(NAMESPACE, NAME)).thenReturn(kc);
@@ -1518,7 +1518,7 @@ public class KafkaConnectBuildAssemblyOperatorOpenShiftTest {
         CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList> mockConnectorOps = supplier.kafkaConnectorOperator;
 
         // Mock KafkaConnector ops
-        when(mockConnectorOps.listAsync(anyString(), any(Optional.class))).thenReturn(Future.succeededFuture(emptyList()));
+        when(mockConnectorOps.listAsync(anyString(), any(LabelSelector.class))).thenReturn(Future.succeededFuture(emptyList()));
 
         // Mock KafkaConnect ops
         when(mockConnectOps.get(NAMESPACE, NAME)).thenReturn(kc);

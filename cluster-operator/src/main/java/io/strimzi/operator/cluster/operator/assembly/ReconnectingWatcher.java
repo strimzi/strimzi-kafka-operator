@@ -12,7 +12,6 @@ import io.fabric8.kubernetes.client.WatcherException;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.operator.resource.AbstractWatchableNamespacedResourceOperator;
 
-import java.util.Optional;
 import java.util.function.BiConsumer;
 
 /**
@@ -67,7 +66,7 @@ public class ReconnectingWatcher<T extends HasMetadata> implements Watcher<T> {
      * @return  The created watch
      */
     private Watch createWatch() {
-        return resourceOperator.watch(namespace, Optional.ofNullable(selector), this);
+        return resourceOperator.watch(namespace, selector, this);
     }
 
     /**
