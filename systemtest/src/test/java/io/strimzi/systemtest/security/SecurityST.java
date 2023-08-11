@@ -1101,14 +1101,23 @@ class SecurityST extends AbstractST {
                     .withRenewalDays(1)
                     .withValidityDays(3)
                 .endClusterCa()
+                .editOrNewKafka()
+                    .addToConfig("default.replication.factor", 3)
+                    .addToConfig("min.insync.replicas", 2)
+                .endKafka()
             .endSpec()
             .build());
 
         resourceManager.createResourceWithWait(extensionContext,
             KafkaUserTemplates.tlsUser(testStorage).build(),
-            KafkaTopicTemplates.topic(testStorage).build()
+            KafkaTopicTemplates.topic(testStorage)
+                .editOrNewSpec()
+                    .withReplicas(3)
+                .endSpec()
+                .build()
         );
 
+        String producerAdditionConfiguration = "acks=all\n";
         KafkaClients kafkaClients = new KafkaClientsBuilder()
             .withTopicName(testStorage.getTopicName())
             .withMessageCount(testStorage.getMessageCount())
@@ -1117,6 +1126,7 @@ class SecurityST extends AbstractST {
             .withConsumerName(testStorage.getConsumerName())
             .withNamespaceName(testStorage.getNamespaceName())
             .withUsername(testStorage.getUsername())
+            .withAdditionalConfig(producerAdditionConfiguration)
             .build();
 
         resourceManager.createResourceWithWait(extensionContext, kafkaClients.producerTlsStrimzi(testStorage.getClusterName()), kafkaClients.consumerTlsStrimzi(testStorage.getClusterName()));
