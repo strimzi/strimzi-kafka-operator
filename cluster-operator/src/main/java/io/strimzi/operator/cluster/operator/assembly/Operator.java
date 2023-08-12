@@ -14,7 +14,6 @@ import io.vertx.core.Handler;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -107,7 +106,7 @@ public interface Operator {
      * A selector for narrowing the resources which this operator instance consumes to those whose labels match this selector.
      * @return A selector.
      */
-    default Optional<LabelSelector> selector() {
-        return Optional.empty();
+    default LabelSelector selector() {
+        return null;
     }
 }

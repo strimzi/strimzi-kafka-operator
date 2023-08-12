@@ -50,7 +50,6 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
@@ -74,7 +73,7 @@ public class StrimziPodSetController implements Runnable {
     private final PodOperator podOperator;
     private final StrimziPodSetOperator strimziPodSetOperator;
     private final ControllerMetricsHolder metrics;
-    private final Optional<LabelSelector> crSelector;
+    private final LabelSelector crSelector;
     private final String watchedNamespace;
 
     private final BlockingQueue<SimplifiedReconciliation> workQueue;
@@ -118,7 +117,7 @@ public class StrimziPodSetController implements Runnable {
     ) {
         this.podOperator = podOperator;
         this.strimziPodSetOperator = strimziPodSetOperator;
-        this.crSelector = (crSelectorLabels == null || crSelectorLabels.toMap().isEmpty()) ? Optional.empty() : Optional.of(new LabelSelector(null, crSelectorLabels.toMap()));
+        this.crSelector = (crSelectorLabels == null || crSelectorLabels.toMap().isEmpty()) ? null : new LabelSelector(null, crSelectorLabels.toMap());
         this.watchedNamespace = watchedNamespace;
         this.workQueue = new ArrayBlockingQueue<>(podSetControllerWorkQueueSize);
 
@@ -262,7 +261,7 @@ public class StrimziPodSetController implements Runnable {
                 .list()
                 .stream()
                 .filter(podSet -> podSet.getSpec() != null
-                        && Util.matchesSelector(Optional.ofNullable(podSet.getSpec().getSelector()), pod))
+                        && Util.matchesSelector(podSet.getSpec().getSelector(), pod))
                 .findFirst().orElse(null);
     }
 
@@ -517,7 +516,7 @@ public class StrimziPodSetController implements Runnable {
                 .namespace(reconciliation.namespace())
                 .list()
                 .stream()
-                .filter(pod -> Util.matchesSelector(Optional.of(selector), pod))
+                .filter(pod -> Util.matchesSelector(selector, pod))
                 .map(pod -> pod.getMetadata().getName())
                 .collect(Collectors.toSet());
         toBeDeleted.removeAll(desiredPodNames);

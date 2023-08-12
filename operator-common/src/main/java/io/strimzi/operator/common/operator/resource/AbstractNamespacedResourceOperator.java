@@ -28,7 +28,6 @@ import io.vertx.core.Vertx;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiPredicate;
 import java.util.stream.Collectors;
@@ -358,7 +357,7 @@ public abstract class AbstractNamespacedResourceOperator<C extends KubernetesCli
      *
      * @return A Future with a list of matching resources.
      */
-    public Future<List<T>> listAsync(String namespace, Optional<LabelSelector> selector) {
+    public Future<List<T>> listAsync(String namespace, LabelSelector selector) {
         return listAsync(applySelector(applyNamespace(namespace), selector));
     }
 

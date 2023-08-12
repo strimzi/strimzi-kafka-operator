@@ -37,7 +37,6 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.TimeZone;
@@ -443,12 +442,12 @@ public class Util {
      *
      * @return              True if the resource contains all labels from the LabelSelector or if the LabelSelector is empty
      */
-    public static boolean matchesSelector(Optional<LabelSelector> labelSelector, HasMetadata cr) {
-        if (labelSelector.isPresent()) {
+    public static boolean matchesSelector(LabelSelector labelSelector, HasMetadata cr) {
+        if (labelSelector != null && labelSelector.getMatchLabels() != null) {
             if (cr.getMetadata().getLabels() != null) {
-                return cr.getMetadata().getLabels().entrySet().containsAll(labelSelector.get().getMatchLabels().entrySet());
+                return cr.getMetadata().getLabels().entrySet().containsAll(labelSelector.getMatchLabels().entrySet());
             } else {
-                return labelSelector.get().getMatchLabels().isEmpty();
+                return labelSelector.getMatchLabels().isEmpty();
             }
         }
 

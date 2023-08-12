@@ -262,7 +262,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
         }
 
         if (scaledToZero)   {
-            return connectorOperator.listAsync(namespace, Optional.of(new LabelSelectorBuilder().addToMatchLabels(Labels.STRIMZI_CLUSTER_LABEL, connectName).build()))
+            return connectorOperator.listAsync(namespace, new LabelSelectorBuilder().addToMatchLabels(Labels.STRIMZI_CLUSTER_LABEL, connectName).build())
                     .compose(connectors -> Future.join(
                             connectors.stream().map(connector -> maybeUpdateConnectorStatus(reconciliation, connector, null, zeroReplicas(namespace, connectName)))
                                     .collect(Collectors.toList())
@@ -274,7 +274,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
 
         return Future.join(
                 apiClient.list(reconciliation, host, port),
-                connectorOperator.listAsync(namespace, Optional.of(new LabelSelectorBuilder().addToMatchLabels(Labels.STRIMZI_CLUSTER_LABEL, connectName).build())),
+                connectorOperator.listAsync(namespace, new LabelSelectorBuilder().addToMatchLabels(Labels.STRIMZI_CLUSTER_LABEL, connectName).build()),
                 apiClient.listConnectorPlugins(reconciliation, host, port),
                 apiClient.updateConnectLoggers(reconciliation, host, port, desiredLogging, defaultLogging)
         ).compose(cf -> {
@@ -302,7 +302,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
                 Promise<Void> connectorStatuses = Promise.promise();
                 LOGGER.warnCr(reconciliation, "Failed to connect to the REST API => trying to update the connector status");
 
-                connectorOperator.listAsync(namespace, Optional.of(new LabelSelectorBuilder().addToMatchLabels(Labels.STRIMZI_CLUSTER_LABEL, connectName).build()))
+                connectorOperator.listAsync(namespace, new LabelSelectorBuilder().addToMatchLabels(Labels.STRIMZI_CLUSTER_LABEL, connectName).build())
                         .compose(connectors -> Future.join(
                                 connectors.stream().map(connector -> maybeUpdateConnectorStatus(reconciliation, connector, null, error))
                                         .collect(Collectors.toList())

@@ -7,7 +7,6 @@ package io.strimzi.operator.common.operator.resource.concurrent;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Executor;
@@ -385,7 +384,7 @@ public abstract class AbstractNamespacedResourceOperator<C extends KubernetesCli
      *
      * @return A CompletionStage with a list of matching resources.
      */
-    public CompletionStage<List<T>> listAsync(String namespace, Optional<LabelSelector> selector) {
+    public CompletionStage<List<T>> listAsync(String namespace, LabelSelector selector) {
         return listAsync(applySelector(applyNamespace(namespace), selector));
     }
 

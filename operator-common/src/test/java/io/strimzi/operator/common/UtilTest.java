@@ -15,7 +15,6 @@ import org.junit.jupiter.api.Test;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 
 import static io.strimzi.operator.common.Util.matchesSelector;
 import static io.strimzi.operator.common.Util.parseMap;
@@ -46,8 +45,6 @@ public class UtilTest {
 
     @Test
     public void testParseMapEmptyString() {
-        String stringMap = "";
-
         Map<String, String> m = parseMap(null);
         assertThat(m, aMapWithSize(0));
     }
@@ -122,7 +119,8 @@ public class UtilTest {
 
         assertThat(Util.mergeLabelsOrAnnotations(base, overrides1, overrides2), is(expected));
         assertThat(Util.mergeLabelsOrAnnotations(base, overrides1, null, overrides2), is(expected));
-        assertThat(Util.mergeLabelsOrAnnotations(base, null), is(base));
+        assertThat(Util.mergeLabelsOrAnnotations(base, (Map<String, String>) null), is(base));
+        assertThat(Util.mergeLabelsOrAnnotations(base, (Map<String, String>[]) null), is(base));
         assertThat(Util.mergeLabelsOrAnnotations(base), is(base));
         assertThat(Util.mergeLabelsOrAnnotations(null, overrides2), is(overrides2));
         assertThrows(InvalidResourceException.class, () -> Util.mergeLabelsOrAnnotations(base, forbiddenOverrides));
@@ -156,37 +154,37 @@ public class UtilTest {
                 .build();
 
         // Resources without any labels
-        Optional<LabelSelector> selector = Optional.empty();
+        LabelSelector selector = null;
         assertThat(matchesSelector(selector, testResource), is(true));
 
-        selector = Optional.of(new LabelSelectorBuilder().withMatchLabels(emptyMap()).build());
+        selector = new LabelSelectorBuilder().withMatchLabels(emptyMap()).build();
         assertThat(matchesSelector(selector, testResource), is(true));
 
-        selector = Optional.of(new LabelSelectorBuilder().withMatchLabels(Map.of("label2", "value2")).build());
+        selector = new LabelSelectorBuilder().withMatchLabels(Map.of("label2", "value2")).build();
         assertThat(matchesSelector(selector, testResource), is(false));
 
         // Resources with Labels
         testResource.getMetadata().setLabels(Map.of("label1", "value1", "label2", "value2"));
 
-        selector = Optional.empty();
+        selector = null;
         assertThat(matchesSelector(selector, testResource), is(true));
 
-        selector = Optional.of(new LabelSelectorBuilder().withMatchLabels(emptyMap()).build());
+        selector = new LabelSelectorBuilder().withMatchLabels(emptyMap()).build();
         assertThat(matchesSelector(selector, testResource), is(true));
 
-        selector = Optional.of(new LabelSelectorBuilder().withMatchLabels(Map.of("label2", "value2")).build());
+        selector = new LabelSelectorBuilder().withMatchLabels(Map.of("label2", "value2")).build();
         assertThat(matchesSelector(selector, testResource), is(true));
 
-        selector = Optional.of(new LabelSelectorBuilder().withMatchLabels(Map.of("label2", "value2", "label1", "value1")).build());
+        selector = new LabelSelectorBuilder().withMatchLabels(Map.of("label2", "value2", "label1", "value1")).build();
         assertThat(matchesSelector(selector, testResource), is(true));
 
-        selector = Optional.of(new LabelSelectorBuilder().withMatchLabels(Map.of("label2", "value1")).build());
+        selector = new LabelSelectorBuilder().withMatchLabels(Map.of("label2", "value1")).build();
         assertThat(matchesSelector(selector, testResource), is(false));
 
-        selector = Optional.of(new LabelSelectorBuilder().withMatchLabels(Map.of("label3", "value3")).build());
+        selector = new LabelSelectorBuilder().withMatchLabels(Map.of("label3", "value3")).build();
         assertThat(matchesSelector(selector, testResource), is(false));
 
-        selector = Optional.of(new LabelSelectorBuilder().withMatchLabels(Map.of("label2", "value2", "label1", "value1", "label3", "value3")).build());
+        selector = new LabelSelectorBuilder().withMatchLabels(Map.of("label2", "value2", "label1", "value1", "label3", "value3")).build();
         assertThat(matchesSelector(selector, testResource), is(false));
     }
 }
