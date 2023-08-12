@@ -1233,29 +1233,19 @@ public class KafkaBridgeClusterTest {
         assertThat(cont.getReadinessProbe().getTimeoutSeconds(), is(32));
     }
 
+    @ParallelTest
     public void testOpenTelemetryTracingConfiguration() {
-        testTracingConfiguration(OpenTelemetryTracing.TYPE_OPENTELEMETRY);
-    }
-
-    private void testTracingConfiguration(String type) {
-
-        KafkaBridgeBuilder builder = new KafkaBridgeBuilder(this.resource);
-        switch (type) {
-            case OpenTelemetryTracing.TYPE_OPENTELEMETRY:
-                builder.editSpec()
-                            .withTracing(new OpenTelemetryTracing())
-                        .endSpec();
-                break;
-            default:
-                throw new IllegalArgumentException("The '" + type + "' is not a valid tracing type");
-        }
+        KafkaBridgeBuilder builder = new KafkaBridgeBuilder(this.resource)
+                .editSpec()
+                    .withTracing(new OpenTelemetryTracing())
+                .endSpec();
         KafkaBridge resource = builder.build();
 
         KafkaBridgeCluster kb = KafkaBridgeCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, SHARED_ENV_PROVIDER);
         Deployment deployment = kb.generateDeployment(new HashMap<>(), true, null, null);
         Container container = deployment.getSpec().getTemplate().getSpec().getContainers().get(0);
 
-        assertThat(io.strimzi.operator.cluster.TestUtils.containerEnvVars(container).get(KafkaBridgeCluster.ENV_VAR_STRIMZI_TRACING), is(type));
+        assertThat(io.strimzi.operator.cluster.TestUtils.containerEnvVars(container).get(KafkaBridgeCluster.ENV_VAR_STRIMZI_TRACING), is(OpenTelemetryTracing.TYPE_OPENTELEMETRY));
     }
 
     @ParallelTest

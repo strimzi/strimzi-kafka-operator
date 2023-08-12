@@ -34,7 +34,8 @@ public abstract class Tracing implements UnknownPropertyPreserving, Serializable
     private Map<String, Object> additionalProperties;
 
     @Description("Type of the tracing used. " +
-            "Currently the only supported type is `opentelemetry` for OpenTelemetry tracing.")
+            "Currently the only supported type is `opentelemetry` for OpenTelemetry tracing. " +
+            "As of Strimzi 0.37.0, `jaeger` type is not supported anymore and this option is ignored.")
     public abstract String getType();
 
     @Override

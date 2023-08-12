@@ -1453,32 +1453,20 @@ public class KafkaConnectClusterTest {
 
     @ParallelTest
     public void testOpenTelemetryTracing() {
-        testTracing(OpenTelemetryTracing.TYPE_OPENTELEMETRY,
-                OpenTelemetryTracing.CONSUMER_INTERCEPTOR_CLASS_NAME,
-                OpenTelemetryTracing.PRODUCER_INTERCEPTOR_CLASS_NAME);
-    }
-
-    public void testTracing(String type, String consumerInterceptor, String producerInterceptor) {
-        KafkaConnectBuilder builder = new KafkaConnectBuilder(this.resource);
-        switch (type) {
-            case OpenTelemetryTracing.TYPE_OPENTELEMETRY:
-                builder.editSpec()
-                            .withNewOpenTelemetryTracing()
-                            .endOpenTelemetryTracing()
-                        .endSpec();
-                break;
-            default:
-                throw new IllegalArgumentException("The '" + type + "' is not a valid tracing type");
-        }
+        KafkaConnectBuilder builder = new KafkaConnectBuilder(this.resource)
+                .editSpec()
+                    .withNewOpenTelemetryTracing()
+                    .endOpenTelemetryTracing()
+                .endSpec();
         KafkaConnect resource = builder.build();
 
         KafkaConnectCluster kc = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS, SHARED_ENV_PROVIDER);
 
         Deployment dep = kc.generateDeployment(replicas, null, Collections.EMPTY_MAP, true, null, null, null);
         Container cont = dep.getSpec().getTemplate().getSpec().getContainers().get(0);
-        assertThat(cont.getEnv().stream().filter(env -> KafkaConnectCluster.ENV_VAR_STRIMZI_TRACING.equals(env.getName())).map(EnvVar::getValue).findFirst().orElse("").equals(type), is(true));
-        assertThat(cont.getEnv().stream().filter(env -> KafkaConnectCluster.ENV_VAR_KAFKA_CONNECT_CONFIGURATION.equals(env.getName())).map(EnvVar::getValue).findFirst().orElse("").contains("consumer.interceptor.classes=" + consumerInterceptor), is(true));
-        assertThat(cont.getEnv().stream().filter(env -> KafkaConnectCluster.ENV_VAR_KAFKA_CONNECT_CONFIGURATION.equals(env.getName())).map(EnvVar::getValue).findFirst().orElse("").contains("producer.interceptor.classes=" + producerInterceptor), is(true));
+        assertThat(cont.getEnv().stream().filter(env -> KafkaConnectCluster.ENV_VAR_STRIMZI_TRACING.equals(env.getName())).map(EnvVar::getValue).findFirst().orElse("").equals(OpenTelemetryTracing.TYPE_OPENTELEMETRY), is(true));
+        assertThat(cont.getEnv().stream().filter(env -> KafkaConnectCluster.ENV_VAR_KAFKA_CONNECT_CONFIGURATION.equals(env.getName())).map(EnvVar::getValue).findFirst().orElse("").contains("consumer.interceptor.classes=" + OpenTelemetryTracing.CONSUMER_INTERCEPTOR_CLASS_NAME), is(true));
+        assertThat(cont.getEnv().stream().filter(env -> KafkaConnectCluster.ENV_VAR_KAFKA_CONNECT_CONFIGURATION.equals(env.getName())).map(EnvVar::getValue).findFirst().orElse("").contains("producer.interceptor.classes=" + OpenTelemetryTracing.PRODUCER_INTERCEPTOR_CLASS_NAME), is(true));
     }
 
     @ParallelTest
