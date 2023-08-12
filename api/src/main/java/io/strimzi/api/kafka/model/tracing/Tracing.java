@@ -21,7 +21,9 @@ import java.util.Map;
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME,
         include = JsonTypeInfo.As.EXISTING_PROPERTY,
         property = "type")
+@SuppressWarnings("deprecation") // Jaeger Tracing is deprecated
 @JsonSubTypes({
+    @JsonSubTypes.Type(name = JaegerTracing.TYPE_JAEGER, value = JaegerTracing.class),
     @JsonSubTypes.Type(name = OpenTelemetryTracing.TYPE_OPENTELEMETRY, value = OpenTelemetryTracing.class),
 })
 @JsonInclude(JsonInclude.Include.NON_NULL)
