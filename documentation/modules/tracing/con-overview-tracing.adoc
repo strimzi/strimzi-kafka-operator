@@ -6,9 +6,9 @@
 = Tracing options
 
 [role="_abstract"]
-Use OpenTelemetry or OpenTracing (deprecated) with the Jaeger tracing system.
+Use OpenTelemetry with the Jaeger tracing system.
 
-OpenTelemetry and OpenTracing provide API specifications that are independent from the tracing or monitoring system.
+OpenTelemetry provides an API specification that is independent from the tracing or monitoring system.
 
 You use the APIs to instrument application code for tracing. 
 
@@ -17,8 +17,6 @@ You use the APIs to instrument application code for tracing.
 * Traces are composed of _spans_ that define specific units of work over time.
 
 Jaeger is a tracing system for microservices-based distributed systems.
-
-* Jaeger implements the tracing APIs and provides client libraries for instrumentation.
 
 * The Jaeger user interface allows you to query, filter, and analyze trace data.
 
@@ -30,4 +28,3 @@ image:image_con-overview-distributed-tracing.png[The Jaeger user interface showi
 
 * {JaegerDocs}
 * {OpenTelemetryDocs}
-* {OpenTracingDocs}

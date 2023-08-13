@@ -19,7 +19,7 @@ To set up distributed tracing, follow these procedures in order:
 
 * Instrument clients with tracers:
 
-** xref:proc-instrumenting-producers-consumers-for-opentracing-{context}[Instrument producers and consumers for tracing]
+** xref:proc-instrumenting-producers-consumers-for-tracing-{context}[Instrument producers and consumers for tracing]
 
 ** xref:proc-instrumenting-kafka-streams-with-tracers-{context}[Instrument Kafka Streams applications for tracing]
 
@@ -39,7 +39,7 @@ include::../../modules/tracing/proc-enabling-tracing-in-connect-mirror-maker-bri
 
 include::../../modules/tracing/proc-configuring-tracers-kafka-clients.adoc[leveloffset=+1]
 
-include::../../modules/tracing/proc-instrumenting-producers-consumers-opentracing.adoc[leveloffset=+1]
+include::../../modules/tracing/proc-instrumenting-producers-consumers-tracing.adoc[leveloffset=+1]
 
 include::../../modules/tracing/proc-instrumenting-kafka-streams-with-tracers.adoc[leveloffset=+1]
 
