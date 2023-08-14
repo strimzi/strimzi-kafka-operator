@@ -20,11 +20,7 @@ You add tracing configuration using `spec.template` properties.
 
 You enable tracing by specifying a tracing type using the `spec.tracing.type` property:
 
-`opentelemetry`:: Specify `type: opentelemetry` to use OpenTelemetry. By Default, OpenTelemetry uses the OTLP (OpenTelemetry Protocol) exporter and endpoint to get trace data. You can specify other tracing systems supported by OpenTelemetry, including Jaeger tracing. To do this, you change the OpenTelemetry exporter and endpoint in the tracing configuration.  
+`opentelemetry`:: Specify `type: opentelemetry` to use OpenTelemetry. By Default, OpenTelemetry uses the OTLP (OpenTelemetry Protocol) exporter and endpoint to get trace data. You can specify other tracing systems supported by OpenTelemetry, including Jaeger tracing. To do this, you change the OpenTelemetry exporter and endpoint in the tracing configuration.
 
-[NOTE]
-====
-Support for `type: jaeger` tracing is removed.
-The Jaeger clients are now retired and the OpenTracing project archived.
-Please use OpenTelemetry instead.
-====
+CAUTION: Strimzi no longer supports OpenTracing.
+If you were previously using OpenTracing with the `bridge.tracing=jaeger` option, we encourage you to transition to using OpenTelemetry instead.
