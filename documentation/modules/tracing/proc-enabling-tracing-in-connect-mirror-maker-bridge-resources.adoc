@@ -127,6 +127,7 @@ spec:
     type: opentelemetry
 #...
 ----
+--
 
 . Create or update the resource:
 +
