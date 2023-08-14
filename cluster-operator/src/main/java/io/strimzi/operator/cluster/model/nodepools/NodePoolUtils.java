@@ -122,7 +122,7 @@ public class NodePoolUtils {
         // If there are no node pools, the rest of the validation makes no sense, so we throw an exception right away
         if (nodePools.isEmpty()
                 || nodePools.stream().noneMatch(np -> np.getSpec().getReplicas() > 0))    {
-            throw new InvalidResourceException("KafkaNodePools are enabled, but the KafkaNodePool for Kafka cluster " + kafka.getMetadata().getName() + " either don't exists or have 0 replicas. " +
+            throw new InvalidResourceException("KafkaNodePools are enabled, but KafkaNodePools for Kafka cluster " + kafka.getMetadata().getName() + " either don't exist or have 0 replicas. " +
                     "Please make sure at least one KafkaNodePool resource exists, is in the same namespace as the Kafka resource, has at least one replica, and has the strimzi.io/cluster label set to the name of the Kafka resource.");
         } else {
             List<String> errors = new ArrayList<>();
