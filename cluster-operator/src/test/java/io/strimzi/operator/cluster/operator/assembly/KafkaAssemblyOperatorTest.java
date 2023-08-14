@@ -6,6 +6,7 @@ package io.strimzi.operator.cluster.operator.assembly;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
+import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaim;
 import io.fabric8.kubernetes.api.model.PersistentVolumeClaimBuilder;
 import io.fabric8.kubernetes.api.model.Pod;
@@ -110,7 +111,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.TimeUnit;
@@ -132,6 +132,7 @@ import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.when;
 
@@ -1233,7 +1234,6 @@ public class KafkaAssemblyOperatorTest {
             })));
     }
 
-    @SuppressWarnings("unchecked")
     @ParameterizedTest
     @MethodSource("data")
     @Timeout(value = 2, timeUnit = TimeUnit.MINUTES)
@@ -1253,7 +1253,7 @@ public class KafkaAssemblyOperatorTest {
 
         Kafka foo = getKafkaAssembly("foo");
         Kafka bar = getKafkaAssembly("bar");
-        when(mockKafkaOps.listAsync(eq(kafkaNamespace), any(Optional.class))).thenReturn(
+        when(mockKafkaOps.listAsync(eq(kafkaNamespace), isNull(LabelSelector.class))).thenReturn(
             Future.succeededFuture(asList(foo, bar))
         );
         // when requested Custom Resource for a specific Kafka cluster
@@ -1287,7 +1287,6 @@ public class KafkaAssemblyOperatorTest {
         ops.reconcileAll("test", kafkaNamespace, context.succeeding(v -> completeTest.flag()));
     }
 
-    @SuppressWarnings("unchecked")
     @ParameterizedTest
     @MethodSource("data")
     @Timeout(value = 2, timeUnit = TimeUnit.MINUTES)
@@ -1303,7 +1302,7 @@ public class KafkaAssemblyOperatorTest {
         foo.getMetadata().setNamespace("namespace1");
         Kafka bar = getKafkaAssembly("bar");
         bar.getMetadata().setNamespace("namespace2");
-        when(mockKafkaOps.listAsync(eq("*"), any(Optional.class))).thenReturn(
+        when(mockKafkaOps.listAsync(eq("*"), isNull(LabelSelector.class))).thenReturn(
                 Future.succeededFuture(asList(foo, bar))
         );
         // when requested Custom Resource for a specific Kafka cluster

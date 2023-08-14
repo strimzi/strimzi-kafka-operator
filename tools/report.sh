@@ -250,11 +250,13 @@ if [[ -n $CO_DEPLOY ]]; then
   echo "    $CO_DEPLOY"
   $KUBE_CLIENT get deploy strimzi-cluster-operator -o yaml -n "$NAMESPACE" > "$OUT_DIR"/reports/deployments/cluster-operator.yaml
   $KUBE_CLIENT get po -l strimzi.io/kind=cluster-operator -o yaml -n "$NAMESPACE" > "$OUT_DIR"/reports/pods/cluster-operator.yaml
-  CO_POD=$($KUBE_CLIENT get po -l strimzi.io/kind=cluster-operator -o name -n "$NAMESPACE" --ignore-not-found)
-  if [[ -n $CO_POD ]]; then
-    echo "    $CO_POD"
-    CO_POD=$(echo "$CO_POD" | cut -d "/" -f 2) && readonly CO_POD
-    get_pod_logs "$CO_POD"
+  mapfile -t CO_PODS < <($KUBE_CLIENT get po -l strimzi.io/kind=cluster-operator -o name -n "$NAMESPACE" --ignore-not-found)
+  if [[ ${#CO_PODS[@]} -ne 0 ]]; then
+    for pod in "${CO_PODS[@]}"; do
+      echo "    $pod"
+      CO_POD=$(echo "$pod" | cut -d "/" -f 2)
+      get_pod_logs "$CO_POD"
+    done
   fi
 fi
 

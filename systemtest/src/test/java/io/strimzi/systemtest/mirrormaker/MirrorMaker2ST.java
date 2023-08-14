@@ -22,6 +22,7 @@ import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.KRaftNotSupported;
+import io.strimzi.systemtest.annotations.KRaftWithoutUTONotSupported;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
@@ -89,7 +90,7 @@ class MirrorMaker2ST extends AbstractST {
 
     @ParallelNamespaceTest
     void testMirrorMaker2(ExtensionContext extensionContext) {
-        final TestStorage testStorage = new TestStorage(extensionContext, clusterOperator.getDeploymentNamespace());
+        final TestStorage testStorage = new TestStorage(extensionContext, Constants.TEST_SUITE_NAMESPACE);
 
         String kafkaClusterSourceName = testStorage.getClusterName() + "-source";
         String kafkaClusterTargetName = testStorage.getClusterName() + "-target";
@@ -190,7 +191,7 @@ class MirrorMaker2ST extends AbstractST {
     @ParallelNamespaceTest
     @Tag(ACCEPTANCE)
     void testMirrorMaker2TlsAndTlsClientAuth(ExtensionContext extensionContext) {
-        final TestStorage testStorage = new TestStorage(extensionContext, clusterOperator.getDeploymentNamespace());
+        final TestStorage testStorage = new TestStorage(extensionContext, Constants.TEST_SUITE_NAMESPACE);
 
         String kafkaClusterSourceName = testStorage.getClusterName() + "-source";
         String kafkaClusterTargetName = testStorage.getClusterName() + "-target";
@@ -320,9 +321,9 @@ class MirrorMaker2ST extends AbstractST {
      * Test mirroring messages by MirrorMaker 2 over tls transport using scram-sha-512 auth
      */
     @ParallelNamespaceTest
-    @KRaftNotSupported("TopicOperator is not supported by KRaft mode and is used in this test class")
+    @KRaftWithoutUTONotSupported
     void testMirrorMaker2TlsAndScramSha512Auth(ExtensionContext extensionContext) {
-        final TestStorage testStorage = new TestStorage(extensionContext, clusterOperator.getDeploymentNamespace());
+        final TestStorage testStorage = new TestStorage(extensionContext, Constants.TEST_SUITE_NAMESPACE);
 
         String kafkaClusterSourceName = testStorage.getClusterName() + "-source";
         String kafkaClusterTargetName = testStorage.getClusterName() + "-target";
@@ -440,17 +441,20 @@ class MirrorMaker2ST extends AbstractST {
         ClientUtils.waitForConsumerClientSuccess(testStorage);
         LOGGER.info("Messages successfully mirrored");
 
-        KafkaTopicUtils.waitForKafkaTopicCreation(testStorage.getNamespaceName(), sourceMirroredTopicName);
-        KafkaTopic mirroredTopic = KafkaTopicResource.kafkaTopicClient().inNamespace(testStorage.getNamespaceName()).withName(sourceMirroredTopicName).get();
+        // https://github.com/strimzi/strimzi-kafka-operator/issues/8864
+        if (!Environment.isUnidirectionalTopicOperatorEnabled()) {
+            KafkaTopicUtils.waitForKafkaTopicCreation(testStorage.getNamespaceName(), sourceMirroredTopicName);
+            KafkaTopic mirroredTopic = KafkaTopicResource.kafkaTopicClient().inNamespace(testStorage.getNamespaceName()).withName(sourceMirroredTopicName).get();
 
-        assertThat(mirroredTopic.getSpec().getPartitions(), is(3));
-        assertThat(mirroredTopic.getMetadata().getLabels().get(Labels.STRIMZI_CLUSTER_LABEL), is(kafkaClusterTargetName));
+            assertThat(mirroredTopic.getSpec().getPartitions(), is(3));
+            assertThat(mirroredTopic.getMetadata().getLabels().get(Labels.STRIMZI_CLUSTER_LABEL), is(kafkaClusterTargetName));
+        }
     }
 
     @ParallelNamespaceTest
     @Tag(COMPONENT_SCALING)
     void testScaleMirrorMaker2UpAndDownToZero(ExtensionContext extensionContext) {
-        final TestStorage testStorage = new TestStorage(extensionContext, clusterOperator.getDeploymentNamespace());
+        final TestStorage testStorage = new TestStorage(extensionContext, Constants.TEST_SUITE_NAMESPACE);
 
         String kafkaClusterSourceName = testStorage.getClusterName();
         String kafkaClusterTargetName = testStorage.getClusterName() + "-target";
@@ -521,7 +525,7 @@ class MirrorMaker2ST extends AbstractST {
 
     @ParallelNamespaceTest
     void testMirrorMaker2CorrectlyMirrorsHeaders(ExtensionContext extensionContext) {
-        final TestStorage testStorage = new TestStorage(extensionContext, clusterOperator.getDeploymentNamespace());
+        final TestStorage testStorage = new TestStorage(extensionContext, Constants.TEST_SUITE_NAMESPACE);
 
         String kafkaClusterSourceName = testStorage.getClusterName() + "-source";
         String kafkaClusterTargetName = testStorage.getClusterName() + "-target";
@@ -582,7 +586,7 @@ class MirrorMaker2ST extends AbstractST {
      */
     @ParallelNamespaceTest
     void testIdentityReplicationPolicy(ExtensionContext extensionContext) {
-        final TestStorage testStorage = new TestStorage(extensionContext, clusterOperator.getDeploymentNamespace());
+        final TestStorage testStorage = new TestStorage(extensionContext, Constants.TEST_SUITE_NAMESPACE);
 
         String kafkaClusterSourceName = testStorage.getClusterName() + "-source";
         String kafkaClusterTargetName = testStorage.getClusterName() + "-target";
@@ -652,7 +656,7 @@ class MirrorMaker2ST extends AbstractST {
      */
     @ParallelNamespaceTest
     void testStrimziIdentityReplicationPolicy(ExtensionContext extensionContext) {
-        final TestStorage testStorage = new TestStorage(extensionContext, clusterOperator.getDeploymentNamespace());
+        final TestStorage testStorage = new TestStorage(extensionContext, Constants.TEST_SUITE_NAMESPACE);
 
         String kafkaClusterSourceName = testStorage.getClusterName() + "-source";
         String kafkaClusterTargetName = testStorage.getClusterName() + "-target";
@@ -716,7 +720,7 @@ class MirrorMaker2ST extends AbstractST {
 
     @ParallelNamespaceTest
     void testConfigureDeploymentStrategy(ExtensionContext extensionContext) {
-        final TestStorage testStorage = new TestStorage(extensionContext, clusterOperator.getDeploymentNamespace());
+        final TestStorage testStorage = new TestStorage(extensionContext, Constants.TEST_SUITE_NAMESPACE);
 
         String kafkaClusterSourceName = testStorage.getClusterName() + "-source";
         String kafkaClusterTargetName = testStorage.getClusterName() + "-target";
@@ -775,7 +779,7 @@ class MirrorMaker2ST extends AbstractST {
     @ParallelNamespaceTest
     @KRaftNotSupported("This the is failing with KRaft and need more investigation")
     void testRestoreOffsetsInConsumerGroup(ExtensionContext extensionContext) {
-        final TestStorage testStorage = new TestStorage(extensionContext, clusterOperator.getDeploymentNamespace());
+        final TestStorage testStorage = new TestStorage(extensionContext, Constants.TEST_SUITE_NAMESPACE);
 
         final String kafkaClusterSourceName = testStorage.getClusterName() + "-source";
         final String kafkaClusterTargetName = testStorage.getClusterName() + "-target";
@@ -921,7 +925,7 @@ class MirrorMaker2ST extends AbstractST {
 
     @ParallelNamespaceTest
     void testKafkaMirrorMaker2ReflectsConnectorsState(ExtensionContext extensionContext) {
-        final TestStorage testStorage = new TestStorage(extensionContext, clusterOperator.getDeploymentNamespace());
+        final TestStorage testStorage = new TestStorage(extensionContext, Constants.TEST_SUITE_NAMESPACE);
 
         String kafkaClusterSourceName = testStorage.getClusterName() + "-source";
         String kafkaClusterTargetName = testStorage.getClusterName() + "-target";
@@ -958,7 +962,7 @@ class MirrorMaker2ST extends AbstractST {
      * while user Scram passwords, CA cluster and clients certificates are changed.
      */
     @ParallelNamespaceTest
-    @KRaftNotSupported("TopicOperator is not supported by KRaft mode and is used in this test class")
+    @KRaftWithoutUTONotSupported
     @SuppressWarnings({"checkstyle:MethodLength"})
     void testKMM2RollAfterSecretsCertsUpdateScramSha(ExtensionContext extensionContext) {
         TestStorage testStorage = new TestStorage(extensionContext);
@@ -1089,11 +1093,11 @@ class MirrorMaker2ST extends AbstractST {
 
         LOGGER.info("Changing KafkaUser sha-password on MirrorMaker2 Source and make sure it rolled");
 
-        KafkaUserUtils.modifyKafkaUserPasswordWithNewSecret(testStorage.getNamespaceName(), kafkaUserSourceName, customSecretSource, "c291cmNlLXBhc3N3b3Jk", extensionContext);
+        KafkaUserUtils.modifyKafkaUserPasswordWithNewSecret(testStorage.getNamespaceName(), kafkaUserSourceName, customSecretSource, "UjhlTjJhSHhQN1lzVDZmQ2pNMWRRb1d6VnBYNWJHa1U=", extensionContext);
         RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), mmSelector, 1, mmSnapshot);
         mmSnapshot = PodUtils.podSnapshot(testStorage.getNamespaceName(), mmSelector);
 
-        KafkaUserUtils.modifyKafkaUserPasswordWithNewSecret(testStorage.getNamespaceName(), kafkaUserTargetName, customSecretTarget, "dGFyZ2V0LXBhc3N3b3Jk", extensionContext);
+        KafkaUserUtils.modifyKafkaUserPasswordWithNewSecret(testStorage.getNamespaceName(), kafkaUserTargetName, customSecretTarget, "VDZmQ2pNMWRRb1d6VnBYNWJHa1VSOGVOMmFIeFA3WXM=", extensionContext);
         RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), mmSelector, 1, mmSnapshot);
 
         RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), mmSelector, 1, mmSnapshot);
@@ -1360,7 +1364,7 @@ class MirrorMaker2ST extends AbstractST {
     void setup(ExtensionContext extensionContext) {
         clusterOperator = new SetupClusterOperator.SetupClusterOperatorBuilder()
             .withExtensionContext(extensionContext)
-            .withNamespace(Constants.INFRA_NAMESPACE)
+            .withNamespace(Constants.CO_NAMESPACE)
             .withWatchingNamespaces(Constants.WATCH_ALL_NAMESPACES)
             .withOperationTimeout(Constants.CO_OPERATION_TIMEOUT_SHORT)
             .createInstallation()

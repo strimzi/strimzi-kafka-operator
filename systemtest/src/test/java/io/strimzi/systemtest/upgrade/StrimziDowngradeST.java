@@ -4,6 +4,7 @@
  */
 package io.strimzi.systemtest.upgrade;
 
+import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.annotations.KRaftNotSupported;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.utils.StUtils;
@@ -50,7 +51,7 @@ public class StrimziDowngradeST extends AbstractUpgradeST {
 
     @Test
     void testDowngradeOfKafkaConnectAndKafkaConnector(final ExtensionContext extensionContext) throws IOException {
-        final TestStorage testStorage = new TestStorage(extensionContext);
+        final TestStorage testStorage = new TestStorage(extensionContext, Constants.CO_NAMESPACE);
         final BundleVersionModificationData bundleDowngradeDataWithFeatureGates = bundleDowngradeMetadata.stream()
                 .filter(bundleMetadata -> bundleMetadata.getFeatureGatesBefore() != null && !bundleMetadata.getFeatureGatesBefore().isEmpty() ||
                         bundleMetadata.getFeatureGatesAfter() != null && !bundleMetadata.getFeatureGatesAfter().isEmpty()).toList().get(0);
@@ -67,29 +68,29 @@ public class StrimziDowngradeST extends AbstractUpgradeST {
         // Setup env
         // We support downgrade only when you didn't upgrade to new inter.broker.protocol.version and log.message.format.version
         // https://strimzi.io/docs/operators/latest/full/deploying.html#con-target-downgrade-version-str
-        setupEnvAndUpgradeClusterOperator(extensionContext, downgradeData, testStorage, testUpgradeKafkaVersion, clusterOperator.getDeploymentNamespace());
+        setupEnvAndUpgradeClusterOperator(extensionContext, downgradeData, testStorage, testUpgradeKafkaVersion, Constants.CO_NAMESPACE);
         logPodImages(clusterName);
         // Downgrade CO
-        changeClusterOperator(downgradeData, clusterOperator.getDeploymentNamespace(), extensionContext);
+        changeClusterOperator(downgradeData, Constants.CO_NAMESPACE, extensionContext);
         // Wait for Kafka cluster rolling update
         waitForKafkaClusterRollingUpdate();
         logPodImages(clusterName);
         // Verify that pods are stable
-        PodUtils.verifyThatRunningPodsAreStable(clusterOperator.getDeploymentNamespace(), clusterName);
-        checkAllImages(downgradeData, clusterOperator.getDeploymentNamespace());
+        PodUtils.verifyThatRunningPodsAreStable(Constants.CO_NAMESPACE, clusterName);
+        checkAllImages(downgradeData, Constants.CO_NAMESPACE);
         // Verify upgrade
-        verifyProcedure(downgradeData, testStorage.getProducerName(), testStorage.getConsumerName(), clusterOperator.getDeploymentNamespace());
+        verifyProcedure(downgradeData, testStorage.getProducerName(), testStorage.getConsumerName(), Constants.CO_NAMESPACE);
     }
 
     @BeforeEach
     void setupEnvironment() {
-        cluster.createNamespace(clusterOperator.getDeploymentNamespace());
-        StUtils.copyImagePullSecrets(clusterOperator.getDeploymentNamespace());
+        cluster.createNamespace(Constants.CO_NAMESPACE);
+        StUtils.copyImagePullSecrets(Constants.CO_NAMESPACE);
     }
 
     @AfterEach
     void afterEach() {
-        deleteInstalledYamls(coDir, clusterOperator.getDeploymentNamespace());
+        deleteInstalledYamls(coDir, Constants.CO_NAMESPACE);
         cluster.deleteNamespaces();
     }
 }

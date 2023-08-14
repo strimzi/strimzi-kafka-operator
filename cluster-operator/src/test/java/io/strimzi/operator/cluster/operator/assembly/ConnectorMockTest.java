@@ -8,7 +8,6 @@ import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.StatusDetails;
 import io.fabric8.kubernetes.client.CustomResource;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.fabric8.kubernetes.client.Watch;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.dsl.base.PatchContext;
 import io.fabric8.kubernetes.client.dsl.base.PatchType;
@@ -66,7 +65,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Predicate;
@@ -118,8 +116,9 @@ public class ConnectorMockTest {
     @SuppressWarnings("unused")
     private KubernetesClient client;
     private MockKube2 mockKube;
-    private Watch connectWatch;
-    private Watch connectorWatch;
+    private StrimziPodSetController podSetController;
+    private ReconnectingWatcher<KafkaConnect> connectWatch;
+    private ReconnectingWatcher<KafkaConnector> connectorWatch;
     private KafkaConnectApi api;
     private HashMap<String, ConnectorState> runningConnectors;
     private KafkaConnectAssemblyOperator kafkaConnectOperator;
@@ -155,24 +154,29 @@ public class ConnectorMockTest {
 
         // Configure the Kubernetes Mock
         mockKube = new MockKube2.MockKube2Builder(client)
+                .withKafkaCrd()
                 .withKafkaConnectCrd()
                 .withKafkaConnectorCrd()
-                .withDeploymentController()
+                .withPodController()
                 .build();
         mockKube.start();
 
         PlatformFeaturesAvailability pfa = new PlatformFeaturesAvailability(false, KubernetesVersion.MINIMAL_SUPPORTED_VERSION);
-        setupMockConnectAPI();
-
         metricsProvider = ResourceUtils.metricsProvider();
         ResourceOperatorSupplier ros = new ResourceOperatorSupplier(vertx, client,
                 new ZookeeperLeaderFinder(vertx,
-                    // Retry up to 3 times (4 attempts), with overall max delay of 35000ms
-                    () -> new BackOff(5_000, 2, 4)),
+                        // Retry up to 3 times (4 attempts), with overall max delay of 35000ms
+                        () -> new BackOff(5_000, 2, 4)),
                 new DefaultAdminClientProvider(),
                 new DefaultZookeeperScalerProvider(),
                 metricsProvider,
                 pfa, 10_000);
+
+        podSetController = new StrimziPodSetController(NAMESPACE, Labels.EMPTY, ros.kafkaOperator, ros.connectOperator, ros.mirrorMaker2Operator, ros.strimziPodSetOperator, ros.podOperations, ros.metricsProvider, Integer.parseInt(ClusterOperatorConfig.POD_SET_CONTROLLER_WORK_QUEUE_SIZE.defaultValue()));
+        podSetController.start();
+
+        setupMockConnectAPI();
+
         ClusterOperatorConfig config = ClusterOperatorConfig.buildFromMap(map(
             ClusterOperatorConfig.STRIMZI_KAFKA_IMAGES, KafkaVersionTestUtils.getKafkaImagesEnvVarString(),
             ClusterOperatorConfig.STRIMZI_KAFKA_CONNECT_IMAGES, KafkaVersionTestUtils.getKafkaConnectImagesEnvVarString(),
@@ -187,14 +191,13 @@ public class ConnectorMockTest {
 
         Checkpoint async = testContext.checkpoint();
         // Fail test if watcher closes for any reason
-        kafkaConnectOperator.createWatch(NAMESPACE, e -> testContext.failNow(e))
+        kafkaConnectOperator.createWatch(NAMESPACE)
             .onComplete(testContext.succeeding(i -> { }))
             .compose(watch -> {
                 connectWatch = watch;
-                return AbstractConnectOperator.createConnectorWatch(kafkaConnectOperator, NAMESPACE, null);
+                return kafkaConnectOperator.createConnectorWatch(NAMESPACE);
             }).compose(watch -> {
                 connectorWatch = watch;
-                //async.flag();
                 return Future.succeededFuture();
             }).onComplete(testContext.succeeding(v -> async.flag()));
     }
@@ -332,6 +335,7 @@ public class ConnectorMockTest {
 
     @AfterEach
     public void teardown() {
+        podSetController.stop();
         mockKube.stop();
         connectWatch.close();
         connectorWatch.close();
@@ -1922,7 +1926,7 @@ public class ConnectorMockTest {
         String connectorName1 = "connector1";
         String connectorName2 = "connector2";
 
-        when(kafkaConnectOperator.selector()).thenReturn(Optional.of(new LabelSelector(null, Map.of("foo", "bar"))));
+        when(kafkaConnectOperator.selector()).thenReturn(new LabelSelector(null, Map.of("foo", "bar")));
 
         KafkaConnect kafkaConnect = new KafkaConnectBuilder()
                 .withNewMetadata()
@@ -1990,7 +1994,7 @@ public class ConnectorMockTest {
         String connectorName1 = "connector1";
         String connectorName2 = "connector2";
 
-        when(kafkaConnectOperator.selector()).thenReturn(Optional.of(new LabelSelector(null, Map.of("foo", "bar"))));
+        when(kafkaConnectOperator.selector()).thenReturn(new LabelSelector(null, Map.of("foo", "bar")));
 
         KafkaConnect kafkaConnect1 = new KafkaConnectBuilder()
                 .withNewMetadata()

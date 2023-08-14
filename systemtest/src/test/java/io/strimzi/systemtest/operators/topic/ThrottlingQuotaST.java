@@ -10,8 +10,9 @@ import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBui
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
-import io.strimzi.systemtest.annotations.KRaftNotSupported;
+import io.strimzi.systemtest.annotations.KRaftWithoutUTONotSupported;
 import io.strimzi.systemtest.annotations.ParallelTest;
+import io.strimzi.systemtest.annotations.UTONotSupported;
 import io.strimzi.systemtest.kafkaclients.internalClients.AdminClientOperation;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaAdminClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaAdminClientsBuilder;
@@ -52,9 +53,10 @@ public class ThrottlingQuotaST extends AbstractST {
     private String scraperPodName = "";
 
     @ParallelTest
-    @KRaftNotSupported("TopicOperator is not supported by KRaft mode and is used in this test class")
+    @KRaftWithoutUTONotSupported
+    @UTONotSupported("https://github.com/strimzi/strimzi-kafka-operator/issues/8864")
     void testThrottlingQuotasDuringAllTopicOperations(ExtensionContext extensionContext) {
-        final TestStorage testStorage = new TestStorage(extensionContext, clusterOperator.getDeploymentNamespace());
+        final TestStorage testStorage = new TestStorage(extensionContext, Constants.TEST_SUITE_NAMESPACE);
 
         final String createAdminName = "create-" + testStorage.getAdminName();
         final String alterAdminName = "alter-" + testStorage.getAdminName();
@@ -187,7 +189,7 @@ public class ThrottlingQuotaST extends AbstractST {
             .createInstallation()
             .runInstallation();
 
-        sharedTestStorage = new TestStorage(extensionContext, clusterOperator.getDeploymentNamespace());
+        sharedTestStorage = new TestStorage(extensionContext, Constants.TEST_SUITE_NAMESPACE);
 
         // Deploy kafka with ScramSHA512
         LOGGER.info("Deploying shared Kafka across all test cases in {} Namespace", sharedTestStorage.getNamespaceName());

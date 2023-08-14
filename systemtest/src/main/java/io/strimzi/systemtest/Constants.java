@@ -191,8 +191,9 @@ public interface Constants {
      * Feature gate related constants
      */
     String USE_KRAFT_MODE = "+UseKRaft";
-    String USE_STABLE_CONNECT_IDENTITIES = "+StableConnectIdentities";
+    String DONT_USE_STABLE_CONNECT_IDENTITIES = "-StableConnectIdentities";
     String USE_KAFKA_NODE_POOLS = "+KafkaNodePools";
+    String UNIDIRECTIONAL_TOPIC_OPERATOR = "+UnidirectionalTopicOperator";
 
     /**
      * Default value which allows execution of tests with any tags
@@ -408,8 +409,8 @@ public interface Constants {
     String LOAD_BALANCER_CLEANUP = "service.kubernetes.io/load-balancer-cleanup";
 
     // main namespace for Cluster Operator deployment
-    String INFRA_NAMESPACE = "infra-namespace";
-    String METRICS_SECOND_NAMESPACE = "second-metrics-cluster-test";
+    String CO_NAMESPACE = "co-namespace";
+    String TEST_SUITE_NAMESPACE = "test-suite-namespace";
 
     /**
      * Auxiliary variables for storing data across our tests

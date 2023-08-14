@@ -35,6 +35,7 @@ import static java.util.Collections.singletonList;
 /**
  * "Static" information about the CRDs defined in this package
  */
+@SuppressWarnings("deprecation") // Kafka Mirror Maker is deprecated
 public class Crds {
     @SuppressWarnings("unchecked")
     private static final Class<? extends CustomResource>[] CRDS = new Class[] {

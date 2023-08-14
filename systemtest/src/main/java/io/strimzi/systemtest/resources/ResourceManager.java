@@ -31,6 +31,7 @@ import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
+import io.strimzi.systemtest.enums.ConditionStatus;
 import io.strimzi.systemtest.enums.DeploymentTypes;
 import io.strimzi.systemtest.resources.crd.KafkaBridgeResource;
 import io.strimzi.systemtest.resources.crd.KafkaClientsResource;
@@ -186,7 +187,7 @@ public class ResourceManager {
                 createKafkaNodePoolIfNeeded(testContext, (Kafka) resource);
             }
 
-            if (Environment.isKRaftModeEnabled()) {
+            if (Environment.isKRaftModeEnabled() && !Environment.isUnidirectionalTopicOperatorEnabled()) {
                 if (Objects.equals(resource.getKind(), Kafka.RESOURCE_KIND)) {
                     // Remove TO when KRaft mode is enabled, because it is not supported
                     ((Kafka) resource).getSpec().getEntityOperator().setTopicOperator(null);
@@ -525,27 +526,34 @@ public class ResourceManager {
      * Wait until the CR is in desired state
      * @param operation - client of CR - for example kafkaClient()
      * @param resource - custom resource
-     * @param status - desired status
+     * @param statusType - desired status
      * @return returns CR
      */
-    public static <T extends CustomResource<? extends Spec, ? extends Status>> boolean waitForResourceStatus(MixedOperation<T, ?, ?> operation, T resource, Enum<?> status, long resourceTimeout) {
-        waitForResourceStatus(operation, resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName(), status, resourceTimeout);
-        return true;
+    public static <T extends CustomResource<? extends Spec, ? extends Status>> boolean waitForResourceStatus(MixedOperation<T, ?, ?> operation, T resource, Enum<?> statusType, long resourceTimeout) {
+        return waitForResourceStatus(operation, resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName(), statusType, ConditionStatus.True, resourceTimeout);
     }
 
-    public static <T extends CustomResource<? extends Spec, ? extends Status>> boolean waitForResourceStatus(MixedOperation<T, ?, ?> operation, String kind, String namespace, String name, Enum<?> status, long resourceTimeoutMs) {
-        LOGGER.info("Waiting for {}: {}/{} will have desired state: {}", kind, namespace, name, status);
+    public static <T extends CustomResource<? extends Spec, ? extends Status>> boolean waitForResourceStatus(MixedOperation<T, ?, ?> operation, T resource, Enum<?> statusType, ConditionStatus conditionStatus, long resourceTimeout) {
+        return waitForResourceStatus(operation, resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName(), statusType, conditionStatus, resourceTimeout);
+    }
 
-        TestUtils.waitFor(String.format("%s: %s#%s will have desired state: %s", kind, namespace, name, status),
+    public static <T extends CustomResource<? extends Spec, ? extends Status>> boolean waitForResourceStatus(MixedOperation<T, ?, ?> operation, String kind, String namespace, String name, Enum<?> statusType, long resourceTimeoutMs) {
+        return waitForResourceStatus(operation, kind, namespace, name, statusType, ConditionStatus.True, resourceTimeoutMs);
+    }
+
+    public static <T extends CustomResource<? extends Spec, ? extends Status>> boolean waitForResourceStatus(MixedOperation<T, ?, ?> operation, String kind, String namespace, String name, Enum<?> statusType, ConditionStatus conditionStatus, long resourceTimeoutMs) {
+        LOGGER.info("Waiting for {}: {}/{} will have desired state: {}", kind, namespace, name, statusType);
+
+        TestUtils.waitFor(String.format("%s: %s#%s will have desired state: %s", kind, namespace, name, statusType),
             Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, resourceTimeoutMs,
             () -> operation.inNamespace(namespace)
                 .withName(name)
-                .get().getStatus().getConditions().stream().anyMatch(condition -> condition.getType().equals(status.toString()) && condition.getStatus().equals("True")),
+                .get().getStatus().getConditions().stream().anyMatch(condition -> condition.getType().equals(statusType.toString()) && condition.getStatus().equals(conditionStatus.toString())),
             () -> logCurrentResourceStatus(operation.inNamespace(namespace)
                 .withName(name)
                 .get()));
 
-        LOGGER.info("{}: {}/{} is in desired state: {}", kind, namespace, name, status);
+        LOGGER.info("{}: {}/{} is in desired state: {}", kind, namespace, name, statusType);
         return true;
     }
 

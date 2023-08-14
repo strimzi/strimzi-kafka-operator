@@ -1,14 +1,4 @@
 {
-  "__inputs": [
-    {
-      "name": "DS_PROMETHEUS",
-      "label": "Prometheus",
-      "description": "",
-      "type": "datasource",
-      "pluginId": "prometheus",
-      "pluginName": "Prometheus"
-    }
-  ],
   "__requires": [
     {
       "type": "grafana",
@@ -51,7 +41,7 @@
   "editable": true,
   "gnetId": null,
   "graphTooltip": 0,
-  "iteration": 1600633283203,
+  "iteration": 1687298918684,
   "links": [],
   "panels": [
     {
@@ -65,6 +55,12 @@
       ],
       "datasource": "${DS_PROMETHEUS}",
       "description": "Number of brokers online",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {}
+        },
+        "overrides": []
+      },
       "format": "none",
       "gauge": {
         "maxValue": 100,
@@ -150,6 +146,12 @@
       ],
       "datasource": "${DS_PROMETHEUS}",
       "description": "Number of active controllers in the cluster",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {}
+        },
+        "overrides": []
+      },
       "format": "none",
       "gauge": {
         "maxValue": 100,
@@ -232,6 +234,12 @@
       ],
       "datasource": "${DS_PROMETHEUS}",
       "description": "Unclean leader election rate",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {}
+        },
+        "overrides": []
+      },
       "format": "none",
       "gauge": {
         "maxValue": 100,
@@ -314,6 +322,12 @@
       ],
       "datasource": "${DS_PROMETHEUS}",
       "description": "Replicas that are online",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {}
+        },
+        "overrides": []
+      },
       "format": "none",
       "gauge": {
         "maxValue": 100,
@@ -395,6 +409,12 @@
       ],
       "datasource": "${DS_PROMETHEUS}",
       "description": "Number of under-replicated partitions (| ISR | < | all replicas |).",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {}
+        },
+        "overrides": []
+      },
       "format": "none",
       "gauge": {
         "maxValue": 100,
@@ -477,6 +497,12 @@
       ],
       "datasource": "${DS_PROMETHEUS}",
       "description": "Number of partitions which are at their minimum in sync replica count (| ISR | == | min.insync.replicas |)",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {}
+        },
+        "overrides": []
+      },
       "format": "none",
       "gauge": {
         "maxValue": 100,
@@ -559,6 +585,12 @@
       ],
       "datasource": "${DS_PROMETHEUS}",
       "description": "Number of partitions which are under their minimum in sync replica count (| ISR | < | min.insync.replicas |)",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {}
+        },
+        "overrides": []
+      },
       "format": "none",
       "gauge": {
         "maxValue": 100,
@@ -641,6 +673,12 @@
       ],
       "datasource": "${DS_PROMETHEUS}",
       "description": "Number of partitions that don’t have an active leader and are hence not writable or readable",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {}
+        },
+        "overrides": []
+      },
       "format": "none",
       "gauge": {
         "maxValue": 100,
@@ -714,6 +752,7 @@
     },
     {
       "collapsed": false,
+      "datasource": null,
       "gridPos": {
         "h": 1,
         "w": 24,
@@ -732,13 +771,21 @@
       "dashes": false,
       "datasource": "${DS_PROMETHEUS}",
       "description": "Kafka broker pods memory usage",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {}
+        },
+        "overrides": []
+      },
       "fill": 1,
+      "fillGradient": 0,
       "gridPos": {
         "h": 7,
         "w": 6,
         "x": 0,
         "y": 5
       },
+      "hiddenSeries": false,
       "id": 82,
       "legend": {
         "avg": false,
@@ -753,8 +800,12 @@
       "linewidth": 1,
       "links": [],
       "nullPointMode": "null",
+      "options": {
+        "alertThreshold": true
+      },
       "paceLength": 10,
       "percentage": false,
+      "pluginVersion": "7.3.7",
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
@@ -820,13 +871,21 @@
       "dashes": false,
       "datasource": "${DS_PROMETHEUS}",
       "description": "Aggregated Kafka broker pods CPU usage",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {}
+        },
+        "overrides": []
+      },
       "fill": 1,
+      "fillGradient": 0,
       "gridPos": {
         "h": 7,
         "w": 6,
         "x": 6,
         "y": 5
       },
+      "hiddenSeries": false,
       "id": 81,
       "legend": {
         "avg": false,
@@ -841,8 +900,12 @@
       "linewidth": 1,
       "links": [],
       "nullPointMode": "null",
+      "options": {
+        "alertThreshold": true
+      },
       "paceLength": 10,
       "percentage": false,
+      "pluginVersion": "7.3.7",
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
@@ -908,13 +971,21 @@
       "dashes": false,
       "datasource": "${DS_PROMETHEUS}",
       "description": "Kafka broker pods disk usage",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {}
+        },
+        "overrides": []
+      },
       "fill": 1,
+      "fillGradient": 0,
       "gridPos": {
         "h": 7,
         "w": 6,
         "x": 12,
         "y": 5
       },
+      "hiddenSeries": false,
       "id": 83,
       "legend": {
         "avg": false,
@@ -929,8 +1000,12 @@
       "linewidth": 1,
       "links": [],
       "nullPointMode": "null",
+      "options": {
+        "alertThreshold": true
+      },
       "paceLength": 10,
       "percentage": false,
+      "pluginVersion": "7.3.7",
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
@@ -996,13 +1071,21 @@
       "dashes": false,
       "datasource": "${DS_PROMETHEUS}",
       "description": "Open File Descriptors",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {}
+        },
+        "overrides": []
+      },
       "fill": 1,
+      "fillGradient": 0,
       "gridPos": {
         "h": 7,
         "w": 6,
         "x": 18,
         "y": 5
       },
+      "hiddenSeries": false,
       "id": 107,
       "legend": {
         "avg": false,
@@ -1017,8 +1100,12 @@
       "linewidth": 1,
       "links": [],
       "nullPointMode": "null",
+      "options": {
+        "alertThreshold": true
+      },
       "paceLength": 10,
       "percentage": false,
+      "pluginVersion": "7.3.7",
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
@@ -1083,13 +1170,21 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "${DS_PROMETHEUS}",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {}
+        },
+        "overrides": []
+      },
       "fill": 1,
+      "fillGradient": 0,
       "gridPos": {
         "h": 7,
         "w": 6,
         "x": 0,
         "y": 12
       },
+      "hiddenSeries": false,
       "id": 93,
       "legend": {
         "avg": false,
@@ -1104,8 +1199,12 @@
       "linewidth": 1,
       "links": [],
       "nullPointMode": "null",
+      "options": {
+        "alertThreshold": true
+      },
       "paceLength": 10,
       "percentage": false,
+      "pluginVersion": "7.3.7",
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
@@ -1169,13 +1268,21 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "${DS_PROMETHEUS}",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {}
+        },
+        "overrides": []
+      },
       "fill": 1,
+      "fillGradient": 0,
       "gridPos": {
         "h": 7,
         "w": 6,
         "x": 6,
         "y": 12
       },
+      "hiddenSeries": false,
       "id": 95,
       "legend": {
         "avg": false,
@@ -1190,8 +1297,12 @@
       "linewidth": 1,
       "links": [],
       "nullPointMode": "null",
+      "options": {
+        "alertThreshold": true
+      },
       "paceLength": 10,
       "percentage": false,
+      "pluginVersion": "7.3.7",
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
@@ -1255,13 +1366,21 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "${DS_PROMETHEUS}",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {}
+        },
+        "overrides": []
+      },
       "fill": 1,
+      "fillGradient": 0,
       "gridPos": {
         "h": 7,
         "w": 6,
         "x": 12,
         "y": 12
       },
+      "hiddenSeries": false,
       "id": 97,
       "legend": {
         "avg": false,
@@ -1276,8 +1395,12 @@
       "linewidth": 1,
       "links": [],
       "nullPointMode": "null",
+      "options": {
+        "alertThreshold": true
+      },
       "paceLength": 10,
       "percentage": false,
+      "pluginVersion": "7.3.7",
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
@@ -1342,13 +1465,21 @@
       "dashes": false,
       "datasource": "${DS_PROMETHEUS}",
       "description": "JVM thread count",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {}
+        },
+        "overrides": []
+      },
       "fill": 1,
+      "fillGradient": 0,
       "gridPos": {
         "h": 7,
         "w": 6,
         "x": 18,
         "y": 12
       },
+      "hiddenSeries": false,
       "id": 108,
       "legend": {
         "avg": false,
@@ -1363,8 +1494,12 @@
       "linewidth": 1,
       "links": [],
       "nullPointMode": "null",
+      "options": {
+        "alertThreshold": true
+      },
       "paceLength": 10,
       "percentage": false,
+      "pluginVersion": "7.3.7",
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
@@ -1433,6 +1568,12 @@
       ],
       "datasource": "${DS_PROMETHEUS}",
       "description": "Total incoming byte rate",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {}
+        },
+        "overrides": []
+      },
       "format": "Bps",
       "gauge": {
         "maxValue": 100,
@@ -1517,6 +1658,12 @@
       ],
       "datasource": "${DS_PROMETHEUS}",
       "description": "Total outgoing byte rate",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {}
+        },
+        "overrides": []
+      },
       "format": "Bps",
       "gauge": {
         "maxValue": 100,
@@ -1601,6 +1748,12 @@
       ],
       "datasource": "${DS_PROMETHEUS}",
       "description": "Incoming messages rate",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {}
+        },
+        "overrides": []
+      },
       "format": "wps",
       "gauge": {
         "maxValue": 100,
@@ -1685,6 +1838,12 @@
       ],
       "datasource": "${DS_PROMETHEUS}",
       "description": "Total produce request rate",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {}
+        },
+        "overrides": []
+      },
       "format": "reqps",
       "gauge": {
         "maxValue": 100,
@@ -1765,13 +1924,21 @@
       "dashes": false,
       "datasource": "${DS_PROMETHEUS}",
       "description": "Byte rate",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {}
+        },
+        "overrides": []
+      },
       "fill": 1,
+      "fillGradient": 0,
       "gridPos": {
         "h": 8,
         "w": 12,
         "x": 0,
         "y": 23
       },
+      "hiddenSeries": false,
       "id": 44,
       "legend": {
         "alignAsTable": false,
@@ -1790,8 +1957,12 @@
       "linewidth": 1,
       "links": [],
       "nullPointMode": "null",
+      "options": {
+        "alertThreshold": true
+      },
       "paceLength": 10,
       "percentage": false,
+      "pluginVersion": "7.3.7",
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
@@ -1867,13 +2038,21 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "${DS_PROMETHEUS}",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {}
+        },
+        "overrides": []
+      },
       "fill": 1,
+      "fillGradient": 0,
       "gridPos": {
         "h": 8,
         "w": 12,
         "x": 12,
         "y": 23
       },
+      "hiddenSeries": false,
       "id": 58,
       "legend": {
         "alignAsTable": false,
@@ -1889,8 +2068,12 @@
       "linewidth": 1,
       "links": [],
       "nullPointMode": "null",
+      "options": {
+        "alertThreshold": true
+      },
       "paceLength": 10,
       "percentage": false,
+      "pluginVersion": "7.3.7",
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
@@ -1955,6 +2138,12 @@
       "dashes": false,
       "datasource": "${DS_PROMETHEUS}",
       "description": "Produce request rate",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {}
+        },
+        "overrides": []
+      },
       "fill": 1,
       "gridPos": {
         "h": 8,
@@ -1978,6 +2167,7 @@
       "nullPointMode": "null",
       "paceLength": 10,
       "percentage": false,
+      "pluginVersion": "7.3.7",
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
@@ -2050,6 +2240,12 @@
       "dashes": false,
       "datasource": "${DS_PROMETHEUS}",
       "description": "Fetch request rate",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {}
+        },
+        "overrides": []
+      },
       "fill": 1,
       "gridPos": {
         "h": 8,
@@ -2073,6 +2269,7 @@
       "nullPointMode": "null",
       "paceLength": 10,
       "percentage": false,
+      "pluginVersion": "7.3.7",
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
@@ -2144,6 +2341,12 @@
       "dashes": false,
       "datasource": "${DS_PROMETHEUS}",
       "description": "Average percentage of time network processor is idle",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {}
+        },
+        "overrides": []
+      },
       "fill": 1,
       "gridPos": {
         "h": 8,
@@ -2167,6 +2370,7 @@
       "nullPointMode": "null",
       "paceLength": 10,
       "percentage": false,
+      "pluginVersion": "7.3.7",
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
@@ -2231,6 +2435,12 @@
       "dashes": false,
       "datasource": "${DS_PROMETHEUS}",
       "description": "Average percentage of time request handler threads are idle",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {}
+        },
+        "overrides": []
+      },
       "fill": 1,
       "gridPos": {
         "h": 8,
@@ -2254,6 +2464,7 @@
       "nullPointMode": "null",
       "paceLength": 10,
       "percentage": false,
+      "pluginVersion": "7.3.7",
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
@@ -2319,6 +2530,12 @@
       "dashes": false,
       "datasource": "${DS_PROMETHEUS}",
       "description": "Disk writes",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {}
+        },
+        "overrides": []
+      },
       "fill": 1,
       "gridPos": {
         "h": 8,
@@ -2342,6 +2559,7 @@
       "nullPointMode": "null",
       "paceLength": 10,
       "percentage": false,
+      "pluginVersion": "7.3.7",
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
@@ -2407,6 +2625,12 @@
       "dashes": false,
       "datasource": "${DS_PROMETHEUS}",
       "description": "Disk reads",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {}
+        },
+        "overrides": []
+      },
       "fill": 1,
       "gridPos": {
         "h": 8,
@@ -2430,6 +2654,7 @@
       "nullPointMode": "null",
       "paceLength": 10,
       "percentage": false,
+      "pluginVersion": "7.3.7",
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
@@ -2495,6 +2720,12 @@
       "dashes": false,
       "datasource": "${DS_PROMETHEUS}",
       "description": "Disk reads",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {}
+        },
+        "overrides": []
+      },
       "fill": 1,
       "gridPos": {
         "h": 8,
@@ -2518,6 +2749,7 @@
       "nullPointMode": "null",
       "paceLength": 10,
       "percentage": false,
+      "pluginVersion": "7.3.7",
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
@@ -2582,6 +2814,12 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "${DS_PROMETHEUS}",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {}
+        },
+        "overrides": []
+      },
       "fill": 1,
       "gridPos": {
         "h": 13,
@@ -2605,6 +2843,7 @@
       "nullPointMode": "null",
       "paceLength": 10,
       "percentage": false,
+      "pluginVersion": "7.3.7",
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
@@ -2665,7 +2904,7 @@
     }
   ],
   "refresh": "5s",
-  "schemaVersion": 21,
+  "schemaVersion": 26,
   "style": "dark",
   "tags": [
     "Strimzi",
@@ -2674,10 +2913,26 @@
   "templating": {
     "list": [
       {
+        "current": {},
+        "error": null,
+        "hide": 0,
+        "includeAll": false,
+        "label": "datasource",
+        "multi": false,
+        "name": "DS_PROMETHEUS",
+        "options": [],
+        "query": "prometheus",
+        "refresh": 1,
+        "regex": "",
+        "skipUrlSync": false,
+        "type": "datasource"
+      },
+      {
         "allValue": null,
         "current": {},
         "datasource": "${DS_PROMETHEUS}",
         "definition": "",
+        "error": null,
         "hide": 0,
         "includeAll": false,
         "label": "Namespace",
@@ -2700,6 +2955,7 @@
         "current": {},
         "datasource": "${DS_PROMETHEUS}",
         "definition": "",
+        "error": null,
         "hide": 0,
         "includeAll": false,
         "label": "Cluster Name",
@@ -2722,6 +2978,7 @@
         "current": {},
         "datasource": "${DS_PROMETHEUS}",
         "definition": "",
+        "error": null,
         "hide": 0,
         "includeAll": true,
         "label": "Broker",
@@ -2744,6 +3001,7 @@
         "current": {},
         "datasource": "${DS_PROMETHEUS}",
         "definition": "",
+        "error": null,
         "hide": 0,
         "includeAll": true,
         "label": "Topic",
@@ -2766,6 +3024,7 @@
         "current": {},
         "datasource": "${DS_PROMETHEUS}",
         "definition": "",
+        "error": null,
         "hide": 0,
         "includeAll": true,
         "label": "Partition",

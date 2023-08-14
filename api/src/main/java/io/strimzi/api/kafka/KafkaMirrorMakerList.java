@@ -10,6 +10,7 @@ import io.strimzi.api.kafka.model.KafkaMirrorMaker;
 /**
  * A {@code DefaultKubernetesResourceList<KafkaMirrorMaker>} required for using Fabric8 CRD support.
  */
+@SuppressWarnings("deprecation") // Kafka Mirror Maker is deprecated
 public class KafkaMirrorMakerList extends DefaultKubernetesResourceList<KafkaMirrorMaker> {
     private static final long serialVersionUID = 1L;
 }

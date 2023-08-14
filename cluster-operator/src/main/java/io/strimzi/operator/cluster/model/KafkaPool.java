@@ -166,12 +166,12 @@ public class KafkaPool extends AbstractModel {
                         "adding volumes to Jbod storage or removing volumes from Jbod storage, " +
                         "changing overrides to nodes which do not exist yet " +
                         "and increasing size of persistent claim volumes (depending on the volume type and used storage class).");
-                LOGGER.warnCr(reconciliation, "The desired Kafka storage configuration in the KafkaNodePool custom resource {}/{} contains changes which are not allowed. As a " +
+                LOGGER.warnCr(reconciliation, "The desired Kafka storage configuration in the KafkaNodePool resource {}/{} contains changes which are not allowed. As a " +
                         "result, all storage changes will be ignored. Use DEBUG level logging for more information " +
                         "about the detected changes.", pool.getMetadata().getNamespace(), pool.getMetadata().getName());
 
                 Condition warning = StatusUtils.buildWarningCondition("KafkaStorage",
-                        "The desired Kafka storage configuration in the KafkaNodePool custom resource " + pool.getMetadata().getNamespace() + "/" + pool.getMetadata().getName() + " contains changes which are not allowed. As a " +
+                        "The desired Kafka storage configuration in the KafkaNodePool resource " + pool.getMetadata().getNamespace() + "/" + pool.getMetadata().getName() + " contains changes which are not allowed. As a " +
                         "result, all storage changes will be ignored. Use DEBUG level logging for more information " +
                         "about the detected changes.");
                 result.warningConditions.add(warning);
@@ -184,6 +184,8 @@ public class KafkaPool extends AbstractModel {
             result.setStorage(pool.getSpec().getStorage());
         }
 
+        // Adds the warnings about unknown or deprecated fields
+        result.warningConditions.addAll(StatusUtils.validate(reconciliation, pool));
 
         if (pool.getSpec().getTemplate() != null) {
             KafkaNodePoolTemplate template = pool.getSpec().getTemplate();
@@ -303,6 +305,7 @@ public class KafkaPool extends AbstractModel {
                 .withNodeIds(new ArrayList<>(idAssignment.desired()))
                 .withReplicas(idAssignment.desired().size())
                 .withLabelSelector(getSelectorLabels().toSelectorString())
+                .withConditions(warningConditions)
                 .build();
     }
 }

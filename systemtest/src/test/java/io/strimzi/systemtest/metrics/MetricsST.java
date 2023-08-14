@@ -153,10 +153,11 @@ public class MetricsST extends AbstractST {
     private final String kafkaClusterSecondName = "metrics-cluster-1";
     private final String mm2ClusterName = "mm2-cluster";
     private final String bridgeClusterName = "my-bridge";
-    String coScraperPodName;
 
-    String scraperPodName;
-    String secondNamespaceScraperPodName;
+    private String coScraperPodName;
+    private String testSuiteScraperPodName;
+    private String scraperPodName;
+    private String secondNamespaceScraperPodName;
 
     private String bridgeTopicName = KafkaTopicUtils.generateRandomNameOfTopic();
     private String topicName = KafkaTopicUtils.generateRandomNameOfTopic();
@@ -702,7 +703,7 @@ public class MetricsST extends AbstractST {
     void setupEnvironment(ExtensionContext extensionContext) throws Exception {
         // Metrics tests are not designed to run with namespace RBAC scope.
         assumeFalse(Environment.isNamespaceRbacScope());
-        cluster.createNamespaces(CollectorElement.createCollectorElement(this.getClass().getName()), clusterOperator.getDeploymentNamespace(), Arrays.asList(namespaceFirst, namespaceSecond));
+        cluster.createNamespaces(CollectorElement.createCollectorElement(this.getClass().getName()), Constants.TEST_SUITE_NAMESPACE, Arrays.asList(namespaceFirst, namespaceSecond));
         // Copy pull secret into newly created namespaces
         StUtils.copyImagePullSecrets(namespaceFirst);
         StUtils.copyImagePullSecrets(namespaceSecond);
@@ -711,7 +712,8 @@ public class MetricsST extends AbstractST {
             .createInstallation()
             .runInstallation();
 
-        final String coScraperName = clusterOperator.getDeploymentNamespace() + "-" + Constants.SCRAPER_NAME;
+        final String coScraperName = Constants.CO_NAMESPACE + "-" + Constants.SCRAPER_NAME;
+        final String testSuiteScraperName = Constants.TEST_SUITE_NAMESPACE + "-" + Constants.SCRAPER_NAME;
         final String scraperName = namespaceFirst + "-" + Constants.SCRAPER_NAME;
         final String secondScraperName = namespaceSecond + "-" + Constants.SCRAPER_NAME;
 
@@ -733,7 +735,8 @@ public class MetricsST extends AbstractST {
                 .endSpec()
                 .build(),
             KafkaTemplates.kafkaWithMetrics(kafkaClusterSecondName, namespaceSecond, 1, 1).build(),
-            ScraperTemplates.scraperPod(clusterOperator.getDeploymentNamespace(), coScraperName).build(),
+            ScraperTemplates.scraperPod(Constants.CO_NAMESPACE, coScraperName).build(),
+            ScraperTemplates.scraperPod(Constants.TEST_SUITE_NAMESPACE, testSuiteScraperName).build(),
             ScraperTemplates.scraperPod(namespaceFirst, scraperName).build(),
             ScraperTemplates.scraperPod(namespaceSecond, secondScraperName).build()
         );
@@ -747,12 +750,13 @@ public class MetricsST extends AbstractST {
         resourceManager.createResourceWithWait(extensionContext, KafkaUserTemplates.tlsUser(namespaceFirst, kafkaClusterFirstName, KafkaUserUtils.generateRandomNameOfKafkaUser()).build());
         resourceManager.createResourceWithWait(extensionContext, KafkaUserTemplates.tlsUser(namespaceFirst, kafkaClusterFirstName, KafkaUserUtils.generateRandomNameOfKafkaUser()).build());
 
-        coScraperPodName = ResourceManager.kubeClient().listPodsByPrefixInName(clusterOperator.getDeploymentNamespace(), coScraperName).get(0).getMetadata().getName();
+        coScraperPodName = ResourceManager.kubeClient().listPodsByPrefixInName(Constants.CO_NAMESPACE, coScraperName).get(0).getMetadata().getName();
+        testSuiteScraperPodName = ResourceManager.kubeClient().listPodsByPrefixInName(Constants.TEST_SUITE_NAMESPACE, testSuiteScraperName).get(0).getMetadata().getName();
         scraperPodName = ResourceManager.kubeClient().listPodsByPrefixInName(namespaceFirst, scraperName).get(0).getMetadata().getName();
         secondNamespaceScraperPodName = ResourceManager.kubeClient().listPodsByPrefixInName(namespaceSecond, secondScraperName).get(0).getMetadata().getName();
 
         // Allow connections from clients to operators pods when NetworkPolicies are set to denied by default
-        NetworkPolicyResource.allowNetworkPolicySettingsForClusterOperator(extensionContext, clusterOperator.getDeploymentNamespace());
+        NetworkPolicyResource.allowNetworkPolicySettingsForClusterOperator(extensionContext, Constants.CO_NAMESPACE);
 
         // wait some time for metrics to be stable - at least reconciliation interval + 10s
         LOGGER.info("Sleeping for {} to give operators and operands some time to stable the metrics values before collecting",
@@ -768,8 +772,8 @@ public class MetricsST extends AbstractST {
 
         if (!Environment.isKRaftModeEnabled()) {
             zookeeperCollector = kafkaCollector.toBuilder()
-                    .withComponentType(ComponentType.Zookeeper)
-                    .build();
+                .withComponentType(ComponentType.Zookeeper)
+                .build();
             zookeeperCollector.collectMetricsFromPods();
         }
 
@@ -779,7 +783,7 @@ public class MetricsST extends AbstractST {
 
         clusterOperatorCollector = new MetricsCollector.Builder()
             .withScraperPodName(coScraperPodName)
-            .withNamespaceName(clusterOperator.getDeploymentNamespace())
+            .withNamespaceName(Constants.CO_NAMESPACE)
             .withComponentType(ComponentType.ClusterOperator)
             .withComponentName(clusterOperator.getClusterOperatorName())
             .build();

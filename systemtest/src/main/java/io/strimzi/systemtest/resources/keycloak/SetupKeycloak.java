@@ -122,8 +122,8 @@ public class SetupKeycloak {
         return new KeycloakInstance(username, password, namespaceName);
     }
 
-    private static void importRealms(String namespaceName, KeycloakInstance keycloakInstance) {
-        String token = KeycloakUtils.getToken(namespaceName, "https://" + keycloakInstance.getHttpsUri(), keycloakInstance.getUsername(), keycloakInstance.getPassword());
+    private static void importRealms(String keycloakNamespace, KeycloakInstance keycloakInstance) {
+        String token = KeycloakUtils.getToken(keycloakNamespace, "https://" + keycloakInstance.getHttpsUri(), keycloakInstance.getUsername(), keycloakInstance.getPassword());
 
         LOGGER.info("Importing Keycloak realms to Keycloak");
         KEYCLOAK_REALMS_FILE_NAMES.forEach(realmFile -> {
@@ -131,7 +131,7 @@ public class SetupKeycloak {
             try {
                 LOGGER.info("Importing realm from file: {}", path);
                 String jsonRealm = new JsonObject(Files.readString(path, StandardCharsets.UTF_8)).encode();
-                String result = KeycloakUtils.importRealm(namespaceName, "https://" + keycloakInstance.getHttpsUri(), token, jsonRealm);
+                String result = KeycloakUtils.importRealm(keycloakNamespace, "https://" + keycloakInstance.getHttpsUri(), token, jsonRealm);
 
                 // if KeycloakRealm is successfully imported, the return contains just empty String
                 if (!result.isEmpty()) {

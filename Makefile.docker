@@ -51,6 +51,11 @@ docker_load_default:
 	# Loads the container as TGZ file
 	docker load < $(ARCHIVE_DIR)/$(PROJECT_NAME)-$(BUILD_TAG)$(DOCKER_PLATFORM_TAG_SUFFIX).tar.gz
 
+.PHONY: docker_delete_archive_default
+docker_delete_archive_default:
+	# Deletes the archive
+	rm $(ARCHIVE_DIR)/$(PROJECT_NAME)-$(BUILD_TAG)$(DOCKER_PLATFORM_TAG_SUFFIX).tar.gz
+
 .PHONY: docker_amend_manifest_default
 docker_amend_manifest_default:
 	# Create / Amend the manifest

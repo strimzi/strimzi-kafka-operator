@@ -4,7 +4,6 @@
  */
 package io.strimzi.operator.common.operator.resource.concurrent;
 
-import java.util.Optional;
 import java.util.concurrent.Executor;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
@@ -74,11 +73,11 @@ public abstract class AbstractWatchableNamespacedResourceOperator<
      *
      * @return  A Kubernetes watch instance
      */
-    public Watch watch(String namespace, Optional<LabelSelector> selector, Watcher<T> watcher) {
+    public Watch watch(String namespace, LabelSelector selector, Watcher<T> watcher) {
         FilterWatchListDeletable<T, L, R> operation
                 = ANY_NAMESPACE.equals(namespace) ? operation().inAnyNamespace() : operation().inNamespace(namespace);
-        if (selector.isPresent()) {
-            operation = operation.withLabelSelector(selector.get());
+        if (selector != null) {
+            operation = operation.withLabelSelector(selector);
         }
         return operation.watch(watcher);
     }

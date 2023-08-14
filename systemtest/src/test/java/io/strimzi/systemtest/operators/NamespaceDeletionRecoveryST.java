@@ -13,7 +13,8 @@ import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
-import io.strimzi.systemtest.annotations.KRaftNotSupported;
+import io.strimzi.systemtest.annotations.KRaftWithoutUTONotSupported;
+import io.strimzi.systemtest.annotations.UTONotSupported;
 import io.strimzi.systemtest.cli.KafkaCmdClient;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
@@ -43,7 +44,7 @@ import java.util.List;
 
 import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.RECOVERY;
-import static io.strimzi.systemtest.Constants.INFRA_NAMESPACE;
+import static io.strimzi.systemtest.Constants.CO_NAMESPACE;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 /**
@@ -54,7 +55,7 @@ import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
  * These tests does not have to be run every time with PRs and so on, the nature of the tests is sufficient for recovery profile only.
  */
 @Tag(RECOVERY)
-@KRaftNotSupported("Topic Operator is not supported by KRaft mode and is used in this test class")
+@KRaftWithoutUTONotSupported
 class NamespaceDeletionRecoveryST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(NamespaceDeletionRecoveryST.class);
     private String storageClassName = "retain";
@@ -66,8 +67,9 @@ class NamespaceDeletionRecoveryST extends AbstractST {
      */
     @IsolatedTest("We need for each test case its own Cluster Operator")
     @Tag(INTERNAL_CLIENTS_USED)
+    @UTONotSupported("https://github.com/strimzi/strimzi-kafka-operator/issues/8864")
     void testTopicAvailable(ExtensionContext extensionContext) {
-        final TestStorage testStorage = new TestStorage(extensionContext, clusterOperator.getDeploymentNamespace());
+        final TestStorage testStorage = new TestStorage(extensionContext, Constants.TEST_SUITE_NAMESPACE);
 
         prepareEnvironmentForRecovery(extensionContext, testStorage);
 
@@ -117,8 +119,9 @@ class NamespaceDeletionRecoveryST extends AbstractST {
      */
     @IsolatedTest("We need for each test case its own Cluster Operator")
     @Tag(INTERNAL_CLIENTS_USED)
-    void testTopicNotAvailable(ExtensionContext extensionContext) throws InterruptedException {
-        final TestStorage testStorage = new TestStorage(extensionContext, clusterOperator.getDeploymentNamespace());
+    @UTONotSupported("https://github.com/strimzi/strimzi-kafka-operator/issues/8864")
+    void testTopicNotAvailable(ExtensionContext extensionContext) {
+        final TestStorage testStorage = new TestStorage(extensionContext, Constants.TEST_SUITE_NAMESPACE);
 
         final List<String> topicsToRemove = List.of("__strimzi-topic-operator-kstreams-topic-store-changelog", "__strimzi_store_topic");
 
@@ -261,7 +264,7 @@ class NamespaceDeletionRecoveryST extends AbstractST {
     private void recreatePvcAndUpdatePv(List<PersistentVolumeClaim> persistentVolumeClaimList) {
         for (PersistentVolumeClaim pvc : persistentVolumeClaimList) {
             pvc.getMetadata().setResourceVersion(null);
-            kubeClient().createPersistentVolumeClaim(clusterOperator.getDeploymentNamespace(), pvc);
+            kubeClient().createPersistentVolumeClaim(Constants.TEST_SUITE_NAMESPACE, pvc);
 
             PersistentVolume pv = kubeClient().getPersistentVolumeWithName(pvc.getSpec().getVolumeName());
             pv.getSpec().setClaimRef(null);
@@ -274,19 +277,19 @@ class NamespaceDeletionRecoveryST extends AbstractST {
     private void recreateClusterOperator(ExtensionContext extensionContext) {
         clusterOperator = new SetupClusterOperator.SetupClusterOperatorBuilder()
             .withExtensionContext(extensionContext)
-            .withNamespace(INFRA_NAMESPACE)
+            .withNamespace(CO_NAMESPACE)
             .createInstallation()
             .runInstallation();
     }
 
     private void deleteAndRecreateNamespace() {
         // Delete namespace with all resources
-        kubeClient().deleteNamespace(clusterOperator.getDeploymentNamespace());
-        NamespaceUtils.waitForNamespaceDeletion(clusterOperator.getDeploymentNamespace());
+        kubeClient().deleteNamespace(Constants.TEST_SUITE_NAMESPACE);
+        NamespaceUtils.waitForNamespaceDeletion(Constants.TEST_SUITE_NAMESPACE);
 
         // Recreate namespace
-        cluster.createNamespace(clusterOperator.getDeploymentNamespace());
-        StUtils.copyImagePullSecrets(clusterOperator.getDeploymentNamespace());
+        cluster.createNamespace(Constants.TEST_SUITE_NAMESPACE);
+        StUtils.copyImagePullSecrets(Constants.TEST_SUITE_NAMESPACE);
     }
 
     @BeforeAll

@@ -69,13 +69,20 @@ if [ "$STRIMZI_KRAFT_ENABLED" = "true" ]; then
     rm -f "$KRAFT_LOG_DIR/__cluster_metadata-0/quorum-state"
   fi
 
+  # when in KRaft mode, the Kafka ready and ZooKeeper connected file paths are empty because not needed to the agent
+  KAFKA_READY=
+  ZK_CONNECTED=
 else
-  rm -f /var/opt/kafka/kafka-ready /var/opt/kafka/zk-connected 2> /dev/null
-  KEY_STORE=/tmp/kafka/cluster.keystore.p12
-  TRUST_STORE=/tmp/kafka/cluster.truststore.p12
-  KAFKA_OPTS="${KAFKA_OPTS} -javaagent:$(ls "$KAFKA_HOME"/libs/kafka-agent*.jar)=/var/opt/kafka/kafka-ready:/var/opt/kafka/zk-connected:$KEY_STORE:$CERTS_STORE_PASSWORD:$TRUST_STORE:$CERTS_STORE_PASSWORD"
-  export KAFKA_OPTS
+  # when in ZooKeeper mode, the Kafka ready and ZooKeeper connected file paths are defined because used by the agent
+  KAFKA_READY=/var/opt/kafka/kafka-ready
+  ZK_CONNECTED=/var/opt/kafka/zk-connected
+  rm -f $KAFKA_READY $ZK_CONNECTED 2> /dev/null
 fi
+
+KEY_STORE=/tmp/kafka/cluster.keystore.p12
+TRUST_STORE=/tmp/kafka/cluster.truststore.p12
+KAFKA_OPTS="${KAFKA_OPTS} -javaagent:$(ls "$KAFKA_HOME"/libs/kafka-agent*.jar)=$KAFKA_READY:$ZK_CONNECTED:$KEY_STORE:$CERTS_STORE_PASSWORD:$TRUST_STORE:$CERTS_STORE_PASSWORD"
+export KAFKA_OPTS
 
 # Configure Garbage Collection logging
 . ./set_kafka_gc_options.sh

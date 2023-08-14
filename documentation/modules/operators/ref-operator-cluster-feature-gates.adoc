@@ -91,14 +91,14 @@ To enable the `UseKRaft` feature gate, specify `+UseKRaft,+KafkaNodePools` in th
 [id='ref-operator-stable-connect-identities-feature-gate-{context}']
 == StableConnectIdentities feature gate
 
-The `StableConnectIdentities` feature gate has a default state of _disabled_.
+The `StableConnectIdentities` feature gate has a default state of _enabled_.
 
 The `StableConnectIdentities` feature gate uses `StrimziPodSet` resources to manage Kafka Connect and Kafka MirrorMaker 2 pods instead of using Kubernetes `Deployment` resources.
 `StrimziPodSets` give the pods stable names and stable addresses, which do not change during rolling upgrades.
 This helps to minimize the number of rebalances of connector tasks.
 
-.Enabling the `StableConnectIdentities` feature gate
-To enable the `StableConnectIdentities` feature gate, specify `+StableConnectIdentities` in the `STRIMZI_FEATURE_GATES` environment variable in the Cluster Operator configuration.
+.Disabling the `StableConnectIdentities` feature gate
+To disable the `StableConnectIdentities` feature gate, specify `-StableConnectIdentities` in the `STRIMZI_FEATURE_GATES` environment variable in the Cluster Operator configuration.
 
 IMPORTANT: The `StableConnectIdentities` feature gate must be disabled when downgrading to Strimzi 0.33 and earlier versions.
 

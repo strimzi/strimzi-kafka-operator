@@ -6,23 +6,19 @@
 = Upgrading Strimzi
 
 [role="_abstract"]
-Strimzi can be upgraded to version {ProductVersion} to take advantage of new features and enhancements, performance improvements, and security options.
+Upgrade your Strimzi installation to version {ProductVersion} and benefit from new features, performance improvements, and enhanced security options.
+During the upgrade, Kafka is also be updated to the latest supported version, introducing additional features and bug fixes to your Strimzi deployment.
 
-As part of the upgrade, you upgrade Kafka to the latest supported version.
-Each Kafka release introduces new features, improvements, and bug fixes to your Strimzi deployment.
+If you encounter any issues with the new version, Strimzi can be xref:assembly-downgrade-{context}[downgraded] to the previous version.
 
-Strimzi can be xref:assembly-downgrade-{context}[downgraded] to the previous version if you encounter issues with the newer version.
+Released Strimzi versions can be found at {ReleaseDownload}.
 
-Released versions of Strimzi are available from the {ReleaseDownload}.
+.Upgrade without downtime
 
-.Upgrade downtime and availability
+For topics configured with high availability (replication factor of at least 3 and evenly distributed partitions), the upgrade process should not cause any downtime for consumers and producers.
 
-If topics are configured for high availability, upgrading Strimzi should not cause any downtime for consumers and producers that publish and read data from those topics.
-Highly available topics have a replication factor of at least 3 and partitions distributed evenly among the brokers.
-
-Upgrading Strimzi triggers rolling updates, where all brokers are restarted in turn, at different stages of the process.
-During rolling updates, not all brokers are online, so overall _cluster availability_ is temporarily reduced.
-A reduction in cluster availability increases the chance that a broker failure will result in lost messages.
+The upgrade triggers rolling updates, where brokers are restarted one by one at different stages of the process. 
+During this time, overall cluster availability is temporarily reduced, which may increase the risk of message loss in the event of a broker failure.
 
 include::../../modules/upgrading/con-upgrade-paths.adoc[leveloffset=+1]
 
@@ -35,6 +31,3 @@ include::assembly-upgrade-cluster-operator.adoc[leveloffset=+1]
 include::assembly-upgrade-kafka-versions.adoc[leveloffset=+1]
 
 include::../../modules/upgrading/proc-switching-to-FIPS-mode-when-upgrading-Strimzi.adoc[leveloffset=+1]
-
-//how to upgrade clients and kafka streams to use the incremental cooperative rebalance protocol
-include::../../modules/upgrading/proc-upgrading-consumers-streams-cooperative-rebalancing.adoc[leveloffset=+1]

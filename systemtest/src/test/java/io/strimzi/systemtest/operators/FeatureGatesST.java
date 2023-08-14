@@ -27,7 +27,6 @@ import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
 import io.strimzi.systemtest.resources.crd.KafkaNodePoolResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
-import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaConnectTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaConnectorTemplates;
@@ -50,11 +49,12 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-import static io.strimzi.systemtest.Constants.INFRA_NAMESPACE;
+import static io.strimzi.systemtest.Constants.CO_NAMESPACE;
 import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
@@ -98,17 +98,17 @@ public class FeatureGatesST extends AbstractST {
 
         testEnvVars.add(new EnvVar(Environment.STRIMZI_FEATURE_GATES_ENV, "+UseKRaft,+KafkaNodePools", null));
 
-        clusterOperator = new SetupClusterOperator.SetupClusterOperatorBuilder()
-                .withExtensionContext(extensionContext)
-                .withNamespace(INFRA_NAMESPACE)
-                .withWatchingNamespaces(Constants.WATCH_ALL_NAMESPACES)
-                .withExtraEnvVars(testEnvVars)
-                .createInstallation()
-                .runInstallation();
+        this.clusterOperator = this.clusterOperator.defaultInstallation(extensionContext)
+            .withNamespace(Constants.CO_NAMESPACE)
+            .withBindingsNamespaces(Arrays.asList(Constants.CO_NAMESPACE, Constants.TEST_SUITE_NAMESPACE))
+            .withExtraEnvVars(testEnvVars)
+            .createInstallation()
+            .runInstallation();
 
         Kafka kafka = KafkaTemplates.kafkaPersistent(clusterName, kafkaReplicas)
             .editOrNewMetadata()
                 .addToAnnotations(Annotations.ANNO_STRIMZI_IO_NODE_POOLS, "enabled")
+                .withNamespace(testStorage.getNamespaceName())
             .endMetadata()
             .editSpec()
                 .editKafka()
@@ -137,6 +137,7 @@ public class FeatureGatesST extends AbstractST {
         kafkaNodePool = new KafkaNodePoolBuilder(kafkaNodePool)
             .editOrNewMetadata()
                 .addToLabels(Labels.STRIMZI_CLUSTER_LABEL, testStorage.getClusterName())
+                .withNamespace(testStorage.getNamespaceName())
             .endMetadata()
             .editOrNewSpec()
                 .addToRoles(ProcessRoles.BROKER, ProcessRoles.CONTROLLER)
@@ -155,33 +156,33 @@ public class FeatureGatesST extends AbstractST {
         LOGGER.info("Trying to send some messages to Kafka in next few minutes");
 
         KafkaClients kafkaClients = new KafkaClientsBuilder()
-                .withProducerName(producerName)
-                .withConsumerName(consumerName)
-                .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(testStorage.getClusterName()))
-                .withUsername(testStorage.getUsername())
-                .withTopicName(topicName)
-                .withMessageCount(messageCount)
-                .withDelayMs(500)
-                .withNamespaceName(INFRA_NAMESPACE)
-                .build();
+            .withProducerName(producerName)
+            .withConsumerName(consumerName)
+            .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(testStorage.getClusterName()))
+            .withUsername(testStorage.getUsername())
+            .withTopicName(topicName)
+            .withMessageCount(messageCount)
+            .withDelayMs(500)
+            .withNamespaceName(testStorage.getNamespaceName())
+            .build();
 
         resourceManager.createResourceWithWait(extensionContext, kafkaClients.producerTlsStrimzi(clusterName));
         resourceManager.createResourceWithWait(extensionContext, kafkaClients.consumerTlsStrimzi(clusterName));
 
         // Check that there is no ZooKeeper
-        Map<String, String> zkPods = PodUtils.podSnapshot(INFRA_NAMESPACE, zkSelector);
+        Map<String, String> zkPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), zkSelector);
         assertThat("No ZooKeeper Pods should exist", zkPods.size(), is(0));
 
         // Roll Kafka
         LOGGER.info("Forcing rolling update of Kafka via read-only configuration change");
-        Map<String, String> kafkaPods = PodUtils.podSnapshot(INFRA_NAMESPACE, kafkaSelector);
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, k -> k.getSpec().getKafka().getConfig().put("log.retention.hours", 72), INFRA_NAMESPACE);
+        Map<String, String> kafkaPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), kafkaSelector);
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, k -> k.getSpec().getKafka().getConfig().put("log.retention.hours", 72), testStorage.getNamespaceName());
 
         LOGGER.info("Waiting for the next reconciliation to happen");
-        RollingUpdateUtils.waitTillComponentHasRolled(INFRA_NAMESPACE, kafkaSelector, kafkaReplicas, kafkaPods);
+        RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), kafkaSelector, kafkaReplicas, kafkaPods);
 
         LOGGER.info("Waiting for clients to finish sending/receiving messages");
-        ClientUtils.waitForClientsSuccess(producerName, consumerName, INFRA_NAMESPACE, MESSAGE_COUNT);
+        ClientUtils.waitForClientsSuccess(producerName, consumerName, testStorage.getNamespaceName(), MESSAGE_COUNT);
     }
     @IsolatedTest
     void testSwitchingConnectStabilityIdentifiesFeatureGateOnAndOff(ExtensionContext extensionContext) {
@@ -198,13 +199,12 @@ public class FeatureGatesST extends AbstractST {
 
         LOGGER.info("Deploying CO without Stable Connect Identities");
 
-        clusterOperator = new SetupClusterOperator.SetupClusterOperatorBuilder()
-                .withExtensionContext(extensionContext)
-                .withNamespace(testStorage.getNamespaceName())
-                .withWatchingNamespaces(Constants.WATCH_ALL_NAMESPACES)
-                .withExtraEnvVars(coEnvVars)
-                .createInstallation()
-                .runInstallation();
+        clusterOperator = this.clusterOperator.defaultInstallation(extensionContext)
+            .withNamespace(testStorage.getNamespaceName())
+            .withWatchingNamespaces(Constants.WATCH_ALL_NAMESPACES)
+            .withExtraEnvVars(coEnvVars)
+            .createInstallation()
+            .runInstallation();
 
         resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), 3, 1).build());
         resourceManager.createResourceWithWait(extensionContext, KafkaTopicTemplates.topic(testStorage).build());
@@ -305,14 +305,12 @@ public class FeatureGatesST extends AbstractST {
     void testKafkaNodePoolFeatureGate(ExtensionContext extensionContext) {
         assumeFalse(Environment.isOlmInstall() || Environment.isHelmInstall());
 
-        final TestStorage testStorage = new TestStorage(extensionContext, INFRA_NAMESPACE);
+        final TestStorage testStorage = new TestStorage(extensionContext, CO_NAMESPACE);
 
         List<EnvVar> coEnvVars = new ArrayList<>();
         coEnvVars.add(new EnvVar(Environment.STRIMZI_FEATURE_GATES_ENV, "+KafkaNodePools", null));
-
-        clusterOperator.unInstall();
-        clusterOperator = new SetupClusterOperator.SetupClusterOperatorBuilder()
-            .withExtensionContext(extensionContext)
+        
+        clusterOperator = this.clusterOperator.defaultInstallation(extensionContext)
             .withNamespace(testStorage.getNamespaceName())
             .withWatchingNamespaces(Constants.WATCH_ALL_NAMESPACES)
             .withExtraEnvVars(coEnvVars)
@@ -327,7 +325,7 @@ public class FeatureGatesST extends AbstractST {
             .endMetadata()
             .build();
 
-        KafkaNodePool kafkaNodePoolCr =  KafkaNodePoolTemplates.defaultKafkaNodePool(testStorage.getKafkaNodePoolName(), testStorage.getClusterName(), 3)
+        KafkaNodePool kafkaNodePoolCr =  KafkaNodePoolTemplates.defaultKafkaNodePool(testStorage.getNamespaceName(), testStorage.getKafkaNodePoolName(), testStorage.getClusterName(), 3)
             .editOrNewMetadata()
                 .withNamespace(testStorage.getNamespaceName())
             .endMetadata()

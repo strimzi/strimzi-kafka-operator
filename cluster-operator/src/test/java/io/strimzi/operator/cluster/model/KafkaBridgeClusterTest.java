@@ -1250,12 +1250,12 @@ public class KafkaBridgeClusterTest {
         switch (type) {
             case JaegerTracing.TYPE_JAEGER:
                 builder.editSpec()
-                            .withJaegerTracing(new JaegerTracing())
+                            .withTracing(new JaegerTracing())
                         .endSpec();
                 break;
             case OpenTelemetryTracing.TYPE_OPENTELEMETRY:
                 builder.editSpec()
-                            .withOpenTelemetryTracing(new OpenTelemetryTracing())
+                            .withTracing(new OpenTelemetryTracing())
                         .endSpec();
                 break;
             default:

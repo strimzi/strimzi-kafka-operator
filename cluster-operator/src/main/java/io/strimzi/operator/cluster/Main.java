@@ -48,6 +48,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 /**
@@ -59,6 +60,7 @@ public class Main {
     private static final Logger LOGGER = LogManager.getLogger(Main.class.getName());
 
     private static final int HEALTH_SERVER_PORT = 8080;
+    private static final long SHUTDOWN_TIMEOUT = 10_000L;
 
     /**
      * The main method used to run the Cluster Operator
@@ -75,6 +77,10 @@ public class Main {
         // setting DNS cache TTL
         Security.setProperty("networkaddress.cache.ttl", String.valueOf(config.getDnsCacheTtlSec()));
 
+        // Shutdown hook to register shutdown actions
+        ShutdownHook shutdownHook = new ShutdownHook();
+        Runtime.getRuntime().addShutdownHook(new Thread(shutdownHook));
+
         // setup Micrometer metrics options
         VertxOptions options = new VertxOptions().setMetricsOptions(
             new MicrometerMetricsOptions()
@@ -82,7 +88,7 @@ public class Main {
                 .setJvmMetricsEnabled(true)
                 .setEnabled(true));
         Vertx vertx = Vertx.vertx(options);
-        Runtime.getRuntime().addShutdownHook(new Thread(new ShutdownHook(vertx)));
+        shutdownHook.register(() -> ShutdownHook.shutdownVertx(vertx, SHUTDOWN_TIMEOUT));
 
         // Setup Micrometer Metrics provider
         MetricsProvider metricsProvider = new MicrometerMetricsProvider();
@@ -90,9 +96,9 @@ public class Main {
 
         maybeCreateClusterRoles(vertx, config, client)
                 .compose(i -> startHealthServer(vertx, metricsProvider))
-                .compose(i -> leaderElection(client, config))
+                .compose(i -> leaderElection(client, config, shutdownHook))
                 .compose(i -> createPlatformFeaturesAvailability(vertx, client))
-                .compose(pfa -> deployClusterOperatorVerticles(vertx, client, metricsProvider, pfa, config))
+                .compose(pfa -> deployClusterOperatorVerticles(vertx, client, metricsProvider, pfa, config, shutdownHook))
                 .onComplete(res -> {
                     if (res.failed())   {
                         LOGGER.error("Unable to start operator for 1 or more namespace", res.cause());
@@ -135,10 +141,11 @@ public class Main {
      * @param metricsProvider   Metrics provider instance
      * @param pfa               PlatformFeaturesAvailability instance describing the Kubernetes cluster
      * @param config            Cluster Operator configuration
+     * @param shutdownHook      Shutdown hook to register leader election shutdown
      *
      * @return  Future which completes when all Cluster Operator verticles are started and running
      */
-    static CompositeFuture deployClusterOperatorVerticles(Vertx vertx, KubernetesClient client, MetricsProvider metricsProvider, PlatformFeaturesAvailability pfa, ClusterOperatorConfig config) {
+    static CompositeFuture deployClusterOperatorVerticles(Vertx vertx, KubernetesClient client, MetricsProvider metricsProvider, PlatformFeaturesAvailability pfa, ClusterOperatorConfig config, ShutdownHook shutdownHook) {
         ResourceOperatorSupplier resourceOperatorSupplier = new ResourceOperatorSupplier(
                 vertx,
                 client,
@@ -181,7 +188,6 @@ public class Main {
             futures.add(prom.future());
             ClusterOperator operator = new ClusterOperator(namespace,
                     config,
-                    client,
                     kafkaClusterOperations,
                     kafkaConnectClusterOperations,
                     kafkaMirrorMakerAssemblyOperator,
@@ -192,6 +198,8 @@ public class Main {
             vertx.deployVerticle(operator,
                 res -> {
                     if (res.succeeded()) {
+                        shutdownHook.register(() -> ShutdownHook.undeployVertxVerticle(vertx, res.result(), SHUTDOWN_TIMEOUT));
+
                         if (config.getCustomResourceSelector() != null) {
                             LOGGER.info("Cluster Operator verticle started in namespace {} with label selector {}", namespace, config.getCustomResourceSelector());
                         } else {
@@ -214,10 +222,11 @@ public class Main {
      *
      * When the leader election is disabled, it just completes the future without waiting for anything.
      *
-     * @param client    Kubernetes client
-     * @param config    Cluster Operator configuration
+     * @param client        Kubernetes client
+     * @param config        Cluster Operator configuration
+     * @param shutdownHook  Shutdown hook to register leader election shutdown
      */
-    private static Future<Void> leaderElection(KubernetesClient client, ClusterOperatorConfig config)    {
+    private static Future<Void> leaderElection(KubernetesClient client, ClusterOperatorConfig config, ShutdownHook shutdownHook)    {
         Promise<Void> leader = Promise.promise();
 
         if (config.getLeaderElectionConfig() != null) {
@@ -228,10 +237,16 @@ public class Main {
                         LOGGER.info("I'm the new leader");
                         leader.complete();
                     },
-                    () -> {
+                    isShuttingDown -> {
                         // Not a leader anymore
-                        LOGGER.info("Stopped being a leader => exiting");
-                        System.exit(0);
+                        if (!isShuttingDown) {
+                            // Exit only if this isn't called as part of a shutdown
+                            LOGGER.warn("Stopped being a leader => exiting");
+                            // Has to run asynchronously to not block the leader election from shutting down (the exit call is synchronous)
+                            CompletableFuture.runAsync(() -> System.exit(1));
+                        } else {
+                            LOGGER.info("Stopped being a leader during a shutdown");
+                        }
                     },
                     s -> {
                         // Do nothing
@@ -239,6 +254,7 @@ public class Main {
 
             LOGGER.info("Waiting to become a leader");
             leaderElection.start();
+            shutdownHook.register(leaderElection::stop);
         } else {
             LOGGER.info("Leader election is not enabled");
             leader.complete();
@@ -259,7 +275,6 @@ public class Main {
      */
     /*test*/ static Future<Void> maybeCreateClusterRoles(Vertx vertx, ClusterOperatorConfig config, KubernetesClient client)  {
         if (config.isCreateClusterRoles()) {
-            @SuppressWarnings({ "rawtypes" })
             List<Future<ReconcileResult<ClusterRole>>> futures = new ArrayList<>();
             ClusterRoleOperator cro = new ClusterRoleOperator(vertx, client);
 
@@ -278,7 +293,6 @@ public class Main {
                                 StandardCharsets.UTF_8))) {
                     String yaml = br.lines().collect(Collectors.joining(System.lineSeparator()));
                     ClusterRole role = ClusterRoleOperator.convertYamlToClusterRole(yaml);
-                    @SuppressWarnings({ "rawtypes" })
                     Future<ReconcileResult<ClusterRole>> fut = cro.reconcile(new Reconciliation("start-cluster-operator", "Deployment", config.getOperatorNamespace(), "cluster-operator"), role.getMetadata().getName(), role);
                     futures.add(fut);
                 } catch (IOException e) {

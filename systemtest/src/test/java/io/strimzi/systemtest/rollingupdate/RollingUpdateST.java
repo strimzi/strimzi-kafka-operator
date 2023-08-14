@@ -83,7 +83,7 @@ class RollingUpdateST extends AbstractST {
     @Tag(ROLLING_UPDATE)
     @KRaftNotSupported("ZooKeeper is not supported by KRaft mode and is used in this test case")
     void testRecoveryDuringZookeeperRollingUpdate(ExtensionContext extensionContext) {
-        final TestStorage testStorage = new TestStorage(extensionContext, clusterOperator.getDeploymentNamespace());
+        final TestStorage testStorage = new TestStorage(extensionContext, Constants.TEST_SUITE_NAMESPACE);
 
         resourceManager.createResourceWithWait(extensionContext,
             KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), 3, 3).build(),
@@ -158,7 +158,7 @@ class RollingUpdateST extends AbstractST {
     @ParallelNamespaceTest
     @Tag(ROLLING_UPDATE)
     void testRecoveryDuringKafkaRollingUpdate(ExtensionContext extensionContext) {
-        final TestStorage testStorage = new TestStorage(extensionContext, clusterOperator.getDeploymentNamespace());
+        final TestStorage testStorage = new TestStorage(extensionContext, Constants.TEST_SUITE_NAMESPACE);
 
         resourceManager.createResourceWithWait(extensionContext,
             KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), 3, 3).build(),
@@ -260,7 +260,7 @@ class RollingUpdateST extends AbstractST {
     @Tag(COMPONENT_SCALING)
     @KRaftNotSupported("The scaling of the Kafka Pods is not working properly at the moment")
     void testKafkaAndZookeeperScaleUpScaleDown(ExtensionContext extensionContext) {
-        final TestStorage testStorage = new TestStorage(extensionContext, clusterOperator.getDeploymentNamespace());
+        final TestStorage testStorage = new TestStorage(extensionContext, Constants.TEST_SUITE_NAMESPACE);
 
         resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), 3, 3)
             .editSpec()
@@ -276,7 +276,7 @@ class RollingUpdateST extends AbstractST {
 
         Map<String, String> kafkaPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getKafkaSelector());
 
-        testDockerImagesForKafkaCluster(testStorage.getClusterName(), clusterOperator.getDeploymentNamespace(), testStorage.getNamespaceName(), 3, 3, false);
+        testDockerImagesForKafkaCluster(testStorage.getClusterName(), Constants.CO_NAMESPACE, testStorage.getNamespaceName(), 3, 3, false);
 
         LOGGER.info("Running kafkaScaleUpScaleDown {}", testStorage.getClusterName());
 
@@ -387,7 +387,7 @@ class RollingUpdateST extends AbstractST {
     @Tag(COMPONENT_SCALING)
     @KRaftNotSupported("Zookeeper is not supported by KRaft mode and is used in this test case")
     void testZookeeperScaleUpScaleDown(ExtensionContext extensionContext) {
-        final TestStorage testStorage = new TestStorage(extensionContext, clusterOperator.getDeploymentNamespace());
+        final TestStorage testStorage = new TestStorage(extensionContext, Constants.TEST_SUITE_NAMESPACE);
 
         resourceManager.createResourceWithWait(extensionContext,
             KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), 3, 3).build(),
@@ -492,7 +492,7 @@ class RollingUpdateST extends AbstractST {
     @ParallelNamespaceTest
     @Tag(ROLLING_UPDATE)
     void testBrokerConfigurationChangeTriggerRollingUpdate(ExtensionContext extensionContext) {
-        final String namespaceName = StUtils.getNamespaceBasedOnRbac(clusterOperator.getDeploymentNamespace(), extensionContext);
+        final String namespaceName = StUtils.getNamespaceBasedOnRbac(Constants.TEST_SUITE_NAMESPACE, extensionContext);
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         final LabelSelector kafkaSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.kafkaStatefulSetName(clusterName));
         final LabelSelector zkSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.zookeeperStatefulSetName(clusterName));
@@ -519,7 +519,7 @@ class RollingUpdateST extends AbstractST {
     @ParallelNamespaceTest
     @Tag(ROLLING_UPDATE)
     void testManualKafkaConfigMapChangeDontTriggerRollingUpdate(ExtensionContext extensionContext) {
-        final String namespaceName = StUtils.getNamespaceBasedOnRbac(clusterOperator.getDeploymentNamespace(), extensionContext);
+        final String namespaceName = StUtils.getNamespaceBasedOnRbac(Constants.TEST_SUITE_NAMESPACE, extensionContext);
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         final LabelSelector kafkaSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.kafkaStatefulSetName(clusterName));
         final LabelSelector zkSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.zookeeperStatefulSetName(clusterName));
@@ -544,7 +544,7 @@ class RollingUpdateST extends AbstractST {
     @ParallelNamespaceTest
     @Tag(ROLLING_UPDATE)
     void testExternalLoggingChangeTriggerRollingUpdate(ExtensionContext extensionContext) {
-        final String namespaceName = StUtils.getNamespaceBasedOnRbac(clusterOperator.getDeploymentNamespace(), extensionContext);
+        final String namespaceName = StUtils.getNamespaceBasedOnRbac(Constants.TEST_SUITE_NAMESPACE, extensionContext);
         final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
         final LabelSelector kafkaSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.kafkaStatefulSetName(clusterName));
         final LabelSelector zkSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.zookeeperStatefulSetName(clusterName));
@@ -630,14 +630,14 @@ class RollingUpdateST extends AbstractST {
 
         resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaPersistent(clusterName, 3, 3)
             .editMetadata()
-                .withNamespace(clusterOperator.getDeploymentNamespace())
+                .withNamespace(Constants.TEST_SUITE_NAMESPACE)
             .endMetadata()
             .build());
 
-        Map<String, String> kafkaPods = PodUtils.podSnapshot(clusterOperator.getDeploymentNamespace(), kafkaSelector);
+        Map<String, String> kafkaPods = PodUtils.podSnapshot(Constants.TEST_SUITE_NAMESPACE, kafkaSelector);
         Map<String, String> zkPods = null;
         if (!Environment.isKRaftModeEnabled()) {
-            zkPods = PodUtils.podSnapshot(clusterOperator.getDeploymentNamespace(), zkSelector);
+            zkPods = PodUtils.podSnapshot(Constants.TEST_SUITE_NAMESPACE, zkSelector);
         }
 
         // Changes to readiness probe should trigger a rolling update
@@ -646,11 +646,11 @@ class RollingUpdateST extends AbstractST {
             if (!Environment.isKRaftModeEnabled()) {
                 kafka.getSpec().getZookeeper().setReadinessProbe(new ProbeBuilder().withTimeoutSeconds(6).build());
             }
-        }, clusterOperator.getDeploymentNamespace());
+        }, Constants.TEST_SUITE_NAMESPACE);
 
         TestUtils.waitFor("rolling update starts", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_STATUS_TIMEOUT,
-            () -> kubeClient(clusterOperator.getDeploymentNamespace()).listPods(clusterOperator.getDeploymentNamespace()).stream().filter(pod -> pod.getStatus().getPhase().equals("Running"))
-                    .map(pod -> pod.getStatus().getPhase()).collect(Collectors.toList()).size() < kubeClient().listPods(clusterOperator.getDeploymentNamespace()).size());
+            () -> kubeClient(Constants.TEST_SUITE_NAMESPACE).listPods(Constants.TEST_SUITE_NAMESPACE).stream().filter(pod -> pod.getStatus().getPhase().equals("Running"))
+                    .map(pod -> pod.getStatus().getPhase()).collect(Collectors.toList()).size() < kubeClient().listPods(Constants.TEST_SUITE_NAMESPACE).size());
 
         LabelSelector coLabelSelector = kubeClient().getDeployment(clusterOperator.getDeploymentNamespace(), ResourceManager.getCoDeploymentName()).getSpec().getSelector();
         LOGGER.info("Deleting Cluster Operator Pod with labels {}", coLabelSelector);
@@ -658,17 +658,17 @@ class RollingUpdateST extends AbstractST {
         LOGGER.info("Cluster Operator Pod deleted");
 
         if (!Environment.isKRaftModeEnabled()) {
-            RollingUpdateUtils.waitTillComponentHasRolled(clusterOperator.getDeploymentNamespace(), zkSelector, 3, zkPods);
+            RollingUpdateUtils.waitTillComponentHasRolled(Constants.TEST_SUITE_NAMESPACE, zkSelector, 3, zkPods);
         }
 
         TestUtils.waitFor("rolling update starts", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_STATUS_TIMEOUT,
-            () -> kubeClient(clusterOperator.getDeploymentNamespace()).listPods(clusterOperator.getDeploymentNamespace()).stream().map(pod -> pod.getStatus().getPhase()).collect(Collectors.toList()).contains("Pending"));
+            () -> kubeClient(Constants.TEST_SUITE_NAMESPACE).listPods(Constants.TEST_SUITE_NAMESPACE).stream().map(pod -> pod.getStatus().getPhase()).collect(Collectors.toList()).contains("Pending"));
 
         LOGGER.info("Deleting Cluster Operator Pod with labels {}", coLabelSelector);
         kubeClient(clusterOperator.getDeploymentNamespace()).deletePodsByLabelSelector(coLabelSelector);
         LOGGER.info("Cluster Operator Pod deleted");
 
-        RollingUpdateUtils.waitTillComponentHasRolled(clusterOperator.getDeploymentNamespace(), kafkaSelector, 3, kafkaPods);
+        RollingUpdateUtils.waitTillComponentHasRolled(Constants.TEST_SUITE_NAMESPACE, kafkaSelector, 3, kafkaPods);
     }
 
     @IsolatedTest
@@ -676,7 +676,7 @@ class RollingUpdateST extends AbstractST {
     @KRaftNotSupported("Zookeeper is not supported by KRaft mode and is used in this test class")
     @SuppressWarnings("checkstyle:MethodLength")
     void testMetricsChange(ExtensionContext extensionContext) throws JsonProcessingException {
-        final TestStorage testStorage = new TestStorage(extensionContext, clusterOperator.getDeploymentNamespace());
+        final TestStorage testStorage = new TestStorage(extensionContext, Constants.TEST_SUITE_NAMESPACE);
 
         //Kafka
         Map<String, Object> kafkaRule = new HashMap<>();

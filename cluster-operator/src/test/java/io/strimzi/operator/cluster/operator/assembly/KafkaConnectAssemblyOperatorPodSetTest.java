@@ -9,28 +9,34 @@ import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.PodBuilder;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
+import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy;
 import io.fabric8.kubernetes.api.model.policy.v1.PodDisruptionBudget;
+import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.api.kafka.KafkaConnectList;
+import io.strimzi.api.kafka.KafkaConnectorList;
 import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnectBuilder;
 import io.strimzi.api.kafka.model.KafkaConnectResources;
+import io.strimzi.api.kafka.model.KafkaConnector;
 import io.strimzi.api.kafka.model.StrimziPodSet;
+import io.strimzi.api.kafka.model.connect.build.BuildBuilder;
 import io.strimzi.api.kafka.model.connect.build.JarArtifactBuilder;
 import io.strimzi.api.kafka.model.connect.build.PluginBuilder;
 import io.strimzi.api.kafka.model.status.KafkaConnectStatus;
-import io.strimzi.operator.cluster.operator.resource.MockSharedEnvironmentProvider;
-import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
+import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.KafkaConnectCluster;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.PodSetUtils;
+import io.strimzi.operator.cluster.operator.resource.MockSharedEnvironmentProvider;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
+import io.strimzi.operator.cluster.operator.resource.SharedEnvironmentProvider;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
-import io.strimzi.operator.cluster.operator.resource.SharedEnvironmentProvider;
 import io.strimzi.operator.common.model.Labels;
+import io.strimzi.operator.common.operator.resource.ClusterRoleBindingOperator;
 import io.strimzi.operator.common.operator.resource.ConfigMapOperator;
 import io.strimzi.operator.common.operator.resource.CrdOperator;
 import io.strimzi.operator.common.operator.resource.DeploymentOperator;
@@ -52,6 +58,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
+import org.mockito.Mockito;
 
 import java.util.List;
 import java.util.Map;
@@ -162,7 +169,7 @@ public class KafkaConnectAssemblyOperatorPodSetTest {
                 vertx,
                 new PlatformFeaturesAvailability(false, KUBERNETES_VERSION),
                 supplier,
-                ResourceUtils.dummyClusterOperatorConfig("+StableConnectIdentities")
+                ResourceUtils.dummyClusterOperatorConfig()
         );
 
         Checkpoint async = context.checkpoint();
@@ -277,7 +284,7 @@ public class KafkaConnectAssemblyOperatorPodSetTest {
                 vertx,
                 new PlatformFeaturesAvailability(false, KUBERNETES_VERSION),
                 supplier,
-                ResourceUtils.dummyClusterOperatorConfig("+StableConnectIdentities")
+                ResourceUtils.dummyClusterOperatorConfig()
         );
 
         Checkpoint async = context.checkpoint();
@@ -373,7 +380,7 @@ public class KafkaConnectAssemblyOperatorPodSetTest {
                 vertx,
                 new PlatformFeaturesAvailability(false, KUBERNETES_VERSION),
                 supplier,
-                ResourceUtils.dummyClusterOperatorConfig("+StableConnectIdentities")
+                ResourceUtils.dummyClusterOperatorConfig()
         );
 
         Checkpoint async = context.checkpoint();
@@ -468,7 +475,7 @@ public class KafkaConnectAssemblyOperatorPodSetTest {
                 vertx,
                 new PlatformFeaturesAvailability(false, KUBERNETES_VERSION),
                 supplier,
-                ResourceUtils.dummyClusterOperatorConfig("+StableConnectIdentities")
+                ResourceUtils.dummyClusterOperatorConfig()
         );
 
         Checkpoint async = context.checkpoint();
@@ -603,7 +610,7 @@ public class KafkaConnectAssemblyOperatorPodSetTest {
                 vertx,
                 new PlatformFeaturesAvailability(false, KUBERNETES_VERSION),
                 supplier,
-                ResourceUtils.dummyClusterOperatorConfig("+StableConnectIdentities")
+                ResourceUtils.dummyClusterOperatorConfig()
         );
 
         Checkpoint async = context.checkpoint();
@@ -704,7 +711,7 @@ public class KafkaConnectAssemblyOperatorPodSetTest {
                 vertx,
                 new PlatformFeaturesAvailability(false, KUBERNETES_VERSION),
                 supplier,
-                ResourceUtils.dummyClusterOperatorConfig("+StableConnectIdentities")
+                ResourceUtils.dummyClusterOperatorConfig()
         );
 
         Checkpoint async = context.checkpoint();
@@ -747,5 +754,86 @@ public class KafkaConnectAssemblyOperatorPodSetTest {
 
                     async.flag();
                 })));
+    }
+
+    @Test
+    public void testDeleteClusterRoleBindings(VertxTestContext context) {
+        String kcName = "foo";
+        String kcNamespace = "test";
+
+        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
+
+        ClusterRoleBindingOperator mockCrbOps = supplier.clusterRoleBindingOperator;
+        ArgumentCaptor<ClusterRoleBinding> desiredCrb = ArgumentCaptor.forClass(ClusterRoleBinding.class);
+        when(mockCrbOps.reconcile(any(), eq(KafkaConnectResources.initContainerClusterRoleBindingName(kcName, kcNamespace)), desiredCrb.capture())).thenReturn(Future.succeededFuture());
+
+        CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList> mockCntrOps = supplier.kafkaConnectorOperator;
+        when(mockCntrOps.listAsync(any(), any(Labels.class))).thenReturn(Future.succeededFuture(List.of()));
+
+        KafkaConnectAssemblyOperator op = new KafkaConnectAssemblyOperator(vertx, new PlatformFeaturesAvailability(true, KubernetesVersion.MINIMAL_SUPPORTED_VERSION),
+                supplier, ResourceUtils.dummyClusterOperatorConfig());
+        Reconciliation reconciliation = new Reconciliation("test-trigger", KafkaConnect.RESOURCE_KIND, kcNamespace, kcName);
+
+        Checkpoint async = context.checkpoint();
+
+        op.delete(reconciliation)
+                .onComplete(context.succeeding(c -> context.verify(() -> {
+                    assertThat(desiredCrb.getValue(), is(nullValue()));
+                    Mockito.verify(mockCrbOps, times(1)).reconcile(any(), any(), any());
+
+                    async.flag();
+                })));
+    }
+
+    @Test
+    public void testImageStreamValidation(VertxTestContext context) {
+        String kcName = "my-connect", kcNamespace = "test";
+        String failureMsg = String.format("The build can't start because there is no image stream with name %s", kcName);
+
+        KafkaConnect kc = ResourceUtils.createEmptyKafkaConnect(kcNamespace, kcName);
+        kc.getSpec().setBuild(
+            new BuildBuilder()
+                .withNewImageStreamOutput()
+                    .withImage(kcName + ":latest")
+                .endImageStreamOutput()
+                .withPlugins(new PluginBuilder()
+                        .withName("my-connector")
+                        .withArtifacts(new JarArtifactBuilder().withUrl("https://example.com/my.jar").build())
+                        .build())
+                .build());
+
+        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
+        var mockConnectOps = supplier.connectOperator;
+        var mockDcOps = supplier.deploymentOperations;
+        var mockPodSetOps = supplier.strimziPodSetOperator;
+        var mockNetPolOps = supplier.networkPolicyOperator;
+        var mockBcOps = supplier.buildConfigOperations;
+        var mockIsOps = supplier.imageStreamOperations;
+
+        KafkaConnectCluster connect = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kc, VERSIONS, SHARED_ENV_PROVIDER);
+        when(mockConnectOps.get(kcNamespace, kcName)).thenReturn(kc);
+        when(mockConnectOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(kc));
+        ArgumentCaptor<KafkaConnect> connectCaptor = ArgumentCaptor.forClass(KafkaConnect.class);
+        when(mockConnectOps.updateStatusAsync(any(), connectCaptor.capture())).thenReturn(Future.succeededFuture());
+        when(mockDcOps.getAsync(kcNamespace, connect.getComponentName())).thenReturn(Future.succeededFuture(connect.generateDeployment(3, null, Map.of(), true, null, null, null)));
+        when(mockPodSetOps.getAsync(any(), any())).thenReturn(Future.succeededFuture());
+        when(mockNetPolOps.reconcile(any(), eq(kc.getMetadata().getNamespace()), eq(KafkaConnectResources.deploymentName(kc.getMetadata().getName())), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new NetworkPolicy())));
+        when(mockBcOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture());
+        when(mockIsOps.getAsync(kcNamespace, kcName)).thenReturn(Future.succeededFuture());
+
+        KafkaConnectAssemblyOperator ops = new KafkaConnectAssemblyOperator(vertx, new PlatformFeaturesAvailability(true, KubernetesVersion.MINIMAL_SUPPORTED_VERSION),
+                supplier, ResourceUtils.dummyClusterOperatorConfig());
+
+        Checkpoint async = context.checkpoint();
+        ops.reconcile(new Reconciliation("unit-test", KafkaConnect.RESOURCE_KIND, kcNamespace, kcName))
+            .onComplete(context.failing(v -> context.verify(() -> {
+                List<KafkaConnect> capturedConnects = connectCaptor.getAllValues();
+                assertThat(capturedConnects, hasSize(1));
+                KafkaConnectStatus connectStatus = capturedConnects.get(0).getStatus();
+                assertThat(connectStatus.getConditions().get(0).getStatus(), is("True"));
+                assertThat(connectStatus.getConditions().get(0).getType(), is("NotReady"));
+                assertThat(connectStatus.getConditions().get(0).getMessage(), is(failureMsg));
+                async.flag();
+            })));
     }
 }

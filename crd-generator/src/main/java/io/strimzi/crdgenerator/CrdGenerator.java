@@ -634,7 +634,6 @@ class CrdGenerator {
         if (!isAbstract(crdClass.getModifiers())) {
             checkForBuilderClass(crdClass, crdClass.getName() + "Builder");
             checkForBuilderClass(crdClass, crdClass.getName() + "Fluent");
-            checkForBuilderClass(crdClass, crdClass.getName() + "FluentImpl");
         }
         if (!Modifier.isAbstract(crdClass.getModifiers())) {
             hasAnyGetterAndAnySetter(crdClass);

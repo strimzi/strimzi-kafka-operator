@@ -13,6 +13,7 @@ import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.informers.SharedIndexInformer;
 import io.fabric8.kubernetes.client.informers.cache.Indexer;
 import io.strimzi.operator.cluster.model.securityprofiles.PodSecurityProviderFactory;
+import io.strimzi.operator.common.ShutdownHook;
 import io.strimzi.platform.KubernetesVersion;
 import io.vertx.core.Vertx;
 import io.vertx.core.VertxOptions;
@@ -64,7 +65,7 @@ public class ClusterOperatorTest {
         env.put(ClusterOperatorConfig.STRIMZI_KAFKA_CONNECT_IMAGES, KafkaVersionTestUtils.getKafkaConnectImagesEnvVarString());
         env.put(ClusterOperatorConfig.STRIMZI_KAFKA_MIRROR_MAKER_IMAGES, KafkaVersionTestUtils.getKafkaMirrorMakerImagesEnvVarString());
         env.put(ClusterOperatorConfig.STRIMZI_KAFKA_MIRROR_MAKER_2_IMAGES, KafkaVersionTestUtils.getKafkaMirrorMaker2ImagesEnvVarString());
-        env.put(ClusterOperatorConfig.FEATURE_GATES.key(), "+KafkaNodePools,+StableConnectIdentities");
+        env.put(ClusterOperatorConfig.FEATURE_GATES.key(), "+KafkaNodePools,-StableConnectIdentities");
 
         if (podSetsOnly) {
             env.put(ClusterOperatorConfig.POD_SET_RECONCILIATION_ONLY.key(), "true");
@@ -174,7 +175,7 @@ public class ClusterOperatorTest {
         CountDownLatch latch = new CountDownLatch(namespaceList.size() + 1);
 
         Main.deployClusterOperatorVerticles(VERTX, client, ResourceUtils.metricsProvider(), new PlatformFeaturesAvailability(false, KubernetesVersion.MINIMAL_SUPPORTED_VERSION),
-                    ClusterOperatorConfig.buildFromMap(env, KafkaVersionTestUtils.getKafkaVersionLookup()))
+                    ClusterOperatorConfig.buildFromMap(env, KafkaVersionTestUtils.getKafkaVersionLookup()), new ShutdownHook())
 
             .onComplete(context.succeeding(v -> context.verify(() -> {
                 assertThat("A verticle per namespace", VERTX.deploymentIDs(), hasSize(namespaceList.size()));
@@ -269,7 +270,7 @@ public class ClusterOperatorTest {
         CountDownLatch latch = new CountDownLatch(2);
 
         Main.deployClusterOperatorVerticles(VERTX, client, ResourceUtils.metricsProvider(), new PlatformFeaturesAvailability(false, KubernetesVersion.MINIMAL_SUPPORTED_VERSION),
-                ClusterOperatorConfig.buildFromMap(env, KafkaVersionTestUtils.getKafkaVersionLookup()))
+                ClusterOperatorConfig.buildFromMap(env, KafkaVersionTestUtils.getKafkaVersionLookup()), new ShutdownHook())
             .onComplete(context.succeeding(v -> context.verify(() -> {
                 assertThat("A verticle per namespace", VERTX.deploymentIDs(), hasSize(1));
                 for (String deploymentId: VERTX.deploymentIDs()) {

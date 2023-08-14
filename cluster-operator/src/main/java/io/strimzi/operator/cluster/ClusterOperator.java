@@ -4,10 +4,8 @@
  */
 package io.strimzi.operator.cluster;
 
-import io.fabric8.kubernetes.client.KubernetesClient;
-import io.fabric8.kubernetes.client.Watch;
+import io.strimzi.api.kafka.model.KafkaConnector;
 import io.strimzi.api.kafka.model.nodepool.KafkaNodePool;
-import io.strimzi.operator.cluster.operator.assembly.AbstractConnectOperator;
 import io.strimzi.operator.cluster.operator.assembly.KafkaAssemblyOperator;
 import io.strimzi.operator.cluster.operator.assembly.KafkaBridgeAssemblyOperator;
 import io.strimzi.operator.cluster.operator.assembly.KafkaConnectAssemblyOperator;
@@ -16,7 +14,8 @@ import io.strimzi.operator.cluster.operator.assembly.KafkaMirrorMakerAssemblyOpe
 import io.strimzi.operator.cluster.operator.assembly.KafkaRebalanceAssemblyOperator;
 import io.strimzi.operator.cluster.operator.assembly.StrimziPodSetController;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
-import io.strimzi.operator.common.AbstractOperator;
+import io.strimzi.operator.cluster.operator.assembly.AbstractOperator;
+import io.strimzi.operator.cluster.operator.assembly.ReconnectingWatcher;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
@@ -46,11 +45,10 @@ public class ClusterOperator extends AbstractVerticle {
     private static final String NAME_SUFFIX = "-cluster-operator";
     private static final String CERTS_SUFFIX = NAME_SUFFIX + "-certs";
 
-    private final KubernetesClient client;
     private final String namespace;
     private final ClusterOperatorConfig config;
 
-    private final Map<String, Watch> watchByKind = new ConcurrentHashMap<>();
+    private final Map<String, ReconnectingWatcher<?>> watchByKind = new ConcurrentHashMap<>();
 
     private long reconcileTimer;
     private final KafkaAssemblyOperator kafkaAssemblyOperator;
@@ -70,20 +68,18 @@ public class ClusterOperator extends AbstractVerticle {
     /**
      * Constructor
      *
-     * @param namespace                             Namespace which this operator instance manages
-     * @param config                                Cluster Operator configuration
-     * @param client                                Kubernetes client
-     * @param kafkaAssemblyOperator                 Kafka operator
-     * @param kafkaConnectAssemblyOperator          KafkaConnect operator
-     * @param kafkaMirrorMakerAssemblyOperator      KafkaMirrorMaker operator
-     * @param kafkaMirrorMaker2AssemblyOperator     KafkaMirrorMaker2 operator
-     * @param kafkaBridgeAssemblyOperator           KafkaBridge operator
-     * @param kafkaRebalanceAssemblyOperator        KafkaRebalance operator
-     * @param resourceOperatorSupplier              Resource operator supplier
+     * @param namespace                         Namespace which this operator instance manages
+     * @param config                            Cluster Operator configuration
+     * @param kafkaAssemblyOperator             Kafka operator
+     * @param kafkaConnectAssemblyOperator      KafkaConnect operator
+     * @param kafkaMirrorMakerAssemblyOperator  KafkaMirrorMaker operator
+     * @param kafkaMirrorMaker2AssemblyOperator KafkaMirrorMaker2 operator
+     * @param kafkaBridgeAssemblyOperator       KafkaBridge operator
+     * @param kafkaRebalanceAssemblyOperator    KafkaRebalance operator
+     * @param resourceOperatorSupplier          Resource operator supplier
      */
     public ClusterOperator(String namespace,
                            ClusterOperatorConfig config,
-                           KubernetesClient client,
                            KafkaAssemblyOperator kafkaAssemblyOperator,
                            KafkaConnectAssemblyOperator kafkaConnectAssemblyOperator,
                            KafkaMirrorMakerAssemblyOperator kafkaMirrorMakerAssemblyOperator,
@@ -94,7 +90,6 @@ public class ClusterOperator extends AbstractVerticle {
         LOGGER.info("Creating ClusterOperator for namespace {}", namespace);
         this.namespace = namespace;
         this.config = config;
-        this.client = client;
         this.kafkaAssemblyOperator = kafkaAssemblyOperator;
         this.kafkaConnectAssemblyOperator = kafkaConnectAssemblyOperator;
         this.kafkaMirrorMakerAssemblyOperator = kafkaMirrorMakerAssemblyOperator;
@@ -116,10 +111,10 @@ public class ClusterOperator extends AbstractVerticle {
 
         if (!config.isPodSetReconciliationOnly()) {
             List<AbstractOperator<?, ?, ?, ?>> operators = new ArrayList<>(asList(
-                    kafkaAssemblyOperator, kafkaMirrorMakerAssemblyOperator,
-                    kafkaConnectAssemblyOperator, kafkaBridgeAssemblyOperator, kafkaMirrorMaker2AssemblyOperator));
+                    kafkaAssemblyOperator, kafkaMirrorMakerAssemblyOperator, kafkaConnectAssemblyOperator,
+                    kafkaBridgeAssemblyOperator, kafkaMirrorMaker2AssemblyOperator, kafkaRebalanceAssemblyOperator));
             for (AbstractOperator<?, ?, ?, ?> operator : operators) {
-                startFutures.add(operator.createWatch(namespace, operator.recreateWatch(namespace)).compose(w -> {
+                startFutures.add(operator.createWatch(namespace).compose(w -> {
                     LOGGER.info("Opened watch for {} operator", operator.kind());
                     watchByKind.put(operator.kind(), w);
                     return Future.succeededFuture();
@@ -129,14 +124,18 @@ public class ClusterOperator extends AbstractVerticle {
             if (config.featureGates().kafkaNodePoolsEnabled())  {
                 // When node pools are enabled, we create the NodePool watch
                 startFutures.add(kafkaAssemblyOperator.createNodePoolWatch(namespace).compose(w -> {
-                    LOGGER.info("Opened KafkaNodePool watch for {} operator", kafkaAssemblyOperator.kind());
+                    LOGGER.info("Opened watch for {} operator", KafkaNodePool.RESOURCE_KIND);
                     watchByKind.put(KafkaNodePool.RESOURCE_KIND, w);
                     return Future.succeededFuture();
                 }));
             }
 
-            startFutures.add(AbstractConnectOperator.createConnectorWatch(kafkaConnectAssemblyOperator, namespace, config.getCustomResourceSelector()));
-            startFutures.add(kafkaRebalanceAssemblyOperator.createRebalanceWatch(namespace));
+            // Start connector watch and add it to the map as well
+            startFutures.add(kafkaConnectAssemblyOperator.createConnectorWatch(namespace).compose(w -> {
+                LOGGER.info("Opened watch for {} operator", KafkaConnector.RESOURCE_KIND);
+                watchByKind.put(KafkaConnector.RESOURCE_KIND, w);
+                return Future.succeededFuture();
+            }));
         }
 
         Future.join(startFutures)
@@ -183,14 +182,13 @@ public class ClusterOperator extends AbstractVerticle {
     public void stop(Promise<Void> stop) {
         LOGGER.info("Stopping ClusterOperator for namespace {}", namespace);
         vertx.cancelTimer(reconcileTimer);
-        for (Watch watch : watchByKind.values()) {
+        for (ReconnectingWatcher<?> watch : watchByKind.values()) {
             if (watch != null) {
                 watch.close();
             }
         }
 
         strimziPodSetController.stop();
-        client.close();
         stop.complete();
     }
 

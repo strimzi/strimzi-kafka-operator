@@ -7,29 +7,31 @@ package io.strimzi.operator.cluster.leaderelection;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.extended.leaderelection.LeaderCallbacks;
 import io.fabric8.kubernetes.client.extended.leaderelection.LeaderElectionConfigBuilder;
+import io.fabric8.kubernetes.client.extended.leaderelection.LeaderElector;
 import io.fabric8.kubernetes.client.extended.leaderelection.resourcelock.LeaseLock;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.concurrent.CancellationException;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
 /**
- * LeaderElectionManager class is responsible for the leader election process. It has its own long-running thread to
- * handle the servicing of the Kubernetes Lease lock. It waits for it until it get available and when it becomes the
- * leader, it also periodically updates the lock to make sure it stays the leader as well. It offers callbacks which
- * the operators can use to integrate with it.
+ * LeaderElectionManager class is responsible for the leader election process. It is based on a future provided by the
+ * Fabric8 leader elector. It waits for it until it get available and when it becomes the leader, it also periodically
+ * updates the lock to make sure it stays the leader as well. It offers callbacks which the operators can use to
+ * integrate with it.
  */
-public class LeaderElectionManager implements Runnable  {
+public class LeaderElectionManager {
     private static final Logger LOGGER = LogManager.getLogger(LeaderElectionManager.class);
 
-    private final KubernetesClient client;
-    private final LeaderElectionManagerConfig config;
     private final Runnable startLeadershipCallback;
-    private final Runnable stopLeadershipCallback;
+    private final Consumer<Boolean> stopLeadershipCallback;
     private final Consumer<String> leadershipChangeCallback;
-    private final Thread managerThread;
+    private final LeaderElector leaderElector;
 
-    private boolean isLeader = false;
+    private CompletableFuture<?> leaderElectorFuture;
+    private boolean isShuttingDown = false;
 
     /**
      * LeaderElectionManager constructor
@@ -40,63 +42,64 @@ public class LeaderElectionManager implements Runnable  {
      * @param stopLeadershipCallback    Callback which is called when this instance stops being a leader
      * @param leadershipChangeCallback  Callback which is called when the leadership changes and a new leader is elected
      */
-    public LeaderElectionManager(KubernetesClient client, LeaderElectionManagerConfig config, Runnable startLeadershipCallback, Runnable stopLeadershipCallback, Consumer<String> leadershipChangeCallback) {
-        this.client = client;
-        this.config = config;
+    public LeaderElectionManager(KubernetesClient client, LeaderElectionManagerConfig config, Runnable startLeadershipCallback, Consumer<Boolean> stopLeadershipCallback, Consumer<String> leadershipChangeCallback) {
         this.startLeadershipCallback = startLeadershipCallback;
         this.stopLeadershipCallback = stopLeadershipCallback;
         this.leadershipChangeCallback = leadershipChangeCallback;
-
-        this.managerThread = new Thread(this);
+        this.leaderElector = client.leaderElector()
+                .withConfig(new LeaderElectionConfigBuilder()
+                        .withReleaseOnCancel()
+                        .withName(config.getLeaseName())
+                        .withLock(new LeaseLock(config.getNamespace(), config.getLeaseName(), config.getIdentity()))
+                        .withLeaseDuration(config.getLeaseDuration())
+                        .withRenewDeadline(config.getRenewDeadline())
+                        .withRetryPeriod(config.getRetryPeriod())
+                        .withLeaderCallbacks(new LeaderCallbacks(
+                                this::startLeadershipHandler,
+                                this::stopLeadershipHandler,
+                                this::leadershipChangeHandler))
+                        .build())
+                .build();
     }
 
     /**
-     * The run() method which just calls into the Fabric8 Kubernetes client API.
-     */
-    @Override
-    public void run() {
-        client.leaderElector()
-                .withConfig(
-                        new LeaderElectionConfigBuilder()
-                                .withName(config.getLeaseName())
-                                .withLock(new LeaseLock(config.getNamespace(), config.getLeaseName(), config.getIdentity()))
-                                .withLeaseDuration(config.getLeaseDuration())
-                                .withRenewDeadline(config.getRenewDeadline())
-                                .withRetryPeriod(config.getRetryPeriod())
-                                .withLeaderCallbacks(new LeaderCallbacks(
-                                        () -> startLeadership(),
-                                        () -> stopLeadership(),
-                                        newLeader -> leadershipChange(newLeader)))
-                                .withReleaseOnCancel(true)
-                                .build())
-                .build().run();
-
-        // Existing the leader election thread => if we are leader, we will loose the leadership
-        if (isLeader)   {
-            stopLeadership();
-        }
-    }
-
-    /**
-     * Start method to start the election thread
+     * Starts the Leader Elector
      */
     public void start() {
-        managerThread.start();
+        LOGGER.info("Starting the Leader Elector");
+        leaderElectorFuture = leaderElector.start();
     }
 
     /**
-     * Stop method to stop the election thread
+     * Stop method to stop the Leader Elector
      */
     public void stop()  {
-        managerThread.interrupt();
+        if (leaderElectorFuture == null)    {
+            LOGGER.info("Leader Elector was not started yet");
+        } else if (leaderElectorFuture.isDone())   {
+            LOGGER.info("Leader Elector is already stopped");
+        } else {
+            LOGGER.info("Stopping the Leader Elector");
+            isShuttingDown = true;
+            leaderElectorFuture.cancel(true);
+
+            LOGGER.info("Waiting for Leader Elector to stop");
+
+            try {
+                leaderElectorFuture.join();
+            } catch (CancellationException e)   {
+                // Nothing to do, we just canceled it
+            }
+
+            LOGGER.info("Leader Elector stopped");
+        }
     }
 
     /**
      * Internal method which logs that this instance is the leader now calls the configured callback. This is called
      * from the leaderElector.
      */
-    private void startLeadership()  {
-        isLeader = true;
+    private void startLeadershipHandler()  {
         LOGGER.info("Started being a leader");
         startLeadershipCallback.run();
     }
@@ -105,17 +108,16 @@ public class LeaderElectionManager implements Runnable  {
      * Internal method which logs that this instance is NOT the leader anymore and calls the configured callback. This
      * is called from the leaderElector.
      */
-    private void stopLeadership()   {
-        isLeader = false;
+    private void stopLeadershipHandler()   {
         LOGGER.info("Stopped being a leader");
-        stopLeadershipCallback.run();
+        stopLeadershipCallback.accept(isShuttingDown);
     }
 
     /**
      * Internal method which logs that the leadership changed and calls the configured callback. This is called
      * from the leaderElector.
      */
-    private void leadershipChange(String newLeader) {
+    private void leadershipChangeHandler(String newLeader) {
         LOGGER.info("The new leader is {}", newLeader);
         leadershipChangeCallback.accept(newLeader);
     }

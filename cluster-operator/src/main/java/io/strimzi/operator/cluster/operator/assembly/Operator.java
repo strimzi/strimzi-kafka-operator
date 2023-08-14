@@ -2,9 +2,10 @@
  * Copyright Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.strimzi.operator.common;
+package io.strimzi.operator.cluster.operator.assembly;
 
 import io.fabric8.kubernetes.api.model.LabelSelector;
+import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.metrics.OperatorMetricsHolder;
 import io.strimzi.operator.common.model.NamespaceAndName;
 import io.vertx.core.AsyncResult;
@@ -13,14 +14,13 @@ import io.vertx.core.Handler;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 
 /**
  * Abstraction of an operator which is driven by resources of a given {@link #kind()}.
  *
  * {@link #reconcile(Reconciliation)} triggers the asynchronous reconciliation of a named resource.
- * Reconciliation of a given resource may be triggered either by a Kubernetes watch event (see {@link OperatorWatcher}) or
+ * Reconciliation of a given resource may be triggered either by a Kubernetes watch event (see {@link ReconnectingWatcher}) or
  * on a regular schedule.
  * {@link #reconcileAll(String, String, Handler)} triggers reconciliation of all the resources that the operator consumes.
  * An operator instance is not bound to a particular namespace. Rather the namespace is passed as a parameter.
@@ -106,7 +106,7 @@ public interface Operator {
      * A selector for narrowing the resources which this operator instance consumes to those whose labels match this selector.
      * @return A selector.
      */
-    default Optional<LabelSelector> selector() {
-        return Optional.empty();
+    default LabelSelector selector() {
+        return null;
     }
 }

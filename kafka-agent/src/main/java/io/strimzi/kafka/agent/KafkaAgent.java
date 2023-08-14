@@ -116,7 +116,7 @@ public class KafkaAgent {
         pollerThread.setDaemon(true);
 
         try {
-            startBrokerStateServer();
+            startHttpServer();
         } catch (Exception e) {
             LOGGER.error("Could not start the server for broker state: ", e);
             throw new RuntimeException(e);
@@ -146,7 +146,8 @@ public class KafkaAgent {
                     sessionState = (Gauge) metric;
                 }
 
-                if (brokerState != null && sessionState != null && !pollerRunning) {
+                // starting the poller to create the broker ready and ZooKeeper session connected files on if not KRaft mode
+                if (!isKRaftMode() && brokerState != null && sessionState != null && !pollerRunning) {
                     LOGGER.info("Starting poller");
                     pollerThread.start();
                     pollerRunning = true;
@@ -209,7 +210,7 @@ public class KafkaAgent {
                 && "SessionExpireListener".equals(name.getType());
     }
 
-    private void startBrokerStateServer() throws Exception {
+    private void startHttpServer() throws Exception {
         Server server = new Server();
 
         HttpConfiguration https = new HttpConfiguration();
@@ -221,7 +222,7 @@ public class KafkaAgent {
         conn.setPort(HTTPS_PORT);
 
         ContextHandler context = new ContextHandler(BROKER_STATE_PATH);
-        context.setHandler(getServerHandler());
+        context.setHandler(getBrokerStateHandler());
 
         server.setConnectors(new Connector[]{conn});
         server.setHandler(context);
@@ -231,11 +232,11 @@ public class KafkaAgent {
     }
 
     /**
-     * Creates a Handler instance to handle incoming HTTP requests
+     * Creates a Handler instance to handle incoming HTTP requests for the broker state
      *
      * @return Handler
      */
-    /* test */ Handler getServerHandler() {
+    /* test */ Handler getBrokerStateHandler() {
         return new AbstractHandler() {
             @Override
             public void handle(String s, Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws IOException {
@@ -353,6 +354,10 @@ public class KafkaAgent {
         }
     }
 
+    private boolean isKRaftMode() {
+        return this.brokerReadyFile == null && this.sessionConnectedFile == null;
+    }
+
     /**
      * Agent entry point
      * @param agentArgs The agent arguments
@@ -363,19 +368,26 @@ public class KafkaAgent {
             LOGGER.error("Not enough arguments to parse {}", agentArgs);
             System.exit(1);
         } else {
-            File brokerReadyFile = new File(args[0]);
-            File sessionConnectedFile = new File(args[1]);
+            // broker ready and ZooKeeper session connected files arguments are empty when in KRaft mode
+            File brokerReadyFile = null;
+            File sessionConnectedFile = null;
+            if (!args[0].isEmpty() && !args[1].isEmpty()) {
+                brokerReadyFile = new File(args[0]);
+                sessionConnectedFile = new File(args[1]);
+                if (brokerReadyFile.exists() && !brokerReadyFile.delete()) {
+                    LOGGER.error("Broker readiness file already exists and could not be deleted: {}", brokerReadyFile);
+                    System.exit(1);
+                } else if (sessionConnectedFile.exists() && !sessionConnectedFile.delete()) {
+                    LOGGER.error("Session connected file already exists and could not be deleted: {}", sessionConnectedFile);
+                    System.exit(1);
+                }
+            }
+
             String sslKeyStorePath = args[2];
             String sslKeyStorePass = args[3];
             String sslTrustStorePath = args[4];
             String sslTrustStorePass = args[5];
-            if (brokerReadyFile.exists() && !brokerReadyFile.delete()) {
-                LOGGER.error("Broker readiness file already exists and could not be deleted: {}", brokerReadyFile);
-                System.exit(1);
-            } else if (sessionConnectedFile.exists() && !sessionConnectedFile.delete()) {
-                LOGGER.error("Session connected file already exists and could not be deleted: {}", sessionConnectedFile);
-                System.exit(1);
-            } else if (sslKeyStorePath.isEmpty() || sslTrustStorePath.isEmpty()) {
+            if (sslKeyStorePath.isEmpty() || sslTrustStorePath.isEmpty()) {
                 LOGGER.error("SSLKeyStorePath or SSLTrustStorePath is empty: sslKeyStorePath={} sslTrustStore={} ", sslKeyStorePath, sslTrustStorePath);
                 System.exit(1);
             } else if (sslKeyStorePass.isEmpty()) {

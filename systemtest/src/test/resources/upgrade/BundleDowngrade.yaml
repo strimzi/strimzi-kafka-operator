@@ -26,19 +26,19 @@
 # --- Structure ---
   
 - fromVersion: HEAD
-  toVersion: 0.36.0
+  toVersion: 0.36.1
   fromExamples: HEAD
-  toExamples: strimzi-0.36.0
+  toExamples: strimzi-0.36.1
   fromUrl: HEAD
-  toUrl: https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.36.0/strimzi-0.36.0.zip
+  toUrl: https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.36.1/strimzi-0.36.1.zip
   fromKafkaVersionsUrl: HEAD
   additionalTopics: 2
   imagesAfterOperations:
-    zookeeper: strimzi/kafka:0.36.0-kafka-3.5.0
-    kafka: strimzi/kafka:0.36.0-kafka-3.5.0
-    topicOperator: strimzi/operator:0.36.0
-    userOperator: strimzi/operator:0.36.0
-  deployKafkaVersion: 3.5.0
+    zookeeper: strimzi/kafka:0.36.1-kafka-3.5.1
+    kafka: strimzi/kafka:0.36.1-kafka-3.5.1
+    topicOperator: strimzi/operator:0.36.1
+    userOperator: strimzi/operator:0.36.1
+  deployKafkaVersion: 3.5.1
   client:
     continuousClientsMessages: 500
   environmentInfo:
@@ -47,21 +47,21 @@
     flakyEnvVariable: none
     reason: Test is working on all environment used by QE.
   featureGatesBefore: "+StableConnectIdentities"
-  featureGatesAfter: ""
+  featureGatesAfter: "-StableConnectIdentities"
 - fromVersion: HEAD
-  toVersion: 0.36.0
+  toVersion: 0.36.1
   fromExamples: HEAD
-  toExamples: strimzi-0.36.0
+  toExamples: strimzi-0.36.1
   fromUrl: HEAD
-  toUrl: https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.36.0/strimzi-0.36.0.zip
+  toUrl: https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.36.1/strimzi-0.36.1.zip
   fromKafkaVersionsUrl: HEAD
   additionalTopics: 2
   imagesAfterOperations:
-    zookeeper: strimzi/kafka:0.36.0-kafka-3.5.0
-    kafka: strimzi/kafka:0.36.0-kafka-3.5.0
-    topicOperator: strimzi/operator:0.36.0
-    userOperator: strimzi/operator:0.36.0
-  deployKafkaVersion: 3.5.0
+    zookeeper: strimzi/kafka:0.36.1-kafka-3.5.1
+    kafka: strimzi/kafka:0.36.1-kafka-3.5.1
+    topicOperator: strimzi/operator:0.36.1
+    userOperator: strimzi/operator:0.36.1
+  deployKafkaVersion: 3.5.1
   client:
     continuousClientsMessages: 500
   environmentInfo:

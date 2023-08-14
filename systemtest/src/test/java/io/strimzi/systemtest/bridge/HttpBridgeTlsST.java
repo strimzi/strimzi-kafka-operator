@@ -62,22 +62,22 @@ class HttpBridgeTlsST extends AbstractST {
             .withProducerName(producerName)
             .build();
 
-        resourceManager.createResourceWithWait(extensionContext, KafkaTopicTemplates.topic(httpBridgeTlsClusterName, topicName, clusterOperator.getDeploymentNamespace()).build());
+        resourceManager.createResourceWithWait(extensionContext, KafkaTopicTemplates.topic(httpBridgeTlsClusterName, topicName, Constants.TEST_SUITE_NAMESPACE).build());
 
         resourceManager.createResourceWithWait(extensionContext, kafkaBridgeClientJobProduce.producerStrimziBridge());
-        ClientUtils.waitForClientSuccess(producerName, clusterOperator.getDeploymentNamespace(), MESSAGE_COUNT);
+        ClientUtils.waitForClientSuccess(producerName, Constants.TEST_SUITE_NAMESPACE, MESSAGE_COUNT);
 
         KafkaClients kafkaClients = new KafkaClientsBuilder()
             .withTopicName(topicName)
             .withMessageCount(MESSAGE_COUNT)
             .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(httpBridgeTlsClusterName))
             .withConsumerName(consumerName)
-            .withNamespaceName(clusterOperator.getDeploymentNamespace())
+            .withNamespaceName(Constants.TEST_SUITE_NAMESPACE)
             .withUsername(sharedKafkaUserName)
             .build();
 
         resourceManager.createResourceWithWait(extensionContext, kafkaClients.consumerTlsStrimzi(httpBridgeTlsClusterName));
-        ClientUtils.waitForClientSuccess(consumerName, clusterOperator.getDeploymentNamespace(), MESSAGE_COUNT);
+        ClientUtils.waitForClientSuccess(consumerName, Constants.TEST_SUITE_NAMESPACE, MESSAGE_COUNT);
     }
 
     @ParallelTest
@@ -92,7 +92,7 @@ class HttpBridgeTlsST extends AbstractST {
             .withConsumerName(consumerName)
             .build();
 
-        resourceManager.createResourceWithWait(extensionContext, KafkaTopicTemplates.topic(httpBridgeTlsClusterName, topicName, clusterOperator.getDeploymentNamespace()).build());
+        resourceManager.createResourceWithWait(extensionContext, KafkaTopicTemplates.topic(httpBridgeTlsClusterName, topicName, Constants.TEST_SUITE_NAMESPACE).build());
 
         resourceManager.createResourceWithWait(extensionContext, kafkaBridgeClientJobConsume.consumerStrimziBridge());
 
@@ -102,12 +102,12 @@ class HttpBridgeTlsST extends AbstractST {
             .withMessageCount(MESSAGE_COUNT)
             .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(httpBridgeTlsClusterName))
             .withProducerName(producerName)
-            .withNamespaceName(clusterOperator.getDeploymentNamespace())
+            .withNamespaceName(Constants.TEST_SUITE_NAMESPACE)
             .withUsername(sharedKafkaUserName)
             .build();
 
         resourceManager.createResourceWithWait(extensionContext, kafkaClients.producerTlsStrimzi(httpBridgeTlsClusterName));
-        ClientUtils.waitForClientsSuccess(producerName, consumerName, clusterOperator.getDeploymentNamespace(), MESSAGE_COUNT);
+        ClientUtils.waitForClientsSuccess(producerName, consumerName, Constants.TEST_SUITE_NAMESPACE, MESSAGE_COUNT);
     }
 
     @BeforeAll
@@ -121,7 +121,7 @@ class HttpBridgeTlsST extends AbstractST {
 
         resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(httpBridgeTlsClusterName, 1, 1)
             .editMetadata()
-                .withNamespace(clusterOperator.getDeploymentNamespace())
+                .withNamespace(Constants.TEST_SUITE_NAMESPACE)
             .endMetadata()
             .editSpec()
                 .editKafka()
@@ -138,7 +138,7 @@ class HttpBridgeTlsST extends AbstractST {
             .build());
 
         // Create Kafka user
-        KafkaUser tlsUser = KafkaUserTemplates.tlsUser(clusterOperator.getDeploymentNamespace(), httpBridgeTlsClusterName, sharedKafkaUserName).build();
+        KafkaUser tlsUser = KafkaUserTemplates.tlsUser(Constants.TEST_SUITE_NAMESPACE, httpBridgeTlsClusterName, sharedKafkaUserName).build();
         resourceManager.createResourceWithWait(extensionContext, tlsUser);
 
         // Initialize CertSecretSource with certificate and Secret names for consumer
@@ -149,7 +149,7 @@ class HttpBridgeTlsST extends AbstractST {
         // Deploy http bridge
         resourceManager.createResourceWithWait(extensionContext, KafkaBridgeTemplates.kafkaBridge(httpBridgeTlsClusterName, KafkaResources.tlsBootstrapAddress(httpBridgeTlsClusterName), 1)
             .editMetadata()
-                .withNamespace(clusterOperator.getDeploymentNamespace())
+                .withNamespace(Constants.TEST_SUITE_NAMESPACE)
             .endMetadata()
             .editSpec()
                 .withNewConsumer()
@@ -173,7 +173,7 @@ class HttpBridgeTlsST extends AbstractST {
             .withTopicName(TOPIC_NAME)
             .withMessageCount(MESSAGE_COUNT)
             .withPort(Constants.HTTP_BRIDGE_DEFAULT_PORT)
-            .withNamespaceName(clusterOperator.getDeploymentNamespace())
+            .withNamespaceName(Constants.TEST_SUITE_NAMESPACE)
             .build();
     }
 }
