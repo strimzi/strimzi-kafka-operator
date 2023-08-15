@@ -270,6 +270,7 @@ public class SetupClusterOperator {
             .withEnvVars(extraEnvVars)
             .withOperationTimeout(operationTimeout)
             .withReconciliationInterval(reconciliationInterval)
+            .withNamespaceToWatch(this.namespaceInstallTo)
             .build();
 
         olmResource = new OlmResource(olmConfiguration);

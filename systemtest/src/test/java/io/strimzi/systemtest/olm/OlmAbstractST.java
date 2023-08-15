@@ -87,8 +87,8 @@ public class OlmAbstractST extends AbstractST {
     void doTestDeployExampleKafkaMirrorMaker2() {
         JsonObject kafkaMirrorMaker2Resource = OlmResource.getExampleResources().get(KafkaMirrorMaker2.RESOURCE_KIND);
         cmdKubeClient().applyContent(kafkaMirrorMaker2Resource.toString()
-                .replace("my-cluster-source-kafka-bootstrap", "my-cluster-kafka-bootstrap")
-                .replace("my-cluster-target-kafka-bootstrap", "my-cluster-kafka-bootstrap"));
+                .replace("cluster-a-kafka-bootstrap", "my-cluster-kafka-bootstrap")
+                .replace("cluster-b-kafka-bootstrap", "my-cluster-kafka-bootstrap"));
         KafkaMirrorMaker2Utils.waitForKafkaMirrorMaker2Ready(Constants.TEST_SUITE_NAMESPACE, kafkaMirrorMaker2Resource.getJsonObject("metadata").getString("name"));
     }
 
