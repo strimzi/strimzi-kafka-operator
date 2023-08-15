@@ -15,6 +15,8 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
 import java.security.KeyStore;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Properties;
 
 import javax.net.ssl.KeyManagerFactory;
@@ -29,6 +31,8 @@ import io.strimzi.operator.cluster.model.DnsNameGenerator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Util;
+import org.apache.kafka.clients.admin.Config;
+import org.apache.kafka.clients.admin.ConfigEntry;
 
 /**
  * Creates HTTP client and interacts with Kafka Agent's REST endpoint
@@ -145,14 +149,18 @@ class KafkaAgentClient {
      * Gets node configuration by sending HTTP request to the /v1/node-config endpoint of the KafkaAgent
      *
      * @param podName Name of the pod to interact with
-     * @return a Properties instance containing the node configuration
+     * @return a Config instance containing the node configuration
      */
-    Properties getNodeConfiguration(String podName) {
-        Properties nodeConfig = null;
+    Config getNodeConfiguration(String podName) {
+        Config config = null;
         String host = DnsNameGenerator.podDnsName(namespace, KafkaResources.brokersServiceName(cluster), podName);
         try {
             URI uri = new URI("https", null, host, KAFKA_AGENT_HTTPS_PORT, NODE_CONFIG_REST_PATH, null, null);
-            nodeConfig = MAPPER.readValue(doGet(uri), Properties.class);
+            Properties nodeConfig = MAPPER.readValue(doGet(uri), Properties.class);
+            List<ConfigEntry> configEntryList = new ArrayList<>();
+            nodeConfig.stringPropertyNames()
+                    .forEach(key -> configEntryList.add(new ConfigEntry(key, nodeConfig.getProperty(key))));
+            config = new Config(configEntryList);
         } catch (JsonProcessingException e) {
             LOGGER.warnCr(reconciliation, "Failed to parse node configuration", e);
         } catch (URISyntaxException e) {
@@ -160,6 +168,6 @@ class KafkaAgentClient {
         } catch (RuntimeException e) {
             LOGGER.warnCr(reconciliation, "Failed to get node configuration", e);
         }
-        return nodeConfig;
+        return config;
     }
 }
