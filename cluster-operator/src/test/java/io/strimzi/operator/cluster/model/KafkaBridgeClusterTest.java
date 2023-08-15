@@ -44,7 +44,6 @@ import io.strimzi.api.kafka.model.template.ContainerTemplate;
 import io.strimzi.api.kafka.model.template.DeploymentStrategy;
 import io.strimzi.api.kafka.model.template.IpFamily;
 import io.strimzi.api.kafka.model.template.IpFamilyPolicy;
-import io.strimzi.api.kafka.model.tracing.JaegerTracing;
 import io.strimzi.api.kafka.model.tracing.OpenTelemetryTracing;
 import io.strimzi.kafka.oauth.client.ClientConfig;
 import io.strimzi.kafka.oauth.server.ServerConfig;
@@ -1235,39 +1234,18 @@ public class KafkaBridgeClusterTest {
     }
 
     @ParallelTest
-    public void testJaegerTracingConfiguration() {
-        testTracingConfiguration(JaegerTracing.TYPE_JAEGER);
-    }
-
-    @ParallelTest
     public void testOpenTelemetryTracingConfiguration() {
-        testTracingConfiguration(OpenTelemetryTracing.TYPE_OPENTELEMETRY);
-    }
-
-    private void testTracingConfiguration(String type) {
-
-        KafkaBridgeBuilder builder = new KafkaBridgeBuilder(this.resource);
-        switch (type) {
-            case JaegerTracing.TYPE_JAEGER:
-                builder.editSpec()
-                            .withTracing(new JaegerTracing())
-                        .endSpec();
-                break;
-            case OpenTelemetryTracing.TYPE_OPENTELEMETRY:
-                builder.editSpec()
-                            .withTracing(new OpenTelemetryTracing())
-                        .endSpec();
-                break;
-            default:
-                throw new IllegalArgumentException("The '" + type + "' is not a valid tracing type");
-        }
+        KafkaBridgeBuilder builder = new KafkaBridgeBuilder(this.resource)
+                .editSpec()
+                    .withTracing(new OpenTelemetryTracing())
+                .endSpec();
         KafkaBridge resource = builder.build();
 
         KafkaBridgeCluster kb = KafkaBridgeCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, SHARED_ENV_PROVIDER);
         Deployment deployment = kb.generateDeployment(new HashMap<>(), true, null, null);
         Container container = deployment.getSpec().getTemplate().getSpec().getContainers().get(0);
 
-        assertThat(io.strimzi.operator.cluster.TestUtils.containerEnvVars(container).get(KafkaBridgeCluster.ENV_VAR_STRIMZI_TRACING), is(type));
+        assertThat(io.strimzi.operator.cluster.TestUtils.containerEnvVars(container).get(KafkaBridgeCluster.ENV_VAR_STRIMZI_TRACING), is(OpenTelemetryTracing.TYPE_OPENTELEMETRY));
     }
 
     @ParallelTest

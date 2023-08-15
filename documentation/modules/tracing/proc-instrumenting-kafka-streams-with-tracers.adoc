@@ -10,9 +10,8 @@ Instrument application code to enable tracing in Kafka Streams API applications.
 Use a decorator pattern or interceptors to instrument your Kafka Streams API applications for tracing.
 You can then record traces when messages are produced or retrieved from a topic.
 
-Decorator instrumentation:: For decorator instrumentation, create a modified Kafka Streams instance for tracing. The OpenTracing instrumentation project provides a `TracingKafkaClientSupplier` class that supports instrumentation of Kafka Streams.
-You create a wrapped instance of the `TracingKafkaClientSupplier` supplier interface, which provides tracing instrumentation for Kafka Streams.
-For OpenTelemetry, the process is the same but you need to create a custom `TracingKafkaClientSupplier` class to provide the support. 
+Decorator instrumentation:: For decorator instrumentation, create a modified Kafka Streams instance for tracing.
+For OpenTelemetry, you need to create a custom `TracingKafkaClientSupplier` class to provide tracing instrumentation for Kafka Streams.
 Interceptor instrumentation:: For interceptor instrumentation, add the tracing capability to the Kafka Streams producer and consumer configuration. 
 
 .Prerequisites

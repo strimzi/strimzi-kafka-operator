@@ -9,7 +9,7 @@
 Use environment variables when you are enabling tracing for Kafka components or initializing a tracer for Kafka clients.
 
 Tracing environment variables are subject to change. 
-For the latest information, see the {OpenTelemetryDocs} and {OpenTracingDocs}.
+For the latest information, see the {OpenTelemetryDocs}.
 
 The following tables describe the key environment variables for setting up a tracer. 
 
@@ -35,27 +35,5 @@ The following tables describe the key environment variables for setting up a tra
 Set to `otlp` by default. If using Jaeger tracing, you need to set this environment variable as `jaeger`.
 If you are using another tracing implementation, xref:proc-enabling-tracing-type-{context}[specify the exporter used].
 
-
-|===
-
-.OpenTracing environment variables
-[cols="2m,1,2",options="header"]
-|===
-
-|Property
-|Required
-|Description
-
-m|JAEGER_SERVICE_NAME
-|Yes
-|The name of the Jaeger tracer service.
-
-m|JAEGER_AGENT_HOST
-|No
-|The hostname for communicating with the `jaeger-agent` through the User Datagram Protocol (UDP).
-
-m|JAEGER_AGENT_PORT
-|No
-|The port used for communicating with the `jaeger-agent` through UDP.
 
 |===

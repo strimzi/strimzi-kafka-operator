@@ -326,7 +326,7 @@ public class KafkaMirrorMakerCluster extends AbstractModel implements SupportsMe
 
         if (tracing != null) {
             if (JaegerTracing.TYPE_JAEGER.equals(tracing.getType())) {
-                config.setConfigOption("interceptor.classes", JaegerTracing.CONSUMER_INTERCEPTOR_CLASS_NAME);
+                LOGGER.warnCr(reconciliation, "Tracing type \"{}\" is not supported anymore and will be ignored", JaegerTracing.TYPE_JAEGER);
             } else if (OpenTelemetryTracing.TYPE_OPENTELEMETRY.equals(tracing.getType())) {
                 config.setConfigOption("interceptor.classes", OpenTelemetryTracing.CONSUMER_INTERCEPTOR_CLASS_NAME);
             }
@@ -341,7 +341,7 @@ public class KafkaMirrorMakerCluster extends AbstractModel implements SupportsMe
 
         if (tracing != null) {
             if (JaegerTracing.TYPE_JAEGER.equals(tracing.getType())) {
-                config.setConfigOption("interceptor.classes", JaegerTracing.PRODUCER_INTERCEPTOR_CLASS_NAME);
+                LOGGER.warnCr(reconciliation, "Tracing type \"{}\" is not supported anymore and will be ignored", JaegerTracing.TYPE_JAEGER);
             } else if (OpenTelemetryTracing.TYPE_OPENTELEMETRY.equals(tracing.getType())) {
                 config.setConfigOption("interceptor.classes", OpenTelemetryTracing.PRODUCER_INTERCEPTOR_CLASS_NAME);
             }

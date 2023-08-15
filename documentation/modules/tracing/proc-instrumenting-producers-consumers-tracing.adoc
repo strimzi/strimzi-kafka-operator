@@ -2,7 +2,7 @@
 //
 // assembly-distributed tracing.adoc
 
-[id='proc-instrumenting-producers-consumers-for-opentracing-{context}']
+[id='proc-instrumenting-producers-consumers-for-tracing-{context}']
 = Instrumenting producers and consumers for tracing
 
 [role="_abstract"]
@@ -10,10 +10,10 @@ Instrument application code to enable tracing in Kafka producers and consumers.
 Use a decorator pattern or interceptors to instrument your Java producer and consumer application code for tracing.
 You can then record traces when messages are produced or retrieved from a topic.
 
-OpenTelemetry and OpenTracing instrumentation projects provide classes that support instrumentation of producers and consumers.
+OpenTelemetry instrumentation project provides classes that support instrumentation of producers and consumers.
 
-Decorator instrumentation:: For decorator instrumentation, create a modified producer or consumer instance for tracing. Decorator instrumentation is different for OpenTelemetry and OpenTracing.
-Interceptor instrumentation:: For interceptor instrumentation, add the tracing capability to the consumer or producer configuration. Interceptor instrumentation is the same for OpenTelemetry and OpenTracing.
+Decorator instrumentation:: For decorator instrumentation, create a modified producer or consumer instance for tracing.
+Interceptor instrumentation:: For interceptor instrumentation, add the tracing capability to the consumer or producer configuration.
 
 .Prerequisites
 
@@ -55,23 +55,6 @@ ConsumerRecords<Integer, String> records = consumer.poll(1000);
 ConsumerRecord<Integer, String> record = ...
 SpanContext spanContext = TracingKafkaUtils.extractSpanContext(record.headers(), tracer);     
 ----
-+
-.Example decorator instrumentation for OpenTracing
-[source,java]
-----
-//producer instance
-KafkaProducer<Integer, String> producer = new KafkaProducer<>(senderProps);
-TracingKafkaProducer<Integer, String> tracingProducer = new TracingKafkaProducer<>(producer, tracer);
-TracingKafkaProducer.send(...)
-
-//consumer instance
-KafkaConsumer<Integer, String> consumer = new KafkaConsumer<>(consumerProps);
-TracingKafkaConsumer<Integer, String> tracingConsumer = new TracingKafkaConsumer<>(consumer, tracer);
-tracingConsumer.subscribe(Collections.singletonList("mytopic"));
-ConsumerRecords<Integer, String> records = tracingConsumer.poll(1000);
-ConsumerRecord<Integer, String> record = ...
-SpanContext spanContext = TracingKafkaUtils.extractSpanContext(record.headers(), tracer);
----- 
 
 * To use interceptors, set the interceptor class in the producer or consumer configuration.
 +

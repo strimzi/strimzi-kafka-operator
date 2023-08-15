@@ -4,9 +4,7 @@
  */
 package io.strimzi.tracing.agent;
 
-import io.opentelemetry.opentracingshim.OpenTracingShim;
 import io.opentelemetry.sdk.autoconfigure.AutoConfiguredOpenTelemetrySdk;
-import io.opentracing.util.GlobalTracer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -23,9 +21,7 @@ public class OpenTelemetryTracing implements Tracing {
         if (serviceName != null) {
             LOGGER.info("Initializing OpenTelemetry tracing with service name {}", serviceName);
             System.setProperty("otel.metrics.exporter", "none"); // disable metrics
-            var openTelemetry = AutoConfiguredOpenTelemetrySdk.initialize().getOpenTelemetrySdk();
-            var tracer = OpenTracingShim.createTracerShim(openTelemetry);
-            GlobalTracer.registerIfAbsent(tracer);
+            AutoConfiguredOpenTelemetrySdk.initialize();
         } else {
             LOGGER.error("OpenTelemetry tracing cannot be initialized because OTEL_SERVICE_NAME environment variable is not defined");
         }
