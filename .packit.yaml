@@ -20,7 +20,7 @@ jobs:
       - automation-check
     tf_extra_params:
       test:
-        fmf:
+        tmt:
           name: smoke
   ###############################################################################################
 
@@ -36,7 +36,7 @@ jobs:
       - upgrade
     tf_extra_params:
       test:
-        fmf:
+        tmt:
           name: upgrade
   ###############################################################################################
 
@@ -55,7 +55,7 @@ jobs:
       - ro
     tf_extra_params:
       test:
-        fmf:
+        tmt:
           name: regression-operators
   ###############################################################################################
 
@@ -74,7 +74,7 @@ jobs:
       - rc
     tf_extra_params:
       test:
-        fmf:
+        tmt:
           name: regression-components
   ###############################################################################################
 
@@ -93,7 +93,7 @@ jobs:
       - ko
     tf_extra_params:
       test:
-        fmf:
+        tmt:
           name: kraft-operators
   ###############################################################################################
 
@@ -112,7 +112,7 @@ jobs:
       - kc
     tf_extra_params:
       test:
-        fmf:
+        tmt:
           name: kraft-components
   ###############################################################################################
 
@@ -128,7 +128,7 @@ jobs:
       - acceptance
     tf_extra_params:
       test:
-        fmf:
+        tmt:
           name: acceptance
   ###############################################################################################
 
@@ -144,5 +144,5 @@ jobs:
       - sanity
     tf_extra_params:
       test:
-        fmf:
+        tmt:
           name: sanity
