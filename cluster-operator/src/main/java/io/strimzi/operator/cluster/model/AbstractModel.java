@@ -54,6 +54,7 @@ public abstract class AbstractModel {
     protected final String componentName;
     protected final OwnerReference ownerReference;
     protected final Labels labels;
+    protected final SharedEnvironmentProvider sharedEnvironmentProvider;
 
     // Docker image configuration
     protected String image;
@@ -78,11 +79,6 @@ public abstract class AbstractModel {
      */
     protected ResourceTemplate templateServiceAccount;
     protected ContainerTemplate templateContainer;
-
-    /**
-     * SharedEnvironmentProvider
-     */
-    protected SharedEnvironmentProvider sharedEnvironmentProvider;
 
     /**
      * Constructor
