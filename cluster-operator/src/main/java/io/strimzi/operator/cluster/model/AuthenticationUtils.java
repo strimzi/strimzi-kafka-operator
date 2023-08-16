@@ -46,9 +46,6 @@ public class AuthenticationUtils {
     private static final String TLS_AUTH_CERT = "TLS_AUTH_CERT";
     private static final String TLS_AUTH_KEY = "TLS_AUTH_KEY";
     private static final String SASL_PASSWORD_FILE = "SASL_PASSWORD_FILE";
-    /**
-     * Key for OAuth config
-     */
     private static final String OAUTH_CONFIG = "OAUTH_CONFIG";
 
     /**
