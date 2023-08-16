@@ -11,6 +11,7 @@ Communication is always encrypted for communication between:
 
 * Kafka brokers
 * ZooKeeper nodes
+* Kafka brokers and ZooKeeper nodes
 * Operators and Kafka brokers
 * Operators and ZooKeeper nodes
 * Kafka Exporter
@@ -28,5 +29,5 @@ Strimzi uses _Secrets_ to store the certificates and private keys required for m
 A TLS CA (certificate authority) issues certificates to authenticate the identity of a component.
 Strimzi verifies the certificates for the components against the CA certificate.
 
-* Strimzi components are verified against the _cluster CA_ CA
-* Kafka clients are verified against the _clients CA_ CA
+* Strimzi components are verified against the _cluster CA_
+* Kafka clients are verified against the _clients CA_
