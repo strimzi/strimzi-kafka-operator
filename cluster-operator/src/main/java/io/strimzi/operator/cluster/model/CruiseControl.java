@@ -111,11 +111,6 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
     private boolean authEnabled;
     @SuppressFBWarnings({"UWF_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR"}) // This field is initialized in the fromCrd method
     protected Capacity capacity;
-
-    public Capacity getCapacity() {
-        return capacity;
-    }
-
     @SuppressFBWarnings({"UWF_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR"}) // This field is initialized in the fromCrd method
     private MetricsModel metrics;
     private LoggingModel logging;
@@ -128,6 +123,10 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
     /* test */ static final String REST_API_PORT_NAME = "rest-api";
 
     /* test */ static final String MIN_INSYNC_REPLICAS = "min.insync.replicas";
+
+    /* test */ Capacity getCapacity() {
+        return capacity;
+    }
 
     // Cruise Control configuration keys (EnvVariables)
     protected static final String ENV_VAR_CRUISE_CONTROL_CONFIGURATION = "CRUISE_CONTROL_CONFIGURATION";
