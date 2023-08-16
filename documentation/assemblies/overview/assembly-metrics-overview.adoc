@@ -24,7 +24,7 @@ Strimzi can employ the following tools for metrics and monitoring:
 Prometheus:: {PrometheusHome} pulls metrics from Kafka, ZooKeeper and Kafka Connect clusters. The Prometheus *Alertmanager* plugin handles alerts and routes them to a notification service.
 Kafka Exporter:: {kafka-exporter-project} adds additional Prometheus metrics.
 Grafana:: {GrafanaHome} provides dashboard visualizations of Prometheus metrics.
-Jaeger:: {JaegerDocs} provides distributed tracing support to track transactions between applications.
+OpenTelemetry:: {OpenTelemetryDocs} provides distributed tracing support to track transactions between applications.
 Cruise Control:: {CruiseControlProject} monitors data distribution and performs data rebalances across a Kafka cluster.
 
 include::../../modules/overview/con-metrics-overview-tools.adoc[leveloffset=+1]
