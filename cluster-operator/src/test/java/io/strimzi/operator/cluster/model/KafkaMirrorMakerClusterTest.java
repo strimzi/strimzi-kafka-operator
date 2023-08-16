@@ -38,7 +38,6 @@ import io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationOAuthB
 import io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationTlsBuilder;
 import io.strimzi.api.kafka.model.template.ContainerTemplate;
 import io.strimzi.api.kafka.model.template.DeploymentStrategy;
-import io.strimzi.api.kafka.model.tracing.JaegerTracing;
 import io.strimzi.api.kafka.model.tracing.OpenTelemetryTracing;
 import io.strimzi.kafka.oauth.client.ClientConfig;
 import io.strimzi.kafka.oauth.server.ServerConfig;
@@ -1022,46 +1021,21 @@ public class KafkaMirrorMakerClusterTest {
     }
 
     @ParallelTest
-    public void testJaegerTracing() {
-        testTracing(JaegerTracing.TYPE_JAEGER,
-                JaegerTracing.CONSUMER_INTERCEPTOR_CLASS_NAME,
-                JaegerTracing.PRODUCER_INTERCEPTOR_CLASS_NAME);
-    }
-
-    @ParallelTest
     public void testOpenTelemetryTracing() {
-        testTracing(OpenTelemetryTracing.TYPE_OPENTELEMETRY,
-                OpenTelemetryTracing.CONSUMER_INTERCEPTOR_CLASS_NAME,
-                OpenTelemetryTracing.PRODUCER_INTERCEPTOR_CLASS_NAME);
-    }
-
-    public void testTracing(String type, String consumerInterceptor, String producerInterceptor) {
-        KafkaMirrorMakerBuilder builder = new KafkaMirrorMakerBuilder(this.resource);
-        switch (type) {
-            case JaegerTracing.TYPE_JAEGER:
-                builder.editSpec()
-                            .withNewJaegerTracing()
-                            .endJaegerTracing()
-                        .endSpec();
-                break;
-            case OpenTelemetryTracing.TYPE_OPENTELEMETRY:
-                builder.editSpec()
-                            .withNewOpenTelemetryTracing()
-                            .endOpenTelemetryTracing()
-                        .endSpec();
-                break;
-            default:
-                throw new IllegalArgumentException("The '" + type + "' is not a valid tracing type");
-        }
+        KafkaMirrorMakerBuilder builder = new KafkaMirrorMakerBuilder(this.resource)
+                .editSpec()
+                    .withNewOpenTelemetryTracing()
+                    .endOpenTelemetryTracing()
+                .endSpec();
         KafkaMirrorMaker resource = builder.build();
 
         KafkaMirrorMakerCluster mmc = KafkaMirrorMakerCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS, SHARED_ENV_PROVIDER);
 
         Deployment dep = mmc.generateDeployment(Collections.emptyMap(), true, null, null);
         Container cont = dep.getSpec().getTemplate().getSpec().getContainers().get(0);
-        assertThat(cont.getEnv().stream().filter(env -> KafkaMirrorMakerCluster.ENV_VAR_STRIMZI_TRACING.equals(env.getName())).map(EnvVar::getValue).findFirst().orElse("").equals(type), is(true));
-        assertThat(cont.getEnv().stream().filter(env -> KafkaMirrorMakerCluster.ENV_VAR_KAFKA_MIRRORMAKER_CONFIGURATION_CONSUMER.equals(env.getName())).map(EnvVar::getValue).findFirst().orElse("").contains("interceptor.classes=" + consumerInterceptor), is(true));
-        assertThat(cont.getEnv().stream().filter(env -> KafkaMirrorMakerCluster.ENV_VAR_KAFKA_MIRRORMAKER_CONFIGURATION_PRODUCER.equals(env.getName())).map(EnvVar::getValue).findFirst().orElse("").contains("interceptor.classes=" + producerInterceptor), is(true));
+        assertThat(cont.getEnv().stream().filter(env -> KafkaMirrorMakerCluster.ENV_VAR_STRIMZI_TRACING.equals(env.getName())).map(EnvVar::getValue).findFirst().orElse("").equals(OpenTelemetryTracing.TYPE_OPENTELEMETRY), is(true));
+        assertThat(cont.getEnv().stream().filter(env -> KafkaMirrorMakerCluster.ENV_VAR_KAFKA_MIRRORMAKER_CONFIGURATION_CONSUMER.equals(env.getName())).map(EnvVar::getValue).findFirst().orElse("").contains("interceptor.classes=" + OpenTelemetryTracing.CONSUMER_INTERCEPTOR_CLASS_NAME), is(true));
+        assertThat(cont.getEnv().stream().filter(env -> KafkaMirrorMakerCluster.ENV_VAR_KAFKA_MIRRORMAKER_CONFIGURATION_PRODUCER.equals(env.getName())).map(EnvVar::getValue).findFirst().orElse("").contains("interceptor.classes=" + OpenTelemetryTracing.PRODUCER_INTERCEPTOR_CLASS_NAME), is(true));
     }
 
     @ParallelTest

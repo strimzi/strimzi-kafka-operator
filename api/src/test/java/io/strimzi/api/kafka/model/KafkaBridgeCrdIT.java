@@ -76,11 +76,6 @@ public class KafkaBridgeCrdIT extends AbstractCrdIT {
     }
 
     @Test
-    void testKafkaBridgeWithJaegerTracing() {
-        createDeleteCustomResource("KafkaBridge-with-jaeger-tracing.yaml");
-    }
-
-    @Test
     void testKafkaBridgeWithOpenTelemetryTracing() {
         createDeleteCustomResource("KafkaBridge-with-opentelemetry-tracing.yaml");
     }

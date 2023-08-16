@@ -6,9 +6,8 @@
 = Initializing tracing for Kafka clients
 
 [role="_abstract"]
-Initialize a tracer, then instrument your client applications for distributed tracing.
+Initialize a tracer for OpenTelemetry, then instrument your client applications for distributed tracing.
 You can instrument Kafka producer and consumer clients, and Kafka Streams API applications.
-You can initialize a tracer for OpenTracing or OpenTelemetry.
 
 Configure and initialize a tracer using a set of xref:ref-tracing-environment-variables-{context}[tracing environment variables].
 
@@ -37,21 +36,6 @@ In each client application add the dependencies for the tracer:
   <version>{OpenTelemetryVersion}</version>
 </dependency>
 ----
-+
-.Dependencies for OpenTracing
-[source,xml,subs="attributes+"]
-----
-<dependency>
-    <groupId>io.jaegertracing</groupId>
-    <artifactId>jaeger-client</artifactId>
-    <version>{JaegerClientVersion}</version>
-</dependency>
-<dependency>
-  <groupId>io.opentracing.contrib</groupId>
-  <artifactId>opentracing-kafka-client</artifactId>
-  <version>{OpenTracingKafkaClient}</version>
-</dependency>
-----
 
 . Define the configuration of the tracer using the xref:ref-tracing-environment-variables-{context}[tracing environment variables].
 
@@ -61,12 +45,6 @@ In each client application add the dependencies for the tracer:
 [source,java,subs=attributes+]
 ----
 OpenTelemetry ot = GlobalOpenTelemetry.get();
-----
-+
-.Creating a tracer for OpenTracing
-[source,java,subs=attributes+]
-----
-Tracer tracer = Configuration.fromEnv().getTracer();
 ----
 
 . Register the tracer as a global tracer:
@@ -78,5 +56,5 @@ GlobalTracer.register(tracer);
 
 . Instrument your client:
 +
-* xref:proc-instrumenting-producers-consumers-for-opentracing-{context}[]
+* xref:proc-instrumenting-producers-consumers-for-tracing-{context}[]
 * xref:proc-instrumenting-kafka-streams-with-tracers-{context}[]

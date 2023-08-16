@@ -58,7 +58,6 @@ import static io.strimzi.systemtest.tracing.TracingConstants.CERT_MANAGER_DEPLOY
 import static io.strimzi.systemtest.tracing.TracingConstants.CERT_MANAGER_CA_INJECTOR_DEPLOYMENT;
 import static io.strimzi.systemtest.tracing.TracingConstants.CERT_MANAGER_NAMESPACE;
 import static io.strimzi.systemtest.tracing.TracingConstants.CERT_MANAGER_WEBHOOK_DEPLOYMENT;
-import static io.strimzi.systemtest.tracing.TracingConstants.JAEGER_AGENT_HOST;
 import static io.strimzi.systemtest.tracing.TracingConstants.JAEGER_COLLECTOR_OTLP_URL;
 import static io.strimzi.systemtest.tracing.TracingConstants.JAEGER_CONSUMER_SERVICE;
 import static io.strimzi.systemtest.tracing.TracingConstants.JAEGER_INSTANCE_NAME;
@@ -70,15 +69,13 @@ import static io.strimzi.systemtest.tracing.TracingConstants.JAEGER_MIRROR_MAKER
 import static io.strimzi.systemtest.tracing.TracingConstants.JAEGER_OPERATOR_DEPLOYMENT_NAME;
 import static io.strimzi.systemtest.tracing.TracingConstants.JAEGER_PRODUCER_SERVICE;
 import static io.strimzi.systemtest.tracing.TracingConstants.JAEGER_QUERY_SERVICE;
-import static io.strimzi.systemtest.tracing.TracingConstants.JAEGER_SAMPLER_PARAM;
-import static io.strimzi.systemtest.tracing.TracingConstants.JAEGER_SAMPLER_TYPE;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.junit.jupiter.api.Assumptions.assumeFalse;
 
 /**
  * Provides a general test cases (e.g., test that we are able to produce and consume messages, and then we could see traces
- * in jaeger API) for the inherited classses (i.e., {@link OpenTelemetryST} and {@link OpenTracingST}).
+ * in jaeger API) for the inherited classes (i.e., {@link OpenTelemetryST}).
  */
 public abstract class TracingAbstractST extends AbstractST {
 
@@ -173,20 +170,8 @@ public abstract class TracingAbstractST extends AbstractST {
                             .withValue(JAEGER_MIRROR_MAKER2_SERVICE)
                         .endEnv()
                         .addNewEnv()
-                            .withName("JAEGER_AGENT_HOST")
-                            .withValue(JAEGER_AGENT_HOST)
-                        .endEnv()
-                        .addNewEnv()
                             .withName("OTEL_EXPORTER_OTLP_ENDPOINT")
                             .withValue(JAEGER_COLLECTOR_OTLP_URL)
-                        .endEnv()
-                        .addNewEnv()
-                            .withName("JAEGER_SAMPLER_TYPE")
-                            .withValue(JAEGER_SAMPLER_TYPE)
-                        .endEnv()
-                        .addNewEnv()
-                            .withName("JAEGER_SAMPLER_PARAM")
-                            .withValue(JAEGER_SAMPLER_PARAM)
                         .endEnv()
                     .endConnectContainer()
                 .endTemplate()
@@ -254,20 +239,8 @@ public abstract class TracingAbstractST extends AbstractST {
                             .withValue(JAEGER_MIRROR_MAKER_SERVICE)
                         .endEnv()
                         .addNewEnv()
-                            .withName("JAEGER_AGENT_HOST")
-                            .withValue(JAEGER_AGENT_HOST)
-                        .endEnv()
-                        .addNewEnv()
                             .withName("OTEL_EXPORTER_OTLP_ENDPOINT")
                             .withValue(JAEGER_COLLECTOR_OTLP_URL)
-                        .endEnv()
-                        .addNewEnv()
-                            .withName("JAEGER_SAMPLER_TYPE")
-                            .withValue(JAEGER_SAMPLER_TYPE)
-                        .endEnv()
-                        .addNewEnv()
-                            .withName("JAEGER_SAMPLER_PARAM")
-                            .withValue(JAEGER_SAMPLER_PARAM)
                         .endEnv()
                     .endMirrorMakerContainer()
                 .endTemplate()
@@ -319,20 +292,8 @@ public abstract class TracingAbstractST extends AbstractST {
                             .withValue(JAEGER_KAFKA_CONNECT_SERVICE)
                         .endEnv()
                         .addNewEnv()
-                            .withName("JAEGER_AGENT_HOST")
-                            .withValue(JAEGER_AGENT_HOST)
-                        .endEnv()
-                        .addNewEnv()
                             .withName("OTEL_EXPORTER_OTLP_ENDPOINT")
                             .withValue(JAEGER_COLLECTOR_OTLP_URL)
-                        .endEnv()
-                        .addNewEnv()
-                            .withName("JAEGER_SAMPLER_TYPE")
-                            .withValue(JAEGER_SAMPLER_TYPE)
-                        .endEnv()
-                        .addNewEnv()
-                            .withName("JAEGER_SAMPLER_PARAM")
-                            .withValue(JAEGER_SAMPLER_PARAM)
                         .endEnv()
                     .endConnectContainer()
                 .endTemplate()
@@ -394,20 +355,8 @@ public abstract class TracingAbstractST extends AbstractST {
                             .withValue(JAEGER_KAFKA_BRIDGE_SERVICE)
                         .endEnv()
                         .addNewEnv()
-                            .withName("JAEGER_AGENT_HOST")
-                            .withValue(JAEGER_AGENT_HOST)
-                        .endEnv()
-                        .addNewEnv()
                             .withName("OTEL_EXPORTER_OTLP_ENDPOINT")
                             .withValue(JAEGER_COLLECTOR_OTLP_URL)
-                        .endEnv()
-                        .addNewEnv()
-                            .withName("JAEGER_SAMPLER_TYPE")
-                            .withValue(JAEGER_SAMPLER_TYPE)
-                        .endEnv()
-                        .addNewEnv()
-                            .withName("JAEGER_SAMPLER_PARAM")
-                            .withValue(JAEGER_SAMPLER_PARAM)
                         .endEnv()
                         .addNewEnv()
                             .withName("OTEL_TRACES_EXPORTER")
@@ -453,20 +402,8 @@ public abstract class TracingAbstractST extends AbstractST {
                         .withValue(JAEGER_KAFKA_BRIDGE_SERVICE)
                     .endEnv()
                     .addNewEnv()
-                        .withName("JAEGER_AGENT_HOST")
-                        .withValue(JAEGER_AGENT_HOST)
-                    .endEnv()
-                    .addNewEnv()
                         .withName("OTEL_EXPORTER_OTLP_ENDPOINT")
                         .withValue(JAEGER_COLLECTOR_OTLP_URL)
-                    .endEnv()
-                    .addNewEnv()
-                        .withName("JAEGER_SAMPLER_TYPE")
-                        .withValue(JAEGER_SAMPLER_TYPE)
-                    .endEnv()
-                    .addNewEnv()
-                        .withName("JAEGER_SAMPLER_PARAM")
-                        .withValue(JAEGER_SAMPLER_PARAM)
                     .endEnv()
                     .addNewEnv()
                         .withName("OTEL_TRACES_EXPORTER")
@@ -619,7 +556,6 @@ public abstract class TracingAbstractST extends AbstractST {
             .withJaegerServiceProducerName(JAEGER_PRODUCER_SERVICE)
             .withJaegerServiceConsumerName(JAEGER_CONSUMER_SERVICE)
             .withJaegerServiceStreamsName(JAEGER_KAFKA_STREAMS_SERVICE)
-            .withJaegerServerAgentName(JAEGER_AGENT_HOST)
             .withTracingServiceNameEnvVar(this.serviceNameEnvVar());
         final KafkaTracingClients kafkaTracingClient = (KafkaTracingClients) this.configureProperTracingType(kafkaTracingClientsBuilder.build());
 
@@ -635,13 +571,13 @@ public abstract class TracingAbstractST extends AbstractST {
             if (this.getClass().getSimpleName().contains(TracingConstants.OPEN_TELEMETRY)) {
                 return new BridgeTracingClientsBuilder((BridgeTracingClients) kafkaClients).withOpenTelemetry().build();
             } else {
-                return new BridgeTracingClientsBuilder((BridgeTracingClients) kafkaClients).withOpenTracing().build();
+                throw new RuntimeException("Client " + kafkaClients.getClass().getSimpleName() + " + does not support tracing.");
             }
         } else if (kafkaClients instanceof KafkaTracingClients) {
             if (this.getClass().getSimpleName().contains(TracingConstants.OPEN_TELEMETRY)) {
                 return new KafkaTracingClientsBuilder((KafkaTracingClients) kafkaClients).withOpenTelemetry().build();
             } else {
-                return new KafkaTracingClientsBuilder((KafkaTracingClients) kafkaClients).withOpenTracing().build();
+                throw new RuntimeException("Client " + kafkaClients.getClass().getSimpleName() + " + does not support tracing.");
             }
         } else {
             throw new RuntimeException("Client " + kafkaClients.getClass().getSimpleName() + " + does not support tracing.");

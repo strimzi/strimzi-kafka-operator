@@ -1095,20 +1095,31 @@ class SecurityST extends AbstractST {
     void testCaRenewalBreakInMiddle(ExtensionContext extensionContext) {
         final TestStorage testStorage = new TestStorage(extensionContext, Constants.TEST_SUITE_NAMESPACE);
 
+        // Extra Kafka configuration ensures that topic created automatically (by producer) will have data available on more than just single replica once one of broker fails
         resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), 3, 3)
             .editSpec()
                 .withNewClusterCa()
                     .withRenewalDays(1)
                     .withValidityDays(3)
                 .endClusterCa()
+                .editOrNewKafka()
+                    .addToConfig("default.replication.factor", 3)
+                    .addToConfig("min.insync.replicas", 2)
+                .endKafka()
             .endSpec()
             .build());
 
         resourceManager.createResourceWithWait(extensionContext,
             KafkaUserTemplates.tlsUser(testStorage).build(),
-            KafkaTopicTemplates.topic(testStorage).build()
+            KafkaTopicTemplates.topic(testStorage)
+                .editOrNewSpec()
+                    .withReplicas(3)
+                .endSpec()
+                .build()
         );
 
+        // Configuration `acks=all` paired with Kafka's `min.insync.replicas=2` enforces there are at least 2 replicas with all produced data before test continues.
+        String producerAdditionConfiguration = "acks=all\n";
         KafkaClients kafkaClients = new KafkaClientsBuilder()
             .withTopicName(testStorage.getTopicName())
             .withMessageCount(testStorage.getMessageCount())
@@ -1117,6 +1128,7 @@ class SecurityST extends AbstractST {
             .withConsumerName(testStorage.getConsumerName())
             .withNamespaceName(testStorage.getNamespaceName())
             .withUsername(testStorage.getUsername())
+            .withAdditionalConfig(producerAdditionConfiguration)
             .build();
 
         resourceManager.createResourceWithWait(extensionContext, kafkaClients.producerTlsStrimzi(testStorage.getClusterName()), kafkaClients.consumerTlsStrimzi(testStorage.getClusterName()));

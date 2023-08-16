@@ -69,31 +69,39 @@ public class KafkaBrokerConfigurationBuilder {
     private final PrintWriter writer = new PrintWriter(stringWriter);
     private final Reconciliation reconciliation;
     private final String brokerId;
+    private final boolean useKRaft;
 
     /**
      * Broker configuration template constructor
      *
      * @param reconciliation    The reconciliation
      * @param brokerId          The ID of the broker
+     * @param useKRaft          Indicates whether KRaft is used or not
      */
-    public KafkaBrokerConfigurationBuilder(Reconciliation reconciliation, String brokerId) {
+    public KafkaBrokerConfigurationBuilder(Reconciliation reconciliation, String brokerId, boolean useKRaft) {
         printHeader();
         this.reconciliation = reconciliation;
         this.brokerId = brokerId;
+        this.useKRaft = useKRaft;
 
-        // Render the broker ID into the config file
-        configureBrokerId();
+        // Render the node/broker ID into the config file
+        configureNodeOrBrokerId();
     }
 
     /**
-     * Renders the broker.id and node.id configurations
+     * Renders the broker.id or node.id configurations
      */
-    private void configureBrokerId()   {
-        printSectionHeader("Broker ID");
-        writer.println("broker.id=" + brokerId);
-        // Node ID is ignored when not using Kraft mode => but it defaults to broker ID when not set
-        // We set it here in the configuration explicitly to avoid never ending rolling updates
-        writer.println("node.id=" + brokerId);
+    private void configureNodeOrBrokerId()   {
+        printSectionHeader("Node / Broker ID");
+
+        if (useKRaft) {
+            writer.println("node.id=" + brokerId);
+        } else {
+            writer.println("broker.id=" + brokerId);
+            // Node ID is ignored when not using Kraft mode => but it defaults to broker ID when not set.
+            // We set it here in the configuration explicitly to avoid never ending rolling updates.
+            writer.println("node.id=" + brokerId);
+        }
 
         writer.println();
     }
@@ -101,7 +109,7 @@ public class KafkaBrokerConfigurationBuilder {
     /**
      * Configures the Cruise Control metric reporter. It is set only if user enabled the Cruise Control.
      *
-     * @param clusterName           Name of the Kafka cluster used to build the bootstrp address
+     * @param clusterName           Name of the Kafka cluster used to build the bootstrap address
      * @param ccMetricsReporter     Cruise Control Metrics Reporter configuration
      * @param isBroker              Flag indicating if this is broker (or controller)
      *
@@ -227,7 +235,6 @@ public class KafkaBrokerConfigurationBuilder {
      *                                   broker. This is used to configure the user-configurable listeners.
      * @param advertisedPortProvider     Lambda method which provides the advertised port for given listener and broker.
      *                                   This is used to configure the user-configurable listeners.
-     * @param useKRaft                   Use KRaft mode in the configuration
      *
      * @return Returns the builder instance
      */
@@ -237,8 +244,7 @@ public class KafkaBrokerConfigurationBuilder {
             NodeRef node,
             List<GenericKafkaListener> kafkaListeners,
             Function<String, String> advertisedHostnameProvider,
-            Function<String, String> advertisedPortProvider,
-            boolean useKRaft
+            Function<String, String> advertisedPortProvider
     )  {
         List<String> listeners = new ArrayList<>();
         List<String> advertisedListeners = new ArrayList<>();
@@ -600,11 +606,10 @@ public class KafkaBrokerConfigurationBuilder {
      *
      * @param clusterName   The name of the cluster (used to configure the replication super-users)
      * @param authorization The authorization configuration from the Kafka CR
-     * @param useKRaft      Use KRaft mode in the configuration
      *
      * @return  Returns the builder instance
      */
-    public KafkaBrokerConfigurationBuilder withAuthorization(String clusterName, KafkaAuthorization authorization, boolean useKRaft)  {
+    public KafkaBrokerConfigurationBuilder withAuthorization(String clusterName, KafkaAuthorization authorization)  {
         if (authorization != null) {
             List<String> superUsers = new ArrayList<>();
 

@@ -12,7 +12,6 @@ import io.sundr.builder.annotations.Buildable;
 public class BridgeTracingClients extends BridgeClients {
 
     private String tracingServiceNameEnvVar;
-    private boolean openTracing = false;
     private boolean openTelemetry = false;
     private String tracingType;
 
@@ -30,14 +29,6 @@ public class BridgeTracingClients extends BridgeClients {
         return tracingServiceNameEnvVar != null ? tracingServiceNameEnvVar : "TEST_SERVICE_NAME";
     }
 
-    public boolean isOpenTracing() {
-        return openTracing;
-    }
-
-    public void setOpenTracing(boolean openTracing) {
-        this.openTracing = openTracing;
-    }
-
     public boolean isOpenTelemetry() {
         return openTelemetry;
     }
@@ -51,8 +42,6 @@ public class BridgeTracingClients extends BridgeClients {
         // to remove need of extra check in each client's method
         if (this.openTelemetry) {
             this.tracingType = TracingConstants.OPEN_TELEMETRY;
-        } else if (this.openTracing) {
-            this.tracingType = TracingConstants.OPEN_TRACING;
         } else {
             this.tracingType = tracingType;
         }
@@ -74,20 +63,8 @@ public class BridgeTracingClients extends BridgeClients {
                                 .endEnv()
                                 // this will only get used if tracing is enabled -- see serviceNameEnvVar()
                                 .addNewEnv()
-                                    .withName("JAEGER_AGENT_HOST")
-                                    .withValue(TracingConstants.JAEGER_AGENT_HOST)
-                                .endEnv()
-                                .addNewEnv()
                                     .withName("OTEL_EXPORTER_OTLP_ENDPOINT")
                                     .withValue(TracingConstants.JAEGER_COLLECTOR_OTLP_URL)
-                                .endEnv()
-                                .addNewEnv()
-                                    .withName("JAEGER_SAMPLER_TYPE")
-                                    .withValue(TracingConstants.JAEGER_SAMPLER_TYPE)
-                                .endEnv()
-                                .addNewEnv()
-                                    .withName("JAEGER_SAMPLER_PARAM")
-                                    .withValue(TracingConstants.JAEGER_SAMPLER_PARAM)
                                 .endEnv()
                                 .addNewEnv()
                                     .withName("TRACING_TYPE")
@@ -112,20 +89,8 @@ public class BridgeTracingClients extends BridgeClients {
                                 .endEnv()
                                 // this will only get used if tracing is enabled -- see serviceNameEnvVar()
                                 .addNewEnv()
-                                    .withName("JAEGER_AGENT_HOST")
-                                    .withValue(TracingConstants.JAEGER_AGENT_HOST)
-                                .endEnv()
-                                .addNewEnv()
                                     .withName("OTEL_EXPORTER_OTLP_ENDPOINT")
                                     .withValue(TracingConstants.JAEGER_COLLECTOR_OTLP_URL)
-                                .endEnv()
-                                .addNewEnv()
-                                    .withName("JAEGER_SAMPLER_TYPE")
-                                    .withValue(TracingConstants.JAEGER_SAMPLER_TYPE)
-                                .endEnv()
-                                .addNewEnv()
-                                    .withName("JAEGER_SAMPLER_PARAM")
-                                    .withValue(TracingConstants.JAEGER_SAMPLER_PARAM)
                                 .endEnv()
                                 .addNewEnv()
                                     .withName("TRACING_TYPE")

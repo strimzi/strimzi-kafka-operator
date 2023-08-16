@@ -6,6 +6,9 @@
   By default, StrimziPodSets are used for Kafka Connect and Kafka Mirror Maker 2.
   If needed, `StableConnectIdentites` can be disabled in the feature gates configuration in the Cluster Operator.
 * Support for the ppc64le platform
+* Removed support for OpenTracing:
+  * The `tracing.type: jaeger` configuration, in `KafkaConnect`, `KafkaMirrorMaker`, `KafkaMirrorMaker2` and `KafkaBridge` resources, is not supported anymore.
+  * The OpenTelemetry based tracing is the only available by using `tracing.type: opentelemetry`.
 
 ## 0.36.1
 

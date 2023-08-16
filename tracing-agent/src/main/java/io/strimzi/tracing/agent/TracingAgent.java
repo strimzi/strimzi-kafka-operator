@@ -17,9 +17,6 @@ public class TracingAgent {
     public static void premain(String agentArgs) {
         Tracing tracing;
         switch (agentArgs) {
-            case "jaeger":
-                tracing = new JaegerTracing();
-                break;
             case "opentelemetry":
                 tracing = new OpenTelemetryTracing();
                 break;

@@ -17,7 +17,7 @@ Enabling tracing in a resource triggers the following events:
 
 * For the Kafka Bridge, a tracer based on the tracing configuration defined in the resource is initialized by the Kafka Bridge itself.
 
-You can enable tracing that uses OpenTelemetry or OpenTracing.
+You can enable tracing that uses OpenTelemetry.
 
 .Tracing in MirrorMaker and MirrorMaker 2
 
@@ -41,7 +41,6 @@ Perform these steps for each `KafkaMirrorMaker`, `KafkaMirrorMaker2`, `KafkaConn
 --
 * Use the xref:ref-tracing-environment-variables-{context}[tracing environment variables] as template configuration properties.
 * For OpenTelemetry, set the `spec.tracing.type` property to `opentelemetry`.
-* For OpenTracing, set the `spec.tracing.type` property to `jaeger`.
 --
 +
 --
@@ -126,98 +125,6 @@ spec:
           value: "http://otlp-host:4317"
   tracing:
     type: opentelemetry
-#...
-----
-
-.Example tracing configuration for Kafka Connect using OpenTracing
-[source,yaml,subs=attributes+]
-----
-apiVersion: {KafkaConnectApiVersion}
-kind: KafkaConnect
-metadata:
-  name: my-connect-cluster
-spec:
-  #...
-  template:
-    connectContainer:
-      env:
-        - name: JAEGER_SERVICE_NAME
-          value: my-jaeger-service
-        - name: JAEGER_AGENT_HOST
-          value: jaeger-agent-name
-        - name: JAEGER_AGENT_PORT
-          value: "6831"
-  tracing:
-    type: jaeger
-  #...
-----
-
-.Example tracing configuration for MirrorMaker using OpenTracing
-[source,yaml,subs=attributes+]
-----
-apiVersion: {KafkaMirrorMakerApiVersion}
-kind: KafkaMirrorMaker
-metadata:
-  name: my-mirror-maker
-spec:
-  #...
-  template:
-    mirrorMakerContainer:
-      env:
-        - name: JAEGER_SERVICE_NAME
-          value: my-jaeger-service
-        - name: JAEGER_AGENT_HOST
-          value: jaeger-agent-name
-        - name: JAEGER_AGENT_PORT
-          value: "6831"
-  tracing:
-    type: jaeger
-#...
-----
-
-.Example tracing configuration for MirrorMaker 2 using OpenTracing
-[source,yaml,subs=attributes+]
-----
-apiVersion: {KafkaMirrorMaker2ApiVersion}
-kind: KafkaMirrorMaker2
-metadata:
-  name: my-mm2-cluster
-spec:
-  #...
-  template:
-    connectContainer:
-      env:
-        - name: JAEGER_SERVICE_NAME
-          value: my-jaeger-service
-        - name: JAEGER_AGENT_HOST
-          value: jaeger-agent-name
-        - name: JAEGER_AGENT_PORT
-          value: "6831"
-  tracing:
-    type: jaeger
-#...
-----
-
-.Example tracing configuration for the Kafka Bridge using OpenTracing
-[source,yaml,subs=attributes+]
-----
-apiVersion: {KafkaBridgeApiVersion}
-kind: KafkaBridge
-metadata:
-  name: my-bridge
-spec:
-  #...
-  template:
-    bridgeContainer:
-      env:
-        - name: JAEGER_SERVICE_NAME
-          value: my-jaeger-service
-        - name: JAEGER_AGENT_HOST
-          value: jaeger-agent-name
-        - name: JAEGER_AGENT_PORT
-          value: "6831"
-  tracing:
-    type: jaeger
 #...
 ----
 --

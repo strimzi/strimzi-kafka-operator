@@ -366,12 +366,10 @@ public class KafkaClusterWithPoolsTest {
         );
 
         String configuration = kc.generatePerBrokerBrokerConfiguration(2, advertisedHostnames, advertisedPorts);
-        assertThat(configuration, containsString("broker.id=2\n"));
         assertThat(configuration, containsString("node.id=2\n"));
         assertThat(configuration, containsString("process.roles=broker\n"));
 
         configuration = kc.generatePerBrokerBrokerConfiguration(10, advertisedHostnames, advertisedPorts);
-        assertThat(configuration, containsString("broker.id=10\n"));
         assertThat(configuration, containsString("node.id=10\n"));
         assertThat(configuration, containsString("process.roles=broker\n"));
 
@@ -380,12 +378,10 @@ public class KafkaClusterWithPoolsTest {
         assertThat(configMaps.stream().map(s -> s.getMetadata().getName()).toList(), hasItems("my-cluster-pool-a-0", "my-cluster-pool-a-1", "my-cluster-pool-a-2", "my-cluster-pool-b-10", "my-cluster-pool-b-11"));
 
         ConfigMap broker2 = configMaps.stream().filter(cm -> "my-cluster-pool-a-2".equals(cm.getMetadata().getName())).findFirst().orElseThrow();
-        assertThat(broker2.getData().get("server.config"), containsString("broker.id=2\n"));
         assertThat(broker2.getData().get("server.config"), containsString("node.id=2\n"));
         assertThat(broker2.getData().get("server.config"), containsString("process.roles=broker\n"));
 
         ConfigMap broker10 = configMaps.stream().filter(cm -> "my-cluster-pool-b-10".equals(cm.getMetadata().getName())).findFirst().orElseThrow();
-        assertThat(broker10.getData().get("server.config"), containsString("broker.id=10\n"));
         assertThat(broker10.getData().get("server.config"), containsString("node.id=10\n"));
         assertThat(broker10.getData().get("server.config"), containsString("process.roles=broker\n"));
     }

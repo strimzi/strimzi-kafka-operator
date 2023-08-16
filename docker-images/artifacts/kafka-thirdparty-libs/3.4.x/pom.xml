@@ -26,9 +26,6 @@
         <jmx-prometheus-javaagent.version>0.18.0</jmx-prometheus-javaagent.version>
         <json-smart.version>2.4.9</json-smart.version>
         <jsonevent-layout.version>1.7</jsonevent-layout.version>
-        <jaeger-client.version>1.8.1</jaeger-client.version>
-        <opentracing.version>0.33.0</opentracing.version>
-        <opentracing-kafka.version>0.1.15</opentracing-kafka.version>
         <opentelemetry.version>1.19.0</opentelemetry.version>
         <opentelemetry.alpha-version>1.19.0-alpha</opentelemetry.alpha-version>
     </properties>
@@ -75,50 +72,6 @@
         </dependency>
         <!-- Tracing -->
         <dependency>
-            <groupId>io.jaegertracing</groupId>
-            <artifactId>jaeger-client</artifactId>
-            <version>${jaeger-client.version}</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.apache.tomcat</groupId>
-                    <artifactId>tomcat-annotations-api</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.apache.tomcat.embed</groupId>
-                    <artifactId>tomcat-embed-core</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.slf4j</groupId>
-                    <artifactId>slf4j-api</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>javax.annotation</groupId>
-                    <artifactId>javax.annotation-api</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>io.opentracing</groupId>
-            <artifactId>opentracing-api</artifactId>
-            <version>${opentracing.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>io.opentracing</groupId>
-            <artifactId>opentracing-util</artifactId>
-            <version>${opentracing.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>io.opentracing.contrib</groupId>
-            <artifactId>opentracing-kafka-client</artifactId>
-            <version>${opentracing-kafka.version}</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.apache.kafka</groupId>
-                    <artifactId>kafka-clients</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
             <groupId>io.opentelemetry</groupId>
             <artifactId>opentelemetry-sdk-extension-autoconfigure</artifactId>
             <version>${opentelemetry.alpha-version}</version>
@@ -126,11 +79,6 @@
         <dependency>
             <groupId>io.opentelemetry.instrumentation</groupId>
             <artifactId>opentelemetry-kafka-clients-2.6</artifactId>
-            <version>${opentelemetry.alpha-version}</version>
-        </dependency>
-        <dependency>
-            <groupId>io.opentelemetry</groupId>
-            <artifactId>opentelemetry-opentracing-shim</artifactId>
             <version>${opentelemetry.alpha-version}</version>
         </dependency>
         <dependency>
