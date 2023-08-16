@@ -70,7 +70,6 @@ import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -127,9 +126,9 @@ public class CruiseControlTest {
 
     private final Map<String, Object> kafkaConfig = singletonMap(CruiseControl.MIN_INSYNC_REPLICAS, minInsyncReplicas);
     private final Map<String, Object> ccConfig = new HashMap<>() {{
-        putAll(CruiseControlConfiguration.getCruiseControlDefaultPropertiesMap());
-        put("num.partition.metrics.windows", "2");
-    }};
+            putAll(CruiseControlConfiguration.getCruiseControlDefaultPropertiesMap());
+            put("num.partition.metrics.windows", "2");
+        }};
 
     private final CruiseControlConfiguration ccConfiguration = new CruiseControlConfiguration(Reconciliation.DUMMY_RECONCILIATION, ccConfig.entrySet());
 
@@ -585,36 +584,36 @@ public class CruiseControlTest {
         assertThat(ccContainer.getImagePullPolicy(), is(ImagePullPolicy.IFNOTPRESENT.toString()));
     }
 
-        @ParallelTest
-        public void testContainerTemplateEnvVars () {
-            ContainerEnvVar envVar1 = new ContainerEnvVar();
-            String testEnvOneKey = "TEST_ENV_1";
-            String testEnvOneValue = "test.env.one";
-            envVar1.setName(testEnvOneKey);
-            envVar1.setValue(testEnvOneValue);
+    @ParallelTest
+    public void testContainerTemplateEnvVars () {
+        ContainerEnvVar envVar1 = new ContainerEnvVar();
+        String testEnvOneKey = "TEST_ENV_1";
+        String testEnvOneValue = "test.env.one";
+        envVar1.setName(testEnvOneKey);
+        envVar1.setValue(testEnvOneValue);
 
-            ContainerEnvVar envVar2 = new ContainerEnvVar();
-            String testEnvTwoKey = "TEST_ENV_2";
-            String testEnvTwoValue = "test.env.two";
-            envVar2.setName(testEnvTwoKey);
-            envVar2.setValue(testEnvTwoValue);
+        ContainerEnvVar envVar2 = new ContainerEnvVar();
+        String testEnvTwoKey = "TEST_ENV_2";
+        String testEnvTwoValue = "test.env.two";
+        envVar2.setName(testEnvTwoKey);
+        envVar2.setValue(testEnvTwoValue);
 
-            CruiseControlSpec cruiseControlSpec = new CruiseControlSpecBuilder()
-                    .withImage(ccImage)
-                    .withNewTemplate()
-                    .withNewCruiseControlContainer()
-                    .withEnv(envVar1, envVar2)
-                    .endCruiseControlContainer()
-                    .endTemplate()
-                    .build();
+        CruiseControlSpec cruiseControlSpec = new CruiseControlSpecBuilder()
+                .withImage(ccImage)
+                .withNewTemplate()
+                .withNewCruiseControlContainer()
+                .withEnv(envVar1, envVar2)
+                .endCruiseControlContainer()
+                .endTemplate()
+                .build();
 
-            Kafka resource = createKafka(cruiseControlSpec);
-            CruiseControl cc = createCruiseControl(resource);
-            List<EnvVar> envVarList = cc.getEnvVars();
+        Kafka resource = createKafka(cruiseControlSpec);
+        CruiseControl cc = createCruiseControl(resource);
+        List<EnvVar> envVarList = cc.getEnvVars();
 
-            assertThat(envVarList, hasItems(new EnvVar(testEnvOneKey, testEnvOneValue, null)));
-            assertThat(envVarList, hasItems(new EnvVar(testEnvTwoKey, testEnvTwoValue, null)));
-        }
+        assertThat(envVarList, hasItems(new EnvVar(testEnvOneKey, testEnvOneValue, null)));
+        assertThat(envVarList, hasItems(new EnvVar(testEnvTwoKey, testEnvTwoValue, null)));
+    }
 
     @ParallelTest
     public void testContainerTemplateEnvVarsWithKeyConflict() {
@@ -835,7 +834,6 @@ public class CruiseControlTest {
                 .build();
 
         CruiseControl cc = CruiseControl.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaSpec(cruiseControlSpec), VERSIONS, nodes, storage, resources, SHARED_ENV_PROVIDER);
-        assert cc != null;
         Capacity capacity = cc.getCapacity();
 
         TreeMap<Integer, BrokerCapacity> map = capacity.getCapacityEntries();
@@ -859,7 +857,6 @@ public class CruiseControlTest {
                 .build();
 
         CruiseControl cc1 = CruiseControl.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaSpec(cruiseControlSpec2), VERSIONS, nodes, storage, resources, SHARED_ENV_PROVIDER);
-        assert cc1 != null;
         Capacity capacity1 = cc1.getCapacity();
         TreeMap<Integer, BrokerCapacity> map1 = capacity1.getCapacityEntries();
 

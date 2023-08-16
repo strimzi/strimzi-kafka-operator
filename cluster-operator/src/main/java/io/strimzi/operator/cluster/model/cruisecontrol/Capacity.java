@@ -354,7 +354,7 @@ public class Capacity {
         // We create a capacity for each broker node
         for (NodeRef node : kafkaBrokerNodes) {
             DiskCapacity disk = processDisk(kafkaStorage.get(node.poolName()), node.nodeId());
-            CpuCapacity cpu = processCpu( null, brokerCapacity, kafkaBrokerResources.get(node.poolName()));
+            CpuCapacity cpu = processCpu(null, brokerCapacity, kafkaBrokerResources.get(node.poolName()));
 
             BrokerCapacity broker = new BrokerCapacity(node.nodeId(), cpu, disk, inboundNetwork, outboundNetwork);
             capacityEntries.put(node.nodeId(), broker);
