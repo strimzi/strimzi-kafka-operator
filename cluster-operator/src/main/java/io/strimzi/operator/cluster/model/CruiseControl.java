@@ -111,6 +111,11 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
     private boolean authEnabled;
     @SuppressFBWarnings({"UWF_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR"}) // This field is initialized in the fromCrd method
     protected Capacity capacity;
+
+    public Capacity getCapacity() {
+        return capacity;
+    }
+
     @SuppressFBWarnings({"UWF_FIELD_NOT_INITIALIZED_IN_CONSTRUCTOR"}) // This field is initialized in the fromCrd method
     private MetricsModel metrics;
     private LoggingModel logging;

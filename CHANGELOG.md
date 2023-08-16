@@ -6,7 +6,12 @@
   By default, StrimziPodSets are used for Kafka Connect and Kafka Mirror Maker 2.
   If needed, `StableConnectIdentites` can be disabled in the feature gates configuration in the Cluster Operator.
 * Support for the ppc64le platform
-* Refactor logic for Cruise Control cpu capacity settings
+
+### Changes, deprecations and removals
+* The logic for Cruise Control cpu capacity settings has been refactored. 
+  For the cases where `requests != limits` or `requests == <value> and limits == nul1` the CPU capacity was set to a default value of `1.0`. 
+  The changes implement the following:
+  For the cases where `requests != limits` or `requests == <value> and limits == nul1` the CPU capacity is set so `capacity == requests`.
 
 ## 0.36.1
 

@@ -36,4 +36,8 @@ public class CpuCapacity {
     public String toString() {
         return this.getJson().toString();
     }
+
+    public String getCores() {
+        return cores;
+    }
 }
