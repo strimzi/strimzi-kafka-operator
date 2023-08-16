@@ -26,7 +26,7 @@ Supported authentication options:
 
 The authentication option you choose depends on how you wish to authenticate client access to Kafka brokers.
 
-NOTE: Try exploring the standard authentication options before using custom authentication. Custom authentication allows for any type of kafka-supported authentication. It can provide more flexibility, but also adds complexity.
+NOTE: Try exploring the standard authentication options before using custom authentication. Custom authentication allows for any type of Kafka-supported authentication. It can provide more flexibility, but also adds complexity.
 
 .Kafka listener authentication options
 image::listener-config-options.png[options for listener authentication configuration]

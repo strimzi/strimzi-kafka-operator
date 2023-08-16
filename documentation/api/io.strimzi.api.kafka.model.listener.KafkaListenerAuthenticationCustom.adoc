@@ -1,6 +1,6 @@
 To configure custom authentication, set the `type` property to `custom`.
 
-Custom authentication allows for any type of kafka-supported authentication to be used.
+Custom authentication allows for any type of Kafka-supported authentication to be used.
 
 .Example custom OAuth authentication configuration
 [source,yaml,subs="attributes+"]
