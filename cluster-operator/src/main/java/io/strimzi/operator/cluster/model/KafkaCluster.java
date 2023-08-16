@@ -1592,7 +1592,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
      */
     private String generatePerBrokerBrokerConfiguration(NodeRef node, KafkaPool pool, Map<Integer, Map<String, String>> advertisedHostnames, Map<Integer, Map<String, String>> advertisedPorts)   {
         if (useKRaft) {
-            return new KafkaBrokerConfigurationBuilder(reconciliation, String.valueOf(node.nodeId()))
+            return new KafkaBrokerConfigurationBuilder(reconciliation, String.valueOf(node.nodeId()), true)
                     .withRackId(rack)
                     .withKRaft(cluster, namespace, pool.processRoles, nodes())
                     .withLogDirs(VolumeUtils.createVolumeMounts(pool.storage, DATA_VOLUME_MOUNT_PATH, false))
@@ -1601,14 +1601,14 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
                             node,
                             listeners,
                             listenerId -> advertisedHostnames.get(node.nodeId()).get(listenerId),
-                            listenerId -> advertisedPorts.get(node.nodeId()).get(listenerId),
-                            true)
-                    .withAuthorization(cluster, authorization, true)
+                            listenerId -> advertisedPorts.get(node.nodeId()).get(listenerId)
+                    )
+                    .withAuthorization(cluster, authorization)
                     .withCruiseControl(cluster, ccMetricsReporter, node.broker())
                     .withUserConfiguration(configuration, node.broker() && ccMetricsReporter != null)
                     .build().trim();
         } else {
-            return new KafkaBrokerConfigurationBuilder(reconciliation, String.valueOf(node.nodeId()))
+            return new KafkaBrokerConfigurationBuilder(reconciliation, String.valueOf(node.nodeId()), false)
                     .withRackId(rack)
                     .withZookeeper(cluster)
                     .withLogDirs(VolumeUtils.createVolumeMounts(pool.storage, DATA_VOLUME_MOUNT_PATH, false))
@@ -1617,9 +1617,9 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
                             node,
                             listeners,
                             listenerId -> advertisedHostnames.get(node.nodeId()).get(listenerId),
-                            listenerId -> advertisedPorts.get(node.nodeId()).get(listenerId),
-                            false)
-                    .withAuthorization(cluster, authorization, false)
+                            listenerId -> advertisedPorts.get(node.nodeId()).get(listenerId)
+                    )
+                    .withAuthorization(cluster, authorization)
                     .withCruiseControl(cluster, ccMetricsReporter, node.broker())
                     .withUserConfiguration(configuration, node.broker() && ccMetricsReporter != null)
                     .build().trim();
