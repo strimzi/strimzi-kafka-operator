@@ -49,7 +49,7 @@ public class AuthenticationUtils {
     /**
      * Key for OAuth config
      */
-    public static final String OAUTH_CONFIG = "OAUTH_CONFIG";
+    private static final String OAUTH_CONFIG = "OAUTH_CONFIG";
 
     /**
      * Validates Kafka client authentication for all components based on Apache Kafka clients.
