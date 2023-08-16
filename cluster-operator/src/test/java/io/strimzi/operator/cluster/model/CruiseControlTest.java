@@ -585,7 +585,7 @@ public class CruiseControlTest {
     }
 
     @ParallelTest
-    public void testContainerTemplateEnvVars () {
+    public void testContainerTemplateEnvVars() {
         ContainerEnvVar envVar1 = new ContainerEnvVar();
         String testEnvOneKey = "TEST_ENV_1";
         String testEnvOneValue = "test.env.one";
