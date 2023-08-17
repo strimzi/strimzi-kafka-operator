@@ -14,8 +14,10 @@ import io.fabric8.kubernetes.api.model.policy.v1.PodDisruptionBudget;
 import io.strimzi.api.kafka.model.KafkaJmxAuthenticationPasswordBuilder;
 import io.strimzi.api.kafka.model.KafkaJmxOptionsBuilder;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2;
+import io.strimzi.api.kafka.model.KafkaMirrorMaker2ClusterSpecBuilder;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2Resources;
 import io.strimzi.api.kafka.model.status.KafkaMirrorMaker2Status;
+import io.strimzi.operator.cluster.model.AuthenticationUtilsTest;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ResourceUtils;
@@ -60,6 +62,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.concurrent.CopyOnWriteArraySet;
 
 import static java.util.Arrays.asList;
@@ -68,6 +71,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasSize;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -913,5 +917,120 @@ public class KafkaMirrorMaker2AssemblyOperatorTest {
                     //assertThat(mirrorMaker2.isJmxAuthenticated(), is(true));
                     async.flag();
                 })));
+    }
+
+    @Test
+    public void testAddClusterToMirrorMaker2ConnectorConfigWithPlain() {
+        var config = new HashMap<String, Object>();
+        var prefix = "prefix";
+        var cluster =
+                new KafkaMirrorMaker2ClusterSpecBuilder(true)
+                        .withAlias("sourceClusterAlias")
+                        .withBootstrapServers("sourceClusterAlias.sourceNamespace.svc:9092")
+                        .withNewKafkaClientAuthenticationPlain()
+                            .withUsername("shaza")
+                            .withNewPasswordSecret()
+                                .withPassword("pa55word")
+                            .endPasswordSecret()
+                            .endKafkaClientAuthenticationPlain()
+                        .build();
+
+        KafkaMirrorMaker2AssemblyOperator.addClusterToMirrorMaker2ConnectorConfig(config, cluster, prefix);
+
+        var jaasConfig = (String) config.remove("prefixsasl.jaas.config");
+        var configEntry = AuthenticationUtilsTest.parseJaasConfig(jaasConfig);
+        assertEquals("org.apache.kafka.common.security.plain.PlainLoginModule", configEntry.getLoginModuleName());
+        assertEquals(Map.of(
+                        "username", "shaza",
+                        "password", "${file:/tmp/strimzi-mirrormaker2-connector.properties:sourceClusterAlias.sasl.password}"),
+                configEntry.getOptions());
+
+        assertEquals(new TreeMap(Map.of("prefixalias", "sourceClusterAlias",
+                "prefixsecurity.protocol", "SASL_PLAINTEXT",
+                "prefixsasl.mechanism", "PLAIN",
+                "prefixbootstrap.servers", "sourceClusterAlias.sourceNamespace.svc:9092")),
+                new TreeMap(config));
+    }
+
+    @Test
+    public void testAddClusterToMirrorMaker2ConnectorConfigWithScram() {
+        var config = new HashMap<String, Object>();
+        var prefix = "prefix";
+        var cluster =
+                new KafkaMirrorMaker2ClusterSpecBuilder(true)
+                        .withAlias("sourceClusterAlias")
+                        .withBootstrapServers("sourceClusterAlias.sourceNamespace.svc:9092")
+                        .withNewKafkaClientAuthenticationScramSha512()
+                        .withUsername("shaza")
+                        .withNewPasswordSecret()
+                        .withPassword("pa55word")
+                        .endPasswordSecret()
+                        .endKafkaClientAuthenticationScramSha512()
+                        .build();
+
+        KafkaMirrorMaker2AssemblyOperator.addClusterToMirrorMaker2ConnectorConfig(config, cluster, prefix);
+
+        var jaasConfig = (String) config.remove("prefixsasl.jaas.config");
+        var configEntry = AuthenticationUtilsTest.parseJaasConfig(jaasConfig);
+        assertEquals("org.apache.kafka.common.security.scram.ScramLoginModule", configEntry.getLoginModuleName());
+        assertEquals(Map.of(
+                        "username", "shaza",
+                        "password", "${file:/tmp/strimzi-mirrormaker2-connector.properties:sourceClusterAlias.sasl.password}"),
+                configEntry.getOptions());
+
+        assertEquals(new TreeMap(Map.of("prefixalias", "sourceClusterAlias",
+                        "prefixsecurity.protocol", "SASL_PLAINTEXT",
+                        "prefixsasl.mechanism", "SCRAM-SHA-512",
+                        "prefixbootstrap.servers", "sourceClusterAlias.sourceNamespace.svc:9092")),
+                new TreeMap(config));
+    }
+
+    @Test
+    public void testAddClusterToMirrorMaker2ConnectorConfigWithOauth() {
+        var config = new HashMap<String, Object>();
+        var prefix = "prefix";
+        var cluster =
+                new KafkaMirrorMaker2ClusterSpecBuilder(true)
+                        .withAlias("sourceClusterAlias")
+                        .withBootstrapServers("sourceClusterAlias.sourceNamespace.svc:9092")
+                        .withNewKafkaClientAuthenticationOAuth()
+                            .withNewAccessToken()
+                                .withKey("accessTokenKey")
+                                .withSecretName("accessTokenSecretName")
+                            .endAccessToken()
+                            .withNewClientSecret()
+                                .withKey("clientSecretKey")
+                                .withSecretName("clientSecretSecretName")
+                            .endClientSecret()
+                            .withNewPasswordSecret()
+                                .withPassword("passwordSecretPassword")
+                                .withSecretName("passwordSecretSecretName")
+                            .endPasswordSecret()
+                            .withNewRefreshToken()
+                                .withKey("refreshTokenKey")
+                                .withSecretName("refreshTokenSecretName")
+                            .endRefreshToken()
+                        .endKafkaClientAuthenticationOAuth()
+                        .build();
+
+        KafkaMirrorMaker2AssemblyOperator.addClusterToMirrorMaker2ConnectorConfig(config, cluster, prefix);
+
+        var jaasConfig = (String) config.remove("prefixsasl.jaas.config");
+        var configEntry = AuthenticationUtilsTest.parseJaasConfig(jaasConfig);
+        assertEquals("org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule", configEntry.getLoginModuleName());
+        assertEquals(Map.of(
+                        "oauth.client.secret", "${file:/tmp/strimzi-mirrormaker2-connector.properties:sourceClusterAlias.oauth.client.secret}",
+                        "oauth.access.token", "${file:/tmp/strimzi-mirrormaker2-connector.properties:sourceClusterAlias.oauth.access.token}",
+                        "oauth.refresh.token", "${file:/tmp/strimzi-mirrormaker2-connector.properties:sourceClusterAlias.oauth.refresh.token}",
+                        "oauth.password.grant.password", "${file:/tmp/strimzi-mirrormaker2-connector.properties:sourceClusterAlias.oauth.password.grant.password}"),
+                configEntry.getOptions());
+
+        assertEquals(Map.of(
+                "prefixalias", "sourceClusterAlias",
+                "prefixbootstrap.servers", "sourceClusterAlias.sourceNamespace.svc:9092",
+                "prefixsasl.login.callback.handler.class", "io.strimzi.kafka.oauth.client.JaasClientOauthLoginCallbackHandler",
+                "prefixsasl.mechanism", "OAUTHBEARER",
+                "prefixsecurity.protocol", "SASL_PLAINTEXT"),
+                config);
     }
 }

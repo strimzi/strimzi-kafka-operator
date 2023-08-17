@@ -37,7 +37,6 @@ import org.hamcrest.TypeSafeMatcher;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -50,9 +49,10 @@ import static io.strimzi.operator.cluster.model.KafkaBrokerConfigurationBuilderT
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
-import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.CoreMatchers.is;
+
 
 @ParallelSuite
 public class KafkaBrokerConfigurationBuilderTest {
@@ -924,7 +924,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "inter.broker.listener.name=REPLICATION-9091",
                 "sasl.enabled.mechanisms=",
                 "ssl.endpoint.identification.algorithm=HTTPS",
-                "listener.name.plain-9092.scram-sha-512.sasl.jaas.config=org.apache.kafka.common.security.scram.ScramLoginModule required;",
+                "listener.name.plain-9092.scram-sha-512.sasl.jaas.config=org.apache.kafka.common.security.scram.ScramLoginModule required ;",
                 "listener.name.plain-9092.sasl.enabled.mechanisms=SCRAM-SHA-512"));
     }
 
@@ -1190,7 +1190,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "inter.broker.listener.name=REPLICATION-9091",
                 "sasl.enabled.mechanisms=",
                 "ssl.endpoint.identification.algorithm=HTTPS",
-                "listener.name.external-9094.scram-sha-512.sasl.jaas.config=org.apache.kafka.common.security.scram.ScramLoginModule required;",
+                "listener.name.external-9094.scram-sha-512.sasl.jaas.config=org.apache.kafka.common.security.scram.ScramLoginModule required ;",
                 "listener.name.external-9094.sasl.enabled.mechanisms=SCRAM-SHA-512",
                 "listener.name.external-9094.ssl.keystore.location=/tmp/kafka/cluster.keystore.p12",
                 "listener.name.external-9094.ssl.keystore.password=${CERTS_STORE_PASSWORD}",
@@ -1253,7 +1253,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .withType(KafkaListenerType.LOADBALANCER)
                 .withTls(true)
                 .build();
-        
+      
         String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, "2", false)
                 .withListeners("my-cluster", "my-namespace", NODE_REF, singletonList(listener), listenerId -> "dummy-advertised-address", listenerId -> "1919")
                 .build();
@@ -1814,7 +1814,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                     .withTlsTrustedCertificates(cert)
                 .endKafkaListenerAuthenticationOAuth()
                 .build();
-        
+
         String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, "2", false)
                 .withListeners("my-cluster", "my-namespace", NODE_REF, singletonList(listener), listenerId -> "dummy-advertised-address", listenerId -> "1919")
                 .build();
@@ -1937,37 +1937,37 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .withFailFast(false)
                 .build();
 
-        List<String> expectedOptions = new ArrayList<>(5);
-        expectedOptions.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_CLIENT_ID, "my-kafka-id"));
-        expectedOptions.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_VALID_ISSUER_URI, "http://valid-issuer"));
-        expectedOptions.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_CHECK_ISSUER, false));
-        expectedOptions.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_CHECK_AUDIENCE, true));
-        expectedOptions.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_CUSTOM_CLAIM_CHECK, "@.aud && @.aud == 'something'"));
-        expectedOptions.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_SCOPE, "messaging"));
-        expectedOptions.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_AUDIENCE, "kafka"));
-        expectedOptions.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_JWKS_ENDPOINT_URI, "http://jwks-endpoint"));
-        expectedOptions.add(String.format("%s=\"%d\"", ServerConfig.OAUTH_JWKS_REFRESH_SECONDS, 50));
-        expectedOptions.add(String.format("%s=\"%d\"", ServerConfig.OAUTH_JWKS_EXPIRY_SECONDS, 160));
-        expectedOptions.add(String.format("%s=\"%d\"", ServerConfig.OAUTH_JWKS_REFRESH_MIN_PAUSE_SECONDS, 5));
-        expectedOptions.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_JWKS_IGNORE_KEY_USE, true));
-        expectedOptions.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_INTROSPECTION_ENDPOINT_URI, "http://introspection-endpoint"));
-        expectedOptions.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_USERINFO_ENDPOINT_URI, "http://userinfo-endpoint"));
-        expectedOptions.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_USERNAME_CLAIM, "preferred_username"));
-        expectedOptions.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_FALLBACK_USERNAME_CLAIM, "client_id"));
-        expectedOptions.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_FALLBACK_USERNAME_PREFIX, "client-account-"));
-        expectedOptions.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_ACCESS_TOKEN_IS_JWT, false));
-        expectedOptions.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_CHECK_ACCESS_TOKEN_TYPE, false));
-        expectedOptions.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_VALID_TOKEN_TYPE, "access_token"));
-        expectedOptions.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM, ""));
-        expectedOptions.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_CONNECT_TIMEOUT_SECONDS, 30));
-        expectedOptions.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_READ_TIMEOUT_SECONDS, 60));
-        expectedOptions.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_HTTP_RETRIES, 2));
-        expectedOptions.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_HTTP_RETRY_PAUSE_MILLIS, 500));
-        expectedOptions.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_ENABLE_METRICS, true));
-        expectedOptions.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_FAIL_FAST, false));
+        Map<String, String> expectedOptions = new HashMap<>();
+        expectedOptions.put(ServerConfig.OAUTH_CLIENT_ID, "my-kafka-id");
+        expectedOptions.put(ServerConfig.OAUTH_VALID_ISSUER_URI, "http://valid-issuer");
+        expectedOptions.put(ServerConfig.OAUTH_CHECK_ISSUER, String.valueOf(false));
+        expectedOptions.put(ServerConfig.OAUTH_CHECK_AUDIENCE, String.valueOf(true));
+        expectedOptions.put(ServerConfig.OAUTH_CUSTOM_CLAIM_CHECK, "@.aud && @.aud == 'something'");
+        expectedOptions.put(ServerConfig.OAUTH_SCOPE, "messaging");
+        expectedOptions.put(ServerConfig.OAUTH_AUDIENCE, "kafka");
+        expectedOptions.put(ServerConfig.OAUTH_JWKS_ENDPOINT_URI, "http://jwks-endpoint");
+        expectedOptions.put(ServerConfig.OAUTH_JWKS_REFRESH_SECONDS, "50");
+        expectedOptions.put(ServerConfig.OAUTH_JWKS_EXPIRY_SECONDS, "160");
+        expectedOptions.put(ServerConfig.OAUTH_JWKS_REFRESH_MIN_PAUSE_SECONDS, "5");
+        expectedOptions.put(ServerConfig.OAUTH_JWKS_IGNORE_KEY_USE, String.valueOf(true));
+        expectedOptions.put(ServerConfig.OAUTH_INTROSPECTION_ENDPOINT_URI, "http://introspection-endpoint");
+        expectedOptions.put(ServerConfig.OAUTH_USERINFO_ENDPOINT_URI, "http://userinfo-endpoint");
+        expectedOptions.put(ServerConfig.OAUTH_USERNAME_CLAIM, "preferred_username");
+        expectedOptions.put(ServerConfig.OAUTH_FALLBACK_USERNAME_CLAIM, "client_id");
+        expectedOptions.put(ServerConfig.OAUTH_FALLBACK_USERNAME_PREFIX, "client-account-");
+        expectedOptions.put(ServerConfig.OAUTH_ACCESS_TOKEN_IS_JWT, String.valueOf(false));
+        expectedOptions.put(ServerConfig.OAUTH_CHECK_ACCESS_TOKEN_TYPE, String.valueOf(false));
+        expectedOptions.put(ServerConfig.OAUTH_VALID_TOKEN_TYPE, "access_token");
+        expectedOptions.put(ServerConfig.OAUTH_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM, "");
+        expectedOptions.put(ServerConfig.OAUTH_CONNECT_TIMEOUT_SECONDS, "30");
+        expectedOptions.put(ServerConfig.OAUTH_READ_TIMEOUT_SECONDS, "60");
+        expectedOptions.put(ServerConfig.OAUTH_HTTP_RETRIES, "2");
+        expectedOptions.put(ServerConfig.OAUTH_HTTP_RETRY_PAUSE_MILLIS, "500");
+        expectedOptions.put(ServerConfig.OAUTH_ENABLE_METRICS, String.valueOf(true));
+        expectedOptions.put(ServerConfig.OAUTH_FAIL_FAST, String.valueOf(false));
 
         // enablePlain and tokenEndpointUri are handled separately from getOAuthOptions
-        List<String> actualOptions = KafkaBrokerConfigurationBuilder.getOAuthOptions(auth);
+        Map<String, String> actualOptions = KafkaBrokerConfigurationBuilder.getOAuthOptions(auth);
 
         assertThat(actualOptions, is(equalTo(expectedOptions)));
     }
@@ -2115,9 +2115,8 @@ public class KafkaBrokerConfigurationBuilderTest {
         KafkaListenerAuthenticationOAuth auth = new KafkaListenerAuthenticationOAuthBuilder()
                 .build();
 
-        List<String> actualOptions = KafkaBrokerConfigurationBuilder.getOAuthOptions(auth);
-
-        assertThat(actualOptions, is(equalTo(Collections.emptyList())));
+        Map<String, String> actualOptions = KafkaBrokerConfigurationBuilder.getOAuthOptions(auth);
+        assertThat(actualOptions, is(equalTo(Collections.emptyMap())));
     }
 
     static class IsEquivalent extends TypeSafeMatcher<String> {

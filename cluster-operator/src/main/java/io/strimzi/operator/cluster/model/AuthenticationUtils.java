@@ -19,12 +19,15 @@ import io.strimzi.kafka.oauth.server.ServerConfig;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
+import java.util.StringJoiner;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * Utils for working with different authentication types
@@ -236,7 +239,7 @@ public class AuthenticationUtils {
     }
 
     /**
-     * Configured environment variables related to authentication in Kafka clients
+     * Configured environment variables related to authentication in Kafka clients within Strimzi-based containers
      *
      * @param authentication    Authentication object with auth configuration
      * @param varList   List where the new environment variables should be added
@@ -244,25 +247,33 @@ public class AuthenticationUtils {
      */
     public static void configureClientAuthenticationEnvVars(KafkaClientAuthentication authentication, List<EnvVar> varList, Function<String, String> envVarNamer)   {
         if (authentication != null) {
-
-            for (Entry<String, String> entry: getClientAuthenticationProperties(authentication).entrySet()) {
-                varList.add(ContainerUtils.createEnvVar(envVarNamer.apply(entry.getKey()), entry.getValue()));
-            }
-            
-            if (authentication instanceof KafkaClientAuthenticationOAuth oauth) {
-
-                if (oauth.getClientSecret() != null)    {
+            if (authentication instanceof KafkaClientAuthenticationTls tlsAuth) {
+                varList.add(ContainerUtils.createEnvVar(envVarNamer.apply(TLS_AUTH_CERT), String.format("%s/%s", tlsAuth.getCertificateAndKey().getSecretName(), tlsAuth.getCertificateAndKey().getCertificate())));
+                varList.add(ContainerUtils.createEnvVar(envVarNamer.apply(TLS_AUTH_KEY), String.format("%s/%s", tlsAuth.getCertificateAndKey().getSecretName(), tlsAuth.getCertificateAndKey().getKey())));
+            } else if (authentication instanceof KafkaClientAuthenticationPlain passwordAuth) {
+                varList.add(ContainerUtils.createEnvVar(envVarNamer.apply(SASL_USERNAME), passwordAuth.getUsername()));
+                varList.add(ContainerUtils.createEnvVar(envVarNamer.apply(SASL_PASSWORD_FILE), String.format("%s/%s", passwordAuth.getPasswordSecret().getSecretName(), passwordAuth.getPasswordSecret().getPassword())));
+                varList.add(ContainerUtils.createEnvVar(envVarNamer.apply(SASL_MECHANISM), KafkaClientAuthenticationPlain.TYPE_PLAIN));
+            } else if (authentication instanceof KafkaClientAuthenticationScram scramAuth) {
+                varList.add(ContainerUtils.createEnvVar(envVarNamer.apply(SASL_USERNAME), scramAuth.getUsername()));
+                varList.add(ContainerUtils.createEnvVar(envVarNamer.apply(SASL_PASSWORD_FILE), String.format("%s/%s", scramAuth.getPasswordSecret().getSecretName(), scramAuth.getPasswordSecret().getPassword())));
+                varList.add(ContainerUtils.createEnvVar(envVarNamer.apply(SASL_MECHANISM), scramAuth.getType()));
+            } else if (authentication instanceof KafkaClientAuthenticationOAuth oauth) {
+                varList.add(ContainerUtils.createEnvVar(envVarNamer.apply(SASL_MECHANISM), KafkaClientAuthenticationOAuth.TYPE_OAUTH));
+                varList.add(ContainerUtils.createEnvVar(envVarNamer.apply(OAUTH_CONFIG),
+                        oauthJaasOptions(oauth).entrySet().stream()
+                                .map(e -> e.getKey() + "=\"" + e.getValue() + "\"")
+                                .collect(Collectors.joining(" "))));
+                if (oauth.getClientSecret() != null) {
                     varList.add(ContainerUtils.createEnvVarFromSecret(envVarNamer.apply("OAUTH_CLIENT_SECRET"), oauth.getClientSecret().getSecretName(), oauth.getClientSecret().getKey()));
                 }
-
-                if (oauth.getAccessToken() != null)    {
+                if (oauth.getAccessToken() != null) {
                     varList.add(ContainerUtils.createEnvVarFromSecret(envVarNamer.apply("OAUTH_ACCESS_TOKEN"), oauth.getAccessToken().getSecretName(), oauth.getAccessToken().getKey()));
                 }
-
-                if (oauth.getRefreshToken() != null)    {
+                if (oauth.getRefreshToken() != null) {
                     varList.add(ContainerUtils.createEnvVarFromSecret(envVarNamer.apply("OAUTH_REFRESH_TOKEN"), oauth.getRefreshToken().getSecretName(), oauth.getRefreshToken().getKey()));
                 }
-                if (oauth.getPasswordSecret() != null)    {
+                if (oauth.getPasswordSecret() != null) {
                     varList.add(ContainerUtils.createEnvVarFromSecret(envVarNamer.apply("OAUTH_PASSWORD_GRANT_PASSWORD"), oauth.getPasswordSecret().getSecretName(), oauth.getPasswordSecret().getPassword()));
                 }
             }
@@ -270,60 +281,42 @@ public class AuthenticationUtils {
     }
 
     /**
-     * Get a map of properties related to authentication in Kafka clients.
-     *
-     * @param authentication    Authentication object with auth configuration
-     * @return Map of name/value pairs
+     * @param oauth The client OAuth authentication configuration.
+     * @return The OAuth JAAS configuration options.
      */
-    public static Map<String, String> getClientAuthenticationProperties(KafkaClientAuthentication authentication) {
-        Map<String, String> properties = new HashMap<>(3);
-        
-        if (authentication != null) {
-            if (authentication instanceof KafkaClientAuthenticationTls tlsAuth) {
-                properties.put(TLS_AUTH_CERT, String.format("%s/%s", tlsAuth.getCertificateAndKey().getSecretName(), tlsAuth.getCertificateAndKey().getCertificate()));
-                properties.put(TLS_AUTH_KEY, String.format("%s/%s", tlsAuth.getCertificateAndKey().getSecretName(), tlsAuth.getCertificateAndKey().getKey()));
-            } else if (authentication instanceof KafkaClientAuthenticationPlain passwordAuth) {
-                properties.put(SASL_USERNAME, passwordAuth.getUsername());
-                properties.put(SASL_PASSWORD_FILE, String.format("%s/%s", passwordAuth.getPasswordSecret().getSecretName(), passwordAuth.getPasswordSecret().getPassword()));
-                properties.put(SASL_MECHANISM, KafkaClientAuthenticationPlain.TYPE_PLAIN);
-            } else if (authentication instanceof KafkaClientAuthenticationScram scramAuth) {
-                properties.put(SASL_USERNAME, scramAuth.getUsername());
-                properties.put(SASL_PASSWORD_FILE, String.format("%s/%s", scramAuth.getPasswordSecret().getSecretName(), scramAuth.getPasswordSecret().getPassword()));
-                properties.put(SASL_MECHANISM, scramAuth.getType());
-            } else if (authentication instanceof KafkaClientAuthenticationOAuth oauth) {
-                properties.put(SASL_MECHANISM, KafkaClientAuthenticationOAuth.TYPE_OAUTH);
-
-                List<String> options = new ArrayList<>(13);
-                addOption(options, ClientConfig.OAUTH_CLIENT_ID, oauth.getClientId());
-                addOption(options, ClientConfig.OAUTH_PASSWORD_GRANT_USERNAME, oauth.getUsername());
-                addOption(options, ClientConfig.OAUTH_TOKEN_ENDPOINT_URI, oauth.getTokenEndpointUri());
-                addOption(options, ClientConfig.OAUTH_SCOPE, oauth.getScope());
-                addOption(options, ClientConfig.OAUTH_AUDIENCE, oauth.getAudience());
-                if (oauth.isDisableTlsHostnameVerification()) options.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM, ""));
-                if (!oauth.isAccessTokenIsJwt()) options.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_ACCESS_TOKEN_IS_JWT, false));
-                addOptionIfGreaterThanZero(options, ClientConfig.OAUTH_MAX_TOKEN_EXPIRY_SECONDS, oauth.getMaxTokenExpirySeconds());
-                addOptionIfGreaterThanZero(options, ClientConfig.OAUTH_CONNECT_TIMEOUT_SECONDS, oauth.getConnectTimeoutSeconds());
-                addOptionIfGreaterThanZero(options, ClientConfig.OAUTH_READ_TIMEOUT_SECONDS, oauth.getReadTimeoutSeconds());
-                addOptionIfGreaterThanZero(options, ClientConfig.OAUTH_HTTP_RETRIES, oauth.getHttpRetries());
-                addOptionIfGreaterThanZero(options, ClientConfig.OAUTH_HTTP_RETRY_PAUSE_MILLIS, oauth.getHttpRetryPauseMs());
-                if (oauth.isEnableMetrics()) options.add(String.format("%s=\"%s\"", ServerConfig.OAUTH_ENABLE_METRICS, true));
-
-                properties.put(OAUTH_CONFIG, String.join(" ", options));
-            }
+    public static Map<String, String> oauthJaasOptions(KafkaClientAuthenticationOAuth oauth) {
+        Map<String, String> options = new LinkedHashMap<>(13);
+        addOption(options, ClientConfig.OAUTH_CLIENT_ID, oauth.getClientId());
+        addOption(options, ClientConfig.OAUTH_PASSWORD_GRANT_USERNAME, oauth.getUsername());
+        addOption(options, ClientConfig.OAUTH_TOKEN_ENDPOINT_URI, oauth.getTokenEndpointUri());
+        addOption(options, ClientConfig.OAUTH_SCOPE, oauth.getScope());
+        addOption(options, ClientConfig.OAUTH_AUDIENCE, oauth.getAudience());
+        if (oauth.isDisableTlsHostnameVerification()) {
+            options.put(ServerConfig.OAUTH_SSL_ENDPOINT_IDENTIFICATION_ALGORITHM, "");
         }
-        
-        return properties;
+        if (!oauth.isAccessTokenIsJwt()) {
+            options.put(ServerConfig.OAUTH_ACCESS_TOKEN_IS_JWT, "false");
+        }
+        addOptionIfGreaterThanZero(options, ClientConfig.OAUTH_MAX_TOKEN_EXPIRY_SECONDS, oauth.getMaxTokenExpirySeconds());
+        addOptionIfGreaterThanZero(options, ClientConfig.OAUTH_CONNECT_TIMEOUT_SECONDS, oauth.getConnectTimeoutSeconds());
+        addOptionIfGreaterThanZero(options, ClientConfig.OAUTH_READ_TIMEOUT_SECONDS, oauth.getReadTimeoutSeconds());
+        addOptionIfGreaterThanZero(options, ClientConfig.OAUTH_HTTP_RETRIES, oauth.getHttpRetries());
+        addOptionIfGreaterThanZero(options, ClientConfig.OAUTH_HTTP_RETRY_PAUSE_MILLIS, oauth.getHttpRetryPauseMs());
+        if (oauth.isEnableMetrics()) {
+            options.put(ServerConfig.OAUTH_ENABLE_METRICS, "true");
+        }
+        return options;
     }
 
-    private static void addOptionIfGreaterThanZero(List<String> options, String name, Integer value) {
+    private static void addOptionIfGreaterThanZero(Map<String, String> options, String name, Integer value) {
         if (value != null && value > 0) {
-            options.add(String.format("%s=\"%s\"", name, value));
+            options.put(name, value.toString());
         }
     }
 
-    private static void addOption(List<String> options, String name, String value) {
+    private static void addOption(Map<String, String> options, String name, String value) {
         if (value != null) {
-            options.add(String.format("%s=\"%s\"", name, value));
+            options.put(name, value);
         }
     }
 
@@ -429,7 +422,36 @@ public class AuthenticationUtils {
                 i++;
             }
         }
-
         return newVolumeMounts;
+    }
+
+    /**
+     * Generates a JAAS configuration string based on the provided module name and options.
+     * The flag will always be "required".
+     *
+     * @param moduleName The name of the JAAS module to be configured.
+     * @param options A Map containing the options to be set for the JAAS module.
+     *               The options are represented as key-value pairs, where both the key and
+     *               the value must be non-null String objects.
+     * @return The JAAS configuration.
+     * @throws IllegalArgumentException If the moduleName is empty, or it contains '=' or ';',
+     *                                  or if any key or value in the options map is empty,
+     *                                  or they contain '=' or ';'.
+     */
+    public static String jaasConfig(String moduleName, Map<String, String> options) {
+        StringJoiner joiner = new StringJoiner(" ");
+        for (Entry<String, String> entry : options.entrySet()) {
+            String key = Objects.requireNonNull(entry.getKey());
+            String value = Objects.requireNonNull(entry.getValue());
+            if (key.contains("=") || key.contains(";")) {
+                throw new IllegalArgumentException("Keys must not contain '=' or ';'");
+            }
+            if (moduleName.isEmpty() || moduleName.contains(";") || moduleName.contains("=")) {
+                throw new IllegalArgumentException("module name must be not empty and must not contain '=' or ';'");
+            } else {
+                joiner.add(key + "=\"" + value + "\"");
+            }
+        }
+        return moduleName + " required " + joiner + ";";
     }
 }
