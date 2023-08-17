@@ -200,12 +200,14 @@ public class KafkaReconciler {
         this.kafka = KafkaCluster.fromCrd(reconciliation, kafkaCr, pools, config.versions(), config.featureGates().useKRaftEnabled(), clusterId, supplier.sharedEnvironmentProvider);
 
         // We set the user-configured inter.broker.protocol.version if needed (when not set by the user)
-        if (versionChange.interBrokerProtocolVersion() != null) {
+        // It is set only in ZooKeeper-mode since in Kraft mode it is ignored and throws warnings
+        if (!config.featureGates().useKRaftEnabled() && versionChange.interBrokerProtocolVersion() != null) {
             this.kafka.setInterBrokerProtocolVersion(versionChange.interBrokerProtocolVersion());
         }
 
         // We set the user-configured log.message.format.version if needed (when not set by the user)
-        if (versionChange.logMessageFormatVersion() != null) {
+        // It is set only in ZooKeeper-mode since in Kraft mode it is ignored and throws warnings
+        if (!config.featureGates().useKRaftEnabled() && versionChange.logMessageFormatVersion() != null) {
             this.kafka.setLogMessageFormatVersion(versionChange.logMessageFormatVersion());
         }
 
@@ -737,8 +739,17 @@ public class KafkaReconciler {
         podAnnotations.put(Annotations.ANNO_STRIMZI_LOGGING_APPENDERS_HASH, loggingHash);
         podAnnotations.put(KafkaCluster.ANNO_STRIMZI_BROKER_CONFIGURATION_HASH, brokerConfigurationHash.get(nodeId));
         podAnnotations.put(ANNO_STRIMZI_IO_KAFKA_VERSION, kafka.getKafkaVersion().version());
-        podAnnotations.put(KafkaCluster.ANNO_STRIMZI_IO_LOG_MESSAGE_FORMAT_VERSION, kafka.getLogMessageFormatVersion());
-        podAnnotations.put(KafkaCluster.ANNO_STRIMZI_IO_INTER_BROKER_PROTOCOL_VERSION, kafka.getInterBrokerProtocolVersion());
+
+        String logMessageFormatVersion = kafka.getLogMessageFormatVersion();
+        if (logMessageFormatVersion != null && !logMessageFormatVersion.isBlank()) {
+            podAnnotations.put(KafkaCluster.ANNO_STRIMZI_IO_LOG_MESSAGE_FORMAT_VERSION, logMessageFormatVersion);
+        }
+
+        String interBrokerProtocolVersion = kafka.getInterBrokerProtocolVersion();
+        if (interBrokerProtocolVersion != null && !interBrokerProtocolVersion.isBlank()) {
+            podAnnotations.put(KafkaCluster.ANNO_STRIMZI_IO_INTER_BROKER_PROTOCOL_VERSION, interBrokerProtocolVersion);
+        }
+
         podAnnotations.put(ANNO_STRIMZI_SERVER_CERT_HASH, kafkaServerCertificateHash.get(nodeId)); // Annotation of broker certificate hash
 
         // Annotations with custom cert thumbprints to help with rolling updates when they change
