@@ -6,6 +6,7 @@ package io.strimzi.operator.cluster.model;
 
 import io.strimzi.api.kafka.model.EntityOperatorSpec;
 import io.strimzi.api.kafka.model.KafkaSpec;
+import io.strimzi.operator.common.model.InvalidResourceException;
 
 import java.util.HashSet;
 import java.util.Set;

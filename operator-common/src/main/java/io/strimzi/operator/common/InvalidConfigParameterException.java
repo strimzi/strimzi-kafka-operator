@@ -5,7 +5,7 @@
 
 package io.strimzi.operator.common;
 
-import io.strimzi.operator.cluster.model.InvalidResourceException;
+import io.strimzi.operator.common.model.InvalidResourceException;
 
 /**
  * Exception indicating that some configuration parameters are invalid

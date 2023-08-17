@@ -9,7 +9,7 @@ import io.fabric8.kubernetes.api.model.ConfigMapKeySelector;
 import io.strimzi.api.kafka.model.JmxPrometheusExporterMetricsBuilder;
 import io.strimzi.api.kafka.model.KafkaConnectSpecBuilder;
 import io.strimzi.api.kafka.model.MetricsConfig;
-import io.strimzi.operator.cluster.model.InvalidResourceException;
+import io.strimzi.operator.common.model.InvalidResourceException;
 import io.strimzi.operator.common.InvalidConfigurationException;
 import io.strimzi.operator.common.Reconciliation;
 import org.junit.jupiter.api.Test;

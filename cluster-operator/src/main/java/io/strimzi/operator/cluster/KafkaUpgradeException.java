@@ -4,7 +4,7 @@
  */
 package io.strimzi.operator.cluster;
 
-import io.strimzi.operator.cluster.model.InvalidResourceException;
+import io.strimzi.operator.common.model.InvalidResourceException;
 
 /**
  * Thrown for exceptional circumstances when upgrading (or downgrading) Kafka clusters from

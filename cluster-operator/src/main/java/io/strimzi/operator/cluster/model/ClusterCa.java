@@ -32,6 +32,7 @@ import io.strimzi.certs.Subject;
 import io.strimzi.operator.cluster.ClusterOperator;
 import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.model.Ca;
 
 /**
  * Represents the Cluster CA
@@ -485,7 +486,7 @@ public class ClusterCa extends Ca {
      * @return  The name of the secret entry
      */
     public static String secretEntryNameForPod(String podName, SecretEntry entry) {
-        return podName + entry.suffix;
+        return podName + entry.getSuffix();
     }
 
     /**

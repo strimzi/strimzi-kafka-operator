@@ -6,6 +6,7 @@ package io.strimzi.operator.cluster.model;
 
 import io.fabric8.kubernetes.api.model.Secret;
 import io.strimzi.operator.common.Util;
+import io.strimzi.operator.common.model.Ca;
 
 import java.math.BigInteger;
 import java.security.cert.CertificateEncodingException;

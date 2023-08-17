@@ -8,7 +8,7 @@ import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.api.kafka.model.status.KafkaUserStatus;
 import io.strimzi.operator.common.Reconciliation;
-import io.strimzi.operator.common.operator.resource.StatusUtils;
+import io.strimzi.operator.common.model.StatusUtils;
 
 import java.util.ArrayList;
 import java.util.Set;

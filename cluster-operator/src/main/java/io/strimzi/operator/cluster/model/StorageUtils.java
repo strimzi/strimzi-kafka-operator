@@ -8,6 +8,7 @@ import io.fabric8.kubernetes.api.model.Quantity;
 import io.strimzi.api.kafka.model.storage.JbodStorage;
 import io.strimzi.api.kafka.model.storage.PersistentClaimStorage;
 import io.strimzi.api.kafka.model.storage.Storage;
+import io.strimzi.operator.common.model.InvalidResourceException;
 
 /**
  * Shared methods for working with Storage - for example comparing volume sizes

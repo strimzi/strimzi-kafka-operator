@@ -20,6 +20,7 @@ import io.strimzi.operator.cluster.operator.resource.MockSharedEnvironmentProvid
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.cluster.operator.resource.SharedEnvironmentProvider;
+import io.strimzi.operator.common.model.InvalidResourceException;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
