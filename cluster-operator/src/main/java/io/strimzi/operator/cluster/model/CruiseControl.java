@@ -41,7 +41,6 @@ import io.strimzi.operator.cluster.model.metrics.SupportsMetrics;
 import io.strimzi.operator.cluster.model.securityprofiles.ContainerSecurityProviderContextImpl;
 import io.strimzi.operator.cluster.model.securityprofiles.PodSecurityProviderContextImpl;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlConfigurationParameters;
-import io.strimzi.operator.common.MetricsAndLogging;
 import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.cluster.operator.resource.SharedEnvironmentProvider;
@@ -536,7 +535,7 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
                         namespace,
                         labels,
                         ownerReference,
-                        MetricsAndLoggingUtils.generateMetricsAndLogConfigMapData(reconciliation, this, metricsAndLogging)
+                        ConfigMapUtils.generateMetricsAndLogConfigMapData(reconciliation, this, metricsAndLogging)
                 );
     }
 

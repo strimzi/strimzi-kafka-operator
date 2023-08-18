@@ -44,7 +44,6 @@ import io.strimzi.operator.cluster.model.metrics.SupportsMetrics;
 import io.strimzi.operator.cluster.model.securityprofiles.ContainerSecurityProviderContextImpl;
 import io.strimzi.operator.cluster.model.securityprofiles.PodSecurityProviderContextImpl;
 import io.strimzi.operator.common.Annotations;
-import io.strimzi.operator.common.MetricsAndLogging;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.cluster.operator.resource.SharedEnvironmentProvider;
 import io.strimzi.operator.common.Util;
@@ -605,7 +604,7 @@ public class ZookeeperCluster extends AbstractModel implements SupportsMetrics, 
      * @return      The generated configuration ConfigMap.
      */
     public ConfigMap generateConfigurationConfigMap(MetricsAndLogging metricsAndLogging) {
-        Map<String, String> data = MetricsAndLoggingUtils.generateMetricsAndLogConfigMapData(reconciliation, this, metricsAndLogging);
+        Map<String, String> data = ConfigMapUtils.generateMetricsAndLogConfigMapData(reconciliation, this, metricsAndLogging);
         data.put(CONFIG_MAP_KEY_ZOOKEEPER_NODE_COUNT, Integer.toString(replicas));
 
         return ConfigMapUtils

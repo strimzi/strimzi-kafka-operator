@@ -7,8 +7,13 @@ package io.strimzi.operator.cluster.model;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
 import io.fabric8.kubernetes.api.model.OwnerReference;
+import io.strimzi.operator.cluster.model.logging.SupportsLogging;
+import io.strimzi.operator.cluster.model.metrics.MetricsModel;
+import io.strimzi.operator.cluster.model.metrics.SupportsMetrics;
+import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -42,5 +47,33 @@ public class ConfigMapUtils {
                 .endMetadata()
                 .withData(data)
                 .build();
+    }
+
+    /**
+     * Generates a metrics and logging ConfigMap according to configured defaults. This is used with most operands, but
+     * not all of them. Kafka brokers have own methods in the KafkaCluster class. So does the Bridge. And Kafka Exporter
+     * has no metrics or logging ConfigMap at all.
+     *
+     * @param reconciliation        Reconciliation marker
+     * @param model                 AbstractModel instance possibly implementing SupportsLogging and SupportsMetrics interfaces
+     * @param metricsAndLogging     ConfigMaps with external logging and metrics configuration
+     *
+     * @return The generated ConfigMap.
+     */
+    public static Map<String, String> generateMetricsAndLogConfigMapData(Reconciliation reconciliation, AbstractModel model, MetricsAndLogging metricsAndLogging) {
+        Map<String, String> data = new HashMap<>(2);
+
+        if (model instanceof SupportsLogging supportsLogging) {
+            data.put(supportsLogging.logging().configMapKey(), supportsLogging.logging().loggingConfiguration(reconciliation, metricsAndLogging.loggingCm()));
+        }
+
+        if (model instanceof SupportsMetrics supportMetrics) {
+            String parseResult = supportMetrics.metrics().metricsJson(reconciliation, metricsAndLogging.metricsCm());
+            if (parseResult != null) {
+                data.put(MetricsModel.CONFIG_MAP_KEY, parseResult);
+            }
+        }
+
+        return data;
     }
 }
