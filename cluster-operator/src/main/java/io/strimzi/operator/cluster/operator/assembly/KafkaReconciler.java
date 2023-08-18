@@ -278,7 +278,8 @@ public class KafkaReconciler {
                 .compose(i -> sharedKafkaConfigurationCleanup())
                 // This has to run after all possible rolling updates which might move the pods to different nodes
                 .compose(i -> nodePortExternalListenerStatus())
-                .compose(i -> addListenersToKafkaStatus(kafkaStatus));
+                .compose(i -> addListenersToKafkaStatus(kafkaStatus))
+                .compose(i -> updateKafkaVersion(kafkaStatus));
     }
 
     /**
@@ -1004,6 +1005,12 @@ public class KafkaReconciler {
     // Adds prepared Listener Statuses to the Kafka Status instance
     protected Future<Void> addListenersToKafkaStatus(KafkaStatus kafkaStatus) {
         kafkaStatus.setListeners(listenerReconciliationResults.listenerStatuses);
+        return Future.succeededFuture();
+    }
+
+    // Adds Kafka version to the Kafka Status instance
+    protected Future<Void> updateKafkaVersion(KafkaStatus kafkaStatus) {
+        kafkaStatus.setKafkaVersion(kafka.getKafkaVersion().version());
         return Future.succeededFuture();
     }
 

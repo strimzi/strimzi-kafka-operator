@@ -1609,16 +1609,20 @@ Used in: xref:type-Kafka-{context}[`Kafka`]
 
 [options="header"]
 |====
-|Property                   |Description
-|conditions          1.2+<.<a|List of status conditions.
+|Property                              |Description
+|conditions                     1.2+<.<a|List of status conditions.
 |xref:type-Condition-{context}[`Condition`] array
-|observedGeneration  1.2+<.<a|The generation of the CRD that was last reconciled by the operator.
+|observedGeneration             1.2+<.<a|The generation of the CRD that was last reconciled by the operator.
 |integer
-|listeners           1.2+<.<a|Addresses of the internal and external listeners.
+|listeners                      1.2+<.<a|Addresses of the internal and external listeners.
 |xref:type-ListenerStatus-{context}[`ListenerStatus`] array
-|kafkaNodePools      1.2+<.<a|List of the KafkaNodePools used by this Kafka cluster.
+|kafkaNodePools                 1.2+<.<a|List of the KafkaNodePools used by this Kafka cluster.
 |xref:type-UsedNodePoolStatus-{context}[`UsedNodePoolStatus`] array
-|clusterId           1.2+<.<a|Kafka cluster Id.
+|clusterId                      1.2+<.<a|Kafka cluster Id.
+|string
+|operatorLastSuccessfulVersion  1.2+<.<a|The Last successful reconciliation was performed by an operator of this version.
+|string
+|kafkaVersion                   1.2+<.<a|The version of Kafka currently deployed in the cluster.
 |string
 |====
 

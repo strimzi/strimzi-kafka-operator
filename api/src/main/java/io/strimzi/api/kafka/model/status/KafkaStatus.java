@@ -22,7 +22,7 @@ import java.util.List;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({ "conditions", "observedGeneration", "listeners", "kafkaNodePools" })
+@JsonPropertyOrder({ "conditions", "observedGeneration", "listeners", "kafkaNodePools", "clusterId", "operatorLastSuccessfulVersion", "kafkaVersion" })
 @EqualsAndHashCode
 @ToString(callSuper = true)
 public class KafkaStatus extends Status {
@@ -32,6 +32,8 @@ public class KafkaStatus extends Status {
     private List<UsedNodePoolStatus> kafkaNodePools;
     
     private String clusterId;
+    private String operatorLastSuccessfulVersion;
+    private String kafkaVersion;
 
     @Description("Addresses of the internal and external listeners")
     public List<ListenerStatus> getListeners() {
@@ -58,5 +60,23 @@ public class KafkaStatus extends Status {
 
     public void setClusterId(String clusterId) {
         this.clusterId = clusterId;
+    }
+
+    @Description("The Last successful reconciliation was performed by an operator of this version.")
+    public String getOperatorLastSuccessfulVersion() {
+        return operatorLastSuccessfulVersion;
+    }
+
+    public void setOperatorLastSuccessfulVersion(String operatorLastSuccessfulVersion) {
+        this.operatorLastSuccessfulVersion = operatorLastSuccessfulVersion;
+    }
+
+    @Description("The version of Kafka currently deployed in the cluster.")
+    public String getKafkaVersion() {
+        return kafkaVersion;
+    }
+
+    public void setKafkaVersion(String kafkaVersion) {
+        this.kafkaVersion = kafkaVersion;
     }
 }

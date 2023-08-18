@@ -41,6 +41,7 @@ import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListener;
 import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.api.kafka.model.status.KafkaStatus;
+import io.strimzi.api.kafka.model.status.KafkaStatusBuilder;
 import io.strimzi.api.kafka.model.storage.EphemeralStorage;
 import io.strimzi.api.kafka.model.storage.PersistentClaimStorage;
 import io.strimzi.api.kafka.model.storage.PersistentClaimStorageBuilder;
@@ -664,7 +665,7 @@ public class KafkaAssemblyOperatorTest {
         // Now try to create a KafkaCluster based on this CM
         Checkpoint async = context.checkpoint();
         ops.createOrUpdate(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, kafkaNamespace, kafkaName), kafka)
-            .onComplete(context.succeeding(v -> context.verify(() -> {
+            .onComplete(context.succeeding(status -> context.verify(() -> {
 
                 // We expect a headless and headful service
                 Set<String> expectedServices = set(
@@ -727,6 +728,8 @@ public class KafkaAssemblyOperatorTest {
                     assertThat(routeNameCaptor.getAllValues(), hasSize(0));
                 }
 
+                assertThat(status.getOperatorLastSuccessfulVersion(), is(KafkaAssemblyOperator.OPERATOR_VERSION));
+
                 async.flag();
             })));
     }
@@ -762,6 +765,18 @@ public class KafkaAssemblyOperatorTest {
     public void testUpdateClusterNoop(Params params, VertxTestContext context) {
         setFields(params);
         Kafka kafkaAssembly = getKafkaAssembly("bar");
+        updateCluster(context, getKafkaAssembly("bar"), kafkaAssembly);
+    }
+
+    @ParameterizedTest
+    @MethodSource("data")
+    public void testUpdateClusterKafkaVersion(Params params, VertxTestContext context) {
+        setFields(params);
+        Kafka kafkaAssembly = getKafkaAssembly("bar");
+        kafkaAssembly.setStatus(new KafkaStatusBuilder()
+                .withKafkaVersion("3.4.0")
+                .withOperatorLastSuccessfulVersion("0.30.0")
+                .build());
         updateCluster(context, getKafkaAssembly("bar"), kafkaAssembly);
     }
 
@@ -1225,9 +1240,12 @@ public class KafkaAssemblyOperatorTest {
         Checkpoint async = context.checkpoint();
         ops.createOrUpdate(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, clusterNamespace, clusterName),
                 updatedAssembly)
-            .onComplete(context.succeeding(v -> context.verify(() -> {
+            .onComplete(context.succeeding(status -> context.verify(() -> {
                 // Check that ZK scale-up happens when it should
                 assertThat(zooPodSetRef.get().getSpec().getPods().size(), is(updatedAssembly.getSpec().getZookeeper().getReplicas()));
+
+                assertThat(status.getOperatorLastSuccessfulVersion(), is(KafkaAssemblyOperator.OPERATOR_VERSION));
+                assertThat(status.getKafkaVersion(), is(VERSIONS.defaultVersion().version()));
 
                 async.flag();
             })));

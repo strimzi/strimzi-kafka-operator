@@ -171,6 +171,9 @@ public class KafkaReconcilerStatusTest {
             // Check ClusterID
             assertThat(status.getClusterId(), is("CLUSTERID"));
 
+            // Check kafka version
+            assertThat(status.getKafkaVersion(), is(VERSIONS.defaultVersion().version()));
+
             // Check model warning conditions
             assertThat(status.getConditions().size(), is(1));
             assertThat(status.getConditions().get(0).getType(), is("Warning"));
@@ -178,6 +181,87 @@ public class KafkaReconcilerStatusTest {
 
             async.flag();
         }));
+    }
+
+    @Test
+    public void testKafkaReconcilerStatusUpdateVersion(VertxTestContext context) {
+        Kafka kafka = new KafkaBuilder(KAFKA)
+                .editOrNewSpec()
+                .editOrNewKafka()
+                .withReplicas(1)
+                .endKafka()
+                .endSpec()
+                .editOrNewStatus()
+                // supportedVersions is an ordered set, get the first element for the lowest kafka version
+                .withKafkaVersion(VERSIONS.supportedVersions().iterator().next())
+                .endStatus()
+                .build();
+
+        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
+
+        // Mock the secrets needed for Kafka client
+        SecretOperator mockSecretOps = supplier.secretOperations;
+        Secret secret = new Secret();
+        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(KafkaResources.clusterCaCertificateSecretName(CLUSTER_NAME)))).thenReturn(Future.succeededFuture(secret));
+        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(ClusterOperator.secretName(CLUSTER_NAME)))).thenReturn(Future.succeededFuture(secret));
+
+        // Run the test
+        KafkaReconciler reconciler = new MockKafkaReconcilerStatusTasks(
+                new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME),
+                supplier,
+                kafka
+        );
+
+        KafkaStatus status = new KafkaStatus();
+
+        Checkpoint async = context.checkpoint();
+        reconciler.reconcile(status, Clock.systemUTC()).onComplete(context.succeeding(v -> context.verify(() -> {
+
+            // Check kafka version updated to default
+            assertThat(status.getKafkaVersion(), is(VERSIONS.defaultVersion().version()));
+
+            async.flag();
+        })));
+    }
+
+    @Test
+    public void testKafkaReconcilerStatusCustomKafkaVersion(VertxTestContext context) {
+        // supportedVersions is an ordered set, get the first element for the lowest kafka version
+        String lowestSupportedVersion = VERSIONS.supportedVersions().iterator().next();
+        Kafka kafka = new KafkaBuilder(KAFKA)
+                .editOrNewSpec()
+                .editOrNewKafka()
+                .withVersion(lowestSupportedVersion)
+                .withReplicas(3)
+                .endKafka()
+                .endSpec()
+                .build();
+
+        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
+
+        // Mock the secrets needed for Kafka client
+        SecretOperator mockSecretOps = supplier.secretOperations;
+        Secret secret = new Secret();
+        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(KafkaResources.clusterCaCertificateSecretName(CLUSTER_NAME)))).thenReturn(Future.succeededFuture(secret));
+        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(ClusterOperator.secretName(CLUSTER_NAME)))).thenReturn(Future.succeededFuture(secret));
+
+        // Run the test
+        KafkaReconciler reconciler = new MockKafkaReconcilerStatusTasks(
+                new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME),
+                supplier,
+                kafka
+        );
+
+        KafkaStatus status = new KafkaStatus();
+
+        Checkpoint async = context.checkpoint();
+        reconciler.reconcile(status, Clock.systemUTC())
+            .onComplete(context.succeeding(v -> context.verify(() -> {
+                // Check kafka version
+                assertThat(status.getKafkaVersion(), is(lowestSupportedVersion));
+
+                async.flag();
+            })));
     }
 
     @Test
@@ -754,6 +838,7 @@ public class KafkaReconcilerStatusTest {
                     .compose(i -> clusterId(kafkaStatus))
                     .compose(i -> nodePortExternalListenerStatus())
                     .compose(i -> addListenersToKafkaStatus(kafkaStatus))
+                    .compose(i -> updateKafkaVersion(kafkaStatus))
                     .recover(error -> {
                         LOGGER.errorCr(reconciliation, "Reconciliation failed", error);
                         return Future.failedFuture(error);

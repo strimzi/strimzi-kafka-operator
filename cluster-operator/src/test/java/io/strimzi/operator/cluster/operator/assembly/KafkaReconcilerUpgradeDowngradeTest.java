@@ -122,10 +122,11 @@ public class KafkaReconcilerUpgradeDowngradeTest {
 
     @Test
     public void testWithAllVersionsInCR(VertxTestContext context) {
+        String kafkaVersion = VERSIONS.defaultVersion().version();
         Kafka kafka = new KafkaBuilder(KAFKA)
                 .editOrNewSpec()
                     .editOrNewKafka()
-                        .withVersion(VERSIONS.defaultVersion().version())
+                        .withVersion(kafkaVersion)
                         .addToConfig(KafkaConfiguration.INTERBROKER_PROTOCOL_VERSION, "2.8")
                         .addToConfig(KafkaConfiguration.LOG_MESSAGE_FORMAT_VERSION, "2.8")
                     .endKafka()
@@ -154,7 +155,7 @@ public class KafkaReconcilerUpgradeDowngradeTest {
         KafkaStatus status = new KafkaStatus();
 
         Checkpoint async = context.checkpoint();
-        reconciler.reconcile(status, Clock.systemUTC()).onComplete(context.succeeding(i -> context.verify(() -> {
+        reconciler.reconcile(status, Clock.systemUTC()).onComplete(context.succeeding(v -> context.verify(() -> {
             assertThat(spsCaptor.getAllValues().size(), is(1));
 
             StrimziPodSet sps = spsCaptor.getValue();

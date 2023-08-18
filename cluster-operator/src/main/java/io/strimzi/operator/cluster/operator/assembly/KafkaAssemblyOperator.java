@@ -55,10 +55,12 @@ import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 
+import java.io.IOException;
 import java.time.Clock;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
 import java.util.stream.IntStream;
 
@@ -72,6 +74,18 @@ import java.util.stream.IntStream;
  */
 public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesClient, Kafka, KafkaList, Resource<Kafka>, KafkaSpec, KafkaStatus> {
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(KafkaAssemblyOperator.class.getName());
+
+    private static final Properties PROPERTIES = new Properties();
+    public static final String OPERATOR_VERSION;
+
+    static {
+        try {
+            PROPERTIES.load(KafkaAssemblyOperator.class.getResourceAsStream("/.properties"));
+            OPERATOR_VERSION = PROPERTIES.getProperty("version");
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
     /* test */ final ClusterOperatorConfig config;
     /* test */ final ResourceOperatorSupplier supplier;
@@ -131,6 +145,27 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 status.setClusterId(kafkaAssembly.getStatus().getClusterId());
             }
 
+            if (status.getOperatorLastSuccessfulVersion() == null
+                    && kafkaAssembly.getStatus() != null
+                    && kafkaAssembly.getStatus().getOperatorLastSuccessfulVersion() != null
+            )  {
+                // If not set in the status prepared by reconciliation but set in the status previously, we copy the
+                // operatorLastSuccessfulVersion version into the new status. This is useful for example when the reconciliation fails for some
+                // reason before setting the cluster ID
+                status.setOperatorLastSuccessfulVersion(kafkaAssembly.getStatus().getOperatorLastSuccessfulVersion());
+            }
+
+
+            if (status.getKafkaVersion() == null
+                    && kafkaAssembly.getStatus() != null
+                    && kafkaAssembly.getStatus().getKafkaVersion() != null
+            )  {
+                // If not set in the status prepared by reconciliation but set in the status previously, we copy the
+                // kafka version into the new status. This is useful for example when the reconciliation fails for some
+                // reason before setting the cluster ID
+                status.setKafkaVersion(kafkaAssembly.getStatus().getKafkaVersion());
+            }
+
             if (reconcileResult.succeeded())    {
                 condition = new ConditionBuilder()
                         .withLastTransitionTime(StatusUtils.iso8601(clock.instant()))
@@ -138,6 +173,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                         .withStatus("True")
                         .build();
 
+                // successful reconcile, write operator version to successful reconcile field
+                status.setOperatorLastSuccessfulVersion(OPERATOR_VERSION);
                 status.addCondition(condition);
                 createOrUpdatePromise.complete(status);
             } else {
@@ -713,6 +750,14 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         // We copy the cluster ID if set
         if (kafka.getStatus() != null && kafka.getStatus().getClusterId() != null)  {
             status.setClusterId(kafka.getStatus().getClusterId());
+        }
+
+        // We copy the versions if set
+        if (kafka.getStatus() != null && kafka.getStatus().getOperatorLastSuccessfulVersion() != null)  {
+            status.setOperatorLastSuccessfulVersion(kafka.getStatus().getOperatorLastSuccessfulVersion());
+        }
+        if (kafka.getStatus() != null && kafka.getStatus().getKafkaVersion() != null)  {
+            status.setKafkaVersion(kafka.getStatus().getKafkaVersion());
         }
 
         return status;
