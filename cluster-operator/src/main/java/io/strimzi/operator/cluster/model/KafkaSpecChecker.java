@@ -2,16 +2,11 @@
  * Copyright Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.strimzi.operator.cluster.operator.resource;
+package io.strimzi.operator.cluster.model;
 
 import io.strimzi.api.kafka.model.KafkaSpec;
 import io.strimzi.api.kafka.model.status.Condition;
-import io.strimzi.operator.cluster.model.KafkaCluster;
-import io.strimzi.operator.cluster.model.KafkaConfiguration;
-import io.strimzi.operator.cluster.model.KafkaVersion;
-import io.strimzi.operator.cluster.model.NodeRef;
-import io.strimzi.operator.cluster.model.StorageUtils;
-import io.strimzi.operator.common.operator.resource.StatusUtils;
+import io.strimzi.operator.common.model.StatusUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -57,7 +52,7 @@ public class KafkaSpecChecker {
      *                 are done.
      * @return List with warning conditions
      */
-    public List<Condition> run(boolean useKRaft) {
+    List<Condition> run(boolean useKRaft) {
         List<Condition> warnings = new ArrayList<>();
 
         checkKafkaLogMessageFormatVersion(warnings);

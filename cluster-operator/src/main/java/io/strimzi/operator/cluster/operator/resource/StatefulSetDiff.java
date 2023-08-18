@@ -12,7 +12,7 @@ import io.strimzi.operator.cluster.model.StorageUtils;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
-import io.strimzi.operator.common.operator.resource.AbstractJsonDiff;
+import io.strimzi.operator.common.model.AbstractJsonDiff;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;

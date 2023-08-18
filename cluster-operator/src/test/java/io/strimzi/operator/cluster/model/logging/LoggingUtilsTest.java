@@ -10,7 +10,7 @@ import io.strimzi.api.kafka.model.ExternalLoggingBuilder;
 import io.strimzi.api.kafka.model.InlineLoggingBuilder;
 import io.strimzi.api.kafka.model.KafkaConnectSpec;
 import io.strimzi.api.kafka.model.KafkaConnectSpecBuilder;
-import io.strimzi.operator.cluster.model.InvalidResourceException;
+import io.strimzi.operator.common.model.InvalidResourceException;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.OrderedProperties;
 import org.junit.jupiter.api.Test;

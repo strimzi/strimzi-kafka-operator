@@ -3,7 +3,7 @@
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
 
-package io.strimzi.operator.common.operator.resource;
+package io.strimzi.operator.common.model;
 
 import io.fabric8.kubernetes.client.CustomResource;
 import io.strimzi.api.kafka.model.Spec;
@@ -12,11 +12,8 @@ import io.strimzi.api.kafka.model.status.AutoRestartStatusBuilder;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.api.kafka.model.status.ConditionBuilder;
 import io.strimzi.api.kafka.model.status.Status;
-import io.strimzi.operator.cluster.model.InvalidResourceException;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
-import io.strimzi.operator.common.model.ResourceVisitor;
-import io.strimzi.operator.common.model.ValidationVisitor;
 
 import java.time.Instant;
 import java.time.ZoneOffset;

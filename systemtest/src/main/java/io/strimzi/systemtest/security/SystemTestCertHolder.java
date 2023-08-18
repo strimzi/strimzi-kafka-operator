@@ -5,7 +5,7 @@
 package io.strimzi.systemtest.security;
 
 import io.fabric8.kubernetes.api.model.Secret;
-import io.strimzi.operator.cluster.model.Ca;
+import io.strimzi.operator.common.model.Ca;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;

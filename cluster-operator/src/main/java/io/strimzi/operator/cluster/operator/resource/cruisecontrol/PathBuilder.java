@@ -4,6 +4,9 @@
  */
 package io.strimzi.operator.cluster.operator.resource.cruisecontrol;
 
+import io.strimzi.operator.common.model.cruisecontrol.CruiseControlEndpoints;
+import io.strimzi.operator.common.model.cruisecontrol.CruiseControlParameters;
+
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -24,7 +27,7 @@ public class PathBuilder {
      * @param endpoint  Cruise COntrol endpoint
      */
     public PathBuilder(CruiseControlEndpoints endpoint) {
-        constructedPath = endpoint.path + "?";
+        constructedPath = endpoint + "?";
         firstParam = true;
     }
 

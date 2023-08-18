@@ -13,7 +13,7 @@ import io.strimzi.api.kafka.model.storage.SingleVolumeStorage;
 import io.strimzi.api.kafka.model.storage.Storage;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
-import io.strimzi.operator.common.operator.resource.AbstractJsonDiff;
+import io.strimzi.operator.common.model.AbstractJsonDiff;
 
 import java.util.Collections;
 import java.util.HashSet;

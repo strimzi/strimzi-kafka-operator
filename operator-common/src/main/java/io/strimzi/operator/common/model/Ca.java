@@ -2,7 +2,7 @@
  * Copyright Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.strimzi.operator.cluster.model;
+package io.strimzi.operator.common.model;
 
 import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.Secret;
@@ -67,7 +67,7 @@ public abstract class Ca {
      */
     public enum SecretEntry {
         /**
-         * A 64-bit encoded X509 Cretificate
+         * A 64-bit encoded X509 Certificate
          */
         CRT(".crt"),
         /**
@@ -145,7 +145,7 @@ public abstract class Ca {
     public static final String IO_STRIMZI = "io.strimzi";
 
     /**
-     * Annotation for requesting a brand new CA to be generated and rolled out
+     * Annotation for requesting a brand-new CA to be generated and rolled out
      */
     public static final String ANNO_STRIMZI_IO_FORCE_REPLACE = Annotations.STRIMZI_DOMAIN + "force-replace";
 
@@ -188,7 +188,13 @@ public abstract class Ca {
     protected final Reconciliation reconciliation;
     private Clock clock;
 
-    enum RenewalType {
+    /**
+     * Enum describing whether an event related to a certificate renewal is happening or not.
+     */
+    public enum RenewalType {
+        /**
+         * No changes to the CA, no renewals are happening.
+         */
         NOOP() {
             @Override
             public String preDescription(String keySecretName, String certSecretName) {
@@ -199,6 +205,9 @@ public abstract class Ca {
                 return "noop";
             }
         },
+        /**
+         * Renewal should be done, but was currently postponed because of the maintenance window configuration
+         */
         POSTPONED() {
             @Override
             public String preDescription(String keySecretName, String certSecretName) {
@@ -209,6 +218,9 @@ public abstract class Ca {
                 return "postponed";
             }
         },
+        /**
+         * New CA is being created
+         */
         CREATE() {
             @Override
             public String preDescription(String keySecretName, String certSecretName) {
@@ -219,6 +231,9 @@ public abstract class Ca {
                 return "CA key (in " + keySecretName + ") and certificate (in " + certSecretName + ") created";
             }
         },
+        /**
+         * CA is being renewed (new public key s generated using the same private key)
+         */
         RENEW_CERT() {
             @Override
             public String preDescription(String keySecretName, String certSecretName) {
@@ -229,6 +244,9 @@ public abstract class Ca {
                 return "CA certificate (in " + certSecretName + ") renewed";
             }
         },
+        /**
+         * CA is being renewed including new private key
+         */
         REPLACE_KEY() {
             @Override
             public String preDescription(String keySecretName, String certSecretName) {
@@ -243,7 +261,24 @@ public abstract class Ca {
         RenewalType() {
         }
 
+        /**
+         * Pre-renewal description which is used to log what is going to happen.
+         *
+         * @param keySecretName     Name of the Secret
+         * @param certSecretName    Key in the Secret
+         *
+         * @return  String with the description
+         */
         public abstract String preDescription(String keySecretName, String certSecretName);
+
+        /**
+         * Post-renewal description which is used to log what was just done.
+         *
+         * @param keySecretName     Name of the Secret
+         * @param certSecretName    Key in the Secret
+         *
+         * @return  String with the description
+         */
         public abstract String postDescription(String keySecretName, String certSecretName);
     }
 
@@ -296,7 +331,13 @@ public abstract class Ca {
         this.clock = Clock.systemUTC();
     }
 
-    /* test */ void setClock(Clock clock) {
+    /**
+     * Sets the clock to some specific value. This method is useful in testing. But it has to be public because of how
+     * the Ca class is shared and inherited between different modules.
+     *
+     * @param clock     Clock instance that should be used to determine time
+     */
+    public void setClock(Clock clock) {
         this.clock = clock;
     }
 
@@ -886,7 +927,17 @@ public abstract class Ca {
         }
     }
 
-    static X509Certificate x509Certificate(byte[] bytes) throws CertificateException {
+    /**
+     * Creates X509Certificate instance from a byte array containing a certificate.
+     *
+     * @param bytes     Bytes with the X509 certificate
+     *
+     * @throws CertificateException     Thrown when the creation of the X509Certificate instance fails. Typically, this
+     *                                  would happen because the bytes do not contain a valid X509 certificate.
+     *
+     * @return  X509Certificate instance created based on the Certificate bytes
+     */
+    public static X509Certificate x509Certificate(byte[] bytes) throws CertificateException {
         CertificateFactory factory = certificateFactory();
         return x509Certificate(factory, bytes);
     }
@@ -1040,7 +1091,7 @@ public abstract class Ca {
      * @return if the current (cluster or clients) CA certificate generation is changed compared to the one
      *         brought by the corresponding annotation on the provided Secret
      */
-    protected boolean hasCaCertGenerationChanged(Secret secret) {
+    public boolean hasCaCertGenerationChanged(Secret secret) {
         if (secret != null) {
             String caCertGenerationAnno = Annotations.stringAnnotation(secret, caCertGenerationAnnotation(), null);
             int currentCaCertGeneration = certGeneration();

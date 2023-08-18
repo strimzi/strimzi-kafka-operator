@@ -5,9 +5,9 @@
 package io.strimzi.operator.cluster.model.cruisecontrol;
 
 import io.strimzi.api.kafka.model.Kafka;
-import io.strimzi.operator.cluster.model.InvalidResourceException;
+import io.strimzi.operator.common.model.InvalidResourceException;
 import io.strimzi.operator.cluster.model.KafkaConfiguration;
-import io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlConfigurationParameters;
+import io.strimzi.operator.common.model.cruisecontrol.CruiseControlConfigurationParameters;
 
 
 /**

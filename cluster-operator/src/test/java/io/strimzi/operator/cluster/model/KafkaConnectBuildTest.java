@@ -21,6 +21,7 @@ import io.strimzi.operator.cluster.operator.resource.MockSharedEnvironmentProvid
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.cluster.operator.resource.SharedEnvironmentProvider;
+import io.strimzi.operator.common.model.InvalidResourceException;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.annotations.ParallelSuite;

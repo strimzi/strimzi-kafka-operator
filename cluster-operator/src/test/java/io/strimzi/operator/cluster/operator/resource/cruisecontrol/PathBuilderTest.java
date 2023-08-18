@@ -4,6 +4,8 @@
  */
 package io.strimzi.operator.cluster.operator.resource.cruisecontrol;
 
+import io.strimzi.operator.common.model.cruisecontrol.CruiseControlEndpoints;
+import io.strimzi.operator.common.model.cruisecontrol.CruiseControlParameters;
 import org.junit.jupiter.api.Test;
 
 import java.io.UnsupportedEncodingException;
@@ -19,22 +21,22 @@ import static org.hamcrest.MatcherAssert.assertThat;
 public class PathBuilderTest {
 
     private static final String DEFAULT_QUERY = "?" +
-            CruiseControlParameters.JSON.key + "=true" + "&" +
-            CruiseControlParameters.DRY_RUN.key + "=true" + "&" +
-            CruiseControlParameters.VERBOSE.key + "=false";
+            CruiseControlParameters.JSON + "=true" + "&" +
+            CruiseControlParameters.DRY_RUN + "=true" + "&" +
+            CruiseControlParameters.VERBOSE + "=false";
 
     private static final List<String> GOALS = Arrays.asList("goal.one", "goal.two", "goal.three", "goal.four", "goal.five");
 
     private String getExpectedRebalanceString() throws UnsupportedEncodingException {
 
         StringBuilder expectedQuery = new StringBuilder(
-                CruiseControlEndpoints.REBALANCE.path + "?" +
-                        CruiseControlParameters.JSON.key + "=true&" +
-                        CruiseControlParameters.DRY_RUN.key + "=false&" +
-                        CruiseControlParameters.VERBOSE.key + "=true&" +
-                        CruiseControlParameters.SKIP_HARD_GOAL_CHECK.key + "=false&" +
-                        CruiseControlParameters.EXCLUDED_TOPICS.key + "=test-.*&" +
-                        CruiseControlParameters.GOALS.key + "=");
+                CruiseControlEndpoints.REBALANCE + "?" +
+                        CruiseControlParameters.JSON + "=true&" +
+                        CruiseControlParameters.DRY_RUN + "=false&" +
+                        CruiseControlParameters.VERBOSE + "=true&" +
+                        CruiseControlParameters.SKIP_HARD_GOAL_CHECK + "=false&" +
+                        CruiseControlParameters.EXCLUDED_TOPICS + "=test-.*&" +
+                        CruiseControlParameters.GOALS + "=");
 
         StringBuilder goalStringBuilder = new StringBuilder();
         for (int i = 0; i < GOALS.size(); i++) {
@@ -45,7 +47,7 @@ public class PathBuilderTest {
         }
 
         expectedQuery.append(URLEncoder.encode(goalStringBuilder.toString(), StandardCharsets.UTF_8.toString()) + "&");
-        expectedQuery.append(CruiseControlParameters.REBALANCE_DISK.key + "=false");
+        expectedQuery.append(CruiseControlParameters.REBALANCE_DISK + "=false");
 
         return expectedQuery.toString();
     }

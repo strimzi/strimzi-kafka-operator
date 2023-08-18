@@ -23,7 +23,7 @@ import io.strimzi.operator.cluster.model.nodepools.NodeIdAssignment;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.cluster.operator.resource.SharedEnvironmentProvider;
 import io.strimzi.operator.common.model.Labels;
-import io.strimzi.operator.common.operator.resource.StatusUtils;
+import io.strimzi.operator.common.model.StatusUtils;
 
 import java.util.ArrayList;
 import java.util.HashSet;

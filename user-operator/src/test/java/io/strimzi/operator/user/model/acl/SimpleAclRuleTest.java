@@ -11,7 +11,7 @@ import io.strimzi.api.kafka.model.AclRuleBuilder;
 import io.strimzi.api.kafka.model.AclRuleResource;
 import io.strimzi.api.kafka.model.AclRuleTopicResourceBuilder;
 import io.strimzi.api.kafka.model.AclRuleType;
-import io.strimzi.operator.cluster.model.InvalidResourceException;
+import io.strimzi.operator.common.model.InvalidResourceException;
 import org.apache.kafka.common.acl.AccessControlEntry;
 import org.apache.kafka.common.acl.AclBinding;
 import org.apache.kafka.common.acl.AclPermissionType;

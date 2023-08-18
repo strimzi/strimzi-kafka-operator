@@ -10,6 +10,7 @@ import io.strimzi.api.kafka.model.CertificateExpirationPolicy;
 import io.strimzi.certs.OpenSslCertManager;
 import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.model.Ca;
 import io.strimzi.test.annotations.ParallelSuite;
 import io.strimzi.test.annotations.ParallelTest;
 

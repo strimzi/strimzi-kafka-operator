@@ -16,6 +16,7 @@ import io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationScram;
 import io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationTls;
 import io.strimzi.kafka.oauth.client.ClientConfig;
 import io.strimzi.kafka.oauth.server.ServerConfig;
+import io.strimzi.operator.common.model.InvalidResourceException;
 
 import java.util.ArrayList;
 import java.util.Collections;

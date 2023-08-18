@@ -13,6 +13,7 @@ import io.strimzi.operator.cluster.model.metrics.SupportsMetrics;
 import io.strimzi.operator.common.MetricsAndLogging;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
+import io.strimzi.operator.common.model.InvalidResourceException;
 import io.strimzi.operator.common.operator.resource.ConfigMapOperator;
 import io.vertx.core.Future;
 

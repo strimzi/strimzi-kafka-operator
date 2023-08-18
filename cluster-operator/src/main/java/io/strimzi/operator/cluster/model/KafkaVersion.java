@@ -11,6 +11,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.KafkaUpgradeException;
+import io.strimzi.operator.common.model.InvalidResourceException;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
