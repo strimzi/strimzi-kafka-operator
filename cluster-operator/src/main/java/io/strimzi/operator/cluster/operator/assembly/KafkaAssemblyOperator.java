@@ -76,6 +76,9 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(KafkaAssemblyOperator.class.getName());
 
     private static final Properties PROPERTIES = new Properties();
+    /**
+     * version of the operator, project.version in the pom.xml
+     */
     public static final String OPERATOR_VERSION;
 
     static {
