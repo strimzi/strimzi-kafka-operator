@@ -56,6 +56,7 @@ import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.time.Clock;
 import java.util.HashMap;
 import java.util.List;
@@ -82,13 +83,23 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
     public static final String OPERATOR_VERSION;
 
     static {
+        InputStream propertiesFile = KafkaAssemblyOperator.class.getResourceAsStream("/.properties");
         try {
-            PROPERTIES.load(KafkaAssemblyOperator.class.getResourceAsStream("/.properties"));
-            OPERATOR_VERSION = PROPERTIES.getProperty("version");
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+            try {
+                PROPERTIES.load(propertiesFile);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        } finally {
+            try {
+                propertiesFile.close();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
         }
+        OPERATOR_VERSION = PROPERTIES.getProperty("version");
     }
+
 
     /* test */ final ClusterOperatorConfig config;
     /* test */ final ResourceOperatorSupplier supplier;
