@@ -17,7 +17,7 @@ import io.strimzi.api.kafka.model.storage.Storage;
 import io.strimzi.operator.cluster.model.NodeRef;
 import io.strimzi.operator.cluster.model.StorageUtils;
 import io.strimzi.operator.cluster.model.VolumeUtils;
-import io.strimzi.operator.cluster.operator.resource.Quantities;
+import io.strimzi.operator.cluster.model.Quantities;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.vertx.core.json.JsonArray;

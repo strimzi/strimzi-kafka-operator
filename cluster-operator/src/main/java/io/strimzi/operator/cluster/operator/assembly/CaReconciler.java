@@ -15,7 +15,6 @@ import io.strimzi.api.kafka.model.KafkaExporterResources;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.StrimziPodSet;
 import io.strimzi.certs.CertManager;
-import io.strimzi.operator.cluster.ClusterOperator;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.model.AbstractModel;
 import io.strimzi.operator.common.model.Ca;
@@ -34,7 +33,7 @@ import io.strimzi.operator.cluster.operator.resource.events.KubernetesRestartEve
 import io.strimzi.operator.common.AdminClientProvider;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.BackOff;
-import io.strimzi.operator.common.PasswordGenerator;
+import io.strimzi.operator.common.model.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Util;
@@ -339,7 +338,7 @@ public class CaReconciler {
                 clusterCa,
                 clusterCa.clusterOperatorSecret(),
                 reconciliation.namespace(),
-                ClusterOperator.secretName(reconciliation.name()),
+                KafkaResources.secretName(reconciliation.name()),
                 "cluster-operator",
                 "cluster-operator",
                 clusterOperatorSecretLabels,
@@ -347,7 +346,7 @@ public class CaReconciler {
                 Util.isMaintenanceTimeWindowsSatisfied(reconciliation, maintenanceWindows, clock.instant())
         );
 
-        return secretOperator.reconcile(reconciliation, reconciliation.namespace(), ClusterOperator.secretName(reconciliation.name()), secret)
+        return secretOperator.reconcile(reconciliation, reconciliation.namespace(), KafkaResources.secretName(reconciliation.name()), secret)
                 .map((Void) null);
     }
 

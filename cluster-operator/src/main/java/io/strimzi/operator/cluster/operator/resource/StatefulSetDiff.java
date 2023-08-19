@@ -8,6 +8,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.apps.StatefulSet;
 import io.fabric8.zjsonpatch.JsonDiff;
+import io.strimzi.operator.cluster.model.Quantities;
 import io.strimzi.operator.cluster.model.StorageUtils;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;

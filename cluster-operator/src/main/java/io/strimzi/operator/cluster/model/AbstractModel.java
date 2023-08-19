@@ -15,7 +15,6 @@ import io.strimzi.api.kafka.model.template.ResourceTemplate;
 import io.strimzi.operator.cluster.model.securityprofiles.PodSecurityProviderFactory;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
-import io.strimzi.operator.cluster.operator.resource.SharedEnvironmentProvider;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.plugin.security.profiles.PodSecurityProvider;
 

@@ -12,7 +12,7 @@ import io.strimzi.api.kafka.model.storage.Storage;
 import io.strimzi.operator.common.model.InvalidResourceException;
 import io.strimzi.operator.cluster.model.KafkaPool;
 import io.strimzi.operator.cluster.model.ModelUtils;
-import io.strimzi.operator.cluster.operator.resource.SharedEnvironmentProvider;
+import io.strimzi.operator.cluster.model.SharedEnvironmentProvider;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;

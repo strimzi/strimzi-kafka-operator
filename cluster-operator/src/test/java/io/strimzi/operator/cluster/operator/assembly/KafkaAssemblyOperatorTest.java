@@ -46,9 +46,8 @@ import io.strimzi.api.kafka.model.storage.PersistentClaimStorage;
 import io.strimzi.api.kafka.model.storage.PersistentClaimStorageBuilder;
 import io.strimzi.api.kafka.model.storage.SingleVolumeStorage;
 import io.strimzi.api.kafka.model.storage.Storage;
-import io.strimzi.operator.cluster.operator.resource.MockSharedEnvironmentProvider;
+import io.strimzi.operator.cluster.model.MockSharedEnvironmentProvider;
 import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
-import io.strimzi.operator.cluster.ClusterOperator;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
@@ -69,9 +68,9 @@ import io.strimzi.operator.cluster.model.nodepools.NodePoolUtils;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.StatefulSetOperator;
 import io.strimzi.operator.common.Annotations;
-import io.strimzi.operator.common.PasswordGenerator;
+import io.strimzi.operator.common.model.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
-import io.strimzi.operator.cluster.operator.resource.SharedEnvironmentProvider;
+import io.strimzi.operator.cluster.model.SharedEnvironmentProvider;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.MockCertManager;
 import io.strimzi.operator.common.operator.resource.ConfigMapOperator;
@@ -576,7 +575,7 @@ public class KafkaAssemblyOperatorTest {
                 KafkaResources.clusterCaKeySecretName(kafkaName),
                 KafkaResources.kafkaSecretName(kafkaName),
                 KafkaResources.zookeeperSecretName(kafkaName),
-                ClusterOperator.secretName(kafkaName));
+                KafkaResources.secretName(kafkaName));
 
         if (metrics)    {
             expectedSecrets.add(KafkaExporterResources.secretName(kafkaName));
@@ -624,7 +623,7 @@ public class KafkaAssemblyOperatorTest {
         when(mockSecretOps.getAsync(kafkaNamespace, KafkaResources.clusterCaCertificateSecretName(kafkaName))).thenAnswer(i ->
                 Future.succeededFuture(secretsMap.get(i.<String>getArgument(1)))
         );
-        when(mockSecretOps.getAsync(kafkaNamespace, ClusterOperator.secretName(kafkaName))).thenAnswer(i ->
+        when(mockSecretOps.getAsync(kafkaNamespace, KafkaResources.secretName(kafkaName))).thenAnswer(i ->
                 Future.succeededFuture(secretsMap.get(i.<String>getArgument(1)))
         );
 
@@ -1094,7 +1093,7 @@ public class KafkaAssemblyOperatorTest {
         when(mockSecretOps.getAsync(clusterNamespace, KafkaResources.clusterCaCertificateSecretName(clusterName))).thenReturn(
                 Future.succeededFuture(new Secret())
         );
-        when(mockSecretOps.getAsync(clusterNamespace, ClusterOperator.secretName(clusterName))).thenReturn(
+        when(mockSecretOps.getAsync(clusterNamespace, KafkaResources.secretName(clusterName))).thenReturn(
                 Future.succeededFuture(new Secret())
         );
         when(mockSecretOps.getAsync(clusterNamespace, CruiseControlResources.secretName(clusterName))).thenReturn(

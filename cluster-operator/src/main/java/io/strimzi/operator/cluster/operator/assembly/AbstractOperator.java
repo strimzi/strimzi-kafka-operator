@@ -18,7 +18,7 @@ import io.strimzi.api.kafka.model.status.Status;
 import io.strimzi.operator.common.model.InvalidResourceException;
 import io.strimzi.operator.common.model.StatusDiff;
 import io.strimzi.operator.common.Annotations;
-import io.strimzi.operator.common.InvalidConfigParameterException;
+import io.strimzi.operator.common.model.InvalidConfigParameterException;
 import io.strimzi.operator.common.MetricsProvider;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationException;

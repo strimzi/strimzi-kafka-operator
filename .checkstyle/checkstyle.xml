@@ -64,10 +64,12 @@
         <module name="TypeName"/>
         <module name="AvoidStarImport"/>
 
-        <!-- dependencies -->
-        <!--<module name="ImportControl">
+        <!-- dependencies and import control -->
+        <module name="ImportControl">
             <property name="file" value="${importControlFile}"/>
-        </module>-->
+            <!-- we do not want to validate test classes -->
+            <property name="path" value="^.*[\\/]src[\\/]main[\\/].*$"/>
+        </module>
 
         <!-- whitespace -->
         <module name="GenericWhitespace"/>

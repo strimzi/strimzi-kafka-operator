@@ -29,10 +29,8 @@ import io.strimzi.api.kafka.model.template.EntityOperatorTemplate;
 import io.strimzi.api.kafka.model.template.PodTemplate;
 import io.strimzi.api.kafka.model.template.ResourceTemplate;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
-import io.strimzi.operator.cluster.Main;
 import io.strimzi.operator.cluster.model.securityprofiles.ContainerSecurityProviderContextImpl;
 import io.strimzi.operator.cluster.model.securityprofiles.PodSecurityProviderContextImpl;
-import io.strimzi.operator.cluster.operator.resource.SharedEnvironmentProvider;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.Util;
 
@@ -331,7 +329,7 @@ public class EntityOperator extends AbstractModel {
 
         try (BufferedReader br = new BufferedReader(
                 new InputStreamReader(
-                    Main.class.getResourceAsStream("/cluster-roles/031-ClusterRole-strimzi-entity-operator.yaml"),
+                    EntityOperator.class.getResourceAsStream("/cluster-roles/031-ClusterRole-strimzi-entity-operator.yaml"),
                     StandardCharsets.UTF_8)
             )
         ) {

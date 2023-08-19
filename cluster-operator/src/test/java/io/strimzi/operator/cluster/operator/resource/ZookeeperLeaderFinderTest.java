@@ -9,7 +9,6 @@ import io.fabric8.kubernetes.api.model.PodBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
-import io.strimzi.operator.cluster.ClusterOperator;
 import io.strimzi.operator.common.model.Ca;
 import io.strimzi.operator.common.BackOff;
 import io.strimzi.operator.common.Reconciliation;
@@ -256,7 +255,7 @@ public class ZookeeperLeaderFinderTest {
 
         Secret secretWithMissingClusterOperatorKey = new SecretBuilder()
                 .withNewMetadata()
-                .withName(ClusterOperator.secretName(CLUSTER))
+                .withName(KafkaResources.secretName(CLUSTER))
                 .withNamespace(NAMESPACE)
                 .endMetadata()
                 .withData(emptyMap())
@@ -291,7 +290,7 @@ public class ZookeeperLeaderFinderTest {
 
         Secret secretWithBadCertificate = new SecretBuilder()
                 .withNewMetadata()
-                .withName(ClusterOperator.secretName(CLUSTER))
+                .withName(KafkaResources.secretName(CLUSTER))
                 .withNamespace(NAMESPACE)
                 .endMetadata()
                 .withData(map("cluster-operator.key", "notacert",

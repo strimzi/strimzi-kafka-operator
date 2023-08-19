@@ -18,7 +18,7 @@ import io.strimzi.operator.cluster.model.ModelUtils;
 import io.strimzi.operator.cluster.model.NetworkPolicyUtils;
 import io.strimzi.operator.cluster.model.ServiceUtils;
 import io.strimzi.operator.cluster.model.TemplateUtils;
-import io.strimzi.operator.common.PasswordGenerator;
+import io.strimzi.operator.common.model.PasswordGenerator;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
 

@@ -12,7 +12,6 @@ import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.StrimziPodSet;
-import io.strimzi.operator.cluster.ClusterOperator;
 import io.strimzi.operator.common.model.Ca;
 import io.strimzi.operator.common.model.ClientsCa;
 import io.strimzi.operator.cluster.model.KafkaCluster;
@@ -22,7 +21,7 @@ import io.strimzi.operator.cluster.model.PodSetUtils;
 import io.strimzi.operator.cluster.model.RestartReason;
 import io.strimzi.operator.cluster.model.RestartReasons;
 import io.strimzi.operator.cluster.model.jmx.SupportsJmx;
-import io.strimzi.operator.cluster.operator.resource.PodRevision;
+import io.strimzi.operator.cluster.model.PodRevision;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
@@ -109,7 +108,7 @@ public class ReconcilerUtils {
     public static CompositeFuture clientSecrets(Reconciliation reconciliation, SecretOperator secretOperator) {
         return Future.join(
                 getSecret(secretOperator, reconciliation.namespace(), KafkaResources.clusterCaCertificateSecretName(reconciliation.name())),
-                getSecret(secretOperator, reconciliation.namespace(), ClusterOperator.secretName(reconciliation.name()))
+                getSecret(secretOperator, reconciliation.namespace(), KafkaResources.secretName(reconciliation.name()))
         );
     }
 

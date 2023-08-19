@@ -95,6 +95,9 @@
         <!-- Configures if we should fail on warnings when generating Javadocs -->
         <javadoc.fail.on.warnings>true</javadoc.fail.on.warnings>
 
+        <!-- Points to the root directory of the Strimzi project directory and can be used for fixed location to configuration files -->
+        <strimziRootDirectory>${basedir}</strimziRootDirectory>
+
         <!-- Maven plugin versions -->
         <maven.compiler.version>3.10.1</maven.compiler.version>
         <maven.surefire.version>3.0.0-M7</maven.surefire.version>
@@ -105,7 +108,7 @@
         <maven.source.version>3.0.1</maven.source.version>
         <maven.dependency.version>3.3.0</maven.dependency.version>
         <maven.gpg.version>1.6</maven.gpg.version>
-        <maven.checkstyle.version>3.1.2</maven.checkstyle.version>
+        <maven.checkstyle.version>3.3.0</maven.checkstyle.version>
         <maven.enforcer.version>3.0.0-M2</maven.enforcer.version>
         <maven.jar.version>3.1.0</maven.jar.version>
         <sonatype.nexus.staging.version>1.6.13</sonatype.nexus.staging.version>
@@ -115,7 +118,7 @@
         <maven.resources.version>3.1.0</maven.resources.version>
 
         <!-- Build tools -->
-        <checkstyle.version>9.2.1</checkstyle.version>
+        <checkstyle.version>10.12.2</checkstyle.version>
         <spotbugs.version>4.7.3</spotbugs.version>
         <sundrio.version>0.100.1</sundrio.version>
         <lombok.version>1.18.24</lombok.version>
@@ -991,6 +994,7 @@
                             <encoding>UTF-8</encoding>
                             <consoleOutput>true</consoleOutput>
                             <failsOnError>true</failsOnError>
+                            <propertyExpansion>importControlFile=${strimziRootDirectory}/.checkstyle/import-control.xml</propertyExpansion>
                         </configuration>
                         <goals>
                             <goal>check</goal>

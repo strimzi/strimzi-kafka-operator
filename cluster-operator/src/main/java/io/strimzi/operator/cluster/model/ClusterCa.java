@@ -29,8 +29,7 @@ import io.strimzi.certs.CertAndKey;
 import io.strimzi.certs.CertManager;
 import io.strimzi.certs.IpAndDnsValidation;
 import io.strimzi.certs.Subject;
-import io.strimzi.operator.cluster.ClusterOperator;
-import io.strimzi.operator.common.PasswordGenerator;
+import io.strimzi.operator.common.model.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Ca;
 
@@ -121,7 +120,7 @@ public class ClusterCa extends Ca {
                 entityUserOperatorSecret = secret;
             } else if (KafkaResources.zookeeperSecretName(clusterName).equals(name)) {
                 zkNodesSecret = secret;
-            } else if (ClusterOperator.secretName(clusterName).equals(name)) {
+            } else if (KafkaResources.secretName(clusterName).equals(name)) {
                 clusterOperatorSecret = secret;
             } else if (KafkaExporterResources.secretName(clusterName).equals(name)) {
                 kafkaExporterSecret = secret;

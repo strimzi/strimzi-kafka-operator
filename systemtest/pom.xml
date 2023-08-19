@@ -13,6 +13,9 @@
     <properties>
         <skipTests>true</skipTests>
         <failsafe.forkCount>0</failsafe.forkCount>
+
+        <!-- Points to the root directory of the Strimzi project directory and can be used for fixed location to configuration files -->
+        <strimziRootDirectory>${basedir}${file.separator}..</strimziRootDirectory>
     </properties>
 
     <dependencies>

@@ -36,7 +36,6 @@ import io.strimzi.api.kafka.model.template.DeploymentTemplateBuilder;
 import io.strimzi.api.kafka.model.template.PodTemplate;
 import io.strimzi.api.kafka.model.template.PodTemplateBuilder;
 import io.strimzi.api.kafka.model.template.ResourceTemplateBuilder;
-import io.strimzi.operator.cluster.operator.resource.PodRevision;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import org.junit.jupiter.api.Test;

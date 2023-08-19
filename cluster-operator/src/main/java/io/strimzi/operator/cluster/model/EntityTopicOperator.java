@@ -27,7 +27,6 @@ import io.strimzi.operator.cluster.model.logging.LoggingModel;
 import io.strimzi.operator.cluster.model.logging.SupportsLogging;
 import io.strimzi.operator.cluster.model.securityprofiles.ContainerSecurityProviderContextImpl;
 import io.strimzi.operator.common.Reconciliation;
-import io.strimzi.operator.cluster.operator.resource.SharedEnvironmentProvider;
 
 import java.util.ArrayList;
 import java.util.Collections;

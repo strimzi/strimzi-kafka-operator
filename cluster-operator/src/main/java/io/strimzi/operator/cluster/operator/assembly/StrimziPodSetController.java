@@ -33,7 +33,7 @@ import io.strimzi.api.kafka.model.status.StrimziPodSetStatus;
 import io.strimzi.operator.cluster.model.ModelUtils;
 import io.strimzi.operator.cluster.model.PodSetUtils;
 import io.strimzi.operator.common.model.StatusDiff;
-import io.strimzi.operator.cluster.operator.resource.PodRevision;
+import io.strimzi.operator.cluster.model.PodRevision;
 import io.strimzi.operator.common.InformerUtils;
 import io.strimzi.operator.common.MetricsProvider;
 import io.strimzi.operator.common.Reconciliation;

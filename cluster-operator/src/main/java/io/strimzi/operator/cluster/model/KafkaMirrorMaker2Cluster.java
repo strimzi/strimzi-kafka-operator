@@ -24,8 +24,8 @@ import io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationOAuth;
 import io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationPlain;
 import io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationScram;
 import io.strimzi.api.kafka.model.authentication.KafkaClientAuthenticationTls;
+import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.common.Reconciliation;
-import io.strimzi.operator.cluster.operator.resource.SharedEnvironmentProvider;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.InvalidResourceException;
 
@@ -34,8 +34,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.function.Supplier;
-
-import static io.strimzi.operator.cluster.ClusterOperatorConfig.STRIMZI_DEFAULT_KAFKA_INIT_IMAGE;
 
 /**
  * Kafka Mirror Maker 2 model
@@ -148,7 +146,7 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
                 .withJvmOptions(spec.getJvmOptions())
                 .withJmxOptions(spec.getJmxOptions())
                 .withMetricsConfig(spec.getMetricsConfig())
-                .withClientRackInitImage(System.getenv().getOrDefault(STRIMZI_DEFAULT_KAFKA_INIT_IMAGE, "quay.io/strimzi/operator:latest"))
+                .withClientRackInitImage(System.getenv().getOrDefault(ClusterOperatorConfig.STRIMZI_DEFAULT_KAFKA_INIT_IMAGE, "quay.io/strimzi/operator:latest"))
                 .withRack(spec.getRack())
                 .withTracing(spec.getTracing())
                 .withTemplate(spec.getTemplate())

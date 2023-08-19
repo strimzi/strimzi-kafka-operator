@@ -39,11 +39,7 @@ import static java.util.Arrays.asList;
  * {@link ClusterOperator}'s in Vertx.
  */
 public class ClusterOperator extends AbstractVerticle {
-
     private static final Logger LOGGER = LogManager.getLogger(ClusterOperator.class.getName());
-
-    private static final String NAME_SUFFIX = "-cluster-operator";
-    private static final String CERTS_SUFFIX = NAME_SUFFIX + "-certs";
 
     private final String namespace;
     private final ClusterOperatorConfig config;
@@ -206,16 +202,5 @@ public class ClusterOperator extends AbstractVerticle {
             kafkaBridgeAssemblyOperator.reconcileAll(trigger, namespace, ignore);
             kafkaRebalanceAssemblyOperator.reconcileAll(trigger, namespace, ignore);
         }
-    }
-
-    /**
-     * Name of the secret with the Cluster Operator certificates for connecting to the cluster
-     *
-     * @param cluster   Name of the Kafka cluster
-     *
-     * @return  Name of the Cluster Operator certificate secret
-     */
-    public static String secretName(String cluster) {
-        return cluster + CERTS_SUFFIX;
     }
 }

@@ -8,7 +8,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import io.strimzi.operator.common.InvalidConfigParameterException;
+import io.strimzi.operator.common.model.InvalidConfigParameterException;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.OrderedProperties;
 import io.strimzi.test.annotations.ParallelSuite;

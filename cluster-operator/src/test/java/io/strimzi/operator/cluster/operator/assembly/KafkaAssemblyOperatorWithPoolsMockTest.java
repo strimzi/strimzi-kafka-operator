@@ -22,7 +22,6 @@ import io.strimzi.api.kafka.model.nodepool.KafkaNodePoolBuilder;
 import io.strimzi.api.kafka.model.nodepool.ProcessRoles;
 import io.strimzi.api.kafka.model.status.UsedNodePoolStatus;
 import io.strimzi.api.kafka.model.storage.PersistentClaimStorageBuilder;
-import io.strimzi.operator.cluster.ClusterOperator;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
@@ -34,7 +33,7 @@ import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.PodSetUtils;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.Annotations;
-import io.strimzi.operator.common.PasswordGenerator;
+import io.strimzi.operator.common.model.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.MockCertManager;
@@ -262,7 +261,7 @@ public class KafkaAssemblyOperatorWithPoolsMockTest {
                 KafkaResources.clusterCaCertificateSecretName(CLUSTER_NAME),
                 KafkaResources.kafkaSecretName(CLUSTER_NAME),
                 KafkaResources.zookeeperSecretName(CLUSTER_NAME),
-                ClusterOperator.secretName(CLUSTER_NAME));
+                KafkaResources.secretName(CLUSTER_NAME));
 
         Checkpoint async = context.checkpoint();
 

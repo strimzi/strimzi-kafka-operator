@@ -2,19 +2,19 @@
  * Copyright Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.strimzi.operator.cluster.operator.resource;
+package io.strimzi.operator.cluster.model;
 
 import org.junit.jupiter.api.Test;
 
-import static io.strimzi.operator.cluster.operator.resource.Quantities.formatMemory;
-import static io.strimzi.operator.cluster.operator.resource.Quantities.formatMilliCpu;
-import static io.strimzi.operator.cluster.operator.resource.Quantities.normalizeCpu;
-import static io.strimzi.operator.cluster.operator.resource.Quantities.normalizeMemory;
-import static io.strimzi.operator.cluster.operator.resource.Quantities.parseCpuAsMilliCpus;
-import static io.strimzi.operator.cluster.operator.resource.Quantities.parseMemory;
+import static io.strimzi.operator.cluster.model.Quantities.formatMemory;
+import static io.strimzi.operator.cluster.model.Quantities.formatMilliCpu;
+import static io.strimzi.operator.cluster.model.Quantities.normalizeCpu;
+import static io.strimzi.operator.cluster.model.Quantities.normalizeMemory;
+import static io.strimzi.operator.cluster.model.Quantities.parseCpuAsMilliCpus;
+import static io.strimzi.operator.cluster.model.Quantities.parseMemory;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class QuantitiesTest {
 
@@ -37,47 +37,12 @@ public class QuantitiesTest {
         assertThat(parseMemory("1.1G"), is(1100000000L));
         assertThat(parseMemory("1.1e3K"), is(1100000L));
 
-        try {
-            parseMemory("-1K");
-            fail();
-        } catch (IllegalArgumentException e) {
-
-        }
-
-        try {
-            parseMemory("K");
-            fail();
-        } catch (IllegalArgumentException e) {
-
-        }
-
-        try {
-            parseMemory("1Kb");
-            fail();
-        } catch (IllegalArgumentException e) {
-
-        }
-
-        try {
-            parseMemory("foo");
-            fail();
-        } catch (IllegalArgumentException e) {
-
-        }
-
-        try {
-            parseMemory("1.1x");
-            fail();
-        } catch (IllegalArgumentException e) {
-
-        }
-
-        try {
-            parseMemory("1.1e-1");
-            fail();
-        } catch (IllegalArgumentException e) {
-
-        }
+        assertThrows(IllegalArgumentException.class, () -> parseMemory("-1K"));
+        assertThrows(IllegalArgumentException.class, () -> parseMemory("K"));
+        assertThrows(IllegalArgumentException.class, () -> parseMemory("1Kb"));
+        assertThrows(IllegalArgumentException.class, () -> parseMemory("foo"));
+        assertThrows(IllegalArgumentException.class, () -> parseMemory("1.1x"));
+        assertThrows(IllegalArgumentException.class, () -> parseMemory("1.1e-1"));
     }
 
     @Test
@@ -122,15 +87,8 @@ public class QuantitiesTest {
         assertThat(parseCpuAsMilliCpus("0.0"), is(0));
         assertThat(parseCpuAsMilliCpus("0.000001"), is(0));
 
-        try {
-            parseCpuAsMilliCpus("0.0m");
-            fail();
-        } catch (IllegalArgumentException e) { }
-
-        try {
-            parseCpuAsMilliCpus("0.1m");
-            fail();
-        } catch (IllegalArgumentException e) { }
+        assertThrows(IllegalArgumentException.class, () -> parseCpuAsMilliCpus("0.0m"));
+        assertThrows(IllegalArgumentException.class, () -> parseCpuAsMilliCpus("0.1m"));
     }
 
     @Test
