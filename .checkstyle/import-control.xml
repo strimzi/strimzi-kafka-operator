@@ -2,12 +2,26 @@
         "-//Checkstyle//DTD ImportControl Configuration 1.4//EN"
         "https://checkstyle.org/dtds/import_control_1_4.dtd">
 
-<!-- We do not have rules for all classes. So we have to first allow all classes import everything
-(strategyOnMismatch="allowed") and then we specify rules for selected packages where we disallow imports by default in
-the subpackage sections.
+<!--
+The import control rules are currently configured only for 3 packages:
+  * io.strimzi.operator.common.model
+  * io.strimzi.operator.cluster.model
+  * io.strimzi.operator.user.model
+
+For all other packages, there are currently no restrictions, and they can import anything. To achieve this, we have to
+first configure <import-control pkg="io.strimzi" strategyOnMismatch="allowed"> which allows all imports for all classes
+not matching any of the <subpackage ...> modules without any restrictions.
+
+And then we add the <subpackage ... strategyOnMismatch="disallowed"> which allows only the selected imports for the 3
+packages mentioned above. These packages should in general use only the API and other model classes plus some selected
+other classes (and of course general Java classes and some other dependencies). They should especially not use any of
+the operator classes (e.g. the Assembly or Resource operators). If you make any changes to these classes and need to
+import something more, you should consider if it really should be used, it should not part of the Model packages and in
+case it is really needed, you can add it bellow to the allowed imports.
 
 We also control imports only in production classes and not in tests. This is controlled in the main checkstyle file.
 -->
+
 <import-control pkg="io.strimzi" strategyOnMismatch="allowed">
     <subpackage name="operator.common.model" strategyOnMismatch="disallowed">
         <!-- This enforces the layering between the Strimzi Model and Operator classes in the Operator Common. The Model classes are not allowed
