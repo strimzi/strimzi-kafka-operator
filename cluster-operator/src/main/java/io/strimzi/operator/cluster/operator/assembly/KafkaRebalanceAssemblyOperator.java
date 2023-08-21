@@ -238,20 +238,19 @@ public class KafkaRebalanceAssemblyOperator
         if (action == Watcher.Action.MODIFIED) {
             KafkaRebalanceBuilder patchedKafkaRebalance = new KafkaRebalanceBuilder(resource);
 
-            if (!resource.getMetadata().getAnnotations().containsKey("oldGeneration")) {
-                patchedKafkaRebalance.editMetadata().addToAnnotations(Map.of("oldGeneration", "1")).endMetadata();
-            }
-
-            if (!patchedKafkaRebalance.buildMetadata().getAnnotations().get("oldGeneration").equals(resource.getMetadata().getGeneration().toString())) {
+            if (patchedKafkaRebalance.buildStatus() != null
+                    && patchedKafkaRebalance.buildStatus().getObservedGeneration() != resource.getMetadata().getGeneration()) {
                 patchedKafkaRebalance.editMetadata()
                         .addToAnnotations(Map.of(ANNO_STRIMZI_IO_REBALANCE, KafkaRebalanceAnnotation.refresh.toString()))
-                        .addToAnnotations(Map.of("oldGeneration", resource.getMetadata().getGeneration().toString()))
-                        .endMetadata();
+                        .endMetadata().
+                        editStatus()
+                        .withObservedGeneration(resource.getMetadata().getGeneration())
+                        .endStatus();
             }
 
-            kafkaRebalanceOperator.patchAsync(reconciliation, patchedKafkaRebalance.build());
-            withLock(reconciliation, LOCK_TIMEOUT_MS,
-                    () -> reconcileRebalance(reconciliation, patchedKafkaRebalance.build()));
+            kafkaRebalanceOperator.patchAsync(reconciliation, patchedKafkaRebalance.build()).onComplete(
+                    r -> withLock(reconciliation, LOCK_TIMEOUT_MS,
+                            () -> reconcileRebalance(reconciliation, patchedKafkaRebalance.build())));
         } else {
             withLock(reconciliation, LOCK_TIMEOUT_MS,
                     () -> reconcileRebalance(reconciliation, action == Watcher.Action.DELETED ? null : resource));
