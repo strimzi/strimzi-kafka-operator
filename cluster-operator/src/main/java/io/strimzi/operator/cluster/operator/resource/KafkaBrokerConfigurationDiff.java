@@ -5,6 +5,7 @@
 
 package io.strimzi.operator.cluster.operator.resource;
 
+import io.strimzi.operator.cluster.model.NodeRef;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -66,18 +67,22 @@ public class KafkaBrokerConfigurationDiff extends AbstractJsonDiff {
             + "|broker\\.rack)$");
 
     /**
+     * KRaft controller configuration options are skipped if it is not combined node
+     */
+    private static final Pattern IGNORABLE_CONTROLLER_PROPERTIES = Pattern.compile("controller\\.quorum\\..*");
+    /**
      * Constructor
      *
      * @param reconciliation    Reconciliation marker
      * @param brokerConfigs     Broker configuration from Kafka Admin API
      * @param desired           Desired configuration
      * @param kafkaVersion      Kafka version
-     * @param brokerId          Broker ID
+     * @param nodeRef           Node reference
      */
-    protected KafkaBrokerConfigurationDiff(Reconciliation reconciliation, Config brokerConfigs, String desired, KafkaVersion kafkaVersion, int brokerId) {
+    protected KafkaBrokerConfigurationDiff(Reconciliation reconciliation, Config brokerConfigs, String desired, KafkaVersion kafkaVersion, NodeRef nodeRef) {
         this.reconciliation = reconciliation;
         this.configModel = KafkaConfiguration.readConfigModel(kafkaVersion);
-        this.diff = diff(brokerId, desired, brokerConfigs, configModel);
+        this.diff = diff(nodeRef, desired, brokerConfigs, configModel);
     }
 
     private static void fillPlaceholderValue(Map<String, String> orderedProperties, String value) {
@@ -125,19 +130,24 @@ public class KafkaBrokerConfigurationDiff extends AbstractJsonDiff {
         return diff.size();
     }
 
-    private static boolean isIgnorableProperty(String key) {
-        return IGNORABLE_PROPERTIES.matcher(key).matches();
+    private static boolean isIgnorableProperty(String key, boolean isCombined) {
+        // If node is both KRaft controller and broker (combined), do not ignore controller config properties.
+        // Otherwise, always ignore KRaft controller config properties.
+        if (isCombined) {
+            return IGNORABLE_PROPERTIES.matcher(key).matches();
+        }
+        return IGNORABLE_PROPERTIES.matcher(key).matches() || IGNORABLE_CONTROLLER_PROPERTIES.matcher(key).matches();
     }
 
     /**
      * Computes diff between two maps. Entries in IGNORABLE_PROPERTIES are skipped
-     * @param brokerId id of compared broker
+     * @param nodeRef node reference of compared broker
      * @param desired desired configuration, may be null if the related ConfigMap does not exist yet or no changes are required
      * @param brokerConfigs current configuration
      * @param configModel default configuration for {@code kafkaVersion} of broker
      * @return Collection of AlterConfigOp containing all entries which were changed from current in desired configuration
      */
-    private Collection<AlterConfigOp> diff(int brokerId, String desired,
+    private Collection<AlterConfigOp> diff(NodeRef nodeRef, String desired,
                                                   Config brokerConfigs,
                                                   Map<String, ConfigModel> configModel) {
         if (brokerConfigs == null || desired == null) {
@@ -156,6 +166,7 @@ public class KafkaBrokerConfigurationDiff extends AbstractJsonDiff {
         orderedProperties.addStringPairs(desired);
         Map<String, String> desiredMap = orderedProperties.asMap();
 
+        int brokerId = nodeRef.nodeId();
         fillPlaceholderValue(desiredMap, Integer.toString(brokerId));
 
         JsonNode source = PATCH_MAPPER.valueToTree(currentMap);
@@ -174,15 +185,15 @@ public class KafkaBrokerConfigurationDiff extends AbstractJsonDiff {
             if (optEntry.isPresent()) {
                 ConfigEntry entry = optEntry.get();
                 if ("remove".equals(op)) {
-                    removeProperty(configModel, updatedCE, pathValueWithoutSlash, entry);
+                    removeProperty(configModel, updatedCE, pathValueWithoutSlash, entry, nodeRef.controller());
                 } else if ("replace".equals(op)) {
                     // entry is in the current, desired is updated value
-                    updateOrAdd(entry.name(), configModel, desiredMap, updatedCE);
+                    updateOrAdd(entry.name(), configModel, desiredMap, updatedCE, nodeRef.controller());
                 }
             } else {
                 if ("add".equals(op)) {
                     // entry is not in the current, it is added
-                    updateOrAdd(pathValueWithoutSlash, configModel, desiredMap, updatedCE);
+                    updateOrAdd(pathValueWithoutSlash, configModel, desiredMap, updatedCE, nodeRef.controller());
                 }
             }
 
@@ -201,8 +212,8 @@ public class KafkaBrokerConfigurationDiff extends AbstractJsonDiff {
         return updatedCE;
     }
 
-    private void updateOrAdd(String propertyName, Map<String, ConfigModel> configModel, Map<String, String> desiredMap, Collection<AlterConfigOp> updatedCE) {
-        if (!isIgnorableProperty(propertyName)) {
+    private void updateOrAdd(String propertyName, Map<String, ConfigModel> configModel, Map<String, String> desiredMap, Collection<AlterConfigOp> updatedCE, boolean isController) {
+        if (!isIgnorableProperty(propertyName, isController)) {
             if (isCustomEntry(propertyName, configModel)) {
                 LOGGER.traceCr(reconciliation, "custom property {} has been updated/added {}", propertyName, desiredMap.get(propertyName));
             } else {
@@ -214,7 +225,7 @@ public class KafkaBrokerConfigurationDiff extends AbstractJsonDiff {
         }
     }
 
-    private void removeProperty(Map<String, ConfigModel> configModel, Collection<AlterConfigOp> updatedCE, String pathValueWithoutSlash, ConfigEntry entry) {
+    private void removeProperty(Map<String, ConfigModel> configModel, Collection<AlterConfigOp> updatedCE, String pathValueWithoutSlash, ConfigEntry entry, boolean isController) {
         if (isCustomEntry(entry.name(), configModel)) {
             // we are deleting custom option
             LOGGER.traceCr(reconciliation, "removing custom property {}", entry.name());
@@ -227,7 +238,7 @@ public class KafkaBrokerConfigurationDiff extends AbstractJsonDiff {
         } else {
             // entry is in current, is not in desired, is not default -> it was using non-default value and was removed
             // if the entry was custom, it should be deleted
-            if (!isIgnorableProperty(pathValueWithoutSlash)) {
+            if (!isIgnorableProperty(pathValueWithoutSlash, isController)) {
                 updatedCE.add(new AlterConfigOp(new ConfigEntry(pathValueWithoutSlash, null), AlterConfigOp.OpType.DELETE));
                 LOGGER.infoCr(reconciliation, "{} not set in desired, unsetting back to default {}", entry.name(), "deleted entry");
             } else {

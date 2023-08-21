@@ -7,6 +7,7 @@ package io.strimzi.operator.cluster.operator.resource;
 
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.model.KafkaVersion;
+import io.strimzi.operator.cluster.model.NodeRef;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.test.TestUtils;
 import org.apache.kafka.clients.admin.AlterConfigOp;
@@ -35,7 +36,7 @@ public class KafkaBrokerConfigurationDiffTest {
     private static final KafkaVersion.Lookup VERSIONS = KafkaVersionTestUtils.getKafkaVersionLookup();
     private static final String KAFKA_VERSION = "3.6.0";
     KafkaVersion kafkaVersion = VERSIONS.supportedVersion(KAFKA_VERSION);
-    private final int brokerId = 0;
+    private final NodeRef brokerId = new NodeRef("broker-0", 0, "broker", false, true);
 
     private ConfigEntry instantiateConfigEntry(String name, String val) {
         // use reflection to instantiate ConfigEntry
@@ -153,6 +154,25 @@ public class KafkaBrokerConfigurationDiffTest {
                 getDesiredConfiguration(ces), kafkaVersion, brokerId);
         assertThat(kcd.getDiffSize(), is(0));
         assertThat(kcd.canBeUpdatedDynamically(), is(true));
+    }
+
+    @Test
+    public void testChangedKRaftControllerConfig() {
+        List<ConfigEntry> desiredControllerConfig = singletonList(new ConfigEntry("controller.quorum.election.timeout.ms", "5000"));
+        List<ConfigEntry> currentControllerConfig = singletonList(new ConfigEntry("controller.quorum.election.timeout.ms", "1000"));
+        KafkaBrokerConfigurationDiff kcd = new KafkaBrokerConfigurationDiff(Reconciliation.DUMMY_RECONCILIATION, getCurrentConfiguration(currentControllerConfig),
+                getDesiredConfiguration(desiredControllerConfig), kafkaVersion, brokerId);
+        assertThat(kcd.getDiffSize(), is(0));
+    }
+
+    @Test
+    public void testChangedKRaftControllerConfigForCombinedNode() {
+        NodeRef combinedNodeId = new NodeRef("broker-0", 0, "broker", true, true);
+        List<ConfigEntry> desiredControllerConfig = singletonList(new ConfigEntry("controller.quorum.election.timeout.ms", "5000"));
+        List<ConfigEntry> currentControllerConfig = singletonList(new ConfigEntry("controller.quorum.election.timeout.ms", "1000"));
+        KafkaBrokerConfigurationDiff kcd = new KafkaBrokerConfigurationDiff(Reconciliation.DUMMY_RECONCILIATION, getCurrentConfiguration(currentControllerConfig),
+                getDesiredConfiguration(desiredControllerConfig), kafkaVersion, combinedNodeId);
+        assertThat(kcd.getDiffSize(), is(1));
     }
 
     @Test

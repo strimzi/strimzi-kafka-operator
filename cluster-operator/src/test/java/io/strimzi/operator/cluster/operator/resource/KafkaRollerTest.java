@@ -28,6 +28,8 @@ import org.apache.kafka.clients.admin.Admin;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.Config;
 import org.apache.kafka.clients.admin.DescribeClusterResult;
+import org.apache.kafka.clients.admin.DescribeMetadataQuorumResult;
+import org.apache.kafka.clients.admin.QuorumInfo;
 import org.apache.kafka.clients.admin.TopicDescription;
 import org.apache.kafka.common.Node;
 import org.apache.kafka.common.internals.KafkaFutureImpl;
@@ -53,6 +55,7 @@ import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -166,7 +169,23 @@ public class KafkaRollerTest {
     }
 
     @Test
-    public void tesRollWithtAControllerChange(VertxTestContext testContext) {
+    public void testRollUnreadyPodFirst(VertxTestContext testContext) {
+        AtomicBoolean podUnready = new AtomicBoolean(true);
+        PodOperator podOps = mockPodOps(podId -> {
+            if (podId == 1 && podUnready.getAndSet(false)) {
+                return failedFuture(new java.util.concurrent.TimeoutException("fail"));
+            } else {
+                return succeededFuture();
+            }
+        });
+        TestingKafkaRoller kafkaRoller = rollerWithControllers(podOps, 2);
+        doSuccessfulRollingRestart(testContext, kafkaRoller,
+                asList(0, 1, 2, 3, 4),
+                asList(1, 0, 3, 4, 2));
+    }
+
+    @Test
+    public void testRollWithAControllerChange(VertxTestContext testContext) {
         PodOperator podOps = mockPodOps(podId -> succeededFuture());
         TestingKafkaRoller kafkaRoller = rollerWithControllers(podOps, 0, 1);
         doSuccessfulRollingRestart(testContext, kafkaRoller,
@@ -255,6 +274,22 @@ public class KafkaRollerTest {
             podNames.add(new NodeRef(KafkaResources.kafkaPodName(clusterName(), podId), podId, null, false, true));
         }
 
+        return podNames;
+    }
+
+    public Set<NodeRef> addKraftPodNames(int brokerReplicas, int combinedReplicas, int controllerReplicas) {
+        Set<NodeRef> podNames = new LinkedHashSet<>(brokerReplicas);
+        for (int brokerId = 0; brokerId < brokerReplicas; brokerId++) {
+            podNames.add(new NodeRef(KafkaResources.kafkaPodName(clusterName(), brokerId), brokerId, "broker", false, true));
+        }
+        int maxCombinedId = brokerReplicas + combinedReplicas;
+        for (int controllerId = brokerReplicas; controllerId < maxCombinedId; controllerId++) {
+            podNames.add(new NodeRef(KafkaResources.kafkaPodName(clusterName(), controllerId), controllerId, "combined", true, true));
+        }
+        int maxControllerId = maxCombinedId + controllerReplicas;
+        for (int controllerId = maxCombinedId; controllerId < maxControllerId; controllerId++) {
+            podNames.add(new NodeRef(KafkaResources.kafkaPodName(clusterName(), controllerId), controllerId, "controller", true, false));
+        }
         return podNames;
     }
 
@@ -357,7 +392,7 @@ public class KafkaRollerTest {
             brokerId ->
                     brokerId == 1 ? succeededFuture(count.getAndDecrement() == 0)
                             : succeededFuture(true),
-                false, new DefaultAdminClientProvider(), false, null,  2);
+                false, new DefaultAdminClientProvider(), false, null, 2);
         doSuccessfulRollingRestart(testContext, kafkaRoller,
                 asList(0, 1, 2, 3, 4),
                 asList(0, 3, 4, 1, 2));
@@ -472,10 +507,9 @@ public class KafkaRollerTest {
         TestingKafkaRoller kafkaRoller = new TestingKafkaRoller(null, null, addPodNames(REPLICAS), podOps,
                 noException(), null,
                 noException(), podId -> new KafkaRoller.ForceableProblem("could not get alter exception"), noException(),
-            brokerId -> succeededFuture(true), false, new DefaultAdminClientProvider(), false, null,  2);
+            brokerId -> succeededFuture(true), false, new DefaultAdminClientProvider(), false, null, 2);
         // The algorithm should carry on rolling the pods
-        doSuccessfulRollingRestart(testContext, kafkaRoller,
-                asList(0, 1, 2, 3, 4),
+        doSuccessfulConfigUpdate(testContext, kafkaRoller,
                 asList(0, 1, 3, 4, 2));
     }
 
@@ -486,9 +520,30 @@ public class KafkaRollerTest {
                 noException(), null,
                 noException(), noException(), noException(),
             brokerId -> succeededFuture(true), false, new DefaultAdminClientProvider(), false, null, 2);
-        // The algorithm should carry on rolling the pods
+        // The algorithm should not carry on rolling the pods
         doSuccessfulConfigUpdate(testContext, kafkaRoller,
                 emptyList());
+    }
+
+    @Test
+    public void testSuccessfulRollingKRaftControllers(VertxTestContext testContext) {
+        TestingKafkaRoller kafkaRoller = new TestingKafkaRoller(null, null, addKraftPodNames(0, 3, 3),
+                mockPodOps(podId -> succeededFuture()), noException(), null, noException(), noException(), noException(),
+                brokerId -> succeededFuture(true), false, new DefaultAdminClientProvider(), false, null, -1);
+        doSuccessfulRollingRestart(testContext, kafkaRoller,
+                asList(0, 1, 2, 3, 4, 5),
+                asList(0, 1, 2, 3, 4, 5));
+    }
+
+    @Test
+    public void testKRaftControllerNoQuorum(VertxTestContext testContext) throws InterruptedException {
+        TestingKafkaRoller kafkaRoller = new TestingKafkaRoller(null, null, addKraftPodNames(0, 0, 3),
+                mockPodOps(podId -> succeededFuture()), noException(), null, noException(), noException(), noException(),
+                brokerId -> succeededFuture(false), false, new DefaultAdminClientProvider(), false, null, -1);
+        doFailingRollingRestart(testContext, kafkaRoller,
+                asList(0, 1, 2),
+                KafkaRoller.UnforceableProblem.class, "Pod c-kafka-0 cannot be updated right now.",
+                asList());
     }
 
     @Test
@@ -501,7 +556,7 @@ public class KafkaRollerTest {
                 false, new DefaultAdminClientProvider(), false, null, 2);
         doFailingRollingRestart(testContext, kafkaRoller,
             asList(0, 1, 2, 3, 4),
-            KafkaRoller.ForceableProblem.class, "Pod c-kafka-2 is controller and there are other pods to verify. Non-controller pods will be verified first",
+            KafkaRoller.ForceableProblem.class, "Pod c-kafka-2 is the active controller and there are other pods to verify. Other pods will be verified first.",
             // We expect all non-controller pods to be rolled
             asList(0, 1, 4));
     }
@@ -527,6 +582,29 @@ public class KafkaRollerTest {
                 asList(0, 1, 2, 3, 4),
                 KafkaRoller.UnforceableProblem.class, "Pod c-kafka-0 is not ready because the broker is performing log recovery. There are  10 logs and 100 segments left to recover.",
                 asList(2, 3, 4, 1));
+    }
+
+    @Test
+    public void testBrokerInRecoveryStateForKRaftController(VertxTestContext testContext) throws InterruptedException {
+        PodOperator podOps = mockPodOps(podId ->
+                (podId == 0) ? failedFuture(new TimeoutException("Timeout")) : succeededFuture()
+        );
+
+        Map<String, Object> recoveryState = new HashMap<>();
+        recoveryState.put("remainingLogsToRecover", 10);
+        recoveryState.put("remainingSegmentsToRecover", 100);
+        BrokerState brokerstate = new BrokerState(2, recoveryState);
+
+        TestingKafkaRoller kafkaRoller = new TestingKafkaRoller(null, null, addKraftPodNames(0, 0, 3),
+                podOps,
+                noException(), null, noException(), noException(), noException(),
+                brokerId -> succeededFuture(true),
+                false, null, false, brokerstate, -1);
+
+        doFailingRollingRestart(testContext, kafkaRoller,
+                List.of(0, 1, 2),
+                KafkaRoller.UnforceableProblem.class, "Pod c-kafka-0 is not ready because the broker is performing log recovery. There are  10 logs and 100 segments left to recover.",
+                List.of(1, 2));
     }
 
     @Test
@@ -585,6 +663,44 @@ public class KafkaRollerTest {
                 List.of(),
                 KubernetesClientException.class, "Failed",
                 List.of());
+    }
+
+    @Test
+    public void testRollWithKRaftNodes(VertxTestContext testContext) {
+        TestingKafkaRoller kafkaRoller = new TestingKafkaRoller(null, null, addKraftPodNames(3, 3, 3),
+                mockPodOps(podId -> succeededFuture()), noException(), null, noException(), noException(), noException(),
+                brokerId -> succeededFuture(true), false, new DefaultAdminClientProvider(), false, null, 6);
+        doSuccessfulRollingRestart(testContext, kafkaRoller,
+                asList(0, 1, 2, 3, 4, 5, 6, 7, 8),
+                asList(3, 4, 5, 7, 8, 6, 0, 1, 2));
+    }
+
+    @Test
+    public void testRollUnreadyPodFirstKRaftNodes(VertxTestContext testContext) {
+        AtomicBoolean pod1Unready = new AtomicBoolean(true);
+        AtomicBoolean pod4Unready = new AtomicBoolean(true);
+        AtomicBoolean pod7Unready = new AtomicBoolean(true);
+        PodOperator podOps = mockPodOps(podId -> {
+            //unready broker is 1
+            if (podId == 1 && pod1Unready.getAndSet(false)) {
+                return failedFuture(new java.util.concurrent.TimeoutException("fail"));
+            }
+            //unready combined node is 4
+            if (podId == 4 && pod4Unready.getAndSet(false)) {
+                return failedFuture(new java.util.concurrent.TimeoutException("fail"));
+            }
+            //unready controller is 7
+            if (podId == 7 && pod7Unready.getAndSet(false)) {
+                return failedFuture(new java.util.concurrent.TimeoutException("fail"));
+            }
+            return succeededFuture();
+        });
+        TestingKafkaRoller kafkaRoller = new TestingKafkaRoller(null, null, addKraftPodNames(3, 3, 3),
+                podOps, noException(), null, noException(), noException(), noException(),
+                brokerId -> succeededFuture(true), false, new DefaultAdminClientProvider(), false, null, -1);
+        doSuccessfulRollingRestart(testContext, kafkaRoller,
+                asList(0, 1, 2, 3, 4, 5, 6, 7, 8), // brokers, combined, controllers
+                asList(7, 4, 3, 5, 6, 8, 1, 0, 2)); //Rolls in order: unready controllers, ready controllers, unready brokers, ready brokers
     }
 
     private TestingKafkaRoller rollerWithControllers(PodOperator podOps, int... controllers) {
@@ -818,6 +934,22 @@ public class KafkaRollerTest {
 
                 @Override
                 Future<Boolean> canRoll(int podId) {
+                    return canRollFn.apply(podId);
+                }
+            };
+        }
+
+        @Override
+        protected KafkaQuorumCheck quorumCheck(Admin ac, long controllerQuorumFetchTimeoutMs) {
+            Admin admin = mock(Admin.class);
+            DescribeMetadataQuorumResult qrmResult = mock(DescribeMetadataQuorumResult.class);
+            when(admin.describeMetadataQuorum()).thenReturn(qrmResult);
+            KafkaFutureImpl<QuorumInfo> kafkaFuture = new KafkaFutureImpl<>();
+            kafkaFuture.complete(null);
+            when(qrmResult.quorumInfo()).thenReturn(kafkaFuture);
+            return new KafkaQuorumCheck(null, admin, null, 0) {
+                @Override
+                Future<Boolean> canRollController(int podId) {
                     return canRollFn.apply(podId);
                 }
             };
