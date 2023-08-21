@@ -260,7 +260,7 @@ public class KafkaUpgradeDowngradeST extends AbstractUpgradeST {
                 "zookeeper", "/bin/bash", "-c", zkVersionCommand).out().trim();
         LOGGER.info("Pre-change ZooKeeper version query returned: " + zkResult);
 
-        String kafkaVersionResult = KafkaUtils.getVersionFromKafkaPodLibs(KafkaResources.kafkaPodName(clusterName, 0));
+        String kafkaVersionResult = KafkaUtils.getVersionFromKafkaPodLibs(KafkaResource.getKafkaPodName(clusterName, 0));
         LOGGER.info("Pre-change Kafka version query returned: " + kafkaVersionResult);
 
         Map<String, String> zkPods = PodUtils.podSnapshot(Constants.CO_NAMESPACE, zkSelector);
@@ -313,7 +313,7 @@ public class KafkaUpgradeDowngradeST extends AbstractUpgradeST {
                 " was expected", zkResult, is(newVersion.zookeeperVersion()));
 
         // Extract the Kafka version number from the jars in the lib directory
-        kafkaVersionResult = KafkaUtils.getVersionFromKafkaPodLibs(KafkaResources.kafkaPodName(clusterName, 0));
+        kafkaVersionResult = KafkaUtils.getVersionFromKafkaPodLibs(KafkaResource.getKafkaPodName(clusterName, 0));
         LOGGER.info("Post-change Kafka version query returned: " + kafkaVersionResult);
 
         assertThat("Kafka container had version " + kafkaVersionResult + " where " + newVersion.version() +
