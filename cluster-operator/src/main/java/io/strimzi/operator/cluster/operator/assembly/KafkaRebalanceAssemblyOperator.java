@@ -241,10 +241,10 @@ public class KafkaRebalanceAssemblyOperator
             if (patchedKafkaRebalance.buildStatus() != null
                     && patchedKafkaRebalance.buildStatus().getObservedGeneration() != resource.getMetadata().getGeneration()) {
                 patchedKafkaRebalance.editMetadata()
-                        .addToAnnotations(Map.of(ANNO_STRIMZI_IO_REBALANCE, KafkaRebalanceAnnotation.refresh.toString()))
-                        .endMetadata().
-                        editStatus()
-                        .withObservedGeneration(resource.getMetadata().getGeneration())
+                             .addToAnnotations(Map.of(ANNO_STRIMZI_IO_REBALANCE, KafkaRebalanceAnnotation.refresh.toString()))
+                        .endMetadata()
+                        .editStatus()
+                             .withObservedGeneration(resource.getMetadata().getGeneration())
                         .endStatus();
             }
 
