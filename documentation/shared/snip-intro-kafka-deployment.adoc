@@ -10,6 +10,7 @@ A typical deployment incorporating Kafka components might include:
 * *Kafka MirrorMaker* cluster to mirror the Kafka cluster in a secondary cluster
 * *Kafka Exporter* to extract additional Kafka metrics data for monitoring
 * *Kafka Bridge* to make HTTP-based requests to the Kafka cluster
+* *Cruise Control* to rebalance topic partitions across broker nodes
 
 Not all of these components are mandatory, though you need Kafka and ZooKeeper as a minimum.
 Some components can be deployed without Kafka, such as MirrorMaker or Kafka Connect.
