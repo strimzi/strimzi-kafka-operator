@@ -157,6 +157,7 @@ public class KafkaStatusTest {
             assertThat(status.getObservedGeneration(), is(2L));
             assertThat(status.getClusterId(), is("my-cluster-id"));
             assertThat(status.getOperatorLastSuccessfulVersion(), is(KafkaAssemblyOperator.OPERATOR_VERSION));
+            assertThat(status.getKafkaVersion(), is(KafkaVersionTestUtils.LATEST_KAFKA_VERSION));
 
             async.flag();
         })));
@@ -196,6 +197,7 @@ public class KafkaStatusTest {
                 assertThat(status.getClusterId(), is("my-cluster-id"));
 
                 assertThat(status.getOperatorLastSuccessfulVersion(), is(nullValue()));
+                assertThat(status.getKafkaVersion(), is(nullValue()));
 
                 async.flag();
             })));
@@ -249,6 +251,7 @@ public class KafkaStatusTest {
             assertThat(kafkaCaptor.getAllValues().size(), is(0));
 
             assertThat(status.getOperatorLastSuccessfulVersion(), is(KafkaAssemblyOperator.OPERATOR_VERSION));
+            assertThat(status.getKafkaVersion(), is(KafkaVersionTestUtils.LATEST_KAFKA_VERSION));
 
             async.flag();
         })));
@@ -308,7 +311,7 @@ public class KafkaStatusTest {
             assertThat(status.getClusterId(), is("my-cluster-id"));
 
             assertThat(status.getOperatorLastSuccessfulVersion(), is(nullValue()));
-
+            assertThat(status.getKafkaVersion(), is(nullValue()));
 
             async.flag();
         })));
@@ -342,7 +345,8 @@ public class KafkaStatusTest {
                                             .withPort(443)
                                             .build())
                                     .build())
-                    .withOperatorLastSuccessfulVersion("old-reconcile-version")
+                    .withKafkaVersion("old-kafka")
+                    .withOperatorLastSuccessfulVersion("old-operator")
                 .endStatus()
                 .build();
 
@@ -380,7 +384,8 @@ public class KafkaStatusTest {
             assertThat(status.getConditions().get(0).getMessage(), is("Something went wrong"));
 
             assertThat(status.getObservedGeneration(), is(2L));
-            assertThat(status.getOperatorLastSuccessfulVersion(), is("old-reconcile-version"));
+            assertThat(status.getKafkaVersion(), is("old-kafka"));
+            assertThat(status.getOperatorLastSuccessfulVersion(), is("old-operator"));
 
             async.flag();
         })));
@@ -480,6 +485,7 @@ public class KafkaStatusTest {
             listeners.add(ls2);
 
             reconcileState.kafkaStatus.setListeners(listeners);
+            reconcileState.kafkaStatus.setKafkaVersion(KafkaVersionTestUtils.LATEST_KAFKA_VERSION);
 
             return Future.succeededFuture();
         }
