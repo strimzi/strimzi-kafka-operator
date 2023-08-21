@@ -75,8 +75,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static io.strimzi.operator.cluster.operator.resource.cruisecontrol.CruiseControlApiImpl.HTTP_DEFAULT_IDLE_TIMEOUT_SECONDS;
-import static io.strimzi.operator.common.Annotations.ANNO_STRIMZI_IO_REBALANCE;
-import static io.strimzi.operator.common.Annotations.ANNO_STRIMZI_IO_REBALANCE_AUTOAPPROVAL;
+import static io.strimzi.operator.common.Annotations.*;
 
 /**
  * <p>Assembly operator for a "KafkaRebalance" assembly, which interacts with the Cruise Control REST API</p>
@@ -256,7 +255,6 @@ public class KafkaRebalanceAssemblyOperator
             withLock(reconciliation, LOCK_TIMEOUT_MS,
                     () -> reconcileRebalance(reconciliation, action == Watcher.Action.DELETED ? null : resource));
         }
-
     }
 
     /**
@@ -871,7 +869,7 @@ public class KafkaRebalanceAssemblyOperator
                             // Safety check as timer might be called again (from a delayed timer firing)
                             if (state(currentKafkaRebalance) == KafkaRebalanceState.PendingProposal) {
                                 if (rebalanceAnnotation(currentKafkaRebalance) == KafkaRebalanceAnnotation.refresh) {
-                                    LOGGER.debugCr(reconciliation, "Requesting for a new proposal since spec is updated");
+                                    LOGGER.infoCr(reconciliation, "Requesting a new proposal since spec has been updated");
                                     vertx.cancelTimer(t);
                                     requestRebalance(reconciliation, host, apiClient, currentKafkaRebalance, true, rebalanceOptionsBuilder).onSuccess(p::complete);
                                 } else if (rebalanceAnnotation(currentKafkaRebalance) == KafkaRebalanceAnnotation.stop) {
@@ -1022,7 +1020,7 @@ public class KafkaRebalanceAssemblyOperator
                                             p.fail(e.getCause());
                                         });
                                 } else if (rebalanceAnnotation(currentKafkaRebalance) == KafkaRebalanceAnnotation.refresh) {
-                                    LOGGER.debugCr(reconciliation, "Stopping current Cruise Control rebalance user task since spec has been updated and requesting a new one");
+                                    LOGGER.infoCr(reconciliation, "Stopping current Cruise Control rebalance user task since spec has been updated and requesting a new one");
                                     vertx.cancelTimer(t);
                                     apiClient.stopExecution(host, CruiseControl.REST_API_PORT)
                                             .onSuccess(r -> {

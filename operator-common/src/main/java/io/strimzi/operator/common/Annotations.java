@@ -166,6 +166,11 @@ public class Annotations {
     public static final String ANNO_DEP_KUBE_IO_REVISION = "deployment.kubernetes.io/revision";
 
     /**
+     * Annotation for tracking Kubernetes generation in KafkaRebalanceAssemblyOperator
+     */
+    public static final String ANNO_KUBE_GENERATION = STRIMZI_DOMAIN + "kubeGeneration";
+
+    /**
      * List of predicates that allows existing load balancer service annotations to be retained while reconciling the resources.
      */
     public static final List<Predicate<String>> LOADBALANCER_ANNOTATION_IGNORELIST = List.of(
