@@ -26,7 +26,7 @@ public enum KafkaRebalanceState {
      *     <dt>NotReady</dt><dd>If Cruise Control returned an error</dd>
      * </dl>
      */
-    PendingProposal(List.of(KafkaRebalanceAnnotation.stop)),
+    PendingProposal(List.of(KafkaRebalanceAnnotation.stop, KafkaRebalanceAnnotation.refresh)),
     /**
      * A proposal is ready and waiting for approval.
      * Transitions to:
