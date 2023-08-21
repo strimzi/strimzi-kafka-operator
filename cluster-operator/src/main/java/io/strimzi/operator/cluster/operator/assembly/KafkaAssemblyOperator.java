@@ -80,7 +80,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
     /**
      * version of the operator, project.version in the pom.xml
      */
-    public static final String OPERATOR_VERSION;
+    /* test */ static final String OPERATOR_VERSION;
 
     static {
         InputStream propertiesFile = KafkaAssemblyOperator.class.getResourceAsStream("/.properties");
@@ -159,8 +159,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 status.setClusterId(kafkaAssembly.getStatus().getClusterId());
             }
 
-            if (status.getOperatorLastSuccessfulVersion() == null
-                    && kafkaAssembly.getStatus() != null
+            if (kafkaAssembly.getStatus() != null
                     && kafkaAssembly.getStatus().getOperatorLastSuccessfulVersion() != null
             )  {
                 // If not set in the status prepared by reconciliation but set in the status previously, we copy the
@@ -168,7 +167,6 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 // reason before setting the cluster ID
                 status.setOperatorLastSuccessfulVersion(kafkaAssembly.getStatus().getOperatorLastSuccessfulVersion());
             }
-
 
             if (status.getKafkaVersion() == null
                     && kafkaAssembly.getStatus() != null

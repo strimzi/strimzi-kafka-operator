@@ -187,13 +187,12 @@ public class KafkaReconcilerStatusTest {
     public void testKafkaReconcilerStatusUpdateVersion(VertxTestContext context) {
         Kafka kafka = new KafkaBuilder(KAFKA)
                 .editOrNewSpec()
-                .editOrNewKafka()
-                .withReplicas(1)
-                .endKafka()
+                    .editOrNewKafka()
+                        .withReplicas(1)
+                    .endKafka()
                 .endSpec()
                 .editOrNewStatus()
-                // supportedVersions is an ordered set, get the first element for the lowest kafka version
-                .withKafkaVersion(VERSIONS.supportedVersions().iterator().next())
+                    .withKafkaVersion(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION)
                 .endStatus()
                 .build();
 
@@ -225,15 +224,53 @@ public class KafkaReconcilerStatusTest {
     }
 
     @Test
-    public void testKafkaReconcilerStatusCustomKafkaVersion(VertxTestContext context) {
-        // supportedVersions is an ordered set, get the first element for the lowest kafka version
-        String lowestSupportedVersion = VERSIONS.supportedVersions().iterator().next();
+    public void testKafkaReconcilerStatusDoesNotUpdateVersionOnFailure(VertxTestContext context) {
         Kafka kafka = new KafkaBuilder(KAFKA)
                 .editOrNewSpec()
-                .editOrNewKafka()
-                .withVersion(lowestSupportedVersion)
-                .withReplicas(3)
-                .endKafka()
+                    .editOrNewKafka()
+                        .withReplicas(1)
+                    .endKafka()
+                .endSpec()
+                .editOrNewStatus()
+                    .withKafkaVersion(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION)
+                .endStatus()
+                .build();
+
+        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
+
+        // Mock the secrets needed for Kafka client
+        SecretOperator mockSecretOps = supplier.secretOperations;
+        Secret secret = new Secret();
+        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(KafkaResources.clusterCaCertificateSecretName(CLUSTER_NAME)))).thenReturn(Future.failedFuture("expected failure"));
+        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(ClusterOperator.secretName(CLUSTER_NAME)))).thenReturn(Future.succeededFuture(secret));
+
+        // Run the test
+        KafkaReconciler reconciler = new MockKafkaReconcilerStatusTasks(
+                new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME),
+                supplier,
+                kafka
+        );
+
+        KafkaStatus status = new KafkaStatus();
+
+        Checkpoint async = context.checkpoint();
+        reconciler.reconcile(status, Clock.systemUTC()).onComplete(context.failing(i -> context.verify(() -> {
+
+            // Check kafka version is unset, KafkaReconciler treats null as use previous
+            assertThat(status.getKafkaVersion(), is(nullValue()));
+
+            async.flag();
+        })));
+    }
+
+    @Test
+    public void testKafkaReconcilerStatusCustomKafkaVersion(VertxTestContext context) {
+        Kafka kafka = new KafkaBuilder(KAFKA)
+                .editOrNewSpec()
+                    .editOrNewKafka()
+                        .withVersion(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION)
+                        .withReplicas(3)
+                    .endKafka()
                 .endSpec()
                 .build();
 
@@ -258,7 +295,7 @@ public class KafkaReconcilerStatusTest {
         reconciler.reconcile(status, Clock.systemUTC())
             .onComplete(context.succeeding(v -> context.verify(() -> {
                 // Check kafka version
-                assertThat(status.getKafkaVersion(), is(lowestSupportedVersion));
+                assertThat(status.getKafkaVersion(), is(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION));
 
                 async.flag();
             })));

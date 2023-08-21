@@ -41,7 +41,6 @@ import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListener;
 import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.api.kafka.model.status.KafkaStatus;
-import io.strimzi.api.kafka.model.status.KafkaStatusBuilder;
 import io.strimzi.api.kafka.model.storage.EphemeralStorage;
 import io.strimzi.api.kafka.model.storage.PersistentClaimStorage;
 import io.strimzi.api.kafka.model.storage.PersistentClaimStorageBuilder;
@@ -765,18 +764,6 @@ public class KafkaAssemblyOperatorTest {
     public void testUpdateClusterNoop(Params params, VertxTestContext context) {
         setFields(params);
         Kafka kafkaAssembly = getKafkaAssembly("bar");
-        updateCluster(context, getKafkaAssembly("bar"), kafkaAssembly);
-    }
-
-    @ParameterizedTest
-    @MethodSource("data")
-    public void testUpdateClusterKafkaVersion(Params params, VertxTestContext context) {
-        setFields(params);
-        Kafka kafkaAssembly = getKafkaAssembly("bar");
-        kafkaAssembly.setStatus(new KafkaStatusBuilder()
-                .withKafkaVersion("3.4.0")
-                .withOperatorLastSuccessfulVersion("0.30.0")
-                .build());
         updateCluster(context, getKafkaAssembly("bar"), kafkaAssembly);
     }
 

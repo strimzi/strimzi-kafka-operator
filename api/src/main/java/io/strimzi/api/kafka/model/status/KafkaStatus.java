@@ -62,7 +62,7 @@ public class KafkaStatus extends Status {
         this.clusterId = clusterId;
     }
 
-    @Description("The Last successful reconciliation was performed by an operator of this version.")
+    @Description("The version of the Strimzi Cluster Operator which performed the last successful reconciliation.")
     public String getOperatorLastSuccessfulVersion() {
         return operatorLastSuccessfulVersion;
     }

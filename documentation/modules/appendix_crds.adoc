@@ -1620,7 +1620,7 @@ Used in: xref:type-Kafka-{context}[`Kafka`]
 |xref:type-UsedNodePoolStatus-{context}[`UsedNodePoolStatus`] array
 |clusterId                      1.2+<.<a|Kafka cluster Id.
 |string
-|operatorLastSuccessfulVersion  1.2+<.<a|The Last successful reconciliation was performed by an operator of this version.
+|operatorLastSuccessfulVersion  1.2+<.<a|The version of the Strimzi Cluster Operator which performed the last successful reconciliation.
 |string
 |kafkaVersion                   1.2+<.<a|The version of Kafka currently deployed in the cluster.
 |string
