@@ -764,14 +764,6 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             status.setClusterId(kafka.getStatus().getClusterId());
         }
 
-        // We copy the versions if set
-        if (kafka.getStatus() != null && kafka.getStatus().getOperatorLastSuccessfulVersion() != null)  {
-            status.setOperatorLastSuccessfulVersion(kafka.getStatus().getOperatorLastSuccessfulVersion());
-        }
-        if (kafka.getStatus() != null && kafka.getStatus().getKafkaVersion() != null)  {
-            status.setKafkaVersion(kafka.getStatus().getKafkaVersion());
-        }
-
         return status;
     }
 
