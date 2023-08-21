@@ -871,7 +871,7 @@ public class KafkaRebalanceAssemblyOperator
                             // Safety check as timer might be called again (from a delayed timer firing)
                             if (state(currentKafkaRebalance) == KafkaRebalanceState.PendingProposal) {
                                 if (rebalanceAnnotation(currentKafkaRebalance) == KafkaRebalanceAnnotation.refresh) {
-                                    LOGGER.debugCr(reconciliation, "Stopping current Cruise Control rebalance user task since spec has been updated");
+                                    LOGGER.debugCr(reconciliation, "Requesting for a new proposal since spec is updated");
                                     vertx.cancelTimer(t);
                                     requestRebalance(reconciliation, host, apiClient, currentKafkaRebalance, true, rebalanceOptionsBuilder).onSuccess(p::complete);
                                 } else if (rebalanceAnnotation(currentKafkaRebalance) == KafkaRebalanceAnnotation.stop) {
@@ -1022,7 +1022,7 @@ public class KafkaRebalanceAssemblyOperator
                                             p.fail(e.getCause());
                                         });
                                 } else if (rebalanceAnnotation(currentKafkaRebalance) == KafkaRebalanceAnnotation.refresh) {
-                                    LOGGER.debugCr(reconciliation, "Stopping current Cruise Control rebalance user task since spec has been updated");
+                                    LOGGER.debugCr(reconciliation, "Stopping current Cruise Control rebalance user task since spec has been updated and requesting a new one");
                                     vertx.cancelTimer(t);
                                     apiClient.stopExecution(host, CruiseControl.REST_API_PORT)
                                             .onSuccess(r -> {
