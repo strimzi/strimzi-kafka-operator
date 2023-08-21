@@ -158,6 +158,15 @@ public class KafkaBrokerConfigurationDiffTest {
     }
 
     @Test
+    public void testChangedKRaftControllerConfig() {
+        List<ConfigEntry> desiredControllerConfig = singletonList(new ConfigEntry("controller.quorum.election.timeout.ms", "5000"));
+        List<ConfigEntry> currentControllerConfig = singletonList(new ConfigEntry("controller.quorum.election.timeout.ms", "1000"));
+        KafkaBrokerConfigurationDiff kcd = new KafkaBrokerConfigurationDiff(Reconciliation.DUMMY_RECONCILIATION, getCurrentConfiguration(currentControllerConfig),
+                getDesiredConfiguration(desiredControllerConfig), kafkaVersion, brokerId);
+        assertThat(kcd.getDiffSize(), is(0));
+    }
+
+    @Test
     public void testChangedAdvertisedListener() {
         List<ConfigEntry> ces = singletonList(new ConfigEntry("advertised.listeners", "karel"));
         KafkaBrokerConfigurationDiff kcd = new KafkaBrokerConfigurationDiff(Reconciliation.DUMMY_RECONCILIATION, getCurrentConfiguration(emptyList()),

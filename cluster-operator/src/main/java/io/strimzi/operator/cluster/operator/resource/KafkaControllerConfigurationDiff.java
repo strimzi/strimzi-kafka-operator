@@ -6,10 +6,11 @@
 package io.strimzi.operator.cluster.operator.resource;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.fabric8.zjsonpatch.JsonDiff;
+import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.model.OrderedProperties;
-import io.strimzi.operator.common.operator.resource.AbstractJsonDiff;
+import io.strimzi.operator.common.model.AbstractJsonDiff;
 import org.apache.kafka.clients.admin.Config;
 import org.apache.kafka.clients.admin.ConfigEntry;
 
@@ -27,43 +28,59 @@ import java.util.stream.Collectors;
  *  4c. If the entry is not in CONTROLLER_CONFIGS, set <code>configsHaveChanged</code> to false.
  */
 public class KafkaControllerConfigurationDiff extends AbstractJsonDiff {
-    @SuppressFBWarnings({"URF_UNREAD_FIELD"}) // This field will be read from KafkaRoller later
+    private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(KafkaControllerConfigurationDiff.class);
+    private final Reconciliation reconciliation;
     final boolean configsHaveChanged;
 
-    KafkaControllerConfigurationDiff(Config controllerConfig, String desired) {
-        this.configsHaveChanged = configsHaveChanged(desired, controllerConfig);
+    KafkaControllerConfigurationDiff(Reconciliation reconciliation, Config controllerConfig, String desired, int brokerId) {
+        this.reconciliation = reconciliation;
+        this.configsHaveChanged = configsHaveChanged(brokerId, desired, controllerConfig);
     }
 
     /**
      * Computes diff between two maps. Checks if entries are in CONTROLLER_CONFIGS.
+     * @param brokerId id of compared broker
      * @param desired desired configuration, may be null if the related ConfigMap does not exist yet or no changes are required.
      * @param controllerConfig current configuration.
      * @return Returns true if changed entries from desired configurations are in CONTROLLER_CONFIGS, otherwise false.
      */
-    private boolean configsHaveChanged(String desired, Config controllerConfig) {
+    private boolean configsHaveChanged(int brokerId, String desired, Config controllerConfig) {
+        if (controllerConfig == null || desired == null) {
+            return false;
+        }
         Map<String, String> current;
 
         current = controllerConfig.entries().stream().collect(
                 Collectors.toMap(
                         ConfigEntry::name,
                         configEntry -> String.valueOf(configEntry.value())));
+        LOGGER.traceCr(reconciliation, "Kafka KRaft Controller {} Current Config {}", brokerId, current);
 
         OrderedProperties orderedProperties = new OrderedProperties();
         orderedProperties.addStringPairs(desired);
         Map<String, String> desiredConfig = orderedProperties.asMap();
+        LOGGER.traceCr(reconciliation, "Kafka KRaft Controller {} Desired Config {}", brokerId, desiredConfig);
 
         JsonNode source = PATCH_MAPPER.valueToTree(current);
         JsonNode target = PATCH_MAPPER.valueToTree(desiredConfig);
         JsonNode jsonDiff = JsonDiff.asJson(source, target);
+        LOGGER.traceCr(reconciliation, "Kafka KRaft Controller {} Config Diff {}", brokerId, jsonDiff);
 
+        boolean configsHaveChanged = false;
         for (JsonNode node : jsonDiff) {
             String operation = node.get("op").asText();
             if ("replace".equals(operation) || "move".equals(operation) || "add".equals(operation)) {
-                return ControllerConfigs.isControllerConfig(node.get("path").asText().substring(1));
+                String configPath = node.get("path").asText();
+                if (ControllerConfigs.isControllerConfig(node.get("path").asText().substring(1))) {
+                    LOGGER.debugCr(reconciliation, "Kafka KRaft Controller {} Config Differs : {}", brokerId, configPath);
+                    LOGGER.debugCr(reconciliation, "Current Kafka KRaft Controller Config path {} has value {}", configPath, lookupPath(source, configPath));
+                    LOGGER.debugCr(reconciliation, "Desired Kafka KRaft Controller Config path {} has value {}", configPath, lookupPath(target, configPath));
+                    configsHaveChanged = true;
+                }
             }
         }
 
-        return false;
+        return configsHaveChanged;
     }
 
     @Override
@@ -73,8 +90,8 @@ public class KafkaControllerConfigurationDiff extends AbstractJsonDiff {
 
     static class ControllerConfigs {
         static final List<String> CONTROLLER_CONFIGS = List.of(
+                "alter.config.policy.class.name",
                 "authorizer.class.name",
-                "auto.create.topics.enable",
                 "background.threads",
                 "broker.heartbeat.interval.ms",
                 "broker.session.timeout.ms",
@@ -96,9 +113,13 @@ public class KafkaControllerConfigurationDiff extends AbstractJsonDiff {
                 "controller.quota.window.size.seconds",
                 "controller.socket.timeout.ms",
                 "create.topic.policy.class.name",
+                "delegation.token.master.key",
+                "delegation.token.secret.key",
+                "delegation.token.max.lifetime.ms",
+                "delegation.token.expiry.time.ms",
+                "delegation.token.expiry.check.interval.ms",
                 "delete.topic.enable",
                 "early.start.listeners",
-                "initial.broker.registration.timeout.ms",
                 "kafka.metrics.polling.interval.secs",
                 "kafka.metrics.reporters",
                 "leader.imbalance.check.interval.seconds",
@@ -129,6 +150,8 @@ public class KafkaControllerConfigurationDiff extends AbstractJsonDiff {
                 "num.network.threads",
                 "principal.builder.class",
                 "process.roles",
+                "queued.max.requests",
+                "queued.max.request.bytes",
                 "sasl.enabled.mechanisms",
                 "sasl.kerberos.kinit.cmd",
                 "sasl.kerberos.min.time.before.relogin",
@@ -187,8 +210,7 @@ public class KafkaControllerConfigurationDiff extends AbstractJsonDiff {
                 "ssl.truststore.certificates",
                 "ssl.truststore.location",
                 "ssl.truststore.password",
-                "ssl.truststore.type",
-                "unclean.leader.election.enable"
+                "ssl.truststore.type"
         );
 
         static boolean isControllerConfig(String config) {

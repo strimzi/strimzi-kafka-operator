@@ -128,6 +128,8 @@ public class KafkaRoller {
     private Admin allClient;
     private KafkaAgentClient kafkaAgentClient;
 
+    private static final String CONTROLLER_QUORUM_FETCH_TIMEOUT_MS_CONFIG_NAME = "controller.quorum.fetch.timeout.ms";
+
     /**
      * Constructor
      *
@@ -219,18 +221,21 @@ public class KafkaRoller {
             try {
                 LOGGER.debugCr(reconciliation, "Verifying cluster pods are up-to-date.");
                 List<NodeRef> pods = new ArrayList<>(nodes.size());
-
-                for (NodeRef node : nodes) {
+                List<NodeRef> unReadyPods = new ArrayList<>();
+                List<NodeRef> readyPods = new ArrayList<>();
+                for (NodeRef node : nodes)  {
                     // Order the nodes unready first otherwise repeated reconciliations might each restart a pod
                     // only for it not to become ready and thus drive the cluster to a worse state.
-
-                    // TODO: In KRaft mode, We currently roll only nodes with the broker role. This is because of Kafka
-                    //       limitations. Once managing controller nodes is supported with Kafka Admin API, this should be
-                    //       fixed. This is tracked in https://github.com/strimzi/strimzi-kafka-operator/issues/8593.
-                    if (node.broker()) {
-                        pods.add(podOperations.isReady(namespace, node.podName()) ? pods.size() : 0, node);
+                    // in KRaft mode Roll controllers first, then brokers, but roll unready brokers before ready controllers
+                    boolean isReady = podOperations.isReady(namespace, node.podName());
+                    if (isReady) {
+                        readyPods.add(node.controller() ? 0 : readyPods.size(), node);
+                    } else {
+                        unReadyPods.add(node.controller() ? 0 : unReadyPods.size(), node);
                     }
                 }
+                pods.addAll(unReadyPods);
+                pods.addAll(readyPods);
                 LOGGER.debugCr(reconciliation, "Initial order for updating pods (rolling restart or dynamic update) is {}", pods);
 
                 List<Future<Void>> futures = new ArrayList<>(nodes.size());
@@ -270,6 +275,7 @@ public class KafkaRoller {
         boolean forceRestart;
         KafkaBrokerConfigurationDiff diff;
         KafkaBrokerLoggingConfigurationDiff logDiff;
+        String controllerQuorumFetchTimeoutMs = "1000";
 
         RestartContext(Supplier<BackOff> backOffSupplier) {
             promise = Promise.promise();
@@ -383,13 +389,15 @@ public class KafkaRoller {
             try {
                 await(isReady(pod), operationTimeoutMs, TimeUnit.MILLISECONDS, e -> new RuntimeException(e));
             } catch (Exception e) {
-                //Initialise the client for KafkaAgent if pod is not ready
-                if (kafkaAgentClient == null) {
-                    this.kafkaAgentClient = initKafkaAgentClient();
-                }
-                BrokerState brokerState = kafkaAgentClient.getBrokerState(pod.getMetadata().getName());
-                if (brokerState.isBrokerInRecovery()) {
-                    throw new UnforceableProblem("Pod " + nodeRef.podName() + " is not ready because the broker is performing log recovery. There are  " + brokerState.remainingLogsToRecover() + " logs and " + brokerState.remainingSegmentsToRecover() + " segments left to recover.", e.getCause());
+                if (nodeRef.broker()) {
+                    //Initialise the client for KafkaAgent if pod is not ready
+                    if (kafkaAgentClient == null) {
+                        this.kafkaAgentClient = initKafkaAgentClient();
+                    }
+                    BrokerState brokerState = kafkaAgentClient.getBrokerState(pod.getMetadata().getName());
+                    if (brokerState.isBrokerInRecovery()) {
+                        throw new UnforceableProblem("Pod " + nodeRef.podName() + " is not ready because the broker is performing log recovery. There are  " + brokerState.remainingLogsToRecover() + " logs and " + brokerState.remainingSegmentsToRecover() + " segments left to recover.", e.getCause());
+                    }
                 }
 
                 if (e.getCause() instanceof TimeoutException) {
@@ -408,21 +416,19 @@ public class KafkaRoller {
                 LOGGER.debugCr(reconciliation, "Pod {} can be rolled now", nodeRef);
                 restartAndAwaitReadiness(pod, operationTimeoutMs, TimeUnit.MILLISECONDS, restartContext);
             } else if (restartContext.needsRestart || restartContext.needsReconfig) {
-                if (deferController(nodeRef, restartContext)) {
+                if (nodeRef.broker() && deferController(nodeRef, restartContext)) {
                     LOGGER.debugCr(reconciliation, "Pod {} is controller and there are other pods to verify. Non-controller pods will be verified first.", nodeRef);
                     throw new ForceableProblem("Pod " + nodeRef.podName() + " is controller and there are other pods to verify. Non-controller pods will be verified first");
+                } else if (!canRoll(nodeRef, 60_000, TimeUnit.MILLISECONDS, false, restartContext)) {
+                    LOGGER.debugCr(reconciliation, "Pod {} cannot be updated right now", nodeRef);
+                    throw new UnforceableProblem("Pod " + nodeRef.podName() + " cannot be updated right now.");
                 } else {
-                    if (canRoll(nodeRef, 60_000, TimeUnit.MILLISECONDS, false, restartContext)) {
-                        // Check for rollability before trying a dynamic update so that if the dynamic update fails we can go to a full restart
-                        if (!maybeDynamicUpdateBrokerConfig(nodeRef, restartContext)) {
-                            LOGGER.debugCr(reconciliation, "Pod {} can be rolled now", nodeRef);
-                            restartAndAwaitReadiness(pod, operationTimeoutMs, TimeUnit.MILLISECONDS, restartContext);
-                        } else {
-                            awaitReadiness(pod, operationTimeoutMs, TimeUnit.MILLISECONDS);
-                        }
+                    // Check for rollability before trying a dynamic update so that if the dynamic update fails we can go to a full restart
+                    if (!maybeDynamicUpdateBrokerConfig(nodeRef, restartContext)) {
+                        LOGGER.debugCr(reconciliation, "Pod {} can be rolled now", nodeRef);
+                        restartAndAwaitReadiness(pod, operationTimeoutMs, TimeUnit.MILLISECONDS, restartContext);
                     } else {
-                        LOGGER.debugCr(reconciliation, "Pod {} cannot be updated right now", nodeRef);
-                        throw new UnforceableProblem("Pod " + nodeRef.podName() + " cannot be updated right now.");
+                        awaitReadiness(pod, operationTimeoutMs, TimeUnit.MILLISECONDS);
                     }
                 }
             } else {
@@ -535,53 +541,78 @@ public class KafkaRoller {
         KafkaBrokerConfigurationDiff diff = null;
         KafkaBrokerLoggingConfigurationDiff loggingDiff = null;
         boolean needsReconfig = false;
-        // Always get the broker config. This request gets sent to that specific broker, so it's a proof that we can
-        // connect to the broker and that it's capable of responding.
-        if (!initAdminClient()) {
-            LOGGER.infoCr(reconciliation, "Pod {} needs to be restarted, because it does not seem to responding to connection attempts", nodeRef);
-            reasonToRestartPod.add(RestartReason.POD_UNRESPONSIVE);
-            restartContext.needsRestart = false;
-            restartContext.needsReconfig = false;
-            restartContext.forceRestart = true;
-            restartContext.diff = null;
-            restartContext.logDiff = null;
-            return;
-        }
-        Config brokerConfig;
-        try {
-            brokerConfig = brokerConfig(nodeRef);
-        } catch (ForceableProblem e) {
-            if (restartContext.backOff.done()) {
+        if (nodeRef.controller()) {
+            LOGGER.debugCr(reconciliation, "Pod {} is a KRaft controller, checking if it requires a restart.", nodeRef);
+            if (kafkaAgentClient == null) {
+                kafkaAgentClient = initKafkaAgentClient();
+            }
+            Config controllerConfig = kafkaAgentClient.getNodeConfiguration(nodeRef.podName());
+            // This configuration property is used by the quorum check for rolling KRaft controllers
+            // and users are allowed to configure this property therefore we need to retrieve its current value.
+            Optional.ofNullable(controllerConfig.get(CONTROLLER_QUORUM_FETCH_TIMEOUT_MS_CONFIG_NAME).value()).ifPresent(config -> restartContext.controllerQuorumFetchTimeoutMs = config);
+            KafkaControllerConfigurationDiff controllerConfigurationDiff = new KafkaControllerConfigurationDiff(reconciliation,
+                    controllerConfig,
+                    kafkaConfigProvider.apply(nodeRef.nodeId()),
+                    nodeRef.nodeId());
+            if (controllerConfigurationDiff.configsHaveChanged) {
+                LOGGER.infoCr(reconciliation, "Pod {} needs to be restarted, because it is a KRaft controller and configuration has changed.", nodeRef);
                 needsRestart = true;
-                brokerConfig = null;
-            } else {
-                throw e;
             }
         }
 
-        if (!needsRestart && allowReconfiguration) {
-            LOGGER.traceCr(reconciliation, "Pod {}: description {}", nodeRef, brokerConfig);
-            diff = new KafkaBrokerConfigurationDiff(reconciliation, brokerConfig, kafkaConfigProvider.apply(nodeRef.nodeId()), kafkaVersion, nodeRef.nodeId());
-            loggingDiff = logging(nodeRef);
+        boolean adminClientInitialised = initAdminClient();
 
-            if (diff.getDiffSize() > 0) {
-                if (diff.canBeUpdatedDynamically()) {
-                    LOGGER.debugCr(reconciliation, "Pod {} needs to be reconfigured.", nodeRef);
-                    needsReconfig = true;
-                } else {
-                    LOGGER.infoCr(reconciliation, "Pod {} needs to be restarted, dynamic update cannot be done.", nodeRef);
-                    restartContext.restartReasons.add(RestartReason.CONFIG_CHANGE_REQUIRES_RESTART);
+        if (nodeRef.broker()) {
+
+            if (!adminClientInitialised) {
+                LOGGER.infoCr(reconciliation, "Pod {} needs to be restarted, because it does not seem to responding to connection attempts", nodeRef);
+                reasonToRestartPod.add(RestartReason.POD_UNRESPONSIVE);
+                restartContext.needsRestart = false;
+                restartContext.needsReconfig = false;
+                restartContext.forceRestart = true;
+                restartContext.diff = null;
+                restartContext.logDiff = null;
+                return;
+            }
+
+            // Always get the broker config. This request gets sent to that specific broker, so it's a proof that we can
+            // connect to the broker and that it's capable of responding.
+            Config brokerConfig;
+            try {
+                brokerConfig = brokerConfig(nodeRef);
+            } catch (ForceableProblem e) {
+                if (restartContext.backOff.done()) {
                     needsRestart = true;
+                    brokerConfig = null;
+                } else {
+                    throw e;
                 }
             }
 
-            // needsRestart value might have changed from the check in the parent if. So we need to check it again.
-            if (!needsRestart && loggingDiff.getDiffSize() > 0) {
-                LOGGER.debugCr(reconciliation, "Pod {} logging needs to be reconfigured.", nodeRef);
-                needsReconfig = true;
+            if (!needsRestart && allowReconfiguration) {
+                LOGGER.traceCr(reconciliation, "Pod {}: description {}", nodeRef, brokerConfig);
+                diff = new KafkaBrokerConfigurationDiff(reconciliation, brokerConfig, kafkaConfigProvider.apply(nodeRef.nodeId()), kafkaVersion, nodeRef.nodeId());
+                loggingDiff = logging(nodeRef);
+
+                if (diff.getDiffSize() > 0) {
+                    if (diff.canBeUpdatedDynamically()) {
+                        LOGGER.debugCr(reconciliation, "Pod {} needs to be reconfigured.", nodeRef);
+                        needsReconfig = true;
+                    } else {
+                        LOGGER.infoCr(reconciliation, "Pod {} needs to be restarted, dynamic update cannot be done.", nodeRef);
+                        restartContext.restartReasons.add(RestartReason.CONFIG_CHANGE_REQUIRES_RESTART);
+                        needsRestart = true;
+                    }
+                }
+
+                // needsRestart value might have changed from the check in the parent if. So we need to check it again.
+                if (!needsRestart && loggingDiff.getDiffSize() > 0) {
+                    LOGGER.debugCr(reconciliation, "Pod {} logging needs to be reconfigured.", nodeRef);
+                    needsReconfig = true;
+                }
+            } else if (needsRestart) {
+                LOGGER.infoCr(reconciliation, "Rolling Pod {} due to {}", nodeRef, reasonToRestartPod.getAllReasonNotes());
             }
-        } else if (needsRestart) {
-            LOGGER.infoCr(reconciliation, "Rolling Pod {} due to {}", nodeRef, reasonToRestartPod.getAllReasonNotes());
         }
 
         restartContext.needsRestart = needsRestart;
@@ -701,11 +732,24 @@ public class KafkaRoller {
     }
 
     private boolean canRoll(NodeRef nodeRef, long timeout, TimeUnit unit, boolean ignoreSslError, RestartContext restartContext)
-            throws ForceableProblem, InterruptedException {
+            throws ForceableProblem, InterruptedException, UnforceableProblem {
         try {
-            return await(availability(allClient).canRoll(nodeRef.nodeId()), timeout, unit,
-                t -> new ForceableProblem("An error while trying to determine the possibility of updating Kafka pods", t));
-        } catch (ForceableProblem e) {
+            if (nodeRef.broker() && nodeRef.controller()) {
+                boolean canRollController = await(quorumCheck(allClient, restartContext.controllerQuorumFetchTimeoutMs).canRoll(nodeRef.nodeId()), timeout, unit,
+                        t -> new UnforceableProblem("An error while trying to determine the possibility of updating Kafka controller pods", t));
+                boolean canRollBroker = await(availability(allClient).canRoll(nodeRef.nodeId()), timeout, unit,
+                        t -> new ForceableProblem("An error while trying to determine the possibility of updating Kafka broker pods", t));
+                return canRollController && canRollBroker;
+            }
+
+            if (nodeRef.controller()) {
+                return await(quorumCheck(allClient, restartContext.controllerQuorumFetchTimeoutMs).canRoll(nodeRef.nodeId()), timeout, unit,
+                        t -> new UnforceableProblem("An error while trying to determine the possibility of updating Kafka controller pods", t));
+            } else {
+                return await(availability(allClient).canRoll(nodeRef.nodeId()), timeout, unit,
+                        t -> new ForceableProblem("An error while trying to determine the possibility of updating Kafka broker pods", t));
+            }
+        } catch (ForceableProblem | UnforceableProblem e) {
             // If we're not able to connect then roll
             if (ignoreSslError && e.getCause() instanceof SslAuthenticationException) {
                 restartContext.restartReasons.add(RestartReason.POD_UNRESPONSIVE);
@@ -809,6 +853,10 @@ public class KafkaRoller {
         } catch (RuntimeException e) {
             throw new ForceableProblem("An error while try to create an admin client with bootstrap brokers " + bootstrapHostnames, e);
         }
+    }
+
+    protected KafkaQuorumCheck quorumCheck(Admin ac, String controllerQuorumFetchTimeoutMs) {
+        return new KafkaQuorumCheck(reconciliation, ac, controllerQuorumFetchTimeoutMs);
     }
 
     protected KafkaAvailability availability(Admin ac) {

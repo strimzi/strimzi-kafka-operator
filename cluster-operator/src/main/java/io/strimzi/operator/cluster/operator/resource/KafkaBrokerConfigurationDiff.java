@@ -63,7 +63,8 @@ public class KafkaBrokerConfigurationDiff extends AbstractJsonDiff {
             + "|zookeeper\\.connect"
             + "|zookeeper\\.ssl\\..*"
             + "|zookeeper\\.clientCnxnSocket"
-            + "|broker\\.rack)$");
+            + "|broker\\.rack"
+            + "|controller\\.quorum\\..*)$");
 
     /**
      * Constructor

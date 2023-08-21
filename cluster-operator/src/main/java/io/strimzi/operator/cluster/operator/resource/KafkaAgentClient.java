@@ -43,7 +43,7 @@ class KafkaAgentClient {
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
     private static final String BROKER_STATE_REST_PATH = "/v1/broker-state/";
-    private static final String NODE_CONFIG_REST_PATH = "/v1/node-config";
+    private static final String NODE_CONFIG_REST_PATH = "/v1/node-config/";
     private static final int KAFKA_AGENT_HTTPS_PORT = 8443;
 
     private String namespace;
