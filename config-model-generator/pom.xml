@@ -14,6 +14,9 @@
     <properties>
         <kafka-metadata-version>${kafka.version}</kafka-metadata-version>
         <config-model-file>../cluster-operator/src/main/resources/kafka-${kafka-metadata-version}-config-model.json</config-model-file>
+
+        <!-- Points to the root directory of the Strimzi project directory and can be used for fixed location to configuration files -->
+        <strimziRootDirectory>${basedir}${file.separator}..</strimziRootDirectory>
     </properties>
 
     <dependencyManagement>

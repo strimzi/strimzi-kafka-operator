@@ -23,7 +23,6 @@ import io.strimzi.api.kafka.model.connect.build.TgzArtifact;
 import io.strimzi.api.kafka.model.connect.build.ZipArtifact;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.common.InvalidConfigurationException;
-import io.strimzi.operator.cluster.operator.resource.SharedEnvironmentProvider;
 import io.strimzi.operator.common.Util;
 
 /**

@@ -16,7 +16,7 @@ import io.strimzi.api.kafka.model.KafkaUserTlsClientAuthentication;
 import io.strimzi.api.kafka.model.KafkaUserTlsExternalClientAuthentication;
 import io.strimzi.certs.CertManager;
 import io.strimzi.operator.common.model.InvalidResourceException;
-import io.strimzi.operator.common.PasswordGenerator;
+import io.strimzi.operator.common.model.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.operator.MockCertManager;

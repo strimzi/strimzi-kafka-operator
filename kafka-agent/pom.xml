@@ -11,6 +11,11 @@
 
     <artifactId>kafka-agent</artifactId>
 
+    <properties>
+        <!-- Points to the root directory of the Strimzi project directory and can be used for fixed location to configuration files -->
+        <strimziRootDirectory>${basedir}${file.separator}..</strimziRootDirectory>
+    </properties>
+
     <dependencies>
         <!-- Note these dependencies are aligned with those in Kafka.
         The scope is provided because the agent's classloader is the system class loader,

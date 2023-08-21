@@ -11,6 +11,11 @@
 
     <artifactId>mockkube</artifactId>
 
+    <properties>
+        <!-- Points to the root directory of the Strimzi project directory and can be used for fixed location to configuration files -->
+        <strimziRootDirectory>${basedir}${file.separator}..</strimziRootDirectory>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>

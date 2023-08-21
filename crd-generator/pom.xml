@@ -20,6 +20,9 @@
   <properties>
     <maven.compiler.source>11</maven.compiler.source>
     <maven.compiler.target>11</maven.compiler.target>
+
+    <!-- Points to the root directory of the Strimzi project directory and can be used for fixed location to configuration files -->
+    <strimziRootDirectory>${basedir}${file.separator}..</strimziRootDirectory>
   </properties>
 
   <dependencies>

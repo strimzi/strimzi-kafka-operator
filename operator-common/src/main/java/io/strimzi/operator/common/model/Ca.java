@@ -12,7 +12,6 @@ import io.strimzi.certs.CertManager;
 import io.strimzi.certs.SecretCertProvider;
 import io.strimzi.certs.Subject;
 import io.strimzi.operator.common.Annotations;
-import io.strimzi.operator.common.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.Util;

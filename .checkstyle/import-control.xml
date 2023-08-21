@@ -1,0 +1,103 @@
+<!DOCTYPE import-control PUBLIC
+        "-//Checkstyle//DTD ImportControl Configuration 1.4//EN"
+        "https://checkstyle.org/dtds/import_control_1_4.dtd">
+
+<!--
+The import control rules are currently configured only for 3 packages:
+  * io.strimzi.operator.common.model
+  * io.strimzi.operator.cluster.model
+  * io.strimzi.operator.user.model
+
+For all other packages, there are currently no restrictions, and they can import anything. To achieve this, we have to
+first configure <import-control pkg="io.strimzi" strategyOnMismatch="allowed"> which allows all imports for all classes
+not matching any of the <subpackage ...> modules without any restrictions.
+
+And then we add the <subpackage ... strategyOnMismatch="disallowed"> which allows only the selected imports for the 3
+packages mentioned above. These packages should in general use only the API and other model classes plus some selected
+other classes (and of course general Java classes and some other dependencies). They should especially not use any of
+the operator classes (e.g. the Assembly or Resource operators). If you make any changes to these classes and need to
+import something more, you should consider if it really should be used, it should not part of the Model packages and in
+case it is really needed, you can add it bellow to the allowed imports.
+
+We also control imports only in production classes and not in tests. This is controlled in the main checkstyle file.
+-->
+
+<import-control pkg="io.strimzi" strategyOnMismatch="allowed">
+    <subpackage name="operator.common.model" strategyOnMismatch="disallowed">
+        <!-- This enforces the layering between the Strimzi Model and Operator classes in the Operator Common. The Model classes are not allowed
+        to import from Operator classes. They should only use the API classes -->
+
+        <!-- Common libraries and Java classes -->
+        <allow pkg="java" />
+        <allow pkg="com.fasterxml.jackson" />
+        <allow pkg="io.fabric8.zjsonpatch" />
+        <allow pkg="io.fabric8.kubernetes.api.model" />
+        <allow class="io.fabric8.kubernetes.client.utils.Serialization" />
+        <allow class="io.fabric8.kubernetes.client.CustomResource" />
+
+        <!-- Strimzi Operators classes -->
+        <allow pkg="io.strimzi.api.annotations" />
+        <allow pkg="io.strimzi.api.kafka" />
+        <allow pkg="io.strimzi.certs" />
+        <allow pkg="io.strimzi.operator.common.model" />
+        <allow class="io.strimzi.operator.common.Reconciliation" />
+        <allow class="io.strimzi.operator.common.ReconciliationLogger" />
+        <allow class="io.strimzi.operator.common.Util" />
+        <allow class="io.strimzi.operator.common.Annotations" />
+    </subpackage>
+
+    <subpackage name="operator.cluster.model" strategyOnMismatch="disallowed">
+        <!-- This enforces the layering between the Strimzi Model and Operator classes in the Cluster Operator. The Model classes are not allowed
+        to import from Operator classes. They should only use the API classes -->
+
+        <!-- Common libraries and Java classes -->
+        <allow pkg="java" />
+        <allow pkg="org.apache.kafka" />
+        <allow pkg="org.apache.logging.log4j" />
+        <allow pkg="com.fasterxml.jackson" />
+        <allow pkg="io.fabric8.zjsonpatch" />
+        <allow pkg="io.fabric8.openshift.api.model" />
+        <allow pkg="io.fabric8.kubernetes.api.model" />
+        <allow pkg="io.vertx.core.json" />
+        <allow class="edu.umd.cs.findbugs.annotations.SuppressFBWarnings" />
+
+        <!-- Strimzi Operators classes -->
+        <allow pkg="io.strimzi.api.kafka" />
+        <allow pkg="io.strimzi.plugin.security.profiles" />
+        <allow pkg="io.strimzi.platform" />
+        <allow pkg="io.strimzi.certs" />
+        <allow pkg="io.strimzi.kafka.config.model" />
+        <allow pkg="io.strimzi.operator.common.model" />
+        <allow pkg="io.strimzi.operator.cluster.model" />
+        <allow class="io.strimzi.operator.common.Reconciliation" />
+        <allow class="io.strimzi.operator.common.ReconciliationLogger" />
+        <allow class="io.strimzi.operator.common.Util" />
+        <allow class="io.strimzi.operator.common.InvalidConfigurationException" />
+        <allow class="io.strimzi.operator.common.Annotations" />
+        <allow class="io.strimzi.operator.cluster.ClusterOperatorConfig" />
+        <allow class="io.strimzi.operator.cluster.PlatformFeaturesAvailability" />
+
+        <!-- Other Strimzi projects -->
+        <allow pkg="io.strimzi.kafka.oauth" />
+    </subpackage>
+
+    <subpackage name="operator.user.model" strategyOnMismatch="disallowed">
+    <!-- This enforces the layering between the Strimzi Model and Operator classes in the User Operator. The Model classes are not allowed
+    to import from Operator classes. They should only use the API classes -->
+
+        <!-- Common libraries and Java classes -->
+        <allow pkg="java" />
+        <allow pkg="javax.naming" />
+        <allow pkg="org.apache.kafka.common" />
+        <allow pkg="io.fabric8.kubernetes.api.model" />
+
+        <!-- Strimzi Operators classes -->
+        <allow pkg="io.strimzi.api.kafka" />
+        <allow pkg="io.strimzi.certs" />
+        <allow pkg="io.strimzi.operator.common.model" />
+        <allow pkg="io.strimzi.operator.user.model" />
+        <allow class="io.strimzi.operator.common.Reconciliation" />
+        <allow class="io.strimzi.operator.common.ReconciliationLogger" />
+        <allow class="io.strimzi.operator.common.Util" />
+    </subpackage>
+</import-control>

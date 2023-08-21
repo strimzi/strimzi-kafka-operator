@@ -14,7 +14,7 @@ import io.strimzi.api.kafka.model.StrimziPodSet;
 import io.strimzi.api.kafka.model.StrimziPodSetBuilder;
 import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
-import io.strimzi.operator.cluster.KafkaUpgradeException;
+import io.strimzi.operator.cluster.model.KafkaUpgradeException;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.KafkaCluster;

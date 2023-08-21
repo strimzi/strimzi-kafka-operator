@@ -15,8 +15,6 @@ import io.strimzi.api.kafka.model.storage.JbodStorageBuilder;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.nodepools.NodePoolUtils;
-import io.strimzi.operator.cluster.operator.resource.MockSharedEnvironmentProvider;
-import io.strimzi.operator.cluster.operator.resource.SharedEnvironmentProvider;
 import io.strimzi.operator.common.Reconciliation;
 import org.junit.jupiter.api.Test;
 

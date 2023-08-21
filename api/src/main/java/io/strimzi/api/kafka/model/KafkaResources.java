@@ -375,4 +375,15 @@ public class KafkaResources {
     public static String entityUserOperatorRoleBinding(String clusterName) {
         return clusterName + "-entity-user-operator-role";
     }
+
+    /**
+     * Name of the secret with the Cluster Operator certificates for connecting to this cluster
+     *
+     * @param cluster   Name of the Kafka cluster
+     *
+     * @return  Name of the Cluster Operator certificate secret
+     */
+    public static String secretName(String cluster) {
+        return cluster + "-cluster-operator-certs";
+    }
 }

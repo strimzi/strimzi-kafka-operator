@@ -8,7 +8,7 @@ import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.strimzi.api.kafka.model.CertificateExpirationPolicy;
 import io.strimzi.certs.OpenSslCertManager;
-import io.strimzi.operator.common.PasswordGenerator;
+import io.strimzi.operator.common.model.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Ca;
 import io.strimzi.test.annotations.ParallelSuite;

@@ -4,7 +4,7 @@
  */
 package io.strimzi.operator.cluster.model.cruisecontrol;
 
-import io.strimzi.operator.cluster.operator.resource.Quantities;
+import io.strimzi.operator.cluster.model.Quantities;
 import io.vertx.core.json.JsonObject;
 
 /**

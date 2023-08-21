@@ -22,7 +22,6 @@ import io.strimzi.api.kafka.model.status.KafkaStatus;
 import io.strimzi.api.kafka.model.status.ListenerStatusBuilder;
 import io.strimzi.certs.OpenSslCertManager;
 import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
-import io.strimzi.operator.cluster.ClusterOperator;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
@@ -32,7 +31,7 @@ import io.strimzi.operator.cluster.model.ClusterCa;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.KafkaVersionChange;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
-import io.strimzi.operator.common.PasswordGenerator;
+import io.strimzi.operator.common.model.PasswordGenerator;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.model.Labels;
@@ -154,7 +153,7 @@ public class KafkaReconcilerStatusTest {
         SecretOperator mockSecretOps = supplier.secretOperations;
         Secret secret = new Secret();
         when(mockSecretOps.getAsync(eq(NAMESPACE), eq(KafkaResources.clusterCaCertificateSecretName(CLUSTER_NAME)))).thenReturn(Future.succeededFuture(secret));
-        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(ClusterOperator.secretName(CLUSTER_NAME)))).thenReturn(Future.succeededFuture(secret));
+        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(KafkaResources.secretName(CLUSTER_NAME)))).thenReturn(Future.succeededFuture(secret));
 
         // Run the test
         KafkaReconciler reconciler = new MockKafkaReconcilerStatusTasks(
@@ -189,7 +188,7 @@ public class KafkaReconcilerStatusTest {
         SecretOperator mockSecretOps = supplier.secretOperations;
         Secret secret = new Secret();
         when(mockSecretOps.getAsync(eq(NAMESPACE), eq(KafkaResources.clusterCaCertificateSecretName(CLUSTER_NAME)))).thenReturn(Future.succeededFuture(secret));
-        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(ClusterOperator.secretName(CLUSTER_NAME)))).thenReturn(Future.succeededFuture(secret));
+        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(KafkaResources.secretName(CLUSTER_NAME)))).thenReturn(Future.succeededFuture(secret));
 
         // Run the test
         KafkaReconciler reconciler = new MockKafkaReconcilerStatusTasks(
@@ -236,7 +235,7 @@ public class KafkaReconcilerStatusTest {
         SecretOperator mockSecretOps = supplier.secretOperations;
         Secret secret = new Secret();
         when(mockSecretOps.getAsync(eq(NAMESPACE), eq(KafkaResources.clusterCaCertificateSecretName(CLUSTER_NAME)))).thenReturn(Future.succeededFuture(secret));
-        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(ClusterOperator.secretName(CLUSTER_NAME)))).thenReturn(Future.succeededFuture(secret));
+        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(KafkaResources.secretName(CLUSTER_NAME)))).thenReturn(Future.succeededFuture(secret));
 
         // Mock Kafka broker pods
         Pod pod0 = new PodBuilder()
@@ -341,7 +340,7 @@ public class KafkaReconcilerStatusTest {
         SecretOperator mockSecretOps = supplier.secretOperations;
         Secret secret = new Secret();
         when(mockSecretOps.getAsync(eq(NAMESPACE), eq(KafkaResources.clusterCaCertificateSecretName(CLUSTER_NAME)))).thenReturn(Future.succeededFuture(secret));
-        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(ClusterOperator.secretName(CLUSTER_NAME)))).thenReturn(Future.succeededFuture(secret));
+        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(KafkaResources.secretName(CLUSTER_NAME)))).thenReturn(Future.succeededFuture(secret));
 
         // Mock Kafka broker pods
         Pod pod0 = new PodBuilder()
@@ -436,7 +435,7 @@ public class KafkaReconcilerStatusTest {
         SecretOperator mockSecretOps = supplier.secretOperations;
         Secret secret = new Secret();
         when(mockSecretOps.getAsync(eq(NAMESPACE), eq(KafkaResources.clusterCaCertificateSecretName(CLUSTER_NAME)))).thenReturn(Future.succeededFuture(secret));
-        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(ClusterOperator.secretName(CLUSTER_NAME)))).thenReturn(Future.succeededFuture(secret));
+        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(KafkaResources.secretName(CLUSTER_NAME)))).thenReturn(Future.succeededFuture(secret));
 
         // Mock Kafka broker pods
         Pod pod0 = new PodBuilder()
@@ -528,7 +527,7 @@ public class KafkaReconcilerStatusTest {
         SecretOperator mockSecretOps = supplier.secretOperations;
         Secret secret = new Secret();
         when(mockSecretOps.getAsync(eq(NAMESPACE), eq(KafkaResources.clusterCaCertificateSecretName(CLUSTER_NAME)))).thenReturn(Future.succeededFuture(secret));
-        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(ClusterOperator.secretName(CLUSTER_NAME)))).thenReturn(Future.succeededFuture(secret));
+        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(KafkaResources.secretName(CLUSTER_NAME)))).thenReturn(Future.succeededFuture(secret));
 
         // Mock Kafka broker pods
         Pod pod0 = new PodBuilder()
@@ -617,7 +616,7 @@ public class KafkaReconcilerStatusTest {
         SecretOperator mockSecretOps = supplier.secretOperations;
         Secret secret = new Secret();
         when(mockSecretOps.getAsync(eq(NAMESPACE), eq(KafkaResources.clusterCaCertificateSecretName(CLUSTER_NAME)))).thenReturn(Future.succeededFuture(secret));
-        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(ClusterOperator.secretName(CLUSTER_NAME)))).thenReturn(Future.succeededFuture(secret));
+        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(KafkaResources.secretName(CLUSTER_NAME)))).thenReturn(Future.succeededFuture(secret));
 
         // Mock Kafka broker pods
         Pod pod0 = new PodBuilder()

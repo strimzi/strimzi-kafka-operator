@@ -19,8 +19,6 @@ import io.strimzi.operator.cluster.model.logging.LoggingModel;
 import io.strimzi.operator.cluster.model.logging.SupportsLogging;
 import io.strimzi.operator.cluster.model.metrics.MetricsModel;
 import io.strimzi.operator.cluster.model.metrics.SupportsMetrics;
-import io.strimzi.operator.cluster.operator.resource.MockSharedEnvironmentProvider;
-import io.strimzi.operator.cluster.operator.resource.SharedEnvironmentProvider;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import org.junit.jupiter.api.Test;
