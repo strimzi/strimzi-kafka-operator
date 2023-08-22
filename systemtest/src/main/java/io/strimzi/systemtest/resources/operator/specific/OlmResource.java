@@ -63,8 +63,7 @@ public class OlmResource implements SpecificResourceType {
 
         // Manual installation needs to be approved with a patch
         if (olmConfiguration.getOlmInstallationStrategy() == OlmInstallationStrategy.Manual) {
-            OlmUtils.waitUntilNonUsedInstallPlanIsPresent(olmConfiguration.getNamespaceName());
-            approveNotApprovedInstallPlan();
+            OlmUtils.waitUntilNonUsedInstallPlanWithSpecificCsvIsPresentAndApprove(olmConfiguration.getNamespaceName(), olmConfiguration.getCsvName());
         }
 
         // Make sure that operator will be created
