@@ -10,10 +10,6 @@ spec:
       log-level: debug
       query:
         base-path: /jaeger
-      # explicitly disable TLS, because tracing on some platforms automatically enables TLS, which for us is not supported
-      # until this is resolved (https://github.com/strimzi/strimzi-kafka-operator/issues/7570)
-      collector.grpc.tls.enabled: false
-      reporter.grpc.tls.enabled: false
   ingress:
     openshift: {}
     resources: {}
