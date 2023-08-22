@@ -101,7 +101,7 @@ public class OlmUpgradeST extends AbstractUpgradeST {
         KafkaClients kafkaBasicClientJob = new KafkaClientsBuilder()
             .withProducerName(testStorage.getProducerName())
             .withConsumerName(testStorage.getConsumerName())
-            .withNamespaceName(testStorage.getNamespaceName())
+            .withNamespaceName(Constants.CO_NAMESPACE)
             .withBootstrapAddress(KafkaResources.plainBootstrapAddress(clusterName))
             .withTopicName(topicUpgradeName)
             .withMessageCount(testStorage.getMessageCount())
