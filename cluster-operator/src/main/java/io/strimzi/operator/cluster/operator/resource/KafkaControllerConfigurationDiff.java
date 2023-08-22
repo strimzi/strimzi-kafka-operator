@@ -6,6 +6,7 @@
 package io.strimzi.operator.cluster.operator.resource;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.fabric8.zjsonpatch.JsonDiff;
 import io.strimzi.operator.common.model.OrderedProperties;
 import io.strimzi.operator.common.operator.resource.AbstractJsonDiff;
@@ -16,13 +17,29 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+/**
+ The algorithm:
+ *  1. Create a map from the supplied current Config.
+ *  2. Create a map from the supplied desired String.
+ *  3. Generate JSON diff from the maps.
+ *  4a. If entry was added, replaced or moved from desired, check whether the entry is in CONTROLLER_CONFIGS.
+ *  4b. If the entry in CONTROLLER_CONFIGS, set <code>configsHaveChanged</code> to true.
+ *  4c. If the entry is not in CONTROLLER_CONFIGS, set <code>configsHaveChanged</code> to false.
+ */
 public class KafkaControllerConfigurationDiff extends AbstractJsonDiff {
+    @SuppressFBWarnings({"URF_UNREAD_FIELD"}) // This field will be read from KafkaRoller later
     final boolean configsHaveChanged;
 
-    protected KafkaControllerConfigurationDiff(Config controllerConfig, String desired) {
+    KafkaControllerConfigurationDiff(Config controllerConfig, String desired) {
         this.configsHaveChanged = configsHaveChanged(desired, controllerConfig);
     }
 
+    /**
+     * Computes diff between two maps. Checks if entries are in CONTROLLER_CONFIGS.
+     * @param desired desired configuration, may be null if the related ConfigMap does not exist yet or no changes are required.
+     * @param controllerConfig current configuration.
+     * @return Returns true if changed entries from desired configurations are in CONTROLLER_CONFIGS, otherwise false.
+     */
     private boolean configsHaveChanged(String desired, Config controllerConfig) {
         Map<String, String> current;
 
