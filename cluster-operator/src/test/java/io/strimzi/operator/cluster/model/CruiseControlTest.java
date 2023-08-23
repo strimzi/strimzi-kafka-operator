@@ -856,14 +856,14 @@ public class CruiseControlTest {
 
         verifyBrokerCapacity(nodes, storage, resourceRequirements3, brokerCapacityThree, resourceLimitCpu, resourceLimitCpu, resourceLimitCpu);
 
-        // In this test case, when neither the override nor the CPU resource request or limits are configured, the CPU capacity will be set to 1
+        // In this test case, when neither the override nor the CPU resource request or limits are configured, the CPU capacity will be set to DEFAULT_CPU_CORE_CAPACITY
         ResourceRequirements resourceRequirements2 = new ResourceRequirementsBuilder()
                 .build();
 
         verifyBrokerCapacity(nodes, storage, resourceRequirements2, brokerCapacityThree, BrokerCapacity.DEFAULT_CPU_CORE_CAPACITY, BrokerCapacity.DEFAULT_CPU_CORE_CAPACITY, BrokerCapacity.DEFAULT_CPU_CORE_CAPACITY);
     }
 
-    public void verifyBrokerCapacity(Set<NodeRef> nodes,
+    private void verifyBrokerCapacity(Set<NodeRef> nodes,
                                      Map<String, Storage> storage,
                                      ResourceRequirements resourceRequirements,
                                      io.strimzi.api.kafka.model.balancing.BrokerCapacity brokerCapacity,
