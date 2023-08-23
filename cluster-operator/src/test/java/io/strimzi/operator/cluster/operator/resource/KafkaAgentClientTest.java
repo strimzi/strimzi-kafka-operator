@@ -13,11 +13,10 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.spy;
 
+import org.apache.kafka.clients.admin.Config;
 import org.junit.jupiter.api.Test;
 
 import io.strimzi.operator.common.Reconciliation;
-
-import java.util.Properties;
 
 public class KafkaAgentClientTest {
 
@@ -73,9 +72,9 @@ public class KafkaAgentClientTest {
         KafkaAgentClient kafkaAgentClient = spy(new KafkaAgentClient(RECONCILIATION, "my-cluster", "namespace"));
         doAnswer(invocation -> "{\"node.id\":\"0\",\"process.roles\":\"controller\"}").when(kafkaAgentClient).doGet(any());
 
-        Properties actual = kafkaAgentClient.getNodeConfiguration("mypod");
-        assertThat(actual.get("node.id"), is("0"));
-        assertThat(actual.get("process.roles"), is("controller"));
+        Config actual = kafkaAgentClient.getNodeConfiguration("mypod");
+        assertThat(actual.get("node.id").value(), is("0"));
+        assertThat(actual.get("process.roles").value(), is("controller"));
     }
 
     @Test
@@ -83,7 +82,7 @@ public class KafkaAgentClientTest {
         KafkaAgentClient kafkaAgentClient = spy(new KafkaAgentClient(RECONCILIATION, "my-cluster", "namespace"));
         doAnswer(invocation -> "&\"node.id\":1&").when(kafkaAgentClient).doGet(any());
 
-        Properties actual = kafkaAgentClient.getNodeConfiguration("mypod");
+        Config actual = kafkaAgentClient.getNodeConfiguration("mypod");
         assertThat(actual, is(nullValue()));
     }
 }
