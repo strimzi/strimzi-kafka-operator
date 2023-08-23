@@ -214,20 +214,19 @@ public class Capacity {
         return null;
     }
 
-    static CpuCapacity getCpuBasedOnRequirements(ResourceRequirements resourceRequirements) {
+    private static CpuCapacity getCpuBasedOnRequirements(ResourceRequirements resourceRequirements) {
         Integer request = getResourceRequirement(resourceRequirements, ResourceRequirementType.REQUEST);
         Integer limit = getResourceRequirement(resourceRequirements, ResourceRequirementType.LIMIT);
 
         if (limit != null) {
-            if (request == null) {
-                return new CpuCapacity(CpuCapacity.milliCpuToCpu(limit));
-            } else {
+            if (request != null) {
                 return new CpuCapacity(CpuCapacity.milliCpuToCpu(request));
+            } else {
+                return new CpuCapacity(CpuCapacity.milliCpuToCpu(limit));
             }
         } else if (request != null) {
             return new CpuCapacity(CpuCapacity.milliCpuToCpu(request));
         }
-
         return null;
     }
 

@@ -53,7 +53,6 @@ public class CruiseControlMetricsReporterTest {
     public void testEnabledCruiseControlWithDefaults() {
         CruiseControlMetricsReporter ccmr = CruiseControlMetricsReporter.fromCrd(KAFKA, new KafkaConfiguration(Reconciliation.DUMMY_RECONCILIATION, Set.of()), 3);
 
-
         assertThat(ccmr.numPartitions(), is(1));
         assertThat(ccmr.replicationFactor(), is(1));
         assertThat(ccmr.minInSyncReplicas(), is(1));

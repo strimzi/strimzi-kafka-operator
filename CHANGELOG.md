@@ -8,10 +8,17 @@
 * Support for the ppc64le platform
 
 ### Changes, deprecations and removals
-* The logic for Cruise Control cpu capacity settings has been refactored. 
-  For the cases where `requests != limits` or `requests == <value> and limits == nul1` the CPU capacity was set to a default value of `1.0`. 
-  The changes implement the following:
-  For the cases where `requests != limits` or `requests == <value> and limits == nul1` the CPU capacity is set so `capacity == requests`.
+* The way the CPU capacity is configured in Cruise Control configuration has been changed.
+  * In previous Strimzi versions, when the CPU resource requirements were set for the Kafka brokers, we used a following logic to determine the CPU capacity:
+    * When CPU limit was set and at the same time CPU request was not set, the CPU limit was used as the capacity.
+    * When CPU limit was set and at the same time CPU request was set to the same value as the limit, the CPU limit was used as the capacity.
+    * When CPU limit was set and at the same time CPU request was set to a different value than the limit, the CPU capacity was configured as `1` as any _override_ value configured in the `.spec.cruiseControl` section of the `Kafka` custom resource.
+  * The previous behavior was identified as a bug and was fixed in this Strimzi release.
+    The new behavior is as follows:
+    * When a user configures custom CPU capacity _override_ in the `.spec.CruiseControl` section of the `Kafka` custom resource, the override value will be used as the CPU capacity.
+    * When the override is not configured but the CPU resource request is configured for the Kafka brokers, the resource request will be used as the CPU capacity.
+    * When neither the override nor the CPU resource request are configured but the CPU resource limit is set for the Kafka brokers, the resource limit will be used as the CPU capacity.
+    * When neither the override nor the CPU resource request or limits are configured the CPU capacity will be set to `1`.
 
 ## 0.36.1
 
