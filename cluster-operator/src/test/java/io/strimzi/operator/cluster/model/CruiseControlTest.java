@@ -127,9 +127,9 @@ public class CruiseControlTest {
 
     private final Map<String, Object> kafkaConfig = singletonMap(CruiseControl.MIN_INSYNC_REPLICAS, minInsyncReplicas);
     private final Map<String, Object> ccConfig = new HashMap<>() {{
-        putAll(CruiseControlConfiguration.getCruiseControlDefaultPropertiesMap());
-        put("num.partition.metrics.windows", "2");
-    }};
+            putAll(CruiseControlConfiguration.getCruiseControlDefaultPropertiesMap());
+            put("num.partition.metrics.windows", "2");
+        }};
 
     private final CruiseControlConfiguration ccConfiguration = new CruiseControlConfiguration(Reconciliation.DUMMY_RECONCILIATION, ccConfig.entrySet());
 
