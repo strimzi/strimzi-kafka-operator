@@ -2,6 +2,10 @@
 set -e
 set +x
 
+# Clean-up /tmp directory from files which might have remained from previous container restart
+# We ignore any errors which might be caused by files injected by different agents which we do not have the rights to delete
+rm -rfv /tmp/* || true
+
 STRIMZI_BROKER_ID=$(hostname | awk -F'-' '{print $NF}')
 export STRIMZI_BROKER_ID
 echo "STRIMZI_BROKER_ID=${STRIMZI_BROKER_ID}"
