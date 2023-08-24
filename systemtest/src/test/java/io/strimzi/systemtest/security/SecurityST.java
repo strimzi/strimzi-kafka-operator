@@ -806,22 +806,20 @@ class SecurityST extends AbstractST {
     @Tag(CONNECT)
     @Tag(CONNECT_COMPONENTS)
     void testTlsHostnameVerificationWithKafkaConnect(ExtensionContext extensionContext) {
-        final TestStorage testStorage = storageMap.get(extensionContext);
-        final String namespaceName = StUtils.getNamespaceBasedOnRbac(Constants.TEST_SUITE_NAMESPACE, extensionContext);
-        final String clusterName = testStorage.getClusterName();
+        final TestStorage testStorage = new TestStorage(extensionContext);
 
-        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3, 1).build());
+        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3, 1).build());
         LOGGER.info("Getting IP of the bootstrap service");
 
-        String ipOfBootstrapService = kubeClient(namespaceName).getService(namespaceName, KafkaResources.bootstrapServiceName(clusterName)).getSpec().getClusterIP();
+        String ipOfBootstrapService = kubeClient(testStorage.getNamespaceName()).getService(testStorage.getNamespaceName(), KafkaResources.bootstrapServiceName(testStorage.getClusterName())).getSpec().getClusterIP();
 
         LOGGER.info("KafkaConnect without config {} will not connect to {}:9093", "ssl.endpoint.identification.algorithm", ipOfBootstrapService);
 
-        resourceManager.createResourceWithoutWait(extensionContext, KafkaConnectTemplates.kafkaConnect(clusterName, clusterName, 1)
+        resourceManager.createResourceWithoutWait(extensionContext, KafkaConnectTemplates.kafkaConnect(testStorage.getClusterName(), testStorage.getNamespaceName(), 1)
             .editSpec()
                 .withNewTls()
                     .addNewTrustedCertificate()
-                        .withSecretName(KafkaResources.clusterCaCertificateSecretName(clusterName))
+                        .withSecretName(KafkaResources.clusterCaCertificateSecretName(testStorage.getClusterName()))
                         .withCertificate("ca.crt")
                     .endTrustedCertificate()
                 .endTls()
@@ -829,22 +827,22 @@ class SecurityST extends AbstractST {
             .endSpec()
             .build());
 
-        PodUtils.waitUntilPodIsPresent(namespaceName, clusterName + "-connect");
+        PodUtils.waitUntilPodIsPresent(testStorage.getNamespaceName(), testStorage.getClusterName() + "-connect");
 
-        String kafkaConnectPodName = kubeClient(namespaceName).listPods(namespaceName, clusterName, Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND).get(0).getMetadata().getName();
+        String kafkaConnectPodName = kubeClient(testStorage.getNamespaceName()).listPods(testStorage.getNamespaceName(), testStorage.getClusterName(), Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND).get(0).getMetadata().getName();
 
-        PodUtils.waitUntilPodIsInCrashLoopBackOff(namespaceName, kafkaConnectPodName);
+        PodUtils.waitUntilPodIsInCrashLoopBackOff(testStorage.getNamespaceName(), kafkaConnectPodName);
 
-        assertThat("CrashLoopBackOff", is(kubeClient(namespaceName).getPod(namespaceName, kafkaConnectPodName).getStatus().getContainerStatuses()
+        assertThat("CrashLoopBackOff", is(kubeClient(testStorage.getNamespaceName()).getPod(testStorage.getNamespaceName(), kafkaConnectPodName).getStatus().getContainerStatuses()
                 .get(0).getState().getWaiting().getReason()));
 
-        KafkaConnectResource.replaceKafkaConnectResourceInSpecificNamespace(clusterName, kc -> {
+        KafkaConnectResource.replaceKafkaConnectResourceInSpecificNamespace(testStorage.getClusterName(), kc -> {
             kc.getSpec().getConfig().put("ssl.endpoint.identification.algorithm", "");
-        }, namespaceName);
+        }, testStorage.getNamespaceName());
 
         LOGGER.info("KafkaConnect with config {} will connect to {}:9093", "ssl.endpoint.identification.algorithm", ipOfBootstrapService);
 
-        KafkaConnectUtils.waitForConnectReady(namespaceName, clusterName);
+        KafkaConnectUtils.waitForConnectReady(testStorage.getNamespaceName(), testStorage.getClusterName());
     }
 
     @ParallelNamespaceTest
@@ -1235,9 +1233,7 @@ class SecurityST extends AbstractST {
     @Tag(CONNECT)
     @Tag(CONNECT_COMPONENTS)
     void testKafkaAndKafkaConnectTlsVersion(ExtensionContext extensionContext) {
-        final TestStorage testStorage = storageMap.get(extensionContext);
-        final String namespaceName = StUtils.getNamespaceBasedOnRbac(Constants.TEST_SUITE_NAMESPACE, extensionContext);
-        final String clusterName = testStorage.getClusterName();
+        final TestStorage testStorage = new TestStorage(extensionContext);
         final Map<String, Object> configWithNewestVersionOfTls = new HashMap<>();
 
         final String tlsVersion12 = "TLSv1.2";
@@ -1248,7 +1244,7 @@ class SecurityST extends AbstractST {
 
         LOGGER.info("Deploying Kafka cluster with the support {} TLS",  tlsVersion12);
 
-        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3)
+        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3)
             .editSpec()
                 .editKafka()
                     .withConfig(configWithNewestVersionOfTls)
@@ -1256,7 +1252,7 @@ class SecurityST extends AbstractST {
             .endSpec()
             .build());
 
-        Map<String, Object> configsFromKafkaCustomResource = KafkaResource.kafkaClient().inNamespace(namespaceName).withName(clusterName).get().getSpec().getKafka().getConfig();
+        Map<String, Object> configsFromKafkaCustomResource = KafkaResource.kafkaClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get().getSpec().getKafka().getConfig();
 
         LOGGER.info("Verifying that Kafka cluster has the accepted configuration:\n" +
                         "{} -> {}\n" +
@@ -1274,7 +1270,7 @@ class SecurityST extends AbstractST {
         configWithLowestVersionOfTls.put(SslConfigs.SSL_ENABLED_PROTOCOLS_CONFIG, tlsVersion1);
         configWithLowestVersionOfTls.put(SslConfigs.SSL_PROTOCOL_CONFIG, tlsVersion1);
 
-        resourceManager.createResourceWithoutWait(extensionContext, KafkaConnectTemplates.kafkaConnect(clusterName, clusterName, 1)
+        resourceManager.createResourceWithoutWait(extensionContext, KafkaConnectTemplates.kafkaConnect(testStorage.getClusterName(), testStorage.getNamespaceName(), 1)
             .editSpec()
                 .withConfig(configWithLowestVersionOfTls)
             .endSpec()
@@ -1282,11 +1278,11 @@ class SecurityST extends AbstractST {
 
         LOGGER.info("Verifying that KafkaConnect status is NotReady because of different TLS version");
 
-        KafkaConnectUtils.waitForConnectNotReady(namespaceName, clusterName);
+        KafkaConnectUtils.waitForConnectNotReady(testStorage.getNamespaceName(), testStorage.getClusterName());
 
         LOGGER.info("Replacing KafkaConnect config to the newest(TLSv1.2) one same as the Kafka Broker has");
 
-        KafkaConnectResource.replaceKafkaConnectResourceInSpecificNamespace(clusterName, kafkaConnect -> kafkaConnect.getSpec().setConfig(configWithNewestVersionOfTls), namespaceName);
+        KafkaConnectResource.replaceKafkaConnectResourceInSpecificNamespace(testStorage.getClusterName(), kafkaConnect -> kafkaConnect.getSpec().setConfig(configWithNewestVersionOfTls), testStorage.getNamespaceName());
 
         LOGGER.info("Verifying that KafkaConnect has the accepted configuration:\n {} -> {}\n {} -> {}",
                 SslConfigs.SSL_ENABLED_PROTOCOLS_CONFIG,
@@ -1294,25 +1290,23 @@ class SecurityST extends AbstractST {
                 SslConfigs.SSL_PROTOCOL_CONFIG,
                 SslConfigs.DEFAULT_SSL_PROTOCOL);
 
-        KafkaConnectUtils.waitForKafkaConnectConfigChange(SslConfigs.SSL_ENABLED_PROTOCOLS_CONFIG, tlsVersion12, namespaceName, clusterName);
-        KafkaConnectUtils.waitForKafkaConnectConfigChange(SslConfigs.SSL_PROTOCOL_CONFIG, SslConfigs.DEFAULT_SSL_PROTOCOL, namespaceName, clusterName);
+        KafkaConnectUtils.waitForKafkaConnectConfigChange(SslConfigs.SSL_ENABLED_PROTOCOLS_CONFIG, tlsVersion12, testStorage.getNamespaceName(), testStorage.getClusterName());
+        KafkaConnectUtils.waitForKafkaConnectConfigChange(SslConfigs.SSL_PROTOCOL_CONFIG, SslConfigs.DEFAULT_SSL_PROTOCOL, testStorage.getNamespaceName(), testStorage.getClusterName());
 
         LOGGER.info("Verifying that KafkaConnect is stable");
 
-        PodUtils.verifyThatRunningPodsAreStable(namespaceName, KafkaConnectResources.deploymentName(clusterName));
+        PodUtils.verifyThatRunningPodsAreStable(testStorage.getNamespaceName(), KafkaConnectResources.deploymentName(testStorage.getClusterName()));
 
         LOGGER.info("Verifying that KafkaConnect status is Ready because of same TLS version");
 
-        KafkaConnectUtils.waitForConnectReady(namespaceName, clusterName);
+        KafkaConnectUtils.waitForConnectReady(testStorage.getNamespaceName(), testStorage.getClusterName());
     }
 
     @ParallelNamespaceTest
     @Tag(CONNECT)
     @Tag(CONNECT_COMPONENTS)
     void testKafkaAndKafkaConnectCipherSuites(ExtensionContext extensionContext) {
-        final TestStorage testStorage = storageMap.get(extensionContext);
-        final String namespaceName = StUtils.getNamespaceBasedOnRbac(Constants.TEST_SUITE_NAMESPACE, extensionContext);
-        final String clusterName = testStorage.getClusterName();
+        final TestStorage testStorage = new TestStorage(extensionContext);
         final Map<String, Object> configWithCipherSuitesSha384 = new HashMap<>();
 
         final String cipherSuitesSha384 = "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384";
@@ -1322,7 +1316,7 @@ class SecurityST extends AbstractST {
 
         LOGGER.info("Deploying Kafka cluster with the support {} cipher algorithms",  cipherSuitesSha384);
 
-        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3)
+        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3)
             .editSpec()
                 .editKafka()
                     .withConfig(configWithCipherSuitesSha384)
@@ -1330,7 +1324,7 @@ class SecurityST extends AbstractST {
             .endSpec()
             .build());
 
-        Map<String, Object> configsFromKafkaCustomResource = KafkaResource.kafkaClient().inNamespace(namespaceName).withName(clusterName).get().getSpec().getKafka().getConfig();
+        Map<String, Object> configsFromKafkaCustomResource = KafkaResource.kafkaClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get().getSpec().getKafka().getConfig();
 
         LOGGER.info("Verifying that KafkaConnect has the accepted configuration:\n {} -> {}",
                 SslConfigs.SSL_CIPHER_SUITES_CONFIG, configsFromKafkaCustomResource.get(SslConfigs.SSL_CIPHER_SUITES_CONFIG));
@@ -1341,7 +1335,7 @@ class SecurityST extends AbstractST {
 
         configWithCipherSuitesSha256.put(SslConfigs.SSL_CIPHER_SUITES_CONFIG, cipherSuitesSha256);
 
-        resourceManager.createResourceWithoutWait(extensionContext, KafkaConnectTemplates.kafkaConnect(clusterName, clusterName, 1)
+        resourceManager.createResourceWithoutWait(extensionContext, KafkaConnectTemplates.kafkaConnect(testStorage.getClusterName(), testStorage.getNamespaceName(), 1)
             .editSpec()
                 .withConfig(configWithCipherSuitesSha256)
             .endSpec()
@@ -1349,36 +1343,35 @@ class SecurityST extends AbstractST {
 
         LOGGER.info("Verifying that KafkaConnect status is NotReady because of different cipher suites complexity of algorithm");
 
-        KafkaConnectUtils.waitForConnectNotReady(namespaceName, clusterName);
+        KafkaConnectUtils.waitForConnectNotReady(testStorage.getNamespaceName(), testStorage.getClusterName());
 
         LOGGER.info("Replacing KafkaConnect config to the cipher suites same as the Kafka Broker has");
 
-        KafkaConnectResource.replaceKafkaConnectResourceInSpecificNamespace(clusterName, kafkaConnect -> kafkaConnect.getSpec().setConfig(configWithCipherSuitesSha384), namespaceName);
+        KafkaConnectResource.replaceKafkaConnectResourceInSpecificNamespace(testStorage.getClusterName(), kafkaConnect -> kafkaConnect.getSpec().setConfig(configWithCipherSuitesSha384), testStorage.getNamespaceName());
 
         LOGGER.info("Verifying that KafkaConnect has the accepted configuration:\n {} -> {}",
                 SslConfigs.SSL_CIPHER_SUITES_CONFIG, configsFromKafkaCustomResource.get(SslConfigs.SSL_CIPHER_SUITES_CONFIG));
 
-        KafkaConnectUtils.waitForKafkaConnectConfigChange(SslConfigs.SSL_CIPHER_SUITES_CONFIG, cipherSuitesSha384, namespaceName, clusterName);
+        KafkaConnectUtils.waitForKafkaConnectConfigChange(SslConfigs.SSL_CIPHER_SUITES_CONFIG, cipherSuitesSha384, testStorage.getNamespaceName(), testStorage.getClusterName());
 
         LOGGER.info("Verifying that KafkaConnect is stable");
 
-        PodUtils.verifyThatRunningPodsAreStable(namespaceName, KafkaConnectResources.deploymentName(clusterName));
+        PodUtils.verifyThatRunningPodsAreStable(testStorage.getNamespaceName(), KafkaConnectResources.deploymentName(testStorage.getClusterName()));
 
         LOGGER.info("Verifying that KafkaConnect status is Ready because of the same cipher suites complexity of algorithm");
 
-        KafkaConnectUtils.waitForConnectReady(namespaceName, clusterName);
+        KafkaConnectUtils.waitForConnectReady(testStorage.getNamespaceName(), testStorage.getClusterName());
     }
 
     @ParallelNamespaceTest
     void testOwnerReferenceOfCASecrets(ExtensionContext extensionContext) {
+        final TestStorage testStorage = new TestStorage(extensionContext);
+
         /* Different name for Kafka cluster to make the test quicker -> KafkaRoller is waiting for pods of "my-cluster" to become ready
          for 5 minutes -> this will prevent the waiting. */
-        final TestStorage testStorage = storageMap.get(extensionContext);
-        final String namespaceName = StUtils.getNamespaceBasedOnRbac(Constants.TEST_SUITE_NAMESPACE, extensionContext);
-        final String clusterName = testStorage.getClusterName();
-        final String secondClusterName = "my-second-cluster-" + clusterName;
+        final String secondClusterName = "my-second-cluster-" + testStorage.getClusterName();
 
-        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3)
+        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3)
             .editOrNewSpec()
                 .withNewClusterCa()
                     .withGenerateSecretOwnerReference(false)
@@ -1389,22 +1382,22 @@ class SecurityST extends AbstractST {
             .endSpec()
             .build());
 
-        LOGGER.info("Listing all cluster CAs for {}", clusterName);
-        List<Secret> caSecrets = kubeClient(namespaceName).listSecrets(namespaceName).stream()
-            .filter(secret -> secret.getMetadata().getName().contains(KafkaResources.clusterCaKeySecretName(clusterName)) || secret.getMetadata().getName().contains(KafkaResources.clientsCaKeySecretName(clusterName))).collect(Collectors.toList());
+        LOGGER.info("Listing all cluster CAs for {}", testStorage.getClusterName());
+        List<Secret> caSecrets = kubeClient(testStorage.getNamespaceName()).listSecrets(testStorage.getNamespaceName()).stream()
+            .filter(secret -> secret.getMetadata().getName().contains(KafkaResources.clusterCaKeySecretName(testStorage.getClusterName())) || secret.getMetadata().getName().contains(KafkaResources.clientsCaKeySecretName(testStorage.getClusterName()))).collect(Collectors.toList());
 
-        LOGGER.info("Deleting Kafka: {}", clusterName);
-        KafkaResource.kafkaClient().inNamespace(namespaceName).withName(clusterName).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
-        KafkaUtils.waitForKafkaDeletion(namespaceName, clusterName);
+        LOGGER.info("Deleting Kafka: {}", testStorage.getClusterName());
+        KafkaResource.kafkaClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
+        KafkaUtils.waitForKafkaDeletion(testStorage.getNamespaceName(), testStorage.getClusterName());
 
         LOGGER.info("Checking actual Secrets after Kafka deletion");
         caSecrets.forEach(caSecret -> {
             String secretName = caSecret.getMetadata().getName();
             LOGGER.info("Checking that Secret: {} is still present", secretName);
-            assertNotNull(kubeClient(namespaceName).getSecret(namespaceName, secretName));
+            assertNotNull(kubeClient(testStorage.getNamespaceName()).getSecret(testStorage.getNamespaceName(), secretName));
 
-            LOGGER.info("Deleting Secret: {}/{}", namespaceName, secretName);
-            kubeClient(namespaceName).deleteSecret(namespaceName, secretName);
+            LOGGER.info("Deleting Secret: {}/{}", testStorage.getNamespaceName(), secretName);
+            kubeClient(testStorage.getNamespaceName()).deleteSecret(testStorage.getNamespaceName(), secretName);
         });
 
         LOGGER.info("Deploying Kafka with generateSecretOwnerReference set to true");
@@ -1419,19 +1412,19 @@ class SecurityST extends AbstractST {
             .endSpec()
             .build());
 
-        caSecrets = kubeClient(namespaceName).listSecrets(namespaceName).stream()
+        caSecrets = kubeClient(testStorage.getNamespaceName()).listSecrets(testStorage.getNamespaceName()).stream()
             .filter(secret -> secret.getMetadata().getName().contains(KafkaResources.clusterCaKeySecretName(secondClusterName)) || secret.getMetadata().getName().contains(KafkaResources.clientsCaKeySecretName(secondClusterName))).collect(Collectors.toList());
 
         LOGGER.info("Deleting Kafka: {}", secondClusterName);
-        KafkaResource.kafkaClient().inNamespace(namespaceName).withName(secondClusterName).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
-        KafkaUtils.waitForKafkaDeletion(namespaceName, secondClusterName);
+        KafkaResource.kafkaClient().inNamespace(testStorage.getNamespaceName()).withName(secondClusterName).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
+        KafkaUtils.waitForKafkaDeletion(testStorage.getNamespaceName(), secondClusterName);
 
         LOGGER.info("Checking actual Secrets after Kafka deletion");
         caSecrets.forEach(caSecret -> {
             String secretName = caSecret.getMetadata().getName();
             LOGGER.info("Checking that Secret: {} is deleted", secretName);
             TestUtils.waitFor("deletion of Secret: " + secretName, Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
-                () -> kubeClient().getSecret(namespaceName, secretName) == null);
+                () -> kubeClient().getSecret(testStorage.getNamespaceName(), secretName) == null);
         });
     }
 

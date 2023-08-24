@@ -21,7 +21,6 @@ import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaNodePoolResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
-import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
@@ -312,9 +311,7 @@ public class KafkaNodePoolST extends AbstractST {
         List<EnvVar> coEnvVars = new ArrayList<>();
         coEnvVars.add(new EnvVar(Environment.STRIMZI_FEATURE_GATES_ENV, "+KafkaNodePools", null));
 
-        clusterOperator = new SetupClusterOperator.SetupClusterOperatorBuilder()
-            .withExtensionContext(extensionContext)
-            .withNamespace(Constants.CO_NAMESPACE)
+        clusterOperator = clusterOperator.defaultInstallation(extensionContext)
             .withExtraEnvVars(coEnvVars)
             .withWatchingNamespaces(Constants.WATCH_ALL_NAMESPACES)
             .createInstallation()

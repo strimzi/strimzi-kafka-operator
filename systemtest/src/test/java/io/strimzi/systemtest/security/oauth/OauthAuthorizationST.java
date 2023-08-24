@@ -11,6 +11,7 @@ import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.FIPSNotSupported;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.annotations.KRaftWithoutUTONotSupported;
@@ -599,10 +600,12 @@ public class OauthAuthorizationST extends OauthAbstractST {
     void testKeycloakAuthorizerToDelegateToSimpleAuthorizer(ExtensionContext extensionContext) {
         TestStorage testStorage = new TestStorage(extensionContext);
 
-        // we have to create keycloak, team-a-client and team-b-client secret from `infra-namespace` to the new namespace
-        resourceManager.createResourceWithWait(extensionContext, SecretUtils.createCopyOfSecret(Constants.TEST_SUITE_NAMESPACE, testStorage.getNamespaceName(), KeycloakInstance.KEYCLOAK_SECRET_NAME).build());
-        resourceManager.createResourceWithWait(extensionContext, SecretUtils.createCopyOfSecret(Constants.TEST_SUITE_NAMESPACE, testStorage.getNamespaceName(), TEAM_A_CLIENT_SECRET).build());
-        resourceManager.createResourceWithWait(extensionContext, SecretUtils.createCopyOfSecret(Constants.TEST_SUITE_NAMESPACE, testStorage.getNamespaceName(), TEAM_B_CLIENT_SECRET).build());
+        if (!Environment.isNamespaceRbacScope()) {
+            // we have to create keycloak, team-a-client and team-b-client secret from `co-namespace` to the new namespace
+            resourceManager.createResourceWithWait(extensionContext, SecretUtils.createCopyOfSecret(Constants.TEST_SUITE_NAMESPACE, testStorage.getNamespaceName(), KeycloakInstance.KEYCLOAK_SECRET_NAME).build());
+            resourceManager.createResourceWithWait(extensionContext, SecretUtils.createCopyOfSecret(Constants.TEST_SUITE_NAMESPACE, testStorage.getNamespaceName(), TEAM_A_CLIENT_SECRET).build());
+            resourceManager.createResourceWithWait(extensionContext, SecretUtils.createCopyOfSecret(Constants.TEST_SUITE_NAMESPACE, testStorage.getNamespaceName(), TEAM_B_CLIENT_SECRET).build());
+        }
 
         resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 1, 1)
             .editSpec()
