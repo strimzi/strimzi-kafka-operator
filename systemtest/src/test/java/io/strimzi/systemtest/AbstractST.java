@@ -539,20 +539,7 @@ public abstract class AbstractST implements TestSeparator {
     protected void beforeEachMayOverride(ExtensionContext extensionContext) {
         // this is because we need to have different clusterName and kafkaClientsName in each test case without
         // synchronization it can produce `data-race`
-
         synchronized (LOCK) {
-            // This can be removed TestStorage does it inside constructor
-            // String clusterName = CLUSTER_NAME_PREFIX + hashStub(String.valueOf(new Random().nextInt(Integer.MAX_VALUE)));
-            // mapWithClusterNames.put(testName, clusterName);
-            // mapWithScraperNames.put(testName, clusterName + "-" + Constants.SCRAPER_NAME);
-            // mapWithTestTopics.put(testName, KafkaTopicUtils.generateRandomNameOfTopic());
-
-            // This will be added to TestStorage
-            // if (extensionContext.getTestMethod().isPresent()) {
-            //      testName = extensionContext.getTestMethod().get().getName();
-            // }
-            // mapWithTestUsers.put(testName, KafkaUserUtils.generateRandomNameOfKafkaUser());
-            // mapWithTestExecutionStartTimes.put(testName, System.currentTimeMillis());
             LOGGER.info("Not first test we are gonna generate cluster name");
             testSuiteNamespaceManager.createParallelNamespace(extensionContext);
             storageMap.put(extensionContext, new TestStorage(extensionContext));
