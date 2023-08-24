@@ -340,6 +340,11 @@
                 <directory>src/main/resources</directory>
             </resource>
             <resource>
+                <!-- separate folder for filtered resources so that non-filtered files don't have their ${} replaced -->
+                <directory>src/main/resources-filtered</directory>
+                <filtering>true</filtering>
+            </resource>
+            <resource>
                 <directory>..</directory>
                 <includes>
                     <include>kafka-versions.yaml</include>

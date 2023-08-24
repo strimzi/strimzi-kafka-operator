@@ -9,6 +9,7 @@
 * Removed support for OpenTracing:
   * The `tracing.type: jaeger` configuration, in `KafkaConnect`, `KafkaMirrorMaker`, `KafkaMirrorMaker2` and `KafkaBridge` resources, is not supported anymore.
   * The OpenTelemetry based tracing is the only available by using `tracing.type: opentelemetry`.
+* Added version fields to the `Kafka` custom resource status to track install and upgrade state
 
 ## 0.36.1
 

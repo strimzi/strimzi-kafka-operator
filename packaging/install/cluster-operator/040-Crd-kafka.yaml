@@ -6305,4 +6305,10 @@ spec:
               clusterId:
                 type: string
                 description: Kafka cluster Id.
+              operatorLastSuccessfulVersion:
+                type: string
+                description: The version of the Strimzi Cluster Operator which performed the last successful reconciliation.
+              kafkaVersion:
+                type: string
+                description: The version of Kafka currently deployed in the cluster.
             description: "The status of the Kafka and ZooKeeper clusters, and Topic Operator."

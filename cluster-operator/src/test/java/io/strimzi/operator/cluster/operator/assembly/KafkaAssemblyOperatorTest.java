@@ -664,7 +664,7 @@ public class KafkaAssemblyOperatorTest {
         // Now try to create a KafkaCluster based on this CM
         Checkpoint async = context.checkpoint();
         ops.createOrUpdate(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, kafkaNamespace, kafkaName), kafka)
-            .onComplete(context.succeeding(v -> context.verify(() -> {
+            .onComplete(context.succeeding(status -> context.verify(() -> {
 
                 // We expect a headless and headful service
                 Set<String> expectedServices = set(
@@ -726,6 +726,8 @@ public class KafkaAssemblyOperatorTest {
                 } else {
                     assertThat(routeNameCaptor.getAllValues(), hasSize(0));
                 }
+
+                assertThat(status.getOperatorLastSuccessfulVersion(), is(KafkaAssemblyOperator.OPERATOR_VERSION));
 
                 async.flag();
             })));
@@ -1225,9 +1227,12 @@ public class KafkaAssemblyOperatorTest {
         Checkpoint async = context.checkpoint();
         ops.createOrUpdate(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, clusterNamespace, clusterName),
                 updatedAssembly)
-            .onComplete(context.succeeding(v -> context.verify(() -> {
+            .onComplete(context.succeeding(status -> context.verify(() -> {
                 // Check that ZK scale-up happens when it should
                 assertThat(zooPodSetRef.get().getSpec().getPods().size(), is(updatedAssembly.getSpec().getZookeeper().getReplicas()));
+
+                assertThat(status.getOperatorLastSuccessfulVersion(), is(KafkaAssemblyOperator.OPERATOR_VERSION));
+                assertThat(status.getKafkaVersion(), is(VERSIONS.defaultVersion().version()));
 
                 async.flag();
             })));

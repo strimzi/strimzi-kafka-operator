@@ -55,10 +55,13 @@ import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.time.Clock;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
 import java.util.stream.IntStream;
 
@@ -72,6 +75,31 @@ import java.util.stream.IntStream;
  */
 public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesClient, Kafka, KafkaList, Resource<Kafka>, KafkaSpec, KafkaStatus> {
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(KafkaAssemblyOperator.class.getName());
+
+    private static final Properties PROPERTIES = new Properties();
+    /**
+     * version of the operator, project.version in the pom.xml
+     */
+    /* test */ static final String OPERATOR_VERSION;
+
+    static {
+        InputStream propertiesFile = KafkaAssemblyOperator.class.getResourceAsStream("/.properties");
+        try {
+            try {
+                PROPERTIES.load(propertiesFile);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        } finally {
+            try {
+                propertiesFile.close();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        OPERATOR_VERSION = PROPERTIES.getProperty("version");
+    }
+
 
     /* test */ final ClusterOperatorConfig config;
     /* test */ final ResourceOperatorSupplier supplier;
@@ -131,6 +159,25 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 status.setClusterId(kafkaAssembly.getStatus().getClusterId());
             }
 
+            if (kafkaAssembly.getStatus() != null
+                    && kafkaAssembly.getStatus().getOperatorLastSuccessfulVersion() != null
+            )  {
+                // If not set in the status prepared by reconciliation but set in the status previously, we copy the
+                // operatorLastSuccessfulVersion version into the new status. This is useful for example when the reconciliation fails for some
+                // reason before setting the cluster ID
+                status.setOperatorLastSuccessfulVersion(kafkaAssembly.getStatus().getOperatorLastSuccessfulVersion());
+            }
+
+            if (status.getKafkaVersion() == null
+                    && kafkaAssembly.getStatus() != null
+                    && kafkaAssembly.getStatus().getKafkaVersion() != null
+            )  {
+                // If not set in the status prepared by reconciliation but set in the status previously, we copy the
+                // kafka version into the new status. This is useful for example when the reconciliation fails for some
+                // reason before setting the cluster ID
+                status.setKafkaVersion(kafkaAssembly.getStatus().getKafkaVersion());
+            }
+
             if (reconcileResult.succeeded())    {
                 condition = new ConditionBuilder()
                         .withLastTransitionTime(StatusUtils.iso8601(clock.instant()))
@@ -138,6 +185,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                         .withStatus("True")
                         .build();
 
+                // successful reconcile, write operator version to successful reconcile field
+                status.setOperatorLastSuccessfulVersion(OPERATOR_VERSION);
                 status.addCondition(condition);
                 createOrUpdatePromise.complete(status);
             } else {
