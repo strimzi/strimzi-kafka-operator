@@ -545,7 +545,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                         if (config.featureGates().kafkaNodePoolsEnabled()
                                 && ReconcilerUtils.nodePoolsEnabled(kafkaAssembly)
                                 && (nodePools == null || nodePools.isEmpty()))  {
-                            throw new InvalidConfigurationException("KafkaNodePools are enabled, but not pools found for Kafka cluster " + name);
+                            throw new InvalidConfigurationException("KafkaNodePools are enabled, but no KafkaNodePools found for Kafka cluster " + name);
                         }
 
                         Map<String, List<String>> currentPods = new HashMap<>();

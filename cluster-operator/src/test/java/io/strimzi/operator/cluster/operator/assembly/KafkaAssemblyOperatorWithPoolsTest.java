@@ -1343,7 +1343,57 @@ public class KafkaAssemblyOperatorWithPoolsTest {
                 .onComplete(context.failing(v -> context.verify(() -> {
                     assertThat(v, instanceOf(InvalidConfigurationException.class));
                     assertThat(v.getMessage(), is("The UseKRaft feature gate can be used only together with a Kafka cluster based on the KafkaNodePool resources."));
+                    async.flag();
+                })));
+    }
 
+    /**
+     * Tests that InvalidConfigurationException is thrown when no KafkaNodePool resource is found
+     *
+     * @param context   Test context
+     */
+    @Test
+    public void testNoNodePoolsValidation(VertxTestContext context)  {
+
+        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
+
+        SecretOperator secretOps = supplier.secretOperations;
+        when(secretOps.reconcile(any(), any(), any(), any())).thenReturn(Future.succeededFuture());
+
+        PodOperator mockPodOps = supplier.podOperations;
+        when(mockPodOps.listAsync(any(), any(Labels.class))).thenReturn(Future.succeededFuture(Collections.emptyList()));
+
+        CrdOperator<KubernetesClient, Kafka, KafkaList> mockKafkaOps = supplier.kafkaOperator;
+        when(mockKafkaOps.getAsync(eq(NAMESPACE), eq(CLUSTER_NAME))).thenReturn(Future.succeededFuture(KAFKA));
+        when(mockKafkaOps.updateStatusAsync(any(), any())).thenReturn(Future.succeededFuture());
+
+        StatefulSetOperator mockStsOps = supplier.stsOperations;
+        when(mockStsOps.getAsync(any(), eq(KAFKA_CLUSTER.getComponentName()))).thenReturn(Future.succeededFuture(null));
+
+        StrimziPodSetOperator mockPodSetOps = supplier.strimziPodSetOperator;
+        when(mockPodSetOps.listAsync(eq(NAMESPACE), eq(KAFKA_CLUSTER.getSelectorLabels()))).thenReturn(Future.succeededFuture(null));
+        when(mockPodSetOps.getAsync(any(), eq(KAFKA_CLUSTER.getComponentName()))).thenReturn(Future.succeededFuture(null));
+
+        CrdOperator<KubernetesClient, KafkaNodePool, KafkaNodePoolList> mockKafkaNodePoolOps = supplier.kafkaNodePoolOperator;
+        when(mockKafkaNodePoolOps.listAsync(any(), any(Labels.class))).thenReturn(Future.succeededFuture(null));
+
+        ClusterOperatorConfig config = new ClusterOperatorConfig.ClusterOperatorConfigBuilder(ResourceUtils.dummyClusterOperatorConfig(), VERSIONS)
+                .with(ClusterOperatorConfig.FEATURE_GATES.key(), "+KafkaNodePools,+UseKRaft")
+                .build();
+
+        KafkaAssemblyOperator kao = new KafkaAssemblyOperator(
+                vertx, new PlatformFeaturesAvailability(false, KUBERNETES_VERSION),
+                CERT_MANAGER,
+                PASSWORD_GENERATOR,
+                supplier,
+                config);
+
+        Checkpoint async = context.checkpoint();
+
+        kao.reconcile(new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME))
+                .onComplete(context.failing(v -> context.verify(() -> {
+                    assertThat(v, instanceOf(InvalidConfigurationException.class));
+                    assertThat(v.getMessage(), is("KafkaNodePools are enabled, but no KafkaNodePools found for Kafka cluster my-cluster"));
                     async.flag();
                 })));
     }

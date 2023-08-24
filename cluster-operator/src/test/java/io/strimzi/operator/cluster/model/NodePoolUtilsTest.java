@@ -539,7 +539,7 @@ public class NodePoolUtilsTest {
                 .build();
 
         InvalidResourceException ex = assertThrows(InvalidResourceException.class, () -> NodePoolUtils.validateNodePools(Reconciliation.DUMMY_RECONCILIATION, KAFKA, List.of(poolA), false));
-        assertThat(ex.getMessage(), is("KafkaNodePools are enabled, but the KafkaNodePool for Kafka cluster my-cluster either don't exists or have 0 replicas. Please make sure at least one KafkaNodePool resource exists, is in the same namespace as the Kafka resource, has at least one replica, and has the strimzi.io/cluster label set to the name of the Kafka resource."));
+        assertThat(ex.getMessage(), is("KafkaNodePools are enabled, but KafkaNodePools for Kafka cluster my-cluster either don't exist or have 0 replicas. Please make sure at least one KafkaNodePool resource exists, is in the same namespace as the Kafka resource, has at least one replica, and has the strimzi.io/cluster label set to the name of the Kafka resource."));
     }
 
     @Test
@@ -560,13 +560,13 @@ public class NodePoolUtilsTest {
     @Test
     public void testValidationOnlyPoolsWithZeroReplicas()   {
         InvalidResourceException ex = assertThrows(InvalidResourceException.class, () -> NodePoolUtils.validateNodePools(Reconciliation.DUMMY_RECONCILIATION, KAFKA, List.of(), false));
-        assertThat(ex.getMessage(), is("KafkaNodePools are enabled, but the KafkaNodePool for Kafka cluster my-cluster either don't exists or have 0 replicas. Please make sure at least one KafkaNodePool resource exists, is in the same namespace as the Kafka resource, has at least one replica, and has the strimzi.io/cluster label set to the name of the Kafka resource."));
+        assertThat(ex.getMessage(), is("KafkaNodePools are enabled, but KafkaNodePools for Kafka cluster my-cluster either don't exist or have 0 replicas. Please make sure at least one KafkaNodePool resource exists, is in the same namespace as the Kafka resource, has at least one replica, and has the strimzi.io/cluster label set to the name of the Kafka resource."));
     }
 
     @Test
     public void testValidationIsCalledFromMainMethod()   {
         InvalidResourceException ex = assertThrows(InvalidResourceException.class, () -> NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, KAFKA, List.of(), Map.of(), Map.of(), false, SHARED_ENV_PROVIDER));
-        assertThat(ex.getMessage(), is("KafkaNodePools are enabled, but the KafkaNodePool for Kafka cluster my-cluster either don't exists or have 0 replicas. Please make sure at least one KafkaNodePool resource exists, is in the same namespace as the Kafka resource, has at least one replica, and has the strimzi.io/cluster label set to the name of the Kafka resource."));
+        assertThat(ex.getMessage(), is("KafkaNodePools are enabled, but KafkaNodePools for Kafka cluster my-cluster either don't exist or have 0 replicas. Please make sure at least one KafkaNodePool resource exists, is in the same namespace as the Kafka resource, has at least one replica, and has the strimzi.io/cluster label set to the name of the Kafka resource."));
     }
 
     @Test
