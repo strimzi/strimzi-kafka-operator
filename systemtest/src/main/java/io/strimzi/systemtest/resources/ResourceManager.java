@@ -174,6 +174,8 @@ public class ResourceManager {
                         resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName());
             }
 
+            setNamespaceInResource(testContext, resource);
+
             if (resource.getKind().equals(Kafka.RESOURCE_KIND)) {
                 // in case we want to run tests with KafkaNodePools enabled, we want to use it for all the Kafka resources
                 if (Environment.isKafkaNodePoolsEnabled()) {
@@ -198,8 +200,6 @@ public class ResourceManager {
                     continue;
                 }
             }
-
-            setNamespaceInResource(testContext, resource);
 
             labelResource(testContext, resource);
 
@@ -239,7 +239,7 @@ public class ResourceManager {
         if (annotations.get(Annotations.ANNO_STRIMZI_IO_NODE_POOLS) != null && annotations.get(Annotations.ANNO_STRIMZI_IO_NODE_POOLS).equals("enabled")) {
             KafkaNodePool nodePool = KafkaNodePoolResource.convertKafkaResourceToKafkaNodePool(resource);
 
-            setNamespaceInResource(testContext, resource);
+            setNamespaceInResource(testContext, nodePool);
 
             boolean nodePoolAlreadyExists = KafkaNodePoolResource.kafkaNodePoolClient().inNamespace(resource.getMetadata().getNamespace()).list().getItems()
                 .stream()
@@ -253,7 +253,7 @@ public class ResourceManager {
                 return;
             }
 
-            labelResource(testContext, resource);
+            labelResource(testContext, nodePool);
 
             ResourceType<KafkaNodePool> nodePoolType = findResourceType(nodePool);
             nodePoolType.create(nodePool);
