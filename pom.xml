@@ -120,13 +120,13 @@
         <!-- Build tools -->
         <checkstyle.version>10.12.2</checkstyle.version>
         <spotbugs.version>4.7.3</spotbugs.version>
-        <sundrio.version>0.100.1</sundrio.version>
+        <sundrio.version>0.100.3</sundrio.version>
         <lombok.version>1.18.24</lombok.version>
 
         <!-- Runtime dependencies -->
-        <fabric8.kubernetes-client.version>6.8.0</fabric8.kubernetes-client.version>
-        <fabric8.openshift-client.version>6.8.0</fabric8.openshift-client.version>
-        <fabric8.kubernetes-model.version>6.8.0</fabric8.kubernetes-model.version>
+        <fabric8.kubernetes-client.version>6.8.1</fabric8.kubernetes-client.version>
+        <fabric8.openshift-client.version>6.8.1</fabric8.openshift-client.version>
+        <fabric8.kubernetes-model.version>6.8.1</fabric8.kubernetes-model.version>
         <fabric8.zjsonpatch.version>0.3.0</fabric8.zjsonpatch.version>
         <fasterxml.jackson-core.version>2.15.2</fasterxml.jackson-core.version>
         <fasterxml.jackson-databind.version>2.15.2</fasterxml.jackson-databind.version>
