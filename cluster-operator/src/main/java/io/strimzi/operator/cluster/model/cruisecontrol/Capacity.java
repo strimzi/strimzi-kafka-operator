@@ -242,7 +242,7 @@ public class Capacity {
         } else if (bc != null && bc.getCpu() != null) {
             return new CpuCapacity(bc.getCpu());
         }
-           return getCpuBasedOnRequirements(resourceRequirements);
+        return getCpuBasedOnRequirements(resourceRequirements);
     }
 
     private static DiskCapacity processDisk(Storage storage, int brokerId) {

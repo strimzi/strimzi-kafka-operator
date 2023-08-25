@@ -114,19 +114,19 @@ public class CruiseControlTest {
 
     private static final SharedEnvironmentProvider SHARED_ENV_PROVIDER = new MockSharedEnvironmentProvider();
 
-    private static final String namespace = "test";
-    private static final String cluster = "foo";
-    private static final int replicas = 1;
-    private static final String image = "my-image:latest";
-    private static final int healthDelay = 120;
-    private static final int healthTimeout = 30;
-    private static final String minInsyncReplicas = "2";
-    private static final String brokerCapacityCpu = "6.0";
-    private static final String brokerCapacityOverrideCpu = "2.0";
-    private static final String resourceLimitCpu = "3.0";
-    private static final String resourceRequestsCpu = "4.0";
+    private static final String NAMESPACE = "test";
+    private static final String CLUSTER = "foo";
+    private static final int REPLICAS = 1;
+    private static final String IMAGE = "my-image:latest";
+    private static final int HEALTH_DELAY = 120;
+    private static final int HEALTH_TIMEOUT = 30;
+    private static final String MIN_INSYNC_REPLICAS = "2";
+    private static final String BROKER_CAPACITY_CPU = "6.0";
+    private static final String BROKER_CAPACITY_OVERRIDE_CPU = "2.0";
+    private static final String RESOURCE_LIMIT_CPU = "3.0";
+    private static final String RESOURCE_REQUESTS_CPU = "4.0";
 
-    private final Map<String, Object> kafkaConfig = singletonMap(CruiseControl.MIN_INSYNC_REPLICAS, minInsyncReplicas);
+    private final Map<String, Object> kafkaConfig = singletonMap(CruiseControl.MIN_INSYNC_REPLICAS, MIN_INSYNC_REPLICAS);
     private final Map<String, Object> ccConfig = new HashMap<>() {{
             putAll(CruiseControlConfiguration.getCruiseControlDefaultPropertiesMap());
             put("num.partition.metrics.windows", "2");
@@ -186,7 +186,7 @@ public class CruiseControlTest {
     }
 
     private Kafka createKafka(CruiseControlSpec cruiseControlSpec) {
-        return new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout))
+        return new KafkaBuilder(ResourceUtils.createKafka(NAMESPACE, CLUSTER, REPLICAS, IMAGE, HEALTH_DELAY, HEALTH_TIMEOUT))
                 .editSpec()
                     .editKafka()
                         .withConfig(kafkaConfig)
@@ -198,14 +198,14 @@ public class CruiseControlTest {
     }
 
     private Map<String, String> expectedLabels(String name) {
-        return TestUtils.map(Labels.STRIMZI_CLUSTER_LABEL, this.cluster,
+        return TestUtils.map(Labels.STRIMZI_CLUSTER_LABEL, this.CLUSTER,
                 "my-user-label", "cromulent",
                 Labels.STRIMZI_KIND_LABEL, Kafka.RESOURCE_KIND,
                 Labels.STRIMZI_NAME_LABEL, name,
                 Labels.STRIMZI_COMPONENT_TYPE_LABEL, CruiseControl.COMPONENT_TYPE,
                 Labels.KUBERNETES_NAME_LABEL, CruiseControl.COMPONENT_TYPE,
-                Labels.KUBERNETES_INSTANCE_LABEL, this.cluster,
-                Labels.KUBERNETES_PART_OF_LABEL, Labels.APPLICATION_NAME + "-" + this.cluster,
+                Labels.KUBERNETES_INSTANCE_LABEL, this.CLUSTER,
+                Labels.KUBERNETES_PART_OF_LABEL, Labels.APPLICATION_NAME + "-" + this.CLUSTER,
                 Labels.KUBERNETES_MANAGED_BY_LABEL, AbstractModel.STRIMZI_CLUSTER_OPERATOR_NAME);
     }
 
@@ -214,15 +214,15 @@ public class CruiseControlTest {
     }
 
     private Map<String, String> expectedLabels() {
-        return expectedLabels(CruiseControlResources.deploymentName(cluster));
+        return expectedLabels(CruiseControlResources.deploymentName(CLUSTER));
     }
 
     private List<EnvVar> getExpectedEnvVars() {
         List<EnvVar> expected = new ArrayList<>();
         expected.add(new EnvVarBuilder().withName(CruiseControl.ENV_VAR_CRUISE_CONTROL_METRICS_ENABLED).withValue(Boolean.toString(CruiseControl.DEFAULT_CRUISE_CONTROL_METRICS_ENABLED)).build());
-        expected.add(new EnvVarBuilder().withName(CruiseControl.ENV_VAR_STRIMZI_KAFKA_BOOTSTRAP_SERVERS).withValue(KafkaResources.bootstrapServiceName(cluster) + ":" + KafkaCluster.REPLICATION_PORT).build());
+        expected.add(new EnvVarBuilder().withName(CruiseControl.ENV_VAR_STRIMZI_KAFKA_BOOTSTRAP_SERVERS).withValue(KafkaResources.bootstrapServiceName(CLUSTER) + ":" + KafkaCluster.REPLICATION_PORT).build());
         expected.add(new EnvVarBuilder().withName(CruiseControl.ENV_VAR_STRIMZI_KAFKA_GC_LOG_ENABLED).withValue(Boolean.toString(JvmOptions.DEFAULT_GC_LOGGING_ENABLED)).build());
-        expected.add(new EnvVarBuilder().withName(CruiseControl.ENV_VAR_MIN_INSYNC_REPLICAS).withValue(minInsyncReplicas).build());
+        expected.add(new EnvVarBuilder().withName(CruiseControl.ENV_VAR_MIN_INSYNC_REPLICAS).withValue(MIN_INSYNC_REPLICAS).build());
         expected.add(new EnvVarBuilder().withName(ENV_VAR_CRUISE_CONTROL_CAPACITY_CONFIGURATION).withValue(cc.capacity.toString()).build());
         expected.add(new EnvVarBuilder().withName(CruiseControl.ENV_VAR_API_SSL_ENABLED).withValue(Boolean.toString(CruiseControlConfigurationParameters.DEFAULT_WEBSERVER_SSL_ENABLED)).build());
         expected.add(new EnvVarBuilder().withName(CruiseControl.ENV_VAR_API_AUTH_ENABLED).withValue(Boolean.toString(CruiseControlConfigurationParameters.DEFAULT_WEBSERVER_SECURITY_ENABLED)).build());
@@ -292,7 +292,7 @@ public class CruiseControlTest {
         Map<String, Quantity> requests = Map.of(Capacity.RESOURCE_TYPE, new Quantity("400m"));
         Map<String, Quantity> limits = Map.of(Capacity.RESOURCE_TYPE, new Quantity("0.5"));
 
-        resource = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout))
+        resource = new KafkaBuilder(ResourceUtils.createKafka(NAMESPACE, CLUSTER, REPLICAS, IMAGE, HEALTH_DELAY, HEALTH_TIMEOUT))
             .editSpec()
                 .editKafka()
                     .withVersion(KafkaVersionTestUtils.DEFAULT_KAFKA_VERSION)
@@ -378,7 +378,7 @@ public class CruiseControlTest {
         requests = Map.of(Capacity.RESOURCE_TYPE, new Quantity(userDefinedCpuCapacity));
         limits = Map.of(Capacity.RESOURCE_TYPE, new Quantity("0.5"));
 
-        resource = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout))
+        resource = new KafkaBuilder(ResourceUtils.createKafka(NAMESPACE, CLUSTER, REPLICAS, IMAGE, HEALTH_DELAY, HEALTH_TIMEOUT))
             .editSpec()
                 .editKafka()
                 .withVersion(KafkaVersionTestUtils.DEFAULT_KAFKA_VERSION)
@@ -401,7 +401,7 @@ public class CruiseControlTest {
 
     @ParallelTest
     public void testBrokerCapacitiesWithPools() {
-        Kafka kafka = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout))
+        Kafka kafka = new KafkaBuilder(ResourceUtils.createKafka(NAMESPACE, CLUSTER, REPLICAS, IMAGE, HEALTH_DELAY, HEALTH_TIMEOUT))
                 .editSpec()
                     .withCruiseControl(cruiseControlSpec)
                 .endSpec()
@@ -483,8 +483,8 @@ public class CruiseControlTest {
 
     @ParallelTest
     public void testFromConfigMap() {
-        assertThat(cc.namespace, is(namespace));
-        assertThat(cc.cluster, is(cluster));
+        assertThat(cc.namespace, is(NAMESPACE));
+        assertThat(cc.cluster, is(CLUSTER));
         assertThat(cc.getImage(), is(ccImage));
     }
 
@@ -496,8 +496,8 @@ public class CruiseControlTest {
 
         assertThat(containers.size(), is(1));
 
-        assertThat(dep.getMetadata().getName(), is(CruiseControlResources.deploymentName(cluster)));
-        assertThat(dep.getMetadata().getNamespace(), is(namespace));
+        assertThat(dep.getMetadata().getName(), is(CruiseControlResources.deploymentName(CLUSTER)));
+        assertThat(dep.getMetadata().getNamespace(), is(NAMESPACE));
         TestUtils.checkOwnerReference(dep, kafka);
 
         // checks on the main Cruise Control container
@@ -520,19 +520,19 @@ public class CruiseControlTest {
 
         Volume volume = volumes.stream().filter(vol -> CruiseControl.TLS_CC_CERTS_VOLUME_NAME.equals(vol.getName())).findFirst().orElseThrow();
         assertThat(volume, is(notNullValue()));
-        assertThat(volume.getSecret().getSecretName(), is(CruiseControlResources.secretName(cluster)));
+        assertThat(volume.getSecret().getSecretName(), is(CruiseControlResources.secretName(CLUSTER)));
 
         volume = volumes.stream().filter(vol -> CruiseControl.TLS_CA_CERTS_VOLUME_NAME.equals(vol.getName())).findFirst().orElseThrow();
         assertThat(volume, is(notNullValue()));
-        assertThat(volume.getSecret().getSecretName(), is(AbstractModel.clusterCaCertSecretName(cluster)));
+        assertThat(volume.getSecret().getSecretName(), is(AbstractModel.clusterCaCertSecretName(CLUSTER)));
 
         volume = volumes.stream().filter(vol -> CruiseControl.LOG_AND_METRICS_CONFIG_VOLUME_NAME.equals(vol.getName())).findFirst().orElseThrow();
         assertThat(volume, is(notNullValue()));
-        assertThat(volume.getConfigMap().getName(), is(CruiseControlResources.logAndMetricsConfigMapName(cluster)));
+        assertThat(volume.getConfigMap().getName(), is(CruiseControlResources.logAndMetricsConfigMapName(CLUSTER)));
 
         volume = volumes.stream().filter(vol -> CruiseControl.API_AUTH_CONFIG_VOLUME_NAME.equals(vol.getName())).findFirst().orElseThrow();
         assertThat(volume, is(notNullValue()));
-        assertThat(volume.getSecret().getSecretName(), is(CruiseControlResources.apiSecretName(cluster)));
+        assertThat(volume.getSecret().getSecretName(), is(CruiseControlResources.apiSecretName(CLUSTER)));
 
         volume = volumes.stream().filter(vol -> VolumeUtils.STRIMZI_TMP_DIRECTORY_DEFAULT_VOLUME_NAME.equals(vol.getName())).findFirst().orElseThrow();
         assertThat(volume, is(notNullValue()));
@@ -655,7 +655,7 @@ public class CruiseControlTest {
         Service svc = cc.generateService();
 
         assertThat(svc.getSpec().getType(), is("ClusterIP"));
-        assertThat(svc.getMetadata().getLabels(), is(expectedLabels(CruiseControlResources.serviceName(cluster))));
+        assertThat(svc.getMetadata().getLabels(), is(expectedLabels(CruiseControlResources.serviceName(CLUSTER))));
         assertThat(svc.getSpec().getSelector(), is(expectedSelectorLabels()));
         assertThat(svc.getSpec().getPorts().size(), is(1));
         assertThat(svc.getSpec().getPorts().get(0).getName(), is(CruiseControl.REST_API_PORT_NAME));
@@ -821,42 +821,42 @@ public class CruiseControlTest {
         /* In this test case, when override is set for a broker, it takes precedence over the general broker capacity setting for that
            specific broker, but the general broker capacity takes precedence over the Kafka resource request */
         ResourceRequirements resourceRequirements = new ResourceRequirementsBuilder()
-                .addToLimits("cpu", new Quantity(resourceLimitCpu))
-                .addToRequests("cpu", new Quantity(resourceRequestsCpu))
+                .addToLimits("cpu", new Quantity(RESOURCE_LIMIT_CPU))
+                .addToRequests("cpu", new Quantity(RESOURCE_REQUESTS_CPU))
                 .build();
 
         io.strimzi.api.kafka.model.balancing.BrokerCapacity brokerCapacityOne = new BrokerCapacityBuilder()
-                .withCpu(brokerCapacityCpu)
+                .withCpu(BROKER_CAPACITY_CPU)
                 .withOverrides()
                     .addNewOverride()
                         .addToBrokers(0)
-                        .withCpu(brokerCapacityOverrideCpu)
+                        .withCpu(BROKER_CAPACITY_OVERRIDE_CPU)
                     .endOverride()
                 .build();
 
-        verifyBrokerCapacity(nodes, storage, resourceRequirements, brokerCapacityOne, brokerCapacityOverrideCpu, brokerCapacityCpu, brokerCapacityCpu);
+        verifyBrokerCapacity(nodes, storage, resourceRequirements, brokerCapacityOne, BROKER_CAPACITY_OVERRIDE_CPU, BROKER_CAPACITY_CPU, BROKER_CAPACITY_CPU);
 
         // In this test case, when override is set for a broker, it takes precedence over the Kafka resource request
         io.strimzi.api.kafka.model.balancing.BrokerCapacity brokerCapacityTwo = new BrokerCapacityBuilder()
                 .withOverrides()
                     .addNewOverride()
                         .addToBrokers(0)
-                        .withCpu(brokerCapacityOverrideCpu)
+                        .withCpu(BROKER_CAPACITY_OVERRIDE_CPU)
                     .endOverride()
                 .build();
 
-        verifyBrokerCapacity(nodes, storage, resourceRequirements, brokerCapacityTwo, brokerCapacityOverrideCpu, resourceRequestsCpu, resourceRequestsCpu);
+        verifyBrokerCapacity(nodes, storage, resourceRequirements, brokerCapacityTwo, BROKER_CAPACITY_OVERRIDE_CPU, RESOURCE_REQUESTS_CPU, RESOURCE_REQUESTS_CPU);
 
         /* In this test case, when neither the override nor the CPU resource request are configured but the CPU
            resource limit for CPU is set for the Kafka brokers; therefore, resource limit will be used as the CPU capacity */
         ResourceRequirements resourceRequirements3 = new ResourceRequirementsBuilder()
-                .addToLimits("cpu", new Quantity(resourceLimitCpu))
+                .addToLimits("cpu", new Quantity(RESOURCE_LIMIT_CPU))
                 .build();
 
         io.strimzi.api.kafka.model.balancing.BrokerCapacity brokerCapacityThree = new BrokerCapacityBuilder()
                 .build();
 
-        verifyBrokerCapacity(nodes, storage, resourceRequirements3, brokerCapacityThree, resourceLimitCpu, resourceLimitCpu, resourceLimitCpu);
+        verifyBrokerCapacity(nodes, storage, resourceRequirements3, brokerCapacityThree, RESOURCE_LIMIT_CPU, RESOURCE_LIMIT_CPU, RESOURCE_LIMIT_CPU);
 
         /* In this test case, when neither the override nor the Kafka resource requests or limits for CPU are configured,
            the CPU capacity will be set to DEFAULT_CPU_CORE_CAPACITY */
@@ -941,12 +941,12 @@ public class CruiseControlTest {
         CruiseControlSpec cruiseControlSpec = new CruiseControlSpecBuilder()
                 .withImage(ccImage)
                 .withNewLivenessProbe()
-                        .withInitialDelaySeconds(healthDelay)
-                        .withTimeoutSeconds(healthTimeout)
+                        .withInitialDelaySeconds(HEALTH_DELAY)
+                        .withTimeoutSeconds(HEALTH_TIMEOUT)
                 .endLivenessProbe()
                 .withNewReadinessProbe()
-                       .withInitialDelaySeconds(healthDelay)
-                       .withTimeoutSeconds(healthTimeout)
+                       .withInitialDelaySeconds(HEALTH_DELAY)
+                       .withTimeoutSeconds(HEALTH_TIMEOUT)
                 .endReadinessProbe()
                 .build();
 
@@ -959,10 +959,10 @@ public class CruiseControlTest {
         // checks on the main Cruise Control container
         Container ccContainer = containers.stream().filter(container -> ccImage.equals(container.getImage())).findFirst().orElseThrow();
         assertThat(ccContainer.getImage(), is(cc.image));
-        assertThat(ccContainer.getLivenessProbe().getInitialDelaySeconds(), is(healthDelay));
-        assertThat(ccContainer.getLivenessProbe().getTimeoutSeconds(), is(healthTimeout));
-        assertThat(ccContainer.getReadinessProbe().getInitialDelaySeconds(), is(healthDelay));
-        assertThat(ccContainer.getReadinessProbe().getTimeoutSeconds(), is(healthTimeout));
+        assertThat(ccContainer.getLivenessProbe().getInitialDelaySeconds(), is(HEALTH_DELAY));
+        assertThat(ccContainer.getLivenessProbe().getTimeoutSeconds(), is(HEALTH_TIMEOUT));
+        assertThat(ccContainer.getReadinessProbe().getInitialDelaySeconds(), is(HEALTH_DELAY));
+        assertThat(ccContainer.getReadinessProbe().getTimeoutSeconds(), is(HEALTH_TIMEOUT));
     }
 
     @ParallelTest
@@ -1101,7 +1101,7 @@ public class CruiseControlTest {
                 .endPodSelector()
                 .build();
 
-        NetworkPolicy np = cc.generateNetworkPolicy(namespace, null);
+        NetworkPolicy np = cc.generateNetworkPolicy(NAMESPACE, null);
 
         assertThat(np.getSpec().getIngress().stream().filter(ing -> ing.getPorts().get(0).getPort().equals(new IntOrString(CruiseControl.REST_API_PORT))).findFirst().orElse(null), is(notNullValue()));
 
