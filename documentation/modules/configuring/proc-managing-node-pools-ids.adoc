@@ -51,6 +51,27 @@ The default approach is also applied if the assigned range of IDs is misformatte
 .Prerequisites
 
 * xref:deploying-cluster-operator-str[The Cluster Operator must be deployed.]
+* (Optional) Use the `reserved.broker-max.id` configuration property to extend the allowable range for node IDs within your node pools. 
+
+By default, Apache Kafka restricts node IDs to numbers ranging from 0 to 999. 
+To use node ID values greater than 999, add the `reserved.broker-max.id` configuration property to the `Kafka` custom resource and specify the required maximum node ID value.
+
+In this example, the maximum node ID is set at 10000.
+Node IDs can then be assigned up to that value. 
+
+[source,yaml,subs="+attributes"]
+.Example configuration for the maximum node ID number
+----
+apiVersion: {KafkaApiVersion}
+kind: Kafka
+metadata:
+  name: my-cluster
+spec:
+  kafka:
+    config:
+      reserved.broker.max.id: 10000
+  # ...      
+----
 
 .Procedure
 
@@ -75,6 +96,8 @@ kubectl annotate kafkanodepool pool-b strimzi.io/remove-node-ids="[60-50,9,8,7]"
 ----
 +
 The highest available ID from this range is removed when scaling down `pool-b`.
++
+NOTE: If you want to remove a specific node, you can assign a single node ID to the scaling down annotation: `kubectl annotate kafkanodepool pool-b strimzi.io/remove-node-ids="[3]"`. 
 
 . You can now scale the node pool.
 +
@@ -87,3 +110,17 @@ For more information, see the following:
 --
 +
 On reconciliation, a warning is given if the annotations are misformatted. 
+
+. After you have performed the scaling operation, you can remove the annotation if it's no longer needed.
++
+.Removing the annotation for scaling up 
+[source,shell,subs="+quotes"]
+----
+kubectl annotate kafkanodepool pool-a strimzi.io/next-node-ids-
+----
++
+.Removing the annotation for  scaling down 
+[source,shell,subs="+quotes"]
+----
+kubectl annotate kafkanodepool pool-b strimzi.io/remove-node-ids-
+----
