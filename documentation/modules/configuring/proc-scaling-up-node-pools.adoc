@@ -27,7 +27,7 @@ NOTE: During this process, the ID of the node that holds the partition replicas 
 .Prerequisites
 
 * xref:deploying-cluster-operator-str[The Cluster Operator must be deployed.]
-* (Optional) For scale up operations, xref:proc-managing-node-pools-ids-{context}[you can specify the node IDs to use].
+* (Optional) For scale up operations, xref:proc-managing-node-pools-ids-{context}[you can specify the node IDs to use in the operation].
 +
 If you have assigned a range of node IDs for the operation, the ID of the node being added is determined by the sequence of nodes given. 
 If you have assigned a single node ID, a node is added with the specified ID.
