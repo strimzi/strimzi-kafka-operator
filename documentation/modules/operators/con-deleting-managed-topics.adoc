@@ -7,7 +7,7 @@
 
 [role="_abstract"]
 Unidirectional topic management supports the deletion of topics managed through the `KafkaTopic` resource with or without Kubernetes finalizers.
-This is controlled by the `STRIMZI_USE_FINALIZERS` Topic Operator environment variable.
+This is determined by the `STRIMZI_USE_FINALIZERS` Topic Operator environment variable.
 By default, this is set to `true`, though it can be set to `false` in the Topic Operator `env` configuration if you do not want the Topic Operator to add finalizers.
 
 NOTE: Unidirectional topic management is available as a preview. 
@@ -57,3 +57,30 @@ When the finalization tasks are successfully executed, the finalizer is removed 
 Finalizers also prevent related resources from being deleted. 
 If the unidirectional Topic Operator is not running, it won't be able to remove the `metadata.finalizer`. 
 Consequently, an attempt to delete the namespace that contains the `KafkaTopic` resource won't complete until either the operator is restarted, or the finalizer is otherwise removed (for example using `kubectl edit`). 
+
+== Removing finalizers
+
+If you want to bypass the finalization process when deleting topics, you can remove the finalizers.   
+You might want to do this to delete topics more quickly; or to handle certain topics without invoking cleanup operations.
+Perhaps the cleanup operation associated with the finalization process is not completing as expected.
+
+To remove finalizers on all topics, use the following command:
+
+.Removing finalizers on topics
+[source,shell]
+----
+kubectl get kt -o=json | jq '.items[].metadata.finalizers = null' | kubectl apply -f -
+----
+
+The command uses the `jq` tool to modify the `KafkaTopic` (`kt`) resources by setting the finalizers to `null`.
+You can also use the command for a specific topic:
+
+.Removing a finalizer on a specific topic
+[source,shell]
+----
+kubectl get kt <topic_name> -o=json | jq '.metadata.finalizers = null' | kubectl apply -f -
+----
+
+After running the command, you can go ahead and delete the topics.
+
+WARNING: Be careful when removing finalizers, as any cleanup operations associated with the finalization process are not performed.
