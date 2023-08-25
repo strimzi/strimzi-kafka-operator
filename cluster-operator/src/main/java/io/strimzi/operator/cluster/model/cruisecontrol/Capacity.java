@@ -218,31 +218,31 @@ public class Capacity {
         Integer request = getResourceRequirement(resourceRequirements, ResourceRequirementType.REQUEST);
         Integer limit = getResourceRequirement(resourceRequirements, ResourceRequirementType.LIMIT);
 
-        if (limit != null) {
-            if (request != null) {
-                return new CpuCapacity(CpuCapacity.milliCpuToCpu(request));
-            } else {
-                return new CpuCapacity(CpuCapacity.milliCpuToCpu(limit));
-            }
-        } else if (request != null) {
+        if (request != null) {
             return new CpuCapacity(CpuCapacity.milliCpuToCpu(request));
+        } else if (limit != null) {
+            return new CpuCapacity(CpuCapacity.milliCpuToCpu(limit));
+        } else {
+            return new CpuCapacity(BrokerCapacity.DEFAULT_CPU_CORE_CAPACITY);
         }
-        return null;
     }
 
+    /**
+     * Processes the CPU capacity for a broker based on possible inputs such as overrides,
+     * broker capacity, and resource requirements.
+     *
+     * @param override            The brokerCapacityOverride containing CPU information.
+     * @param bc                  The brokerCapacity containing CPU information.
+     * @param resourceRequirements The resourceRequirements for the broker (requests or limits).
+     * @return A {@link CpuCapacity} object representing the processed CPU capacity.
+     */
     private CpuCapacity processCpu(BrokerCapacityOverride override, io.strimzi.api.kafka.model.balancing.BrokerCapacity bc, ResourceRequirements resourceRequirements) {
         if (override != null && override.getCpu() != null) {
             return new CpuCapacity(override.getCpu());
         } else if (bc != null && bc.getCpu() != null) {
             return new CpuCapacity(bc.getCpu());
-        } else {
-            CpuCapacity cpu = getCpuBasedOnRequirements(resourceRequirements);
-            if (cpu != null) {
-                return cpu;
-            } else {
-                return new CpuCapacity(BrokerCapacity.DEFAULT_CPU_CORE_CAPACITY);
-            }
         }
+           return getCpuBasedOnRequirements(resourceRequirements);
     }
 
     private static DiskCapacity processDisk(Storage storage, int brokerId) {

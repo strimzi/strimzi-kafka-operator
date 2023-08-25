@@ -114,16 +114,17 @@ public class CruiseControlTest {
 
     private static final SharedEnvironmentProvider SHARED_ENV_PROVIDER = new MockSharedEnvironmentProvider();
 
-    private final String namespace = "test";
-    private final String cluster = "foo";
-    private final int replicas = 1;
-    private final String image = "my-image:latest";
-    private final int healthDelay = 120;
-    private final int healthTimeout = 30;
-    private final String minInsyncReplicas = "2";
-    static String brokerCapacityCpu = "6.0";
-    static String brokerCapacityOverrideCpu = "2.0";
-    static String resourceLimitCpu = "3.0";
+    private static final String namespace = "test";
+    private static final String cluster = "foo";
+    private static final int replicas = 1;
+    private static final String image = "my-image:latest";
+    private static final int healthDelay = 120;
+    private static final int healthTimeout = 30;
+    private static final String minInsyncReplicas = "2";
+    private static final String brokerCapacityCpu = "6.0";
+    private static final String brokerCapacityOverrideCpu = "2.0";
+    private static final String resourceLimitCpu = "3.0";
+    private static final String resourceRequestsCpu = "4.0";
 
     private final Map<String, Object> kafkaConfig = singletonMap(CruiseControl.MIN_INSYNC_REPLICAS, minInsyncReplicas);
     private final Map<String, Object> ccConfig = new HashMap<>() {{
@@ -191,7 +192,7 @@ public class CruiseControlTest {
                         .withConfig(kafkaConfig)
                         .withStorage(kafkaStorage)
                     .endKafka()
-                  .withCruiseControl(cruiseControlSpec)
+                    .withCruiseControl(cruiseControlSpec)
                 .endSpec()
                 .build();
     }
@@ -292,15 +293,15 @@ public class CruiseControlTest {
         Map<String, Quantity> limits = Map.of(Capacity.RESOURCE_TYPE, new Quantity("0.5"));
 
         resource = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout))
-                .editSpec()
-                    .editKafka()
-                        .withVersion(KafkaVersionTestUtils.DEFAULT_KAFKA_VERSION)
-                        .withStorage(jbodStorage)
-                        .withResources(new ResourceRequirementsBuilder().withRequests(requests).withLimits(limits).build())
-                    .endKafka()
-                    .withCruiseControl(cruiseControlSpec)
-                .endSpec()
-                .build();
+            .editSpec()
+                .editKafka()
+                    .withVersion(KafkaVersionTestUtils.DEFAULT_KAFKA_VERSION)
+                    .withStorage(jbodStorage)
+                    .withResources(new ResourceRequirementsBuilder().withRequests(requests).withLimits(limits).build())
+                .endKafka()
+                .withCruiseControl(cruiseControlSpec)
+            .endSpec()
+            .build();
 
         capacity = new Capacity(Reconciliation.DUMMY_RECONCILIATION, resource.getSpec(), NODES, createStorageMap(resource), createResourceRequirementsMap(resource));
         String cpuCapacity = new CpuCapacity(userDefinedCpuCapacity).toString();
@@ -329,22 +330,22 @@ public class CruiseControlTest {
         List<Integer> overrideList1 = List.of(broker1);
 
         cruiseControlSpec = new CruiseControlSpecBuilder()
-                .withImage(ccImage)
-                .withNewBrokerCapacity()
-                    .withCpu(userDefinedCpuCapacity)
-                    .withInboundNetwork(inboundNetwork)
-                    .addNewOverride()
-                        .withBrokers(overrideList0)
-                        .withCpu(userDefinedCpuCapacityOverride0)
-                        .withInboundNetwork(inboundNetworkOverride0)
-                    .endOverride()
-                    .addNewOverride()
-                        .withBrokers(overrideList1)
-                        .withInboundNetwork(inboundNetworkOverride1)
-                        .withOutboundNetwork(outboundNetworkOverride1)
-                    .endOverride()
-                .endBrokerCapacity()
-                .build();
+            .withImage(ccImage)
+            .withNewBrokerCapacity()
+                .withCpu(userDefinedCpuCapacity)
+                .withInboundNetwork(inboundNetwork)
+                .addNewOverride()
+                    .withBrokers(overrideList0)
+                    .withCpu(userDefinedCpuCapacityOverride0)
+                    .withInboundNetwork(inboundNetworkOverride0)
+                .endOverride()
+                .addNewOverride()
+                    .withBrokers(overrideList1)
+                    .withInboundNetwork(inboundNetworkOverride1)
+                    .withOutboundNetwork(outboundNetworkOverride1)
+                .endOverride()
+            .endBrokerCapacity()
+            .build();
 
         resource = createKafka(cruiseControlSpec);
         capacity = new Capacity(Reconciliation.DUMMY_RECONCILIATION, resource.getSpec(), NODES, createStorageMap(resource), createResourceRequirementsMap(resource));
@@ -378,15 +379,15 @@ public class CruiseControlTest {
         limits = Map.of(Capacity.RESOURCE_TYPE, new Quantity("0.5"));
 
         resource = new KafkaBuilder(ResourceUtils.createKafka(namespace, cluster, replicas, image, healthDelay, healthTimeout))
-                .editSpec()
-                    .editKafka()
-                    .withVersion(KafkaVersionTestUtils.DEFAULT_KAFKA_VERSION)
-                    .withStorage(jbodStorage)
-                    .withResources(new ResourceRequirementsBuilder().withRequests(requests).withLimits(limits).build())
-                .endKafka()
-                .withCruiseControl(cruiseControlSpec)
-                .endSpec()
-                .build();
+            .editSpec()
+                .editKafka()
+                .withVersion(KafkaVersionTestUtils.DEFAULT_KAFKA_VERSION)
+                .withStorage(jbodStorage)
+                .withResources(new ResourceRequirementsBuilder().withRequests(requests).withLimits(limits).build())
+            .endKafka()
+            .withCruiseControl(cruiseControlSpec)
+            .endSpec()
+            .build();
 
         capacity = new Capacity(Reconciliation.DUMMY_RECONCILIATION, resource.getSpec(), NODES, createStorageMap(resource), createResourceRequirementsMap(resource));
         cpuCapacity = new CpuCapacity(userDefinedCpuCapacityOverride0).toString();
@@ -817,10 +818,11 @@ public class CruiseControlTest {
         Map<String, Storage> storage = new HashMap<>();
         storage.put("pool1", new JbodStorageBuilder().withVolumes(new PersistentClaimStorageBuilder().withId(0).withSize("100Gi").build()).build());
 
-        // In this test case, when override is set for a broker, it takes precedence over resource request
+        /* In this test case, when override is set for a broker, it takes precedence over the general broker capacity setting for that
+           specific broker, but the general broker capacity takes precedence over the Kafka resource request */
         ResourceRequirements resourceRequirements = new ResourceRequirementsBuilder()
                 .addToLimits("cpu", new Quantity(resourceLimitCpu))
-                .addToRequests("cpu", new Quantity(resourceLimitCpu))
+                .addToRequests("cpu", new Quantity(resourceRequestsCpu))
                 .build();
 
         io.strimzi.api.kafka.model.balancing.BrokerCapacity brokerCapacityOne = new BrokerCapacityBuilder()
@@ -834,7 +836,7 @@ public class CruiseControlTest {
 
         verifyBrokerCapacity(nodes, storage, resourceRequirements, brokerCapacityOne, brokerCapacityOverrideCpu, brokerCapacityCpu, brokerCapacityCpu);
 
-        // In this test case, when override is set for a broker, it takes precedence over resource limit
+        // In this test case, when override is set for a broker, it takes precedence over the Kafka resource request
         io.strimzi.api.kafka.model.balancing.BrokerCapacity brokerCapacityTwo = new BrokerCapacityBuilder()
                 .withOverrides()
                     .addNewOverride()
@@ -843,10 +845,10 @@ public class CruiseControlTest {
                     .endOverride()
                 .build();
 
-        verifyBrokerCapacity(nodes, storage, resourceRequirements, brokerCapacityTwo, brokerCapacityOverrideCpu, resourceLimitCpu, resourceLimitCpu);
+        verifyBrokerCapacity(nodes, storage, resourceRequirements, brokerCapacityTwo, brokerCapacityOverrideCpu, resourceRequestsCpu, resourceRequestsCpu);
 
         /* In this test case, when neither the override nor the CPU resource request are configured but the CPU
-           resource limit is set for the Kafka brokers, the resource limit will be used as the CPU capacity */
+           resource limit for CPU is set for the Kafka brokers; therefore, resource limit will be used as the CPU capacity */
         ResourceRequirements resourceRequirements3 = new ResourceRequirementsBuilder()
                 .addToLimits("cpu", new Quantity(resourceLimitCpu))
                 .build();
@@ -856,7 +858,8 @@ public class CruiseControlTest {
 
         verifyBrokerCapacity(nodes, storage, resourceRequirements3, brokerCapacityThree, resourceLimitCpu, resourceLimitCpu, resourceLimitCpu);
 
-        // In this test case, when neither the override nor the CPU resource request or limits are configured, the CPU capacity will be set to DEFAULT_CPU_CORE_CAPACITY
+        /* In this test case, when neither the override nor the Kafka resource requests or limits for CPU are configured,
+           the CPU capacity will be set to DEFAULT_CPU_CORE_CAPACITY */
         ResourceRequirements resourceRequirements2 = new ResourceRequirementsBuilder()
                 .build();
 
