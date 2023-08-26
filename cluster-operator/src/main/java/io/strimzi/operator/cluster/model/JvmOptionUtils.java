@@ -33,6 +33,9 @@ public final class JvmOptionUtils  {
 
     private static final String X_MS = "-Xms";
     private static final String X_MX = "-Xmx";
+    private static final String MAX_RAM_PERCENTAGE = "MaxRAMPercentage";
+    private static final String INITIAL_RAM_PERCENTAGE = "InitialRAMPercentage";
+    private static final List<String> XX_HEAP_OPTIONS = List.of(MAX_RAM_PERCENTAGE, INITIAL_RAM_PERCENTAGE);
     private static final String MEMORY = "memory";
 
     private JvmOptionUtils() {
@@ -60,9 +63,33 @@ public final class JvmOptionUtils  {
         jvmSystemProperties(envVars, jvmOptions);
     }
 
+    /**
+     * Appends Heap configurations to the String builder. Heap configurations include -Xms, -Xmx,
+     * -XX:InitialRAMPercentage, and -XX:MaxRAMPercentage
+     *
+     * @param optsBuilder   String builder to add the heap options to
+     * @param jvmOptions    JVM Options configured in the CR
+     */
     private static void appendHeapOpts(StringBuilder optsBuilder, JvmOptions jvmOptions) {
-        Optional.ofNullable(jvmOptions).map(JvmOptions::getXms).ifPresent(ms -> optsBuilder.append(X_MS).append(ms));
-        Optional.ofNullable(jvmOptions).map(JvmOptions::getXmx).ifPresent(mx -> optsBuilder.append(' ').append(X_MX).append(mx));
+        if (jvmOptions != null) {
+            if (jvmOptions.getXms() != null)    {
+                optsBuilder.append(X_MS).append(jvmOptions.getXms());
+            }
+
+            if (jvmOptions.getXmx() != null)    {
+                optsBuilder.append(' ').append(X_MX).append(jvmOptions.getXmx());
+            }
+
+            if (jvmOptions.getXx() != null) {
+                if (jvmOptions.getXx().get(INITIAL_RAM_PERCENTAGE) != null)   {
+                    optsBuilder.append(' ').append("-XX:").append(INITIAL_RAM_PERCENTAGE).append("=").append(jvmOptions.getXx().get(INITIAL_RAM_PERCENTAGE));
+                }
+
+                if (jvmOptions.getXx().get(MAX_RAM_PERCENTAGE) != null)   {
+                    optsBuilder.append(' ').append("-XX:").append(MAX_RAM_PERCENTAGE).append("=").append(jvmOptions.getXx().get(MAX_RAM_PERCENTAGE));
+                }
+            }
+        }
     }
 
     /**
@@ -117,9 +144,11 @@ public final class JvmOptionUtils  {
             .map(JvmOptions::getXx)
             .map(Map::entrySet)
             .map(entrySet -> entrySet.stream()
-                .sorted(JvmOptionUtils::compareJvmPerformanceOption)
-                .map(JvmOptionUtils::toJvmPerformanceFlag)
-                .collect(joining(" ")))
+                    // We filter out the XX options which should be passed to HEAP options and not to Performance options in Kafka
+                    .filter(entry -> !XX_HEAP_OPTIONS.contains(entry.getKey()))
+                    .sorted(JvmOptionUtils::compareJvmPerformanceOption)
+                    .map(JvmOptionUtils::toJvmPerformanceFlag)
+                    .collect(joining(" ")))
             .filter(envVar -> !envVar.isEmpty());
     }
 
@@ -191,7 +220,7 @@ public final class JvmOptionUtils  {
         var kafkaHeapOpts = new StringBuilder();
         appendHeapOpts(kafkaHeapOpts, jvmOptions);
 
-        if (jvmOptions == null || jvmOptions.getXmx() == null) {
+        if (needsDefaultHeapConfiguration(jvmOptions)) {
             // Get the resources => if requests are set, take request. If requests are not set, try limits
             if (hasMemoryRequestOrLimit(resources)) {
                 // Delegate to the container to figure out only when CGroup memory limits are defined to prevent allocating
@@ -200,7 +229,7 @@ public final class JvmOptionUtils  {
                 if (dynamicHeapMaxBytes > 0) {
                     envVars.add(ContainerUtils.createEnvVar(AbstractModel.ENV_VAR_DYNAMIC_HEAP_MAX, Long.toString(dynamicHeapMaxBytes)));
                 }
-            } else if (jvmOptions == null || jvmOptions.getXms() == null) {
+            } else if (needsDefaultHeapXmsConfiguration(jvmOptions)) {
                 // When no memory limit, `Xms`, and `Xmx` are defined then set a default `Xms` and
                 // leave `Xmx` undefined.
                 kafkaHeapOpts.append(X_MS).append(DEFAULT_JVM_XMS);
@@ -211,6 +240,30 @@ public final class JvmOptionUtils  {
         if (!kafkaHeapOptsString.isEmpty()) {
             envVars.add(ContainerUtils.createEnvVar(AbstractModel.ENV_VAR_KAFKA_HEAP_OPTS, kafkaHeapOptsString));
         }
+    }
+
+    /**
+     * Checks whether we need to add our own default Java heap configuration. If the user defines their own Xmx or
+     * MaxRAMPercentage, we leave it to the user. But if both are missing, we use our own values.
+     *
+     * @param jvmOptions    JVM Options as configured by the user in the CR
+     *
+     * @return  True if our own custom configuration should be added. False otherwise.
+     */
+    private static boolean needsDefaultHeapConfiguration(JvmOptions jvmOptions)    {
+        return jvmOptions == null || (jvmOptions.getXmx() == null && (jvmOptions.getXx() == null || jvmOptions.getXx().get("MaxRAMPercentage") == null));
+    }
+
+    /**
+     * Checks whether we need to add our own default Java Xms heap configuration. If the user defines their own Xms or
+     * InitialRAMPercentage, we leave it to the user. But if both are missing, we use our own default for the Xms option.
+     *
+     * @param jvmOptions    JVM Options as configured by the user in the CR
+     *
+     * @return  True if our own custom Xms configuration should be added. False otherwise.
+     */
+    private static boolean needsDefaultHeapXmsConfiguration(JvmOptions jvmOptions)    {
+        return jvmOptions == null || (jvmOptions.getXms() == null && (jvmOptions.getXx() == null || jvmOptions.getXx().get("InitialRAMPercentage") == null));
     }
 
     private static boolean hasMemoryRequestOrLimit(ResourceRequirements resources) {

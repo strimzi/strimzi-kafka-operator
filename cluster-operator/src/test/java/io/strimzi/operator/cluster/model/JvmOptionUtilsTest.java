@@ -98,6 +98,30 @@ class JvmOptionUtilsTest {
     }
 
     @ParallelTest
+    void testJvmMemoryOptionsDefaultWithNoMemoryLimitButXXOptionsExist() {
+        Map<String, String> env = heapOptions(jvmOptions(null, null, Map.of("Something", "80")), 50, 5_000_000_000L, null);
+        assertThat(env.get(AbstractModel.ENV_VAR_KAFKA_HEAP_OPTS), is("-Xms" + JvmOptionUtils.DEFAULT_JVM_XMS));
+        assertThat(env.get(AbstractModel.ENV_VAR_DYNAMIC_HEAP_PERCENTAGE), is(nullValue()));
+        assertThat(env.get(AbstractModel.ENV_VAR_DYNAMIC_HEAP_MAX), is(nullValue()));
+    }
+
+    @ParallelTest
+    void testJvmMemoryOptionsWithMaxAndInitialRAMPercentage() {
+        Map<String, String> env = heapOptions(jvmOptions(null, null, Map.of("MaxRAMPercentage", "80", "InitialRAMPercentage", "50")), 50, 5_000_000_000L, null);
+        assertThat(env.get(AbstractModel.ENV_VAR_KAFKA_HEAP_OPTS), is("-XX:InitialRAMPercentage=50 -XX:MaxRAMPercentage=80"));
+        assertThat(env.get(AbstractModel.ENV_VAR_DYNAMIC_HEAP_PERCENTAGE), is(nullValue()));
+        assertThat(env.get(AbstractModel.ENV_VAR_DYNAMIC_HEAP_MAX), is(nullValue()));
+    }
+
+    @ParallelTest
+    void testJvmMemoryOptionsWithInitialRAMPercentage() {
+        Map<String, String> env = heapOptions(jvmOptions(null, null, Map.of("InitialRAMPercentage", "50")), 50, 5_000_000_000L, null);
+        assertThat(env.get(AbstractModel.ENV_VAR_KAFKA_HEAP_OPTS), is("-XX:InitialRAMPercentage=50"));
+        assertThat(env.get(AbstractModel.ENV_VAR_DYNAMIC_HEAP_PERCENTAGE), is(nullValue()));
+        assertThat(env.get(AbstractModel.ENV_VAR_DYNAMIC_HEAP_MAX), is(nullValue()));
+    }
+
+    @ParallelTest
     void testThatJavaPerformanceOptionsAreIgnoredOnNullJvmOptions() {
         // when
         var envVars = new ArrayList<EnvVar>();
@@ -137,18 +161,32 @@ class JvmOptionUtilsTest {
     }
 
     @ParallelTest
+    void testThatJavaHeapXXOptionsAreIgnored() {
+        // when
+        var envVars = new ArrayList<EnvVar>();
+        var jvmOptions = new JvmOptions();
+        jvmOptions.setXx(Map.of("InitialRAMPercentage", "50", "MaxRAMPercentage", "80"));
+
+        // when
+        JvmOptionUtils.jvmPerformanceOptions(envVars, jvmOptions);
+
+        // then
+        assertThat(envVars, is(emptyList()));
+    }
+
+    @ParallelTest
     void testThatJavaPerformanceOptionsAreAddedToEnvVariable() {
         // when
         var envVars = new ArrayList<EnvVar>();
         var jvmOptions = new JvmOptions();
         jvmOptions.setXx(Map.of(
-            "c", "1",
-            "b", "2",
-            "a", "3",
-            "z", "false",
-            "x", "true",
-            "y", "FALSE",
-            "v", "tRuE"));
+                "MaxRAMPercentage", "80",
+                "b", "2",
+                "a", "3",
+                "z", "false",
+                "x", "true",
+                "y", "FALSE",
+                "v", "tRuE"));
 
         // when
         JvmOptionUtils.jvmPerformanceOptions(envVars, jvmOptions);
@@ -156,7 +194,7 @@ class JvmOptionUtilsTest {
         // then
         var expectedPerformanceOpts = new EnvVarBuilder()
             .withName(AbstractModel.ENV_VAR_KAFKA_JVM_PERFORMANCE_OPTS)
-            .withValue("-XX:a=3 -XX:b=2 -XX:c=1 -XX:+v -XX:+x -XX:-y -XX:-z")
+            .withValue("-XX:a=3 -XX:b=2 -XX:+v -XX:+x -XX:-y -XX:-z")
             .build();
         assertThat(envVars, equalTo(List.of(expectedPerformanceOpts)));
     }
@@ -281,7 +319,7 @@ class JvmOptionUtilsTest {
     }
 
     @ParallelTest
-    void testThatJavaOptionsWithPerformenceOptionsIsAddedToEnvVariables() {
+    void testThatJavaOptionsWithPerformanceOptionsIsAddedToEnvVariables() {
      // given
         var envVars = new ArrayList<EnvVar>();
         var jvmOptions = new JvmOptions();
@@ -303,7 +341,7 @@ class JvmOptionUtilsTest {
     }
 
     @ParallelTest
-    void testThatJavaOptionsWithHeapAndPerformenceOptionsIsAddedToEnvVariables() {
+    void testThatJavaOptionsWithHeapAndPerformanceOptionsIsAddedToEnvVariables() {
      // given
         var envVars = new ArrayList<EnvVar>();
         var jvmOptions = new JvmOptions();
@@ -361,7 +399,7 @@ class JvmOptionUtilsTest {
     }
 
     @ParallelTest
-    void testThatJavaOptionsWithHeapPerformenceAndSystemPropertiesIsAddedToEnvVariables() {
+    void testThatJavaOptionsWithHeapPerformanceAndSystemPropertiesIsAddedToEnvVariables() {
      // given
         var envVars = new ArrayList<EnvVar>();
         var jvmOptions = new JvmOptions();
@@ -424,6 +462,22 @@ class JvmOptionUtilsTest {
         return result;
     }
 
+    /**
+     * Utility method to create JvmOptions object.
+     *
+     * @param xmx   Configures -Xmx
+     * @param xms   Configures -Xms
+     * @param xx    Configures -XX options
+     *
+     * @return      New JvmOptions object
+     */
+    private static JvmOptions jvmOptions(String xmx, String xms, Map<String, String> xx) {
+        JvmOptions result = new JvmOptions();
+        result.setXms(xms);
+        result.setXmx(xmx);
+        result.setXx(xx);
+        return result;
+    }
 
     /**
      * Utility method to create SystemProperty with given name and value.
