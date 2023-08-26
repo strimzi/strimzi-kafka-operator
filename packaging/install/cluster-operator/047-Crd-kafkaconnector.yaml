@@ -65,6 +65,9 @@ spec:
                   enabled:
                     type: boolean
                     description: Whether automatic restart for failed connectors and tasks should be enabled or disabled.
+                  maxRestarts:
+                    type: integer
+                    description: "Maximal number of connector restarts that the operator will try. If the connector is still in failed state afterwards, it has to be restarted manually by the user. Defaults to unlimited number of restarts."
                 description: Automatic restart of connector and tasks configuration.
               config:
                 x-kubernetes-preserve-unknown-fields: true
