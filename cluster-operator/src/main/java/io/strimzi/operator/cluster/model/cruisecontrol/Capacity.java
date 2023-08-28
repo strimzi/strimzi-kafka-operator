@@ -218,28 +218,36 @@ public class Capacity {
         Integer request = getResourceRequirement(resourceRequirements, ResourceRequirementType.REQUEST);
         Integer limit = getResourceRequirement(resourceRequirements, ResourceRequirementType.LIMIT);
 
-        if (limit != null) {
-            if (request == null || limit.intValue() == request.intValue()) {
-                return new CpuCapacity(CpuCapacity.milliCpuToCpu(limit));
-            }
-        }
-
-        return null;
-    }
-
-    private CpuCapacity processCpu(io.strimzi.api.kafka.model.balancing.BrokerCapacity bc, BrokerCapacityOverride override, CpuCapacity cpuBasedOnRequirements) {
-        if (cpuBasedOnRequirements != null) {
-            if ((override != null && override.getCpu() != null) || (bc != null && bc.getCpu() != null)) {
-                LOGGER.warnCr(reconciliation, "Ignoring CPU capacity override settings since they are automatically set to resource limits");
-            }
-            return cpuBasedOnRequirements;
-        } else if (override != null && override.getCpu() != null) {
-            return new CpuCapacity(override.getCpu());
-        } else if (bc != null && bc.getCpu() != null) {
-            return new CpuCapacity(bc.getCpu());
+        if (request != null) {
+            return new CpuCapacity(CpuCapacity.milliCpuToCpu(request));
+        } else if (limit != null) {
+            return new CpuCapacity(CpuCapacity.milliCpuToCpu(limit));
         } else {
             return new CpuCapacity(BrokerCapacity.DEFAULT_CPU_CORE_CAPACITY);
         }
+    }
+
+    /**
+     * The brokerCapacity overrides per broker take top precedence, then general brokerCapacity configuration, and then the Kafka resource requests, then the Kafka resource limits.
+     * For example:
+     *   (1) brokerCapacity overrides
+     *   (2) brokerCapacity
+     *   (3) Kafka resource requests
+     *   (4) Kafka resource limits
+     * When none of Cruise Control CPU capacity configurations mentioned above are configured, CPU capacity will be set to `1`.
+     *
+     * @param override             brokerCapacity overrides (per broker)
+     * @param bc                   brokerCapacity (for all brokers)
+     * @param resourceRequirements Kafka resource requests and limits (for all brokers)
+     * @return A {@link CpuCapacity} object containing the specified capacity for a broker
+     */
+    private CpuCapacity processCpu(BrokerCapacityOverride override, io.strimzi.api.kafka.model.balancing.BrokerCapacity bc, ResourceRequirements resourceRequirements) {
+        if (override != null && override.getCpu() != null) {
+            return new CpuCapacity(override.getCpu());
+        } else if (bc != null && bc.getCpu() != null) {
+            return new CpuCapacity(bc.getCpu());
+        }
+        return getCpuBasedOnRequirements(resourceRequirements);
     }
 
     private static DiskCapacity processDisk(Storage storage, int brokerId) {
@@ -348,43 +356,43 @@ public class Capacity {
         String outboundNetwork = processOutboundNetwork(brokerCapacity, null);
 
         // We create a capacity for each broker node
-        for (NodeRef node : kafkaBrokerNodes)   {
+        for (NodeRef node : kafkaBrokerNodes) {
             DiskCapacity disk = processDisk(kafkaStorage.get(node.poolName()), node.nodeId());
-            CpuCapacity cpu = processCpu(brokerCapacity, null, getCpuBasedOnRequirements(kafkaBrokerResources.get(node.poolName())));
+            CpuCapacity cpu = processCpu(null, brokerCapacity, kafkaBrokerResources.get(node.poolName()));
 
             BrokerCapacity broker = new BrokerCapacity(node.nodeId(), cpu, disk, inboundNetwork, outboundNetwork);
             capacityEntries.put(node.nodeId(), broker);
-        }
 
-        if (brokerCapacity != null) {
-            // For checking for duplicate brokerIds
-            Set<Integer> overrideIds = new HashSet<>();
-            List<BrokerCapacityOverride> overrides = brokerCapacity.getOverrides();
-            // Override broker entries
-            if (overrides != null) {
-                if (overrides.isEmpty()) {
-                    LOGGER.warnCr(reconciliation, "Ignoring empty overrides list");
-                } else {
-                    for (BrokerCapacityOverride override : overrides) {
-                        List<Integer> ids = override.getBrokers();
-                        inboundNetwork = processInboundNetwork(brokerCapacity, override);
-                        outboundNetwork = processOutboundNetwork(brokerCapacity, override);
-                        for (int id : ids) {
-                            if (id == BrokerCapacity.DEFAULT_BROKER_ID) {
-                                LOGGER.warnCr(reconciliation, "Ignoring broker capacity override with illegal broker id -1.");
-                            } else {
-                                if (capacityEntries.containsKey(id)) {
-                                    if (overrideIds.add(id)) {
-                                        BrokerCapacity brokerCapacityEntry = capacityEntries.get(id);
-                                        brokerCapacityEntry.setCpu(processCpu(brokerCapacity, override, capacityEntries.get(id).getCpu()));
-                                        brokerCapacityEntry.setInboundNetwork(inboundNetwork);
-                                        brokerCapacityEntry.setOutboundNetwork(outboundNetwork);
-                                    } else {
-                                        LOGGER.warnCr(reconciliation, "Duplicate broker id {} found in overrides, using first occurrence.", id);
-                                    }
+            if (brokerCapacity != null) {
+                // For checking for duplicate brokerIds
+                Set<Integer> overrideIds = new HashSet<>();
+                List<BrokerCapacityOverride> overrides = brokerCapacity.getOverrides();
+                // Override broker entries
+                if (overrides != null) {
+                    if (overrides.isEmpty()) {
+                        LOGGER.warnCr(reconciliation, "Ignoring empty overrides list");
+                    } else {
+                        for (BrokerCapacityOverride override : overrides) {
+                            List<Integer> ids = override.getBrokers();
+                            inboundNetwork = processInboundNetwork(brokerCapacity, override);
+                            outboundNetwork = processOutboundNetwork(brokerCapacity, override);
+                            for (int id : ids) {
+                                if (id == BrokerCapacity.DEFAULT_BROKER_ID) {
+                                    LOGGER.warnCr(reconciliation, "Ignoring broker capacity override with illegal broker id -1.");
                                 } else {
-                                    LOGGER.warnCr(reconciliation, "Ignoring broker capacity override for unknown node ID {}", id);
-                                    overrideIds.add(id);
+                                    if (capacityEntries.containsKey(id)) {
+                                        if (overrideIds.add(id)) {
+                                            BrokerCapacity brokerCapacityEntry = capacityEntries.get(id);
+                                            brokerCapacityEntry.setCpu(processCpu(override, brokerCapacity, kafkaBrokerResources.get(Integer.toString(id))));
+                                            brokerCapacityEntry.setInboundNetwork(inboundNetwork);
+                                            brokerCapacityEntry.setOutboundNetwork(outboundNetwork);
+                                        } else {
+                                            LOGGER.warnCr(reconciliation, "Duplicate broker id {} found in overrides, using first occurrence.", id);
+                                        }
+                                    } else {
+                                        LOGGER.warnCr(reconciliation, "Ignoring broker capacity override for unknown node ID {}", id);
+                                        overrideIds.add(id);
+                                    }
                                 }
                             }
                         }
@@ -393,7 +401,6 @@ public class Capacity {
             }
         }
     }
-
     /**
      * Generate broker capacity entry for capacity configuration.
      *

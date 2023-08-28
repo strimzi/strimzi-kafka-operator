@@ -36,4 +36,13 @@ public class CpuCapacity {
     public String toString() {
         return this.getJson().toString();
     }
+
+    /**
+     * Retrieves the value of the 'cores' property.
+     *
+     * @return The value of the 'cores' property.
+     */
+    public String getCores() {
+        return cores;
+    }
 }

@@ -11,6 +11,28 @@
   * The OpenTelemetry based tracing is the only available by using `tracing.type: opentelemetry`.
 * Added version fields to the `Kafka` custom resource status to track install and upgrade state
 
+### Changes, deprecations and removals
+* The automatic configuration of Cruise Control CPU capacity has been changed in this release:
+  * There are three ways to configure Cruise Control CPU capacity values:
+    * `.spec.cruiseControl.brokerCapacity` (for all brokers)
+    * `.spec.cruiseControl.brokerCapacity.overrides` (per broker)
+    * Kafka resource requests and limits (for all brokers).
+  * The precedence of which Cruise Control CPU capacity configuration is used has been changed.
+  * In previous Strimzi versions, the Kafka resource limit (if set) took precedence, regardless if any other CPU configurations were set.
+    * For example:
+      * (1) Kafka resource limits
+      * (2) `.spec.cruiseControl.brokerCapacity.overrides`
+      * (3) `.spec.cruiseControl.brokerCapacity`
+  * This previous behavior was identified as a bug and was fixed in this Strimzi release.
+  * Going forward, the brokerCapacity overrides per broker take top precedence, then general brokerCapacity configuration, and then the Kafka resource requests, then the Kafka resource limits.
+    * For example:
+      * (1) `.spec.cruiseControl.brokerCapacity.overrides`
+      * (2) `.spec.cruiseControl.brokerCapacity`
+      * (3) Kafka resource requests
+      * (4) Kafka resource limits
+    * When none of Cruise Control CPU capacity configurations mentioned above are configured, CPU capacity will be set to `1`.
+ as any _override_ value configured in the `.spec.cruiseControl` section of the `Kafka` custom resource.
+
 ## 0.36.1
 
 * Add support for Apache Kafka 3.5.1

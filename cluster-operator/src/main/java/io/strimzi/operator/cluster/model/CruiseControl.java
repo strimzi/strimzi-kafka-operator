@@ -122,6 +122,10 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
 
     /* test */ static final String MIN_INSYNC_REPLICAS = "min.insync.replicas";
 
+    /* test */ Capacity getCapacity() {
+        return capacity;
+    }
+
     // Cruise Control configuration keys (EnvVariables)
     protected static final String ENV_VAR_CRUISE_CONTROL_CONFIGURATION = "CRUISE_CONTROL_CONFIGURATION";
     protected static final String ENV_VAR_STRIMZI_KAFKA_BOOTSTRAP_SERVERS = "STRIMZI_KAFKA_BOOTSTRAP_SERVERS";

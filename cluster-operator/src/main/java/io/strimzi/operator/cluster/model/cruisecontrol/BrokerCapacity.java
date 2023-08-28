@@ -21,7 +21,10 @@ public class BrokerCapacity {
     public static final String DEFAULT_OUTBOUND_NETWORK_CAPACITY_IN_KIB_PER_SECOND = "10000";
 
     private static final String DEFAULT_BROKER_DOC = "This is the default capacity. Capacity unit used for disk is in MiB, cpu is in number of cores, network throughput is in KiB.";
-    protected static final String DEFAULT_CPU_CORE_CAPACITY = "1";
+    /**
+     * Default cpu core capacity
+     */
+    public static final String DEFAULT_CPU_CORE_CAPACITY = "1.0";
     protected static final String DEFAULT_DISK_CAPACITY_IN_MIB = "100000";
     protected static final String DEFAULT_INBOUND_NETWORK_CAPACITY_IN_KIB_PER_SECOND = "10000";
 
