@@ -228,8 +228,13 @@ public class Capacity {
     }
 
     /**
-     * Processes the CPU capacity for a broker based on possible inputs such as overrides,
-     * broker capacity, and resource requirements.
+     * The brokerCapacity overrides per broker take top precedence, then general brokerCapacity configuration, and then the Kafka resource requests, then the Kafka resource limits.
+     * For example:
+     *   (1) brokerCapacity overrides
+     *   (2) brokerCapacity
+     *   (3) Kafka resource requests
+     *   (4) Kafka resource limits
+     * When none of Cruise Control CPU capacity configurations mentioned above are configured, CPU capacity will be set to `1`.
      *
      * @param override             brokerCapacity overrides (per broker)
      * @param bc                   brokerCapacity (for all brokers)
