@@ -8,24 +8,85 @@
 * Support for the ppc64le platform
 
 ### Changes, deprecations and removals
-* There are three ways to configure Cruise Control CPU capacity values:
-  * brokerCapacity (for all brokers)
-  * brokerCapacity overrides (per broker)
-  * Kafka resource requests and limits (for all brokers).
-* The precedence of which Cruise Control CPU capacity configuration is used has been changed.
-* In previous Strimzi versions, the Kafka resource limit (if set) took precedence, regardless if any other CPU configurations were set. 
-  * For example:
-    * (1) Kafka resource limits
-    * (2) brokerCapacity overrides
-    * (3) brokerCapacity
-* This previous behavior was identified as a bug and was fixed in this Strimzi release.
-* Going forward, the brokerCapacity overrides per broker take top precedence, then general brokerCapacity configuration, and then the Kafka resource requests, then the Kafka resource limits. 
-  * For example:
-     * (1) brokerCapacity overrides
-     * (2) brokerCapacity
-     * (3) Kafka resource requests
-     * (4) Kafka resource limits
-  * When none of Cruise Control CPU capacity configurations mentioned above are configured, CPU capacity will be set to `1`.
+* There are three ways to configure Cruise Control CPU capacity values including: brokerCapacity (for all brokers), brokerCapacity overrides (per broker) and Kafka resource requests and limits (for all brokers).
+* `brokerCapacity` can be set in `Kafka.spec.cruiseControl`
+```yaml
+  apiVersion: kafka.strimzi.io/v1beta2
+  kind: Kafka
+  metadata:
+    # ...
+  spec:
+    # ...
+    cruiseControl:
+    # ...
+      brokerCapacity:
+        cpu: "2"
+        inboundNetwork: 10000KiB/s
+        outboundNetwork: 10000KiB/s
+    # ...
+  ``` 
+
+* `overrides` can be used to set the network capacity and cpu limits for individual brokers in `Kafka.spec.cruiseControl.brokerCapacity.overrides.brokers[]`
+```yaml
+apiVersion: kafka.strimzi.io/v1beta2
+kind: Kafka
+metadata:
+  name: my-cluster
+spec:
+  # ...
+  cruiseControl:
+    # ...
+    brokerCapacity:
+      cpu: "1"
+      inboundNetwork: 10000KiB/s
+      outboundNetwork: 10000KiB/s
+      overrides:
+      - brokers: [0]
+        cpu: "2.755"
+        inboundNetwork: 20000KiB/s
+        outboundNetwork: 20000KiB/s
+      - brokers: [1, 2]
+        cpu: 3000m
+        inboundNetwork: 30000KiB/s
+        outboundNetwork: 30000KiB/s
+```
+* `resource requests` and `resource limits` are configured to control specific requests and limits for cpu resources in `Kafka.spec.kafka`.
+```yaml
+apiVersion: kafka.strimzi.io/v1beta2
+kind: Kafka
+metadata:
+  name: my-cluster
+spec:
+  kafka:
+    #...
+    resources:
+      requests:
+        memory: 64Gi
+        cpu: "8"
+      limits:
+        memory: 64Gi
+        cpu: "12"
+  entityOperator:
+    #...
+    topicOperator:
+      #...
+      resources:
+        requests:
+          memory: 512Mi
+          cpu: "1"
+        limits:
+          memory: 512Mi
+          cpu: "1"
+```          
+* The precedence of which Cruise Control CPU capacity configuration is used has been changed. In previous Strimzi versions, the Kafka resource limit (if set) took precedence, regardless if any other CPU configurations were set. 
+For example, Kafka resource limits took the highest priority, then brokerCapacity overrides and finally brokerCapacity. This previous behavior was identified as a bug and was fixed in this Strimzi release.
+* Going forward, the brokerCapacity overrides per broker take the highest precedence, then general brokerCapacity configuration, and then the Kafka resource requests, then the Kafka resource limits. 
+* For example:
+   * (1) brokerCapacity overrides
+   * (2) brokerCapacity
+   * (3) Kafka resource requests
+   * (4) Kafka resource limits
+* When none of Cruise Control CPU capacity configurations mentioned above are configured, CPU capacity will be set to `1`.
 
 ## 0.36.1
 

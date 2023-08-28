@@ -231,10 +231,10 @@ public class Capacity {
      * Processes the CPU capacity for a broker based on possible inputs such as overrides,
      * broker capacity, and resource requirements.
      *
-     * @param override            The brokerCapacityOverride containing CPU information.
-     * @param bc                  The brokerCapacity containing CPU information.
-     * @param resourceRequirements The resourceRequirements for the broker (requests or limits).
-     * @return A {@link CpuCapacity} object representing the processed CPU capacity.
+     * @param override             brokerCapacity overrides (per broker)
+     * @param bc                   brokerCapacity (for all brokers)
+     * @param resourceRequirements Kafka resource requests and limits (for all brokers)
+     * @return A {@link CpuCapacity} object containing the specified capacity for a broker
      */
     private CpuCapacity processCpu(BrokerCapacityOverride override, io.strimzi.api.kafka.model.balancing.BrokerCapacity bc, ResourceRequirements resourceRequirements) {
         if (override != null && override.getCpu() != null) {
