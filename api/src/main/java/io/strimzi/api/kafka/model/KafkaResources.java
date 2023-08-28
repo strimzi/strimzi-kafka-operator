@@ -47,6 +47,15 @@ public class KafkaResources {
         return clusterName + "-clients-ca";
     }
 
+    /**
+     * Returns the name of the Cluster Operator certificate {@code Secret} for a {@code Kafka} cluster of the given name.
+     * @param clusterName  The {@code metadata.name} of the {@code Kafka} resource.
+     * @return The name of the corresponding Cluster Operator certificate {@code Secret}.
+     */
+    public static String clusterOperatorCertificateSecretName(String clusterName) {
+        return clusterName + "-cluster-operator-certs";
+    }
+
     ////////
     // Kafka methods
     ////////
@@ -68,6 +77,36 @@ public class KafkaResources {
      */
     public static String kafkaPodName(String clusterName, int podNum) {
         return kafkaStatefulSetName(clusterName) + "-" + podNum;
+    }
+
+    /**
+     * Returns the name of the Kafka {@code Pod} for a {@code Kafka} cluster of the given name and using NodePools.
+     * @param clusterName  The {@code metadata.name} of the {@code Kafka} resource.
+     * @param podNum The number of the Kafka pod
+     * @return The name of the corresponding Kafka {@code Pod}.
+     */
+    public static String kafkaNodePoolsPodName(String clusterName, String nodePoolName, int podNum) {
+        return clusterName + "-" + nodePoolName + "-" + podNum;
+    }
+
+    /**
+     * Returns the name of the Kafka {@code ConfigMap} for a {@code Kafka} cluster of the given name.
+     * @param clusterName  The {@code metadata.name} of the {@code Kafka} resource.
+     * @param podNum The number of the Kafka pod
+     * @return The name of the corresponding Kafka {@code ConfigMap}
+     */
+    public static String kafkaConfigMapName(String clusterName, int podNum) {
+        return kafkaPodName(clusterName, podNum);
+    }
+
+    /**
+     * Returns the name of the Kafka {@code ConfigMap} for a {@code Kafka} cluster of the given name  and using NodePools.
+     * @param clusterName  The {@code metadata.name} of the {@code Kafka} resource.
+     * @param podNum The number of the Kafka pod
+     * @return The name of the corresponding Kafka {@code ConfigMap}
+     */
+    public static String kafkaNodePoolsConfigMapName(String clusterName, String nodePoolName, int podNum) {
+        return kafkaNodePoolsPodName(clusterName, nodePoolName, podNum);
     }
 
     /**
@@ -187,6 +226,15 @@ public class KafkaResources {
         return clusterName + "-network-policy-kafka";
     }
 
+    /**
+     * Returns the name of the Kafka {@code PodDisruptionBudget} for a {@code Kafka} cluster of the given name.
+     * @param clusterName The {@code metadata.name} of the {@code Kafka} resource.
+     * @return The name of the corresponding Kafka {@code PodDisruptionBudget}.
+     */
+    public static String kafkaPodDisruptionBudgetName(String clusterName) {
+        return clusterName + "-kafka";
+    }
+
     ////////
     // ZooKeeper methods
     ////////
@@ -270,6 +318,15 @@ public class KafkaResources {
         return clusterName + "-network-policy-zookeeper";
     }
 
+    /**
+     * Returns the name of the ZooKeeper {@code PodDisruptionBudget} for a {@code Kafka} cluster of the given name.
+     * @param clusterName The {@code metadata.name} of the {@code Kafka} resource.
+     * @return The name of the corresponding ZooKeeper {@code PodDisruptionBudget}.
+     */
+    public static String zookeeperPodDisruptionBudgetName(String clusterName) {
+        return clusterName + "-zookeeper";
+    }
+
     ////////
     // Entity Operator methods
     ////////
@@ -299,6 +356,17 @@ public class KafkaResources {
     @Deprecated
     public static String entityOperatorSecretName(String clusterName) {
         return entityOperatorDeploymentName(clusterName) + "-certs";
+    }
+
+    /**
+     * Returns the name of the Entity Operator Network Policy.
+     *
+     * @param clusterName The {@code metadata.name} of the {@code Kafka} resource.
+     *
+     * @return The name of the corresponding Entity Operator Network Policy.
+     */
+    public static String entityOperatorNetworkPolicyName(String clusterName) {
+        return clusterName + "-entity-operator";
     }
 
     ////////
@@ -385,5 +453,13 @@ public class KafkaResources {
      */
     public static String secretName(String cluster) {
         return cluster + "-cluster-operator-certs";
+    }
+
+    /**
+     * Returns the name of the Entity Operator ClusterRole.
+     * @return The name of the Entity Operator ClusterRole.
+     */
+    public static String entityOperatorClusterRoleName() {
+        return "strimzi-entity-operator";
     }
 }

@@ -17,10 +17,15 @@ import io.fabric8.kubernetes.api.model.rbac.ClusterRole;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.fabric8.kubernetes.api.model.rbac.Role;
 import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
+import io.strimzi.api.kafka.model.ClusterOperatorResources;
+import io.strimzi.api.kafka.model.CruiseControlResources;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBridge;
+import io.strimzi.api.kafka.model.KafkaBridgeResources;
 import io.strimzi.api.kafka.model.KafkaConnect;
+import io.strimzi.api.kafka.model.KafkaConnectResources;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2;
+import io.strimzi.api.kafka.model.KafkaMirrorMaker2Resources;
 import io.strimzi.api.kafka.model.KafkaRebalance;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaTopic;
@@ -62,7 +67,7 @@ public class DefaultClusterReportST extends AbstractClusterReportST {
     @ParallelTest
     void createReport(TestInfo testInfo) throws IOException {
         final String outPath = buildOutPath(testInfo, testStorage.getClusterName());
-        final String secretPath = outPath + "/reports/secrets/" + testStorage.getClusterName() + "-cluster-ca.yaml";
+        final String secretPath = outPath + "/reports/secrets/" + KafkaResources.clusterCaKeySecretName(testStorage.getClusterName()) + ".yaml";
         final String secretKey = "ca.key";
 
         LOGGER.info("Running report on {}/{}", testStorage.getNamespaceName(), testStorage.getClusterName());
@@ -85,7 +90,7 @@ public class DefaultClusterReportST extends AbstractClusterReportST {
         assertValidClusterRoles(outPath);
         assertValidConfigMaps(outPath, testStorage.getClusterName());
         assertValidCustomResourceDefinitions(outPath);
-        assertValidCustomDeployments(outPath, testStorage.getClusterName());
+        assertValidDeployments(outPath, testStorage.getClusterName());
         assertValidNetworkPolicies(outPath, testStorage.getClusterName());
         assertValidPodDisruptionBudgets(outPath, testStorage.getClusterName());
         assertValidPods(outPath, testStorage.getClusterName());
@@ -112,7 +117,7 @@ public class DefaultClusterReportST extends AbstractClusterReportST {
     @ParallelTest
     void createReportWithSecretsAll(TestInfo testInfo) throws IOException {
         final String outPath = buildOutPath(testInfo, testStorage.getClusterName());
-        final String secretPath = outPath + "/reports/secrets/" + testStorage.getClusterName() + "-cluster-ca.yaml";
+        final String secretPath = outPath + "/reports/secrets/" + KafkaResources.clusterCaKeySecretName(testStorage.getClusterName()) + ".yaml";
         final String secretKey = "ca.key";
 
         LOGGER.info("Running report on {}/{}", testStorage.getNamespaceName(), testStorage.getClusterName());
@@ -130,7 +135,7 @@ public class DefaultClusterReportST extends AbstractClusterReportST {
     @ParallelTest
     void createReportWithSecretsOff(TestInfo testInfo) throws IOException {
         final String outPath = buildOutPath(testInfo, testStorage.getClusterName());
-        final String secretPath = outPath + "/reports/secrets/" + testStorage.getClusterName() + "-cluster-ca.yaml";
+        final String secretPath = outPath + "/reports/secrets/" + KafkaResources.clusterCaKeySecretName(testStorage.getClusterName()) + ".yaml";
 
         LOGGER.info("Running report on {}/{}", testStorage.getNamespaceName(), testStorage.getClusterName());
         Exec.exec(USER_PATH + "/../tools/report.sh",
@@ -199,9 +204,9 @@ public class DefaultClusterReportST extends AbstractClusterReportST {
 
     private void assertValidClusterRoleBindings(String outPath) throws IOException {
         for (String s : Arrays.asList(
-            "strimzi-cluster-operator.yaml",
-            "strimzi-cluster-operator-kafka-broker-delegation.yaml",
-            "strimzi-cluster-operator-kafka-client-delegation.yaml"
+            ClusterOperatorResources.clusterRoleBindingName() + ".yaml",
+            ClusterOperatorResources.brokerDelegationClusterRoleBindingName() + ".yaml",
+            ClusterOperatorResources.clientDelegationClusterRoleBindingName() + ".yaml"
         )) {
             assertValidYamls(outPath + "/reports/clusterrolebindings", ClusterRoleBinding.class, s, 1);
         }
@@ -209,13 +214,13 @@ public class DefaultClusterReportST extends AbstractClusterReportST {
 
     private void assertValidClusterRoles(String outPath) throws IOException {
         for (String s : Arrays.asList(
-            "strimzi-cluster-operator-global.yaml",
-            "strimzi-cluster-operator-leader-election.yaml",
-            "strimzi-cluster-operator-namespaced.yaml",
-            "strimzi-cluster-operator-watched.yaml",
-            "strimzi-entity-operator.yaml",
-            "strimzi-kafka-client.yaml",
-            "strimzi-kafka-broker.yaml"
+            ClusterOperatorResources.globalClusterRoleName() + ".yaml",
+            ClusterOperatorResources.leaderElectionClusterRoleName() + ".yaml",
+            ClusterOperatorResources.namespacedClusterRoleName() + ".yaml",
+            ClusterOperatorResources.watchedClusterRoleName() + ".yaml",
+            KafkaResources.entityOperatorClusterRoleName() + ".yaml",
+            ClusterOperatorResources.kafkaClientClusterRoleName() + ".yaml",
+            ClusterOperatorResources.kafkaBrokerClusterRoleName() + ".yaml"
         )) {
             assertValidYamls(outPath + "/reports/clusterroles", ClusterRole.class, s, 1);
         }
@@ -223,17 +228,17 @@ public class DefaultClusterReportST extends AbstractClusterReportST {
 
     private void assertValidConfigMaps(String outPath, String clusterName) throws IOException {
         for (String s : Arrays.asList(
-            "my-bridge-bridge-config.yaml",
-            "strimzi-cluster-operator.yaml",
-            clusterName + "-cruise-control-config.yaml",
-            clusterName + "-entity-topic-operator-config.yaml",
-            clusterName + "-entity-user-operator-config.yaml",
-            clusterName + "-kafka-0.yaml",
-            clusterName + "-kafka-1.yaml",
-            clusterName + "-kafka-2.yaml",
-            clusterName + "-zookeeper-config.yaml",
-            "my-connect-connect-config.yaml",
-            "my-mm2-mirrormaker2-config.yaml"
+            KafkaBridgeResources.metricsAndLogConfigMapName("my-bridge") + ".yaml",
+            ClusterOperatorResources.metricsAndLogConfigMapName() + ".yaml",
+            CruiseControlResources.logAndMetricsConfigMapName(clusterName) + ".yaml",
+            KafkaResources.entityTopicOperatorLoggingConfigMapName(clusterName) + ".yaml",
+            KafkaResources.entityUserOperatorLoggingConfigMapName(clusterName) + ".yaml",
+            KafkaResources.kafkaConfigMapName(clusterName, 0) + ".yaml",
+            KafkaResources.kafkaConfigMapName(clusterName, 1) + ".yaml",
+            KafkaResources.kafkaConfigMapName(clusterName, 2) + ".yaml",
+            KafkaResources.zookeeperMetricsAndLogConfigMapName(clusterName) + ".yaml",
+            KafkaConnectResources.metricsAndLogConfigMapName("my-connect") + ".yaml",
+            KafkaMirrorMaker2Resources.metricsAndLogConfigMapName("my-mm2") + ".yaml"
         )) {
             assertValidYamls(outPath + "/reports/configmaps", ConfigMap.class, s, 1);
         }
@@ -241,25 +246,25 @@ public class DefaultClusterReportST extends AbstractClusterReportST {
 
     private void assertValidCustomResourceDefinitions(String outPath) throws IOException {
         for (String s : Arrays.asList(
-            "kafkabridges.kafka.strimzi.io.yaml",
-            "kafkaconnects.kafka.strimzi.io.yaml",
-            "kafkamirrormaker2s.kafka.strimzi.io.yaml",
-            "kafkarebalances.kafka.strimzi.io.yaml",
-            "kafkas.kafka.strimzi.io.yaml",
-            "kafkatopics.kafka.strimzi.io.yaml",
-            "kafkausers.kafka.strimzi.io.yaml",
-            "strimzipodsets.core.strimzi.io.yaml"
+            ClusterOperatorResources.kafkaCustomResourceDefinitionName("kafkabridges") + ".yaml",
+            ClusterOperatorResources.kafkaCustomResourceDefinitionName("kafkaconnects") + ".yaml",
+            ClusterOperatorResources.kafkaCustomResourceDefinitionName("kafkamirrormaker2s") + ".yaml",
+            ClusterOperatorResources.kafkaCustomResourceDefinitionName("kafkarebalances") + ".yaml",
+            ClusterOperatorResources.kafkaCustomResourceDefinitionName("kafkas") + ".yaml",
+            ClusterOperatorResources.kafkaCustomResourceDefinitionName("kafkatopics") + ".yaml",
+            ClusterOperatorResources.kafkaCustomResourceDefinitionName("kafkausers") + ".yaml",
+            ClusterOperatorResources.coreCustomResourceDefinitionName("strimzipodsets") + ".yaml"
         )) {
             assertValidYamls(outPath + "/reports/customresourcedefinitions", CustomResourceDefinition.class, s, 1);
         }
     }
 
-    private void assertValidCustomDeployments(String outPath, String clusterName) throws IOException {
+    private void assertValidDeployments(String outPath, String clusterName) throws IOException {
         for (String s : Arrays.asList(
-            "my-bridge-bridge.yaml",
-            clusterName + "-cruise-control.yaml",
-            clusterName + "-entity-operator.yaml",
-            "strimzi-cluster-operator.yaml"
+            KafkaBridgeResources.deploymentName("my-bridge") + ".yaml",
+            CruiseControlResources.deploymentName(clusterName) + ".yaml",
+            KafkaResources.entityOperatorDeploymentName(clusterName) + ".yaml",
+            ClusterOperatorResources.deploymentName() + ".yaml"
         )) {
             assertValidYamls(outPath + "/reports/deployments", Deployment.class, s, 1);
         }
@@ -267,11 +272,11 @@ public class DefaultClusterReportST extends AbstractClusterReportST {
 
     private void assertValidNetworkPolicies(String outPath, String clusterName) throws IOException {
         for (String s : Arrays.asList(
-            clusterName + "-entity-operator.yaml",
-            clusterName + "-network-policy-cruise-control.yaml",
-            clusterName + "-network-policy-kafka.yaml",
-            clusterName + "-network-policy-zookeeper.yaml",
-            "my-mm2-mirrormaker2.yaml"
+            KafkaResources.entityOperatorNetworkPolicyName(clusterName) + ".yaml",
+            CruiseControlResources.networkPolicyName(clusterName) + ".yaml",
+            KafkaResources.kafkaNetworkPolicyName(clusterName) + ".yaml",
+            KafkaResources.zookeeperNetworkPolicyName(clusterName) + ".yaml",
+            KafkaMirrorMaker2Resources.networkPolicyName("my-mm2") + ".yaml"
         )) {
             assertValidYamls(outPath + "/reports/networkpolicies", NetworkPolicy.class, s, 1);
         }
@@ -279,11 +284,11 @@ public class DefaultClusterReportST extends AbstractClusterReportST {
 
     private void assertValidPodDisruptionBudgets(String outPath, String clusterName) throws IOException {
         for (String s : Arrays.asList(
-            "my-bridge-bridge.yaml",
-            clusterName + "-kafka.yaml",
-            clusterName + "-zookeeper.yaml",
-            "my-connect-connect.yaml",
-            "my-mm2-mirrormaker2.yaml"
+            KafkaBridgeResources.podDisruptionBudgetName("my-bridge") + ".yaml",
+            KafkaResources.kafkaPodDisruptionBudgetName(clusterName) + ".yaml",
+            KafkaResources.zookeeperPodDisruptionBudgetName(clusterName) + ".yaml",
+            KafkaConnectResources.podDisruptionBudgetName("my-connect") + ".yaml",
+            KafkaMirrorMaker2Resources.podDisruptionBudgetName("my-mm2") + ".yaml"
         )) {
             assertValidYamls(outPath + "/reports/poddisruptionbudgets", PodDisruptionBudget.class, s, 1);
         }
@@ -291,17 +296,17 @@ public class DefaultClusterReportST extends AbstractClusterReportST {
 
     private void assertValidPods(String outPath, String clusterName) throws IOException {
         for (String s : Arrays.asList(
-            clusterName + "-kafka-0.yaml",
-            clusterName + "-kafka-1.yaml",
-            clusterName + "-kafka-2.yaml",
-            clusterName + "-zookeeper-0.yaml",
-            clusterName + "-zookeeper-1.yaml",
-            clusterName + "-zookeeper-2.yaml",
-            "my-bridge-bridge",
-            clusterName + "-cruise-control",
-            clusterName + "-entity-operator",
-            "my-connect-connect",
-            "my-mm2-mirrormaker2"
+            KafkaResources.kafkaPodName(clusterName, 0) + ".yaml",
+            KafkaResources.kafkaPodName(clusterName, 1) + ".yaml",
+            KafkaResources.kafkaPodName(clusterName, 2) + ".yaml",
+            KafkaResources.zookeeperPodName(clusterName, 0) + ".yaml",
+            KafkaResources.zookeeperPodName(clusterName, 1) + ".yaml",
+            KafkaResources.zookeeperPodName(clusterName, 2) + ".yaml",
+            KafkaBridgeResources.deploymentName("my-bridge"),
+            CruiseControlResources.deploymentName(clusterName),
+            KafkaResources.entityOperatorDeploymentName(clusterName),
+            KafkaConnectResources.deploymentName("my-connect"),
+            KafkaMirrorMaker2Resources.deploymentName("my-mm2")
         )) {
             assertValidYamls(outPath + "/reports/pods", Pod.class, s, 1);
         }
@@ -310,10 +315,10 @@ public class DefaultClusterReportST extends AbstractClusterReportST {
 
     private void assertValidReplicaSets(String outPath, String clusterName) throws IOException {
         for (String s : Arrays.asList(
-            "my-bridge-bridge",
-            clusterName + "-cruise-control",
-            clusterName + "-entity-operator",
-            "strimzi-cluster-operator"
+            KafkaBridgeResources.deploymentName("my-bridge"),
+            CruiseControlResources.deploymentName(clusterName),
+            KafkaResources.entityOperatorDeploymentName(clusterName),
+            ClusterOperatorResources.deploymentName()
         )) {
             assertValidYamls(outPath + "/reports/replicasets", ReplicaSet.class, s, 1);
         }
@@ -321,30 +326,30 @@ public class DefaultClusterReportST extends AbstractClusterReportST {
 
     private void assertValidRoleBindings(String outPath, String clusterName) throws IOException {
         for (String s : Arrays.asList(
-            clusterName + "-entity-topic-operator-role.yaml",
-            clusterName + "-entity-user-operator-role.yaml"
+            KafkaResources.entityTopicOperatorRoleBinding(clusterName) + ".yaml",
+            KafkaResources.entityUserOperatorRoleBinding(clusterName) + ".yaml"
         )) {
             assertValidYamls(outPath + "/reports/rolebindings", RoleBinding.class, s, 1);
         }
     }
 
     private void assertValidRoles(String outPath, String clusterName) throws IOException {
-        assertValidYamls(outPath + "/reports/roles", Role.class, clusterName + "-entity-operator.yaml", 1);
+        assertValidYamls(outPath + "/reports/roles", Role.class, KafkaResources.entityOperatorDeploymentName(clusterName) + ".yaml", 1);
     }
 
     private void assertValidSecrets(String outPath, String clusterName) throws IOException {
         for (String s : Arrays.asList(
-            clusterName + "-clients-ca.yaml",
-            clusterName + "-clients-ca-cert.yaml",
-            clusterName + "-cluster-ca.yaml",
-            clusterName + "-cluster-ca-cert.yaml",
-            clusterName + "-cluster-operator-certs.yaml",
-            clusterName + "-cruise-control-api.yaml",
-            clusterName + "-cruise-control-certs.yaml",
-            clusterName + "-entity-topic-operator-certs.yaml",
-            clusterName + "-entity-user-operator-certs.yaml",
-            clusterName + "-kafka-brokers.yaml",
-            clusterName + "-zookeeper-nodes.yaml"
+            KafkaResources.clientsCaKeySecretName(clusterName) + ".yaml",
+            KafkaResources.clientsCaCertificateSecretName(clusterName) + ".yaml",
+            KafkaResources.clusterCaKeySecretName(clusterName) + ".yaml",
+            KafkaResources.clusterCaCertificateSecretName(clusterName) + ".yaml",
+            KafkaResources.clusterOperatorCertificateSecretName(clusterName) + ".yaml",
+            CruiseControlResources.apiSecretName(clusterName) + ".yaml",
+            CruiseControlResources.secretName(clusterName) + ".yaml",
+            KafkaResources.entityTopicOperatorSecretName(clusterName) + ".yaml",
+            KafkaResources.entityUserOperatorSecretName(clusterName) + ".yaml",
+            KafkaResources.kafkaSecretName(clusterName) + ".yaml",
+            KafkaResources.zookeeperSecretName(clusterName) + ".yaml"
         )) {
             assertValidYamls(outPath + "/reports/secrets", Secret.class, s, 1);
         }
@@ -352,14 +357,14 @@ public class DefaultClusterReportST extends AbstractClusterReportST {
 
     private void assertValidServices(String outPath, String clusterName) throws IOException {
         for (String s : Arrays.asList(
-            "my-bridge-bridge-service.yaml",
-            clusterName + "-cruise-control.yaml",
-            clusterName + "-kafka-bootstrap.yaml",
-            clusterName + "-kafka-brokers.yaml",
-            clusterName + "-zookeeper-client.yaml",
-            clusterName + "-zookeeper-nodes.yaml",
-            "my-connect-connect-api.yaml",
-            "my-mm2-mirrormaker2-api.yaml"
+            KafkaBridgeResources.serviceName("my-bridge") + ".yaml",
+            CruiseControlResources.serviceName(clusterName) + ".yaml",
+            KafkaResources.bootstrapServiceName(clusterName) + ".yaml",
+            KafkaResources.brokersServiceName(clusterName) + ".yaml",
+            KafkaResources.zookeeperServiceName(clusterName) + ".yaml",
+            KafkaResources.zookeeperHeadlessServiceName(clusterName) + ".yaml",
+            KafkaConnectResources.serviceName("my-connect") + ".yaml",
+            KafkaMirrorMaker2Resources.serviceName("my-mm2") + ".yaml"
         )) {
             assertValidYamls(outPath + "/reports/services", Service.class, s, 1);
         }
@@ -412,13 +417,13 @@ public class DefaultClusterReportST extends AbstractClusterReportST {
 
     private void assertValidConfigs(String outPath, String clusterName) {
         for (String s : Arrays.asList(
-            clusterName + "-kafka-0.cfg",
-            clusterName + "-kafka-1.cfg",
-            clusterName + "-kafka-2.cfg",
-            clusterName + "-zookeeper-0.cfg",
-            clusterName + "-zookeeper-1.cfg",
-            clusterName + "-zookeeper-2.cfg")
-        ) {
+            KafkaResources.kafkaPodName(clusterName, 0) + ".cfg",
+            KafkaResources.kafkaPodName(clusterName, 1) + ".cfg",
+            KafkaResources.kafkaPodName(clusterName, 2) + ".cfg",
+            KafkaResources.zookeeperPodName(clusterName, 0) + ".cfg",
+            KafkaResources.zookeeperPodName(clusterName, 1) + ".cfg",
+            KafkaResources.zookeeperPodName(clusterName, 2) + ".cfg"
+        )) {
             assertValidFiles(outPath + "/reports/configs", s, 1);
         }
     }
@@ -429,16 +434,16 @@ public class DefaultClusterReportST extends AbstractClusterReportST {
 
     private void assertValidLogs(String outPath, String clusterName) {
         for (String s : Arrays.asList(
-            clusterName + "-kafka-0.log",
-            clusterName + "-kafka-1.log",
-            clusterName + "-kafka-2.log",
-            clusterName + "-zookeeper-0.log",
-            clusterName + "-zookeeper-1.log",
-            clusterName + "-zookeeper-2.log",
-            clusterName + "-cruise-control",
-            "my-bridge-bridge",
-            "my-connect-connect",
-            "my-mm2-mirrormaker2"
+            KafkaResources.kafkaPodName(clusterName, 0) + ".log",
+            KafkaResources.kafkaPodName(clusterName, 1) + ".log",
+            KafkaResources.kafkaPodName(clusterName, 2) + ".log",
+            KafkaResources.zookeeperPodName(clusterName, 0) + ".log",
+            KafkaResources.zookeeperPodName(clusterName, 1) + ".log",
+            KafkaResources.zookeeperPodName(clusterName, 2) + ".log",
+            CruiseControlResources.deploymentName(clusterName),
+            KafkaBridgeResources.deploymentName("my-bridge"),
+            KafkaConnectResources.deploymentName("my-connect"),
+            KafkaMirrorMaker2Resources.deploymentName("my-mm2")
         )) {
             assertValidFiles(outPath + "/reports/logs", s, 1);
         }

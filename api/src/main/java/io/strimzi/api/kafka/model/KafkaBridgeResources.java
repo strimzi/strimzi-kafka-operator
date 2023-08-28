@@ -70,4 +70,13 @@ public class KafkaBridgeResources {
     public static String initContainerClusterRoleBindingName(String clusterName, String namespace) {
         return "strimzi-" + namespace + "-" + deploymentName(clusterName) + "-init";
     }
+
+    /**
+     * Returns the name of the Kafka Bridge {@code PodDisruptionBudget} for a {@code KafkaBridge} cluster of the given name.
+     * @param clusterName The {@code metadata.name} of the {@code KafkaBridge} resource.
+     * @return The name of the corresponding Kafka Bridge {@code PodDisruptionBudget}.
+     */
+    public static String podDisruptionBudgetName(String clusterName) {
+        return clusterName + "-bridge";
+    }
 }

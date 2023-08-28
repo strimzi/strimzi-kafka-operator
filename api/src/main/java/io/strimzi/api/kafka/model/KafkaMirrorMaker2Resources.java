@@ -9,6 +9,7 @@ package io.strimzi.api.kafka.model;
  * {@code KafkaMirrorMaker2} cluster.
  */
 public class KafkaMirrorMaker2Resources {
+    private KafkaMirrorMaker2Resources() { }
     
     /**
      * Returns the name of the Kafka MirrorMaker 2 {@code Deployment} for a {@code KafkaMirrorMaker2} cluster of the given name.
@@ -17,6 +18,16 @@ public class KafkaMirrorMaker2Resources {
      */
     public static String deploymentName(String clusterName) {
         return clusterName + "-mirrormaker2";
+    }
+
+    /**
+     * Returns the name of the Kafka MirrorMaker 2 {@code Pod} for a {@code MirrorMaker2} cluster of the given name.
+     * @param clusterName  The {@code metadata.name} of the {@code MirrorMaker2} resource.
+     * @param podNum The number of the Kafka MirrorMaker 2 pod
+     * @return The name of the corresponding Kafka MirrorMaker 2 {@code Pod}.
+     */
+    public static String stableIdentitiesPodName(String clusterName, int podNum) {
+        return clusterName + "-mirrormaker2-" + podNum;
     }
 
     /**
@@ -78,5 +89,25 @@ public class KafkaMirrorMaker2Resources {
      */
     public static String initContainerClusterRoleBindingName(String clusterName, String namespace) {
         return "strimzi-" + namespace + "-" + deploymentName(clusterName) + "-init";
+    }
+
+    /**
+     * Returns the name of the Kafka MirrorMaker 2 {@code NetworkPolicy} for a {@code Kafka} cluster of the given name.
+     *
+     * @param clusterName  The {@code metadata.name} of the {@code Kafka} resource.
+     *
+     * @return The name of the corresponding Kafka MirrorMaker 2 {@code NetworkPolicy}.
+     */
+    public static String networkPolicyName(String clusterName) {
+        return clusterName + "-mirrormaker2";
+    }
+
+    /**
+     * Returns the name of the Kafka MirrorMaker 2 {@code PodDisruptionBudget} for a {@code KafkaMirrorMaker2} cluster of the given name.
+     * @param clusterName The {@code metadata.name} of the {@code KafkaMirrorMaker2} resource.
+     * @return The name of the corresponding Kafka MirrorMaker 2 {@code PodDisruptionBudget}.
+     */
+    public static String podDisruptionBudgetName(String clusterName) {
+        return clusterName + "-mirrormaker2";
     }
 }
