@@ -3119,7 +3119,7 @@ include::../api/io.strimzi.api.kafka.model.AutoRestart.adoc[leveloffset=+1]
 |Property            |Description
 |enabled      1.2+<.<a|Whether automatic restart for failed connectors and tasks should be enabled or disabled.
 |boolean
-|maxRestarts  1.2+<.<a|Maximal number of connector restarts that the operator will try. If the connector is still in failed state afterwards, it has to be restarted manually by the user. Defaults to unlimited number of restarts.
+|maxRestarts  1.2+<.<a|Maximum number of connector restarts that the operator will try. If the connector is still in failed state afterwards, it has to be restarted manually by the user. Defaults to unlimited number of restarts.
 |integer
 |====
 
