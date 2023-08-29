@@ -3,8 +3,8 @@ Configures automatic restarts for connectors and tasks that are in a `FAILED` st
 When enabled, a back-off algorithm applies the automatic restart to each failed connector and its tasks.
 The back-off is calculated using the formula `n * n + n` where `n` is number of previous restarts and is capped at 60 minutes as a maximum.
 That means that the restarts will be done immediately and then after 2, 6, 12, 20, 30, 42, 56, and then every 60 minutes.
-By default, Strimzi will be restarting the connector and its tasks forever.
-If you want, you can use the `maxRestarts` field to set the maximal number of restarts.
+By default, Strimzi will restart the connector and its tasks forever.
+If you want, you can use the `maxRestarts` field to set the maximum number of restarts.
 When `maxRestarts` are used and the connector fails even after the final attempt, you will have to restart it manually.
 
 For Kafka Connect connectors, use the `autoRestart` property of the `KafkaConnector` resource to enable automatic restarts of failed connectors and tasks.
@@ -21,7 +21,7 @@ spec:
     enabled: true
 ----
 
-If desired, you can also set the maximal number of restarts.
+If desired, you can also set the maximum number of restarts.
 
 .Enabling automatic restarts of failed connectors for Kafka Connect with limited number of restarts
 [source,yaml,subs="attributes+"]

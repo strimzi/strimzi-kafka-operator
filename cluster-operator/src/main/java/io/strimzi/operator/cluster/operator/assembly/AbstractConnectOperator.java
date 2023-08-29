@@ -597,7 +597,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
      * {@code autoRestartBackOffInterval} and based on the {@code maxRestarts} parameter.
      *
      * @param autoRestartStatus     Status field with auto-restart status
-     * @param maxRestarts           Maximal number of restarts (or null for unlimited restarts)
+     * @param maxRestarts           Maximum number of restarts (or null for unlimited restarts)
      *
      * @return True if the connector should be auto-restarted right now. False otherwise.
      */
@@ -612,7 +612,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
             var minutesSinceLastRestart = StatusUtils.minutesDifferenceUntilNow(StatusUtils.isoUtcDatetime(autoRestartStatus.getLastRestartTimestamp()));
 
             return (maxRestarts == null || count < maxRestarts)
-                    && minutesSinceLastRestart >= autoRestartBackOffInterval(count);
+                    && minutesSinceLastRestart >= nextAutoRestartBackOffIntervalInMinutes(count);
         }
     }
 
@@ -625,7 +625,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
      *
      * @return  Number of minutes after which the next restart should happen
      */
-    private int autoRestartBackOffInterval(int restartCount)    {
+    private int nextAutoRestartBackOffIntervalInMinutes(int restartCount)    {
         return Math.min(restartCount * restartCount + restartCount, 60);
     }
 
@@ -645,7 +645,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
             // There are previous auto-restarts => we check if it is time to reset the status
             long minutesSinceLastRestart = StatusUtils.minutesDifferenceUntilNow(StatusUtils.isoUtcDatetime(autoRestartStatus.getLastRestartTimestamp()));
 
-            return minutesSinceLastRestart > autoRestartBackOffInterval(autoRestartStatus.getCount());
+            return minutesSinceLastRestart > nextAutoRestartBackOffIntervalInMinutes(autoRestartStatus.getCount());
         } else {
             // There are no previous restarts => nothing to reset
             return false;

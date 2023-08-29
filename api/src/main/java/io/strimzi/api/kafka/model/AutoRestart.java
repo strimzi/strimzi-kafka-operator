@@ -43,7 +43,7 @@ public class AutoRestart implements UnknownPropertyPreserving, Serializable {
         this.enabled = enabled;
     }
 
-    @Description("Maximal number of connector restarts that the operator will try. " +
+    @Description("Maximum number of connector restarts that the operator will try. " +
             "If the connector is still in failed state afterwards, it has to be restarted manually by the user. " +
             "Defaults to unlimited number of restarts.")
     public Integer getMaxRestarts() {
