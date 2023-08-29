@@ -7,6 +7,7 @@ package io.strimzi.systemtest.report;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.utils.FileUtils;
 import org.junit.jupiter.api.Tag;
@@ -52,5 +53,109 @@ public abstract class AbstractClusterReportST extends AbstractST {
         for (File file : files) {
             assertThat(format("%s is empty", file.getAbsolutePath()), file.length(), greaterThan(0L));
         }
+    }
+
+    protected String clusterOperatorDeploymentName() {
+        return "strimzi-cluster-operator";
+    }
+
+    protected String clusterOperatorMetricsAndLogConfigMapName() {
+        return clusterOperatorDeploymentName();
+    }
+
+    protected String clusterOperatorClusterRoleBindingName() {
+        return clusterOperatorDeploymentName();
+    }
+
+    protected String clusterOperatorBrokerDelegationClusterRoleBindingName() {
+        return clusterOperatorDeploymentName() + "-kafka-broker-delegation";
+    }
+
+    protected String clusterOperatorClientDelegationClusterRoleBindingName() {
+        return clusterOperatorDeploymentName() + "-kafka-client-delegation";
+    }
+
+    protected String clusterOperatorGlobalClusterRoleName() {
+        return clusterOperatorDeploymentName() + "-global";
+    }
+
+    protected String clusterOperatorLeaderElectionClusterRoleName() {
+        return clusterOperatorDeploymentName() + "-leader-election";
+    }
+
+    protected String clusterOperatorNamespacedClusterRoleName() {
+        return clusterOperatorDeploymentName() + "-namespaced";
+    }
+
+    protected String clusterOperatorWatchedClusterRoleName() {
+        return clusterOperatorDeploymentName() + "-watched";
+    }
+
+    protected String clusterOperatorKafkaClientClusterRoleName() {
+        return "strimzi-kafka-client";
+    }
+
+    protected String clusterOperatorKafkaBrokerClusterRoleName() {
+        return "strimzi-kafka-broker";
+    }
+
+    protected String kafkaCustomResourceDefinitionName(String name) {
+        return name + ".kafka.strimzi.io";
+    }
+
+    protected String coreCustomResourceDefinitionName(String name) {
+        return name + ".core.strimzi.io";
+    }
+
+    protected String bridgePodDisruptionBudgetName(String clusterName) {
+        return clusterName + "-bridge";
+    }
+
+    protected String kafkaConnectStableIdentitiesPodName(String clusterName, int podNum) {
+        return clusterName + "-connect-" + podNum;
+    }
+
+    protected String kafkaConnectPodDisruptionBudgetName(String clusterName) {
+        return clusterName + "-connect";
+    }
+
+    protected String kafkaMirrorMaker2StableIdentitiesPodName(String clusterName, int podNum) {
+        return clusterName + "-mirrormaker2-" + podNum;
+    }
+
+    protected String kafkaMirrorMaker2NetworkPolicyName(String clusterName) {
+        return clusterName + "-mirrormaker2";
+    }
+
+    protected String kafkaMirrorMaker2PodDisruptionBudgetName(String clusterName) {
+        return clusterName + "-mirrormaker2";
+    }
+
+    protected String kafkaConfigMapName(String clusterName, int podNum) {
+        return KafkaResources.kafkaPodName(clusterName, podNum);
+    }
+
+    protected String kafkaNodePoolsPodName(String clusterName, String nodePoolName, int podNum) {
+        return clusterName + "-" + nodePoolName + "-" + podNum;
+    }
+
+    protected String kafkaNodePoolsConfigMapName(String clusterName, String nodePoolName, int podNum) {
+        return kafkaNodePoolsPodName(clusterName, nodePoolName, podNum);
+    }
+
+    protected String kafkaPodDisruptionBudgetName(String clusterName) {
+        return clusterName + "-kafka";
+    }
+
+    protected String zookeeperPodDisruptionBudgetName(String clusterName) {
+        return clusterName + "-zookeeper";
+    }
+
+    protected String entityOperatorNetworkPolicyName(String clusterName) {
+        return clusterName + "-entity-operator";
+    }
+
+    protected String entityOperatorClusterRoleName() {
+        return "strimzi-entity-operator";
     }
 }

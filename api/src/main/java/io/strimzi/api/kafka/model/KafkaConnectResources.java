@@ -21,16 +21,6 @@ public class KafkaConnectResources {
     }
 
     /**
-     * Returns the name of the Kafka Connect {@code Pod} for a {@code KafkaConnect} cluster of the given name.
-     * @param clusterName  The {@code metadata.name} of the {@code KafkaConnect} resource.
-     * @param podNum The number of the Kafka Connect pod
-     * @return The name of the corresponding Kafka Connect {@code Pod}.
-     */
-    public static String stableIdentitiesPodName(String clusterName, int podNum) {
-        return clusterName + "-connect-" + podNum;
-    }
-
-    /**
      * Returns the name of the Kafka Connect {@code ServiceAccount} for a {@code KafkaConnect} cluster of the given name.
      * @param clusterName  The {@code metadata.name} of the {@code KafkaConnect} resource.
      * @return The name of the corresponding Kafka Connect {@code ServiceAccount}.
@@ -173,14 +163,5 @@ public class KafkaConnectResources {
      */
     public static String buildName(String clusterName, Long buildVersion) {
         return buildConfigName(clusterName) + "-" + buildVersion;
-    }
-
-    /**
-     * Returns the name of the Kafka Connect {@code PodDisruptionBudget} for a {@code KafkaConnect} cluster of the given name.
-     * @param clusterName The {@code metadata.name} of the {@code KafkaConnect} resource.
-     * @return The name of the corresponding Kafka Connect {@code PodDisruptionBudget}.
-     */
-    public static String podDisruptionBudgetName(String clusterName) {
-        return clusterName + "-connect";
     }
 }
