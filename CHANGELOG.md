@@ -15,7 +15,7 @@
 ### Changes, deprecations and removals
 
 * **The default behavior of the Kafka Connect connector auto-restart has changed.**
-  When the auto-restart feature is enabled in `KafkaConnector` or `KafkaMirrorMaker2` custom resources, it will not continue to restart the connectors forever and not stop after 7 restarts.
+  When the auto-restart feature is enabled in `KafkaConnector` or `KafkaMirrorMaker2` custom resources, it will now continue to restart the connectors indefinitely rather than stopping after 7 restarts, as previously.
   If you want to use the original behaviour, use the `.spec.autoRestart.maxRestarts` option to configure the maximum number of restarts.
   For example:
   ```yaml

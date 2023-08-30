@@ -265,7 +265,7 @@ spec:
                                 description: Whether automatic restart for failed connectors and tasks should be enabled or disabled.
                               maxRestarts:
                                 type: integer
-                                description: "Maximum number of connector restarts that the operator will try. If the connector is still in failed state afterwards, it has to be restarted manually by the user. Defaults to unlimited number of restarts."
+                                description: "The maximum number of connector restarts that the operator will try. If the connector remains in a failed state after reaching this limit, it must be restarted manually by the user. Defaults to an unlimited number of restarts."
                             description: Automatic restart of connector and tasks configuration.
                           pause:
                             type: boolean
@@ -290,7 +290,7 @@ spec:
                                 description: Whether automatic restart for failed connectors and tasks should be enabled or disabled.
                               maxRestarts:
                                 type: integer
-                                description: "Maximum number of connector restarts that the operator will try. If the connector is still in failed state afterwards, it has to be restarted manually by the user. Defaults to unlimited number of restarts."
+                                description: "The maximum number of connector restarts that the operator will try. If the connector remains in a failed state after reaching this limit, it must be restarted manually by the user. Defaults to an unlimited number of restarts."
                             description: Automatic restart of connector and tasks configuration.
                           pause:
                             type: boolean
@@ -315,7 +315,7 @@ spec:
                                 description: Whether automatic restart for failed connectors and tasks should be enabled or disabled.
                               maxRestarts:
                                 type: integer
-                                description: "Maximum number of connector restarts that the operator will try. If the connector is still in failed state afterwards, it has to be restarted manually by the user. Defaults to unlimited number of restarts."
+                                description: "The maximum number of connector restarts that the operator will try. If the connector remains in a failed state after reaching this limit, it must be restarted manually by the user. Defaults to an unlimited number of restarts."
                             description: Automatic restart of connector and tasks configuration.
                           pause:
                             type: boolean

@@ -594,7 +594,7 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
 
     /**
      * Checks whether it is time for another connector restart. The decision is made based on the timing provided by
-     * {@code autoRestartBackOffInterval} and based on the {@code maxRestarts} parameter.
+     * {@code autoRestartBackOffInterval} and the value specified for the {@code maxRestarts} parameter.
      *
      * @param autoRestartStatus     Status field with auto-restart status
      * @param maxRestarts           Maximum number of restarts (or null for unlimited restarts)
