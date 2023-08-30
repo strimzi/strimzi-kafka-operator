@@ -370,8 +370,9 @@ class ConnectST extends AbstractST {
 
     @ParallelNamespaceTest
     void testJvmAndResources(ExtensionContext extensionContext) {
+        final TestStorage testStorage = storageMap.get(extensionContext);
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(Constants.TEST_SUITE_NAMESPACE, extensionContext);
-        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        final String clusterName = testStorage.getClusterName();
 
         resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3).build());
 
@@ -404,8 +405,9 @@ class ConnectST extends AbstractST {
     @ParallelNamespaceTest
     @Tag(COMPONENT_SCALING)
     void testKafkaConnectScaleUpScaleDown(ExtensionContext extensionContext) {
+        TestStorage testStorage = new TestStorage(extensionContext);
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(Constants.TEST_SUITE_NAMESPACE, extensionContext);
-        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        final String clusterName = testStorage.getClusterName();
 
         resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3).build());
 
@@ -677,8 +679,9 @@ class ConnectST extends AbstractST {
 
     @ParallelNamespaceTest
     void testCustomAndUpdatedValues(ExtensionContext extensionContext) {
+        final TestStorage testStorage = new TestStorage(extensionContext);
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(Constants.TEST_SUITE_NAMESPACE, extensionContext);
-        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        final String clusterName = testStorage.getClusterName();
         final LabelSelector labelSelector = KafkaConnectResource.getLabelSelector(clusterName, KafkaConnectResources.deploymentName(clusterName));
         final String usedVariable = "KAFKA_CONNECT_CONFIGURATION";
 
@@ -840,8 +843,9 @@ class ConnectST extends AbstractST {
     @Tag(CONNECTOR_OPERATOR)
     @ParallelNamespaceTest
     void testConnectTlsAuthWithWeirdUserName(ExtensionContext extensionContext) {
-        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
-        final String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
+        final TestStorage testStorage = new TestStorage(extensionContext);
+        final String clusterName = testStorage.getClusterName();
+        final String topicName = testStorage.getTopicName();
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(Constants.TEST_SUITE_NAMESPACE, extensionContext);
 
         // Create weird named user with . and maximum of 64 chars -> TLS
@@ -904,8 +908,9 @@ class ConnectST extends AbstractST {
     @Tag(CONNECTOR_OPERATOR)
     @ParallelNamespaceTest
     void testConnectScramShaAuthWithWeirdUserName(ExtensionContext extensionContext) {
-        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
-        final String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
+        final TestStorage testStorage = new TestStorage(extensionContext);
+        final String clusterName = testStorage.getClusterName();
+        final String topicName = testStorage.getTopicName();
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(Constants.TEST_SUITE_NAMESPACE, extensionContext);
 
         // Create weird named user with . and more than 64 chars -> SCRAM-SHA
@@ -993,8 +998,9 @@ class ConnectST extends AbstractST {
     @ParallelNamespaceTest
     @Tag(COMPONENT_SCALING)
     void testScaleConnectWithoutConnectorToZero(ExtensionContext extensionContext) {
+        final TestStorage testStorage = new TestStorage(extensionContext);
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(Constants.TEST_SUITE_NAMESPACE, extensionContext);
-        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        final String clusterName = testStorage.getClusterName();
 
         resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3).build());
         resourceManager.createResourceWithWait(extensionContext, KafkaConnectTemplates.kafkaConnectWithFilePlugin(clusterName, namespaceName, 2).build());
@@ -1021,9 +1027,10 @@ class ConnectST extends AbstractST {
     @Tag(CONNECTOR_OPERATOR)
     @Tag(COMPONENT_SCALING)
     void testScaleConnectWithConnectorToZero(ExtensionContext extensionContext) {
+        final TestStorage testStorage = new TestStorage(extensionContext);
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(Constants.TEST_SUITE_NAMESPACE, extensionContext);
-        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
-        final String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
+        final String clusterName = testStorage.getClusterName();
+        final String topicName = testStorage.getTopicName();
 
         resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3).build());
         resourceManager.createResourceWithWait(extensionContext, KafkaConnectTemplates.kafkaConnectWithFilePlugin(clusterName, namespaceName, 2)
@@ -1068,9 +1075,10 @@ class ConnectST extends AbstractST {
     @Tag(CONNECTOR_OPERATOR)
     @Tag(COMPONENT_SCALING)
     void testScaleConnectAndConnectorSubresource(ExtensionContext extensionContext) {
+        final TestStorage testStorage = new TestStorage(extensionContext);
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(Constants.TEST_SUITE_NAMESPACE, extensionContext);
-        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
-        final String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
+        final String clusterName = testStorage.getClusterName();
+        final String topicName = testStorage.getTopicName();
         LabelSelector labelSelector = KafkaConnectResource.getLabelSelector(clusterName, KafkaConnectResources.deploymentName(clusterName));
 
         resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3).build());
@@ -1141,8 +1149,9 @@ class ConnectST extends AbstractST {
     @ParallelNamespaceTest
     @SuppressWarnings({"checkstyle:MethodLength"})
     void testMountingSecretAndConfigMapAsVolumesAndEnvVars(ExtensionContext extensionContext) {
+        final TestStorage testStorage = new TestStorage(extensionContext);
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(Constants.TEST_SUITE_NAMESPACE, extensionContext);
-        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        final String clusterName = testStorage.getClusterName();
 
         final String secretPassword = "password";
         final String encodedPassword = Base64.getEncoder().encodeToString(secretPassword.getBytes());
@@ -1302,8 +1311,9 @@ class ConnectST extends AbstractST {
 
     @ParallelNamespaceTest
     void testConfigureDeploymentStrategy(ExtensionContext extensionContext) {
+        final TestStorage testStorage = new TestStorage(extensionContext);
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(Constants.TEST_SUITE_NAMESPACE, extensionContext);
-        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        final String clusterName = testStorage.getClusterName();
 
         resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3).build());
         resourceManager.createResourceWithWait(extensionContext, KafkaConnectTemplates.kafkaConnect(clusterName, namespaceName, 1)
@@ -1354,10 +1364,11 @@ class ConnectST extends AbstractST {
     @Tag(INTERNAL_CLIENTS_USED)
     // changing the password in Secret should cause the RU of connect pod
     void testKafkaConnectWithScramShaAuthenticationRolledAfterPasswordChanged(ExtensionContext extensionContext) {
+        final TestStorage testStorage = new TestStorage(extensionContext);
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(Constants.TEST_SUITE_NAMESPACE, extensionContext);
-        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
-        final String userName = mapWithTestUsers.get(extensionContext.getDisplayName());
-        final String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
+        final String clusterName = testStorage.getClusterName();
+        final String userName = testStorage.getKafkaUsername();
+        final String topicName = testStorage.getTopicName();
         LabelSelector labelSelector = KafkaConnectResource.getLabelSelector(clusterName, KafkaConnectResources.deploymentName(clusterName));
 
         resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3)

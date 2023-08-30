@@ -57,12 +57,12 @@ public class OauthScopeST extends OauthAbstractST {
         "sasl.mechanism = PLAIN\n" +
         "security.protocol = SASL_PLAINTEXT\n" +
         "sasl.jaas.config = org.apache.kafka.common.security.plain.PlainLoginModule required username=\"kafka-client\" password=\"kafka-client-secret\" ;";
-    private TestStorage testStorage;
 
     @ParallelTest
     @Tag(CONNECT)
     void testScopeKafkaConnectSetIncorrectly(ExtensionContext extensionContext) {
-        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        final TestStorage testStorage = storageMap.get(extensionContext);
+        final String clusterName = testStorage.getClusterName();
 
         // SCOPE TESTING
         resourceManager.createResourceWithoutWait(extensionContext, KafkaConnectTemplates.kafkaConnect(clusterName, clusterName, 1)
@@ -100,7 +100,8 @@ public class OauthScopeST extends OauthAbstractST {
     @ParallelTest
     @Tag(CONNECT)
     void testScopeKafkaConnectSetCorrectly(ExtensionContext extensionContext) {
-        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        final TestStorage testStorage = storageMap.get(extensionContext);
+        final String clusterName = testStorage.getClusterName();
 
         // SCOPE TESTING
         resourceManager.createResourceWithWait(extensionContext, KafkaConnectTemplates.kafkaConnect(clusterName, clusterName, 1)
@@ -143,10 +144,11 @@ public class OauthScopeST extends OauthAbstractST {
 
     @ParallelTest
     void testClientScopeKafkaSetCorrectly(ExtensionContext extensionContext) {
-        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        final TestStorage testStorage = storageMap.get(extensionContext);
+        final String clusterName = testStorage.getClusterName();
         final String producerName = OAUTH_PRODUCER_NAME + "-" + clusterName;
         final String consumerName = OAUTH_CONSUMER_NAME + "-" + clusterName;
-        final String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
+        final String topicName = testStorage.getTopicName();
 
         KafkaClients oauthInternalClientChecksJob = new KafkaClientsBuilder()
             .withNamespaceName(Constants.TEST_SUITE_NAMESPACE)
@@ -171,10 +173,11 @@ public class OauthScopeST extends OauthAbstractST {
 
     @IsolatedTest("Modification of shared Kafka cluster")
     void testClientScopeKafkaSetIncorrectly(ExtensionContext extensionContext) throws UnexpectedException {
-        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        final TestStorage testStorage = storageMap.get(extensionContext);
+        final String clusterName = testStorage.getClusterName();
         final String producerName = OAUTH_PRODUCER_NAME + "-" + clusterName;
         final String consumerName = OAUTH_CONSUMER_NAME + "-" + clusterName;
-        final String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
+        final String topicName = testStorage.getTopicName();
         final LabelSelector kafkaSelector = KafkaResource.getLabelSelector(oauthClusterName, KafkaResources.kafkaStatefulSetName(oauthClusterName));
 
         KafkaClients oauthInternalClientChecksJob = new KafkaClientsBuilder()

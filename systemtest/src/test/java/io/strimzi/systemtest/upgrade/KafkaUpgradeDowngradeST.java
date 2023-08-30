@@ -13,6 +13,7 @@ import io.strimzi.systemtest.annotations.KRaftNotSupported;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
+import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.utils.ClientUtils;
@@ -75,9 +76,10 @@ public class KafkaUpgradeDowngradeST extends AbstractUpgradeST {
 
     @IsolatedTest
     void testKafkaClusterDowngrade(ExtensionContext testContext) {
+        final TestStorage testStorage = storageMap.get(testContext);
         List<TestKafkaVersion> sortedVersions = TestKafkaVersion.getSupportedKafkaVersions();
 
-        String clusterName = mapWithClusterNames.get(testContext.getDisplayName());
+        String clusterName = testStorage.getClusterName();
         String producerName = clusterName + "-producer";
         String consumerName = clusterName + "-consumer";
 
@@ -100,9 +102,10 @@ public class KafkaUpgradeDowngradeST extends AbstractUpgradeST {
 
     @IsolatedTest
     void testKafkaClusterDowngradeToOlderMessageFormat(ExtensionContext testContext) {
+        final TestStorage testStorage = storageMap.get(testContext);
         List<TestKafkaVersion> sortedVersions = TestKafkaVersion.getSupportedKafkaVersions();
 
-        String clusterName = mapWithClusterNames.get(testContext.getDisplayName());
+        String clusterName = testStorage.getClusterName();
         String producerName = clusterName + "-producer";
         String consumerName = clusterName + "-consumer";
 

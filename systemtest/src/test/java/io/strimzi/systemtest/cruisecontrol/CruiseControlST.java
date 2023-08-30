@@ -85,7 +85,8 @@ public class CruiseControlST extends AbstractST {
     @KRaftWithoutUTONotSupported
     @UTONotSupported("https://github.com/strimzi/strimzi-kafka-operator/issues/8864")
     void testAutoCreationOfCruiseControlTopicsWithResources(ExtensionContext extensionContext) {
-        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        final TestStorage testStorage = storageMap.get(extensionContext);
+        final String clusterName = testStorage.getClusterName();
 
         resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaWithCruiseControl(clusterName, 3, 3)
             .editMetadata()
@@ -143,7 +144,8 @@ public class CruiseControlST extends AbstractST {
 
     @IsolatedTest
     void testCruiseControlWithApiSecurityDisabled(ExtensionContext extensionContext) {
-        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        final TestStorage testStorage = storageMap.get(extensionContext);
+        String clusterName = testStorage.getClusterName();
 
         resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaWithCruiseControl(clusterName, 3, 3)
                 .editMetadata()
@@ -169,7 +171,8 @@ public class CruiseControlST extends AbstractST {
     @Tag(SANITY)
     @Tag(ACCEPTANCE)
     void testCruiseControlWithRebalanceResourceAndRefreshAnnotation(ExtensionContext extensionContext) {
-        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        final TestStorage testStorage = storageMap.get(extensionContext);
+        String clusterName = testStorage.getClusterName();
 
         resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3, 3)
                 .editMetadata()
@@ -205,8 +208,9 @@ public class CruiseControlST extends AbstractST {
 
     @ParallelNamespaceTest
     void testCruiseControlWithSingleNodeKafka(ExtensionContext extensionContext) {
+        final TestStorage testStorage = storageMap.get(extensionContext);
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(Constants.TEST_SUITE_NAMESPACE, extensionContext);
-        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        final String clusterName = testStorage.getClusterName();
 
         final String errMessage =  "Kafka " + namespaceName + "/" + clusterName + " has invalid configuration. " +
             "Cruise Control cannot be deployed with a Kafka cluster which has only one broker. " +
@@ -240,8 +244,9 @@ public class CruiseControlST extends AbstractST {
     @ParallelNamespaceTest
     @KRaftWithoutUTONotSupported
     void testCruiseControlTopicExclusion(ExtensionContext extensionContext) {
+        final TestStorage testStorage = storageMap.get(extensionContext);
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(Constants.TEST_SUITE_NAMESPACE, extensionContext);
-        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        final String clusterName = testStorage.getClusterName();
 
         final String excludedTopic1 = "excluded-topic-1";
         final String excludedTopic2 = "excluded-topic-2";
@@ -272,8 +277,9 @@ public class CruiseControlST extends AbstractST {
 
     @ParallelNamespaceTest
     void testCruiseControlReplicaMovementStrategy(ExtensionContext extensionContext) {
+        final TestStorage testStorage = storageMap.get(extensionContext);
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(Constants.TEST_SUITE_NAMESPACE, extensionContext);
-        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        final String clusterName = testStorage.getClusterName();
 
         final String replicaMovementStrategies = "default.replica.movement.strategies";
         final String newReplicaMovementStrategies = "com.linkedin.kafka.cruisecontrol.executor.strategy.PrioritizeSmallReplicaMovementStrategy," +

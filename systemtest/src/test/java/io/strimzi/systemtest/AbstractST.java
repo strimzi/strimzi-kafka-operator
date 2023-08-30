@@ -51,7 +51,6 @@ import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
-import static io.strimzi.operator.common.Util.hashStub;
 import static io.strimzi.systemtest.matchers.Matchers.logHasNoUnexpectedErrors;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
@@ -82,15 +81,6 @@ public abstract class AbstractST implements TestSeparator {
     // {thread-safe} this needs to be static because when more threads spawns diff. TestSuites it might produce race conditions
     private static final Object LOCK = new Object();
 
-    // maps for local variables {thread safe}
-    protected static Map<String, String> mapWithClusterNames = new HashMap<>();
-    protected static Map<String, String> mapWithTestTopics = new HashMap<>();
-    protected static Map<String, String> mapWithTestUsers = new HashMap<>();
-    protected static Map<String, String> mapWithScraperNames = new HashMap<>();
-
-    // This variable makes sure the assertNoCoErrorsLogged performed as afterEach
-    // does not take all the Cluster Operator logs from the beginning, but only from the time when the test execution started
-    protected static Map<String, Long> mapWithTestExecutionStartTimes = new HashMap<>();
     protected static ConcurrentHashMap<ExtensionContext, TestStorage> storageMap = new ConcurrentHashMap<>();
     protected static final String CLUSTER_NAME_PREFIX = "my-cluster-";
     protected static final String KAFKA_IMAGE_MAP = "STRIMZI_KAFKA_IMAGES";
@@ -549,28 +539,10 @@ public abstract class AbstractST implements TestSeparator {
     protected void beforeEachMayOverride(ExtensionContext extensionContext) {
         // this is because we need to have different clusterName and kafkaClientsName in each test case without
         // synchronization it can produce `data-race`
-        String testName = null;
-
         synchronized (LOCK) {
-            if (extensionContext.getTestMethod().isPresent()) {
-                testName = extensionContext.getTestMethod().get().getName();
-            }
-
             LOGGER.info("Not first test we are gonna generate cluster name");
-
-            String clusterName = CLUSTER_NAME_PREFIX + hashStub(String.valueOf(new Random().nextInt(Integer.MAX_VALUE)));
-
-            mapWithClusterNames.put(testName, clusterName);
-            mapWithTestTopics.put(testName, KafkaTopicUtils.generateRandomNameOfTopic());
-            mapWithTestUsers.put(testName, KafkaUserUtils.generateRandomNameOfKafkaUser());
-            mapWithScraperNames.put(testName, clusterName + "-" + Constants.SCRAPER_NAME);
-            mapWithTestExecutionStartTimes.put(testName, System.currentTimeMillis());
-
-            LOGGER.trace("CLUSTER_NAMES_MAP: {}", mapWithClusterNames);
-            LOGGER.trace("USERS_NAME_MAP: {}", mapWithTestUsers);
-            LOGGER.trace("TOPIC_NAMES_MAP: {}", mapWithTestTopics);
-            LOGGER.trace("THIS IS CLIENTS MAP: {}", mapWithScraperNames);
             testSuiteNamespaceManager.createParallelNamespace(extensionContext);
+            storageMap.put(extensionContext, new TestStorage(extensionContext));
         }
     }
 
@@ -629,9 +601,8 @@ public abstract class AbstractST implements TestSeparator {
         // does not proceed with the next method (i.e., afterEachMustExecute()). This ensures that if such problem happen
         // it will always execute the second method.
         try {
-            assertNoCoErrorsLogged(clusterOperator.getDeploymentNamespace(), mapWithTestExecutionStartTimes.get(extensionContext.getTestMethod().get().getName()));
+            assertNoCoErrorsLogged(clusterOperator.getDeploymentNamespace(), storageMap.get(extensionContext).getTestExecutionStartTime());
             afterEachMayOverride(extensionContext);
-            mapWithTestExecutionStartTimes.remove(extensionContext.getTestMethod().get().getName());
         } finally {
             afterEachMustExecute(extensionContext);
         }

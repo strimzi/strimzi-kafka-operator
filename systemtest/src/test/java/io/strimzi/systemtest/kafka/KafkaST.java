@@ -108,8 +108,9 @@ class KafkaST extends AbstractST {
     @ParallelNamespaceTest
     @KRaftWithoutUTONotSupported
     void testJvmAndResources(ExtensionContext extensionContext) {
+        final TestStorage testStorage = storageMap.get(extensionContext);
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(Constants.TEST_SUITE_NAMESPACE, extensionContext);
-        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        final String clusterName = testStorage.getClusterName();
         final LabelSelector kafkaSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.kafkaStatefulSetName(clusterName));
         final LabelSelector zkSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.zookeeperStatefulSetName(clusterName));
 
@@ -272,8 +273,9 @@ class KafkaST extends AbstractST {
      */
     @ParallelNamespaceTest
     void testRemoveComponentsFromEntityOperator(ExtensionContext extensionContext) {
+        final TestStorage testStorage = storageMap.get(extensionContext);
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(Constants.TEST_SUITE_NAMESPACE, extensionContext);
-        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        final String clusterName = testStorage.getClusterName();
 
         LOGGER.info("Deploying Kafka cluster {}", clusterName);
 
@@ -443,8 +445,9 @@ class KafkaST extends AbstractST {
     @ParallelNamespaceTest
     @Tag(LOADBALANCER_SUPPORTED)
     void testRegenerateCertExternalAddressChange(ExtensionContext extensionContext) {
+        final TestStorage testStorage = storageMap.get(extensionContext);
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(Constants.TEST_SUITE_NAMESPACE, extensionContext);
-        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        final String clusterName = testStorage.getClusterName();
         final LabelSelector kafkaSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.kafkaStatefulSetName(clusterName));
 
         LOGGER.info("Creating Kafka without external listener");
@@ -994,7 +997,7 @@ class KafkaST extends AbstractST {
         final TestStorage testStorage = new TestStorage(extensionContext);
         String nonExistingVersion = "6.6.6";
         String nonExistingVersionMessage = "Unsupported Kafka.spec.kafka.version: " + nonExistingVersion + ". Supported versions are:.*";
-        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        String clusterName = testStorage.getClusterName();
 
         resourceManager.createResourceWithoutWait(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 1, 1)
                 .editSpec()

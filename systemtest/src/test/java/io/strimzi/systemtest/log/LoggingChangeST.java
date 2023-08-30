@@ -90,8 +90,9 @@ class LoggingChangeST extends AbstractST {
     @ParallelNamespaceTest
     @SuppressWarnings({"checkstyle:MethodLength"})
     void testJSONFormatLogging(ExtensionContext extensionContext) {
+        final TestStorage testStorage = storageMap.get(extensionContext);
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(Constants.TEST_SUITE_NAMESPACE, extensionContext);
-        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        final String clusterName = testStorage.getClusterName();
         final LabelSelector kafkaSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.kafkaStatefulSetName(clusterName));
         final LabelSelector zkSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.zookeeperStatefulSetName(clusterName));
 
@@ -260,8 +261,9 @@ class LoggingChangeST extends AbstractST {
     @KRaftWithoutUTONotSupported
     @SuppressWarnings({"checkstyle:MethodLength", "checkstyle:CyclomaticComplexity"})
     void testDynamicallySetEOloggingLevels(ExtensionContext extensionContext) {
+        final TestStorage testStorage = storageMap.get(extensionContext);
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(Constants.TEST_SUITE_NAMESPACE, extensionContext);
-        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        final String clusterName = testStorage.getClusterName();
 
         InlineLogging ilOff = new InlineLogging();
         ilOff.setLoggers(Collections.singletonMap("rootLogger.level", "OFF"));
@@ -783,9 +785,10 @@ class LoggingChangeST extends AbstractST {
 
     @ParallelNamespaceTest
     void testDynamicallySetKafkaLoggingLevels(ExtensionContext extensionContext) {
+        final TestStorage testStorage = storageMap.get(extensionContext);
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(Constants.TEST_SUITE_NAMESPACE, extensionContext);
-        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
-        final String scraperName = mapWithScraperNames.get(extensionContext.getDisplayName());
+        final String clusterName = testStorage.getClusterName();
+        final String scraperName = testStorage.getScraperName();
         String kafkaName = KafkaResources.kafkaStatefulSetName(clusterName);
         final LabelSelector kafkaSelector = KafkaResource.getLabelSelector(clusterName, kafkaName);
 
@@ -919,9 +922,10 @@ class LoggingChangeST extends AbstractST {
 
     @ParallelNamespaceTest
     void testDynamicallySetUnknownKafkaLogger(ExtensionContext extensionContext) {
+        final TestStorage testStorage = storageMap.get(extensionContext);
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(Constants.TEST_SUITE_NAMESPACE, extensionContext);
-        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
-        final String scraperName = mapWithScraperNames.get(extensionContext.getDisplayName());
+        final String clusterName = testStorage.getClusterName();
+        final String scraperName = testStorage.getScraperName();
 
         final LabelSelector kafkaSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.kafkaStatefulSetName(clusterName));
 
@@ -947,8 +951,9 @@ class LoggingChangeST extends AbstractST {
 
     @ParallelNamespaceTest
     void testDynamicallySetUnknownKafkaLoggerValue(ExtensionContext extensionContext) {
+        final TestStorage testStorage = storageMap.get(extensionContext);
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(Constants.TEST_SUITE_NAMESPACE, extensionContext);
-        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        final String clusterName = testStorage.getClusterName();
         final LabelSelector kafkaSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.kafkaStatefulSetName(clusterName));
 
         resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaPersistent(clusterName, 3, 1).build());
@@ -968,9 +973,10 @@ class LoggingChangeST extends AbstractST {
 
     @ParallelNamespaceTest
     void testDynamicallySetKafkaExternalLogging(ExtensionContext extensionContext) {
+        final TestStorage testStorage = storageMap.get(extensionContext);
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(Constants.TEST_SUITE_NAMESPACE, extensionContext);
-        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
-        final String scraperName = mapWithScraperNames.get(extensionContext.getDisplayName());
+        final String clusterName = testStorage.getClusterName();
+        final String scraperName = testStorage.getScraperName();
         final LabelSelector kafkaSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.kafkaStatefulSetName(clusterName));
 
         // this test changes dynamically unchangeable logging config and thus RU is expected
@@ -1094,8 +1100,9 @@ class LoggingChangeST extends AbstractST {
     @Tag(MIRROR_MAKER2)
     @Tag(CONNECT_COMPONENTS)
     void testDynamicallySetMM2LoggingLevels(ExtensionContext extensionContext) {
+        final TestStorage testStorage = storageMap.get(extensionContext);
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(Constants.TEST_SUITE_NAMESPACE, extensionContext);
-        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        final String clusterName = testStorage.getClusterName();
         LabelSelector labelSelector = KafkaMirrorMaker2Resource.getLabelSelector(clusterName, KafkaMirrorMaker2Resources.deploymentName(clusterName));
 
         InlineLogging ilOff = new InlineLogging();
@@ -1203,8 +1210,9 @@ class LoggingChangeST extends AbstractST {
     @Tag(ROLLING_UPDATE)
     @Tag(MIRROR_MAKER2)
     void testMM2LoggingLevelsHierarchy(ExtensionContext extensionContext) {
+        final TestStorage testStorage = storageMap.get(extensionContext);
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(Constants.TEST_SUITE_NAMESPACE, extensionContext);
-        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        final String clusterName = testStorage.getClusterName();
         LabelSelector labelSelector = KafkaMirrorMaker2Resource.getLabelSelector(clusterName, KafkaMirrorMaker2Resources.deploymentName(clusterName));
 
         resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName + "-source", 1).build());
@@ -1297,9 +1305,10 @@ class LoggingChangeST extends AbstractST {
 
     @ParallelNamespaceTest
     void testNotExistingCMSetsDefaultLogging(ExtensionContext extensionContext) {
+        final TestStorage testStorage = storageMap.get(extensionContext);
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(Constants.TEST_SUITE_NAMESPACE, extensionContext);
         final String defaultProps = TestUtils.getFileAsString(TestUtils.USER_PATH + "/../cluster-operator/src/main/resources/default-logging/KafkaCluster.properties");
-        final String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        final String clusterName = testStorage.getClusterName();
         final LabelSelector kafkaSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.kafkaStatefulSetName(clusterName));
 
         String cmData = "log4j.appender.CONSOLE=org.apache.log4j.ConsoleAppender\n" +

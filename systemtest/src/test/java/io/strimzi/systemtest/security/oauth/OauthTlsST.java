@@ -77,10 +77,11 @@ public class OauthTlsST extends OauthAbstractST {
             "As an OAuth consumer, I am able to consumer messages from the Kafka Broker using encrypted communication")
     @ParallelTest
     void testProducerConsumer(ExtensionContext extensionContext) {
-        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        final TestStorage testStorage = storageMap.get(extensionContext);
+        String clusterName = testStorage.getClusterName();
         String producerName = OAUTH_PRODUCER_NAME + "-" + clusterName;
         String consumerName = OAUTH_CONSUMER_NAME + "-" + clusterName;
-        String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
+        String topicName = testStorage.getTopicName();
 
         resourceManager.createResourceWithWait(extensionContext, KafkaTopicTemplates.topic(oauthClusterName, topicName, Constants.TEST_SUITE_NAMESPACE).build());
 
@@ -108,10 +109,11 @@ public class OauthTlsST extends OauthAbstractST {
     @Tag(CONNECT)
     @Tag(CONNECT_COMPONENTS)
     void testProducerConsumerConnect(ExtensionContext extensionContext) {
-        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        final TestStorage testStorage = storageMap.get(extensionContext);
+        String clusterName = testStorage.getClusterName();
         String producerName = OAUTH_PRODUCER_NAME + "-" + clusterName;
         String consumerName = OAUTH_CONSUMER_NAME + "-" + clusterName;
-        String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
+        String topicName = testStorage.getTopicName();
         String scraperName = clusterName + "-" + Constants.SCRAPER_NAME;
 
         resourceManager.createResourceWithWait(extensionContext, KafkaTopicTemplates.topic(oauthClusterName, topicName, Constants.TEST_SUITE_NAMESPACE).build());
@@ -183,10 +185,11 @@ public class OauthTlsST extends OauthAbstractST {
     @ParallelTest
     @Tag(BRIDGE)
     void testProducerConsumerBridge(ExtensionContext extensionContext) {
-        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        final TestStorage testStorage = storageMap.get(extensionContext);
+        String clusterName = testStorage.getClusterName();
         String producerName = OAUTH_PRODUCER_NAME + "-" + clusterName;
         String consumerName = OAUTH_CONSUMER_NAME + "-" + clusterName;
-        String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
+        String topicName = testStorage.getTopicName();
 
         resourceManager.createResourceWithWait(extensionContext, KafkaTopicTemplates.topic(oauthClusterName, topicName, Constants.TEST_SUITE_NAMESPACE).build());
 
@@ -408,10 +411,11 @@ public class OauthTlsST extends OauthAbstractST {
 
     @ParallelTest
     void testIntrospectionEndpoint(ExtensionContext extensionContext) {
-        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        final TestStorage testStorage = storageMap.get(extensionContext);
+        String clusterName = testStorage.getClusterName();
         String producerName = OAUTH_PRODUCER_NAME + "-" + clusterName;
         String consumerName = OAUTH_CONSUMER_NAME + "-" + clusterName;
-        String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
+        String topicName = testStorage.getTopicName();
 
         resourceManager.createResourceWithWait(extensionContext, KafkaTopicTemplates.topic(oauthClusterName, topicName, Constants.TEST_SUITE_NAMESPACE).build());
 

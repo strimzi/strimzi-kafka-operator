@@ -16,6 +16,7 @@ import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.cli.KafkaCmdClient;
 import io.strimzi.systemtest.kafkaclients.externalClients.ExternalKafkaClient;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
+import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaUserTemplates;
@@ -65,8 +66,10 @@ public class DynamicConfST extends AbstractST {
 
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testSimpleDynamicConfiguration(ExtensionContext extensionContext) {
-        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
-        String scraperName = mapWithScraperNames.get(extensionContext.getDisplayName());
+        final TestStorage testStorage = storageMap.get(extensionContext);
+
+        String clusterName = testStorage.getClusterName();
+        String scraperName = testStorage.getScraperName();
 
         Map<String, Object> deepCopyOfShardKafkaConfig = kafkaConfig.entrySet().stream()
             .collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue()));
@@ -118,8 +121,10 @@ public class DynamicConfST extends AbstractST {
     @Tag(ROLLING_UPDATE)
     @IsolatedTest("Using more tha one Kafka cluster in one namespace")
     void testUpdateToExternalListenerCausesRollingRestart(ExtensionContext extensionContext) {
-        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
-        String scraperName = mapWithScraperNames.get(extensionContext.getDisplayName());
+        final TestStorage testStorage = storageMap.get(extensionContext);
+        String clusterName = testStorage.getClusterName();
+        String scraperName = testStorage.getScraperName();
+
 
         Map<String, Object> deepCopyOfShardKafkaConfig = kafkaConfig.entrySet().stream()
             .collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue()));
@@ -259,9 +264,10 @@ public class DynamicConfST extends AbstractST {
     @Tag(EXTERNAL_CLIENTS_USED)
     @Tag(ROLLING_UPDATE)
     void testUpdateToExternalListenerCausesRollingRestartUsingExternalClients(ExtensionContext extensionContext) {
-        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
-        String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
-        String userName = mapWithTestUsers.get(extensionContext.getDisplayName());
+        final TestStorage testStorage = storageMap.get(extensionContext);
+        String clusterName = testStorage.getClusterName();
+        String topicName = testStorage.getTopicName();
+        String userName = testStorage.getKafkaUsername();
         Map<String, Object> deepCopyOfShardKafkaConfig = kafkaConfig.entrySet().stream()
             .collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue()));
         LabelSelector kafkaSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.kafkaStatefulSetName(clusterName));

@@ -137,11 +137,12 @@ public abstract class AbstractNamespaceST extends AbstractST {
     @ParallelTest
     @KRaftWithoutUTONotSupported
     final void testTopicOperatorWatchingOtherNamespace(ExtensionContext extensionContext) {
+        final TestStorage testStorage = storageMap.get(extensionContext);
 
         LOGGER.info("Topic Operator in Kafka: {}/{} watches KafkaTopics in (different) Namespace: {}", MAIN_TEST_NAMESPACE, PRIMARY_KAFKA_NAME, PRIMARY_KAFKA_WATCHED_NAMESPACE);
 
 
-        final String topicName = mapWithTestTopics.get(extensionContext.getDisplayName());
+        final String topicName = testStorage.getTopicName();
         LOGGER.info("Verifying that KafkaTopic: {}/{} does not exist before test", PRIMARY_KAFKA_WATCHED_NAMESPACE, topicName);
         List<String> topics = KafkaCmdClient.listTopicsUsingPodCli(MAIN_TEST_NAMESPACE, scraperPodName, KafkaResources.plainBootstrapAddress(PRIMARY_KAFKA_NAME));
         assertThat(topics, not(hasItems(topicName)));
@@ -264,7 +265,8 @@ public abstract class AbstractNamespaceST extends AbstractST {
     @Tag(CONNECT_COMPONENTS)
     final void testDeployKafkaConnectAndKafkaConnectorInNamespaceDifferentFromCO(ExtensionContext extensionContext) {
 
-        String kafkaConnectName = mapWithClusterNames.get(extensionContext.getDisplayName()) + "kafka-connect";
+        final TestStorage testStorage = storageMap.get(extensionContext);
+        String kafkaConnectName = testStorage.getClusterName() + "kafka-connect";
 
         // Deploy Kafka Connect in other namespace than CO
         resourceManager.createResourceWithWait(extensionContext, KafkaConnectTemplates.kafkaConnectWithFilePlugin(kafkaConnectName, MAIN_TEST_NAMESPACE, PRIMARY_KAFKA_NAME, 1)

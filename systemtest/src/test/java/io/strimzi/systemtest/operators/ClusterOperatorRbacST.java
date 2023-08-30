@@ -12,6 +12,7 @@ import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.enums.ClusterOperatorRBACType;
 import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
+import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaConnectTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
@@ -44,9 +45,10 @@ public class ClusterOperatorRbacST extends AbstractST {
     @Tag(CONNECT)
     @Tag(CONNECT_COMPONENTS)
     void testCRBDeletionErrorIsIgnoredWhenRackAwarenessIsNotEnabled(ExtensionContext extensionContext) {
+        final TestStorage testStorage = storageMap.get(extensionContext);
         assumeFalse(Environment.isNamespaceRbacScope());
 
-        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        String clusterName = testStorage.getClusterName();
 
         // 060-Deployment
         this.clusterOperator = this.clusterOperator.defaultInstallation(extensionContext)
@@ -78,9 +80,10 @@ public class ClusterOperatorRbacST extends AbstractST {
     @Tag(CONNECT)
     @Tag(CONNECT_COMPONENTS)
     void testCRBDeletionErrorsWhenRackAwarenessIsEnabled(ExtensionContext extensionContext) {
+        final TestStorage testStorage = storageMap.get(extensionContext);
         assumeFalse(Environment.isNamespaceRbacScope());
 
-        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        String clusterName = testStorage.getClusterName();
 
         // 060-Deployment
         this.clusterOperator = this.clusterOperator.defaultInstallation(extensionContext)

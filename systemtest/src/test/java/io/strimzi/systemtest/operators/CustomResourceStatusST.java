@@ -159,7 +159,8 @@ class CustomResourceStatusST extends AbstractST {
 
     @ParallelTest
     void testKafkaUserStatus(ExtensionContext extensionContext) {
-        String userName = mapWithTestUsers.get(extensionContext.getDisplayName());
+        final TestStorage testStorage = storageMap.get(extensionContext);
+        String userName = testStorage.getKafkaUsername();
 
         resourceManager.createResourceWithWait(extensionContext, KafkaUserTemplates.tlsUser(Constants.TEST_SUITE_NAMESPACE, CUSTOM_RESOURCE_STATUS_CLUSTER_NAME, userName).build());
 
@@ -196,7 +197,8 @@ class CustomResourceStatusST extends AbstractST {
     @ParallelTest
     @Tag(MIRROR_MAKER)
     void testKafkaMirrorMakerStatus(ExtensionContext extensionContext) {
-        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        final TestStorage testStorage = storageMap.get(extensionContext);
+        String clusterName = testStorage.getClusterName();
         String mirrorMakerName = clusterName + "-mirror-maker";
 
         // Deploy MirrorMaker
@@ -223,8 +225,9 @@ class CustomResourceStatusST extends AbstractST {
     @ParallelTest
     @Tag(MIRROR_MAKER)
     void testKafkaMirrorMakerStatusWrongBootstrap(ExtensionContext extensionContext) {
-        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
-        String mirrorMakerName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        final TestStorage testStorage = storageMap.get(extensionContext);
+        String clusterName = testStorage.getClusterName();
+        String mirrorMakerName = testStorage.getClusterName();
 
         resourceManager.createResourceWithWait(extensionContext, KafkaMirrorMakerTemplates.kafkaMirrorMaker(mirrorMakerName, CUSTOM_RESOURCE_STATUS_CLUSTER_NAME, CUSTOM_RESOURCE_STATUS_CLUSTER_NAME, ClientUtils.generateRandomConsumerGroup(), 1, false)
             .editMetadata()
@@ -342,7 +345,8 @@ class CustomResourceStatusST extends AbstractST {
     @ParallelTest
     @Tag(CONNECTOR_OPERATOR)
     void testKafkaConnectorWithoutClusterConfig(ExtensionContext extensionContext) {
-        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        final TestStorage testStorage = storageMap.get(extensionContext);
+        String clusterName = testStorage.getClusterName();
 
         // This test check NPE when connect cluster is not specified in labels
         // Check for NPE in CO logs is performed after every test in BaseST
@@ -372,7 +376,8 @@ class CustomResourceStatusST extends AbstractST {
     @Tag(MIRROR_MAKER2)
     @Tag(CONNECT_COMPONENTS)
     void testKafkaMirrorMaker2Status(ExtensionContext extensionContext) {
-        String targetClusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        final TestStorage testStorage = storageMap.get(extensionContext);
+        String targetClusterName = testStorage.getClusterName();
         String mirrorMaker2Name = targetClusterName + "-mirror-maker-2";
         String mm2Url = KafkaMirrorMaker2Resources.url(mirrorMaker2Name, Constants.TEST_SUITE_NAMESPACE, 8083);
 
@@ -420,7 +425,8 @@ class CustomResourceStatusST extends AbstractST {
     @ParallelTest
     @Tag(MIRROR_MAKER2)
     void testKafkaMirrorMaker2WrongBootstrap(ExtensionContext extensionContext) {
-        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        final TestStorage testStorage = storageMap.get(extensionContext);
+        String clusterName = testStorage.getClusterName();
         String mirrorMaker2Name = clusterName + "-mirror-maker-2";
 
         KafkaMirrorMaker2 kafkaMirrorMaker2 = KafkaMirrorMaker2Templates.kafkaMirrorMaker2(mirrorMaker2Name,

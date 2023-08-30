@@ -11,6 +11,7 @@ import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
+import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.util.Random;
@@ -32,6 +33,7 @@ final public class TestStorage {
     private static final Random RANDOM = new Random();
 
     private ExtensionContext extensionContext;
+    private String testName;
     private String namespaceName;
     private String clusterName;
     private String kafkaNodePoolName;
@@ -44,12 +46,15 @@ final public class TestStorage {
     private String consumerName;
     private String adminName;
     private String username;
+    private String kafkaUsername;
     private String eoDeploymentName;
     private String kafkaStatefulSetName;
     private String zkStatefulSetName;
     private LabelSelector kafkaSelector;
     private LabelSelector zkSelector;
     private int messageCount;
+    private long testExecutionStartTime;
+
 
     public TestStorage(ExtensionContext extensionContext) {
         this(extensionContext, Constants.TEST_SUITE_NAMESPACE);
@@ -60,7 +65,9 @@ final public class TestStorage {
     }
 
     public TestStorage(ExtensionContext extensionContext, String namespaceName, int messageCount) {
+
         this.extensionContext = extensionContext;
+        this.testName = extensionContext.getTestMethod().isPresent() ? extensionContext.getTestMethod().get().getName() : "null-testname";
         this.namespaceName = StUtils.isParallelNamespaceTest(extensionContext) ? StUtils.getNamespaceBasedOnRbac(namespaceName, extensionContext) : namespaceName;
         this.clusterName = CLUSTER_NAME_PREFIX + hashStub(String.valueOf(RANDOM.nextInt(Integer.MAX_VALUE)));
         this.kafkaNodePoolName = Constants.KAFKA_NODE_POOL_PREFIX + hashStub(clusterName);
@@ -73,6 +80,7 @@ final public class TestStorage {
         this.consumerName = clusterName  + "-" + CONSUMER;
         this.adminName = clusterName + "-" + ADMIN;
         this.username = clusterName + "-" + USER;
+        this.kafkaUsername = KafkaUserUtils.generateRandomNameOfKafkaUser();
         this.eoDeploymentName = KafkaResources.entityOperatorDeploymentName(clusterName);
         this.kafkaStatefulSetName = Environment.isKafkaNodePoolsEnabled() ?
             this.clusterName + "-" + this.kafkaNodePoolName : KafkaResources.kafkaStatefulSetName(clusterName);
@@ -80,7 +88,9 @@ final public class TestStorage {
         this.kafkaSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.kafkaStatefulSetName(clusterName));
         this.zkSelector = KafkaResource.getLabelSelector(clusterName, this.zkStatefulSetName);
         this.messageCount = messageCount;
+        this.testExecutionStartTime = System.currentTimeMillis();
 
+        extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.TEST_NAME_KEY, this.testName);
         extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.NAMESPACE_KEY, this.namespaceName);
         extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.CLUSTER_KEY, this.clusterName);
         extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.KAFKA_NODE_POOL_KEY, this.kafkaNodePoolName);
@@ -93,12 +103,14 @@ final public class TestStorage {
         extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.CONSUMER_KEY, this.consumerName);
         extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.ADMIN_KEY, this.adminName);
         extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.USER_NAME_KEY, this.username);
+        extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.KAFKA_USER_NAME_KEY, this.kafkaUsername);
         extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.ENTITY_OPERATOR_NAME_KEY, this.eoDeploymentName);
         extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.KAFKA_STATEFULSET_NAME_KEY, this.kafkaStatefulSetName);
         extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.ZOOKEEPER_STATEFULSET_NAME_KEY, this.zkStatefulSetName);
         extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.KAFKA_SELECTOR, this.kafkaSelector);
         extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.ZOOKEEPER_SELECTOR, this.zkSelector);
         extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.MESSAGE_COUNT_KEY, this.messageCount);
+        extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.TEST_EXECUTION_START_TIME_KEY, this.testExecutionStartTime);
     }
 
     public void addToTestStorage(String key, Object value) {
@@ -107,6 +119,10 @@ final public class TestStorage {
 
     public Object retrieveFromTestStorage(String key) {
         return extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(key);
+    }
+
+    public String getTestName() {
+        return extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.TEST_NAME_KEY).toString();
     }
 
     public String getNamespaceName() {
@@ -153,6 +169,10 @@ final public class TestStorage {
         return extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.USER_NAME_KEY).toString();
     }
 
+    public String getKafkaUsername() {
+        return extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.KAFKA_USER_NAME_KEY).toString();
+    }
+
     public String getEoDeploymentName() {
         return extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.ENTITY_OPERATOR_NAME_KEY).toString();
     }
@@ -174,6 +194,10 @@ final public class TestStorage {
 
     public int getMessageCount() {
         return (int) extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.MESSAGE_COUNT_KEY);
+    }
+
+    public long getTestExecutionStartTime() {
+        return (long) extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.TEST_EXECUTION_START_TIME_KEY);
     }
 
 }

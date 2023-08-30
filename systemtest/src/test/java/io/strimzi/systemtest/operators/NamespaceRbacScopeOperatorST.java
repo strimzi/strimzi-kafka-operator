@@ -10,6 +10,7 @@ import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.enums.ClusterOperatorRBACType;
 import io.strimzi.systemtest.annotations.IsolatedTest;
+import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import org.junit.jupiter.api.Tag;
@@ -32,9 +33,10 @@ class NamespaceRbacScopeOperatorST extends AbstractST {
 
     @IsolatedTest("This test case needs own Cluster Operator")
     void testNamespacedRbacScopeDeploysRoles(ExtensionContext extensionContext) {
+        final TestStorage testStorage = storageMap.get(extensionContext);
         assumeFalse(Environment.isOlmInstall() || Environment.isHelmInstall());
 
-        String clusterName = mapWithClusterNames.get(extensionContext.getDisplayName());
+        String clusterName = testStorage.getClusterName();
 
         this.clusterOperator = this.clusterOperator.defaultInstallation(extensionContext)
             .withClusterOperatorRBACType(ClusterOperatorRBACType.NAMESPACE)
