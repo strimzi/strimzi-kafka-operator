@@ -15,10 +15,9 @@ You remove a connector by deleting its corresponding `KafkaConnector`.
 
 `KafkaConnector` resources must be deployed to the same namespace as the Kafka Connect cluster they link to.
 
-In the configuration shown in this procedure, the `autoRestart` property is set to `true`.
-This enables automatic restarts of failed connectors and tasks. 
-Up to seven restart attempts are made, after which restarts must be made manually.
-You annotate the `KafkaConnector` resource to xref:proc-manual-restart-connector-str[restart a connector] or xref:proc-manual-restart-connector-task-str[restart a connector task] manually.
+In the configuration shown in this procedure, the `autoRestart` features is enabled (`enabled: true`).
+This enables automatic restarts of failed connectors and tasks.
+You can also annotate the `KafkaConnector` resource to xref:proc-manual-restart-connector-str[restart a connector] or xref:proc-manual-restart-connector-task-str[restart a connector task] manually.
 
 .Example connectors
 

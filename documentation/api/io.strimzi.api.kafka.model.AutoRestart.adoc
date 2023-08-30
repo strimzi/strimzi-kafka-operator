@@ -1,14 +1,12 @@
 Configures automatic restarts for connectors and tasks that are in a `FAILED` state.
 
 When enabled, a back-off algorithm applies the automatic restart to each failed connector and its tasks.
-
-The operator attempts an automatic restart on reconciliation. 
-If the first attempt fails, the operator makes up to six more attempts. 
-The duration between each restart attempt increases from 2 to 30 minutes.
-After each restart, failed connectors and tasks transit from `FAILED` to `RESTARTING`.
-If the restart fails after the final attempt, there is likely to be a problem with the connector configuration. 
-The connector and tasks remain in a `FAILED` state and you have to restart them manually.
-You can do this by annotating the `KafKaConnector` custom resource with `strimzi.io/restart: "true"`.
+An incremental back-off interval is calculated using the formula `n * n + n` where `n` represents the number of previous restarts.
+This interval is capped at a maximum of 60 minutes.
+Consequently, a restart occurs immediately, followed by restarts after 2, 6, 12, 20, 30, 42, 56 minutes, and then at 60-minute intervals.
+By default, Strimzi initiates restarts of the connector and its tasks indefinitely.
+However, you can use the `maxRestarts` property to set a maximum on the number of restarts.
+If `maxRestarts` is configured and the connector still fails even after the final restart attempt, you must then restart the connector manually.
 
 For Kafka Connect connectors, use the `autoRestart` property of the `KafkaConnector` resource to enable automatic restarts of failed connectors and tasks.
 
@@ -22,6 +20,21 @@ metadata:
 spec:
   autoRestart:
     enabled: true
+----
+
+If you prefer, you can also set a maximum limit on the number of restarts.
+
+.Enabling automatic restarts of failed connectors for Kafka Connect with limited number of restarts
+[source,yaml,subs="attributes+"]
+----
+apiVersion: {KafkaConnectorApiVersion}
+kind: KafkaConnector
+metadata:
+  name: my-source-connector
+spec:
+  autoRestart:
+    enabled: true
+    maxRestarts: 10
 ----
 
 For MirrorMaker 2, use the `autoRestart` property of connectors in the `KafkaMirrorMaker2` resource to enable automatic restarts of failed connectors and tasks.

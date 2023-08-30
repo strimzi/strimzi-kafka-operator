@@ -10,8 +10,28 @@
   * The `tracing.type: jaeger` configuration, in `KafkaConnect`, `KafkaMirrorMaker`, `KafkaMirrorMaker2` and `KafkaBridge` resources, is not supported anymore.
   * The OpenTelemetry based tracing is the only available by using `tracing.type: opentelemetry`.
 * Added version fields to the `Kafka` custom resource status to track install and upgrade state
+* Support for infinite auto-restart of Kafka Connect connectors
 
 ### Changes, deprecations and removals
+
+* **The default behavior of the Kafka Connect connector auto-restart has changed.**
+  When the auto-restart feature is enabled in `KafkaConnector` or `KafkaMirrorMaker2` custom resources, it will now continue to restart the connectors indefinitely rather than stopping after 7 restarts, as previously.
+  If you want to use the original behaviour, use the `.spec.autoRestart.maxRestarts` option to configure the maximum number of restarts.
+  For example:
+  ```yaml
+  apiVersion: kafka.strimzi.io/v1beta2
+  kind: KafkaConnector
+  metadata:
+    labels:
+      strimzi.io/cluster: my-connect
+    name: echo-sink-connector
+  spec:
+    # ...
+    autoRestart:
+      enabled: true
+      maxRestarts: 7
+    # ...
+  ```
 * The automatic configuration of Cruise Control CPU capacity has been changed in this release:
   * There are three ways to configure Cruise Control CPU capacity values:
     * `.spec.cruiseControl.brokerCapacity` (for all brokers)
