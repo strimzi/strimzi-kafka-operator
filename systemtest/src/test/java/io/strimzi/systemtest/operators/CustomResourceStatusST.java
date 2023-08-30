@@ -9,6 +9,9 @@ import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.fabric8.kubernetes.api.model.Service;
+import io.strimzi.api.kafka.model.AclOperation;
+import io.strimzi.api.kafka.model.AclRule;
+import io.strimzi.api.kafka.model.AclRuleBuilder;
 import io.strimzi.api.kafka.model.KafkaBridgeResources;
 import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.strimzi.api.kafka.model.KafkaConnectResources;
@@ -84,7 +87,6 @@ import static io.strimzi.systemtest.Constants.MIRROR_MAKER;
 import static io.strimzi.systemtest.Constants.MIRROR_MAKER2;
 import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
-import static io.strimzi.systemtest.enums.CustomResourceStatus.NotReady;
 import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
 import static io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils.getKafkaSecretCertificates;
 import static io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils.getKafkaStatusCertificates;
@@ -161,7 +163,25 @@ class CustomResourceStatusST extends AbstractST {
     void testKafkaUserStatus(ExtensionContext extensionContext) {
         String userName = mapWithTestUsers.get(extensionContext.getDisplayName());
 
-        resourceManager.createResourceWithWait(extensionContext, KafkaUserTemplates.tlsUser(Constants.TEST_SUITE_NAMESPACE, CUSTOM_RESOURCE_STATUS_CLUSTER_NAME, userName).build());
+        final AclRule aclRule = new AclRuleBuilder()
+            .withNewAclRuleTopicResource()
+                .withName(EXAMPLE_TOPIC_NAME)
+            .endAclRuleTopicResource()
+            .withOperations(AclOperation.WRITE, AclOperation.DESCRIBE)
+            .build();
+
+        resourceManager.createResourceWithoutWait(extensionContext, KafkaUserTemplates.tlsUser(Constants.TEST_SUITE_NAMESPACE, CUSTOM_RESOURCE_STATUS_CLUSTER_NAME, userName)
+            .editSpec()
+                .withNewKafkaUserAuthorizationSimple()
+                    .withAcls(aclRule)
+                .endKafkaUserAuthorizationSimple()
+            .endSpec()
+            .build());
+
+        KafkaUserUtils.waitForKafkaUserNotReady(Constants.TEST_SUITE_NAMESPACE, userName);
+
+        KafkaUserResource.replaceUserResourceInSpecificNamespace(userName, user -> user.getSpec().setAuthorization(null), Constants.TEST_SUITE_NAMESPACE);
+        KafkaUserUtils.waitForKafkaUserReady(Constants.TEST_SUITE_NAMESPACE, userName);
 
         LOGGER.info("Checking status of deployed KafkaUser");
         Condition kafkaCondition = KafkaUserResource.kafkaUserClient().inNamespace(Constants.TEST_SUITE_NAMESPACE).withName(userName).get().getStatus().getConditions().get(0);
@@ -169,28 +189,6 @@ class CustomResourceStatusST extends AbstractST {
         LOGGER.info("KafkaUser Type: {}", kafkaCondition.getType());
         assertThat("KafkaUser is in wrong state!", kafkaCondition.getType(), is(Ready.toString()));
         LOGGER.info("KafkaUser is in desired state: Ready");
-    }
-
-    @ParallelTest
-    void testKafkaUserStatusNotReady(ExtensionContext extensionContext) {
-        // Simulate NotReady state with userName longer than 64 characters
-        String userName = "sasl-use-rabcdefghijklmnopqrstuvxyzabcdefghijklmnopqrstuvxyzabcdef";
-
-        resourceManager.createResourceWithoutWait(extensionContext, KafkaUserTemplates.defaultUser(Constants.TEST_SUITE_NAMESPACE, CUSTOM_RESOURCE_STATUS_CLUSTER_NAME, userName).build());
-
-        KafkaUserUtils.waitForKafkaUserNotReady(Constants.TEST_SUITE_NAMESPACE, userName);
-
-        LOGGER.info("Checking status of deployed KafkaUser {}", userName);
-        Condition kafkaCondition = KafkaUserResource.kafkaUserClient().inNamespace(Constants.TEST_SUITE_NAMESPACE).withName(userName).get().getStatus().getConditions().get(0);
-        LOGGER.info("KafkaUser Status: {}", kafkaCondition.getStatus());
-        LOGGER.info("KafkaUser Type: {}", kafkaCondition.getType());
-        LOGGER.info("KafkaUser Message: {}", kafkaCondition.getMessage());
-        LOGGER.info("KafkaUser Reason: {}", kafkaCondition.getReason());
-        assertThat("KafkaUser is in wrong state!", kafkaCondition.getType(), is(NotReady.toString()));
-        LOGGER.info("KafkaUser {} is in desired state: {}", userName, kafkaCondition.getType());
-
-        KafkaUserResource.kafkaUserClient().inNamespace(Constants.TEST_SUITE_NAMESPACE).withName(userName).delete();
-        KafkaUserUtils.waitForKafkaUserDeletion(Constants.TEST_SUITE_NAMESPACE, userName);
     }
 
     @ParallelTest
