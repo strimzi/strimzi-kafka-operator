@@ -85,7 +85,7 @@ spec:
         tls: true
         authentication: # <14>
           type: tls
-      - name: external # <15>
+      - name: external1 # <15>
         port: 9094
         type: route
         tls: true

@@ -43,7 +43,7 @@ For more information about enabling TLS passthrough, see the {NginxIngressContro
 * A running Cluster Operator
 
 In this procedure, the Kafka cluster name is `my-cluster`.
-The name of the listener is `external`.
+The name of the listener is `external2`.
 
 .Procedure
 
@@ -67,7 +67,7 @@ spec:
   kafka:
     # ...
     listeners:
-      - name: external
+      - name: external2
         port: 9094
         type: ingress
         tls: true # <1>
@@ -107,11 +107,11 @@ An `ingress` is also created for each service, with a DNS address to expose them
 .Ingresses created for the bootstrap and brokers
 [source,shell]
 ----
-NAME                        CLASS  HOSTS                    ADDRESS               PORTS
-my-cluster-kafka-0          nginx  broker-0.myingress.com   external.ingress.com  80,443
-my-cluster-kafka-1          nginx  broker-1.myingress.com   external.ingress.com  80,443
-my-cluster-kafka-2          nginx  broker-2.myingress.com   external.ingress.com  80,443
-my-cluster-kafka-bootstrap  nginx  bootstrap.myingress.com  external.ingress.com  80,443
+NAME                                  CLASS  HOSTS                    ADDRESS       PORTS
+my-cluster-kafka-external2-0          nginx  broker-0.myingress.com   192.168.49.2  80,443
+my-cluster-kafka-external2-1          nginx  broker-1.myingress.com   192.168.49.2  80,443
+my-cluster-kafka-external2-2          nginx  broker-2.myingress.com   192.168.49.2  80,443
+my-cluster-kafka-external2-bootstrap  nginx  bootstrap.myingress.com  192.168.49.2  80,443
 ----
 +
 The DNS addresses used for client connection are propagated to the `status` of each ingress.
@@ -122,7 +122,7 @@ The DNS addresses used for client connection are propagated to the `status` of e
 status:
   loadBalancer:
     ingress:
-      - hostname: external.ingress.com
+    - ip: 192.168.49.2
  # ...
 ----
 

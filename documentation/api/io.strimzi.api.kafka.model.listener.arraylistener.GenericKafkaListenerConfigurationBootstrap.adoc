@@ -12,7 +12,7 @@ The `alternativeNames` property is applicable to all types of listeners.
 ----
 listeners:
   #...
-  - name: external
+  - name: external1
     port: 9094
     type: route
     tls: true
@@ -40,7 +40,7 @@ Strimzi will not perform any validation that the requested hosts are available a
 ----
 listeners:
   #...
-  - name: external
+  - name: external2
     port: 9094
     type: ingress
     tls: true
@@ -71,7 +71,7 @@ You must ensure that they are free and can be used.
 # ...
 listeners:
   #...
-  - name: external
+  - name: external1
     port: 9094
     type: route
     tls: true
@@ -105,7 +105,7 @@ You must ensure that they are free and available for use.
 # ...
 listeners:
   #...
-  - name: external
+  - name: external4
     port: 9094
     type: nodeport
     tls: true
@@ -137,7 +137,7 @@ The `loadBalancerIP` field is ignored if the cloud provider does not support the
 # ...
 listeners:
   #...
-  - name: external
+  - name: external3
     port: 9094
     type: loadbalancer
     tls: true
@@ -168,7 +168,7 @@ You can use these annotations, for example, to instrument DNS tooling such as {K
 # ...
 listeners:
   #...
-  - name: external
+  - name: external3
     port: 9094
     type: loadbalancer
     tls: true

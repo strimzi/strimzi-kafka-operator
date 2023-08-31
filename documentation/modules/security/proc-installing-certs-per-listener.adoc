@@ -63,7 +63,7 @@ listeners:
     port: 9092
     type: internal
     tls: false
-  - name: external
+  - name: external3
     port: 9094
     type: loadbalancer
     tls: true

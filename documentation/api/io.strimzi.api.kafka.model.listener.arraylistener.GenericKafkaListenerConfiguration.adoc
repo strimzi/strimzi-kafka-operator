@@ -11,7 +11,7 @@ You can use the property to provide your own Kafka listener certificates.
 ----
 listeners:
   #...
-  - name: external
+  - name: external3
     port: 9094
     type: loadbalancer
     tls: true
@@ -44,7 +44,7 @@ When exposing Kafka outside of Kubernetes use source ranges, in addition to labe
 ----
 listeners:
   #...
-  - name: external
+  - name: external3
     port: 9094
     type: loadbalancer
     tls: false
@@ -68,7 +68,7 @@ You can configure the `Ingress` class using the `class` property.
 ----
 listeners:
   #...
-  - name: external
+  - name: external2
     port: 9094
     type: ingress
     tls: true
@@ -99,7 +99,7 @@ If the preferred address type is not found, Strimzi proceeds through the types i
 ----
 listeners:
   #...
-  - name: external
+  - name: external4
     port: 9094
     type: nodeport
     tls: false

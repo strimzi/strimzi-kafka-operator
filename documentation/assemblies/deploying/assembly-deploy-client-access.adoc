@@ -14,6 +14,8 @@ Otherwise, create listeners that provide client access within or outside the Kub
 include::../../modules/deploying/proc-deploy-example-clients.adoc[leveloffset=+1]
 //overview of listeners
 include::../../modules/overview/con-configuration-points-listeners.adoc[leveloffset=+1]
+//listener naming conventions
+include::../../modules/overview/con-configuration-points-listener-names.adoc[leveloffset=+1]
 //how to set up external clients that can access and use the deployment
 include::../../modules/deploying/proc-deploy-setup-external-clients.adoc[leveloffset=+1]
 //access through external listeners
@@ -24,3 +26,4 @@ ifdef::Section[]
 include::../../modules/security/proc-accessing-kafka-using-ingress.adoc[leveloffset=+1]
 endif::Section[]
 include::../../modules/security/proc-accessing-kafka-using-routes.adoc[leveloffset=+1]
+

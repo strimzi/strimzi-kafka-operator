@@ -26,7 +26,7 @@ For more information on listener configuration, see the link:{BookURLConfiguring
 * A running Cluster Operator
 
 In this procedure, the Kafka cluster name is `my-cluster`.
-The name of the listener is `external`.
+The name of the listener is `external3`.
 
 .Procedure
 
@@ -47,8 +47,8 @@ spec:
   kafka:
     # ...
     listeners:
-      - name: external
-        port: 9095
+      - name: external3
+        port: 9094
         type: loadbalancer
         tls: true
         authentication:
@@ -72,16 +72,16 @@ A cluster CA certificate to verify the identity of the kafka brokers is also cre
 [source,shell]
 ----
 NAME                                  TYPE            CLUSTER-IP      PORT(S)
-my-cluster-kafka-external-0          LoadBalancer     172.30.204.234  9095:30011/TCP
-my-cluster-kafka-external-1          LoadBalancer     172.30.164.89   9095:32544/TCP 
-my-cluster-kafka-external-2          LoadBalancer     172.30.73.151   9095:32504/TCP
-my-cluster-kafka-external-bootstrap  LoadBalancer     172.30.30.228   9095:30371/TCP
+my-cluster-kafka-external3-0          LoadBalancer    172.30.204.234  9094:30011/TCP
+my-cluster-kafka-external3-1          LoadBalancer    172.30.164.89   9094:32544/TCP 
+my-cluster-kafka-external3-2          LoadBalancer    172.30.73.151   9094:32504/TCP
+my-cluster-kafka-external3-bootstrap  LoadBalancer    172.30.30.228   9094:30371/TCP
 
-NAME                                 EXTERNAL-IP (loadbalancer)
-my-cluster-kafka-external-0          a8a519e464b924000b6c0f0a05e19f0d-1132975133.us-west-2.elb.amazonaws.com
-my-cluster-kafka-external-1          ab6adc22b556343afb0db5ea05d07347-611832211.us-west-2.elb.amazonaws.com 
-my-cluster-kafka-external-2          a9173e8ccb1914778aeb17eca98713c0-777597560.us-west-2.elb.amazonaws.com
-my-cluster-kafka-external-bootstrap  a8d4a6fb363bf447fb6e475fc3040176-36312313.us-west-2.elb.amazonaws.com
+NAME                                  EXTERNAL-IP (loadbalancer)
+my-cluster-kafka-external3-0          a8a519e464b924000b6c0f0a05e19f0d-1132975133.us-west-2.elb.amazonaws.com
+my-cluster-kafka-external3-1          ab6adc22b556343afb0db5ea05d07347-611832211.us-west-2.elb.amazonaws.com 
+my-cluster-kafka-external3-2          a9173e8ccb1914778aeb17eca98713c0-777597560.us-west-2.elb.amazonaws.com
+my-cluster-kafka-external3-bootstrap  a8d4a6fb363bf447fb6e475fc3040176-36312313.us-west-2.elb.amazonaws.com
 ----
 +
 The bootstrap address used for client connection is propagated to the `status` of the `Kafka` resource.
@@ -100,16 +100,16 @@ status:
     - addresses:
         - host: >-
             a8d4a6fb363bf447fb6e475fc3040176-36312313.us-west-2.elb.amazonaws.com
-          port: 9095
+          port: 9094
       bootstrapServers: >-
-        a8d4a6fb363bf447fb6e475fc3040176-36312313.us-west-2.elb.amazonaws.com:9095
+        a8d4a6fb363bf447fb6e475fc3040176-36312313.us-west-2.elb.amazonaws.com:9094
       certificates:
         - |
           -----BEGIN CERTIFICATE-----
           
           -----END CERTIFICATE-----
-      name: external
-      type: external
+      name: external3
+      type: external3
   observedGeneration: 2
  # ...
 ----
@@ -131,9 +131,9 @@ status:
 +
 [source,shell,subs=+quotes]
 ----
-kubectl get kafka my-cluster -o=jsonpath='{.status.listeners[?(@.name=="external")].bootstrapServers}{"\n"}'
+kubectl get kafka my-cluster -o=jsonpath='{.status.listeners[?(@.name=="external3")].bootstrapServers}{"\n"}'
 
-a8d4a6fb363bf447fb6e475fc3040176-36312313.us-west-2.elb.amazonaws.com:9095
+a8d4a6fb363bf447fb6e475fc3040176-36312313.us-west-2.elb.amazonaws.com:9094
 ----
 
 . Extract the cluster CA certificate.
@@ -145,7 +145,7 @@ kubectl get secret my-cluster-cluster-ca-cert -o jsonpath='{.data.ca\.crt}' | ba
 
 . Configure your client to connect to the brokers.
 
-.. Specify the bootstrap host and port in your Kafka client as the bootstrap address to connect to the Kafka cluster. For example, `a8d4a6fb363bf447fb6e475fc3040176-36312313.us-west-2.elb.amazonaws.com:9095`.
+.. Specify the bootstrap host and port in your Kafka client as the bootstrap address to connect to the Kafka cluster. For example, `a8d4a6fb363bf447fb6e475fc3040176-36312313.us-west-2.elb.amazonaws.com:9094`.
 
 .. Add the extracted certificate to the truststore of your Kafka client to configure a TLS connection.
 +

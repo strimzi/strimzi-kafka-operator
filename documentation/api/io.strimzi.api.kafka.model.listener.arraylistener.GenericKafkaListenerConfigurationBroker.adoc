@@ -16,7 +16,7 @@ Overriding the advertised host and ports is available for all types of listeners
 ----
 listeners:
   #...
-  - name: external
+  - name: external1
     port: 9094
     type: route
     tls: true

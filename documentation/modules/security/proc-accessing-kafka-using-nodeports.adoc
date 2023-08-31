@@ -26,7 +26,7 @@ For more information on listener configuration, see the link:{BookURLConfiguring
 * A running Cluster Operator
 
 In this procedure, the Kafka cluster name is `my-cluster`.
-The name of the listener is `external`.
+The name of the listener is `external4`.
 
 .Procedure
 
@@ -47,7 +47,7 @@ spec:
   kafka:
     # ...
     listeners:
-      - name: external
+      - name: external4
         port: 9094
         type: nodeport
         tls: true
@@ -71,11 +71,11 @@ A cluster CA certificate to verify the identity of the kafka brokers is created 
 .Node port services created for the bootstrap and brokers
 [source,shell]
 ----
-NAME                                 TYPE      CLUSTER-IP      PORT(S)               
-my-cluster-kafka-external-0          NodePort  172.30.55.13    9094:31789/TCP
-my-cluster-kafka-external-1          NodePort  172.30.250.248  9094:30028/TCP
-my-cluster-kafka-external-2          NodePort  172.30.115.81   9094:32650/TCP
-my-cluster-kafka-external-bootstrap  NodePort  172.30.30.23    9094:32650/TCP
+NAME                                  TYPE      CLUSTER-IP      PORT(S)               
+my-cluster-kafka-external4-0          NodePort  172.30.55.13    9094:31789/TCP
+my-cluster-kafka-external4-1          NodePort  172.30.250.248  9094:30028/TCP
+my-cluster-kafka-external4-2          NodePort  172.30.115.81   9094:32650/TCP
+my-cluster-kafka-external4-bootstrap  NodePort  172.30.30.23    9094:32650/TCP
 ----
 +
 The bootstrap address used for client connection is propagated to the `status` of the `Kafka` resource.
@@ -100,8 +100,8 @@ status:
           -----BEGIN CERTIFICATE-----
           
           -----END CERTIFICATE-----
-      name: external
-      type: external
+      name: external4
+      type: external4
   observedGeneration: 2
  # ...
 ----
@@ -110,7 +110,7 @@ status:
 +
 [source,shell,subs=+quotes]
 ----
-kubectl get kafka my-cluster -o=jsonpath='{.status.listeners[?(@.name=="external")].bootstrapServers}{"\n"}'
+kubectl get kafka my-cluster -o=jsonpath='{.status.listeners[?(@.name=="external4")].bootstrapServers}{"\n"}'
 
 ip-10-0-224-199.us-west-2.compute.internal:32650
 ----

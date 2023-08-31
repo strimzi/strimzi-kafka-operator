@@ -116,8 +116,8 @@ status:
           -----BEGIN CERTIFICATE-----
           
           -----END CERTIFICATE-----
-      name: external2
-      type: external2
+      name: external3
+      type: external3
     - addresses:
         - host: ip-10-0-172-202.us-east-2.compute.internal
           port: 31644
@@ -127,8 +127,8 @@ status:
           -----BEGIN CERTIFICATE-----
           
           -----END CERTIFICATE-----
-      name: external1
-      type: external1
+      name: external4
+      type: external4
   observedGeneration: 3 # <5>
 ----
 <1> The Kafka cluster ID.

@@ -56,7 +56,7 @@ You configure an `external` listener with `type: oauth` for a secure transport l
 ----
 # ...
 listeners:
-  - name: external
+  - name: external3
     port: 9094
     type: loadbalancer
     tls: true
