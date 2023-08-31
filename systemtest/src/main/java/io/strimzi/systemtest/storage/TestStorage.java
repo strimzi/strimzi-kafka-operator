@@ -8,6 +8,7 @@ import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
+import io.strimzi.systemtest.kafkaclients.internalClients.KafkaTracingClients;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
@@ -71,7 +72,7 @@ final public class TestStorage {
         this.namespaceName = StUtils.isParallelNamespaceTest(extensionContext) ? StUtils.getNamespaceBasedOnRbac(namespaceName, extensionContext) : namespaceName;
         this.clusterName = CLUSTER_NAME_PREFIX + hashStub(String.valueOf(RANDOM.nextInt(Integer.MAX_VALUE)));
         this.kafkaNodePoolName = Constants.KAFKA_NODE_POOL_PREFIX + hashStub(clusterName);
-        this.targetClusterName = CLUSTER_NAME_PREFIX + hashStub(String.valueOf(RANDOM.nextInt(Integer.MAX_VALUE))) + "-target";
+        this.targetClusterName = clusterName + "-target";
         this.topicName = KafkaTopicUtils.generateRandomNameOfTopic();
         this.targetTopicName = topicName + "-target";
         this.streamsTopicTargetName = KafkaTopicUtils.generateRandomNameOfTopic();
@@ -149,6 +150,10 @@ final public class TestStorage {
         return extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.TARGET_TOPIC_KEY).toString();
     }
 
+    public String getStreamsTopicTargetName() {
+        return extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.STREAM_TOPIC_KEY).toString();
+    }
+
     public String getScraperName() {
         return extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.SCRAPER_KEY).toString();
     }
@@ -200,4 +205,11 @@ final public class TestStorage {
         return (long) extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.TEST_EXECUTION_START_TIME_KEY);
     }
 
+    public KafkaTracingClients getTracingClients() {
+        return (KafkaTracingClients) extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.KAFKA_TRACING_CLIENT_KEY);
+    }
+
+    public String getScraperPodName() {
+        return extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.SCRAPER_POD_KEY).toString();
+    }
 }
