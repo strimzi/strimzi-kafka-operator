@@ -103,6 +103,9 @@ include::../../modules/configuring/con-config-mirrormaker2-acls.adoc[leveloffset
 //securing connections to and from mirrormaker
 include::../../modules/configuring/proc-config-mirrormaker2-securing-connection.adoc[leveloffset=+2]
 
+//running multiple Kafka Connect or MirrorMaker instances
+include::../../modules/configuring/con-config-kafka-connect-mm2-multiple-instances.adoc[leveloffset=+1]
+
 //`KafkaMirrorMaker` resource config
 include::../../modules/configuring/con-config-mirrormaker.adoc[leveloffset=+1]
 

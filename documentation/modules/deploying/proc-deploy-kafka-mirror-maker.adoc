@@ -9,6 +9,7 @@
 This procedure shows how to deploy a Kafka MirrorMaker cluster to your Kubernetes cluster using the Cluster Operator.
 
 The deployment uses a YAML file to provide the specification to create a `KafkaMirrorMaker` or `KafkaMirrorMaker2` resource depending on the version of MirrorMaker deployed.
+MirrorMaker 2 is based on Kafka Connect and uses its configuration properties. 
 
 IMPORTANT: Kafka MirrorMaker 1 (referred to as just _MirrorMaker_ in the documentation) has been deprecated in Apache Kafka 3.0.0 and will be removed in Apache Kafka 4.0.0.
 As a result, the `KafkaMirrorMaker` custom resource which is used to deploy Kafka MirrorMaker 1 has been deprecated in Strimzi as well.
@@ -20,6 +21,9 @@ In this procedure, we use the following example files:
 
 * `examples/mirror-maker/kafka-mirror-maker.yaml`
 * `examples/mirror-maker/kafka-mirror-maker-2.yaml`
+
+IMPORTANT: If deploying MirrorMaker 2 clusters to run in parallel, each instance must use unique names for internal Kafka Connect topics. 
+To do this, xref:con-kafka-connect-mm2-multiple-instances-{context}[configure each MirrorMaker 2 instance to replace the defaults].  
 
 .Prerequisites
 

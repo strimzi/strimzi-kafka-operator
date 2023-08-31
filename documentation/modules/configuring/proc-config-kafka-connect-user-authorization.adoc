@@ -5,42 +5,16 @@
 [id='proc-configuring-kafka-connect-user-authorization-{context}']
 = Configuring Kafka Connect user authorization
 
-This procedure describes how to authorize user access to Kafka Connect.
+[role="_abstract"]
+When using authorization in Kafka, a Kafka Connect user requires read/write access to the cluster group and internal topics of Kafka Connect. 
+This procedure outlines how access is granted using `simple` authorization.
 
-When any type of authorization is being used in Kafka, a Kafka Connect user requires read/write access rights to the consumer group
-and the internal topics of Kafka Connect.
+Properties for the Kafka Connect cluster group ID and internal topics are configured by Strimzi by default. 
+Alternatively, you can define them explicitly in the `spec` of the `KafkaConnect` resource. 
+This is useful when xref:con-kafka-connect-mm2-multiple-instances-{context}[configuring Kafka Connect for multiple instances], as the values for the group ID and topics must differ when running multiple Kafka Connect instances.
 
-The properties for the consumer group and internal topics are automatically configured by Strimzi,
-or they can be specified explicitly in the `spec` of the `KafkaConnect` resource.
-
-.Example configuration properties in the `KafkaConnect` resource
-[source,yaml,subs=attributes+]
-----
-apiVersion: {KafkaConnectApiVersion}
-kind: KafkaConnect
-metadata:
-  name: my-connect
-spec:
-  # ...
-  config:
-    group.id: my-connect-cluster <1>
-    offset.storage.topic: my-connect-cluster-offsets <2>
-    config.storage.topic: my-connect-cluster-configs <3>
-    status.storage.topic: my-connect-cluster-status <4>
-    # ...
-  # ...
-----
-<1> The Kafka Connect cluster ID within Kafka.
-<2> Kafka topic that stores connector offsets.
-<3> Kafka topic that stores connector and task status configurations.
-<4> Kafka topic that stores connector and task status updates.
-
-This procedure shows how access is provided when `simple` authorization is being used.
-
-Simple authorization uses ACL rules, handled by the Kafka `AclAuthorizer` plugin, to provide the right level of access.
+Simple authorization uses ACL rules managed by the Kafka `AclAuthorizer` plugin to ensure appropriate access levels. 
 For more information on configuring a `KafkaUser` resource to use simple authorization, see the link:{BookURLConfiguring}#type-AclRule-reference[`AclRule` schema reference^].
-
-NOTE: The default values for the consumer group and topics will differ when xref:con-kafka-connect-multiple-instances-{context}[running multiple instances].
 
 .Prerequisites
 
@@ -51,8 +25,10 @@ NOTE: The default values for the consumer group and topics will differ when xref
 
 . Edit the `authorization` property in the `KafkaUser` resource to provide access rights to the user.
 +
-In the following example, access rights are configured for the Kafka Connect topics and consumer group using `literal` name values:
+Access rights are configured for the Kafka Connect topics and cluster group using `literal` name values:
+The following table shows the default names configured for the topics and cluster group ID. 
 +
+.Names for the access rights configuration 
 [table,stripes=none]
 |===
 |Property |Name
@@ -71,6 +47,10 @@ In the following example, access rights are configured for the Kafka Connect top
 
 |===
 +
+In this example configuration, the default names are used to specify access rights.
+If you are using different names for a Kafka Connect instance, use those.
++
+.Example configuration for simple authorization
 [source,yaml,subs="attributes+"]
 ----
 apiVersion: {KafkaUserApiVersion}
@@ -117,7 +97,7 @@ spec:
           - Read
           - Write
         host: "*"
-      # consumer group
+      # cluster group
       - resource:
           type: group
           name: connect-cluster
