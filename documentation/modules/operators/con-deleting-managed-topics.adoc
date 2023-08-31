@@ -55,7 +55,7 @@ If the deletion fails, it is shown in the status of the resource.
 When the finalization tasks are successfully executed, the finalizer is removed from the metadata, and the resource is fully deleted.  
 
 Finalizers also serve to prevent related resources from being deleted. 
-If the unidirectional Topic Operator is not running, it won't be able to remove the `metadata.finalizer`. 
+If the unidirectional Topic Operator is not running, it won't be able to remove its finalizer from the `metadata.finalizers`. 
 And any attempt to delete the `KafkaTopic` resources directly or by deleting the namespace will result in failure or timeout. 
 
 == Removing finalizers
@@ -81,5 +81,7 @@ kubectl get kt <topic_name> -o=json | jq '.metadata.finalizers = null' | kubectl
 ----
 
 After running the command, you can go ahead and delete the topics.
+Alternatively, if the topics were already being deleted but were blocked due to outstanding finalizers then their deletion should complete.
 
-WARNING: Be careful when removing finalizers, as any cleanup operations associated with the finalization process are not performed.
+WARNING: Be careful when removing finalizers, as any cleanup operations associated with the finalization process are not performed. 
+For example, if you remove the finalizer from a `KafkaTopic` resource and subsequently delete the resource, the related topic in Kafka won't be deleted.  
