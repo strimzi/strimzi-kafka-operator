@@ -33,6 +33,10 @@ import static io.strimzi.systemtest.tracing.TracingConstants.JAEGER_INSTANCE_NAM
 import static io.strimzi.systemtest.tracing.TracingConstants.JAEGER_OPERATOR_DEPLOYMENT_NAME;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 
+/**
+ * Class containing methods for deployment and deletion of Jaeger operator, Cert Manager, and Jaeger instance.
+ * Jaeger instances are created for each parallel namespace specified by `namespaceName` parameter.
+ */
 public class SetupJaeger {
 
     private static final Logger LOGGER = LogManager.getLogger(SetupJaeger.class);
@@ -48,11 +52,18 @@ public class SetupJaeger {
         cmdKubeClient().namespace(Constants.TEST_SUITE_NAMESPACE).deleteContent(yamlContent);
     }
 
+    /**
+     * Encapsulates two methods for deploying Cert Manager and Jaeger operator
+     * @param extensionContext ExtensionContext of the suite
+     */
     public static void deployJaegerOperatorAndCertManager(ExtensionContext extensionContext) {
         deployAndWaitForCertManager(extensionContext);
         deployJaegerOperator(extensionContext);
     }
 
+    /**
+     * Deletes all Cert Manager resources and waits for their deletion
+     */
     private static void deleteCertManager() {
         cmdKubeClient().delete(CERT_MANAGER_PATH);
         DeploymentUtils.waitForDeploymentDeletion(CERT_MANAGER_NAMESPACE, CERT_MANAGER_DEPLOYMENT);
@@ -60,6 +71,10 @@ public class SetupJaeger {
         DeploymentUtils.waitForDeploymentDeletion(CERT_MANAGER_NAMESPACE, CERT_MANAGER_CA_INJECTOR_DEPLOYMENT);
     }
 
+    /**
+     * Deploys Cert Manager and adds it to the stack of resources to be deleted on clean up
+     * @param extensionContext ExtensionContext of the suite
+     */
     private static void deployCertManager(ExtensionContext extensionContext) {
         // create namespace `cert-manager` and add it to stack, to collect logs from it
         KubeClusterResource.getInstance().createNamespace(CollectorElement.createCollectorElement(extensionContext.getRequiredTestClass().getName()), CERT_MANAGER_NAMESPACE);
@@ -72,17 +87,29 @@ public class SetupJaeger {
         ResourceManager.STORED_RESOURCES.get(extensionContext.getDisplayName()).push(new ResourceItem<>(SetupJaeger::deleteCertManager));
     }
 
+    /**
+     * Method that waits for all resources of Cert Manager to be up and running (ready) - Deployment, Webhook, and CA injector
+     */
     private static void waitForCertManagerDeployment() {
         DeploymentUtils.waitForDeploymentAndPodsReady(CERT_MANAGER_NAMESPACE, CERT_MANAGER_DEPLOYMENT, 1);
         DeploymentUtils.waitForDeploymentAndPodsReady(CERT_MANAGER_NAMESPACE, CERT_MANAGER_WEBHOOK_DEPLOYMENT, 1);
         DeploymentUtils.waitForDeploymentAndPodsReady(CERT_MANAGER_NAMESPACE, CERT_MANAGER_CA_INJECTOR_DEPLOYMENT, 1);
     }
 
+    /**
+     * Encapsulates two other methods - deployment of CertManager and wait for deployment (and all resources of CM) to be ready
+     * @param extensionContext ExtensionContext of the testcase
+     */
     private static void deployAndWaitForCertManager(final ExtensionContext extensionContext) {
         deployCertManager(extensionContext);
         waitForCertManagerDeployment();
     }
 
+    /**
+     * Applies YAML file of Jaeger operator in a loop.
+     * Loop is needed because of issue with Cert Manager, that can have problem injecting CA for Jaeger operator
+     * @param extensionContext ExtensionContext of the suite
+     */
     private static void deployJaegerContent(ExtensionContext extensionContext) {
         TestUtils.waitFor("Jaeger deploy", JAEGER_DEPLOYMENT_POLL, JAEGER_DEPLOYMENT_TIMEOUT, () -> {
             try {
@@ -101,6 +128,10 @@ public class SetupJaeger {
         DeploymentUtils.waitForDeploymentAndPodsReady(Constants.TEST_SUITE_NAMESPACE, JAEGER_OPERATOR_DEPLOYMENT_NAME, 1);
     }
 
+    /**
+     * Deploys Jaeger operator and NetworkPolicy needed for its proper function, waits for readiness of NetworkPolicy
+     * @param extensionContext
+     */
     private static void deployJaegerOperator(final ExtensionContext extensionContext) {
         LOGGER.info("=== Applying Jaeger Operator install files ===");
 
