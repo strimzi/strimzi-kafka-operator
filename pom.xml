@@ -132,9 +132,6 @@
         <fasterxml.jackson-databind.version>2.15.2</fasterxml.jackson-databind.version>
         <fasterxml.jackson-dataformat.version>2.15.2</fasterxml.jackson-dataformat.version>
         <fasterxml.jackson-annotations.version>2.15.2</fasterxml.jackson-annotations.version>
-        <!-- This is used to override CVE-2022-25857 and CVE-2022-41854 => should be removed once jackson-dataformat-yaml uses it out of the box -->
-        <!-- https://github.com/strimzi/strimzi-kafka-operator/issues/7261 covers the removal of this override -->
-        <snakeyaml.version>2.0</snakeyaml.version>
         <vertx.version>4.4.4</vertx.version>
         <vertx-junit5.version>4.4.4</vertx-junit5.version>
         <kafka.version>3.5.1</kafka.version>
@@ -527,13 +524,6 @@
                 <groupId>com.fasterxml.jackson.dataformat</groupId>
                 <artifactId>jackson-dataformat-yaml</artifactId>
                 <version>${fasterxml.jackson-dataformat.version}</version>
-            </dependency>
-            <!-- This is used to override CVE-2022-25857 => should be removed once jackson-dataformat-yaml uses it out of the box -->
-            <!-- https://github.com/strimzi/strimzi-kafka-operator/issues/7261 covers the removal of this override -->
-            <dependency>
-                <groupId>org.yaml</groupId>
-                <artifactId>snakeyaml</artifactId>
-                <version>${snakeyaml.version}</version>
             </dependency>
             <dependency>
                 <!-- transitive dep; override here to avoid buggy version -->
