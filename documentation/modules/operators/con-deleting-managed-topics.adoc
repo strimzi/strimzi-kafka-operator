@@ -54,15 +54,14 @@ If the deletion fails, it is shown in the status of the resource.
 
 When the finalization tasks are successfully executed, the finalizer is removed from the metadata, and the resource is fully deleted.  
 
-Finalizers also prevent related resources from being deleted. 
+Finalizers also serve to prevent related resources from being deleted. 
 If the unidirectional Topic Operator is not running, it won't be able to remove the `metadata.finalizer`. 
-Consequently, an attempt to delete the namespace that contains the `KafkaTopic` resource won't complete until either the operator is restarted, or the finalizer is otherwise removed (for example using `kubectl edit`). 
+And any attempt to delete the `KafkaTopic` resources directly or by deleting the namespace will result in failure or timeout. 
 
 == Removing finalizers
 
-If you want to bypass the finalization process when deleting topics, you can remove the finalizers.   
-You might want to do this to delete topics more quickly; or to handle certain topics without invoking cleanup operations.
-Perhaps the cleanup operation associated with the finalization process is not completing as expected.
+If you want to bypass the finalization process when deleting topics, you have to remove the finalizers.   
+You can do this manually by editing the resources directly or by using a command.
 
 To remove finalizers on all topics, use the following command:
 
