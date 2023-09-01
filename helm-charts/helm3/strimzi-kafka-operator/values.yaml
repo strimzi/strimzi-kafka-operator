@@ -10,7 +10,7 @@ watchAnyNamespace: false
 
 defaultImageRegistry: quay.io
 defaultImageRepository: strimzi
-defaultImageTag: 0.36.1
+defaultImageTag: 0.37.0
 
 image:
   registry: ""
@@ -49,6 +49,9 @@ rbac:
   create: yes
 serviceAccountCreate: yes
 serviceAccount: strimzi-cluster-operator
+
+leaderElection:
+  enable: true
 
 # If you are using the grafana dashboard sidecar,
 # you can import some default dashboards here
