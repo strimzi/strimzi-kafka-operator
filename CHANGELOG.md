@@ -5,15 +5,15 @@
 * The `StableConnectIdentites` feature gate moves to beta stage.
   By default, StrimziPodSets are used for Kafka Connect and Kafka Mirror Maker 2.
   If needed, `StableConnectIdentites` can be disabled in the feature gates configuration in the Cluster Operator.
-* Support for the ppc64le platform
-* Removed support for OpenTracing:
-  * The `tracing.type: jaeger` configuration, in `KafkaConnect`, `KafkaMirrorMaker`, `KafkaMirrorMaker2` and `KafkaBridge` resources, is not supported anymore.
-  * The OpenTelemetry based tracing is the only available by using `tracing.type: opentelemetry`.
+* Support for the `ppc64le` platform
 * Added version fields to the `Kafka` custom resource status to track install and upgrade state
-* Support for infinite auto-restart of Kafka Connect connectors
+* Support for infinite auto-restarts of Kafka Connect and Kafka Mirror Maker 2 connectors
 
 ### Changes, deprecations and removals
 
+* **Removed support for OpenTracing**:
+  * The `tracing.type: jaeger` configuration, in `KafkaConnect`, `KafkaMirrorMaker`, `KafkaMirrorMaker2` and `KafkaBridge` resources, is not supported anymore.
+  * The OpenTelemetry based tracing is the only available by using `tracing.type: opentelemetry`.
 * **The default behavior of the Kafka Connect connector auto-restart has changed.**
   When the auto-restart feature is enabled in `KafkaConnector` or `KafkaMirrorMaker2` custom resources, it will now continue to restart the connectors indefinitely rather than stopping after 7 restarts, as previously.
   If you want to use the original behaviour, use the `.spec.autoRestart.maxRestarts` option to configure the maximum number of restarts.
@@ -32,7 +32,7 @@
       maxRestarts: 7
     # ...
   ```
-* The automatic configuration of Cruise Control CPU capacity has been changed in this release:
+* **The automatic configuration of Cruise Control CPU capacity has been changed in this release**:
   * There are three ways to configure Cruise Control CPU capacity values:
     * `.spec.cruiseControl.brokerCapacity` (for all brokers)
     * `.spec.cruiseControl.brokerCapacity.overrides` (per broker)
