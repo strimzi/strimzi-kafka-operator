@@ -112,6 +112,7 @@
 //distributed tracing versions and links
 :OpenTelemetryAlphaVersion: 1.19.0-alpha
 :OpenTelemetryVersion: 1.19.0
+:OpenTelemetryKafkaClientVersion: 2.6
 
 :OpenTelemetryDocs: link:https://opentelemetry.io/docs/[OpenTelemetry documentation^]
 :JaegerDocs: link:https://www.jaegertracing.io/docs/[Jaeger documentation^]

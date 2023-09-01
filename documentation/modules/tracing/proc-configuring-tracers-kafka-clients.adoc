@@ -27,7 +27,7 @@ In each client application add the dependencies for the tracer:
 </dependency>
 <dependency>
   <groupId>io.opentelemetry.instrumentation</groupId>
-  <artifactId>opentelemetry-kafka-clients-{OpenTelemetryKafkaClient}</artifactId>
+  <artifactId>opentelemetry-kafka-clients-{OpenTelemetryKafkaClientVersion}</artifactId>
   <version>{OpenTelemetryAlphaVersion}</version>
 </dependency>
 <dependency>
