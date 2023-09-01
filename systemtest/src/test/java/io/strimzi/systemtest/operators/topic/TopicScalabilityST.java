@@ -31,7 +31,7 @@ import static io.strimzi.systemtest.Constants.SCALABILITY;
 public class TopicScalabilityST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(TopicScalabilityST.class);
-    private static final int NUMBER_OF_TOPICS = 2;
+    private static final int NUMBER_OF_TOPICS = 200;
     private final String sharedClusterName = "topic-scalability-shared-cluster-name";
     final String topicPrefix = "example-topic";
 
