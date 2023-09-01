@@ -73,8 +73,8 @@ spec:
   kafka:
     # ...
     listeners: # <1>
-    - name: external # <2>
-      port: 9094 <3>
+    - name: external1 # <2>
+      port: 9094 # <3>
       type: _<listener_type>_ # <4>
       tls: true # <5>
       authentication:
@@ -97,9 +97,9 @@ spec:
 <8> Authorization specified as `simple`, which uses the `AclAuthorizer` Kafka plugin.
 <9> (Optional) Super users can access all brokers regardless of any access restrictions defined in ACLs.
 +
-WARNING: An OpenShift Route address comprises the name of the Kafka cluster, the name of the listener, and the name of the namespace it is created in.
-For example, `my-cluster-kafka-listener1-bootstrap-myproject` (_CLUSTER-NAME_-kafka-_LISTENER-NAME_-bootstrap-_NAMESPACE_).
-If you are using a `route` listener type, be careful that the whole length of the address does not exceed a maximum limit of 63 characters.
+WARNING: An OpenShift route address comprises the Kafka cluster name, the listener name, the project name, and the domain of the router.
+For example, `my-cluster-kafka-external1-bootstrap-my-project.domain.com` (<cluster_name>-kafka-<listener_name>-bootstrap-<namespace>.<domain>). 
+Each DNS label (between periods "`.`") must not exceed 63 characters, and the total length of the address must not exceed 255 characters.
 
 . Create or update the `Kafka` resource.
 +

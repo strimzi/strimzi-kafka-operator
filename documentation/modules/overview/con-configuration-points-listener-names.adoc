@@ -1,0 +1,38 @@
+// This module is included in:
+//
+// assembly-deploy-client-access.adoc
+
+[id="con-configuration-points-listener-names-{context}"]
+= Listener naming conventions
+
+[role="_abstract"]
+From the listener configuration, the resulting listener bootstrap and per-broker service names are structured according to the following naming conventions:
+
+.Listener naming conventions
+[cols="2a,4,4", options="header"]
+|===
+| Listener type | Bootstrap service name | Per-Broker service name
+| `internal` | <cluster_name>-kafka-bootstrap | _Not applicable_
+| `loadbalancer` + 
+  `nodeport` +
+  `ingress` +
+  `route` +
+  `cluster-ip`
+ | <cluster_name>-kafka-<listener-name>-bootstrap | <cluster_name>-kafka-<listener-name>-<idx>
+|===  
+
+For example, `my-cluster-kafka-bootstrap`, `my-cluster-kafka-external1-bootstrap`, and `my-cluster-kafka-external1-0`.
+The names are assigned to the services, routes, load balancers, and ingresses created through the listener configuration.
+
+You can use certain backwards compatible names and port numbers to transition listeners initially configured under the retired `KafkaListeners` schema.
+The resulting external listener naming convention varies slightly. 
+These specific combinations of listener name and port configuration values are backwards compatible:
+
+.Backwards compatible listener name and port combinations
+[cols="2a,2a,4,4", options="header"]
+|===
+| Listener name | Port | Bootstrap service name | Per-Broker service name
+| `plain` | `9092` | <cluster_name>-kafka-bootstrap |  _Not applicable_
+| `tls` | `9093` | <cluster-name>-kafka-bootstrap |  _Not applicable_
+| `external` | `9094` | <cluster_name>-kafka-bootstrap | <cluster_name>-kafka-bootstrap-<idx>
+|===

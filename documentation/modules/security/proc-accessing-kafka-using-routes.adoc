@@ -16,8 +16,9 @@ Per-broker connections are then established using DNS names, which route traffic
 To connect to a broker, you specify a hostname for the route bootstrap address, as well as the certificate used for TLS encryption.
 For access using routes, the port is always 443.
 
-WARNING: An OpenShift route address comprises the name of the Kafka cluster, the name of the listener, and the name of the project it is created in.
-For example, `my-cluster-kafka-external-bootstrap-myproject` (<cluster_name>-kafka-<listener_name>-bootstrap-<namespace>). Be careful that the whole length of the address does not exceed a maximum limit of 63 characters.
+WARNING: An OpenShift route address comprises the Kafka cluster name, the listener name, the project name, and the domain of the router.
+For example, `my-cluster-kafka-external1-bootstrap-my-project.domain.com` (<cluster_name>-kafka-<listener_name>-bootstrap-<namespace>.<domain>). 
+Each DNS label (between periods "`.`") must not exceed 63 characters, and the total length of the address must not exceed 255 characters.
 
 The procedure shows basic listener configuration.
 TLS encryption (`tls`) must be enabled.
@@ -43,7 +44,7 @@ To configure listeners to use your own listener certificates, xref:proc-installi
 * A running Cluster Operator
 
 In this procedure, the Kafka cluster name is `my-cluster`.
-The name of the listener is `external`.
+The name of the listener is `external1`.
 
 .Procedure
 
@@ -64,7 +65,7 @@ spec:
   kafka:
     # ...
     listeners:
-      - name: external
+      - name: external1
         port: 9094
         type: route
         tls: true # <1>
@@ -95,11 +96,11 @@ The routes are preconfigured with TLS passthrough.
 .Routes created for the bootstraps and brokers
 [source,shell]
 ----
-NAME                                  HOST/PORT                                                   SERVICES                              PORT  TERMINATION
-my-cluster-kafka-external-0          my-cluster-kafka-external-0-my-project.router.com          my-cluster-kafka-external-0          9094  passthrough
-my-cluster-kafka-external-1          my-cluster-kafka-external-1-my-project.router.com          my-cluster-kafka-external-1          9094  passthrough
-my-cluster-kafka-external-2          my-cluster-kafka-external-2-my-project.router.com          my-cluster-kafka-external-2          9094  passthrough
-my-cluster-kafka-external-bootstrap  my-cluster-kafka-external-bootstrap-my-project.router.com  my-cluster-kafka-external-bootstrap  9094  passthrough
+NAME                                  HOST/PORT                                                  SERVICES                              PORT  TERMINATION
+my-cluster-kafka-external1-0          my-cluster-kafka-external1-0-my-project.router.com         my-cluster-kafka-external1-0          9094  passthrough
+my-cluster-kafka-external1-1          my-cluster-kafka-external1-1-my-project.router.com         my-cluster-kafka-external1-1          9094  passthrough
+my-cluster-kafka-external1-2          my-cluster-kafka-external1-2-my-project.router.com         my-cluster-kafka-external1-2          9094  passthrough
+my-cluster-kafka-external1-bootstrap  my-cluster-kafka-external1-bootstrap-my-project.router.com my-cluster-kafka-external1-bootstrap  9094  passthrough
 ----
 +
 The DNS addresses used for client connection are propagated to the `status` of each route.
@@ -110,7 +111,7 @@ The DNS addresses used for client connection are propagated to the `status` of e
 status:
   ingress:
     - host: >-
-        my-cluster-kafka-external-bootstrap-my-project.router.com
+        my-cluster-kafka-external1-bootstrap-my-project.router.com
  # ...
 ----
 
@@ -118,10 +119,10 @@ status:
 +
 [source,shell]
 ----
-openssl s_client -connect my-cluster-kafka-external-0-my-project.router.com:443 -servername my-cluster-kafka-external-0-my-project.router.com -showcerts
+openssl s_client -connect my-cluster-kafka-external1-0-my-project.router.com:443 -servername my-cluster-kafka-external1-0-my-project.router.com -showcerts
 ----
 +
-The server name is the SNI for passing the connection to the broker. 
+The server name is the Server Name Indication (SNI) for passing the connection to the broker. 
 +
 If the connection is successful, the certificates for the broker are returned.
 +
@@ -137,12 +138,12 @@ Certificate chain
 +
 [source,shell,subs=+quotes]
 ----
-kubectl get kafka my-cluster -o=jsonpath='{.status.listeners[?(@.name=="external")].bootstrapServers}{"\n"}'
+kubectl get kafka my-cluster -o=jsonpath='{.status.listeners[?(@.name=="external1")].bootstrapServers}{"\n"}'
 
-my-cluster-kafka-external-bootstrap-my-project.router.com:443
+my-cluster-kafka-external1-bootstrap-my-project.router.com:443
 ----
 +
-The address comprises the cluster name, the listener name, the project name and the domain of the router (`router.com` in this example).
+The address comprises the Kafka cluster name, the listener name, the project name and the domain of the router (`router.com` in this example).
 
 . Extract the cluster CA certificate.
 +

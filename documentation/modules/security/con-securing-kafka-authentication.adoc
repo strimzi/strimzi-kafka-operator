@@ -73,7 +73,7 @@ spec:
         tls: true
         authentication:
           type: tls
-      - name: external
+      - name: external3
         port: 9094
         type: loadbalancer
         tls: true

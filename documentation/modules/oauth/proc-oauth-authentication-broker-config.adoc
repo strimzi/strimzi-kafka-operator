@@ -51,7 +51,7 @@ The examples here show the configuration options as configured for external list
 [source,yaml,subs="+quotes,attributes"]
 ----
 #...
-- name: external
+- name: external3
   port: 9094
   type: loadbalancer
   tls: true
@@ -84,7 +84,7 @@ The examples here show the configuration options as configured for external list
 .Example 2: Configuring token validation using an introspection endpoint
 [source,yaml,subs="+quotes,attributes"]
 ----
-- name: external
+- name: external3
   port: 9094
   type: loadbalancer
   tls: true
