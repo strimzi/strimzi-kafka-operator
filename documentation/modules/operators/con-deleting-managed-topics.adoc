@@ -24,8 +24,8 @@ kind: KafkaTopic
 metadata:
   generation: 1
   name: my-topic-1
-  finalizer: 
-    strimzi.io/topic-operator
+  finalizers: 
+    - strimzi.io/topic-operator
   labels:
     strimzi.io/cluster: my-cluster
 ----
@@ -42,8 +42,8 @@ kind: KafkaTopic
 metadata:
   generation: 1
   name: my-topic-1
-  finalizer: 
-    strimzi.io/topic-operator
+  finalizers: 
+    - strimzi.io/topic-operator
   labels:
     strimzi.io/cluster: my-cluster
   deletionTimestamp: 20230301T000000.000  
@@ -56,11 +56,11 @@ When the finalization tasks are successfully executed, the finalizer is removed 
 
 Finalizers also serve to prevent related resources from being deleted. 
 If the unidirectional Topic Operator is not running, it won't be able to remove its finalizer from the `metadata.finalizers`. 
-And any attempt to delete the `KafkaTopic` resources directly or by deleting the namespace will result in failure or timeout. 
+And any attempt to directly delete the `KafkaTopic` resources or the namespace will fail or timeout, leaving the namespace in a stuck terminating state.
 
 == Removing finalizers
 
-If you want to bypass the finalization process when deleting topics, you have to remove the finalizers.   
+If the Topic Operator is not running, and you want to bypass the finalization process when deleting topics, you have to remove the finalizers.   
 You can do this manually by editing the resources directly or by using a command.
 
 To remove finalizers on all topics, use the following command:
@@ -84,4 +84,4 @@ After running the command, you can go ahead and delete the topics.
 Alternatively, if the topics were already being deleted but were blocked due to outstanding finalizers then their deletion should complete.
 
 WARNING: Be careful when removing finalizers, as any cleanup operations associated with the finalization process are not performed. 
-For example, if you remove the finalizer from a `KafkaTopic` resource and subsequently delete the resource, the related topic in Kafka won't be deleted.  
+For example, if you remove the finalizer from a `KafkaTopic` resource and subsequently delete the resource, the related Kafka topic won't be deleted.  
