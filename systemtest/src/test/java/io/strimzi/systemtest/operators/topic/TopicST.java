@@ -38,7 +38,6 @@ import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.systemtest.utils.specific.ScraperUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.exceptions.KubeClusterException;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.hamcrest.CoreMatchers;
