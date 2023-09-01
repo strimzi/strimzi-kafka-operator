@@ -24,6 +24,8 @@ import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.JobUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
+import java.util.ArrayList;
+import java.util.List;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
@@ -59,7 +61,7 @@ public class ThrottlingQuotaST extends AbstractST {
         final TestStorage testStorage = new TestStorage(extensionContext, Constants.TEST_SUITE_NAMESPACE);
 
         final String createAdminName = "create-" + testStorage.getAdminName();
-        final String alterAdminName = "alter-" + testStorage.getAdminName();
+        final String updateAdminName = "update-" + testStorage.getAdminName();
         final String deleteAdminName = "delete-" + testStorage.getAdminName();
         final String listAdminName = "list-" + testStorage.getAdminName();
         final String plainBootstrapName = KafkaResources.plainBootstrapAddress(sharedTestStorage.getClusterName());
@@ -106,40 +108,47 @@ public class ThrottlingQuotaST extends AbstractST {
 
         LOGGER.info("Listing Topics after creation");
         resourceManager.createResourceWithWait(extensionContext, listTopicJob.defaultAdmin());
-        ClientUtils.waitForClientContainsMessage(listAdminName, testStorage.getNamespaceName(), testStorage.getTopicName() + "-" + (numOfTopics - 1));
 
-        int partitionAlter = 25;
+        List<String> topicNames = new ArrayList<>();
 
-        KafkaAdminClients alterTopicsJob = new KafkaAdminClientsBuilder(createTopicJob)
-            .withAdminName(alterAdminName)
-            .withPartitions(partitionAlter)
+        for (int i = 0; i < numOfTopics; i++) {
+            topicNames.add(testStorage.getTopicName() + "-" + i);
+        }
+
+        ClientUtils.waitForClientContainsAllMessages(listAdminName, testStorage.getNamespaceName(), topicNames);
+
+        int partitionUpdate = 25;
+
+        KafkaAdminClients updateTopicsJob = new KafkaAdminClientsBuilder(createTopicJob)
+            .withAdminName(updateAdminName)
+            .withPartitions(partitionUpdate)
             .withAdminOperation(AdminClientOperation.UPDATE_TOPICS)
             .build();
 
-        LOGGER.info("Altering {} Topics - setting partitions to {} - we should hit the quota", numOfTopics, partitionAlter);
+        LOGGER.info("Updating {} Topics - setting partitions to {} - we should hit the quota", numOfTopics, partitionUpdate);
 
         // because we are not hitting the quota, this should pass without a problem
-        resourceManager.createResourceWithWait(extensionContext, alterTopicsJob.defaultAdmin());
-        ClientUtils.waitForClientContainsMessage(alterAdminName, testStorage.getNamespaceName(), THROTTLING_ERROR_MSG);
+        resourceManager.createResourceWithWait(extensionContext, updateTopicsJob.defaultAdmin());
+        ClientUtils.waitForClientContainsMessage(updateAdminName, testStorage.getNamespaceName(), THROTTLING_ERROR_MSG);
 
-        // we need to set higher partitions - for case when we altered some topics before hitting the quota to 25 partitions
-        partitionAlter = 30;
+        // we need to set higher partitions - for case when we updated some topics before hitting the quota to 25 partitions
+        partitionUpdate = 30;
         int numOfTopicsIter = 5;
 
-        alterTopicsJob = new KafkaAdminClientsBuilder(alterTopicsJob)
-            .withPartitions(partitionAlter)
+        updateTopicsJob = new KafkaAdminClientsBuilder(updateTopicsJob)
+            .withPartitions(partitionUpdate)
             .withTopicCount(numOfTopicsIter)
             .build();
 
         for (int i = 0; i < iterations; i++) {
-            alterTopicsJob = new KafkaAdminClientsBuilder(alterTopicsJob)
+            updateTopicsJob = new KafkaAdminClientsBuilder(updateTopicsJob)
                 .withTopicCount(numOfTopicsIter)
                 .withTopicOffset(numOfTopicsIter * i)
                 .build();
 
-            LOGGER.info("Altering {} Topics with offset {} - setting partitions to {} - we should not hit the quota", numOfTopicsIter, numOfTopicsIter * i, partitionAlter);
-            resourceManager.createResourceWithWait(extensionContext, alterTopicsJob.defaultAdmin());
-            ClientUtils.waitForClientContainsMessage(alterAdminName, testStorage.getNamespaceName(), "All topics altered");
+            LOGGER.info("Updating {} Topics with offset {} - setting partitions to {} - we should not hit the quota", numOfTopicsIter, numOfTopicsIter * i, partitionUpdate);
+            resourceManager.createResourceWithWait(extensionContext, updateTopicsJob.defaultAdmin());
+            ClientUtils.waitForClientContainsMessage(updateAdminName, testStorage.getNamespaceName(), "All topics updated");
         }
 
         // delete few topics
