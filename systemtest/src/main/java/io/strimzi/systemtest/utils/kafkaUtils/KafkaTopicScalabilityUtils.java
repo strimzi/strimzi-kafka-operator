@@ -91,6 +91,23 @@ public class KafkaTopicScalabilityUtils {
         allTopics.join();
     }
 
+    public static void waitForTopicsPartitions(String namespaceName, String topicPrefix, int numberOfTopics, int numberOfPartitions) {
+        LOGGER.info("Verifying that {} Topics have correct number of partitions: {}", numberOfTopics, numberOfPartitions);
+        List<CompletableFuture<?>> topics = new ArrayList<>();
+
+        for (int i = 0; i < numberOfTopics; i++) {
+            String currentTopic = topicPrefix + i;
+            topics.add(CompletableFuture.runAsync(() -> {
+                KafkaTopicUtils.waitForKafkaTopicPartitionChange(namespaceName, currentTopic, numberOfPartitions);
+            }));
+        }
+
+        CompletableFuture<Void> allTopics = CompletableFuture.allOf(topics.toArray(new CompletableFuture[0]))
+                .thenRun(() -> LOGGER.info("All Topics have correct number of partitions"));
+
+        allTopics.join();
+    }
+
     public static void modifyBigAmountOfTopics(String namespaceName, String topicPrefix, int numberOfTopics, KafkaTopicSpec topicSpec) {
         LOGGER.info("Modify {} Topics via Kubernetes", numberOfTopics);
 
