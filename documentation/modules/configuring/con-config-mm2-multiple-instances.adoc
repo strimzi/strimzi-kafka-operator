@@ -1,0 +1,44 @@
+// Module included in the following assemblies:
+//
+// assembly-config.adoc
+
+[id='con-config-mm2-multiple-instances-{context}']
+== Configuring MirrorMaker 2 for multiple instances
+
+[role="_abstract"]
+By default, Strimzi configures the group ID and names of the internal topics used by the Kafka Connect framework that MirrorMaker 2 runs on. 
+When running multiple instances of MirrorMaker 2, and they share the same `connectCluster` value, you must change these default settings using the following `config` properties:
+
+[source,yaml,subs="attributes+"]
+----
+apiVersion: {KafkaMirrorMaker2ApiVersion}
+kind: KafkaMirrorMaker2
+metadata:
+  name: my-mirror-maker2
+spec:
+  connectCluster: "my-cluster-target"
+  clusters:
+  - alias: "my-cluster-target"
+    config::
+      group.id: my-connect-cluster # <1>
+      offset.storage.topic: my-connect-cluster-offsets # <2>
+      config.storage.topic: my-connect-cluster-configs # <3>
+      status.storage.topic: my-connect-cluster-status # <4>
+      # ...
+    # ...
+----
+<1> The Kafka Connect cluster group ID within Kafka.
+<2> Kafka topic that stores connector offsets.
+<3> Kafka topic that stores connector and task status configurations.
+<4> Kafka topic that stores connector and task status updates.
+
+NOTE: Values for the three topics must be the same for all instances with the same `group.id`.
+
+The `connectCluster` setting specifies the alias of the target Kafka cluster used by Kafka Connect for its internal topics. 
+As a result, modifications to the `connectCluster`, group ID, and internal topic naming configuration are specific to the target Kafka cluster. 
+You don't need to make changes if two MirrorMaker 2 instances are using the same source Kafka cluster or in an active-active mode where each MirrorMaker 2 instance has a different `connectCluster` setting and target cluster.
+
+However, if multiple MirrorMaker 2 instances share the same `connectCluster`, each instance connecting to the same target Kafka cluster is deployed with the same values. 
+In practice, this means all instances form a cluster and use the same internal topics.
+
+Multiple instances attempting to use the same internal topics will cause unexpected errors, so you must change the values of these properties for each instance.

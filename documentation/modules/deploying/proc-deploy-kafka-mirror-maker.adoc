@@ -23,7 +23,7 @@ In this procedure, we use the following example files:
 * `examples/mirror-maker/kafka-mirror-maker-2.yaml`
 
 IMPORTANT: If deploying MirrorMaker 2 clusters to run in parallel, each instance must use unique names for internal Kafka Connect topics. 
-To do this, xref:con-kafka-connect-mm2-multiple-instances-{context}[configure each MirrorMaker 2 instance to replace the defaults].  
+To do this, xref:con-config-mm2-multiple-instances-{context}[configure each MirrorMaker 2 instance to replace the defaults].  
 
 .Prerequisites
 

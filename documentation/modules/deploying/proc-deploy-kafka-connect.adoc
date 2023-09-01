@@ -18,7 +18,7 @@ In this procedure, we use the following example file:
 * `examples/connect/kafka-connect.yaml`
 
 IMPORTANT: If deploying Kafka Connect clusters to run in parallel, each instance must use unique names for internal Kafka Connect topics. 
-To do this, xref:con-kafka-connect-mm2-multiple-instances-{context}[configure each Kafka Connect instance to replace the defaults].  
+To do this, xref:con-config-kafka-connect-multiple-instances-{context}[configure each Kafka Connect instance to replace the defaults].  
 
 .Prerequisites
 

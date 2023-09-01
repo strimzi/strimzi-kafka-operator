@@ -1,0 +1,38 @@
+// Module included in the following assemblies:
+//
+// assembly-config.adoc
+
+[id='con-config-kafka-connect-multiple-instances-{context}']
+== Configuring Kafka Connect for multiple instances
+
+[role="_abstract"]
+By default, Strimzi configures the group ID and names of the internal topics used by Kafka Connect.
+When running multiple instances of Kafka Connect, you must change these default settings using the following `config` properties:
+
+[source,yaml,subs="attributes+"]
+----
+apiVersion: {KafkaConnectApiVersion}
+kind: KafkaConnect
+metadata:
+  name: my-connect
+spec:
+  config:
+    group.id: my-connect-cluster # <1>
+    offset.storage.topic: my-connect-cluster-offsets # <2>
+    config.storage.topic: my-connect-cluster-configs # <3>
+    status.storage.topic: my-connect-cluster-status # <4>
+    # ...
+  # ...
+----
+<1> The Kafka Connect cluster group ID within Kafka.
+<2> Kafka topic that stores connector offsets.
+<3> Kafka topic that stores connector and task status configurations.
+<4> Kafka topic that stores connector and task status updates.
+
+NOTE: Values for the three topics must be the same for all instances with the same `group.id`.
+
+Unless you modify these default settings, each instance connecting to the same Kafka cluster is deployed with the same values. 
+In practice, this means all instances form a cluster and use the same internal topics.
+
+Multiple instances attempting to use the same internal topics will cause unexpected errors, so you must change the values of these properties for each instance.
+

@@ -120,8 +120,7 @@ spec:
       tasksMax: 10 # <18>
       autoRestart: # <19>
         enabled: true
-      config:
-        docs_mm2-connector-config
+      config
         replication.factor: 1 # <20>
         offset-syncs.topic.replication.factor: 1 # <21>
         sync.topic.acls.enabled: "false" # <22>
