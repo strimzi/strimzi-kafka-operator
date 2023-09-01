@@ -251,7 +251,7 @@ spec:
   kafka:
     #...
     listeners:
-      - name: externalclusterip
+      - name: clusterip
         type: cluster-ip
         tls: false
         port: 9096
