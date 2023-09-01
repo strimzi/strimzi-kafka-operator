@@ -93,7 +93,6 @@ status:
           port: 9092
       bootstrapServers: 'my-cluster-kafka-bootstrap.prm-project.svc:9092'
       name: plain
-      type: plain
     - addresses:
         - host: my-cluster-kafka-bootstrap.prm-project.svc
           port: 9093
@@ -104,7 +103,6 @@ status:
           
           -----END CERTIFICATE-----
       name: tls
-      type: tls
     - addresses:
         - host: >-
             2054284155.us-east-2.elb.amazonaws.com
@@ -117,7 +115,6 @@ status:
           
           -----END CERTIFICATE-----
       name: external3
-      type: external3
     - addresses:
         - host: ip-10-0-172-202.us-east-2.compute.internal
           port: 31644
@@ -128,7 +125,6 @@ status:
           
           -----END CERTIFICATE-----
       name: external4
-      type: external4
   observedGeneration: 3 # <5>
 ----
 <1> The Kafka cluster ID.

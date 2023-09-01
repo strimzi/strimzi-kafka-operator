@@ -109,7 +109,6 @@ status:
           
           -----END CERTIFICATE-----
       name: external3
-      type: external3
   observedGeneration: 2
  # ...
 ----

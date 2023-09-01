@@ -101,7 +101,6 @@ status:
           
           -----END CERTIFICATE-----
       name: external4
-      type: external4
   observedGeneration: 2
  # ...
 ----
