@@ -52,7 +52,7 @@ metrics
 <10> Metrics configuration that defines Prometheus JMX Exporter relabeling rules for Kafka Connect.
 <11> Metrics configuration that defines Prometheus JMX Exporter relabeling rules for Cruise Control.
 <12> Metrics configuration that defines Prometheus JMX Exporter relabeling rules for Kafka and ZooKeeper.
-<13> Metrics configuration that defines Prometheus JMX Exporter relabeling rules for Kafka Mirror Maker 2.0.
+<13> Metrics configuration that defines Prometheus JMX Exporter relabeling rules for Kafka MirrorMaker 2.
 
 //Example Prometheus metrics files
 include::../../modules/metrics/ref-prometheus-metrics-config.adoc[leveloffset=+1]

@@ -85,6 +85,8 @@ include::../../modules/operators/proc-disabling-fips-mode-cluster-operator.adoc[
 
 //`KafkaConnect` resource config
 include::../../modules/configuring/con-config-kafka-connect.adoc[leveloffset=+1]
+//running multiple Kafka Connect instances
+include::../../modules/configuring/con-config-kafka-connect-multiple-instances.adoc[leveloffset=+1]
 //if authorization is enabled, configure the Kafka Connect user for read/write access rights
 include::../../modules/configuring/proc-config-kafka-connect-user-authorization.adoc[leveloffset=+2]
 
@@ -92,6 +94,8 @@ include::../../modules/configuring/proc-config-kafka-connect-user-authorization.
 include::../../modules/configuring/con-config-mirrormaker2.adoc[leveloffset=+1]
 //configuring replication modes 
 include::../../modules/overview/con-overview-mirrormaker2.adoc[leveloffset=+2]
+//running multiple MM2 instances
+include::../../modules/configuring/con-config-mm2-multiple-instances.adoc[leveloffset=+1]
 //configuring MM2 connectors
 include::../../modules/configuring/con-config-mirrormaker2-connectors.adoc[leveloffset=+2]
 //configuring MM2 connector producers and consumers
