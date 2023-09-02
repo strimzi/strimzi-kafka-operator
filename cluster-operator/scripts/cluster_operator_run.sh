@@ -27,9 +27,6 @@ else
     echo "Configuration file log4j2.properties not found. Using default static logging setting. Dynamic updates of logging configuration will not work."
 fi
 
-# The java.util.logging.manager is set because of OkHttp client which is using JUL logging
-export JAVA_OPTS="${JAVA_OPTS} -Djava.util.logging.manager=org.apache.logging.log4j.jul.LogManager"
-
 # Used to identify cluster operator instance when publishing events
 if [[ -z "$STRIMZI_OPERATOR_NAME" ]]; then
   STRIMZI_OPERATOR_NAME="$(cat /proc/sys/kernel/hostname)"

@@ -10,9 +10,6 @@ then
     export JAVA_OPTS="${JAVA_OPTS} -Dlog4j2.configurationFile=file:/opt/user-operator/custom-config/log4j2.properties"
 fi
 
-# The java.util.logging.manager is set because of OkHttp client which is using JUL logging
-export JAVA_OPTS="${JAVA_OPTS} -Djava.util.logging.manager=org.apache.logging.log4j.jul.LogManager"
-
 if [ -n "$STRIMZI_JAVA_SYSTEM_PROPERTIES" ]; then
     export JAVA_OPTS="${JAVA_OPTS} ${STRIMZI_JAVA_SYSTEM_PROPERTIES}"
 fi
