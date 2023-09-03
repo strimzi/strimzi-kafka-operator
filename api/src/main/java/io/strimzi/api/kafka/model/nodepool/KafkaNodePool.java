@@ -55,12 +55,7 @@ import java.util.Map;
                                 name = "Desired replicas",
                                 description = "The desired number of replicas",
                                 jsonPath = ".spec.replicas",
-                                type = "integer"),
-                    @Crd.Spec.AdditionalPrinterColumn(
-                                name = "Ready",
-                                description = "The state of the custom resource",
-                                jsonPath = ".status.conditions[?(@.type==\"Ready\")].status",
-                                type = "string")
+                                type = "integer")
                 }
         )
 )
