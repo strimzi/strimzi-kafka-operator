@@ -25,14 +25,12 @@ status:
     status: "True"
   observedGeneration: 1
   listeners:
-  - type: "plain"
-    name: "plain"
+  - name: "plain"
     addresses:
     - host: "my-service.my-namespace.svc"
       port: 9092
     bootstrapServers: "my-service.my-namespace.svc:9092"
-  - type: "external"
-    name: "external"
+  - name: "external"
     addresses:
     - host: "my-route-address.domain.tld"
       port: 443
