@@ -476,7 +476,7 @@ class CustomResourceStatusST extends AbstractST {
         assertThat("Kafka cluster status has incorrect Observed Generation", observedGeneration, is(expectedObservedGeneration));
 
         for (ListenerStatus listener : kafkaStatus.getListeners()) {
-            switch (listener.getType()) {
+            switch (listener.getName()) {
                 case Constants.TLS_LISTENER_DEFAULT_NAME:
                     assertThat("TLS bootstrap has incorrect port", listener.getAddresses().get(0).getPort(), is(9093));
                     assertThat("TLS bootstrap has incorrect host", listener.getAddresses().get(0).getHost(), is(internalAddress));

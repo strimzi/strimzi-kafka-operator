@@ -188,7 +188,7 @@ public class HttpBridgeKafkaExternalListenersST extends AbstractST {
         final String kafkaProducerExternalName = "kafka-producer-external" + new Random().nextInt(Integer.MAX_VALUE);
 
         final List<ListenerStatus> listenerStatusList = KafkaResource.kafkaClient().inNamespace(ts.getNamespaceName()).withName(ts.getClusterName()).get().getStatus().getListeners();
-        final String externalBootstrapServers = listenerStatusList.stream().filter(listener -> listener.getType().equals(Constants.EXTERNAL_LISTENER_DEFAULT_NAME))
+        final String externalBootstrapServers = listenerStatusList.stream().filter(listener -> listener.getName().equals(Constants.EXTERNAL_LISTENER_DEFAULT_NAME))
             .findFirst()
             .orElseThrow(RuntimeException::new)
             .getBootstrapServers();
