@@ -33,7 +33,7 @@ public class KafkaControllerConfigurationDiffTest {
     public void testChangedPresentValue() {
         Map<String, String> config = Map.of("controller.quorum.election.timeout.ms", "5000");
         KafkaControllerConfigurationDiff kcd = new KafkaControllerConfigurationDiff(Reconciliation.DUMMY_RECONCILIATION,
-                getCurrentConfiguration(emptyMap(), ""),
+                getCurrentConfiguration(emptyMap()),
                 getDesiredConfiguration(config),
                 BROKER_ID);
         assertTrue(kcd.configsHaveChanged);
@@ -43,7 +43,7 @@ public class KafkaControllerConfigurationDiffTest {
     public void testUnchangedPresentValue() {
         Map<String, String> config = Map.of("controller.quorum.election.timeout.ms", "1000");
         KafkaControllerConfigurationDiff kcd = new KafkaControllerConfigurationDiff(Reconciliation.DUMMY_RECONCILIATION,
-                getCurrentConfiguration(emptyMap(), ""),
+                getCurrentConfiguration(config),
                 getDesiredConfiguration(config),
                 BROKER_ID);
         assertFalse(kcd.configsHaveChanged);
@@ -53,7 +53,7 @@ public class KafkaControllerConfigurationDiffTest {
     public void testChangedNonControllerValue() {
         Map<String, String> config = Map.of("min.insync.replicas", "2");
         KafkaControllerConfigurationDiff kcd = new KafkaControllerConfigurationDiff(Reconciliation.DUMMY_RECONCILIATION,
-                getCurrentConfiguration(emptyMap(), ""),
+                getCurrentConfiguration(emptyMap()),
                 getDesiredConfiguration(config),
                 BROKER_ID);
         assertFalse(kcd.configsHaveChanged);
@@ -65,7 +65,7 @@ public class KafkaControllerConfigurationDiffTest {
         config.put("min.insync.replicas", "2");
         config.put("process.roles", "controller");
         KafkaControllerConfigurationDiff kcd = new KafkaControllerConfigurationDiff(Reconciliation.DUMMY_RECONCILIATION,
-                getCurrentConfiguration(emptyMap(), ""),
+                getCurrentConfiguration(emptyMap()),
                 getDesiredConfiguration(config),
                 BROKER_ID);
         assertTrue(kcd.configsHaveChanged);
@@ -75,7 +75,7 @@ public class KafkaControllerConfigurationDiffTest {
     public void testAddValue() {
         Map<String, String> config = Map.of("controller.quorum.election.timeout.ms", "1005");
         KafkaControllerConfigurationDiff kcd = new KafkaControllerConfigurationDiff(Reconciliation.DUMMY_RECONCILIATION,
-                getCurrentConfiguration(emptyMap(), "controller.quorum.election.timeout.ms"),
+                getCurrentConfiguration(emptyMap()),
                 getDesiredConfiguration(config),
                 BROKER_ID);
         assertTrue(kcd.configsHaveChanged);
@@ -93,21 +93,18 @@ public class KafkaControllerConfigurationDiffTest {
 
     @Test
     public void testRemoveValue() {
-        List<ConfigEntry> currentConfigs = new ArrayList<>();
-        currentConfigs.add(new ConfigEntry("broker.session.timeout.ms", "1000"));
-        currentConfigs.add(new ConfigEntry("controller.quorum.election.timeout.ms", "1000"));
-        String desiredConfig = "controller.quorum.election.timeout.ms=1000";
+        Map<String, String> config = Map.of("controller.quorum.election.timeout.ms", "1000");
         KafkaControllerConfigurationDiff kcd = new KafkaControllerConfigurationDiff(Reconciliation.DUMMY_RECONCILIATION,
-                new Config(currentConfigs), desiredConfig,
+                getCurrentConfiguration(config), getDesiredConfiguration(emptyMap()),
                 BROKER_ID);
-        assertFalse(kcd.configsHaveChanged);
+        assertTrue(kcd.configsHaveChanged);
     }
 
     @Test
     public void testCustomPropertyAdded() {
         Map<String, String> config = Map.of("custom.property", "42");
         KafkaControllerConfigurationDiff kcd = new KafkaControllerConfigurationDiff(Reconciliation.DUMMY_RECONCILIATION,
-                getCurrentConfiguration(emptyMap(), ""),
+                getCurrentConfiguration(emptyMap()),
                 getDesiredConfiguration(config),
                 BROKER_ID);
         assertFalse(kcd.configsHaveChanged);
@@ -117,7 +114,7 @@ public class KafkaControllerConfigurationDiffTest {
     public void testCustomPropertyRemoved() {
         Map<String, String> config = Map.of("custom.property", "42");
         KafkaControllerConfigurationDiff kcd = new KafkaControllerConfigurationDiff(Reconciliation.DUMMY_RECONCILIATION,
-                getCurrentConfiguration(config, ""),
+                getCurrentConfiguration(config),
                 getDesiredConfiguration(emptyMap()),
                 BROKER_ID);
         assertFalse(kcd.configsHaveChanged);
@@ -127,7 +124,7 @@ public class KafkaControllerConfigurationDiffTest {
     public void testCustomPropertyKept() {
         Map<String, String> config = Map.of("custom.property", "42");
         KafkaControllerConfigurationDiff kcd = new KafkaControllerConfigurationDiff(Reconciliation.DUMMY_RECONCILIATION,
-                getCurrentConfiguration(config, ""),
+                getCurrentConfiguration(config),
                 getDesiredConfiguration(config),
                 BROKER_ID);
         assertFalse(kcd.configsHaveChanged);
@@ -138,7 +135,7 @@ public class KafkaControllerConfigurationDiffTest {
         Map<String, String> config = Map.of("custom.property", "42");
         Map<String, String> config2 = Map.of("custom.property", "43");
         KafkaControllerConfigurationDiff kcd = new KafkaControllerConfigurationDiff(Reconciliation.DUMMY_RECONCILIATION,
-                getCurrentConfiguration(config, ""),
+                getCurrentConfiguration(config),
                 getDesiredConfiguration(config2),
                 BROKER_ID);
         assertFalse(kcd.configsHaveChanged);
@@ -156,7 +153,7 @@ public class KafkaControllerConfigurationDiffTest {
     @Test
     public void testNullDesiredConfig() {
         KafkaControllerConfigurationDiff kcd = new KafkaControllerConfigurationDiff(Reconciliation.DUMMY_RECONCILIATION,
-                getCurrentConfiguration(emptyMap(), ""),
+                getCurrentConfiguration(emptyMap()),
                 null,
                 BROKER_ID);
         assertFalse(kcd.configsHaveChanged);
@@ -173,7 +170,7 @@ public class KafkaControllerConfigurationDiffTest {
         return "";
     }
 
-    private Config getCurrentConfiguration(Map<String, String> additional, String removeKey) {
+    private Config getCurrentConfiguration(Map<String, String> additional) {
         List<ConfigEntry> configEntries = new ArrayList<>();
 
         try (InputStream is = getClass().getClassLoader().getResourceAsStream("current-kafka-controller.conf")) {
@@ -184,9 +181,7 @@ public class KafkaControllerConfigurationDiffTest {
                 String[] split = entry.split("=");
                 String value = split.length == 1 ? "" : split[1];
                 String key = split[0].replace("\n", "");
-                if (!key.equals(removeKey)) {
-                    configEntries.add(new ConfigEntry(key, value));
-                }
+                configEntries.add(new ConfigEntry(key, value));
             });
             additional.forEach((key, value) -> configEntries.add(new ConfigEntry(key, value)));
         } catch (IOException e) {

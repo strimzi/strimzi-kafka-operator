@@ -41,7 +41,7 @@ class KafkaQuorumCheck {
             Map<Integer, Long> replicaIdToLastCaughtUpTimestampMap = info.voters().stream().collect(Collectors.toMap(
                     QuorumInfo.ReplicaState::replicaId,
                     replicaState -> replicaState.lastCaughtUpTimestamp().isPresent() ? replicaState.lastCaughtUpTimestamp().getAsLong() : -1));
-            boolean canRoll = quorumHealthy(info.leaderId(), replicaIdToLastCaughtUpTimestampMap);
+            boolean canRoll = isQuorumHealthy(info.leaderId(), replicaIdToLastCaughtUpTimestampMap);
             if (!canRoll) {
                 LOGGER.debugCr(reconciliation, "Restart pod {} would affect the quorum", podId);
             }
@@ -52,7 +52,7 @@ class KafkaQuorumCheck {
         });
     }
 
-    private boolean quorumHealthy(int leaderId, Map<Integer, Long> replicaStates) {
+    private boolean isQuorumHealthy(int leaderId, Map<Integer, Long> replicaStates) {
         int totalNumVoters = replicaStates.size();
         AtomicInteger numOfCaughtUpVoters = new AtomicInteger();
         long leaderLastCaughtUpTimestamp = replicaStates.get(leaderId);

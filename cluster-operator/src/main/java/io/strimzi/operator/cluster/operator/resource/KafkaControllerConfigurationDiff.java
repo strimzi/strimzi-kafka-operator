@@ -68,15 +68,12 @@ public class KafkaControllerConfigurationDiff extends AbstractJsonDiff {
 
         boolean configsHaveChanged = false;
         for (JsonNode node : jsonDiff) {
-            String operation = node.get("op").asText();
-            if ("replace".equals(operation) || "move".equals(operation) || "add".equals(operation)) {
-                String configPath = node.get("path").asText();
-                if (ControllerConfigs.isControllerConfig(node.get("path").asText().substring(1))) {
-                    LOGGER.debugCr(reconciliation, "Kafka KRaft Controller {} Config Differs : {}", brokerId, configPath);
-                    LOGGER.debugCr(reconciliation, "Current Kafka KRaft Controller Config path {} has value {}", configPath, lookupPath(source, configPath));
-                    LOGGER.debugCr(reconciliation, "Desired Kafka KRaft Controller Config path {} has value {}", configPath, lookupPath(target, configPath));
-                    configsHaveChanged = true;
-                }
+            String configPath = node.get("path").asText();
+            if (ControllerConfigs.isControllerConfig(node.get("path").asText().substring(1))) {
+                LOGGER.debugCr(reconciliation, "Kafka KRaft Controller {} Config Differs : {}", brokerId, configPath);
+                LOGGER.debugCr(reconciliation, "Current Kafka KRaft Controller Config path {} has value {}", configPath, lookupPath(source, configPath));
+                LOGGER.debugCr(reconciliation, "Desired Kafka KRaft Controller Config path {} has value {}", configPath, lookupPath(target, configPath));
+                configsHaveChanged = true;
             }
         }
 
