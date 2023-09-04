@@ -87,6 +87,7 @@ import org.apache.kafka.common.KafkaException;
 
 import java.time.Clock;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -1047,7 +1048,7 @@ public class KafkaReconciler {
             }
 
             // Sets the list of used Node Pools in the Kafka CR status
-            kafkaStatus.setKafkaNodePools(statusesForKafka);
+            kafkaStatus.setKafkaNodePools(statusesForKafka.stream().sorted(Comparator.comparing(UsedNodePoolStatus::getName)).toList());
 
             List<Future<KafkaNodePool>> statusUpdateFutures = new ArrayList<>();
 
