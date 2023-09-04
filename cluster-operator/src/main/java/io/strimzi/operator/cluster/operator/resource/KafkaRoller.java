@@ -127,8 +127,8 @@ public class KafkaRoller {
     private final boolean allowReconfiguration;
     private Admin allClient;
     private KafkaAgentClient kafkaAgentClient;
-
     private static final String CONTROLLER_QUORUM_FETCH_TIMEOUT_MS_CONFIG_NAME = "controller.quorum.fetch.timeout.ms";
+    private static final long CONTROLLER_QUORUM_FETCH_TIMEOUT_MS_CONFIG_DEFAULT = 2000L;
 
     /**
      * Constructor
@@ -275,7 +275,7 @@ public class KafkaRoller {
         boolean forceRestart;
         KafkaBrokerConfigurationDiff diff;
         KafkaBrokerLoggingConfigurationDiff logDiff;
-        String controllerQuorumFetchTimeoutMs = "1000";
+        Long controllerQuorumFetchTimeoutMs = CONTROLLER_QUORUM_FETCH_TIMEOUT_MS_CONFIG_DEFAULT;
 
         RestartContext(Supplier<BackOff> backOffSupplier) {
             promise = Promise.promise();
@@ -549,7 +549,7 @@ public class KafkaRoller {
             Config controllerConfig = kafkaAgentClient.getNodeConfiguration(nodeRef.podName());
             // This configuration property is used by the quorum check for rolling KRaft controllers
             // and users are allowed to configure this property therefore we need to retrieve its current value.
-            Optional.ofNullable(controllerConfig.get(CONTROLLER_QUORUM_FETCH_TIMEOUT_MS_CONFIG_NAME)).ifPresent(config -> restartContext.controllerQuorumFetchTimeoutMs = config.value());
+            Optional.ofNullable(controllerConfig.get(CONTROLLER_QUORUM_FETCH_TIMEOUT_MS_CONFIG_NAME)).ifPresent(config -> restartContext.controllerQuorumFetchTimeoutMs = Long.getLong(config.value()));
             KafkaControllerConfigurationDiff controllerConfigurationDiff = new KafkaControllerConfigurationDiff(reconciliation,
                     controllerConfig,
                     kafkaConfigProvider.apply(nodeRef.nodeId()),
@@ -735,7 +735,7 @@ public class KafkaRoller {
             throws ForceableProblem, InterruptedException, UnforceableProblem {
         try {
             if (nodeRef.broker() && nodeRef.controller()) {
-                boolean canRollController = await(quorumCheck(allClient, restartContext.controllerQuorumFetchTimeoutMs).canRoll(nodeRef.nodeId()), timeout, unit,
+                boolean canRollController = await(quorumCheck(allClient, restartContext.controllerQuorumFetchTimeoutMs).canRollController(nodeRef.nodeId()), timeout, unit,
                         t -> new UnforceableProblem("An error while trying to determine the possibility of updating Kafka controller pods", t));
                 boolean canRollBroker = await(availability(allClient).canRoll(nodeRef.nodeId()), timeout, unit,
                         t -> new ForceableProblem("An error while trying to determine the possibility of updating Kafka broker pods", t));
@@ -743,7 +743,7 @@ public class KafkaRoller {
             }
 
             if (nodeRef.controller()) {
-                return await(quorumCheck(allClient, restartContext.controllerQuorumFetchTimeoutMs).canRoll(nodeRef.nodeId()), timeout, unit,
+                return await(quorumCheck(allClient, restartContext.controllerQuorumFetchTimeoutMs).canRollController(nodeRef.nodeId()), timeout, unit,
                         t -> new UnforceableProblem("An error while trying to determine the possibility of updating Kafka controller pods", t));
             } else {
                 return await(availability(allClient).canRoll(nodeRef.nodeId()), timeout, unit,
@@ -855,7 +855,7 @@ public class KafkaRoller {
         }
     }
 
-    protected KafkaQuorumCheck quorumCheck(Admin ac, String controllerQuorumFetchTimeoutMs) {
+    protected KafkaQuorumCheck quorumCheck(Admin ac, long controllerQuorumFetchTimeoutMs) {
         return new KafkaQuorumCheck(reconciliation, ac, controllerQuorumFetchTimeoutMs);
     }
 

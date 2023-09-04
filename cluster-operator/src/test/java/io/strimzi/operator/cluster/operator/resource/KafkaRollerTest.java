@@ -962,15 +962,15 @@ public class KafkaRollerTest {
         }
 
         @Override
-        protected KafkaQuorumCheck quorumCheck(Admin ac, String controllerQuorumFetchTimeoutMs) {
-            return new KafkaQuorumCheck(null, null, "") {
+        protected KafkaQuorumCheck quorumCheck(Admin ac, long controllerQuorumFetchTimeoutMs) {
+            return new KafkaQuorumCheck(null, null, 0) {
                 @Override
                 protected Future<QuorumInfo> describeMetadataQuorum() {
                     return succeededFuture(null);
                 }
 
                 @Override
-                Future<Boolean> canRoll(int podId) {
+                Future<Boolean> canRollController(int podId) {
                     return canRollFn.apply(podId);
                 }
             };

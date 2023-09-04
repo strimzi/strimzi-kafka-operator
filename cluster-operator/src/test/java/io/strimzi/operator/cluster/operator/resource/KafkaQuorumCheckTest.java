@@ -47,14 +47,14 @@ class KafkaQuorumCheckTest {
     }
 
     @Test
-    public void canRollReturnsTrue(VertxTestContext context) {
+    public void canRollControllerReturnsTrue(VertxTestContext context) {
         Map<Integer, OptionalLong> voters = new HashMap<>();
         voters.put(1, OptionalLong.of(10000L));
         voters.put(2, OptionalLong.of(9500L));
         voters.put(3, OptionalLong.of(9700L));
         Admin admin = setUpMocks(1, voters);
-        KafkaQuorumCheck quorumCheck = new KafkaQuorumCheck(Reconciliation.DUMMY_RECONCILIATION, admin, "1000");
-        quorumCheck.canRoll(1).onComplete(context.succeeding(result -> {
+        KafkaQuorumCheck quorumCheck = new KafkaQuorumCheck(Reconciliation.DUMMY_RECONCILIATION, admin, 1000);
+        quorumCheck.canRollController(1).onComplete(context.succeeding(result -> {
             context.verify(() -> assertTrue(result));
             context.completeNow();
         }));
@@ -62,77 +62,77 @@ class KafkaQuorumCheckTest {
     }
 
     @Test
-    public void canRollReturnsTrueWith1FollowerBehind(VertxTestContext context) {
+    public void canRollControllerReturnsTrueWith1FollowerBehind(VertxTestContext context) {
         Map<Integer, OptionalLong> voters = new HashMap<>();
         voters.put(1, OptionalLong.of(10000L));
         voters.put(2, OptionalLong.of(7000L));
         voters.put(3, OptionalLong.of(8200L));
         Admin admin = setUpMocks(1, voters);
-        KafkaQuorumCheck quorumCheck = new KafkaQuorumCheck(Reconciliation.DUMMY_RECONCILIATION, admin, "2000");
-        quorumCheck.canRoll(1).onComplete(context.succeeding(result -> {
+        KafkaQuorumCheck quorumCheck = new KafkaQuorumCheck(Reconciliation.DUMMY_RECONCILIATION, admin, 2000);
+        quorumCheck.canRollController(1).onComplete(context.succeeding(result -> {
             context.verify(() -> assertTrue(result));
             context.completeNow();
         }));
     }
 
     @Test
-    public void canRollReturnsFalse(VertxTestContext context) {
+    public void canRollControllerReturnsFalse(VertxTestContext context) {
         Map<Integer, OptionalLong> voters = new HashMap<>();
         voters.put(1, OptionalLong.of(10000L));
         voters.put(2, OptionalLong.of(7000L));
         voters.put(3, OptionalLong.of(9000L));
         Admin admin = setUpMocks(1, voters);
-        KafkaQuorumCheck quorumCheck = new KafkaQuorumCheck(Reconciliation.DUMMY_RECONCILIATION, admin, "1000");
-        quorumCheck.canRoll(1).onComplete(context.succeeding(result -> {
+        KafkaQuorumCheck quorumCheck = new KafkaQuorumCheck(Reconciliation.DUMMY_RECONCILIATION, admin, 1000);
+        quorumCheck.canRollController(1).onComplete(context.succeeding(result -> {
             context.verify(() -> assertFalse(result));
             context.completeNow();
         }));
     }
 
     @Test
-    public void canRollReturnsFalseInvalidLeaderTimestamp(VertxTestContext context) {
+    public void canRollControllerReturnsFalseInvalidLeaderTimestamp(VertxTestContext context) {
         Map<Integer, OptionalLong> voters = new HashMap<>();
         voters.put(1, OptionalLong.of(-1));
         voters.put(2, OptionalLong.of(7000L));
         voters.put(3, OptionalLong.of(9000L));
         Admin admin = setUpMocks(1, voters);
-        KafkaQuorumCheck quorumCheck = new KafkaQuorumCheck(Reconciliation.DUMMY_RECONCILIATION, admin, "1000");
-        quorumCheck.canRoll(1).onComplete(context.succeeding(result -> {
+        KafkaQuorumCheck quorumCheck = new KafkaQuorumCheck(Reconciliation.DUMMY_RECONCILIATION, admin, 1000);
+        quorumCheck.canRollController(1).onComplete(context.succeeding(result -> {
             context.verify(() -> assertFalse(result));
             context.completeNow();
         }));
     }
 
     @Test
-    public void canRollReturnsFalseOneInvalidFollowerTimestamp(VertxTestContext context) {
+    public void canRollControllerReturnsFalseOneInvalidFollowerTimestamp(VertxTestContext context) {
         Map<Integer, OptionalLong> voters = new HashMap<>();
         voters.put(1, OptionalLong.of(10000L));
         voters.put(2, OptionalLong.of(-1));
         voters.put(3, OptionalLong.of(9500L));
         Admin admin = setUpMocks(1, voters);
-        KafkaQuorumCheck quorumCheck = new KafkaQuorumCheck(Reconciliation.DUMMY_RECONCILIATION, admin, "1000");
-        quorumCheck.canRoll(1).onComplete(context.succeeding(result -> {
+        KafkaQuorumCheck quorumCheck = new KafkaQuorumCheck(Reconciliation.DUMMY_RECONCILIATION, admin, 1000);
+        quorumCheck.canRollController(1).onComplete(context.succeeding(result -> {
             context.verify(() -> assertTrue(result));
             context.completeNow();
         }));
     }
 
     @Test
-    public void canRollReturnsFalseInvalidFollowersTimestamp(VertxTestContext context) {
+    public void canRollControllerReturnsFalseInvalidFollowersTimestamp(VertxTestContext context) {
         Map<Integer, OptionalLong> voters = new HashMap<>();
         voters.put(1, OptionalLong.of(10000L));
         voters.put(2, OptionalLong.of(-1));
         voters.put(3, OptionalLong.of(-1));
         Admin admin = setUpMocks(1, voters);
-        KafkaQuorumCheck quorumCheck = new KafkaQuorumCheck(Reconciliation.DUMMY_RECONCILIATION, admin, "1000");
-        quorumCheck.canRoll(1).onComplete(context.succeeding(result -> {
+        KafkaQuorumCheck quorumCheck = new KafkaQuorumCheck(Reconciliation.DUMMY_RECONCILIATION, admin, 1000);
+        quorumCheck.canRollController(1).onComplete(context.succeeding(result -> {
             context.verify(() -> assertFalse(result));
             context.completeNow();
         }));
     }
 
     @Test
-    public void canRollReturnsFailedFuture(VertxTestContext context) {
+    public void canRollControllerReturnsFailedFuture(VertxTestContext context) {
         Admin admin = mock(Admin.class);
         DescribeMetadataQuorumResult qrmResult = mock(DescribeMetadataQuorumResult.class);
         KafkaFutureImpl<QuorumInfo> kafkaFuture = new KafkaFutureImpl<>();
@@ -140,8 +140,8 @@ class KafkaQuorumCheckTest {
         kafkaFuture.completeExceptionally(new Exception(expectedError));
         when(qrmResult.quorumInfo()).thenReturn(kafkaFuture);
         when(admin.describeMetadataQuorum()).thenReturn(qrmResult);
-        KafkaQuorumCheck quorumCheck = new KafkaQuorumCheck(Reconciliation.DUMMY_RECONCILIATION, admin, "1000");
-        quorumCheck.canRoll(1).onComplete(context.failing(error -> {
+        KafkaQuorumCheck quorumCheck = new KafkaQuorumCheck(Reconciliation.DUMMY_RECONCILIATION, admin, 1000);
+        quorumCheck.canRollController(1).onComplete(context.failing(error -> {
             context.verify(() -> assertThat(error.getMessage(), is(expectedError)));
             context.completeNow();
         }));
