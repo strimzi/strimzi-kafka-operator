@@ -28,6 +28,7 @@ import org.apache.kafka.clients.admin.Admin;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.Config;
 import org.apache.kafka.clients.admin.DescribeClusterResult;
+import org.apache.kafka.clients.admin.QuorumInfo;
 import org.apache.kafka.clients.admin.TopicDescription;
 import org.apache.kafka.common.Node;
 import org.apache.kafka.common.internals.KafkaFutureImpl;
@@ -544,16 +545,27 @@ public class KafkaRollerTest {
     }
 
     @Test
-    public void testKRaftNodesReConfigBrokersUnavailable(VertxTestContext testContext) throws InterruptedException {
-        String desiredConfig = "log.dirs=/tmp";
-        TestingKafkaRoller kafkaRoller = new TestingKafkaRoller(null, null, addKraftPodNames(3, 3, 3),
+    public void testKRaftControllerNoQuorum(VertxTestContext testContext) throws InterruptedException {
+        String desiredConfig = "controller.quorum.election.timeout.ms=1000";
+        TestingKafkaRoller kafkaRoller = new TestingKafkaRoller(null, null, addKraftPodNames(0, 0, 3),
                 mockPodOps(podId -> succeededFuture()), noException(), null, noException(), noException(), noException(),
                 brokerId -> succeededFuture(false), false, new DefaultAdminClientProvider(), false, null, desiredConfig, -1);
         doFailingRollingRestart(testContext, kafkaRoller,
                 emptyList(),
+                KafkaRoller.UnforceableProblem.class, "Pod c-kafka-2 cannot be updated right now.",
+                asList());
+    }
+
+    @Test
+    public void testKRaftNodesReConfigBrokerUnavailable(VertxTestContext testContext) throws InterruptedException {
+        String desiredConfig = "log.dirs=/tmp";
+        TestingKafkaRoller kafkaRoller = new TestingKafkaRoller(null, null, addKraftPodNames(3, 3, 3),
+                mockPodOps(podId -> succeededFuture()), noException(), null, noException(), noException(), noException(),
+                brokerId -> (brokerId == 5) ? succeededFuture(false) : succeededFuture(true), false, new DefaultAdminClientProvider(), false, null, desiredConfig, -1);
+        doFailingRollingRestart(testContext, kafkaRoller,
+                emptyList(),
                 KafkaRoller.UnforceableProblem.class, "Pod c-kafka-5 cannot be updated right now.",
-                // We expect all KRaft controller only pods to roll
-                asList(8, 7, 6));
+                asList(8, 7, 6, 4, 3, 0, 1, 2));
     }
 
     @Test
@@ -940,6 +952,21 @@ public class KafkaRollerTest {
                 @Override
                 protected Future<Collection<TopicDescription>> describeTopics(Set<String> names) {
                     return succeededFuture(Collections.emptySet());
+                }
+
+                @Override
+                Future<Boolean> canRoll(int podId) {
+                    return canRollFn.apply(podId);
+                }
+            };
+        }
+
+        @Override
+        protected KafkaQuorumCheck quorumCheck(Admin ac, String controllerQuorumFetchTimeoutMs) {
+            return new KafkaQuorumCheck(null, null, "") {
+                @Override
+                protected Future<QuorumInfo> describeMetadataQuorum() {
+                    return succeededFuture(null);
                 }
 
                 @Override

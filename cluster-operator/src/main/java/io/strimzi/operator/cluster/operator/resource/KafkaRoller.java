@@ -549,7 +549,7 @@ public class KafkaRoller {
             Config controllerConfig = kafkaAgentClient.getNodeConfiguration(nodeRef.podName());
             // This configuration property is used by the quorum check for rolling KRaft controllers
             // and users are allowed to configure this property therefore we need to retrieve its current value.
-            Optional.ofNullable(controllerConfig.get(CONTROLLER_QUORUM_FETCH_TIMEOUT_MS_CONFIG_NAME).value()).ifPresent(config -> restartContext.controllerQuorumFetchTimeoutMs = config);
+            Optional.ofNullable(controllerConfig.get(CONTROLLER_QUORUM_FETCH_TIMEOUT_MS_CONFIG_NAME)).ifPresent(config -> restartContext.controllerQuorumFetchTimeoutMs = config.value());
             KafkaControllerConfigurationDiff controllerConfigurationDiff = new KafkaControllerConfigurationDiff(reconciliation,
                     controllerConfig,
                     kafkaConfigProvider.apply(nodeRef.nodeId()),
