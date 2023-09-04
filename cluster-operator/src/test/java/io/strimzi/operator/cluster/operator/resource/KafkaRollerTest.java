@@ -7,6 +7,7 @@ package io.strimzi.operator.cluster.operator.resource;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.PodBuilder;
 import io.fabric8.kubernetes.api.model.Secret;
+import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.model.NodeRef;
@@ -566,6 +567,24 @@ public class KafkaRollerTest {
                 asList(0),
                 KafkaRoller.FatalProblem.class, "Error while waiting for restarted pod c-kafka-0 to become ready",
                 asList(0));
+    }
+
+    @Test
+    public void testFailWhenPodIsReadyThrows(VertxTestContext testContext) throws InterruptedException {
+        PodOperator podOps = mockPodOps(podId ->
+                (podId == 0) ? failedFuture(new KubernetesClientException("Failed")) : succeededFuture()
+        );
+
+        TestingKafkaRoller kafkaRoller = new TestingKafkaRoller(null, null, addPodNames(REPLICAS),
+                podOps,
+                noException(), null, noException(), noException(), noException(),
+                brokerId -> succeededFuture(true),
+                false, null, false, null, 1);
+
+        doFailingRollingRestart(testContext, kafkaRoller,
+                List.of(),
+                KubernetesClientException.class, "Failed",
+                List.of());
     }
 
     private TestingKafkaRoller rollerWithControllers(PodOperator podOps, int... controllers) {
