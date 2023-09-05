@@ -521,7 +521,7 @@ public class KafkaRoller {
     /**
      * Determine whether the pod should be restarted, or the broker reconfigured.
      */
-    @SuppressWarnings("checkstyle:CyclomaticComplexity")
+    @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:NPathComplexity"})
     private void checkReconfigurability(NodeRef nodeRef, Pod pod, RestartContext restartContext) throws ForceableProblem, InterruptedException, FatalProblem {
         RestartReasons reasonToRestartPod = restartContext.restartReasons;
         boolean podStuck = isPodStuck(pod);
@@ -549,7 +549,8 @@ public class KafkaRoller {
             Config controllerConfig = kafkaAgentClient.getNodeConfiguration(nodeRef.podName());
             // This configuration property is used by the quorum check for rolling KRaft controllers
             // and users are allowed to configure this property therefore we need to retrieve its current value.
-            Optional.ofNullable(controllerConfig.get(CONTROLLER_QUORUM_FETCH_TIMEOUT_MS_CONFIG_NAME)).ifPresent(config -> restartContext.controllerQuorumFetchTimeoutMs = Long.getLong(config.value()));
+            restartContext.controllerQuorumFetchTimeoutMs = (controllerConfig.get(CONTROLLER_QUORUM_FETCH_TIMEOUT_MS_CONFIG_NAME) != null) ?
+                    Long.parseLong(controllerConfig.get(CONTROLLER_QUORUM_FETCH_TIMEOUT_MS_CONFIG_NAME).value()) : CONTROLLER_QUORUM_FETCH_TIMEOUT_MS_CONFIG_DEFAULT;
             KafkaControllerConfigurationDiff controllerConfigurationDiff = new KafkaControllerConfigurationDiff(reconciliation,
                     controllerConfig,
                     kafkaConfigProvider.apply(nodeRef.nodeId()),
