@@ -975,6 +975,7 @@
                             <configLocation>.checkstyle/checkstyle.xml</configLocation>
                             <suppressionsLocation>.checkstyle/suppressions.xml</suppressionsLocation>
                             <includeTestSourceDirectory>true</includeTestSourceDirectory>
+                            <inputEncoding>UTF-8</inputEncoding>
                             <consoleOutput>true</consoleOutput>
                             <failsOnError>true</failsOnError>
                             <propertyExpansion>importControlFile=${strimziRootDirectory}/.checkstyle/import-control.xml</propertyExpansion>
