@@ -251,7 +251,7 @@ public class KafkaRoller {
             } catch (Exception e)   {
                 // If anything happens, we have to raise the error otherwise the reconciliation would get stuck
                 // Its logged at upper level, so we just log it at debug here
-                LOGGER.warnCr(reconciliation, "Something went wrong when trying to do a rolling restart", e);
+                LOGGER.debugCr(reconciliation, "Something went wrong when trying to do a rolling restart", e);
                 singleExecutor.shutdown();
                 result.fail(e);
             }
