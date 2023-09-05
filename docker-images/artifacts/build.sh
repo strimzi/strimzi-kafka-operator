@@ -154,18 +154,13 @@ function download_kafka_binaries_from_cdn {
     local remote_path="${archive_url/https:\/\/archive.apache.org\/dist\//}"
     local cdn_url="https://dlcdn.apache.org/${remote_path}"
 
-    # curl command in silent mode if running on the CI
-    if [[ -n $RUN_ON_CI ]]; then
-        local curl_silent="s"
-    fi
-
     echo "Downloading from CDN: ${cdn_url}"
-    local cdn_code=$(curl -L"${curl_silent}" -o "${local_path}" -w %{http_code} "${cdn_url}")
+    local cdn_code=$(curl -L ${CURL_ARGS} -o "${local_path}" -w %{http_code} "${cdn_url}")
     echo "CDN HTTP code: ${cdn_code}"
 
     if [[ "${cdn_code}" != "200" ]]; then
         echo "Download from CDN failed. Retrying with archive: ${archive_url}"
-        local archive_code=$(curl -L"${curl_silent}" -o "${local_path}" -w %{http_code} "${archive_url}")
+        local archive_code=$(curl -L ${CURL_ARGS} -o "${local_path}" -w %{http_code} "${archive_url}")
         echo "Archive HTTP code: ${archive_code}"
     fi
 }
