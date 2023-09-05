@@ -200,8 +200,6 @@ public class FeatureGatesST extends AbstractST {
         LOGGER.info("Deploying CO without Stable Connect Identities");
 
         clusterOperator = this.clusterOperator.defaultInstallation(extensionContext)
-            .withNamespace(testStorage.getNamespaceName())
-            .withWatchingNamespaces(Constants.WATCH_ALL_NAMESPACES)
             .withExtraEnvVars(coEnvVars)
             .createInstallation()
             .runInstallation();
@@ -311,8 +309,6 @@ public class FeatureGatesST extends AbstractST {
         coEnvVars.add(new EnvVar(Environment.STRIMZI_FEATURE_GATES_ENV, "+KafkaNodePools", null));
         
         clusterOperator = this.clusterOperator.defaultInstallation(extensionContext)
-            .withNamespace(testStorage.getNamespaceName())
-            .withWatchingNamespaces(Constants.WATCH_ALL_NAMESPACES)
             .withExtraEnvVars(coEnvVars)
             .createInstallation()
             .runInstallation();

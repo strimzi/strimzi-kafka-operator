@@ -11,6 +11,7 @@ import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
@@ -35,6 +36,7 @@ import java.util.List;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.systemtest.Constants.SPECIFIC;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assumptions.assumeFalse;
 
 @Tag(SPECIFIC)
 @Tag(REGRESSION)
@@ -43,6 +45,8 @@ public class SpecificST extends AbstractST {
 
     @IsolatedTest
     void testClusterWideOperatorWithLimitedAccessToSpecificNamespaceViaRbacRole(final ExtensionContext extensionContext) {
+        assumeFalse(Environment.isNamespaceRbacScope());
+
         final TestStorage testStorage = new TestStorage(extensionContext);
         final String namespaceWhereCreationOfCustomResourcesIsApproved = "example-1";
 
