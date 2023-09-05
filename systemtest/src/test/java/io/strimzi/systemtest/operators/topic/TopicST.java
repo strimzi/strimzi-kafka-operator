@@ -182,7 +182,7 @@ public class TopicST extends AbstractST {
 
         properties.setProperty(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, KafkaResource.kafkaClient().inNamespace(Constants.TEST_SUITE_NAMESPACE)
             .withName(clusterName).get().getStatus().getListeners().stream()
-            .filter(listener -> listener.getType().equals(Constants.EXTERNAL_LISTENER_DEFAULT_NAME))
+            .filter(listener -> listener.getName().equals(Constants.EXTERNAL_LISTENER_DEFAULT_NAME))
             .findFirst()
             .orElseThrow(RuntimeException::new)
             .getBootstrapServers());

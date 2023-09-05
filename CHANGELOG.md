@@ -2,6 +2,11 @@
 
 ## 0.38.0
 
+### Changes, deprecations and removals
+
+* The `Kafka.KafkaStatus.ListenerStatus.type` property has been deprecated for a long time, and now we do not use it anymore.
+  The current plan is to completely remove this property in the next schema version.
+  If needed, you can use the `Kafka.KafkaStatus.ListenerStatus.name` property, which has the same value.
 
 ## 0.37.0
 

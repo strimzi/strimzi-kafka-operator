@@ -442,7 +442,7 @@ public class ListenersST extends AbstractST {
 
         // Check that Kafka status has correct addresses in NodePort external listener part
         for (ListenerStatus listenerStatus : KafkaResource.getKafkaStatus(clusterName, namespaceName).getListeners()) {
-            if (listenerStatus.getType().equals(Constants.EXTERNAL_LISTENER_DEFAULT_NAME)) {
+            if (listenerStatus.getName().equals(Constants.EXTERNAL_LISTENER_DEFAULT_NAME)) {
                 List<String> listStatusAddresses = listenerStatus.getAddresses().stream().map(ListenerAddress::getHost).collect(Collectors.toList());
                 listStatusAddresses.sort(Comparator.comparing(String::toString));
                 List<Integer> listStatusPorts = listenerStatus.getAddresses().stream().map(ListenerAddress::getPort).collect(Collectors.toList());
