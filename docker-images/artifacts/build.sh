@@ -155,12 +155,12 @@ function download_kafka_binaries_from_cdn {
     local cdn_url="https://dlcdn.apache.org/${remote_path}"
     
     echo "Downloading from CDN: ${cdn_url}"
-    local cdn_code=$(curl -Ls -o "${local_path}" -w %{http_code} "${cdn_url}")
+    local cdn_code=$(curl -L -o "${local_path}" -w %{http_code} "${cdn_url}")
     echo "CDN HTTP code: ${cdn_code}"
 
     if [[ "${cdn_code}" != "200" ]]; then
         echo "Download from CDN failed. Retrying with archive: ${archive_url}"
-        local archive_code=$(curl -Ls -o "${local_path}" -w %{http_code} "${archive_url}")
+        local archive_code=$(curl -L -o "${local_path}" -w %{http_code} "${archive_url}")
         echo "Archive HTTP code: ${archive_code}"
     fi
 }
