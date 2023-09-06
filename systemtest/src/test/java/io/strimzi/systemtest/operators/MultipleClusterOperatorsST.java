@@ -256,6 +256,7 @@ public class MultipleClusterOperatorsST extends AbstractST {
     @Tag(CRUISE_CONTROL)
     @KRaftNotSupported("The scaling of the Kafka Pods is not working properly at the moment")
     void testKafkaCCAndRebalanceWithMultipleCOs(ExtensionContext extensionContext) {
+        assumeFalse(Environment.isNamespaceRbacScope());
         TestStorage testStorage = new TestStorage(extensionContext, DEFAULT_NAMESPACE);
         LabelSelector kafkaSelector = KafkaResource.getLabelSelector(testStorage.getClusterName(), KafkaResources.kafkaStatefulSetName(testStorage.getClusterName()));
 

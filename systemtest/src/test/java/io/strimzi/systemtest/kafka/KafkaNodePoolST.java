@@ -311,9 +311,8 @@ public class KafkaNodePoolST extends AbstractST {
         List<EnvVar> coEnvVars = new ArrayList<>();
         coEnvVars.add(new EnvVar(Environment.STRIMZI_FEATURE_GATES_ENV, "+KafkaNodePools", null));
 
-        clusterOperator = clusterOperator.defaultInstallation(extensionContext)
+        this.clusterOperator = this.clusterOperator.defaultInstallation(extensionContext)
             .withExtraEnvVars(coEnvVars)
-            .withWatchingNamespaces(Constants.WATCH_ALL_NAMESPACES)
             .createInstallation()
             .runInstallation();
     }

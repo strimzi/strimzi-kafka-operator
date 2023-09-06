@@ -342,9 +342,16 @@ public class OpenTelemetryST extends AbstractST {
     void testKafkaBridgeService(ExtensionContext extensionContext) {
         final TestStorage testStorage = storageMap.get(extensionContext);
 
-        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3, 1).build());
+        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3, 1)
+            .editMetadata()
+                .withNamespace(testStorage.getNamespaceName())
+            .endMetadata()
+            .build());
         // Deploy http bridge
         resourceManager.createResourceWithWait(extensionContext, KafkaBridgeTemplates.kafkaBridge(testStorage.getClusterName(), KafkaResources.plainBootstrapAddress(testStorage.getClusterName()), 1)
+            .editMetadata()
+                .withNamespace(testStorage.getNamespaceName())
+            .endMetadata()
             .editSpec()
                 .withTracing(otelTracing)
                 .withNewTemplate()
@@ -394,9 +401,16 @@ public class OpenTelemetryST extends AbstractST {
     void testKafkaBridgeServiceWithHttpTracing(ExtensionContext extensionContext) {
         final TestStorage testStorage = storageMap.get(extensionContext);
 
-        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3, 1).build());
+        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3, 1)
+            .editMetadata()
+                .withNamespace(testStorage.getNamespaceName())
+            .endMetadata()
+            .build());
         // Deploy http bridge
         resourceManager.createResourceWithWait(extensionContext, KafkaBridgeTemplates.kafkaBridge(testStorage.getClusterName(), KafkaResources.plainBootstrapAddress(testStorage.getClusterName()), 1)
+            .editMetadata()
+                .withNamespace(testStorage.getNamespaceName())
+            .endMetadata()
             .editSpec()
                 .withTracing(otelTracing)
                 .withNewTemplate()
