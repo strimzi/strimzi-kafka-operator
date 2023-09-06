@@ -25,6 +25,5 @@ _NOTE: To use this example, you have to enable the `UseKRaft` feature gate in ad
 
 Please be aware that ZooKeeper-less Kafka is still a work in progress and is still missing many features.
 For example:
-* The controller-only nodes are currently not rolled by Strimzi when their configuration changes due to the limitations of the Kafka Admin API. 
-* SCRAM-SHA-512 is not supported.
+* The controller-only nodes are currently not rolled by Strimzi when their configuration changes due to the limitations of the Kafka Admin API.
 * JBOD storage is not supported (you can use the `type: jbod` storage in the Strimzi custom resources, but it should contain only a single volume)
