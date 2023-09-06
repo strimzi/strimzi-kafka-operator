@@ -32,6 +32,7 @@ import org.apache.kafka.clients.admin.Admin;
 import org.apache.kafka.clients.admin.AlterConfigOp;
 import org.apache.kafka.clients.admin.AlterConfigsResult;
 import org.apache.kafka.clients.admin.Config;
+import org.apache.kafka.clients.admin.ConfigEntry;
 import org.apache.kafka.clients.admin.DescribeClusterResult;
 import org.apache.kafka.common.KafkaException;
 import org.apache.kafka.common.KafkaFuture;
@@ -275,7 +276,8 @@ public class KafkaRoller {
         boolean forceRestart;
         KafkaBrokerConfigurationDiff diff;
         KafkaBrokerLoggingConfigurationDiff logDiff;
-        Long controllerQuorumFetchTimeoutMs = CONTROLLER_QUORUM_FETCH_TIMEOUT_MS_CONFIG_DEFAULT;
+        Config controllerConfig;
+        KafkaQuorumCheck quorumCheck;
 
         RestartContext(Supplier<BackOff> backOffSupplier) {
             promise = Promise.promise();
@@ -389,15 +391,13 @@ public class KafkaRoller {
             try {
                 await(isReady(pod), operationTimeoutMs, TimeUnit.MILLISECONDS, e -> new RuntimeException(e));
             } catch (Exception e) {
-                if (nodeRef.broker()) {
-                    //Initialise the client for KafkaAgent if pod is not ready
-                    if (kafkaAgentClient == null) {
-                        this.kafkaAgentClient = initKafkaAgentClient();
-                    }
-                    BrokerState brokerState = kafkaAgentClient.getBrokerState(pod.getMetadata().getName());
-                    if (brokerState.isBrokerInRecovery()) {
-                        throw new UnforceableProblem("Pod " + nodeRef.podName() + " is not ready because the broker is performing log recovery. There are  " + brokerState.remainingLogsToRecover() + " logs and " + brokerState.remainingSegmentsToRecover() + " segments left to recover.", e.getCause());
-                    }
+                //Initialise the client for KafkaAgent if pod is not ready
+                if (kafkaAgentClient == null) {
+                    this.kafkaAgentClient = initKafkaAgentClient();
+                }
+                BrokerState brokerState = kafkaAgentClient.getBrokerState(pod.getMetadata().getName());
+                if (brokerState.isBrokerInRecovery()) {
+                    throw new UnforceableProblem("Pod " + nodeRef.podName() + " is not ready because the broker is performing log recovery. There are  " + brokerState.remainingLogsToRecover() + " logs and " + brokerState.remainingSegmentsToRecover() + " segments left to recover.", e.getCause());
                 }
 
                 if (e.getCause() instanceof TimeoutException) {
@@ -410,13 +410,24 @@ public class KafkaRoller {
 
         restartContext.restartReasons = podNeedsRestart.apply(pod);
 
+        if (nodeRef.controller()) {
+            if (kafkaAgentClient == null) {
+                kafkaAgentClient = initKafkaAgentClient();
+            }
+            restartContext.controllerConfig = kafkaAgentClient.getNodeConfiguration(nodeRef.podName());
+            // This configuration property is used by the quorum check for rolling KRaft controllers
+            // and users are allowed to configure this property therefore we need to retrieve its current value.
+            ConfigEntry controllerQuorumFetchTimeoutMs =  restartContext.controllerConfig.get(CONTROLLER_QUORUM_FETCH_TIMEOUT_MS_CONFIG_NAME);
+            restartContext.quorumCheck = quorumCheck(allClient, (controllerQuorumFetchTimeoutMs != null)
+                    ? Long.parseLong(controllerQuorumFetchTimeoutMs.value()) : CONTROLLER_QUORUM_FETCH_TIMEOUT_MS_CONFIG_DEFAULT);
+        }
         try {
             checkReconfigurability(nodeRef, pod, restartContext);
             if (restartContext.forceRestart) {
                 LOGGER.debugCr(reconciliation, "Pod {} can be rolled now", nodeRef);
                 restartAndAwaitReadiness(pod, operationTimeoutMs, TimeUnit.MILLISECONDS, restartContext);
             } else if (restartContext.needsRestart || restartContext.needsReconfig) {
-                if (nodeRef.broker() && deferController(nodeRef, restartContext)) {
+                if (deferController(nodeRef, restartContext)) {
                     LOGGER.debugCr(reconciliation, "Pod {} is controller and there are other pods to verify. Non-controller pods will be verified first.", nodeRef);
                     throw new ForceableProblem("Pod " + nodeRef.podName() + " is controller and there are other pods to verify. Non-controller pods will be verified first");
                 } else if (!canRoll(nodeRef, 60_000, TimeUnit.MILLISECONDS, false, restartContext)) {
@@ -543,16 +554,8 @@ public class KafkaRoller {
         boolean needsReconfig = false;
         if (nodeRef.controller()) {
             LOGGER.debugCr(reconciliation, "Pod {} is a KRaft controller, checking if it requires a restart.", nodeRef);
-            if (kafkaAgentClient == null) {
-                kafkaAgentClient = initKafkaAgentClient();
-            }
-            Config controllerConfig = kafkaAgentClient.getNodeConfiguration(nodeRef.podName());
-            // This configuration property is used by the quorum check for rolling KRaft controllers
-            // and users are allowed to configure this property therefore we need to retrieve its current value.
-            restartContext.controllerQuorumFetchTimeoutMs = (controllerConfig.get(CONTROLLER_QUORUM_FETCH_TIMEOUT_MS_CONFIG_NAME) != null) ?
-                    Long.parseLong(controllerConfig.get(CONTROLLER_QUORUM_FETCH_TIMEOUT_MS_CONFIG_NAME).value()) : CONTROLLER_QUORUM_FETCH_TIMEOUT_MS_CONFIG_DEFAULT;
             KafkaControllerConfigurationDiff controllerConfigurationDiff = new KafkaControllerConfigurationDiff(reconciliation,
-                    controllerConfig,
+                    restartContext.controllerConfig,
                     kafkaConfigProvider.apply(nodeRef.nodeId()),
                     nodeRef.nodeId());
             if (controllerConfigurationDiff.configsHaveChanged) {
@@ -736,7 +739,7 @@ public class KafkaRoller {
             throws ForceableProblem, InterruptedException, UnforceableProblem {
         try {
             if (nodeRef.broker() && nodeRef.controller()) {
-                boolean canRollController = await(quorumCheck(allClient, restartContext.controllerQuorumFetchTimeoutMs).canRollController(nodeRef.nodeId()), timeout, unit,
+                boolean canRollController = await(restartContext.quorumCheck.canRollController(nodeRef.nodeId()), timeout, unit,
                         t -> new UnforceableProblem("An error while trying to determine the possibility of updating Kafka controller pods", t));
                 boolean canRollBroker = await(availability(allClient).canRoll(nodeRef.nodeId()), timeout, unit,
                         t -> new ForceableProblem("An error while trying to determine the possibility of updating Kafka broker pods", t));
@@ -744,7 +747,7 @@ public class KafkaRoller {
             }
 
             if (nodeRef.controller()) {
-                return await(quorumCheck(allClient, restartContext.controllerQuorumFetchTimeoutMs).canRollController(nodeRef.nodeId()), timeout, unit,
+                return await(restartContext.quorumCheck.canRollController(nodeRef.nodeId()), timeout, unit,
                         t -> new UnforceableProblem("An error while trying to determine the possibility of updating Kafka controller pods", t));
             } else {
                 return await(availability(allClient).canRoll(nodeRef.nodeId()), timeout, unit,
@@ -857,7 +860,7 @@ public class KafkaRoller {
     }
 
     protected KafkaQuorumCheck quorumCheck(Admin ac, long controllerQuorumFetchTimeoutMs) {
-        return new KafkaQuorumCheck(reconciliation, ac, controllerQuorumFetchTimeoutMs);
+        return new KafkaQuorumCheck(reconciliation, ac, vertx, controllerQuorumFetchTimeoutMs);
     }
 
     protected KafkaAvailability availability(Admin ac) {
@@ -865,8 +868,8 @@ public class KafkaRoller {
     }
     
     /**
-     * Return true if the given {@code nodeId} is the controller and there are other brokers we might yet have to consider.
-     * This ensures that the controller is restarted/reconfigured last.
+     * Return true if the given {@code nodeId} is the controller or the active controller in KRaft case and there are other brokers we might yet have to consider.
+     * This ensures that the active controller is restarted/reconfigured last.
      */
     private boolean deferController(NodeRef nodeRef, RestartContext restartContext) throws Exception {
         int controller = controller(nodeRef, operationTimeoutMs, TimeUnit.MILLISECONDS, restartContext);
@@ -883,21 +886,28 @@ public class KafkaRoller {
      */
     @SuppressFBWarnings("RCN_REDUNDANT_NULLCHECK_WOULD_HAVE_BEEN_A_NPE") // seems to be completely spurious
     int controller(NodeRef nodeRef, long timeout, TimeUnit unit, RestartContext restartContext) throws Exception {
-        // Don't use all allClient here, because it will have cache metadata about which is the controller.
-        try (Admin ac = adminClient(Set.of(nodeRef), false)) {
-            Node controllerNode = null;
-            try {
-                DescribeClusterResult describeClusterResult = ac.describeCluster();
-                KafkaFuture<Node> controller = describeClusterResult.controller();
-                controllerNode = controller.get(timeout, unit);
-                restartContext.clearConnectionError();
-            } catch (ExecutionException | TimeoutException e) {
-                maybeTcpProbe(nodeRef, e, restartContext);
+        int id;
+        if (nodeRef.controller()) {
+            id = await(restartContext.quorumCheck.quorumLeaderId(), timeout, unit,
+                    t -> new UnforceableProblem("An error while trying to determine the quorum leader id", t));
+            LOGGER.debugCr(reconciliation, "Active controller (quorum leader) is {}", id);
+        } else {
+            // Don't use all allClient here, because it will have cache metadata about which is the controller.
+            try (Admin ac = adminClient(Set.of(nodeRef), false)) {
+                Node controllerNode = null;
+                try {
+                    DescribeClusterResult describeClusterResult = ac.describeCluster();
+                    KafkaFuture<Node> controller = describeClusterResult.controller();
+                    controllerNode = controller.get(timeout, unit);
+                    restartContext.clearConnectionError();
+                } catch (ExecutionException | TimeoutException e) {
+                    maybeTcpProbe(nodeRef, e, restartContext);
+                }
+                id = controllerNode == null || Node.noNode().equals(controllerNode) ? -1 : controllerNode.id();
+                LOGGER.debugCr(reconciliation, "Controller is {}", id);
             }
-            int id = controllerNode == null || Node.noNode().equals(controllerNode) ? -1 : controllerNode.id();
-            LOGGER.debugCr(reconciliation, "Controller is {}", id);
-            return id;
         }
+        return id;
     }
 
     /**

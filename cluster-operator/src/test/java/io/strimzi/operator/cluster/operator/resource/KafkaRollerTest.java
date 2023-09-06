@@ -28,6 +28,7 @@ import org.apache.kafka.clients.admin.Admin;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.Config;
 import org.apache.kafka.clients.admin.DescribeClusterResult;
+import org.apache.kafka.clients.admin.DescribeMetadataQuorumResult;
 import org.apache.kafka.clients.admin.QuorumInfo;
 import org.apache.kafka.clients.admin.TopicDescription;
 import org.apache.kafka.common.Node;
@@ -607,23 +608,26 @@ public class KafkaRollerTest {
     }
 
     @Test
-    public void testIgnoresBrokerStateForKraftController(VertxTestContext testContext) throws InterruptedException {
+    public void testBrokerInRecoveryStateForKRaftController(VertxTestContext testContext) throws InterruptedException {
         PodOperator podOps = mockPodOps(podId ->
-             failedFuture(new TimeoutException("Timeout"))
+                (podId == 0) ? failedFuture(new TimeoutException("Timeout")) : succeededFuture()
         );
 
-        BrokerState brokerstate = new BrokerState(2, null);
+        Map<String, Object> recoveryState = new HashMap<>();
+        recoveryState.put("remainingLogsToRecover", 10);
+        recoveryState.put("remainingSegmentsToRecover", 100);
+        BrokerState brokerstate = new BrokerState(2, recoveryState);
 
-        TestingKafkaRoller kafkaRoller = new TestingKafkaRoller(null, null, addKraftPodNames(0, 0, 1),
+        TestingKafkaRoller kafkaRoller = new TestingKafkaRoller(null, null, addKraftPodNames(0, 0, 3),
                 podOps,
                 noException(), null, noException(), noException(), noException(),
                 brokerId -> succeededFuture(true),
                 false, null, false, brokerstate, "", -1);
 
         doFailingRollingRestart(testContext, kafkaRoller,
-                List.of(0),
-                KafkaRoller.FatalProblem.class, "Error while waiting for restarted pod c-kafka-0 to become ready",
-                List.of(0));
+                List.of(0, 1, 2),
+                KafkaRoller.UnforceableProblem.class, "Pod c-kafka-0 is not ready because the broker is performing log recovery. There are  10 logs and 100 segments left to recover.",
+                List.of(2, 1));
     }
 
     @Test
@@ -690,7 +694,7 @@ public class KafkaRollerTest {
                 brokerId -> succeededFuture(true), false, new DefaultAdminClientProvider(), false, null, "", 6);
         doSuccessfulRollingRestart(testContext, kafkaRoller,
                 asList(0, 1, 2, 3, 4, 5, 6, 7, 8),
-                asList(8, 7, 6, 5, 4, 3, 0, 1, 2)); //Doesn't defer 6 since it is a KRaft controller, not a ZooKeeper broker controller
+                asList(8, 7, 5, 4, 3, 0, 1, 2, 6));
     }
 
     @Test
@@ -963,12 +967,13 @@ public class KafkaRollerTest {
 
         @Override
         protected KafkaQuorumCheck quorumCheck(Admin ac, long controllerQuorumFetchTimeoutMs) {
-            return new KafkaQuorumCheck(null, null, 0) {
-                @Override
-                protected Future<QuorumInfo> describeMetadataQuorum() {
-                    return succeededFuture(null);
-                }
-
+            Admin admin = mock(Admin.class);
+            DescribeMetadataQuorumResult qrmResult = mock(DescribeMetadataQuorumResult.class);
+            when(admin.describeMetadataQuorum()).thenReturn(qrmResult);
+            KafkaFutureImpl<QuorumInfo> kafkaFuture = new KafkaFutureImpl<>();
+            kafkaFuture.complete(null);
+            when(qrmResult.quorumInfo()).thenReturn(kafkaFuture);
+            return new KafkaQuorumCheck(null, admin, null, 0) {
                 @Override
                 Future<Boolean> canRollController(int podId) {
                     return canRollFn.apply(podId);

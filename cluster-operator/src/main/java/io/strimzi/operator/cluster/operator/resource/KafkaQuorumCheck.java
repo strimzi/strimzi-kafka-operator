@@ -6,8 +6,9 @@ package io.strimzi.operator.cluster.operator.resource;
 
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
+import io.strimzi.operator.common.VertxUtil;
 import io.vertx.core.Future;
-import io.vertx.core.Promise;
+import io.vertx.core.Vertx;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
@@ -15,25 +16,24 @@ import org.apache.kafka.clients.admin.Admin;
 import org.apache.kafka.clients.admin.QuorumInfo;
 
 /**
- * Determines whether the given controller can be rolled without affecting the quorum.
+ * Provides a method that determines whether it's safe to restart a KRaft controller, which may be the active controller
  */
 class KafkaQuorumCheck {
 
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(KafkaQuorumCheck.class.getName());
-    private final Admin ac;
     private final Reconciliation reconciliation;
     private final Future<QuorumInfo> quorumInfoFuture;
     private final long controllerQuorumFetchTimeoutMs;
 
-    KafkaQuorumCheck(Reconciliation reconciliation, Admin ac, long controllerQuorumFetchTimeoutMs) {
-        this.ac = ac;
+    KafkaQuorumCheck(Reconciliation reconciliation, Admin ac, Vertx vertx, long controllerQuorumFetchTimeoutMs) {
         this.reconciliation = reconciliation;
-        this.quorumInfoFuture = describeMetadataQuorum();
+        this.quorumInfoFuture = describeMetadataQuorum(ac, reconciliation, vertx);
         this.controllerQuorumFetchTimeoutMs = controllerQuorumFetchTimeoutMs;
     }
 
     /**
-     * Determine whether the given controller can be rolled without affecting the quorum
+     * Returns true if the given controller can be rolled based on the quorum state. Quorum is considered
+     * healthy if the majority of controllers have caught up with the quorum leader within the controller.quorum.fetch.timeout.ms.
      */
     Future<Boolean> canRollController(int podId) {
         LOGGER.debugCr(reconciliation, "Determining whether controller {} can be rolled", podId);
@@ -52,14 +52,25 @@ class KafkaQuorumCheck {
         });
     }
 
+    /**
+     * Returns id of the quorum leader.
+     **/
+    Future<Integer> quorumLeaderId() {
+        LOGGER.debugCr(reconciliation, "Determining the quorum leader id");
+        return quorumInfoFuture.map(info -> info.leaderId()).recover(error -> {
+            LOGGER.warnCr(reconciliation, "Error determining the quorum leader id", error);
+            return Future.failedFuture(error);
+        });
+    }
+
     private boolean isQuorumHealthy(int leaderId, Map<Integer, Long> replicaStates) {
         int totalNumVoters = replicaStates.size();
         AtomicInteger numOfCaughtUpVoters = new AtomicInteger();
-        long leaderLastCaughtUpTimestamp = replicaStates.get(leaderId);
-        if (leaderLastCaughtUpTimestamp < 0) {
-            LOGGER.warnCr(reconciliation, "No valid lastCaughtUpTimestamp is found for the leader replica {} ", leaderId);
+        if (leaderId < 0) {
+            LOGGER.warnCr(reconciliation, "No quorum leader is found because the leader id is set to {}", leaderId);
             return false;
         }
+        long leaderLastCaughtUpTimestamp = replicaStates.get(leaderId);
         LOGGER.debugCr(reconciliation, "The lastCaughtUpTimestamp for the leader replica {} is {}", leaderId, leaderLastCaughtUpTimestamp);
         replicaStates.forEach((replicaId, lastCaughtUpTimestamp) -> {
             if (lastCaughtUpTimestamp < 0) {
@@ -78,17 +89,7 @@ class KafkaQuorumCheck {
         return numOfCaughtUpVoters.get() > (totalNumVoters / 2);
     }
 
-    protected Future<QuorumInfo> describeMetadataQuorum() {
-        Promise<QuorumInfo> descPromise = Promise.promise();
-        ac.describeMetadataQuorum().quorumInfo().whenComplete(
-                ((quorumInfo, error) -> {
-                    if (error != null) {
-                        descPromise.fail(error);
-                    } else {
-                        descPromise.complete(quorumInfo);
-                    }
-                })
-        );
-        return descPromise.future();
+    private static Future<QuorumInfo> describeMetadataQuorum(Admin ac, Reconciliation reconciliation, Vertx vertx) {
+        return VertxUtil.kafkaFutureToVertxFuture(reconciliation, vertx, ac.describeMetadataQuorum().quorumInfo());
     }
 }

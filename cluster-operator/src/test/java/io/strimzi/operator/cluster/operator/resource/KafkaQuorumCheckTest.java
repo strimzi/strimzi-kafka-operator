@@ -5,6 +5,7 @@
 package io.strimzi.operator.cluster.operator.resource;
 
 import io.strimzi.operator.common.Reconciliation;
+import io.vertx.core.Vertx;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
 import java.util.HashMap;
@@ -16,6 +17,8 @@ import org.apache.kafka.clients.admin.DescribeMetadataQuorumResult;
 import org.apache.kafka.clients.admin.QuorumInfo;
 import org.apache.kafka.common.KafkaFuture;
 import org.apache.kafka.common.internals.KafkaFutureImpl;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
@@ -28,6 +31,18 @@ import static org.mockito.Mockito.when;
 
 @ExtendWith(VertxExtension.class)
 class KafkaQuorumCheckTest {
+
+    private static Vertx vertx;
+
+    @BeforeAll
+    public static void before() {
+        vertx = Vertx.vertx();
+    }
+
+    @AfterAll
+    public static void after() {
+        vertx.close();
+    }
 
     private Admin setUpMocks(int leaderId, Map<Integer, OptionalLong> replicaStateMap) {
         Admin admin = mock(Admin.class);
@@ -53,7 +68,7 @@ class KafkaQuorumCheckTest {
         voters.put(2, OptionalLong.of(9500L));
         voters.put(3, OptionalLong.of(9700L));
         Admin admin = setUpMocks(1, voters);
-        KafkaQuorumCheck quorumCheck = new KafkaQuorumCheck(Reconciliation.DUMMY_RECONCILIATION, admin, 1000);
+        KafkaQuorumCheck quorumCheck = new KafkaQuorumCheck(Reconciliation.DUMMY_RECONCILIATION, admin, vertx, 1000);
         quorumCheck.canRollController(1).onComplete(context.succeeding(result -> {
             context.verify(() -> assertTrue(result));
             context.completeNow();
@@ -68,7 +83,7 @@ class KafkaQuorumCheckTest {
         voters.put(2, OptionalLong.of(7000L));
         voters.put(3, OptionalLong.of(8200L));
         Admin admin = setUpMocks(1, voters);
-        KafkaQuorumCheck quorumCheck = new KafkaQuorumCheck(Reconciliation.DUMMY_RECONCILIATION, admin, 2000);
+        KafkaQuorumCheck quorumCheck = new KafkaQuorumCheck(Reconciliation.DUMMY_RECONCILIATION, admin, vertx, 2000);
         quorumCheck.canRollController(1).onComplete(context.succeeding(result -> {
             context.verify(() -> assertTrue(result));
             context.completeNow();
@@ -82,7 +97,7 @@ class KafkaQuorumCheckTest {
         voters.put(2, OptionalLong.of(7000L));
         voters.put(3, OptionalLong.of(9000L));
         Admin admin = setUpMocks(1, voters);
-        KafkaQuorumCheck quorumCheck = new KafkaQuorumCheck(Reconciliation.DUMMY_RECONCILIATION, admin, 1000);
+        KafkaQuorumCheck quorumCheck = new KafkaQuorumCheck(Reconciliation.DUMMY_RECONCILIATION, admin, vertx, 1000);
         quorumCheck.canRollController(1).onComplete(context.succeeding(result -> {
             context.verify(() -> assertFalse(result));
             context.completeNow();
@@ -96,7 +111,7 @@ class KafkaQuorumCheckTest {
         voters.put(2, OptionalLong.of(7000L));
         voters.put(3, OptionalLong.of(9000L));
         Admin admin = setUpMocks(1, voters);
-        KafkaQuorumCheck quorumCheck = new KafkaQuorumCheck(Reconciliation.DUMMY_RECONCILIATION, admin, 1000);
+        KafkaQuorumCheck quorumCheck = new KafkaQuorumCheck(Reconciliation.DUMMY_RECONCILIATION, admin, vertx, 1000);
         quorumCheck.canRollController(1).onComplete(context.succeeding(result -> {
             context.verify(() -> assertFalse(result));
             context.completeNow();
@@ -110,7 +125,7 @@ class KafkaQuorumCheckTest {
         voters.put(2, OptionalLong.of(-1));
         voters.put(3, OptionalLong.of(9500L));
         Admin admin = setUpMocks(1, voters);
-        KafkaQuorumCheck quorumCheck = new KafkaQuorumCheck(Reconciliation.DUMMY_RECONCILIATION, admin, 1000);
+        KafkaQuorumCheck quorumCheck = new KafkaQuorumCheck(Reconciliation.DUMMY_RECONCILIATION, admin, vertx, 1000);
         quorumCheck.canRollController(1).onComplete(context.succeeding(result -> {
             context.verify(() -> assertTrue(result));
             context.completeNow();
@@ -124,7 +139,7 @@ class KafkaQuorumCheckTest {
         voters.put(2, OptionalLong.of(-1));
         voters.put(3, OptionalLong.of(-1));
         Admin admin = setUpMocks(1, voters);
-        KafkaQuorumCheck quorumCheck = new KafkaQuorumCheck(Reconciliation.DUMMY_RECONCILIATION, admin, 1000);
+        KafkaQuorumCheck quorumCheck = new KafkaQuorumCheck(Reconciliation.DUMMY_RECONCILIATION, admin, vertx, 1000);
         quorumCheck.canRollController(1).onComplete(context.succeeding(result -> {
             context.verify(() -> assertFalse(result));
             context.completeNow();
@@ -135,16 +150,17 @@ class KafkaQuorumCheckTest {
     public void canRollControllerReturnsFailedFuture(VertxTestContext context) {
         Admin admin = mock(Admin.class);
         DescribeMetadataQuorumResult qrmResult = mock(DescribeMetadataQuorumResult.class);
+        when(admin.describeMetadataQuorum()).thenReturn(qrmResult);
         KafkaFutureImpl<QuorumInfo> kafkaFuture = new KafkaFutureImpl<>();
         String expectedError = "admin client not initialised";
         kafkaFuture.completeExceptionally(new Exception(expectedError));
         when(qrmResult.quorumInfo()).thenReturn(kafkaFuture);
-        when(admin.describeMetadataQuorum()).thenReturn(qrmResult);
-        KafkaQuorumCheck quorumCheck = new KafkaQuorumCheck(Reconciliation.DUMMY_RECONCILIATION, admin, 1000);
+        KafkaQuorumCheck quorumCheck = new KafkaQuorumCheck(Reconciliation.DUMMY_RECONCILIATION, admin, vertx, 1000);
         quorumCheck.canRollController(1).onComplete(context.failing(error -> {
             context.verify(() -> assertThat(error.getMessage(), is(expectedError)));
             context.completeNow();
         }));
+
     }
 
 }
