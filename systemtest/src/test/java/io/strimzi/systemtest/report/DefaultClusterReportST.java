@@ -75,9 +75,9 @@ public class DefaultClusterReportST extends AbstractClusterReportST {
             "--namespace=" + testStorage.getNamespaceName(),
             "--cluster=" + testStorage.getClusterName(),
             "--out-dir=" + outPath,
-            "--bridge=my-bridge",
-            "--connect=my-connect",
-            "--mm2=my-mm2"
+            "--bridge=" + BRIDGE_NAME,
+            "--connect=" + CONNECT_NAME,
+            "--mm2=" + MM2_NAME
         );
 
         assertThat("Output directory does not exist", FileUtils.fileExists(outPath));
@@ -196,9 +196,9 @@ public class DefaultClusterReportST extends AbstractClusterReportST {
             KafkaTopicTemplates.topic(testStorage.getClusterName(), "my-topic", 1, 1, Constants.CO_NAMESPACE).build(),
             KafkaUserTemplates.tlsUser(Constants.CO_NAMESPACE, testStorage.getClusterName(), "my-user").build(),
             KafkaRebalanceTemplates.kafkaRebalance(testStorage.getClusterName()).build(),
-            KafkaBridgeTemplates.kafkaBridge("my-bridge", KafkaResources.plainBootstrapAddress(testStorage.getClusterName()), 1).build(),
-            KafkaConnectTemplates.kafkaConnect("my-connect", Constants.CO_NAMESPACE, testStorage.getClusterName(), 1).build(),
-            KafkaMirrorMaker2Templates.kafkaMirrorMaker2("my-mm2", testStorage.getClusterName() + "-tgt", testStorage.getClusterName(), 1, false).build()
+            KafkaBridgeTemplates.kafkaBridge(BRIDGE_NAME, KafkaResources.plainBootstrapAddress(testStorage.getClusterName()), 1).build(),
+            KafkaConnectTemplates.kafkaConnect(CONNECT_NAME, Constants.CO_NAMESPACE, testStorage.getClusterName(), 1).build(),
+            KafkaMirrorMaker2Templates.kafkaMirrorMaker2(MM2_NAME, testStorage.getClusterName() + "-tgt", testStorage.getClusterName(), 1, false).build()
         );
     }
 
@@ -228,7 +228,7 @@ public class DefaultClusterReportST extends AbstractClusterReportST {
 
     private void assertValidConfigMaps(String outPath, String clusterName) throws IOException {
         for (String s : Arrays.asList(
-            KafkaBridgeResources.metricsAndLogConfigMapName("my-bridge") + ".yaml",
+            KafkaBridgeResources.metricsAndLogConfigMapName(BRIDGE_NAME) + ".yaml",
             clusterOperatorMetricsAndLogConfigMapName() + ".yaml",
             CruiseControlResources.logAndMetricsConfigMapName(clusterName) + ".yaml",
             KafkaResources.entityTopicOperatorLoggingConfigMapName(clusterName) + ".yaml",
@@ -237,8 +237,8 @@ public class DefaultClusterReportST extends AbstractClusterReportST {
             kafkaConfigMapName(clusterName, 1) + ".yaml",
             kafkaConfigMapName(clusterName, 2) + ".yaml",
             KafkaResources.zookeeperMetricsAndLogConfigMapName(clusterName) + ".yaml",
-            KafkaConnectResources.metricsAndLogConfigMapName("my-connect") + ".yaml",
-            KafkaMirrorMaker2Resources.metricsAndLogConfigMapName("my-mm2") + ".yaml"
+            KafkaConnectResources.metricsAndLogConfigMapName(CONNECT_NAME) + ".yaml",
+            KafkaMirrorMaker2Resources.metricsAndLogConfigMapName(MM2_NAME) + ".yaml"
         )) {
             assertValidYamls(outPath + "/reports/configmaps", ConfigMap.class, s, 1);
         }
@@ -261,7 +261,7 @@ public class DefaultClusterReportST extends AbstractClusterReportST {
 
     private void assertValidDeployments(String outPath, String clusterName) throws IOException {
         for (String s : Arrays.asList(
-            KafkaBridgeResources.deploymentName("my-bridge") + ".yaml",
+            KafkaBridgeResources.deploymentName(BRIDGE_NAME) + ".yaml",
             CruiseControlResources.deploymentName(clusterName) + ".yaml",
             KafkaResources.entityOperatorDeploymentName(clusterName) + ".yaml",
             clusterOperatorDeploymentName() + ".yaml"
@@ -276,7 +276,7 @@ public class DefaultClusterReportST extends AbstractClusterReportST {
             CruiseControlResources.networkPolicyName(clusterName) + ".yaml",
             KafkaResources.kafkaNetworkPolicyName(clusterName) + ".yaml",
             KafkaResources.zookeeperNetworkPolicyName(clusterName) + ".yaml",
-            kafkaMirrorMaker2NetworkPolicyName("my-mm2") + ".yaml"
+            kafkaMirrorMaker2NetworkPolicyName(MM2_NAME) + ".yaml"
         )) {
             assertValidYamls(outPath + "/reports/networkpolicies", NetworkPolicy.class, s, 1);
         }
@@ -284,11 +284,11 @@ public class DefaultClusterReportST extends AbstractClusterReportST {
 
     private void assertValidPodDisruptionBudgets(String outPath, String clusterName) throws IOException {
         for (String s : Arrays.asList(
-            bridgePodDisruptionBudgetName("my-bridge") + ".yaml",
+            bridgePodDisruptionBudgetName(BRIDGE_NAME) + ".yaml",
             kafkaPodDisruptionBudgetName(clusterName) + ".yaml",
             zookeeperPodDisruptionBudgetName(clusterName) + ".yaml",
-            kafkaConnectPodDisruptionBudgetName("my-connect") + ".yaml",
-            kafkaMirrorMaker2PodDisruptionBudgetName("my-mm2") + ".yaml"
+            kafkaConnectPodDisruptionBudgetName(CONNECT_NAME) + ".yaml",
+            kafkaMirrorMaker2PodDisruptionBudgetName(MM2_NAME) + ".yaml"
         )) {
             assertValidYamls(outPath + "/reports/poddisruptionbudgets", PodDisruptionBudget.class, s, 1);
         }
@@ -302,11 +302,11 @@ public class DefaultClusterReportST extends AbstractClusterReportST {
             KafkaResources.zookeeperPodName(clusterName, 0) + ".yaml",
             KafkaResources.zookeeperPodName(clusterName, 1) + ".yaml",
             KafkaResources.zookeeperPodName(clusterName, 2) + ".yaml",
-            KafkaBridgeResources.deploymentName("my-bridge"),
+            KafkaBridgeResources.deploymentName(BRIDGE_NAME),
             CruiseControlResources.deploymentName(clusterName),
             KafkaResources.entityOperatorDeploymentName(clusterName),
-            KafkaConnectResources.deploymentName("my-connect"),
-            KafkaMirrorMaker2Resources.deploymentName("my-mm2")
+            KafkaConnectResources.deploymentName(CONNECT_NAME),
+            KafkaMirrorMaker2Resources.deploymentName(MM2_NAME)
         )) {
             assertValidYamls(outPath + "/reports/pods", Pod.class, s, 1);
         }
@@ -315,7 +315,7 @@ public class DefaultClusterReportST extends AbstractClusterReportST {
 
     private void assertValidReplicaSets(String outPath, String clusterName) throws IOException {
         for (String s : Arrays.asList(
-            KafkaBridgeResources.deploymentName("my-bridge"),
+            KafkaBridgeResources.deploymentName(BRIDGE_NAME),
             CruiseControlResources.deploymentName(clusterName),
             KafkaResources.entityOperatorDeploymentName(clusterName),
             clusterOperatorDeploymentName()
@@ -357,29 +357,29 @@ public class DefaultClusterReportST extends AbstractClusterReportST {
 
     private void assertValidServices(String outPath, String clusterName) throws IOException {
         for (String s : Arrays.asList(
-            KafkaBridgeResources.serviceName("my-bridge") + ".yaml",
+            KafkaBridgeResources.serviceName(BRIDGE_NAME) + ".yaml",
             CruiseControlResources.serviceName(clusterName) + ".yaml",
             KafkaResources.bootstrapServiceName(clusterName) + ".yaml",
             KafkaResources.brokersServiceName(clusterName) + ".yaml",
             KafkaResources.zookeeperServiceName(clusterName) + ".yaml",
             KafkaResources.zookeeperHeadlessServiceName(clusterName) + ".yaml",
-            KafkaConnectResources.serviceName("my-connect") + ".yaml",
-            KafkaMirrorMaker2Resources.serviceName("my-mm2") + ".yaml"
+            KafkaConnectResources.serviceName(CONNECT_NAME) + ".yaml",
+            KafkaMirrorMaker2Resources.serviceName(MM2_NAME) + ".yaml"
         )) {
             assertValidYamls(outPath + "/reports/services", Service.class, s, 1);
         }
     }
 
     private void assertValidKafkaBridges(String outPath) throws IOException {
-        assertValidYamls(outPath + "/reports/kafkabridges", KafkaBridge.class, "my-bridge.yaml", 1);
+        assertValidYamls(outPath + "/reports/kafkabridges", KafkaBridge.class, BRIDGE_NAME + ".yaml", 1);
     }
 
     private void assertValidKafkaConnects(String outPath) throws IOException {
-        assertValidYamls(outPath + "/reports/kafkaconnects", KafkaConnect.class, "my-connect.yaml", 1);
+        assertValidYamls(outPath + "/reports/kafkaconnects", KafkaConnect.class, CONNECT_NAME + ".yaml", 1);
     }
 
     private void assertValidKafkaMirrorMaker2s(String outPath) throws IOException {
-        assertValidYamls(outPath + "/reports/kafkamirrormaker2s", KafkaMirrorMaker2.class, "my-mm2.yaml", 1);
+        assertValidYamls(outPath + "/reports/kafkamirrormaker2s", KafkaMirrorMaker2.class, MM2_NAME + ".yaml", 1);
     }
 
     private void assertValidKafkaRebalances(String outPath, String clusterName) throws IOException {
@@ -406,10 +406,10 @@ public class DefaultClusterReportST extends AbstractClusterReportST {
 
     private void assertValidStrimziPodSets(String outPath, String clusterName) throws IOException {
         for (String s : Arrays.asList(
-            clusterName + "-kafka.yaml",
-            clusterName + "-tgt-kafka.yaml",
-            clusterName + "-tgt-zookeeper.yaml",
-            clusterName + "-zookeeper.yaml"
+            kafkaPodSetName(clusterName) + ".yaml",
+            kafkaPodSetName(clusterName + "-tgt") + ".yaml",
+            zookeeperPodSetName(clusterName + "-tgt") + ".yaml",
+            zookeeperPodSetName(clusterName) + ".yaml"
         )) {
             assertValidYamls(outPath + "/reports/strimzipodsets", StrimziPodSet.class, s, 1);
         }
@@ -441,9 +441,9 @@ public class DefaultClusterReportST extends AbstractClusterReportST {
             KafkaResources.zookeeperPodName(clusterName, 1) + ".log",
             KafkaResources.zookeeperPodName(clusterName, 2) + ".log",
             CruiseControlResources.deploymentName(clusterName),
-            KafkaBridgeResources.deploymentName("my-bridge"),
-            KafkaConnectResources.deploymentName("my-connect"),
-            KafkaMirrorMaker2Resources.deploymentName("my-mm2")
+            KafkaBridgeResources.deploymentName(BRIDGE_NAME),
+            KafkaConnectResources.deploymentName(CONNECT_NAME),
+            KafkaMirrorMaker2Resources.deploymentName(MM2_NAME)
         )) {
             assertValidFiles(outPath + "/reports/logs", s, 1);
         }

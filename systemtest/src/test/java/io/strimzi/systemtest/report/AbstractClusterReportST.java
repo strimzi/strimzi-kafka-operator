@@ -7,8 +7,12 @@ package io.strimzi.systemtest.report;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.strimzi.api.kafka.model.KafkaBridgeResources;
+import io.strimzi.api.kafka.model.KafkaConnectResources;
+import io.strimzi.api.kafka.model.KafkaMirrorMaker2Resources;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.AbstractST;
+import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.utils.FileUtils;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.TestInfo;
@@ -28,6 +32,9 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 @Tag(REGRESSION)
 public abstract class AbstractClusterReportST extends AbstractST {
     private static final ObjectMapper MAPPER = new ObjectMapper(new YAMLFactory());
+    protected static final String BRIDGE_NAME = "my-bridge";
+    protected static final String CONNECT_NAME = "my-connect";
+    protected static final String MM2_NAME = "my-mm2";
 
     protected String buildOutPath(TestInfo testInfo, String clusterName) {
         String methodName = testInfo.getTestMethod().isPresent() ?
@@ -56,7 +63,7 @@ public abstract class AbstractClusterReportST extends AbstractST {
     }
 
     protected String clusterOperatorDeploymentName() {
-        return "strimzi-cluster-operator";
+        return Constants.STRIMZI_DEPLOYMENT_NAME;
     }
 
     protected String clusterOperatorMetricsAndLogConfigMapName() {
@@ -68,67 +75,67 @@ public abstract class AbstractClusterReportST extends AbstractST {
     }
 
     protected String clusterOperatorBrokerDelegationClusterRoleBindingName() {
-        return clusterOperatorDeploymentName() + "-kafka-broker-delegation";
+        return Constants.BROKER_DELEGATION_CLUSTER_ROLE_BINDING;
     }
 
     protected String clusterOperatorClientDelegationClusterRoleBindingName() {
-        return clusterOperatorDeploymentName() + "-kafka-client-delegation";
+        return Constants.CLIENT_DELEGATION_CLUSTER_ROLE_BINDING;
     }
 
     protected String clusterOperatorGlobalClusterRoleName() {
-        return clusterOperatorDeploymentName() + "-global";
+        return Constants.CO_GLOBAL_CLUSTER_ROLE_BINDING;
     }
 
     protected String clusterOperatorLeaderElectionClusterRoleName() {
-        return clusterOperatorDeploymentName() + "-leader-election";
+        return Constants.CO_LEADER_ELECTION_CLUSTER_ROLE;
     }
 
     protected String clusterOperatorNamespacedClusterRoleName() {
-        return clusterOperatorDeploymentName() + "-namespaced";
+        return Constants.CO_NAMESPACED_CLUSTER_ROLE;
     }
 
     protected String clusterOperatorWatchedClusterRoleName() {
-        return clusterOperatorDeploymentName() + "-watched";
+        return Constants.CO_WATCHED_CLUSTER_ROLE;
     }
 
     protected String clusterOperatorKafkaClientClusterRoleName() {
-        return "strimzi-kafka-client";
+        return Constants.CO_KAFKA_CLIENT_CLUSTER_ROLE;
     }
 
     protected String clusterOperatorKafkaBrokerClusterRoleName() {
-        return "strimzi-kafka-broker";
+        return Constants.CO_KAFKA_BROKER_CLUSTER_ROLE;
     }
 
     protected String kafkaCustomResourceDefinitionName(String name) {
-        return name + ".kafka.strimzi.io";
+        return name + "." + Constants.KAFKA_CRD_GROUP;
     }
 
     protected String coreCustomResourceDefinitionName(String name) {
-        return name + ".core.strimzi.io";
+        return name + "." + Constants.CORE_CRD_GROUP;
     }
 
     protected String bridgePodDisruptionBudgetName(String clusterName) {
-        return clusterName + "-bridge";
+        return KafkaBridgeResources.deploymentName(clusterName);
     }
 
     protected String kafkaConnectStableIdentitiesPodName(String clusterName, int podNum) {
-        return clusterName + "-connect-" + podNum;
+        return KafkaConnectResources.deploymentName(clusterName) + "-" + podNum;
     }
 
     protected String kafkaConnectPodDisruptionBudgetName(String clusterName) {
-        return clusterName + "-connect";
+        return KafkaConnectResources.deploymentName(clusterName);
     }
 
     protected String kafkaMirrorMaker2StableIdentitiesPodName(String clusterName, int podNum) {
-        return clusterName + "-mirrormaker2-" + podNum;
+        return KafkaMirrorMaker2Resources.deploymentName(clusterName) + "-" + podNum;
     }
 
     protected String kafkaMirrorMaker2NetworkPolicyName(String clusterName) {
-        return clusterName + "-mirrormaker2";
+        return KafkaMirrorMaker2Resources.deploymentName(clusterName);
     }
 
     protected String kafkaMirrorMaker2PodDisruptionBudgetName(String clusterName) {
-        return clusterName + "-mirrormaker2";
+        return KafkaMirrorMaker2Resources.deploymentName(clusterName);
     }
 
     protected String kafkaConfigMapName(String clusterName, int podNum) {
@@ -136,7 +143,7 @@ public abstract class AbstractClusterReportST extends AbstractST {
     }
 
     protected String kafkaNodePoolsPodName(String clusterName, String nodePoolName, int podNum) {
-        return clusterName + "-" + nodePoolName + "-" + podNum;
+        return String.join("-", clusterName, nodePoolName, String.valueOf(podNum));
     }
 
     protected String kafkaNodePoolsConfigMapName(String clusterName, String nodePoolName, int podNum) {
@@ -144,18 +151,38 @@ public abstract class AbstractClusterReportST extends AbstractST {
     }
 
     protected String kafkaPodDisruptionBudgetName(String clusterName) {
-        return clusterName + "-kafka";
+        return KafkaResources.kafkaStatefulSetName(clusterName);
     }
 
     protected String zookeeperPodDisruptionBudgetName(String clusterName) {
-        return clusterName + "-zookeeper";
+        return KafkaResources.zookeeperStatefulSetName(clusterName);
     }
 
     protected String entityOperatorNetworkPolicyName(String clusterName) {
-        return clusterName + "-entity-operator";
+        return KafkaResources.entityOperatorDeploymentName(clusterName);
     }
 
     protected String entityOperatorClusterRoleName() {
-        return "strimzi-entity-operator";
+        return Constants.EO_CLUSTER_ROLE;
+    }
+
+    protected String kafkaPodSetName(String clusterName) {
+        return KafkaResources.kafkaStatefulSetName(clusterName);
+    }
+
+    protected String zookeeperPodSetName(String clusterName) {
+        return KafkaResources.zookeeperStatefulSetName(clusterName);
+    }
+
+    protected String kafkaConnectPodSetName(String clusterName) {
+        return KafkaConnectResources.deploymentName(clusterName);
+    }
+
+    protected String kafkaMirrorMaker2PodSetName(String clusterName) {
+        return KafkaMirrorMaker2Resources.deploymentName(clusterName);
+    }
+
+    protected String kafkaNodePoolPodSetName(String clusterName, String poolName) {
+        return clusterName + "-" + poolName;
     }
 }

@@ -375,6 +375,11 @@ public interface Constants {
      */
     String ARM64_UNSUPPORTED = "arm64unsupported";
 
+    /**
+     * Tag for tests using NodePools.
+     */
+    String NODE_POOLS = "nodepools";
+
     String ISOLATED_TEST = "isolatedtest";
     String PARALLEL_TEST = "paralleltest";
     /**
@@ -484,4 +489,18 @@ public interface Constants {
      * Persistent Volume related
      */
     String PVC_PHASE_BOUND = "Bound";
+
+    String BROKER_DELEGATION_CLUSTER_ROLE_BINDING = STRIMZI_DEPLOYMENT_NAME + "-kafka-broker-delegation";
+    String CLIENT_DELEGATION_CLUSTER_ROLE_BINDING = STRIMZI_DEPLOYMENT_NAME + "-kafka-client-delegation";
+    String CO_GLOBAL_CLUSTER_ROLE_BINDING = STRIMZI_DEPLOYMENT_NAME + "-global";
+
+    String CO_LEADER_ELECTION_CLUSTER_ROLE = STRIMZI_DEPLOYMENT_NAME + "-leader-election";
+    String CO_NAMESPACED_CLUSTER_ROLE = STRIMZI_DEPLOYMENT_NAME + "-namespaced";
+    String CO_WATCHED_CLUSTER_ROLE = STRIMZI_DEPLOYMENT_NAME + "-watched";
+    String CO_KAFKA_CLIENT_CLUSTER_ROLE = "strimzi-kafka-client";
+    String CO_KAFKA_BROKER_CLUSTER_ROLE = "strimzi-kafka-broker";
+    String EO_CLUSTER_ROLE = "strimzi-entity-operator";
+
+    String KAFKA_CRD_GROUP = "kafka.strimzi.io";
+    String CORE_CRD_GROUP = "core.strimzi.io";
 }
