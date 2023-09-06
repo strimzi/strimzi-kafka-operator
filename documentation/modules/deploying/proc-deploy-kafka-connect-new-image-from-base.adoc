@@ -6,7 +6,7 @@
 = Building a new container image with connector plugins from the Kafka Connect base image
 
 [role="_abstract"]
-Create a custom Docker image with connector plugins from the Kafka Connect base image
+Create a custom Docker image with connector plugins from the Kafka Connect base image.
 Add the custom image to the `/opt/kafka/plugins` directory.
 
 You can use the Kafka container image on {DockerRepository} as a base image for creating your own custom image with additional connector plugins.
