@@ -42,8 +42,8 @@ public class ListenerStatus implements UnknownPropertyPreserving, Serializable {
     private Map<String, Object> additionalProperties;
 
     @Deprecated
-    @DeprecatedProperty(description = "The `type` property is deprecated and not used anymore.")
-    @Description("*The `type` property is deprecated and not used anymore. Use the `name` property.* The name of the listener.")
+    @DeprecatedProperty(description = "The `type` property is not used anymore. Use the `name` property with the same value.")
+    @Description("The name of the listener.")
     public String getType() {
         return type;
     }
