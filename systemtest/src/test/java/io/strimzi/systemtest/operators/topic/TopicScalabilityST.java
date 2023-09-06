@@ -7,6 +7,8 @@ package io.strimzi.systemtest.operators.topic;
 import io.strimzi.api.kafka.model.KafkaTopicSpecBuilder;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.annotations.BTONotSupported;
+import io.strimzi.systemtest.annotations.KRaftWithoutUTONotSupported;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicScalabilityUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
@@ -14,7 +16,6 @@ import io.strimzi.test.annotations.IsolatedTest;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
@@ -27,7 +28,8 @@ import static io.strimzi.systemtest.Constants.SCALABILITY;
 
 
 @Tag(SCALABILITY)
-@Disabled("TO is not so stable with large number of topics. After new version of TO, these should be enabled again")
+@BTONotSupported
+@KRaftWithoutUTONotSupported
 public class TopicScalabilityST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(TopicScalabilityST.class);
