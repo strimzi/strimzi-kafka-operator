@@ -375,11 +375,6 @@ public interface Constants {
      */
     String ARM64_UNSUPPORTED = "arm64unsupported";
 
-    /**
-     * Tag for tests using NodePools.
-     */
-    String NODE_POOLS = "nodepools";
-
     String ISOLATED_TEST = "isolatedtest";
     String PARALLEL_TEST = "paralleltest";
     /**

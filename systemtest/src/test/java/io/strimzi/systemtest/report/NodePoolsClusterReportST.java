@@ -60,14 +60,12 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 import java.io.IOException;
 import java.util.Arrays;
 
-import static io.strimzi.systemtest.Constants.NODE_POOLS;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.test.TestUtils.USER_PATH;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @Tag(REGRESSION)
-@Tag(NODE_POOLS)
 public class NodePoolsClusterReportST extends AbstractClusterReportST {
     private static final Logger LOGGER = LogManager.getLogger(NodePoolsClusterReportST.class);
     private static final String NODE_POOL_A_NAME = "pool-a";
