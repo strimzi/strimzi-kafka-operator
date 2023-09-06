@@ -277,15 +277,20 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
 
     @Override
     public Future<Void> pause(Reconciliation reconciliation, String host, int port, String connectorName) {
-        return pauseResume(reconciliation, host, port, "/connectors/" + connectorName + "/pause");
+        return updateState(reconciliation, host, port, "/connectors/" + connectorName + "/pause");
+    }
+
+    @Override
+    public Future<Void> stop(Reconciliation reconciliation, String host, int port, String connectorName) {
+        return updateState(reconciliation, host, port, "/connectors/" + connectorName + "/stop");
     }
 
     @Override
     public Future<Void> resume(Reconciliation reconciliation, String host, int port, String connectorName) {
-        return pauseResume(reconciliation, host, port, "/connectors/" + connectorName + "/resume");
+        return updateState(reconciliation, host, port, "/connectors/" + connectorName + "/resume");
     }
 
-    private Future<Void> pauseResume(Reconciliation reconciliation, String host, int port, String path) {
+    private Future<Void> updateState(Reconciliation reconciliation, String host, int port, String path) {
         LOGGER.debugCr(reconciliation, "Making PUT request to {} ", path);
         return HttpClientUtils.withHttpClient(vertx, new HttpClientOptions().setLogActivity(true), (httpClient, result) ->
                 httpClient.request(HttpMethod.PUT, port, host, path, request -> {

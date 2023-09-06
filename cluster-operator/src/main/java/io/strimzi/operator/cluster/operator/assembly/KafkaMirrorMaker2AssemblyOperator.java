@@ -384,6 +384,7 @@ public class KafkaMirrorMaker2AssemblyOperator extends AbstractConnectOperator<K
                         String className = MIRRORMAKER2_CONNECTOR_PACKAGE + entry.getKey();
 
                         KafkaMirrorMaker2ConnectorSpec mm2ConnectorSpec = entry.getValue().apply(mirror);
+                        @SuppressWarnings("deprecation")
                         KafkaConnectorSpec connectorSpec = new KafkaConnectorSpecBuilder()
                                 .withClassName(className)
                                 .withConfig(mm2ConnectorSpec.getConfig())

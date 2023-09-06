@@ -178,6 +178,12 @@ public class KafkaConnectApiIT {
             .compose(ignored -> client.resume(Reconciliation.DUMMY_RECONCILIATION, "localhost", port, "test"))
             .onComplete(context.succeeding(i -> { }))
 
+            .compose(ignored -> client.stop(Reconciliation.DUMMY_RECONCILIATION, "localhost", port, "test"))
+            .onComplete(context.succeeding(i -> { }))
+
+            .compose(ignored -> client.resume(Reconciliation.DUMMY_RECONCILIATION, "localhost", port, "test"))
+            .onComplete(context.succeeding(i -> { }))
+
             .compose(ignored -> client.restart("localhost", port, "test", true, true))
             .onComplete(context.succeeding(i -> { }))
 
