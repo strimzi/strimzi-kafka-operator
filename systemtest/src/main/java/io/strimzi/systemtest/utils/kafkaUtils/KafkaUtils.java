@@ -109,6 +109,14 @@ public class KafkaUtils {
             });
     }
 
+    public static void waitUntilStatusKafkaVersionMatchesExpectedVersion(String clusterName, String namespace, String expectedKafkaVersion) {
+        TestUtils.waitFor("Kafka version '" + expectedKafkaVersion + "' in Kafka cluster '" + clusterName + "' to match",
+            Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_STATUS_TIMEOUT, () -> {
+                String kafkaVersionInStatus = KafkaResource.kafkaClient().inNamespace(namespace).withName(clusterName).get().getStatus().getKafkaVersion();
+                return expectedKafkaVersion.equals(kafkaVersionInStatus);
+            });
+    }
+
     public static void waitUntilKafkaStatusConditionContainsMessage(String clusterName, String namespace, String pattern) {
         waitUntilKafkaStatusConditionContainsMessage(clusterName, namespace, pattern, Constants.GLOBAL_STATUS_TIMEOUT);
     }

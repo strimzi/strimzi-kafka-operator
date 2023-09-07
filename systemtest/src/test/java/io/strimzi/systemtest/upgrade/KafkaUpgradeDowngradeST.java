@@ -263,8 +263,8 @@ public class KafkaUpgradeDowngradeST extends AbstractUpgradeST {
                 "zookeeper", "/bin/bash", "-c", zkVersionCommand).out().trim();
         LOGGER.info("Pre-change ZooKeeper version query returned: " + zkResult);
 
-        String kafkaVersionResult = KafkaUtils.getVersionFromKafkaPodLibs(KafkaResource.getKafkaPodName(clusterName, 0));
-        LOGGER.info("Pre-change Kafka version query returned: " + kafkaVersionResult);
+        String kafkaVersionResult = KafkaResource.kafkaClient().inNamespace(Constants.CO_NAMESPACE).withName(clusterName).get().getStatus().getKafkaVersion();
+        LOGGER.info("Pre-change Kafka version: " + kafkaVersionResult);
 
         Map<String, String> zkPods = PodUtils.podSnapshot(Constants.CO_NAMESPACE, zkSelector);
         kafkaPods = PodUtils.podSnapshot(Constants.CO_NAMESPACE, kafkaSelector);
@@ -364,5 +364,8 @@ public class KafkaUpgradeDowngradeST extends AbstractUpgradeST {
                         .get().getSpec().getKafka().getConfig().get("inter.broker.protocol.version"), is(newVersion.protocolVersion()));
             }
         }
+
+        LOGGER.info("Waiting till Kafka Cluster {}/{} with specified version {} has the same version in status and specification", Constants.CO_NAMESPACE, clusterName, newVersion.version());
+        KafkaUtils.waitUntilStatusKafkaVersionMatchesExpectedVersion(clusterName, Constants.CO_NAMESPACE, newVersion.version());
     }
 }
