@@ -38,7 +38,7 @@ import java.util.Random;
 import static io.strimzi.systemtest.Constants.BRIDGE;
 import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
-import static org.junit.jupiter.api.Assumptions.assumeTrue;
+import static org.junit.jupiter.api.Assumptions.assumeFalse;
 
 @Tag(INTERNAL_CLIENTS_USED)
 @Tag(BRIDGE)
@@ -109,7 +109,7 @@ class HttpBridgeScramShaST extends AbstractST {
     @BeforeAll
     void setUp(ExtensionContext extensionContext) {
         // skip test if KRaft mode is enabled and Kafka version is lower than 3.5.0 - https://github.com/strimzi/strimzi-kafka-operator/issues/8806
-        assumeTrue(Environment.isKRaftModeEnabled() && TestKafkaVersion.compareDottedVersions("3.5.0", Environment.ST_KAFKA_VERSION) != 1);
+        assumeFalse(Environment.isKRaftModeEnabled() && TestKafkaVersion.compareDottedVersions("3.5.0", Environment.ST_KAFKA_VERSION) == 1);
 
         clusterOperator = clusterOperator.defaultInstallation(extensionContext)
             .createInstallation()

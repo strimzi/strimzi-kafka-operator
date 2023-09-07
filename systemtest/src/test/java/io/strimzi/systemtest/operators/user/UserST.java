@@ -58,7 +58,7 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assumptions.assumeTrue;
+import static org.junit.jupiter.api.Assumptions.assumeFalse;
 import static org.valid4j.matchers.jsonpath.JsonPathMatchers.hasJsonPath;
 
 @Tag(REGRESSION)
@@ -154,7 +154,7 @@ class UserST extends AbstractST {
     @ParallelTest
     void testTlsUserWithQuotas(ExtensionContext extensionContext) {
         // skip test if KRaft mode is enabled and Kafka version is lower than 3.5.0 - https://github.com/strimzi/strimzi-kafka-operator/issues/8806
-        assumeTrue(Environment.isKRaftModeEnabled() && TestKafkaVersion.compareDottedVersions("3.5.0", Environment.ST_KAFKA_VERSION) != 1);
+        assumeFalse(Environment.isKRaftModeEnabled() && TestKafkaVersion.compareDottedVersions("3.5.0", Environment.ST_KAFKA_VERSION) == 1);
 
         KafkaUser user = KafkaUserTemplates.tlsUser(Constants.TEST_SUITE_NAMESPACE, userClusterName, "encrypted-arnost").build();
 
@@ -165,7 +165,7 @@ class UserST extends AbstractST {
     void testTlsExternalUserWithQuotas(ExtensionContext extensionContext) {
         final TestStorage testStorage = storageMap.get(extensionContext);
         // skip test if KRaft mode is enabled and Kafka version is lower than 3.5.0 - https://github.com/strimzi/strimzi-kafka-operator/issues/8806
-        assumeTrue(Environment.isKRaftModeEnabled() && TestKafkaVersion.compareDottedVersions("3.5.0", Environment.ST_KAFKA_VERSION) != 1);
+        assumeFalse(Environment.isKRaftModeEnabled() && TestKafkaVersion.compareDottedVersions("3.5.0", Environment.ST_KAFKA_VERSION) == 1);
 
         final String kafkaUserName = testStorage.getKafkaUsername();
         final KafkaUser tlsExternalUser = KafkaUserTemplates.tlsExternalUser(Constants.TEST_SUITE_NAMESPACE, userClusterName, kafkaUserName).build();
@@ -415,7 +415,7 @@ class UserST extends AbstractST {
     @ParallelTest
     void testUOListeningOnlyUsersInSameCluster(ExtensionContext extensionContext) {
         // skip test if KRaft mode is enabled and Kafka version is lower than 3.5.0 - https://github.com/strimzi/strimzi-kafka-operator/issues/8806
-        assumeTrue(Environment.isKRaftModeEnabled() && TestKafkaVersion.compareDottedVersions("3.5.0", Environment.ST_KAFKA_VERSION) != 1);
+        assumeFalse(Environment.isKRaftModeEnabled() && TestKafkaVersion.compareDottedVersions("3.5.0", Environment.ST_KAFKA_VERSION) == 1);
 
         final TestStorage testStorage = new TestStorage(extensionContext, Constants.TEST_SUITE_NAMESPACE);
         final String userListeningClusterName = "user-listening-cluster";
