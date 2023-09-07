@@ -103,4 +103,5 @@ spec:
 kubectl apply -f <kafka_configuration_file>
 ----
 +
-There is no change or rolling update and resources are identical to how they were before.
+There is no change or rolling update.
+The resources remain identical to how they were before.
