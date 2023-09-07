@@ -111,8 +111,13 @@ public class KafkaConnectBuild extends AbstractModel {
             // The additionalKanikoOptions are validated separately to avoid parsing the list twice
             if (spec.getBuild().getOutput() != null
                     && spec.getBuild().getOutput() instanceof DockerOutput dockerOutput) {
+
+                // Validation to check if KafkaConnect .spec.image equals .spec.build.output.image name
+                if (dockerOutput.getImage() != null && spec.getImage() != null && dockerOutput.getImage().equals(spec.getImage())) {
+                    throw new InvalidResourceException("KafkaConnect .spec.image cannot be the same as .spec.build.output.image");
+                }
                 if (dockerOutput.getAdditionalKanikoOptions() != null
-                        && !dockerOutput.getAdditionalKanikoOptions().isEmpty())  {
+                        && !dockerOutput.getAdditionalKanikoOptions().isEmpty()) {
                     validateAdditionalKanikoOptions(dockerOutput.getAdditionalKanikoOptions());
                     result.additionalKanikoOptions = dockerOutput.getAdditionalKanikoOptions();
                 }
