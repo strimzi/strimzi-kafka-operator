@@ -148,5 +148,4 @@ IMPORTANT: From Kafka 3.0.0, when the `inter.broker.protocol.version` is set to 
 
 . Wait for the Cluster Operator to update the cluster.
 +
-* The Kafka cluster and clients are now using the new Kafka version.
-* The brokers are configured to send messages using the inter-broker protocol version and message format version of the new version of Kafka.
+You can xref:con-upgrade-status-{context}[check the upgrade has completed successfully from the status of the `Kafka` resource].
