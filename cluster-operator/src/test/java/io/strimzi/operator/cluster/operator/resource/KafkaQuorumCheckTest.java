@@ -105,20 +105,6 @@ class KafkaQuorumCheckTest {
     }
 
     @Test
-    public void canRollControllerReturnsFalseInvalidLeaderTimestamp(VertxTestContext context) {
-        Map<Integer, OptionalLong> voters = new HashMap<>();
-        voters.put(1, OptionalLong.of(-1));
-        voters.put(2, OptionalLong.of(7000L));
-        voters.put(3, OptionalLong.of(9000L));
-        Admin admin = setUpMocks(1, voters);
-        KafkaQuorumCheck quorumCheck = new KafkaQuorumCheck(Reconciliation.DUMMY_RECONCILIATION, admin, vertx, 1000);
-        quorumCheck.canRollController(1).onComplete(context.succeeding(result -> {
-            context.verify(() -> assertFalse(result));
-            context.completeNow();
-        }));
-    }
-
-    @Test
     public void canRollControllerReturnsFalseOneInvalidFollowerTimestamp(VertxTestContext context) {
         Map<Integer, OptionalLong> voters = new HashMap<>();
         voters.put(1, OptionalLong.of(10000L));

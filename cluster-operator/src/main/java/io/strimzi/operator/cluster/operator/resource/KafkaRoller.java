@@ -221,29 +221,32 @@ public class KafkaRoller {
         singleExecutor.submit(() -> {
             try {
                 LOGGER.debugCr(reconciliation, "Verifying cluster pods are up-to-date.");
-                List<NodeRef> pods = new ArrayList<>(nodes.size());
-                List<NodeRef> unReadyPods = new ArrayList<>();
-                List<NodeRef> readyPods = new ArrayList<>();
+                List<NodeRef> controllerPods = new ArrayList<>();
+                List<NodeRef> brokerPods = new ArrayList<>();
                 for (NodeRef node : nodes)  {
                     // Order the nodes unready first otherwise repeated reconciliations might each restart a pod
                     // only for it not to become ready and thus drive the cluster to a worse state.
-                    // in KRaft mode Roll controllers first, then brokers, but roll unready brokers before ready controllers
+                    // in KRaft mode roll unready controllers, then ready controllers, then unready brokers, then ready brokers
                     boolean isReady = podOperations.isReady(namespace, node.podName());
-                    if (isReady) {
-                        readyPods.add(node.controller() ? 0 : readyPods.size(), node);
+                    if (node.controller()) {
+                        controllerPods.add(isReady ? controllerPods.size() : 0, node);
                     } else {
-                        unReadyPods.add(node.controller() ? 0 : unReadyPods.size(), node);
+                        brokerPods.add(isReady ? brokerPods.size() : 0, node);
                     }
                 }
-                pods.addAll(unReadyPods);
-                pods.addAll(readyPods);
-                LOGGER.debugCr(reconciliation, "Initial order for updating pods (rolling restart or dynamic update) is {}", pods);
+                LOGGER.debugCr(reconciliation, "Initial order for updating pods (rolling restart or dynamic update) is {},{}", controllerPods, brokerPods);
 
-                List<Future<Void>> futures = new ArrayList<>(nodes.size());
-                for (NodeRef node : pods) {
-                    futures.add(schedule(node, 0, TimeUnit.MILLISECONDS));
+                List<Future<Void>> controllerFutures = new ArrayList<>(controllerPods.size());
+                for (NodeRef node : controllerPods) {
+                    controllerFutures.add(schedule(node, 0, TimeUnit.MILLISECONDS));
                 }
-                Future.join(futures).onComplete(ar -> {
+                Future.join(controllerFutures).compose(v -> {
+                    List<Future<Void>> brokerFutures = new ArrayList<>(nodes.size());
+                    for (NodeRef broker : brokerPods) {
+                        brokerFutures.add(schedule(broker, 0, TimeUnit.MILLISECONDS));
+                    }
+                    return Future.join(brokerFutures);
+                }).onComplete(ar -> {
                     singleExecutor.shutdown();
                     try {
                         if (allClient != null) {
@@ -368,7 +371,7 @@ public class KafkaRoller {
      * @throws ForceableProblem         Some error. Not thrown when finalAttempt==true.
      * @throws UnforceableProblem       Some error, still thrown when finalAttempt==true.
      */
-    @SuppressWarnings({"checkstyle:CyclomaticComplexity"})
+    @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:NPathComplexity"})
     private void restartIfNecessary(NodeRef nodeRef, RestartContext restartContext)
             throws Exception {
         Pod pod;
@@ -418,6 +421,9 @@ public class KafkaRoller {
             // This configuration property is used by the quorum check for rolling KRaft controllers
             // and users are allowed to configure this property therefore we need to retrieve its current value.
             ConfigEntry controllerQuorumFetchTimeoutMs =  restartContext.controllerConfig.get(CONTROLLER_QUORUM_FETCH_TIMEOUT_MS_CONFIG_NAME);
+            if (!initAdminClient()) {
+                throw new ForceableProblem("Failed to create admin connection to brokers to get quorum state");
+            }
             restartContext.quorumCheck = quorumCheck(allClient, (controllerQuorumFetchTimeoutMs != null)
                     ? Long.parseLong(controllerQuorumFetchTimeoutMs.value()) : CONTROLLER_QUORUM_FETCH_TIMEOUT_MS_CONFIG_DEFAULT);
         }
@@ -428,8 +434,8 @@ public class KafkaRoller {
                 restartAndAwaitReadiness(pod, operationTimeoutMs, TimeUnit.MILLISECONDS, restartContext);
             } else if (restartContext.needsRestart || restartContext.needsReconfig) {
                 if (deferController(nodeRef, restartContext)) {
-                    LOGGER.debugCr(reconciliation, "Pod {} is controller and there are other pods to verify. Non-controller pods will be verified first.", nodeRef);
-                    throw new ForceableProblem("Pod " + nodeRef.podName() + " is controller and there are other pods to verify. Non-controller pods will be verified first");
+                    LOGGER.debugCr(reconciliation, "Pod {} is controller or KRaft quorum leader and there are other pods to verify. Non-controller or KRaft follower pods pods will be verified first.", nodeRef);
+                    throw new ForceableProblem("Pod " + nodeRef.podName() + " is controller or KRaft quorum leader and there are other pods to verify. Non-controller or KRaft follower pods will be verified first.");
                 } else if (!canRoll(nodeRef, 60_000, TimeUnit.MILLISECONDS, false, restartContext)) {
                     LOGGER.debugCr(reconciliation, "Pod {} cannot be updated right now", nodeRef);
                     throw new UnforceableProblem("Pod " + nodeRef.podName() + " cannot be updated right now.");
@@ -532,7 +538,7 @@ public class KafkaRoller {
     /**
      * Determine whether the pod should be restarted, or the broker reconfigured.
      */
-    @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:NPathComplexity"})
+    @SuppressWarnings({"checkstyle:CyclomaticComplexity"})
     private void checkReconfigurability(NodeRef nodeRef, Pod pod, RestartContext restartContext) throws ForceableProblem, InterruptedException, FatalProblem {
         RestartReasons reasonToRestartPod = restartContext.restartReasons;
         boolean podStuck = isPodStuck(pod);
@@ -873,9 +879,13 @@ public class KafkaRoller {
      */
     private boolean deferController(NodeRef nodeRef, RestartContext restartContext) throws Exception {
         int controller = controller(nodeRef, operationTimeoutMs, TimeUnit.MILLISECONDS, restartContext);
-        int stillRunning = podToContext.reduceValuesToInt(100, v -> v.promise.future().isComplete() ? 0 : 1,
-                0, Integer::sum);
-        return controller == nodeRef.nodeId() && stillRunning > 1;
+        if (controller == nodeRef.nodeId()) {
+            int stillRunning = podToContext.reduceValuesToInt(100, v -> v.promise.future().isComplete() ? 0 : 1,
+                    0, Integer::sum);
+            return stillRunning > 1;
+        } else {
+            return false;
+        }
     }
 
     /**

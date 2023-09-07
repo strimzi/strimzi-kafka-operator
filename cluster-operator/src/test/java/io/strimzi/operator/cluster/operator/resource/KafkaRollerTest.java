@@ -532,7 +532,7 @@ public class KafkaRollerTest {
                 mockPodOps(podId -> succeededFuture()), noException(), null, noException(), noException(), noException(),
                 brokerId -> succeededFuture(true), false, new DefaultAdminClientProvider(), false, null, desiredConfig, -1);
         doSuccessfulConfigUpdate(testContext, kafkaRoller,
-                asList(5, 4, 3, 2, 1, 0));
+                asList(0, 1, 2, 3, 4, 5));
     }
 
     @Test
@@ -542,7 +542,7 @@ public class KafkaRollerTest {
                 mockPodOps(podId -> succeededFuture()), noException(), null, noException(), noException(), noException(),
                 brokerId -> succeededFuture(true), false, new DefaultAdminClientProvider(), false, null, desiredConfig, -1);
         doSuccessfulConfigUpdate(testContext, kafkaRoller,
-                asList(5, 4, 3, 0, 1, 2));
+                asList(3, 4, 5, 0, 1, 2));
     }
 
     @Test
@@ -553,7 +553,7 @@ public class KafkaRollerTest {
                 brokerId -> succeededFuture(false), false, new DefaultAdminClientProvider(), false, null, desiredConfig, -1);
         doFailingRollingRestart(testContext, kafkaRoller,
                 emptyList(),
-                KafkaRoller.UnforceableProblem.class, "Pod c-kafka-2 cannot be updated right now.",
+                KafkaRoller.UnforceableProblem.class, "Pod c-kafka-0 cannot be updated right now.",
                 asList());
     }
 
@@ -566,7 +566,7 @@ public class KafkaRollerTest {
         doFailingRollingRestart(testContext, kafkaRoller,
                 emptyList(),
                 KafkaRoller.UnforceableProblem.class, "Pod c-kafka-5 cannot be updated right now.",
-                asList(8, 7, 6, 4, 3, 0, 1, 2));
+                asList(3, 4, 6, 7, 8));
     }
 
     @Test
@@ -579,7 +579,7 @@ public class KafkaRollerTest {
                 false, new DefaultAdminClientProvider(), false, null, "", 2);
         doFailingRollingRestart(testContext, kafkaRoller,
             asList(0, 1, 2, 3, 4),
-            KafkaRoller.ForceableProblem.class, "Pod c-kafka-2 is controller and there are other pods to verify. Non-controller pods will be verified first",
+            KafkaRoller.ForceableProblem.class, "Pod c-kafka-2 is controller or KRaft quorum leader and there are other pods to verify. Non-controller or KRaft follower pods will be verified first.",
             // We expect all non-controller pods to be rolled
             asList(0, 1, 4));
     }
@@ -627,7 +627,7 @@ public class KafkaRollerTest {
         doFailingRollingRestart(testContext, kafkaRoller,
                 List.of(0, 1, 2),
                 KafkaRoller.UnforceableProblem.class, "Pod c-kafka-0 is not ready because the broker is performing log recovery. There are  10 logs and 100 segments left to recover.",
-                List.of(2, 1));
+                List.of(1, 2));
     }
 
     @Test
@@ -694,7 +694,7 @@ public class KafkaRollerTest {
                 brokerId -> succeededFuture(true), false, new DefaultAdminClientProvider(), false, null, "", 6);
         doSuccessfulRollingRestart(testContext, kafkaRoller,
                 asList(0, 1, 2, 3, 4, 5, 6, 7, 8),
-                asList(8, 7, 5, 4, 3, 0, 1, 2, 6));
+                asList(3, 4, 5, 7, 8, 6, 0, 1, 2));
     }
 
     @Test
@@ -722,7 +722,7 @@ public class KafkaRollerTest {
                 brokerId -> succeededFuture(true), false, new DefaultAdminClientProvider(), false, null, "", -1);
         doSuccessfulRollingRestart(testContext, kafkaRoller,
                 asList(0, 1, 2, 3, 4, 5, 6, 7, 8), // brokers, combined, controllers
-                asList(7, 4, 1, 8, 6, 5, 3, 0, 2)); //Rolls in order: unready pods, ready pods
+                asList(7, 4, 3, 5, 6, 8, 1, 0, 2)); //Rolls in order: unready controllers, ready controllers, unready brokers, ready brokers
     }
 
     private TestingKafkaRoller rollerWithControllers(PodOperator podOps, int... controllers) {
