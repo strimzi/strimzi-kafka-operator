@@ -175,6 +175,7 @@ public class Environment {
     private static final String ST_CLIENTS_KAFKA_VERSION_DEFAULT = "3.4.0";
     public static final String TEST_CLIENTS_VERSION_DEFAULT = "0.5.2";
     public static final String ST_FILE_PLUGIN_URL_DEFAULT = "https://repo1.maven.org/maven2/org/apache/kafka/connect-file/" + ST_KAFKA_VERSION_DEFAULT + "/connect-file-" + ST_KAFKA_VERSION_DEFAULT + ".jar";
+    public static final String OLM_OPERATOR_VERSION_DEFAULT = "0.37.0";
 
     /**
      * Set values
@@ -215,7 +216,7 @@ public class Environment {
     public static final String OLM_SOURCE_NAME = getOrDefault(OLM_SOURCE_NAME_ENV, OLM_SOURCE_NAME_DEFAULT);
     public static final String OLM_SOURCE_NAMESPACE = getOrDefault(OLM_SOURCE_NAMESPACE_ENV, OpenShift.OLM_SOURCE_NAMESPACE);
     public static final String OLM_APP_BUNDLE_PREFIX = getOrDefault(OLM_APP_BUNDLE_PREFIX_ENV, OLM_APP_BUNDLE_PREFIX_DEFAULT);
-    public static final String OLM_OPERATOR_LATEST_RELEASE_VERSION = getOrDefault(OLM_OPERATOR_VERSION_ENV, "0.36.0");
+    public static final String OLM_OPERATOR_LATEST_RELEASE_VERSION = getOrDefault(OLM_OPERATOR_VERSION_ENV, OLM_OPERATOR_VERSION_DEFAULT);
     // NetworkPolicy variable
     public static final boolean DEFAULT_TO_DENY_NETWORK_POLICIES = getOrDefault(DEFAULT_TO_DENY_NETWORK_POLICIES_ENV, Boolean::parseBoolean, DEFAULT_TO_DENY_NETWORK_POLICIES_DEFAULT);
     // Cluster Operator installation type variable
