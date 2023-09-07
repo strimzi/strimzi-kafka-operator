@@ -67,6 +67,9 @@ env:
   - name: STRIMZI_FEATURE_GATES
     value: +KafkaNodePools
 ----
++
+After restarting, the Cluster Operator logs a warning indicating that the Kafka node pool has been added but is not yet integrated with the Cluster Operator.
+This is an expected part of the process.
 
 . Enable the `KafkaNodePools` feature gate in the `Kafka` resource using the `strimzi.io/node-pools: enabled` annotation.
 +
@@ -99,3 +102,6 @@ spec:
 ----
 kubectl apply -f <kafka_configuration_file>
 ----
++
+There is no change or rolling update.
+The resources remain identical to how they were before.
