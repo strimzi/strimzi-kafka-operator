@@ -366,6 +366,6 @@ public class KafkaUpgradeDowngradeST extends AbstractUpgradeST {
         }
 
         LOGGER.info("Waiting till Kafka Cluster {}/{} with specified version {} has the same version in status and specification", Constants.CO_NAMESPACE, clusterName, newVersion.version());
-        KafkaUtils.waitUntilStatusKafkaVersionMatchesSpecificationKafkaVersion(clusterName, Constants.CO_NAMESPACE);
+        KafkaUtils.waitUntilStatusKafkaVersionMatchesExpectedVersion(clusterName, Constants.CO_NAMESPACE, newVersion.version());
     }
 }
