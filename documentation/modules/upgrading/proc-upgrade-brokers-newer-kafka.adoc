@@ -52,7 +52,7 @@ NOTE: The value of `log.message.format.version` and `inter.broker.protocol.versi
 +
 [NOTE]
 ====
-Changing the `kafka.version` ensures that all brokers in the cluster will be upgraded to start using the new broker binaries.
+Changing the `kafka.version` ensures that all brokers in the cluster are upgraded to start using the new broker binaries.
 During this process, some brokers are using the old binaries while others have already upgraded to the new ones.
 Leaving the `inter.broker.protocol.version` unchanged at the current setting ensures that the brokers can continue to communicate with each other throughout the upgrade.
 ====
@@ -78,7 +78,7 @@ spec:
 +
 WARNING: You cannot downgrade Kafka if the `inter.broker.protocol.version` for the new Kafka version changes. The inter-broker protocol version determines the schemas used for persistent metadata stored by the broker, including messages written to `__consumer_offsets`. The downgraded cluster will not understand the messages.
 
-. If the image for the Kafka cluster is defined in the Kafka custom resource, in `Kafka.spec.kafka.image`, update the `image` to point to a container image with the new Kafka version.
+. If the image for the Kafka cluster is defined in `Kafka.spec.kafka.image` of the `Kafka` custom resource, update the `image` to point to a container image with the new Kafka version.
 +
 See xref:con-versions-and-images-str[Kafka version and image mappings]
 
@@ -100,6 +100,11 @@ If required, set the `version` property for Kafka Connect and MirrorMaker as the
 .. For Kafka Connect, update `KafkaConnect.spec.version`.
 .. For MirrorMaker, update `KafkaMirrorMaker.spec.version`.
 .. For MirrorMaker 2, update `KafkaMirrorMaker2.spec.version`.
++
+NOTE: If you are using custom images that are built manually, you must rebuild those images to ensure that they are up-to-date with the latest Strimzi base image. 
+For example, if you xref:creating-new-image-from-base-str[created a Docker image from the base Kafka Connect image], update the Dockerfile to point to the latest base image and build configuration.
+
+. Verify that the upgraded client applications work correctly with the new Kafka brokers.
 
 . If configured, update the Kafka resource to use the new `inter.broker.protocol.version` version. Otherwise, go to step 9.
 +
