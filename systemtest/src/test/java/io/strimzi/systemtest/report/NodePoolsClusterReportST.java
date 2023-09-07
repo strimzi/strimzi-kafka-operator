@@ -206,6 +206,9 @@ public class NodePoolsClusterReportST extends AbstractClusterReportST {
             .build();
         KafkaNodePool kafkaNodePoolACr = KafkaNodePoolTemplates
             .defaultKafkaNodePool(Constants.CO_NAMESPACE, NODE_POOL_A_NAME, testStorage.getClusterName(), 2)
+                .editMetadata()
+                    .addToAnnotations("strimzi.io/next-node-ids", "[0-9]")
+                .endMetadata()
                 .editOrNewSpec()
                     .addToRoles(ProcessRoles.BROKER)
                     .withStorage(kafkaMainCr.getSpec().getKafka().getStorage())
@@ -215,6 +218,9 @@ public class NodePoolsClusterReportST extends AbstractClusterReportST {
             .build();
         KafkaNodePool kafkaNodePoolBCr = KafkaNodePoolTemplates
             .defaultKafkaNodePool(Constants.CO_NAMESPACE, "pool-b", testStorage.getClusterName(), 1)
+                .editMetadata()
+                    .addToAnnotations("strimzi.io/next-node-ids", "[10-19]")
+                .endMetadata()
                 .editOrNewSpec()
                     .addToRoles(ProcessRoles.BROKER)
                     .withStorage(kafkaMainCr.getSpec().getKafka().getStorage())
@@ -222,9 +228,8 @@ public class NodePoolsClusterReportST extends AbstractClusterReportST {
                     .withResources(kafkaMainCr.getSpec().getKafka().getResources())
                 .endSpec()
             .build();
-        resourceManager.createResourceWithWait(extensionContext, kafkaNodePoolACr);
-        resourceManager.createResourceWithWait(extensionContext, kafkaNodePoolBCr, kafkaMainCr,
-            KafkaTemplates.kafkaEphemeral(testStorage.getClusterName() + "-tgt", 1).build());
+        resourceManager.createResourceWithWait(extensionContext, kafkaNodePoolACr, kafkaNodePoolBCr, kafkaMainCr,
+            KafkaTemplates.kafkaEphemeral(testStorage.getClusterName() + "-tgt", 3).build());
         resourceManager.createResourceWithWait(extensionContext,
             KafkaTopicTemplates.topic(testStorage.getClusterName(), "my-topic", 1, 1, Constants.CO_NAMESPACE).build(),
             KafkaUserTemplates.tlsUser(Constants.CO_NAMESPACE, testStorage.getClusterName(), "my-user").build(),
@@ -268,7 +273,7 @@ public class NodePoolsClusterReportST extends AbstractClusterReportST {
             KafkaResources.entityUserOperatorLoggingConfigMapName(clusterName) + ".yaml",
             kafkaNodePoolsConfigMapName(clusterName, NODE_POOL_A_NAME, 0) + ".yaml",
             kafkaNodePoolsConfigMapName(clusterName, NODE_POOL_A_NAME, 1) + ".yaml",
-            kafkaNodePoolsConfigMapName(clusterName, NODE_POOL_B_NAME, 2) + ".yaml",
+            kafkaNodePoolsConfigMapName(clusterName, NODE_POOL_B_NAME, 10) + ".yaml",
             KafkaResources.zookeeperMetricsAndLogConfigMapName(clusterName) + ".yaml",
             KafkaConnectResources.metricsAndLogConfigMapName(CONNECT_NAME) + ".yaml",
             KafkaMirrorMaker2Resources.metricsAndLogConfigMapName(MM2_NAME) + ".yaml"
@@ -332,7 +337,7 @@ public class NodePoolsClusterReportST extends AbstractClusterReportST {
         for (String s : Arrays.asList(
             kafkaNodePoolsPodName(clusterName, NODE_POOL_A_NAME, 0) + ".yaml",
             kafkaNodePoolsPodName(clusterName, NODE_POOL_A_NAME, 1) + ".yaml",
-            kafkaNodePoolsPodName(clusterName, NODE_POOL_B_NAME, 2) + ".yaml",
+            kafkaNodePoolsPodName(clusterName, NODE_POOL_B_NAME, 10) + ".yaml",
             KafkaResources.zookeeperPodName(clusterName, 0) + ".yaml",
             KafkaResources.zookeeperPodName(clusterName, 1) + ".yaml",
             KafkaResources.zookeeperPodName(clusterName, 2) + ".yaml",
@@ -426,12 +431,7 @@ public class NodePoolsClusterReportST extends AbstractClusterReportST {
     }
 
     private void assertValidKafkas(String outPath, String clusterName) throws IOException {
-        for (String s : Arrays.asList(
-            clusterName + ".yaml",
-            clusterName + "-tgt.yaml"
-        )) {
-            assertValidYamls(outPath + "/reports/kafkas", Kafka.class, s, 1);
-        }
+        assertValidYamls(outPath + "/reports/kafkas", Kafka.class, clusterName + ".yaml", 1);
     }
 
     private void assertValidKafkaTopics(String outPath) throws IOException {
@@ -447,8 +447,6 @@ public class NodePoolsClusterReportST extends AbstractClusterReportST {
         for (String s : Arrays.asList(
             kafkaNodePoolPodSetName(clusterName, NODE_POOL_A_NAME) + ".yaml",
             kafkaNodePoolPodSetName(clusterName, NODE_POOL_B_NAME) + ".yaml",
-            kafkaPodSetName(clusterName + "-tgt") + ".yaml",
-            zookeeperPodSetName(clusterName + "-tgt") + ".yaml",
             zookeeperPodSetName(clusterName) + ".yaml",
             kafkaConnectPodSetName(CONNECT_NAME) + ".yaml",
             kafkaMirrorMaker2PodSetName(MM2_NAME) + ".yaml"
@@ -461,7 +459,7 @@ public class NodePoolsClusterReportST extends AbstractClusterReportST {
         for (String s : Arrays.asList(
             kafkaNodePoolsPodName(clusterName, NODE_POOL_A_NAME, 0) + ".cfg",
             kafkaNodePoolsPodName(clusterName, NODE_POOL_A_NAME, 1) + ".cfg",
-            kafkaNodePoolsPodName(clusterName, NODE_POOL_B_NAME, 2) + ".cfg",
+            kafkaNodePoolsPodName(clusterName, NODE_POOL_B_NAME, 10) + ".cfg",
             KafkaResources.zookeeperPodName(clusterName, 0) + ".cfg",
             KafkaResources.zookeeperPodName(clusterName, 1) + ".cfg",
             KafkaResources.zookeeperPodName(clusterName, 2) + ".cfg"
@@ -478,7 +476,7 @@ public class NodePoolsClusterReportST extends AbstractClusterReportST {
         for (String s : Arrays.asList(
             kafkaNodePoolsPodName(clusterName, NODE_POOL_A_NAME, 0) + ".log",
             kafkaNodePoolsPodName(clusterName, NODE_POOL_A_NAME, 1) + ".log",
-            kafkaNodePoolsPodName(clusterName, NODE_POOL_B_NAME, 2) + ".log",
+            kafkaNodePoolsPodName(clusterName, NODE_POOL_B_NAME, 10) + ".log",
             KafkaResources.zookeeperPodName(clusterName, 0) + ".log",
             KafkaResources.zookeeperPodName(clusterName, 1) + ".log",
             KafkaResources.zookeeperPodName(clusterName, 2) + ".log",

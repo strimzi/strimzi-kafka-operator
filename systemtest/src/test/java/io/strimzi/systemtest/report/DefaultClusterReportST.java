@@ -190,7 +190,7 @@ public class DefaultClusterReportST extends AbstractClusterReportST {
         this.testStorage = new TestStorage(extensionContext, Constants.CO_NAMESPACE);
         resourceManager.createResourceWithWait(extensionContext,
             KafkaTemplates.kafkaWithCruiseControl(testStorage.getClusterName(), 3, 3).build(),
-            KafkaTemplates.kafkaEphemeral(testStorage.getClusterName() + "-tgt", 1).build()
+            KafkaTemplates.kafkaEphemeral(testStorage.getClusterName() + "-tgt", 3).build()
         );
         resourceManager.createResourceWithWait(extensionContext,
             KafkaTopicTemplates.topic(testStorage.getClusterName(), "my-topic", 1, 1, Constants.CO_NAMESPACE).build(),
@@ -387,12 +387,7 @@ public class DefaultClusterReportST extends AbstractClusterReportST {
     }
 
     private void assertValidKafkas(String outPath, String clusterName) throws IOException {
-        for (String s : Arrays.asList(
-            clusterName + ".yaml",
-            clusterName + "-tgt.yaml"
-        )) {
-            assertValidYamls(outPath + "/reports/kafkas", Kafka.class, s, 1);
-        }
+        assertValidYamls(outPath + "/reports/kafkas", Kafka.class, clusterName + ".yaml", 1);
     }
 
     private void assertValidKafkaTopics(String outPath) throws IOException {
@@ -407,8 +402,6 @@ public class DefaultClusterReportST extends AbstractClusterReportST {
     private void assertValidStrimziPodSets(String outPath, String clusterName) throws IOException {
         for (String s : Arrays.asList(
             kafkaPodSetName(clusterName) + ".yaml",
-            kafkaPodSetName(clusterName + "-tgt") + ".yaml",
-            zookeeperPodSetName(clusterName + "-tgt") + ".yaml",
             zookeeperPodSetName(clusterName) + ".yaml"
         )) {
             assertValidYamls(outPath + "/reports/strimzipodsets", StrimziPodSet.class, s, 1);
