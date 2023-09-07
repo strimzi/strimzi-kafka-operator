@@ -36,6 +36,7 @@ import io.strimzi.api.kafka.model.nodepool.ProcessRoles;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
+import io.strimzi.systemtest.annotations.NodePoolsOnly;
 import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaBridgeTemplates;
@@ -66,6 +67,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @Tag(REGRESSION)
+@NodePoolsOnly
 public class NodePoolsClusterReportST extends AbstractClusterReportST {
     private static final Logger LOGGER = LogManager.getLogger(NodePoolsClusterReportST.class);
     private static final String NODE_POOL_A_NAME = "pool-a";
