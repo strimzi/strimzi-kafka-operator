@@ -17,7 +17,7 @@ Finalizers ensure orderly and controlled deletion of `KafkaTopic` resources.
 A finalizer for the Topic Operator is added to the metadata of the `KafkaTopic` resource:
 
 .Finalizer to control topic deletion
-[source,shell,subs="+quotes"]
+[source,shell,subs="+attributes"]
 ----
 apiVersion: {KafkaTopicApiVersion}
 kind: KafkaTopic
@@ -35,7 +35,7 @@ The finalizer prevents the topic from being fully deleted until the finalization
 If you then delete the topic using `kubectl delete kafkatopic my-topic-1`, a timestamp is added to the metadata:
 
 .Finalizer timestamp on deletion
-[source,shell,subs="+quotes"]
+[source,shell,subs="+attributes"]
 ----
 apiVersion: {KafkaTopicApiVersion}
 kind: KafkaTopic
