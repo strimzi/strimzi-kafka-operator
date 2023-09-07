@@ -101,7 +101,7 @@ If required, set the `version` property for Kafka Connect and MirrorMaker as the
 .. For MirrorMaker, update `KafkaMirrorMaker.spec.version`.
 .. For MirrorMaker 2, update `KafkaMirrorMaker2.spec.version`.
 +
-NOTE: If you are using custom images that are built manually, you must rebuild those images to include the new version of the client binaries. 
+NOTE: If you are using custom images that are built manually, you must rebuild those images to ensure that they are up-to-date with the latest Strimzi base image. 
 For example, if you xref:creating-new-image-from-base-str[created a Docker image from the base Kafka Connect image], update the Dockerfile to point to the latest base image and build configuration.
 
 . Verify that the upgraded client applications work correctly with the new Kafka brokers.
