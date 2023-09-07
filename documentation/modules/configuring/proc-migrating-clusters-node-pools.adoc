@@ -68,9 +68,8 @@ env:
     value: +KafkaNodePools
 ----
 +
-After restarting, the Cluster Operator will log the following warning message:
-"KafkaNodePool kafka in namespace _<namespace>_ was ADDED, but the Kafka cluster my-cluster to which it belongs does not have KafkaNodePool support enabled".
-It means that, while the node pool for the Kafka brokers was created, it is not handled by the Cluster Operator yet.
+After restarting, the Cluster Operator logs a warning indicating that the Kafka node pool has been added but is not yet integrated with the Cluster Operator.
+This is an expected part of the process.
 
 . Enable the `KafkaNodePools` feature gate in the `Kafka` resource using the `strimzi.io/node-pools: enabled` annotation.
 +
