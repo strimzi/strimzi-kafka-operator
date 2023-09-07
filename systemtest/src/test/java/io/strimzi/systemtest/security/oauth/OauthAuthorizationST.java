@@ -631,8 +631,11 @@ public class OauthAuthorizationST extends OauthAbstractST {
             .endSpec()
             .build());
 
-        resourceManager.createResourceWithWait(extensionContext, KafkaUserTemplates.tlsUser(testStorage.getNamespaceName(), testStorage.getClusterName(), TEAM_A_CLIENT).build());
-        resourceManager.createResourceWithWait(extensionContext, KafkaUserTemplates.tlsUser(testStorage.getNamespaceName(), testStorage.getClusterName(), TEAM_B_CLIENT).build());
+        // we do not need to create a KafkaUsers when RBAC=NAMESPACE (they are already created)
+        if (!Environment.isNamespaceRbacScope()) {
+            resourceManager.createResourceWithWait(extensionContext, KafkaUserTemplates.tlsUser(testStorage.getNamespaceName(), testStorage.getClusterName(), TEAM_A_CLIENT).build());
+            resourceManager.createResourceWithWait(extensionContext, KafkaUserTemplates.tlsUser(testStorage.getNamespaceName(), testStorage.getClusterName(), TEAM_B_CLIENT).build());
+        }
 
         final String teamAProducerName = TEAM_A_PRODUCER_NAME + "-" + testStorage.getClusterName();
         final String teamAConsumerName = TEAM_A_CONSUMER_NAME + "-" + testStorage.getClusterName();
