@@ -216,37 +216,45 @@ public class KafkaRoller {
         this.podNeedsRestart = podNeedsRestart;
         Promise<Void> result = Promise.promise();
         singleExecutor.submit(() -> {
-            LOGGER.debugCr(reconciliation, "Verifying cluster pods are up-to-date.");
-            List<NodeRef> pods = new ArrayList<>(nodes.size());
+            try {
+                LOGGER.debugCr(reconciliation, "Verifying cluster pods are up-to-date.");
+                List<NodeRef> pods = new ArrayList<>(nodes.size());
 
-            for (NodeRef node : nodes)  {
-                // Order the nodes unready first otherwise repeated reconciliations might each restart a pod
-                // only for it not to become ready and thus drive the cluster to a worse state.
+                for (NodeRef node : nodes) {
+                    // Order the nodes unready first otherwise repeated reconciliations might each restart a pod
+                    // only for it not to become ready and thus drive the cluster to a worse state.
 
-                // TODO: In KRaft mode, We currently roll only nodes with the broker role. This is because of Kafka
-                //       limitations. Once managing controller nodes is supported with Kafka Admin API, this should be
-                //       fixed. This is tracked in https://github.com/strimzi/strimzi-kafka-operator/issues/8593.
-                if (node.broker()) {
-                    pods.add(podOperations.isReady(namespace, node.podName()) ? pods.size() : 0, node);
-                }
-            }
-            LOGGER.debugCr(reconciliation, "Initial order for updating pods (rolling restart or dynamic update) is {}", pods);
-
-            List<Future<Void>> futures = new ArrayList<>(nodes.size());
-            for (NodeRef node : pods) {
-                futures.add(schedule(node, 0, TimeUnit.MILLISECONDS));
-            }
-            Future.join(futures).onComplete(ar -> {
-                singleExecutor.shutdown();
-                try {
-                    if (allClient != null) {
-                        allClient.close(Duration.ofSeconds(30));
+                    // TODO: In KRaft mode, We currently roll only nodes with the broker role. This is because of Kafka
+                    //       limitations. Once managing controller nodes is supported with Kafka Admin API, this should be
+                    //       fixed. This is tracked in https://github.com/strimzi/strimzi-kafka-operator/issues/8593.
+                    if (node.broker()) {
+                        pods.add(podOperations.isReady(namespace, node.podName()) ? pods.size() : 0, node);
                     }
-                } catch (RuntimeException e) {
-                    LOGGER.debugCr(reconciliation, "Exception closing admin client", e);
                 }
-                vertx.runOnContext(ignored -> result.handle(ar.map((Void) null)));
-            });
+                LOGGER.debugCr(reconciliation, "Initial order for updating pods (rolling restart or dynamic update) is {}", pods);
+
+                List<Future<Void>> futures = new ArrayList<>(nodes.size());
+                for (NodeRef node : pods) {
+                    futures.add(schedule(node, 0, TimeUnit.MILLISECONDS));
+                }
+                Future.join(futures).onComplete(ar -> {
+                    singleExecutor.shutdown();
+                    try {
+                        if (allClient != null) {
+                            allClient.close(Duration.ofSeconds(30));
+                        }
+                    } catch (RuntimeException e) {
+                        LOGGER.debugCr(reconciliation, "Exception closing admin client", e);
+                    }
+                    vertx.runOnContext(ignored -> result.handle(ar.map((Void) null)));
+                });
+            } catch (Exception e)   {
+                // If anything happens, we have to raise the error otherwise the reconciliation would get stuck
+                // Its logged at upper level, so we just log it at debug here
+                LOGGER.debugCr(reconciliation, "Something went wrong when trying to do a rolling restart", e);
+                singleExecutor.shutdown();
+                result.fail(e);
+            }
         });
         return result.future();
     }
