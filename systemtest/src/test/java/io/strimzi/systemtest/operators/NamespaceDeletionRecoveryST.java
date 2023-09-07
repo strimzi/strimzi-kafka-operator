@@ -44,7 +44,6 @@ import java.util.List;
 
 import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.RECOVERY;
-import static io.strimzi.systemtest.Constants.CO_NAMESPACE;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 /**
@@ -78,10 +77,10 @@ class NamespaceDeletionRecoveryST extends AbstractST {
         // Get list of topics and list of PVC needed for recovery
         List<KafkaTopic> kafkaTopicList = KafkaTopicResource.kafkaTopicClient().inNamespace(testStorage.getNamespaceName()).list().getItems();
         List<PersistentVolumeClaim> persistentVolumeClaimList = kubeClient().getClient().persistentVolumeClaims().list().getItems();
-        deleteAndRecreateNamespace();
+        deleteAndRecreateNamespace(testStorage.getNamespaceName());
 
-        recreatePvcAndUpdatePv(persistentVolumeClaimList);
-        recreateClusterOperator(extensionContext);
+        recreatePvcAndUpdatePv(persistentVolumeClaimList, testStorage.getNamespaceName());
+        recreateClusterOperator(extensionContext, testStorage.getNamespaceName());
 
         // Recreate all KafkaTopic resources
         for (KafkaTopic kafkaTopic : kafkaTopicList) {
@@ -150,13 +149,13 @@ class NamespaceDeletionRecoveryST extends AbstractST {
         }
 
         LOGGER.info("Deleting namespace and recreating for recovery");
-        deleteAndRecreateNamespace();
+        deleteAndRecreateNamespace(testStorage.getNamespaceName());
 
         LOGGER.info("Recreating PVCs and updating PVs for recovery");
-        recreatePvcAndUpdatePv(persistentVolumeClaimList);
+        recreatePvcAndUpdatePv(persistentVolumeClaimList, testStorage.getNamespaceName());
 
         LOGGER.info("Recreating Cluster Operator");
-        recreateClusterOperator(extensionContext);
+        recreateClusterOperator(extensionContext, testStorage.getNamespaceName());
 
         LOGGER.info("Recreating Kafka cluster without Topic Operator");
         resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), 3, 3)
@@ -261,10 +260,10 @@ class NamespaceDeletionRecoveryST extends AbstractST {
         ClientUtils.waitForClientsSuccess(testStorage);
     }
 
-    private void recreatePvcAndUpdatePv(List<PersistentVolumeClaim> persistentVolumeClaimList) {
+    private void recreatePvcAndUpdatePv(List<PersistentVolumeClaim> persistentVolumeClaimList, String namespace) {
         for (PersistentVolumeClaim pvc : persistentVolumeClaimList) {
             pvc.getMetadata().setResourceVersion(null);
-            kubeClient().createPersistentVolumeClaim(Constants.TEST_SUITE_NAMESPACE, pvc);
+            kubeClient().createPersistentVolumeClaim(namespace, pvc);
 
             PersistentVolume pv = kubeClient().getPersistentVolumeWithName(pvc.getSpec().getVolumeName());
             pv.getSpec().setClaimRef(null);
@@ -274,22 +273,22 @@ class NamespaceDeletionRecoveryST extends AbstractST {
         }
     }
 
-    private void recreateClusterOperator(ExtensionContext extensionContext) {
+    private void recreateClusterOperator(ExtensionContext extensionContext, String namespace) {
         clusterOperator = new SetupClusterOperator.SetupClusterOperatorBuilder()
             .withExtensionContext(extensionContext)
-            .withNamespace(CO_NAMESPACE)
+            .withNamespace(namespace)
             .createInstallation()
             .runInstallation();
     }
 
-    private void deleteAndRecreateNamespace() {
+    private void deleteAndRecreateNamespace(String namespace) {
         // Delete namespace with all resources
-        kubeClient().deleteNamespace(Constants.TEST_SUITE_NAMESPACE);
-        NamespaceUtils.waitForNamespaceDeletion(Constants.TEST_SUITE_NAMESPACE);
+        kubeClient().deleteNamespace(namespace);
+        NamespaceUtils.waitForNamespaceDeletion(namespace);
 
         // Recreate namespace
-        cluster.createNamespace(Constants.TEST_SUITE_NAMESPACE);
-        StUtils.copyImagePullSecrets(Constants.TEST_SUITE_NAMESPACE);
+        cluster.createNamespace(namespace);
+        StUtils.copyImagePullSecrets(namespace);
     }
 
     @BeforeAll
