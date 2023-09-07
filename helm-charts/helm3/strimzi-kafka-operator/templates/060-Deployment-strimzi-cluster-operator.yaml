@@ -141,7 +141,11 @@ spec:
 {{ toYaml .Values.extraEnvs | indent 12 }}
             {{- end }}
             - name: STRIMZI_LEADER_ELECTION_ENABLED
+              {{- if .Values.leaderElection.enable }}
               value: "true"
+              {{- else }}
+              value: "false"
+              {{- end }}
             - name: STRIMZI_LEADER_ELECTION_LEASE_NAME
               value: "strimzi-cluster-operator"
             - name: STRIMZI_LEADER_ELECTION_LEASE_NAMESPACE
