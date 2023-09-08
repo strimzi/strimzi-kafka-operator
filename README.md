@@ -68,6 +68,25 @@ If you want to get in touch with us first before contributing, you can use:
 ## License
 Strimzi is licensed under the [Apache License](./LICENSE), Version 2.0
 
+## Container signatures
+
+From the 0.38.0 release, Strimzi containers are signed using the [`cosign` tool](https://github.com/sigstore/cosign).
+Strimzi currently does not use the keyless signing and the transparency log.
+To verify the container, you can copy the following public key into a file:
+
+```
+-----BEGIN PUBLIC KEY-----
+MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAET3OleLR7h0JqatY2KkECXhA9ZAkC
+TRnbE23Wb5AzJPnpevvQ1QUEQQ5h/I4GobB7/jkGfqYkt6Ct5WOU2cc6HQ==
+-----END PUBLIC KEY-----
+```
+
+And use it to verify the signature:
+
+```
+cosign verify --key strimzi.pub quay.io/strimzi/operator:latest --insecure-ignore-tlog=true
+```
+
 ---
 
 Strimzi is a <a href="http://cncf.io">Cloud Native Computing Foundation</a> sandbox project.

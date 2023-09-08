@@ -29,6 +29,9 @@ docker_amend_manifest:
 docker_push_manifest:
 	./build.sh docker_push_manifest
 
+docker_sign_manifest:
+	./build.sh docker_sign_manifest
+
 docker_delete_manifest:
 	./build.sh docker_delete_manifest
 

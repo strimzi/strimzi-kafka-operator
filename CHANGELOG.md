@@ -2,6 +2,8 @@
 
 ## 0.38.0
 
+* Sign containers using `cosign`
+
 ### Changes, deprecations and removals
 
 * The `Kafka.KafkaStatus.ListenerStatus.type` property has been deprecated for a long time, and now we do not use it anymore.

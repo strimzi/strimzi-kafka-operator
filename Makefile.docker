@@ -14,6 +14,8 @@ DOCKER_REGISTRY    ?= docker.io
 DOCKER_ORG         ?= $(USER)
 DOCKER_TAG         ?= latest
 BUILD_TAG          ?= latest
+BUILD_ID           ?= n/a
+BUILD_COMMIT       ?= n/a
 RELEASE_VERSION    ?= $(shell cat $(TOPDIR)/release.version)
 
 ifdef DOCKER_ARCHITECTURE
@@ -65,6 +67,14 @@ docker_amend_manifest_default:
 docker_push_manifest_default:
 	# Push the manifest to the registry
 	docker manifest push $(DOCKER_REGISTRY)/$(DOCKER_ORG)/$(PROJECT_NAME):$(DOCKER_TAG)
+
+.PHONY: docker_sign_manifest_default
+docker_sign_manifest_default:
+	# Signs the manifest and its images
+	@echo $$COSIGN_PRIVATE_KEY | base64 -d > cosign.key
+	MANIFEST_DIGEST=$(shell docker buildx imagetools inspect $(DOCKER_REGISTRY)/$(DOCKER_ORG)/$(PROJECT_NAME):$(DOCKER_TAG) --format '{{ json . }}' | jq -r .manifest.digest); \
+	cosign sign --recursive --tlog-upload=false -a author=StrimziCI -a BuildID=$(BUILD_ID) -a Commit=$(BUILD_COMMIT) --key cosign.key $(DOCKER_REGISTRY)/$(DOCKER_ORG)/$(PROJECT_NAME)@$$MANIFEST_DIGEST
+	@rm cosign.key
 
 .PHONY: docker_delete_manifest_default
 docker_delete_manifest_default:
