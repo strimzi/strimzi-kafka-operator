@@ -52,6 +52,7 @@ Wait for the rolling updates to complete.
 kubectl get pod my-cluster-kafka-0 -o jsonpath='{.spec.containers[0].image}'
 ----
 +
-The image tag shows the new Strimzi version followed by the Kafka version. For example, `_NEW-STRIMZI-VERSION_-kafka-_CURRENT-KAFKA-VERSION_`.
-
-Your Cluster Operator was downgraded to the previous version.
+The image tag shows the new Strimzi version followed by the Kafka version. 
+For example, `<strimzi_version>-kafka-<kafka_version>`.
++
+You can also xref:con-upgrade-status-{context}[check the downgrade has completed successfully from the status of the `Kafka` resource].

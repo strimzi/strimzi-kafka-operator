@@ -1,0 +1,31 @@
+// This assembly is included in the following assemblies:
+//
+// assembly-upgrade.adoc
+
+[id='con-upgrade-status-{context}']
+= Checking the status of an upgrade
+
+[role="_abstract"]
+When performing an upgrade, you can check it completed successfully in the status of the `Kafka` custom resource.
+The status provides information on the Strimzi and Kafka versions being used.
+
+To ensure that you have the correct versions after completing an upgrade, verify the `kafkaVersion` and `operatorLastSuccessfulVersion` values in the Kafka status.  
+
+* `operatorLastSuccessfulVersion` is the version of the Strimzi operator that last performed a successful reconciliation.
+* `kafkaVersion` is the the version of Kafka being used by the Kafka cluster.
+
+You can use these values to check an upgrade of Strimzi or Kafka has completed.
+
+.Checking an upgrade from the Kafka status
+[source,shell,subs="+attributes"]
+----
+apiVersion: {KafkaApiVersion}
+kind: Kafka
+metadata:
+spec:
+  # ...
+status:
+  # ...
+  kafkaVersion: {DefaultKafkaVersion} 
+  operatorLastSuccessfulVersion: {ProductVersion}
+----

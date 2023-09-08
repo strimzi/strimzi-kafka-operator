@@ -87,7 +87,7 @@ my-cluster-kafka-external3-bootstrap  a8d4a6fb363bf447fb6e475fc3040176-36312313.
 The bootstrap address used for client connection is propagated to the `status` of the `Kafka` resource.
 +
 .Example status for the bootstrap address
-[source,yaml]
+[source,yaml,subs="+attributes"]
 ----
 status:
   clusterId: Y_RJQDGKRXmNF7fEcWldJQ
@@ -95,6 +95,7 @@ status:
     - lastTransitionTime: '2023-01-31T14:59:37.113630Z'
       status: 'True'
       type: Ready
+  kafkaVersion: {DefaultKafkaVersion}    
   listeners:
     # ...
     - addresses:
@@ -110,6 +111,7 @@ status:
           -----END CERTIFICATE-----
       name: external3
   observedGeneration: 2
+  operatorLastSuccessfulVersion: {ProductVersion}
  # ...
 ----
 +

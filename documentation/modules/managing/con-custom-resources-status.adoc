@@ -63,10 +63,13 @@ The `status.conditions` and `status.observedGeneration` properties are common to
 
 `status.conditions`:: Status conditions describe the _current state_ of a resource. Status condition properties are useful for tracking progress related to the resource achieving its _desired state_, as defined by the configuration specified in its `spec`. Status condition properties provide the time and reason the state of the resource changed, and details of events preventing or delaying the operator from realizing the desired state.
 
-`status.observedGeneration`:: Last observed generation denotes the latest reconciliation of the resource by the Cluster Operator. If the value of `observedGeneration` is different from the value of `metadata.generation` ((the current version of the deployment), the operator has not yet processed the latest update to the resource. If these values are the same, the status information reflects the most recent changes to the resource.
+`status.observedGeneration`:: Last observed generation denotes the latest reconciliation of the resource by the Cluster Operator. If the value of `observedGeneration` is different from the value of `metadata.generation` (the current version of the deployment), the operator has not yet processed the latest update to the resource. If these values are the same, the status information reflects the most recent changes to the resource.
 
 The `status` properties also provide resource-specific information.
 For example, `KafkaStatus` provides information on listener addresses, and the ID of the Kafka cluster.
+
+`KafkaStatus` also provides information on the Kafka and Strimzi versions being used.
+You can check the values of `operatorLastSuccessfulVersion` and `kafkaVersion` to determine whether an upgrade of Strimzi or Kafka has completed  
 
 Strimzi creates and maintains the status of custom resources, periodically evaluating the current state of the custom resource and updating its status accordingly.
 When performing an update on a custom resource using `kubectl edit`, for example, its `status` is not editable. Moreover, changing the `status` would not affect the configuration of the Kafka cluster.
@@ -87,7 +90,8 @@ status:
     - lastTransitionTime: '2023-01-20T17:56:29.396588Z'
       status: 'True'
       type: Ready # <3>
-  listeners: # <4>
+  kafkaVersion: {DefaultKafkaVersion} # <4>
+  listeners: # <5>
     - addresses:
         - host: my-cluster-kafka-bootstrap.prm-project.svc
           port: 9092
@@ -125,13 +129,16 @@ status:
           
           -----END CERTIFICATE-----
       name: external4
-  observedGeneration: 3 # <5>
+  observedGeneration: 3 # <6>
+  operatorLastSuccessfulVersion: {ProductVersion} # <7>
 ----
 <1> The Kafka cluster ID.
 <2> Status `conditions` describe the current state of the Kafka cluster.
 <3> The `Ready` condition indicates that the Cluster Operator considers the Kafka cluster able to handle traffic.
-<4> The `listeners` describe Kafka bootstrap addresses by type.
-<5> The `observedGeneration` value indicates the last reconciliation of the `Kafka` custom resource by the Cluster Operator.
+<4> The version of Kafka being used by the Kafka cluster.
+<5> The `listeners` describe Kafka bootstrap addresses by type.
+<6> The `observedGeneration` value indicates the last reconciliation of the `Kafka` custom resource by the Cluster Operator.
+<7> The version of the operator that successfully completed the last reconciliation. 
 
 NOTE: The Kafka bootstrap addresses listed in the status do not signify that those endpoints or the Kafka cluster is in a `Ready` state.
 
