@@ -159,6 +159,9 @@ class NamespaceDeletionRecoveryST extends AbstractST {
 
         LOGGER.info("Recreating Kafka cluster without Topic Operator");
         resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), 3, 3)
+            .editMetadata()
+                .withNamespace(testStorage.getNamespaceName())
+            .endMetadata()
             .editSpec()
                 .withNewEntityOperator()
                 .endEntityOperator()
