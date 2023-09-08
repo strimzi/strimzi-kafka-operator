@@ -62,7 +62,7 @@ oc get kafkatopics my-topic-1 -o yaml
 ----
 +
 .Example topic with a `Ready` status
-[source,shell,subs="+quotes"]
+[source,shell,subs="+attributes"]
 ----
 apiVersion: {KafkaTopicApiVersion}
 kind: KafkaTopic
