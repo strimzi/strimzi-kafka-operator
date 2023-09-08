@@ -242,7 +242,7 @@ public class NetworkPoliciesST extends AbstractST {
 
         final TestStorage testStorage = storageMap.get(extensionContext);
         String clusterName = testStorage.getClusterName();
-        String secondNamespace = "second-" + Constants.TEST_SUITE_NAMESPACE;
+        String secondNamespace = "second-" + Environment.TEST_SUITE_NAMESPACE;
 
         Map<String, String> labels = new HashMap<>();
         labels.put("my-label", "my-value");
@@ -254,15 +254,15 @@ public class NetworkPoliciesST extends AbstractST {
 
         clusterOperator = new SetupClusterOperator.SetupClusterOperatorBuilder()
             .withExtensionContext(extensionContext)
-            .withNamespace(Constants.TEST_SUITE_NAMESPACE)
+            .withNamespace(Environment.TEST_SUITE_NAMESPACE)
             .withWatchingNamespaces(Constants.WATCH_ALL_NAMESPACES)
-            .withBindingsNamespaces(Arrays.asList(Constants.TEST_SUITE_NAMESPACE, secondNamespace))
+            .withBindingsNamespaces(Arrays.asList(Environment.TEST_SUITE_NAMESPACE, secondNamespace))
             .withExtraEnvVars(Collections.singletonList(operatorLabelsEnv))
             .createInstallation()
             .runInstallation();
 
-        Namespace actualNamespace = kubeClient().getClient().namespaces().withName(Constants.TEST_SUITE_NAMESPACE).get();
-        kubeClient().getClient().namespaces().withName(Constants.TEST_SUITE_NAMESPACE).edit(ns -> new NamespaceBuilder(actualNamespace)
+        Namespace actualNamespace = kubeClient().getClient().namespaces().withName(Environment.TEST_SUITE_NAMESPACE).get();
+        kubeClient().getClient().namespaces().withName(Environment.TEST_SUITE_NAMESPACE).edit(ns -> new NamespaceBuilder(actualNamespace)
             .editOrNewMetadata()
                 .addToLabels(labels)
             .endMetadata()
@@ -296,7 +296,7 @@ public class NetworkPoliciesST extends AbstractST {
 
         clusterOperator = new SetupClusterOperator.SetupClusterOperatorBuilder()
             .withExtensionContext(extensionContext)
-            .withNamespace(Constants.TEST_SUITE_NAMESPACE)
+            .withNamespace(Environment.TEST_SUITE_NAMESPACE)
             .withExtraEnvVars(Collections.singletonList(networkPolicyGenerationEnv))
             .createInstallation()
             .runInstallation();
@@ -304,7 +304,7 @@ public class NetworkPoliciesST extends AbstractST {
         resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaWithCruiseControl(clusterName, 3, 3)
             .build());
 
-        resourceManager.createResourceWithWait(extensionContext, KafkaConnectTemplates.kafkaConnect(clusterName, Constants.TEST_SUITE_NAMESPACE, 1)
+        resourceManager.createResourceWithWait(extensionContext, KafkaConnectTemplates.kafkaConnect(clusterName, Environment.TEST_SUITE_NAMESPACE, 1)
                 .build());
 
         List<NetworkPolicy> networkPolicyList = kubeClient().getClient().network().networkPolicies().list().getItems().stream()

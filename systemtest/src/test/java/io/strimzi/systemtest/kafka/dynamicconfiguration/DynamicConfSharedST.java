@@ -8,7 +8,6 @@ import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.kafka.config.model.ConfigModel;
 import io.strimzi.kafka.config.model.Type;
 import io.strimzi.systemtest.AbstractST;
-import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.specific.ScraperTemplates;
@@ -64,11 +63,11 @@ public class DynamicConfSharedST extends AbstractST {
 
             dynamicTests.add(DynamicTest.dynamicTest("Test " + key + "->" + value, () -> {
                 // exercise phase
-                KafkaUtils.updateConfigurationWithStabilityWait(Constants.TEST_SUITE_NAMESPACE, dynamicConfigurationSharedClusterName, key, value);
+                KafkaUtils.updateConfigurationWithStabilityWait(Environment.TEST_SUITE_NAMESPACE, dynamicConfigurationSharedClusterName, key, value);
 
                 // verify phase
-                assertThat(KafkaUtils.verifyCrDynamicConfiguration(Constants.TEST_SUITE_NAMESPACE, dynamicConfigurationSharedClusterName, key, value), is(true));
-                assertThat(KafkaUtils.verifyPodDynamicConfiguration(Constants.TEST_SUITE_NAMESPACE, scraperPodName,
+                assertThat(KafkaUtils.verifyCrDynamicConfiguration(Environment.TEST_SUITE_NAMESPACE, dynamicConfigurationSharedClusterName, key, value), is(true));
+                assertThat(KafkaUtils.verifyPodDynamicConfiguration(Environment.TEST_SUITE_NAMESPACE, scraperPodName,
                     KafkaResources.plainBootstrapAddress(dynamicConfigurationSharedClusterName), KafkaResources.kafkaStatefulSetName(dynamicConfigurationSharedClusterName), key, value), is(true));
             }));
         }
@@ -228,12 +227,12 @@ public class DynamicConfSharedST extends AbstractST {
         LOGGER.info("Deploying shared Kafka across all test cases!");
         resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaPersistent(dynamicConfigurationSharedClusterName, 3)
             .editMetadata()
-                .withNamespace(Constants.TEST_SUITE_NAMESPACE)
+                .withNamespace(Environment.TEST_SUITE_NAMESPACE)
             .endMetadata()
             .build(),
-            ScraperTemplates.scraperPod(Constants.TEST_SUITE_NAMESPACE, sharedScraperName).build()
+            ScraperTemplates.scraperPod(Environment.TEST_SUITE_NAMESPACE, sharedScraperName).build()
         );
 
-        scraperPodName = kubeClient().listPodsByPrefixInName(Constants.TEST_SUITE_NAMESPACE, sharedScraperName).get(0).getMetadata().getName();
+        scraperPodName = kubeClient().listPodsByPrefixInName(Environment.TEST_SUITE_NAMESPACE, sharedScraperName).get(0).getMetadata().getName();
     }
 }

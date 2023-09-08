@@ -100,7 +100,7 @@ public class FeatureGatesST extends AbstractST {
 
         this.clusterOperator = this.clusterOperator.defaultInstallation(extensionContext)
             .withNamespace(Constants.CO_NAMESPACE)
-            .withBindingsNamespaces(Arrays.asList(Constants.CO_NAMESPACE, Constants.TEST_SUITE_NAMESPACE))
+            .withBindingsNamespaces(Arrays.asList(Constants.CO_NAMESPACE, Environment.TEST_SUITE_NAMESPACE))
             .withExtraEnvVars(testEnvVars)
             .createInstallation()
             .runInstallation();

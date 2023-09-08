@@ -10,6 +10,7 @@ import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBui
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.KRaftWithoutUTONotSupported;
 import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.annotations.UTONotSupported;
@@ -56,7 +57,7 @@ public class ThrottlingQuotaST extends AbstractST {
     @KRaftWithoutUTONotSupported
     @UTONotSupported("https://github.com/strimzi/strimzi-kafka-operator/issues/8864")
     void testThrottlingQuotasDuringAllTopicOperations(ExtensionContext extensionContext) {
-        final TestStorage testStorage = new TestStorage(extensionContext, Constants.TEST_SUITE_NAMESPACE);
+        final TestStorage testStorage = new TestStorage(extensionContext, Environment.TEST_SUITE_NAMESPACE);
 
         final String createAdminName = "create-" + testStorage.getAdminName();
         final String alterAdminName = "alter-" + testStorage.getAdminName();
@@ -189,7 +190,7 @@ public class ThrottlingQuotaST extends AbstractST {
             .createInstallation()
             .runInstallation();
 
-        sharedTestStorage = new TestStorage(extensionContext, Constants.TEST_SUITE_NAMESPACE);
+        sharedTestStorage = new TestStorage(extensionContext, Environment.TEST_SUITE_NAMESPACE);
 
         // Deploy kafka with ScramSHA512
         LOGGER.info("Deploying shared Kafka across all test cases in {} Namespace", sharedTestStorage.getNamespaceName());

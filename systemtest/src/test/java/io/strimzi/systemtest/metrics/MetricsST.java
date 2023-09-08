@@ -703,7 +703,7 @@ public class MetricsST extends AbstractST {
     void setupEnvironment(ExtensionContext extensionContext) throws Exception {
         // Metrics tests are not designed to run with namespace RBAC scope.
         assumeFalse(Environment.isNamespaceRbacScope());
-        cluster.createNamespaces(CollectorElement.createCollectorElement(this.getClass().getName()), Constants.TEST_SUITE_NAMESPACE, Arrays.asList(namespaceFirst, namespaceSecond));
+        cluster.createNamespaces(CollectorElement.createCollectorElement(this.getClass().getName()), Environment.TEST_SUITE_NAMESPACE, Arrays.asList(namespaceFirst, namespaceSecond));
         // Copy pull secret into newly created namespaces
         StUtils.copyImagePullSecrets(namespaceFirst);
         StUtils.copyImagePullSecrets(namespaceSecond);
@@ -713,7 +713,7 @@ public class MetricsST extends AbstractST {
             .runInstallation();
 
         final String coScraperName = Constants.CO_NAMESPACE + "-" + Constants.SCRAPER_NAME;
-        final String testSuiteScraperName = Constants.TEST_SUITE_NAMESPACE + "-" + Constants.SCRAPER_NAME;
+        final String testSuiteScraperName = Environment.TEST_SUITE_NAMESPACE + "-" + Constants.SCRAPER_NAME;
         final String scraperName = namespaceFirst + "-" + Constants.SCRAPER_NAME;
         final String secondScraperName = namespaceSecond + "-" + Constants.SCRAPER_NAME;
 
@@ -736,7 +736,7 @@ public class MetricsST extends AbstractST {
                 .build(),
             KafkaTemplates.kafkaWithMetrics(kafkaClusterSecondName, namespaceSecond, 1, 1).build(),
             ScraperTemplates.scraperPod(Constants.CO_NAMESPACE, coScraperName).build(),
-            ScraperTemplates.scraperPod(Constants.TEST_SUITE_NAMESPACE, testSuiteScraperName).build(),
+            ScraperTemplates.scraperPod(Environment.TEST_SUITE_NAMESPACE, testSuiteScraperName).build(),
             ScraperTemplates.scraperPod(namespaceFirst, scraperName).build(),
             ScraperTemplates.scraperPod(namespaceSecond, secondScraperName).build()
         );
@@ -751,7 +751,7 @@ public class MetricsST extends AbstractST {
         resourceManager.createResourceWithWait(extensionContext, KafkaUserTemplates.tlsUser(namespaceFirst, kafkaClusterFirstName, KafkaUserUtils.generateRandomNameOfKafkaUser()).build());
 
         coScraperPodName = ResourceManager.kubeClient().listPodsByPrefixInName(Constants.CO_NAMESPACE, coScraperName).get(0).getMetadata().getName();
-        testSuiteScraperPodName = ResourceManager.kubeClient().listPodsByPrefixInName(Constants.TEST_SUITE_NAMESPACE, testSuiteScraperName).get(0).getMetadata().getName();
+        testSuiteScraperPodName = ResourceManager.kubeClient().listPodsByPrefixInName(Environment.TEST_SUITE_NAMESPACE, testSuiteScraperName).get(0).getMetadata().getName();
         scraperPodName = ResourceManager.kubeClient().listPodsByPrefixInName(namespaceFirst, scraperName).get(0).getMetadata().getName();
         secondNamespaceScraperPodName = ResourceManager.kubeClient().listPodsByPrefixInName(namespaceSecond, secondScraperName).get(0).getMetadata().getName();
 

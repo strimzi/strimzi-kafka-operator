@@ -52,7 +52,7 @@ public class JmxST extends AbstractST {
         final TestStorage testStorage = storageMap.get(extensionContext);
         final String clusterName = testStorage.getClusterName();
         final String scraperName = testStorage.getScraperName();
-        final String namespaceName = StUtils.getNamespaceBasedOnRbac(Constants.TEST_SUITE_NAMESPACE, extensionContext);
+        final String namespaceName = StUtils.getNamespaceBasedOnRbac(Environment.TEST_SUITE_NAMESPACE, extensionContext);
         final String zkSecretName = clusterName + "-zookeeper-jmx";
         final String connectJmxSecretName = clusterName + "-kafka-connect-jmx";
         final String kafkaJmxSecretName = clusterName + "-kafka-jmx";

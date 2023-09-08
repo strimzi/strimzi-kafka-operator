@@ -390,14 +390,14 @@ public class SetupClusterOperator {
                     new ResourceItem<>(this::deleteClusterOperatorNamespace));
 
 
-                // when RBAC=NAMESPACE, we need to add a binding namespace Constants.TEST_SUITE_NAMESPACE, because now,
+                // when RBAC=NAMESPACE, we need to add a binding namespace Environment.TEST_SUITE_NAMESPACE, because now,
                 // we always has two namespaces (i.e., co-namespace and test-suite-namespace)
                 if (Environment.isNamespaceRbacScope() || this.clusterOperatorRBACType.equals(ClusterOperatorRBACType.NAMESPACE)) {
-                    if (!this.bindingsNamespaces.contains(Constants.TEST_SUITE_NAMESPACE)) {
-                        this.bindingsNamespaces.add(Constants.TEST_SUITE_NAMESPACE);
+                    if (!this.bindingsNamespaces.contains(Environment.TEST_SUITE_NAMESPACE)) {
+                        this.bindingsNamespaces.add(Environment.TEST_SUITE_NAMESPACE);
                     }
-                    if (!this.namespaceToWatch.contains(Constants.TEST_SUITE_NAMESPACE)) {
-                        this.namespaceToWatch += "," + Constants.TEST_SUITE_NAMESPACE;
+                    if (!this.namespaceToWatch.contains(Environment.TEST_SUITE_NAMESPACE)) {
+                        this.namespaceToWatch += "," + Environment.TEST_SUITE_NAMESPACE;
                     }
                 }
 

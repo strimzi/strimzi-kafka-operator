@@ -500,7 +500,7 @@ class ConnectBuilderST extends AbstractST {
 
         resourceManager.createResourceWithWait(extensionContext, KafkaConnectorTemplates.kafkaConnector(connectorName, testStorage.getClusterName())
             .editMetadata()
-                .withNamespace(Constants.TEST_SUITE_NAMESPACE)
+                .withNamespace(Environment.TEST_SUITE_NAMESPACE)
             .endMetadata()
             .editOrNewSpec()
                 .withClassName(CAMEL_CONNECTOR_TIMER_CLASS_NAME)
@@ -511,7 +511,7 @@ class ConnectBuilderST extends AbstractST {
         KafkaClients kafkaClient = new KafkaClientsBuilder()
             .withConsumerName(testStorage.getConsumerName())
             .withBootstrapAddress(KafkaResources.plainBootstrapAddress(SHARED_KAFKA_CLUSTER))
-            .withNamespaceName(Constants.TEST_SUITE_NAMESPACE)
+            .withNamespaceName(Environment.TEST_SUITE_NAMESPACE)
             .withTopicName(testStorage.getTopicName())
             .withMessageCount(testStorage.getMessageCount())
             .withDelayMs(0)
@@ -528,7 +528,7 @@ class ConnectBuilderST extends AbstractST {
 
     private String getImageNameForTestCase() {
         int randomNum = new Random().nextInt(Integer.MAX_VALUE);
-        return Environment.getImageOutputRegistry(Constants.TEST_SUITE_NAMESPACE, Constants.ST_CONNECT_BUILD_IMAGE_NAME, String.valueOf(randomNum));
+        return Environment.getImageOutputRegistry(Environment.TEST_SUITE_NAMESPACE, Constants.ST_CONNECT_BUILD_IMAGE_NAME, String.valueOf(randomNum));
 
     }
 
@@ -541,7 +541,7 @@ class ConnectBuilderST extends AbstractST {
 
         resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(SHARED_KAFKA_CLUSTER, 3)
             .editMetadata()
-                .withNamespace(Constants.TEST_SUITE_NAMESPACE)
+                .withNamespace(Environment.TEST_SUITE_NAMESPACE)
             .endMetadata()
             .build());
     }

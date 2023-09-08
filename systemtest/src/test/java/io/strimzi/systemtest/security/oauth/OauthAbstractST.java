@@ -11,6 +11,7 @@ import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBui
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.enums.DefaultNetworkPolicy;
 import io.strimzi.systemtest.keycloak.KeycloakInstance;
 import io.strimzi.systemtest.resources.keycloak.SetupKeycloak;
@@ -129,19 +130,19 @@ public class OauthAbstractST extends AbstractST {
         clusterOperator.defaultInstallation(extensionContext).createInstallation().runInstallation();
 
         resourceManager.createResourceWithWait(extensionContext, NetworkPolicyTemplates.applyDefaultNetworkPolicy(extensionContext, keycloakNamespace, DefaultNetworkPolicy.DEFAULT_TO_ALLOW));
-        resourceManager.createResourceWithoutWait(extensionContext, ScraperTemplates.scraperPod(Constants.TEST_SUITE_NAMESPACE, Constants.SCRAPER_NAME).build());
+        resourceManager.createResourceWithoutWait(extensionContext, ScraperTemplates.scraperPod(Environment.TEST_SUITE_NAMESPACE, Constants.SCRAPER_NAME).build());
 
         LOGGER.info("Deploying keycloak");
 
         // this is need for cluster-wide OLM (creating `infra-namespace` for Keycloak)
         // Keycloak do not support cluster-wide namespace, and thus we need it to deploy in non-OLM cluster wide namespace
         // (f.e., our `infra-namespace`)
-        if (kubeClient().getNamespace(Constants.TEST_SUITE_NAMESPACE) == null) {
-            cluster.createNamespace(CollectorElement.createCollectorElement(extensionContext.getRequiredTestClass().getName()), Constants.TEST_SUITE_NAMESPACE);
-            StUtils.copyImagePullSecrets(Constants.TEST_SUITE_NAMESPACE);
+        if (kubeClient().getNamespace(Environment.TEST_SUITE_NAMESPACE) == null) {
+            cluster.createNamespace(CollectorElement.createCollectorElement(extensionContext.getRequiredTestClass().getName()), Environment.TEST_SUITE_NAMESPACE);
+            StUtils.copyImagePullSecrets(Environment.TEST_SUITE_NAMESPACE);
         }
 
-        SetupKeycloak.deployKeycloakOperator(extensionContext, Constants.TEST_SUITE_NAMESPACE, keycloakNamespace);
+        SetupKeycloak.deployKeycloakOperator(extensionContext, Environment.TEST_SUITE_NAMESPACE, keycloakNamespace);
 
         keycloakInstance = SetupKeycloak.deployKeycloakAndImportRealms(extensionContext, keycloakNamespace);
 

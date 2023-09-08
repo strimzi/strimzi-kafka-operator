@@ -58,7 +58,7 @@ final public class TestStorage {
 
 
     public TestStorage(ExtensionContext extensionContext) {
-        this(extensionContext, Constants.TEST_SUITE_NAMESPACE);
+        this(extensionContext, Environment.TEST_SUITE_NAMESPACE);
     }
 
     public TestStorage(ExtensionContext extensionContext, String namespaceName) {

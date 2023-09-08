@@ -38,7 +38,7 @@ public class TestSuiteNamespaceManager {
     }
 
     /**
-     * Creates a test suite namespace {@code Constants.TEST_SUITE_NAMESPACE} if conditions are met (e.g., the test class
+     * Creates a test suite namespace {@code Environment.TEST_SUITE_NAMESPACE} if conditions are met (e.g., the test class
      * contains {@link io.strimzi.systemtest.annotations.IsolatedTest} or {@link io.strimzi.systemtest.annotations.ParallelTest}
      * test cases we will create such namespace, otherwise not). When we have test class, which only contains
      *  {@link io.strimzi.systemtest.annotations.ParallelNamespaceTest}, which creates its own namespace it does not
@@ -52,12 +52,12 @@ public class TestSuiteNamespaceManager {
         if (ExecutionListener.hasSuiteParallelOrIsolatedTest(extensionContext)) {
             // if RBAC is enabled we don't run tests in parallel mode and with that said we don't create another namespaces
             if (!Environment.isNamespaceRbacScope()) {
-                KubeClusterResource.getInstance().createNamespace(CollectorElement.createCollectorElement(testSuiteName), Constants.TEST_SUITE_NAMESPACE);
-                NetworkPolicyResource.applyDefaultNetworkPolicySettings(extensionContext, Collections.singletonList(Constants.TEST_SUITE_NAMESPACE));
-                StUtils.copyImagePullSecrets(Constants.TEST_SUITE_NAMESPACE);
+                KubeClusterResource.getInstance().createNamespace(CollectorElement.createCollectorElement(testSuiteName), Environment.TEST_SUITE_NAMESPACE);
+                NetworkPolicyResource.applyDefaultNetworkPolicySettings(extensionContext, Collections.singletonList(Environment.TEST_SUITE_NAMESPACE));
+                StUtils.copyImagePullSecrets(Environment.TEST_SUITE_NAMESPACE);
             } else {
                 LOGGER.info("We are not gonna create additional namespace: {}, because test suite: {} does not " +
-                        "contains @ParallelTest or @IsolatedTest.", Constants.TEST_SUITE_NAMESPACE, testSuiteName);
+                        "contains @ParallelTest or @IsolatedTest.", Environment.TEST_SUITE_NAMESPACE, testSuiteName);
             }
         }
     }
@@ -73,8 +73,8 @@ public class TestSuiteNamespaceManager {
             if (!Environment.isNamespaceRbacScope()) {
                 final String testSuiteName = extensionContext.getRequiredTestClass().getName();
 
-                LOGGER.info("Deleting Namespace: {} for TestSuite: {}", Constants.TEST_SUITE_NAMESPACE, StUtils.removePackageName(testSuiteName));
-                KubeClusterResource.getInstance().deleteNamespace(CollectorElement.createCollectorElement(testSuiteName), Constants.TEST_SUITE_NAMESPACE);
+                LOGGER.info("Deleting Namespace: {} for TestSuite: {}", Environment.TEST_SUITE_NAMESPACE, StUtils.removePackageName(testSuiteName));
+                KubeClusterResource.getInstance().deleteNamespace(CollectorElement.createCollectorElement(testSuiteName), Environment.TEST_SUITE_NAMESPACE);
             }
         }
 
