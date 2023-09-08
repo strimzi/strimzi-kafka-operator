@@ -13,6 +13,7 @@ import org.apache.kafka.common.quota.ClientQuotaFilter;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
@@ -45,19 +46,27 @@ public class QuotasCacheTest {
         Admin mockClient = mock(Admin.class);
 
         // Mock result
+        @SuppressWarnings("unchecked")
         KafkaFuture<Map<ClientQuotaEntity, Map<String, Double>>> mockFuture = mock(KafkaFuture.class);
+
+        // For the default user quota, we need to set the user to null value which is not possible with Map.of(). So we use HashMap.
+        Map<String, String> defaultUserEntityMap = new HashMap<>();
+        defaultUserEntityMap.put(ClientQuotaEntity.USER, null);
+        ClientQuotaEntity defaultUserEntity = new ClientQuotaEntity(defaultUserEntityMap);
+        Map<String, Double> defaultUserQuotas = Map.of("producer_byte_rate", 1024.0, "consumer_byte_rate", 2048.0);
 
         ClientQuotaEntity myUserEntity = new ClientQuotaEntity(Map.of(ClientQuotaEntity.USER, "my-user"));
         Map<String, Double> myUserQuotas = Map.of("producer_byte_rate", 1024.0, "consumer_byte_rate", 2048.0);
+
         ClientQuotaEntity myUser2Entity = new ClientQuotaEntity(Map.of(ClientQuotaEntity.USER, "my-user2"));
         Map<String, Double> myUser2Quotas = Map.of("producer_byte_rate", 1024000.0, "consumer_byte_rate", 2048000.0);
         Map<String, Double> myUser2QuotasUpdated = Map.of("producer_byte_rate", 4096000.0, "consumer_byte_rate", 4096000.0);
 
         when(mockFuture.get(anyLong(), any())).thenAnswer(i -> {
             if (initialData.get()) {
-                return Map.of(myUserEntity, myUserQuotas, myUser2Entity, myUser2Quotas);
+                return Map.of(defaultUserEntity, defaultUserQuotas, myUserEntity, myUserQuotas, myUser2Entity, myUser2Quotas);
             } else {
-                return Map.of(myUser2Entity, myUser2QuotasUpdated);
+                return Map.of(defaultUserEntity, defaultUserQuotas, myUser2Entity, myUser2QuotasUpdated);
             }
         });
 

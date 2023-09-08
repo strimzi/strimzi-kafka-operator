@@ -52,7 +52,10 @@ public class QuotasCache extends AbstractCache<KafkaUserQuotas> {
             ConcurrentHashMap<String, KafkaUserQuotas> map = new ConcurrentHashMap<>((int) (quotas.size() / 0.75f));
 
             for (Map.Entry<ClientQuotaEntity, Map<String, Double>> entry : quotas.entrySet()) {
-                if (entry.getKey().entries().containsKey(ClientQuotaEntity.USER)) {
+                // We have to check if the ClientQuotaEntity.USER value is not null, because the entries might contain
+                // the default user quota for which the key would exist but the value would be null. And that would
+                // throw and NPE when we try to insert it into the cache.
+                if (entry.getKey().entries().get(ClientQuotaEntity.USER) != null) {
                     map.put(entry.getKey().entries().get(ClientQuotaEntity.USER), QuotaUtils.fromClientQuota(entry.getValue()));
                 }
             }
