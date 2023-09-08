@@ -235,26 +235,8 @@ public class KafkaRebalanceAssemblyOperator
                 resource.getStatus() != null ? rebalanceStateConditionType(resource.getStatus()) : null,
                 ANNO_STRIMZI_IO_REBALANCE, rawRebalanceAnnotation(resource));
 
-        if (action == Watcher.Action.MODIFIED) {
-            KafkaRebalanceBuilder patchedKafkaRebalance = new KafkaRebalanceBuilder(resource);
-
-            if (patchedKafkaRebalance.buildStatus() != null
-                    && patchedKafkaRebalance.buildStatus().getObservedGeneration() != resource.getMetadata().getGeneration()) {
-                patchedKafkaRebalance.editMetadata()
-                             .addToAnnotations(Map.of(ANNO_STRIMZI_IO_REBALANCE, KafkaRebalanceAnnotation.refresh.toString()))
-                        .endMetadata()
-                        .editStatus()
-                             .withObservedGeneration(resource.getMetadata().getGeneration())
-                        .endStatus();
-            }
-
-            kafkaRebalanceOperator.patchAsync(reconciliation, patchedKafkaRebalance.build()).onComplete(
-                    r -> withLock(reconciliation, LOCK_TIMEOUT_MS,
-                            () -> reconcileRebalance(reconciliation, patchedKafkaRebalance.build())));
-        } else {
             withLock(reconciliation, LOCK_TIMEOUT_MS,
                     () -> reconcileRebalance(reconciliation, action == Watcher.Action.DELETED ? null : resource));
-        }
     }
 
     /**
@@ -869,6 +851,7 @@ public class KafkaRebalanceAssemblyOperator
                             // Safety check as timer might be called again (from a delayed timer firing)
                             if (state(currentKafkaRebalance) == KafkaRebalanceState.PendingProposal) {
                                 if (rebalanceAnnotation(currentKafkaRebalance) == KafkaRebalanceAnnotation.refresh) {
+                                    System.out.println("hitman");
                                     LOGGER.infoCr(reconciliation, "Requesting a new proposal since spec has been updated");
                                     vertx.cancelTimer(t);
                                     requestRebalance(reconciliation, host, apiClient, currentKafkaRebalance, true, rebalanceOptionsBuilder).onSuccess(p::complete);
@@ -1177,6 +1160,23 @@ public class KafkaRebalanceAssemblyOperator
         if (kafkaRebalance == null) {
             LOGGER.infoCr(reconciliation, "Rebalance resource deleted");
             return Future.succeededFuture();
+        }
+
+        KafkaRebalanceBuilder patchedKafkaRebalance = new KafkaRebalanceBuilder(kafkaRebalance);
+
+        if (patchedKafkaRebalance.buildStatus() != null
+                && patchedKafkaRebalance.buildStatus().getObservedGeneration() != kafkaRebalance.getMetadata().getGeneration()) {
+
+            System.out.println(patchedKafkaRebalance.buildStatus().getObservedGeneration());
+            patchedKafkaRebalance.editMetadata()
+                    .addToAnnotations(Map.of(ANNO_STRIMZI_IO_REBALANCE, KafkaRebalanceAnnotation.refresh.toString()))
+                    .endMetadata()
+                    .editStatus()
+                    .withObservedGeneration(kafkaRebalance.getMetadata().getGeneration())
+                    .endStatus();
+
+            kafkaRebalanceOperator.patchAsync(reconciliation, patchedKafkaRebalance.build()).onComplete(
+                    r -> LOGGER.infoCr(reconciliation, "Done"));
         }
 
         String clusterName = kafkaRebalance.getMetadata().getLabels() == null ? null : kafkaRebalance.getMetadata().getLabels().get(Labels.STRIMZI_CLUSTER_LABEL);

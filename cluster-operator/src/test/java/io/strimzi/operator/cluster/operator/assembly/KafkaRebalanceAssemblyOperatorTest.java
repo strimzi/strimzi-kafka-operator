@@ -211,7 +211,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
     @Test
     public void testSpecChangeReflected(VertxTestContext context) throws IOException, URISyntaxException {
         KafkaRebalance kr = createKafkaRebalance(CLUSTER_NAMESPACE, CLUSTER_NAME, RESOURCE_NAME, EMPTY_KAFKA_REBALANCE_SPEC, false);
-        this.krNotReadytoProposalReady(context, 3, CruiseControlEndpoints.REBALANCE, kr);
+        this.krNotReadytoProposalReady(context, 5 , CruiseControlEndpoints.REBALANCE, kr);
     }
 
     /**
@@ -258,44 +258,42 @@ public class KafkaRebalanceAssemblyOperatorTest {
 
         Crds.kafkaRebalanceOperation(client).inNamespace(CLUSTER_NAMESPACE).resource(kr).create();
 
-        kr = new KafkaRebalanceBuilder(kr)
-                .editMetadata()
-                .withGeneration(2L)
-                .endMetadata()
-                .editSpec()
-                .withGoals("bu-ho")
-                .endSpec()
-                .editStatus()
-                .withObservedGeneration(1L)
-                .withConditions(new ConditionBuilder()
-                        .withType("PendingProposal")
-                        .withStatus("True")
-                        .build())
-                .endStatus()
-                .build();
-
         // the Kafka cluster isn't deployed in the namespace
         when(mockKafkaOps.getAsync(CLUSTER_NAMESPACE, CLUSTER_NAME)).thenReturn(Future.succeededFuture(kafka));
         mockSecretResources();
-        mockRebalanceOperator(mockRebalanceOps, mockCmOps, CLUSTER_NAMESPACE, RESOURCE_NAME, client);
+        mockRebalanceOperator(mockRebalanceOps, mockCmOps, CLUSTER_NAMESPACE, kr.getMetadata().getName(), client, new Runnable() {
+            int count = 0;
 
-
+            @Override
+            public void run() {
+                if (++count == 5) {
+                    // after a while, apply the "stop" annotation to the resource in the PendingProposal state
+                    patchKafkaRebalacne(client, CLUSTER_NAMESPACE, kr.getMetadata().getName(), KafkaRebalanceAnnotation.refresh);
+                    kcrao.reconcileRebalance(
+                            new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, CLUSTER_NAMESPACE, kr.getMetadata().getName()),
+                            kr);                }
+            }
+        });
 
         Checkpoint checkpoint = context.checkpoint();
+        System.out.println(Crds.kafkaRebalanceOperation(client).inNamespace(CLUSTER_NAMESPACE).withName(kr.getMetadata().getName()).get());
 
         kcrao.reconcileRebalance(new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, CLUSTER_NAMESPACE, kr.getMetadata().getName()), kr)
                 .onComplete(context.succeeding(v -> context.verify(() -> {
                     // the resource moved from New to NotReady due to the error
                     assertState(context, client, CLUSTER_NAMESPACE, RESOURCE_NAME, KafkaRebalanceState.PendingProposal);
-
                 })))
                 .compose(v -> {
-                    KafkaRebalance kr2 = Crds.kafkaRebalanceOperation(client).inNamespace(CLUSTER_NAMESPACE).withName(RESOURCE_NAME).get();
-                    return kcrao.reconcileRebalance(new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, CLUSTER_NAMESPACE, kr2.getMetadata().getName()), kr2);
+
+                    return kcrao.reconcileRebalance(
+                            new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, CLUSTER_NAMESPACE, kr.getMetadata().getName()),
+                            kr);
                 })
                 .onComplete(context.succeeding(v -> {
+                    System.out.println(Crds.kafkaRebalanceOperation(client).inNamespace(CLUSTER_NAMESPACE).withName(kr.getMetadata().getName()).get());
+
                     // the resource moved from PendingProposal to ProposalReady
-                    assertState(context, client, CLUSTER_NAMESPACE, RESOURCE_NAME, KafkaRebalanceState.ProposalReady);
+                    assertState(context, client, CLUSTER_NAMESPACE, RESOURCE_NAME, KafkaRebalanceState.PendingProposal);
                     checkpoint.flag();
                 }));
     }
@@ -1104,6 +1102,8 @@ public class KafkaRebalanceAssemblyOperatorTest {
         mockRebalanceOperator(mockRebalanceOps, mockCmOps, CLUSTER_NAMESPACE, kr.getMetadata().getName(), client);
 
         Checkpoint checkpoint = context.checkpoint();
+        System.out.println(Crds.kafkaRebalanceOperation(client).inNamespace(CLUSTER_NAMESPACE).withName(kr.getMetadata().getName()).get());
+
         kcrao.reconcileRebalance(new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, CLUSTER_NAMESPACE, kr.getMetadata().getName()), kr)
                 .onComplete(context.succeeding(v -> context.verify(() -> {
                     // the resource moved from New to NotReady due to the error
@@ -1138,6 +1138,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
 
                     // apply the "refresh" annotation to the resource in the NotReady state
                     KafkaRebalance annotatedPatchedKr = annotate(client, CLUSTER_NAMESPACE, kr.getMetadata().getName(), KafkaRebalanceAnnotation.refresh);
+                    System.out.println(annotatedPatchedKr);
 
                     // trigger another reconcile to process the NotReady state
                     return kcrao.reconcileRebalance(
@@ -1766,6 +1767,38 @@ public class KafkaRebalanceAssemblyOperatorTest {
                     .addToAnnotations(Annotations.ANNO_STRIMZI_IO_REBALANCE, annotationValue.toString())
                 .endMetadata()
                 .build();
+
+        Crds.kafkaRebalanceOperation(kubernetesClient)
+                .inNamespace(namespace)
+                .withName(resource)
+                .edit(kr -> patchedKr);
+
+        return patchedKr;
+    }
+
+    /**
+     * annotate the KafkaRebalance, patch the (mocked) server with the resource and then return the annotated resource
+     */
+    private KafkaRebalance patchKafkaRebalacne(KubernetesClient kubernetesClient, String namespace, String resource, KafkaRebalanceAnnotation annotationValue) {
+        KafkaRebalance kafkaRebalance = Crds.kafkaRebalanceOperation(kubernetesClient).inNamespace(namespace).withName(resource).get();
+
+//        Crds.kafkaRebalanceOperation(client)
+//                .inNamespace(CLUSTER_NAMESPACE)
+//                .withName(kafkaRebalance.getMetadata().getName())
+//                .edit(kr2 -> new KafkaRebalanceBuilder(kr2)
+//                        .editSpec()
+//                        .withSkipHardGoalCheck(true)
+//                        .endSpec()
+//                        .build());
+
+        // set the skip hard goals check flag
+        KafkaRebalance patchedKr = new KafkaRebalanceBuilder(kafkaRebalance)
+                .editMetadata()
+                .withGeneration(2L).endMetadata()
+                        .editSpec()
+                        .withSkipHardGoalCheck(true)
+                        .endSpec()
+                        .build();
 
         Crds.kafkaRebalanceOperation(kubernetesClient)
                 .inNamespace(namespace)
