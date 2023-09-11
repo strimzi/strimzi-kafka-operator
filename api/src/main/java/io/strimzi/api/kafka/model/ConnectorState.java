@@ -7,6 +7,9 @@ package io.strimzi.api.kafka.model;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
 
+/**
+ * This defines values for the spec.state field of connectors
+ */
 public enum ConnectorState {
     PAUSED,
     STOPPED,

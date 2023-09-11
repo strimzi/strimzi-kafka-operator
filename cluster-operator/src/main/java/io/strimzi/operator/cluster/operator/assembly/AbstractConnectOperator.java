@@ -489,40 +489,40 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
             ConnectorState desiredState = connectorSpec.getState();
             @SuppressWarnings("deprecation")
             Boolean shouldPause = connectorSpec.getPause();
-            ConnectorState effectiveState = desiredState != null ? desiredState :
+            ConnectorState targetState = desiredState != null ? desiredState :
                     Boolean.TRUE.equals(shouldPause) ? ConnectorState.PAUSED : ConnectorState.RUNNING;
             if (desiredState != null && shouldPause != null) {
                 String message = "Both pause and state are set. Since pause is deprecated, state takes precedence " +
-                        "so the connector will be " + effectiveState.toValue();
+                        "so the connector will be " + targetState.toValue();
                 LOGGER.warnCr(reconciliation, message);
                 conditions.add(StatusUtils.buildWarningCondition("UpdateState", message));
             }
             Future<Void> future = Future.succeededFuture();
             switch (state) {
                 case "RUNNING" -> {
-                    if (effectiveState == ConnectorState.PAUSED) {
-                        LOGGER.debugCr(reconciliation, "Pausing connector {}", connectorName);
+                    if (targetState == ConnectorState.PAUSED) {
+                        LOGGER.infoCr(reconciliation, "Pausing connector {}", connectorName);
                         future = apiClient.pause(reconciliation, host, port, connectorName);
-                    } else if (effectiveState == ConnectorState.STOPPED) {
-                        LOGGER.debugCr(reconciliation, "Stopping connector {}", connectorName);
+                    } else if (targetState == ConnectorState.STOPPED) {
+                        LOGGER.infoCr(reconciliation, "Stopping connector {}", connectorName);
                         future = apiClient.stop(reconciliation, host, port, connectorName);
                     }
                 }
                 case "PAUSED" -> {
-                    if (effectiveState == ConnectorState.RUNNING) {
-                        LOGGER.debugCr(reconciliation, "Resuming connector {}", connectorName);
+                    if (targetState == ConnectorState.RUNNING) {
+                        LOGGER.infoCr(reconciliation, "Resuming connector {}", connectorName);
                         future = apiClient.resume(reconciliation, host, port, connectorName);
-                    } else if (effectiveState == ConnectorState.STOPPED) {
-                        LOGGER.debugCr(reconciliation, "Stopping connector {}", connectorName);
+                    } else if (targetState == ConnectorState.STOPPED) {
+                        LOGGER.infoCr(reconciliation, "Stopping connector {}", connectorName);
                         future = apiClient.stop(reconciliation, host, port, connectorName);
                     }
                 }
                 case "STOPPED" -> {
-                    if (effectiveState == ConnectorState.RUNNING) {
-                        LOGGER.debugCr(reconciliation, "Resuming connector {}", connectorName);
+                    if (targetState == ConnectorState.RUNNING) {
+                        LOGGER.infoCr(reconciliation, "Resuming connector {}", connectorName);
                         future = apiClient.resume(reconciliation, host, port, connectorName);
-                    } else if (effectiveState == ConnectorState.PAUSED) {
-                        LOGGER.debugCr(reconciliation, "Pausing connector {}", connectorName);
+                    } else if (targetState == ConnectorState.PAUSED) {
+                        LOGGER.infoCr(reconciliation, "Pausing connector {}", connectorName);
                         future = apiClient.pause(reconciliation, host, port, connectorName);
                     }
                 }
