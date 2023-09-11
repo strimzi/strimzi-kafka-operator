@@ -18,7 +18,6 @@ import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 import io.strimzi.systemtest.resources.crd.KafkaNodePoolResource;
-import io.strimzi.systemtest.rollingupdate.KafkaRollerST;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaBridgeTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
@@ -161,15 +160,10 @@ class RecoveryST extends AbstractST {
     }
 
     /**
-     * The main difference between this test and KafkaRollerST#testKafkaPodPending()
-     * is that in this test, we are deploying Kafka cluster with an impossible memory request,
-     * but in the KafkaRollerST#testKafkaPodPending()
-     * we first deploy Kafka cluster with a correct configuration, then change the configuration to an unschedulable one, waiting
-     * for one Kafka pod to be in the `Pending` phase. In this test, all 3 Kafka pods are `Pending`. After we
+     * We are deploying Kafka cluster with an impossible memory request, all 3 Kafka pods are `Pending`. After we
      * check that Kafka pods are stable in `Pending` phase (for one minute), we change the memory request so that the pods are again schedulable
      * and wait until the Kafka cluster recovers and becomes `Ready`.
      *
-     * @see {@link KafkaRollerST#testKafkaPodPending(ExtensionContext)}
      */
     @IsolatedTest("We need for each test case its own Cluster Operator")
     void testRecoveryFromImpossibleMemoryRequest() {
