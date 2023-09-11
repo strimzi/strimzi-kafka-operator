@@ -31,6 +31,7 @@ import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.StrimziPodSet;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.annotations.NodePoolsNotSupported;
 import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaBridgeTemplates;
@@ -60,6 +61,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @Tag(REGRESSION)
+@NodePoolsNotSupported
 public class DefaultClusterReportST extends AbstractClusterReportST {
     private static final Logger LOGGER = LogManager.getLogger(DefaultClusterReportST.class);
     private TestStorage testStorage;
