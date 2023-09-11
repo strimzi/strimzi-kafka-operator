@@ -200,13 +200,18 @@ public class FeatureGatesST extends AbstractST {
         LOGGER.info("Deploying CO without Stable Connect Identities");
 
         clusterOperator = this.clusterOperator.defaultInstallation(extensionContext)
+            .withBindingsNamespaces(Arrays.asList(Constants.CO_NAMESPACE, Environment.TEST_SUITE_NAMESPACE))
             .withExtraEnvVars(coEnvVars)
             .createInstallation()
             .runInstallation();
 
-        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), 3, 1).build());
+        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), 3, 1)
+                .editMetadata()
+                    .withNamespace(testStorage.getNamespaceName())
+                .endMetadata()
+                .build());
         resourceManager.createResourceWithWait(extensionContext, KafkaTopicTemplates.topic(testStorage).build());
-        resourceManager.createResourceWithWait(extensionContext, KafkaConnectTemplates.kafkaConnectWithFilePlugin(testStorage.getClusterName(), clusterOperator.getDeploymentNamespace(), connectReplicas)
+        resourceManager.createResourceWithWait(extensionContext, KafkaConnectTemplates.kafkaConnectWithFilePlugin(testStorage.getClusterName(), testStorage.getNamespaceName(), connectReplicas)
                 .editMetadata()
                     .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
                 .endMetadata()
@@ -231,7 +236,7 @@ public class FeatureGatesST extends AbstractST {
         Map<String, String> coPod = DeploymentUtils.depSnapshot(clusterOperator.getDeploymentNamespace(), ResourceManager.getCoDeploymentName());
 
         final LabelSelector connectLabelSelector = KafkaConnectResource.getLabelSelector(testStorage.getClusterName(), KafkaConnectResources.deploymentName(testStorage.getClusterName()));
-        Map<String, String> connectPods = PodUtils.podSnapshot(clusterOperator.getDeploymentNamespace(), connectLabelSelector);
+        Map<String, String> connectPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), connectLabelSelector);
 
         KafkaClients clients = new KafkaClientsBuilder()
             .withProducerName(testStorage.getProducerName())
@@ -240,7 +245,7 @@ public class FeatureGatesST extends AbstractST {
             .withTopicName(testStorage.getTopicName())
             .withMessageCount(messageCount)
             .withDelayMs(500)
-            .withNamespaceName(clusterOperator.getDeploymentNamespace())
+            .withNamespaceName(testStorage.getNamespaceName())
             .build();
 
         String connectorPodName = kubeClient().listPods(testStorage.getNamespaceName(), connectLabelSelector).get(0).getMetadata().getName();
@@ -260,7 +265,7 @@ public class FeatureGatesST extends AbstractST {
         kubeClient().getClient().apps().deployments().inNamespace(clusterOperator.getDeploymentNamespace()).resource(coDep).update();
 
         coPod = DeploymentUtils.waitTillDepHasRolled(clusterOperator.getDeploymentNamespace(), Constants.STRIMZI_DEPLOYMENT_NAME, 1, coPod);
-        connectPods = RollingUpdateUtils.waitTillComponentHasRolled(clusterOperator.getDeploymentNamespace(), connectLabelSelector, connectReplicas, connectPods);
+        connectPods = RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), connectLabelSelector, connectReplicas, connectPods);
         KafkaConnectorUtils.waitForConnectorReady(testStorage.getNamespaceName(), testStorage.getClusterName());
 
         connectorPodName = kubeClient().listPods(testStorage.getNamespaceName(), connectLabelSelector).get(0).getMetadata().getName();
@@ -276,7 +281,7 @@ public class FeatureGatesST extends AbstractST {
         kubeClient().getClient().apps().deployments().inNamespace(clusterOperator.getDeploymentNamespace()).resource(coDep).update();
 
         DeploymentUtils.waitTillDepHasRolled(clusterOperator.getDeploymentNamespace(), Constants.STRIMZI_DEPLOYMENT_NAME, 1, coPod);
-        RollingUpdateUtils.waitTillComponentHasRolled(clusterOperator.getDeploymentNamespace(), connectLabelSelector, connectReplicas, connectPods);
+        RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), connectLabelSelector, connectReplicas, connectPods);
         KafkaConnectorUtils.waitForConnectorReady(testStorage.getNamespaceName(), testStorage.getClusterName());
 
         connectorPodName = kubeClient().listPods(testStorage.getNamespaceName(), connectLabelSelector).get(0).getMetadata().getName();
