@@ -10,12 +10,17 @@ import io.strimzi.api.kafka.model.ProbeBuilder;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.IsolatedTest;
+import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
+import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.kubernetes.DeploymentResource;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
+import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
+import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.RollingUpdateUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
+import io.strimzi.systemtest.utils.kubeUtils.controllers.StrimziPodSetUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -46,15 +51,49 @@ public class PodSetST extends AbstractST {
         final int replicas = 3;
         final int probeTimeoutSeconds = 6;
 
+        // setup clients configured to produce/consume data for next 3-4 minutes and configured for resilience against one broker being down.
+        String producerAdditionConfiguration = "acks=all\n";
+        KafkaClients clients = new KafkaClientsBuilder()
+            .withProducerName(testStorage.getProducerName())
+            .withConsumerName(testStorage.getConsumerName())
+            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
+            .withTopicName(testStorage.getTopicName())
+            .withMessageCount(200)
+            .withNamespaceName(testStorage.getNamespaceName())
+            .withDelayMs(1000)
+            .withAdditionalConfig(producerAdditionConfiguration)
+            .build();
+
         EnvVar reconciliationEnv = new EnvVar(Environment.STRIMZI_POD_SET_RECONCILIATION_ONLY_ENV, "true", null);
         List<EnvVar> envVars = kubeClient().getDeployment(clusterOperator.getDeploymentNamespace(), clusterOperator.getClusterOperatorName()).getSpec().getTemplate().getSpec().getContainers().get(0).getEnv();
         envVars.add(reconciliationEnv);
 
+        LOGGER.info("Deploy Kafka configured to create topics more resilient against data loss or unavailability");
         resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), replicas)
             .editMetadata()
                 .withNamespace(testStorage.getNamespaceName())
             .endMetadata()
+            .editSpec()
+                .editOrNewKafka()
+                    .addToConfig("default.replication.factor", 3)
+                    .addToConfig("min.insync.replicas", 2)
+                .endKafka()
+            .endSpec()
             .build());
+
+        resourceManager.createResourceWithWait(extensionContext,
+            KafkaTopicTemplates.topic(testStorage)
+                .editOrNewSpec()
+                    .withReplicas(3)
+                .endSpec()
+                .build()
+        );
+
+        LOGGER.info("Producing and Consuming messages with clients: {}, {} in Namespace {}", testStorage.getProducerName(), testStorage.getConsumerName(), testStorage.getNamespaceName());
+        resourceManager.createResourceWithWait(extensionContext,
+            clients.producerStrimzi(),
+            clients.consumerStrimzi()
+        );
 
         LOGGER.info("Changing {} to 'true', so only SPS will be reconciled", Environment.STRIMZI_POD_SET_RECONCILIATION_ONLY_ENV);
 
@@ -89,8 +128,12 @@ public class PodSetST extends AbstractST {
         DeploymentUtils.waitTillDepHasRolled(clusterOperator.getDeploymentNamespace(), clusterOperator.getClusterOperatorName(), 1, coPod);
 
         LOGGER.info("Because the configuration was changed, Pods should be rolled");
-
         RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), testStorage.getKafkaSelector(), replicas, kafkaPods);
+
+        LOGGER.info("Wait till all StrimziPodSet {}/{} status match number of ready pods", testStorage.getNamespaceName(), testStorage.getKafkaStatefulSetName());
+        StrimziPodSetUtils.waitForAllStrimziPodSetAndPodsReady(testStorage.getNamespaceName(), testStorage.getKafkaStatefulSetName(), KafkaResources.kafkaStatefulSetName(testStorage.getClusterName()), 3);
+
+        ClientUtils.waitForClientsSuccess(testStorage);
     }
 
     @BeforeAll
