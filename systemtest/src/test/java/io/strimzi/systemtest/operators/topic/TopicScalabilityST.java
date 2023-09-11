@@ -7,6 +7,8 @@ package io.strimzi.systemtest.operators.topic;
 import io.strimzi.api.kafka.model.KafkaTopicSpecBuilder;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.annotations.BTONotSupported;
+import io.strimzi.systemtest.annotations.KRaftWithoutUTONotSupported;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicScalabilityUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
@@ -14,21 +16,20 @@ import io.strimzi.test.annotations.IsolatedTest;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.util.HashMap;
 import java.util.Map;
 
-import static io.strimzi.systemtest.Constants.CO_NAMESPACE;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.CoreMatchers.is;
 import static io.strimzi.systemtest.Constants.SCALABILITY;
 
 
 @Tag(SCALABILITY)
-@Disabled("TO is not so stable with large number of topics. After new version of TO, these should be enabled again")
+@BTONotSupported
+@KRaftWithoutUTONotSupported
 public class TopicScalabilityST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(TopicScalabilityST.class);
@@ -49,39 +50,21 @@ public class TopicScalabilityST extends AbstractST {
     }
 
     @IsolatedTest
-    void testModifyBigAmountOfTopicPartitions(ExtensionContext extensionContext) {
-        final int defaultPartitionCount = 2;
-
-        // Create topics
-        KafkaTopicScalabilityUtils.createTopicsViaK8s(extensionContext, Constants.TEST_SUITE_NAMESPACE, sharedClusterName, topicPrefix,
-                NUMBER_OF_TOPICS, defaultPartitionCount, 1, 1);
-        KafkaTopicScalabilityUtils.waitForTopicsReady(Constants.TEST_SUITE_NAMESPACE, topicPrefix, NUMBER_OF_TOPICS);
-
-        // Decrease partitions and expect not ready status
-        KafkaTopicScalabilityUtils.modifyBigAmountOfTopics(Constants.TEST_SUITE_NAMESPACE, topicPrefix, NUMBER_OF_TOPICS,
-                new KafkaTopicSpecBuilder().withPartitions(defaultPartitionCount - 1).build());
-        KafkaTopicScalabilityUtils.waitForTopicsNotReady(Constants.TEST_SUITE_NAMESPACE, topicPrefix, NUMBER_OF_TOPICS);
-
-        // Set back to default and check if topic becomes ready
-        KafkaTopicScalabilityUtils.modifyBigAmountOfTopics(Constants.TEST_SUITE_NAMESPACE, topicPrefix, NUMBER_OF_TOPICS,
-                new KafkaTopicSpecBuilder().withPartitions(defaultPartitionCount).build());
-        KafkaTopicScalabilityUtils.waitForTopicsReady(Constants.TEST_SUITE_NAMESPACE, topicPrefix, NUMBER_OF_TOPICS);
-    }
-
-    @IsolatedTest
-    void testModifyBigAmountOfTopicConfigs(ExtensionContext extensionContext) {
+    void testModifyBigAmountOfTopics(ExtensionContext extensionContext) {
         Map<String, Object> modifiedConfig = new HashMap<>();
+        final int defaultPartitionCount = 1;
+        final int modifiedPartitionCount = defaultPartitionCount + 1;
 
         // Create topics
         KafkaTopicScalabilityUtils.createTopicsViaK8s(extensionContext, Constants.TEST_SUITE_NAMESPACE, sharedClusterName, topicPrefix,
-                NUMBER_OF_TOPICS, 2, 3, 2);
+                NUMBER_OF_TOPICS, defaultPartitionCount, 3, 1);
         KafkaTopicScalabilityUtils.waitForTopicsReady(Constants.TEST_SUITE_NAMESPACE, topicPrefix, NUMBER_OF_TOPICS);
 
         // Add set of configs and expect topics to have ready status
         modifiedConfig.put("compression.type", "gzip");
         modifiedConfig.put("cleanup.policy", "delete");
         modifiedConfig.put("message.timestamp.type", "LogAppendTime");
-        modifiedConfig.put("min.insync.replicas", 6);
+        modifiedConfig.put("min.insync.replicas", 2);
 
         KafkaTopicScalabilityUtils.modifyBigAmountOfTopics(Constants.TEST_SUITE_NAMESPACE, topicPrefix, NUMBER_OF_TOPICS,
                 new KafkaTopicSpecBuilder().withConfig(modifiedConfig).build());
@@ -99,7 +82,6 @@ public class TopicScalabilityST extends AbstractST {
                 new KafkaTopicSpecBuilder().withConfig(modifiedConfig).build());
         KafkaTopicScalabilityUtils.waitForTopicsContainConfig(Constants.TEST_SUITE_NAMESPACE, topicPrefix, NUMBER_OF_TOPICS, modifiedConfig);
 
-
         // Set size configs
         modifiedConfig.clear();
         modifiedConfig.put("retention.bytes", 9876543);
@@ -111,21 +93,30 @@ public class TopicScalabilityST extends AbstractST {
                 new KafkaTopicSpecBuilder().withConfig(modifiedConfig).build());
         KafkaTopicScalabilityUtils.waitForTopicsContainConfig(Constants.TEST_SUITE_NAMESPACE, topicPrefix, NUMBER_OF_TOPICS, modifiedConfig);
 
-
         // Set back to default state
         modifiedConfig.clear();
         KafkaTopicScalabilityUtils.modifyBigAmountOfTopics(Constants.TEST_SUITE_NAMESPACE, topicPrefix, NUMBER_OF_TOPICS,
                 new KafkaTopicSpecBuilder().withConfig(modifiedConfig).build());
         KafkaTopicScalabilityUtils.waitForTopicsReady(Constants.TEST_SUITE_NAMESPACE, topicPrefix, NUMBER_OF_TOPICS);
+
+        // Try increasing partitions as this should create more load
+        KafkaTopicScalabilityUtils.modifyBigAmountOfTopics(Constants.TEST_SUITE_NAMESPACE, topicPrefix, NUMBER_OF_TOPICS,
+                new KafkaTopicSpecBuilder().withPartitions(modifiedPartitionCount).build());
+        KafkaTopicScalabilityUtils.waitForTopicsPartitions(Constants.TEST_SUITE_NAMESPACE, topicPrefix, NUMBER_OF_TOPICS, modifiedPartitionCount);
+        KafkaTopicScalabilityUtils.waitForTopicsReady(Constants.TEST_SUITE_NAMESPACE, topicPrefix, NUMBER_OF_TOPICS);
     }
 
     @BeforeAll
     void setup(ExtensionContext extensionContext) {
-        clusterOperator.defaultInstallation(extensionContext).createInstallation().runInstallation();
+        clusterOperator.defaultInstallation(extensionContext)
+            .createInstallation()
+            .runInstallation();
+
         LOGGER.info("Deploying shared Kafka across all test cases in Namespace: {}", Constants.TEST_SUITE_NAMESPACE);
+        cluster.createNamespace(Constants.TEST_SUITE_NAMESPACE);
         resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(sharedClusterName, 3, 1)
             .editMetadata()
-                .withNamespace(CO_NAMESPACE)
+                .withNamespace(Constants.TEST_SUITE_NAMESPACE)
             .endMetadata()
             .build());
     }
