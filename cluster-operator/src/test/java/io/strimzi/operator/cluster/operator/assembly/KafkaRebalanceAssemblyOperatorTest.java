@@ -208,15 +208,6 @@ public class KafkaRebalanceAssemblyOperatorTest {
         this.krNewToProposalReady(context, 0, CruiseControlEndpoints.REBALANCE, kr);
     }
 
-    @Test
-    public void testSpecChangeReflected(VertxTestContext context) throws IOException, URISyntaxException {
-        KafkaRebalanceSpec kafkaRebalanceSpec = new KafkaRebalanceSpecBuilder()
-                .withGoals("DiskCapacityGoal", "CpuCapacityGoal")
-                .build();
-        KafkaRebalance kr = createKafkaRebalance(CLUSTER_NAMESPACE, CLUSTER_NAME, RESOURCE_NAME, kafkaRebalanceSpec, false);
-        this.krNotReadyToProposalReadyOnSpecChange(context, 0, CruiseControlEndpoints.REBALANCE, kr);
-    }
-
     /**
      * See the {@link KafkaRebalanceAssemblyOperatorTest#testNewToProposalReadyRebalance} for description
      */
@@ -255,9 +246,30 @@ public class KafkaRebalanceAssemblyOperatorTest {
                 }));
     }
 
-    private void krNotReadyToProposalReadyOnSpecChange(VertxTestContext context, int pendingCalls, CruiseControlEndpoints endpoint, KafkaRebalance kr) throws IOException, URISyntaxException {
+    /**
+     * Tests the transition from 'NotReady' to 'ProposalReady' when
+     * the kafkaRebalance resource  spec is updated with "skip hard goals check" state
+     *
+     * 1. A new KafkaRebalance resource is created with some specified not hard goals; it is in the New state
+     * 2. The operator requests a rebalance proposal through the Cruise Control REST API
+     * 3. The operator receives a "missing hard goals" error instead of a proposal
+     * 4. The KafkaRebalance resource moves to the 'NotReady' state
+     * 5. The rebalance spec is updated with the 'skip hard goals check' field to "true"
+     * 6. The operator requests a rebalance proposal through the Cruise Control REST API
+     * 7. The rebalance proposal is ready on the first call
+     * 8. The KafkaRebalance resource moves to the 'ProposalReady' state
+     */
+    @Test
+    public void krNotReadyToProposalReadyOnSpecChange(VertxTestContext context) throws IOException, URISyntaxException {
+
         // Setup the rebalance endpoint to get error about hard goals
-        MockCruiseControl.setupCCRebalanceBadGoalsError(ccServer, endpoint);
+        MockCruiseControl.setupCCRebalanceBadGoalsError(ccServer, CruiseControlEndpoints.REBALANCE);
+
+        KafkaRebalanceSpec kafkaRebalanceSpec = new KafkaRebalanceSpecBuilder()
+                .withGoals("DiskCapacityGoal", "CpuCapacityGoal")
+                .build();
+
+        KafkaRebalance kr = createKafkaRebalance(CLUSTER_NAMESPACE, CLUSTER_NAME, RESOURCE_NAME, kafkaRebalanceSpec, false);
 
         Crds.kafkaRebalanceOperation(client).inNamespace(CLUSTER_NAMESPACE).resource(kr).create();
 
@@ -267,7 +279,6 @@ public class KafkaRebalanceAssemblyOperatorTest {
         mockRebalanceOperator(mockRebalanceOps, mockCmOps, CLUSTER_NAMESPACE, kr.getMetadata().getName(), client);
 
         Checkpoint checkpoint = context.checkpoint();
-        System.out.println(Crds.kafkaRebalanceOperation(client).inNamespace(CLUSTER_NAMESPACE).withName(kr.getMetadata().getName()).get());
 
         kcrao.reconcileRebalance(new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, CLUSTER_NAMESPACE, kr.getMetadata().getName()), kr)
                 .onComplete(context.succeeding(v -> context.verify(() -> {
@@ -286,12 +297,19 @@ public class KafkaRebalanceAssemblyOperatorTest {
                     ccServer.reset();
                     try {
                         // Setup the rebalance endpoint with the number of pending calls before a response is received.
-                        MockCruiseControl.setupCCRebalanceResponse(ccServer, pendingCalls, endpoint);
+                        MockCruiseControl.setupCCRebalanceResponse(ccServer, 0, CruiseControlEndpoints.REBALANCE);
                     } catch (IOException | URISyntaxException e) {
                         context.failNow(e);
                     }
 
-                    KafkaRebalance updatedKafkaRebalance = updateRebalanceSpec(client, CLUSTER_NAMESPACE, kr.getMetadata().getName());
+                    KafkaRebalance updatedKafkaRebalance =  Crds.kafkaRebalanceOperation(client)
+                            .inNamespace(CLUSTER_NAMESPACE)
+                            .withName(kr.getMetadata().getName())
+                            .edit(kr2 -> new KafkaRebalanceBuilder(kr2)
+                                    .editSpec()
+                                    .withSkipHardGoalCheck(true)
+                                    .endSpec()
+                                    .build());
 
                     return kcrao.reconcileRebalance(
                             new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, CLUSTER_NAMESPACE, kr.getMetadata().getName()),
@@ -1108,7 +1126,6 @@ public class KafkaRebalanceAssemblyOperatorTest {
         mockRebalanceOperator(mockRebalanceOps, mockCmOps, CLUSTER_NAMESPACE, kr.getMetadata().getName(), client);
 
         Checkpoint checkpoint = context.checkpoint();
-        System.out.println(Crds.kafkaRebalanceOperation(client).inNamespace(CLUSTER_NAMESPACE).withName(kr.getMetadata().getName()).get());
 
         kcrao.reconcileRebalance(new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, CLUSTER_NAMESPACE, kr.getMetadata().getName()), kr)
                 .onComplete(context.succeeding(v -> context.verify(() -> {
@@ -1144,7 +1161,6 @@ public class KafkaRebalanceAssemblyOperatorTest {
 
                     // apply the "refresh" annotation to the resource in the NotReady state
                     KafkaRebalance annotatedPatchedKr = annotate(client, CLUSTER_NAMESPACE, kr.getMetadata().getName(), KafkaRebalanceAnnotation.refresh);
-                    System.out.println(annotatedPatchedKr);
 
                     // trigger another reconcile to process the NotReady state
                     return kcrao.reconcileRebalance(
