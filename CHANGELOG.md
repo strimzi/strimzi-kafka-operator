@@ -3,6 +3,7 @@
 ## 0.38.0
 
 * Sign containers using `cosign`
+* Add support for stopping connectors according to [Strimzi Proposal #54](https://github.com/strimzi/proposals/blob/main/054-stopping-kafka-connect-connectors.md)
 
 ### Changes, deprecations and removals
 
