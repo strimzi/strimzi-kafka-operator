@@ -220,7 +220,7 @@ public class CruiseControlST extends AbstractST {
         LOGGER.info("Annotating KafkaRebalance: {} with 'approve' anno", testStorage.getClusterName());
         KafkaRebalanceUtils.annotateKafkaRebalanceResource(new Reconciliation("test", KafkaRebalance.RESOURCE_KIND, clusterOperator.getDeploymentNamespace(), testStorage.getClusterName()), clusterOperator.getDeploymentNamespace(), testStorage.getClusterName(), KafkaRebalanceAnnotation.approve);
 
-        // updated the spec while the resource was in `Rebalancing` state
+        // updating the KafkaRebalance resource by configuring replication throttle
         KafkaRebalanceResource.replaceKafkaRebalanceResourceInSpecificNamespace(testStorage.getClusterName(), kafkaRebalance -> kafkaRebalance.getSpec().setReplicationThrottle(100000), clusterOperator.getDeploymentNamespace());
 
         // the resource moved to `ProposalReady` state
