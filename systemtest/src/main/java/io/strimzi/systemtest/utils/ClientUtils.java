@@ -4,7 +4,9 @@
  */
 package io.strimzi.systemtest.utils;
 
+import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.JobUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
@@ -213,6 +215,16 @@ public class ClientUtils {
         int salt = rng.nextInt(Integer.MAX_VALUE);
 
         return CONSUMER_GROUP_NAME + salt;
+    }
+
+    public static KafkaClientsBuilder getDefaultClientBuilder(TestStorage testStorage) {
+        return  new KafkaClientsBuilder()
+            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
+            .withNamespaceName(testStorage.getNamespaceName())
+            .withMessageCount(testStorage.getMessageCount())
+            .withUsername(testStorage.getUsername())
+            .withProducerName(testStorage.getProducerName())
+            .withConsumerName(testStorage.getConsumerName());
     }
 }
 
