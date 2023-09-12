@@ -851,7 +851,6 @@ public class KafkaRebalanceAssemblyOperator
                             // Safety check as timer might be called again (from a delayed timer firing)
                             if (state(currentKafkaRebalance) == KafkaRebalanceState.PendingProposal) {
                                 if (rebalanceAnnotation(currentKafkaRebalance) == KafkaRebalanceAnnotation.refresh) {
-                                    System.out.println("hitman");
                                     LOGGER.infoCr(reconciliation, "Requesting a new proposal since spec has been updated");
                                     vertx.cancelTimer(t);
                                     requestRebalance(reconciliation, host, apiClient, currentKafkaRebalance, true, rebalanceOptionsBuilder).onSuccess(p::complete);
@@ -1162,21 +1161,21 @@ public class KafkaRebalanceAssemblyOperator
             return Future.succeededFuture();
         }
 
-        KafkaRebalanceBuilder patchedKafkaRebalance = new KafkaRebalanceBuilder(kafkaRebalance);
+        if (kafkaRebalance.getStatus() != null
+                && kafkaRebalance.getStatus().getObservedGeneration() != kafkaRebalance.getMetadata().getGeneration()) {
 
-        if (patchedKafkaRebalance.buildStatus() != null
-                && patchedKafkaRebalance.buildStatus().getObservedGeneration() != kafkaRebalance.getMetadata().getGeneration()) {
+            KafkaRebalanceBuilder patchedKafkaRebalance = new KafkaRebalanceBuilder(kafkaRebalance);
 
-            System.out.println(patchedKafkaRebalance.buildStatus().getObservedGeneration());
-            patchedKafkaRebalance.editMetadata()
-                    .addToAnnotations(Map.of(ANNO_STRIMZI_IO_REBALANCE, KafkaRebalanceAnnotation.refresh.toString()))
+            patchedKafkaRebalance
+                    .editMetadata()
+                         .addToAnnotations(Map.of(ANNO_STRIMZI_IO_REBALANCE, KafkaRebalanceAnnotation.refresh.toString()))
                     .endMetadata()
                     .editStatus()
-                    .withObservedGeneration(kafkaRebalance.getMetadata().getGeneration())
+                         .withObservedGeneration(kafkaRebalance.getMetadata().getGeneration())
                     .endStatus();
 
             kafkaRebalanceOperator.patchAsync(reconciliation, patchedKafkaRebalance.build()).onComplete(
-                    r -> LOGGER.infoCr(reconciliation, "Done"));
+                    r -> LOGGER.infoCr(reconciliation, "The KafkaRebalance resource is updated with refresh annotation since spec is updated"));
         }
 
         String clusterName = kafkaRebalance.getMetadata().getLabels() == null ? null : kafkaRebalance.getMetadata().getLabels().get(Labels.STRIMZI_CLUSTER_LABEL);
