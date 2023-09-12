@@ -8,14 +8,14 @@ KUBE_VERSION=${KUBE_VERSION:-1.21.0}
 MINIKUBE_REGISTRY_IMAGE=${REGISTRY_IMAGE:-"registry"}
 COPY_DOCKER_LOGIN=${COPY_DOCKER_LOGIN:-"false"}
 
-DEFAULT_KIND_MEMORY=$(free -m | grep "Mem" | awk '{print $2}')
-DEFAULT_KIND_CPU=$(awk '$1~/cpu[0-9]/{usage=($2+$4)*100/($2+$4+$5); print $1": "usage"%"}' /proc/stat | wc -l)
+DEFAULT_CLUSTER_MEMORY=$(free -m | grep "Mem" | awk '{print $2}')
+DEFAULT_CLUSTER_CPU=$(awk '$1~/cpu[0-9]/{usage=($2+$4)*100/($2+$4+$5); print $1": "usage"%"}' /proc/stat | wc -l)
 
-KIND_MEMORY=${KIND_MEMORY:-$DEFAULT_KIND_MEMORY}
-KIND_CPU=${KIND_CPU:-$DEFAULT_KIND_CPU}
+CLUSTER_MEMORY=${CLUSTER_MEMORY:-$DEFAULT_CLUSTER_MEMORY}
+CLUSTER_CPU=${CLUSTER_CPU:-$DEFAULT_CLUSTER_CPU}
 
-echo "[INFO] KIND_MEMORY: ${KIND_MEMORY}"
-echo "[INFO] KIND_CPU: ${KIND_CPU}"
+echo "[INFO] CLUSTER_MEMORY: ${CLUSTER_MEMORY}"
+echo "[INFO] CLUSTER_CPU: ${CLUSTER_CPU}"
 
 # note that IPv6 is only supported on kind (i.e., minikube does not support it). Also we assume that when you set this flag
 # to true then you meet requirements (i.) net.ipv6.conf.all.disable_ipv6 = 0 (ii. you have installed CNI supporting IPv6)
@@ -115,6 +115,8 @@ function add_docker_hub_credentials_to_kubernetes {
     fi
 }
 
+setup_kube_directory
+
 if [ "$TEST_CLUSTER" = "minikube" ]; then
     install_kubectl
     install_kubernetes_provisioner
@@ -124,8 +126,6 @@ if [ "$TEST_CLUSTER" = "minikube" ]; then
     export MINIKUBE_HOME=$HOME
     export CHANGE_MINIKUBE_NONE_USER=true
 
-    setup_kube_directory
-
     docker run -d -p 5000:5000 ${MINIKUBE_REGISTRY_IMAGE}
 
     export KUBECONFIG=$HOME/.kube/config
@@ -134,7 +134,7 @@ if [ "$TEST_CLUSTER" = "minikube" ]; then
     # We can allow NP after Strimzi#4092 which should fix some issues on STs side
     minikube start --vm-driver=docker --kubernetes-version=${KUBE_VERSION} \
       --insecure-registry=localhost:5000 --extra-config=apiserver.authorization-mode=Node,RBAC \
-      --cpus=${MINIKUBE_CPU} --memory=${MINIKUBE_MEMORY} --force
+      --cpus=${CLUSTER_CPU} --memory=${CLUSTER_MEMORY} --force
 
     if [ $? -ne 0 ]
     then
@@ -149,8 +149,6 @@ if [ "$TEST_CLUSTER" = "minikube" ]; then
 elif [ "$TEST_CLUSTER" = "kind" ]; then
     install_kubectl
     install_kubernetes_provisioner
-
-    setup_kube_directory
 
     # 1. Create registry container unless it already exists
     reg_name='kind-registry'

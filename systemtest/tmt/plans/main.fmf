@@ -72,11 +72,12 @@ prepare:
   - name: Install minikube
     how: shell
     script: |
-      export TEST_CLUSTER='minikube'
+      export TEST_CLUSTER='kind'
+      # [ipv4, ipv6 or dual]
+      export IP_FAMILY='ipv4'
       ARCH=$(uname -m)
       if [[ $ARCH == "x86_64" ]]; then ARCH="amd64"; fi
       if [[ $ARCH == "aarch64" ]]; then ARCH="arm64"; fi
-      export MINIKUBE_MEMORY=$(($(free -m | grep "Mem" | awk '{print $2}') - 2048))
       ./.azure/scripts/setup-kubernetes.sh ${ARCH}
 
   - name: Install helm
@@ -98,7 +99,6 @@ prepare:
     how: shell
     script: |
       # build images
-      eval $(minikube docker-env)
       ARCH=$(uname -m)
       if [[ ${ARCH} == "aarch64" ]]; then
         export DOCKER_BUILD_ARGS="--platform linux/arm64 --build-arg TARGETPLATFORM=linux/arm64"
