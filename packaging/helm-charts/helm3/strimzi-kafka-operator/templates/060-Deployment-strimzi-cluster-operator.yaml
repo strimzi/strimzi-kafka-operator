@@ -70,6 +70,14 @@ spec:
             - name: {{ .Values.logVolume }}
               mountPath: /opt/strimzi/custom-config/
           env:
+            {{- if .Values.kubernetesMaster }}
+            - name: KUBERNETES_MASTER
+              value: {{ .Values.kubernetesMaster }}
+            {{- end }}
+            {{- if .Values.kubernetesDisableHostVerification }}
+            - name: KUBERNETES_DISABLE_HOSTNAME_VERIFICATION
+              value: {{ .Values.kubernetesDisableHostVerification | quote }}
+            {{- end }}
             - name: STRIMZI_NAMESPACE
               {{- if .Values.watchAnyNamespace }}
               value: "*"
