@@ -8,7 +8,7 @@ public enum AdminClientOperation {
     CREATE_TOPICS("create"),
     DELETE_TOPICS("delete"),
     LIST_TOPICS("list"),
-    UPDATE_TOPICS("update"),
+    ALTER_TOPICS("alter"),
     HELP("help");
 
     private final String operation;

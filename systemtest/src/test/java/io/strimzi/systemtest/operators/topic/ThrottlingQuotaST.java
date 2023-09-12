@@ -61,7 +61,7 @@ public class ThrottlingQuotaST extends AbstractST {
         final TestStorage testStorage = new TestStorage(extensionContext, Constants.TEST_SUITE_NAMESPACE);
 
         final String createAdminName = "create-" + testStorage.getAdminName();
-        final String updateAdminName = "update-" + testStorage.getAdminName();
+        final String alterAdminName = "alter-" + testStorage.getAdminName();
         final String deleteAdminName = "delete-" + testStorage.getAdminName();
         final String listAdminName = "list-" + testStorage.getAdminName();
         final String plainBootstrapName = KafkaResources.plainBootstrapAddress(sharedTestStorage.getClusterName());
@@ -117,38 +117,38 @@ public class ThrottlingQuotaST extends AbstractST {
 
         ClientUtils.waitForClientContainsAllMessages(listAdminName, testStorage.getNamespaceName(), topicNames);
 
-        int partitionUpdate = 25;
+        int partitionAlter = 25;
 
-        KafkaAdminClients updateTopicsJob = new KafkaAdminClientsBuilder(createTopicJob)
-            .withAdminName(updateAdminName)
-            .withPartitions(partitionUpdate)
-            .withAdminOperation(AdminClientOperation.UPDATE_TOPICS)
+        KafkaAdminClients alterTopicsJob = new KafkaAdminClientsBuilder(createTopicJob)
+            .withAdminName(alterAdminName)
+            .withPartitions(partitionAlter)
+            .withAdminOperation(AdminClientOperation.ALTER_TOPICS)
             .build();
 
-        LOGGER.info("Updating {} Topics - setting partitions to {} - we should hit the quota", numOfTopics, partitionUpdate);
+        LOGGER.info("Altering {} Topics - setting partitions to {} - we should hit the quota", numOfTopics, partitionAlter);
 
         // because we are not hitting the quota, this should pass without a problem
-        resourceManager.createResourceWithWait(extensionContext, updateTopicsJob.defaultAdmin());
-        ClientUtils.waitForClientContainsMessage(updateAdminName, testStorage.getNamespaceName(), THROTTLING_ERROR_MSG);
+        resourceManager.createResourceWithWait(extensionContext, alterTopicsJob.defaultAdmin());
+        ClientUtils.waitForClientContainsMessage(alterAdminName, testStorage.getNamespaceName(), THROTTLING_ERROR_MSG);
 
-        // we need to set higher partitions - for case when we updated some topics before hitting the quota to 25 partitions
-        partitionUpdate = 30;
+        // we need to set higher partitions - for case when we alter some topics before hitting the quota to 25 partitions
+        partitionAlter = 30;
         int numOfTopicsIter = 5;
 
-        updateTopicsJob = new KafkaAdminClientsBuilder(updateTopicsJob)
-            .withPartitions(partitionUpdate)
+        alterTopicsJob = new KafkaAdminClientsBuilder(alterTopicsJob)
+            .withPartitions(partitionAlter)
             .withTopicCount(numOfTopicsIter)
             .build();
 
         for (int i = 0; i < iterations; i++) {
-            updateTopicsJob = new KafkaAdminClientsBuilder(updateTopicsJob)
+            alterTopicsJob = new KafkaAdminClientsBuilder(alterTopicsJob)
                 .withTopicCount(numOfTopicsIter)
                 .withTopicOffset(numOfTopicsIter * i)
                 .build();
 
-            LOGGER.info("Updating {} Topics with offset {} - setting partitions to {} - we should not hit the quota", numOfTopicsIter, numOfTopicsIter * i, partitionUpdate);
-            resourceManager.createResourceWithWait(extensionContext, updateTopicsJob.defaultAdmin());
-            ClientUtils.waitForClientContainsMessage(updateAdminName, testStorage.getNamespaceName(), "All topics updated");
+            LOGGER.info("Altering {} Topics with offset {} - setting partitions to {} - we should not hit the quota", numOfTopicsIter, numOfTopicsIter * i, partitionAlter);
+            resourceManager.createResourceWithWait(extensionContext, alterTopicsJob.defaultAdmin());
+            ClientUtils.waitForClientContainsMessage(alterAdminName, testStorage.getNamespaceName(), "All topics altered");
         }
 
         // delete few topics
@@ -188,7 +188,6 @@ public class ThrottlingQuotaST extends AbstractST {
         String afterDeletePodLogs = kubeClient().logsInSpecificNamespace(testStorage.getNamespaceName(), listPodName);
 
         assertFalse(afterDeletePodLogs.contains(testStorage.getTopicName()));
-        JobUtils.deleteJobWithWait(testStorage.getNamespaceName(), listAdminName);
     }
 
     @BeforeAll
