@@ -116,11 +116,10 @@ function add_docker_hub_credentials_to_kubernetes {
 }
 
 setup_kube_directory
+install_kubectl
+install_kubernetes_provisioner
 
 if [ "$TEST_CLUSTER" = "minikube" ]; then
-    install_kubectl
-    install_kubernetes_provisioner
-
     export MINIKUBE_WANTUPDATENOTIFICATION=false
     export MINIKUBE_WANTREPORTERRORPROMPT=false
     export MINIKUBE_HOME=$HOME
@@ -147,9 +146,6 @@ if [ "$TEST_CLUSTER" = "minikube" ]; then
     setup_registry_proxy
 
 elif [ "$TEST_CLUSTER" = "kind" ]; then
-    install_kubectl
-    install_kubernetes_provisioner
-
     # 1. Create registry container unless it already exists
     reg_name='kind-registry'
     reg_port='5001'
