@@ -45,17 +45,17 @@ function label_node {
 
 function install_kubernetes_provisioner {
       if [ "$TEST_CLUSTER" = "minikube" ]; then
-            if [ "${TEST_MINIKUBE_VERSION:-latest}" = "latest" ]; then
+            if [ "${TEST_KUBERNETES_VERSION:-latest}" = "latest" ]; then
                 TEST_KUBERNETES_URL=https://storage.googleapis.com/minikube/releases/latest/minikube-linux-${ARCH}
             else
-                TEST_KUBERNETES_URL=https://github.com/kubernetes/minikube/releases/download/${TEST_MINIKUBE_VERSION}/minikube-linux-${ARCH}
+                TEST_KUBERNETES_URL=https://github.com/kubernetes/minikube/releases/download/${TEST_KUBERNETES_VERSION}/minikube-linux-${ARCH}
             fi
       elif [ "$TEST_CLUSTER" = "kind" ]; then
-            if [ "${TEST_KIND_VERSION:-latest}" = "latest" ]; then
+            if [ "${TEST_KUBERNETES_VERSION:-latest}" = "latest" ]; then
                 # get the latest released tag
-                TEST_KIND_VERSION=$(curl https://api.github.com/repos/kubernetes-sigs/kind/releases/latest | grep -Po "(?<=\"tag_name\": \").*(?=\")")
+                TEST_KUBERNETES_VERSION=$(curl https://api.github.com/repos/kubernetes-sigs/kind/releases/latest | grep -Po "(?<=\"tag_name\": \").*(?=\")")
             fi
-            TEST_KUBERNETES_URL=https://github.com/kubernetes-sigs/kind/releases/download/${TEST_KIND_VERSION}/kind-linux-${ARCH}
+            TEST_KUBERNETES_URL=https://github.com/kubernetes-sigs/kind/releases/download/${TEST_KUBERNETES_VERSION}/kind-linux-${ARCH}
 
       if [ "$KUBE_VERSION" != "latest" ] && [ "$KUBE_VERSION" != "stable" ]; then
           KUBE_VERSION="v${KUBE_VERSION}"
