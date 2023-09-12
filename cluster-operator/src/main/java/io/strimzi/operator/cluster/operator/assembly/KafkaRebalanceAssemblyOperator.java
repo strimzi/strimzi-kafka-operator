@@ -235,8 +235,8 @@ public class KafkaRebalanceAssemblyOperator
                 resource.getStatus() != null ? rebalanceStateConditionType(resource.getStatus()) : null,
                 ANNO_STRIMZI_IO_REBALANCE, rawRebalanceAnnotation(resource));
 
-            withLock(reconciliation, LOCK_TIMEOUT_MS,
-                    () -> reconcileRebalance(reconciliation, action == Watcher.Action.DELETED ? null : resource));
+        withLock(reconciliation, LOCK_TIMEOUT_MS,
+                () -> reconcileRebalance(reconciliation, action == Watcher.Action.DELETED ? null : resource));
     }
 
     /**

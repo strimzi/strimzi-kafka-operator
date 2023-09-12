@@ -214,7 +214,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
                 .withGoals("DiskCapacityGoal", "CpuCapacityGoal")
                 .build();
         KafkaRebalance kr = createKafkaRebalance(CLUSTER_NAMESPACE, CLUSTER_NAME, RESOURCE_NAME, kafkaRebalanceSpec, false);
-        this.krNotReadyToProposalReadyOnSpecChange(context, 0 , CruiseControlEndpoints.REBALANCE, kr);
+        this.krNotReadyToProposalReadyOnSpecChange(context, 0, CruiseControlEndpoints.REBALANCE, kr);
     }
 
     /**
