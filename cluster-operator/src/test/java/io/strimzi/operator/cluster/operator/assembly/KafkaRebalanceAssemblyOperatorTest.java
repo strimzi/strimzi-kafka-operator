@@ -291,7 +291,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
                         context.failNow(e);
                     }
 
-                    KafkaRebalance updatedKafkaRebalance = updateRebalanceSpec(client, CLUSTER_NAMESPACE, kr.getMetadata().getName(), KafkaRebalanceAnnotation.refresh);
+                    KafkaRebalance updatedKafkaRebalance = updateRebalanceSpec(client, CLUSTER_NAMESPACE, kr.getMetadata().getName());
 
                     return kcrao.reconcileRebalance(
                             new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, CLUSTER_NAMESPACE, kr.getMetadata().getName()),
@@ -1785,7 +1785,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
     /**
      * Updates the KafkaRebalance spec
      */
-    private KafkaRebalance updateRebalanceSpec(KubernetesClient kubernetesClient, String namespace, String resource, KafkaRebalanceAnnotation annotationValue) {
+    private KafkaRebalance updateRebalanceSpec(KubernetesClient kubernetesClient, String namespace, String resource) {
         KafkaRebalance kafkaRebalance = Crds.kafkaRebalanceOperation(kubernetesClient).inNamespace(namespace).withName(resource).get();
         return Crds.kafkaRebalanceOperation(client)
                 .inNamespace(CLUSTER_NAMESPACE)
