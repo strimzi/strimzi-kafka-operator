@@ -6,6 +6,7 @@ package io.strimzi.api.kafka.model;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import io.strimzi.api.annotations.DeprecatedProperty;
 import io.strimzi.crdgenerator.annotations.Description;
 import io.strimzi.crdgenerator.annotations.Minimum;
 import io.sundr.builder.annotations.Buildable;
@@ -23,7 +24,7 @@ import java.util.Map;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({"pause", "tasksMax", "config"})
+@JsonPropertyOrder({"pause", "tasksMax", "config", "state"})
 @EqualsAndHashCode
 public abstract class AbstractConnectorSpec extends Spec {
     private static final long serialVersionUID = 1L;
@@ -36,6 +37,7 @@ public abstract class AbstractConnectorSpec extends Spec {
     private Integer tasksMax;
     private Boolean pause;
     private Map<String, Object> config = new HashMap<>(0);
+    private ConnectorState state;
 
     private AutoRestart autoRestart;
 
@@ -79,6 +81,8 @@ public abstract class AbstractConnectorSpec extends Spec {
      * @return  Flag indicating whether the connector should paused or not
      */
     @Description("Whether the connector should be paused. Defaults to false.")
+    @Deprecated
+    @DeprecatedProperty(description = "Deprecated in Strimzi 0.38.0, use state instead.")
     public Boolean getPause() {
         return pause;
     }
@@ -88,6 +92,7 @@ public abstract class AbstractConnectorSpec extends Spec {
      *
      * @param pause     Set to true to request the connector to be paused. False to have it running.
      */
+    @Deprecated
     public void setPause(Boolean pause) {
         this.pause = pause;
     }
@@ -109,4 +114,22 @@ public abstract class AbstractConnectorSpec extends Spec {
     public void setAutoRestart(AutoRestart autoRestart) {
         this.autoRestart = autoRestart;
     }
+
+    /**
+     * @return The state of the connector
+     */
+    @Description("The state the connector should be in. Defaults to running.")
+    public ConnectorState getState() {
+        return state;
+    }
+
+    /**
+     * Sets the connector state
+     *
+     * @param state The state of the connector
+     */
+    public void setState(ConnectorState state) {
+        this.state = state;
+    }
+
 }

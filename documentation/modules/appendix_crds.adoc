@@ -3097,8 +3097,10 @@ Used in: xref:type-KafkaConnector-{context}[`KafkaConnector`]
 |xref:type-AutoRestart-{context}[`AutoRestart`]
 |config       1.2+<.<a|The Kafka Connector configuration. The following properties cannot be set: connector.class, tasks.max.
 |map
-|pause        1.2+<.<a|Whether the connector should be paused. Defaults to false.
+|pause        1.2+<.<a|**The `pause` property has been deprecated.** Deprecated in Strimzi 0.38.0, use state instead. Whether the connector should be paused. Defaults to false.
 |boolean
+|state        1.2+<.<a|The state the connector should be in. Defaults to running.
+|string (one of [running, paused, stopped])
 |====
 
 [id='type-AutoRestart-{context}']
@@ -3301,8 +3303,10 @@ Used in: xref:type-KafkaMirrorMaker2MirrorSpec-{context}[`KafkaMirrorMaker2Mirro
 |map
 |autoRestart  1.2+<.<a|Automatic restart of connector and tasks configuration.
 |xref:type-AutoRestart-{context}[`AutoRestart`]
-|pause        1.2+<.<a|Whether the connector should be paused. Defaults to false.
+|pause        1.2+<.<a|**The `pause` property has been deprecated.** Deprecated in Strimzi 0.38.0, use state instead. Whether the connector should be paused. Defaults to false.
 |boolean
+|state        1.2+<.<a|The state the connector should be in. Defaults to running.
+|string (one of [running, paused, stopped])
 |====
 
 [id='type-KafkaMirrorMaker2Status-{context}']

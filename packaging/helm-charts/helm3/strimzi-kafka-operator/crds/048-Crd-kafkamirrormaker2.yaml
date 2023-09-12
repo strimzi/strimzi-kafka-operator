@@ -270,6 +270,13 @@ spec:
                           pause:
                             type: boolean
                             description: Whether the connector should be paused. Defaults to false.
+                          state:
+                            type: string
+                            enum:
+                              - paused
+                              - stopped
+                              - running
+                            description: The state the connector should be in. Defaults to running.
                         description: The specification of the Kafka MirrorMaker 2 source connector.
                       heartbeatConnector:
                         type: object
@@ -295,6 +302,13 @@ spec:
                           pause:
                             type: boolean
                             description: Whether the connector should be paused. Defaults to false.
+                          state:
+                            type: string
+                            enum:
+                              - paused
+                              - stopped
+                              - running
+                            description: The state the connector should be in. Defaults to running.
                         description: The specification of the Kafka MirrorMaker 2 heartbeat connector.
                       checkpointConnector:
                         type: object
@@ -320,6 +334,13 @@ spec:
                           pause:
                             type: boolean
                             description: Whether the connector should be paused. Defaults to false.
+                          state:
+                            type: string
+                            enum:
+                              - paused
+                              - stopped
+                              - running
+                            description: The state the connector should be in. Defaults to running.
                         description: The specification of the Kafka MirrorMaker 2 checkpoint connector.
                       topicsPattern:
                         type: string

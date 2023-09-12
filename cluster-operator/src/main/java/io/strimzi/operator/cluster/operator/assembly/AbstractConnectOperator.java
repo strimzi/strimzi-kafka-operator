@@ -19,6 +19,7 @@ import io.micrometer.core.instrument.Timer;
 import io.netty.channel.ConnectTimeoutException;
 import io.strimzi.api.kafka.KafkaConnectorList;
 import io.strimzi.api.kafka.model.AbstractKafkaConnectSpec;
+import io.strimzi.api.kafka.model.ConnectorState;
 import io.strimzi.api.kafka.model.KafkaConnectResources;
 import io.strimzi.api.kafka.model.KafkaConnector;
 import io.strimzi.api.kafka.model.KafkaConnectorBuilder;
@@ -421,8 +422,8 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
                 if (!needsReconfiguring(reconciliation, connectorName, connectorSpec, desiredConfig.asOrderedProperties().asMap(), currentConfig)) {
                     LOGGER.debugCr(reconciliation, "Connector {} exists and has desired config, {}=={}", connectorName, desiredConfig.asOrderedProperties().asMap(), currentConfig);
                     return apiClient.status(reconciliation, host, port, connectorName)
-                        .compose(status -> pauseResume(reconciliation, host, apiClient, connectorName, connectorSpec, status))
-                        .compose(ignored -> maybeRestartConnector(reconciliation, host, apiClient, connectorName, resource, new ArrayList<>()))
+                        .compose(status -> updateState(reconciliation, host, apiClient, connectorName, connectorSpec, status, new ArrayList<>()))
+                        .compose(conditions -> maybeRestartConnector(reconciliation, host, apiClient, connectorName, resource, conditions))
                         .compose(conditions -> maybeRestartConnectorTask(reconciliation, host, apiClient, connectorName, resource, conditions))
                         .compose(conditions ->
                             apiClient.statusWithBackOff(reconciliation, new BackOff(200L, 2, 10), host, port, connectorName)
@@ -475,27 +476,64 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
         return apiClient.createOrUpdatePutRequest(reconciliation, host, port, connectorName, asJson(connectorSpec, desiredConfig))
             .compose(ignored -> apiClient.statusWithBackOff(reconciliation, new BackOff(200L, 2, 10), host, port,
                     connectorName))
-            .compose(status -> pauseResume(reconciliation, host, apiClient, connectorName, connectorSpec, status))
+            .compose(status -> updateState(reconciliation, host, apiClient, connectorName, connectorSpec, status, new ArrayList<>()))
             .compose(ignored ->  apiClient.status(reconciliation, host, port, connectorName));
     }
 
-    private Future<Void> pauseResume(Reconciliation reconciliation, String host, KafkaConnectApi apiClient, String connectorName, KafkaConnectorSpec connectorSpec, Map<String, Object> status) {
+    private Future<List<Condition>> updateState(Reconciliation reconciliation, String host, KafkaConnectApi apiClient, String connectorName, KafkaConnectorSpec connectorSpec, Map<String, Object> status, List<Condition> conditions) {
         @SuppressWarnings({ "rawtypes" })
         Object path = ((Map) status.getOrDefault("connector", emptyMap())).get("state");
-        if (!(path instanceof String)) {
+        if (!(path instanceof String state)) {
             return Future.failedFuture("JSON response lacked $.connector.state");
         } else {
-            String state = (String) path;
-            boolean shouldPause = Boolean.TRUE.equals(connectorSpec.getPause());
-            if ("RUNNING".equals(state) && shouldPause) {
-                LOGGER.debugCr(reconciliation, "Pausing connector {}", connectorName);
-                return apiClient.pause(reconciliation, host, port, connectorName);
-            } else if ("PAUSED".equals(state) && !shouldPause) {
-                LOGGER.debugCr(reconciliation, "Resuming connector {}", connectorName);
-                return apiClient.resume(reconciliation, host, port, connectorName);
-            } else {
-                return Future.succeededFuture();
+            ConnectorState desiredState = connectorSpec.getState();
+            @SuppressWarnings("deprecation")
+            Boolean shouldPause = connectorSpec.getPause();
+            ConnectorState targetState = desiredState != null ? desiredState :
+                    Boolean.TRUE.equals(shouldPause) ? ConnectorState.PAUSED : ConnectorState.RUNNING;
+            if (desiredState != null && shouldPause != null) {
+                String message = "Both pause and state are set. Since pause is deprecated, state takes precedence " +
+                        "so the connector will be " + targetState.toValue();
+                LOGGER.warnCr(reconciliation, message);
+                conditions.add(StatusUtils.buildWarningCondition("UpdateState", message));
             }
+            Future<Void> future = Future.succeededFuture();
+            switch (state) {
+                case "RUNNING" -> {
+                    if (targetState == ConnectorState.PAUSED) {
+                        LOGGER.infoCr(reconciliation, "Pausing connector {}", connectorName);
+                        future = apiClient.pause(reconciliation, host, port, connectorName);
+                    } else if (targetState == ConnectorState.STOPPED) {
+                        LOGGER.infoCr(reconciliation, "Stopping connector {}", connectorName);
+                        future = apiClient.stop(reconciliation, host, port, connectorName);
+                    }
+                }
+                case "PAUSED" -> {
+                    if (targetState == ConnectorState.RUNNING) {
+                        LOGGER.infoCr(reconciliation, "Resuming connector {}", connectorName);
+                        future = apiClient.resume(reconciliation, host, port, connectorName);
+                    } else if (targetState == ConnectorState.STOPPED) {
+                        LOGGER.infoCr(reconciliation, "Stopping connector {}", connectorName);
+                        future = apiClient.stop(reconciliation, host, port, connectorName);
+                    }
+                }
+                case "STOPPED" -> {
+                    if (targetState == ConnectorState.RUNNING) {
+                        LOGGER.infoCr(reconciliation, "Resuming connector {}", connectorName);
+                        future = apiClient.resume(reconciliation, host, port, connectorName);
+                    } else if (targetState == ConnectorState.PAUSED) {
+                        LOGGER.infoCr(reconciliation, "Pausing connector {}", connectorName);
+                        future = apiClient.pause(reconciliation, host, port, connectorName);
+                    }
+                }
+                default -> {
+                    // Connectors can also be in the UNASSIGNED or RESTARTING state. We could transition directly
+                    // from these states to PAUSED or STOPPED but as these are transient, and typically lead to
+                    // RUNNING, we ignore them here.
+                    return Future.succeededFuture(conditions);
+                }
+            }
+            return future.compose(ignored -> Future.succeededFuture(conditions));
         }
     }
 

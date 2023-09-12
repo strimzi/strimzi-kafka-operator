@@ -277,15 +277,20 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
 
     @Override
     public Future<Void> pause(Reconciliation reconciliation, String host, int port, String connectorName) {
-        return pauseResume(reconciliation, host, port, "/connectors/" + connectorName + "/pause");
+        return updateState(reconciliation, host, port, "/connectors/" + connectorName + "/pause", 202);
+    }
+
+    @Override
+    public Future<Void> stop(Reconciliation reconciliation, String host, int port, String connectorName) {
+        return updateState(reconciliation, host, port, "/connectors/" + connectorName + "/stop", 204);
     }
 
     @Override
     public Future<Void> resume(Reconciliation reconciliation, String host, int port, String connectorName) {
-        return pauseResume(reconciliation, host, port, "/connectors/" + connectorName + "/resume");
+        return updateState(reconciliation, host, port, "/connectors/" + connectorName + "/resume", 202);
     }
 
-    private Future<Void> pauseResume(Reconciliation reconciliation, String host, int port, String path) {
+    private Future<Void> updateState(Reconciliation reconciliation, String host, int port, String path, int expectedStatusCode) {
         LOGGER.debugCr(reconciliation, "Making PUT request to {} ", path);
         return HttpClientUtils.withHttpClient(vertx, new HttpClientOptions().setLogActivity(true), (httpClient, result) ->
                 httpClient.request(HttpMethod.PUT, port, host, path, request -> {
@@ -294,13 +299,13 @@ class KafkaConnectApiImpl implements KafkaConnectApi {
                                 .putHeader("Accept", "application/json");
                         request.result().send(response -> {
                             if (response.succeeded()) {
-                                if (response.result().statusCode() == 202) {
+                                if (response.result().statusCode() == expectedStatusCode) {
                                     response.result().bodyHandler(body -> {
                                         result.complete();
                                     });
                                 } else {
                                     result.fail("Unexpected status code " + response.result().statusCode()
-                                            + " for GET request to " + host + ":" + port + path);
+                                            + " for PUT request to " + host + ":" + port + path);
                                 }
                             } else {
                                 result.tryFail(response.cause());
