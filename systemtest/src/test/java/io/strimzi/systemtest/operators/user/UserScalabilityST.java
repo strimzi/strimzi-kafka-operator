@@ -53,7 +53,7 @@ public class UserScalabilityST extends AbstractST {
     }
 
     void testCreateAndAlterBigAmountOfUsers(ExtensionContext extensionContext, final TestStorage testStorage, final UserAuthType authType) {
-        int numberOfUsers = 2;
+        int numberOfUsers = 1000;
 
         List<KafkaUser> usersList = getListOfKafkaUsers(testStorage.getUsername(), numberOfUsers, authType);
 
