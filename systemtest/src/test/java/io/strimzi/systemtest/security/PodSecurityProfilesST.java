@@ -68,6 +68,32 @@ public class PodSecurityProfilesST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(PodSecurityProfilesST.class);
 
+    /**
+     * @description This test case verifies common behaviour of Pod Security profiles.
+     *
+     * @steps
+     *  1. - Add restricted security profile to the namespace containing all resources, by applying according label
+     *     - Namespace is modified
+     *  2. - Deploy 3 Kafka Clusters, of which 2 will serve as targets and one as a source and for other purposes
+     *     - Kafka clusters are deployed
+     *  3. - Deploy all additional Operands which are to be tested, i.e., KafkaMirrorMaker KafkaMirrorMaker2 KafkaBridge KafkaConnect, KafkaConnector.
+     *     - All components are deployed targeting respective Kafka Clusters
+     *  4. - Deploy producer which will produce data into Topic residing in Kafka Cluster serving as Source for KafkaMirrorMakers and is targeted by other Operands
+     *     - Messages are sent into KafkaTopic
+     *  5. - Verify that containers such as Kafka, ZooKeeper, Entity Operator, KafkaBridge has properly set .securityContext
+     *     - All containers and Pods have expected properties
+     *  6. - Verify KafkaConnect and KafkaConnector are working by checking presence of Data in file targeted by FileSink KafkaConnector
+     *     - Data are present here
+     *  7. - Verify Kafka and MirrorMakers by Deploy kafka Consumers in respective target Kafka Clusters targeting KafkaTopics created by mirroring
+     *     - Data are present here
+     *  8. - Deploy Kafka consumer with invalid configuration regarding, i.e., without pod security profile
+     *     - Consumer is unable to communicate correctly with Kafka
+     *
+     * @usecase
+     *  - Entity Operator
+     *  - Topic Operator
+     *  - User Operator
+     */
     @Tag(ACCEPTANCE)
     @ParallelNamespaceTest
     @RequiredMinKubeOrOcpBasedKubeVersion(kubeVersion = 1.23, ocpBasedKubeVersion = 1.24)
