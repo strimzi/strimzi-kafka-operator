@@ -166,7 +166,7 @@ public class ClientUtils {
             }
         }
     }
-    public static void waitForClientContainsAllMessages(String jobName, String namespace, List<String> messages) {
+    public static void waitForClientContainsAllMessages(String jobName, String namespace, List<String> messages, boolean deleteAfterSuccess) {
         String jobPodName = PodUtils.getPodNameByPrefix(namespace, jobName);
         List<String> notReadyMessages = messages;
         TestUtils.waitFor("client Job to contain all messages: [" + messages.toString() + "]", Constants.GLOBAL_POLL_INTERVAL, Constants.THROTTLING_EXCEPTION_TIMEOUT, () -> {
@@ -175,6 +175,11 @@ public class ClientUtils {
                     notReadyMessages.remove(message);
                 }
             }
+
+            if (deleteAfterSuccess && notReadyMessages.isEmpty()) {
+                JobUtils.deleteJobWithWait(namespace, jobName);
+            }
+
             return notReadyMessages.isEmpty();
         });
     }

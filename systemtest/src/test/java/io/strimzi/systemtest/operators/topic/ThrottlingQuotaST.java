@@ -114,7 +114,7 @@ public class ThrottlingQuotaST extends AbstractST {
             topicNames.add(testStorage.getTopicName() + "-" + i);
         }
 
-        ClientUtils.waitForClientContainsAllMessages(listAdminName, testStorage.getNamespaceName(), topicNames);
+        ClientUtils.waitForClientContainsAllMessages(listAdminName, testStorage.getNamespaceName(), topicNames, true);
 
         int partitionAlter = 25;
 
