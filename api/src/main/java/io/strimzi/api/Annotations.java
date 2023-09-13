@@ -5,8 +5,7 @@
 package io.strimzi.api;
 
 /**
- * Class for holding some annotation keys and utility methods for handling
- * annotations
+ * Class for holding some annotation keys.
  */
 public class Annotations {
     /**

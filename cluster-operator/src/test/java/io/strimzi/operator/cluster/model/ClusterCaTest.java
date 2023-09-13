@@ -9,6 +9,7 @@ import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.strimzi.api.kafka.model.CertificateExpirationPolicy;
 import io.strimzi.certs.OpenSslCertManager;
 import io.strimzi.operator.common.model.PasswordGenerator;
+import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Ca;
 import io.strimzi.test.annotations.ParallelSuite;
@@ -44,7 +45,7 @@ public class ClusterCaTest {
         // force key replacement so certificate renewal ...
         Secret caKeySecretWithReplaceAnno = new SecretBuilder(clusterCa.caKeySecret())
                 .editMetadata()
-                .addToAnnotations(Ca.ANNO_STRIMZI_IO_FORCE_REPLACE, "true")
+                .addToAnnotations(Annotations.ANNO_STRIMZI_IO_FORCE_REPLACE, "true")
                 .endMetadata()
                 .build();
         // ... simulated at the following time, with expire at 365 days later (by default)
@@ -105,7 +106,7 @@ public class ClusterCaTest {
         // force key replacement so certificate renewal ...
         Secret caKeySecretWithReplaceAnno = new SecretBuilder(clusterCa.caKeySecret())
                 .editMetadata()
-                .addToAnnotations(Ca.ANNO_STRIMZI_IO_FORCE_REPLACE, "true")
+                .addToAnnotations(Annotations.ANNO_STRIMZI_IO_FORCE_REPLACE, "true")
                 .endMetadata()
                 .build();
         // ... simulated at the following time, with expire at 365 days later (by default)
