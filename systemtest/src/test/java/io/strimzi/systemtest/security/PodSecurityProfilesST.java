@@ -47,11 +47,8 @@ import java.util.List;
 import java.util.Map;
 
 import static io.strimzi.systemtest.Constants.ACCEPTANCE;
-import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.POD_SECURITY_PROFILES_RESTRICTED;
 import static io.strimzi.systemtest.Constants.REGRESSION;
-import static io.strimzi.systemtest.Constants.SANITY;
-import static io.strimzi.systemtest.Constants.SMOKE;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.MatcherAssert.assertThat;
 
@@ -182,232 +179,22 @@ public class PodSecurityProfilesST extends AbstractST {
             .build();
         resourceManager.createResourceWithWait(extensionContext, mm2Client.consumerStrimzi());
         ClientUtils.waitForClientSuccess("mm2-consumer", testStorage.getNamespaceName(), messageCount);
-    }
 
-    @Tag(ACCEPTANCE)
-    @ParallelNamespaceTest
-    // Pod Security profiles works from 1.23 Kubernetes version or OCP 4.11
-    @RequiredMinKubeOrOcpBasedKubeVersion(kubeVersion = 1.23, ocpBasedKubeVersion = 1.24)
-    void testKafkaWithRestrictedSecurityProfile(ExtensionContext extensionContext) {
-        final TestStorage testStorage = new TestStorage(extensionContext);
-        addRestrictedPodSecurityProfileToNamespace(testStorage.getNamespaceName());
-
-        // if Kafka Pods deploys it means that it works...
-        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), 3).build());
-
-        // 1. check the generated structure of SecurityContext of Kafka Pods
-        // verifies that (i.) Pods and (ii.) Containers has proper generated SC
-        verifyPodAndContainerSecurityContext(PodUtils.getKafkaClusterPods(testStorage));
-
-        // 2. check that Kafka cluster is usable and everything is working
-        verifyStabilityOfKafkaCluster(extensionContext, testStorage);
-    }
-
-    @ParallelNamespaceTest
-    @RequiredMinKubeOrOcpBasedKubeVersion(kubeVersion = 1.23, ocpBasedKubeVersion = 1.24)
-    void testKafkaWithKafkaBridgeRestrictedSecurityProfile(ExtensionContext extensionContext) {
-        final TestStorage testStorage = new TestStorage(extensionContext);
-        addRestrictedPodSecurityProfileToNamespace(testStorage.getNamespaceName());
-
-        // if Kafka and KafkaBridge Pods deploys it means that it works...
-        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), 3).build());
-        resourceManager.createResourceWithWait(extensionContext, KafkaBridgeTemplates.kafkaBridge(testStorage.getClusterName(),
-            KafkaResources.plainBootstrapAddress(testStorage.getClusterName()), 1).build());
-
-        final List<Pod> kafkaClusterAndKafkaBridgePods = PodUtils.getKafkaClusterPods(testStorage);
-        // add KafkaBridge Pod
-        kafkaClusterAndKafkaBridgePods.addAll(kubeClient().listPods(testStorage.getNamespaceName(), testStorage.getClusterName(), Labels.STRIMZI_KIND_LABEL, KafkaBridge.RESOURCE_KIND));
-
-        // 1. check the generated structure of SecurityContext of Kafka and KafkaBridge Pods
-        // verifies that (i.) Pods and (ii.) Containers has proper generated SC
-        verifyPodAndContainerSecurityContext(kafkaClusterAndKafkaBridgePods);
-
-        // 2. check that Kafka cluster is usable and everything is working
-        verifyStabilityOfKafkaCluster(extensionContext, testStorage);
-    }
-
-    @ParallelNamespaceTest
-    @RequiredMinKubeOrOcpBasedKubeVersion(kubeVersion = 1.23, ocpBasedKubeVersion = 1.24)
-    void testKafkaWithMirrorMakerRestrictedSecurityProfile(ExtensionContext extensionContext) {
-        final TestStorage testStorage = new TestStorage(extensionContext);
-        addRestrictedPodSecurityProfileToNamespace(testStorage.getNamespaceName());
-
-        // if Kafka and KafkaMirrorMaker Pods deploys it means that it works...
-        resourceManager.createResourceWithWait(extensionContext,
-            KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), 1).build(),
-            KafkaTemplates.kafkaPersistent(testStorage.getTargetClusterName(), 1).build(),
-            KafkaTopicTemplates.topic(testStorage).build(),
-            KafkaTopicTemplates.topic(testStorage.getTargetClusterName(), testStorage.getTargetTopicName(), testStorage.getNamespaceName()).build());
-
-        final KafkaClients kafkaClients = new KafkaClientsBuilder()
-            .withTopicName(testStorage.getTopicName())
-            .withMessageCount(testStorage.getMessageCount())
-            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
-            .withProducerName(testStorage.getProducerName())
-            .withConsumerName(testStorage.getConsumerName())
-            .withNamespaceName(testStorage.getNamespaceName())
-            .withUsername(testStorage.getUsername())
-            .withPodSecurityPolicy(PodSecurityProfile.RESTRICTED)
-            .build();
-
-        resourceManager.createResourceWithWait(extensionContext, kafkaClients.producerStrimzi());
-        ClientUtils.waitForProducerClientSuccess(testStorage);
-
-        resourceManager.createResourceWithWait(extensionContext, KafkaMirrorMakerTemplates.kafkaMirrorMaker(testStorage.getClusterName(), testStorage.getTargetClusterName(), testStorage.getClusterName(), ClientUtils.generateRandomConsumerGroup(), 1, false).build());
-
-        final List<Pod> kafkaClusterAndKafkaMirrorMakerPods = PodUtils.getKafkaClusterPods(testStorage);
-        // add KafkaMirrorMaker Pod
-        kafkaClusterAndKafkaMirrorMakerPods.addAll(kubeClient().listPods(testStorage.getNamespaceName(), testStorage.getClusterName(), Labels.STRIMZI_KIND_LABEL, KafkaMirrorMaker.RESOURCE_KIND));
-
-        // 1. check the generated structure of SecurityContext of Kafka and KafkaMirrorMaker Pods
-        // verifies that (i.) Pods and (ii.) Containers has proper generated SC
-        verifyPodAndContainerSecurityContext(kafkaClusterAndKafkaMirrorMakerPods);
-
-        // 2. check that KMM mirrors messages
-        resourceManager.createResourceWithWait(extensionContext, kafkaClients.consumerStrimzi());
-
-        ClientUtils.waitForConsumerClientSuccess(testStorage);
-    }
-
-    @ParallelNamespaceTest
-    @RequiredMinKubeOrOcpBasedKubeVersion(kubeVersion = 1.23, ocpBasedKubeVersion = 1.24)
-    void testKafkaWithMirrorMaker2RestrictedSecurityProfile(ExtensionContext extensionContext) {
-        final TestStorage testStorage = new TestStorage(extensionContext);
-        addRestrictedPodSecurityProfileToNamespace(testStorage.getNamespaceName());
-
-        // if Kafka and KafkaMirrorMaker Pods deploys it means that it works...
-        resourceManager.createResourceWithWait(extensionContext,
-            KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), 1).build(),
-            KafkaTemplates.kafkaPersistent(testStorage.getTargetClusterName(), 1).build(),
-            KafkaTopicTemplates.topic(testStorage).build(),
-            KafkaTopicTemplates.topic(testStorage.getTargetClusterName(), testStorage.getTargetTopicName(), testStorage.getNamespaceName()).build());
-
-        final KafkaClients kafkaClients = new KafkaClientsBuilder()
-            .withTopicName(testStorage.getTopicName())
-            .withMessageCount(testStorage.getMessageCount())
-            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
-            .withProducerName(testStorage.getProducerName())
-            .withConsumerName(testStorage.getConsumerName())
-            .withNamespaceName(testStorage.getNamespaceName())
-            .withUsername(testStorage.getUsername())
-            .withPodSecurityPolicy(PodSecurityProfile.RESTRICTED)
-            .build();
-
-        resourceManager.createResourceWithWait(extensionContext, kafkaClients.producerStrimzi());
-        ClientUtils.waitForProducerClientSuccess(testStorage);
-
-        resourceManager.createResourceWithWait(extensionContext, KafkaMirrorMakerTemplates.kafkaMirrorMaker(testStorage.getClusterName(), testStorage.getTargetClusterName(), testStorage.getClusterName(), ClientUtils.generateRandomConsumerGroup(), 1, false).build());
-
-        final List<Pod> kafkaClusterAndKafkaMirrorMakerPods = PodUtils.getKafkaClusterPods(testStorage);
-        // add KafkaMirrorMaker2 Pod
-        kafkaClusterAndKafkaMirrorMakerPods.addAll(kubeClient().listPods(testStorage.getNamespaceName(), testStorage.getClusterName(), Labels.STRIMZI_KIND_LABEL, KafkaMirrorMaker2.RESOURCE_KIND));
-
-        // 1. check the generated structure of SecurityContext of Kafka and KafkaMirrorMaker2 Pods
-        // verifies that (i.) Pods and (ii.) Containers has proper generated SC
-        verifyPodAndContainerSecurityContext(kafkaClusterAndKafkaMirrorMakerPods);
-
-        // 2. check that KMM2 mirrors messages
-        resourceManager.createResourceWithWait(extensionContext, kafkaClients.consumerStrimzi());
-
-        ClientUtils.waitForConsumerClientSuccess(testStorage);
-    }
-
-    @ParallelNamespaceTest
-    @Tag(SANITY)
-    @Tag(SMOKE)
-    @Tag(INTERNAL_CLIENTS_USED)
-    void testKafkaConnectAndPausedConnectorWithFileSinkPlugin(ExtensionContext extensionContext) {
-        TestStorage testStorage = new TestStorage(extensionContext);
-
-        addRestrictedPodSecurityProfileToNamespace(testStorage.getNamespaceName());
-
-        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3).build());
-        resourceManager.createResourceWithWait(extensionContext, KafkaTopicTemplates.topic(testStorage).build());
-        resourceManager.createResourceWithWait(extensionContext, KafkaConnectTemplates.kafkaConnectWithFilePlugin(testStorage.getClusterName(), testStorage.getNamespaceName(), 1)
-            .editMetadata()
-            .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
-            .endMetadata()
-            .editSpec()
-            .addToConfig("key.converter.schemas.enable", false)
-            .addToConfig("value.converter.schemas.enable", false)
-            .addToConfig("key.converter", "org.apache.kafka.connect.storage.StringConverter")
-            .addToConfig("value.converter", "org.apache.kafka.connect.storage.StringConverter")
-            .endSpec()
-            .build());
-
-        final String kafkaConnectPodName = kubeClient(testStorage.getNamespaceName()).listPodsByPrefixInName(KafkaConnectResources.deploymentName(testStorage.getClusterName())).get(0).getMetadata().getName();
-
-        KafkaConnectUtils.waitUntilKafkaConnectRestApiIsAvailable(testStorage.getNamespaceName(), kafkaConnectPodName);
-
-        LOGGER.info("Creating KafkaConnector with 'pause: true'");
-
-        resourceManager.createResourceWithWait(extensionContext, KafkaConnectorTemplates.kafkaConnector(testStorage.getClusterName())
-            .editSpec()
-            .withClassName("org.apache.kafka.connect.file.FileStreamSinkConnector")
-            .addToConfig("topics", testStorage.getTopicName())
-            .addToConfig("file", Constants.DEFAULT_SINK_FILE_PATH)
-            .addToConfig("key.converter", "org.apache.kafka.connect.storage.StringConverter")
-            .addToConfig("value.converter", "org.apache.kafka.connect.storage.StringConverter")
-            .endSpec()
-            .build());
-
-        KafkaClients kafkaClients = new KafkaClientsBuilder()
-            .withTopicName(testStorage.getTopicName())
-            .withMessageCount(testStorage.getMessageCount())
-            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
-            .withProducerName(testStorage.getProducerName())
-            .withConsumerName(testStorage.getConsumerName())
-            .withNamespaceName(testStorage.getNamespaceName())
-            .build();
-
-        resourceManager.createResourceWithWait(extensionContext, kafkaClients.producerStrimzi(), kafkaClients.consumerStrimzi());
-        ClientUtils.waitForClientsSuccess(testStorage);
-
-        KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(testStorage.getNamespaceName(), kafkaConnectPodName, Constants.DEFAULT_SINK_FILE_PATH, "99");
-
-        final List<Pod> kafkaClusterAndKafkaMirrorMakerPods = PodUtils.getKafkaClusterPods(testStorage);
-        // add KafkaMirrorMaker2 Pod
-        kafkaClusterAndKafkaMirrorMakerPods.addAll(kubeClient().listPods(testStorage.getNamespaceName(), testStorage.getClusterName(), Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND));
-
-        // 1. check the generated structure of SecurityContext of Kafka and KafkaMirrorMaker2 Pods
-        // verifies that (i.) Pods and (ii.) Containers has proper generated SC
-        verifyPodAndContainerSecurityContext(kafkaClusterAndKafkaMirrorMakerPods);
-    }
-
-    @ParallelNamespaceTest
-    @RequiredMinKubeOrOcpBasedKubeVersion(kubeVersion = 1.23, ocpBasedKubeVersion = 1.24)
-    void testKafkaWithIncorrectConfiguredKafkaClient(ExtensionContext extensionContext) {
-        final TestStorage testStorage = new TestStorage(extensionContext);
-        addRestrictedPodSecurityProfileToNamespace(testStorage.getNamespaceName());
-
-        // if Kafka Pods deploys it means that it works...
-        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), 3).build());
-
-        // 1. check the generated structure of SecurityContext of Kafka Pods
-        // verifies that (i.) Pods and (ii.) Containers has proper generated SC
-        verifyPodAndContainerSecurityContext(PodUtils.getKafkaClusterPods(testStorage));
-
-        // 2. check that Client is unable to create due to incorrect configuration
-        final KafkaClients kafkaClients = new KafkaClientsBuilder()
-            .withTopicName(testStorage.getTopicName())
-            .withMessageCount(testStorage.getMessageCount())
-            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
-            .withConsumerName(testStorage.getConsumerName())
-            .withProducerName(testStorage.getProducerName())
-            .withNamespaceName(testStorage.getNamespaceName())
-            // we set DEFAULT, which is in this case incorrect and client should crash
+        // verify that client incorrectly configured Pod Security Profile wont successfully communicate.
+        final KafkaClients incorrectKafkaClients = new KafkaClientsBuilder(kafkaClients)
             .withPodSecurityPolicy(PodSecurityProfile.DEFAULT)
             .build();
 
-        // 3. excepted failure
+        // excepted failure
         // job_controller.go:1437 pods "..." is forbidden: violates PodSecurity "restricted:latest": allowPrivilegeEscalation != false
         // (container "..." must set securityContext.allowPrivilegeEscalation=false),
         // unrestricted capabilities (container "..." must set securityContext.capabilities.drop=["ALL"]),
         // runAsNonRoot != true (pod or container "..." must set securityContext.runAsNonRoot=true),
         // seccompProfile (pod or container "..." must set securityContext.seccompProfile.type to "RuntimeDefault" or "Localhost")
-        resourceManager.createResourceWithoutWait(extensionContext, kafkaClients.producerStrimzi());
+        resourceManager.createResourceWithoutWait(extensionContext, incorrectKafkaClients.producerStrimzi());
         ClientUtils.waitForProducerClientTimeout(testStorage);
     }
+
 
     @BeforeAll
     void beforeAll(ExtensionContext extensionContext) {
