@@ -260,7 +260,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
      * 8. The KafkaRebalance resource moves to the 'ProposalReady' state
      */
     @Test
-    public void krNotReadyToProposalReadyOnSpecChange(VertxTestContext context) throws IOException, URISyntaxException {
+    public void testKrNotReadyToProposalReadyOnSpecChange(VertxTestContext context) throws IOException, URISyntaxException {
 
         // Setup the rebalance endpoint to get error about hard goals
         MockCruiseControl.setupCCRebalanceBadGoalsError(ccServer, CruiseControlEndpoints.REBALANCE);
@@ -1796,21 +1796,6 @@ public class KafkaRebalanceAssemblyOperatorTest {
                 .edit(kr -> patchedKr);
 
         return patchedKr;
-    }
-
-    /**
-     * Updates the KafkaRebalance spec
-     */
-    private KafkaRebalance updateRebalanceSpec(KubernetesClient kubernetesClient, String namespace, String resource) {
-        KafkaRebalance kafkaRebalance = Crds.kafkaRebalanceOperation(kubernetesClient).inNamespace(namespace).withName(resource).get();
-        return Crds.kafkaRebalanceOperation(client)
-                .inNamespace(CLUSTER_NAMESPACE)
-                .withName(kafkaRebalance.getMetadata().getName())
-                .edit(kr2 -> new KafkaRebalanceBuilder(kr2)
-                        .editSpec()
-                        .withSkipHardGoalCheck(true)
-                        .endSpec()
-                        .build());
     }
 
     private void assertState(VertxTestContext context, KubernetesClient kubernetesClient, String namespace, String resource, KafkaRebalanceState state) {
