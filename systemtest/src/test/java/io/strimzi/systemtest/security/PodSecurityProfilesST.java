@@ -90,9 +90,7 @@ public class PodSecurityProfilesST extends AbstractST {
      *     - Consumer is unable to communicate correctly with Kafka
      *
      * @usecase
-     *  - Entity Operator
-     *  - Topic Operator
-     *  - User Operator
+     *  - security-profiles
      */
     @Tag(ACCEPTANCE)
     @ParallelNamespaceTest
