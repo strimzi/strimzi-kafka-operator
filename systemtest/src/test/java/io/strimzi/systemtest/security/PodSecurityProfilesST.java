@@ -28,6 +28,7 @@ import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaBridgeTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaConnectTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaConnectorTemplates;
+import io.strimzi.systemtest.templates.crd.KafkaMirrorMaker2Templates;
 import io.strimzi.systemtest.templates.crd.KafkaMirrorMakerTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
@@ -69,6 +70,119 @@ import static org.hamcrest.MatcherAssert.assertThat;
 public class PodSecurityProfilesST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(PodSecurityProfilesST.class);
+
+    @Tag(ACCEPTANCE)
+    @ParallelNamespaceTest
+    @RequiredMinKubeOrOcpBasedKubeVersion(kubeVersion = 1.23, ocpBasedKubeVersion = 1.24)
+    void testOperandsWithRestrictedSecurityProfile(ExtensionContext extensionContext) {
+
+        final TestStorage testStorage = new TestStorage(extensionContext);
+
+        final String mm1TargetClusterName = testStorage.getTargetClusterName() + "-mm1";
+        final String mm2TargetClusterName = testStorage.getTargetClusterName() + "-mm2";
+        final String mm2SourceMirroredTopicName = testStorage.getClusterName() + "." + testStorage.getTopicName();
+        final int messageCount = 100;
+
+        addRestrictedPodSecurityProfileToNamespace(testStorage.getNamespaceName());
+
+        // 1 source Kafka Cluster, 2 target Kafka Cluster, 1 for MM1 and MM2 each having different target Kafka Cluster,
+
+        LOGGER.info("Deploy Kafka Clusters resources");
+        resourceManager.createResourceWithWait(extensionContext,
+            KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 1).build(),
+            KafkaTemplates.kafkaEphemeral(mm1TargetClusterName, 1).build(),
+            KafkaTemplates.kafkaEphemeral(mm2TargetClusterName, 1).build(),
+            KafkaTopicTemplates.topic(testStorage).build()
+        );
+
+        // Kafka Bridge and KafkaConnect use main Kafka Cluster (one serving as source for MM1 and MM2)
+        // MM1 and MM2 shares source Kafka Cluster and each have their own target kafka cluster
+
+        LOGGER.info("Deploy all additional operands: MM1, MM2, Bridge, KafkaConnect");
+        resourceManager.createResourceWithWait(extensionContext,
+            KafkaConnectTemplates.kafkaConnectWithFilePlugin(testStorage.getClusterName(), testStorage.getNamespaceName(), 1)
+                .editMetadata()
+                    .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
+                .endMetadata()
+                .editSpec()
+                    .addToConfig("key.converter.schemas.enable", false)
+                    .addToConfig("value.converter.schemas.enable", false)
+                    .addToConfig("key.converter", "org.apache.kafka.connect.storage.StringConverter")
+                    .addToConfig("value.converter", "org.apache.kafka.connect.storage.StringConverter")
+                .endSpec()
+                .build(),
+            KafkaBridgeTemplates.kafkaBridge(testStorage.getClusterName(), KafkaResources.plainBootstrapAddress(testStorage.getClusterName()), 1).build(),
+            KafkaMirrorMakerTemplates.kafkaMirrorMaker(testStorage.getClusterName() + "-mm1", testStorage.getClusterName(), mm1TargetClusterName, ClientUtils.generateRandomConsumerGroup(), 1, false)
+                .build(),
+            KafkaMirrorMaker2Templates.kafkaMirrorMaker2(testStorage.getClusterName() + "-mm2", mm2TargetClusterName, testStorage.getClusterName(), 1, false)
+                .editSpec()
+                    .editFirstMirror()
+                        .editSourceConnector()
+                            .addToConfig("refresh.topics.interval.seconds", "1")
+                        .endSourceConnector()
+                    .endMirror()
+                .endSpec()
+                .build());
+
+        LOGGER.info("Deploy File Sink Kafka Connector: {}/{}", testStorage.getNamespaceName(), testStorage.getClusterName());
+        resourceManager.createResourceWithWait(extensionContext, KafkaConnectorTemplates.kafkaConnector(testStorage.getClusterName())
+            .editSpec()
+                .withClassName("org.apache.kafka.connect.file.FileStreamSinkConnector")
+                .addToConfig("topics", testStorage.getTopicName())
+                .addToConfig("file", Constants.DEFAULT_SINK_FILE_PATH)
+                .addToConfig("key.converter", "org.apache.kafka.connect.storage.StringConverter")
+                .addToConfig("value.converter", "org.apache.kafka.connect.storage.StringConverter")
+            .endSpec()
+            .build());
+
+        // Messages produced to Main Kafka Cluster (source) will be sinked to file, and mirrored into targeted Kafkas to later verify Operands work correctly.
+        LOGGER.info("Deploy producer: {} and produce {} messages into Kafka: {} in Ns: ", testStorage.getProducerName(), testStorage.getClusterName(), messageCount);
+        final KafkaClients kafkaClients = new KafkaClientsBuilder()
+            .withTopicName(testStorage.getTopicName())
+            .withMessageCount(messageCount)
+            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
+            .withProducerName(testStorage.getProducerName())
+            .withConsumerName(testStorage.getConsumerName())
+            .withNamespaceName(testStorage.getNamespaceName())
+            .withUsername(testStorage.getUsername())
+            .withPodSecurityPolicy(PodSecurityProfile.RESTRICTED)
+            .build();
+        resourceManager.createResourceWithWait(extensionContext, kafkaClients.producerStrimzi());
+        ClientUtils.waitForProducerClientSuccess(testStorage);
+
+        // verifies that (i.) Pods and (ii.) Containers have proper generated SC
+        final List<Pod> kafkaClusterAndKafkaBridgePods = PodUtils.getKafkaClusterPods(testStorage);
+        kafkaClusterAndKafkaBridgePods.addAll(kubeClient().listPods(testStorage.getNamespaceName(), testStorage.getClusterName(), Labels.STRIMZI_KIND_LABEL, KafkaBridge.RESOURCE_KIND));
+        kafkaClusterAndKafkaBridgePods.addAll(kubeClient().listPods(testStorage.getNamespaceName(), testStorage.getClusterName(), Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND));
+        kafkaClusterAndKafkaBridgePods.addAll(kubeClient().listPods(testStorage.getNamespaceName(), testStorage.getClusterName(), Labels.STRIMZI_KIND_LABEL, KafkaMirrorMaker2.RESOURCE_KIND));
+        kafkaClusterAndKafkaBridgePods.addAll(kubeClient().listPods(testStorage.getNamespaceName(), testStorage.getClusterName(), Labels.STRIMZI_KIND_LABEL, KafkaMirrorMaker.RESOURCE_KIND));
+
+        verifyPodAndContainerSecurityContext(PodUtils.getKafkaClusterPods(testStorage));
+
+        LOGGER.info("Verify that Kafka cluster is usable and everything (MM1, MM2, and Connector) is working");
+        verifyStabilityOfKafkaCluster(extensionContext, testStorage);
+
+        // verify KafkaConnect
+        final String kafkaConnectPodName = kubeClient(testStorage.getNamespaceName()).listPodsByPrefixInName(KafkaConnectResources.deploymentName(testStorage.getClusterName())).get(0).getMetadata().getName();
+        KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(testStorage.getNamespaceName(), kafkaConnectPodName, Constants.DEFAULT_SINK_FILE_PATH, "99");
+
+        // verify MM1, as topic name does not change, only bootstrap server is changed.
+        final KafkaClients mm1Client = new KafkaClientsBuilder(kafkaClients)
+            .withConsumerName("mm1-consumer")
+            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(mm1TargetClusterName))
+            .build();
+        resourceManager.createResourceWithWait(extensionContext, mm1Client.consumerStrimzi());
+        ClientUtils.waitForClientSuccess("mm1-consumer", testStorage.getNamespaceName(), messageCount);
+
+        // verify MM2
+        final KafkaClients mm2Client = new KafkaClientsBuilder(kafkaClients)
+            .withTopicName(mm2SourceMirroredTopicName)
+            .withConsumerName("mm2-consumer")
+            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(mm2TargetClusterName))
+            .build();
+        resourceManager.createResourceWithWait(extensionContext, mm2Client.consumerStrimzi());
+        ClientUtils.waitForClientSuccess("mm2-consumer", testStorage.getNamespaceName(), messageCount);
+    }
 
     @Tag(ACCEPTANCE)
     @ParallelNamespaceTest
