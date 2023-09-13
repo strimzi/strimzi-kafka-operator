@@ -169,8 +169,6 @@ public class NetworkPoliciesST extends AbstractST {
 
         LOGGER.info("Initialize producers and consumers with access to the Kafka using plain and tls listeners");
         KafkaClients kafkaClientsWithAccessPlain = ClientUtils.getDefaultClientBuilder(testStorage)
-            .withMessageCount(testStorage.getMessageCount())
-            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
             .withProducerName(producerNameAccessedPlain)
             .withConsumerName(consumerNameAccessedPlain)
             .withTopicName(topicNameAccessedPlain)
@@ -184,7 +182,6 @@ public class NetworkPoliciesST extends AbstractST {
 
         LOGGER.info("Initialize producers and consumers without access (denied) to the Kafka using plain and tls listeners");
         KafkaClients kafkaClientsWithoutAccessPlain = ClientUtils.getDefaultClientBuilder(testStorage)
-            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
             .withProducerName(producerNameDeniedPlain)
             .withConsumerName(consumerNameDeniedPlain)
             .withTopicName(topicNameDeniedPlain)

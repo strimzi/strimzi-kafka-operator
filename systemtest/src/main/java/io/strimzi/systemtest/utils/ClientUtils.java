@@ -218,7 +218,7 @@ public class ClientUtils {
     }
 
     public static KafkaClientsBuilder getDefaultClientBuilder(TestStorage testStorage) {
-        return  new KafkaClientsBuilder()
+        return new KafkaClientsBuilder()
             .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
             .withNamespaceName(testStorage.getNamespaceName())
             .withMessageCount(testStorage.getMessageCount())
