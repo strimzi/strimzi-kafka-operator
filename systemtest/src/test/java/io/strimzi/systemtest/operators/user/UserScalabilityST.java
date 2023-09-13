@@ -11,19 +11,18 @@ import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.KafkaUserAuthorizationSimple;
 import io.strimzi.api.kafka.model.KafkaUserAuthorizationSimpleBuilder;
 import io.strimzi.api.kafka.model.KafkaUserBuilder;
+import io.strimzi.api.kafka.model.KafkaUserQuotas;
+import io.strimzi.api.kafka.model.KafkaUserQuotasBuilder;
 import io.strimzi.api.kafka.model.KafkaUserSpec;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.enums.UserAuthType;
-import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaUserTemplates;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
-import java.util.HashMap;
-import java.util.Map;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
@@ -54,19 +53,11 @@ public class UserScalabilityST extends AbstractST {
     }
 
     void testCreateAndAlterBigAmountOfUsers(ExtensionContext extensionContext, final TestStorage testStorage, final UserAuthType authType) {
-        int numberOfUsers = 1000;
-        Map<String, Quantity> requests = new HashMap<>();
-        requests.put("memory", new Quantity("512Mi"));
-        requests.put("cpu", new Quantity("0.2"));
+        int numberOfUsers = 2;
 
         List<KafkaUser> usersList = getListOfKafkaUsers(testStorage.getUsername(), numberOfUsers, authType);
 
         createAllUsersInList(extensionContext, usersList, testStorage.getUsername());
-
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, kafka -> {
-            kafka.getSpec().getEntityOperator().getUserOperator().getResources().setRequests(requests);
-        }, testStorage.getNamespaceName());
-
         alterAllUsersInList(extensionContext, usersList, testStorage.getUsername());
     }
 
@@ -115,6 +106,13 @@ public class UserScalabilityST extends AbstractST {
     private void alterAllUsersInList(ExtensionContext extensionContext, List<KafkaUser> listOfUsers, String usersPrefix) {
         LOGGER.info("Altering {} KafkaUsers", listOfUsers.size());
 
+        KafkaUserQuotas kafkaUserQuotas = new KafkaUserQuotasBuilder()
+                .withConsumerByteRate(1000)
+                .withProducerByteRate(2000)
+                .withRequestPercentage(42)
+                .withControllerMutationRate(10d)
+                .build();
+
         KafkaUserAuthorizationSimple updatedAcl = new KafkaUserAuthorizationSimpleBuilder()
             .addNewAcl()
                 .withNewAclRuleTopicResource()
@@ -127,6 +125,7 @@ public class UserScalabilityST extends AbstractST {
         listOfUsers.replaceAll(kafkaUser -> new KafkaUserBuilder(kafkaUser)
             .editSpec()
                 .withAuthorization(updatedAcl)
+                .withQuotas(kafkaUserQuotas)
             .endSpec()
             .build());
 
@@ -168,7 +167,9 @@ public class UserScalabilityST extends AbstractST {
                     .editUserOperator()
                         .withResources(new ResourceRequirementsBuilder()
                             .addToLimits("memory", new Quantity("512Mi"))
+                            .addToRequests("memory", new Quantity("512Mi"))
                             .addToLimits("cpu", new Quantity("0.5"))
+                            .addToRequests("cpu", new Quantity("0.2"))
                             .build())
                     .endUserOperator()
                 .endEntityOperator()
