@@ -1126,7 +1126,6 @@ public class KafkaRebalanceAssemblyOperatorTest {
         mockRebalanceOperator(mockRebalanceOps, mockCmOps, CLUSTER_NAMESPACE, kr.getMetadata().getName(), client);
 
         Checkpoint checkpoint = context.checkpoint();
-
         kcrao.reconcileRebalance(new Reconciliation("test-trigger", KafkaRebalance.RESOURCE_KIND, CLUSTER_NAMESPACE, kr.getMetadata().getName()), kr)
                 .onComplete(context.succeeding(v -> context.verify(() -> {
                     // the resource moved from New to NotReady due to the error
