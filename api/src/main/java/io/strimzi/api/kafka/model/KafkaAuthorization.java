@@ -35,7 +35,7 @@ public abstract class KafkaAuthorization implements UnknownPropertyPreserving, S
 
     @Description("Authorization type. " +
             "Currently, the supported types are `simple`, `keycloak`, `opa` and `custom`. " +
-            "`simple` authorization type uses Kafka's `kafka.security.authorizer.AclAuthorizer` class for authorization. " +
+            "`simple` authorization type uses Kafka's built-in authorizer for authorization. " +
             "`keycloak` authorization type uses Keycloak Authorization Services for authorization. " +
             "`opa` authorization type uses Open Policy Agent based authorization." +
             "`custom` authorization type uses user-provided implementation for authorization.")

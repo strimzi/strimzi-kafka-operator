@@ -50,7 +50,7 @@ spec:
   zookeeper:
     # ...
 ----
-<1> Authorization xref:con-securing-kafka-authorization-str[enables `simple` authorization on the Kafka broker using the `AclAuthorizer` Kafka plugin].
+<1> Authorization xref:con-securing-kafka-authorization-str[enables `simple` authorization on the Kafka broker using the `AclAuthorizer` and `StandardAuthorizer` Kafka plugins].
 <2> List of user principals with unlimited access to Kafka. _CN_ is the common name from the client certificate when mTLS authentication is used.
 <3> Listener authentication mechanisms may be configured for each listener, and xref:assembly-securing-kafka-brokers-{context}[specified as mTLS, SCRAM-SHA-512, or token-based OAuth 2.0].
 +
