@@ -15,7 +15,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * A representation of a single ACL rule for AclAuthorizer
+ * A representation of a single ACL rule for the Kafka's built-in authorizer
  */
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME,
         include = JsonTypeInfo.As.EXISTING_PROPERTY,

@@ -1,4 +1,4 @@
-Simple authorization in Strimzi uses the `AclAuthorizer` plugin, the default Access Control Lists (ACLs) authorization plugin provided with Apache Kafka.
+For simple authorization, Strimzi uses Kafka's built-in authorization plugins: the `StandardAuthorizer` for KRaft mode and the `AclAuthorizer` for ZooKeeper-based cluster management.
 ACLs allow you to define which users have access to which resources at a granular level.
 
 Configure the `Kafka` custom resource to use simple authorization.

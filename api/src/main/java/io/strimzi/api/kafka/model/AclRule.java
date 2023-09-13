@@ -19,7 +19,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * A representation of a single ACL rule for AclAuthorizer
+ * A representation of a single ACL rule for Kafka's built-in authorizer
  */
 @DescriptionFile
 @Buildable(

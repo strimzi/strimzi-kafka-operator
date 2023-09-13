@@ -32,11 +32,11 @@ You can disable it using the `STRIMZI_ACLS_ADMIN_API_SUPPORTED` environment vari
 
 If no authorization is specified, the User Operator does not provision any access rights for the user.
 Whether such a `KafkaUser` can still access resources depends on the authorizer being used.
-For example, for the `AclAuthorizer` this is determined by its `allow.everyone.if.no.acl.found` configuration.
+For example, for `simple` authorization, this is determined by the `allow.everyone.if.no.acl.found` configuration in the Kafka cluster.
 
 == ACL rules
 
-`AclAuthorizer` uses ACL rules to manage access to Kafka brokers.
+`simple` authorization uses ACL rules to manage access to Kafka brokers.
 
 ACL rules grant access rights to the user, which you specify in the `acls` property.
 

@@ -1,4 +1,4 @@
-Configures access control rules for a `KafkaUser` when brokers are using the `AclAuthorizer`.
+Configures access control rules for a `KafkaUser` when brokers are using `simple` authorization.
 
 .Example `KafkaUser` configuration with authorization
 [source,yaml,subs="attributes+"]
@@ -94,7 +94,7 @@ The following operations are supported:
 
 Only certain operations work with each resource.
 
-For more details about `AclAuthorizer`, ACLs and supported combinations of resources and operations, see link:http://kafka.apache.org/documentation/#security_authz[Authorization and ACLs^].
+For more details about `simple` authorization, ACLs, and supported combinations of resources and operations, see link:http://kafka.apache.org/documentation/#security_authz[Authorization and ACLs^].
 
 [id='property-acl-host-{context}']
 = `host`
