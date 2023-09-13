@@ -5,6 +5,7 @@
 package io.strimzi.test.k8s;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import io.strimzi.test.k8s.cluster.Kind;
 import io.strimzi.test.k8s.cluster.KubeCluster;
 import io.strimzi.test.k8s.cluster.OpenShift;
 import io.strimzi.test.k8s.cmdClient.KubeCmdClient;
@@ -364,6 +365,10 @@ public class KubeClusterResource {
 
     public boolean isOpenShift() {
         return kubeClusterResource.cluster() instanceof OpenShift;
+    }
+
+    public boolean isKind() {
+        return kubeClusterResource.cluster() instanceof Kind;
     }
 
     /** Returns list of currently deployed resources */
