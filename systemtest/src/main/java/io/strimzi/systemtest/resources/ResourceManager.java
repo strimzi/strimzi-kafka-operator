@@ -315,7 +315,7 @@ public class ResourceManager {
         if (StUtils.isParallelNamespaceTest(testContext)) {
             if (!Environment.isNamespaceRbacScope()) {
                 final String namespace = testContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
-                LOGGER.info("Using Namespace: {}", namespace);
+                LOGGER.info("Setting Namespace: {} to resource: {}/{}", namespace, resource.getKind(), resource.getMetadata().getName());
                 resource.getMetadata().setNamespace(namespace);
             }
         }
