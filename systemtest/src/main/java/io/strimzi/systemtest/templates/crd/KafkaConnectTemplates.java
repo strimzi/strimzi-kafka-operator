@@ -113,11 +113,20 @@ public class KafkaConnectTemplates {
 
         final String imageFullPath = Environment.getImageOutputRegistry(namespaceName, Constants.ST_CONNECT_BUILD_IMAGE_NAME, String.valueOf(new Random().nextInt(Integer.MAX_VALUE)));
 
+
+        final DockerOutput dockerOutput = dockerOutput(imageFullPath);
+//        // if we use KIND we load images and avoid needing to authenticate on the nodes
+//        if (KubeClusterResource.getInstance().isKind()) {
+//
+//            LOGGER.info("Loading image:{} to the kind cluster", imageFullPath);
+//            Exec.exec("kind", "load", "docker-image", imageFullPath);
+//        }
+
         KafkaConnectBuilder kafkaConnectBuilder = kafkaConnect(name, namespaceName, clusterName, replicas, pathToConnectConfig)
             .editOrNewSpec()
                 .editOrNewBuild()
                     .withPlugins(fileSinkPlugin)
-                    .withOutput(dockerOutput(imageFullPath))
+                    .withOutput(dockerOutput)
                 .endBuild()
             .endSpec();
 
@@ -129,7 +138,7 @@ public class KafkaConnectTemplates {
         if (Environment.CONNECT_BUILD_REGISTRY_SECRET != null && !Environment.CONNECT_BUILD_REGISTRY_SECRET.isEmpty()) {
             dockerOutputBuilder.withPushSecret(Environment.CONNECT_BUILD_REGISTRY_SECRET);
         }
-        return dockerOutputBuilder.build();
+        return dockerOutputBuilder.withAdditionalKanikoOptions("--skip-tls-verify").build();
     }
 
     private static KafkaConnect getKafkaConnectFromYaml(String yamlPath) {
