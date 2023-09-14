@@ -18,13 +18,11 @@ import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
-import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.metrics.MetricsCollector;
 import io.strimzi.systemtest.resources.ComponentType;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
-import io.strimzi.systemtest.resources.kubernetes.NetworkPolicyResource;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaConnectTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
@@ -62,27 +60,60 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
 public class NetworkPoliciesST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(NetworkPoliciesST.class);
 
+    /**
+     * @description This test case verifies network policies if Cluster Operator is in same namespace as Operands.
+     *
+     * @steps
+     *  1. - Deploy Kafka with plain and tls listeners, having set network policies for respective clients
+     *     - Kafka is deployed
+     *  2. - Deploy KafkaTopics, metric scraper Pod and all Kafka clients
+     *     - All resources are deployed
+     *  3. - Produce and Consume messages with clients using respective listeners
+     *     - Clients Fails or Succeed in connecting to the Kafka based on specified network policies
+     *  4. - Scrape exported metrics regarding present Kafka Topics
+     *     - Metrics are present and have expected values
+     *  5. - Change log configuration in Kafka config
+     *     - Observed generation is higher than before the config change and Rolling Update did not take place.
+     *
+     * @usecase
+     *  - network-policy
+     *  - listeners
+     *  - metrics
+     */
     @IsolatedTest("Specific Cluster Operator for test case")
     @Tag(INTERNAL_CLIENTS_USED)
-    void testNetworkPoliciesWithPlainListener(ExtensionContext extensionContext) {
+    @SuppressWarnings("checkstyle:MethodLength")
+    void testNetworkPoliciesOnListenersWhenOperatorIsInSameNamespaceAsOperands(ExtensionContext extensionContext) {
+        assumeTrue(!Environment.isHelmInstall() && !Environment.isOlmInstall());
+
         final TestStorage testStorage = new TestStorage(extensionContext, Constants.TEST_SUITE_NAMESPACE);
 
-        final String topic0 = "topic-example-0";
-        final String topic1 = "topic-example-1";
+        final String topicNameAccessedTls = testStorage.getTopicName() + "-accessed-tls";
+        final String topicNameAccessedPlain = testStorage.getTopicName() + "-accessed-plain";
+        final String topicNameDeniedTls = testStorage.getTopicName() + "-denied-tls";
+        final String topicNameDeniedPlain = testStorage.getTopicName() + "-denied-plain";
 
-        final String deniedProducerName = "denied-" + testStorage.getProducerName();
-        final String deniedConsumerName = "denied-" + testStorage.getConsumerName();
+        final String producerNameAccessedTls = testStorage.getProducerName() + "-accessed-tls";
+        final String producerNameAccessedPlain = testStorage.getProducerName() + "-accessed-plain";
+        final String consumerNameAccessedTls = testStorage.getConsumerName() + "-accessed-tls";
+        final String consumerNameAccessedPlain = testStorage.getConsumerName() + "-accessed-plain";
+
+        final String producerNameDeniedTls = testStorage.getProducerName() + "-denied-tls";
+        final String producerNameDeniedPlain = testStorage.getProducerName() + "-denied-plain";
+        final String consumerNameDeniedTls = testStorage.getConsumerName() + "-denied-tls";
+        final String consumerNameDeniedPlain = testStorage.getConsumerName() + "-denied-plain";
 
         clusterOperator = new SetupClusterOperator.SetupClusterOperatorBuilder()
             .withExtensionContext(extensionContext)
-            .withNamespace(Constants.TEST_SUITE_NAMESPACE)
+            .withNamespace(testStorage.getNamespaceName())
             .createInstallation()
             .runInstallation();
 
         resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 1, 1)
             .editSpec()
                 .editKafka()
-                    .withListeners(new GenericKafkaListenerBuilder()
+                    .withListeners(
+                        new GenericKafkaListenerBuilder()
                             .withName(Constants.PLAIN_LISTENER_DEFAULT_NAME)
                             .withPort(9092)
                             .withType(KafkaListenerType.INTERNAL)
@@ -92,16 +123,37 @@ public class NetworkPoliciesST extends AbstractST {
                             .withNetworkPolicyPeers(
                                 new NetworkPolicyPeerBuilder()
                                     .withNewPodSelector()
-                                        .addToMatchLabels("app", testStorage.getProducerName())
+                                        .addToMatchLabels("app", producerNameAccessedPlain)
                                     .endPodSelector()
                                     .build(),
                                 new NetworkPolicyPeerBuilder()
                                     .withNewPodSelector()
-                                        .addToMatchLabels("app", testStorage.getConsumerName())
+                                        .addToMatchLabels("app", consumerNameAccessedPlain)
                                     .endPodSelector()
                                     .build()
                             )
-                            .build())
+                            .build(),
+                        new GenericKafkaListenerBuilder()
+                            .withName(Constants.TLS_LISTENER_DEFAULT_NAME)
+                            .withPort(9093)
+                            .withType(KafkaListenerType.INTERNAL)
+                            .withTls(true)
+                            .withNewKafkaListenerAuthenticationScramSha512Auth()
+                            .endKafkaListenerAuthenticationScramSha512Auth()
+                            .withNetworkPolicyPeers(
+                                new NetworkPolicyPeerBuilder()
+                                    .withNewPodSelector()
+                                    .addToMatchLabels("app", producerNameAccessedTls)
+                                    .endPodSelector()
+                                    .build(),
+                                new NetworkPolicyPeerBuilder()
+                                    .withNewPodSelector()
+                                    .addToMatchLabels("app", consumerNameAccessedTls)
+                                    .endPodSelector()
+                                    .build()
+                            )
+                            .build()
+                    )
                 .endKafka()
                 .withNewKafkaExporter()
                 .endKafkaExporter()
@@ -109,40 +161,61 @@ public class NetworkPoliciesST extends AbstractST {
             .build(),
             ScraperTemplates.scraperPod(testStorage.getNamespaceName(), testStorage.getScraperName()).build(),
             KafkaUserTemplates.scramShaUser(testStorage).build(),
-            KafkaTopicTemplates.topic(testStorage.getClusterName(), topic0, testStorage.getNamespaceName()).build(),
-            KafkaTopicTemplates.topic(testStorage.getClusterName(), topic1, testStorage.getNamespaceName()).build()
+            KafkaTopicTemplates.topic(testStorage.getClusterName(), topicNameAccessedPlain, testStorage.getNamespaceName()).build(),
+            KafkaTopicTemplates.topic(testStorage.getClusterName(), topicNameAccessedTls, testStorage.getNamespaceName()).build(),
+            KafkaTopicTemplates.topic(testStorage.getClusterName(), topicNameDeniedPlain, testStorage.getNamespaceName()).build(),
+            KafkaTopicTemplates.topic(testStorage.getClusterName(), topicNameDeniedTls, testStorage.getNamespaceName()).build()
         );
 
-        final String scraperPodName = kubeClient().listPodsByPrefixInName(testStorage.getNamespaceName(), testStorage.getScraperName()).get(0).getMetadata().getName();
-        NetworkPolicyResource.allowNetworkPolicySettingsForKafkaExporter(extensionContext, testStorage.getClusterName(), testStorage.getNamespaceName());
-
-        LOGGER.info("Verifying that producer/consumer: {}/{} are able to exchange messages", testStorage.getProducerName(), testStorage.getConsumerName());
-
-        KafkaClients kafkaClients = new KafkaClientsBuilder()
-            .withProducerName(testStorage.getProducerName())
-            .withConsumerName(testStorage.getConsumerName())
-            .withNamespaceName(testStorage.getNamespaceName())
-            .withMessageCount(testStorage.getMessageCount())
-            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
-            .withTopicName(topic0)
-            .withUsername(testStorage.getUsername())
+        LOGGER.info("Initialize producers and consumers with access to the Kafka using plain and tls listeners");
+        KafkaClients kafkaClientsWithAccessPlain = ClientUtils.getDefaultClientBuilder(testStorage)
+            .withProducerName(producerNameAccessedPlain)
+            .withConsumerName(consumerNameAccessedPlain)
+            .withTopicName(topicNameAccessedPlain)
+            .build();
+        KafkaClients kafkaClientsWithAccessTls = ClientUtils.getDefaultClientBuilder(testStorage)
+            .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(testStorage.getClusterName()))
+            .withProducerName(producerNameAccessedTls)
+            .withConsumerName(consumerNameAccessedTls)
+            .withTopicName(topicNameAccessedTls)
             .build();
 
-        resourceManager.createResourceWithWait(extensionContext, kafkaClients.producerScramShaPlainStrimzi(), kafkaClients.consumerScramShaPlainStrimzi());
-        ClientUtils.waitForClientsSuccess(testStorage);
-
-        kafkaClients = new KafkaClientsBuilder(kafkaClients)
-            .withProducerName(deniedProducerName)
-            .withConsumerName(deniedConsumerName)
-            .withTopicName(topic1)
+        LOGGER.info("Initialize producers and consumers without access (denied) to the Kafka using plain and tls listeners");
+        KafkaClients kafkaClientsWithoutAccessPlain = ClientUtils.getDefaultClientBuilder(testStorage)
+            .withProducerName(producerNameDeniedPlain)
+            .withConsumerName(consumerNameDeniedPlain)
+            .withTopicName(topicNameDeniedPlain)
+            .build();
+        KafkaClients kafkaClientsWithoutAccessTls = ClientUtils.getDefaultClientBuilder(testStorage)
+            .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(testStorage.getClusterName()))
+            .withProducerName(producerNameDeniedTls)
+            .withConsumerName(consumerNameDeniedTls)
+            .withTopicName(topicNameDeniedTls)
             .build();
 
-        LOGGER.info("Verifying that producer/consumer: {}/{} are not able to exchange messages", deniedProducerName, deniedConsumerName);
-        resourceManager.createResourceWithWait(extensionContext, kafkaClients.producerStrimzi(), kafkaClients.consumerStrimzi());
-        ClientUtils.waitForClientsTimeout(testStorage);
+        LOGGER.info("Deploy all initialized clients");
+        resourceManager.createResourceWithWait(extensionContext,
+            kafkaClientsWithAccessPlain.producerScramShaPlainStrimzi(),
+            kafkaClientsWithAccessPlain.consumerScramShaPlainStrimzi(),
+            kafkaClientsWithAccessTls.producerScramShaTlsStrimzi(testStorage.getClusterName()),
+            kafkaClientsWithAccessTls.consumerScramShaTlsStrimzi(testStorage.getClusterName()),
+            kafkaClientsWithoutAccessPlain.producerScramShaPlainStrimzi(),
+            kafkaClientsWithoutAccessPlain.consumerScramShaPlainStrimzi(),
+            kafkaClientsWithoutAccessTls.producerScramShaTlsStrimzi(testStorage.getClusterName()),
+            kafkaClientsWithoutAccessTls.consumerScramShaTlsStrimzi(testStorage.getClusterName())
+        );
+
+        LOGGER.info("Verifying that clients: {}, {}, {}, {} are all allowed to communicate", producerNameAccessedPlain, consumerNameAccessedPlain, producerNameAccessedTls, consumerNameAccessedTls);
+        ClientUtils.waitForClientsSuccess(producerNameAccessedPlain, consumerNameAccessedPlain, testStorage.getNamespaceName(), testStorage.getMessageCount());
+        ClientUtils.waitForClientsSuccess(producerNameAccessedTls, consumerNameAccessedTls, testStorage.getNamespaceName(), testStorage.getMessageCount());
+
+        LOGGER.info("Verifying that clients: {}, {}, {}, {} are denied to communicate", producerNameDeniedPlain, consumerNameDeniedPlain, producerNameDeniedTls, consumerNameDeniedTls);
+        ClientUtils.waitForClientsTimeout(producerNameDeniedPlain, consumerNameDeniedPlain, testStorage.getNamespaceName(), testStorage.getMessageCount());
+        ClientUtils.waitForClientsTimeout(producerNameDeniedTls, consumerNameDeniedTls, testStorage.getNamespaceName(), testStorage.getMessageCount());
 
         LOGGER.info("Check metrics exported by KafkaExporter");
 
+        final String scraperPodName = kubeClient().listPodsByPrefixInName(testStorage.getNamespaceName(), testStorage.getScraperName()).get(0).getMetadata().getName();
         MetricsCollector metricsCollector = new MetricsCollector.Builder()
             .withScraperPodName(scraperPodName)
             .withComponentName(testStorage.getClusterName())
@@ -154,102 +227,13 @@ public class NetworkPoliciesST extends AbstractST {
         for (Map.Entry<String, String> entry : metricsCollector.getCollectedData().entrySet()) {
             assertThat("Value from collected metric should be non-empty", !entry.getValue().isEmpty());
             assertThat("Metrics doesn't contain specific values", entry.getValue().contains("kafka_consumergroup_current_offset"));
-            assertThat("Metrics doesn't contain specific values", entry.getValue().contains("kafka_topic_partitions{topic=\"" + topic0 + "\"} 1"));
-            assertThat("Metrics doesn't contain specific values", entry.getValue().contains("kafka_topic_partitions{topic=\"" + topic1 + "\"} 1"));
+            assertThat("Metrics doesn't contain specific values", entry.getValue().contains("kafka_topic_partitions{topic=\"" + topicNameAccessedTls + "\"} 1"));
+            assertThat("Metrics doesn't contain specific values", entry.getValue().contains("kafka_topic_partitions{topic=\"" + topicNameAccessedPlain + "\"} 1"));
         }
-    }
 
-    @IsolatedTest("Specific Cluster Operator for test case")
-    @Tag(INTERNAL_CLIENTS_USED)
-    void testNetworkPoliciesWithTlsListener(ExtensionContext extensionContext) {
-        final TestStorage testStorage = new TestStorage(extensionContext, Constants.TEST_SUITE_NAMESPACE);
 
-        final String topic0 = "topic-example-0";
-        final String topic1 = "topic-example-1";
-
-        final String deniedProducerName = "denied-" + testStorage.getProducerName();
-        final String deniedConsumerName = "denied-" + testStorage.getConsumerName();
-
-        clusterOperator = new SetupClusterOperator.SetupClusterOperatorBuilder()
-            .withExtensionContext(extensionContext)
-            .withNamespace(Constants.TEST_SUITE_NAMESPACE)
-            .createInstallation()
-            .runInstallation();
-
-        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 1, 1)
-            .editSpec()
-                .editKafka()
-                    .withListeners(new GenericKafkaListenerBuilder()
-                            .withName(Constants.TLS_LISTENER_DEFAULT_NAME)
-                            .withPort(9093)
-                            .withType(KafkaListenerType.INTERNAL)
-                            .withTls(true)
-                            .withNewKafkaListenerAuthenticationScramSha512Auth()
-                            .endKafkaListenerAuthenticationScramSha512Auth()
-                            .withNetworkPolicyPeers(
-                                new NetworkPolicyPeerBuilder()
-                                    .withNewPodSelector()
-                                        .addToMatchLabels("app", testStorage.getProducerName())
-                                    .endPodSelector()
-                                    .build(),
-                                new NetworkPolicyPeerBuilder()
-                                    .withNewPodSelector()
-                                        .addToMatchLabels("app", testStorage.getConsumerName())
-                                    .endPodSelector()
-                                    .build()
-                            )
-                            .build())
-                .endKafka()
-            .endSpec()
-            .build(),
-            KafkaTopicTemplates.topic(testStorage.getClusterName(), topic0, testStorage.getNamespaceName()).build(),
-            KafkaTopicTemplates.topic(testStorage.getClusterName(), topic1, testStorage.getNamespaceName()).build(),
-            KafkaUserTemplates.scramShaUser(testStorage).build()
-        );
-
-        LOGGER.info("Verifying that producer/consumer: {}/{} are able to exchange messages", testStorage.getProducerName(), testStorage.getConsumerName());
-
-        KafkaClients kafkaClients = new KafkaClientsBuilder()
-            .withProducerName(testStorage.getProducerName())
-            .withConsumerName(testStorage.getConsumerName())
-            .withNamespaceName(testStorage.getNamespaceName())
-            .withMessageCount(testStorage.getMessageCount())
-            .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(testStorage.getClusterName()))
-            .withTopicName(topic0)
-            .withUsername(testStorage.getUsername())
-            .build();
-
-        resourceManager.createResourceWithWait(extensionContext, kafkaClients.producerScramShaTlsStrimzi(testStorage.getClusterName()), kafkaClients.consumerScramShaTlsStrimzi(testStorage.getClusterName()));
-        ClientUtils.waitForClientsSuccess(testStorage);
-
-        kafkaClients = new KafkaClientsBuilder(kafkaClients)
-            .withProducerName(deniedProducerName)
-            .withConsumerName(deniedConsumerName)
-            .withTopicName(topic1)
-            .build();
-
-        LOGGER.info("Verifying that producer/consumer: {}/{} are not able to exchange messages", deniedProducerName, deniedConsumerName);
-        resourceManager.createResourceWithWait(extensionContext, kafkaClients.producerStrimzi(), kafkaClients.consumerStrimzi());
-        ClientUtils.waitForClientsTimeout(testStorage);
-    }
-
-    @IsolatedTest("Specific Cluster Operator for test case")
-    void testNPWhenOperatorIsInSameNamespaceAsOperand(ExtensionContext extensionContext) {
-        assumeTrue(!Environment.isHelmInstall() && !Environment.isOlmInstall());
-
-        final TestStorage testStorage = storageMap.get(extensionContext);
-        String clusterName = testStorage.getClusterName();
-
-        clusterOperator = new SetupClusterOperator.SetupClusterOperatorBuilder()
-            .withExtensionContext(extensionContext)
-            .withNamespace(Constants.TEST_SUITE_NAMESPACE)
-            .createInstallation()
-            .runInstallation();
-
-        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3).build());
-
-        checkNetworkPoliciesInNamespace(clusterName, Constants.TEST_SUITE_NAMESPACE);
-        changeKafkaConfigurationAndCheckObservedGeneration(clusterName, Constants.TEST_SUITE_NAMESPACE);
+        checkNetworkPoliciesInNamespace(testStorage.getClusterName(), Constants.TEST_SUITE_NAMESPACE);
+        changeKafkaConfigurationAndCheckObservedGeneration(testStorage.getClusterName(), Constants.TEST_SUITE_NAMESPACE);
     }
 
     @IsolatedTest("Specific Cluster Operator for test case")
