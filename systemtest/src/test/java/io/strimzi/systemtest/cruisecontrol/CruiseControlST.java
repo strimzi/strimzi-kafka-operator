@@ -207,11 +207,11 @@ public class CruiseControlST extends AbstractST {
     void testCruiseControlChangesFromRebalancingtoProposalReadyWhenSpecUpdated(ExtensionContext extensionContext) {
         TestStorage testStorage = new TestStorage(extensionContext, Constants.TEST_SUITE_NAMESPACE);
 
-        resourceManager.createResourceWithoutWait(extensionContext, KafkaTemplates.kafkaWithCruiseControl(testStorage.getClusterName(), 3, 1).build());
+        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaWithCruiseControl(testStorage.getClusterName(), 3, 1).build());
 
-        resourceManager.createResourceWithoutWait(extensionContext,  KafkaRebalanceTemplates.kafkaRebalance(testStorage.getClusterName())
+        resourceManager.createResourceWithWait(extensionContext,  KafkaRebalanceTemplates.kafkaRebalance(testStorage.getClusterName())
                 .editMetadata()
-                .withNamespace(clusterOperator.getDeploymentNamespace())
+                    .withNamespace(clusterOperator.getDeploymentNamespace())
                 .endMetadata()
                 .build());
 
