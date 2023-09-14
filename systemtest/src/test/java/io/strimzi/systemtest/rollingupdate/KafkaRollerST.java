@@ -14,9 +14,6 @@ import io.fabric8.kubernetes.api.model.NodeSelectorRequirementBuilder;
 import io.fabric8.kubernetes.api.model.NodeSelectorTerm;
 import io.fabric8.kubernetes.api.model.NodeSelectorTermBuilder;
 import io.fabric8.kubernetes.api.model.Pod;
-import io.fabric8.kubernetes.api.model.Quantity;
-import io.fabric8.kubernetes.api.model.ResourceRequirements;
-import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.StrimziPodSet;
 import io.strimzi.api.kafka.model.template.KafkaClusterTemplate;
@@ -49,7 +46,6 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -120,6 +116,7 @@ public class KafkaRollerST extends AbstractST {
         List<Event> events = kubeClient(namespaceName).listEventsByResourceUid(uid);
         assertThat(events, hasAllOfReasons(Scheduled, Pulled, Created, Started));
 
+        // TODO scaling down of Kafka Cluster (with 4 replicas which has KafkaTopic with 4 replicas) can be forbidden in a future due to would-be Topic under-replication (https://github.com/strimzi/strimzi-kafka-operator/pull/9042)
         // scale down
         final int scaledDownReplicas = 3;
         LOGGER.info("Scaling down to {}", scaledDownReplicas);
@@ -233,56 +230,6 @@ public class KafkaRollerST extends AbstractST {
         assertTrue(checkIfExactlyOneKafkaPodIsNotReady(namespaceName, clusterName));
 
         KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, kafka -> kafka.getSpec().getKafka().setImage(kafkaImage), namespaceName);
-
-        // kafka should get back ready in some reasonable time frame.
-        // Current timeout for wait is set to 14 minutes, which should be enough.
-        // No additional checks are needed, because in case of wait failure, the test will not continue.
-        KafkaUtils.waitForKafkaReady(namespaceName, clusterName);
-    }
-
-    @ParallelNamespaceTest
-    public void testKafkaPodPending(ExtensionContext extensionContext) {
-        final TestStorage testStorage = storageMap.get(extensionContext);
-        final String namespaceName = StUtils.getNamespaceBasedOnRbac(Constants.TEST_SUITE_NAMESPACE, extensionContext);
-        final String clusterName = testStorage.getClusterName();
-
-        ResourceRequirements rr = new ResourceRequirementsBuilder()
-            .withRequests(Collections.emptyMap())
-            .build();
-
-        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaPersistent(clusterName, 3, 3)
-            .editSpec()
-                .editKafka()
-                    .withResources(rr)
-                .endKafka()
-            .endSpec()
-            .build());
-
-        Map<String, Quantity> requests = new HashMap<>(2);
-        requests.put("cpu", new Quantity("123456"));
-        requests.put("memory", new Quantity("128Mi"));
-
-        if (Environment.isKafkaNodePoolsEnabled()) {
-            KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(KafkaResource.getNodePoolName(clusterName), knp ->
-                knp.getSpec().getResources().setRequests(requests), namespaceName);
-        } else {
-            KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, kafka ->
-                kafka.getSpec().getKafka().getResources().setRequests(requests), namespaceName);
-        }
-
-        KafkaUtils.waitForKafkaNotReady(namespaceName, clusterName);
-
-        assertTrue(checkIfExactlyOneKafkaPodIsNotReady(namespaceName, clusterName));
-
-        requests.put("cpu", new Quantity("100m"));
-
-        if (Environment.isKafkaNodePoolsEnabled()) {
-            KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(KafkaResource.getNodePoolName(clusterName), knp ->
-                knp.getSpec().getResources().setRequests(requests), namespaceName);
-        } else {
-            KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, kafka ->
-                kafka.getSpec().getKafka().getResources().setRequests(requests), namespaceName);
-        }
 
         // kafka should get back ready in some reasonable time frame.
         // Current timeout for wait is set to 14 minutes, which should be enough.

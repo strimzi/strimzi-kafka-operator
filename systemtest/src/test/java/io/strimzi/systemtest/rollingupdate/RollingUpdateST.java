@@ -534,6 +534,7 @@ class RollingUpdateST extends AbstractST {
         for (String cmName : StUtils.getKafkaConfigurationConfigMaps(clusterName, 3)) {
             ConfigMap configMap = kubeClient(namespaceName).getConfigMap(namespaceName, cmName);
             configMap.getData().put("new.kafka.config", "new.config.value");
+            configMap.getData().replace("listeners.config", "TLS_9095");
             kubeClient().updateConfigMapInNamespace(namespaceName, configMap);
         }
 
