@@ -17,6 +17,8 @@ import org.apache.logging.log4j.Logger;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Locale;
@@ -295,7 +297,15 @@ public class Environment {
         if (KubeClusterResource.getInstance().isOpenShift()) {
             return "image-registry.openshift-image-registry.svc:5000";
         } else if (KubeClusterResource.getInstance().isKind()) {
-            return "kind-registry:5000";
+            // we will need a hostname of machine
+            final String hostname;
+            try {
+                hostname = InetAddress.getLocalHost().getHostAddress() + ":5051";
+            } catch (UnknownHostException e) {
+                throw new RuntimeException(e);
+            }
+            LOGGER.info("Using hostname:{}", hostname);
+            return hostname;
         } else {
             LOGGER.warn("For running these tests on K8s you have to have internal registry deployed using `minikube start --insecure-registry '10.0.0.0/24'` and `minikube addons enable registry`");
             Service service = kubeClient("kube-system").getService("registry");
