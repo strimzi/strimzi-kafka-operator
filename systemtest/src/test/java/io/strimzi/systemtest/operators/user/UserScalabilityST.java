@@ -11,6 +11,8 @@ import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.KafkaUserAuthorizationSimple;
 import io.strimzi.api.kafka.model.KafkaUserAuthorizationSimpleBuilder;
 import io.strimzi.api.kafka.model.KafkaUserBuilder;
+import io.strimzi.api.kafka.model.KafkaUserQuotas;
+import io.strimzi.api.kafka.model.KafkaUserQuotasBuilder;
 import io.strimzi.api.kafka.model.KafkaUserSpec;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
@@ -104,6 +106,13 @@ public class UserScalabilityST extends AbstractST {
     private void alterAllUsersInList(ExtensionContext extensionContext, List<KafkaUser> listOfUsers, String usersPrefix) {
         LOGGER.info("Altering {} KafkaUsers", listOfUsers.size());
 
+        KafkaUserQuotas kafkaUserQuotas = new KafkaUserQuotasBuilder()
+                .withConsumerByteRate(1000)
+                .withProducerByteRate(2000)
+                .withRequestPercentage(42)
+                .withControllerMutationRate(10d)
+                .build();
+
         KafkaUserAuthorizationSimple updatedAcl = new KafkaUserAuthorizationSimpleBuilder()
             .addNewAcl()
                 .withNewAclRuleTopicResource()
@@ -116,6 +125,7 @@ public class UserScalabilityST extends AbstractST {
         listOfUsers.replaceAll(kafkaUser -> new KafkaUserBuilder(kafkaUser)
             .editSpec()
                 .withAuthorization(updatedAcl)
+                .withQuotas(kafkaUserQuotas)
             .endSpec()
             .build());
 
@@ -139,6 +149,9 @@ public class UserScalabilityST extends AbstractST {
             .runInstallation();
 
         resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3)
+            .editMetadata()
+                .withNamespace(Constants.TEST_SUITE_NAMESPACE)
+            .endMetadata()
             .editOrNewSpec()
                 .editOrNewKafka()
                     .withNewKafkaAuthorizationSimple()
@@ -162,7 +175,7 @@ public class UserScalabilityST extends AbstractST {
                 .endEntityOperator()
             .endSpec()
             .build(),
-            KafkaTopicTemplates.topic(clusterName, topicName, testStorage.getNamespaceName()).build()
+            KafkaTopicTemplates.topic(clusterName, topicName, Constants.TEST_SUITE_NAMESPACE).build()
         );
     }
 }
