@@ -157,9 +157,9 @@ elif [ "$TEST_CLUSTER" = "kind" ]; then
     fi
 
     # We need to add such host to insecure-registry (as localhost is default)
-    echo '{
-      "insecure-registries" : ["10.31.11.250:5001"]
-    }' | sudo tee /etc/docker/daemon.json
+    echo "{
+      \"insecure-registries\" : [\"${hostname}:${reg_port}\"]
+    }" | sudo tee /etc/docker/daemon.json
 
     # 2. Create kind cluster with containerd registry config dir enabled
     # TODO: kind will eventually enable this by default and this patch will
