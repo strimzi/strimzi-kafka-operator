@@ -11,7 +11,6 @@ import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.SecurityContext;
 import io.strimzi.api.kafka.model.KafkaBridge;
 import io.strimzi.api.kafka.model.KafkaConnect;
-import io.strimzi.api.kafka.model.KafkaConnectResources;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2;
 import io.strimzi.api.kafka.model.KafkaResources;
@@ -171,20 +170,19 @@ public class PodSecurityProfilesST extends AbstractST {
         resourceManager.createResourceWithWait(extensionContext, kafkaClients.producerStrimzi());
         ClientUtils.waitForProducerClientSuccess(testStorage);
 
-        // verifies that (i.) Pods and (ii.) Containers have proper generated SC
-        final List<Pod> kafkaClusterAndKafkaBridgePods = PodUtils.getKafkaClusterPods(testStorage);
-        kafkaClusterAndKafkaBridgePods.addAll(kubeClient().listPods(testStorage.getNamespaceName(), testStorage.getClusterName(), Labels.STRIMZI_KIND_LABEL, KafkaBridge.RESOURCE_KIND));
-        kafkaClusterAndKafkaBridgePods.addAll(kubeClient().listPods(testStorage.getNamespaceName(), testStorage.getClusterName(), Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND));
-        kafkaClusterAndKafkaBridgePods.addAll(kubeClient().listPods(testStorage.getNamespaceName(), testStorage.getClusterName(), Labels.STRIMZI_KIND_LABEL, KafkaMirrorMaker2.RESOURCE_KIND));
-        kafkaClusterAndKafkaBridgePods.addAll(kubeClient().listPods(testStorage.getNamespaceName(), testStorage.getClusterName(), Labels.STRIMZI_KIND_LABEL, KafkaMirrorMaker.RESOURCE_KIND));
-
-        verifyPodAndContainerSecurityContext(PodUtils.getKafkaClusterPods(testStorage));
+        // verifies that Pods and Containers have proper generated SC
+        final List<Pod> podsWithProperlyGeneratedSecurityCOntexts = PodUtils.getKafkaClusterPods(testStorage);
+        podsWithProperlyGeneratedSecurityCOntexts.addAll(kubeClient().listPods(testStorage.getNamespaceName(), testStorage.getClusterName(), Labels.STRIMZI_KIND_LABEL, KafkaBridge.RESOURCE_KIND));
+        podsWithProperlyGeneratedSecurityCOntexts.addAll(kubeClient().listPods(testStorage.getNamespaceName(), testStorage.getClusterName(), Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND));
+        podsWithProperlyGeneratedSecurityCOntexts.addAll(kubeClient().listPods(testStorage.getNamespaceName(), testStorage.getClusterName(), Labels.STRIMZI_KIND_LABEL, KafkaMirrorMaker2.RESOURCE_KIND));
+        podsWithProperlyGeneratedSecurityCOntexts.addAll(kubeClient().listPods(testStorage.getNamespaceName(), testStorage.getClusterName(), Labels.STRIMZI_KIND_LABEL, KafkaMirrorMaker.RESOURCE_KIND));
+        verifyPodAndContainerSecurityContext(podsWithProperlyGeneratedSecurityCOntexts);
 
         LOGGER.info("Verify that Kafka cluster is usable and everything (MM1, MM2, and Connector) is working");
         verifyStabilityOfKafkaCluster(extensionContext, testStorage);
 
         // verify KafkaConnect
-        final String kafkaConnectPodName = kubeClient(testStorage.getNamespaceName()).listPodsByPrefixInName(KafkaConnectResources.deploymentName(testStorage.getClusterName())).get(0).getMetadata().getName();
+        final String kafkaConnectPodName = kubeClient(testStorage.getNamespaceName()).listPods(testStorage.getNamespaceName(), testStorage.getClusterName(), Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND).get(0).getMetadata().getName();
         KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(testStorage.getNamespaceName(), kafkaConnectPodName, Constants.DEFAULT_SINK_FILE_PATH, "99");
 
         // verify MM1, as topic name does not change, only bootstrap server is changed.
@@ -218,7 +216,6 @@ public class PodSecurityProfilesST extends AbstractST {
         resourceManager.createResourceWithoutWait(extensionContext, incorrectKafkaClients.producerStrimzi());
         ClientUtils.waitForProducerClientTimeout(testStorage);
     }
-
 
     @BeforeAll
     void beforeAll(ExtensionContext extensionContext) {
