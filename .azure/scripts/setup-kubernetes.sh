@@ -149,11 +149,17 @@ elif [ "$TEST_CLUSTER" = "kind" ]; then
     # 1. Create registry container unless it already exists
     reg_name='kind-registry'
     reg_port='5001'
+    hostname=$(hostname --ip-address)
     if [ "$(docker inspect -f '{{.State.Running}}' "${reg_name}" 2>/dev/null || true)" != 'true' ]; then
       docker run \
-        -d --restart=always -p "127.0.0.1:${reg_port}:5000" --name "${reg_name}" \
+        -d --restart=always -p "${hostname}:${reg_port}:5000" --name "${reg_name}" \
         registry:2
     fi
+
+    # We need to add such host to insecure-registry (as localhost is default)
+    echo '{
+      "insecure-registries" : ["10.31.11.250:5001"]
+    }' | sudo tee /etc/docker/daemon.json
 
     # 2. Create kind cluster with containerd registry config dir enabled
     # TODO: kind will eventually enable this by default and this patch will
@@ -183,7 +189,7 @@ EOF
     #
     # We want a consistent name that works from both ends, so we tell containerd to
     # alias localhost:${reg_port} to the registry container when pulling images
-    REGISTRY_DIR="/etc/containerd/certs.d/localhost:${reg_port}"
+    REGISTRY_DIR="/etc/containerd/certs.d/${hostname}:${reg_port}"
     # note: kind get nodes (default name `kind` and with specifying new name we have to use --name <cluster-name>
     for node in $(kind get nodes --name kind-cluster); do
       echo "Executing command in node:${node}"
@@ -209,7 +215,7 @@ EOF
       namespace: kube-public
     data:
       localRegistryHosting.v1: |
-        host: "localhost:${reg_port}"
+        host: "${hostname}:${reg_port}"
         help: "https://kind.sigs.k8s.io/docs/user/local-registry/"
 EOF
 

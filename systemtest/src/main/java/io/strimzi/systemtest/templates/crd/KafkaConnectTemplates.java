@@ -19,12 +19,17 @@ import io.strimzi.api.kafka.model.connect.build.PluginBuilder;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.test.TestUtils;
+import io.strimzi.test.k8s.KubeClusterResource;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.util.Random;
 
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 public class KafkaConnectTemplates {
+
+    private static final Logger LOGGER = LogManager.getLogger(KafkaConnectTemplates.class);
 
     private KafkaConnectTemplates() {}
 
@@ -113,20 +118,11 @@ public class KafkaConnectTemplates {
 
         final String imageFullPath = Environment.getImageOutputRegistry(namespaceName, Constants.ST_CONNECT_BUILD_IMAGE_NAME, String.valueOf(new Random().nextInt(Integer.MAX_VALUE)));
 
-
-        final DockerOutput dockerOutput = dockerOutput(imageFullPath);
-//        // if we use KIND we load images and avoid needing to authenticate on the nodes
-//        if (KubeClusterResource.getInstance().isKind()) {
-//
-//            LOGGER.info("Loading image:{} to the kind cluster", imageFullPath);
-//            Exec.exec("kind", "load", "docker-image", imageFullPath);
-//        }
-
         KafkaConnectBuilder kafkaConnectBuilder = kafkaConnect(name, namespaceName, clusterName, replicas, pathToConnectConfig)
             .editOrNewSpec()
                 .editOrNewBuild()
                     .withPlugins(fileSinkPlugin)
-                    .withOutput(dockerOutput)
+                    .withOutput(dockerOutput(imageFullPath))
                 .endBuild()
             .endSpec();
 
@@ -138,7 +134,13 @@ public class KafkaConnectTemplates {
         if (Environment.CONNECT_BUILD_REGISTRY_SECRET != null && !Environment.CONNECT_BUILD_REGISTRY_SECRET.isEmpty()) {
             dockerOutputBuilder.withPushSecret(Environment.CONNECT_BUILD_REGISTRY_SECRET);
         }
-        return dockerOutputBuilder.withAdditionalKanikoOptions("--skip-tls-verify").build();
+
+        // if we use Kind we add insecure option
+        if (KubeClusterResource.getInstance().isKind()) {
+            dockerOutputBuilder.withAdditionalKanikoOptions("--insecure", "--insecure-pull");
+        }
+
+        return dockerOutputBuilder.build();
     }
 
     private static KafkaConnect getKafkaConnectFromYaml(String yamlPath) {
