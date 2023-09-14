@@ -300,7 +300,7 @@ public class Environment {
             // we will need a hostname of machine
             final String hostname;
             try {
-                hostname = InetAddress.getLocalHost().getHostAddress() + ":5051";
+                hostname = InetAddress.getLocalHost().getHostAddress() + ":5001";
             } catch (UnknownHostException e) {
                 throw new RuntimeException(e);
             }
