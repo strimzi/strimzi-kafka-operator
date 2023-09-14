@@ -105,7 +105,7 @@ prepare:
       fi
       HOSTNAME=$(hostname --ip-address)
       export MVN_ARGS="-B -DskipTests -Dmaven.javadoc.skip=true --no-transfer-progress"
-      export DOCKER_REGISTRY="{HOSTNAME}:5001"
+      export DOCKER_REGISTRY="${HOSTNAME}:5001"
       export DOCKER_ORG="strimzi"
       export DOCKER_TAG="test"
       
