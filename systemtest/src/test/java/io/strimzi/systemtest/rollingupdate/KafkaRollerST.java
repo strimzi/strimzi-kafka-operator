@@ -116,7 +116,7 @@ public class KafkaRollerST extends AbstractST {
         List<Event> events = kubeClient(namespaceName).listEventsByResourceUid(uid);
         assertThat(events, hasAllOfReasons(Scheduled, Pulled, Created, Started));
 
-        // TODO scaling down of Kafka Cluster (with 4 replicas which has KafkaTopic with 4 replicas) can be forbidden in a future due to would-be Topic under-replication
+        // TODO scaling down of Kafka Cluster (with 4 replicas which has KafkaTopic with 4 replicas) can be forbidden in a future due to would-be Topic under-replication (https://github.com/strimzi/strimzi-kafka-operator/pull/9042)
         // scale down
         final int scaledDownReplicas = 3;
         LOGGER.info("Scaling down to {}", scaledDownReplicas);
