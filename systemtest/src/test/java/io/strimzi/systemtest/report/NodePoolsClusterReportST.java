@@ -202,9 +202,9 @@ public class NodePoolsClusterReportST extends AbstractClusterReportST {
             .runInstallation();
         this.testStorage = new TestStorage(extensionContext, Constants.CO_NAMESPACE);
         Kafka kafkaMainCr = KafkaTemplates.kafkaWithCruiseControl(testStorage.getClusterName(), 3, 3)
-            .editOrNewMetadata()
-                .addToAnnotations(Annotations.ANNO_STRIMZI_IO_NODE_POOLS, "enabled")
-            .endMetadata()
+                .editOrNewMetadata()
+                    .addToAnnotations(Annotations.ANNO_STRIMZI_IO_NODE_POOLS, "enabled")
+                .endMetadata()
             .build();
         KafkaNodePool kafkaNodePoolACr = KafkaNodePoolTemplates
             .defaultKafkaNodePool(Constants.CO_NAMESPACE, NODE_POOL_A_NAME, testStorage.getClusterName(), 2)
@@ -230,15 +230,33 @@ public class NodePoolsClusterReportST extends AbstractClusterReportST {
                     .withResources(kafkaMainCr.getSpec().getKafka().getResources())
                 .endSpec()
             .build();
-        resourceManager.createResourceWithWait(extensionContext, kafkaNodePoolACr, kafkaNodePoolBCr, kafkaMainCr,
-            KafkaTemplates.kafkaEphemeral(testStorage.getClusterName() + "-tgt", 3).build());
+        final String targetClusterName = testStorage.getClusterName() + "-tgt";
+        KafkaNodePool kafkaNodePoolTgtCr = KafkaNodePoolTemplates
+            .defaultKafkaNodePool(Constants.CO_NAMESPACE, "kafka", targetClusterName, 1)
+                .editMetadata()
+                    .addToAnnotations("strimzi.io/next-node-ids", "[20-29]")
+                .endMetadata()
+                .editOrNewSpec()
+                    .addToRoles(ProcessRoles.BROKER)
+                    .withStorage(kafkaMainCr.getSpec().getKafka().getStorage())
+                    .withJvmOptions(kafkaMainCr.getSpec().getKafka().getJvmOptions())
+                    .withResources(kafkaMainCr.getSpec().getKafka().getResources())
+                .endSpec()
+            .build();
+        Kafka kafkaTgtCr = KafkaTemplates.kafkaEphemeral(targetClusterName, 1, 3)
+                .editOrNewMetadata()
+                    .addToAnnotations(Annotations.ANNO_STRIMZI_IO_NODE_POOLS, "enabled")
+                .endMetadata()
+            .build();
+        resourceManager.createResourceWithWait(extensionContext,
+            kafkaNodePoolACr, kafkaNodePoolBCr, kafkaMainCr, kafkaNodePoolTgtCr, kafkaTgtCr);
         resourceManager.createResourceWithWait(extensionContext,
             KafkaTopicTemplates.topic(testStorage.getClusterName(), "my-topic", 1, 1, Constants.CO_NAMESPACE).build(),
             KafkaUserTemplates.tlsUser(Constants.CO_NAMESPACE, testStorage.getClusterName(), "my-user").build(),
             KafkaRebalanceTemplates.kafkaRebalance(testStorage.getClusterName()).build(),
             KafkaBridgeTemplates.kafkaBridge(BRIDGE_NAME, KafkaResources.plainBootstrapAddress(testStorage.getClusterName()), 1).build(),
             KafkaConnectTemplates.kafkaConnect(CONNECT_NAME, Constants.CO_NAMESPACE, testStorage.getClusterName(), 1).build(),
-            KafkaMirrorMaker2Templates.kafkaMirrorMaker2(MM2_NAME, testStorage.getClusterName() + "-tgt", testStorage.getClusterName(), 1, false).build()
+            KafkaMirrorMaker2Templates.kafkaMirrorMaker2(MM2_NAME, targetClusterName, testStorage.getClusterName(), 1, false).build()
         );
     }
 
