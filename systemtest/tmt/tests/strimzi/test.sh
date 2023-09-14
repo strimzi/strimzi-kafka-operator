@@ -3,10 +3,8 @@
 # Move to root folder of strimzi
 cd ../../../../
 
-eval $(minikube docker-env)
-
 #run tests
-export DOCKER_REGISTRY="$(kubectl get service registry -n kube-system -o=jsonpath='{.spec.clusterIP}'):80"
+export DOCKER_REGISTRY="$(hostname --ip-address):5001"
 mvn compile -pl config-model-generator -DskipTests -Dmaven.javadoc.skip=true --no-transfer-progress
 mvn verify -pl systemtest -P ${TEST_PROFILE} \
     $([[ "${TEST_GROUPS}" != "" ]] && echo "-Dgroups=${TEST_GROUPS}" || echo "") \
