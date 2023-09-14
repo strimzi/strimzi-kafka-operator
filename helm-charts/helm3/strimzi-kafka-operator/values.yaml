@@ -53,6 +53,12 @@ serviceAccount: strimzi-cluster-operator
 leaderElection:
   enable: true
 
+podDisruptionBudget:
+  # https://kubernetes.io/docs/tasks/run-application/configure-pdb/
+  enabled: false
+  minAvailable: 1
+  maxUnavailable:
+
 # If you are using the grafana dashboard sidecar,
 # you can import some default dashboards here
 dashboards:
