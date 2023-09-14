@@ -95,13 +95,13 @@ public class NetworkPoliciesST extends AbstractST {
 
         final String producerNameAccessedTls = testStorage.getProducerName() + "-accessed-tls";
         final String producerNameAccessedPlain = testStorage.getProducerName() + "-accessed-plain";
-        final String consumerNameAccessedTls = testStorage.getClusterName() + "-accessed-tls";
-        final String consumerNameAccessedPlain = testStorage.getClusterName() + "-accessed-plain";
+        final String consumerNameAccessedTls = testStorage.getConsumerName() + "-accessed-tls";
+        final String consumerNameAccessedPlain = testStorage.getConsumerName() + "-accessed-plain";
 
         final String producerNameDeniedTls = testStorage.getProducerName() + "-denied-tls";
         final String producerNameDeniedPlain = testStorage.getProducerName() + "-denied-plain";
-        final String consumerNameDeniedTls = testStorage.getClusterName() + "-denied-tls";
-        final String consumerNameDeniedPlain = testStorage.getClusterName() + "-denied-plain";
+        final String consumerNameDeniedTls = testStorage.getConsumerName() + "-denied-tls";
+        final String consumerNameDeniedPlain = testStorage.getConsumerName() + "-denied-plain";
 
         clusterOperator = new SetupClusterOperator.SetupClusterOperatorBuilder()
             .withExtensionContext(extensionContext)
