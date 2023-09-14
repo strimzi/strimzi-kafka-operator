@@ -26,7 +26,7 @@ public enum KafkaRebalanceState {
      *     <dt>NotReady</dt><dd>If Cruise Control returned an error</dd>
      * </dl>
      */
-    PendingProposal(List.of(KafkaRebalanceAnnotation.stop)),
+    PendingProposal(List.of(KafkaRebalanceAnnotation.stop, KafkaRebalanceAnnotation.refresh)),
     /**
      * A proposal is ready and waiting for approval.
      * Transitions to:
@@ -44,9 +44,10 @@ public enum KafkaRebalanceState {
      *     <dt>Rebalancing</dt><dd>While the actual rebalancing is still ongoing</dd>
      *     <dt>Stopped</dt><dd>If the user sets annotation strimzi.io/rebalance=stop.</dd>
      *     <dt>Ready</dt><dd>Once the rebalancing is complete.</dd>
+     *     <dt>ProposalReady</dt><dd>When annotation strimzi.io/rebalance=refresh is applied on rebalance resource and the proposal is updated.</dd>
      * </dl>
      */
-    Rebalancing(List.of(KafkaRebalanceAnnotation.stop)),
+    Rebalancing(List.of(KafkaRebalanceAnnotation.stop, KafkaRebalanceAnnotation.refresh)),
     /**
      * The user has stopped the actual rebalancing by setting annotation strimzi.io/rebalance=stop
      * May transition back to:
