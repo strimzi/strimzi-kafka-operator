@@ -279,7 +279,6 @@ public class KafkaRoller {
         boolean forceRestart;
         KafkaBrokerConfigurationDiff diff;
         KafkaBrokerLoggingConfigurationDiff logDiff;
-        Config controllerConfig;
         KafkaQuorumCheck quorumCheck;
 
         RestartContext(Supplier<BackOff> backOffSupplier) {
@@ -371,7 +370,7 @@ public class KafkaRoller {
      * @throws ForceableProblem         Some error. Not thrown when finalAttempt==true.
      * @throws UnforceableProblem       Some error, still thrown when finalAttempt==true.
      */
-    @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:NPathComplexity"})
+    @SuppressWarnings({"checkstyle:CyclomaticComplexity"})
     private void restartIfNecessary(NodeRef nodeRef, RestartContext restartContext)
             throws Exception {
         Pod pod;
@@ -413,20 +412,6 @@ public class KafkaRoller {
 
         restartContext.restartReasons = podNeedsRestart.apply(pod);
 
-        if (nodeRef.controller()) {
-            if (kafkaAgentClient == null) {
-                kafkaAgentClient = initKafkaAgentClient();
-            }
-            restartContext.controllerConfig = kafkaAgentClient.getNodeConfiguration(nodeRef.podName());
-            // This configuration property is used by the quorum check for rolling KRaft controllers
-            // and users are allowed to configure this property therefore we need to retrieve its current value.
-            ConfigEntry controllerQuorumFetchTimeoutMs =  restartContext.controllerConfig.get(CONTROLLER_QUORUM_FETCH_TIMEOUT_MS_CONFIG_NAME);
-            if (!initAdminClient()) {
-                throw new ForceableProblem("Failed to create admin connection to brokers to get quorum state");
-            }
-            restartContext.quorumCheck = quorumCheck(allClient, (controllerQuorumFetchTimeoutMs != null)
-                    ? Long.parseLong(controllerQuorumFetchTimeoutMs.value()) : CONTROLLER_QUORUM_FETCH_TIMEOUT_MS_CONFIG_DEFAULT);
-        }
         try {
             checkReconfigurability(nodeRef, pod, restartContext);
             if (restartContext.forceRestart) {
@@ -538,14 +523,10 @@ public class KafkaRoller {
     /**
      * Determine whether the pod should be restarted, or the broker reconfigured.
      */
-    @SuppressWarnings({"checkstyle:CyclomaticComplexity"})
-    private void checkReconfigurability(NodeRef nodeRef, Pod pod, RestartContext restartContext) throws ForceableProblem, InterruptedException, FatalProblem {
+    @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:NPathComplexity"})
+    private void checkReconfigurability(NodeRef nodeRef, Pod pod, RestartContext restartContext) throws ForceableProblem, InterruptedException, FatalProblem, UnforceableProblem {
         RestartReasons reasonToRestartPod = restartContext.restartReasons;
         boolean podStuck = isPodStuck(pod);
-        if (podStuck) {
-            LOGGER.infoCr(reconciliation, "Pod {} needs to be restarted, because it seems to be stuck and restart might help", nodeRef);
-            restartContext.restartReasons.add(RestartReason.POD_STUCK);
-        }
 
         if (podStuck && !reasonToRestartPod.contains(RestartReason.POD_HAS_OLD_REVISION)) {
             // If the pod is unschedulable then deleting it, or trying to open an Admin client to it will make no difference
@@ -553,24 +534,55 @@ public class KafkaRoller {
             // and deleting a different pod in the meantime will likely result in another unschedulable pod.
             throw new FatalProblem("Pod is unschedulable or is not starting");
         }
+
+        if (podStuck) {
+            LOGGER.infoCr(reconciliation, "Pod {} needs to be restarted, because it seems to be stuck and restart might help", nodeRef);
+            restartContext.restartReasons.add(RestartReason.POD_STUCK);
+            restartContext.needsRestart = false;
+            restartContext.needsReconfig = false;
+            restartContext.forceRestart = true;
+            restartContext.diff = null;
+            restartContext.logDiff = null;
+            return;
+        }
+
+        boolean adminClientInitialised = initAdminClient();
+
         // Unless the annotation is present, check the pod is at least ready.
         boolean needsRestart = reasonToRestartPod.shouldRestart();
         KafkaBrokerConfigurationDiff diff = null;
         KafkaBrokerLoggingConfigurationDiff loggingDiff = null;
         boolean needsReconfig = false;
         if (nodeRef.controller()) {
-            LOGGER.debugCr(reconciliation, "Pod {} is a KRaft controller, checking if it requires a restart.", nodeRef);
-            KafkaControllerConfigurationDiff controllerConfigurationDiff = new KafkaControllerConfigurationDiff(reconciliation,
-                    restartContext.controllerConfig,
-                    kafkaConfigProvider.apply(nodeRef.nodeId()),
-                    nodeRef.nodeId());
-            if (controllerConfigurationDiff.configsHaveChanged) {
-                LOGGER.infoCr(reconciliation, "Pod {} needs to be restarted, because it is a KRaft controller and configuration has changed.", nodeRef);
-                needsRestart = true;
+            if (kafkaAgentClient == null) {
+                kafkaAgentClient = initKafkaAgentClient();
+            }
+            Config controllerConfig = kafkaAgentClient.getNodeConfiguration(nodeRef.podName());
+            // This configuration property is used by the quorum check for rolling KRaft controllers
+            // and users are allowed to configure this property therefore we need to retrieve its current value.
+            ConfigEntry controllerQuorumFetchTimeoutMs = null;
+
+            if (controllerConfig != null) {
+                controllerQuorumFetchTimeoutMs = controllerConfig.get(CONTROLLER_QUORUM_FETCH_TIMEOUT_MS_CONFIG_NAME);
+
+                LOGGER.debugCr(reconciliation, "Pod {} is a KRaft controller, checking if it requires a restart.", nodeRef);
+                KafkaControllerConfigurationDiff controllerConfigurationDiff = new KafkaControllerConfigurationDiff(reconciliation,
+                        controllerConfig,
+                        kafkaConfigProvider.apply(nodeRef.nodeId()),
+                        nodeRef.nodeId());
+                if (controllerConfigurationDiff.configsHaveChanged) {
+                    LOGGER.infoCr(reconciliation, "Pod {} needs to be restarted, because it is a KRaft controller and configuration has changed.", nodeRef);
+                    needsRestart = true;
+                }
+            }
+
+            if (adminClientInitialised) {
+                restartContext.quorumCheck = quorumCheck(allClient, (controllerQuorumFetchTimeoutMs != null)
+                        ? Long.parseLong(controllerQuorumFetchTimeoutMs.value()) : CONTROLLER_QUORUM_FETCH_TIMEOUT_MS_CONFIG_DEFAULT);
+            } else {
+                throw new UnforceableProblem("KafkaQuorumCheck cannot be initialised for " + nodeRef + " because none of the brokers do not seem to responding to connection attempts");
             }
         }
-
-        boolean adminClientInitialised = initAdminClient();
 
         if (nodeRef.broker()) {
 
