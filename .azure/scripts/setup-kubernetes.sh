@@ -160,6 +160,8 @@ elif [ "$TEST_CLUSTER" = "kind" ]; then
     echo "{
       \"insecure-registries\" : [\"${hostname}:${reg_port}\"]
     }" | sudo tee /etc/docker/daemon.json
+    # we need to restart docker service to propagate configuration
+    systemctl restart docker
 
     # 2. Create kind cluster with containerd registry config dir enabled
     # TODO: kind will eventually enable this by default and this patch will
