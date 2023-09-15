@@ -7,7 +7,7 @@ package io.strimzi.api;
 /**
  * An immutable set of labels
  */
-public class Labels {
+public class ResourceLabels {
     /**
      * Strimzi domain used for the Strimzi labels
      */

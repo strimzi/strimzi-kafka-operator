@@ -5,6 +5,7 @@
 package io.strimzi.operator.common.model;
 
 import io.fabric8.kubernetes.api.model.HasMetadata;
+import io.strimzi.api.ResourceLabels;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -21,7 +22,7 @@ import static java.util.Collections.unmodifiableMap;
 /**
  * An immutable set of labels
  */
-public class Labels extends io.strimzi.api.Labels {
+public class Labels extends ResourceLabels {
 
     /**
      * Kubernetes domain used for Kubernetes labels

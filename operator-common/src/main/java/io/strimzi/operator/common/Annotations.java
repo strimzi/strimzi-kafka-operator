@@ -8,6 +8,7 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.PodTemplateSpec;
 import io.fabric8.kubernetes.client.CustomResource;
+import io.strimzi.api.ResourceAnnotations;
 
 import java.util.HashMap;
 import java.util.List;
@@ -21,7 +22,7 @@ import static java.lang.Integer.parseInt;
 /**
  * Class for holding some annotation keys and utility methods for handling annotations
  */
-public class Annotations extends io.strimzi.api.Annotations {
+public class Annotations extends ResourceAnnotations {
 
     /**
      * Annotation for keeping Kafka and ZooKeeper servers' certificate thumbprints.

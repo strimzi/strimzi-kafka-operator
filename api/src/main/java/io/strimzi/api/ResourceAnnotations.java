@@ -7,7 +7,7 @@ package io.strimzi.api;
 /**
  * Class for holding some annotation keys.
  */
-public class Annotations {
+public class ResourceAnnotations {
     /**
      * The Strimzi domain used in all annotations
      */
