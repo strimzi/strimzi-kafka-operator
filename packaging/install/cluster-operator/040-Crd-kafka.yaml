@@ -310,6 +310,11 @@ spec:
                                   x-kubernetes-preserve-unknown-fields: true
                                   type: object
                                   description: "Annotations that will be added to the `Ingress`, `Route`, or `Service` resource. You can use this field to configure DNS providers such as External DNS. This field can be used only with `loadbalancer`, `nodeport`, `route`, or `ingress` type listeners."
+                                externalIPs:
+                                  type: array
+                                  items:
+                                    type: string
+                                  description: External IPs to the resource.
                                 labels:
                                   x-kubernetes-preserve-unknown-fields: true
                                   type: object
@@ -342,6 +347,11 @@ spec:
                                     x-kubernetes-preserve-unknown-fields: true
                                     type: object
                                     description: "Annotations that will be added to the `Ingress` or `Service` resource. You can use this field to configure DNS providers such as External DNS. This field can be used only with `loadbalancer`, `nodeport`, or `ingress` type listeners."
+                                  externalIPs:
+                                    type: array
+                                    items:
+                                      type: string
+                                    description: External IPs to the resource.
                                   labels:
                                     x-kubernetes-preserve-unknown-fields: true
                                     type: object

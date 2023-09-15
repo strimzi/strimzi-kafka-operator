@@ -411,6 +411,8 @@ include::../api/io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaLi
 |string
 |annotations       1.2+<.<a|Annotations that will be added to the `Ingress`, `Route`, or `Service` resource. You can use this field to configure DNS providers such as External DNS. This field can be used only with `loadbalancer`, `nodeport`, `route`, or `ingress` type listeners.
 |map
+|externalIPs       1.2+<.<a|External IPs to the resource.
+|string array
 |labels            1.2+<.<a|Labels that will be added to the `Ingress`, `Route`, or `Service` resource. This field can be used only with `loadbalancer`, `nodeport`, `route`, or `ingress` type listeners.
 |map
 |====
@@ -445,6 +447,8 @@ include::../api/io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaLi
 |string
 |annotations     1.2+<.<a|Annotations that will be added to the `Ingress` or `Service` resource. You can use this field to configure DNS providers such as External DNS. This field can be used only with `loadbalancer`, `nodeport`, or `ingress` type listeners.
 |map
+|externalIPs     1.2+<.<a|External IPs to the resource.
+|string array
 |labels          1.2+<.<a|Labels that will be added to the `Ingress`, `Route`, or `Service` resource. This field can be used only with `loadbalancer`, `nodeport`, `route`, or `ingress` type listeners.
 |map
 |====
