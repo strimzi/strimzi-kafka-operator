@@ -1,6 +1,6 @@
 TOPDIR = $(dir $(lastword $(MAKEFILE_LIST)))
 RELEASE_VERSION ?= $(shell cat $(TOPDIR)/release.version)
-DOCKER_TARGETS = docker_build docker_push docker_tag docker_load docker_save docker_amend_manifest docker_push_manifest docker_delete_manifest docker_delete_archive
+DOCKER_TARGETS = docker_build docker_push docker_tag docker_load docker_save docker_amend_manifest docker_push_manifest docker_delete_manifest docker_delete_archive docker_sbom docker_push_sbom
 DOCKER_TAG ?= latest
 
 .PHONY: build clean release all $(DOCKER_TARGETS)
@@ -37,6 +37,12 @@ docker_delete_manifest:
 
 docker_delete_archive:
 	./build.sh docker_delete_archive
+
+docker_sbom:
+	./build.sh docker_sbom
+
+docker_push_sbom:
+	./build.sh docker_push_sbom
 
 all: docker_build docker_push
 

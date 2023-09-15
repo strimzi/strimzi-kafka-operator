@@ -15,4 +15,10 @@ docker_push_manifest:
 docker_sign_manifest:
 	# Do nothing
 
+docker_sbom:
+	# Do nothing
+
+docker_push_sbom:
+	# Do nothing
+
 .PHONY: build clean release
