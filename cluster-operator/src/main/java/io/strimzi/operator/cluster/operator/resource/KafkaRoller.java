@@ -231,12 +231,7 @@ public class KafkaRoller {
                         pods.add(podOperations.isReady(namespace, node.podName()) ? pods.size() : 0, node);
                     } else if (node.controller())   {
                         // We do not roll KRaft controllers yet, but we can throw a warning if it needs to be rolled
-                        Pod pod = null;
-                        try {
-                            pod = podOperations.get(namespace, node.podName());
-                        } catch (KubernetesClientException e) {
-                            LOGGER.errorCr(reconciliation, "Error getting pod " + node.podName(), e);
-                        }
+                        Pod pod = podOperations.get(namespace, node.podName());
 
                         if (pod != null)    {
                             RestartReasons reasons = podNeedsRestart.apply(pod);
