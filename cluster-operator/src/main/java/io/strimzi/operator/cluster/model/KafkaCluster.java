@@ -421,9 +421,11 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
     /**
      * Finds a node pool to which this given node belongs
      *
+     * @param nodeId    Id of the Kafka node for that we want to find the node pool
+     *
      * @return  KafkaPool which includes this node ID
      */
-    private KafkaPool nodePoolForNodeId(int nodeId) {
+    public KafkaPool nodePoolForNodeId(int nodeId) {
         for (KafkaPool pool : nodePools)    {
             if (pool.containsNodeId(nodeId))    {
                 return pool;
