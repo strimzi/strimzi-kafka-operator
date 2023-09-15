@@ -137,8 +137,11 @@ public class KafkaConnectTemplates {
 
         // if we use Kind we add insecure option
         if (KubeClusterResource.getInstance().isKind()) {
-            // --insecure for PUSH via HTTP instead of HTTPS
-            dockerOutputBuilder.withAdditionalKanikoOptions("--insecure");
+            dockerOutputBuilder.withAdditionalKanikoOptions(
+                // --insecure for PUSH via HTTP instead of HTTPS
+                "--insecure",
+                // this is need for (error building image: deleting file system after stage 0: unlinkat //product_uuid: device or resource busy)
+                "--ignore-path=/product_uuid");
         }
 
         return dockerOutputBuilder.build();

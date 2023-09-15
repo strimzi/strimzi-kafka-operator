@@ -140,9 +140,45 @@ jobs:
       - centos-stream-9-aarch64
     skip_build: true
     manual_trigger: true
+    env: { IP_FAMILY: ipv4 }
     labels:
       - sanity
     tf_extra_params:
       test:
         tmt:
           name: sanity
+
+  ###############################################################################################
+  ##################################    IPv6/dual jobs   ########################################
+  ###############################################################################################
+  - job: tests
+    trigger: pull_request
+    identifier: "acceptance_ipv6"
+    targets:
+      - centos-stream-9-x86_64
+      - centos-stream-9-aarch64
+    skip_build: true
+    manual_trigger: true
+    env: { IP_FAMILY: ipv6 }
+    labels:
+      - acceptance
+    tf_extra_params:
+      test:
+        tmt:
+          name: acceptance
+  ###############################################################################################
+  - job: tests
+    trigger: pull_request
+    identifier: "acceptance_dual"
+    targets:
+      - centos-stream-9-x86_64
+      - centos-stream-9-aarch64
+    skip_build: true
+    manual_trigger: true
+    env: { IP_FAMILY: dual }
+    labels:
+      - acceptance
+    tf_extra_params:
+      test:
+        tmt:
+          name: acceptance
