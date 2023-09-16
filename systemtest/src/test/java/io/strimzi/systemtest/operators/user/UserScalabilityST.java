@@ -150,7 +150,7 @@ public class UserScalabilityST extends AbstractST {
 
         resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3)
             .editMetadata()
-                .withNamespace(Constants.TEST_SUITE_NAMESPACE)
+                .withNamespace(Environment.TEST_SUITE_NAMESPACE)
             .endMetadata()
             .editOrNewSpec()
                 .editOrNewKafka()
@@ -175,7 +175,7 @@ public class UserScalabilityST extends AbstractST {
                 .endEntityOperator()
             .endSpec()
             .build(),
-            KafkaTopicTemplates.topic(clusterName, topicName, Constants.TEST_SUITE_NAMESPACE).build()
+            KafkaTopicTemplates.topic(clusterName, topicName, Environment.TEST_SUITE_NAMESPACE).build()
         );
     }
 }

@@ -86,7 +86,7 @@ public class NetworkPoliciesST extends AbstractST {
     void testNetworkPoliciesOnListenersWhenOperatorIsInSameNamespaceAsOperands(ExtensionContext extensionContext) {
         assumeTrue(!Environment.isHelmInstall() && !Environment.isOlmInstall());
 
-        final TestStorage testStorage = new TestStorage(extensionContext, Constants.TEST_SUITE_NAMESPACE);
+        final TestStorage testStorage = new TestStorage(extensionContext, Environment.TEST_SUITE_NAMESPACE);
 
         final String topicNameAccessedTls = testStorage.getTopicName() + "-accessed-tls";
         final String topicNameAccessedPlain = testStorage.getTopicName() + "-accessed-plain";
@@ -231,9 +231,8 @@ public class NetworkPoliciesST extends AbstractST {
             assertThat("Metrics doesn't contain specific values", entry.getValue().contains("kafka_topic_partitions{topic=\"" + topicNameAccessedPlain + "\"} 1"));
         }
 
-
-        checkNetworkPoliciesInNamespace(testStorage.getClusterName(), Constants.TEST_SUITE_NAMESPACE);
-        changeKafkaConfigurationAndCheckObservedGeneration(testStorage.getClusterName(), Constants.TEST_SUITE_NAMESPACE);
+        checkNetworkPoliciesInNamespace(testStorage.getClusterName(), Environment.TEST_SUITE_NAMESPACE);
+        changeKafkaConfigurationAndCheckObservedGeneration(testStorage.getClusterName(), Environment.TEST_SUITE_NAMESPACE);
     }
 
     @IsolatedTest("Specific Cluster Operator for test case")
