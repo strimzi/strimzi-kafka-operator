@@ -15,7 +15,6 @@ import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.model.Labels;
-import io.strimzi.operator.common.operator.resource.AbstractScalableNamespacedResourceOperator;
 import io.strimzi.operator.common.operator.resource.PodOperator;
 import io.strimzi.operator.common.operator.resource.PvcOperator;
 import io.vertx.core.Future;
@@ -99,7 +98,7 @@ public class ManualPodCleaner {
                     // Only one pod per reconciliation is rolled
                     Pod podToClean = pods
                             .stream()
-                            .filter(pod -> Annotations.booleanAnnotation(pod, AbstractScalableNamespacedResourceOperator.ANNO_STRIMZI_IO_DELETE_POD_AND_PVC, false))
+                            .filter(pod -> Annotations.booleanAnnotation(pod, Annotations.ANNO_STRIMZI_IO_DELETE_POD_AND_PVC, false))
                             .findFirst()
                             .orElse(null);
 
@@ -205,7 +204,7 @@ public class ManualPodCleaner {
 
                     for (PersistentVolumeClaim pvc : deletePvcs)    {
                         String pvcName = pvc.getMetadata().getName();
-                        LOGGER.debugCr(reconciliation, "Deleting PVC {} for Pod {} based on {} annotation", pvcName, podName, AbstractScalableNamespacedResourceOperator.ANNO_STRIMZI_IO_DELETE_POD_AND_PVC);
+                        LOGGER.debugCr(reconciliation, "Deleting PVC {} for Pod {} based on {} annotation", pvcName, podName, Annotations.ANNO_STRIMZI_IO_DELETE_POD_AND_PVC);
                         deleteResults.add(pvcOperator.deleteAsync(reconciliation, reconciliation.namespace(), pvcName, true));
                     }
                     return Future.join(deleteResults);

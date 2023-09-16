@@ -17,7 +17,7 @@ import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBui
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.api.kafka.model.status.KafkaMirrorMaker2Status;
 import io.strimzi.api.kafka.model.template.DeploymentStrategy;
-import io.strimzi.operator.common.model.Ca;
+import io.strimzi.operator.common.Annotations;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
@@ -1264,13 +1264,13 @@ class MirrorMaker2ST extends AbstractST {
 
         LOGGER.info("Renew Clients CA secret for Source cluster via annotation");
         String sourceClientsCaSecretName = KafkaResources.clientsCaCertificateSecretName(kafkaClusterSourceName);
-        SecretUtils.annotateSecret(testStorage.getNamespaceName(), sourceClientsCaSecretName, Ca.ANNO_STRIMZI_IO_FORCE_RENEW, "true");
+        SecretUtils.annotateSecret(testStorage.getNamespaceName(), sourceClientsCaSecretName, Annotations.ANNO_STRIMZI_IO_FORCE_RENEW, "true");
         kafkaSourcePods = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), kafkaSourceSelector, 1, kafkaSourcePods);
         mmSnapshot = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), mmSelector, 1, mmSnapshot);
 
         LOGGER.info("Renew Clients CA secret for target cluster via annotation");
         String targetClientsCaSecretName = KafkaResources.clientsCaCertificateSecretName(kafkaClusterTargetName);
-        SecretUtils.annotateSecret(testStorage.getNamespaceName(), targetClientsCaSecretName, Ca.ANNO_STRIMZI_IO_FORCE_RENEW, "true");
+        SecretUtils.annotateSecret(testStorage.getNamespaceName(), targetClientsCaSecretName, Annotations.ANNO_STRIMZI_IO_FORCE_RENEW, "true");
         kafkaTargetPods = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), kafkaTargetSelector, 1, kafkaTargetPods);
         mmSnapshot = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), mmSelector, 1, mmSnapshot);
 
@@ -1299,7 +1299,7 @@ class MirrorMaker2ST extends AbstractST {
 
         LOGGER.info("Renew Cluster CA secret for Source clusters via annotation");
         String sourceClusterCaSecretName = KafkaResources.clusterCaCertificateSecretName(kafkaClusterSourceName);
-        SecretUtils.annotateSecret(testStorage.getNamespaceName(), sourceClusterCaSecretName, Ca.ANNO_STRIMZI_IO_FORCE_RENEW, "true");
+        SecretUtils.annotateSecret(testStorage.getNamespaceName(), sourceClusterCaSecretName, Annotations.ANNO_STRIMZI_IO_FORCE_RENEW, "true");
 
         if (!Environment.isKRaftModeEnabled()) {
             RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), zkSourceSelector, 1, zkSourcePods);
@@ -1310,7 +1310,7 @@ class MirrorMaker2ST extends AbstractST {
 
         LOGGER.info("Renew Cluster CA secret for target clusters via annotation");
         String targetClusterCaSecretName = KafkaResources.clusterCaCertificateSecretName(kafkaClusterTargetName);
-        SecretUtils.annotateSecret(testStorage.getNamespaceName(), targetClusterCaSecretName, Ca.ANNO_STRIMZI_IO_FORCE_RENEW, "true");
+        SecretUtils.annotateSecret(testStorage.getNamespaceName(), targetClusterCaSecretName, Annotations.ANNO_STRIMZI_IO_FORCE_RENEW, "true");
 
         if (!Environment.isKRaftModeEnabled()) {
             RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), zkTargetSelector, 1, zkTargetPods);

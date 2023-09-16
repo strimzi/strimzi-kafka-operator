@@ -8,6 +8,7 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.ObjectMeta;
 import io.fabric8.kubernetes.api.model.PodTemplateSpec;
 import io.fabric8.kubernetes.client.CustomResource;
+import io.strimzi.api.ResourceAnnotations;
 
 import java.util.HashMap;
 import java.util.List;
@@ -21,11 +22,7 @@ import static java.lang.Integer.parseInt;
 /**
  * Class for holding some annotation keys and utility methods for handling annotations
  */
-public class Annotations {
-    /**
-     * The Strimzi domain used in all annotations
-     */
-    public static final String STRIMZI_DOMAIN = "strimzi.io/";
+public class Annotations extends ResourceAnnotations {
 
     /**
      * Annotation for keeping Kafka and ZooKeeper servers' certificate thumbprints.
@@ -70,61 +67,9 @@ public class Annotations {
     public static final String STRIMZI_IO_CONNECT_BUILD_IMAGE = STRIMZI_DOMAIN + "connect-build-image";
 
     /**
-     * Annotation used to force rebuild of the container image even if the dockerfile did not changed
-     */
-    public static final String STRIMZI_IO_CONNECT_FORCE_REBUILD = STRIMZI_DOMAIN + "force-rebuild";
-
-    /**
-     * Annotation used to pause resource reconciliation
-     */
-    public static final String ANNO_STRIMZI_IO_PAUSE_RECONCILIATION = STRIMZI_DOMAIN + "pause-reconciliation";
-
-    /**
-     * Annotation to trigger manually rolling updats
-     */
-    public static final String ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE = STRIMZI_DOMAIN + "manual-rolling-update";
-
-    /**
-     * This annotation with related possible values (approve, stop, refresh) is set by the user for interacting
-     * with the rebalance operator in order to start, stop, or refresh rebalancing proposals and operations.
-     */
-    public static final String ANNO_STRIMZI_IO_REBALANCE = STRIMZI_DOMAIN + "rebalance";
-
-    /**
-     * Use this boolean annotation to auto-approve a rebalance optimization proposal without the need for the
-     * manual approval by applying the strimzi.io/rebalance=approve annotation
-     */
-    public static final String ANNO_STRIMZI_IO_REBALANCE_AUTOAPPROVAL = STRIMZI_DOMAIN + "rebalance-auto-approval";
-
-    /**
      * Annotation for restarting KafkaConnector
      */
     public static final String ANNO_STRIMZI_IO_RESTART = STRIMZI_DOMAIN + "restart";
-
-    /**
-     * Annotation for restarting Mirror Maker 2 connector
-     */
-    public static final String ANNO_STRIMZI_IO_RESTART_CONNECTOR = STRIMZI_DOMAIN + "restart-connector";
-
-    /**
-     * Annotation for restarting KafkaConnector task
-     */
-    public static final String ANNO_STRIMZI_IO_RESTART_TASK = STRIMZI_DOMAIN + "restart-task";
-
-    /**
-     * Annotation for restarting Mirror Maker 2 connector task
-     */
-    public static final String ANNO_STRIMZI_IO_RESTART_CONNECTOR_TASK = STRIMZI_DOMAIN + "restart-connector-task";
-
-    /**
-     * Key for specifying which Mirror Maker 2 connector should be restarted
-     */
-    public static final String ANNO_STRIMZI_IO_RESTART_CONNECTOR_TASK_PATTERN_CONNECTOR = "connector";
-
-    /**
-     * Key for specifying which Mirror Maker 2 connector task should be restarted
-     */
-    public static final String ANNO_STRIMZI_IO_RESTART_CONNECTOR_TASK_PATTERN_TASK = "task";
 
     /**
      * Pattern for validation of value which specifies which connector or task should be restarted
@@ -144,21 +89,6 @@ public class Annotations {
      * Annotation for storing the information whether the PVC should be deleted when the node is scaled down or when the cluster is deleted.
      */
     public static final String ANNO_STRIMZI_IO_DELETE_CLAIM = STRIMZI_DOMAIN + "delete-claim";
-
-    /**
-     * Annotation for configuring the ranges of node IDs which should be used for given node pool
-     */
-    public static final String ANNO_STRIMZI_IO_NEXT_NODE_IDS = STRIMZI_DOMAIN + "next-node-ids";
-
-    /**
-     * Annotation for configuring the ranges of node IDs which should be used for given node pool
-     */
-    public static final String ANNO_STRIMZI_IO_REMOVE_NODE_IDS = STRIMZI_DOMAIN + "remove-node-ids";
-
-    /**
-     * Annotation for enabling or disabling the Node Pools. This annotation is used on the Kafka CR
-     */
-    public static final String ANNO_STRIMZI_IO_NODE_POOLS = STRIMZI_DOMAIN + "node-pools";
 
     /**
      * Annotation for tracking Deployment revisions

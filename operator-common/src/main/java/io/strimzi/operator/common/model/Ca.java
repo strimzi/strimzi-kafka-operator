@@ -144,11 +144,6 @@ public abstract class Ca {
     public static final String IO_STRIMZI = "io.strimzi";
 
     /**
-     * Annotation for requesting a brand-new CA to be generated and rolled out
-     */
-    public static final String ANNO_STRIMZI_IO_FORCE_REPLACE = Annotations.STRIMZI_DOMAIN + "force-replace";
-
-    /**
      * Annotation for requesting a renewal of the CA and rolling it out
      */
     public static final String ANNO_STRIMZI_IO_FORCE_RENEW = Annotations.STRIMZI_DOMAIN + "force-renew";
@@ -575,8 +570,8 @@ public abstract class Ca {
 
         if (renewalType.equals(RenewalType.POSTPONED)
                 && this.caCertSecret.getMetadata() != null
-                && Annotations.hasAnnotation(caCertSecret, ANNO_STRIMZI_IO_FORCE_RENEW))   {
-            certAnnotations.put(ANNO_STRIMZI_IO_FORCE_RENEW, Annotations.stringAnnotation(caCertSecret, ANNO_STRIMZI_IO_FORCE_RENEW, "false"));
+                && Annotations.hasAnnotation(caCertSecret, Annotations.ANNO_STRIMZI_IO_FORCE_RENEW))   {
+            certAnnotations.put(Annotations.ANNO_STRIMZI_IO_FORCE_RENEW, Annotations.stringAnnotation(caCertSecret, Annotations.ANNO_STRIMZI_IO_FORCE_RENEW, "false"));
         }
 
         Map<String, String> keyAnnotations = new HashMap<>(2);
@@ -584,8 +579,8 @@ public abstract class Ca {
 
         if (renewalType.equals(RenewalType.POSTPONED)
                 && this.caKeySecret.getMetadata() != null
-                && Annotations.hasAnnotation(caKeySecret, ANNO_STRIMZI_IO_FORCE_REPLACE))   {
-            keyAnnotations.put(ANNO_STRIMZI_IO_FORCE_REPLACE, Annotations.stringAnnotation(caKeySecret, ANNO_STRIMZI_IO_FORCE_REPLACE, "false"));
+                && Annotations.hasAnnotation(caKeySecret, Annotations.ANNO_STRIMZI_IO_FORCE_REPLACE))   {
+            keyAnnotations.put(Annotations.ANNO_STRIMZI_IO_FORCE_REPLACE, Annotations.stringAnnotation(caKeySecret, Annotations.ANNO_STRIMZI_IO_FORCE_REPLACE, "false"));
         }
 
         caCertSecret = secretCertProvider.createSecret(namespace, caCertSecretName, certData, Util.mergeLabelsOrAnnotations(labels, additionalLabels),
@@ -617,8 +612,8 @@ public abstract class Ca {
             reason = "CA certificate secret " + caCertSecretName + " is missing or lacking data." + CA_CRT.replace(".", "\\.");
             renewalType = RenewalType.RENEW_CERT;
         } else if (this.caCertSecret.getMetadata() != null
-                && Annotations.booleanAnnotation(this.caCertSecret, ANNO_STRIMZI_IO_FORCE_RENEW, false)) {
-            reason = "CA certificate secret " + caCertSecretName + " is annotated with " + ANNO_STRIMZI_IO_FORCE_RENEW;
+                && Annotations.booleanAnnotation(this.caCertSecret, Annotations.ANNO_STRIMZI_IO_FORCE_RENEW, false)) {
+            reason = "CA certificate secret " + caCertSecretName + " is annotated with " + Annotations.ANNO_STRIMZI_IO_FORCE_RENEW;
 
             if (maintenanceWindowSatisfied) {
                 renewalType = RenewalType.RENEW_CERT;
@@ -626,8 +621,8 @@ public abstract class Ca {
                 renewalType = RenewalType.POSTPONED;
             }
         } else if (this.caKeySecret.getMetadata() != null
-                && Annotations.booleanAnnotation(this.caKeySecret, ANNO_STRIMZI_IO_FORCE_REPLACE, false)) {
-            reason = "CA key secret " + caKeySecretName + " is annotated with " + ANNO_STRIMZI_IO_FORCE_REPLACE;
+                && Annotations.booleanAnnotation(this.caKeySecret, Annotations.ANNO_STRIMZI_IO_FORCE_REPLACE, false)) {
+            reason = "CA key secret " + caKeySecretName + " is annotated with " + Annotations.ANNO_STRIMZI_IO_FORCE_REPLACE;
 
             if (maintenanceWindowSatisfied) {
                 renewalType = RenewalType.REPLACE_KEY;

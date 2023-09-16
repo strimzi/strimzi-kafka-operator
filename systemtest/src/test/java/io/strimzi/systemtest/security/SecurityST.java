@@ -23,6 +23,7 @@ import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationTls;
 import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
+import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.model.Ca;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
@@ -274,10 +275,10 @@ class SecurityST extends AbstractST {
             initialCaCerts.put(secretName, value);
             Secret annotated = new SecretBuilder(secret)
                 .editMetadata()
-                .addToAnnotations(Ca.ANNO_STRIMZI_IO_FORCE_RENEW, "true")
+                .addToAnnotations(Annotations.ANNO_STRIMZI_IO_FORCE_RENEW, "true")
                 .endMetadata()
                 .build();
-            LOGGER.info("Patching Secret: {} with {}", secretName, Ca.ANNO_STRIMZI_IO_FORCE_RENEW);
+            LOGGER.info("Patching Secret: {} with {}", secretName, Annotations.ANNO_STRIMZI_IO_FORCE_RENEW);
             kubeClient().patchSecret(testStorage.getNamespaceName(), secretName, annotated);
         }
 
@@ -453,10 +454,10 @@ class SecurityST extends AbstractST {
             initialCaKeys.put(secretName, value);
             Secret annotated = new SecretBuilder(secret)
                     .editMetadata()
-                    .addToAnnotations(Ca.ANNO_STRIMZI_IO_FORCE_REPLACE, "true")
+                    .addToAnnotations(Annotations.ANNO_STRIMZI_IO_FORCE_REPLACE, "true")
                     .endMetadata()
                     .build();
-            LOGGER.info("Patching Secret: {}/{} with {}", testStorage.getNamespaceName(), secretName, Ca.ANNO_STRIMZI_IO_FORCE_REPLACE);
+            LOGGER.info("Patching Secret: {}/{} with {}", testStorage.getNamespaceName(), secretName, Annotations.ANNO_STRIMZI_IO_FORCE_REPLACE);
             kubeClient().patchSecret(testStorage.getNamespaceName(), secretName, annotated);
         }
 
