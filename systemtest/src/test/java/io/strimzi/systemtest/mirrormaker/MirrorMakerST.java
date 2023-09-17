@@ -20,9 +20,9 @@ import io.strimzi.api.kafka.model.template.DeploymentStrategy;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
-import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.resources.crd.KafkaMirrorMakerResource;
 import io.strimzi.systemtest.storage.TestStorage;
@@ -73,7 +73,7 @@ public class MirrorMakerST extends AbstractST {
 
     @ParallelNamespaceTest
     void testMirrorMaker(ExtensionContext extensionContext) {
-        final TestStorage testStorage = new TestStorage(extensionContext, Constants.TEST_SUITE_NAMESPACE);
+        final TestStorage testStorage = new TestStorage(extensionContext, Environment.TEST_SUITE_NAMESPACE);
 
         String kafkaClusterSourceName = testStorage.getClusterName() + "-source";
         String kafkaClusterTargetName = testStorage.getClusterName() + "-target";
@@ -150,7 +150,7 @@ public class MirrorMakerST extends AbstractST {
     @Tag(ACCEPTANCE)
     @SuppressWarnings({"checkstyle:MethodLength"})
     void testMirrorMakerTlsAuthenticated(ExtensionContext extensionContext) {
-        final TestStorage testStorage = new TestStorage(extensionContext, Constants.TEST_SUITE_NAMESPACE);
+        final TestStorage testStorage = new TestStorage(extensionContext, Environment.TEST_SUITE_NAMESPACE);
 
         String kafkaClusterSourceName = testStorage.getClusterName() + "-source";
         String kafkaClusterTargetName = testStorage.getClusterName() + "-target";
@@ -262,7 +262,7 @@ public class MirrorMakerST extends AbstractST {
     @ParallelNamespaceTest
     @SuppressWarnings("checkstyle:methodlength")
     void testMirrorMakerTlsScramSha(ExtensionContext extensionContext) {
-        final TestStorage testStorage = new TestStorage(extensionContext, Constants.TEST_SUITE_NAMESPACE);
+        final TestStorage testStorage = new TestStorage(extensionContext, Environment.TEST_SUITE_NAMESPACE);
 
         String kafkaClusterSourceName = testStorage.getClusterName() + "-source";
         String kafkaClusterTargetName = testStorage.getClusterName() + "-target";
@@ -375,7 +375,7 @@ public class MirrorMakerST extends AbstractST {
 
     @ParallelNamespaceTest
     void testIncludeList(ExtensionContext extensionContext) throws UnexpectedException {
-        final TestStorage testStorage = new TestStorage(extensionContext, Constants.TEST_SUITE_NAMESPACE);
+        final TestStorage testStorage = new TestStorage(extensionContext, Environment.TEST_SUITE_NAMESPACE);
 
         String kafkaClusterSourceName = testStorage.getClusterName() + "-source";
         String kafkaClusterTargetName = testStorage.getClusterName() + "-target";
@@ -442,7 +442,7 @@ public class MirrorMakerST extends AbstractST {
     @ParallelNamespaceTest
     void testCustomAndUpdatedValues(ExtensionContext extensionContext) {
         final TestStorage testStorage = storageMap.get(extensionContext);
-        final String namespaceName = StUtils.getNamespaceBasedOnRbac(Constants.TEST_SUITE_NAMESPACE, extensionContext);
+        final String namespaceName = StUtils.getNamespaceBasedOnRbac(Environment.TEST_SUITE_NAMESPACE, extensionContext);
         String clusterName = testStorage.getClusterName();
 
         resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 1, 1)
@@ -566,7 +566,7 @@ public class MirrorMakerST extends AbstractST {
     @ParallelNamespaceTest
     @Tag(COMPONENT_SCALING)
     void testScaleMirrorMakerUpAndDownToZero(ExtensionContext extensionContext) {
-        final TestStorage testStorage = new TestStorage(extensionContext, Constants.TEST_SUITE_NAMESPACE);
+        final TestStorage testStorage = new TestStorage(extensionContext, Environment.TEST_SUITE_NAMESPACE);
 
         String kafkaClusterSourceName = testStorage.getClusterName() + "-source";
         String kafkaClusterTargetName = testStorage.getClusterName() + "-target";
@@ -630,7 +630,7 @@ public class MirrorMakerST extends AbstractST {
     @ParallelNamespaceTest
     void testConfigureDeploymentStrategy(ExtensionContext extensionContext) {
         final TestStorage testStorage = storageMap.get(extensionContext);
-        final String namespaceName = StUtils.getNamespaceBasedOnRbac(Constants.TEST_SUITE_NAMESPACE, extensionContext);
+        final String namespaceName = StUtils.getNamespaceBasedOnRbac(Environment.TEST_SUITE_NAMESPACE, extensionContext);
         String clusterName = testStorage.getClusterName();
         String kafkaClusterSourceName = clusterName + "-source";
         String kafkaClusterTargetName = clusterName + "-target";
@@ -687,10 +687,7 @@ public class MirrorMakerST extends AbstractST {
 
     @BeforeAll
     void setupEnvironment(ExtensionContext extensionContext) {
-        clusterOperator = new SetupClusterOperator.SetupClusterOperatorBuilder()
-            .withExtensionContext(extensionContext)
-            .withNamespace(Constants.CO_NAMESPACE)
-            .withWatchingNamespaces(Constants.WATCH_ALL_NAMESPACES)
+        clusterOperator = clusterOperator.defaultInstallation(extensionContext)
             .withOperationTimeout(Constants.CO_OPERATION_TIMEOUT_MEDIUM)
             .createInstallation()
             .runInstallation();

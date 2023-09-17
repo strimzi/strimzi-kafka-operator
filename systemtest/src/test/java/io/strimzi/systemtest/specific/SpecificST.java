@@ -11,6 +11,7 @@ import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
@@ -35,6 +36,7 @@ import java.util.List;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.systemtest.Constants.SPECIFIC;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assumptions.assumeFalse;
 
 @Tag(SPECIFIC)
 @Tag(REGRESSION)
@@ -43,6 +45,8 @@ public class SpecificST extends AbstractST {
 
     @IsolatedTest
     void testClusterWideOperatorWithLimitedAccessToSpecificNamespaceViaRbacRole(final ExtensionContext extensionContext) {
+        assumeFalse(Environment.isNamespaceRbacScope());
+
         final TestStorage testStorage = new TestStorage(extensionContext);
         final String namespaceWhereCreationOfCustomResourcesIsApproved = "example-1";
 
@@ -105,7 +109,7 @@ public class SpecificST extends AbstractST {
         resourceManager.createResourceWithoutWait(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3)
                 .editMetadata()
                 // this should not work
-                    .withNamespace(Constants.TEST_SUITE_NAMESPACE)
+                    .withNamespace(Environment.TEST_SUITE_NAMESPACE)
                 .endMetadata()
                 .build());
 
@@ -119,10 +123,10 @@ public class SpecificST extends AbstractST {
                 .build());
 
         // verify that in `infra-namespace` we are not able to deploy Kafka cluster
-        KafkaUtils.waitUntilKafkaStatusConditionContainsMessage(testStorage.getClusterName(), Constants.TEST_SUITE_NAMESPACE,
+        KafkaUtils.waitUntilKafkaStatusConditionContainsMessage(testStorage.getClusterName(), Environment.TEST_SUITE_NAMESPACE,
                 ".*code=403.*");
 
-        final Condition condition = KafkaResource.kafkaClient().inNamespace(Constants.TEST_SUITE_NAMESPACE).withName(testStorage.getClusterName()).get().getStatus().getConditions().stream().findFirst().get();
+        final Condition condition = KafkaResource.kafkaClient().inNamespace(Environment.TEST_SUITE_NAMESPACE).withName(testStorage.getClusterName()).get().getStatus().getConditions().stream().findFirst().get();
 
         assertThat(condition.getReason(), CoreMatchers.is("KubernetesClientException"));
         assertThat(condition.getStatus(), CoreMatchers.is("True"));

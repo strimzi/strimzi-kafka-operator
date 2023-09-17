@@ -228,6 +228,7 @@ public class Environment {
 
     public static final String CONNECT_BUILD_IMAGE_PATH = getOrDefault(CONNECT_BUILD_IMAGE_PATH_ENV, "");
     public static final String CONNECT_BUILD_REGISTRY_SECRET = getOrDefault(CONNECT_BUILD_REGISTRY_SECRET_ENV, "");
+    public static final String TEST_SUITE_NAMESPACE = Environment.isNamespaceRbacScope() ? Constants.CO_NAMESPACE : "test-suite-namespace";
 
     private Environment() { }
 

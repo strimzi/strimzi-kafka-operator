@@ -15,7 +15,7 @@ import io.strimzi.api.kafka.model.KafkaUserQuotas;
 import io.strimzi.api.kafka.model.KafkaUserQuotasBuilder;
 import io.strimzi.api.kafka.model.KafkaUserSpec;
 import io.strimzi.systemtest.AbstractST;
-import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.enums.UserAuthType;
 import io.strimzi.systemtest.storage.TestStorage;
@@ -76,7 +76,7 @@ public class UserScalabilityST extends AbstractST {
         for (int i = 0; i < numberOfUsers; i++) {
             if (userAuthType.equals(UserAuthType.Tls)) {
                 usersList.add(
-                    KafkaUserTemplates.tlsUser(Constants.TEST_SUITE_NAMESPACE, clusterName, userName + "-" + i)
+                    KafkaUserTemplates.tlsUser(Environment.TEST_SUITE_NAMESPACE, clusterName, userName + "-" + i)
                         .editOrNewSpec()
                             .withAuthorization(usersAcl)
                         .endSpec()
@@ -84,7 +84,7 @@ public class UserScalabilityST extends AbstractST {
                 );
             } else {
                 usersList.add(
-                    KafkaUserTemplates.scramShaUser(Constants.TEST_SUITE_NAMESPACE, clusterName, userName + "-" + i)
+                    KafkaUserTemplates.scramShaUser(Environment.TEST_SUITE_NAMESPACE, clusterName, userName + "-" + i)
                         .editOrNewSpec()
                             .withAuthorization(usersAcl)
                         .endSpec()
@@ -100,7 +100,7 @@ public class UserScalabilityST extends AbstractST {
         LOGGER.info("Creating {} KafkaUsers", listOfUsers.size());
 
         resourceManager.createResourceWithoutWait(extensionContext, listOfUsers.toArray(new KafkaUser[listOfUsers.size()]));
-        KafkaUserUtils.waitForAllUsersWithPrefixReady(Constants.TEST_SUITE_NAMESPACE, usersPrefix);
+        KafkaUserUtils.waitForAllUsersWithPrefixReady(Environment.TEST_SUITE_NAMESPACE, usersPrefix);
     }
 
     private void alterAllUsersInList(ExtensionContext extensionContext, List<KafkaUser> listOfUsers, String usersPrefix) {
@@ -133,8 +133,8 @@ public class UserScalabilityST extends AbstractST {
         KafkaUserSpec kafkaUserSpec = listOfUsers.stream().findFirst().get().getSpec();
 
         resourceManager.updateResource(listOfUsers.toArray(new KafkaUser[listOfUsers.size()]));
-        KafkaUserUtils.waitForConfigToBeChangedInAllUsersWithPrefix(Constants.TEST_SUITE_NAMESPACE, usersPrefix, kafkaUserSpec);
-        KafkaUserUtils.waitForAllUsersWithPrefixReady(Constants.TEST_SUITE_NAMESPACE, usersPrefix);
+        KafkaUserUtils.waitForConfigToBeChangedInAllUsersWithPrefix(Environment.TEST_SUITE_NAMESPACE, usersPrefix, kafkaUserSpec);
+        KafkaUserUtils.waitForAllUsersWithPrefixReady(Environment.TEST_SUITE_NAMESPACE, usersPrefix);
     }
 
     @BeforeAll
@@ -150,7 +150,7 @@ public class UserScalabilityST extends AbstractST {
 
         resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3)
             .editMetadata()
-                .withNamespace(Constants.TEST_SUITE_NAMESPACE)
+                .withNamespace(Environment.TEST_SUITE_NAMESPACE)
             .endMetadata()
             .editOrNewSpec()
                 .editOrNewKafka()
@@ -175,7 +175,7 @@ public class UserScalabilityST extends AbstractST {
                 .endEntityOperator()
             .endSpec()
             .build(),
-            KafkaTopicTemplates.topic(clusterName, topicName, Constants.TEST_SUITE_NAMESPACE).build()
+            KafkaTopicTemplates.topic(clusterName, topicName, Environment.TEST_SUITE_NAMESPACE).build()
         );
     }
 }

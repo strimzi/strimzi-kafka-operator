@@ -13,6 +13,7 @@ import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBui
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.KRaftNotSupported;
 import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
@@ -41,14 +42,14 @@ public class CustomAuthorizerST extends AbstractST {
     @ParallelTest
     @Tag(INTERNAL_CLIENTS_USED)
     void testAclRuleReadAndWrite(ExtensionContext extensionContext) {
-        final TestStorage testStorage = new TestStorage(extensionContext, Constants.TEST_SUITE_NAMESPACE);
+        final TestStorage testStorage = new TestStorage(extensionContext, Environment.TEST_SUITE_NAMESPACE);
         final String kafkaUserWrite = "kafka-user-write";
         final String kafkaUserRead = "kafka-user-read";
         final String consumerGroupName = "consumer-group-name-1";
 
-        resourceManager.createResourceWithWait(extensionContext, KafkaTopicTemplates.topic(CLUSTER_NAME, testStorage.getTopicName(), Constants.TEST_SUITE_NAMESPACE).build());
+        resourceManager.createResourceWithWait(extensionContext, KafkaTopicTemplates.topic(CLUSTER_NAME, testStorage.getTopicName(), Environment.TEST_SUITE_NAMESPACE).build());
 
-        KafkaUser writeUser = KafkaUserTemplates.tlsUser(Constants.TEST_SUITE_NAMESPACE, CLUSTER_NAME, kafkaUserWrite)
+        KafkaUser writeUser = KafkaUserTemplates.tlsUser(Environment.TEST_SUITE_NAMESPACE, CLUSTER_NAME, kafkaUserWrite)
             .editSpec()
                 .withNewKafkaUserAuthorizationSimple()
                     .addNewAcl()
@@ -61,7 +62,7 @@ public class CustomAuthorizerST extends AbstractST {
             .endSpec()
             .build();
 
-        KafkaUser readUser = KafkaUserTemplates.tlsUser(Constants.TEST_SUITE_NAMESPACE, CLUSTER_NAME, kafkaUserRead)
+        KafkaUser readUser = KafkaUserTemplates.tlsUser(Environment.TEST_SUITE_NAMESPACE, CLUSTER_NAME, kafkaUserRead)
             .editSpec()
                 .withNewKafkaUserAuthorizationSimple()
                     .addNewAcl()
@@ -118,11 +119,11 @@ public class CustomAuthorizerST extends AbstractST {
     @ParallelTest
     @Tag(INTERNAL_CLIENTS_USED)
     void testAclWithSuperUser(ExtensionContext extensionContext) {
-        final TestStorage testStorage = new TestStorage(extensionContext, Constants.TEST_SUITE_NAMESPACE);
+        final TestStorage testStorage = new TestStorage(extensionContext, Environment.TEST_SUITE_NAMESPACE);
 
-        resourceManager.createResourceWithWait(extensionContext, KafkaTopicTemplates.topic(CLUSTER_NAME, testStorage.getTopicName(), Constants.TEST_SUITE_NAMESPACE).build());
+        resourceManager.createResourceWithWait(extensionContext, KafkaTopicTemplates.topic(CLUSTER_NAME, testStorage.getTopicName(), Environment.TEST_SUITE_NAMESPACE).build());
 
-        KafkaUser adminUser = KafkaUserTemplates.tlsUser(Constants.TEST_SUITE_NAMESPACE, CLUSTER_NAME, ADMIN)
+        KafkaUser adminUser = KafkaUserTemplates.tlsUser(Environment.TEST_SUITE_NAMESPACE, CLUSTER_NAME, ADMIN)
             .editSpec()
                 .withNewKafkaUserAuthorizationSimple()
                     .addNewAcl()
@@ -137,7 +138,7 @@ public class CustomAuthorizerST extends AbstractST {
 
         resourceManager.createResourceWithWait(extensionContext, adminUser);
 
-        LOGGER.info("Checking Kafka Super User: {}/{} that is able to send messages to Topic: {}", Constants.TEST_SUITE_NAMESPACE, ADMIN, testStorage.getTopicName());
+        LOGGER.info("Checking Kafka Super User: {}/{} that is able to send messages to Topic: {}", Environment.TEST_SUITE_NAMESPACE, ADMIN, testStorage.getTopicName());
 
         KafkaClients kafkaClients = new KafkaClientsBuilder()
             .withProducerName(testStorage.getProducerName())
@@ -153,7 +154,7 @@ public class CustomAuthorizerST extends AbstractST {
         ClientUtils.waitForProducerClientSuccess(testStorage);
 
         LOGGER.info("Checking Kafka Super User: {}/{} that is able to read messages from Topic: {} regardless that " +
-                "we configured Acls with only write operation", Constants.TEST_SUITE_NAMESPACE, ADMIN, TOPIC_NAME);
+                "we configured Acls with only write operation", Environment.TEST_SUITE_NAMESPACE, ADMIN, TOPIC_NAME);
 
         resourceManager.createResourceWithWait(extensionContext, kafkaClients.consumerTlsStrimzi(CLUSTER_NAME));
         ClientUtils.waitForConsumerClientSuccess(testStorage);
@@ -168,7 +169,7 @@ public class CustomAuthorizerST extends AbstractST {
 
         resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaPersistent(CLUSTER_NAME, 1, 1)
             .editMetadata()
-                .withNamespace(Constants.TEST_SUITE_NAMESPACE)
+                .withNamespace(Environment.TEST_SUITE_NAMESPACE)
             .endMetadata()
             .editSpec()
                 .editKafka()

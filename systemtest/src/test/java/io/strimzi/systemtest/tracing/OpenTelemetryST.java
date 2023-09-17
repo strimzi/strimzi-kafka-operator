@@ -274,7 +274,7 @@ public class OpenTelemetryST extends AbstractST {
         configOfKafkaConnect.put("key.converter.schemas.enable", "false");
         configOfKafkaConnect.put("value.converter.schemas.enable", "false");
 
-        resourceManager.createResourceWithWait(extensionContext, KafkaConnectTemplates.kafkaConnect(testStorage.getClusterName(), Constants.TEST_SUITE_NAMESPACE, 1)
+        resourceManager.createResourceWithWait(extensionContext, KafkaConnectTemplates.kafkaConnect(testStorage.getClusterName(), Environment.TEST_SUITE_NAMESPACE, 1)
             .editMetadata()
                 .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
             .endMetadata()
@@ -342,9 +342,16 @@ public class OpenTelemetryST extends AbstractST {
     void testKafkaBridgeService(ExtensionContext extensionContext) {
         final TestStorage testStorage = storageMap.get(extensionContext);
 
-        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3, 1).build());
+        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3, 1)
+            .editMetadata()
+                .withNamespace(testStorage.getNamespaceName())
+            .endMetadata()
+            .build());
         // Deploy http bridge
         resourceManager.createResourceWithWait(extensionContext, KafkaBridgeTemplates.kafkaBridge(testStorage.getClusterName(), KafkaResources.plainBootstrapAddress(testStorage.getClusterName()), 1)
+            .editMetadata()
+                .withNamespace(testStorage.getNamespaceName())
+            .endMetadata()
             .editSpec()
                 .withTracing(otelTracing)
                 .withNewTemplate()
@@ -394,9 +401,16 @@ public class OpenTelemetryST extends AbstractST {
     void testKafkaBridgeServiceWithHttpTracing(ExtensionContext extensionContext) {
         final TestStorage testStorage = storageMap.get(extensionContext);
 
-        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3, 1).build());
+        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3, 1)
+            .editMetadata()
+                .withNamespace(testStorage.getNamespaceName())
+            .endMetadata()
+            .build());
         // Deploy http bridge
         resourceManager.createResourceWithWait(extensionContext, KafkaBridgeTemplates.kafkaBridge(testStorage.getClusterName(), KafkaResources.plainBootstrapAddress(testStorage.getClusterName()), 1)
+            .editMetadata()
+                .withNamespace(testStorage.getNamespaceName())
+            .endMetadata()
             .editSpec()
                 .withTracing(otelTracing)
                 .withNewTemplate()
@@ -444,7 +458,7 @@ public class OpenTelemetryST extends AbstractST {
 
     @BeforeEach
     void createTestResources(final ExtensionContext extensionContext) {
-        final TestStorage testStorage = new TestStorage(extensionContext, Constants.TEST_SUITE_NAMESPACE);
+        final TestStorage testStorage = new TestStorage(extensionContext, Environment.TEST_SUITE_NAMESPACE);
 
         SetupJaeger.deployJaegerInstance(extensionContext, testStorage.getNamespaceName());
 

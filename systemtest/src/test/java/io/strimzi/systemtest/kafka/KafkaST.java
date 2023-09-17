@@ -109,7 +109,7 @@ class KafkaST extends AbstractST {
     @KRaftWithoutUTONotSupported
     void testJvmAndResources(ExtensionContext extensionContext) {
         final TestStorage testStorage = storageMap.get(extensionContext);
-        final String namespaceName = StUtils.getNamespaceBasedOnRbac(Constants.TEST_SUITE_NAMESPACE, extensionContext);
+        final String namespaceName = StUtils.getNamespaceBasedOnRbac(Environment.TEST_SUITE_NAMESPACE, extensionContext);
         final String clusterName = testStorage.getClusterName();
         final LabelSelector kafkaSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.kafkaStatefulSetName(clusterName));
         final LabelSelector zkSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.zookeeperStatefulSetName(clusterName));
@@ -274,7 +274,7 @@ class KafkaST extends AbstractST {
     @ParallelNamespaceTest
     void testRemoveComponentsFromEntityOperator(ExtensionContext extensionContext) {
         final TestStorage testStorage = storageMap.get(extensionContext);
-        final String namespaceName = StUtils.getNamespaceBasedOnRbac(Constants.TEST_SUITE_NAMESPACE, extensionContext);
+        final String namespaceName = StUtils.getNamespaceBasedOnRbac(Environment.TEST_SUITE_NAMESPACE, extensionContext);
         final String clusterName = testStorage.getClusterName();
 
         LOGGER.info("Deploying Kafka cluster {}", clusterName);
@@ -386,7 +386,7 @@ class KafkaST extends AbstractST {
     @ParallelNamespaceTest
     @KRaftNotSupported("JBOD is not supported by KRaft mode and is used in this test case.")
     void testKafkaJBODDeleteClaimsTrueFalse(ExtensionContext extensionContext) {
-        final TestStorage testStorage = new TestStorage(extensionContext, Constants.TEST_SUITE_NAMESPACE);
+        final TestStorage testStorage = new TestStorage(extensionContext, Environment.TEST_SUITE_NAMESPACE);
         final int kafkaReplicas = 2;
         final String diskSizeGi = "10";
 
@@ -446,7 +446,7 @@ class KafkaST extends AbstractST {
     @Tag(LOADBALANCER_SUPPORTED)
     void testRegenerateCertExternalAddressChange(ExtensionContext extensionContext) {
         final TestStorage testStorage = storageMap.get(extensionContext);
-        final String namespaceName = StUtils.getNamespaceBasedOnRbac(Constants.TEST_SUITE_NAMESPACE, extensionContext);
+        final String namespaceName = StUtils.getNamespaceBasedOnRbac(Environment.TEST_SUITE_NAMESPACE, extensionContext);
         final String clusterName = testStorage.getClusterName();
         final LabelSelector kafkaSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.kafkaStatefulSetName(clusterName));
 
@@ -1081,7 +1081,7 @@ class KafkaST extends AbstractST {
     protected void afterEachMayOverride(ExtensionContext extensionContext) throws Exception {
         resourceManager.deleteResources(extensionContext);
 
-        final String namespaceName = StUtils.getNamespaceBasedOnRbac(Constants.TEST_SUITE_NAMESPACE, extensionContext);
+        final String namespaceName = StUtils.getNamespaceBasedOnRbac(Environment.TEST_SUITE_NAMESPACE, extensionContext);
 
         if (KafkaResource.kafkaClient().inNamespace(namespaceName).withName(OPENSHIFT_CLUSTER_NAME).get() != null) {
             cmdKubeClient(namespaceName).deleteByName(Kafka.RESOURCE_KIND, OPENSHIFT_CLUSTER_NAME);

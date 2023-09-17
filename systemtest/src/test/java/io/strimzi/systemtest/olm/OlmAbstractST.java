@@ -15,7 +15,7 @@ import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.balancing.KafkaRebalanceState;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
-import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.resources.operator.specific.OlmResource;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaBridgeUtils;
@@ -38,7 +38,7 @@ public class OlmAbstractST extends AbstractST {
     void doTestDeployExampleKafka() {
         JsonObject kafkaResource = OlmResource.getExampleResources().get(Kafka.RESOURCE_KIND);
         cmdKubeClient().applyContent(kafkaResource.toString());
-        KafkaUtils.waitForKafkaReady(Constants.TEST_SUITE_NAMESPACE, kafkaResource.getJsonObject("metadata").getString("name"));
+        KafkaUtils.waitForKafkaReady(Environment.TEST_SUITE_NAMESPACE, kafkaResource.getJsonObject("metadata").getString("name"));
     }
 
     void doTestDeployExampleKafkaUser(ExtensionContext extensionContext) {
@@ -55,25 +55,25 @@ public class OlmAbstractST extends AbstractST {
         JsonObject kafkaUserResource = OlmResource.getExampleResources().get(KafkaUser.RESOURCE_KIND);
         kafkaUserResource.getJsonObject("metadata").getJsonObject("labels").put(Labels.STRIMZI_CLUSTER_LABEL, userKafkaName);
         cmdKubeClient().applyContent(kafkaUserResource.toString());
-        KafkaUserUtils.waitForKafkaUserCreation(Constants.TEST_SUITE_NAMESPACE, kafkaUserResource.getJsonObject("metadata").getString("name"));
+        KafkaUserUtils.waitForKafkaUserCreation(Environment.TEST_SUITE_NAMESPACE, kafkaUserResource.getJsonObject("metadata").getString("name"));
     }
 
     void doTestDeployExampleKafkaTopic() {
         JsonObject kafkaTopicResource = OlmResource.getExampleResources().get(KafkaTopic.RESOURCE_KIND);
         cmdKubeClient().applyContent(kafkaTopicResource.toString());
-        KafkaTopicUtils.waitForKafkaTopicCreation(Constants.TEST_SUITE_NAMESPACE, kafkaTopicResource.getJsonObject("metadata").getString("name"));
+        KafkaTopicUtils.waitForKafkaTopicCreation(Environment.TEST_SUITE_NAMESPACE, kafkaTopicResource.getJsonObject("metadata").getString("name"));
     }
 
     void doTestDeployExampleKafkaConnect() {
         JsonObject kafkaConnectResource = OlmResource.getExampleResources().get(KafkaConnect.RESOURCE_KIND);
         cmdKubeClient().applyContent(kafkaConnectResource.toString());
-        KafkaConnectUtils.waitForConnectReady(Constants.TEST_SUITE_NAMESPACE, kafkaConnectResource.getJsonObject("metadata").getString("name"));
+        KafkaConnectUtils.waitForConnectReady(Environment.TEST_SUITE_NAMESPACE, kafkaConnectResource.getJsonObject("metadata").getString("name"));
     }
 
     void doTestDeployExampleKafkaBridge() {
         JsonObject kafkaBridgeResource = OlmResource.getExampleResources().get(KafkaBridge.RESOURCE_KIND);
         cmdKubeClient().applyContent(kafkaBridgeResource.toString());
-        KafkaBridgeUtils.waitForKafkaBridgeReady(Constants.TEST_SUITE_NAMESPACE, kafkaBridgeResource.getJsonObject("metadata").getString("name"));
+        KafkaBridgeUtils.waitForKafkaBridgeReady(Environment.TEST_SUITE_NAMESPACE, kafkaBridgeResource.getJsonObject("metadata").getString("name"));
     }
 
     void doTestDeployExampleKafkaMirrorMaker() {
@@ -81,7 +81,7 @@ public class OlmAbstractST extends AbstractST {
         cmdKubeClient().applyContent(kafkaMirrorMakerResource.toString()
                 .replace("my-source-cluster-kafka-bootstrap", "my-cluster-kafka-bootstrap")
                 .replace("my-target-cluster-kafka-bootstrap", "my-cluster-kafka-bootstrap"));
-        KafkaMirrorMakerUtils.waitForKafkaMirrorMakerReady(Constants.TEST_SUITE_NAMESPACE, kafkaMirrorMakerResource.getJsonObject("metadata").getString("name"));
+        KafkaMirrorMakerUtils.waitForKafkaMirrorMakerReady(Environment.TEST_SUITE_NAMESPACE, kafkaMirrorMakerResource.getJsonObject("metadata").getString("name"));
     }
 
     void doTestDeployExampleKafkaMirrorMaker2() {
@@ -89,7 +89,7 @@ public class OlmAbstractST extends AbstractST {
         cmdKubeClient().applyContent(kafkaMirrorMaker2Resource.toString()
                 .replace("cluster-a-kafka-bootstrap", "my-cluster-kafka-bootstrap")
                 .replace("cluster-b-kafka-bootstrap", "my-cluster-kafka-bootstrap"));
-        KafkaMirrorMaker2Utils.waitForKafkaMirrorMaker2Ready(Constants.TEST_SUITE_NAMESPACE, kafkaMirrorMaker2Resource.getJsonObject("metadata").getString("name"));
+        KafkaMirrorMaker2Utils.waitForKafkaMirrorMaker2Ready(Environment.TEST_SUITE_NAMESPACE, kafkaMirrorMaker2Resource.getJsonObject("metadata").getString("name"));
     }
 
     void doTestDeployExampleKafkaRebalance(ExtensionContext extensionContext) {
@@ -98,7 +98,7 @@ public class OlmAbstractST extends AbstractST {
         JsonObject kafkaRebalanceResource = OlmResource.getExampleResources().get(KafkaRebalance.RESOURCE_KIND);
         kafkaRebalanceResource.getJsonObject("metadata").getJsonObject("labels").put(Labels.STRIMZI_CLUSTER_LABEL, cruiseControlClusterName);
         cmdKubeClient().applyContent(kafkaRebalanceResource.toString());
-        KafkaRebalanceUtils.waitForKafkaRebalanceCustomResourceState(Constants.TEST_SUITE_NAMESPACE, "my-rebalance", KafkaRebalanceState.PendingProposal);
+        KafkaRebalanceUtils.waitForKafkaRebalanceCustomResourceState(Environment.TEST_SUITE_NAMESPACE, "my-rebalance", KafkaRebalanceState.PendingProposal);
     }
 
     @AfterAll
