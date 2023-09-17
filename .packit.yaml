@@ -161,7 +161,7 @@ jobs:
     manual_trigger: true
     env: { IP_FAMILY: ipv6 }
     labels:
-      - acceptance
+      - acceptance_ipv6
     tf_extra_params:
       test:
         tmt:
@@ -177,7 +177,7 @@ jobs:
     manual_trigger: true
     env: { IP_FAMILY: dual }
     labels:
-      - acceptance
+      - acceptance_dual
     tf_extra_params:
       test:
         tmt:
