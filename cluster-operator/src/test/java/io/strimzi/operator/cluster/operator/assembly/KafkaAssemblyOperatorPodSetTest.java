@@ -73,7 +73,7 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.IntStream;
 
-import static io.strimzi.operator.common.Annotations.ANNO_STRIMZI_IO_SKIP_BROKER_SCALEDOWN_CHECK;
+import static io.strimzi.api.ResourceAnnotations.ANNO_STRIMZI_IO_SKIP_BROKER_SCALEDOWN_CHECK;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.empty;
