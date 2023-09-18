@@ -44,18 +44,11 @@ function label_node {
 }
 
 function install_kubernetes_provisioner {
-      if [ "$TEST_CLUSTER" = "minikube" ]; then
-            if [ "${TEST_KUBERNETES_VERSION:-latest}" = "latest" ]; then
-                TEST_KUBERNETES_URL=https://storage.googleapis.com/minikube/releases/latest/minikube-linux-${ARCH}
-            else
-                TEST_KUBERNETES_URL=https://github.com/kubernetes/minikube/releases/download/${TEST_KUBERNETES_VERSION}/minikube-linux-${ARCH}
-            fi
-      elif [ "$TEST_CLUSTER" = "kind" ]; then
-            if [ "${TEST_KUBERNETES_VERSION:-latest}" = "latest" ]; then
-                # get the latest released tag
-                TEST_KUBERNETES_VERSION=$(curl https://api.github.com/repos/kubernetes-sigs/kind/releases/latest | grep -Po "(?<=\"tag_name\": \").*(?=\")")
-            fi
-            TEST_KUBERNETES_URL=https://github.com/kubernetes-sigs/kind/releases/download/${TEST_KUBERNETES_VERSION}/kind-linux-${ARCH}
+      if [ "${TEST_MINIKUBE_VERSION:-latest}" = "latest" ]; then
+          TEST_KUBERNETES_URL=https://storage.googleapis.com/minikube/releases/latest/minikube-linux-${ARCH}
+      else
+          TEST_KUBERNETES_URL=https://github.com/kubernetes/minikube/releases/download/${TEST_MINIKUBE_VERSION}/minikube-linux-${ARCH}
+      fi
 
       if [ "$KUBE_VERSION" != "latest" ] && [ "$KUBE_VERSION" != "stable" ]; then
           KUBE_VERSION="v${KUBE_VERSION}"
@@ -63,7 +56,6 @@ function install_kubernetes_provisioner {
 
       curl -Lo $TEST_CLUSTER ${TEST_KUBERNETES_URL} && chmod +x $TEST_CLUSTER
       sudo cp $TEST_CLUSTER /usr/local/bin
-    fi
 }
 
 function create_cluster_role_binding_admin {
@@ -144,102 +136,6 @@ if [ "$TEST_CLUSTER" = "minikube" ]; then
     minikube addons enable default-storageclass
     add_docker_hub_credentials_to_kubernetes "$TEST_CLUSTER"
     setup_registry_proxy
-
-elif [ "$TEST_CLUSTER" = "kind" ]; then
-    reg_name='kind-registry'
-    reg_port='5001'
-    hostname=''
-    if [ "$IP_FAMILY" = "ipv4" ]; then
-        hostname=$(hostname -I | grep -oE '\b([0-9]{1,3}\.){3}[0-9]{1,3}\b' | sort | head -1)
-    else
-        # for ipv6 and dual configuration
-        hostname=$(hostname --ip-address | grep -oE '\b([0-9a-fA-F:]+)\b' | awk '{ if (found == 1) { print $1; exit; } if ($1 ~ /^fe80/) { found = 1; next; } }')
-    fi
-
-     daemon_configuration=''
-
-    if [ "$IP_FAMILY" = "ipv6" ]; then
-      daemon_configuration="{
-              \"insecure-registries\" : [\"${hostname}:${reg_port}\"],
-              \"experimental\": true,
-              \"ip6tables\": true
-           }"
-    else
-      daemon_configuration="{
-              \"insecure-registries\" : [\"${hostname}:${reg_port}\"]
-           }"
-    fi
-
-    # We need to add such host to insecure-registry (as localhost is default)
-    echo ${daemon_configuration} | sudo tee /etc/docker/daemon.json
-    # we need to restart docker service to propagate configuration
-    systemctl restart docker
-
-    # Create kind cluster with containerd registry config dir enabled
-    # TODO: kind will eventually enable this by default and this patch will
-    # be unnecessary.
-    #
-    # See:
-    # https://github.com/kubernetes-sigs/kind/issues/2875
-    # https://github.com/containerd/containerd/blob/main/docs/cri/config.md#registry-configuration
-    # See: https://github.com/containerd/containerd/blob/main/docs/hosts.md
-    cat <<EOF | kind create cluster --config=-
-    kind: Cluster
-    apiVersion: kind.x-k8s.io/v1alpha4
-    name: kind-cluster
-    containerdConfigPatches:
-    - |-
-      [plugins."io.containerd.grpc.v1.cri".registry]
-        config_path = "/etc/containerd/certs.d"
-    networking:
-        ipFamily: $IP_FAMILY
-EOF
-
-    if [ "$(docker inspect -f '{{.State.Running}}' "${reg_name}" 2>/dev/null || true)" != 'true' ]; then
-        docker run \
-          -d --restart=always --network kind -h ${hostname} -p "${reg_port}:5000" --name "${reg_name}" \
-          registry:2
-    fi
-
-    # Add the registry config to the nodes
-    #
-    # This is necessary because localhost resolves to loopback addresses that are
-    # network-namespace local.
-    # In other words: localhost in the container is not localhost on the host.
-    #
-    # We want a consistent name that works from both ends, so we tell containerd to
-    # alias localhost:${reg_port} to the registry container when pulling images
-    REGISTRY_DIR="/etc/containerd/certs.d/${hostname}:${reg_port}"
-    # note: kind get nodes (default name `kind` and with specifying new name we have to use --name <cluster-name>
-    for node in $(kind get nodes --name kind-cluster); do
-      echo "Executing command in node:${node}"
-      docker exec "${node}" mkdir -p "${REGISTRY_DIR}"
-      cat <<EOF | docker exec -i "${node}" cp /dev/stdin "${REGISTRY_DIR}/hosts.toml"
-    [host."http://${reg_name}:5000"]
-EOF
-    done
-
-    # Connect the registry to the cluster network if not already connected
-    # This allows kind to bootstrap the network but ensures they're on the same network
-    if [ "$(docker inspect -f='{{json .NetworkSettings.Networks.kind}}' "${reg_name}")" = 'null' ]; then
-      docker network connect "kind" "${reg_name}"
-    fi
-
-    # Document the local registry
-    # https://github.com/kubernetes/enhancements/tree/master/keps/sig-cluster-lifecycle/generic/1755-communicating-a-local-registry
-    cat <<EOF | kubectl apply -f -
-    apiVersion: v1
-    kind: ConfigMap
-    metadata:
-      name: local-registry-hosting
-      namespace: kube-public
-    data:
-      localRegistryHosting.v1: |
-        host: "${hostname}:${reg_port}"
-        help: "https://kind.sigs.k8s.io/docs/user/local-registry/"
-EOF
-
-    add_docker_hub_credentials_to_kubernetes "$TEST_CLUSTER"
 else
     echo "Unsupported TEST_CLUSTER '$TEST_CLUSTER'"
     exit 1
