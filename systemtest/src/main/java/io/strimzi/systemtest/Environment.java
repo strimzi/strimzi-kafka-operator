@@ -17,14 +17,9 @@ import org.apache.logging.log4j.Logger;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.Inet6Address;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
+import java.net.*;
 import java.nio.file.Paths;
-import java.util.HashMap;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.function.Function;
 
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
@@ -309,19 +304,28 @@ public class Environment {
             return "image-registry.openshift-image-registry.svc:5000";
         } else if (KubeClusterResource.getInstance().isKind()) {
             // we will need a hostname of machine
-            final String hostname;
-
+            String hostname = "";
             try {
                 if (Environment.isIpv4Family()) {
                     hostname = InetAddress.getLocalHost().getHostAddress() + ":5001";
                 } else {
                     // for dual and ipv6
-                    hostname = Inet6Address.getLocalHost().getHostAddress() + ":5001";
+                    Enumeration<NetworkInterface> networkInterfaces = NetworkInterface.getNetworkInterfaces();
+                    while (networkInterfaces.hasMoreElements()) {
+                        NetworkInterface networkInterface = networkInterfaces.nextElement();
+                        Enumeration<InetAddress> inetAddresses = networkInterface.getInetAddresses();
+                        while (inetAddresses.hasMoreElements()) {
+                            InetAddress inetAddress = inetAddresses.nextElement();
+                            if (inetAddress instanceof java.net.Inet6Address) {
+                                hostname = inetAddress.getHostAddress() + ":5001";
+                                break;
+                            }
+                        }
+                    }
                 }
-            } catch (UnknownHostException e) {
+            } catch (UnknownHostException | SocketException e) {
                 throw new RuntimeException(e);
             }
-
             LOGGER.info("Using hostname:{}", hostname);
             return hostname;
         } else {

@@ -161,7 +161,7 @@ elif [ "$TEST_CLUSTER" = "kind" ]; then
 
     if [ "$IP_FAMILY" = "ipv6" ]; then
       daemon_configuration="{
-              \"insecure-registries\" : [\"${hostname}:${reg_port}\"],
+              \"insecure-registries\" : [\"${hostname}:${reg_port}\", \"0.0.0.0:5001\"],
               \"experimental\": true,
               \"ip6tables\": true
            }"
