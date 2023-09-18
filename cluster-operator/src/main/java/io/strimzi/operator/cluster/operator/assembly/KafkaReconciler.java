@@ -225,7 +225,7 @@ public class KafkaReconciler {
         this.pfa = pfa;
         this.imagePullPolicy = config.getImagePullPolicy();
         this.imagePullSecrets = config.getImagePullSecrets();
-        this.skipBrokerScaleDownCheck = Annotations.booleanAnnotation(kafkaCr, ANNO_STRIMZI_IO_SKIP_BROKER_SCALEDOWN_CHECK, true);
+        this.skipBrokerScaleDownCheck = Annotations.booleanAnnotation(kafkaCr, ANNO_STRIMZI_IO_SKIP_BROKER_SCALEDOWN_CHECK, false);
 
         this.stsOperator = supplier.stsOperations;
         this.strimziPodSetOperator = supplier.strimziPodSetOperator;
@@ -291,23 +291,20 @@ public class KafkaReconciler {
     }
 
     protected Future<Void> brokerScaleDownCheck() {
-        if (skipBrokerScaleDownCheck) {
+        if (skipBrokerScaleDownCheck || kafka.removedNodes().isEmpty()) {
             return Future.succeededFuture();
         } else {
-            if (kafka.removedNodes().isEmpty()) {
-                return Future.succeededFuture();
-            } else {
-                return brokerScaleDownOperations.canScaleDownBrokers(reconciliation, vertx, kafka.removedNodes(), secretOperator, adminClientProvider)
-                        .compose(brokersContainingPartitions -> {
-                            if (!brokersContainingPartitions.isEmpty()) {
-                                throw new InvalidResourceException("Cannot scale down brokers " + kafka.removedNodes() + " because brokers " + brokersContainingPartitions + " are not empty");
-                            } else {
-                                return Future.succeededFuture();
-                            }
-                        });
-            }
+            return brokerScaleDownOperations.canScaleDownBrokers(reconciliation, vertx, kafka.removedNodes(), secretOperator, adminClientProvider)
+                    .compose(brokersContainingPartitions -> {
+                        if (!brokersContainingPartitions.isEmpty()) {
+                            throw new InvalidResourceException("Cannot scale down brokers " + kafka.removedNodes() + " because brokers " + brokersContainingPartitions + " are not empty");
+                        } else {
+                            return Future.succeededFuture();
+                        }
+                    });
         }
     }
+
 
     /**
      * Takes the warning conditions from the Model and adds them in the KafkaStatus
