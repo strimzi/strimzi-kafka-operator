@@ -220,7 +220,7 @@ Standard Apache Kafka configuration may be provided, restricted to those propert
 <16> Cluster alias for the target cluster used by the MirrorMaker 2 connectors.
 <17> Configuration for the `MirrorSourceConnector` that creates remote topics. The `config` overrides the default configuration options.
 <18> The maximum number of tasks that the connector may create. Tasks handle the data replication and run in parallel. If the infrastructure supports the processing overhead, increasing this value can improve throughput. Kafka Connect distributes the tasks between members of the cluster. If there are more tasks than workers, workers are assigned multiple tasks. For sink connectors, aim to have one task for each topic partition consumed. For source connectors, the number of tasks that can run in parallel may also depend on the external system. The connector creates fewer than the maximum number of tasks if it cannot achieve the parallelism.
-<19> Enables automatic restarts of failed connectors and tasks.
+<19> Enables automatic restarts of failed connectors and tasks. By default, the number of restarts is indefinite, but you can set a maximum on the number of automatic restarts using the `maxRestarts` property. 
 <20> Replication factor for mirrored topics created at the target cluster.
 <21> Replication factor for the `MirrorSourceConnector` `offset-syncs` internal topic that maps the offsets of the source and target clusters.
 <22> When ACL rules synchronization is enabled, ACLs are applied to synchronized topics. The default is `true`. This feature is not compatible with the User Operator. If you are using the User Operator, set this property to `false`.
