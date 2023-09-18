@@ -18,11 +18,8 @@ import org.apache.logging.log4j.Logger;
 import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
-import java.net.NetworkInterface;
-import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.nio.file.Paths;
-import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -315,22 +312,8 @@ public class Environment {
             try {
                 if (Environment.isIpv4Family()) {
                     hostname = InetAddress.getLocalHost().getHostAddress() + ":5001";
-                } else {
-                    // for dual and ipv6
-                    Enumeration<NetworkInterface> networkInterfaces = NetworkInterface.getNetworkInterfaces();
-                    while (networkInterfaces.hasMoreElements()) {
-                        NetworkInterface networkInterface = networkInterfaces.nextElement();
-                        Enumeration<InetAddress> inetAddresses = networkInterface.getInetAddresses();
-                        while (inetAddresses.hasMoreElements()) {
-                            InetAddress inetAddress = inetAddresses.nextElement();
-                            if (inetAddress instanceof java.net.Inet6Address) {
-                                hostname = inetAddress.getHostAddress() + ":5001";
-                                break;
-                            }
-                        }
-                    }
                 }
-            } catch (UnknownHostException | SocketException e) {
+            } catch (UnknownHostException e) {
                 throw new RuntimeException(e);
             }
             LOGGER.info("Using hostname:{}", hostname);

@@ -146,7 +146,6 @@ if [ "$TEST_CLUSTER" = "minikube" ]; then
     setup_registry_proxy
 
 elif [ "$TEST_CLUSTER" = "kind" ]; then
-    # 1. Create registry container unless it already exists
     reg_name='kind-registry'
     reg_port='5001'
     hostname=''
@@ -161,7 +160,7 @@ elif [ "$TEST_CLUSTER" = "kind" ]; then
 
     if [ "$IP_FAMILY" = "ipv6" ]; then
       daemon_configuration="{
-              \"insecure-registries\" : [\"${hostname}:${reg_port}\", \"0.0.0.0:5001\"],
+              \"insecure-registries\" : [\"${hostname}:${reg_port}\"],
               \"experimental\": true,
               \"ip6tables\": true
            }"
@@ -176,7 +175,7 @@ elif [ "$TEST_CLUSTER" = "kind" ]; then
     # we need to restart docker service to propagate configuration
     systemctl restart docker
 
-    # 2. Create kind cluster with containerd registry config dir enabled
+    # Create kind cluster with containerd registry config dir enabled
     # TODO: kind will eventually enable this by default and this patch will
     # be unnecessary.
     #
@@ -202,7 +201,7 @@ EOF
           registry:2
     fi
 
-    # 3. Add the registry config to the nodes
+    # Add the registry config to the nodes
     #
     # This is necessary because localhost resolves to loopback addresses that are
     # network-namespace local.
@@ -220,13 +219,13 @@ EOF
 EOF
     done
 
-    # 4. Connect the registry to the cluster network if not already connected
+    # Connect the registry to the cluster network if not already connected
     # This allows kind to bootstrap the network but ensures they're on the same network
     if [ "$(docker inspect -f='{{json .NetworkSettings.Networks.kind}}' "${reg_name}")" = 'null' ]; then
       docker network connect "kind" "${reg_name}"
     fi
 
-    # 5. Document the local registry
+    # Document the local registry
     # https://github.com/kubernetes/enhancements/tree/master/keps/sig-cluster-lifecycle/generic/1755-communicating-a-local-registry
     cat <<EOF | kubectl apply -f -
     apiVersion: v1
