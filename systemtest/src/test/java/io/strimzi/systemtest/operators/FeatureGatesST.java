@@ -201,6 +201,7 @@ public class FeatureGatesST extends AbstractST {
         final String enabledFgMessage = "Enabled FG message";
         final String disabledFgMessage = "Disabled FG message";
 
+        final String continuousProducerName = "continuous-producer";
         final String startingProducerName = "starting-fg-producer";
         final String enabledFgProducerName = "enabled-fg-producer";
         final String disabledFgProducerName = "disabled-fg-producer";
@@ -251,7 +252,7 @@ public class FeatureGatesST extends AbstractST {
 
         // We are sending continuous messages throughout the test to verify communication in between enabling the FG
         KafkaClients continuousClients = new KafkaClientsBuilder()
-            .withProducerName("continuous-producer")
+            .withProducerName(continuousProducerName)
             .withConsumerName(testStorage.getConsumerName())
             .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
             .withTopicName(testStorage.getTopicName())
@@ -269,7 +270,7 @@ public class FeatureGatesST extends AbstractST {
             .withTopicName(testStorage.getTopicName())
             .withMessageCount(oneTimeMessageCount)
             .withMessage(startingMessage)
-            .withNamespaceName(clusterOperator.getDeploymentNamespace())
+            .withNamespaceName(testStorage.getNamespaceName())
             .build();
 
         LOGGER.info("Verifying that KafkaConnector is able to sink the messages to the file-sink file before enabling FG");
@@ -303,7 +304,7 @@ public class FeatureGatesST extends AbstractST {
             .withMessage(enabledFgMessage)
             .build();
         resourceManager.createResourceWithWait(extensionContext, oneTimeClients.producerStrimzi());
-        ClientUtils.waitForClientSuccess(enabledFgProducerName, clusterOperator.getDeploymentNamespace(), oneTimeMessageCount);
+        ClientUtils.waitForClientSuccess(enabledFgProducerName, testStorage.getNamespaceName(), oneTimeMessageCount);
         KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(testStorage.getNamespaceName(), enabledFgConnectorPodName, Constants.DEFAULT_SINK_FILE_PATH, String.format("%s - %s", enabledFgMessage, oneTimeMessageCount - 1));
         KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(testStorage.getNamespaceName(), enabledFgConnectorPodName, Constants.DEFAULT_SINK_FILE_PATH, continuousMessage);
 
@@ -331,7 +332,7 @@ public class FeatureGatesST extends AbstractST {
             .withMessage(disabledFgMessage)
             .build();
         resourceManager.createResourceWithWait(extensionContext, oneTimeClients.producerStrimzi());
-        ClientUtils.waitForClientSuccess(disabledFgProducerName, clusterOperator.getDeploymentNamespace(), oneTimeMessageCount);
+        ClientUtils.waitForClientSuccess(disabledFgProducerName, testStorage.getNamespaceName(), oneTimeMessageCount);
         KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(testStorage.getNamespaceName(), disabledFgConnectorPodName, Constants.DEFAULT_SINK_FILE_PATH, String.format("%s - %s", disabledFgMessage, oneTimeMessageCount - 1));
         KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(testStorage.getNamespaceName(), disabledFgConnectorPodName, Constants.DEFAULT_SINK_FILE_PATH, continuousMessage);
     }
