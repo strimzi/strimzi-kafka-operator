@@ -87,6 +87,26 @@ And use it to verify the signature:
 cosign verify --key strimzi.pub quay.io/strimzi/operator:latest --insecure-ignore-tlog=true
 ```
 
+## Software Bill of Materials (SBOM)
+
+From the 0.38.0 release, Strimzi publishes the software bill of materials (SBOM) of our containers.
+The SBOMs are published as an archive with `SPDX-JSON` and `Syft-Table` formats signed using cosign.
+For releases, they are also pushed into the container registry.
+To verify the SBOM signatures, please use the Strimzi public key:
+
+```
+-----BEGIN PUBLIC KEY-----
+MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAET3OleLR7h0JqatY2KkECXhA9ZAkC
+TRnbE23Wb5AzJPnpevvQ1QUEQQ5h/I4GobB7/jkGfqYkt6Ct5WOU2cc6HQ==
+-----END PUBLIC KEY-----
+```
+
+You can use it to verify the signature of the SBOM files with the following command:
+
+```
+cosign verify-blob --key cosign.pub --bundle <SBOM-file>.bundle --insecure-ignore-tlog=true <SBOM-file>
+```
+
 ---
 
 Strimzi is a <a href="http://cncf.io">Cloud Native Computing Foundation</a> sandbox project.
