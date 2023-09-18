@@ -184,11 +184,11 @@ which multiplies the maximum bandwidth of the link (in bytes/s) with the round-t
 == Managing Kafka logs with delete and compact policies
 
 Kafka relies on logs to store message data. 
-Logs consist of a series of segments, each associated with various indexes. 
+Logs consist of a series of segments, each associated with offset-based and timestamp-based indexes.
 New messages are written to an _active_ segment and are never subsequently modified. 
 When serving fetch requests from consumers, segments are read. 
 Periodically, the active segment is _rolled_ to become read-only, and a new active segment is created to replace it. 
-There is only one active segment at a time. 
+There is only one active segment per topic-partition per broker. 
 Older segments are retained until they become eligible for deletion.
 
 Configuration at the broker level determines the maximum size in bytes of a log segment and the time in milliseconds before an active segment is rolled:
@@ -206,7 +206,7 @@ The choice to lower or raise these values depends on the policy for segment dele
 A larger size means the active segment contains more messages and is rolled less often. 
 Segments also become eligible for deletion less frequently.
 
-In Kafka, log cleanup policies determine how older log data is managed.
+In Kafka, log cleanup policies determine how log data is managed.
 In most cases, you won't need to change the default configuration at the cluster level, which specifies the `delete` cleanup policy and enables the log cleaner used by the `compact` cleanup policy:
 
 [source,env]
@@ -228,12 +228,12 @@ You can also configure topics to use both policies (`cleanup.policy=compact,dele
 
 The delete policy corresponds to managing logs with data retention policies. 
 The policy is suitable when data does not need to be retained forever.
-You can establish time-based or size-based log retention and cleanup policies to keep logs manageable. 
+You can establish time-based or size-based log retention and cleanup policies to keep logs bounded. 
 
 When log retention policies are employed, non-active log segments are removed when retention limits are reached.
 This deletion of old segments helps prevent exceeding disk capacity.
 
-For time-based log retention, you set a retention period based on hours, minutes, and milliseconds: 
+For time-based log retention, you set a retention period based on hours, minutes, or milliseconds: 
 
 [source,env]
 ----
@@ -243,12 +243,12 @@ log.retention.ms=1680000
 ----
 
 The retention period is based on the time messages were appended to the segment. The milliseconds configuration has priority over minutes, which has priority over hours. 
-The minutes and milliseconds configuration is null by default, but the three options provide a substantial level of control over the data you wish to retain. Preference should be given to the milliseconds configuration, as it is the only one of the three properties that is dynamically updateable.
+The minutes and milliseconds configurations are null by default, but the three options provide a substantial level of control over the data you wish to retain. Preference should be given to the milliseconds configuration, as it is the only one of the three properties that is dynamically updateable.
 
 If `log.retention.ms` is set to -1, no time limit is applied to log retention, and all logs are retained. 
 However, this setting is not generally recommended as it can lead to issues with full disks that are difficult to rectify.
 
-For size-based log retention, you specify a maximum log size (in bytes) for all segments in the log:
+For size-based log retention, you specify a minimum log size (in bytes):
 
 [source,env]
 ----
@@ -257,10 +257,13 @@ log.retention.bytes=1073741824
 # ...
 ----
 
-In other words, a log will typically have approximately `log.retention.bytes/log.segment.bytes` segments once it reaches a steady state. 
-When the maximum log size is reached, older segments are removed.
+This means that Kafka will ensure there is always at least the specified amount of log data available.
 
-A potential issue with using a maximum log size is that it does not take into account the time messages were appended to a segment.
+For example, if you set `log.retention.bytes` to 1000 and `log.segment.bytes` to 300, Kafka will keep 4 segments plus the active segment, ensuring a minimum of 1000 bytes are available. 
+When the active segment becomes full and a new segment is created, the oldest segment is deleted. 
+At this point, the size on disk may exceed the specified 1000 bytes, potentially ranging between 1200 and 1500 bytes (excluding index files).
+
+A potential issue with using a log size is that it does not take into account the time messages were appended to a segment.
 You can use time-based and size-based log retention for your cleanup policy to get the balance you need.
 Whichever threshold is reached first triggers the cleanup.
 
@@ -286,7 +289,7 @@ log.retention.check.interval.ms=300000
 
 Adjust the log retention check interval in relation to the log retention settings. 
 Smaller retention sizes might require more frequent checks. 
-The frequency of cleanup should be often enough to manage the disk space but not so often it affects performance on a topic.
+The frequency of cleanup should be often enough to manage the disk space but not so often it affects performance on a broker.
 
 .Retaining the most recent messages using compact policy
 
