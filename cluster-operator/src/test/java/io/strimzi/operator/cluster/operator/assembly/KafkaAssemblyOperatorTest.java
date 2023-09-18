@@ -1223,7 +1223,7 @@ public class KafkaAssemblyOperatorTest {
                 config
         );
 
-        // Mock broker scale down check
+        // Mock broker scale down operation
         PreventBrokerScaleDownCheck operations = supplier.brokerScaleDownOperations;
         when(operations.canScaleDownBrokers(any(), any(), any(), any(), any())).thenReturn(Future.succeededFuture(Set.of()));
 
