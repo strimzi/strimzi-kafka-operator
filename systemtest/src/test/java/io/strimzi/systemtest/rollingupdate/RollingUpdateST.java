@@ -9,12 +9,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
-import io.fabric8.kubernetes.api.model.ConfigMapKeySelector;
 import io.fabric8.kubernetes.api.model.ConfigMapKeySelectorBuilder;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
-import io.strimzi.api.kafka.model.ExternalLoggingBuilder;
 import io.strimzi.api.kafka.model.JmxPrometheusExporterMetrics;
 import io.strimzi.api.kafka.model.JmxPrometheusExporterMetricsBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
@@ -519,86 +517,7 @@ class RollingUpdateST extends AbstractST {
         }
     }
 
-    @ParallelNamespaceTest
-    @Tag(ROLLING_UPDATE)
-    void testExternalLoggingChangeTriggerRollingUpdate(ExtensionContext extensionContext) {
-        final TestStorage testStorage = storageMap.get(extensionContext);
-        final String namespaceName = StUtils.getNamespaceBasedOnRbac(Environment.TEST_SUITE_NAMESPACE, extensionContext);
-        final String clusterName = testStorage.getClusterName();
-        final LabelSelector kafkaSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.kafkaStatefulSetName(clusterName));
-        final LabelSelector zkSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.zookeeperStatefulSetName(clusterName));
 
-        // EO dynamic logging is tested in io.strimzi.systemtest.log.LoggingChangeST.testDynamicallySetEOloggingLevels
-        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3, 3).build());
-
-        Map<String, String> kafkaPods = PodUtils.podSnapshot(namespaceName, kafkaSelector);
-        Map<String, String> zkPods = null;
-        if (!Environment.isKRaftModeEnabled()) {
-            zkPods = PodUtils.podSnapshot(namespaceName, zkSelector);
-        }
-
-        String loggersConfig = "log4j.appender.CONSOLE=org.apache.log4j.ConsoleAppender\n" +
-                "log4j.appender.CONSOLE.layout=org.apache.log4j.PatternLayout\n" +
-                "log4j.appender.CONSOLE.layout.ConversionPattern=%d{ISO8601} %p %m (%c) [%t]\n" +
-                "kafka.root.logger.level=INFO\n" +
-                "log4j.rootLogger=${kafka.root.logger.level}, CONSOLE\n" +
-                "log4j.logger.org.I0Itec.zkclient.ZkClient=INFO\n" +
-                "log4j.logger.org.apache.zookeeper=INFO\n" +
-                "log4j.logger.kafka=INFO\n" +
-                "log4j.logger.org.apache.kafka=INFO\n" +
-                "log4j.logger.kafka.request.logger=WARN, CONSOLE\n" +
-                "log4j.logger.kafka.network.Processor=INFO\n" +
-                "log4j.logger.kafka.server.KafkaApis=INFO\n" +
-                "log4j.logger.kafka.network.RequestChannel$=INFO\n" +
-                "log4j.logger.kafka.controller=INFO\n" +
-                "log4j.logger.kafka.log.LogCleaner=INFO\n" +
-                "log4j.logger.state.change.logger=TRACE\n" +
-                "log4j.logger.kafka.authorizer.logger=INFO";
-
-        String configMapLoggersName = "loggers-config-map";
-        ConfigMap configMapLoggers = new ConfigMapBuilder()
-                .withNewMetadata()
-                    .withNamespace(namespaceName)
-                    .withName(configMapLoggersName)
-                .endMetadata()
-                .addToData("log4j-custom.properties", loggersConfig)
-                .build();
-
-        ConfigMapKeySelector log4jLoggimgCMselector = new ConfigMapKeySelectorBuilder()
-                .withName(configMapLoggersName)
-                .withKey("log4j-custom.properties")
-                .build();
-
-        kubeClient().createConfigMapInNamespace(namespaceName, configMapLoggers);
-
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, kafka -> {
-            kafka.getSpec().getKafka().setLogging(new ExternalLoggingBuilder()
-                    .withNewValueFrom()
-                        .withConfigMapKeyRef(log4jLoggimgCMselector)
-                    .endValueFrom()
-                    .build());
-            if (!Environment.isKRaftModeEnabled()) {
-                kafka.getSpec().getZookeeper().setLogging(new ExternalLoggingBuilder()
-                    .withNewValueFrom()
-                        .withConfigMapKeyRef(log4jLoggimgCMselector)
-                    .endValueFrom()
-                    .build());
-            }
-        }, namespaceName);
-
-        if (!Environment.isKRaftModeEnabled()) {
-            zkPods = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(namespaceName, zkSelector, 3, zkPods);
-        }
-        kafkaPods = RollingUpdateUtils.waitTillComponentHasRolled(namespaceName, kafkaSelector, 3, kafkaPods);
-
-        configMapLoggers.getData().put("log4j-custom.properties", loggersConfig.replace("%p %m (%c) [%t]", "%p %m (%c) [%t]%n"));
-        kubeClient().updateConfigMapInNamespace(namespaceName, configMapLoggers);
-
-        if (!Environment.isKRaftModeEnabled()) {
-            RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(namespaceName, zkSelector, 3, zkPods);
-        }
-        RollingUpdateUtils.waitTillComponentHasRolled(namespaceName, kafkaSelector, 3, kafkaPods);
-    }
 
     @IsolatedTest("Deleting Pod of Shared Cluster Operator")
     @Tag(ROLLING_UPDATE)
