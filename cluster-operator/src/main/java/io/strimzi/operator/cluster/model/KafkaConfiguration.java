@@ -276,10 +276,10 @@ public class KafkaConfiguration extends AbstractConfiguration {
     }
 
     /**
-     * Return the config properties with their values in this KafkaConfiguration which are not known broker configs.
-     * These might be consumed by broker plugins.
+     * Return the config properties with their values in this KafkaConfiguration which are known to be relevant for the
+     * Kafka controller nodes.
      *
-     * @return  The configuration options relevant for consumers
+     * @return  The configuration options relevant for controllers
      */
     public Set<String> controllerConfigsWithValues() {
         Set<String> result = new HashSet<>();
