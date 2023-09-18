@@ -32,8 +32,12 @@ prepare:
     script: |
       OS=$(cat /etc/redhat-release || true)
       if [[ ${OS} == *"CentOS"* ]]; then
+        sudo yum clean all
+        sudo yum upgrade
         sudo yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
       else
+        sudo dnf clean all
+        sudo dnf upgrade
         sudo dnf config-manager --add-repo https://download.docker.com/linux/fedora/docker-ce.repo
       fi
 
