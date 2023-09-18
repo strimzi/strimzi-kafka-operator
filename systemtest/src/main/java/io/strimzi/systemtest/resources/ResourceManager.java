@@ -166,6 +166,9 @@ public class ResourceManager {
     private final <T extends HasMetadata> void createResource(ExtensionContext testContext, boolean waitReady, T... resources) {
         for (T resource : resources) {
             ResourceType<T> type = findResourceType(resource);
+
+            setNamespaceInResource(testContext, resource);
+
             if (resource.getMetadata().getNamespace() == null) {
                 LOGGER.info("Creating/Updating {} {}",
                         resource.getKind(), resource.getMetadata().getName());
@@ -173,8 +176,6 @@ public class ResourceManager {
                 LOGGER.info("Creating/Updating {} {}/{}",
                         resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName());
             }
-
-            setNamespaceInResource(testContext, resource);
 
             if (resource.getKind().equals(Kafka.RESOURCE_KIND)) {
                 // in case we want to run tests with KafkaNodePools enabled, we want to use it for all the Kafka resources
@@ -314,7 +315,7 @@ public class ResourceManager {
         if (StUtils.isParallelNamespaceTest(testContext)) {
             if (!Environment.isNamespaceRbacScope()) {
                 final String namespace = testContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
-                LOGGER.info("Using Namespace: {}", namespace);
+                LOGGER.info("Setting Namespace: {} to resource: {}/{}", namespace, resource.getKind(), resource.getMetadata().getName());
                 resource.getMetadata().setNamespace(namespace);
             }
         }
