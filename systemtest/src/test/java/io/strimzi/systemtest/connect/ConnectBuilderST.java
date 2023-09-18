@@ -72,7 +72,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assumptions.assumeTrue;
+import static org.junit.jupiter.api.Assumptions.assumeFalse;
 
 @Tag(REGRESSION)
 @Tag(CONNECT_COMPONENTS)
@@ -474,7 +474,7 @@ class ConnectBuilderST extends AbstractST {
     @ParallelTest
     void testBuildPluginUsingMavenCoordinatesArtifacts(ExtensionContext extensionContext) {
         // using kind we encounter (error building image: deleting file system after stage 0: unlinkat //product_uuid: device or resource busy)
-        assumeTrue(KubeClusterResource.getInstance().isKind());
+        assumeFalse(KubeClusterResource.getInstance().isKind());
 
         TestStorage testStorage = new TestStorage(extensionContext);
 

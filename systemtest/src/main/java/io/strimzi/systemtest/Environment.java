@@ -17,6 +17,7 @@ import org.apache.logging.log4j.Logger;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.file.Paths;
@@ -151,6 +152,7 @@ public class Environment {
      */
     public static final String CONNECT_BUILD_IMAGE_PATH_ENV = "CONNECT_BUILD_IMAGE_PATH";
     public static final String CONNECT_BUILD_REGISTRY_SECRET_ENV = "CONNECT_BUILD_REGISTRY_SECRET";
+    public static final String IP_FAMILY_ENV = "IP_FAMILY";
 
     /**
      * Defaults
@@ -177,6 +179,8 @@ public class Environment {
     private static final String ST_CLIENTS_KAFKA_VERSION_DEFAULT = "3.4.0";
     public static final String TEST_CLIENTS_VERSION_DEFAULT = "0.5.2";
     public static final String ST_FILE_PLUGIN_URL_DEFAULT = "https://repo1.maven.org/maven2/org/apache/kafka/connect-file/" + ST_KAFKA_VERSION_DEFAULT + "/connect-file-" + ST_KAFKA_VERSION_DEFAULT + ".jar";
+
+    public static final String IP_FAMILY_DEFAULT = "ipv4";
 
     /**
      * Set values
@@ -230,6 +234,9 @@ public class Environment {
 
     public static final String CONNECT_BUILD_IMAGE_PATH = getOrDefault(CONNECT_BUILD_IMAGE_PATH_ENV, "");
     public static final String CONNECT_BUILD_REGISTRY_SECRET = getOrDefault(CONNECT_BUILD_REGISTRY_SECRET_ENV, "");
+
+    public static final String IP_FAMILY = getOrDefault(IP_FAMILY_ENV, IP_FAMILY_DEFAULT);
+
 
     private Environment() { }
 
@@ -289,6 +296,10 @@ public class Environment {
         return Environment.BRIDGE_IMAGE.equals(Environment.BRIDGE_IMAGE_DEFAULT);
     }
 
+    public static boolean isIpv4Family() {
+        return IP_FAMILY.contains(IP_FAMILY_DEFAULT);
+    }
+
     private static String getOrDefault(String varName, String defaultValue) {
         return getOrDefault(varName, String::toString, defaultValue);
     }
@@ -299,11 +310,18 @@ public class Environment {
         } else if (KubeClusterResource.getInstance().isKind()) {
             // we will need a hostname of machine
             final String hostname;
+
             try {
-                hostname = InetAddress.getLocalHost().getHostAddress() + ":5001";
+                if (Environment.isIpv4Family()) {
+                    hostname = InetAddress.getLocalHost().getHostAddress() + ":5001";
+                } else {
+                    // for dual and ipv6
+                    hostname = Inet6Address.getLocalHost().getHostAddress() + ":5001";
+                }
             } catch (UnknownHostException e) {
                 throw new RuntimeException(e);
             }
+
             LOGGER.info("Using hostname:{}", hostname);
             return hostname;
         } else {

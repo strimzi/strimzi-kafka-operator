@@ -149,17 +149,30 @@ elif [ "$TEST_CLUSTER" = "kind" ]; then
     # 1. Create registry container unless it already exists
     reg_name='kind-registry'
     reg_port='5001'
-    hostname=$(hostname --ip-address)
-    if [ "$(docker inspect -f '{{.State.Running}}' "${reg_name}" 2>/dev/null || true)" != 'true' ]; then
-      docker run \
-        -d --restart=always -p "${hostname}:${reg_port}:5000" --name "${reg_name}" \
-        registry:2
+    hostname=''
+    if [ "$IP_FAMILY" = "ipv4" ]; then
+        hostname=$(hostname --ip-address | grep -oE '\b([0-9]{1,3}\.){3}[0-9]{1,3}\b' | awk '$1 != "127.0.0.1" { print $1 }' | head -1)
+    else
+        # for ipv6 and dual configuration
+        hostname=$(hostname --ip-address | grep -oE '\b([0-9a-fA-F:]+)\b' | awk '{ if (found == 1) { print $1; exit; } if ($1 ~ /^fe80/) { found = 1; next; } }')
+    fi
+
+     daemon_configuration=''
+
+    if [ "$IP_FAMILY" = "ipv6" ]; then
+      daemon_configuration="{
+              \"insecure-registries\" : [\"${hostname}:${reg_port}\"],
+              \"experimental\": true,
+              \"ip6tables\": true
+           }"
+    else
+      daemon_configuration="{
+              \"insecure-registries\" : [\"${hostname}:${reg_port}\"]
+           }"
     fi
 
     # We need to add such host to insecure-registry (as localhost is default)
-    echo "{
-      \"insecure-registries\" : [\"${hostname}:${reg_port}\"]
-    }" | sudo tee /etc/docker/daemon.json
+    echo ${daemon_configuration} | sudo tee /etc/docker/daemon.json
     # we need to restart docker service to propagate configuration
     systemctl restart docker
 
@@ -182,6 +195,12 @@ elif [ "$TEST_CLUSTER" = "kind" ]; then
     networking:
         ipFamily: $IP_FAMILY
 EOF
+
+    if [ "$(docker inspect -f '{{.State.Running}}' "${reg_name}" 2>/dev/null || true)" != 'true' ]; then
+        docker run \
+          -d --restart=always --network kind -h ${hostname} -p "${reg_port}:5000" --name "${reg_name}" \
+          registry:2
+    fi
 
     # 3. Add the registry config to the nodes
     #
