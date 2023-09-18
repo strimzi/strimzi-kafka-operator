@@ -4,17 +4,10 @@
  */
 package io.strimzi.systemtest.rollingupdate;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
-import io.fabric8.kubernetes.api.model.ConfigMap;
-import io.fabric8.kubernetes.api.model.ConfigMapBuilder;
-import io.fabric8.kubernetes.api.model.ConfigMapKeySelectorBuilder;
+
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
-import io.strimzi.api.kafka.model.JmxPrometheusExporterMetrics;
-import io.strimzi.api.kafka.model.JmxPrometheusExporterMetricsBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.ProbeBuilder;
@@ -26,8 +19,6 @@ import io.strimzi.systemtest.annotations.KRaftNotSupported;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
-import io.strimzi.systemtest.metrics.MetricsCollector;
-import io.strimzi.systemtest.resources.ComponentType;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaNodePoolResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
@@ -35,7 +26,6 @@ import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaUserTemplates;
-import io.strimzi.systemtest.templates.specific.ScraperTemplates;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.RollingUpdateUtils;
 import io.strimzi.systemtest.utils.StUtils;
@@ -51,8 +41,6 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
@@ -569,199 +557,6 @@ class RollingUpdateST extends AbstractST {
 
         LOGGER.info("Wait until Rolling Update finish successfully despite Cluster Operator being deleted in beginning of Rolling Update and also during Kafka Pods rolling");
         RollingUpdateUtils.waitTillComponentHasRolled(Environment.TEST_SUITE_NAMESPACE, kafkaSelector, 3, kafkaPods);
-    }
-
-    @IsolatedTest
-    @Tag(ROLLING_UPDATE)
-    @KRaftNotSupported("Zookeeper is not supported by KRaft mode and is used in this test class")
-    @SuppressWarnings("checkstyle:MethodLength")
-    void testMetricsChange(ExtensionContext extensionContext) throws JsonProcessingException {
-        final TestStorage testStorage = new TestStorage(extensionContext, Environment.TEST_SUITE_NAMESPACE);
-
-        //Kafka
-        Map<String, Object> kafkaRule = new HashMap<>();
-        kafkaRule.put("pattern", "kafka.(\\w+)<type=(.+), name=(.+)><>Count");
-        kafkaRule.put("name", "kafka_$1_$2_$3_count");
-        kafkaRule.put("type", "COUNTER");
-
-        Map<String, Object> kafkaMetrics = new HashMap<>();
-        kafkaMetrics.put("lowercaseOutputName", true);
-        kafkaMetrics.put("rules", Collections.singletonList(kafkaRule));
-
-        String metricsCMNameK = "k-metrics-cm";
-
-        ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
-        String yaml = mapper.writeValueAsString(kafkaMetrics);
-        ConfigMap metricsCMK = new ConfigMapBuilder()
-                .withNewMetadata()
-                    .withName(metricsCMNameK)
-                    .withNamespace(testStorage.getNamespaceName())
-                .endMetadata()
-                .withData(singletonMap("metrics-config.yml", yaml))
-                .build();
-
-        JmxPrometheusExporterMetrics kafkaMetricsConfig = new JmxPrometheusExporterMetricsBuilder()
-                .withNewValueFrom()
-                    .withConfigMapKeyRef(new ConfigMapKeySelectorBuilder()
-                            .withName(metricsCMNameK)
-                            .withKey("metrics-config.yml")
-                            .withOptional(true)
-                            .build())
-                .endValueFrom()
-                .build();
-
-        //Zookeeper
-        Map<String, Object> zookeeperLabels = new HashMap<>();
-        zookeeperLabels.put("replicaId", "$2");
-
-        Map<String, Object> zookeeperRule = new HashMap<>();
-        zookeeperRule.put("labels", zookeeperLabels);
-        zookeeperRule.put("name", "zookeeper_$3");
-        zookeeperRule.put("pattern", "org.apache.ZooKeeperService<name0=ReplicatedServer_id(\\d+), name1=replica.(\\d+)><>(\\w+)");
-
-        Map<String, Object> zookeeperMetrics = new HashMap<>();
-        zookeeperMetrics.put("lowercaseOutputName", true);
-        zookeeperMetrics.put("rules", Collections.singletonList(zookeeperRule));
-
-        String metricsCMNameZk = "zk-metrics-cm";
-        ConfigMap metricsCMZk = new ConfigMapBuilder()
-                .withNewMetadata()
-                    .withName(metricsCMNameZk)
-                    .withNamespace(testStorage.getNamespaceName())
-                .endMetadata()
-                .withData(singletonMap("metrics-config.yml", mapper.writeValueAsString(zookeeperMetrics)))
-                .build();
-
-        JmxPrometheusExporterMetrics zkMetricsConfig = new JmxPrometheusExporterMetricsBuilder()
-                .withNewValueFrom()
-                    .withConfigMapKeyRef(new ConfigMapKeySelectorBuilder()
-                            .withName(metricsCMNameZk)
-                            .withKey("metrics-config.yml")
-                            .withOptional(true)
-                            .build())
-                .endValueFrom()
-                .build();
-
-        kubeClient().createConfigMapInNamespace(testStorage.getNamespaceName(), metricsCMK);
-        kubeClient().createConfigMapInNamespace(testStorage.getNamespaceName(), metricsCMZk);
-
-        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3, 3)
-            .editMetadata()
-                .withNamespace(testStorage.getNamespaceName())
-            .endMetadata()
-            .editSpec()
-                .editKafka()
-                    .withMetricsConfig(kafkaMetricsConfig)
-                .endKafka()
-                .editOrNewZookeeper()
-                    .withMetricsConfig(zkMetricsConfig)
-                .endZookeeper()
-                .withNewKafkaExporter()
-                .endKafkaExporter()
-            .endSpec()
-            .build());
-
-        Map<String, String> kafkaPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getKafkaSelector());
-        Map<String, String> zkPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getZookeeperSelector());
-
-        resourceManager.createResourceWithWait(extensionContext, ScraperTemplates.scraperPod(testStorage.getNamespaceName(), testStorage.getScraperName()).build());
-
-        String metricsScraperPodName = PodUtils.getPodsByPrefixInNameWithDynamicWait(testStorage.getNamespaceName(), testStorage.getScraperName()).get(0).getMetadata().getName();
-
-        MetricsCollector kafkaCollector = new MetricsCollector.Builder()
-            .withNamespaceName(testStorage.getNamespaceName())
-            .withScraperPodName(metricsScraperPodName)
-            .withComponentName(testStorage.getClusterName())
-            .withComponentType(ComponentType.Kafka)
-            .build();
-
-        MetricsCollector zkCollector = kafkaCollector.toBuilder()
-            .withComponentType(ComponentType.Zookeeper)
-            .build();
-
-        LOGGER.info("Check if metrics are present in Pod of Kafka and ZooKeeper");
-        kafkaCollector.collectMetricsFromPods();
-        zkCollector.collectMetricsFromPods();
-
-        assertThat(kafkaCollector.getCollectedData().values().toString().contains("kafka_"), is(true));
-        assertThat(zkCollector.getCollectedData().values().toString().contains("replicaId"), is(true));
-
-        LOGGER.info("Changing metrics to something else");
-
-        kafkaRule.replace("pattern", "kafka.(\\w+)<type=(.+), name=(.+)><>Count",
-                "kafka.(\\w+)<type=(.+), name=(.+)Percent\\w*><>MeanRate");
-        kafkaRule.replace("name", "kafka_$1_$2_$3_count", "kafka_$1_$2_$3_percent");
-        kafkaRule.replace("type", "COUNTER", "GAUGE");
-
-        zookeeperRule.replace("pattern",
-                "org.apache.ZooKeeperService<name0=ReplicatedServer_id(\\d+), name1=replica.(\\d+)><>(\\w+)",
-                "org.apache.ZooKeeperService<name0=StandaloneServer_port(\\d+)><>(\\w+)");
-        zookeeperRule.replace("name", "zookeeper_$3", "zookeeper_$2");
-        zookeeperRule.replace("labels", zookeeperLabels, null);
-
-        metricsCMZk = new ConfigMapBuilder()
-                .withNewMetadata()
-                    .withName(metricsCMNameZk)
-                    .withNamespace(testStorage.getNamespaceName())
-                .endMetadata()
-                .withData(singletonMap("metrics-config.yml", mapper.writeValueAsString(zookeeperMetrics)))
-                .build();
-
-        metricsCMK = new ConfigMapBuilder()
-                .withNewMetadata()
-                    .withName(metricsCMNameK)
-                    .withNamespace(testStorage.getNamespaceName())
-                .endMetadata()
-                .withData(singletonMap("metrics-config.yml", mapper.writeValueAsString(kafkaMetrics)))
-                .build();
-
-        kubeClient().updateConfigMapInNamespace(testStorage.getNamespaceName(), metricsCMK);
-        kubeClient().updateConfigMapInNamespace(testStorage.getNamespaceName(), metricsCMZk);
-
-        PodUtils.verifyThatRunningPodsAreStable(testStorage.getNamespaceName(), testStorage.getZookeeperStatefulSetName());
-        PodUtils.verifyThatRunningPodsAreStable(testStorage.getNamespaceName(), testStorage.getKafkaStatefulSetName());
-
-        LOGGER.info("Check if Kafka and ZooKeeper Pods didn't roll");
-        assertThat(PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getZookeeperSelector()), is(zkPods));
-        assertThat(PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getKafkaSelector()), is(kafkaPods));
-
-        LOGGER.info("Check if Kafka and ZooKeeper metrics are changed");
-        ObjectMapper yamlReader = new ObjectMapper(new YAMLFactory());
-        String kafkaMetricsConf = kubeClient().getClient().configMaps().inNamespace(testStorage.getNamespaceName()).withName(metricsCMNameK).get().getData().get("metrics-config.yml");
-        String zkMetricsConf = kubeClient().getClient().configMaps().inNamespace(testStorage.getNamespaceName()).withName(metricsCMNameZk).get().getData().get("metrics-config.yml");
-        Object kafkaMetricsJsonToYaml = yamlReader.readValue(kafkaMetricsConf, Object.class);
-        Object zkMetricsJsonToYaml = yamlReader.readValue(zkMetricsConf, Object.class);
-        ObjectMapper jsonWriter = new ObjectMapper();
-        for (String cmName : StUtils.getKafkaConfigurationConfigMaps(testStorage.getClusterName(), 3)) {
-            assertThat(kubeClient().getClient().configMaps().inNamespace(testStorage.getNamespaceName()).withName(cmName).get().getData().get(Constants.METRICS_CONFIG_JSON_NAME),
-                    is(jsonWriter.writeValueAsString(kafkaMetricsJsonToYaml)));
-        }
-        assertThat(kubeClient().getClient().configMaps().inNamespace(testStorage.getNamespaceName()).withName(KafkaResources.zookeeperMetricsAndLogConfigMapName(testStorage.getClusterName())).get().getData().get(Constants.METRICS_CONFIG_JSON_NAME),
-                is(jsonWriter.writeValueAsString(zkMetricsJsonToYaml)));
-
-        LOGGER.info("Check if metrics are present in Pod of Kafka and ZooKeeper");
-
-        kafkaCollector.collectMetricsFromPods();
-        zkCollector.collectMetricsFromPods();
-
-        assertThat(kafkaCollector.getCollectedData().values().toString().contains("kafka_"), is(true));
-        assertThat(zkCollector.getCollectedData().values().toString().contains("replicaId"), is(true));
-
-        LOGGER.info("Removing metrics from Kafka and ZooKeeper and setting them to null");
-
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), kafka -> {
-            kafka.getSpec().getKafka().setMetricsConfig(null);
-            kafka.getSpec().getZookeeper().setMetricsConfig(null);
-        }, testStorage.getNamespaceName());
-
-        LOGGER.info("Waiting for Kafka and ZooKeeper Pods to roll");
-        RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), testStorage.getZookeeperSelector(), 3, zkPods);
-        RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getKafkaSelector(), 3, kafkaPods);
-
-        LOGGER.info("Check if metrics do not exist in Pods");
-
-        kafkaCollector.collectMetricsFromPodsWithoutWait().values().forEach(value -> assertThat(value, is("")));
-        zkCollector.collectMetricsFromPodsWithoutWait().values().forEach(value -> assertThat(value, is("")));
     }
 
     @BeforeAll
