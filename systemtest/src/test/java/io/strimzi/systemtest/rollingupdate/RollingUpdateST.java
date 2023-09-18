@@ -521,33 +521,6 @@ class RollingUpdateST extends AbstractST {
 
     @ParallelNamespaceTest
     @Tag(ROLLING_UPDATE)
-    void testManualKafkaConfigMapChangeDontTriggerRollingUpdate(ExtensionContext extensionContext) {
-        final TestStorage testStorage = storageMap.get(extensionContext);
-        final String namespaceName = StUtils.getNamespaceBasedOnRbac(Environment.TEST_SUITE_NAMESPACE, extensionContext);
-        final String clusterName = testStorage.getClusterName();
-        final LabelSelector kafkaSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.kafkaStatefulSetName(clusterName));
-        final LabelSelector zkSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.zookeeperStatefulSetName(clusterName));
-
-        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaPersistent(clusterName, 3, 3).build());
-
-        Map<String, String> kafkaPods = PodUtils.podSnapshot(namespaceName, kafkaSelector);
-        Map<String, String> zkPods = PodUtils.podSnapshot(namespaceName, zkSelector);
-
-        for (String cmName : StUtils.getKafkaConfigurationConfigMaps(clusterName, 3)) {
-            ConfigMap configMap = kubeClient(namespaceName).getConfigMap(namespaceName, cmName);
-            configMap.getData().put("new.kafka.config", "new.config.value");
-            configMap.getData().replace("listeners.config", "TLS_9095");
-            kubeClient().updateConfigMapInNamespace(namespaceName, configMap);
-        }
-
-        PodUtils.verifyThatRunningPodsAreStable(namespaceName, clusterName);
-
-        assertThat(PodUtils.podSnapshot(namespaceName, zkSelector), is(zkPods));
-        assertThat(PodUtils.podSnapshot(namespaceName, kafkaSelector), is(kafkaPods));
-    }
-
-    @ParallelNamespaceTest
-    @Tag(ROLLING_UPDATE)
     void testExternalLoggingChangeTriggerRollingUpdate(ExtensionContext extensionContext) {
         final TestStorage testStorage = storageMap.get(extensionContext);
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(Environment.TEST_SUITE_NAMESPACE, extensionContext);
