@@ -1460,6 +1460,19 @@ class LoggingChangeST extends AbstractST {
         KafkaConnectorUtils.loggerStabilityWait(testStorage.getNamespaceName(), testStorage.getClusterName(), scraperPodName, "ERROR", connectorClassName);
     }
 
+    /**
+     * @description This test case check that changing Logging configuration from internal to external triggers Rolling Update.
+     *
+     * @steps
+     *  1. - Deploy Kafka Cluster, without any logging related configuration
+     *     - Cluster is deployed
+     *  2. - Modify Kafka by changing specification of logging to new external value
+     *     - Change in logging specification triggers Rolling Update
+     *
+     * @usecase
+     *  - logging
+     *  - rolling-update
+     */
     @ParallelNamespaceTest
     @Tag(ROLLING_UPDATE)
     void testChangingInternalToExternalLoggingTriggerRollingUpdate(ExtensionContext extensionContext) {

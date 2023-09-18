@@ -242,6 +242,28 @@ class RollingUpdateST extends AbstractST {
         ClientUtils.waitForClientsSuccess(testStorage);
     }
 
+    /**
+     * @description This test case checks scaling Kafka up and down and that it works correctly during this event.
+     *
+     * @steps
+     *  1. - Deploy persistent Kafka Cluster with 3 replicas, and also first kafkaTopic with 3 replicas
+     *     - Cluster with 3 replicas and Kafka topics are deployed
+     *  2. - Deploy Kafka clients, produce and consume messages targeting created KafkaTopic
+     *     - Data are produced and consumed successfully
+     *  3. - Scale up Kafka Cluster from 3 to 5 replicas
+     *     - Cluster scales to 5 replicas and volumes as such
+     *  4. - Deploy KafkaTopic with 4 replicas and new clients which will target this KafkaTopic
+     *     - Topic is deployed and ready, clients successfully communicate with topic represented by mentioned KafkaTopic
+     *  5. - Scale down Kafka Cluster back from 5 to 3 replicas
+     *     - Cluster scales down to 3 replicas and volumes as such
+     *  6. - Deploy new KafkaTopic and new clients which will target this KafkaTopic, also do the same for the first KafkaTopic
+     *     - New KafkaTopic is created and ready, all clients can communicate successfully
+     *
+     * @usecase
+     *  - kafka
+     *  - scale-up
+     *  - scale-down
+     */
     @ParallelNamespaceTest
     @Tag(ACCEPTANCE)
     @Tag(COMPONENT_SCALING)
@@ -260,8 +282,6 @@ class RollingUpdateST extends AbstractST {
             .build(),
             KafkaUserTemplates.tlsUser(testStorage).build()
         );
-
-        Map<String, String> kafkaPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getKafkaSelector());
 
         testDockerImagesForKafkaCluster(testStorage.getClusterName(), Constants.CO_NAMESPACE, testStorage.getNamespaceName(), 3, 3, false);
 
@@ -365,6 +385,28 @@ class RollingUpdateST extends AbstractST {
         ClientUtils.waitForClientsSuccess(testStorage);
     }
 
+    /**
+     * @description This test case checks scaling Zookeeper up and down and that it works correctly during and after this event.
+     *
+     * @steps
+     *  1. - Deploy persistent Kafka Cluster with 3 replicas, first KafkaTopic, and KafkaUser
+     *     - Cluster with 3 replicas and other resources are created and ready
+     *  2. - Deploy Kafka clients, produce and consume messages targeting created KafkaTopic
+     *     - Data are produced and consumed successfully
+     *  3. - Scale up Zookeeper Cluster from 3 to 7 replicas
+     *     - Cluster scales to 7 replicas, quorum is temporarily lost but regained afterwards
+     *  4. - Deploy new KafkaTopic and new clients which will target this KafkaTopic, and also first KafkaTopic
+     *     - New KafkaTopic is deployed and ready, clients successfully communicate with topics represented by mentioned KafkaTopics
+     *  5. - Scale down Zookeeper Cluster back from 7 to 3 replicas
+     *     - Cluster scales down to 3, Zookeeper
+     *  6. - Deploy new KafkaTopic and new clients targeting it
+     *     - New KafkaTopic is created and ready, all clients can communicate successfully
+     *
+     * @usecase
+     *  - zookeeper
+     *  - scale-up
+     *  - scale-down
+     */
     @ParallelNamespaceTest
     @Tag(COMPONENT_SCALING)
     @KRaftNotSupported("Zookeeper is not supported by KRaft mode and is used in this test case")
@@ -505,8 +547,23 @@ class RollingUpdateST extends AbstractST {
         }
     }
 
-
-
+    /**
+     * @description This test case verifies that cluster operator can finish rolling update of components despite being restarted.
+     *
+     * @steps
+     *  1. - Deploy persistent Kafka Cluster with 3 replicas
+     *     - Cluster with 3 replicas is deployed and ready
+     *  2. - Change specification of readiness probe inside Kafka Cluster, thereby triggering Rolling Update
+     *     - Rolling Update is triggered
+     *  3. - Delete cluster operator Pod
+     *     - Cluster operator Pod is restarted and Rolling Update continues
+     *  4. - Delete cluster operator Pod again, this time in the middle of Kafka Pods being rolled
+     *     - Cluster operator Pod is restarted and Rolling Update finish successfully
+     *
+         * @usecase
+     *  - rolling-update
+     *  - cluster-operator
+     */
     @IsolatedTest("Deleting Pod of Shared Cluster Operator")
     @Tag(ROLLING_UPDATE)
     void testClusterOperatorFinishAllRollingUpdates(ExtensionContext extensionContext) {

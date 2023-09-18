@@ -713,7 +713,7 @@ public class MetricsST extends AbstractST {
      *
      * @steps
      *  1. - Deploy Kafka Cluster with Zookeeper and with disabled metrics configuration
-     *     - Cluster is Deployed
+     *     - Cluster is deployed
      *  2. - Change specification of Kafka Cluster by configuring metrics for Kafka, Zookeeper, and configuring metrics Exporter
      *     - Allowing metrics triggers Rolling Update
      *  3. - Setup or deploy necessary scraper, metric rules, and collectors and collect metrics
