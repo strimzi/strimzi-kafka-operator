@@ -36,7 +36,8 @@ prepare:
       else
         sudo dnf config-manager --add-repo https://download.docker.com/linux/fedora/docker-ce.repo
       fi
-      sudo yum install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin
+
+      sudo yum install -y docker-ce
       sudo systemctl enable docker --now
 
   - name: Install yq
