@@ -25,6 +25,7 @@ import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.AbstractModel;
+import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.model.ClientsCa;
 import io.strimzi.operator.cluster.model.ClusterCa;
 import io.strimzi.operator.cluster.model.KafkaCluster;
@@ -73,7 +74,6 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.IntStream;
 
-import static io.strimzi.api.ResourceAnnotations.ANNO_STRIMZI_IO_SKIP_BROKER_SCALEDOWN_CHECK;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.empty;
@@ -825,7 +825,7 @@ public class KafkaAssemblyOperatorPodSetTest {
 
         Kafka patchKafka = new KafkaBuilder(KAFKA)
                 .editMetadata()
-                    .addToAnnotations(Map.of(ANNO_STRIMZI_IO_SKIP_BROKER_SCALEDOWN_CHECK, "false"))
+                    .addToAnnotations(Map.of(Annotations.ANNO_STRIMZI_IO_SKIP_BROKER_SCALEDOWN_CHECK, "false"))
                 .endMetadata()
                 .build();
 
@@ -875,7 +875,7 @@ public class KafkaAssemblyOperatorPodSetTest {
 
         Kafka patchKafka = new KafkaBuilder(KAFKA)
                 .editMetadata()
-                    .addToAnnotations(Map.of(ANNO_STRIMZI_IO_SKIP_BROKER_SCALEDOWN_CHECK, "false"))
+                    .addToAnnotations(Map.of(Annotations.ANNO_STRIMZI_IO_SKIP_BROKER_SCALEDOWN_CHECK, "false"))
                 .endMetadata()
                 .build();
 
@@ -985,7 +985,7 @@ public class KafkaAssemblyOperatorPodSetTest {
 
         Kafka patchKafka = new KafkaBuilder(KAFKA)
                 .editMetadata()
-                    .addToAnnotations(Map.of(ANNO_STRIMZI_IO_SKIP_BROKER_SCALEDOWN_CHECK, "true"))
+                    .addToAnnotations(Map.of(Annotations.ANNO_STRIMZI_IO_SKIP_BROKER_SCALEDOWN_CHECK, "true"))
                 .endMetadata()
                 .build();
 
