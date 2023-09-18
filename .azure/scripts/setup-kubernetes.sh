@@ -150,7 +150,7 @@ elif [ "$TEST_CLUSTER" = "kind" ]; then
     reg_port='5001'
     hostname=''
     if [ "$IP_FAMILY" = "ipv4" ]; then
-        hostname=$(hostname -I | awk '/^10\./ && !/127\.0\.0\.1/ { print $1 }' | head -1)
+        hostname=$(hostname -I | grep -oE '\b([0-9]{1,3}\.){3}[0-9]{1,3}\b' | sort | head -1)
     else
         # for ipv6 and dual configuration
         hostname=$(hostname --ip-address | grep -oE '\b([0-9a-fA-F:]+)\b' | awk '{ if (found == 1) { print $1; exit; } if ($1 ~ /^fe80/) { found = 1; next; } }')
