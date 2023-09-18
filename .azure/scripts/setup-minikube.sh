@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 set -xe
-set -o errexit
 
 rm -rf ~/.kube
 
@@ -8,18 +7,14 @@ KUBE_VERSION=${KUBE_VERSION:-1.21.0}
 MINIKUBE_REGISTRY_IMAGE=${REGISTRY_IMAGE:-"registry"}
 COPY_DOCKER_LOGIN=${COPY_DOCKER_LOGIN:-"false"}
 
-DEFAULT_CLUSTER_MEMORY=$(free -m | grep "Mem" | awk '{print $2}')
-DEFAULT_CLUSTER_CPU=$(awk '$1~/cpu[0-9]/{usage=($2+$4)*100/($2+$4+$5); print $1": "usage"%"}' /proc/stat | wc -l)
+DEFAULT_MINIKUBE_MEMORY=$(free -m | grep "Mem" | awk '{print $2}')
+DEFAULT_MINIKUBE_CPU=$(awk '$1~/cpu[0-9]/{usage=($2+$4)*100/($2+$4+$5); print $1": "usage"%"}' /proc/stat | wc -l)
 
-CLUSTER_MEMORY=${CLUSTER_MEMORY:-$DEFAULT_CLUSTER_MEMORY}
-CLUSTER_CPU=${CLUSTER_CPU:-$DEFAULT_CLUSTER_CPU}
+MINIKUBE_MEMORY=${MINIKUBE_MEMORY:-DEFAULT_MINIKUBE_MEMORY}
+MINIKUBE_CPU=${MINIKUBE_CPU:-DEFAULT_MINIKUBE_CPU}
 
-echo "[INFO] CLUSTER_MEMORY: ${CLUSTER_MEMORY}"
-echo "[INFO] CLUSTER_CPU: ${CLUSTER_CPU}"
-
-# note that IPv6 is only supported on kind (i.e., minikube does not support it). Also we assume that when you set this flag
-# to true then you meet requirements (i.) net.ipv6.conf.all.disable_ipv6 = 0 (ii. you have installed CNI supporting IPv6)
-IP_FAMILY=${IP_FAMILY:-"ipv4"}
+echo "[INFO] MINIKUBE_MEMORY: ${MINIKUBE_MEMORY}"
+echo "[INFO] MINIKUBE_CPU: ${MINIKUBE_CPU}"
 
 ARCH=$1
 if [ -z "$ARCH" ]; then
