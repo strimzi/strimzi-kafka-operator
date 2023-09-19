@@ -39,7 +39,7 @@ public abstract class AbstractClusterReportST extends AbstractST {
     protected String buildOutPath(TestInfo testInfo, String clusterName) {
         String methodName = testInfo.getTestMethod().isPresent() ?
             testInfo.getTestMethod().get().getName() : UUID.randomUUID().toString();
-        return USER_PATH + "/target/reports/" + clusterName + "/" + methodName;
+        return USER_PATH + "/target/logs/reports/" + clusterName + "/" + methodName;
     }
 
     protected <T> void assertValidYamls(String path, Class<T> clazz, String prefix, int num) throws IOException {
