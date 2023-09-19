@@ -113,11 +113,12 @@ prepare:
         export DOCKER_BUILD_ARGS="--platform linux/arm64 --build-arg TARGETPLATFORM=linux/arm64"
       fi
       #
+      HOST=""
       if [[ ${IP_FAMILY} == "ipv4" ]]; then
-        HOSTNAME=$(curl icanhazip.com)
+        HOST=$(curl icanhazip.com)
       fi
       export MVN_ARGS="-B -DskipTests -Dmaven.javadoc.skip=true --no-transfer-progress"
-      export DOCKER_REGISTRY="${HOSTNAME}:5001"
+      export DOCKER_REGISTRY="${HOST}:5001"
       export DOCKER_ORG="strimzi"
       export DOCKER_TAG="test"
       
