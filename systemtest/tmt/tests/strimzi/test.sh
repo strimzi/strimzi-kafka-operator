@@ -4,7 +4,7 @@
 cd ../../../../
 
 #run tests
-export DOCKER_REGISTRY="$(ip -4 addr | grep -oE 'inet [0-9]+\.[0-9]+\.[0-9]+\.[0-9]+/[0-9]+' |  awk -F'/' '{print $1}' | sort | awk -F' ' '{print $2}' | head -1):5001"
+export DOCKER_REGISTRY="$(curl icanhazip.com):5001"
 mvn compile -pl config-model-generator -DskipTests -Dmaven.javadoc.skip=true --no-transfer-progress
 mvn verify -pl systemtest -P ${TEST_PROFILE} \
     $([[ "${TEST_GROUPS}" != "" ]] && echo "-Dgroups=${TEST_GROUPS}" || echo "") \

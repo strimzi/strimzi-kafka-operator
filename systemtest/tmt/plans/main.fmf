@@ -114,7 +114,7 @@ prepare:
       fi
       #
       if [[ ${IP_FAMILY} == "ipv4" ]]; then
-        HOSTNAME=$(ip -4 addr | grep -oE 'inet [0-9]+\.[0-9]+\.[0-9]+\.[0-9]+/[0-9]+' |  awk -F'/' '{print $1}' | sort | awk -F' ' '{print $2}' | head -1)
+        HOSTNAME=$(curl icanhazip.com)
       fi
       export MVN_ARGS="-B -DskipTests -Dmaven.javadoc.skip=true --no-transfer-progress"
       export DOCKER_REGISTRY="${HOSTNAME}:5001"
