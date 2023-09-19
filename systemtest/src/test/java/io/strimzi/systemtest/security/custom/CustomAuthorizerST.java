@@ -32,7 +32,6 @@ import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
 
 @Tag(REGRESSION)
-//@KRaftNotSupported("Custom Authorizer is not supported by KRaft mode and is used in this test case")
 public class CustomAuthorizerST extends AbstractST {
     static final String CLUSTER_NAME = "custom-authorizer";
     static final String ADMIN = "sre-admin";
@@ -135,29 +134,29 @@ public class CustomAuthorizerST extends AbstractST {
         ClientUtils.waitForProducerClientTimeout(testStorage);
     }
 
+    /**
+     * @description This test case verifies Access Control Lists with simple authorization and tls listener.
+     *
+     * @steps
+     *  1. - Kafka with simple authorization and specified superuser is deployed even before the test itself start
+     *     - Kafka with desired authorization is ready
+     *  2. - Create explicit KafkaUser, with no other properties except necessary metadata and specific name referencing pre-created superuser
+     *     - Admin KafkaUser is ready
+     *  3. - Deploy Kafka clients using admin KafkaUser
+     *     - Producer and consumer complete successfully
+     *
+     * @usecase
+     *  - custom-authorization
+     *  - acls
+     *  - kafka-user
+     */
     @ParallelTest
     @Tag(INTERNAL_CLIENTS_USED)
     void testAclWithSuperUser(ExtensionContext extensionContext) {
         final TestStorage testStorage = new TestStorage(extensionContext, Environment.TEST_SUITE_NAMESPACE);
 
         resourceManager.createResourceWithWait(extensionContext, KafkaTopicTemplates.topic(CLUSTER_NAME, testStorage.getTopicName(), Environment.TEST_SUITE_NAMESPACE).build());
-
-        KafkaUser adminUser = KafkaUserTemplates.tlsUser(Environment.TEST_SUITE_NAMESPACE, CLUSTER_NAME, ADMIN)
-            .editSpec()
-                .withNewKafkaUserAuthorizationSimple()
-                    .addNewAcl()
-                        .withNewAclRuleTopicResource()
-                            .withName(testStorage.getTopicName())
-                        .endAclRuleTopicResource()
-                        .withOperations(AclOperation.WRITE, AclOperation.DESCRIBE, AclOperation.READ, AclOperation.CREATE)
-                    .endAcl()
-                .endKafkaUserAuthorizationSimple()
-            .endSpec()
-            .build();
-
-        resourceManager.createResourceWithWait(extensionContext, adminUser);
-
-        LOGGER.info("Checking Kafka Super User: {}/{} that is able to send messages to Topic: {}", Environment.TEST_SUITE_NAMESPACE, ADMIN, testStorage.getTopicName());
+        resourceManager.createResourceWithWait(extensionContext, KafkaUserTemplates.tlsUser(Environment.TEST_SUITE_NAMESPACE, CLUSTER_NAME, ADMIN).build());
 
         KafkaClients kafkaClients = new KafkaClientsBuilder()
             .withProducerName(testStorage.getProducerName())
@@ -169,14 +168,9 @@ public class CustomAuthorizerST extends AbstractST {
             .withUsername(ADMIN)
             .build();
 
-        resourceManager.createResourceWithWait(extensionContext, kafkaClients.producerTlsStrimzi(CLUSTER_NAME));
-        ClientUtils.waitForProducerClientSuccess(testStorage);
-
-        LOGGER.info("Checking Kafka Super User: {}/{} that is able to read messages from Topic: {} regardless that " +
-                "we configured Acls with only write operation", Environment.TEST_SUITE_NAMESPACE, ADMIN, TOPIC_NAME);
-
-        resourceManager.createResourceWithWait(extensionContext, kafkaClients.consumerTlsStrimzi(CLUSTER_NAME));
-        ClientUtils.waitForConsumerClientSuccess(testStorage);
+        LOGGER.info("Checking Kafka Super User: {}/{} is able to produce/consume despite having no explicit rights in KafkaUser", Environment.TEST_SUITE_NAMESPACE, ADMIN);
+        resourceManager.createResourceWithWait(extensionContext, kafkaClients.producerTlsStrimzi(CLUSTER_NAME), kafkaClients.consumerTlsStrimzi(CLUSTER_NAME));
+        ClientUtils.waitForClientsSuccess(testStorage);
     }
 
     @BeforeAll
