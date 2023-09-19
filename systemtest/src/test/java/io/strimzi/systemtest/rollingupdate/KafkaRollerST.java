@@ -85,7 +85,10 @@ public class KafkaRollerST extends AbstractST {
         // so that KafkaStreamsTopicStore topic gets set/distributed on this first 3 [0, 1, 2],
         // since this topic has replication-factor 3 and minISR 2.
         resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaPersistent(clusterName, 3)
-            .editSpec()
+                .editMetadata()
+                    .addToAnnotations(Map.of(Annotations.ANNO_STRIMZI_IO_SKIP_BROKER_SCALEDOWN_CHECK, "true"))
+                .endMetadata()
+                .editSpec()
                 .editKafka()
                     .addToConfig("auto.create.topics.enable", "false")
                 .endKafka()
