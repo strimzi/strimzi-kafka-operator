@@ -95,7 +95,7 @@ if [ "$TEST_CLUSTER" = "kind" ]; then
         hostname=$(hostname --ip-address | grep -oE '\b([0-9]{1,3}\.){3}[0-9]{1,3}\b' | awk '$1 != "127.0.0.1" { print $1 }' | head -1)
     else
         # for ipv6 and dual configuration
-        hostname=$(hostname --ip-address | grep -oE '\b([0-9a-fA-F:]+)\b' | awk '{ if (found == 1) { print $1; exit; } if ($1 ~ /^fe80/) { found = 1; next; } }')
+        hostname=$(ip -6 addr show eth0 | awk '/inet6/ {print $2}' | cut -d '/' -f 1)
     fi
 
      daemon_configuration=''
@@ -137,10 +137,19 @@ if [ "$TEST_CLUSTER" = "kind" ]; then
         ipFamily: $IP_FAMILY
 EOF
 
-    if [ "$(docker inspect -f '{{.State.Running}}' "${reg_name}" 2>/dev/null || true)" != 'true' ]; then
-        docker run \
-          -d --restart=always --network kind -h ${hostname} -p "${reg_port}:5000" --name "${reg_name}" \
-          registry:2
+    if [ "$IP_FAMILY" = "ipv4" ]; then
+        if [ "$(docker inspect -f '{{.State.Running}}' "${reg_name}" 2>/dev/null || true)" != 'true' ]; then
+            docker run \
+              -d --restart=always -p "${hostname}:${reg_port}:5000" --name "${reg_name}" \
+              registry:2
+        fi
+    else
+        # for ipv6 and dual configuration
+        if [ "$(docker inspect -f '{{.State.Running}}' "${reg_name}" 2>/dev/null || true)" != 'true' ]; then
+            docker run \
+              -d --restart=always --ip6 ${hostname} -p "${reg_port}:5000" --name "${reg_name}" \
+              registry:2
+        fi
     fi
 
     # Add the registry config to the nodes
