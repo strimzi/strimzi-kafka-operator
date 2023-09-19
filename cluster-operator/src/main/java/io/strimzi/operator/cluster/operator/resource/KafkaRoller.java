@@ -229,8 +229,20 @@ public class KafkaRoller {
                     //       fixed. This is tracked in https://github.com/strimzi/strimzi-kafka-operator/issues/8593.
                     if (node.broker()) {
                         pods.add(podOperations.isReady(namespace, node.podName()) ? pods.size() : 0, node);
+                    } else if (node.controller())   {
+                        // We do not roll KRaft controllers yet, but we can throw a warning if it needs to be rolled
+                        Pod pod = podOperations.get(namespace, node.podName());
+
+                        if (pod != null)    {
+                            RestartReasons reasons = podNeedsRestart.apply(pod);
+
+                            if (reasons.shouldRestart())   {
+                                LOGGER.warnCr(reconciliation, "The controller node {} needs to be rolled because of {}. Strimzi currently does not support rolling of controller nodes. Please roll the node manually using 'kubectl delete pod {}'.", node.podName(), reasons.getReasons(), node.podName());
+                            }
+                        }
                     }
                 }
+
                 LOGGER.debugCr(reconciliation, "Initial order for updating pods (rolling restart or dynamic update) is {}", pods);
 
                 List<Future<Void>> futures = new ArrayList<>(nodes.size());

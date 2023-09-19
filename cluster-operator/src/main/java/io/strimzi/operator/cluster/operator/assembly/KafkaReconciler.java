@@ -624,20 +624,20 @@ public class KafkaReconciler {
                     // Create / update the desired config maps
                     for (ConfigMap cm : desiredConfigMaps) {
                         String cmName = cm.getMetadata().getName();
-                        int brokerId = ReconcilerUtils.getPodIndexFromPodName(cmName);
+                        int nodeId = ReconcilerUtils.getPodIndexFromPodName(cmName);
 
                         // The advertised hostname and port might change. If they change, we need to roll the pods.
                         // Here we collect their hash to trigger the rolling update. For per-broker configuration,
                         // we need just the advertised hostnames / ports for given broker.
                         String brokerConfiguration = listenerReconciliationResults.advertisedHostnames
-                                .get(brokerId)
+                                .get(nodeId)
                                 .entrySet()
                                 .stream()
                                 .map(kv -> kv.getKey() + "://" + kv.getValue())
                                 .sorted()
                                 .collect(Collectors.joining(" "));
                         brokerConfiguration += listenerReconciliationResults.advertisedPorts
-                                .get(brokerId)
+                                .get(nodeId)
                                 .entrySet()
                                 .stream()
                                 .map(kv -> kv.getKey() + "://" + kv.getValue())
@@ -650,8 +650,15 @@ public class KafkaReconciler {
                         // This is captured here with the unknown configurations and the hash is used to roll the pod when it changes
                         KafkaConfiguration kc = KafkaConfiguration.unvalidated(reconciliation, cm.getData().getOrDefault(KafkaCluster.BROKER_CONFIGURATION_FILENAME, ""));
 
+                        String controllerConfiguration = "";
+                        KafkaPool pool = kafka.nodePoolForNodeId(nodeId);
+                        if (pool.isController() && !pool.isBroker())   {
+                            // For controllers only, we extract the controller-relevant configurations and use it in the configuration annotations
+                            controllerConfiguration = kc.controllerConfigsWithValues().toString();
+                        }
+
                         // We store hash of the broker configurations for later use in Pod and in rolling updates
-                        this.brokerConfigurationHash.put(brokerId, Util.hashStub(brokerConfiguration + kc.unknownConfigsWithValues(kafka.getKafkaVersion()).toString()));
+                        this.brokerConfigurationHash.put(nodeId, Util.hashStub(brokerConfiguration + kc.unknownConfigsWithValues(kafka.getKafkaVersion()).toString() + controllerConfiguration));
 
                         ops.add(configMapOperator.reconcile(reconciliation, reconciliation.namespace(), cmName, cm));
                     }
