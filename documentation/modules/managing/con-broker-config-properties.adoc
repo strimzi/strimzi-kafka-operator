@@ -242,8 +242,11 @@ log.retention.ms=1680000
 # ...
 ----
 
-The retention period is based on the time messages were appended to the segment. The milliseconds configuration has priority over minutes, which has priority over hours. 
-The minutes and milliseconds configurations are null by default, but the three options provide a substantial level of control over the data you wish to retain. Preference should be given to the milliseconds configuration, as it is the only one of the three properties that is dynamically updateable.
+The retention period is based on the time messages were appended to the segment. 
+Kafka uses the timestamp of the latest message within a segment to determine if that segment has expired or not.
+The milliseconds configuration has priority over minutes, which has priority over hours. 
+The minutes and milliseconds configurations are null by default, but the three options provide a substantial level of control over the data you wish to retain. 
+Preference should be given to the milliseconds configuration, as it is the only one of the three properties that is dynamically updateable.
 
 If `log.retention.ms` is set to -1, no time limit is applied to log retention, and all logs are retained. 
 However, this setting is not generally recommended as it can lead to issues with full disks that are difficult to rectify.
