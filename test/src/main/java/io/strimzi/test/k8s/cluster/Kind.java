@@ -17,31 +17,32 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * The `Kind` class provides functionality for interacting with a Kubernetes cluster created using the Kind tool.
- * Kind is a tool for running local Kubernetes clusters using Docker container nodes.
- * This class implements the `KubeCluster` interface and provides methods for checking the availability of the Kind tool,
- * verifying if a Kind cluster is up and running, and creating default Kubernetes clients and command clients for the cluster.
- *
- * Usage:
- * - Check if Kind is available on the system using {@link #isAvailable()}.
- * - Check if a Kind cluster is up and running using {@link #isClusterUp()}.
- * - Obtain a default Kubernetes command client using {@link #defaultCmdClient()}.
- * - Obtain a default Kubernetes client using {@link #defaultClient()}.
+ * Represents a Kubernetes cluster implemented using the "kind" tool.
+ * This class provides methods to check the availability of the "kind" command,
+ * the status of the cluster, and to retrieve default clients for interaction.
  *
  * @see KubeCluster
- * @see KubeCmdClient
- * @see KubeClient
  */
 public class Kind implements KubeCluster {
 
     public static final String CMD = "kind";
     private static final Logger LOGGER = LogManager.getLogger(Kind.class);
 
+    /**
+     * Determines if the "kind" command is available in the system's path.
+     *
+     * @return true if the "kind" command is available, false otherwise.
+     */
     @Override
     public boolean isAvailable() {
         return Exec.isExecutableOnPath(CMD);
     }
 
+    /**
+     * Checks if the Kubernetes cluster managed by "kind" is up and running.
+     *
+     * @return true if the cluster is up, false otherwise.
+     */
     @Override
     public boolean isClusterUp() {
         List<String> cmd = Arrays.asList(CMD, "status");
@@ -54,16 +55,31 @@ public class Kind implements KubeCluster {
         }
     }
 
+    /**
+     * Retrieves the default command line client for interaction with the cluster.
+     *
+     * @return a {@link KubeCmdClient} instance.
+     */
     @Override
     public KubeCmdClient defaultCmdClient() {
         return new Kubectl();
     }
 
+    /**
+     * Retrieves the default client for programmatically interacting with the cluster.
+     *
+     * @return a {@link KubeClient} instance.
+     */
     @Override
     public KubeClient defaultClient() {
         return new KubeClient(new KubernetesClientBuilder().withConfig(CONFIG).build(), "default");
     }
 
+    /**
+     * Returns the string representation of this class, which is the "kind" command.
+     *
+     * @return the "kind" command string.
+     */
     public String toString() {
         return CMD;
     }

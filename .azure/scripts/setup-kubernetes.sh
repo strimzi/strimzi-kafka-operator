@@ -38,31 +38,57 @@ function label_node {
 	done
 }
 
-function install_kubernetes_provisioner {
-      if [ "${TEST_MINIKUBE_VERSION:-latest}" = "latest" ]; then
-          TEST_KUBERNETES_URL=https://storage.googleapis.com/minikube/releases/latest/minikube-linux-${ARCH}
-      else
-          TEST_KUBERNETES_URL=https://github.com/kubernetes/minikube/releases/download/${TEST_MINIKUBE_VERSION}/minikube-linux-${ARCH}
-      fi
+if [ "$TEST_CLUSTER" = "minikube" ]; then
+    install_kubectl
+    if [ "${TEST_MINIKUBE_VERSION:-latest}" = "latest" ]; then
+        TEST_MINIKUBE_URL=https://storage.googleapis.com/minikube/releases/latest/minikube-linux-${ARCH}
+    else
+        TEST_MINIKUBE_URL=https://github.com/kubernetes/minikube/releases/download/${TEST_MINIKUBE_VERSION}/minikube-linux-${ARCH}
+    fi
 
-      if [ "$KUBE_VERSION" != "latest" ] && [ "$KUBE_VERSION" != "stable" ]; then
-          KUBE_VERSION="v${KUBE_VERSION}"
-      fi
+    if [ "$KUBE_VERSION" != "latest" ] && [ "$KUBE_VERSION" != "stable" ]; then
+        KUBE_VERSION="v${KUBE_VERSION}"
+    fi
 
-      curl -Lo $TEST_CLUSTER ${TEST_KUBERNETES_URL} && chmod +x $TEST_CLUSTER
-      sudo cp $TEST_CLUSTER /usr/local/bin
-}
+    curl -Lo minikube ${TEST_MINIKUBE_URL} && chmod +x minikube
+    sudo cp minikube /usr/local/bin
 
-function create_cluster_role_binding_admin {
-    kubectl create clusterrolebinding add-on-cluster-admin --clusterrole=cluster-admin --serviceaccount=kube-system:default
-}
+    export MINIKUBE_WANTUPDATENOTIFICATION=false
+    export MINIKUBE_WANTREPORTERRORPROMPT=false
+    export MINIKUBE_HOME=$HOME
+    export CHANGE_MINIKUBE_NONE_USER=true
 
-function setup_kube_directory {
     mkdir $HOME/.kube || true
     touch $HOME/.kube/config
-}
 
-function setup_registry_proxy {
+    docker run -d -p 5000:5000 ${MINIKUBE_REGISTRY_IMAGE}
+
+    export KUBECONFIG=$HOME/.kube/config
+    # We can turn on network polices support by adding the following options --network-plugin=cni --cni=calico
+    # We have to allow trafic for ITS when NPs are turned on
+    # We can allow NP after Strimzi#4092 which should fix some issues on STs side
+    minikube start --vm-driver=docker --kubernetes-version=${KUBE_VERSION} \
+      --insecure-registry=localhost:5000 --extra-config=apiserver.authorization-mode=Node,RBAC \
+      --cpus=${MINIKUBE_CPU} --memory=${MINIKUBE_MEMORY} --force
+
+    if [ $? -ne 0 ]
+    then
+        echo "Minikube failed to start or RBAC could not be properly set up"
+        exit 1
+    fi
+
+    minikube addons enable default-storageclass
+
+    # Add Docker hub credentials to Minikube
+    if [ "$COPY_DOCKER_LOGIN" = "true" ]
+    then
+      set +ex
+
+      docker exec "minikube" bash -c "echo '$(cat $HOME/.docker/config.json)'| sudo tee -a /var/lib/kubelet/config.json > /dev/null && sudo systemctl restart kubelet"
+
+      set -ex
+    fi
+
     if [ "$ARCH" = "s390x" ]; then
         git clone -b v1.9.11 --depth 1 https://github.com/kubernetes/kubernetes.git
         sed -i 's/:1.11/:1.22.1/' kubernetes/cluster/addons/registry/images/Dockerfile
@@ -88,53 +114,11 @@ function setup_registry_proxy {
     fi
 
     minikube addons enable registry-aliases
-}
 
-function add_docker_hub_credentials_to_kubernetes {
-    # Add Docker hub credentials to Minikube
-    if [ "$COPY_DOCKER_LOGIN" = "true" ]
-    then
-      set +ex
-
-      docker exec $1 bash -c "echo '$(cat $HOME/.docker/config.json)'| sudo tee -a /var/lib/kubelet/config.json > /dev/null && sudo systemctl restart kubelet"
-
-      set -ex
-    fi
-}
-
-setup_kube_directory
-install_kubectl
-install_kubernetes_provisioner
-
-if [ "$TEST_CLUSTER" = "minikube" ]; then
-    export MINIKUBE_WANTUPDATENOTIFICATION=false
-    export MINIKUBE_WANTREPORTERRORPROMPT=false
-    export MINIKUBE_HOME=$HOME
-    export CHANGE_MINIKUBE_NONE_USER=true
-
-    docker run -d -p 5000:5000 ${MINIKUBE_REGISTRY_IMAGE}
-
-    export KUBECONFIG=$HOME/.kube/config
-    # We can turn on network polices support by adding the following options --network-plugin=cni --cni=calico
-    # We have to allow trafic for ITS when NPs are turned on
-    # We can allow NP after Strimzi#4092 which should fix some issues on STs side
-    minikube start --vm-driver=docker --kubernetes-version=${KUBE_VERSION} \
-      --insecure-registry=localhost:5000 --extra-config=apiserver.authorization-mode=Node,RBAC \
-      --cpus=${MINIKUBE_CPU} --memory=${MINIKUBE_MEMORY} --force
-
-    if [ $? -ne 0 ]
-    then
-        echo "Minikube failed to start or RBAC could not be properly set up"
-        exit 1
-    fi
-
-    minikube addons enable default-storageclass
-    add_docker_hub_credentials_to_kubernetes "$TEST_CLUSTER"
-    setup_registry_proxy
+    kubectl create clusterrolebinding add-on-cluster-admin --clusterrole=cluster-admin --serviceaccount=kube-system:default
 else
     echo "Unsupported TEST_CLUSTER '$TEST_CLUSTER'"
     exit 1
 fi
 
-create_cluster_role_binding_admin
 label_node
