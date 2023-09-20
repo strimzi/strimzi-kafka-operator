@@ -16,5 +16,5 @@
 fromVersion: 0.37.0
 fromOlmChannelName: strimzi-0.37.x
 fromExamples: strimzi-0.37.0
-fromUrl: https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.37.0/strimzi-0.36.1.zip
+fromUrl: https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.37.0/strimzi-0.37.0.zip
 fromKafkaVersionsUrl: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/0.37.0/kafka-versions.yaml
