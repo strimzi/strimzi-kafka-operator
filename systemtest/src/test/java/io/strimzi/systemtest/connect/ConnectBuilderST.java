@@ -26,7 +26,7 @@ import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
-import io.strimzi.systemtest.annotations.KindNotSupport;
+import io.strimzi.systemtest.annotations.KindNotSupported;
 import io.strimzi.systemtest.annotations.OpenShiftOnly;
 import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
@@ -470,7 +470,7 @@ class ConnectBuilderST extends AbstractST {
 
     @Tag(SANITY)
     @Tag(ACCEPTANCE)
-    @KindNotSupport("using kind we encounter (error building image: deleting file system after stage 0: unlinkat //product_uuid: device or resource busy)")
+    @KindNotSupported("using kind we encounter (error building image: deleting file system after stage 0: unlinkat //product_uuid: device or resource busy)")
     @ParallelTest
     void testBuildPluginUsingMavenCoordinatesArtifacts(ExtensionContext extensionContext) {
         TestStorage testStorage = new TestStorage(extensionContext);

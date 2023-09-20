@@ -17,14 +17,14 @@ import java.lang.annotation.Target;
  *
  * <p>If the kind is supported, the test will be disabled. If not, the test will be enabled.</p>
  *
- * <p>This annotation leverages the {@link KindNotSupportCondition} to evaluate the execution condition.</p>
+ * <p>This annotation leverages the {@link KindNotSupportedCondition} to evaluate the execution condition.</p>
  *
- * @see KindNotSupportCondition
+ * @see KindNotSupportedCondition
  */
 @Target({ElementType.METHOD, ElementType.TYPE})
 @Retention(RetentionPolicy.RUNTIME)
-@ExtendWith(KindNotSupportCondition.class)
-public @interface KindNotSupport {
+@ExtendWith(KindNotSupportedCondition.class)
+public @interface KindNotSupported {
 
     /**
      * Optional value to provide additional information or customization for the condition.

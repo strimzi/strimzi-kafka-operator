@@ -13,7 +13,7 @@ else
 fi
 
 export DOCKER_REGISTRY="$DOCKER_REGISTRY:5001"
-echo "Using registry:$DOCKER_REGISTRY"
+echo "Using container registry:$DOCKER_REGISTRY"
 
 mvn compile -pl config-model-generator -DskipTests -Dmaven.javadoc.skip=true --no-transfer-progress
 mvn verify -pl systemtest -P ${TEST_PROFILE} \

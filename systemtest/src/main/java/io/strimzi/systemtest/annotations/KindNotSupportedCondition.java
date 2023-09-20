@@ -13,7 +13,7 @@ import org.junit.jupiter.api.extension.ExtensionContext;
  * Represents a condition that checks if a kind is supported for execution.
  * If the kind is supported, the test will be disabled, otherwise enabled.
  */
-public class KindNotSupportCondition implements ExecutionCondition {
+public class KindNotSupportedCondition implements ExecutionCondition {
 
     /**
      * Evaluates the condition to determine if the test should be enabled or disabled
