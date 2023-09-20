@@ -326,11 +326,6 @@ class AlternativeReconcileTriggersST extends AbstractST {
     }
 
     /**
-     * Adding and removing JBOD volumes requires rolling updates in the sequential order. Otherwise the StatefulSet does
-     * not like it.
-     */
-
-    /**
      * @description This tests tries to add and remove volume from JBOD.
      *
      * @steps
