@@ -67,8 +67,9 @@ IMPORTANT: **KRaft mode is not ready for production in Apache Kafka or in Strimz
 Enabling the `UseKRaft` feature gate requires the `KafkaNodePools` feature gate to be enabled as well.
 To deploy a Kafka cluster in KRaft mode, you must use the `KafkaNodePool` resources.
 For more details and examples, see xref:deploying-kafka-node-pools-{context}[].
+The `Kafka` custom resource using KRaft mode must also have the annotation `strimzi.io/kraft: enabled`.
 
-When the `UseKRaft` feature gate is enabled, the Kafka cluster is deployed without ZooKeeper.
+When the `UseKRaft` feature gate is enabled and such annotation is set, the Kafka cluster is deployed without ZooKeeper.
 *The `.spec.zookeeper` properties in the `Kafka` custom resource are ignored, but still need to be present.*
 The `UseKRaft` feature gate provides an API that configures Kafka cluster nodes and their roles.
 The API is still in development and is expected to change before the KRaft mode is production-ready.
@@ -87,6 +88,8 @@ Currently, the KRaft mode in Strimzi has the following major limitations:
 
 .Enabling the UseKRaft feature gate
 To enable the `UseKRaft` feature gate, specify `+UseKRaft,+KafkaNodePools` in the `STRIMZI_FEATURE_GATES` environment variable in the Cluster Operator configuration.
+The `Kafka` custom resource using KRaft mode must also have the annotation `strimzi.io/kraft: enabled`.
+If such annotation is set to `disabled`, missing or any other value, the operator will handle the `Kafka` custom resource as using ZooKeeper mode.
 
 [id='ref-operator-stable-connect-identities-feature-gate-{context}']
 == StableConnectIdentities feature gate

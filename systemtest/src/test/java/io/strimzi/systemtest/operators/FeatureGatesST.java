@@ -109,6 +109,7 @@ public class FeatureGatesST extends AbstractST {
         Kafka kafka = KafkaTemplates.kafkaPersistent(clusterName, kafkaReplicas)
             .editOrNewMetadata()
                 .addToAnnotations(Annotations.ANNO_STRIMZI_IO_NODE_POOLS, "enabled")
+                .addToAnnotations(Annotations.ANNO_STRIMZI_IO_KRAFT, "enabled")
                 .withNamespace(testStorage.getNamespaceName())
             .endMetadata()
             .editSpec()

@@ -181,6 +181,11 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
     public static final String ENABLED_VALUE_STRIMZI_IO_NODE_POOLS = "enabled";
 
     /**
+     * The annotation value which indicates that the KRaft mode is enabled
+     */
+    public static final String ENABLED_VALUE_STRIMZI_IO_KRAFT = "enabled";
+
+    /**
      * Key under which the broker configuration is stored in Config Map
      */
     public static final String BROKER_CONFIGURATION_FILENAME = "server.config";

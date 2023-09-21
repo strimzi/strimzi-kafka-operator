@@ -79,7 +79,10 @@ public class KafkaAssemblyOperatorWithPoolsKRaftMockTest {
                 .withNewMetadata()
                     .withName(CLUSTER_NAME)
                     .withNamespace(NAMESPACE)
-                    .withAnnotations(Map.of(Annotations.ANNO_STRIMZI_IO_NODE_POOLS, "enabled"))
+                    .withAnnotations(Map.of(
+                            Annotations.ANNO_STRIMZI_IO_NODE_POOLS, "enabled",
+                            Annotations.ANNO_STRIMZI_IO_KRAFT, "enabled"
+                    ))
                 .endMetadata()
                 .withNewSpec()
                     .withNewKafka()
