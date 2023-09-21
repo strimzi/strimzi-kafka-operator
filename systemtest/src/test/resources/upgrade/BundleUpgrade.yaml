@@ -24,11 +24,11 @@
 #  featureGatesAfter: String - FG added to `STRIMZI_FEATURE_GATES` environment variable, on upgrade of CO
 #  --- Structure ---
 
-- fromVersion: 0.36.1
-  fromExamples: strimzi-0.36.1
+- fromVersion: 0.37.0
+  fromExamples: strimzi-0.37.0
   oldestKafka: 3.4.0
-  fromUrl: https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.36.1/strimzi-0.36.1.zip
-  fromKafkaVersionsUrl: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/0.36.1/kafka-versions.yaml
+  fromUrl: https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.37.0/strimzi-0.37.0.zip
+  fromKafkaVersionsUrl: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/0.37.0/kafka-versions.yaml
   additionalTopics: 2
   imagesAfterOperations:
     zookeeper: strimzi/kafka:latest-kafka-3.5.1
@@ -44,11 +44,11 @@
     reason: Test is working on environment, where k8s server version is < 1.22
   featureGatesBefore: ""
   featureGatesAfter: ""
-- fromVersion: 0.36.1
-  fromExamples: strimzi-0.36.1
+- fromVersion: 0.37.0
+  fromExamples: strimzi-0.37.0
   oldestKafka: 3.4.0
-  fromUrl: https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.36.1/strimzi-0.36.1.zip
-  fromKafkaVersionsUrl: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/0.36.1/kafka-versions.yaml
+  fromUrl: https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.37.0/strimzi-0.37.0.zip
+  fromKafkaVersionsUrl: https://raw.githubusercontent.com/strimzi/strimzi-kafka-operator/0.37.0/kafka-versions.yaml
   additionalTopics: 2
   imagesAfterOperations:
     zookeeper: strimzi/kafka:latest-kafka-3.5.1
