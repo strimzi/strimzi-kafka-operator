@@ -17,6 +17,8 @@ import org.apache.logging.log4j.Logger;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Locale;
@@ -149,6 +151,7 @@ public class Environment {
      */
     public static final String CONNECT_BUILD_IMAGE_PATH_ENV = "CONNECT_BUILD_IMAGE_PATH";
     public static final String CONNECT_BUILD_REGISTRY_SECRET_ENV = "CONNECT_BUILD_REGISTRY_SECRET";
+    public static final String IP_FAMILY_ENV = "IP_FAMILY";
 
     /**
      * Defaults
@@ -176,6 +179,8 @@ public class Environment {
     public static final String TEST_CLIENTS_VERSION_DEFAULT = "0.5.2";
     public static final String ST_FILE_PLUGIN_URL_DEFAULT = "https://repo1.maven.org/maven2/org/apache/kafka/connect-file/" + ST_KAFKA_VERSION_DEFAULT + "/connect-file-" + ST_KAFKA_VERSION_DEFAULT + ".jar";
     public static final String OLM_OPERATOR_VERSION_DEFAULT = "0.37.0";
+
+    public static final String IP_FAMILY_DEFAULT = "ipv4";
 
     /**
      * Set values
@@ -230,6 +235,9 @@ public class Environment {
     public static final String CONNECT_BUILD_IMAGE_PATH = getOrDefault(CONNECT_BUILD_IMAGE_PATH_ENV, "");
     public static final String CONNECT_BUILD_REGISTRY_SECRET = getOrDefault(CONNECT_BUILD_REGISTRY_SECRET_ENV, "");
     public static final String TEST_SUITE_NAMESPACE = Environment.isNamespaceRbacScope() ? Constants.CO_NAMESPACE : "test-suite-namespace";
+
+    public static final String IP_FAMILY = getOrDefault(IP_FAMILY_ENV, IP_FAMILY_DEFAULT);
+
 
     private Environment() { }
 
@@ -289,6 +297,10 @@ public class Environment {
         return Environment.BRIDGE_IMAGE.equals(Environment.BRIDGE_IMAGE_DEFAULT);
     }
 
+    public static boolean isIpv4Family() {
+        return IP_FAMILY.contains(IP_FAMILY_DEFAULT);
+    }
+
     private static String getOrDefault(String varName, String defaultValue) {
         return getOrDefault(varName, String::toString, defaultValue);
     }
@@ -296,6 +308,18 @@ public class Environment {
     public static String getImageOutputRegistry() {
         if (KubeClusterResource.getInstance().isOpenShift()) {
             return "image-registry.openshift-image-registry.svc:5000";
+        } else if (KubeClusterResource.getInstance().isKind()) {
+            // we will need a hostname of machine
+            String hostname = "";
+            try {
+                if (Environment.isIpv4Family()) {
+                    hostname = InetAddress.getLocalHost().getHostAddress() + ":5001";
+                }
+            } catch (UnknownHostException e) {
+                throw new RuntimeException(e);
+            }
+            LOGGER.info("Using container registry :{}", hostname);
+            return hostname;
         } else {
             LOGGER.warn("For running these tests on K8s you have to have internal registry deployed using `minikube start --insecure-registry '10.0.0.0/24'` and `minikube addons enable registry`");
             Service service = kubeClient("kube-system").getService("registry");

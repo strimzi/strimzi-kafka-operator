@@ -19,12 +19,17 @@ import io.strimzi.api.kafka.model.connect.build.PluginBuilder;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.test.TestUtils;
+import io.strimzi.test.k8s.KubeClusterResource;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.util.Random;
 
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 public class KafkaConnectTemplates {
+
+    private static final Logger LOGGER = LogManager.getLogger(KafkaConnectTemplates.class);
 
     private KafkaConnectTemplates() {}
 
@@ -129,6 +134,14 @@ public class KafkaConnectTemplates {
         if (Environment.CONNECT_BUILD_REGISTRY_SECRET != null && !Environment.CONNECT_BUILD_REGISTRY_SECRET.isEmpty()) {
             dockerOutputBuilder.withPushSecret(Environment.CONNECT_BUILD_REGISTRY_SECRET);
         }
+
+        // if we use Kind we add insecure option
+        if (KubeClusterResource.getInstance().isKind()) {
+            dockerOutputBuilder.withAdditionalKanikoOptions(
+                // --insecure for PUSH via HTTP instead of HTTPS
+                "--insecure");
+        }
+
         return dockerOutputBuilder.build();
     }
 
