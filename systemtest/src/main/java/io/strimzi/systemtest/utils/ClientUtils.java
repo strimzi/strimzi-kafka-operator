@@ -12,6 +12,7 @@ import io.strimzi.systemtest.utils.kubeUtils.controllers.JobUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.WaitException;
+import java.util.List;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -166,6 +167,23 @@ public class ClientUtils {
                 throw e;
             }
         }
+    }
+    public static void waitForClientContainsAllMessages(String jobName, String namespace, List<String> messages, boolean deleteAfterSuccess) {
+        String jobPodName = PodUtils.getPodNameByPrefix(namespace, jobName);
+        List<String> notReadyMessages = messages;
+        TestUtils.waitFor("client Job to contain all messages: [" + messages.toString() + "]", Constants.GLOBAL_POLL_INTERVAL, Constants.THROTTLING_EXCEPTION_TIMEOUT, () -> {
+            for (String message : messages) {
+                if (kubeClient().logsInSpecificNamespace(namespace, jobPodName).contains(message)) {
+                    notReadyMessages.remove(message);
+                }
+            }
+
+            if (deleteAfterSuccess && notReadyMessages.isEmpty()) {
+                JobUtils.deleteJobWithWait(namespace, jobName);
+            }
+
+            return notReadyMessages.isEmpty();
+        });
     }
 
     public static void waitForClientContainsMessage(String jobName, String namespace, String message) {

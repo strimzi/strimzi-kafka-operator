@@ -23,8 +23,9 @@ import io.strimzi.systemtest.templates.crd.KafkaUserTemplates;
 import io.strimzi.systemtest.templates.specific.ScraperTemplates;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
-import io.strimzi.systemtest.utils.kubeUtils.controllers.JobUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
+import java.util.ArrayList;
+import java.util.List;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
@@ -107,14 +108,21 @@ public class ThrottlingQuotaST extends AbstractST {
 
         LOGGER.info("Listing Topics after creation");
         resourceManager.createResourceWithWait(extensionContext, listTopicJob.defaultAdmin());
-        ClientUtils.waitForClientContainsMessage(listAdminName, testStorage.getNamespaceName(), testStorage.getTopicName() + "-" + (numOfTopics - 1));
+
+        List<String> topicNames = new ArrayList<>();
+
+        for (int i = 0; i < numOfTopics; i++) {
+            topicNames.add(testStorage.getTopicName() + "-" + i);
+        }
+
+        ClientUtils.waitForClientContainsAllMessages(listAdminName, testStorage.getNamespaceName(), topicNames, true);
 
         int partitionAlter = 25;
 
         KafkaAdminClients alterTopicsJob = new KafkaAdminClientsBuilder(createTopicJob)
             .withAdminName(alterAdminName)
             .withPartitions(partitionAlter)
-            .withAdminOperation(AdminClientOperation.UPDATE_TOPICS)
+            .withAdminOperation(AdminClientOperation.ALTER_TOPICS)
             .build();
 
         LOGGER.info("Altering {} Topics - setting partitions to {} - we should hit the quota", numOfTopics, partitionAlter);
@@ -123,7 +131,7 @@ public class ThrottlingQuotaST extends AbstractST {
         resourceManager.createResourceWithWait(extensionContext, alterTopicsJob.defaultAdmin());
         ClientUtils.waitForClientContainsMessage(alterAdminName, testStorage.getNamespaceName(), THROTTLING_ERROR_MSG);
 
-        // we need to set higher partitions - for case when we altered some topics before hitting the quota to 25 partitions
+        // we need to set higher partitions - for case when we alter some topics before hitting the quota to 25 partitions
         partitionAlter = 30;
         int numOfTopicsIter = 5;
 
@@ -180,7 +188,6 @@ public class ThrottlingQuotaST extends AbstractST {
         String afterDeletePodLogs = kubeClient().logsInSpecificNamespace(testStorage.getNamespaceName(), listPodName);
 
         assertFalse(afterDeletePodLogs.contains(testStorage.getTopicName()));
-        JobUtils.deleteJobWithWait(testStorage.getNamespaceName(), listAdminName);
     }
 
     @BeforeAll
