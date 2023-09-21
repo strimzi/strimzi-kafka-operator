@@ -21,7 +21,7 @@ SECRETS_OPT="hidden"
 # sed non-printable text delimiter
 SD=$(echo -en "\001") && readonly SD
 # sed sensitive information filter expression
-SE="s${SD}^\(\s*.*\password\s*:\s*\).*${SD}\1\[hidden\]${SD}; s${SD}^\(\s*.*\.key\s*:\s*\).*${SD}\1\[hidden\]${SD}" && readonly SE
+SE="s${SD}^\(\s*.*\password\s*:\s*\).*${SD}\1\<hidden>'${SD}; s${SD}^\(\s*.*\.key\s*:\s*\).*${SD}\1\<hidden>${SD}" && readonly SE
 
 error() {
   echo "$@" 1>&2 && exit 1
@@ -228,44 +228,49 @@ get_pod_logs() {
     local names && names=$($KUBE_CLIENT -n "$NAMESPACE" get po "$pod" -o jsonpath='{.spec.containers[*].name}' --ignore-not-found)
     local count && count=$(echo "$names" | wc -w)
     local logs
-    mkdir -p "$OUT_DIR"/reports/podlogs
+    mkdir -p "$OUT_DIR"/reports/logs
     if [[ "$count" -eq 1 ]]; then
       logs="$($KUBE_CLIENT -n "$NAMESPACE" logs "$pod" ||true)"
-      if [[ -n $logs ]]; then printf "%s" "$logs" > "$OUT_DIR"/reports/podlogs/"$pod".log; fi
+      if [[ -n $logs ]]; then printf "%s" "$logs" > "$OUT_DIR"/reports/logs/"$pod".log; fi
       logs="$($KUBE_CLIENT -n "$NAMESPACE" logs "$pod" -p 2>/dev/null ||true)"
-      if [[ -n $logs ]]; then printf "%s" "$logs" > "$OUT_DIR"/reports/podlogs/"$pod".log.0; fi
+      if [[ -n $logs ]]; then printf "%s" "$logs" > "$OUT_DIR"/reports/logs/"$pod".log.0; fi
     fi
     if [[ "$count" -gt 1 && -n "$con" && "$names" == *"$con"* ]]; then
       logs="$($KUBE_CLIENT -n "$NAMESPACE" logs "$pod" -c "$con" ||true)"
-      if [[ -n $logs ]]; then printf "%s" "$logs" > "$OUT_DIR"/reports/podlogs/"$pod"-"$con".log; fi
+      if [[ -n $logs ]]; then printf "%s" "$logs" > "$OUT_DIR"/reports/logs/"$pod"-"$con".log; fi
       logs="$($KUBE_CLIENT -n "$NAMESPACE" logs "$pod" -p -c "$con" 2>/dev/null ||true)"
-      if [[ -n $logs ]]; then printf "%s" "$logs" > "$OUT_DIR"/reports/podlogs/"$pod"-"$con".log.0; fi
+      if [[ -n $logs ]]; then printf "%s" "$logs" > "$OUT_DIR"/reports/logs/"$pod"-"$con".log.0; fi
     fi
   fi
 }
 
 echo "clusteroperator"
-CO_DEPLOY=$($KUBE_CLIENT get deploy strimzi-cluster-operator -o name -n "$NAMESPACE" --ignore-not-found) && readonly CO_DEPLOY
+CO_DEPLOY=$($KUBE_CLIENT get deploy strimzi-cluster-operator -o name -n "$NAMESPACE" --ignore-not-found)
 if [[ -n $CO_DEPLOY ]]; then
   echo "    $CO_DEPLOY"
-  $KUBE_CLIENT get deploy strimzi-cluster-operator -o yaml -n "$NAMESPACE" > "$OUT_DIR"/reports/deployments/cluster-operator.yaml
-  $KUBE_CLIENT get po -l strimzi.io/kind=cluster-operator -o yaml -n "$NAMESPACE" > "$OUT_DIR"/reports/pods/cluster-operator.yaml
+  CO_DEPLOY=$(echo "$CO_DEPLOY" | cut -d "/" -f 2) && readonly CO_DEPLOY
+  $KUBE_CLIENT get deploy "$CO_DEPLOY" -o yaml -n "$NAMESPACE" > "$OUT_DIR"/reports/deployments/"$CO_DEPLOY".yaml
+  CO_RS=$($KUBE_CLIENT get rs -l strimzi.io/kind=cluster-operator -o name -n "$NAMESPACE" --ignore-not-found)
+  if [[ -n $CO_RS ]]; then
+    echo "    $CO_RS"
+    CO_RS=$(echo "$CO_RS" | cut -d "/" -f 2) && readonly CO_RS
+    $KUBE_CLIENT get rs "$CO_RS" -o yaml -n "$NAMESPACE" > "$OUT_DIR"/reports/replicasets/"$CO_RS".yaml
+  fi
   mapfile -t CO_PODS < <($KUBE_CLIENT get po -l strimzi.io/kind=cluster-operator -o name -n "$NAMESPACE" --ignore-not-found)
   if [[ ${#CO_PODS[@]} -ne 0 ]]; then
     for pod in "${CO_PODS[@]}"; do
       echo "    $pod"
       CO_POD=$(echo "$pod" | cut -d "/" -f 2)
+      $KUBE_CLIENT get po "$CO_POD" -o yaml -n "$NAMESPACE" > "$OUT_DIR"/reports/pods/"$CO_POD".yaml
       get_pod_logs "$CO_POD"
     done
   fi
-fi
-
-CO_RS=$($KUBE_CLIENT get rs -l strimzi.io/kind=cluster-operator -o name -n "$NAMESPACE" --ignore-not-found)
-if [[ -n $CO_RS ]]; then
-  echo "    $CO_RS"
-  CO_RS=$(echo "$CO_RS" | tail -n1) && echo "    $CO_RS"
-  CO_RS=$(echo "$CO_RS" | cut -d "/" -f 2) && readonly CO_RS
-  $KUBE_CLIENT get rs "$CO_RS" -n "$NAMESPACE" > "$OUT_DIR"/reports/replicasets/"$CO_RS".yaml
+  CO_CM=$($KUBE_CLIENT get cm strimzi-cluster-operator -o name -n "$NAMESPACE" --ignore-not-found)
+  if [[ -n $CO_CM ]]; then
+    echo "    $CO_CM"
+    CO_CM=$(echo "$CO_CM" | cut -d "/" -f 2) && readonly CO_CM
+    $KUBE_CLIENT get cm "$CO_CM" -o yaml -n "$NAMESPACE" > "$OUT_DIR"/reports/configmaps/"$CO_CM".yaml
+  fi
 fi
 
 echo "draincleaner"
@@ -283,16 +288,17 @@ if [[ -n $DC_DEPLOY ]]; then
 fi
 
 echo "customresources"
-mkdir -p "$OUT_DIR"/reports/crds "$OUT_DIR"/reports/crs
-CRDS=$($KUBE_CLIENT get crd -l app=strimzi -o name | cut -d "/" -f 2) && readonly CRDS
+mkdir -p "$OUT_DIR"/reports/customresourcedefinitions
+CRDS=$($KUBE_CLIENT get crd -l app=strimzi --ignore-not-found --no-headers -o=custom-columns=NAME:.metadata.name) && readonly CRDS
 for CRD in $CRDS; do
   RES=$($KUBE_CLIENT get "$CRD" -o name -n "$NAMESPACE" | cut -d "/" -f 2)
   if [[ -n $RES ]]; then
     echo "    $CRD"
-    $KUBE_CLIENT get crd "$CRD" -o yaml > "$OUT_DIR"/reports/crds/"$CRD".yaml
+    $KUBE_CLIENT get crd "$CRD" -o yaml > "$OUT_DIR"/reports/customresourcedefinitions/"$CRD".yaml
+    CR_DIR="${CRD//.*/}" && mkdir -p "$OUT_DIR"/reports/"$CR_DIR"
     for j in $RES; do
       RES=$(echo "$j" | cut -f 1 -d " ")
-      $KUBE_CLIENT get "$CRD" "$RES" -n "$NAMESPACE" -o yaml > "$OUT_DIR"/reports/crs/"$CRD"-"$RES".yaml
+      $KUBE_CLIENT get "$CRD" "$RES" -n "$NAMESPACE" -o yaml > "$OUT_DIR"/reports/"$CR_DIR"/"$RES".yaml
       echo "        $RES"
     done
   fi
@@ -305,7 +311,7 @@ if [[ -n $EVENTS ]]; then
   echo "$EVENTS" > "$OUT_DIR"/reports/events/events.txt
 fi
 
-echo "podlogs"
+echo "logs"
 mkdir -p "$OUT_DIR"/reports/configs
 mapfile -t KAFKA_PODS < <($KUBE_CLIENT -n "$NAMESPACE" get po -l strimzi.io/kind=Kafka,strimzi.io/name="$CLUSTER-kafka" --ignore-not-found --no-headers -o=custom-columns=NAME:.metadata.name)
 if [[ ${#KAFKA_PODS[@]} -ne 0 ]]; then
