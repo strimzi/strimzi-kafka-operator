@@ -148,7 +148,7 @@ public class NodePoolUtils {
 
             // Throw an exception if there are any errors
             if (!errors.isEmpty()) {
-                throw new InvalidResourceException("Tha Kafka cluster " + kafka.getMetadata().getName() + " is invalid: " + errors);
+                throw new InvalidResourceException("The Kafka cluster " + kafka.getMetadata().getName() + " is invalid: " + errors);
             }
         }
     }
