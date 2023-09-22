@@ -11,6 +11,7 @@ import io.strimzi.api.kafka.model.KafkaExporterResources;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2Resources;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.resources.ComponentType;
 import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
 import io.strimzi.systemtest.resources.crd.KafkaMirrorMaker2Resource;
@@ -269,6 +270,8 @@ public class MetricsCollector {
             "-n", namespaceName,
             "--", "curl", metricsPodIp + ":" + metricsPort + metricsPath);
 
+        LOGGER.debug("Executing command:{} for scrape the metrics", executableCommand);
+
         Exec exec = new Exec();
         // 20 seconds should be enough for collect data from the pod
         int ret = exec.execute(null, executableCommand, 20_000);
@@ -307,8 +310,16 @@ public class MetricsCollector {
         Map<String, String> map = new HashMap<>();
         kubeClient(namespaceName).listPods(namespaceName, componentLabelSelector).forEach(p -> {
             try {
-                String podName = p.getMetadata().getName();
-                map.put(podName, collectMetrics(p.getStatus().getPodIP(), podName));
+                final String podName = p.getMetadata().getName();
+                String podIP = p.getStatus().getPodIP();
+
+                if (Environment.isIpv6Family()) {
+                    // for curl command we need to add '[' and ']' to make it work
+                    // f.e. http://[fd00:10:244::1d]:9404 this would work but http://fd00:10:244::1d:9404 will not
+                    podIP = "[" + podIP + "]";
+                }
+
+                map.put(podName, collectMetrics(podIP, podName));
             } catch (InterruptedException | ExecutionException | IOException e) {
                 throw new RuntimeException(e);
             }

@@ -303,7 +303,7 @@ public class Environment {
     }
 
     public static boolean isIpv6Family() {
-        return IP_FAMILY.contains(IP_FAMILY_DEFAULT);
+        return IP_FAMILY.contains(IP_FAMILY_VERSION_6);
     }
 
     private static String getOrDefault(String varName, String defaultValue) {
