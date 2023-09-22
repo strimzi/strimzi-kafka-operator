@@ -554,7 +554,7 @@ public class NodePoolUtilsTest {
                 .build();
 
         InvalidResourceException ex = assertThrows(InvalidResourceException.class, () -> NodePoolUtils.validateNodePools(Reconciliation.DUMMY_RECONCILIATION, KAFKA, List.of(poolA, POOL_B), true));
-        assertThat(ex.getMessage(), containsString("Tha Kafka cluster my-cluster is invalid: [At least one KafkaNodePool with the controller role and at least one replica is required when KRaft mode is enabled, Using more than one disk in a JBOD storage is currently not supported when the UseKRaft feature gate is enabled (in KafkaNodePool pool-a)]"));
+        assertThat(ex.getMessage(), containsString("The Kafka cluster my-cluster is invalid: [At least one KafkaNodePool with the controller role and at least one replica is required when KRaft mode is enabled, Using more than one disk in a JBOD storage is currently not supported when the UseKRaft feature gate is enabled (in KafkaNodePool pool-a)]"));
     }
 
     @Test
@@ -739,10 +739,10 @@ public class NodePoolUtilsTest {
                 .build();
 
         InvalidResourceException ex = assertThrows(InvalidResourceException.class, () -> NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafka, List.of(poolA), Map.of(), Map.of(), false, SHARED_ENV_PROVIDER));
-        assertThat(ex.getMessage(), is("Tha Kafka cluster my-cluster is invalid: [The Kafka custom resource and its KafkaNodePool resources use different cluster IDs.]"));
+        assertThat(ex.getMessage(), is("The Kafka cluster my-cluster is invalid: [The Kafka custom resource and its KafkaNodePool resources use different cluster IDs.]"));
 
         ex = assertThrows(InvalidResourceException.class, () -> NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, KAFKA, List.of(poolA), Map.of(), Map.of(), false, SHARED_ENV_PROVIDER));
-        assertThat(ex.getMessage(), is("Tha Kafka cluster my-cluster is invalid: [The KafkaNodePool resources should not have cluster ID set before the Kafka custom resource.]"));
+        assertThat(ex.getMessage(), is("The Kafka cluster my-cluster is invalid: [The KafkaNodePool resources should not have cluster ID set before the Kafka custom resource.]"));
     }
 
     @Test
@@ -763,6 +763,6 @@ public class NodePoolUtilsTest {
                 .build();
 
         InvalidResourceException ex = assertThrows(InvalidResourceException.class, () -> NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafka, List.of(poolA), Map.of(), Map.of(), true, SHARED_ENV_PROVIDER));
-        assertThat(ex.getMessage(), is("Tha Kafka cluster my-cluster is invalid: [The Kafka custom resource and its KafkaNodePool resources use different cluster IDs.]"));
+        assertThat(ex.getMessage(), is("The Kafka cluster my-cluster is invalid: [The Kafka custom resource and its KafkaNodePool resources use different cluster IDs.]"));
     }
 }
