@@ -1468,6 +1468,8 @@ class LoggingChangeST extends AbstractST {
      *     - Cluster is deployed
      *  2. - Modify Kafka by changing specification of logging to new external value
      *     - Change in logging specification triggers Rolling Update
+     *  3. - Modify Kafka by changing specification of logging to new logging format
+     *     - Change in logging specification triggers Rolling Update
      *
      * @usecase
      *  - logging
@@ -1477,21 +1479,17 @@ class LoggingChangeST extends AbstractST {
     @Tag(ROLLING_UPDATE)
     void testChangingInternalToExternalLoggingTriggerRollingUpdate(ExtensionContext extensionContext) {
         final TestStorage testStorage = storageMap.get(extensionContext);
-        final String namespaceName = StUtils.getNamespaceBasedOnRbac(Environment.TEST_SUITE_NAMESPACE, extensionContext);
-        final String clusterName = testStorage.getClusterName();
-        final LabelSelector kafkaSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.kafkaStatefulSetName(clusterName));
-        final LabelSelector zkSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.zookeeperStatefulSetName(clusterName));
 
         // EO dynamic logging is tested in io.strimzi.systemtest.log.LoggingChangeST.testDynamicallySetEOloggingLevels
-        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3, 3).build());
+        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3, 3).build());
 
-        Map<String, String> kafkaPods = PodUtils.podSnapshot(namespaceName, kafkaSelector);
+        Map<String, String> kafkaPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getKafkaSelector());
         Map<String, String> zkPods = null;
         if (!Environment.isKRaftModeEnabled()) {
-            zkPods = PodUtils.podSnapshot(namespaceName, zkSelector);
+            zkPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getZookeeperSelector());
         }
 
-        String loggersConfig = "log4j.appender.CONSOLE=org.apache.log4j.ConsoleAppender\n" +
+        final String loggersConfig = "log4j.appender.CONSOLE=org.apache.log4j.ConsoleAppender\n" +
             "log4j.appender.CONSOLE.layout=org.apache.log4j.PatternLayout\n" +
             "log4j.appender.CONSOLE.layout.ConversionPattern=%d{ISO8601} %p %m (%c) [%t]\n" +
             "kafka.root.logger.level=INFO\n" +
@@ -1509,11 +1507,11 @@ class LoggingChangeST extends AbstractST {
             "log4j.logger.state.change.logger=TRACE\n" +
             "log4j.logger.kafka.authorizer.logger=INFO";
 
-        String configMapLoggersName = "loggers-config-map";
+        final String configMapLoggersName = "loggers-config-map";
         ConfigMap configMapLoggers = new ConfigMapBuilder()
             .withNewMetadata()
-            .withNamespace(namespaceName)
-            .withName(configMapLoggersName)
+                .withNamespace(testStorage.getNamespaceName())
+                .withName(configMapLoggersName)
             .endMetadata()
             .addToData("log4j-custom.properties", loggersConfig)
             .build();
@@ -1523,9 +1521,9 @@ class LoggingChangeST extends AbstractST {
             .withKey("log4j-custom.properties")
             .build();
 
-        kubeClient().createConfigMapInNamespace(namespaceName, configMapLoggers);
+        kubeClient().createConfigMapInNamespace(testStorage.getNamespaceName(), configMapLoggers);
 
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, kafka -> {
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), kafka -> {
             kafka.getSpec().getKafka().setLogging(new ExternalLoggingBuilder()
                 .withNewValueFrom()
                 .withConfigMapKeyRef(log4jLoggimgCMselector)
@@ -1538,20 +1536,25 @@ class LoggingChangeST extends AbstractST {
                     .endValueFrom()
                     .build());
             }
-        }, namespaceName);
+        }, testStorage.getNamespaceName());
 
         if (!Environment.isKRaftModeEnabled()) {
-            zkPods = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(namespaceName, zkSelector, 3, zkPods);
+            LOGGER.info("Waiting for Zookeeper pods to roll after change in logging");
+            zkPods = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), testStorage.getZookeeperSelector(), 3, zkPods);
         }
-        kafkaPods = RollingUpdateUtils.waitTillComponentHasRolled(namespaceName, kafkaSelector, 3, kafkaPods);
+
+        LOGGER.info("Waiting for Kafka pods to roll after change in logging");
+        kafkaPods = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), testStorage.getKafkaSelector(), 3, kafkaPods);
 
         configMapLoggers.getData().put("log4j-custom.properties", loggersConfig.replace("%p %m (%c) [%t]", "%p %m (%c) [%t]%n"));
-        kubeClient().updateConfigMapInNamespace(namespaceName, configMapLoggers);
+        kubeClient().updateConfigMapInNamespace(testStorage.getNamespaceName(), configMapLoggers);
 
         if (!Environment.isKRaftModeEnabled()) {
-            RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(namespaceName, zkSelector, 3, zkPods);
+            LOGGER.info("Waiting for Zookeeper pods to roll after change in logging properties config map");
+            RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), testStorage.getZookeeperSelector(), 3, zkPods);
         }
-        RollingUpdateUtils.waitTillComponentHasRolled(namespaceName, kafkaSelector, 3, kafkaPods);
+        LOGGER.info("Waiting for Kafka pods to roll after change in logging properties config map");
+        RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), testStorage.getKafkaSelector(), 3, kafkaPods);
     }
 
     @BeforeAll
