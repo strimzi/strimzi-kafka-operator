@@ -199,7 +199,7 @@ EOF
     for node in $(kind get nodes --name kind-cluster); do
         echo "Executing command in node:${node}"
         # add myregistry.local to each node to resolve our IPv6 address
-        docker exec -it "${node}" /bin/sh -c "echo \"${ula_fixed_ipv6}::1    myregistry.local\" >> /etc/hosts"
+        docker exec "${node}" /bin/sh -c "echo \"${ula_fixed_ipv6}::1    myregistry.local\" >> /etc/hosts"
     done
 fi
 
