@@ -35,6 +35,7 @@ import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StrimziPodSetUtils;
+import io.strimzi.systemtest.utils.kubeUtils.objects.PersistentVolumeClaimUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.test.TestUtils;
 import io.vertx.core.cli.annotations.Description;
@@ -455,7 +456,8 @@ class AlternativeReconcileTriggersST extends AbstractST {
         RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getKafkaSelector(), 3, kafkaPods);
 
         // ensure there are 3 Kafka Volumes (1 per each of 3 broker)
-        kafkaPvcs = kubeClient().listClaimedPersistentVolumes(testStorage.getNamespaceName(), testStorage.getClusterName()).stream().filter(pv -> pv.getSpec().getClaimRef().getName().contains("kafka")).collect(Collectors.toList());
+        PersistentVolumeClaimUtils.waitForPersistentVolumeClaimDeletion(testStorage, 3);
+        kafkaPvcs = kubeClient().listClaimedPersistentVolumes(testStorage.getNamespaceName(), testStorage.getClusterName()).stream().filter(pv -> pv.getSpec().getClaimRef().getName().contains("kafka") && pv.getStatus().getPhase().equals("Bound")).collect(Collectors.toList());
         LOGGER.debug("Obtained Volumes total '{}' claimed by claims Belonging to Kafka {}", kafkaPvcs.size(), testStorage.getClusterName());
         assertThat("There are not 3 volumes used by Kafka Cluster", kafkaPvcs.size() == 3);
 
