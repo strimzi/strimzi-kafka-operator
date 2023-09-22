@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 set -xe
-set -o errexit
 
 rm -rf ~/.kube
 
@@ -54,8 +53,8 @@ function install_kubernetes_provisioner {
         KUBE_VERSION="v${KUBE_VERSION}"
     fi
 
-    curl -Lo $TEST_CLUSTER ${TEST_KUBERNETES_URL} && chmod +x $TEST_CLUSTER
-    sudo cp $TEST_CLUSTER /usr/local/bin
+    curl -Lo kind ${TEST_KUBERNETES_URL} && chmod +x kind
+    sudo cp kind /usr/local/bin
 }
 
 function create_cluster_role_binding_admin {
@@ -210,7 +209,7 @@ if [ "$(docker inspect -f='{{json .NetworkSettings.Networks.kind}}' "${reg_name}
   docker network connect "kind" "${reg_name}"
 fi
 
-add_docker_hub_credentials_to_kubernetes "$TEST_CLUSTER"
+add_docker_hub_credentials_to_kubernetes "kind"
 
 create_cluster_role_binding_admin
 label_node
