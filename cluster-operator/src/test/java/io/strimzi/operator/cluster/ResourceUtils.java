@@ -44,6 +44,7 @@ import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.api.kafka.model.storage.EphemeralStorage;
 import io.strimzi.api.kafka.model.storage.SingleVolumeStorage;
 import io.strimzi.api.kafka.model.storage.Storage;
+import io.strimzi.operator.cluster.operator.assembly.PreventBrokerScaleDownCheck;
 import io.strimzi.operator.common.model.Ca;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
@@ -579,7 +580,8 @@ public class ResourceUtils {
                 adminClientProvider(),
                 mock(ZookeeperLeaderFinder.class),
                 mock(KubernetesRestartEventPublisher.class),
-                new MockSharedEnvironmentProvider());
+                new MockSharedEnvironmentProvider(),
+                mock(PreventBrokerScaleDownCheck.class));
 
         when(supplier.secretOperations.getAsync(any(), any())).thenReturn(Future.succeededFuture());
         when(supplier.serviceAccountOperations.reconcile(any(), anyString(), anyString(), any())).thenReturn(Future.succeededFuture());

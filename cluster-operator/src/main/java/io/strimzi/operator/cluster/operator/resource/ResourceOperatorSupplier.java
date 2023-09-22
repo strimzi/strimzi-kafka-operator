@@ -25,6 +25,7 @@ import io.strimzi.api.kafka.model.nodepool.KafkaNodePool;
 import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.model.DefaultSharedEnvironmentProvider;
 import io.strimzi.operator.cluster.model.SharedEnvironmentProvider;
+import io.strimzi.operator.cluster.operator.assembly.PreventBrokerScaleDownCheck;
 import io.strimzi.operator.cluster.operator.resource.events.KubernetesRestartEventPublisher;
 import io.strimzi.operator.common.AdminClientProvider;
 import io.strimzi.operator.common.BackOff;
@@ -236,6 +237,11 @@ public class ResourceOperatorSupplier {
     public final SharedEnvironmentProvider sharedEnvironmentProvider;
 
     /**
+     * Broker Scale Down operations
+     */
+    public final PreventBrokerScaleDownCheck brokerScaleDownOperations;
+
+    /**
      * Constructor
      *
      * @param vertx                 Vert.x instance
@@ -335,7 +341,8 @@ public class ResourceOperatorSupplier {
                 adminClientProvider,
                 zlf,
                 restartEventPublisher,
-                new DefaultSharedEnvironmentProvider());
+                new DefaultSharedEnvironmentProvider(),
+                new PreventBrokerScaleDownCheck());
     }
 
     /**
@@ -375,7 +382,8 @@ public class ResourceOperatorSupplier {
      * @param adminClientProvider                   Kafka Admin client provider
      * @param zookeeperLeaderFinder                 ZooKeeper Leader Finder
      * @param restartEventsPublisher                Kubernetes Events publisher
-     * @param sharedEnvironmentProvider                 Shared environment provider
+     * @param sharedEnvironmentProvider             Shared environment provider
+     * @param brokerScaleDownOperations             Broker scale down operations
      */
     @SuppressWarnings({"checkstyle:ParameterNumber"})
     public ResourceOperatorSupplier(ServiceOperator serviceOperations,
@@ -412,7 +420,8 @@ public class ResourceOperatorSupplier {
                                     AdminClientProvider adminClientProvider,
                                     ZookeeperLeaderFinder zookeeperLeaderFinder,
                                     KubernetesRestartEventPublisher restartEventsPublisher,
-                                    SharedEnvironmentProvider sharedEnvironmentProvider) {
+                                    SharedEnvironmentProvider sharedEnvironmentProvider,
+                                    PreventBrokerScaleDownCheck brokerScaleDownOperations) {
         this.serviceOperations = serviceOperations;
         this.routeOperations = routeOperations;
         this.imageStreamOperations = imageStreamOperations;
@@ -448,5 +457,6 @@ public class ResourceOperatorSupplier {
         this.zookeeperLeaderFinder = zookeeperLeaderFinder;
         this.restartEventsPublisher = restartEventsPublisher;
         this.sharedEnvironmentProvider = sharedEnvironmentProvider;
+        this.brokerScaleDownOperations = brokerScaleDownOperations;
     }
 }

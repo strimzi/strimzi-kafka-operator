@@ -307,4 +307,13 @@ public class KafkaPool extends AbstractModel {
                 .withConditions(warningConditions)
                 .build();
     }
+
+    /**
+     * Generates list of references to Kafka nodes going to be removed from the Kafka cluster.
+     *
+     * @return  Set of Kafka node ids which are going to be removed
+     */
+    public Set<Integer> scaledDownNodes() {
+        return idAssignment.toBeRemoved();
+    }
 }

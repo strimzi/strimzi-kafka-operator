@@ -84,8 +84,16 @@ public class KafkaRollerST extends AbstractST {
         // We need to start with 3 replicas / brokers,
         // so that KafkaStreamsTopicStore topic gets set/distributed on this first 3 [0, 1, 2],
         // since this topic has replication-factor 3 and minISR 2.
+
+        // We have disabled the broker scale down check for now since the test fails at the moment
+        // due to partition replicas being present on the broker during scale down. We can enable this check
+        // once the issue is resolved
+        // https://github.com/strimzi/strimzi-kafka-operator/issues/9134
         resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaPersistent(clusterName, 3)
-            .editSpec()
+                .editMetadata()
+                    .addToAnnotations(Map.of(Annotations.ANNO_STRIMZI_IO_SKIP_BROKER_SCALEDOWN_CHECK, "true"))
+                .endMetadata()
+                .editSpec()
                 .editKafka()
                     .addToConfig("auto.create.topics.enable", "false")
                 .endKafka()
