@@ -193,13 +193,13 @@ EOF
           registry:2
     fi
     # we need to also make a DNS record for docker tag because it seems that such version does not support []:: format
-    echo "${ula_fixed_ipv6}::1    myregistry.local" >> /etc/hosts
+    echo "${ula_fixed_ipv6}::1    ${registry_dns}" >> /etc/hosts
 
     # note: kind get nodes (default name `kind` and with specifying new name we have to use --name <cluster-name>
     for node in $(kind get nodes --name kind-cluster); do
         echo "Executing command in node:${node}"
         # add myregistry.local to each node to resolve our IPv6 address
-        docker exec "${node}" /bin/sh -c "echo \"${ula_fixed_ipv6}::1    myregistry.local\" >> /etc/hosts"
+        docker exec "${node}" /bin/sh -c "echo \"${ula_fixed_ipv6}::1    ${registry_dns}\" >> /etc/hosts"
     done
 fi
 
