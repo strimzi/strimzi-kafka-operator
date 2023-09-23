@@ -35,6 +35,8 @@ import io.strimzi.api.kafka.model.status.Status;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.model.ImagePullPolicy;
+import io.strimzi.operator.cluster.model.KafkaVersion;
+import io.strimzi.operator.cluster.model.SharedEnvironmentProvider;
 import io.strimzi.operator.common.model.InvalidResourceException;
 import io.strimzi.operator.cluster.model.KafkaConnectCluster;
 import io.strimzi.operator.cluster.model.KafkaConnectorConfiguration;
@@ -50,13 +52,16 @@ import io.strimzi.operator.common.model.OrderedProperties;
 import io.strimzi.operator.common.operator.resource.ClusterRoleBindingOperator;
 import io.strimzi.operator.common.operator.resource.ConfigMapOperator;
 import io.strimzi.operator.common.operator.resource.CrdOperator;
+import io.strimzi.operator.common.operator.resource.DeploymentOperator;
 import io.strimzi.operator.common.operator.resource.NetworkPolicyOperator;
 import io.strimzi.operator.common.operator.resource.PodDisruptionBudgetOperator;
+import io.strimzi.operator.common.operator.resource.PodOperator;
 import io.strimzi.operator.common.operator.resource.ReconcileResult;
 import io.strimzi.operator.common.operator.resource.SecretOperator;
 import io.strimzi.operator.common.operator.resource.ServiceAccountOperator;
 import io.strimzi.operator.common.operator.resource.ServiceOperator;
 import io.strimzi.operator.common.model.StatusUtils;
+import io.strimzi.operator.common.operator.resource.StrimziPodSetOperator;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
@@ -101,6 +106,9 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
     protected final Function<Vertx, KafkaConnectApi> connectClientProvider;
     protected final CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList> connectorOperator;
     protected final ImagePullPolicy imagePullPolicy;
+    protected final DeploymentOperator deploymentOperations;
+    protected final StrimziPodSetOperator podSetOperations;
+    protected final PodOperator podOperations;
     protected final ConfigMapOperator configMapOperations;
     protected final ClusterRoleBindingOperator clusterRoleBindingOperations;
     protected final ServiceOperator serviceOperations;
@@ -113,6 +121,9 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
     protected final Labels operatorNamespaceLabels;
     protected final PlatformFeaturesAvailability pfa;
     protected final ServiceAccountOperator serviceAccountOperations;
+    protected final KafkaVersion.Lookup versions;
+    protected final boolean stableIdentities;
+    protected final SharedEnvironmentProvider sharedEnvironmentProvider;
     private final int port;
 
     /**
@@ -135,6 +146,9 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
         super(vertx, kind, resourceOperator, new ConnectOperatorMetricsHolder(kind, config.getCustomResourceSelector(), supplier.metricsProvider), config.getCustomResourceSelector());
 
         this.isNetworkPolicyGeneration = config.isNetworkPolicyGeneration();
+        this.deploymentOperations = supplier.deploymentOperations;
+        this.podSetOperations = supplier.strimziPodSetOperator;
+        this.podOperations = supplier.podOperations;
         this.connectorOperator = supplier.kafkaConnectorOperator;
         this.connectClientProvider = connectClientProvider;
         this.configMapOperations = supplier.configMapOperations;
@@ -150,6 +164,9 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
         this.operatorNamespace = config.getOperatorNamespace();
         this.operatorNamespaceLabels = config.getOperatorNamespaceLabels();
         this.pfa = pfa;
+        this.versions = config.versions();
+        this.stableIdentities = config.featureGates().stableConnectIdentitiesEnabled();
+        this.sharedEnvironmentProvider = supplier.sharedEnvironmentProvider;
         this.port = port;
     }
 
@@ -226,6 +243,34 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
         if (isNetworkPolicyGeneration) {
             return networkPolicyOperator.reconcile(reconciliation, namespace, connect.getComponentName(), connect.generateNetworkPolicy(connectorOperatorEnabled, operatorNamespace, operatorNamespaceLabels));
         } else {
+            return Future.succeededFuture();
+        }
+    }
+
+    /**
+     * Executes manual rolling update of the Kafka Connect / MM2 Pods based on the annotation set by the user on the
+     * StrimziPodSet or on the Pods.
+     *
+     * @param reconciliation    Reconciliation marker
+     * @param connect           Instance of the Connect or MM2 cluster
+     *
+     * @return  Future which completes when the manual rolling update is done. Either when the pods marked with the
+     *          annotation were rolled or when there is nothing to roll.
+     */
+    protected Future<Void> manualRollingUpdate(Reconciliation reconciliation, KafkaConnectCluster connect)  {
+        if (stableIdentities)   {
+            return podSetOperations.getAsync(reconciliation.namespace(), connect.getComponentName())
+                    .compose(podSet -> {
+                        if (podSet != null) {
+                            KafkaConnectRoller roller = new KafkaConnectRoller(reconciliation, connect, operationTimeoutMs, podOperations);
+                            return roller.maybeRoll(podSet, KafkaConnectRoller::needsRollingRestartDueToManualRollingUpdate);
+                        } else {
+                            // Pod Set does not exist. Cannot roll pods as they would not be recreated.
+                            return Future.succeededFuture();
+                        }
+                    });
+        } else {
+            // Manual rolling update is supported only with StableConnectIdentities feature gate enabled
             return Future.succeededFuture();
         }
     }

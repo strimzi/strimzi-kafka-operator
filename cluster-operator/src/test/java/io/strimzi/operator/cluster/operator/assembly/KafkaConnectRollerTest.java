@@ -16,6 +16,7 @@ import io.strimzi.operator.cluster.model.KafkaConnectCluster;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.PodSetUtils;
 import io.strimzi.operator.cluster.model.PodRevision;
+import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.cluster.model.SharedEnvironmentProvider;
 import io.strimzi.operator.common.model.Labels;
@@ -96,7 +97,7 @@ public class KafkaConnectRollerTest {
         );
 
         KafkaConnectRoller roller = new KafkaConnectRoller(RECONCILIATION, CLUSTER, 1_000L, null);
-        Queue<String> rollingOrder = roller.prepareRollingOrder(pods);
+        Queue<String> rollingOrder = roller.prepareRollingOrder(CLUSTER.getReplicas(), pods);
 
         assertThat(rollingOrder.poll(), is("my-connect-connect-0"));
         assertThat(rollingOrder.poll(), is("my-connect-connect-1"));
@@ -111,7 +112,7 @@ public class KafkaConnectRollerTest {
         );
 
         KafkaConnectRoller roller = new KafkaConnectRoller(RECONCILIATION, CLUSTER, 1_000L, null);
-        Queue<String> rollingOrder = roller.prepareRollingOrder(pods);
+        Queue<String> rollingOrder = roller.prepareRollingOrder(CLUSTER.getReplicas(), pods);
 
         assertThat(rollingOrder.poll(), is("my-connect-connect-1"));
         assertThat(rollingOrder.poll(), is("my-connect-connect-0"));
@@ -127,7 +128,7 @@ public class KafkaConnectRollerTest {
         );
 
         KafkaConnectRoller roller = new KafkaConnectRoller(RECONCILIATION, CLUSTER, 1_000L, null);
-        Queue<String> rollingOrder = roller.prepareRollingOrder(pods);
+        Queue<String> rollingOrder = roller.prepareRollingOrder(CLUSTER.getReplicas(), pods);
 
         assertThat(rollingOrder.poll(), is("my-connect-connect-1"));
         assertThat(rollingOrder.poll(), is("my-connect-connect-0"));
@@ -142,7 +143,7 @@ public class KafkaConnectRollerTest {
         );
 
         KafkaConnectRoller roller = new KafkaConnectRoller(RECONCILIATION, CLUSTER, 1_000L, null);
-        Queue<String> rollingOrder = roller.prepareRollingOrder(pods);
+        Queue<String> rollingOrder = roller.prepareRollingOrder(CLUSTER.getReplicas(), pods);
 
         assertThat(rollingOrder.poll(), is("my-connect-connect-2"));
         assertThat(rollingOrder.poll(), is("my-connect-connect-1"));
@@ -167,7 +168,7 @@ public class KafkaConnectRollerTest {
         KafkaConnectRoller roller = new KafkaConnectRoller(RECONCILIATION, CLUSTER, 1_000L, mockPodOps);
 
         Checkpoint async = context.checkpoint();
-        roller.maybeRollPod(podSet, "my-connect-connect-0")
+        roller.maybeRollPod(podSet, KafkaConnectRoller::needsRollingRestart, "my-connect-connect-0")
                 .onComplete(context.succeeding(v -> context.verify(() -> {
                     verify(mockPodOps, never()).deleteAsync(any(), any(), any(), anyBoolean());
 
@@ -193,7 +194,7 @@ public class KafkaConnectRollerTest {
         KafkaConnectRoller roller = new KafkaConnectRoller(RECONCILIATION, CLUSTER, 1_000L, mockPodOps);
 
         Checkpoint async = context.checkpoint();
-        roller.maybeRollPod(podSet, "my-connect-connect-0")
+        roller.maybeRollPod(podSet, KafkaConnectRoller::needsRollingRestart, "my-connect-connect-0")
                 .onComplete(context.succeeding(v -> context.verify(() -> {
                     verify(mockPodOps, never()).deleteAsync(any(), any(), any(), anyBoolean());
 
@@ -220,7 +221,7 @@ public class KafkaConnectRollerTest {
         KafkaConnectRoller roller = new KafkaConnectRoller(RECONCILIATION, CLUSTER, 1_000L, mockPodOps);
 
         Checkpoint async = context.checkpoint();
-        roller.maybeRollPod(podSet, "my-connect-connect-0")
+        roller.maybeRollPod(podSet, KafkaConnectRoller::needsRollingRestart, "my-connect-connect-0")
                 .onComplete(context.succeeding(v -> context.verify(() -> {
                     verify(mockPodOps, times(1)).deleteAsync(any(), eq(NAMESPACE), eq("my-connect-connect-0"), eq(false));
 
@@ -246,7 +247,7 @@ public class KafkaConnectRollerTest {
         KafkaConnectRoller roller = new KafkaConnectRoller(RECONCILIATION, CLUSTER, 1_000L, mockPodOps);
 
         Checkpoint async = context.checkpoint();
-        roller.maybeRollPod(podSet, "my-connect-connect-0")
+        roller.maybeRollPod(podSet, KafkaConnectRoller::needsRollingRestart, "my-connect-connect-0")
                 .onComplete(context.failing(v -> context.verify(() -> {
                     verify(mockPodOps, never()).deleteAsync(any(), any(), any(), anyBoolean());
 
@@ -288,7 +289,7 @@ public class KafkaConnectRollerTest {
         KafkaConnectRoller roller = new KafkaConnectRoller(RECONCILIATION, CLUSTER, 1_000L, mockPodOps);
 
         Checkpoint async = context.checkpoint();
-        roller.maybeRoll(podSet)
+        roller.maybeRoll(podSet, KafkaConnectRoller::needsRollingRestart)
                 .onComplete(context.succeeding(v -> context.verify(() -> {
                     verify(mockPodOps, never()).deleteAsync(any(), any(), any(), anyBoolean());
 
@@ -332,11 +333,74 @@ public class KafkaConnectRollerTest {
         KafkaConnectRoller roller = new KafkaConnectRoller(RECONCILIATION, CLUSTER, 1_000L, mockPodOps);
 
         Checkpoint async = context.checkpoint();
-        roller.maybeRoll(podSet)
+        roller.maybeRoll(podSet, KafkaConnectRoller::needsRollingRestart)
                 .onComplete(context.failing(v -> context.verify(() -> {
                     assertThat(v.getMessage(), is("Timeout"));
                     async.flag();
                 })));
+    }
+
+    @Test
+    public void testManualRollingUpdate()   {
+        Pod podWithAnno = new PodBuilder()
+                .withNewMetadata()
+                    .withName("name")
+                    .withAnnotations(Map.of(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "true"))
+                .endMetadata()
+                .build();
+
+        Pod podWithoutAnno = new PodBuilder()
+                .withNewMetadata()
+                    .withName("name")
+                .endMetadata()
+                .build();
+
+        StrimziPodSet podSetWithAnno = new StrimziPodSetBuilder()
+                .withNewMetadata()
+                    .withName("name")
+                    .withAnnotations(Map.of(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "true"))
+                .endMetadata()
+                .build();
+
+        StrimziPodSet podSetWithoutAnno = new StrimziPodSetBuilder()
+                .withNewMetadata()
+                    .withName("name")
+                .endMetadata()
+                .build();
+
+        assertThat(KafkaConnectRoller.needsRollingRestartDueToManualRollingUpdate(podSetWithoutAnno, podWithoutAnno).shouldRestart(), is(false));
+        assertThat(KafkaConnectRoller.needsRollingRestartDueToManualRollingUpdate(podSetWithAnno, podWithAnno).shouldRestart(), is(true));
+        assertThat(KafkaConnectRoller.needsRollingRestartDueToManualRollingUpdate(podSetWithAnno, podWithoutAnno).shouldRestart(), is(true));
+        assertThat(KafkaConnectRoller.needsRollingRestartDueToManualRollingUpdate(podSetWithoutAnno, podWithAnno).shouldRestart(), is(true));
+    }
+
+    @Test
+    public void testRegularRollingUpdate()   {
+        Pod pod1 = new PodBuilder()
+                .withNewMetadata()
+                    .withName("name")
+                    .withAnnotations(Map.of(PodRevision.STRIMZI_REVISION_ANNOTATION, "avfc1874"))
+                .endMetadata()
+                .build();
+
+        Pod pod2 = new PodBuilder()
+                .withNewMetadata()
+                    .withName("name")
+                    .withAnnotations(Map.of(PodRevision.STRIMZI_REVISION_ANNOTATION, "skso1919"))
+                .endMetadata()
+                .build();
+
+        StrimziPodSet podSet = new StrimziPodSetBuilder()
+                .withNewMetadata()
+                    .withName("name")
+                .endMetadata()
+                .withNewSpec()
+                    .withPods(PodSetUtils.podToMap(pod1))
+                .endSpec()
+                .build();
+
+        assertThat(KafkaConnectRoller.needsRollingRestart(podSet, pod1).shouldRestart(), is(false));
+        assertThat(KafkaConnectRoller.needsRollingRestart(podSet, pod2).shouldRestart(), is(true));
     }
 
     /**

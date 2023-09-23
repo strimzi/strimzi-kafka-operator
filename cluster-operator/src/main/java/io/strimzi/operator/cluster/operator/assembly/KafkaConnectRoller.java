@@ -9,6 +9,9 @@ import io.fabric8.kubernetes.client.readiness.Readiness;
 import io.strimzi.api.kafka.model.StrimziPodSet;
 import io.strimzi.operator.cluster.model.KafkaConnectCluster;
 import io.strimzi.operator.cluster.model.PodRevision;
+import io.strimzi.operator.cluster.model.RestartReason;
+import io.strimzi.operator.cluster.model.RestartReasons;
+import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.operator.resource.PodOperator;
@@ -18,6 +21,7 @@ import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.List;
 import java.util.Queue;
+import java.util.function.BiFunction;
 
 /**
  * This class contains the methods for rolling Kafka Connect and Kafka Mirror Maker 2 clusters based on StrimziPodSets.
@@ -56,21 +60,23 @@ public class KafkaConnectRoller {
      * pods which do not exist or are not ready, they will be handled first to avoid killing the whole cluster in
      * subsequent reconciliations.
      *
-     * @param podSet    The current StrimziPodSet resource which the Pods are compared against when checking if they
-     *                  are up-to-date
+     * @param podSet            The current StrimziPodSet resource which the Pods are compared against when checking if
+     *                          they are up-to-date
+     * @param podNeedsRestart   Function that evaluates the PodSet and Pods and decides if restart of the Pod is needed
+     *                          or not
      *
      * @return  Future which completes when the rolling update is done
      */
-    public Future<Void> maybeRoll(StrimziPodSet podSet)    {
+    public Future<Void> maybeRoll(StrimziPodSet podSet, BiFunction<StrimziPodSet, Pod, RestartReasons> podNeedsRestart)    {
         return podOperator.listAsync(reconciliation.namespace(), connect.getSelectorLabels())
-                .compose(pods -> Future.succeededFuture(prepareRollingOrder(pods)))
-                .compose(rollingOrder -> maybeRollPods(podSet, rollingOrder));
+                .compose(pods -> Future.succeededFuture(prepareRollingOrder(podSet.getSpec().getPods().size(), pods)))
+                .compose(rollingOrder -> maybeRollPods(podSet, podNeedsRestart, rollingOrder));
     }
 
-    /* test */ Queue<String> prepareRollingOrder(List<Pod> pods)   {
+    /* test */ Queue<String> prepareRollingOrder(int replicas, List<Pod> pods)   {
         Deque<String> rollingOrder = new ArrayDeque<>();
 
-        for (int i = 0; i < connect.getReplicas(); i++) {
+        for (int i = 0; i < replicas; i++) {
             String podName = connect.getPodName(i);
             Pod matchingPod = pods.stream().filter(pod -> podName.equals(pod.getMetadata().getName())).findFirst().orElse(null);
 
@@ -91,20 +97,23 @@ public class KafkaConnectRoller {
      * Goes through the pods in given order and considers them for rolling. It checks if the first pod in the queue
      * needs rolling and checks its readiness. And then calls itself to move to the next pod.
      *
-     * @param podSet        The current StrimziPodSet resource which the Pods are compared against when checking if they
-     *                      are up-to-date
-     * @param rollingOrder  Queue with the pod names in the order of their rolling
+     * @param podSet            The current StrimziPodSet resource which the Pods are compared against when checking if
+     *                          they are up-to-date
+     * @param podNeedsRestart   Function that evaluates the PodSet and Pods and decides if restart of the Pod is needed
+     *                          or not
+     * @param rollingOrder      Queue with the pod names in the order of their rolling
      *
      * @return  Future which completes when all pods were rolled / considered for rolling
      */
     private Future<Void> maybeRollPods(StrimziPodSet podSet,
+                                       BiFunction<StrimziPodSet, Pod, RestartReasons> podNeedsRestart,
                                        Queue<String> rollingOrder)  {
         String podName = rollingOrder.poll();
 
         if (podName != null)    {
             // The queue is not empty. We consider rolling of this pod and call this method again to handle the next pod
-            return maybeRollPod(podSet, podName)
-                    .compose(i -> maybeRollPods(podSet, rollingOrder));
+            return maybeRollPod(podSet, podNeedsRestart, podName)
+                    .compose(i -> maybeRollPods(podSet, podNeedsRestart, rollingOrder));
         } else {
             // Queue is empty => we return completely
             return Future.succeededFuture();
@@ -112,35 +121,81 @@ public class KafkaConnectRoller {
     }
 
     /**
-     * Checks given pod if it needs rolling and rolls it if needed. It checks the pod readiness afterwards and waits
+     * Checks given pod if it needs rolling and rolls it if needed. It checks the pod readiness afterward and waits
      * for it if needed. The Pod is rolled when its revision doesn't match the desired revision from the StrimziPodSet.
      *
-     * @param podSet    The current StrimziPodSet resource which the Pods are compared against when checking if they
-     *                  are up-to-date
-     * @param podName   Name of the pod which should be considered
+     * @param podSet            The current StrimziPodSet resource which the Pods are compared against when checking if
+     *                          they are up-to-date
+     * @param podNeedsRestart   Function that evaluates the PodSet and Pods and decides if restart of the Pod is needed
+     *                          or not
+     * @param podName           Name of the pod which should be considered
      *
      * @return  Future which completes when the pod is maybe rolled and ready
      */
     /* test */ Future<Void> maybeRollPod(StrimziPodSet podSet,
-                                      String podName) {
+                                         BiFunction<StrimziPodSet, Pod, RestartReasons> podNeedsRestart,
+                                         String podName) {
         return podOperator.getAsync(reconciliation.namespace(), podName)
                 .compose(pod -> {
-                    if (pod == null)    {
+                    if (pod == null) {
                         LOGGER.debugCr(reconciliation, "Pod {} does not exist => waiting for its creation", podName);
                         return Future.succeededFuture();
-                    } else if (PodRevision.hasChanged(pod, podSet)) {
-                        // Pods changed and needs rolling
-                        LOGGER.infoCr(reconciliation, "Rolling pod {} (Pod revision changed)", podName);
-                        return podOperator.deleteAsync(reconciliation, reconciliation.namespace(), podName, false);
                     } else {
-                        // Pod exists and does not need to be rolled
-                        LOGGER.debugCr(reconciliation, "Pod {} does not need to be rolled", podName);
-                        return Future.succeededFuture();
+                        RestartReasons restartReasons = podNeedsRestart.apply(podSet, pod);
+
+                        if (restartReasons.shouldRestart())  {
+                            // Pods changed and needs rolling
+                            LOGGER.infoCr(reconciliation, "Rolling pod {}: {}", podName, restartReasons.getAllReasonNotes());
+                            return podOperator.deleteAsync(reconciliation, reconciliation.namespace(), podName, false);
+                        } else {
+                            // Pod exists and does not need to be rolled
+                            LOGGER.debugCr(reconciliation, "Pod {} does not need to be rolled", podName);
+                            return Future.succeededFuture();
+                        }
                     }
                 })
                 .compose(i -> {
                     LOGGER.debugCr(reconciliation, "Waiting for pod {} to become ready", podName);
                     return podOperator.readiness(reconciliation, reconciliation.namespace(), podName, 1_000, operationTimeoutMs);
                 });
+    }
+
+    /**
+     * Checks if the Pod needs a rolling restart. This method is used in regular rolling updates and checks if the Pod
+     * matches the PodSet or not.
+     *
+     * @param podSet    PodSet with the desired Pod definition
+     * @param pod       The current definition of the Pod
+     *
+     * @return  RestartReasons object indicating whether a restart is needed and why.
+     */
+    public static RestartReasons needsRollingRestart(StrimziPodSet podSet, Pod pod) {
+        RestartReasons restartReasons = new RestartReasons();
+
+        if (PodRevision.hasChanged(pod, podSet)) {
+            restartReasons.add(RestartReason.POD_HAS_OLD_REVISION);
+        }
+
+        return restartReasons;
+    }
+
+    /**
+     * Checks if the Pod needs a rolling restart. This method is used in manual rolling updates and checks for the
+     * corresponding annotations on the Pod or PodSet.
+     *
+     * @param podSet    PodSet with the possible annotation requesting rolling update of all Pods
+     * @param pod       PodSet with the possible annotation requesting rolling update of this particular Pod
+     *
+     * @return  RestartReasons object indicating whether a restart is needed and why.
+     */
+    public static RestartReasons needsRollingRestartDueToManualRollingUpdate(StrimziPodSet podSet, Pod pod) {
+        RestartReasons restartReasons = new RestartReasons();
+
+        if (Annotations.booleanAnnotation(podSet, Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, false)
+                || Annotations.booleanAnnotation(pod, Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, false)) {
+            restartReasons.add(RestartReason.MANUAL_ROLLING_UPDATE);
+        }
+
+        return restartReasons;
     }
 }
