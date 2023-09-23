@@ -131,19 +131,19 @@ class VertxUtilTest {
 
     @Test
     void testAuthTlsHashScramSha512SecretFoundAndPasswordNotFound() {
-        SecretOperator secretOpertator = mock(SecretOperator.class);
+        SecretOperator secretOperator = mock(SecretOperator.class);
         Map<String, String> data = new HashMap<>();
         data.put("passwordKey", "my-password");
         Secret secret = new Secret();
         secret.setData(data);
         CompletionStage<Secret> cf = CompletableFuture.supplyAsync(() ->  secret);
-        when(secretOpertator.getAsync(anyString(), anyString())).thenReturn(Future.fromCompletionStage(cf));
+        when(secretOperator.getAsync(anyString(), anyString())).thenReturn(Future.fromCompletionStage(cf));
         KafkaClientAuthenticationScramSha512 auth = new KafkaClientAuthenticationScramSha512();
         PasswordSecretSource passwordSecretSource = new PasswordSecretSource();
         passwordSecretSource.setSecretName("my-secret");
         passwordSecretSource.setPassword("password1");
         auth.setPasswordSecret(passwordSecretSource);
-        Future<Integer> result = VertxUtil.authTlsHash(secretOpertator, "anyNamespace", auth, List.of());
+        Future<Integer> result = VertxUtil.authTlsHash(secretOperator, "anyNamespace", auth, List.of());
         result.onComplete(handler -> {
             assertTrue(handler.failed());
             assertEquals("Items with key(s) [password1] are missing in Secret my-secret", handler.cause().getMessage());
@@ -152,19 +152,19 @@ class VertxUtilTest {
 
     @Test
     void testAuthTlsHashScramSha512SecretAndPasswordFound() {
-        SecretOperator secretOpertator = mock(SecretOperator.class);
+        SecretOperator secretOperator = mock(SecretOperator.class);
         Map<String, String> data = new HashMap<>();
         data.put("passwordKey", "my-password");
         Secret secret = new Secret();
         secret.setData(data);
         CompletionStage<Secret> cf = CompletableFuture.supplyAsync(() ->  secret);
-        when(secretOpertator.getAsync(anyString(), anyString())).thenReturn(Future.fromCompletionStage(cf));
+        when(secretOperator.getAsync(anyString(), anyString())).thenReturn(Future.fromCompletionStage(cf));
         KafkaClientAuthenticationScramSha512 auth = new KafkaClientAuthenticationScramSha512();
         PasswordSecretSource passwordSecretSource = new PasswordSecretSource();
         passwordSecretSource.setSecretName("my-secret");
         passwordSecretSource.setPassword("passwordKey");
         auth.setPasswordSecret(passwordSecretSource);
-        Future<Integer> result = VertxUtil.authTlsHash(secretOpertator, "anyNamespace", auth, List.of());
+        Future<Integer> result = VertxUtil.authTlsHash(secretOperator, "anyNamespace", auth, List.of());
         result.onComplete(handler -> {
             assertTrue(handler.succeeded());
             assertEquals("my-password".hashCode(), handler.result());
@@ -173,19 +173,19 @@ class VertxUtilTest {
 
     @Test
     void testAuthTlsPlainSecretFoundAndPasswordNotFound() {
-        SecretOperator secretOpertator = mock(SecretOperator.class);
+        SecretOperator secretOperator = mock(SecretOperator.class);
         Map<String, String> data = new HashMap<>();
         data.put("passwordKey", "my-password");
         Secret secret = new Secret();
         secret.setData(data);
         CompletionStage<Secret> cf = CompletableFuture.supplyAsync(() ->  secret);
-        when(secretOpertator.getAsync(anyString(), anyString())).thenReturn(Future.fromCompletionStage(cf));
+        when(secretOperator.getAsync(anyString(), anyString())).thenReturn(Future.fromCompletionStage(cf));
         KafkaClientAuthenticationPlain auth = new KafkaClientAuthenticationPlain();
         PasswordSecretSource passwordSecretSource = new PasswordSecretSource();
         passwordSecretSource.setSecretName("my-secret");
         passwordSecretSource.setPassword("password1");
         auth.setPasswordSecret(passwordSecretSource);
-        Future<Integer> result = VertxUtil.authTlsHash(secretOpertator, "anyNamespace", auth, List.of());
+        Future<Integer> result = VertxUtil.authTlsHash(secretOperator, "anyNamespace", auth, List.of());
         result.onComplete(handler -> {
             assertTrue(handler.failed());
             assertEquals("Items with key(s) [password1] are missing in Secret my-secret", handler.cause().getMessage());
@@ -194,19 +194,19 @@ class VertxUtilTest {
 
     @Test
     void testAuthTlsPlainSecretAndPasswordFound() {
-        SecretOperator secretOpertator = mock(SecretOperator.class);
+        SecretOperator secretOperator = mock(SecretOperator.class);
         Map<String, String> data = new HashMap<>();
         data.put("passwordKey", "my-password");
         Secret secret = new Secret();
         secret.setData(data);
         CompletionStage<Secret> cf = CompletableFuture.supplyAsync(() ->  secret);
-        when(secretOpertator.getAsync(anyString(), anyString())).thenReturn(Future.fromCompletionStage(cf));
+        when(secretOperator.getAsync(anyString(), anyString())).thenReturn(Future.fromCompletionStage(cf));
         KafkaClientAuthenticationPlain auth = new KafkaClientAuthenticationPlain();
         PasswordSecretSource passwordSecretSource = new PasswordSecretSource();
         passwordSecretSource.setSecretName("my-secret");
         passwordSecretSource.setPassword("passwordKey");
         auth.setPasswordSecret(passwordSecretSource);
-        Future<Integer> result = VertxUtil.authTlsHash(secretOpertator, "anyNamespace", auth, List.of());
+        Future<Integer> result = VertxUtil.authTlsHash(secretOperator, "anyNamespace", auth, List.of());
         result.onComplete(handler -> {
             assertTrue(handler.succeeded());
             assertEquals("my-password".hashCode(), handler.result());
