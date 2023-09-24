@@ -188,7 +188,7 @@ public class VersionRange<Version extends Comparable<Version>> {
     /**
      * Checks when the version is part of the version range
      *
-     * @param apiVersion    API Version which should be checked whether it is in the raneg or not
+     * @param apiVersion    API Version which should be checked whether it is in the range or not
      *
      * @return      True when the range contains the version. False otherwise
      */
