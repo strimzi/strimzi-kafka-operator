@@ -181,6 +181,7 @@ public class Environment {
     public static final String OLM_OPERATOR_VERSION_DEFAULT = "0.37.0";
 
     public static final String IP_FAMILY_DEFAULT = "ipv4";
+    public static final String IP_FAMILY_VERSION_6 = "ipv6";
 
     /**
      * Set values
@@ -301,6 +302,10 @@ public class Environment {
         return IP_FAMILY.contains(IP_FAMILY_DEFAULT);
     }
 
+    public static boolean isIpv6Family() {
+        return IP_FAMILY.contains(IP_FAMILY_VERSION_6);
+    }
+
     private static String getOrDefault(String varName, String defaultValue) {
         return getOrDefault(varName, String::toString, defaultValue);
     }
@@ -314,6 +319,8 @@ public class Environment {
             try {
                 if (Environment.isIpv4Family()) {
                     hostname = InetAddress.getLocalHost().getHostAddress() + ":5001";
+                } else if (Environment.isIpv6Family()) {
+                    hostname = "myregistry.local:5001";
                 }
             } catch (UnknownHostException e) {
                 throw new RuntimeException(e);

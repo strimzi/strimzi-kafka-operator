@@ -1,11 +1,9 @@
 #!/usr/bin/env bash
 set -xe
-set -o errexit
 
 rm -rf ~/.kube
 
 KUBE_VERSION=${KUBE_VERSION:-1.21.0}
-MINIKUBE_REGISTRY_IMAGE=${REGISTRY_IMAGE:-"registry"}
 COPY_DOCKER_LOGIN=${COPY_DOCKER_LOGIN:-"false"}
 
 DEFAULT_CLUSTER_MEMORY=$(free -m | grep "Mem" | awk '{print $2}')
@@ -43,7 +41,6 @@ function label_node {
 	done
 }
 
-
 function install_kubernetes_provisioner {
 
     if [ "${TEST_KUBERNETES_VERSION:-latest}" = "latest" ]; then
@@ -56,19 +53,29 @@ function install_kubernetes_provisioner {
         KUBE_VERSION="v${KUBE_VERSION}"
     fi
 
-    curl -Lo $TEST_CLUSTER ${TEST_KUBERNETES_URL} && chmod +x $TEST_CLUSTER
-    sudo cp $TEST_CLUSTER /usr/local/bin
+    curl -Lo kind ${TEST_KUBERNETES_URL} && chmod +x kind
+    sudo cp kind /usr/local/bin
 }
 
 function create_cluster_role_binding_admin {
     kubectl create clusterrolebinding add-on-cluster-admin --clusterrole=cluster-admin --serviceaccount=kube-system:default
 }
 
+: '
+@brief: Set up Kubernetes configuration directory and file.
+@note: Ensures $HOME/.kube directory and $HOME/.kube/config file exist.
+'
 function setup_kube_directory {
     mkdir $HOME/.kube || true
     touch $HOME/.kube/config
 }
 
+: '
+@brief: Add Docker Hub credentials to Kubernetes node.
+@param $1: Container name/ID.
+@global: COPY_DOCKER_LOGIN - If "true", copies credentials.
+@note: Uses hosts $HOME/.docker/config.json.
+'
 function add_docker_hub_credentials_to_kubernetes {
     # Add Docker hub credentials to Minikube
     if [ "$COPY_DOCKER_LOGIN" = "true" ]
@@ -81,91 +88,120 @@ function add_docker_hub_credentials_to_kubernetes {
     fi
 }
 
+: '
+@brief: Update Docker daemon configuration and restart service.
+@param $1: JSON string for Docker daemon configuration.
+@note: Requires sudo permissions.
+'
+function updateDockerDaemonConfiguration() {
+    # We need to add such host to insecure-registry (as localhost is default)
+    echo $1 | sudo tee /etc/docker/daemon.json
+    # we need to restart docker service to propagate configuration
+    systemctl restart docker
+}
+
 setup_kube_directory
 install_kubectl
 install_kubernetes_provisioner
 
 reg_name='kind-registry'
 reg_port='5001'
-hostname=''
+
 if [ "$IP_FAMILY" = "ipv4" ]; then
     hostname=$(hostname --ip-address | grep -oE '\b([0-9]{1,3}\.){3}[0-9]{1,3}\b' | awk '$1 != "127.0.0.1" { print $1 }' | head -1)
-else
-    # for ipv6 and dual configuration
-    hostname=$(ip -6 addr show eth0 | awk '/inet6/ {print $2}' | cut -d '/' -f 1)
-fi
 
- daemon_configuration=''
+    # update insecure registries
+    updateDockerDaemonConfiguration "{ \"insecure-registries\" : [\"${hostname}:${reg_port}\"] }"
 
-if [ "$IP_FAMILY" = "ipv6" ]; then
-  daemon_configuration="{
-          \"insecure-registries\" : [\"${hostname}:${reg_port}\"],
-          \"experimental\": true,
-          \"ip6tables\": true
-       }"
-else
-  daemon_configuration="{
-          \"insecure-registries\" : [\"${hostname}:${reg_port}\"]
-       }"
-fi
-
-# We need to add such host to insecure-registry (as localhost is default)
-echo ${daemon_configuration} | sudo tee /etc/docker/daemon.json
-# we need to restart docker service to propagate configuration
-systemctl restart docker
-
-# Create kind cluster with containerd registry config dir enabled
-# TODO: kind will eventually enable this by default and this patch will
-# be unnecessary.
-#
-# See:
-# https://github.com/kubernetes-sigs/kind/issues/2875
-# https://github.com/containerd/containerd/blob/main/docs/cri/config.md#registry-configuration
-# See: https://github.com/containerd/containerd/blob/main/docs/hosts.md
-cat <<EOF | kind create cluster --config=-
-kind: Cluster
-apiVersion: kind.x-k8s.io/v1alpha4
-name: kind-cluster
-containerdConfigPatches:
-- |-
-  [plugins."io.containerd.grpc.v1.cri".registry]
-    config_path = "/etc/containerd/certs.d"
-networking:
-    ipFamily: $IP_FAMILY
+    # Create kind cluster with containerd registry config dir enabled
+    # TODO: kind will eventually enable this by default and this patch will
+    # be unnecessary.
+    #
+    # See:
+    # https://github.com/kubernetes-sigs/kind/issues/2875
+    # https://github.com/containerd/containerd/blob/main/docs/cri/config.md#registry-configuration
+    # See: https://github.com/containerd/containerd/blob/main/docs/hosts.md
+    cat <<EOF | kind create cluster --config=-
+    kind: Cluster
+    apiVersion: kind.x-k8s.io/v1alpha4
+    name: kind-cluster
+    containerdConfigPatches:
+    - |-
+     [plugins."io.containerd.grpc.v1.cri".registry]
+       config_path = "/etc/containerd/certs.d"
+    networking:
+       ipFamily: $IP_FAMILY
 EOF
-
-if [ "$IP_FAMILY" = "ipv4" ]; then
+    # run local container registry
     if [ "$(docker inspect -f '{{.State.Running}}' "${reg_name}" 2>/dev/null || true)" != 'true' ]; then
         docker run \
           -d --restart=always -p "${hostname}:${reg_port}:5000" --name "${reg_name}" \
           registry:2
     fi
-else
-    # for ipv6 and dual configuration
+
+    REGISTRY_DIR="/etc/containerd/certs.d/${hostname}:${reg_port}"
+
+    # Add the registry config to the nodes
+    #
+    # This is necessary because localhost resolves to loopback addresses that are
+    # network-namespace local.
+    # In other words: localhost in the container is not localhost on the host.
+    #
+    # We want a consistent name that works from both ends, so we tell containerd to
+    # alias localhost:${reg_port} to the registry container when pulling images
+    # note: kind get nodes (default name `kind` and with specifying new name we have to use --name <cluster-name>
+    for node in $(kind get nodes --name kind-cluster); do
+        echo "Executing command in node:${node}"
+        docker exec "${node}" mkdir -p "${REGISTRY_DIR}"
+        cat <<EOF | docker exec -i "${node}" cp /dev/stdin "${REGISTRY_DIR}/hosts.toml"
+    [host."http://${reg_name}:5000"]
+EOF
+    done
+elif [ "$IP_FAMILY" = "ipv6" ]; then
+    # for ipv6 configuration
+    ula_fixed_ipv6="fd01:2345:6789"
+    registry_dns="myregistry.local"
+
+    # manually assign an IPv6 address to eth0 interface
+    sudo ip -6 addr add "${ula_fixed_ipv6}"::1/64 dev eth0
+
+     # use ULA (i.e., Unique Local Address), which offers a similar "private" scope as link-local
+    # but without the interface dependency and some of the other challenges of link-local addresses.
+    # (link-local starts as fe80::) but we will use ULA fd01
+    updateDockerDaemonConfiguration "{
+        \"insecure-registries\" : [\"[${ula_fixed_ipv6}::1]:${reg_port}\", \"${registry_dns}:${reg_port}\"],
+        \"experimental\": true,
+        \"ip6tables\": true,
+        \"fixed-cidr-v6\": \"${ula_fixed_ipv6}::/80\"
+    }"
+
+    cat <<EOF | kind create cluster --config=-
+    kind: Cluster
+    apiVersion: kind.x-k8s.io/v1alpha4
+    name: kind-cluster
+    containerdConfigPatches:
+    - |-
+      [plugins."io.containerd.grpc.v1.cri".registry.mirrors."myregistry.local:5001"]
+          endpoint = ["http://myregistry.local:5001"]
+    networking:
+        ipFamily: $IP_FAMILY
+EOF
+    # run local container registry
     if [ "$(docker inspect -f '{{.State.Running}}' "${reg_name}" 2>/dev/null || true)" != 'true' ]; then
         docker run \
-          -d --restart=always --ip6 ${hostname} -p "${reg_port}:5000" --name "${reg_name}" \
+          -d --restart=always -p "[${ula_fixed_ipv6}::1]:${reg_port}:5000" --name "${reg_name}" \
           registry:2
     fi
-fi
+    # we need to also make a DNS record for docker tag because it seems that such version does not support []:: format
+    echo "${ula_fixed_ipv6}::1    ${registry_dns}" >> /etc/hosts
 
-# Add the registry config to the nodes
-#
-# This is necessary because localhost resolves to loopback addresses that are
-# network-namespace local.
-# In other words: localhost in the container is not localhost on the host.
-#
-# We want a consistent name that works from both ends, so we tell containerd to
-# alias localhost:${reg_port} to the registry container when pulling images
-REGISTRY_DIR="/etc/containerd/certs.d/${hostname}:${reg_port}"
-# note: kind get nodes (default name `kind` and with specifying new name we have to use --name <cluster-name>
-for node in $(kind get nodes --name kind-cluster); do
-  echo "Executing command in node:${node}"
-  docker exec "${node}" mkdir -p "${REGISTRY_DIR}"
-  cat <<EOF | docker exec -i "${node}" cp /dev/stdin "${REGISTRY_DIR}/hosts.toml"
-[host."http://${reg_name}:5000"]
-EOF
-done
+    # note: kind get nodes (default name `kind` and with specifying new name we have to use --name <cluster-name>
+    for node in $(kind get nodes --name kind-cluster); do
+        echo "Executing command in node:${node}"
+        # add myregistry.local to each node to resolve our IPv6 address
+        docker exec "${node}" /bin/sh -c "echo \"${ula_fixed_ipv6}::1    ${registry_dns}\" >> /etc/hosts"
+    done
+fi
 
 # Connect the registry to the cluster network if not already connected
 # This allows kind to bootstrap the network but ensures they're on the same network
@@ -173,21 +209,7 @@ if [ "$(docker inspect -f='{{json .NetworkSettings.Networks.kind}}' "${reg_name}
   docker network connect "kind" "${reg_name}"
 fi
 
-# Document the local registry
-# https://github.com/kubernetes/enhancements/tree/master/keps/sig-cluster-lifecycle/generic/1755-communicating-a-local-registry
-cat <<EOF | kubectl apply -f -
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: local-registry-hosting
-  namespace: kube-public
-data:
-  localRegistryHosting.v1: |
-    host: "${hostname}:${reg_port}"
-    help: "https://kind.sigs.k8s.io/docs/user/local-registry/"
-EOF
-
-add_docker_hub_credentials_to_kubernetes "$TEST_CLUSTER"
+add_docker_hub_credentials_to_kubernetes "kind"
 
 create_cluster_role_binding_admin
 label_node

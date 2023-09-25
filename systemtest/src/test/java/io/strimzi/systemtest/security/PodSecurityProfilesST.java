@@ -18,6 +18,7 @@ import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.annotations.KindIPv6NotSupported;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.annotations.RequiredMinKubeOrOcpBasedKubeVersion;
 import io.strimzi.systemtest.enums.PodSecurityProfile;
@@ -92,6 +93,7 @@ public class PodSecurityProfilesST extends AbstractST {
      *  - security-profiles
      */
     @Tag(ACCEPTANCE)
+    @KindIPv6NotSupported("Kafka Connect Build using the Kaniko builder is not available under the restricted security profile")
     @ParallelNamespaceTest
     @RequiredMinKubeOrOcpBasedKubeVersion(kubeVersion = 1.23, ocpBasedKubeVersion = 1.24)
     void testOperandsWithRestrictedSecurityProfile(ExtensionContext extensionContext) {
