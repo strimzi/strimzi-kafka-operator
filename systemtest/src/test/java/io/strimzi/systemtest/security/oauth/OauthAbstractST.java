@@ -12,6 +12,7 @@ import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
+import io.strimzi.systemtest.annotations.IPv6NotSupported;
 import io.strimzi.systemtest.enums.DefaultNetworkPolicy;
 import io.strimzi.systemtest.keycloak.KeycloakInstance;
 import io.strimzi.systemtest.resources.keycloak.SetupKeycloak;
@@ -44,6 +45,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 @Tag(OAUTH)
 @Tag(REGRESSION)
 @Tag(ARM64_UNSUPPORTED)
+@IPv6NotSupported("Keycloak does not support IPv6 single-stack - https://github.com/keycloak/keycloak/issues/21277")
 public class OauthAbstractST extends AbstractST {
 
     protected static final Logger LOGGER = LogManager.getLogger(OauthAbstractST.class);
