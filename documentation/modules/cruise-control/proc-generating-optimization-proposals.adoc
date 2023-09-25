@@ -240,10 +240,7 @@ Although optimization proposals will not reassign replicas of excluded topics, t
 [source,shell,subs="+quotes"]
 ----
 com.linkedin.kafka.cruisecontrol.exception.OptimizationFailureException:
-        [CpuCapacityGoal] Insufficient capacity for cpu (Utilization 615.21,
-        Allowed Capacity 420.00, Threshold: 0.70). Add at least 3 brokers with
-        the same cpu capacity (100.00) as broker-0. Add at least 3 brokers with
-        the same cpu capacity (100.00) as broker-0.
+[CpuCapacityGoal] Insufficient capacity for cpu (Utilization 615.21, Allowed Capacity 420.00, Threshold: 0.70). Add at least 3 brokers with the same cpu capacity (100.00) as broker-0. Add at least 3 brokers with the same cpu capacity (100.00) as broker-0.
 ----
 
 [NOTE]
