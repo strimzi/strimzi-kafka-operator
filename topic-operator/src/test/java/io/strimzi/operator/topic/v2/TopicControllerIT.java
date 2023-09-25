@@ -94,6 +94,7 @@ class TopicControllerIT {
 
     private static final Logger LOGGER = LogManager.getLogger(TopicControllerIT.class);
     public static final Map<String, String> SELECTOR = Map.of("foo", "FOO", "bar", "BAR");
+    public static final Map<String, String> ANNO_PAUSE_TRUE = Map.of("strimzi.io/pause-reconciliation", "true");
 
     KubernetesClient client;
 
@@ -174,11 +175,37 @@ class TopicControllerIT {
         };
     }
 
+    private static Predicate<KafkaTopic> isPausedAndHasConditionMatching(String description,
+                                                                         Predicate<Condition> conditionPredicate) {
+        return new Predicate<>() {
+            @Override
+            public boolean test(KafkaTopic kt) {
+                return kt.getStatus() != null
+                    && kt.getMetadata() != null
+                    && kt.getMetadata().getGeneration() != null
+                    && kt.getStatus().getConditions() != null
+                    && kt.getStatus().getConditions().stream()
+                    .anyMatch(conditionPredicate);
+            }
+
+            public String toString() {
+                return "status.generation and status.condition which matches " + description;
+            }
+        };
+    }
+
     private static Predicate<KafkaTopic> readyIsTrue() {
         Predicate<Condition> conditionPredicate = condition ->
                 "Ready".equals(condition.getType())
                         && "True".equals(condition.getStatus());
         return isReconcilatedAndHasConditionMatching("Ready=True", conditionPredicate);
+    }
+
+    private static Predicate<KafkaTopic> pausedIsTrue() {
+        Predicate<Condition> conditionPredicate = condition ->
+            "ReconciliationPaused".equals(condition.getType())
+                && "True".equals(condition.getStatus());
+        return isPausedAndHasConditionMatching("ReconciliationPaused=True", conditionPredicate);
     }
 
     private static Predicate<KafkaTopic> readyIsFalse() {
@@ -419,6 +446,30 @@ class TopicControllerIT {
         LOGGER.info("Test created KafkaTopic {} with resourceVersion {}",
                 created.getMetadata().getName(), BatchingTopicController.resourceVersion(created));
         return waitUntil(created, readyIsTrueOrFalse());
+    }
+
+    private void pauseTopic(String namespace, String topicName) {
+        var current = Crds.topicOperation(client).inNamespace(namespace).withName(topicName).get();
+        var paused = Crds.topicOperation(client).resource(new KafkaTopicBuilder(current)
+            .editMetadata()
+                .withAnnotations(ANNO_PAUSE_TRUE)
+            .endMetadata()
+            .build()).update();
+        LOGGER.info("Test paused KafkaTopic {} with resourceVersion {}",
+            paused.getMetadata().getName(), BatchingTopicController.resourceVersion(paused));
+        waitUntil(paused, pausedIsTrue());
+    }
+
+    private void updateTopicConfig(String namespace, String topicName, Map<String, Object> configs) {
+        var kt = Crds.topicOperation(client).inNamespace(namespace).withName(topicName).get();
+        var updated = new KafkaTopicBuilder(kt)
+            .editOrNewSpec()
+                .withConfig(configs)
+            .endSpec()
+            .build();
+        LOGGER.info("Test updated KafkaTopic {} with resourceVersion {}",
+            updated.getMetadata().getName(), BatchingTopicController.resourceVersion(updated));
+        waitUntil(kt, pausedIsTrue());
     }
 
     private TopicDescription awaitTopicDescription(String expectedTopicName) throws InterruptedException, ExecutionException, TimeoutException {
@@ -1903,5 +1954,28 @@ class TopicControllerIT {
         operatorAdmin = null;
         operator = null;
         maybeStartOperator(topicOperatorConfig("ns", kafkaCluster));
+    }
+
+    @Test
+    public void shouldSkipReconciliationsWhenKafkaTopicIsPaused(
+            @BrokerConfig(name = "auto.create.topics.enable", value = "false")
+            KafkaCluster kafkaCluster)
+        throws ExecutionException, InterruptedException, TimeoutException {
+        String namespace = "ns";
+        String topicName = "foo";
+
+        // generation 1 (reconciled)
+        KafkaTopic kt = createTopic(kafkaCluster,
+            kafkaTopic(namespace, topicName, SELECTOR, true, topicName, 1, 1, Map.of()));
+
+        // generation 2 (not reconciled)
+        pauseTopic(namespace, topicName);
+
+        // generation 3 (not reconciled)
+        updateTopicConfig(namespace, topicName, Map.of(TopicConfig.FLUSH_MS_CONFIG, "1000"));
+
+        assertEquals(1, kt.getStatus().getObservedGeneration());
+        TopicDescription topicDescription = awaitTopicDescription(topicName);
+        assertEquals(Map.of(), topicConfigMap(topicName));
     }
 }
