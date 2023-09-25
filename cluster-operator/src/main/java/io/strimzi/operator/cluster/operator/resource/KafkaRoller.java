@@ -744,9 +744,7 @@ public class KafkaRoller {
                 boolean canRollBroker = await(availability(allClient).canRoll(nodeRef.nodeId()), timeout, unit,
                         t -> new ForceableProblem("An error while trying to determine the possibility of updating Kafka broker pods", t));
                 return canRollController && canRollBroker;
-            }
-
-            if (nodeRef.controller()) {
+            } else if (nodeRef.controller()) {
                 return await(restartContext.quorumCheck.canRollController(nodeRef.nodeId()), timeout, unit,
                         t -> new UnforceableProblem("An error while trying to determine the possibility of updating Kafka controller pods", t));
             } else {

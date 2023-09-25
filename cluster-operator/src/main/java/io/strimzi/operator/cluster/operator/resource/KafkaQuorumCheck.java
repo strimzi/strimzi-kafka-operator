@@ -24,12 +24,15 @@ class KafkaQuorumCheck {
 
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(KafkaQuorumCheck.class.getName());
     private final Reconciliation reconciliation;
-    private final Future<QuorumInfo> quorumInfoFuture;
+    private final Admin admin;
+    private final Vertx vertx;
     private final long controllerQuorumFetchTimeoutMs;
+    private Future<QuorumInfo> quorumInfoFuture;
 
     KafkaQuorumCheck(Reconciliation reconciliation, Admin ac, Vertx vertx, long controllerQuorumFetchTimeoutMs) {
         this.reconciliation = reconciliation;
-        this.quorumInfoFuture = describeMetadataQuorum(ac, reconciliation, vertx);
+        this.admin = ac;
+        this.vertx = vertx;
         this.controllerQuorumFetchTimeoutMs = controllerQuorumFetchTimeoutMs;
     }
 
@@ -39,6 +42,9 @@ class KafkaQuorumCheck {
      */
     Future<Boolean> canRollController(int podId) {
         LOGGER.debugCr(reconciliation, "Determining whether controller {} can be rolled", podId);
+        if (quorumInfoFuture == null) {
+            this.quorumInfoFuture = describeMetadataQuorum();
+        }
         return quorumInfoFuture.map(info -> {
             Map<Integer, Long> replicaIdToLastCaughtUpTimestampMap = info.voters().stream().collect(Collectors.toMap(
                     QuorumInfo.ReplicaState::replicaId,
@@ -59,6 +65,9 @@ class KafkaQuorumCheck {
      **/
     Future<Integer> quorumLeaderId() {
         LOGGER.debugCr(reconciliation, "Determining the quorum leader id");
+        if (quorumInfoFuture == null) {
+            this.quorumInfoFuture = describeMetadataQuorum();
+        }
         return quorumInfoFuture.map(info -> info.leaderId()).recover(error -> {
             LOGGER.warnCr(reconciliation, "Error determining the quorum leader id", error);
             return Future.failedFuture(error);
@@ -90,11 +99,11 @@ class KafkaQuorumCheck {
                 }
             }
         });
-        LOGGER.infoCr(reconciliation, "Out of {} voters, there are {} controllers that have caught up with the quorum leader, not including the controller {}", totalNumOfControllers, numOfCaughtUpControllers, podId);
+        LOGGER.debugCr(reconciliation, "Out of {} voters, there are {} controllers that have caught up with the quorum leader, not including the controller {}", totalNumOfControllers, numOfCaughtUpControllers, podId);
         return numOfCaughtUpControllers.get() >= ceil((double) totalNumOfControllers / 2);
     }
 
-    private static Future<QuorumInfo> describeMetadataQuorum(Admin ac, Reconciliation reconciliation, Vertx vertx) {
-        return VertxUtil.kafkaFutureToVertxFuture(reconciliation, vertx, ac.describeMetadataQuorum().quorumInfo());
+    private Future<QuorumInfo> describeMetadataQuorum() {
+        return VertxUtil.kafkaFutureToVertxFuture(reconciliation, vertx, admin.describeMetadataQuorum().quorumInfo());
     }
 }

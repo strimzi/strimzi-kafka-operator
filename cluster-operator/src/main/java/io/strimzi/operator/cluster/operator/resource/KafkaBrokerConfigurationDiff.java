@@ -212,8 +212,8 @@ public class KafkaBrokerConfigurationDiff extends AbstractJsonDiff {
         return updatedCE;
     }
 
-    private void updateOrAdd(String propertyName, Map<String, ConfigModel> configModel, Map<String, String> desiredMap, Collection<AlterConfigOp> updatedCE, boolean isController) {
-        if (!isIgnorableProperty(propertyName, isController)) {
+    private void updateOrAdd(String propertyName, Map<String, ConfigModel> configModel, Map<String, String> desiredMap, Collection<AlterConfigOp> updatedCE, boolean isCombined) {
+        if (!isIgnorableProperty(propertyName, isCombined)) {
             if (isCustomEntry(propertyName, configModel)) {
                 LOGGER.traceCr(reconciliation, "custom property {} has been updated/added {}", propertyName, desiredMap.get(propertyName));
             } else {
@@ -225,7 +225,7 @@ public class KafkaBrokerConfigurationDiff extends AbstractJsonDiff {
         }
     }
 
-    private void removeProperty(Map<String, ConfigModel> configModel, Collection<AlterConfigOp> updatedCE, String pathValueWithoutSlash, ConfigEntry entry, boolean isController) {
+    private void removeProperty(Map<String, ConfigModel> configModel, Collection<AlterConfigOp> updatedCE, String pathValueWithoutSlash, ConfigEntry entry, boolean isCombined) {
         if (isCustomEntry(entry.name(), configModel)) {
             // we are deleting custom option
             LOGGER.traceCr(reconciliation, "removing custom property {}", entry.name());
@@ -238,7 +238,7 @@ public class KafkaBrokerConfigurationDiff extends AbstractJsonDiff {
         } else {
             // entry is in current, is not in desired, is not default -> it was using non-default value and was removed
             // if the entry was custom, it should be deleted
-            if (!isIgnorableProperty(pathValueWithoutSlash, isController)) {
+            if (!isIgnorableProperty(pathValueWithoutSlash, isCombined)) {
                 updatedCE.add(new AlterConfigOp(new ConfigEntry(pathValueWithoutSlash, null), AlterConfigOp.OpType.DELETE));
                 LOGGER.infoCr(reconciliation, "{} not set in desired, unsetting back to default {}", entry.name(), "deleted entry");
             } else {
