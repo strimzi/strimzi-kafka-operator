@@ -1,0 +1,106 @@
+// Module included in the following assemblies:
+//
+// assembly-config.adoc
+
+[id='proc-managing-storage-node-pools-{context}']
+= (Preview) Managing storage using node pools
+
+[role="_abstract"]
+Storage management in Strimzi is usually straightforward, and requires little change when set up, but there might be situations where you need to modify your storage configurations. 
+Node pools simplify this process, because you can set up separate node pools that specify your new storage requirements.
+
+In this procedure we create and manage storage for a node pool called `pool-a` containing three nodes.
+We show how to change the storage class (`volumes.class`) that defines the type of persistent storage it uses.
+You can use the same steps to change the storage size (`volumes.size`). 
+
+NOTE: We strongly recommend using block storage. Strimzi is only tested for use with block storage.
+
+.Prerequisites
+
+* xref:deploying-cluster-operator-str[The Cluster Operator must be deployed.]
+* xref:proc-configuring-deploying-cruise-control-str[Cruise Control is deployed with Kafka.]
+* For storage that uses persistent volume claims for dynamic volume allocation, storage classes are defined and available in the Kubernetes cluster that correspond to the storage solutions you need. 
+
+.Procedure
+
+. Create the node pool with its own storage settings.
++
+For example, node pool `pool-a` uses JBOD storage with persistent volumes:
++
+[source,yaml,subs="+attributes"]
+----
+apiVersion: {KafkaNodePoolApiVersion}
+kind: KafkaNodePool
+metadata:
+  name: pool-a
+  labels:
+    strimzi.io/cluster: my-cluster
+spec:
+  replicas: 3
+  storage:
+    type: jbod
+    volumes:
+      - id: 0
+        type: persistent-claim
+        size: 500Gi
+        class: gp2-ebs
+  # ...
+----
++
+Nodes in `pool-a` are configured to use Amazon EBS (Elastic Block Store) GP2 volumes.
+
+. Apply the node pool configuration for `pool-a`.
+. Check the status of the deployment and wait for the pods in `pool-a` to be created and have a status of `READY`.
++
+[source,shell]
+----
+kubectl get pods -n <my_cluster_operator_namespace>
+----
++
+.Output shows three Kafka nodes in the node pool
+[source,shell]
+----
+NAME                       READY  STATUS   RESTARTS
+my-cluster-pool-a-kafka-0  1/1    Running  0
+my-cluster-pool-a-kafka-1  1/1    Running  0
+my-cluster-pool-a-kafka-2  1/1    Running  0
+----
+
+. To migrate to a new storage class, create a new node pool with the required storage configuration:
++
+[source,yaml,subs="+attributes"]
+----
+apiVersion: {KafkaNodePoolApiVersion}
+kind: KafkaNodePool
+metadata:
+  name: pool-b
+  labels:
+    strimzi.io/cluster: my-cluster
+spec:
+  roles:
+    - broker
+  replicas: 3
+  storage:
+    type: jbod
+    volumes:
+      - id: 0
+        type: persistent-claim
+        size: 1Ti
+        class: gp3-ebs
+  # ...
+----
++
+Nodes in `pool-b` are configured to use Amazon EBS (Elastic Block Store) GP3 volumes.
+
+. Apply the node pool configuration for `pool-b`.
+. Check the status of the deployment and wait for the pods in `pool-b` to be created and have a status of `READY`.
+. Reassign the partitions from `pool-a` to `pool-b`.
++
+When migrating to a new storage configuration, you can use the Cruise Control `remove-brokers` mode to move partition replicas off the brokers that are going to be removed.
+
+. After the reassignment process is complete, delete the old node pool:
++
+[source, shell]
+----
+kubectl delete kafkanodepool pool-a
+----

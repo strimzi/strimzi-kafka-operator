@@ -1,0 +1,130 @@
+// Module included in the following assemblies:
+//
+// assembly-config.adoc
+
+[id='proc-managing-storage-affinity-node-pools-{context}']
+= (Preview) Managing storage affinity using node pools
+
+[role="_abstract"]
+In situations where storage resources, such as local persistent volumes, are constrained to specific worker nodes, or availability zones, configuring storage affinity helps to schedule pods to use the right nodes. 
+
+Node pools allow you to configure affinity independently. 
+In this procedure, we create and manage storage affinity for two availability zones: `zone-1` and `zone-2`.
+
+You can configure node pools for separate availability zones, but use the same storage class. 
+We define an `all-zones` persistent storage class representing the storage resources available in each zone.
+
+We also use the `.spec.template.pod` properties to configure the node affinity and schedule Kafka pods on `zone-1` and `zone-2` worker nodes.
+
+The storage class and affinity is specified in node pools representing the nodes in each availability zone:
+
+* `pool-zone-1`
+* `pool-zone-2`. 
+
+.Prerequisites
+
+* xref:deploying-cluster-operator-str[The Cluster Operator must be deployed.]
+* If you are not familiar with the concepts of affinity, see the {K8sAffinity}.
+
+.Procedure
+
+. Define the storage class for use with each availability zone:
++
+[source,yaml,subs="+attributes"]
+----
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: all-zones
+provisioner: kubernetes.io/my-storage
+parameters:
+  type: ssd
+volumeBindingMode: WaitForFirstConsumer
+----       
+
+. Create node pools representing the two availability zones, specifying the `all-zones` storage class and the affinity for each zone:
++
+.Node pool configuration for zone-1
+[source,yaml,subs="+attributes"]
+----
+apiVersion: {KafkaNodePoolApiVersion}
+kind: KafkaNodePool
+metadata:
+  name: pool-zone-1
+  labels:
+    strimzi.io/cluster: my-cluster
+spec:
+  replicas: 3
+  storage:
+    type: jbod
+    volumes:
+      - id: 0
+        type: persistent-claim
+        size: 500Gi
+        class: all-zones
+  template:
+    pod:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                - key: topology.kubernetes.io/zone
+                  operator: In
+                  values:
+                  - zone-1      
+  # ...
+----
++
+.Node pool configuration for zone-2
+[source,yaml,subs="+attributes"]
+----
+apiVersion: {KafkaNodePoolApiVersion}
+kind: KafkaNodePool
+metadata:
+  name: pool-zone-2
+  labels:
+    strimzi.io/cluster: my-cluster
+spec:
+  replicas: 4
+  storage:
+    type: jbod
+    volumes:
+      - id: 0
+        type: persistent-claim
+        size: 500Gi
+        class: all-zones
+  template:
+    pod:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                - key: topology.kubernetes.io/zone
+                  operator: In
+                  values:
+                  - zone-2      
+  # ...
+----
+
+. Apply the node pool configuration.
+. Check the status of the deployment and wait for the pods in the node pools to be created and have a status of `READY`.
++
+[source,shell]
+----
+kubectl get pods -n <my_cluster_operator_namespace>
+----
++
+.Output shows 3 Kafka nodes in `pool-zone-1` and 4 Kafka nodes in `pool-zone-2`:
+[source,shell]
+----
+NAME                       READY  STATUS   RESTARTS
+my-cluster-pool-zone-1-kafka-0  1/1    Running  0
+my-cluster-pool-zone-1-kafka-1  1/1    Running  0
+my-cluster-pool-zone-1-kafka-2  1/1    Running  0
+my-cluster-pool-zone-2-kafka-3  1/1    Running  0
+my-cluster-pool-zone-2-kafka-4  1/1    Running  0
+my-cluster-pool-zone-2-kafka-5  1/1    Running  0
+my-cluster-pool-zone-2-kafka-6  1/1    Running  0
+---- 

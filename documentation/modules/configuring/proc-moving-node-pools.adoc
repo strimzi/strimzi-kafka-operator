@@ -25,6 +25,7 @@ NOTE: During this process, the ID of the node that holds the partition replicas 
 .Prerequisites
 
 * xref:deploying-cluster-operator-str[The Cluster Operator must be deployed.]
+* xref:proc-configuring-deploying-cruise-control-str[Cruise Control is deployed with Kafka.]
 * (Optional) For scale up and scale down operations, xref:proc-managing-node-pools-ids-{context}[you can specify the range of node IDs to use].
 +
 If you have assigned node IDs for the operation, the ID of the node being added or removed is determined by the sequence of nodes given. 
