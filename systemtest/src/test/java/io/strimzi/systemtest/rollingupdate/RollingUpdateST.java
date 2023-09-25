@@ -19,6 +19,7 @@ import io.strimzi.api.kafka.model.JmxPrometheusExporterMetricsBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.ProbeBuilder;
+import io.strimzi.operator.common.Annotations;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
@@ -265,7 +266,7 @@ class RollingUpdateST extends AbstractST {
      *     - Data are produced and consumed successfully
      *  3. - Scale up Kafka Cluster from 3 to 5 replicas
      *     - Cluster scales to 5 replicas and volumes as such
-     *  4. - Deploy KafkaTopic with 4 replicas and new clients which will target this KafkaTopic
+     *  4. - Deploy KafkaTopic with 3 replicas and new clients which will target this KafkaTopic
      *     - Topic is deployed and ready, clients successfully communicate with topic represented by mentioned KafkaTopic
      *  5. - Scale down Kafka Cluster back from 5 to 3 replicas
      *     - Cluster scales down to 3 replicas and volumes as such
@@ -285,6 +286,9 @@ class RollingUpdateST extends AbstractST {
         final TestStorage testStorage = new TestStorage(extensionContext, Environment.TEST_SUITE_NAMESPACE);
 
         resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), 3, 3)
+            .editMetadata()
+                .addToAnnotations(Map.of(Annotations.ANNO_STRIMZI_IO_SKIP_BROKER_SCALEDOWN_CHECK, "true"))
+            .endMetadata()
             .editSpec()
                 .editKafka()
                     // Topic Operator doesn't support KRaft, yet, using auto topic creation and default replication factor as workaround
@@ -345,7 +349,7 @@ class RollingUpdateST extends AbstractST {
         String scaleUpTopicName = KafkaTopicUtils.generateRandomNameOfTopic();
         KafkaTopic scaleUpKafkaTopicResource = KafkaTopicTemplates.topic(testStorage.getClusterName(), scaleUpTopicName, testStorage.getNamespaceName())
             .editSpec()
-                .withReplicas(4)
+                .withReplicas(3)
             .endSpec()
             .build();
         resourceManager.createResourceWithWait(extensionContext, scaleUpKafkaTopicResource);
