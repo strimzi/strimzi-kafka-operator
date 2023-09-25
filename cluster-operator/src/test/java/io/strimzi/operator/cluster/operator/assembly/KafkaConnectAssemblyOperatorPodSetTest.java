@@ -809,6 +809,7 @@ public class KafkaConnectAssemblyOperatorPodSetTest {
         var mockNetPolOps = supplier.networkPolicyOperator;
         var mockBcOps = supplier.buildConfigOperations;
         var mockIsOps = supplier.imageStreamOperations;
+        var mockPodOps = supplier.podOperations;
 
         KafkaConnectCluster connect = KafkaConnectCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kc, VERSIONS, SHARED_ENV_PROVIDER);
         when(mockConnectOps.get(kcNamespace, kcName)).thenReturn(kc);
@@ -820,6 +821,7 @@ public class KafkaConnectAssemblyOperatorPodSetTest {
         when(mockNetPolOps.reconcile(any(), eq(kc.getMetadata().getNamespace()), eq(KafkaConnectResources.deploymentName(kc.getMetadata().getName())), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new NetworkPolicy())));
         when(mockBcOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture());
         when(mockIsOps.getAsync(kcNamespace, kcName)).thenReturn(Future.succeededFuture());
+        when(mockPodOps.listAsync(eq(kcNamespace), any(Labels.class))).thenReturn(Future.succeededFuture(List.of()));
 
         KafkaConnectAssemblyOperator ops = new KafkaConnectAssemblyOperator(vertx, new PlatformFeaturesAvailability(true, KubernetesVersion.MINIMAL_SUPPORTED_VERSION),
                 supplier, ResourceUtils.dummyClusterOperatorConfig());
@@ -992,7 +994,7 @@ public class KafkaConnectAssemblyOperatorPodSetTest {
                     //    * First for the one Pod that exists before the scale-up goes through manual rolling update
                     //    * Then the one Pod that exists before the scale-up goes through regular rolling update (caused by the mock being imperfect)
                     //    * The scaled-up Pods are not rolled
-                    verify(mockPodOps, times(2)).deleteAsync(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), eq(false));
+                    verify(mockPodOps, times(2)).deleteAsync(any(), eq(NAMESPACE), eq(COMPONENT_NAME + "-0"), eq(false));
 
                     // Verify CR status
                     List<KafkaConnect> capturedConnects = connectCaptor.getAllValues();
@@ -1071,8 +1073,10 @@ public class KafkaConnectAssemblyOperatorPodSetTest {
         Checkpoint async = context.checkpoint();
         ops.reconcile(new Reconciliation("test-trigger", KafkaConnect.RESOURCE_KIND, NAMESPACE, NAME))
                 .onComplete(context.succeeding(v -> context.verify(() -> {
-                    // Check rolling happened => 1 should be for the manual rolling update and one for the regular one caused by the mocked StrimziPodSet
-                    verify(mockPodOps, times(4)).deleteAsync(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), eq(false));
+                    // Check rolling happened => Should happen once as a regular rolling update to all pods and once more for the annotated pod
+                    verify(mockPodOps, times(1)).deleteAsync(any(), eq(NAMESPACE), eq(COMPONENT_NAME + "-0"), eq(false));
+                    verify(mockPodOps, times(2)).deleteAsync(any(), eq(NAMESPACE), eq(COMPONENT_NAME + "-1"), eq(false));
+                    verify(mockPodOps, times(1)).deleteAsync(any(), eq(NAMESPACE), eq(COMPONENT_NAME + "-2"), eq(false));
 
                     // Verify CR status
                     List<KafkaConnect> capturedConnects = connectCaptor.getAllValues();

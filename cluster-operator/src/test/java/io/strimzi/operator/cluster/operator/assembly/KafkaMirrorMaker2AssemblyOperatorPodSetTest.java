@@ -979,7 +979,7 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
                     //    * First for the one Pod that exists before the scale-up goes through manual rolling update
                     //    * Then the one Pod that exists before the scale-up goes through regular rolling update (caused by the mock being imperfect)
                     //    * The scaled-up Pods are not rolled
-                    verify(mockPodOps, times(2)).deleteAsync(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), eq(false));
+                    verify(mockPodOps, times(2)).deleteAsync(any(), eq(NAMESPACE), eq(COMPONENT_NAME + "-0"), eq(false));
 
                     // Verify CR status
                     List<KafkaMirrorMaker2> capturedMm2Statuses = mm2StatusCaptor.getAllValues();
@@ -1064,8 +1064,10 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
         Checkpoint async = context.checkpoint();
         ops.reconcile(new Reconciliation("test-trigger", KafkaMirrorMaker2.RESOURCE_KIND, NAMESPACE, NAME))
                 .onComplete(context.succeeding(v -> context.verify(() -> {
-                    // Check rolling happened => 1 should be for the manual rolling update and one for the regular one caused by the mocked StrimziPodSet
-                    verify(mockPodOps, times(4)).deleteAsync(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), eq(false));
+                    // Check rolling happened => Should happen once as a regular rolling update to all pods and once more for the annotated pod
+                    verify(mockPodOps, times(1)).deleteAsync(any(), eq(NAMESPACE), eq(COMPONENT_NAME + "-0"), eq(false));
+                    verify(mockPodOps, times(2)).deleteAsync(any(), eq(NAMESPACE), eq(COMPONENT_NAME + "-1"), eq(false));
+                    verify(mockPodOps, times(1)).deleteAsync(any(), eq(NAMESPACE), eq(COMPONENT_NAME + "-2"), eq(false));
 
                     // Verify CR status
                     List<KafkaMirrorMaker2> capturedMm2Statuses = mm2StatusCaptor.getAllValues();

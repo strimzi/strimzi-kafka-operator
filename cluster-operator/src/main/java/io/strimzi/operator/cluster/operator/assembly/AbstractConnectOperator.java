@@ -36,6 +36,9 @@ import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.model.ImagePullPolicy;
 import io.strimzi.operator.cluster.model.KafkaVersion;
+import io.strimzi.operator.cluster.model.PodSetUtils;
+import io.strimzi.operator.cluster.model.RestartReason;
+import io.strimzi.operator.cluster.model.RestartReasons;
 import io.strimzi.operator.cluster.model.SharedEnvironmentProvider;
 import io.strimzi.operator.common.model.InvalidResourceException;
 import io.strimzi.operator.cluster.model.KafkaConnectCluster;
@@ -261,11 +264,22 @@ public abstract class AbstractConnectOperator<C extends KubernetesClient, T exte
         if (stableIdentities)   {
             return podSetOperations.getAsync(reconciliation.namespace(), connect.getComponentName())
                     .compose(podSet -> {
-                        if (podSet != null) {
-                            KafkaConnectRoller roller = new KafkaConnectRoller(reconciliation, connect, operationTimeoutMs, podOperations);
-                            return roller.maybeRoll(podSet, KafkaConnectRoller::needsRollingRestartDueToManualRollingUpdate);
+                        if (podSet != null
+                                && Annotations.booleanAnnotation(podSet, Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, false)) {
+                            // We should roll the whole PodSet -> we return all its pods without any need to list the Pods
+                            return Future.succeededFuture(PodSetUtils.podNames(podSet));
                         } else {
-                            // Pod Set does not exist. Cannot roll pods as they would not be recreated.
+                            // The PodSet is not annotated for rolling - but the Pods might be
+                            return podOperations.listAsync(reconciliation.namespace(), connect.getSelectorLabels())
+                                    .compose(pods -> Future.succeededFuture(pods.stream().filter(pod -> Annotations.booleanAnnotation(pod, Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, false)).map(pod -> pod.getMetadata().getName()).collect(Collectors.toList())));
+                        }
+                    })
+                    .compose(podNamesToRoll -> {
+                        if (!podNamesToRoll.isEmpty())  {
+                            // There are some pods to roll
+                            KafkaConnectRoller roller = new KafkaConnectRoller(reconciliation, connect, operationTimeoutMs, podOperations);
+                            return roller.maybeRoll(podNamesToRoll, pod -> RestartReasons.of(RestartReason.MANUAL_ROLLING_UPDATE));
+                        } else {
                             return Future.succeededFuture();
                         }
                     });
