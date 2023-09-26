@@ -20,7 +20,7 @@ NOTE: To run the commands in this guide, your cluster user must have the rights 
 //Prereqs for a deployment
 include::../../modules/deploying/con-deploy-prereqs.adoc[leveloffset=+1]
 //operator deployment tips
-include::../../modules/deploying/proc-deploy-operator-best-practices.adoc[leveloffset=+1]
+include::../../modules/deploying/con-deploy-operator-best-practices.adoc[leveloffset=+1]
 //How to access release artifacts
 include::../../modules/deploying/con-deploy-product-downloads.adoc[leveloffset=+1]
 //Container images
