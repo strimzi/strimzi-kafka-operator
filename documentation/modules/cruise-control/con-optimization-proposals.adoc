@@ -155,9 +155,9 @@ To enable the optimization proposal auto-approval mechanism, create the `KafkaRe
 If the annotation is not set or set to `false`, the optimization proposal requires manual approval.
 
 .Example rebalance request with auto-approval mechanism enabled
-[source,yaml]
+[source,yaml,subs="+attributes"]
 ----
-apiVersion: kafka.strimzi.io/v1beta2
+apiVersion: {KafkaRebalanceApiVersion}
 kind: KafkaRebalance
 metadata:
   name: my-rebalance
