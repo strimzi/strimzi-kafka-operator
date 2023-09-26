@@ -10,9 +10,9 @@ discover:
 # Required HW
 provision:
   hardware:
-    memory: ">= 24 GiB"
+    memory: ">= 32 GiB"
     cpu:
-      processors: ">= 8"
+      processors: ">= 16"
 
 # Install required packages and scripts for running strimzi suite
 prepare:
