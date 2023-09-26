@@ -1043,6 +1043,16 @@ public class KubeClient {
         return client.persistentVolumes().withName(pvName).get();
     }
 
+    public List<PersistentVolume> listClaimedPersistentVolumes(String namespaceName, String clusterName) {
+        return client.persistentVolumes().list().getItems().stream()
+            .filter(pv -> {
+                boolean containsClusterName = pv.getSpec().getClaimRef().getName().contains(clusterName);
+                boolean containsClusterNamespace = pv.getSpec().getClaimRef().getNamespace().contains(namespaceName);
+                return containsClusterName && containsClusterNamespace;
+            })
+            .collect(Collectors.toList());
+    }
+
     // ===================================
     // ---------> STORAGE CLASS <---------
     // ===================================
