@@ -1460,6 +1460,103 @@ class LoggingChangeST extends AbstractST {
         KafkaConnectorUtils.loggerStabilityWait(testStorage.getNamespaceName(), testStorage.getClusterName(), scraperPodName, "ERROR", connectorClassName);
     }
 
+    /**
+     * @description This test case check that changing Logging configuration from internal to external triggers Rolling Update.
+     *
+     * @steps
+     *  1. - Deploy Kafka Cluster, without any logging related configuration
+     *     - Cluster is deployed
+     *  2. - Modify Kafka by changing specification of logging to new external value
+     *     - Change in logging specification triggers Rolling Update
+     *  3. - Modify Kafka by changing specification of logging to new logging format
+     *     - Change in logging specification triggers Rolling Update
+     *
+     * @usecase
+     *  - logging
+     *  - rolling-update
+     */
+    @ParallelNamespaceTest
+    @Tag(ROLLING_UPDATE)
+    void testChangingInternalToExternalLoggingTriggerRollingUpdate(ExtensionContext extensionContext) {
+        final TestStorage testStorage = storageMap.get(extensionContext);
+
+        // EO dynamic logging is tested in io.strimzi.systemtest.log.LoggingChangeST.testDynamicallySetEOloggingLevels
+        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3, 3).build());
+
+        Map<String, String> kafkaPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getKafkaSelector());
+        Map<String, String> zkPods = null;
+        if (!Environment.isKRaftModeEnabled()) {
+            zkPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getZookeeperSelector());
+        }
+
+        final String loggersConfig = "log4j.appender.CONSOLE=org.apache.log4j.ConsoleAppender\n" +
+            "log4j.appender.CONSOLE.layout=org.apache.log4j.PatternLayout\n" +
+            "log4j.appender.CONSOLE.layout.ConversionPattern=%d{ISO8601} %p %m (%c) [%t]\n" +
+            "kafka.root.logger.level=INFO\n" +
+            "log4j.rootLogger=${kafka.root.logger.level}, CONSOLE\n" +
+            "log4j.logger.org.I0Itec.zkclient.ZkClient=INFO\n" +
+            "log4j.logger.org.apache.zookeeper=INFO\n" +
+            "log4j.logger.kafka=INFO\n" +
+            "log4j.logger.org.apache.kafka=INFO\n" +
+            "log4j.logger.kafka.request.logger=WARN, CONSOLE\n" +
+            "log4j.logger.kafka.network.Processor=INFO\n" +
+            "log4j.logger.kafka.server.KafkaApis=INFO\n" +
+            "log4j.logger.kafka.network.RequestChannel$=INFO\n" +
+            "log4j.logger.kafka.controller=INFO\n" +
+            "log4j.logger.kafka.log.LogCleaner=INFO\n" +
+            "log4j.logger.state.change.logger=TRACE\n" +
+            "log4j.logger.kafka.authorizer.logger=INFO";
+
+        final String configMapLoggersName = "loggers-config-map";
+        ConfigMap configMapLoggers = new ConfigMapBuilder()
+            .withNewMetadata()
+                .withNamespace(testStorage.getNamespaceName())
+                .withName(configMapLoggersName)
+            .endMetadata()
+            .addToData("log4j-custom.properties", loggersConfig)
+            .build();
+
+        ConfigMapKeySelector log4jLoggimgCMselector = new ConfigMapKeySelectorBuilder()
+            .withName(configMapLoggersName)
+            .withKey("log4j-custom.properties")
+            .build();
+
+        kubeClient().createConfigMapInNamespace(testStorage.getNamespaceName(), configMapLoggers);
+
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), kafka -> {
+            kafka.getSpec().getKafka().setLogging(new ExternalLoggingBuilder()
+                .withNewValueFrom()
+                .withConfigMapKeyRef(log4jLoggimgCMselector)
+                .endValueFrom()
+                .build());
+            if (!Environment.isKRaftModeEnabled()) {
+                kafka.getSpec().getZookeeper().setLogging(new ExternalLoggingBuilder()
+                    .withNewValueFrom()
+                    .withConfigMapKeyRef(log4jLoggimgCMselector)
+                    .endValueFrom()
+                    .build());
+            }
+        }, testStorage.getNamespaceName());
+
+        if (!Environment.isKRaftModeEnabled()) {
+            LOGGER.info("Waiting for Zookeeper pods to roll after change in logging");
+            zkPods = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), testStorage.getZookeeperSelector(), 3, zkPods);
+        }
+
+        LOGGER.info("Waiting for Kafka pods to roll after change in logging");
+        kafkaPods = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), testStorage.getKafkaSelector(), 3, kafkaPods);
+
+        configMapLoggers.getData().put("log4j-custom.properties", loggersConfig.replace("%p %m (%c) [%t]", "%p %m (%c) [%t]%n"));
+        kubeClient().updateConfigMapInNamespace(testStorage.getNamespaceName(), configMapLoggers);
+
+        if (!Environment.isKRaftModeEnabled()) {
+            LOGGER.info("Waiting for Zookeeper pods to roll after change in logging properties config map");
+            RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), testStorage.getZookeeperSelector(), 3, zkPods);
+        }
+        LOGGER.info("Waiting for Kafka pods to roll after change in logging properties config map");
+        RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), testStorage.getKafkaSelector(), 3, kafkaPods);
+    }
+
     @BeforeAll
     void setup(ExtensionContext extensionContext) {
         this.clusterOperator = this.clusterOperator

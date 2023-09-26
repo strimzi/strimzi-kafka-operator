@@ -108,6 +108,52 @@ public class RollingUpdateUtils {
         return PodUtils.podSnapshot(namespaceName, selector);
     }
 
+    /**
+     *  Method to wait when Kafka or Zookeeper starts rolling update by rolling first Pod
+     * @param namespaceName Namespace name
+     * @param selector
+     * @param snapshot Snapshot of Kafka or Zookeeper Pods before the rolling update
+     * @return The new Snapshot of actually present Pods after the first successful roll
+     */
+    public static Map<String, String> waitTillComponentHasStartedRolling(String namespaceName, LabelSelector selector, Map<String, String> snapshot) {
+
+        String componentName = selector.getMatchLabels().get(Labels.STRIMZI_NAME_LABEL);
+
+        LOGGER.info("Waiting for component matching {} -> {}/{} first rolled Pod", selector, namespaceName, componentName);
+        TestUtils.waitFor("first pod's roll : " + namespaceName + "/" + componentName,
+            Constants.WAIT_FOR_ROLLING_UPDATE_INTERVAL, ResourceOperation.timeoutForPodsOperation(snapshot.size()), () -> {
+                try {
+                    LOGGER.debug("Existing snapshot: {}/{}", namespaceName, new TreeMap<>(snapshot));
+
+                    Map<String, String> currentSnapshot = PodUtils.podSnapshot(namespaceName, selector);
+                    LOGGER.debug("Current snapshot: {}/{}", namespaceName, new TreeMap<>(currentSnapshot));
+
+                    currentSnapshot.keySet().retainAll(snapshot.keySet());
+
+                    LOGGER.debug("Pods in common: {}/{}", namespaceName, new TreeMap<>(currentSnapshot));
+                    for (Map.Entry<String, String> podSnapshot : currentSnapshot.entrySet()) {
+                        String currentPodVersion = podSnapshot.getValue();
+                        String podName = podSnapshot.getKey();
+                        String oldPodVersion = snapshot.get(podName);
+                        if (!oldPodVersion.equals(currentPodVersion)) {
+                            LOGGER.debug("Pod {}/{} rolled", namespaceName, podName);
+                            return true;
+                        }
+                    }
+
+                    LOGGER.debug("Component did not start Rolling Update");
+                    return false;
+
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    return false;
+                }
+            }
+        );
+
+        return PodUtils.podSnapshot(namespaceName, selector);
+    }
+
     public static void waitForComponentAndPodsReady(String namespaceName, LabelSelector selector, int expectedPods) {
         final String clusterName = selector.getMatchLabels().get(Labels.STRIMZI_CLUSTER_LABEL);
         final String componentName = selector.getMatchLabels().get(Labels.STRIMZI_NAME_LABEL);
