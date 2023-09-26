@@ -367,6 +367,8 @@ public class KafkaConnectBuildAssemblyOperatorKubeTest {
                 .build();
         when(mockPodOps.waitFor(any(), eq(NAMESPACE), eq(KafkaConnectResources.buildPodName(NAME)), anyString(), anyLong(), anyLong(), any(BiPredicate.class))).thenReturn(Future.succeededFuture((Void) null));
         when(mockPodOps.getAsync(eq(NAMESPACE), eq(KafkaConnectResources.buildPodName(NAME)))).thenReturn(Future.succeededFuture(null), Future.succeededFuture(terminatedPod));
+        // Kafka Connect (not builder) Pods
+        when(mockPodOps.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(Future.succeededFuture(List.of()));
 
         // Mock and capture BuildConfig ops
         when(mockBcOps.reconcile(any(), eq(NAMESPACE), eq(KafkaConnectResources.buildConfigName(NAME)), eq(null))).thenReturn(Future.succeededFuture(ReconcileResult.noop(null)));

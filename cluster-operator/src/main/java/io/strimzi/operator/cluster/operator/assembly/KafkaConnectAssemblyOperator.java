@@ -22,26 +22,22 @@ import io.strimzi.api.kafka.model.StrimziPodSet;
 import io.strimzi.api.kafka.model.authentication.KafkaClientAuthentication;
 import io.strimzi.api.kafka.model.status.KafkaConnectStatus;
 import io.strimzi.api.kafka.model.status.KafkaConnectorStatus;
-import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
-import io.strimzi.operator.common.model.InvalidResourceException;
+import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.model.KafkaConnectBuild;
 import io.strimzi.operator.cluster.model.KafkaConnectCluster;
-import io.strimzi.operator.cluster.model.KafkaVersion;
+import io.strimzi.operator.cluster.model.PodSetUtils;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationException;
 import io.strimzi.operator.common.ReconciliationLogger;
-import io.strimzi.operator.cluster.model.SharedEnvironmentProvider;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.VertxUtil;
+import io.strimzi.operator.common.model.InvalidResourceException;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.NamespaceAndName;
-import io.strimzi.operator.common.operator.resource.DeploymentOperator;
-import io.strimzi.operator.common.operator.resource.PodOperator;
 import io.strimzi.operator.common.model.StatusUtils;
-import io.strimzi.operator.common.operator.resource.StrimziPodSetOperator;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
@@ -66,13 +62,8 @@ import java.util.stream.Collectors;
  */
 public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<KubernetesClient, KafkaConnect, KafkaConnectList, Resource<KafkaConnect>, KafkaConnectSpec, KafkaConnectStatus> {
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(KafkaConnectAssemblyOperator.class.getName());
-    private final DeploymentOperator deploymentOperations;
-    private final StrimziPodSetOperator podSetOperations;
-    private final PodOperator podOperations;
+
     private final ConnectBuildOperator connectBuildOperator;
-    private final KafkaVersion.Lookup versions;
-    private final boolean stableIdentities;
-    private final SharedEnvironmentProvider sharedEnvironmentProvider;
 
     /**
      * Constructor
@@ -122,14 +113,8 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
                                         ClusterOperatorConfig config,
                                         Function<Vertx, KafkaConnectApi> connectClientProvider, int port) {
         super(vertx, pfa, KafkaConnect.RESOURCE_KIND, supplier.connectOperator, supplier, config, connectClientProvider, port);
-        this.deploymentOperations = supplier.deploymentOperations;
-        this.podSetOperations = supplier.strimziPodSetOperator;
-        this.podOperations = supplier.podOperations;
-        this.connectBuildOperator = new ConnectBuildOperator(pfa, supplier, config);
 
-        this.versions = config.versions();
-        this.stableIdentities = config.featureGates().stableConnectIdentitiesEnabled();
-        this.sharedEnvironmentProvider = supplier.sharedEnvironmentProvider;
+        this.connectBuildOperator = new ConnectBuildOperator(pfa, supplier, config);
     }
 
     @Override
@@ -166,6 +151,7 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
                 .compose(i -> connectServiceAccount(reconciliation, namespace, KafkaConnectResources.serviceAccountName(connect.getCluster()), connect))
                 .compose(i -> connectInitClusterRoleBinding(reconciliation, initCrbName, initCrb))
                 .compose(i -> connectNetworkPolicy(reconciliation, namespace, connect, isUseResources(kafkaConnect)))
+                .compose(i -> manualRollingUpdate(reconciliation, connect))
                 .compose(i -> connectBuildOperator.reconcile(reconciliation, namespace, activeController(deployment.get(), podSet.get()), build))
                 .compose(buildInfo -> {
                     if (buildInfo != null) {
@@ -297,12 +283,10 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
         return podSetOperations.reconcile(reconciliation, reconciliation.namespace(), connect.getComponentName(), connect.generatePodSet(connect.getReplicas(), podSetAnnotations, podAnnotations, pfa.isOpenshift(), imagePullPolicy, imagePullSecrets, customContainerImage))
                 .compose(reconciliationResult -> {
                     KafkaConnectRoller roller = new KafkaConnectRoller(reconciliation, connect, operationTimeoutMs, podOperations);
-                    return roller.maybeRoll(reconciliationResult.resource());
+                    return roller.maybeRoll(PodSetUtils.podNames(reconciliationResult.resource()), pod -> KafkaConnectRoller.needsRollingRestart(reconciliationResult.resource(), pod));
                 })
                 .compose(i -> podSetOperations.readiness(reconciliation, reconciliation.namespace(), connect.getComponentName(), 1_000, operationTimeoutMs));
     }
-
-
 
     @Override
     protected KafkaConnectStatus createStatus(KafkaConnect ignored) {

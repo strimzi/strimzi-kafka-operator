@@ -33,6 +33,7 @@ import io.strimzi.operator.cluster.model.KafkaMirrorMaker2Cluster;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.PodSetUtils;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
+import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.cluster.model.SharedEnvironmentProvider;
 import io.strimzi.operator.common.model.Labels;
@@ -809,6 +810,271 @@ public class KafkaMirrorMaker2AssemblyOperatorPodSetTest {
         when(mockMirrorMaker2Ops.updateStatusAsync(any(), mirrorMaker2Captor.capture())).thenReturn(Future.succeededFuture());
 
         return mirrorMaker2Captor;
+    }
+
+    @Test
+    public void testManualRollingUpdate(VertxTestContext context)  {
+        StrimziPodSet oldPodSet = CLUSTER.generatePodSet(3, null, null, false, null, null, null);
+        oldPodSet.getMetadata().getAnnotations().put(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "true"); // We want the pods to roll manually
+        List<Pod> oldPods = PodSetUtils.podSetToPods(oldPodSet);
+
+        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
+
+        // Mock deployment
+        DeploymentOperator mockDepOps = supplier.deploymentOperations;
+        when(mockDepOps.getAsync(eq(NAMESPACE), eq(COMPONENT_NAME))).thenReturn(Future.succeededFuture());
+
+        // Mock PodSets
+        StrimziPodSetOperator mockPodSetOps = supplier.strimziPodSetOperator;
+        when(mockPodSetOps.getAsync(eq(NAMESPACE), eq(COMPONENT_NAME))).thenReturn(Future.succeededFuture(oldPodSet));
+        when(mockPodSetOps.readiness(any(), eq(NAMESPACE), eq(COMPONENT_NAME), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+        ArgumentCaptor<StrimziPodSet> podSetCaptor = ArgumentCaptor.forClass(StrimziPodSet.class);
+        when(mockPodSetOps.reconcile(any(), eq(NAMESPACE), eq(COMPONENT_NAME), podSetCaptor.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.created(i.getArgument(3))));
+
+        // Mock PDBs
+        PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
+        ArgumentCaptor<PodDisruptionBudget> pdbCaptor = ArgumentCaptor.forClass(PodDisruptionBudget.class);
+        when(mockPdbOps.reconcile(any(), eq(NAMESPACE), eq(COMPONENT_NAME), pdbCaptor.capture())).thenReturn(Future.succeededFuture());
+
+        // Mock Config Maps
+        ConfigMapOperator mockCmOps = supplier.configMapOperations;
+        when(mockCmOps.reconcile(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), any())).thenReturn(Future.succeededFuture());
+
+        // Mock Services
+        ServiceOperator mockServiceOps = supplier.serviceOperations;
+        ArgumentCaptor<Service> serviceCaptor = ArgumentCaptor.forClass(Service.class);
+        when(mockServiceOps.reconcile(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), serviceCaptor.capture())).thenReturn(Future.succeededFuture());
+
+        // Mock Network Policies
+        NetworkPolicyOperator mockNetPolOps = supplier.networkPolicyOperator;
+        when(mockNetPolOps.reconcile(any(), eq(NAMESPACE), eq(COMPONENT_NAME), any())).thenReturn(Future.succeededFuture());
+
+        // Mock Pods
+        PodOperator mockPodOps = supplier.podOperations;
+        when(mockPodOps.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(Future.succeededFuture(oldPods));
+        when(mockPodOps.getAsync(eq(NAMESPACE), startsWith(COMPONENT_NAME))).thenAnswer(i -> {
+            Pod pod = oldPods.stream().filter(p -> i.getArgument(1).equals(p.getMetadata().getName())).findFirst().orElse(null);
+            return Future.succeededFuture(pod);
+        });
+        when(mockPodOps.deleteAsync(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), eq(false))).thenReturn(Future.succeededFuture());
+        when(mockPodOps.reconcile(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), any())).thenReturn(Future.succeededFuture());
+        when(mockPodOps.readiness(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+
+        // Mock Secrets
+        SecretOperator mockSecretOps = supplier.secretOperations;
+        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(KafkaConnectResources.jmxSecretName(NAME)))).thenReturn(Future.succeededFuture());
+
+        // Mock KafkaMirrorMaker2 CRs
+        CrdOperator<KubernetesClient, KafkaMirrorMaker2, KafkaMirrorMaker2List> mockConnectOps = supplier.mirrorMaker2Operator;
+        when(mockConnectOps.get(eq(NAMESPACE), eq(NAME))).thenReturn(new KafkaMirrorMaker2Builder(MM2).build());
+        when(mockConnectOps.getAsync(eq(NAMESPACE), eq(NAME))).thenReturn(Future.succeededFuture(new KafkaMirrorMaker2Builder(MM2).build()));
+        ArgumentCaptor<KafkaMirrorMaker2> mm2StatusCaptor = ArgumentCaptor.forClass(KafkaMirrorMaker2.class);
+        when(mockConnectOps.updateStatusAsync(any(), mm2StatusCaptor.capture())).thenReturn(Future.succeededFuture());
+
+        // Mock Connect API
+        KafkaConnectApi mockConnectClient = mock(KafkaConnectApi.class);
+        when(mockConnectClient.list(any(), anyString(), anyInt())).thenReturn(Future.succeededFuture(emptyList()));
+        when(mockConnectClient.updateConnectLoggers(any(), anyString(), anyInt(), anyString(), any(OrderedProperties.class))).thenReturn(Future.succeededFuture());
+
+        KafkaMirrorMaker2AssemblyOperator ops = new KafkaMirrorMaker2AssemblyOperator(
+                vertx,
+                new PlatformFeaturesAvailability(false, KUBERNETES_VERSION),
+                supplier,
+                ResourceUtils.dummyClusterOperatorConfig("+StableConnectIdentities"),
+                x -> mockConnectClient
+        );
+
+        Checkpoint async = context.checkpoint();
+        ops.reconcile(new Reconciliation("test-trigger", KafkaMirrorMaker2.RESOURCE_KIND, NAMESPACE, NAME))
+                .onComplete(context.succeeding(v -> context.verify(() -> {
+                    // Check rolling happened => it should happen 6 times:
+                    //    * First for the manual rolling update
+                    //    * Then the regular rolling update (caused by the mock being imperfect)
+                    verify(mockPodOps, times(6)).deleteAsync(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), eq(false));
+
+                    // Verify CR status
+                    List<KafkaMirrorMaker2> capturedMm2Statuses = mm2StatusCaptor.getAllValues();
+                    assertThat(capturedMm2Statuses, hasSize(1));
+
+                    async.flag();
+                })));
+    }
+
+    @Test
+    public void testManualRollingUpdateAtScaleUp(VertxTestContext context)  {
+        StrimziPodSet oldPodSet = CLUSTER.generatePodSet(1, null, null, false, null, null, null);
+        oldPodSet.getMetadata().getAnnotations().put(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "true"); // We want the pods to roll manually
+        List<Pod> oldPods = PodSetUtils.podSetToPods(oldPodSet);
+
+        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
+
+        // Mock deployment
+        DeploymentOperator mockDepOps = supplier.deploymentOperations;
+        when(mockDepOps.getAsync(eq(NAMESPACE), eq(COMPONENT_NAME))).thenReturn(Future.succeededFuture());
+
+        // Mock PodSets
+        StrimziPodSetOperator mockPodSetOps = supplier.strimziPodSetOperator;
+        when(mockPodSetOps.getAsync(eq(NAMESPACE), eq(COMPONENT_NAME))).thenReturn(Future.succeededFuture(oldPodSet));
+        when(mockPodSetOps.readiness(any(), eq(NAMESPACE), eq(COMPONENT_NAME), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+        ArgumentCaptor<StrimziPodSet> podSetCaptor = ArgumentCaptor.forClass(StrimziPodSet.class);
+        when(mockPodSetOps.reconcile(any(), eq(NAMESPACE), eq(COMPONENT_NAME), podSetCaptor.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.created(i.getArgument(3))));
+
+        // Mock PDBs
+        PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
+        ArgumentCaptor<PodDisruptionBudget> pdbCaptor = ArgumentCaptor.forClass(PodDisruptionBudget.class);
+        when(mockPdbOps.reconcile(any(), eq(NAMESPACE), eq(COMPONENT_NAME), pdbCaptor.capture())).thenReturn(Future.succeededFuture());
+
+        // Mock Config Maps
+        ConfigMapOperator mockCmOps = supplier.configMapOperations;
+        when(mockCmOps.reconcile(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), any())).thenReturn(Future.succeededFuture());
+
+        // Mock Services
+        ServiceOperator mockServiceOps = supplier.serviceOperations;
+        ArgumentCaptor<Service> serviceCaptor = ArgumentCaptor.forClass(Service.class);
+        when(mockServiceOps.reconcile(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), serviceCaptor.capture())).thenReturn(Future.succeededFuture());
+
+        // Mock Network Policies
+        NetworkPolicyOperator mockNetPolOps = supplier.networkPolicyOperator;
+        when(mockNetPolOps.reconcile(any(), eq(NAMESPACE), eq(COMPONENT_NAME), any())).thenReturn(Future.succeededFuture());
+
+        // Mock Pods
+        PodOperator mockPodOps = supplier.podOperations;
+        when(mockPodOps.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(Future.succeededFuture(oldPods));
+        when(mockPodOps.getAsync(eq(NAMESPACE), startsWith(COMPONENT_NAME))).thenAnswer(i -> {
+            Pod pod = oldPods.stream().filter(p -> i.getArgument(1).equals(p.getMetadata().getName())).findFirst().orElse(null);
+            return Future.succeededFuture(pod);
+        });
+        when(mockPodOps.deleteAsync(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), eq(false))).thenReturn(Future.succeededFuture());
+        when(mockPodOps.reconcile(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), any())).thenReturn(Future.succeededFuture());
+        when(mockPodOps.readiness(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+
+        // Mock Secrets
+        SecretOperator mockSecretOps = supplier.secretOperations;
+        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(KafkaConnectResources.jmxSecretName(NAME)))).thenReturn(Future.succeededFuture());
+
+        // Mock KafkaMirrorMaker2 CRs
+        CrdOperator<KubernetesClient, KafkaMirrorMaker2, KafkaMirrorMaker2List> mockConnectOps = supplier.mirrorMaker2Operator;
+        when(mockConnectOps.get(eq(NAMESPACE), eq(NAME))).thenReturn(new KafkaMirrorMaker2Builder(MM2).build());
+        when(mockConnectOps.getAsync(eq(NAMESPACE), eq(NAME))).thenReturn(Future.succeededFuture(new KafkaMirrorMaker2Builder(MM2).build()));
+        ArgumentCaptor<KafkaMirrorMaker2> mm2StatusCaptor = ArgumentCaptor.forClass(KafkaMirrorMaker2.class);
+        when(mockConnectOps.updateStatusAsync(any(), mm2StatusCaptor.capture())).thenReturn(Future.succeededFuture());
+
+        // Mock Connect API
+        KafkaConnectApi mockConnectClient = mock(KafkaConnectApi.class);
+        when(mockConnectClient.list(any(), anyString(), anyInt())).thenReturn(Future.succeededFuture(emptyList()));
+        when(mockConnectClient.updateConnectLoggers(any(), anyString(), anyInt(), anyString(), any(OrderedProperties.class))).thenReturn(Future.succeededFuture());
+
+        KafkaMirrorMaker2AssemblyOperator ops = new KafkaMirrorMaker2AssemblyOperator(
+                vertx,
+                new PlatformFeaturesAvailability(false, KUBERNETES_VERSION),
+                supplier,
+                ResourceUtils.dummyClusterOperatorConfig("+StableConnectIdentities"),
+                x -> mockConnectClient
+        );
+
+        Checkpoint async = context.checkpoint();
+        ops.reconcile(new Reconciliation("test-trigger", KafkaMirrorMaker2.RESOURCE_KIND, NAMESPACE, NAME))
+                .onComplete(context.succeeding(v -> context.verify(() -> {
+                    // Check rolling happened => it should happen 2 times:
+                    //    * First for the one Pod that exists before the scale-up goes through manual rolling update
+                    //    * Then the one Pod that exists before the scale-up goes through regular rolling update (caused by the mock being imperfect)
+                    //    * The scaled-up Pods are not rolled
+                    verify(mockPodOps, times(2)).deleteAsync(any(), eq(NAMESPACE), eq(COMPONENT_NAME + "-0"), eq(false));
+
+                    // Verify CR status
+                    List<KafkaMirrorMaker2> capturedMm2Statuses = mm2StatusCaptor.getAllValues();
+                    assertThat(capturedMm2Statuses, hasSize(1));
+
+                    async.flag();
+                })));
+    }
+
+    @Test
+    public void testManualRollingUpdatePerPod(VertxTestContext context)  {
+        StrimziPodSet oldPodSet = CLUSTER.generatePodSet(3, null, null, false, null, null, null);
+        List<Pod> oldPods = PodSetUtils.podSetToPods(oldPodSet);
+        oldPods.get(1).getMetadata().getAnnotations().put(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "true"); // We want the pod to roll manually
+
+        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
+
+        // Mock deployment
+        DeploymentOperator mockDepOps = supplier.deploymentOperations;
+        when(mockDepOps.getAsync(eq(NAMESPACE), eq(COMPONENT_NAME))).thenReturn(Future.succeededFuture());
+
+        // Mock PodSets
+        StrimziPodSetOperator mockPodSetOps = supplier.strimziPodSetOperator;
+        when(mockPodSetOps.getAsync(eq(NAMESPACE), eq(COMPONENT_NAME))).thenReturn(Future.succeededFuture(oldPodSet));
+        when(mockPodSetOps.readiness(any(), eq(NAMESPACE), eq(COMPONENT_NAME), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+        ArgumentCaptor<StrimziPodSet> podSetCaptor = ArgumentCaptor.forClass(StrimziPodSet.class);
+        when(mockPodSetOps.reconcile(any(), eq(NAMESPACE), eq(COMPONENT_NAME), podSetCaptor.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.created(i.getArgument(3))));
+
+        // Mock PDBs
+        PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
+        ArgumentCaptor<PodDisruptionBudget> pdbCaptor = ArgumentCaptor.forClass(PodDisruptionBudget.class);
+        when(mockPdbOps.reconcile(any(), eq(NAMESPACE), eq(COMPONENT_NAME), pdbCaptor.capture())).thenReturn(Future.succeededFuture());
+
+        // Mock Config Maps
+        ConfigMapOperator mockCmOps = supplier.configMapOperations;
+        when(mockCmOps.reconcile(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), any())).thenReturn(Future.succeededFuture());
+
+        // Mock Services
+        ServiceOperator mockServiceOps = supplier.serviceOperations;
+        ArgumentCaptor<Service> serviceCaptor = ArgumentCaptor.forClass(Service.class);
+        when(mockServiceOps.reconcile(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), serviceCaptor.capture())).thenReturn(Future.succeededFuture());
+
+        // Mock Network Policies
+        NetworkPolicyOperator mockNetPolOps = supplier.networkPolicyOperator;
+        when(mockNetPolOps.reconcile(any(), eq(NAMESPACE), eq(COMPONENT_NAME), any())).thenReturn(Future.succeededFuture());
+
+        // Mock Pods
+        PodOperator mockPodOps = supplier.podOperations;
+        when(mockPodOps.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(Future.succeededFuture(oldPods));
+        when(mockPodOps.getAsync(eq(NAMESPACE), startsWith(COMPONENT_NAME))).thenAnswer(i -> {
+            Pod pod = oldPods.stream().filter(p -> i.getArgument(1).equals(p.getMetadata().getName())).findFirst().orElse(null);
+            return Future.succeededFuture(pod);
+        });
+        when(mockPodOps.deleteAsync(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), eq(false))).thenReturn(Future.succeededFuture());
+        when(mockPodOps.reconcile(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), any())).thenReturn(Future.succeededFuture());
+        when(mockPodOps.readiness(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+
+        // Mock Secrets
+        SecretOperator mockSecretOps = supplier.secretOperations;
+        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(KafkaConnectResources.jmxSecretName(NAME)))).thenReturn(Future.succeededFuture());
+
+        // Mock KafkaMirrorMaker2 CRs
+        CrdOperator<KubernetesClient, KafkaMirrorMaker2, KafkaMirrorMaker2List> mockConnectOps = supplier.mirrorMaker2Operator;
+        when(mockConnectOps.get(eq(NAMESPACE), eq(NAME))).thenReturn(new KafkaMirrorMaker2Builder(MM2).build());
+        when(mockConnectOps.getAsync(eq(NAMESPACE), eq(NAME))).thenReturn(Future.succeededFuture(new KafkaMirrorMaker2Builder(MM2).build()));
+        ArgumentCaptor<KafkaMirrorMaker2> mm2StatusCaptor = ArgumentCaptor.forClass(KafkaMirrorMaker2.class);
+        when(mockConnectOps.updateStatusAsync(any(), mm2StatusCaptor.capture())).thenReturn(Future.succeededFuture());
+
+        // Mock Connect API
+        KafkaConnectApi mockConnectClient = mock(KafkaConnectApi.class);
+        when(mockConnectClient.list(any(), anyString(), anyInt())).thenReturn(Future.succeededFuture(emptyList()));
+        when(mockConnectClient.updateConnectLoggers(any(), anyString(), anyInt(), anyString(), any(OrderedProperties.class))).thenReturn(Future.succeededFuture());
+
+        KafkaMirrorMaker2AssemblyOperator ops = new KafkaMirrorMaker2AssemblyOperator(
+                vertx,
+                new PlatformFeaturesAvailability(false, KUBERNETES_VERSION),
+                supplier,
+                ResourceUtils.dummyClusterOperatorConfig("+StableConnectIdentities"),
+                x -> mockConnectClient
+        );
+
+        Checkpoint async = context.checkpoint();
+        ops.reconcile(new Reconciliation("test-trigger", KafkaMirrorMaker2.RESOURCE_KIND, NAMESPACE, NAME))
+                .onComplete(context.succeeding(v -> context.verify(() -> {
+                    // Check rolling happened => Should happen once as a regular rolling update to all pods and once more for the annotated pod
+                    verify(mockPodOps, times(1)).deleteAsync(any(), eq(NAMESPACE), eq(COMPONENT_NAME + "-0"), eq(false));
+                    verify(mockPodOps, times(2)).deleteAsync(any(), eq(NAMESPACE), eq(COMPONENT_NAME + "-1"), eq(false));
+                    verify(mockPodOps, times(1)).deleteAsync(any(), eq(NAMESPACE), eq(COMPONENT_NAME + "-2"), eq(false));
+
+                    // Verify CR status
+                    List<KafkaMirrorMaker2> capturedMm2Statuses = mm2StatusCaptor.getAllValues();
+                    assertThat(capturedMm2Statuses, hasSize(1));
+
+                    async.flag();
+                })));
     }
 
     private KafkaConnectApi createConnectClientMock() {
