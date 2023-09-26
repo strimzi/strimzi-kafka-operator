@@ -266,12 +266,12 @@ class RollingUpdateST extends AbstractST {
      *     - Data are produced and consumed successfully
      *  3. - Scale up Kafka Cluster from 3 to 5 replicas
      *     - Cluster scales to 5 replicas and volumes as such
-     *  4. - Deploy KafkaTopic with 3 replicas and new clients which will target this KafkaTopic
-     *     - Topic is deployed and ready, clients successfully communicate with topic represented by mentioned KafkaTopic
+     *  4. - Deploy KafkaTopic with 4 replicas and new clients which will target this KafkaTopic and the first one KafkaTopic
+     *     - Topic is deployed and ready, clients successfully communicate with respective KafkaTopics
      *  5. - Scale down Kafka Cluster back from 5 to 3 replicas
      *     - Cluster scales down to 3 replicas and volumes as such
      *  6. - Deploy new KafkaTopic and new clients which will target this KafkaTopic, also do the same for the first KafkaTopic
-     *     - New KafkaTopic is created and ready, all clients can communicate successfully
+     *     - New KafkaTopic is created and ready, clients successfully communicate with respective KafkaTopics
      *
      * @usecase
      *  - kafka
@@ -284,6 +284,10 @@ class RollingUpdateST extends AbstractST {
     @KRaftNotSupported("The scaling of the Kafka Pods is not working properly at the moment, topic with extra operators will also need a workaround")
     void testKafkaScaleUpScaleDown(ExtensionContext extensionContext) {
         final TestStorage testStorage = new TestStorage(extensionContext, Environment.TEST_SUITE_NAMESPACE);
+
+        final String topicNameBeforeScaling = testStorage.getTopicName();
+        final String topicNameScaledUp = testStorage.getTopicName() + "-scaled-up";
+        final String topicNameScaledBackDown = testStorage.getTopicName() + "-scaled-down";
 
         resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), 3, 3)
             .editMetadata()
@@ -307,14 +311,16 @@ class RollingUpdateST extends AbstractST {
         final int initialReplicas = kubeClient().getClient().pods().inNamespace(testStorage.getNamespaceName()).withLabelSelector(testStorage.getKafkaSelector()).list().getItems().size();
         assertEquals(3, initialReplicas);
 
-        resourceManager.createResourceWithWait(extensionContext, KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getTopicName(), 3, initialReplicas, initialReplicas, testStorage.getNamespaceName()).build());
+        // communicate with topic before scaling up/down
+
+        resourceManager.createResourceWithWait(extensionContext, KafkaTopicTemplates.topic(testStorage.getClusterName(), topicNameBeforeScaling, 3, initialReplicas, initialReplicas, testStorage.getNamespaceName()).build());
 
         KafkaClients clients = new KafkaClientsBuilder()
             .withProducerName(testStorage.getProducerName())
             .withConsumerName(testStorage.getConsumerName())
             .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(testStorage.getClusterName()))
             .withNamespaceName(testStorage.getNamespaceName())
-            .withTopicName(testStorage.getTopicName())
+            .withTopicName(topicNameBeforeScaling)
             .withMessageCount(testStorage.getMessageCount())
             .withUsername(testStorage.getUsername())
             .withConsumerGroup(ClientUtils.generateRandomConsumerGroup())
@@ -340,33 +346,39 @@ class RollingUpdateST extends AbstractST {
 
         LOGGER.info("Kafka scale up to {} finished", scaleTo);
 
+        // consuming data from original topic after scaling up
+
         LOGGER.info("Consume data produced before scaling up");
         clients = new KafkaClientsBuilder(clients)
             .withConsumerGroup(ClientUtils.generateRandomConsumerGroup())
             .build();
 
+        resourceManager.createResourceWithWait(extensionContext, clients.consumerTlsStrimzi(testStorage.getClusterName()));
+        ClientUtils.waitForConsumerClientSuccess(testStorage);
+
+        // new topic has more replicas than there was available Kafka brokers before scaling up
+
         LOGGER.info("Create new KafkaTopic with replica count requiring existence of brokers added by scaling up");
-        String scaleUpTopicName = KafkaTopicUtils.generateRandomNameOfTopic();
-        KafkaTopic scaleUpKafkaTopicResource = KafkaTopicTemplates.topic(testStorage.getClusterName(), scaleUpTopicName, testStorage.getNamespaceName())
+        KafkaTopic scaledUpKafkaTopicResource = KafkaTopicTemplates.topic(testStorage.getClusterName(), topicNameScaledUp, testStorage.getNamespaceName())
             .editSpec()
-                .withReplicas(3)
+                .withReplicas(initialReplicas + 1)
             .endSpec()
             .build();
-        resourceManager.createResourceWithWait(extensionContext, scaleUpKafkaTopicResource);
+        resourceManager.createResourceWithWait(extensionContext, scaledUpKafkaTopicResource);
 
+        LOGGER.info("Produce and consume messages into KafkaTopic {}/{}", testStorage.getNamespaceName(), topicNameScaledUp);
         clients = new KafkaClientsBuilder(clients)
-            .withTopicName(scaleUpTopicName)
+            .withTopicName(topicNameScaledUp)
             .build();
-
         resourceManager.createResourceWithWait(extensionContext, clients.producerTlsStrimzi(testStorage.getClusterName()), clients.consumerTlsStrimzi(testStorage.getClusterName()));
         ClientUtils.waitForClientsSuccess(testStorage);
 
-        resourceManager.deleteResource(scaleUpKafkaTopicResource);
-
+        LOGGER.info("Verify number of PVCs is increased to 5 after scaling Kafka: {}/{} Up to 5 replicas", testStorage.getNamespaceName(), testStorage.getClusterName());
         assertThat((int) kubeClient().listPersistentVolumeClaims(testStorage.getNamespaceName(), testStorage.getClusterName()).stream().filter(
             pvc -> pvc.getMetadata().getName().contains(testStorage.getKafkaStatefulSetName())).count(), is(scaleTo));
 
         // scale down
+
         LOGGER.info("Scale down Kafka to {}", initialReplicas);
         if (Environment.isKafkaNodePoolsEnabled()) {
             KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(testStorage.getKafkaNodePoolName(), knp ->
@@ -376,25 +388,28 @@ class RollingUpdateST extends AbstractST {
         }
 
         RollingUpdateUtils.waitForComponentScaleUpOrDown(testStorage.getNamespaceName(), testStorage.getKafkaSelector(), initialReplicas);
-
         LOGGER.info("Kafka scale down to {} finished", initialReplicas);
 
+        // consuming from original topic (i.e. created before scaling)
+
+        LOGGER.info("Consume data from topic {}/{} where data were produced before scaling up and down", testStorage.getNamespaceName(), testStorage.getTopicName());
         clients = new KafkaClientsBuilder(clients)
+            .withTopicName(testStorage.getTopicName())
             .withConsumerGroup(ClientUtils.generateRandomConsumerGroup())
             .build();
-
         resourceManager.createResourceWithWait(extensionContext, clients.consumerTlsStrimzi(testStorage.getClusterName()));
         ClientUtils.waitForConsumerClientSuccess(testStorage);
 
         PersistentVolumeClaimUtils.waitForPersistentVolumeClaimDeletion(testStorage, initialReplicas);
 
         // Create new topic to ensure, that ZK or KRaft is working properly
-        String scaleDownTopicName = KafkaTopicUtils.generateRandomNameOfTopic();
 
-        resourceManager.createResourceWithWait(extensionContext, KafkaTopicTemplates.topic(testStorage.getClusterName(), scaleDownTopicName, testStorage.getNamespaceName()).build());
+        LOGGER.info("Creating new KafkaTopic: {}/{} and producing consuming data", testStorage.getNamespaceName(), topicNameScaledBackDown);
+
+        resourceManager.createResourceWithWait(extensionContext, KafkaTopicTemplates.topic(testStorage.getClusterName(), topicNameScaledBackDown, testStorage.getNamespaceName()).build());
 
         clients = new KafkaClientsBuilder(clients)
-            .withTopicName(scaleDownTopicName)
+            .withTopicName(topicNameScaledBackDown)
             .withConsumerGroup(ClientUtils.generateRandomConsumerGroup())
             .build();
 
