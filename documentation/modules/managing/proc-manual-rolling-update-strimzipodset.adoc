@@ -6,29 +6,36 @@
 = Performing a rolling update using a pod management annotation
 
 [role="_abstract"]
-This procedure describes how to trigger a rolling update of a Kafka cluster or ZooKeeper cluster.
+This procedure describes how to trigger a rolling update of Kafka, Kafka Connect, MirrorMaker 2, or ZooKeeper clusters.
 To trigger the update, you add an annotation to the `StrimziPodSet` that manages the pods running on the cluster.
 
 .Prerequisites
 
-To perform a manual rolling update, you need a running Cluster Operator and Kafka cluster.
+To perform a manual rolling update, you need a running Cluster Operator.
+The cluster for the component you are updating, whether it's Kafka, Kafka Connect, MirrorMaker 2, or ZooKeeper, must also be running.
 
 .Procedure
 
-. Find the name of the resource that controls the Kafka or ZooKeeper pods you want to manually update.
+. Find the name of the resource that controls the pods you want to manually update.
 +
 For example, if your Kafka cluster is named _my-cluster_, the corresponding names are _my-cluster-kafka_ and _my-cluster-zookeeper_.
+For a Kafka Connect cluster named _my-connect-cluster_, the corresponding name is _my-connect-cluster-connect_.
+And for a MirrorMaker 2 cluster named _my-mm2-cluster_, the corresponding name is _my-mm2-cluster-mirrormaker2_.
 
 . Use `kubectl annotate` to annotate the appropriate resource in Kubernetes.
 +
 .Annotating a StrimziPodSet
 [source,shell,subs=+quotes]
 ----
-kubectl annotate strimzipodset _<cluster_name>_-kafka strimzi.io/manual-rolling-update=true
+kubectl annotate strimzipodset <cluster_name>-kafka strimzi.io/manual-rolling-update=true
 
-kubectl annotate strimzipodset _<cluster_name>_-zookeeper strimzi.io/manual-rolling-update=true
+kubectl annotate strimzipodset <cluster_name>-zookeeper strimzi.io/manual-rolling-update=true
+
+kubectl annotate strimzipodset <cluster_name>-connect strimzi.io/manual-rolling-update=true
+
+kubectl annotate strimzipodset <cluster_name>-mirrormaker2 strimzi.io/manual-rolling-update=true
 ----
 
 . Wait for the next reconciliation to occur (every two minutes by default).
 A rolling update of all pods within the annotated resource is triggered, as long as the annotation was detected by the reconciliation process.
-When the rolling update of all the pods is complete, the annotation is removed from the resource.
+When the rolling update of all the pods is complete, the annotation is automatically removed from the resource.
