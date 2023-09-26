@@ -65,6 +65,8 @@ include::../../modules/configuring/proc-managing-node-pools-ids.adoc[leveloffset
 include::../../modules/configuring/proc-scaling-up-node-pools.adoc[leveloffset=+2]
 include::../../modules/configuring/proc-scaling-down-node-pools.adoc[leveloffset=+2]
 include::../../modules/configuring/proc-moving-node-pools.adoc[leveloffset=+2]
+include::../../modules/configuring/proc-managing-storage-node-pools.adoc[leveloffset=+2]
+include::../../modules/configuring/proc-managing-storage-affinity-node-pools.adoc[leveloffset=+2]
 include::../../modules/configuring/proc-migrating-clusters-node-pools.adoc[leveloffset=+2]
 
 //`Kafka` config for operators

@@ -30,6 +30,7 @@ my-cluster   3                        3
 m|Strimzi resource      |Long name          |Short name
 
 | Kafka                 | kafka             | k
+| Kafka Node Pool       | kafkanodepool     | knp
 | Kafka Topic           | kafkatopic        | kt
 | Kafka User            | kafkauser         | ku
 | Kafka Connect         | kafkaconnect      | kc

@@ -8,28 +8,27 @@
 [role="_abstract"]
 Persistent data storage retains data in the event of system disruption.
 For pods that use persistent data storage, data is persisted across pod failures and restarts.
+Because of its permanent nature, persistent storage is recommended for production environments.
 
-A dynamic provisioning framework enables clusters to be created with persistent storage. 
-Pod configuration uses {K8sPersistentVolumeClaims} (PVCs) to make storage requests on persistent volumes (PVs).
-PVs are storage resources that represent a storage volume.
-PVs are independent of the pods that use them.
+To use persistent storage in Strimzi, you specify `persistent-claim` in the storage configuration of the `Kafka` or `ZooKeeper` resources. 
+If you are using the preview of the node pools feature, you can also specify `persistent-claim` in the storage configuration of individual node pools.
+
+You configure the resource so that pods use {K8sPersistentVolumeClaims} (PVCs) to make storage requests on persistent volumes (PVs).
+PVs represent storage volumes that are created on demand and are independent of the pods that use them.
 The PVC requests the amount of storage required when a pod is being created.
 The underlying storage infrastructure of the PV does not need to be understood. 
 If a PV matches the storage criteria, the PVC is bound to the PV.
 
-Because of its permanent nature, persistent storage is recommended for production.
+You have two options for specifying the storage type:
 
-PVCs can request different types of persistent storage by specifying a {K8SStorageClass}.
-Storage classes define storage profiles and dynamically provision PVs.  
-If a storage class is not specified, the default storage class is used.
-Persistent storage options might include SAN storage types or {K8sLocalPersistentVolumes}.
+`storage.type: persistent-claim`:: If you choose `persistent-claim` as the storage type, a single persistent storage volume is defined. 
 
-To use persistent storage, you set the storage type configuration in the `Kafka` or `ZooKeeper` resource to `persistent-claim`.
+`storage.type: jbod`:: When you select `jbod` as the storage type, you have the flexibility to define an array of persistent storage volumes using unique IDs. 
 
-In the production environment, the following configuration is recommended:
+In a production environment, it is recommended to configure the following:
 
-* For Kafka, configure `type: jbod`  with one or more `type: persistent-claim` volumes
-* For ZooKeeper, configure `type: persistent-claim`
+* For Kafka or node pools, set `storage.type` to `jbod` with one or more persistent volumes.
+* For ZooKeeper, set `storage.type` as `persistent-claim` for a single persistent volume.
 
 Persistent storage also has the following configuration options:
 
@@ -41,8 +40,10 @@ Default is `0`.
 The size of the persistent volume claim, for example, "1000Gi".
 
 `class` (optional)::
-The Kubernetes {K8SStorageClass} to use for dynamic volume provisioning.
-Storage `class` configuration includes parameters that describe the profile of a volume in detail. 
+PVCs can request different types of persistent storage by specifying a {K8SStorageClass}.
+Storage classes define storage profiles and dynamically provision PVs based on that profile.  
+If a storage class is not specified, the storage class marked as default in the Kubernetes cluster is used.
+Persistent storage options might include SAN storage types or {K8sLocalPersistentVolumes}.
 
 `selector` (optional)::
 Configuration to specify a specific PV.
@@ -57,12 +58,14 @@ For other versions of Kubernetes and storage classes that do not support volume 
 Decreasing the size of existing persistent volumes is not possible.
 
 .Example persistent storage configuration for Kafka and ZooKeeper
-[source,yaml]
+[source,yaml,subs="attributes+"]
 ----
-# ...
+apiVersion: {KafkaApiVersion}
+kind: Kafka
+metadata:
+  name: my-cluster
 spec:
   kafka:
-    # ...
     storage:
       type: jbod
       volumes:
@@ -83,11 +86,8 @@ spec:
     storage:
       type: persistent-claim
       size: 1000Gi
-# ...
+    # ...
 ----
-
-If you do not specify a storage class, the default is used.
-The following example specifies a storage class.
 
 .Example persistent storage configuration with specific storage class
 [source,yaml,subs="attributes+"]
@@ -95,7 +95,7 @@ The following example specifies a storage class.
 # ...
 storage:
   type: persistent-claim
-  size: 1Gi
+  size: 500Gi
   class: my-storage-class
 # ...
 ----
@@ -117,13 +117,13 @@ storage:
 
 == Storage class overrides
 
-Instead of using the default storage class, you can specify a different storage class for one or more Kafka brokers or ZooKeeper nodes.
+Instead of using the default storage class, you can specify a different storage class for one or more Kafka or ZooKeeper nodes.
 This is useful, for example, when storage classes are restricted to different availability zones or data centers.
 You can use the `overrides` field for this purpose.
 
 In this example, the default storage class is named `my-storage-class`:
 
-.Example Strimzi cluster using storage class overrides
+.Example storage configuration with class overrides
 [source,yaml,subs="attributes+"]
 ----
 apiVersion: {KafkaApiVersion}
@@ -175,14 +175,13 @@ As a result of the configured `overrides` property, the volumes use the followin
 
 * The persistent volumes of ZooKeeper node 0 use `my-storage-class-zone-1a`.
 * The persistent volumes of ZooKeeper node 1 use `my-storage-class-zone-1b`.
-* The persistent volumes of ZooKeeepr node 2 use `my-storage-class-zone-1c`.
+* The persistent volumes of ZooKeeper node 2 use `my-storage-class-zone-1c`.
 * The persistent volumes of Kafka broker 0 use `my-storage-class-zone-1a`.
 * The persistent volumes of Kafka broker 1 use `my-storage-class-zone-1b`.
 * The persistent volumes of Kafka broker 2 use `my-storage-class-zone-1c`.
 
-The `overrides` property is currently used only to override storage class configurations. 
+The `overrides` property is currently used only to override the storage `class`. 
 Overrides for other storage configuration properties is not currently supported.
-Other storage configuration properties are currently not supported.
 
 [id='ref-persistent-storage-pvc-{context}']
 == PVC resources for persistent storage
