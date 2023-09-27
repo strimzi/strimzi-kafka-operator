@@ -7,7 +7,7 @@
 
 [role="_abstract"]
 When using authorization in Kafka, a Kafka Connect user requires read/write access to the cluster group and internal topics of Kafka Connect. 
-This procedure outlines how access is granted using `simple` authorization.
+This procedure outlines how access is granted using `simple` authorization and ACLs.
 
 Properties for the Kafka Connect cluster group ID and internal topics are configured by Strimzi by default. 
 Alternatively, you can define them explicitly in the `spec` of the `KafkaConnect` resource. 
@@ -25,7 +25,7 @@ For more information on configuring a `KafkaUser` resource to use simple authori
 
 . Edit the `authorization` property in the `KafkaUser` resource to provide access rights to the user.
 +
-Access rights are configured for the Kafka Connect topics and cluster group using `literal` name values:
+Access rights are configured for the Kafka Connect topics and cluster group using `literal` name values.
 The following table shows the default names configured for the topics and cluster group ID. 
 +
 .Names for the access rights configuration 
@@ -48,7 +48,7 @@ The following table shows the default names configured for the topics and cluste
 |===
 +
 In this example configuration, the default names are used to specify access rights.
-If you are using different names for a Kafka Connect instance, use those.
+If you are using different names for a Kafka Connect instance, use those names in the ACLs configuration.
 +
 .Example configuration for simple authorization
 [source,yaml,subs="attributes+"]

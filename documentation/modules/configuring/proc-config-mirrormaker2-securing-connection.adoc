@@ -26,14 +26,20 @@ Before starting this procedure, take a look at the xref:config-examples-{context
 They include examples for securing a deployment of MirrorMaker 2 using mTLS or SCRAM-SHA-512 authentication.
 The examples specify internal listeners for connecting within a Kubernetes cluster.
 
-The examples provide the configuration for full authorization, including all the ACLs needed by MirrorMaker 2 to allow operations on the source and target Kafka clusters.
+The examples also provide the configuration for full authorization, including the ACLs that allow user operations on the source and target Kafka clusters.
+
+When configuring user access to source and target Kafka clusters, ACLs must grant access rights to internal MirrorMaker 2 connectors and read/write access to the cluster group and internal topics used by the underlying Kafka Connect framework in the target cluster. 
+If you've renamed the cluster group or internal topics, such as when xref:con-config-kafka-connect-multiple-instances-{context}[configuring MirrorMaker 2 for multiple instances], use those names in the ACLs configuration.
+
+Simple authorization uses ACL rules managed by the Kafka `AclAuthorizer` and `StandardAuthorizer` plugins to ensure appropriate access levels.
+For more information on configuring a `KafkaUser` resource to use simple authorization, see the link:{BookURLConfiguring}#type-AclRule-reference[`AclRule` schema reference^].
 
 .Prerequisites
 
 * Strimzi is running
 * Separate namespaces for source and target clusters
 
-The procedure assumes that the source and target Kafka clusters are installed to separate namespaces
+The procedure assumes that the source and target Kafka clusters are installed to separate namespaces.
 If you want to use the Topic Operator, you'll need to do this.
 The Topic Operator only watches a single cluster in a specified namespace.
 
@@ -157,8 +163,6 @@ The certificates are created in the secret `_<cluster_name>_-cluster-ca-cert`.
 For example, if you used `tls` authentication and the `simple` authorization type in the `Kafka` configuration for the source Kafka cluster, use the same in the `KafkaUser` configuration.
 
 .. Configure the ACLs needed by MirrorMaker 2 to allow operations on the source and target Kafka clusters.
-+
-The ACLs are used by the internal MirrorMaker connectors, and by the underlying Kafka Connect framework.
 --
 +
 .Example source user configuration for mTLS authentication
@@ -223,12 +227,13 @@ spec:
   authorization:
     type: simple
     acls:
-      # Underlying Kafka Connect internal topics to store configuration, offsets, or status
+      # cluster group
       - resource:
           type: group
           name: mirrormaker2-cluster
         operations:
           - Read
+      # access to config.storage.topic    
       - resource:
           type: topic
           name: mirrormaker2-cluster-configs
@@ -238,6 +243,7 @@ spec:
           - DescribeConfigs
           - Read
           - Write
+      # access to status.storage.topic    
       - resource:
           type: topic
           name: mirrormaker2-cluster-status
@@ -247,6 +253,7 @@ spec:
           - DescribeConfigs
           - Read
           - Write
+      # access to offset.storage.topic    
       - resource:
           type: topic
           name: mirrormaker2-cluster-offsets
