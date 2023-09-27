@@ -6,6 +6,7 @@ package io.strimzi.operator.topic.v2;
 
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientException;
+import io.micrometer.core.instrument.Timer;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaTopicBuilder;
@@ -428,7 +429,7 @@ public class BatchingTopicController {
         }
 
         var remainingAfterDeletions = partitionedByDeletion.get(false);
-        remainingAfterDeletions.forEach(rt -> rt.startTimer(metrics));
+        remainingAfterDeletions.forEach(this::startReconciliationTimer);
         Map<ReconcilableTopic, Either<TopicOperatorException, Object>> results = new HashMap<>();
 
         var partitionedByManaged = remainingAfterDeletions.stream().collect(Collectors.partitioningBy(reconcilableTopic -> isManaged(reconcilableTopic.kt())));
@@ -441,6 +442,7 @@ public class BatchingTopicController {
         partitionedByPaused.get(true).forEach(reconcilableTopic -> putResult(results, reconcilableTopic, Either.ofRight(null)));
 
         var mayNeedUpdate = partitionedByPaused.get(false);
+        metrics.reconciliationsCounter(namespace).increment(mayNeedUpdate.size());
         var addedFinalizer = addOrRemoveFinalizer(useFinalizer, mayNeedUpdate);
 
         var currentStatesOrError = describeTopic(addedFinalizer);
@@ -458,7 +460,7 @@ public class BatchingTopicController {
         accumulateResults(results, currentStatesOrError, alterConfigsResults, createPartitionsResults);
 
         updateStatuses(results);
-        remainingAfterDeletions.forEach(rt -> rt.stopTimer(metrics));
+        remainingAfterDeletions.forEach(this::stopTimer);
 
         LOGGER.traceOp("Total time reconciling batch of {} KafkaTopics: {}ns", results.size(), System.nanoTime() - t3);
     }
@@ -805,7 +807,6 @@ public class BatchingTopicController {
                 var e = validate(reconcilableTopic);
                 if (e.isRightEqual(true)) {
                     // adminDelete, removeFinalizer, forgetTopic, updateStatus
-                    reconcilableTopic.startTimer(metrics);
                     return true;
                 } else if (e.isRightEqual(false)) {
                     // do nothing
@@ -821,7 +822,12 @@ public class BatchingTopicController {
                 return false;
             }
         });
-        Set<String> topicNames = partitionedByManaged.map(ReconcilableTopic::topicName).collect(Collectors.toSet());
+
+        Set<String> topicNames = partitionedByManaged.map(reconcilableTopic -> {
+            metrics.reconciliationsCounter(namespace).increment();
+            startReconciliationTimer(reconcilableTopic);
+            return reconcilableTopic.topicName();
+        }).collect(Collectors.toSet());
 
         PartitionedByError<ReconcilableTopic, Object> deleteResult = deleteTopics(batch, topicNames);
 
@@ -838,9 +844,8 @@ public class BatchingTopicController {
                 }
             }
             forgetTopic(pair.getKey());
-            metrics.reconciliationsCounter(namespace).increment();
             metrics.successfulReconciliationsCounter(namespace).increment();
-            pair.getKey().stopTimer(metrics);
+            stopTimer(pair.getKey());
         });
 
         // join that to fail
@@ -859,12 +864,11 @@ public class BatchingTopicController {
                             entry.getKey().topicName(),
                             entry.getValue());
                 }
-                metrics.reconciliationsCounter(namespace).increment();
                 metrics.failedReconciliationsCounter(namespace).increment();
             } else {
                 updateStatusForException(entry.getKey(), entry.getValue());
             }
-            entry.getKey().stopTimer(metrics);
+            stopTimer(entry.getKey());
         });
 
     }
@@ -994,6 +998,7 @@ public class BatchingTopicController {
             .withLastTransitionTime(StatusUtils.iso8601Now())
             .build();
         updateStatus(reconcilableTopic.reconciliation(), reconcilableTopic.kt(), condition);
+        metrics.failedReconciliationsCounter(namespace).increment();
     }
 
     private void updateStatusOk(ReconcilableTopic reconcilableTopic) {
@@ -1003,6 +1008,7 @@ public class BatchingTopicController {
             .withLastTransitionTime(StatusUtils.iso8601Now())
             .build();
         updateStatus(reconcilableTopic.reconciliation(), reconcilableTopic.kt(), condition);
+        metrics.successfulReconciliationsCounter(namespace).increment();
     }
 
     private void updateStatus(Reconciliation reconciliation,
@@ -1052,5 +1058,17 @@ public class BatchingTopicController {
                 || !Objects.equals(oldReadyCondition.getStatus(), condition.getStatus())
                 || !Objects.equals(oldReadyCondition.getReason(), condition.getReason())
                 || !Objects.equals(oldReadyCondition.getMessage(), condition.getMessage());
+    }
+
+    private void startReconciliationTimer(ReconcilableTopic topic) {
+        if (topic.reconciliationTimerSample() == null) {
+            topic.reconciliationTimerSample(Timer.start(metrics.metricsProvider().meterRegistry()));
+        }
+    }
+
+    private void stopTimer(ReconcilableTopic topic) {
+        if (topic.reconciliationTimerSample() != null) {
+            topic.reconciliationTimerSample().stop(metrics.reconciliationsTimer(namespace));
+        }
     }
 }

@@ -7,7 +7,6 @@ package io.strimzi.operator.topic.v2;
 import io.micrometer.core.instrument.Timer;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.operator.common.Reconciliation;
-import io.strimzi.operator.common.metrics.MetricsHolder;
 
 /**
  * A topic to be reconciled
@@ -54,23 +53,18 @@ public class ReconcilableTopic {
     }
 
     /**
-     * Start the reconciliation timer.
-     * @param metrics Metrics holder
+     * @return The timer sample
      */
-    public void startTimer(MetricsHolder metrics) {
-        if (sample == null) {
-            sample = Timer.start(metrics.metricsProvider().meterRegistry());
-        }
+    public Timer.Sample reconciliationTimerSample() {
+        return sample;
     }
 
     /**
-     * Stop the reconciliation timer if present.
-     * @param metrics Metrics holder
+     * Store the timer sample
+     * @param sample The timer sample
      */
-    public void stopTimer(MetricsHolder metrics) {
-        if (sample != null) {
-            sample.stop(metrics.reconciliationsTimer(reconciliation.namespace()));
-        }
+    public void reconciliationTimerSample(Timer.Sample sample) {
+        this.sample = sample;
     }
 
     @Override

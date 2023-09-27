@@ -9,7 +9,7 @@ import io.fabric8.kubernetes.client.informers.cache.ItemStore;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
-import io.strimzi.operator.common.metrics.MetricsHolder;
+import io.strimzi.operator.common.metrics.BatchOperatorMetricsHolder;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -44,7 +44,7 @@ class BatchingLoop {
     private final ItemStore<KafkaTopic> itemStore;
     private final Runnable stop;
     private final int maxQueueSize;
-    private final MetricsHolder metrics;
+    private final BatchOperatorMetricsHolder metrics;
     private final String namespace;
 
     public BatchingLoop(
@@ -55,7 +55,7 @@ class BatchingLoop {
             long maxBatchLingerMs,
             ItemStore<KafkaTopic> itemStore,
             Runnable stop,
-            MetricsHolder metrics,
+            BatchOperatorMetricsHolder metrics,
             String namespace) {
         this.maxQueueSize = maxQueueSize;
         this.queue = new LinkedBlockingDeque<>(maxQueueSize);
@@ -100,8 +100,8 @@ class BatchingLoop {
      */
     public void offer(TopicEvent event) {
         if (queue.offerFirst(event)) {
-            LOGGER.debugOp("Item {} push onto the deque head", event);
-            metrics.reconciliationsMaxQueueSize(namespace).getAndUpdate(size -> size < queue.size() ? queue.size() : size);
+            LOGGER.debugOp("Item {} added to front of queue", event);
+            metrics.reconciliationsMaxQueueSize(namespace).getAndUpdate(size -> Math.max(size, queue.size()));
         } else {
             LOGGER.errorOp("Queue length {} exceeded, stopping operator. Please increase {} environment variable.",
                     maxQueueSize,
@@ -265,7 +265,7 @@ class BatchingLoop {
                 addToBatch(batchId, batch, rejected, topicEvent);
             }
             LOGGER.traceOp("[Batch #{}] Filled with {} topics", batchId, batch.size());
-            metrics.reconciliationsMaxBatchSize(namespace).getAndUpdate(size -> size < batch.size() ? batch.size() : size);
+            metrics.reconciliationsMaxBatchSize(namespace).getAndUpdate(size -> Math.max(size, batch.size()));
 
             // here we need a deque and can push `rejected` back on the front of the queue
             //      where they can be taken by the next thread.

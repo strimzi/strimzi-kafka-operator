@@ -26,7 +26,7 @@ import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.http.HealthCheckAndMetricsServer;
 import io.strimzi.operator.common.http.Liveness;
 import io.strimzi.operator.common.http.Readiness;
-import io.strimzi.operator.common.metrics.OperatorMetricsHolder;
+import io.strimzi.operator.common.metrics.BatchOperatorMetricsHolder;
 import io.strimzi.operator.common.model.Labels;
 import org.apache.kafka.clients.admin.Admin;
 
@@ -67,7 +67,7 @@ public class TopicOperatorMain implements Liveness, Readiness {
         this.resyncIntervalMs = config.fullReconciliationIntervalMs();
         this.admin = admin;
         MetricsProvider metricsProvider = createMetricsProvider();
-        OperatorMetricsHolder metrics = new OperatorMetricsHolder(KafkaTopic.RESOURCE_KIND, Labels.fromMap(selector), metricsProvider);
+        BatchOperatorMetricsHolder metrics = new BatchOperatorMetricsHolder(KafkaTopic.RESOURCE_KIND, Labels.fromMap(selector), metricsProvider);
         this.controller = new BatchingTopicController(selector, admin, client, config.useFinalizer(), metrics, namespace);
         this.itemStore = new BasicItemStore<KafkaTopic>(Cache::metaNamespaceKeyFunc);
         this.queue = new BatchingLoop(config.maxQueueSize(), controller, 1, config.maxBatchSize(), config.maxBatchLingerMs(), itemStore, this::stop, metrics, namespace);
@@ -159,7 +159,6 @@ public class TopicOperatorMain implements Liveness, Readiness {
                     TopicOperatorMain.class.getPackage().getImplementationVersion())
                 .build();
     }
-
 
     @Override
     public boolean isAlive() {

@@ -35,8 +35,6 @@ public abstract class MetricsHolder {
     private final Map<String, Counter> successfulReconciliationsCounterMap = new ConcurrentHashMap<>(1);
     private final Map<String, Counter> lockedReconciliationsCounterMap = new ConcurrentHashMap<>(1);
     private final Map<String, Timer> reconciliationsTimerMap = new ConcurrentHashMap<>(1);
-    private final Map<String, AtomicInteger> reconciliationsMaxQueueMap = new ConcurrentHashMap<>(1);
-    private final Map<String, AtomicInteger> reconciliationsMaxBatchMap = new ConcurrentHashMap<>(1);
 
     /**
      * Constructs the metrics holder
@@ -161,30 +159,6 @@ public abstract class MetricsHolder {
     public Counter lockedReconciliationsCounter(String namespace) {
         return getCounter(namespace, kind, METRICS_PREFIX + "reconciliations.locked", metricsProvider, selectorLabels, lockedReconciliationsCounterMap,
                 "Number of reconciliations skipped because another reconciliation for the same resource was still running");
-    }
-
-    /**
-     * Gauge metric for the max size recorded for the event queue.
-     *
-     * @param namespace Namespace of the resources being reconciled
-     *
-     * @return Metrics gauge
-     */
-    public AtomicInteger reconciliationsMaxQueueSize(String namespace) {
-        return getGauge(namespace, kind, METRICS_PREFIX + "reconciliations.max.queue.size",
-            metricsProvider, selectorLabels, reconciliationsMaxQueueMap, "Max size recorded for the shared event queue");
-    }
-
-    /**
-     * Gauge metric for the max size recorded for the event batch.
-     *
-     * @param namespace Namespace of the resources being reconciled
-     *
-     * @return Metrics gauge
-     */
-    public AtomicInteger reconciliationsMaxBatchSize(String namespace) {
-        return getGauge(namespace, kind, METRICS_PREFIX + "reconciliations.max.batch.size",
-            metricsProvider, selectorLabels, reconciliationsMaxBatchMap, "Max size recorded for a single event batch");
     }
 
     ////////////////////
