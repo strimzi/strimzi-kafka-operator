@@ -525,11 +525,6 @@ public class KafkaRoller {
     private void checkIfRestartOrReconfigureRequired(NodeRef nodeRef, Pod pod, RestartContext restartContext) throws ForceableProblem, InterruptedException, FatalProblem, UnforceableProblem {
         RestartReasons reasonToRestartPod = restartContext.restartReasons;
         boolean podStuck = isPodStuck(pod);
-        if (podStuck) {
-            LOGGER.infoCr(reconciliation, "Pod {} needs to be restarted, because it seems to be stuck and restart might help", nodeRef);
-            restartContext.restartReasons.add(RestartReason.POD_STUCK);
-        }
-
         if (podStuck && !reasonToRestartPod.contains(RestartReason.POD_HAS_OLD_REVISION)) {
             // If the pod is unschedulable then deleting it, or trying to open an Admin client to it will make no difference
             // Treat this as fatal because if it's not possible to schedule one pod then it's likely that proceeding
@@ -550,7 +545,6 @@ public class KafkaRoller {
 
         boolean adminClientInitialised = initAdminClient();
 
-        // Unless the annotation is present, check the pod is at least ready.
         boolean needsRestart = reasonToRestartPod.shouldRestart();
         KafkaBrokerConfigurationDiff diff = null;
         KafkaBrokerLoggingConfigurationDiff loggingDiff = null;
@@ -562,7 +556,10 @@ public class KafkaRoller {
                 String controllerQuorumFetchTimeout = orderedProperties.addStringPairs(desiredConfig).asMap().get(CONTROLLER_QUORUM_FETCH_TIMEOUT_MS_CONFIG_NAME);
                 restartContext.quorumCheck = quorumCheck(allClient, controllerQuorumFetchTimeout != null ? Long.parseLong(controllerQuorumFetchTimeout) : CONTROLLER_QUORUM_FETCH_TIMEOUT_MS_CONFIG_DEFAULT);
             } else {
-                throw new UnforceableProblem("KafkaQuorumCheck cannot be initialised for " + nodeRef + " because none of the brokers do not seem to responding to connection attempts");
+                //throw UnforceableProblem if it is a pure controller, otherwise continue
+                if (!nodeRef.broker()) {
+                    throw new UnforceableProblem("KafkaQuorumCheck cannot be initialised for " + nodeRef + " because none of the brokers do not seem to responding to connection attempts");
+                }
             }
         }
 
