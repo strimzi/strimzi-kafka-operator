@@ -11,6 +11,7 @@ import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaTopicBuilder;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.api.kafka.model.status.ConditionBuilder;
+import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.model.StatusUtils;
@@ -62,7 +63,6 @@ public class BatchingTopicController {
 
     static final String FINALIZER = "strimzi.io/topic-operator";
     static final String MANAGED = "strimzi.io/managed";
-    static final String PAUSED = "strimzi.io/pause-reconciliation";
     static final String AUTO_CREATE_TOPICS_ENABLE = "auto.create.topics.enable";
     private final boolean useFinalizer;
 
@@ -114,10 +114,7 @@ public class BatchingTopicController {
     }
 
     /* test */ static boolean isPaused(KafkaTopic kt) {
-        return kt.getMetadata() != null
-            && kt.getMetadata().getAnnotations() != null
-            && kt.getMetadata().getAnnotations().get(PAUSED) != null
-            && "true".equals(kt.getMetadata().getAnnotations().get(PAUSED));
+        return Annotations.isReconciliationPausedWithAnnotation(kt);
     }
 
     private static boolean isForDeletion(KafkaTopic kt) {
