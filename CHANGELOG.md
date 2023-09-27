@@ -7,6 +7,7 @@
 * Add support for stopping connectors according to [Strimzi Proposal #54](https://github.com/strimzi/proposals/blob/main/054-stopping-kafka-connect-connectors.md)
 * Allow manual rolling of Kafka Connect and Kafka Mirror Maker 2 pods using the `strimzi.io/manual-rolling-update` annotation (supported only when `StableConnectIdentities` feature gate is enabled) 
 * Make sure brokers are empty before scaling them down
+* Update Cruise Control to 2.5.128
 
 ### Changes, deprecations and removals
 
