@@ -22,7 +22,7 @@ spec:
   config:
     # ...
     config.providers: env
-    config.providers.env.class: io.strimzi.kafka.EnvVarConfigProvider
+    config.providers.env.class: org.apache.kafka.common.config.provider.EnvVarConfigProvider
   # ...
 ----
 
