@@ -107,7 +107,7 @@ import static io.strimzi.operator.common.Annotations.ANNO_STRIMZI_IO_REBALANCE_A
  *
  *     The user can stop an ongoing rebalance by annotating the custom resource with {@code strimzi.io/rebalance=stop}
  *     when it is in the {@code Rebalancing} state. The operator then moves to the {@code Stopped} state. The ongoing
- *     partition reassignement will complete and further reassignements will be cancelled. The user can request a new
+ *     partition reassignment will complete and further reassignments will be cancelled. The user can request a new
  *     proposal by applying the {@code strimzi.io/rebalance=refresh} annotation on the custom resource.
  *
  *     Finally, when a proposal is ready but the user has not approved it right after the computation, the proposal may
@@ -587,7 +587,7 @@ public class KafkaRebalanceAssemblyOperator
 
     /**
      * Converts the supplied before and after broker load arrays into a map linking from broker ID integer to a map linking
-     * from load parameter to an array of [before, after, difference]. The load paramters included in the map are dictated
+     * from load parameter to an array of [before, after, difference]. The load parameters included in the map are dictated
      * by the values in he {@link CruiseControlLoadParameters} enum.
      *
      * @param brokerLoadBeforeArray The JSONArray of broker load JSONObjects, for before the optimization proposal is applied,
@@ -797,7 +797,7 @@ public class KafkaRebalanceAssemblyOperator
 
     /**
      * This method handles the transition from {@code ReconciliationPaused} state.
-     * When the reconciliatiom is unpaused {@link KafkaRebalance} , it calls the Cruise Control API for requesting a rebalance proposal.
+     * When the reconciliation is unpaused {@link KafkaRebalance} , it calls the Cruise Control API for requesting a rebalance proposal.
      * If the proposal is immediately ready, the next state is {@code ProposalReady}.
      * If the proposal is not ready yet and Cruise Control is still processing it, the next state is {@code PendingProposal}.
      *
@@ -910,7 +910,7 @@ public class KafkaRebalanceAssemblyOperator
      * This method handles the transition from {@code ProposalReady} state.
      * It is related to the value that the user apply to the strimzi.io/rebalance annotation.
      * If the strimzi.io/rebalance annotation is set to 'approve', it calls the Cruise Control API for executing the proposed rebalance.
-     * If the strimzi.io/rebalance annotation is set to 'refresh', it calls the Cruise Control API for for requesting/refreshing the ready rebalance proposal.
+     * If the strimzi.io/rebalance annotation is set to 'refresh', it calls the Cruise Control API for requesting/refreshing the ready rebalance proposal.
      * If the rebalance is immediately complete, the next state is {@code Ready}.
      * If the rebalance is not finished yet as Cruise Control is still processing it (the usual case), the next state is {@code Rebalancing}.
      * If the user sets any other value for the strimzi.io/rebalance annotation, it is ignored.

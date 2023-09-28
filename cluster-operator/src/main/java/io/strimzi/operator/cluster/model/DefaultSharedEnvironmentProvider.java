@@ -18,7 +18,7 @@ import java.util.Map;
  * Provides the default shared environment provider.
  */
 public class DefaultSharedEnvironmentProvider implements SharedEnvironmentProvider {
-    private Map<String, EnvVar> envVarMap;
+    private final Map<String, EnvVar> envVarMap;
 
     /**
      * Creates the shared environment provider.

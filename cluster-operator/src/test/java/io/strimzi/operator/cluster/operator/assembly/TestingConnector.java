@@ -79,7 +79,7 @@ public class TestingConnector extends SourceConnector {
         }
 
         @Override
-        public List<SourceRecord> poll() throws InterruptedException {
+        public List<SourceRecord> poll() {
             LOGGER.infoOp("Poll {}", this);
             LOGGER.infoOp("Sleeping for {}ms in poll", taskPollTime);
             sleep(taskPollTime);

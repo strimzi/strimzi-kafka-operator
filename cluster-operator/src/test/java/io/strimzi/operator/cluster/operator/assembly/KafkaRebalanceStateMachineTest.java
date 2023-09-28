@@ -149,7 +149,7 @@ public class KafkaRebalanceStateMachineTest {
      * @param vertx The vertx test instance.
      * @param context The test context instance.
      * @param currentState The current state of the resource before being passed to computeNextStatus.
-     * @param nextState The expected state of the resouce after computeNextStatus has been called.
+     * @param nextState The expected state of the resource after computeNextStatus has been called.
      * @param initialAnnotation The initial annotation attached to the Kafka Rebalance resource. For example none or refresh.
      * @param kcRebalance The Kafka Rebalance instance that will be returned by the resourceSupplier.
      * @return A future for the {@link KafkaRebalanceStatus} returned by the {@link KafkaRebalanceAssemblyOperator#computeNextStatus} method

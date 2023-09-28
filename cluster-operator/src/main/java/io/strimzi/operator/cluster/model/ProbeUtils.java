@@ -19,7 +19,7 @@ import java.util.List;
  */
 public class ProbeUtils {
     /**
-     * Default healhtcheck options used by most of our operands with the exception of Mirror Maker (1 and 2), Connect,
+     * Default healthcheck options used by most of our operands with the exception of Mirror Maker (1 and 2), Connect,
      * and User / Topic operators.
      */
     public static final Probe DEFAULT_HEALTHCHECK_OPTIONS = new io.strimzi.api.kafka.model.ProbeBuilder().withTimeoutSeconds(5).withInitialDelaySeconds(15).build();

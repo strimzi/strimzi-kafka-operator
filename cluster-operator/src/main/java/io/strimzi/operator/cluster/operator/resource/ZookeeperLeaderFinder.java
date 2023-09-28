@@ -295,7 +295,7 @@ public class ZookeeperLeaderFinder {
      * The hostname for connecting to zookeeper in the given pod.
      *
      * @param reconciliation    Reconciliation used to obtain the namespace and cluster name
-     * @param podName           Name of the pod for which the hosname should be constructed
+     * @param podName           Name of the pod for which the hostname should be constructed
      *
      * @return                  Hostname of the ZooKeeper node
      */

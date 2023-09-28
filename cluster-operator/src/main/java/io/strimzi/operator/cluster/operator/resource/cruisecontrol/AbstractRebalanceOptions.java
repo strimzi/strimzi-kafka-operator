@@ -12,25 +12,25 @@ import java.util.List;
 @SuppressWarnings("unchecked")
 public abstract class AbstractRebalanceOptions {
     /** Sets whether this rebalance only provides an optimisation proposal (true) or starts a rebalance (false) */
-    private boolean isDryRun;
+    private final boolean isDryRun;
     /** List of optimisation goal class names, must be a sub-set of the configured main goals and include all hard.goals unless skipHardGoals=true */
-    private List<String> goals;
+    private final List<String> goals;
     /** Include additional information in the response from the Cruise Control Server */
-    private boolean verbose;
-    /** Allows specifying a custom goals list that does not incude all configured hard.goals */
-    private boolean skipHardGoalCheck;
-    /** Sets whether the response should be JSON formatted or formated for readibility on the command line */
-    private boolean json;
+    private final boolean verbose;
+    /** Allows specifying a custom goals list that does not include all configured hard.goals */
+    private final boolean skipHardGoalCheck;
+    /** Sets whether the response should be JSON formatted or formatted for readability on the command line */
+    private final boolean json;
     /** A regular expression to specify topics that should not be considered for replica movement */
-    private String excludedTopics;
+    private final String excludedTopics;
     /** The upper bound of ongoing replica movements going into/out of each broker */
-    private int concurrentPartitionMovementsPerBroker;
+    private final int concurrentPartitionMovementsPerBroker;
     /** The upper bound of ongoing leadership movements */
-    private int concurrentLeaderMovements;
+    private final int concurrentLeaderMovements;
     /** The upper bound, in bytes per second, on the bandwidth used to move replicas */
-    private long replicationThrottle;
+    private final long replicationThrottle;
     /** A list of strategy class names used to determine the execution order for the replica movements in the generated optimization proposal. */
-    private List<String> replicaMovementStrategies;
+    private final List<String> replicaMovementStrategies;
 
     /**
      * @return  True if this is dry-run only. False otherwise.

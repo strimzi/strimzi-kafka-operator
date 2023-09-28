@@ -239,7 +239,7 @@ public class StorageDiffTest {
         assertThat(diff.shrinkSize(), is(false));
         assertThat(diff.isVolumesAddedOrRemoved(), is(true));
 
-        // Volume replaced with another ID without chenging the volumes which are kept
+        // Volume replaced with another ID without changing the volumes which are kept
         diff = new StorageDiff(Reconciliation.DUMMY_RECONCILIATION, jbod2, jbod6, Set.of(0, 1, 5), Set.of(0, 1, 5));
         assertThat(diff.changesType(), is(false));
         assertThat(diff.isEmpty(), is(true));

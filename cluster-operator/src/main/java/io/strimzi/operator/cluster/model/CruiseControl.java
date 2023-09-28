@@ -289,7 +289,7 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
     }
 
     /**
-     * @return  Generates a Kuberneets Service for Cruise Control
+     * @return  Generates a Kubernetes Service for Cruise Control
      */
     public Service generateService() {
         return ServiceUtils.createClusterIpService(
@@ -331,7 +331,7 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
     }
 
     /**
-     * Generates Kubernetes Deployment for Cruise Cotnrol
+     * Generates Kubernetes Deployment for Cruise Control
      *
      * @param isOpenShift       Flag indicating if we are on OpenShift or not
      * @param imagePullPolicy   Image pull policy

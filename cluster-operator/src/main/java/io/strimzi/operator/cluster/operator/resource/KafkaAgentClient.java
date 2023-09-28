@@ -40,9 +40,9 @@ class KafkaAgentClient {
     private static final String BROKER_STATE_REST_PATH = "/v1/broker-state/";
     private static final int BROKER_STATE_HTTPS_PORT = 8443;
 
-    private String namespace;
-    private Reconciliation reconciliation;
-    private String cluster;
+    private final String namespace;
+    private final Reconciliation reconciliation;
+    private final String cluster;
     private Secret clusterCaCertSecret;
     private Secret coKeySecret;
     private HttpClient httpClient;

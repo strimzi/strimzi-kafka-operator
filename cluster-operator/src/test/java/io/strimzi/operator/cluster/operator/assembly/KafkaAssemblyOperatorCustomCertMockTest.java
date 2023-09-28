@@ -70,7 +70,7 @@ public class KafkaAssemblyOperatorCustomCertMockTest {
     }
 
     @BeforeEach
-    public void setup() throws InterruptedException {
+    public void setup() {
         Kafka kafka = createKafka();
 
         // Configure the Kubernetes Mock

@@ -48,10 +48,10 @@ public class ZookeeperScaler implements AutoCloseable {
     private final Secret coKeySecret;
 
     private final String trustStorePassword;
-    private File trustStoreFile;
+    private final File trustStoreFile;
 
     private final String keyStorePassword;
-    private File keyStoreFile;
+    private final File keyStoreFile;
 
     private final Reconciliation reconciliation;
 

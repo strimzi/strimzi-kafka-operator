@@ -58,7 +58,7 @@ public class ConnectBuildOperator {
      *
      * @param pfa       Describes the features available in the Kubernetes cluster
      * @param supplier  Resource operator supplier
-     * @param config    Cluster OPerator configuration
+     * @param config    Cluster operator configuration
      */
     public ConnectBuildOperator(PlatformFeaturesAvailability pfa, ResourceOperatorSupplier supplier, ClusterOperatorConfig config) {
         this.imageStreamOperations = supplier.imageStreamOperations;
@@ -327,12 +327,12 @@ public class ConnectBuildOperator {
      * Checks if the image stream is required and exists.
      *
      * @param namespace     Namespace where the BuildConfig exists
-     * @param buidlOutput   Build output configuration
+     * @param buildOutput   Build output configuration
      * @return              Future that completes when the check completes
      */
-    public Future<Void> validateImageStream(String namespace, Output buidlOutput)   {
-        if (buidlOutput != null && buidlOutput.getType().equals(Output.TYPE_IMAGESTREAM)) {
-            String imageName = buidlOutput.getImage().split(":")[0];
+    public Future<Void> validateImageStream(String namespace, Output buildOutput)   {
+        if (buildOutput != null && buildOutput.getType().equals(Output.TYPE_IMAGESTREAM)) {
+            String imageName = buildOutput.getImage().split(":")[0];
             return imageStreamOperations.getAsync(namespace, imageName)
                 .compose(is -> {
                     if (is == null) {

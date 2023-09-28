@@ -38,8 +38,6 @@ import io.vertx.core.WorkerExecutor;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -57,8 +55,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 @ExtendWith(VertxExtension.class)
 @SuppressWarnings("checkstyle:ClassFanOutComplexity")
 public class KafkaAssemblyOperatorWithPoolsKRaftMockTest {
-    private static final Logger LOGGER = LogManager.getLogger(KafkaAssemblyOperatorWithPoolsKRaftMockTest.class);
-
     private static final String NAMESPACE = "my-namespace";
     private static final String CLUSTER_NAME = "my-cluster";
 

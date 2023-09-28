@@ -8,7 +8,6 @@ import io.strimzi.operator.common.model.cruisecontrol.CruiseControlEndpoints;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlParameters;
 import org.junit.jupiter.api.Test;
 
-import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
@@ -27,7 +26,7 @@ public class PathBuilderTest {
 
     private static final List<String> GOALS = Arrays.asList("goal.one", "goal.two", "goal.three", "goal.four", "goal.five");
 
-    private String getExpectedRebalanceString() throws UnsupportedEncodingException {
+    private String getExpectedRebalanceString() {
 
         StringBuilder expectedQuery = new StringBuilder(
                 CruiseControlEndpoints.REBALANCE + "?" +
@@ -46,7 +45,7 @@ public class PathBuilderTest {
             }
         }
 
-        expectedQuery.append(URLEncoder.encode(goalStringBuilder.toString(), StandardCharsets.UTF_8.toString()) + "&");
+        expectedQuery.append(URLEncoder.encode(goalStringBuilder.toString(), StandardCharsets.UTF_8) + "&");
         expectedQuery.append(CruiseControlParameters.REBALANCE_DISK + "=false");
 
         return expectedQuery.toString();
@@ -66,7 +65,7 @@ public class PathBuilderTest {
     }
 
     @Test
-    public void testQueryStringList() throws UnsupportedEncodingException {
+    public void testQueryStringList() {
 
         String path = new PathBuilder(CruiseControlEndpoints.REBALANCE)
                 .withParameter(CruiseControlParameters.JSON, "true")
@@ -84,7 +83,7 @@ public class PathBuilderTest {
     }
 
     @Test
-    public void testQueryRebalanceOptions() throws UnsupportedEncodingException {
+    public void testQueryRebalanceOptions() {
 
         RebalanceOptions options = new RebalanceOptions.RebalanceOptionsBuilder()
                 .withVerboseResponse()

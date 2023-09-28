@@ -17,7 +17,7 @@ public class StorageUtils {
     /**
      * Parse a K8S-style representation of a quantity of memory, such as {@code 512Mi}, into the equivalent number in
      * the specified units. For example, a memory value of "100Gb" and a unit value of "Mb" will return 100000. This
-     * handles values up to around 9Pi, than the long overflows. This should not cause issues in reality since it is
+     * handles values up to around 9Pi, then the long overflows. This should not cause issues in reality since it is
      * unlikely we will have broker with disks over petabyte of size.
      *
      * @param memory The String representation of the quantity of memory.
@@ -32,7 +32,7 @@ public class StorageUtils {
 
     /**
      * Parse a K8S-style representation of a disk size, such as {@code 100Gi}, into the equivalent number of millibytes
-     * represented as a long. This handles values up to around 9Pi, than the long overflows. This should not cause
+     * represented as a long. This handles values up to around 9Pi, then the long overflows. This should not cause
      * issues in reality since it is unlikely we will have broker with disks over petabyte of size.
      *
      * @param size The String representation of the volume size.
@@ -51,7 +51,7 @@ public class StorageUtils {
 
     /**
      * Parse a K8S-style representation of a disk size, such as {@code 100Gi}, into the equivalent number of millibytes
-     * represented as a long. This handles values up to around 9Pi, than the long overflows. This should not cause
+     * represented as a long. This handles values up to around 9Pi, then the long overflows. This should not cause
      * issues in reality since it is unlikely we will have broker with disks over petabyte of size.
      *
      * @param size The String representation of the volume size.

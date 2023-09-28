@@ -16,7 +16,6 @@ import io.strimzi.operator.common.model.StatusUtils;
 import io.strimzi.test.annotations.ParallelSuite;
 import io.strimzi.test.annotations.ParallelTest;
 
-import java.text.ParseException;
 import java.time.Clock;
 import java.time.Instant;
 
@@ -113,7 +112,7 @@ public class StatusDiffTest {
     }
 
     @ParallelTest
-    public void testTimestampDiff() throws ParseException {
+    public void testTimestampDiff() {
         ListenerStatus ls1 = new ListenerStatusBuilder()
                 .withName("plain")
                 .withAddresses(new ListenerAddressBuilder()

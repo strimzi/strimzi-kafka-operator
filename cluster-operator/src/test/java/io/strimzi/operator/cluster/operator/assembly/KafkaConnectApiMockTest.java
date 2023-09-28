@@ -49,7 +49,7 @@ public class KafkaConnectApiMockTest {
     }
 
     @Test
-    public void testStatusWithBackOffSuccedingEventually(VertxTestContext context) {
+    public void testStatusWithBackOffSucceedingEventually(VertxTestContext context) {
         Queue<Future<Map<String, Object>>> statusResults = new ArrayBlockingQueue<>(3);
         statusResults.add(Future.failedFuture(new ConnectRestException(null, null, 404, null, null)));
         statusResults.add(Future.failedFuture(new ConnectRestException(null, null, 404, null, null)));

@@ -14,7 +14,7 @@ public class CruiseControlRebalanceResponse extends CruiseControlResponse {
     private boolean isProposalStillCalculating;
 
     /**
-     * Cosntructor
+     * Constructor
      *
      * @param userTaskId    User task ID
      * @param json          JSON data
@@ -25,7 +25,7 @@ public class CruiseControlRebalanceResponse extends CruiseControlResponse {
         // Sourced from the NotEnoughValidWindows error from the Cruise Control response
         this.isNotEnoughDataForProposal = false;
         // Proposal is not in progress unless response from Cruise Control says otherwise
-        // Sourced from the "progress" field in the response with value "proposalStillCalaculating"
+        // Sourced from the "progress" field in the response with value "proposalStillCalculating"
         this.isProposalStillCalculating = false;
     }
 

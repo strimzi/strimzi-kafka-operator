@@ -8,8 +8,6 @@ import io.strimzi.operator.common.model.cruisecontrol.CruiseControlEndpoints;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlParameters;
 
 import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -24,32 +22,11 @@ public class PathBuilder {
     /**
      * Constructor
      *
-     * @param endpoint  Cruise COntrol endpoint
+     * @param endpoint  Cruise Control endpoint
      */
     public PathBuilder(CruiseControlEndpoints endpoint) {
         constructedPath = endpoint + "?";
         firstParam = true;
-    }
-
-    /**
-     * Adds parameter to the path
-     *
-     * @param parameter     Parameter
-     *
-     * @return  Instance of this builder
-     */
-    public PathBuilder withParameter(String parameter) {
-        if (!firstParam) {
-            constructedPath += "&";
-        } else {
-            firstParam = false;
-        }
-        try {
-            constructedPath += URLEncoder.encode(parameter, StandardCharsets.UTF_8.toString());
-        } catch (UnsupportedEncodingException e) {
-            throw new RuntimeException(e.getMessage());
-        }
-        return this;
     }
 
     /**
@@ -155,9 +132,8 @@ public class PathBuilder {
      */
     public PathBuilder withAddBrokerParameters(AddBrokerOptions options) {
         if (options != null) {
-            PathBuilder builder = withAbstractRebalanceParameters(options)
+            return withAbstractRebalanceParameters(options)
                     .withParameter(CruiseControlParameters.BROKER_ID, options.getBrokers().stream().map(String::valueOf).collect(Collectors.joining(",")));
-            return builder;
         } else {
             return this;
         }
@@ -172,9 +148,8 @@ public class PathBuilder {
      */
     public PathBuilder withRemoveBrokerParameters(RemoveBrokerOptions options) {
         if (options != null) {
-            PathBuilder builder = withAbstractRebalanceParameters(options)
+            return withAbstractRebalanceParameters(options)
                     .withParameter(CruiseControlParameters.BROKER_ID, options.getBrokers().stream().map(String::valueOf).collect(Collectors.joining(",")));
-            return builder;
         } else {
             return this;
         }

@@ -40,7 +40,7 @@ public class KafkaVersionChange {
 
     /**
      * The version being changed to.
-     * @return The version being changeed to.
+     * @return The version being changed to.
      */
     public KafkaVersion to() {
         return to;
