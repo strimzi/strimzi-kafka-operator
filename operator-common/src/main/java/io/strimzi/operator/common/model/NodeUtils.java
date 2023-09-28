@@ -19,7 +19,7 @@ public class NodeUtils {
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(NodeUtils.class);
 
     /**
-     * Tries to find the right address of the node. The different addresses has different prioprities:
+     * Tries to find the right address of the node. The different addresses has different priorities:
      *      1. ExternalDNS
      *      2. ExternalIP
      *      3. Hostname

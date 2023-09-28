@@ -19,7 +19,7 @@ import io.vertx.core.Vertx;
  * @param <C>   Kubernetes client
  * @param <T>   Kubernetes resource
  * @param <L>   Kubernetes resource list
- * @param <R>   Kubernetes Reasource
+ * @param <R>   Kubernetes Resource
  */
 public abstract class AbstractWatchableStatusedNamespacedResourceOperator<
         C extends KubernetesClient,

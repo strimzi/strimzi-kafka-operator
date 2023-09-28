@@ -45,7 +45,7 @@ public class BuildConfigOperator extends AbstractNamespacedResourceOperator<Open
      * Asynchronously deletes the resource in the given {@code namespace} with the given {@code name},
      * returning a Future which completes once the {@code delete} returns.
      *
-     * This is n override for BuildConfigs because the {@code selfClosingWatch} used by {@code AbstractResourceoperator} does not work for them.
+     * This is n override for BuildConfigs because the {@code selfClosingWatch} used by {@code AbstractResourceOperator} does not work for them.
      *
      * @param reconciliation The reconciliation
      * @param namespace Namespace of the resource which should be deleted

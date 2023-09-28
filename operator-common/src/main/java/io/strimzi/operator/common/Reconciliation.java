@@ -56,7 +56,7 @@ public class Reconciliation {
     }
 
     /**
-     * @return  Namespace of the reconcilied resource
+     * @return  Namespace of the reconciled resource
      */
     public String namespace() {
         return namespace;

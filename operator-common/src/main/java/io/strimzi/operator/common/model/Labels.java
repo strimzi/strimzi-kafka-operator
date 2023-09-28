@@ -128,7 +128,7 @@ public class Labels extends ResourceLabels {
                     .keySet()
                     .stream()
                     .filter(key -> key.startsWith(Labels.STRIMZI_DOMAIN) && !key.startsWith(Labels.STRIMZI_CLUSTER_LABEL))
-                    .collect(Collectors.toList());
+                    .toList();
             if (invalidLabels.size() > 0) {
                 throw new IllegalArgumentException("Labels starting with " + STRIMZI_DOMAIN + " are not allowed in Custom Resources, such labels should be removed.");
             }
@@ -277,7 +277,7 @@ public class Labels extends ResourceLabels {
      * This method is written to handle instance names which are valid resource names, since they are derived from a
      * custom resource. It does not modify arbitrary names as label values.
      *
-     * @param instance Theoriginal name of the instance
+     * @param instance The original name of the instance
      * @return Either the original instance name or a modified version to match label value criteria
      */
     /*test*/ static String getOrValidInstanceLabelValue(String instance) {

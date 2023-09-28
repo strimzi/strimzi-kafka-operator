@@ -83,7 +83,7 @@ public abstract class AbstractControllerLoop {
     }
 
     /**
-     * Indicates whether the controller is inside the run loop..
+     * Indicates whether the controller is inside the run loop.
      *
      * @return  True when the controller is in the run loop, false otherwise
      */

@@ -20,8 +20,6 @@ import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxTestContext;
 import org.junit.jupiter.api.Test;
 
-import java.io.IOException;
-
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -98,7 +96,7 @@ public class KafkaCrdOperatorTest extends AbstractNamespacedResourceOperatorTest
     }
 
     @Test
-    public void testUpdateStatusAsync(VertxTestContext context) throws IOException {
+    public void testUpdateStatusAsync(VertxTestContext context) {
         Kafka resource = resource();
         Resource mockResource = mock(resourceType());
         when(mockResource.replaceStatus()).thenReturn(resource);

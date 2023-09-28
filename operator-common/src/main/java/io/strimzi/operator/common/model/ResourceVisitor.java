@@ -79,7 +79,7 @@ public class ResourceVisitor {
     }
 
     /**
-     * Visits a field int he resource
+     * Visits a field in the resource
      *
      * @param reconciliation    Reconciliation marker
      * @param resource          Resource which should be visited
@@ -209,7 +209,7 @@ public class ResourceVisitor {
     }
 
     static class MethodProperty implements Property<Method> {
-        private boolean getPrefix;
+        private final boolean getPrefix;
         public MethodProperty(boolean getPrefix) {
             this.getPrefix = getPrefix;
         }
@@ -230,7 +230,7 @@ public class ResourceVisitor {
     private static final MethodProperty GET_METHOD_PROPERTY = new MethodProperty(true);
     private static final MethodProperty IS_METHOD_PROPERTY = new MethodProperty(false);
 
-    private static final Property<Field> FIELD_PROPERTY = new Property<Field>() {
+    private static final Property<Field> FIELD_PROPERTY = new Property<>() {
         @Override
         public String propertyName(Field i) {
             return i.getName();

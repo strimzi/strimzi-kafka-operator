@@ -267,7 +267,7 @@ public class StatusUtils {
     /**
      * Adds additional conditions to te status (this expects)
      *
-     * @param status        The Status instance where additonal conditions should be added
+     * @param status        The Status instance where additional conditions should be added
      * @param conditions    The Set with the new conditions
      */
     public static void addConditionsToStatus(Status status, Set<Condition> conditions)   {
