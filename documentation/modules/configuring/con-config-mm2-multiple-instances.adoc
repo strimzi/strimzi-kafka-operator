@@ -19,7 +19,7 @@ spec:
   connectCluster: "my-cluster-target"
   clusters:
   - alias: "my-cluster-target"
-    config::
+    config:
       group.id: my-connect-cluster # <1>
       offset.storage.topic: my-connect-cluster-offsets # <2>
       config.storage.topic: my-connect-cluster-configs # <3>
