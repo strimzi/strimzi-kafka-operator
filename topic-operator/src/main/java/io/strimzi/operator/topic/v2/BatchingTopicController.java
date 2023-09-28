@@ -403,7 +403,7 @@ public class BatchingTopicController {
             if (!matchesSelector(selector, kt.getMetadata().getLabels())) {
                 forgetTopic(reconcilableTopic);
                 LOGGER.debugCr(reconcilableTopic.reconciliation(), "Ignoring KafkaTopic with labels {} not selected by selector {}",
-                        kt.getMetadata().getLabels(), selector);
+                    kt.getMetadata().getLabels(), selector);
                 return false;
             }
             return true;
@@ -994,13 +994,13 @@ public class BatchingTopicController {
                               KafkaTopic kt,
                               Condition condition) {
         var oldStatus = kt.getStatus();
-        Condition oldReadyCondition = oldStatus == null || oldStatus.getConditions() == null ? null : oldStatus.getConditions().stream().findFirst().orElse(null);
+        Condition oldReadyCondition = oldStatus == null || oldStatus.getConditions() == null ?
+            null : oldStatus.getConditions().stream().findFirst().orElse(null);
         if (oldStatus == null
-                || oldStatus.getObservedGeneration() != kt.getMetadata().getGeneration()
+                || (!isPaused(kt) && oldStatus.getObservedGeneration() != kt.getMetadata().getGeneration())
                 || oldStatus.getTopicName() == null
                 || oldReadyCondition == null
-                || isDifferentCondition(oldReadyCondition, condition)
-                || isPaused(kt)) {
+                || isDifferentCondition(oldReadyCondition, condition)) {
             long observedGeneration = oldStatus != null
                 ? !isPaused(kt) ? kt.getMetadata().getGeneration() : oldStatus.getObservedGeneration()
                 : !isPaused(kt) ? kt.getMetadata().getGeneration() : 0L;
@@ -1031,7 +1031,7 @@ public class BatchingTopicController {
 
     private static boolean isDifferentCondition(Condition oldReadyCondition,
                                                 Condition condition) {
-        return !Objects.equals(oldReadyCondition.getType(), "Ready")
+        return !Objects.equals(oldReadyCondition.getType(), condition.getType())
                 || !Objects.equals(oldReadyCondition.getStatus(), condition.getStatus())
                 || !Objects.equals(oldReadyCondition.getReason(), condition.getReason())
                 || !Objects.equals(oldReadyCondition.getMessage(), condition.getMessage());
