@@ -437,11 +437,10 @@ public class KafkaRebalanceAssemblyOperator
                                                 kafkaRebalance.getMetadata().getName(), desiredStatusAndMap.getLoadMap())
                                                 .compose(i -> updateStatus(reconciliation, currentKafkaRebalance, desiredStatusAndMap.getStatus(), null))
                                                 .compose(updatedKafkaRebalance -> {
-                                                    String message;
                                                     if (currentKafkaRebalance.getStatus() != null
                                                             && updatedKafkaRebalance.getStatus() != null
                                                             && !rebalanceStateConditionType(currentKafkaRebalance.getStatus()).equals(rebalanceStateConditionType(updatedKafkaRebalance.getStatus()))) {
-                                                        message = "KafkaRebalance state is now updated to [{}]";
+                                                        String message = "KafkaRebalance state is now updated to [{}]";
 
                                                         if (rawRebalanceAnnotation(updatedKafkaRebalance) != null) {
                                                             message = message + " with annotation {}={} applied on the KafkaRebalance resource";
