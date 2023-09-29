@@ -38,7 +38,7 @@ public enum CruiseControlEndpoints {
      */
     REMOVE_BROKER("/kafkacruisecontrol/remove_broker");
 
-    String path;
+    private final String path;
 
     /**
      * Creates the Enum from String

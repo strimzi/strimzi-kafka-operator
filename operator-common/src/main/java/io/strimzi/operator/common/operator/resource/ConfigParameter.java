@@ -24,7 +24,7 @@ import java.util.Map;
 public record ConfigParameter<T>(String key, ConfigParameterParser<T> type, String defaultValue, boolean required, Map<String, ConfigParameter<?>> map) {
 
     /**
-     * Contructor
+     * Constructor
      * @param key           Configuration parameter name/key
      * @param type          Type of the default value
      * @param map           Configuration map
@@ -35,7 +35,7 @@ public record ConfigParameter<T>(String key, ConfigParameterParser<T> type, Stri
     }
 
     /**
-     * Contructor
+     * Constructor
      * @param key           Configuration parameter name/key
      * @param type          Type of the default value
      * @param defaultValue  Default value of the configuration parameter

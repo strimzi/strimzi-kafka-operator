@@ -141,7 +141,7 @@ public enum CruiseControlConfigurationParameters {
     METRICS_TOPIC_NAME("cruise.control.metrics.topic"),
 
     /**
-     * Should the Cruise Control topic ne auto.created
+     * Should the Cruise Control topic be auto.created
      */
     METRICS_TOPIC_AUTO_CREATE("cruise.control.metrics.topic.auto.create"),
 

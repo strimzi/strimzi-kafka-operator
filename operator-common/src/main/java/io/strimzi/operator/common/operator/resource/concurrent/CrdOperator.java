@@ -119,7 +119,7 @@ public class CrdOperator<C extends KubernetesClient,
      * Updates custom resource status asynchronously
      *
      * @param reconciliation    Reconciliation marker
-     * @param resource          Desired resource with the updated statis
+     * @param resource          Desired resource with the updated status
      *
      * @return  Future which completes when the status is patched
      */

@@ -39,7 +39,7 @@ public enum CruiseControlRebalanceKeys {
      */
     BROKER_ID("Broker");
 
-    private String key;
+    private final String key;
 
     /**
      * Creates the Enum from String

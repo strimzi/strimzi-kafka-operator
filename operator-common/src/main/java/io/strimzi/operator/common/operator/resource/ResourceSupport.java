@@ -125,7 +125,7 @@ public class ResourceSupport {
      * @param <U> The result type of the {@code watchFn}.
      *
      * @return A Futures which completes when the {@code watchFn} returns non-null
-     * in response to some Kubenetes even on the watched resource(s).
+     * in response to some Kubernetes even on the watched resource(s).
      */
     <T, U> Future<U> selfClosingWatch(Reconciliation reconciliation,
                                       Watchable<T> watchable,

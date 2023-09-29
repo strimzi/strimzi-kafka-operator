@@ -24,7 +24,7 @@ public class ControllerQueueTest {
 
         SimplifiedReconciliation r1 = new SimplifiedReconciliation("kind", "my-namespace", "my-name", "watch");
         SimplifiedReconciliation r2 = new SimplifiedReconciliation("kind", "my-namespace", "my-name", "timer");
-        SimplifiedReconciliation r3 = new SimplifiedReconciliation("kind", "my-nymespace", "my-other-name", "watch");
+        SimplifiedReconciliation r3 = new SimplifiedReconciliation("kind", "my-namespace", "my-other-name", "watch");
 
         q.enqueue(r1);
         q.enqueue(r3);

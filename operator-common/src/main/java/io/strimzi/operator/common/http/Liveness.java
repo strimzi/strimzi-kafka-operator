@@ -19,5 +19,5 @@ public interface Liveness {
      *
      * @return  True when the application is alive, false otherwise.
      */
-    public boolean isAlive();
+    boolean isAlive();
 }

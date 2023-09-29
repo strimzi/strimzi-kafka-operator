@@ -21,7 +21,7 @@ public abstract class ReconcileResult<R> {
     };
 
     /**
-     * Nothing was changed during the reocnciliation
+     * Nothing was changed during the reconciliation
      *
      * @param <R>   Resource type for which the result is being indicated
      */

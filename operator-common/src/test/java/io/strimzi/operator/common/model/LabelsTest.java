@@ -23,7 +23,7 @@ public class LabelsTest {
     public void testParseValidLabels()   {
         String validLabels = "key1=value1,key2=value2";
 
-        Map sourceMap = new HashMap<String, String>(2);
+        Map<String, String> sourceMap = new HashMap<>(2);
         sourceMap.put("key1", "value1");
         sourceMap.put("key2", "value2");
         Labels expected = Labels.fromMap(sourceMap);
@@ -82,7 +82,7 @@ public class LabelsTest {
 
     @Test
     public void testStrimziSelectorLabels()   {
-        Map sourceMap = new HashMap<String, String>(5);
+        Map<String, String> sourceMap = new HashMap<>(5);
         sourceMap.put(Labels.STRIMZI_CLUSTER_LABEL, "my-cluster");
         sourceMap.put("key1", "value1");
         sourceMap.put(Labels.STRIMZI_KIND_LABEL, "Kafka");
@@ -91,7 +91,7 @@ public class LabelsTest {
         sourceMap.put(Labels.STRIMZI_DISCOVERY_LABEL, "true");
         Labels labels = Labels.fromMap(sourceMap);
 
-        Map expected = new HashMap<String, String>(2);
+        Map<String, String> expected = new HashMap<>(2);
         expected.put(Labels.STRIMZI_CLUSTER_LABEL, "my-cluster");
         expected.put(Labels.STRIMZI_KIND_LABEL, "Kafka");
         expected.put(Labels.STRIMZI_NAME_LABEL, "my-cluster-kafka");
@@ -101,7 +101,7 @@ public class LabelsTest {
 
     @Test
     public void testToLabelSelectorString()   {
-        Map sourceMap = new HashMap<String, String>(4);
+        Map<String, String> sourceMap = new HashMap<>(4);
         sourceMap.put(Labels.STRIMZI_CLUSTER_LABEL, "my-cluster");
         sourceMap.put(Labels.STRIMZI_KIND_LABEL, "Kafka");
         sourceMap.put(Labels.STRIMZI_NAME_LABEL, "my-cluster-kafka");
@@ -122,11 +122,11 @@ public class LabelsTest {
         assertThat(nullLabels.toMap(), is(start.toMap()));
 
         // Non-null values
-        Map userLabels = new HashMap<String, String>(2);
+        Map<String, String> userLabels = new HashMap<>(2);
         userLabels.put("key1", "value1");
         userLabels.put("key2", "value2");
 
-        Map<String, String> expected = new HashMap<String, String>();
+        Map<String, String> expected = new HashMap<>();
         expected.putAll(start.toMap());
         expected.putAll(userLabels);
 
@@ -136,7 +136,7 @@ public class LabelsTest {
 
     @Test
     public void testWithInvalidUserSuppliedLabels()   {
-        Map userLabelsWithStrimzi = new HashMap<String, String>(3);
+        Map<String, String> userLabelsWithStrimzi = new HashMap<>(3);
         userLabelsWithStrimzi.put("key1", "value1");
         userLabelsWithStrimzi.put("key2", "value2");
         userLabelsWithStrimzi.put(Labels.STRIMZI_DOMAIN + "something", "value3");
@@ -170,7 +170,7 @@ public class LabelsTest {
 
     @Test
     public void testFromResourceWithLabels()   {
-        Map<String, String> userProvidedLabels = new HashMap<String, String>(6);
+        Map<String, String> userProvidedLabels = new HashMap<>(6);
         userProvidedLabels.put(Labels.KUBERNETES_NAME_LABEL, "some-app");
         userProvidedLabels.put(Labels.KUBERNETES_INSTANCE_LABEL, "my-cluster");
         userProvidedLabels.put(Labels.KUBERNETES_PART_OF_LABEL, "some-other-application-name");
@@ -197,7 +197,7 @@ public class LabelsTest {
                 .endSpec()
                 .build();
 
-        Map<String, String> expectedLabels = new HashMap<String, String>(3);
+        Map<String, String> expectedLabels = new HashMap<>(3);
         expectedLabels.put("key1", "value1");
         expectedLabels.put("key2", "value2");
         expectedLabels.put(Labels.KUBERNETES_PART_OF_LABEL, "some-other-application-name");
@@ -232,7 +232,6 @@ public class LabelsTest {
         String customResourceName = "my-cluster";
         String componentName = "kafka";
         String operatorName  = "my-operator";
-        String appName = "an-app";
 
         class ResourceWithMetadata implements HasMetadata {
 

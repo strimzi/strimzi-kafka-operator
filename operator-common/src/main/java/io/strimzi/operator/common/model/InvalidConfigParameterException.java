@@ -12,7 +12,7 @@ public class InvalidConfigParameterException extends InvalidResourceException {
     /**
      * Key with the invalid configuration
      */
-    private String key;
+    private final String key;
 
     /**
      * Constructs the exception

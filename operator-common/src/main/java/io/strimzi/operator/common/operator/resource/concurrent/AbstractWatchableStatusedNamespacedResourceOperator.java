@@ -20,7 +20,7 @@ import io.strimzi.operator.common.Reconciliation;
  * @param <C>   Kubernetes client
  * @param <T>   Kubernetes resource
  * @param <L>   Kubernetes resource list
- * @param <R>   Kubernetes Reasource
+ * @param <R>   Kubernetes Resource
  */
 public abstract class AbstractWatchableStatusedNamespacedResourceOperator<
         C extends KubernetesClient,

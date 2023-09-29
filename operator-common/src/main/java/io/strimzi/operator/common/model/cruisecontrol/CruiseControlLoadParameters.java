@@ -42,7 +42,7 @@ public enum CruiseControlLoadParameters {
     DISK_MB("DiskMB", "diskUsedMB", "double"),
 
     /**
-     * Outgoing network capactiy
+     * Outgoing network capacity
      */
     NETWORK_OUT_RATE("NwOutRate", "networkOutRateKB", "double"),
 
@@ -62,11 +62,11 @@ public enum CruiseControlLoadParameters {
     POTENTIAL_MAX_NETWORK_OUT_RATE("PnwOutRate", "potentialMaxNetworkOutRateKB", "double");
 
     /** The key used in the load JSON object returned by Cruise Control. */
-    private String cruiseControlKey;
-    /** The key used for the KafakRebalance status field. */
-    private String kafkaRebalanceStatusKey;
+    private final String cruiseControlKey;
+    /** The key used for the KafkaRebalance status field. */
+    private final String kafkaRebalanceStatusKey;
     /** The type of value stored in the relevant field. */
-    private String type;
+    private final String type;
 
     /**
      * Constructs an Enum with Cruise Control parameter

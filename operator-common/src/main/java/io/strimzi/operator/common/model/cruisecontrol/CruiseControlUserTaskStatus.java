@@ -22,7 +22,7 @@ public enum CruiseControlUserTaskStatus {
     ACTIVE("Active"),
 
     /**
-     * In exceution
+     * In execution
      */
     IN_EXECUTION("InExecution"),
 
@@ -36,7 +36,7 @@ public enum CruiseControlUserTaskStatus {
      */
     COMPLETED_WITH_ERROR("CompletedWithError");
 
-    private String status;
+    private final String status;
     // Reverse Lookup table
     private static final Map<String, CruiseControlUserTaskStatus> LOOKUP = new HashMap<>();
     //Populate the lookup table on loading time
