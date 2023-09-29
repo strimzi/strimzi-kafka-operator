@@ -228,9 +228,7 @@ public class OauthPasswordGrantsST extends OauthAbstractST {
         ClientUtils.waitForClientSuccess(testStorage.getConsumerName(), Environment.TEST_SUITE_NAMESPACE, MESSAGE_COUNT);
 
         String kafkaSourceClusterName = oauthClusterName;
-        String kafkaTargetClusterName = testStorage.getClusterName() + "-target";
-        // MirrorMaker2 adding prefix to mirrored Topic for in this case mirror Topic will be : my-cluster.my-topic
-        String kafkaTargetClusterTopicName = kafkaSourceClusterName + "." + testStorage.getTopicName();
+        String kafkaTargetClusterName = testStorage.getTargetClusterName();
 
         resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(kafkaTargetClusterName, 1, 1)
             .editMetadata()
@@ -327,7 +325,7 @@ public class OauthPasswordGrantsST extends OauthAbstractST {
                     .withProducerName(testStorage.getProducerName())
                     .withConsumerName(testStorage.getConsumerName())
                     .withBootstrapAddress(KafkaResources.plainBootstrapAddress(kafkaTargetClusterName))
-                    .withTopicName(kafkaTargetClusterTopicName)
+                    .withTopicName(kafkaSourceClusterName + "." + testStorage.getTopicName())
                     .withMessageCount(MESSAGE_COUNT)
                     .withOauthClientId(OAUTH_CLIENT_NAME)
                     .withOauthClientSecret(OAUTH_CLIENT_SECRET)
