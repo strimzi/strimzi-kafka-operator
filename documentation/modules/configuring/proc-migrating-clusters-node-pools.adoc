@@ -84,9 +84,16 @@ metadata:
     strimzi.io/node-pools: enabled
 spec:
   kafka:
-    # ...
-  zookeeper:
-    # ...
+    version: {DefaultKafkaVersion}
+    replicas: 3
+  # ...
+  storage:
+      type: jbod
+      volumes:
+      - id: 0
+        type: persistent-claim
+        size: 100Gi
+        deleteClaim: false
 ----
 
 . Apply the `Kafka` resource:
