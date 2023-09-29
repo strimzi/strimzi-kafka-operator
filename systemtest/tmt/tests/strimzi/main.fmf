@@ -9,6 +9,7 @@ environment:
   TEST_GROUPS: ""
   EXCLUDED_TEST_GROUPS: "loadbalancer"
   CLUSTER_OPERATOR_INSTALL_TYPE: bundle
+  PARALLELISM_ENABLED: "true"
   PARALLEL_TEST_COUNT: 2
   RERUN_FAILED_TEST_COUNT: 2
 adjust:
@@ -35,18 +36,20 @@ adjust:
 /regression-operators:
   summary: Run regression strimzi test suite
   tags: [strimzi, kafka, regression, operators]
-  duration: 10h
+  duration: 15h
   tier: 2
   environment+:
     TEST_PROFILE: operators
+    PARALLELISM_ENABLED: "false"
 
 /regression-components:
   summary: Run regression strimzi test suite
   tags: [strimzi, kafka, regression, components]
-  duration: 12h
+  duration: 15h
   tier: 2
   environment+:
     TEST_PROFILE: components
+    PARALLELISM_ENABLED: "false"
 
 /kraft-operators:
   summary: Run regression kraft strimzi test suite
