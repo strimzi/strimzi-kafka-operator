@@ -1,0 +1,26 @@
+// Module included in the following assemblies:
+//
+// deploying/assembly_deploy-tasks-prep.adoc
+
+[id='con-deploy-operator-best-practices-{context}']
+= Operator deployment best practices
+
+[role="_abstract"]
+Potential issues can arise from installing more than one Strimzi operator in the same Kubernetes cluster, especially when using different versions.
+Each Strimzi operator manages a set of resources in a Kubernetes cluster. 
+When you install multiple Strimzi operators, they may attempt to manage the same resources concurrently. 
+This can lead to conflicts and unpredictable behavior within your cluster.
+Conflicts can still occur even if you deploy Strimzi operators in different namespaces within the same Kubernetes cluster. 
+Although namespaces provide some degree of resource isolation, certain resources managed by the Strimzi operator, such as Custom Resource Definitions (CRDs) and roles, have a cluster-wide scope. 
+
+Additionally, installing multiple operators with different versions can result in compatibility issues between the operators and the Kafka clusters they manage. 
+Different versions of Strimzi operators may introduce changes, bug fixes, or improvements that are not backward-compatible. 
+
+To avoid the issues associated with installing multiple Strimzi operators in a Kubernetes cluster, the following guidelines are recommend:
+
+* Install the Strimzi operator in a separate namespace from the Kafka cluster and other Kafka components it manages, to ensure clear separation of resources and configurations.
+* Use a single Strimzi operator to manage all your Kafka instances within a Kubernetes cluster.
+* Update the Strimzi operator and the supported Kafka version as often as possible to reflect the latest features and enhancements.
+
+By following these best practices and ensuring consistent updates for a single Strimzi operator, you can enhance the stability of managing Kafka instances in a Kubernetes cluster.
+This approach also enables you to make the most of Strimzi's latest features and capabilities.
