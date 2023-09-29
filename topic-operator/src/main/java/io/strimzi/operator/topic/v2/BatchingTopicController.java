@@ -1001,6 +1001,8 @@ public class BatchingTopicController {
                 || oldStatus.getTopicName() == null
                 || oldReadyCondition == null
                 || isDifferentCondition(oldReadyCondition, condition)) {
+            // the observedGeneration is initialized to 0 when creating a paused user (oldStatus null, paused true)
+            // this will result in metadata.generation: 1 > status.observedGeneration: 0 (not reconciled)
             long observedGeneration = oldStatus != null
                 ? !isPaused(kt) ? kt.getMetadata().getGeneration() : oldStatus.getObservedGeneration()
                 : !isPaused(kt) ? kt.getMetadata().getGeneration() : 0L;
