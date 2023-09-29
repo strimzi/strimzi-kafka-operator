@@ -107,7 +107,7 @@ install_kubernetes_provisioner
 reg_name='kind-registry'
 reg_port='5001'
 
-if [ "$IP_FAMILY" = "ipv4" ]; then
+if [ "$IP_FAMILY" = "ipv4" || "$IP_FAMILY" = "dual" ]; then
     hostname=$(hostname --ip-address | grep -oE '\b([0-9]{1,3}\.){3}[0-9]{1,3}\b' | awk '$1 != "127.0.0.1" { print $1 }' | head -1)
 
     # update insecure registries

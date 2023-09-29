@@ -4,7 +4,7 @@
 cd ../../../../
 
 #run tests
-if [[ ${IP_FAMILY} == "ipv4" ]]; then
+if [[ ${IP_FAMILY} == "ipv4" || ${IP_FAMILY} == "dual" ]]; then
     DOCKER_REGISTRY=$(hostname --ip-address | grep -oE '\b([0-9]{1,3}\.){3}[0-9]{1,3}\b' | awk '$1 != "127.0.0.1" { print $1 }' | head -1)
 elif [[ ${IP_FAMILY} == "ipv6" ]]; then
     DOCKER_REGISTRY="myregistry.local"
