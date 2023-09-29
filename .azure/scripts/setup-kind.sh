@@ -107,7 +107,7 @@ install_kubernetes_provisioner
 reg_name='kind-registry'
 reg_port='5001'
 
-if [ "$IP_FAMILY" = "ipv4" || "$IP_FAMILY" = "dual" ]; then
+if [[ "$IP_FAMILY" = "ipv4" || "$IP_FAMILY" = "dual" ]]; then
     hostname=$(hostname --ip-address | grep -oE '\b([0-9]{1,3}\.){3}[0-9]{1,3}\b' | awk '$1 != "127.0.0.1" { print $1 }' | head -1)
 
     # update insecure registries
@@ -157,7 +157,7 @@ EOF
     [host."http://${reg_name}:5000"]
 EOF
     done
-elif [ "$IP_FAMILY" = "ipv6" ]; then
+elif [[ "$IP_FAMILY" = "ipv6" ]]; then
     # for ipv6 configuration
     ula_fixed_ipv6="fd01:2345:6789"
     registry_dns="myregistry.local"
