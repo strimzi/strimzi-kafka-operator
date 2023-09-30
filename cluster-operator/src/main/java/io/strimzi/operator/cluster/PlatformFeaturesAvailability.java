@@ -173,7 +173,7 @@ public class PlatformFeaturesAvailability implements PlatformFeatures {
     private PlatformFeaturesAvailability() {}
 
     /**
-     * This constructor is used in tests. It sets all OpenShift APIs to true or false depending on the isOpenShift paremeter
+     * This constructor is used in tests. It sets all OpenShift APIs to true or false depending on the isOpenShift parameter
      *
      * @param isOpenShift           Set all OpenShift APIs to true
      * @param kubernetesVersion     Set the Kubernetes version

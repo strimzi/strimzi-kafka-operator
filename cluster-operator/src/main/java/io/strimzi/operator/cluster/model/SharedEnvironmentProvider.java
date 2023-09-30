@@ -25,7 +25,7 @@ public interface SharedEnvironmentProvider {
         /** Comma separated list of DNS suffixes or IP addresses that can be accessed without passing through the proxy */
         NO_PROXY,
         /** Disable FIPS mode by setting disabled as value */
-        FIPS_MODE;
+        FIPS_MODE
     }
 
     /**

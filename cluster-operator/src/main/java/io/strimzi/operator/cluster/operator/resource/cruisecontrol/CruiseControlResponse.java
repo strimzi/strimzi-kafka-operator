@@ -10,8 +10,8 @@ import io.vertx.core.json.JsonObject;
  * Cruise Control response
  */
 public class CruiseControlResponse {
-    private String userTaskId;
-    private JsonObject json;
+    private final String userTaskId;
+    private final JsonObject json;
 
     /**
      * Constructor

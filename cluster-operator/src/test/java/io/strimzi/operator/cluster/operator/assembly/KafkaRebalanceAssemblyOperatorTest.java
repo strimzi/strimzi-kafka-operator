@@ -699,7 +699,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
     }
 
     /**
-     * Tests the transition from 'New' to to 'ProposalReady' to `ReconciliationPaused`
+     * Tests the transition from 'New' to 'ProposalReady' to `ReconciliationPaused`
      * The rebalance is paused and the resource moves to 'ReconciliationPaused'
      *
      * 1. A new KafkaRebalance resource is created; it is in the 'New' state
@@ -1251,7 +1251,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
     }
 
     /**
-     * Tests the transition from 'New' to to 'ProposalReady'
+     * Tests the transition from 'New' to 'ProposalReady'
      * The rebalance proposal is approved and the resource moves to 'Rebalancing' then to 'Stopped' (via annotation)
      *
      * 1. A new KafkaRebalance resource is created; it is in the 'New' state
@@ -1385,7 +1385,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
      * 4. The KafkaRebalance resource still remains in `Ready` state
      */
     @Test
-    public void testKafkaRebalanceStaysReadyWhenComplete(VertxTestContext context) throws IOException, URISyntaxException {
+    public void testKafkaRebalanceStaysReadyWhenComplete(VertxTestContext context) {
 
         KafkaRebalance kr = createKafkaRebalance(CLUSTER_NAMESPACE, CLUSTER_NAME, RESOURCE_NAME, EMPTY_KAFKA_REBALANCE_SPEC, false);
         Crds.kafkaRebalanceOperation(client).inNamespace(CLUSTER_NAMESPACE).resource(kr).create();
@@ -1875,7 +1875,7 @@ public class KafkaRebalanceAssemblyOperatorTest {
                 return Future.succeededFuture(Crds.kafkaRebalanceOperation(client)
                         .inNamespace(namespace)
                         .withName(resource)
-                        .edit(kr -> (KafkaRebalance) invocation.getArgument(1)));
+                        .edit(kr -> invocation.getArgument(1)));
             } catch (Exception e) {
                 return Future.failedFuture(e);
             }

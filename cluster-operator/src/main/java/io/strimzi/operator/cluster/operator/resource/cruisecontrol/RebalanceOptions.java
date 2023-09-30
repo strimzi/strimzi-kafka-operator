@@ -9,12 +9,12 @@ package io.strimzi.operator.cluster.operator.resource.cruisecontrol;
  */
 public class RebalanceOptions extends AbstractRebalanceOptions {
     /** Whether to balance load between disks within brokers (requires JBOD Kafka deployment) */
-    private boolean rebalanceDisk;
+    private final boolean rebalanceDisk;
     /** The upper bound of ongoing replica movements between disks within each broker */
-    private int concurrentIntraBrokerPartitionMovements;
+    private final int concurrentIntraBrokerPartitionMovements;
 
     /**
-     * @return  True if intra-broker relbalance is enabled. False otherwise.
+     * @return  True if intra-broker rebalance is enabled. False otherwise.
      */
     public boolean isRebalanceDisk() {
         return rebalanceDisk;

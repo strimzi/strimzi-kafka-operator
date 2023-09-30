@@ -14,7 +14,7 @@ import java.util.function.Function;
  * Class to provide the real ZookeeperScaler which connects to actual Zookeeper
  */
 public class DefaultZookeeperScalerProvider implements ZookeeperScalerProvider {
-    private static ZooKeeperAdminProvider zooAdminProvider = new DefaultZooKeeperAdminProvider();
+    private static final ZooKeeperAdminProvider ZOO_ADMIN_PROVIDER = new DefaultZooKeeperAdminProvider();
 
     /**
      * Creates an instance of ZookeeperScaler
@@ -32,7 +32,7 @@ public class DefaultZookeeperScalerProvider implements ZookeeperScalerProvider {
     public ZookeeperScaler createZookeeperScaler(Reconciliation reconciliation, Vertx vertx, String zookeeperConnectionString,
                                                  Function<Integer, String> zkNodeAddress, Secret clusterCaCertSecret,
                                                  Secret coKeySecret, long operationTimeoutMs, int zkAdminSessionTimeoutMs) {
-        return new ZookeeperScaler(reconciliation, vertx, zooAdminProvider, zookeeperConnectionString, zkNodeAddress,
+        return new ZookeeperScaler(reconciliation, vertx, ZOO_ADMIN_PROVIDER, zookeeperConnectionString, zkNodeAddress,
                 clusterCaCertSecret, coKeySecret, operationTimeoutMs, zkAdminSessionTimeoutMs);
     }
 }

@@ -11,6 +11,8 @@ import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy;
 import io.fabric8.kubernetes.api.model.policy.v1.PodDisruptionBudget;
+import io.fabric8.kubernetes.client.KubernetesClient;
+import io.strimzi.api.kafka.KafkaMirrorMaker2List;
 import io.strimzi.api.kafka.model.KafkaJmxAuthenticationPasswordBuilder;
 import io.strimzi.api.kafka.model.KafkaJmxOptionsBuilder;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2;
@@ -109,7 +111,7 @@ public class KafkaMirrorMaker2AssemblyOperatorTest {
     @Test
     public void testCreateCluster(VertxTestContext context) {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
-        CrdOperator mockMirrorMaker2Ops = supplier.mirrorMaker2Operator;
+        CrdOperator<KubernetesClient, KafkaMirrorMaker2, KafkaMirrorMaker2List> mockMirrorMaker2Ops = supplier.mirrorMaker2Operator;
         DeploymentOperator mockDcOps = supplier.deploymentOperations;
         StrimziPodSetOperator mockPodSetOps = supplier.strimziPodSetOperator;
         PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
@@ -205,7 +207,7 @@ public class KafkaMirrorMaker2AssemblyOperatorTest {
     @Test
     public void testUpdateClusterNoDiff(VertxTestContext context) {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
-        CrdOperator mockMirrorMaker2Ops = supplier.mirrorMaker2Operator;
+        CrdOperator<KubernetesClient, KafkaMirrorMaker2, KafkaMirrorMaker2List> mockMirrorMaker2Ops = supplier.mirrorMaker2Operator;
         DeploymentOperator mockDcOps = supplier.deploymentOperations;
         StrimziPodSetOperator mockPodSetOps = supplier.strimziPodSetOperator;
         PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
@@ -290,7 +292,7 @@ public class KafkaMirrorMaker2AssemblyOperatorTest {
     @Test
     public void testUpdateCluster(VertxTestContext context) {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
-        CrdOperator mockMirrorMaker2Ops = supplier.mirrorMaker2Operator;
+        CrdOperator<KubernetesClient, KafkaMirrorMaker2, KafkaMirrorMaker2List> mockMirrorMaker2Ops = supplier.mirrorMaker2Operator;
         DeploymentOperator mockDcOps = supplier.deploymentOperations;
         StrimziPodSetOperator mockPodSetOps = supplier.strimziPodSetOperator;
         PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
@@ -608,7 +610,7 @@ public class KafkaMirrorMaker2AssemblyOperatorTest {
     @Test
     public void testReconcile(VertxTestContext context) {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
-        CrdOperator mockMirrorMaker2Ops = supplier.mirrorMaker2Operator;
+        CrdOperator<KubernetesClient, KafkaMirrorMaker2, KafkaMirrorMaker2List> mockMirrorMaker2Ops = supplier.mirrorMaker2Operator;
         DeploymentOperator mockDcOps = supplier.deploymentOperations;
         StrimziPodSetOperator mockPodSetOps = supplier.strimziPodSetOperator;
         SecretOperator mockSecretOps = supplier.secretOperations;
@@ -670,7 +672,7 @@ public class KafkaMirrorMaker2AssemblyOperatorTest {
     @Test
     public void testCreateClusterStatusNotReady(VertxTestContext context) {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
-        CrdOperator mockMirrorMaker2Ops = supplier.mirrorMaker2Operator;
+        CrdOperator<KubernetesClient, KafkaMirrorMaker2, KafkaMirrorMaker2List> mockMirrorMaker2Ops = supplier.mirrorMaker2Operator;
         DeploymentOperator mockDcOps = supplier.deploymentOperations;
         StrimziPodSetOperator mockPodSetOps = supplier.strimziPodSetOperator;
         PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
@@ -723,7 +725,7 @@ public class KafkaMirrorMaker2AssemblyOperatorTest {
     @Test
     public void testCreateClusterWithZeroReplicas(VertxTestContext context) {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
-        CrdOperator mockMirrorMaker2Ops = supplier.mirrorMaker2Operator;
+        CrdOperator<KubernetesClient, KafkaMirrorMaker2, KafkaMirrorMaker2List> mockMirrorMaker2Ops = supplier.mirrorMaker2Operator;
         DeploymentOperator mockDcOps = supplier.deploymentOperations;
         StrimziPodSetOperator mockPodSetOps = supplier.strimziPodSetOperator;
         PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
@@ -816,7 +818,7 @@ public class KafkaMirrorMaker2AssemblyOperatorTest {
     @Test
     public void testCreateClusterWithJmxEnabled(VertxTestContext context) {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
-        CrdOperator mockMirrorMaker2Ops = supplier.mirrorMaker2Operator;
+        CrdOperator<KubernetesClient, KafkaMirrorMaker2, KafkaMirrorMaker2List> mockMirrorMaker2Ops = supplier.mirrorMaker2Operator;
         DeploymentOperator mockDcOps = supplier.deploymentOperations;
         StrimziPodSetOperator mockPodSetOps = supplier.strimziPodSetOperator;
         PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
@@ -945,11 +947,11 @@ public class KafkaMirrorMaker2AssemblyOperatorTest {
                         "password", "${file:/tmp/strimzi-mirrormaker2-connector.properties:sourceClusterAlias.sasl.password}"),
                 configEntry.getOptions());
 
-        assertEquals(new TreeMap(Map.of("prefixalias", "sourceClusterAlias",
+        assertEquals(new TreeMap<>(Map.of("prefixalias", "sourceClusterAlias",
                 "prefixsecurity.protocol", "SASL_PLAINTEXT",
                 "prefixsasl.mechanism", "PLAIN",
                 "prefixbootstrap.servers", "sourceClusterAlias.sourceNamespace.svc:9092")),
-                new TreeMap(config));
+                new TreeMap<>(config));
     }
 
     @Test
@@ -978,11 +980,11 @@ public class KafkaMirrorMaker2AssemblyOperatorTest {
                         "password", "${file:/tmp/strimzi-mirrormaker2-connector.properties:sourceClusterAlias.sasl.password}"),
                 configEntry.getOptions());
 
-        assertEquals(new TreeMap(Map.of("prefixalias", "sourceClusterAlias",
+        assertEquals(new TreeMap<>(Map.of("prefixalias", "sourceClusterAlias",
                         "prefixsecurity.protocol", "SASL_PLAINTEXT",
                         "prefixsasl.mechanism", "SCRAM-SHA-512",
                         "prefixbootstrap.servers", "sourceClusterAlias.sourceNamespace.svc:9092")),
-                new TreeMap(config));
+                new TreeMap<>(config));
     }
 
     @Test

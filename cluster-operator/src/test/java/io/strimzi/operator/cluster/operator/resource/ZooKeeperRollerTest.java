@@ -294,7 +294,7 @@ public class ZooKeeperRollerTest {
     /**
      * Utility method to help with testing of the rolling order.
      *
-     * @param podContexts   List of Pod Context representing pods whcih should be rolled
+     * @param podContexts   List of Pod Context representing pods which should be rolled
      *
      * @return  List of pod names in the order in which they should be rolled
      */

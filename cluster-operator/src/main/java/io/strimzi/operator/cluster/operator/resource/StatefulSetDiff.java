@@ -153,14 +153,10 @@ public class StatefulSetDiff extends AbstractJsonDiff {
             && !t.isMissingNode()) {
             if ("cpu".equals(group)) {
                 // Ignore single millicpu differences as they could be due to rounding error
-                if (Math.abs(Quantities.parseCpuAsMilliCpus(s.asText()) - Quantities.parseCpuAsMilliCpus(t.asText())) < 1) {
-                    return true;
-                }
+                return Math.abs(Quantities.parseCpuAsMilliCpus(s.asText()) - Quantities.parseCpuAsMilliCpus(t.asText())) < 1;
             } else {
                 // Ignore single byte differences as they could be due to rounding error
-                if (Math.abs(Quantities.parseMemory(s.asText()) - Quantities.parseMemory(t.asText())) < 1) {
-                    return true;
-                }
+                return Math.abs(Quantities.parseMemory(s.asText()) - Quantities.parseMemory(t.asText())) < 1;
             }
         }
         return false;

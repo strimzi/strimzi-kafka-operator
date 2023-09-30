@@ -204,7 +204,7 @@ public class PartialRollingUpdateMockTest {
                 int finalI = i;
 
                 Pod pod = client.pods().inNamespace(NAMESPACE).withName(KafkaResources.kafkaPodName(CLUSTER_NAME, i)).get();
-                String podRrevision = pod.getMetadata().getAnnotations().get(PodRevision.STRIMZI_REVISION_ANNOTATION);
+                String podRevision = pod.getMetadata().getAnnotations().get(PodRevision.STRIMZI_REVISION_ANNOTATION);
                 String spsRevision = kafkaPodsFromPodSet
                         .stream()
                         .filter(p -> KafkaResources.kafkaPodName(CLUSTER_NAME, finalI).equals(p.getMetadata().getName()))
@@ -214,7 +214,7 @@ public class PartialRollingUpdateMockTest {
                         .getAnnotations()
                         .get(PodRevision.STRIMZI_REVISION_ANNOTATION);
 
-                context.verify(() -> assertThat("Pod " + finalI + " had unexpected revision", podRrevision, is(spsRevision)));
+                context.verify(() -> assertThat("Pod " + finalI + " had unexpected revision", podRevision, is(spsRevision)));
             }
             async.flag();
         });
@@ -270,7 +270,7 @@ public class PartialRollingUpdateMockTest {
                 int finalI = i;
 
                 Pod pod = client.pods().inNamespace(NAMESPACE).withName(KafkaResources.zookeeperPodName(CLUSTER_NAME, i)).get();
-                String podRrevision = pod.getMetadata().getAnnotations().get(PodRevision.STRIMZI_REVISION_ANNOTATION);
+                String podRevision = pod.getMetadata().getAnnotations().get(PodRevision.STRIMZI_REVISION_ANNOTATION);
                 String spsRevision = zooPodsFromPodSet
                         .stream()
                         .filter(p -> KafkaResources.zookeeperPodName(CLUSTER_NAME, finalI).equals(p.getMetadata().getName()))
@@ -280,7 +280,7 @@ public class PartialRollingUpdateMockTest {
                         .getAnnotations()
                         .get(PodRevision.STRIMZI_REVISION_ANNOTATION);
 
-                context.verify(() -> assertThat("Pod " + finalI + " had unexpected revision", podRrevision, is(spsRevision)));
+                context.verify(() -> assertThat("Pod " + finalI + " had unexpected revision", podRevision, is(spsRevision)));
             }
             async.flag();
         });

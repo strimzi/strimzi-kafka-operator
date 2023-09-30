@@ -11,7 +11,7 @@ import java.util.List;
  */
 public class RemoveBrokerOptions extends AbstractRebalanceOptions {
     /** list with the ids of the brokers removed from the cluster */
-    private List<Integer> brokers;
+    private final List<Integer> brokers;
 
     /**
      * @return  List of brokers which will be removed

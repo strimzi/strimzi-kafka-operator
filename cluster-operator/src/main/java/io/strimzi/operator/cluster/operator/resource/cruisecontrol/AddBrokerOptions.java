@@ -11,7 +11,7 @@ import java.util.List;
  */
 public class AddBrokerOptions extends AbstractRebalanceOptions {
     /** list with the ids of the new brokers added to the cluster */
-    private List<Integer> brokers;
+    private final List<Integer> brokers;
 
     /**
      * @return  List of broker IDs which should be added

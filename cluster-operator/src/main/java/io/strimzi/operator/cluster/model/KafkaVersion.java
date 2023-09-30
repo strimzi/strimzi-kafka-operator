@@ -158,7 +158,7 @@ public class KafkaVersion implements Comparable<KafkaVersion> {
         }
 
         /**
-         * Find the version from the given version string. This method looks only through suported versions and is used
+         * Find the version from the given version string. This method looks only through supported versions and is used
          * to validate the versions used in custom resources.
          *
          * UnsupportedKafkaVersionException is thrown if the version passed as argument is not found or is not supported.

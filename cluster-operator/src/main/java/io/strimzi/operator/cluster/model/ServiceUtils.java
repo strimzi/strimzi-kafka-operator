@@ -117,7 +117,7 @@ public class ServiceUtils {
      * @param additionalLabels      Additional labels
      * @param additionalAnnotations Additional annotations
      * @param ipFamilyPolicy        IP Family Policy configuration
-     * @param ipFamilies            List of IP familiers
+     * @param ipFamilies            List of IP families
      *
      * @return  New Service
      */

@@ -165,7 +165,7 @@ public class NodeIdRange {
                     start--;
                     return returnValue;
                 } else {
-                    // Start is smaller then end => return start and increment it (the range is going up)
+                    // Start is smaller than end => return start and increment it (the range is going up)
                     Integer returnValue = start;
                     start++;
                     return returnValue;

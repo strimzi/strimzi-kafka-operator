@@ -196,7 +196,7 @@ public class StorageDiff extends AbstractJsonDiff {
      * @param currentNodeIds    Node IDs currently used by this node pool
      * @param desiredNodeIds    Node IDs used in the future by this node pool
      *
-     * @return                  True if only allowed override changes were done, false othewise
+     * @return                  True if only allowed override changes were done, false otherwise
      */
     private boolean isOverrideChangeAllowed(Storage current, Storage desired, Set<Integer> currentNodeIds, Set<Integer> desiredNodeIds)   {
         List<PersistentClaimStorageOverride> currentOverrides = ((PersistentClaimStorage) current).getOverrides();

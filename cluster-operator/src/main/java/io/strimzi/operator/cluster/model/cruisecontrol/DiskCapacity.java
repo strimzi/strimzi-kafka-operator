@@ -10,7 +10,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Cruise Control disk capactiy
+ * Cruise Control disk capacity
  */
 public class DiskCapacity {
     private static final String SINGLE_DISK = "";

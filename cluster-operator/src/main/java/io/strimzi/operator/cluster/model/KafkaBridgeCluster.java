@@ -475,10 +475,10 @@ public class KafkaBridgeCluster extends AbstractModel implements SupportsLogging
     /**
      * Sets the configured authentication
      *
-     * @param authetication Authentication configuration
+     * @param authentication Authentication configuration
      */
-    protected void setAuthentication(KafkaClientAuthentication authetication) {
-        this.authentication = authetication;
+    protected void setAuthentication(KafkaClientAuthentication authentication) {
+        this.authentication = authentication;
     }
 
     /**

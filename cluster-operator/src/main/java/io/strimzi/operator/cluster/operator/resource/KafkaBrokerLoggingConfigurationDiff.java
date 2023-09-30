@@ -34,7 +34,7 @@ public class KafkaBrokerLoggingConfigurationDiff extends AbstractJsonDiff {
     /**
      * Constructor
      *
-     * @param reconciliation Reconciliatin marker
+     * @param reconciliation Reconciliation marker
      * @param brokerConfigs  Current broker configuration from Kafka Admin API
      * @param desired        Desired logging configuration
      */

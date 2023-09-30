@@ -363,9 +363,9 @@ public class ReconcilerUtils {
     }
 
     /**
-     * Checks whether Node pools are enabled for given Kafka custom resource using the strimzi.io/node-pools anotation
+     * Checks whether Node pools are enabled for given Kafka custom resource using the strimzi.io/node-pools annotation
      *
-     * @param kafka     The Kafka custom resource which might have the node-pools anotation
+     * @param kafka     The Kafka custom resource which might have the node-pools annotation
      *
      * @return      True when the node pools are enabled. False otherwise.
      */

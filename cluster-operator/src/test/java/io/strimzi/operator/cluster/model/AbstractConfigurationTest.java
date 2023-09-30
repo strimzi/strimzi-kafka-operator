@@ -319,7 +319,7 @@ class TestConfiguration extends AbstractConfiguration {
      * Constructor used to instantiate this class from String configuration. Should be used to create configuration
      * from the Assembly.
      *
-     * @param configuration Configuration in String format. Should contain zero or more lines with with key=value
+     * @param configuration Configuration in String format. Should contain zero or more lines with key=value
      *                      pairs.
      */
     public TestConfiguration(String configuration) {
@@ -349,7 +349,7 @@ class TestConfigurationWithoutDefaults extends AbstractConfiguration {
      * Constructor used to instantiate this class from String configuration. Should be used to create configuration
      * from the Assembly.
      *
-     * @param configuration Configuration in String format. Should contain zero or more lines with with key=value
+     * @param configuration Configuration in String format. Should contain zero or more lines with key=value
      *                      pairs.
      */
     public TestConfigurationWithoutDefaults(String configuration) {
