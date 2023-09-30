@@ -17,7 +17,7 @@
 
     <properties>
         <strimzi-oauth.version>0.13.0</strimzi-oauth.version>
-        <cruise-control.version>2.5.125</cruise-control.version>
+        <cruise-control.version>2.5.128</cruise-control.version>
         <opa-authorizer.version>1.5.1</opa-authorizer.version>
         <kafka-quotas-plugin.version>0.2.0</kafka-quotas-plugin.version>
         <kafka-mirror-maker-2-extensions.version>1.2.0</kafka-mirror-maker-2-extensions.version>
