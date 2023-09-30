@@ -7,6 +7,7 @@ package io.strimzi.operator.topic.v2;
 import io.fabric8.kubernetes.client.informers.ResourceEventHandler;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.operator.common.ReconciliationLogger;
+import io.strimzi.operator.common.metrics.MetricsHolder;
 
 class TopicOperatorEventHandler implements ResourceEventHandler<KafkaTopic> {
 
@@ -14,15 +15,20 @@ class TopicOperatorEventHandler implements ResourceEventHandler<KafkaTopic> {
 
     private final BatchingLoop queue;
     private final boolean useFinalizer;
+    private final MetricsHolder metrics;
+    private final String namespace;
 
-    public TopicOperatorEventHandler(BatchingLoop queue, boolean useFinalizer) {
+    public TopicOperatorEventHandler(BatchingLoop queue, boolean useFinalizer, MetricsHolder metrics, String namespace) {
         this.queue = queue;
         this.useFinalizer = useFinalizer;
+        this.metrics = metrics;
+        this.namespace = namespace;
     }
 
     @Override
     public void onAdd(KafkaTopic obj) {
         LOGGER.debugOp("Informed of add {}", obj);
+        metrics.resourceCounter(namespace).incrementAndGet();
         queue.offer(new TopicUpsert(System.nanoTime(), obj.getMetadata().getNamespace(),
                 obj.getMetadata().getName(),
                 obj.getMetadata().getResourceVersion()));
@@ -40,6 +46,7 @@ class TopicOperatorEventHandler implements ResourceEventHandler<KafkaTopic> {
 
     @Override
     public void onDelete(KafkaTopic obj, boolean deletedFinalStateUnknown) {
+        metrics.resourceCounter(namespace).decrementAndGet();
         if (useFinalizer) {
             LOGGER.debugOp("Ignoring of delete {} (using finalizers)", obj);
         } else {

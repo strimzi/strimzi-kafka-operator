@@ -8,8 +8,9 @@
 * Allow manual rolling of Kafka Connect and Kafka Mirror Maker 2 pods using the `strimzi.io/manual-rolling-update` annotation (supported only when `StableConnectIdentities` feature gate is enabled) 
 * Make sure brokers are empty before scaling them down
 * Update Cruise Control to 2.5.128
-* Add support for pausing `KafkaTopic` reconciliations with the UnidirectionalTopicOperator
+* Add support for pausing reconciliations to the Unidirectional Topic Operator
 * Allow running ZooKeeper and KRaft based Apache Kafka clusters in parallel when the `+UseKRaft` feature gate is enabled
+* Add support for metrics to the Unidirectional Topic Operator
 
 ### Changes, deprecations and removals
 

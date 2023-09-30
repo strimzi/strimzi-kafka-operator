@@ -96,6 +96,7 @@ class TopicControllerIT {
 
     private static final Logger LOGGER = LogManager.getLogger(TopicControllerIT.class);
     public static final Map<String, String> SELECTOR = Map.of("foo", "FOO", "bar", "BAR");
+    private static final String NAMESPACE = "ns";
 
     KubernetesClient client;
 
@@ -110,12 +111,12 @@ class TopicControllerIT {
 
     @BeforeAll
     public static void setupKubeCluster() {
-        TopicOperatorTestUtil.setupKubeCluster();
+        TopicOperatorTestUtil.setupKubeCluster(NAMESPACE);
     }
 
     @AfterAll
     public static void teardownKubeCluster() {
-        TopicOperatorTestUtil.teardownKubeCluster2();
+        TopicOperatorTestUtil.teardownKubeCluster2(NAMESPACE);
     }
 
     @BeforeEach

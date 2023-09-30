@@ -14,6 +14,7 @@ import io.strimzi.api.kafka.model.status.ConditionBuilder;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
+import io.strimzi.operator.common.metrics.MetricsHolder;
 import io.strimzi.operator.common.model.StatusUtils;
 import org.apache.kafka.clients.admin.Admin;
 import org.apache.kafka.clients.admin.AlterConfigOp;
@@ -75,11 +76,15 @@ public class BatchingTopicController {
     // Key: topic name, Value: The KafkaTopics known to manage that topic
     /* test */ final Map<String, Set<KubeRef>> topics = new HashMap<>();
 
+    private final MetricsHolder metrics;
+    private final String namespace;
 
     BatchingTopicController(Map<String, String> selector,
                             Admin admin,
                             KubernetesClient kubeClient,
-                            boolean useFinalizer) throws ExecutionException, InterruptedException {
+                            boolean useFinalizer,
+                            MetricsHolder metrics,
+                            String namespace) throws ExecutionException, InterruptedException {
         this.selector = Objects.requireNonNull(selector);
         this.useFinalizer = useFinalizer;
         this.admin = admin;
@@ -103,7 +108,8 @@ public class BatchingTopicController {
                     "to avoid races between the operator and Kafka applications auto-creating topics");
         }
         this.kubeClient = kubeClient;
-
+        this.metrics = metrics;
+        this.namespace = namespace;
     }
 
     /* test */ static boolean isManaged(KafkaTopic kt) {
@@ -421,10 +427,11 @@ public class BatchingTopicController {
             deleteInternal(toBeDeleted, false);
         }
 
+        var remainingAfterDeletions = partitionedByDeletion.get(false);
+        remainingAfterDeletions.forEach(rt -> rt.startTimer(metrics));
         Map<ReconcilableTopic, Either<TopicOperatorException, Object>> results = new HashMap<>();
 
-        var partitionedByManaged = partitionedByDeletion.get(false).stream()
-            .collect(Collectors.partitioningBy(reconcilableTopic -> isManaged(reconcilableTopic.kt())));
+        var partitionedByManaged = remainingAfterDeletions.stream().collect(Collectors.partitioningBy(reconcilableTopic -> isManaged(reconcilableTopic.kt())));
         var unmanaged = partitionedByManaged.get(false);
         addOrRemoveFinalizer(useFinalizer, unmanaged).forEach(rt -> putResult(results, rt, Either.ofRight(null)));
 
@@ -451,6 +458,7 @@ public class BatchingTopicController {
         accumulateResults(results, currentStatesOrError, alterConfigsResults, createPartitionsResults);
 
         updateStatuses(results);
+        remainingAfterDeletions.forEach(rt -> rt.stopTimer(metrics));
 
         LOGGER.traceOp("Total time reconciling batch of {} KafkaTopics: {}ns", results.size(), System.nanoTime() - t3);
     }
@@ -797,6 +805,7 @@ public class BatchingTopicController {
                 var e = validate(reconcilableTopic);
                 if (e.isRightEqual(true)) {
                     // adminDelete, removeFinalizer, forgetTopic, updateStatus
+                    reconcilableTopic.startTimer(metrics);
                     return true;
                 } else if (e.isRightEqual(false)) {
                     // do nothing
@@ -829,6 +838,9 @@ public class BatchingTopicController {
                 }
             }
             forgetTopic(pair.getKey());
+            metrics.reconciliationsCounter(namespace).increment();
+            metrics.successfulReconciliationsCounter(namespace).increment();
+            pair.getKey().stopTimer(metrics);
         });
 
         // join that to fail
@@ -847,9 +859,12 @@ public class BatchingTopicController {
                             entry.getKey().topicName(),
                             entry.getValue());
                 }
+                metrics.reconciliationsCounter(namespace).increment();
+                metrics.failedReconciliationsCounter(namespace).increment();
             } else {
                 updateStatusForException(entry.getKey(), entry.getValue());
             }
+            entry.getKey().stopTimer(metrics);
         });
 
     }
