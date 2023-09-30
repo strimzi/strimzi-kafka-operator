@@ -182,6 +182,7 @@ public class Environment {
 
     public static final String IP_FAMILY_DEFAULT = "ipv4";
     public static final String IP_FAMILY_VERSION_6 = "ipv6";
+    public static final String IP_FAMILY_DUAL_STACK = "dual";
 
     /**
      * Set values
@@ -306,6 +307,10 @@ public class Environment {
         return IP_FAMILY.contains(IP_FAMILY_VERSION_6);
     }
 
+    public static boolean isDualStackIpFamily() {
+        return IP_FAMILY.contains(IP_FAMILY_DUAL_STACK);
+    }
+
     private static String getOrDefault(String varName, String defaultValue) {
         return getOrDefault(varName, String::toString, defaultValue);
     }
@@ -317,7 +322,7 @@ public class Environment {
             // we will need a hostname of machine
             String hostname = "";
             try {
-                if (Environment.isIpv4Family()) {
+                if (Environment.isIpv4Family() || Environment.isDualStackIpFamily()) {
                     hostname = InetAddress.getLocalHost().getHostAddress() + ":5001";
                 } else if (Environment.isIpv6Family()) {
                     hostname = "myregistry.local:5001";
