@@ -1,0 +1,37 @@
+// Module included in the following assemblies:
+//
+// con-scaling-kafka-clusters.adoc
+
+[id='con-skipping-scale-down-checks-{context}']
+= Skipping checks on scale-down operations
+
+[role="_abstract"]
+By default, Strimzi performs a check to ensure that there are no partition replicas on a broker before initiating a scale-down operation on a Kafka cluster. 
+If replicas are found, cluster operations are blocked to prevent potential data loss. 
+To resume cluster operations, no replicas must be left on the broker before trying to scale it down again.
+
+However, there may be scenarios where you want to bypass this blocking mechanism.
+Disabling the check might be necessary on busy clusters, for example, because new topics keep generating replicas for the broker.
+This situation can indefinitely block cluster operations, even when brokers are nearly empty. 
+Overriding the blocking mechanism in this way has an impact:
+the presence of topics on the broker being scaled down will likely cause a reconciliation failure for the Kafka cluster. 
+
+You can bypass the blocking mechanism by annotating the `Kafka` resource for the Kafka cluster.
+Annotate the resource by setting the `strimzi.io/skip-broker-scaledown-check` annotation to `true`:
+
+.Adding the annotation to skip checks on scale-down operations  
+[source,shell,subs="+quotes,attributes+"]
+----
+kubectl annotate Kafka my-kafka-cluster strimzi.io/skip-broker-scaledown-check="true"
+----
+
+This annotation instructs Strimzi to skip the scale-down check.
+Replace `my-kafka-cluster` with the name of your specific `Kafka` resource.
+
+To restore the check for scale-down operations, remove the annotation:
+
+.Removing the annotation to skip checks on scale-down operations  
+[source,shell,subs="+quotes,attributes+"]
+----
+kubectl annotate Kafka my-kafka-cluster strimzi.io/skip-broker-scaledown-check-
+----

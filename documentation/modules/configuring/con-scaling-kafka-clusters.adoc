@@ -52,3 +52,5 @@ You can use Cruise Control's `add-brokers` and `remove-brokers` modes when scali
 
 * Use the `add-brokers` mode after scaling up a Kafka cluster to move partition replicas from existing brokers to the newly added brokers.
 * Use the `remove-brokers` mode before scaling down a Kafka cluster to move partition replicas off the brokers that are going to be removed.
+
+include::../../modules/configuring/con-skipping-scale-down-checks.adoc[leveloffset=+1]
