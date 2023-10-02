@@ -71,4 +71,8 @@ public class KafkaConnectResource implements ResourceType<KafkaConnect> {
                 .withMatchLabels(matchLabels)
                 .build();
     }
+
+    public static String getStrimziPodSetName(String clusterName) {
+        return clusterName + "-connect";
+    }
 }
