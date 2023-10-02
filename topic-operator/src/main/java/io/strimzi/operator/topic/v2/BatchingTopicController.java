@@ -11,6 +11,7 @@ import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaTopicBuilder;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.api.kafka.model.status.ConditionBuilder;
+import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.model.StatusUtils;
@@ -110,6 +111,10 @@ public class BatchingTopicController {
                 || kt.getMetadata().getAnnotations() == null
                 || kt.getMetadata().getAnnotations().get(MANAGED) == null
                 || !"false".equals(kt.getMetadata().getAnnotations().get(MANAGED));
+    }
+
+    /* test */ static boolean isPaused(KafkaTopic kt) {
+        return Annotations.isReconciliationPausedWithAnnotation(kt);
     }
 
     private static boolean isForDeletion(KafkaTopic kt) {
@@ -398,7 +403,7 @@ public class BatchingTopicController {
             if (!matchesSelector(selector, kt.getMetadata().getLabels())) {
                 forgetTopic(reconcilableTopic);
                 LOGGER.debugCr(reconcilableTopic.reconciliation(), "Ignoring KafkaTopic with labels {} not selected by selector {}",
-                        kt.getMetadata().getLabels(), selector);
+                    kt.getMetadata().getLabels(), selector);
                 return false;
             }
             return true;
@@ -418,12 +423,17 @@ public class BatchingTopicController {
 
         Map<ReconcilableTopic, Either<TopicOperatorException, Object>> results = new HashMap<>();
 
-        var partitionedByManaged = partitionedByDeletion.get(false).stream().collect(Collectors.partitioningBy(reconcilableTopic -> isManaged(reconcilableTopic.kt())));
+        var partitionedByManaged = partitionedByDeletion.get(false).stream()
+            .collect(Collectors.partitioningBy(reconcilableTopic -> isManaged(reconcilableTopic.kt())));
         var unmanaged = partitionedByManaged.get(false);
         addOrRemoveFinalizer(useFinalizer, unmanaged).forEach(rt -> putResult(results, rt, Either.ofRight(null)));
 
-        List<ReconcilableTopic> mayNeedUpdate = validateManagedTopics(partitionedByManaged);
+        // skip reconciliation of paused KafkaTopics
+        var partitionedByPaused = validateManagedTopics(partitionedByManaged).stream()
+            .collect(Collectors.partitioningBy(reconcilableTopic -> isPaused(reconcilableTopic.kt())));
+        partitionedByPaused.get(true).forEach(reconcilableTopic -> putResult(results, reconcilableTopic, Either.ofRight(null)));
 
+        var mayNeedUpdate = partitionedByPaused.get(false);
         var addedFinalizer = addOrRemoveFinalizer(useFinalizer, mayNeedUpdate);
 
         var currentStatesOrError = describeTopic(addedFinalizer);
@@ -961,25 +971,41 @@ public class BatchingTopicController {
             LOGGER.warnCr(reconcilableTopic.reconciliation(), "Updating status for unexpected exception", e);
             reason = e.getClass().getSimpleName();
         }
-        updateStatus(reconcilableTopic.reconciliation(), reconcilableTopic.kt(), reason, message);
+        Condition condition = new ConditionBuilder()
+            .withType("Ready")
+            .withStatus("False")
+            .withReason(reason)
+            .withMessage(message)
+            .withLastTransitionTime(StatusUtils.iso8601Now())
+            .build();
+        updateStatus(reconcilableTopic.reconciliation(), reconcilableTopic.kt(), condition);
     }
 
     private void updateStatusOk(ReconcilableTopic reconcilableTopic) {
-        updateStatus(reconcilableTopic.reconciliation(), reconcilableTopic.kt(), null, null);
+        Condition condition = new ConditionBuilder()
+            .withType(isPaused(reconcilableTopic.kt()) ? "ReconciliationPaused" : "Ready")
+            .withStatus("True")
+            .withLastTransitionTime(StatusUtils.iso8601Now())
+            .build();
+        updateStatus(reconcilableTopic.reconciliation(), reconcilableTopic.kt(), condition);
     }
 
     private void updateStatus(Reconciliation reconciliation,
                               KafkaTopic kt,
-                              String newReason,
-                              String newMessage) {
+                              Condition condition) {
         var oldStatus = kt.getStatus();
-        Condition oldReadyCondition = oldStatus == null || oldStatus.getConditions() == null ? null : oldStatus.getConditions().stream().findFirst().orElse(null);
-        String newStatus = newReason != null || newMessage != null ? "False" : "True";
+        Condition oldReadyCondition = oldStatus == null || oldStatus.getConditions() == null ?
+            null : oldStatus.getConditions().stream().findFirst().orElse(null);
         if (oldStatus == null
-                || oldStatus.getObservedGeneration() != kt.getMetadata().getGeneration()
+                || (!isPaused(kt) && oldStatus.getObservedGeneration() != kt.getMetadata().getGeneration())
                 || oldStatus.getTopicName() == null
                 || oldReadyCondition == null
-                || isDifferentCondition(oldReadyCondition, newReason, newMessage, newStatus)) {
+                || isDifferentCondition(oldReadyCondition, condition)) {
+            // the observedGeneration is initialized to 0 when creating a paused user (oldStatus null, paused true)
+            // this will result in metadata.generation: 1 > status.observedGeneration: 0 (not reconciled)
+            long observedGeneration = oldStatus != null
+                ? !isPaused(kt) ? kt.getMetadata().getGeneration() : oldStatus.getObservedGeneration()
+                : !isPaused(kt) ? kt.getMetadata().getGeneration() : 0L;
             String newTopicName = !isManaged(kt) ? null
                     : oldStatus != null && oldStatus.getTopicName() != null ? oldStatus.getTopicName()
                     : topicName(kt);
@@ -988,15 +1014,9 @@ public class BatchingTopicController {
                         .withResourceVersion(null)
                     .endMetadata()
                     .editOrNewStatus()
-                        .withObservedGeneration(kt.getMetadata().getGeneration())
+                        .withObservedGeneration(observedGeneration)
                         .withTopicName(newTopicName)
-                        .withConditions(new ConditionBuilder()
-                                .withType("Ready")
-                                .withStatus(newStatus)
-                                .withReason(newReason)
-                                .withMessage(newMessage)
-                                .withLastTransitionTime(StatusUtils.iso8601Now())
-                                .build())
+                        .withConditions(condition)
                     .endStatus().build();
             LOGGER.debugCr(reconciliation, "Updating status with {}", updatedTopic.getStatus());
             long t0 = System.nanoTime();
@@ -1012,12 +1032,10 @@ public class BatchingTopicController {
     }
 
     private static boolean isDifferentCondition(Condition oldReadyCondition,
-                                                String newReason,
-                                                String newMessage,
-                                                String newStatus) {
-        return !Objects.equals(oldReadyCondition.getType(), "Ready")
-                || !Objects.equals(oldReadyCondition.getStatus(), newStatus)
-                || !Objects.equals(oldReadyCondition.getReason(), newReason)
-                || !Objects.equals(oldReadyCondition.getMessage(), newMessage);
+                                                Condition condition) {
+        return !Objects.equals(oldReadyCondition.getType(), condition.getType())
+                || !Objects.equals(oldReadyCondition.getStatus(), condition.getStatus())
+                || !Objects.equals(oldReadyCondition.getReason(), condition.getReason())
+                || !Objects.equals(oldReadyCondition.getMessage(), condition.getMessage());
     }
 }
