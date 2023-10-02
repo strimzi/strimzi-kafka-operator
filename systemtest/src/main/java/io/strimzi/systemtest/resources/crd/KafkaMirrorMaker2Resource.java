@@ -69,4 +69,8 @@ public class KafkaMirrorMaker2Resource implements ResourceType<KafkaMirrorMaker2
                 .withMatchLabels(matchLabels)
                 .build();
     }
+
+    public static String getStrimziPodSetName(String clusterName) {
+        return clusterName + "-mirrormaker2";
+    }
 }
