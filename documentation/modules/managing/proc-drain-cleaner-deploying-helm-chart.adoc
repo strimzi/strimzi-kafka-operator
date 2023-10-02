@@ -96,7 +96,7 @@ Alternatively, you can use parameter values to install a specific version of the
 .Example configuration that installs a specific version of the Drain Cleaner and changes the number of replicas
 [source,shell]
 ----
-helm install strimzi-drain-cleaner --set replicaCount=2 --version 0.5.0 oci://quay.io/strimzi-helm/strimzi-drain-cleaner
+helm install strimzi-drain-cleaner --set replicaCount=2 --version 1.0.0 oci://quay.io/strimzi-helm/strimzi-drain-cleaner
 ----
 
 . Verify that the Drain Cleaner has been deployed successfully:
