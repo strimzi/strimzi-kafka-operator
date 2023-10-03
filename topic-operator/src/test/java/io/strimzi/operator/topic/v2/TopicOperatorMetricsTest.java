@@ -34,6 +34,7 @@ import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
+import static io.strimzi.api.ResourceAnnotations.ANNO_STRIMZI_IO_PAUSE_RECONCILIATION;
 import static io.strimzi.api.kafka.model.KafkaTopic.RESOURCE_KIND;
 import static io.strimzi.operator.topic.v2.BatchingTopicController.topicName;
 import static java.lang.String.format;
@@ -76,23 +77,42 @@ public class TopicOperatorMetricsTest {
         TopicOperatorEventHandler eventHandler = new TopicOperatorEventHandler(mockQueue, true, metrics, NAMESPACE);
         int numOfTestResources = 100;
         for (int i = 0; i < numOfTestResources; i++) {
-            KafkaTopic kt = new KafkaTopic();
-            kt.getMetadata().setNamespace(NAMESPACE);
-            kt.getMetadata().setName("t" + i);
-            kt.getMetadata().setResourceVersion("100100");
+            KafkaTopic kt = createKafkaTopic("t" + i, "100100");
             eventHandler.onAdd(kt);
         }
         String[] tags = new String[]{"kind", RESOURCE_KIND, "namespace", NAMESPACE};
         assertMetricMatches("strimzi.resources", tags, "gauge", is(Double.valueOf(numOfTestResources)));
 
         for (int i = 0; i < numOfTestResources; i++) {
-            KafkaTopic kt = new KafkaTopic();
-            kt.getMetadata().setNamespace(NAMESPACE);
-            kt.getMetadata().setName("t" + i);
-            kt.getMetadata().setResourceVersion("1");
+            KafkaTopic kt = createKafkaTopic("t" + i, "100100");
             eventHandler.onDelete(kt, false);
         }
         assertMetricMatches("strimzi.resources", tags, "gauge", is(0.0));
+
+        KafkaTopic foo1 = createKafkaTopic("foo", "100100");
+        eventHandler.onAdd(foo1);
+        assertMetricMatches("strimzi.resources.paused", tags, "gauge", is(0.0));
+
+        KafkaTopic foo2 = createKafkaTopic("foo", "100100");
+        foo2.getMetadata().setAnnotations(Map.of(ANNO_STRIMZI_IO_PAUSE_RECONCILIATION, "true"));
+        eventHandler.onUpdate(foo1, foo2);
+        assertMetricMatches("strimzi.resources.paused", tags, "gauge", is(1.0));
+
+        eventHandler.onUpdate(foo1, foo1);
+        assertMetricMatches("strimzi.resources.paused", tags, "gauge", is(1.0));
+
+        KafkaTopic foo3 = createKafkaTopic("foo", "100100");
+        foo3.getMetadata().setAnnotations(Map.of(ANNO_STRIMZI_IO_PAUSE_RECONCILIATION, "false"));
+        eventHandler.onUpdate(foo2, foo3);
+        assertMetricMatches("strimzi.resources.paused", tags, "gauge", is(0.0));
+    }
+
+    private static KafkaTopic createKafkaTopic(String name, String version) {
+        KafkaTopic kt = new KafkaTopic();
+        kt.getMetadata().setNamespace(NAMESPACE);
+        kt.getMetadata().setName(name);
+        kt.getMetadata().setResourceVersion(version);
+        return kt;
     }
 
     @Test
