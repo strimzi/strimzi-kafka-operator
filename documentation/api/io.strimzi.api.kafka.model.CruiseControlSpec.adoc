@@ -231,6 +231,16 @@ spec:
         outboundNetwork: 30000KiB/s
 ----
 
+If you are using `cruiseControl.brokerCapacity.cpu` or `cruiseControl.brokerCapacity.overrides.cpu` to change the default capacity limits for goals related to resource distribution, the order of precedence is as follows, with highest priority first:
+
+. `Kafka.spec.cruiseControl.brokerCapacity.overrides.cpu` that define custom CPU capacity limits for individual brokers
+. `Kafka.cruiseControl.brokerCapacity.cpu` that defines custom CPU capacity limits for all brokers in the kafka cluster
+. `Kafka.spec.kafka.resources.requests.cpu` that defines the CPU resources that are reserved for each broker in the Kafka cluster.
+. `Kafka.spec.kafka.resources.limits.cpu` that defines the maximum CPU resources that can be consumed by each broker in the Kafka cluster.
+
+This order of precedence is the sequence in which different configuration values are considered when determining the actual capacity limit for a Kafka broker. 
+If none of the CPU capacity configurations are specified, the default CPU capacity for a Kafka broker is set to 1 CPU core. 
+
 For more information, refer to the xref:type-BrokerCapacity-reference[BrokerCapacity schema reference].
 
 [id='property-cruise-control-logging-{context}']
