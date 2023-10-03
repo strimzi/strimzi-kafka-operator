@@ -81,11 +81,11 @@ kubectl get pods -n _<my_cluster_operator_namespace>_
 .Output shows the node pool names and readiness
 [source,shell,subs="+quotes"]
 ----
-NAME                        READY   STATUS    RESTARTS
-my-cluster-entity-operator  3/3     Running   0
-my-cluster-pool-a-kafka-0   1/1     Running   0
-my-cluster-pool-a-kafka-1   1/1     Running   0
-my-cluster-pool-a-kafka-4   1/1     Running   0
+NAME                        READY  STATUS   RESTARTS
+my-cluster-entity-operator  3/3    Running  0
+my-cluster-pool-a-0         1/1    Running  0
+my-cluster-pool-a-1         1/1    Running  0
+my-cluster-pool-a-4         1/1    Running  0
 ----
 +
 * `my-cluster` is the name of the Kafka cluster.

@@ -7,7 +7,7 @@
 
 The following resources are created by the Cluster Operator in the Kubernetes cluster:
 
-_bridge-cluster-name_-bridge:: Deployment which is in charge to create the Kafka Bridge worker node pods.
-_bridge-cluster-name_-bridge-service:: Service which exposes the REST interface of the Kafka Bridge cluster.
-_bridge-cluster-name_-bridge-config:: ConfigMap which contains the Kafka Bridge ancillary configuration and is mounted as a volume by the Kafka broker pods.
-_bridge-cluster-name_-bridge:: Pod Disruption Budget configured for the Kafka Bridge worker nodes.
+<bridge_cluster_name>-bridge:: Deployment which is in charge to create the Kafka Bridge worker node pods.
+<bridge_cluster_name>-bridge-service:: Service which exposes the REST interface of the Kafka Bridge cluster.
+<bridge_cluster_name>-bridge-config:: ConfigMap which contains the Kafka Bridge ancillary configuration and is mounted as a volume by the Kafka broker pods.
+<bridge_cluster_name>-bridge:: Pod Disruption Budget configured for the Kafka Bridge worker nodes.

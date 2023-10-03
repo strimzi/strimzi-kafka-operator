@@ -60,10 +60,10 @@ kubectl get pods -n <my_cluster_operator_namespace>
 .Output shows three Kafka nodes in the node pool
 [source,shell]
 ----
-NAME                       READY  STATUS   RESTARTS
-my-cluster-pool-a-kafka-0  1/1    Running  0
-my-cluster-pool-a-kafka-1  1/1    Running  0
-my-cluster-pool-a-kafka-2  1/1    Running  0
+NAME                 READY  STATUS   RESTARTS
+my-cluster-pool-a-0  1/1    Running  0
+my-cluster-pool-a-1  1/1    Running  0
+my-cluster-pool-a-2  1/1    Running  0
 ----
 
 . To migrate to a new storage class, create a new node pool with the required storage configuration:
