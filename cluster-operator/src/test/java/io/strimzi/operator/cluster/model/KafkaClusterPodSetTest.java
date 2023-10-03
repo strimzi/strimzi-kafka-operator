@@ -184,7 +184,7 @@ public class KafkaClusterPodSetTest {
                 2, Map.of("PLAIN_9092", "10002")
         );
 
-        String config = KC.generatePerBrokerBrokerConfiguration(2, advertisedHostnames, advertisedPorts);
+        String config = KC.generatePerBrokerConfiguration(2, advertisedHostnames, advertisedPorts);
 
         assertThat(config, containsString("broker.id=2"));
         assertThat(config, containsString("node.id=2"));

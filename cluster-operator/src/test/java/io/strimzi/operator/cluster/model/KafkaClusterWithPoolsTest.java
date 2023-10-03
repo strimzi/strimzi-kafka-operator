@@ -363,11 +363,11 @@ public class KafkaClusterWithPoolsTest {
                 null, SHARED_ENV_PROVIDER
         );
 
-        String configuration = kc.generatePerBrokerBrokerConfiguration(2, advertisedHostnames, advertisedPorts);
+        String configuration = kc.generatePerBrokerConfiguration(2, advertisedHostnames, advertisedPorts);
         assertThat(configuration, containsString("node.id=2\n"));
         assertThat(configuration, containsString("process.roles=broker\n"));
 
-        configuration = kc.generatePerBrokerBrokerConfiguration(10, advertisedHostnames, advertisedPorts);
+        configuration = kc.generatePerBrokerConfiguration(10, advertisedHostnames, advertisedPorts);
         assertThat(configuration, containsString("node.id=10\n"));
         assertThat(configuration, containsString("process.roles=broker\n"));
 

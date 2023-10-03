@@ -324,11 +324,11 @@ public class KafkaClusterWithKRaftTest {
                 SHARED_ENV_PROVIDER
         );
 
-        String configuration = kc.generatePerBrokerBrokerConfiguration(2, Map.of(), Map.of());
+        String configuration = kc.generatePerBrokerConfiguration(2, Map.of(), Map.of());
         assertThat(configuration, containsString("node.id=2\n"));
         assertThat(configuration, containsString("process.roles=controller\n"));
 
-        configuration = kc.generatePerBrokerBrokerConfiguration(1001, advertisedHostnames, advertisedPorts);
+        configuration = kc.generatePerBrokerConfiguration(1001, advertisedHostnames, advertisedPorts);
         assertThat(configuration, containsString("node.id=1001\n"));
         assertThat(configuration, containsString("process.roles=broker\n"));
 

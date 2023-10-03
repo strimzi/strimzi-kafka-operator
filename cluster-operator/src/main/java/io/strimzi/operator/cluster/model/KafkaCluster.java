@@ -1590,10 +1590,10 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
      *
      * @return The Kafka broker configuration as a String
      */
-    public String generatePerBrokerBrokerConfiguration(int nodeId, Map<Integer, Map<String, String>> advertisedHostnames, Map<Integer, Map<String, String>> advertisedPorts)   {
+    public String generatePerBrokerConfiguration(int nodeId, Map<Integer, Map<String, String>> advertisedHostnames, Map<Integer, Map<String, String>> advertisedPorts)   {
         KafkaPool pool = nodePoolForNodeId(nodeId);
 
-        return generatePerBrokerBrokerConfiguration(
+        return generatePerBrokerConfiguration(
                 pool.nodeRef(nodeId),
                 pool,
                 advertisedHostnames,
@@ -1611,7 +1611,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
      *
      * @return  String with the Kafka broker configuration
      */
-    private String generatePerBrokerBrokerConfiguration(NodeRef node, KafkaPool pool, Map<Integer, Map<String, String>> advertisedHostnames, Map<Integer, Map<String, String>> advertisedPorts)   {
+    private String generatePerBrokerConfiguration(NodeRef node, KafkaPool pool, Map<Integer, Map<String, String>> advertisedHostnames, Map<Integer, Map<String, String>> advertisedPorts)   {
         if (useKRaft) {
             return new KafkaBrokerConfigurationBuilder(reconciliation, String.valueOf(node.nodeId()), true)
                     .withRackId(rack)
@@ -1671,7 +1671,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
                 }
 
                 data.put(logging.configMapKey(), parsedLogging);
-                data.put(BROKER_CONFIGURATION_FILENAME, generatePerBrokerBrokerConfiguration(node, pool, advertisedHostnames, advertisedPorts));
+                data.put(BROKER_CONFIGURATION_FILENAME, generatePerBrokerConfiguration(node, pool, advertisedHostnames, advertisedPorts));
                 // List of configured listeners => StrimziPodSets still need this because of OAUTH and how the OAUTH secret
                 // environment variables are parsed in the container bash scripts
                 data.put(BROKER_LISTENERS_FILENAME, listeners.stream().map(ListenersUtils::envVarIdentifier).collect(Collectors.joining(" ")));
