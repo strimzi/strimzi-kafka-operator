@@ -1364,12 +1364,12 @@ public class KafkaAssemblyOperatorWithPoolsTest {
         when(mockPodOps.listAsync(any(), any(Labels.class))).thenReturn(Future.succeededFuture(Collections.emptyList()));
 
         CrdOperator<KubernetesClient, Kafka, KafkaList> mockKafkaOps = supplier.kafkaOperator;
-        Kafka kafka = new KafkaBuilder(KAFKA)
+        Kafka kraftEnabledKafka = new KafkaBuilder(KAFKA)
                 .editMetadata()
                         .addToAnnotations(Annotations.ANNO_STRIMZI_IO_KRAFT, "enabled")
                 .endMetadata()
                 .build();
-        when(mockKafkaOps.getAsync(eq(NAMESPACE), eq(CLUSTER_NAME))).thenReturn(Future.succeededFuture(kafka));
+        when(mockKafkaOps.getAsync(eq(NAMESPACE), eq(CLUSTER_NAME))).thenReturn(Future.succeededFuture(kraftEnabledKafka));
         when(mockKafkaOps.updateStatusAsync(any(), any())).thenReturn(Future.succeededFuture());
 
         StatefulSetOperator mockStsOps = supplier.stsOperations;
