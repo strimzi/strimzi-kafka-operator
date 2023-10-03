@@ -209,7 +209,9 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
     Future<Void> reconcile(ReconciliationState reconcileState)  {
         Promise<Void> chainPromise = Promise.promise();
 
-        if (featureGates.useKRaftEnabled()) {
+        boolean isKRaftEnabled = featureGates.useKRaftEnabled() && ReconcilerUtils.kraftEnabled(reconcileState.kafkaAssembly);
+
+        if (isKRaftEnabled) {
             // Makes sure KRaft is used only with KafkaNodePool custom resources and not with virtual node pools
             if (featureGates.kafkaNodePoolsEnabled()
                     && !ReconcilerUtils.nodePoolsEnabled(reconcileState.kafkaAssembly))  {
@@ -230,7 +232,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                 .compose(state -> state.versionChange())
 
                 // Run reconciliations of the different components
-                .compose(state -> featureGates.useKRaftEnabled() ? Future.succeededFuture(state) : state.reconcileZooKeeper(clock))
+                .compose(state -> isKRaftEnabled ? Future.succeededFuture(state) : state.reconcileZooKeeper(clock))
                 .compose(state -> state.reconcileKafka(clock))
                 .compose(state -> state.reconcileEntityOperator(clock))
                 .compose(state -> state.reconcileCruiseControl(clock))

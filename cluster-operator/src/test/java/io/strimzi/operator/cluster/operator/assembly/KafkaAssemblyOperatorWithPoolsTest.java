@@ -1318,7 +1318,7 @@ public class KafkaAssemblyOperatorWithPoolsTest {
     public void testKRaftClusterWithoutNodePools(VertxTestContext context)  {
         Kafka kafka = new KafkaBuilder(KAFKA)
                 .editMetadata()
-                .withAnnotations(Map.of())
+                .withAnnotations(Map.of(Annotations.ANNO_STRIMZI_IO_KRAFT, "enabled"))
                 .endMetadata()
                 .build();
 
@@ -1364,7 +1364,12 @@ public class KafkaAssemblyOperatorWithPoolsTest {
         when(mockPodOps.listAsync(any(), any(Labels.class))).thenReturn(Future.succeededFuture(Collections.emptyList()));
 
         CrdOperator<KubernetesClient, Kafka, KafkaList> mockKafkaOps = supplier.kafkaOperator;
-        when(mockKafkaOps.getAsync(eq(NAMESPACE), eq(CLUSTER_NAME))).thenReturn(Future.succeededFuture(KAFKA));
+        Kafka kraftEnabledKafka = new KafkaBuilder(KAFKA)
+                .editMetadata()
+                        .addToAnnotations(Annotations.ANNO_STRIMZI_IO_KRAFT, "enabled")
+                .endMetadata()
+                .build();
+        when(mockKafkaOps.getAsync(eq(NAMESPACE), eq(CLUSTER_NAME))).thenReturn(Future.succeededFuture(kraftEnabledKafka));
         when(mockKafkaOps.updateStatusAsync(any(), any())).thenReturn(Future.succeededFuture());
 
         StatefulSetOperator mockStsOps = supplier.stsOperations;

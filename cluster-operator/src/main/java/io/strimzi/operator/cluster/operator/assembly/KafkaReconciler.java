@@ -197,20 +197,21 @@ public class KafkaReconciler {
         this.operationTimeoutMs = config.getOperationTimeoutMs();
         this.kafkaNodePoolCrs = nodePools;
 
+        boolean isKRaftEnabled = config.featureGates().useKRaftEnabled() && ReconcilerUtils.kraftEnabled(kafkaCr);
         // We prepare the KafkaPool models and create the KafkaCluster model
-        List<KafkaPool> pools = NodePoolUtils.createKafkaPools(reconciliation, kafkaCr, nodePools, oldStorage, currentPods, config.featureGates().useKRaftEnabled(), supplier.sharedEnvironmentProvider);
-        String clusterId = config.featureGates().useKRaftEnabled() ? NodePoolUtils.getOrGenerateKRaftClusterId(kafkaCr, nodePools) : NodePoolUtils.getClusterIdIfSet(kafkaCr, nodePools);
-        this.kafka = KafkaCluster.fromCrd(reconciliation, kafkaCr, pools, config.versions(), config.featureGates().useKRaftEnabled(), clusterId, supplier.sharedEnvironmentProvider);
+        List<KafkaPool> pools = NodePoolUtils.createKafkaPools(reconciliation, kafkaCr, nodePools, oldStorage, currentPods, isKRaftEnabled, supplier.sharedEnvironmentProvider);
+        String clusterId = isKRaftEnabled ? NodePoolUtils.getOrGenerateKRaftClusterId(kafkaCr, nodePools) : NodePoolUtils.getClusterIdIfSet(kafkaCr, nodePools);
+        this.kafka = KafkaCluster.fromCrd(reconciliation, kafkaCr, pools, config.versions(), isKRaftEnabled, clusterId, supplier.sharedEnvironmentProvider);
 
         // We set the user-configured inter.broker.protocol.version if needed (when not set by the user)
         // It is set only in ZooKeeper-mode since in Kraft mode it is ignored and throws warnings
-        if (!config.featureGates().useKRaftEnabled() && versionChange.interBrokerProtocolVersion() != null) {
+        if (!isKRaftEnabled && versionChange.interBrokerProtocolVersion() != null) {
             this.kafka.setInterBrokerProtocolVersion(versionChange.interBrokerProtocolVersion());
         }
 
         // We set the user-configured log.message.format.version if needed (when not set by the user)
         // It is set only in ZooKeeper-mode since in Kraft mode it is ignored and throws warnings
-        if (!config.featureGates().useKRaftEnabled() && versionChange.logMessageFormatVersion() != null) {
+        if (!isKRaftEnabled && versionChange.logMessageFormatVersion() != null) {
             this.kafka.setLogMessageFormatVersion(versionChange.logMessageFormatVersion());
         }
 

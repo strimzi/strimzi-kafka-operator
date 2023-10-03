@@ -107,4 +107,10 @@ public class ResourceAnnotations {
      */
     public static final String ANNO_STRIMZI_IO_SKIP_BROKER_SCALEDOWN_CHECK = STRIMZI_DOMAIN + "skip-broker-scaledown-check";
 
+    /**
+     * Annotation for defining a cluster as KRaft (enabled) or ZooKeeper (disabled) based.
+     * This annotation is used on the Kafka CR
+     * If missing or with an invalid value, the cluster is assumed to be ZooKeeper-based
+     */
+    public static final String ANNO_STRIMZI_IO_KRAFT = STRIMZI_DOMAIN + "kraft";
 }

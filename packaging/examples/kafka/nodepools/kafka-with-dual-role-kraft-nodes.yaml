@@ -24,6 +24,7 @@ metadata:
   name: my-cluster
   annotations:
     strimzi.io/node-pools: enabled
+    strimzi.io/kraft: enabled
 spec:
   kafka:
     version: 3.5.1

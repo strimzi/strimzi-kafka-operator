@@ -182,6 +182,10 @@ public class ResourceManager {
                 if (Environment.isKafkaNodePoolsEnabled()) {
                     Map<String, String> annotations = resource.getMetadata().getAnnotations();
                     annotations.put(Annotations.ANNO_STRIMZI_IO_NODE_POOLS, "enabled");
+                    // if the tests are running with UseKRaft enabled, the corresponding annotation is needed for all the Kafka resources
+                    if (Environment.isKRaftModeEnabled()) {
+                        annotations.put(Annotations.ANNO_STRIMZI_IO_KRAFT, "enabled");
+                    }
                     resource.getMetadata().setAnnotations(annotations);
                 }
 
