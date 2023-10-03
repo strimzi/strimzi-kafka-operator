@@ -12,7 +12,20 @@ import io.strimzi.systemtest.utils.kubeUtils.controllers.JobUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.WaitException;
+import io.strimzi.test.k8s.KubeClusterResource;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Base64;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -243,6 +256,112 @@ public class ClientUtils {
             .withUsername(testStorage.getUsername())
             .withProducerName(testStorage.getProducerName())
             .withConsumerName(testStorage.getConsumerName());
+    }
+
+    public static String createPrivateKeyAndGetPath() {
+        return createPrivateKeyAndGetPath(2048);
+    }
+
+    public static String createPrivateKeyAndGetPath(int keyLengthBits) {
+        try {
+            LOGGER.info("Creating client private key of size {} bits", keyLengthBits);
+            File privateKeyTempFile = Files.createTempFile("client-private-key-", ".pem").toFile();
+            String command = String.format("openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:%d -out %s", keyLengthBits, privateKeyTempFile.getAbsolutePath());
+            execOpensslCmdAndVerifyFileNotEmpty(privateKeyTempFile, command);
+            return privateKeyTempFile.getAbsolutePath();
+        } catch (IOException e)  {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static String createSimpleCertSignRequestAndGetPath(String privateKeyPath, String subjectString) {
+        try {
+            LOGGER.info("Creating CertificateSigningRequest file from private key: {} and subject: {}", privateKeyPath, subjectString);
+
+            File csrTempFile = Files.createTempFile("client-csr-", ".pem").toFile();
+            // OpenSSL needs subject to have escaped every non-number or alphabet character
+            // Following code gets each subject info as a match, escapes its value and constructs it back for openssl command
+            Matcher subjectMatches = Pattern.compile("/(?<type>[a-zA-Z0-9]+)=(?<value>[^/]+)").matcher(subjectString);
+            StringBuilder subject = new StringBuilder();
+
+            while (subjectMatches.find()) {
+                Matcher subjectValMatcher = Pattern.compile("[^a-zA-Z0-9]").matcher(subjectMatches.group("value"));
+                subject.append("/" + subjectMatches.group("type") + "=" + subjectValMatcher.replaceAll("\\\\$0"));
+            }
+
+            String command = String.format("openssl req -new -subj %s -key %s -out %s ", subject.toString(), privateKeyPath, csrTempFile.getAbsolutePath());
+            execOpensslCmdAndVerifyFileNotEmpty(csrTempFile, command);
+            return csrTempFile.getAbsolutePath();
+        } catch (IOException e)  {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static String createSignedCertAndGetPath(String csrPath, String caCertPath, String caKeyPath) {
+        try {
+            File certTempFile = Files.createTempFile("client-signed-cert-", ".pem").toFile();
+            String command = String.format("openssl x509 -req -in %s -CA %s -CAkey %s -out %s", csrPath, caCertPath, caKeyPath, certTempFile.getAbsolutePath());
+            execOpensslCmdAndVerifyFileNotEmpty(certTempFile, command);
+            return certTempFile.getAbsolutePath();
+        } catch (IOException e)  {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static void execOpensslCmdAndVerifyFileNotEmpty(File tempFile, String command) {
+        try {
+            Process process = Runtime.getRuntime().exec(command);
+            int exitCode = process.waitFor();
+
+            StringBuilder stderr = new StringBuilder();
+            String line;
+            BufferedReader reader = new BufferedReader(new InputStreamReader(process.getErrorStream()));
+
+            while ((line = reader.readLine()) != null) {
+                stderr.append("\n" + line);
+            }
+
+            if (Files.readString(Path.of(tempFile.getAbsolutePath())).isEmpty() || exitCode != 0) {
+                String reason = !stderr.isEmpty() ? stderr.toString() : "unknown";
+                throw new RuntimeException(String.format("Did not generate %s. Reason: %s", tempFile.getAbsolutePath(), reason));
+            }
+        } catch (IOException | InterruptedException e)  {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static String saveDecodedCaCertSecretToFileAndGetPath(String namespaceName, String secretName) {
+        String encodedCert = KubeClusterResource.kubeClient(namespaceName).getSecret(secretName).getData().get("ca.crt");
+        return saveCaToFileAndGetPath(new String(Base64.getDecoder().decode(encodedCert), StandardCharsets.UTF_8), "ca", ".crt");
+    }
+
+    public static String saveDecodedCaKeySecretToFileAndGetPath(String namespaceName, String secretName) {
+        String encodedKey = KubeClusterResource.kubeClient(namespaceName).getSecret(secretName).getData().get("ca.key");
+        return saveCaToFileAndGetPath(new String(Base64.getDecoder().decode(encodedKey), StandardCharsets.UTF_8), "ca", ".key");
+    }
+
+    public static String saveCaToFileAndGetPath(String caString, String prefix, String suffix) {
+        try {
+            File caTempFile = Files.createTempFile(prefix + "-", suffix).toFile();
+            LOGGER.info("Saving Certificate Authority data: {}{} to {}", prefix, suffix, caTempFile.getAbsolutePath());
+
+            BufferedWriter writer = new BufferedWriter(new FileWriter(caTempFile.getAbsolutePath()));
+            writer.write(caString);
+            writer.close();
+
+            return caTempFile.getAbsolutePath();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static String getKeyOrCertFileEncodedToString(String filePath) {
+        try {
+            String keyOrCert = Files.readString(Path.of(filePath));
+            return Base64.getEncoder().encodeToString(keyOrCert.getBytes(StandardCharsets.UTF_8));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 }
 
