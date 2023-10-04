@@ -52,15 +52,15 @@ kubectl get pods -n <my_cluster_operator_namespace>
 .Output shows four Kafka nodes in the target node pool
 [source,shell]
 ----
-NAME                       READY  STATUS   RESTARTS
-my-cluster-pool-a-kafka-0  1/1    Running  0
-my-cluster-pool-a-kafka-1  1/1    Running  0
-my-cluster-pool-a-kafka-4  1/1    Running  0
-my-cluster-pool-a-kafka-5  1/1    Running  0
+NAME                 READY  STATUS   RESTARTS
+my-cluster-pool-a-0  1/1    Running  0
+my-cluster-pool-a-1  1/1    Running  0
+my-cluster-pool-a-4  1/1    Running  0
+my-cluster-pool-a-5  1/1    Running  0
 ----
 +
 Node IDs are appended to the name of the node on creation.
-We add node `my-cluster-pool-a-kafka-5`, which has a node ID of `5`.
+We add node `my-cluster-pool-a-5`, which has a node ID of `5`.
 
 . Reassign the partitions from the old node to the new node.
 +

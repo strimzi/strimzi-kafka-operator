@@ -13,14 +13,14 @@ In this procedure, we start with three nodes for node pool `pool-a`:
 .Kafka nodes in the node pool
 [source,shell]
 ----
-NAME                       READY  STATUS   RESTARTS
-my-cluster-pool-a-kafka-0  1/1    Running  0
-my-cluster-pool-a-kafka-1  1/1    Running  0
-my-cluster-pool-a-kafka-2  1/1    Running  0
+NAME                 READY  STATUS   RESTARTS
+my-cluster-pool-a-0  1/1    Running  0
+my-cluster-pool-a-1  1/1    Running  0
+my-cluster-pool-a-2  1/1    Running  0
 ----
 
 Node IDs are appended to the name of the node on creation.
-We add node `my-cluster-pool-a-kafka-3`, which has a node ID of `3`.
+We add node `my-cluster-pool-a-3`, which has a node ID of `3`.
 
 NOTE: During this process, the ID of the node that holds the partition replicas changes. Consider any dependencies that reference the node ID.
 
@@ -55,11 +55,11 @@ kubectl get pods -n <my_cluster_operator_namespace>
 .Output shows four Kafka nodes in the node pool
 [source,shell]
 ----
-NAME                       READY  STATUS   RESTARTS
-my-cluster-pool-a-kafka-0  1/1    Running  0
-my-cluster-pool-a-kafka-1  1/1    Running  0
-my-cluster-pool-a-kafka-2  1/1    Running  0
-my-cluster-pool-a-kafka-3  1/1    Running  0
+NAME                 READY  STATUS   RESTARTS
+my-cluster-pool-a-0  1/1    Running  0
+my-cluster-pool-a-1  1/1    Running  0
+my-cluster-pool-a-2  1/1    Running  0
+my-cluster-pool-a-3  1/1    Running  0
 ---- 
 
 . Reassign the partitions after increasing the number of nodes in the node pool.
