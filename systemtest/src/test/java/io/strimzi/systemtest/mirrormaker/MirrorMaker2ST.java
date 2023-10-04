@@ -172,7 +172,9 @@ class MirrorMaker2ST extends AbstractST {
 
         LOGGER.info("Mirrored successful");
 
-        if (!Environment.isKRaftModeEnabled()) {
+        // TODO: https://github.com/strimzi/strimzi-kafka-operator/issues/8864
+        // currently disabled for UTO, as KafkaTopic CR is not created -> we should check it directly in Kafka
+        if (!Environment.isKRaftModeEnabled() && !Environment.isUnidirectionalTopicOperatorEnabled()) {
             KafkaTopic mirroredTopic = KafkaTopicResource.kafkaTopicClient().inNamespace(testStorage.getNamespaceName()).withName(sourceMirroredTopicName).get();
             assertThat(mirroredTopic.getSpec().getPartitions(), is(3));
             assertThat(mirroredTopic.getMetadata().getLabels().get(Labels.STRIMZI_CLUSTER_LABEL), is(kafkaClusterTargetName));
@@ -307,7 +309,9 @@ class MirrorMaker2ST extends AbstractST {
         ClientUtils.waitForConsumerClientSuccess(testStorage);
         LOGGER.info("Messages successfully mirrored");
 
-        if (!Environment.isKRaftModeEnabled()) {
+        // TODO: https://github.com/strimzi/strimzi-kafka-operator/issues/8864
+        // currently disabled for UTO, as KafkaTopic CR is not created -> we should check it directly in Kafka
+        if (!Environment.isKRaftModeEnabled() && !Environment.isUnidirectionalTopicOperatorEnabled()) {
             KafkaTopicUtils.waitForKafkaTopicCreation(testStorage.getNamespaceName(), sourceMirroredTopicName);
             KafkaTopic mirroredTopic = KafkaTopicResource.kafkaTopicClient().inNamespace(testStorage.getNamespaceName()).withName(sourceMirroredTopicName).get();
 

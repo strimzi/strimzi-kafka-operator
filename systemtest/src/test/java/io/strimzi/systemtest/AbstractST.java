@@ -488,8 +488,10 @@ public abstract class AbstractST implements TestSeparator {
         if (!Environment.isKRaftModeEnabled()) {
             imgFromPod = PodUtils.getContainerImageNameFromPod(kafkaNamespaceName, entityOperatorPodName, "topic-operator");
             assertThat(imgFromPod, containsString(imgFromDeplConf.get(TO_IMAGE)));
-            imgFromPod = PodUtils.getContainerImageNameFromPod(kafkaNamespaceName, entityOperatorPodName, "tls-sidecar");
-            assertThat(imgFromPod, containsString(imgFromDeplConf.get(TLS_SIDECAR_EO_IMAGE)));
+            if (!Environment.isUnidirectionalTopicOperatorEnabled()) {
+                imgFromPod = PodUtils.getContainerImageNameFromPod(kafkaNamespaceName, entityOperatorPodName, "tls-sidecar");
+                assertThat(imgFromPod, containsString(imgFromDeplConf.get(TLS_SIDECAR_EO_IMAGE)));
+            }
         }
 
         LOGGER.info("Docker images verified");

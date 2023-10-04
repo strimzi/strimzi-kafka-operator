@@ -89,7 +89,8 @@ public class CruiseControlConfigurationST extends AbstractST {
         LOGGER.info("Verifying that there is no configuration to CruiseControl metric reporter in Kafka ConfigMap");
         assertThrows(WaitException.class, () -> CruiseControlUtils.verifyCruiseControlMetricReporterConfigurationInKafkaConfigMapIsPresent(CruiseControlUtils.getKafkaCruiseControlMetricsReporterConfiguration(namespaceName, clusterName)));
 
-        if (!Environment.isKRaftModeEnabled()) {
+        // https://github.com/strimzi/strimzi-kafka-operator/issues/8864
+        if (!Environment.isKRaftModeEnabled() && !Environment.isUnidirectionalTopicOperatorEnabled()) {
             LOGGER.info("Cruise Control Topics will not be deleted and will stay in the Kafka cluster");
             CruiseControlUtils.verifyThatCruiseControlTopicsArePresent(namespaceName);
         }
@@ -104,7 +105,8 @@ public class CruiseControlConfigurationST extends AbstractST {
         LOGGER.info("Verifying that configuration of CruiseControl metric reporter is present in Kafka ConfigMap");
         CruiseControlUtils.verifyCruiseControlMetricReporterConfigurationInKafkaConfigMapIsPresent(CruiseControlUtils.getKafkaCruiseControlMetricsReporterConfiguration(namespaceName, clusterName));
 
-        if (!Environment.isKRaftModeEnabled()) {
+        // https://github.com/strimzi/strimzi-kafka-operator/issues/8864
+        if (!Environment.isKRaftModeEnabled() && !Environment.isUnidirectionalTopicOperatorEnabled()) {
             LOGGER.info("Verifying that {} Topics are created after CC is instantiated", Constants.CRUISE_CONTROL_NAME);
 
             CruiseControlUtils.verifyThatCruiseControlTopicsArePresent(namespaceName);
