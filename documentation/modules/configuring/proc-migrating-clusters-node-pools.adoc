@@ -47,6 +47,10 @@ spec:
         size: 100Gi
         deleteClaim: false
 ----
++
+WARNING: To migrate a cluster while preserving its data along with the names of its nodes and resources, the node pool name must be `kafka`, and the `strimzi.io/cluster` label must use the name of the Kafka resource. 
+Otherwise, nodes and resources are created with new names, including the persistent volume storage used by the nodes. 
+Consequently, your previous data may not be available.       
 
 . Apply the `KafkaNodePool` resource:
 +
