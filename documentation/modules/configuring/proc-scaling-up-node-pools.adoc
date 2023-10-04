@@ -13,10 +13,10 @@ In this procedure, we start with three nodes for node pool `pool-a`:
 .Kafka nodes in the node pool
 [source,shell]
 ----
-NAME                      READY    STATUS  RESTARTS
-my-cluster-pool-a-0  1/1  Running  0
-my-cluster-pool-a-1  1/1  Running  0
-my-cluster-pool-a-2  1/1  Running  0
+NAME                 READY  STATUS   RESTARTS
+my-cluster-pool-a-0  1/1    Running  0
+my-cluster-pool-a-1  1/1    Running  0
+my-cluster-pool-a-2  1/1    Running  0
 ----
 
 Node IDs are appended to the name of the node on creation.
@@ -55,7 +55,7 @@ kubectl get pods -n <my_cluster_operator_namespace>
 .Output shows four Kafka nodes in the node pool
 [source,shell]
 ----
-NAME                       READY  STATUS   RESTARTS
+NAME                 READY  STATUS   RESTARTS
 my-cluster-pool-a-0  1/1    Running  0
 my-cluster-pool-a-1  1/1    Running  0
 my-cluster-pool-a-2  1/1    Running  0
