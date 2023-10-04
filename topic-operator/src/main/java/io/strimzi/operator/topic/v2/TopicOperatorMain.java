@@ -9,16 +9,29 @@ import io.fabric8.kubernetes.client.informers.ResourceEventHandler;
 import io.fabric8.kubernetes.client.informers.SharedIndexInformer;
 import io.fabric8.kubernetes.client.informers.cache.BasicItemStore;
 import io.fabric8.kubernetes.client.informers.cache.Cache;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.binder.jvm.ClassLoaderMetrics;
+import io.micrometer.core.instrument.binder.jvm.JvmGcMetrics;
+import io.micrometer.core.instrument.binder.jvm.JvmMemoryMetrics;
+import io.micrometer.core.instrument.binder.jvm.JvmThreadMetrics;
+import io.micrometer.core.instrument.binder.system.ProcessorMetrics;
+import io.micrometer.prometheus.PrometheusConfig;
+import io.micrometer.prometheus.PrometheusMeterRegistry;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.KafkaTopic;
+import io.strimzi.operator.common.MetricsProvider;
+import io.strimzi.operator.common.MicrometerMetricsProvider;
 import io.strimzi.operator.common.OperatorKubernetesClientBuilder;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.http.HealthCheckAndMetricsServer;
 import io.strimzi.operator.common.http.Liveness;
 import io.strimzi.operator.common.http.Readiness;
+import io.strimzi.operator.common.metrics.BatchOperatorMetricsHolder;
+import io.strimzi.operator.common.model.Labels;
 import org.apache.kafka.clients.admin.Admin;
 
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ExecutionException;
 
 /**
@@ -47,15 +60,19 @@ public class TopicOperatorMain implements Liveness, Readiness {
                       Admin admin,
                       KubernetesClient client,
                       TopicOperatorConfig config) throws ExecutionException, InterruptedException {
+        Objects.requireNonNull(namespace);
+        Objects.requireNonNull(selector);
         this.namespace = namespace;
         this.client = client;
         this.resyncIntervalMs = config.fullReconciliationIntervalMs();
         this.admin = admin;
-        this.controller = new BatchingTopicController(selector, admin, client, config.useFinalizer());
+        MetricsProvider metricsProvider = createMetricsProvider();
+        BatchOperatorMetricsHolder metrics = new BatchOperatorMetricsHolder(KafkaTopic.RESOURCE_KIND, Labels.fromMap(selector), metricsProvider);
+        this.controller = new BatchingTopicController(selector, admin, client, config.useFinalizer(), metrics, namespace);
         this.itemStore = new BasicItemStore<KafkaTopic>(Cache::metaNamespaceKeyFunc);
-        this.queue = new BatchingLoop(config.maxQueueSize(),  controller, 1, config.maxBatchSize(), config.maxBatchLingerMs(), itemStore, this::stop);
-        this.handler = new TopicOperatorEventHandler(queue, config.useFinalizer());
-        this.healthAndMetricsServer = new HealthCheckAndMetricsServer(8080, this, this, null);
+        this.queue = new BatchingLoop(config.maxQueueSize(), controller, 1, config.maxBatchSize(), config.maxBatchLingerMs(), itemStore, this::stop, metrics, namespace);
+        this.handler = new TopicOperatorEventHandler(queue, config.useFinalizer(), metrics, namespace);
+        this.healthAndMetricsServer = new HealthCheckAndMetricsServer(8080, this, this, metricsProvider);
     }
 
     synchronized void start() {
@@ -143,7 +160,6 @@ public class TopicOperatorMain implements Liveness, Readiness {
                 .build();
     }
 
-
     @Override
     public boolean isAlive() {
         boolean running;
@@ -170,5 +186,21 @@ public class TopicOperatorMain implements Liveness, Readiness {
         } else {
             return queue.isReady();
         }
+    }
+
+    /**
+     * Creates the MetricsProvider instance based on a PrometheusMeterRegistry
+     * and binds the JVM metrics to it.
+     *
+     * @return MetricsProvider instance
+     */
+    private static MetricsProvider createMetricsProvider()  {
+        MeterRegistry registry = new PrometheusMeterRegistry(PrometheusConfig.DEFAULT);
+        new ClassLoaderMetrics().bindTo(registry);
+        new JvmMemoryMetrics().bindTo(registry);
+        new JvmGcMetrics().bindTo(registry);
+        new ProcessorMetrics().bindTo(registry);
+        new JvmThreadMetrics().bindTo(registry);
+        return new MicrometerMetricsProvider(registry);
     }
 }

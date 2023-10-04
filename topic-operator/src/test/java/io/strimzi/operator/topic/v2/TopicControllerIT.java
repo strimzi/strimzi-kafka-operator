@@ -16,7 +16,6 @@ import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaTopicBuilder;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.api.kafka.model.status.KafkaTopicStatus;
-import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.model.Labels;
 import org.apache.kafka.clients.admin.Admin;
 import org.apache.kafka.clients.admin.AlterConfigOp;
@@ -78,6 +77,7 @@ import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 
+import static io.strimzi.api.ResourceAnnotations.ANNO_STRIMZI_IO_PAUSE_RECONCILIATION;
 import static io.strimzi.operator.topic.v2.BatchingTopicController.isPaused;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -96,6 +96,7 @@ class TopicControllerIT {
 
     private static final Logger LOGGER = LogManager.getLogger(TopicControllerIT.class);
     public static final Map<String, String> SELECTOR = Map.of("foo", "FOO", "bar", "BAR");
+    private static final String NAMESPACE = "ns";
 
     KubernetesClient client;
 
@@ -110,12 +111,12 @@ class TopicControllerIT {
 
     @BeforeAll
     public static void setupKubeCluster() {
-        TopicOperatorTestUtil.setupKubeCluster();
+        TopicOperatorTestUtil.setupKubeCluster(NAMESPACE);
     }
 
     @AfterAll
     public static void teardownKubeCluster() {
-        TopicOperatorTestUtil.teardownKubeCluster2();
+        TopicOperatorTestUtil.teardownKubeCluster2(NAMESPACE);
     }
 
     @BeforeEach
@@ -459,7 +460,7 @@ class TopicControllerIT {
         var current = Crds.topicOperation(client).inNamespace(namespace).withName(topicName).get();
         var paused = Crds.topicOperation(client).resource(new KafkaTopicBuilder(current)
             .editMetadata()
-                .withAnnotations(Map.of(Annotations.ANNO_STRIMZI_IO_PAUSE_RECONCILIATION, "True"))
+                .withAnnotations(Map.of(ANNO_STRIMZI_IO_PAUSE_RECONCILIATION, "true"))
             .endMetadata()
             .build()).update();
         LOGGER.info("Test paused KafkaTopic {} with resourceVersion {}",
@@ -1963,7 +1964,7 @@ class TopicControllerIT {
         KafkaTopic kt = createTopic(
             kafkaCluster,
             kafkaTopic(namespace, topicName, SELECTOR,
-                Map.of(Annotations.ANNO_STRIMZI_IO_PAUSE_RECONCILIATION, "True"),
+                Map.of(ANNO_STRIMZI_IO_PAUSE_RECONCILIATION, "true"),
                 true, topicName, 1, 1, Map.of()),
             pausedIsTrue()
         );

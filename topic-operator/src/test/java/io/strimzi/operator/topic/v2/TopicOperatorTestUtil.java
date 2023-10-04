@@ -48,14 +48,14 @@ class TopicOperatorTestUtil {
         return testInfo.getTestMethod().map(m -> m.getName() + "() " + testInfo.getDisplayName().replaceAll("[\r\n]+", " ")).orElse("");
     }
 
-    static void setupKubeCluster() {
+    static void setupKubeCluster(String namespace) {
         try {
             KubeCluster.bootstrap();
         } catch (NoClusterException e) {
             assumeTrue(false, e.getMessage());
         }
         KubeClusterResource.getInstance();
-        cmdKubeClient().createNamespace(BatchingTopicControllerTest.NAMESPACE);
+        cmdKubeClient().createNamespace(namespace);
         LOGGER.info("#### Creating " + "../packaging/install/topic-operator/02-Role-strimzi-topic-operator.yaml");
         cmdKubeClient().create(TestUtils.USER_PATH + "/../packaging/install/topic-operator/02-Role-strimzi-topic-operator.yaml");
         LOGGER.info("#### Creating " + TestUtils.CRD_TOPIC);
@@ -64,12 +64,12 @@ class TopicOperatorTestUtil {
         cmdKubeClient().create(TestUtils.USER_PATH + "/src/test/resources/TopicOperatorIT-rbac.yaml");
     }
 
-    static void teardownKubeCluster2() {
+    static void teardownKubeCluster2(String namespace) {
         cmdKubeClient()
                 .delete(TestUtils.USER_PATH + "/src/test/resources/TopicOperatorIT-rbac.yaml")
                 .delete(TestUtils.CRD_TOPIC)
                 .delete(TestUtils.USER_PATH + "/../packaging/install/topic-operator/02-Role-strimzi-topic-operator.yaml")
-                .deleteNamespace(BatchingTopicControllerTest.NAMESPACE);
+                .deleteNamespace(namespace);
     }
 
     static void cleanupNamespace(KubernetesClient client, TestInfo testInfo, String pop) {

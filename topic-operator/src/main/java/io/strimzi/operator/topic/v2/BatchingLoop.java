@@ -9,6 +9,7 @@ import io.fabric8.kubernetes.client.informers.cache.ItemStore;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
+import io.strimzi.operator.common.metrics.BatchOperatorMetricsHolder;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -43,6 +44,8 @@ class BatchingLoop {
     private final ItemStore<KafkaTopic> itemStore;
     private final Runnable stop;
     private final int maxQueueSize;
+    private final BatchOperatorMetricsHolder metrics;
+    private final String namespace;
 
     public BatchingLoop(
             int maxQueueSize,
@@ -51,7 +54,9 @@ class BatchingLoop {
             int maxBatchSize,
             long maxBatchLingerMs,
             ItemStore<KafkaTopic> itemStore,
-            Runnable stop) {
+            Runnable stop,
+            BatchOperatorMetricsHolder metrics,
+            String namespace) {
         this.maxQueueSize = maxQueueSize;
         this.queue = new LinkedBlockingDeque<>(maxQueueSize);
         this.controller = controller;
@@ -63,6 +68,8 @@ class BatchingLoop {
         this.maxBatchLingerMs = maxBatchLingerMs;
         this.itemStore = itemStore;
         this.stop = stop;
+        this.metrics = metrics;
+        this.namespace = namespace;
     }
 
     /**
@@ -93,7 +100,8 @@ class BatchingLoop {
      */
     public void offer(TopicEvent event) {
         if (queue.offerFirst(event)) {
-            LOGGER.debugOp("Item {} push onto the deque tail", event);
+            LOGGER.debugOp("Item {} added to front of queue", event);
+            metrics.reconciliationsMaxQueueSize(namespace).getAndUpdate(size -> Math.max(size, queue.size()));
         } else {
             LOGGER.errorOp("Queue length {} exceeded, stopping operator. Please increase {} environment variable.",
                     maxQueueSize,
@@ -257,16 +265,13 @@ class BatchingLoop {
                 addToBatch(batchId, batch, rejected, topicEvent);
             }
             LOGGER.traceOp("[Batch #{}] Filled with {} topics", batchId, batch.size());
+            metrics.reconciliationsMaxBatchSize(namespace).getAndUpdate(size -> Math.max(size, batch.size()));
 
             // here we need a deque and can push `rejected` back on the front of the queue
             //      where they can be taken by the next thread.
             for (int i = rejected.size() - 1; i >= 0; i--) {
                 TopicEvent item = rejected.get(i);
-                if (queue.offerFirst(item)) {
-                    LOGGER.traceOp("[Batch #{}] Item {} returned to deque head", batchId, item);
-                } else {
-                    LOGGER.warnOp("[Batch #{}] Item {} couldn't be pushed onto the deque head after rejection from batch", batchId, item);
-                }
+                offer(item);
             }
         }
 
@@ -288,6 +293,7 @@ class BatchingLoop {
             } else {
                 LOGGER.debugOp("[Batch #{}] Rejecting item {}, already inflight", batchId, topicEvent);
                 rejected.add(topicEvent);
+                metrics.lockedReconciliationsCounter(namespace).increment();
             }
         }
     }

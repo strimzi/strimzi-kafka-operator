@@ -6,6 +6,7 @@ package io.strimzi.operator.topic.v2;
 
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientException;
+import io.micrometer.core.instrument.Timer;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaTopicBuilder;
@@ -14,6 +15,7 @@ import io.strimzi.api.kafka.model.status.ConditionBuilder;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
+import io.strimzi.operator.common.metrics.MetricsHolder;
 import io.strimzi.operator.common.model.StatusUtils;
 import org.apache.kafka.clients.admin.Admin;
 import org.apache.kafka.clients.admin.AlterConfigOp;
@@ -75,11 +77,15 @@ public class BatchingTopicController {
     // Key: topic name, Value: The KafkaTopics known to manage that topic
     /* test */ final Map<String, Set<KubeRef>> topics = new HashMap<>();
 
+    private final MetricsHolder metrics;
+    private final String namespace;
 
     BatchingTopicController(Map<String, String> selector,
                             Admin admin,
                             KubernetesClient kubeClient,
-                            boolean useFinalizer) throws ExecutionException, InterruptedException {
+                            boolean useFinalizer,
+                            MetricsHolder metrics,
+                            String namespace) throws ExecutionException, InterruptedException {
         this.selector = Objects.requireNonNull(selector);
         this.useFinalizer = useFinalizer;
         this.admin = admin;
@@ -103,7 +109,8 @@ public class BatchingTopicController {
                     "to avoid races between the operator and Kafka applications auto-creating topics");
         }
         this.kubeClient = kubeClient;
-
+        this.metrics = metrics;
+        this.namespace = namespace;
     }
 
     /* test */ static boolean isManaged(KafkaTopic kt) {
@@ -421,10 +428,11 @@ public class BatchingTopicController {
             deleteInternal(toBeDeleted, false);
         }
 
+        var remainingAfterDeletions = partitionedByDeletion.get(false);
+        remainingAfterDeletions.forEach(this::startReconciliationTimer);
         Map<ReconcilableTopic, Either<TopicOperatorException, Object>> results = new HashMap<>();
 
-        var partitionedByManaged = partitionedByDeletion.get(false).stream()
-            .collect(Collectors.partitioningBy(reconcilableTopic -> isManaged(reconcilableTopic.kt())));
+        var partitionedByManaged = remainingAfterDeletions.stream().collect(Collectors.partitioningBy(reconcilableTopic -> isManaged(reconcilableTopic.kt())));
         var unmanaged = partitionedByManaged.get(false);
         addOrRemoveFinalizer(useFinalizer, unmanaged).forEach(rt -> putResult(results, rt, Either.ofRight(null)));
 
@@ -434,6 +442,7 @@ public class BatchingTopicController {
         partitionedByPaused.get(true).forEach(reconcilableTopic -> putResult(results, reconcilableTopic, Either.ofRight(null)));
 
         var mayNeedUpdate = partitionedByPaused.get(false);
+        metrics.reconciliationsCounter(namespace).increment(mayNeedUpdate.size());
         var addedFinalizer = addOrRemoveFinalizer(useFinalizer, mayNeedUpdate);
 
         var currentStatesOrError = describeTopic(addedFinalizer);
@@ -451,6 +460,7 @@ public class BatchingTopicController {
         accumulateResults(results, currentStatesOrError, alterConfigsResults, createPartitionsResults);
 
         updateStatuses(results);
+        remainingAfterDeletions.forEach(this::stopTimer);
 
         LOGGER.traceOp("Total time reconciling batch of {} KafkaTopics: {}ns", results.size(), System.nanoTime() - t3);
     }
@@ -812,7 +822,12 @@ public class BatchingTopicController {
                 return false;
             }
         });
-        Set<String> topicNames = partitionedByManaged.map(ReconcilableTopic::topicName).collect(Collectors.toSet());
+
+        Set<String> topicNames = partitionedByManaged.map(reconcilableTopic -> {
+            metrics.reconciliationsCounter(namespace).increment();
+            startReconciliationTimer(reconcilableTopic);
+            return reconcilableTopic.topicName();
+        }).collect(Collectors.toSet());
 
         PartitionedByError<ReconcilableTopic, Object> deleteResult = deleteTopics(batch, topicNames);
 
@@ -829,6 +844,8 @@ public class BatchingTopicController {
                 }
             }
             forgetTopic(pair.getKey());
+            metrics.successfulReconciliationsCounter(namespace).increment();
+            stopTimer(pair.getKey());
         });
 
         // join that to fail
@@ -847,9 +864,11 @@ public class BatchingTopicController {
                             entry.getKey().topicName(),
                             entry.getValue());
                 }
+                metrics.failedReconciliationsCounter(namespace).increment();
             } else {
                 updateStatusForException(entry.getKey(), entry.getValue());
             }
+            stopTimer(entry.getKey());
         });
 
     }
@@ -979,6 +998,7 @@ public class BatchingTopicController {
             .withLastTransitionTime(StatusUtils.iso8601Now())
             .build();
         updateStatus(reconcilableTopic.reconciliation(), reconcilableTopic.kt(), condition);
+        metrics.failedReconciliationsCounter(namespace).increment();
     }
 
     private void updateStatusOk(ReconcilableTopic reconcilableTopic) {
@@ -988,6 +1008,7 @@ public class BatchingTopicController {
             .withLastTransitionTime(StatusUtils.iso8601Now())
             .build();
         updateStatus(reconcilableTopic.reconciliation(), reconcilableTopic.kt(), condition);
+        metrics.successfulReconciliationsCounter(namespace).increment();
     }
 
     private void updateStatus(Reconciliation reconciliation,
@@ -1037,5 +1058,17 @@ public class BatchingTopicController {
                 || !Objects.equals(oldReadyCondition.getStatus(), condition.getStatus())
                 || !Objects.equals(oldReadyCondition.getReason(), condition.getReason())
                 || !Objects.equals(oldReadyCondition.getMessage(), condition.getMessage());
+    }
+
+    private void startReconciliationTimer(ReconcilableTopic topic) {
+        if (topic.reconciliationTimerSample() == null) {
+            topic.reconciliationTimerSample(Timer.start(metrics.metricsProvider().meterRegistry()));
+        }
+    }
+
+    private void stopTimer(ReconcilableTopic topic) {
+        if (topic.reconciliationTimerSample() != null) {
+            topic.reconciliationTimerSample().stop(metrics.reconciliationsTimer(namespace));
+        }
     }
 }
