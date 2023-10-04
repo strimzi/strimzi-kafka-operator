@@ -57,7 +57,7 @@ spec:
                   description: The docker image for the pods.
                 connectCluster:
                   type: string
-                  description: The cluster alias used for Kafka Connect. The alias must match a cluster in the list at `spec.clusters`.
+                  description: The cluster alias used for Kafka Connect. The value must match the alias of the *target* Kafka cluster as specified in the `spec.clusters` configuration. The target Kafka cluster is used by the underlying Kafka Connect framework for its internal topics.
                 clusters:
                   type: array
                   items:
