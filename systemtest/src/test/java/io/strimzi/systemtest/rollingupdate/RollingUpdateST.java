@@ -162,7 +162,14 @@ class RollingUpdateST extends AbstractST {
         final TestStorage testStorage = new TestStorage(extensionContext, Environment.TEST_SUITE_NAMESPACE);
 
         resourceManager.createResourceWithWait(extensionContext,
-            KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), 3, 3).build(),
+            KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), 3, 3)
+                .editSpec()
+                    .editKafka()
+                        // in case consumer is created after we move one Kafka Pod to pending state, we need just 2 replicas
+                        .addToConfig(singletonMap("offsets.topic.replication.factor", 2))
+                    .endKafka()
+                .endSpec()
+                .build(),
             KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getTopicName(), 2, 2, testStorage.getNamespaceName()).build(),
             KafkaUserTemplates.tlsUser(testStorage).build()
         );
