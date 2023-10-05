@@ -2,6 +2,7 @@
 
 ## 0.38.0
 
+* Add support for Apache Kafka 3.6.0 and drop support for 3.4.0 and 3.4.1
 * Sign containers using `cosign`
 * Generate and publish Software Bill of Materials (SBOMs) of Strimzi containers
 * Add support for stopping connectors according to [Strimzi Proposal #54](https://github.com/strimzi/proposals/blob/main/054-stopping-kafka-connect-connectors.md)

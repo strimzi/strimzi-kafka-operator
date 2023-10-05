@@ -134,7 +134,7 @@
         <fasterxml.jackson-annotations.version>2.15.2</fasterxml.jackson-annotations.version>
         <vertx.version>4.4.4</vertx.version>
         <vertx-junit5.version>4.4.4</vertx-junit5.version>
-        <kafka.version>3.5.1</kafka.version>
+        <kafka.version>3.6.0</kafka.version>
         <yammer-metrics.version>2.2.0</yammer-metrics.version>
         <scala-library.version>2.13.9</scala-library.version>
         <zookeeper.version>3.6.4</zookeeper.version>

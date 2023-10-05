@@ -624,12 +624,12 @@ public class KafkaConnectAssemblyOperatorPodSetTest {
                     assertThat(capturesPodSets.size(), is(1));
                     StrimziPodSet podSet = capturesPodSets.get(0);
                     assertThat(podSet.getMetadata().getName(), is(COMPONENT_NAME));
-                    assertThat(podSet.getMetadata().getAnnotations().get(Annotations.STRIMZI_IO_CONNECT_BUILD_REVISION), is("1047a0c8751944b0"));
+                    assertThat(podSet.getMetadata().getAnnotations().get(Annotations.STRIMZI_IO_CONNECT_BUILD_REVISION), is("582c8867751944b0"));
                     assertThat(podSet.getMetadata().getAnnotations().get(Annotations.STRIMZI_IO_CONNECT_BUILD_IMAGE), is("my-connect-build@sha256:blablabla"));
                     assertThat(podSet.getSpec().getPods().size(), is(3));
 
                     for (Pod pod : PodSetUtils.podSetToPods(podSet))  {
-                        assertThat(pod.getMetadata().getAnnotations().get(Annotations.STRIMZI_IO_CONNECT_BUILD_REVISION), is("1047a0c8751944b0"));
+                        assertThat(pod.getMetadata().getAnnotations().get(Annotations.STRIMZI_IO_CONNECT_BUILD_REVISION), is("582c8867751944b0"));
                         assertThat(pod.getSpec().getContainers().get(0).getImage(), is("my-connect-build@sha256:blablabla"));
                     }
 

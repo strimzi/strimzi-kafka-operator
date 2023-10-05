@@ -23,15 +23,15 @@
 :KubernetesVersion: 1.21 and later
 
 // Kafka upgrade attributes used in kafka upgrades section
-:DefaultKafkaVersion: 3.5.1
-:KafkaVersionLower: 3.4.0
-:KafkaVersionHigher: 3.5.1
+:DefaultKafkaVersion: 3.6.0
+:KafkaVersionLower: 3.5.1
+:KafkaVersionHigher: 3.6.0
 :ExampleImageTagUpgrades: quay.io/strimzi/kafka:{ProductVersion}-kafka-{KafkaVersionHigher}
 
 //inter-broker protocol and log message version
-:DefaultInterBrokerVersion: 3.5
-:InterBrokerVersionLower: 3.4
-:InterBrokerVersionHigher: 3.5
+:DefaultInterBrokerVersion: 3.6
+:InterBrokerVersionLower: 3.5
+:InterBrokerVersionHigher: 3.6
 
 // Source and download links
 :ReleaseDownload: https://github.com/strimzi/strimzi-kafka-operator/releases[GitHub releases page^]
