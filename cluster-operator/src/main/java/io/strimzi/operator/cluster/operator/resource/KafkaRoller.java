@@ -397,7 +397,7 @@ public class KafkaRoller {
                 }
                 BrokerState brokerState = kafkaAgentClient.getBrokerState(pod.getMetadata().getName());
                 if (brokerState.isBrokerInRecovery()) {
-                    throw new UnforceableProblem("Pod " + nodeRef.podName() + " is not ready because the broker is performing log recovery. There are  " + brokerState.remainingLogsToRecover() + " logs and " + brokerState.remainingSegmentsToRecover() + " segments left to recover.", e.getCause());
+                    throw new UnforceableProblem("Pod " + nodeRef.podName() + " is not ready because the broker is performing log recovery. There are " + brokerState.remainingLogsToRecover() + " logs and " + brokerState.remainingSegmentsToRecover() + " segments left to recover.", e.getCause());
                 }
 
                 if (e.getCause() instanceof TimeoutException) {
