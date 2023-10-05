@@ -37,7 +37,7 @@ class KafkaQuorumCheck {
     }
 
     /**
-     * Returns true if the given controller can be rolled based on the quorum state. Quorum is considered
+     * Returns future that completes with true if the given controller can be rolled based on the quorum state. Quorum is considered
      * healthy if the majority of controllers have caught up with the quorum leader within the controller.quorum.fetch.timeout.ms.
      */
     Future<Boolean> canRollController(int podId) {
@@ -46,10 +46,7 @@ class KafkaQuorumCheck {
             this.quorumInfoFuture = describeMetadataQuorum();
         }
         return quorumInfoFuture.map(info -> {
-            Map<Integer, Long> replicaIdToLastCaughtUpTimestampMap = info.voters().stream().collect(Collectors.toMap(
-                    QuorumInfo.ReplicaState::replicaId,
-                    replicaState -> replicaState.lastCaughtUpTimestamp().isPresent() ? replicaState.lastCaughtUpTimestamp().getAsLong() : -1));
-            boolean canRoll = isQuorumHealthy(info.leaderId(), podId, replicaIdToLastCaughtUpTimestampMap);
+            boolean canRoll = isQuorumHealthyWithoutPod(podId, info);
             if (!canRoll) {
                 LOGGER.debugCr(reconciliation, "Restart pod {} would affect the quorum", podId);
             }
@@ -68,13 +65,17 @@ class KafkaQuorumCheck {
         if (quorumInfoFuture == null) {
             this.quorumInfoFuture = describeMetadataQuorum();
         }
-        return quorumInfoFuture.map(info -> info.leaderId()).recover(error -> {
+        return quorumInfoFuture.map(QuorumInfo::leaderId).recover(error -> {
             LOGGER.warnCr(reconciliation, "Error determining the quorum leader id", error);
             return Future.failedFuture(error);
         });
     }
 
-    private boolean isQuorumHealthy(int leaderId, int podId,  Map<Integer, Long> replicaStates) {
+    private boolean isQuorumHealthyWithoutPod(int podId, QuorumInfo info) {
+        int leaderId = info.leaderId();
+        Map<Integer, Long> replicaStates = info.voters().stream().collect(Collectors.toMap(
+                QuorumInfo.ReplicaState::replicaId,
+                replicaState -> replicaState.lastCaughtUpTimestamp().isPresent() ? replicaState.lastCaughtUpTimestamp().getAsLong() : -1));
         int totalNumOfControllers = replicaStates.size();
         AtomicInteger numOfCaughtUpControllers = new AtomicInteger();
         if (leaderId < 0) {
@@ -87,9 +88,9 @@ class KafkaQuorumCheck {
             if (lastCaughtUpTimestamp < 0) {
                 LOGGER.warnCr(reconciliation, "No valid lastCaughtUpTimestamp is found for the replica {} ", replicaId);
             } else {
-                if ((leaderLastCaughtUpTimestamp - lastCaughtUpTimestamp) < controllerQuorumFetchTimeoutMs) {
-                    // skip the controller that we are considering to roll unless it's the leader
-                    if (replicaId != podId || replicaId == leaderId) {
+                if (replicaId == leaderId || (leaderLastCaughtUpTimestamp - lastCaughtUpTimestamp) < controllerQuorumFetchTimeoutMs) {
+                    // skip the controller that we are considering to roll
+                    if (replicaId != podId) {
                         numOfCaughtUpControllers.getAndIncrement();
                     }
                     LOGGER.debugCr(reconciliation, "The controller {} has caught up with the quorum leader", replicaId);
