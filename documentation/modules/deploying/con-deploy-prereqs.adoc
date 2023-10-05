@@ -10,8 +10,9 @@ To deploy Strimzi, you will need the following:
 ifdef::Downloading[]
 * A Kubernetes {KubernetesVersion} cluster.
 +
-If you do not have access to a Kubernetes cluster, you can install Strimzi with xref:deploy-kubernetes-{context}[_Minikube_].
 * The `kubectl` command-line tool is installed and configured to connect to the running cluster.
+
+For more information on the tools available for running Kubernetes, see {KubeTools} in the Kubernetes documentation.
 
 NOTE: Strimzi supports some features that are specific to OpenShift,
 where such integration benefits OpenShift users and there is no equivalent implementation using standard Kubernetes.
