@@ -66,13 +66,13 @@ All cluster roles are required by the Cluster Operator in order to delegate priv
 |Access rights used by the Topic and User Operators to manage Kafka users and topics.
 
 |strimzi-kafka-client
-|Access rights to allow Kafka Connect, MirrorMaker (1 and 2), and Bridge to get the topology labels from Kubernetes worker nodes when rack-awareness is used.
+|Access rights to allow Kafka Connect, MirrorMaker (1 and 2), and Kafka Bridge to get the topology labels from Kubernetes worker nodes when rack-awareness is used.
 
 |===
 
 == `ClusterRoleBinding` resources
 
-The Cluster Operator uses `ClusterRoleBinding` and `RoleBinding` resources to associate its `ClusterRole` with its `ServiceAccount`:
+The Cluster Operator uses `ClusterRoleBinding` and `RoleBinding` resources to associate its `ClusterRole` with its `ServiceAccount`.
 Cluster role bindings are required by cluster roles containing cluster-scoped resources.
 
 .`ClusterRoleBinding` resources
@@ -83,13 +83,13 @@ Cluster role bindings are required by cluster roles containing cluster-scoped re
 | Description
 
 |strimzi-cluster-operator
-|Grants the Cluster Operator the rights from the `strimzi-cluster-operator-global` Cluster Role
+|Grants the Cluster Operator the rights from the `strimzi-cluster-operator-global` cluster role.
 
 |strimzi-cluster-operator-kafka-broker-delegation
-|Grants the Cluster Operator the rights from the `strimzi-entity-operator` Cluster Role
+|Grants the Cluster Operator the rights from the `strimzi-entity-operator` cluster role.
 
 |strimzi-cluster-operator-kafka-client-delegation
-|Grants the Cluster Operator the rights from the `strimzi-kafka-client` Cluster Role
+|Grants the Cluster Operator the rights from the `strimzi-kafka-client` cluster role.
 
 |===
 
@@ -101,27 +101,27 @@ Cluster role bindings are required by cluster roles containing cluster-scoped re
 | Description
 
 |strimzi-cluster-operator
-|Grants the Cluster Operator the rights from the `strimzi-cluster-operator-namespaced` Cluster Role
+|Grants the Cluster Operator the rights from the `strimzi-cluster-operator-namespaced` cluster role.
 
 |strimzi-cluster-operator-leader-election
-|Grants the Cluster Operator the rights from the `strimzi-cluster-operator-leader-election` Cluster Role
+|Grants the Cluster Operator the rights from the `strimzi-cluster-operator-leader-election` cluster role.
 
 |strimzi-cluster-operator-watched
-|Grants the Cluster Operator the rights from the `strimzi-cluster-operator-watched` Cluster Role
+|Grants the Cluster Operator the rights from the `strimzi-cluster-operator-watched` cluster role.
 
 |strimzi-cluster-operator-entity-operator-delegation
-|Grants the Cluster Operator the rights from the `strimzi-cluster-operator-entity-operator-delegation` Cluster Role
+|Grants the Cluster Operator the rights from the `strimzi-cluster-operator-entity-operator-delegation` cluster role.
 
 |===
 
 == `ServiceAccount` resources
 
 The Cluster Operator runs using the `strimzi-cluster-operator` `ServiceAccount`.
-This `ServiceAccount` is used to grant it the privileges it required to manage the operands.
-The Cluster Operator will create additional `ClusterRoleBinding` and `RoleBinding` resources to delegate some of these RBAC rights to the operands.
+This service account grants it the privileges it requires to manage the operands.
+The Cluster Operator creates additional `ClusterRoleBinding` and `RoleBinding` resources to delegate some of these RBAC rights to the operands.
 
-Each of the operands uses its own Service Account created by the Cluster Operator.
-That allows it to follow the principle of least privilege and give the operands only the access rights that are really need.
+Each of the operands uses its own service account created by the Cluster Operator.
+This allows the Cluster Operator to follow the principle of least privilege and give the operands only the access rights that are really need.
 
 .`ServiceAccount` resources
 [cols="1m,1",options="header"]
@@ -129,31 +129,31 @@ That allows it to follow the principle of least privilege and give the operands 
 | Name
 | Used by
 
-|_<cluster_name>_-zookeeper
+|<cluster_name>-zookeeper
 |ZooKeeper pods
 
-|_<cluster_name>_-kafka
+|<cluster_name>-kafka
 |Kafka broker pods
 
-|_<cluster_name>_-entity-operator
+|<cluster_name>-entity-operator
 |Entity Operator
 
-|_<cluster_name>_-cruise-control
+|<cluster_name>-cruise-control
 |Cruise Control pods
 
-|_<cluster_name>_-kafka-exporter
+|<cluster_name>-kafka-exporter
 |Kafka Exporter pods
 
-|_<cluster_name>_-connect
+|<cluster_name>-connect
 |Kafka Connect pods
 
-|_<cluster_name>_-mirror-maker
+|<cluster_name>-mirror-maker
 |MirrorMaker pods
 
-|_<cluster_name>_-mirrormaker2
+|<cluster_name>-mirrormaker2
 |MirrorMaker 2 pods
 
-|_<cluster_name>_-bridge
+|<cluster_name>-bridge
 |Kafka Bridge pods
 
 |===
