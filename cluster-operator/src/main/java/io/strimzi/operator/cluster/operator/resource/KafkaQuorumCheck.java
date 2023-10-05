@@ -100,7 +100,7 @@ class KafkaQuorumCheck {
             }
         });
         LOGGER.debugCr(reconciliation, "Out of {} voters, there are {} controllers that have caught up with the quorum leader, not including the controller {}", totalNumOfControllers, numOfCaughtUpControllers, podId);
-        return numOfCaughtUpControllers.get() >= ceil((double) totalNumOfControllers / 2);
+        return numOfCaughtUpControllers.get() >= ceil((double) (totalNumOfControllers + 1) / 2);
     }
 
     private Future<QuorumInfo> describeMetadataQuorum() {

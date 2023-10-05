@@ -63,7 +63,7 @@ class KafkaQuorumCheckTest {
     }
 
     @Test
-    public void canRollActiveController(VertxTestContext context) {
+    public void canRollActiveControllerOdd(VertxTestContext context) {
         Map<Integer, OptionalLong> controllers = new HashMap<>();
         controllers.put(1, OptionalLong.of(10000L));
         controllers.put(2, OptionalLong.of(9500L));
@@ -78,7 +78,23 @@ class KafkaQuorumCheckTest {
     }
 
     @Test
-    public void canRollActiveControllerWith1FollowerBehind(VertxTestContext context) {
+    public void canRollActiveControllerEven(VertxTestContext context) {
+        Map<Integer, OptionalLong> controllers = new HashMap<>();
+        controllers.put(1, OptionalLong.of(10000L));
+        controllers.put(2, OptionalLong.of(9500L));
+        controllers.put(3, OptionalLong.of(9700L));
+        controllers.put(4, OptionalLong.of(9600L));
+        Admin admin = setUpMocks(1, controllers);
+        KafkaQuorumCheck quorumCheck = new KafkaQuorumCheck(Reconciliation.DUMMY_RECONCILIATION, admin, vertx, CONTROLLER_QUORUM_FETCH_TIMEOUT_MS);
+        quorumCheck.canRollController(1).onComplete(context.succeeding(result -> {
+            context.verify(() -> assertTrue(result));
+            context.completeNow();
+        }));
+
+    }
+
+    @Test
+    public void canRollActiveControllerWith1FollowerBehindOdd(VertxTestContext context) {
         Map<Integer, OptionalLong> controllers = new HashMap<>();
         controllers.put(1, OptionalLong.of(10000L));
         controllers.put(2, OptionalLong.of(7000L));
@@ -92,11 +108,41 @@ class KafkaQuorumCheckTest {
     }
 
     @Test
-    public void cannotRollActiveControllersMostFollowersBehind(VertxTestContext context) {
+    public void canRollActiveControllerWith1FollowerBehindEven(VertxTestContext context) {
+        Map<Integer, OptionalLong> controllers = new HashMap<>();
+        controllers.put(1, OptionalLong.of(10000L));
+        controllers.put(2, OptionalLong.of(7000L));
+        controllers.put(3, OptionalLong.of(8200L));
+        controllers.put(4, OptionalLong.of(9000L));
+        Admin admin = setUpMocks(1, controllers);
+        KafkaQuorumCheck quorumCheck = new KafkaQuorumCheck(Reconciliation.DUMMY_RECONCILIATION, admin, vertx, CONTROLLER_QUORUM_FETCH_TIMEOUT_MS);
+        quorumCheck.canRollController(1).onComplete(context.succeeding(result -> {
+            context.verify(() -> assertTrue(result));
+            context.completeNow();
+        }));
+    }
+
+    @Test
+    public void cannotRollActiveControllersMostFollowersBehindOdd(VertxTestContext context) {
         Map<Integer, OptionalLong> controllers = new HashMap<>();
         controllers.put(1, OptionalLong.of(10000L));
         controllers.put(2, OptionalLong.of(7000L));
         controllers.put(3, OptionalLong.of(8000L));
+        Admin admin = setUpMocks(1, controllers);
+        KafkaQuorumCheck quorumCheck = new KafkaQuorumCheck(Reconciliation.DUMMY_RECONCILIATION, admin, vertx, CONTROLLER_QUORUM_FETCH_TIMEOUT_MS);
+        quorumCheck.canRollController(1).onComplete(context.succeeding(result -> {
+            context.verify(() -> assertFalse(result));
+            context.completeNow();
+        }));
+    }
+
+    @Test
+    public void cannotRollActiveControllersHalfFollowersBehindEven(VertxTestContext context) {
+        Map<Integer, OptionalLong> controllers = new HashMap<>();
+        controllers.put(1, OptionalLong.of(10000L));
+        controllers.put(2, OptionalLong.of(7000L));
+        controllers.put(3, OptionalLong.of(8200L));
+        controllers.put(4, OptionalLong.of(8000L));
         Admin admin = setUpMocks(1, controllers);
         KafkaQuorumCheck quorumCheck = new KafkaQuorumCheck(Reconciliation.DUMMY_RECONCILIATION, admin, vertx, CONTROLLER_QUORUM_FETCH_TIMEOUT_MS);
         quorumCheck.canRollController(1).onComplete(context.succeeding(result -> {
