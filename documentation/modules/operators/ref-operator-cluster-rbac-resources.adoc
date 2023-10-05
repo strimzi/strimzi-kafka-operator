@@ -20,110 +20,13 @@ Permission is specified through the following Kubernetes RBAC resources:
 == Delegating privileges to Strimzi components
 
 The Cluster Operator runs under a service account called `strimzi-cluster-operator`.
-It is assigned cluster roles that give it permission to create the RBAC resources for Strimzi components. 
-Role bindings associate the cluster roles with the service account. 
+It is assigned cluster roles that give it permission to create the RBAC resources for Strimzi components.
+Role bindings associate the cluster roles with the service account.
 
 Kubernetes prevents components operating under one `ServiceAccount` from granting another `ServiceAccount` privileges that the granting `ServiceAccount` does not have.
 Because the Cluster Operator creates the `RoleBinding` and `ClusterRoleBinding` RBAC resources needed by the resources it manages, it requires a role that gives it the same privileges.
 
-The following tables describe the RBAC resources created by the Cluster Operator. 
-
-.`ServiceAccount` resources
-[cols="1m,1",options="header"]
-|===
-| Name
-| Used by
-
-|_<cluster_name>_-kafka
-|Kafka broker pods
-
-|_<cluster_name>_-zookeeper
-|ZooKeeper pods
-
-|_<cluster_name>_-cluster-connect
-|Kafka Connect pods
-
-|_<cluster_name>_-mirror-maker
-|MirrorMaker pods
-
-|_<cluster_name>_-mirrormaker2
-|MirrorMaker 2 pods
-
-|_<cluster_name>_-bridge
-|Kafka Bridge pods
-
-|_<cluster_name>_-entity-operator
-|Entity Operator
-
-|===
-
-.`ClusterRole` resources
-[cols="1m,1",options="header"]
-|===
-
-| Name
-| Used by
-
-|strimzi-cluster-operator-namespaced
-|Cluster Operator
-|strimzi-cluster-operator-global
-|Cluster Operator
-|strimzi-cluster-operator-leader-election
-|Cluster Operator
-|strimzi-kafka-broker
-|Cluster Operator, rack feature (when used)
-|strimzi-entity-operator
-|Cluster Operator, Topic Operator, User Operator
-|strimzi-kafka-client
-|Cluster Operator, Kafka clients for rack awareness
-|===
-
-.`ClusterRoleBinding` resources
-[cols="1m,1",options="header"]
-|===
-
-| Name
-| Used by
-
-|strimzi-cluster-operator
-|Cluster Operator
-|strimzi-cluster-operator-kafka-broker-delegation
-|Cluster Operator, Kafka brokers for rack awareness
-|strimzi-cluster-operator-kafka-client-delegation
-|Cluster Operator, Kafka clients for rack awareness
-|===
-
-.`RoleBinding` resources
-[cols="1m,1",options="header"]
-|===
-
-| Name
-| Used by
-
-|strimzi-cluster-operator
-|Cluster Operator
-|strimzi-cluster-operator-kafka-broker-delegation
-|Cluster Operator, Kafka brokers for rack awareness
-|===
-
-== Running the Cluster Operator using a `ServiceAccount`
-
-The Cluster Operator is best run using a `ServiceAccount`.
-
-[source,yaml,options="nowrap"]
-.Example `ServiceAccount` for the Cluster Operator
-----
-include::../install/cluster-operator/010-ServiceAccount-strimzi-cluster-operator.yaml[]
-----
-
-The `Deployment` of the operator then needs to specify this in its `spec.template.spec.serviceAccountName`.
-
-[source,yaml,numbered,options="nowrap",highlight='12']
-.Partial example of `Deployment` for the Cluster Operator
-----
-include::../install/cluster-operator/060-Deployment-strimzi-cluster-operator.yaml[lines=1..19]
-      # ...
-----
+The following sections describe the RBAC resources required by the Cluster Operator.
 
 == `ClusterRole` resources
 
@@ -133,96 +36,124 @@ Depending on the Kubernetes cluster setup, a cluster administrator might be need
 NOTE: Cluster administrator rights are only needed for the creation of `ClusterRole` resources.
 The Cluster Operator will not run under a cluster admin account.
 
-`ClusterRole` resources follow the _principle of least privilege_ and contain only those privileges needed by the Cluster Operator to operate the cluster of the Kafka component. The first set of assigned privileges allow the Cluster Operator to manage Kubernetes resources such as `Deployment`, `Pod`, and `ConfigMap`.
+The RBAC resources follow the _principle of least privilege_ and contain only those privileges needed by the Cluster Operator to operate the cluster of the Kafka component.
 
-All cluster roles are required by the Cluster Operator in order to delegate privileges. 
+All cluster roles are required by the Cluster Operator in order to delegate privileges.
 
-The Cluster Operator uses the `strimzi-cluster-operator-namespaced` and `strimzi-cluster-operator-global` cluster roles to grant permission at the namespace-scoped resources level and cluster-scoped resources level.
+.`ClusterRole` resources
+[cols="1m,1",options="header"]
+|===
 
-[source,yaml,options="nowrap"]
-.`ClusterRole` with namespaced resources for the Cluster Operator
-----
-include::../install/cluster-operator/020-ClusterRole-strimzi-cluster-operator-role.yaml[]
-----
+| Name
+| Description
 
-[source,yaml,options="nowrap"]
-.`ClusterRole` with cluster-scoped resources for the Cluster Operator
-----
-include::../install/cluster-operator/021-ClusterRole-strimzi-cluster-operator-role.yaml[]
-----
+|strimzi-cluster-operator-namespaced
+|Access rights for namespace-scoped resources used by the Cluster Operator to deploy and manage the operands.
 
-The `strimzi-cluster-operator-leader-election` cluster role represents the permissions needed for the leader election.
+|strimzi-cluster-operator-global
+|Access rights for cluster-scoped resources used by the Cluster Operator to deploy and manage the operands.
 
-[source,yaml,options="nowrap"]
-.`ClusterRole` with leader election permissions
-----
-include::../install/cluster-operator/022-ClusterRole-strimzi-cluster-operator-role.yaml[]
-----
+|strimzi-cluster-operator-leader-election
+|Access rights used by the Cluster Operator for leader election.
 
-The `strimzi-kafka-broker` cluster role represents the access needed by the init container in Kafka pods that use rack awareness. 
+|strimzi-cluster-operator-watched
+|Access rights used by the Cluster Operator to watch and manage the Strimzi custom resources.
 
-A role binding named `strimzi-_<cluster_name>_-kafka-init` grants the `_<cluster_name>_-kafka` service account access to nodes within a cluster using the `strimzi-kafka-broker` role. 
-If the rack feature is not used and the cluster is not exposed through `nodeport`, no binding is created.
+|strimzi-kafka-broker
+|Access rights to allow Kafka brokers to get the topology labels from Kubernetes worker nodes when rack-awareness is used.
 
-[source,yaml,options="nowrap"]
-.`ClusterRole` for the Cluster Operator allowing it to delegate access to Kubernetes nodes to the Kafka broker pods
-----
-include::../install/cluster-operator/030-ClusterRole-strimzi-kafka-broker.yaml[]
-----
+|strimzi-entity-operator
+|Access rights used by the Topic and User Operators to manage Kafka users and topics.
 
-The `strimzi-entity-operator` cluster role represents the access needed by the Topic Operator and User Operator. 
+|strimzi-kafka-client
+|Access rights to allow Kafka Connect, MirrorMaker (1 and 2), and Kafka Bridge to get the topology labels from Kubernetes worker nodes when rack-awareness is used.
 
-The Topic Operator produces Kubernetes events with status information, so the `_<cluster_name>_-entity-operator` service account is bound to the `strimzi-entity-operator` role, which grants this access via the `strimzi-entity-operator` role binding.
-
-[source,yaml,options="nowrap"]
-.`ClusterRole` for the Cluster Operator allowing it to delegate access to events to the Topic and User Operators
-----
-include::../install/cluster-operator/031-ClusterRole-strimzi-entity-operator.yaml[]
-----
-
-The `strimzi-kafka-client` cluster role represents the access needed by Kafka clients that use rack awareness.
-
-[source,yaml,options="nowrap"]
-.`ClusterRole` for the Cluster Operator allowing it to delegate access to Kubernetes nodes to the Kafka client-based pods
-----
-include::../install/cluster-operator/033-ClusterRole-strimzi-kafka-client.yaml[]
-----
+|===
 
 == `ClusterRoleBinding` resources
 
-The Cluster Operator uses `ClusterRoleBinding` and `RoleBinding` resources to associate its `ClusterRole` with its `ServiceAccount`:
+The Cluster Operator uses `ClusterRoleBinding` and `RoleBinding` resources to associate its `ClusterRole` with its `ServiceAccount`.
 Cluster role bindings are required by cluster roles containing cluster-scoped resources.
 
-[source,yaml,options="nowrap"]
-.Example `ClusterRoleBinding` for the Cluster Operator
-----
-include::../install/cluster-operator/021-ClusterRoleBinding-strimzi-cluster-operator.yaml[]
-----
+.`ClusterRoleBinding` resources
+[cols="1m,1",options="header"]
+|===
 
-Cluster role bindings are also needed for the cluster roles used in delegating privileges:
+| Name
+| Description
 
-[source,yaml,options="nowrap"]
-.Example `ClusterRoleBinding` for the Cluster Operator and Kafka broker rack awareness
-----
-include::../install/cluster-operator/030-ClusterRoleBinding-strimzi-cluster-operator-kafka-broker-delegation.yaml[]
-----
+|strimzi-cluster-operator
+|Grants the Cluster Operator the rights from the `strimzi-cluster-operator-global` cluster role.
 
-[source,yaml,options="nowrap"]
-.Example `ClusterRoleBinding` for the Cluster Operator and Kafka client rack awareness
-----
-include::../install/cluster-operator/033-ClusterRoleBinding-strimzi-cluster-operator-kafka-client-delegation.yaml[]
-----
+|strimzi-cluster-operator-kafka-broker-delegation
+|Grants the Cluster Operator the rights from the `strimzi-entity-operator` cluster role.
 
-Cluster roles containing only namespaced resources are bound using role bindings only.
+|strimzi-cluster-operator-kafka-client-delegation
+|Grants the Cluster Operator the rights from the `strimzi-kafka-client` cluster role.
 
-.Example `RoleBinding` for the Cluster Operator
-[source,yaml,options="nowrap"]
-----
-include::../install/cluster-operator/020-RoleBinding-strimzi-cluster-operator.yaml[]
-----
+|===
 
-.Example `RoleBinding` for the Cluster Operator and Kafka broker rack awareness
-[source,yaml,options="nowrap"]
-----
-include::../install/cluster-operator/031-RoleBinding-strimzi-cluster-operator-entity-operator-delegation.yaml[]
-----
+.`RoleBinding` resources
+[cols="1m,1",options="header"]
+|===
+
+| Name
+| Description
+
+|strimzi-cluster-operator
+|Grants the Cluster Operator the rights from the `strimzi-cluster-operator-namespaced` cluster role.
+
+|strimzi-cluster-operator-leader-election
+|Grants the Cluster Operator the rights from the `strimzi-cluster-operator-leader-election` cluster role.
+
+|strimzi-cluster-operator-watched
+|Grants the Cluster Operator the rights from the `strimzi-cluster-operator-watched` cluster role.
+
+|strimzi-cluster-operator-entity-operator-delegation
+|Grants the Cluster Operator the rights from the `strimzi-cluster-operator-entity-operator-delegation` cluster role.
+
+|===
+
+== `ServiceAccount` resources
+
+The Cluster Operator runs using the `strimzi-cluster-operator` `ServiceAccount`.
+This service account grants it the privileges it requires to manage the operands.
+The Cluster Operator creates additional `ClusterRoleBinding` and `RoleBinding` resources to delegate some of these RBAC rights to the operands.
+
+Each of the operands uses its own service account created by the Cluster Operator.
+This allows the Cluster Operator to follow the principle of least privilege and give the operands only the access rights that are really need.
+
+.`ServiceAccount` resources
+[cols="1m,1",options="header"]
+|===
+| Name
+| Used by
+
+|<cluster_name>-zookeeper
+|ZooKeeper pods
+
+|<cluster_name>-kafka
+|Kafka broker pods
+
+|<cluster_name>-entity-operator
+|Entity Operator
+
+|<cluster_name>-cruise-control
+|Cruise Control pods
+
+|<cluster_name>-kafka-exporter
+|Kafka Exporter pods
+
+|<cluster_name>-connect
+|Kafka Connect pods
+
+|<cluster_name>-mirror-maker
+|MirrorMaker pods
+
+|<cluster_name>-mirrormaker2
+|MirrorMaker 2 pods
+
+|<cluster_name>-bridge
+|Kafka Bridge pods
+
+|===
