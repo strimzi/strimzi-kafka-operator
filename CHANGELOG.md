@@ -12,6 +12,23 @@
 * Add support for pausing reconciliations to the Unidirectional Topic Operator
 * Allow running ZooKeeper and KRaft based Apache Kafka clusters in parallel when the `+UseKRaft` feature gate is enabled
 * Add support for metrics to the Unidirectional Topic Operator
+* The `io.strimzi.kafka.EnvVarConfigProvider` configuration provider is now deprecated and will be removed in Strimzi 0.42. Users should migrate to Kafka's implementation, `org.apache.kafka.common.config.provider.EnvVarConfigProvider`, which is a drop-in replacement.
+  For example:
+  ```yaml
+  config:
+    # ...
+    config.providers: env
+    config.providers.env.class: io.strimzi.kafka.EnvVarConfigProvider
+    # ...
+  ```
+  becomes
+  ```yaml
+  config:
+    # ...
+    config.providers: env
+    config.providers.env.class: org.apache.kafka.common.config.provider.EnvVarConfigProvider
+    # ...
+  ```
 
 ### Changes, deprecations and removals
 

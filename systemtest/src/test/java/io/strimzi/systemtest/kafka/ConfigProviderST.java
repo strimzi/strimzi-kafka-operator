@@ -85,7 +85,7 @@ public class ConfigProviderST extends AbstractST {
                 .addToConfig("value.converter", "org.apache.kafka.connect.storage.StringConverter")
                 .addToConfig("config.providers", "configmaps,env")
                 .addToConfig("config.providers.configmaps.class", "io.strimzi.kafka.KubernetesConfigMapConfigProvider")
-                .addToConfig("config.providers.env.class", "io.strimzi.kafka.EnvVarConfigProvider")
+                .addToConfig("config.providers.env.class", "org.apache.kafka.common.config.provider.EnvVarConfigProvider")
                 .editOrNewExternalConfiguration()
                     .addNewEnv()
                 .withName("FILE_SINK_FILE")
