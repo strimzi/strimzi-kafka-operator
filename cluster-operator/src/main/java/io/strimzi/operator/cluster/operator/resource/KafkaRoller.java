@@ -277,6 +277,7 @@ public class KafkaRoller {
         boolean needsRestart;
         boolean needsReconfig;
         boolean forceRestart;
+        boolean podStuck;
         KafkaBrokerConfigurationDiff diff;
         KafkaBrokerLoggingConfigurationDiff logDiff;
         KafkaQuorumCheck quorumCheck;
@@ -371,7 +372,7 @@ public class KafkaRoller {
     @SuppressWarnings({"checkstyle:CyclomaticComplexity"})
     private void restartIfNecessary(NodeRef nodeRef, RestartContext restartContext)
             throws Exception {
-        Pod pod;
+        final Pod pod;
         try {
             pod = podOperations.get(namespace, nodeRef.podName());
             if (pod == null) {
@@ -382,7 +383,8 @@ public class KafkaRoller {
             throw new UnforceableProblem("Error getting pod " + nodeRef.podName(), e);
         }
 
-        if (!isPodStuck(pod)) {
+        restartContext.podStuck = isPodStuck(pod);
+        if (!restartContext.podStuck) {
             // We want to give pods chance to get ready before we try to connect to the or consider them for rolling.
             // This is important especially for pods which were just started. But only in case when they are not stuck.
             // If the pod is stuck, it suggests that it is running already for some time and it will not become ready.
@@ -411,7 +413,7 @@ public class KafkaRoller {
         restartContext.restartReasons = podNeedsRestart.apply(pod);
 
         try {
-            checkIfRestartOrReconfigureRequired(nodeRef, pod, restartContext);
+            checkIfRestartOrReconfigureRequired(nodeRef, restartContext);
             if (restartContext.forceRestart) {
                 LOGGER.debugCr(reconciliation, "Pod {} can be rolled now", nodeRef);
                 restartAndAwaitReadiness(pod, operationTimeoutMs, TimeUnit.MILLISECONDS, restartContext);
@@ -441,7 +443,7 @@ public class KafkaRoller {
                 LOGGER.debugCr(reconciliation, "Pod {} is now ready", nodeRef);
             }
         } catch (ForceableProblem e) {
-            if (isPodStuck(pod) || restartContext.backOff.done() || e.forceNow) {
+            if (restartContext.podStuck || restartContext.backOff.done() || e.forceNow) {
                 if (canRoll(nodeRef, 60_000, TimeUnit.MILLISECONDS, true, restartContext)) {
                     String errorMsg = e.getMessage();
                     if (e.getCause() != null) {
@@ -521,18 +523,17 @@ public class KafkaRoller {
     /**
      * Determine whether the pod should be restarted, or the broker reconfigured.
      */
-    @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:NPathComplexity"})
-    private void checkIfRestartOrReconfigureRequired(NodeRef nodeRef, Pod pod, RestartContext restartContext) throws ForceableProblem, InterruptedException, FatalProblem, UnforceableProblem {
+    @SuppressWarnings("checkstyle:CyclomaticComplexity")
+    private void checkIfRestartOrReconfigureRequired(NodeRef nodeRef, RestartContext restartContext) throws ForceableProblem, InterruptedException, FatalProblem, UnforceableProblem {
         RestartReasons reasonToRestartPod = restartContext.restartReasons;
-        boolean podStuck = isPodStuck(pod);
-        if (podStuck && !reasonToRestartPod.contains(RestartReason.POD_HAS_OLD_REVISION)) {
+        if (restartContext.podStuck && !reasonToRestartPod.contains(RestartReason.POD_HAS_OLD_REVISION)) {
             // If the pod is unschedulable then deleting it, or trying to open an Admin client to it will make no difference
             // Treat this as fatal because if it's not possible to schedule one pod then it's likely that proceeding
             // and deleting a different pod in the meantime will likely result in another unschedulable pod.
             throw new FatalProblem("Pod is unschedulable or is not starting");
         }
 
-        if (podStuck) {
+        if (restartContext.podStuck) {
             LOGGER.infoCr(reconciliation, "Pod {} needs to be restarted, because it seems to be stuck and restart might help", nodeRef);
             restartContext.restartReasons.add(RestartReason.POD_STUCK);
             restartContext.needsRestart = false;
