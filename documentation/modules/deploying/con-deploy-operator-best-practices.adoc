@@ -16,7 +16,7 @@ Although namespaces provide some degree of resource isolation, certain resources
 Additionally, installing multiple operators with different versions can result in compatibility issues between the operators and the Kafka clusters they manage. 
 Different versions of Strimzi operators may introduce changes, bug fixes, or improvements that are not backward-compatible. 
 
-To avoid the issues associated with installing multiple Strimzi operators in a Kubernetes cluster, the following guidelines are recommend:
+To avoid the issues associated with installing multiple Strimzi operators in a Kubernetes cluster, the following guidelines are recommended:
 
 * Install the Strimzi operator in a separate namespace from the Kafka cluster and other Kafka components it manages, to ensure clear separation of resources and configurations.
 * Use a single Strimzi operator to manage all your Kafka instances within a Kubernetes cluster.
