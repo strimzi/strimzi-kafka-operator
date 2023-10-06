@@ -16,8 +16,6 @@ import io.strimzi.api.kafka.model.KafkaTopicBuilder;
 import io.strimzi.operator.common.MetricsProvider;
 import io.strimzi.operator.common.MicrometerMetricsProvider;
 import io.strimzi.operator.common.Reconciliation;
-import io.strimzi.operator.common.metrics.MetricsHolder;
-import io.strimzi.operator.common.metrics.OperatorMetricsHolder;
 import org.apache.kafka.clients.admin.Admin;
 import org.apache.kafka.clients.admin.AdminClientConfig;
 import org.apache.kafka.clients.admin.AlterConfigsResult;
@@ -73,7 +71,7 @@ class BatchingTopicControllerTest {
 
     private Admin[] admin = new Admin[] {null};
 
-    private MetricsHolder metrics;
+    private TopicOperatorMetricsHolder metrics;
 
     private static <T> KafkaFuture<T> interruptedFuture() throws ExecutionException, InterruptedException {
         var future = mock(KafkaFuture.class);
@@ -112,7 +110,7 @@ class BatchingTopicControllerTest {
     public void beforeEach() {
         this.client = new KubernetesClientBuilder().build();
         MetricsProvider metricsProvider = new MicrometerMetricsProvider(new SimpleMeterRegistry());
-        this.metrics = new OperatorMetricsHolder(RESOURCE_KIND, null, metricsProvider);
+        this.metrics = new TopicOperatorMetricsHolder(RESOURCE_KIND, null, metricsProvider);
     }
 
     @AfterEach
