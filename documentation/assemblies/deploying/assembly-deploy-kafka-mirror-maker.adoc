@@ -20,6 +20,8 @@ Data replication across clusters supports scenarios that require the following:
 
 //Procedure to deploy a MirrorMaker cluster
 include::../../modules/deploying/proc-deploy-kafka-mirror-maker.adoc[leveloffset=+1]
+//Resources created for Kafka MirrorMaker 2
+include::../../modules/configuring/ref-list-of-mirrormaker2-resources.adoc[leveloffset=+1]
 //Resources created for Kafka MirrorMaker
 include::../../modules/configuring/ref-list-of-mirrormaker-resources.adoc[leveloffset=+1]
 
