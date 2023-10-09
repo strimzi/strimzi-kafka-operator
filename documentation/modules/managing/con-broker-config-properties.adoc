@@ -184,7 +184,7 @@ which multiplies the maximum bandwidth of the link (in bytes/s) with the round-t
 == Managing Kafka logs with delete and compact policies
 
 Kafka relies on logs to store message data. 
-Logs consist of a series of segments, each associated with offset-based and timestamp-based indexes.
+A log consists of a series of segments, where each segment is associated with offset-based and timestamp-based indexes.
 New messages are written to an _active_ segment and are never subsequently modified. 
 When serving fetch requests from consumers, the segments are read. 
 Periodically, the active segment is _rolled_ to become read-only, and a new active segment is created to replace it. 
@@ -296,7 +296,7 @@ The frequency of cleanup should be often enough to manage the disk space but not
 
 .Retaining the most recent messages using compact policy
 
-When you enable log compaction for a topic by setting `cleanup.policy=compact`, Kafka uses the log cleaner as a background process to perform the compaction.
+When you enable log compaction for a topic by setting `cleanup.policy=compact`, Kafka uses the log cleaner as a background thread to perform the compaction.
 The compact policy guarantees that the most recent message for each message key is retained, effectively cleaning up older versions of records. 
 The policy is suitable when message values are changeable, and you want to retain the latest update.
 
@@ -308,7 +308,7 @@ To use compaction, you must have keys to identify related messages because Kafka
 .Log showing key value writes with offset positions before compaction
 image::tuning/broker-tuning-compaction-before.png[Image of compaction showing key value writes]
 
-Using keys to identify messages, Kafka compaction keeps the latest message (with the highest offset) for a specific message key, eventually discarding earlier messages that have the same key. 
+Using keys to identify messages, Kafka compaction keeps the latest message (with the highest offset) that is present in the log tail for a specific message key, eventually discarding earlier messages that have the same key. 
 The message in its latest state is always available, and any out-of-date records of that particular message are eventually removed when the log cleaner runs. 
 You can restore a message back to a previous state.
 Records retain their original offsets even when surrounding records get deleted. 
@@ -330,8 +330,8 @@ The deleted data retention period gives time to notice the data is gone before i
 
 To delete all messages related to a specific key, a producer can send a _tombstone_ message. 
 A tombstone has a null value and acts as a marker to inform consumers that the corresponding message for that key has been deleted. 
-After compaction, only the tombstone marker is retained. 
-The marker is retained for a duration specified by `log.cleaner.delete.retention.ms` to allow consumers enough time to recognize the deletion.
+After some time, only the tombstone marker is retained. 
+Assuming new messages continue to come in, the marker is retained for a duration specified by `log.cleaner.delete.retention.ms` to allow consumers enough time to recognize the deletion.
 
 You can also set a time in milliseconds to put the cleaner on standby if there are no logs to clean:
 
