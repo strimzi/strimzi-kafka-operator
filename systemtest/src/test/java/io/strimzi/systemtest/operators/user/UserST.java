@@ -344,7 +344,7 @@ class UserST extends AbstractST {
     }
 
     @ParallelNamespaceTest
-    void testTlsExternalUser(ExtensionContext extensionContext) throws IOException {
+    void testTlsExternalUser(ExtensionContext extensionContext) throws IOException, InterruptedException {
         final TestStorage testStorage = storageMap.get(extensionContext);
         String consumerGroupName = ClientUtils.generateRandomConsumerGroup();
 
@@ -371,12 +371,14 @@ class UserST extends AbstractST {
                 .withNewKafkaUserAuthorizationSimple()
                     .addNewAcl()
                         .withNewAclRuleTopicResource()
+                            .withPatternType(AclResourcePatternType.LITERAL)
                             .withName(testStorage.getTopicName())
                         .endAclRuleTopicResource()
-                        .withOperations(AclOperation.WRITE, AclOperation.READ, AclOperation.DESCRIBE, AclOperation.CREATE)
+                        .withOperations(AclOperation.READ, AclOperation.WRITE, AclOperation.DESCRIBE, AclOperation.CREATE)
                     .endAcl()
                     .addNewAcl()
                         .withNewAclRuleGroupResource()
+                            .withPatternType(AclResourcePatternType.LITERAL)
                             .withName(consumerGroupName)
                         .endAclRuleGroupResource()
                         .withOperations(AclOperation.READ)
@@ -422,6 +424,8 @@ class UserST extends AbstractST {
 
         kubeClient().namespace(testStorage.getNamespaceName()).createSecret(secretBuilder);
         SecretUtils.waitForSecretReady(testStorage.getNamespaceName(), testStorage.getKafkaUsername(), () -> { });
+
+        Thread.sleep(5000);
 
         KafkaClients kafkaClients = new KafkaClientsBuilder()
             .withProducerName(testStorage.getProducerName())
