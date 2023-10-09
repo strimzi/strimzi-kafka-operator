@@ -4,6 +4,7 @@
  */
 package io.strimzi.systemtest.security;
 
+import java.io.BufferedWriter;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
@@ -167,6 +168,20 @@ public class SystemTestCertManager {
             pemWriter.flush();
         }
         return certFile;
+    }
+
+    public static File exportCaDataToFile(String caData, String prefix, String suffix) {
+        try {
+            File tempFile = Files.createTempFile(prefix + "-", suffix).toFile();
+
+            FileWriter fileWriter = new FileWriter(tempFile.getAbsolutePath());
+            fileWriter.write(caData);
+            fileWriter.close();
+
+            return tempFile;
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public static boolean containsAllDN(String principal1, String principal2) {

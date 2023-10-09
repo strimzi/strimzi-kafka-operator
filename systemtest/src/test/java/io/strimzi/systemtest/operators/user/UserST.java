@@ -17,6 +17,7 @@ import io.strimzi.api.kafka.model.KafkaUserScramSha512ClientAuthentication;
 import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.api.kafka.model.status.Condition;
+import io.strimzi.certs.Subject;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
@@ -26,6 +27,8 @@ import io.strimzi.systemtest.cli.KafkaCmdClient;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 import io.strimzi.systemtest.resources.crd.KafkaUserResource;
+import io.strimzi.systemtest.security.OpenSsl;
+import io.strimzi.systemtest.security.SystemTestCertManager;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
@@ -36,6 +39,12 @@ import io.strimzi.systemtest.utils.TestKafkaVersion;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
 import io.strimzi.test.TestUtils;
+import io.strimzi.test.k8s.KubeClusterResource;
+import java.io.File;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.util.Base64;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
@@ -336,7 +345,7 @@ class UserST extends AbstractST {
     }
 
     @ParallelNamespaceTest
-    void testTlsExternalUser(ExtensionContext extensionContext) {
+    void testTlsExternalUser(ExtensionContext extensionContext) throws IOException {
         final TestStorage testStorage = storageMap.get(extensionContext);
 
         resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 1, 1)
@@ -383,17 +392,25 @@ class UserST extends AbstractST {
         assertThat(kubeClient().getSecret(testStorage.getNamespaceName(), testStorage.getKafkaUsername()), nullValue());
         assertThat(KafkaUserResource.kafkaUserClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getKafkaUsername()).get().getStatus().getUsername(), is("CN=" + testStorage.getKafkaUsername()));
 
-        // To test tls-external authentication, client needs to have a secret provided by end user
-        // To simulate this these steps are done:
+        // To test tls-external authentication, client needs to have an external certificates provided
+        // To simulate externally provided certs, these steps are done:
         // 1. Generate private key and csr (containing at least common name CN) for user
         // 2. Generate a certificate by signing CSR using private key from secret generated for clients by operator
         // 3. Create user secret from private key, generated certificate and certificate from secret created for clients by operator
 
-        String clientKeyPath = ClientUtils.createPrivateKeyAndGetPath();
-        String csrPath = ClientUtils.createSimpleCertSignRequestAndGetPath(clientKeyPath, "/CN=" + testStorage.getKafkaUsername());
-        String caKeyPath = ClientUtils.saveDecodedCaKeySecretToFileAndGetPath(testStorage.getNamespaceName(), KafkaResources.clientsCaKeySecretName(testStorage.getClusterName()));
-        String caCrtPath = ClientUtils.saveDecodedCaCertSecretToFileAndGetPath(testStorage.getNamespaceName(), KafkaResources.clientsCaCertificateSecretName(testStorage.getClusterName()));
-        String clientCertPath = ClientUtils.createSignedCertAndGetPath(csrPath, caCrtPath, caKeyPath);
+        File clientPrivateKey = OpenSsl.generatePrivateKey();
+
+        Subject clientSubject = new Subject.Builder()
+                .withCommonName(testStorage.getKafkaUsername())
+                .build();
+
+        File csr = OpenSsl.generateCertSigningRequest(clientPrivateKey, clientSubject);
+        String caCrt = KubeClusterResource.kubeClient(testStorage.getNamespaceName()).getSecret(KafkaResources.clientsCaCertificateSecretName(testStorage.getClusterName())).getData().get("ca.crt");
+        String caKey = KubeClusterResource.kubeClient(testStorage.getNamespaceName()).getSecret(KafkaResources.clientsCaKeySecretName(testStorage.getClusterName())).getData().get("ca.key");
+
+        File clientCert = OpenSsl.generateSignedCert(csr,
+            SystemTestCertManager.exportCaDataToFile(new String(Base64.getDecoder().decode(caCrt), StandardCharsets.UTF_8), "ca", ".crt"),
+            SystemTestCertManager.exportCaDataToFile(new String(Base64.getDecoder().decode(caKey), StandardCharsets.UTF_8), "ca", ".key"));
 
         Secret secretBuilder = new SecretBuilder()
             .withApiVersion("v1")
@@ -402,9 +419,9 @@ class UserST extends AbstractST {
                 .withName(testStorage.getKafkaUsername())
                 .withNamespace(testStorage.getNamespaceName())
             .endMetadata()
-            .addToData("ca.crt", ClientUtils.getKeyOrCertFileEncodedToString(caCrtPath))
-            .addToData("user.crt", ClientUtils.getKeyOrCertFileEncodedToString(clientCertPath))
-            .addToData("user.key", ClientUtils.getKeyOrCertFileEncodedToString(clientKeyPath))
+            .addToData("ca.crt", caCrt)
+            .addToData("user.crt", Base64.getEncoder().encodeToString(Files.readAllBytes(clientCert.toPath())))
+            .addToData("user.key", Base64.getEncoder().encodeToString(Files.readAllBytes(clientPrivateKey.toPath())))
             .withType("Opaque")
             .build();
 
