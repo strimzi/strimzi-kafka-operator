@@ -61,6 +61,7 @@ import io.strimzi.systemtest.utils.RollingUpdateUtils;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectorUtils;
+import io.strimzi.systemtest.utils.kubeUtils.controllers.StrimziPodSetUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.test.TestUtils;
 import io.vertx.core.json.JsonObject;
@@ -112,8 +113,10 @@ class ConnectST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(ConnectST.class);
 
     @ParallelNamespaceTest
-    void testDeployUndeploy(ExtensionContext extensionContext) {
+    void testDeployRollUndeploy(ExtensionContext extensionContext) {
         TestStorage testStorage = new TestStorage(extensionContext);
+
+        final int connectReplicasCount = 2;
 
         final Map<String, Object> exceptedConfig = StUtils.loadProperties("group.id=" + KafkaConnectResources.deploymentName(testStorage.getClusterName()) + "\n" +
                 "key.converter=org.apache.kafka.connect.json.JsonConverter\n" +
@@ -126,9 +129,18 @@ class ConnectST extends AbstractST {
                 "offset.storage.topic=" + KafkaConnectResources.configStorageTopicOffsets(testStorage.getClusterName()) + "\n");
 
         resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3).build());
-        resourceManager.createResourceWithWait(extensionContext, KafkaConnectTemplates.kafkaConnect(testStorage.getClusterName(), testStorage.getNamespaceName(), 1).build());
+        resourceManager.createResourceWithWait(extensionContext, KafkaConnectTemplates.kafkaConnect(testStorage.getClusterName(), testStorage.getNamespaceName(), connectReplicasCount).build());
 
-        LOGGER.info("Looks like the connect cluster my-cluster deployed OK");
+        if (Environment.isStableConnectIdentitiesEnabled()) {
+            LOGGER.info("KafkaConnect manual rolling update");
+
+            // set annotation to trigger connect rolling update
+            final LabelSelector connectLabelSelector = KafkaConnectResource.getLabelSelector(testStorage.getClusterName(), KafkaConnectResources.deploymentName(testStorage.getClusterName()));
+            final Map<String, String> connectPodsSnapshot = PodUtils.podSnapshot(testStorage.getNamespaceName(), connectLabelSelector);
+            StrimziPodSetUtils.annotateStrimziPodSet(testStorage.getNamespaceName(), KafkaConnectResources.deploymentName(testStorage.getClusterName()), Collections.singletonMap(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "true"));
+
+            RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), connectLabelSelector, connectReplicasCount, connectPodsSnapshot);
+        }
 
         final String podName = PodUtils.getPodNameByPrefix(testStorage.getNamespaceName(), KafkaConnectResources.deploymentName(testStorage.getClusterName()));
         final String kafkaPodJson = TestUtils.toJsonString(kubeClient(testStorage.getNamespaceName()).getPod(podName));
@@ -1474,6 +1486,7 @@ class ConnectST extends AbstractST {
     void setUp(final ExtensionContext extensionContext) {
         clusterOperator = clusterOperator
             .defaultInstallation(extensionContext)
+            .withOperationTimeout(Constants.CO_OPERATION_TIMEOUT_MEDIUM)
             .createInstallation()
             .runInstallation();
     }

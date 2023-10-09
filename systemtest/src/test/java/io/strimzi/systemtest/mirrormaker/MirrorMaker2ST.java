@@ -45,6 +45,7 @@ import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
+import io.strimzi.systemtest.utils.kubeUtils.controllers.StrimziPodSetUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
 import io.strimzi.test.TestUtils;
@@ -93,6 +94,7 @@ class MirrorMaker2ST extends AbstractST {
 
         String kafkaClusterSourceName = testStorage.getClusterName() + "-source";
         String kafkaClusterTargetName = testStorage.getClusterName() + "-target";
+        final int mirrorMakerReplicasCount = 2;
 
         String sourceMirroredTopicName = kafkaClusterSourceName + "." + testStorage.getTopicName();
 
@@ -115,6 +117,16 @@ class MirrorMaker2ST extends AbstractST {
             KafkaTemplates.kafkaEphemeral(kafkaClusterTargetName, 1).build()
         );
 
+        resourceManager.createResourceWithWait(extensionContext, KafkaMirrorMaker2Templates.kafkaMirrorMaker2(testStorage.getClusterName(), kafkaClusterTargetName, kafkaClusterSourceName, mirrorMakerReplicasCount, false)
+            .editSpec()
+                .editFirstMirror()
+                    .editSourceConnector()
+                        .addToConfig("refresh.topics.interval.seconds", "1")
+                    .endSourceConnector()
+                .endMirror()
+            .endSpec()
+            .build());
+
         // Deploy source topic
         resourceManager.createResourceWithWait(extensionContext, KafkaTopicTemplates.topic(kafkaClusterSourceName, testStorage.getTopicName(), 3, testStorage.getNamespaceName()).build());
 
@@ -133,16 +145,6 @@ class MirrorMaker2ST extends AbstractST {
 
         resourceManager.createResourceWithWait(extensionContext, clients.producerStrimzi(), clients.consumerStrimzi());
         ClientUtils.waitForClientsSuccess(testStorage);
-
-        resourceManager.createResourceWithWait(extensionContext, KafkaMirrorMaker2Templates.kafkaMirrorMaker2(testStorage.getClusterName(), kafkaClusterTargetName, kafkaClusterSourceName, 1, false)
-            .editSpec()
-                .editFirstMirror()
-                    .editSourceConnector()
-                        .addToConfig("refresh.topics.interval.seconds", "1")
-                    .endSourceConnector()
-                .endMirror()
-            .endSpec()
-            .build());
 
         String podName = PodUtils.getPodNameByPrefix(testStorage.getNamespaceName(), KafkaMirrorMaker2Resources.deploymentName(testStorage.getClusterName()));
         String kafkaPodJson = TestUtils.toJsonString(kubeClient().getPod(testStorage.getNamespaceName(), podName));
@@ -171,6 +173,17 @@ class MirrorMaker2ST extends AbstractST {
         ClientUtils.waitForConsumerClientSuccess(testStorage);
 
         LOGGER.info("Mirrored successful");
+
+        if (Environment.isStableConnectIdentitiesEnabled()) {
+            LOGGER.info("MirrorMaker2 manual rolling update");
+
+            // set annotation to trigger mm2 rolling update
+            final LabelSelector mm2LabelSelector = KafkaMirrorMaker2Resource.getLabelSelector(testStorage.getClusterName(), KafkaMirrorMaker2Resources.deploymentName(testStorage.getClusterName()));
+            final Map<String, String> mm2PodsSnapshot = PodUtils.podSnapshot(testStorage.getNamespaceName(), mm2LabelSelector);
+            StrimziPodSetUtils.annotateStrimziPodSet(testStorage.getNamespaceName(), KafkaMirrorMaker2Resources.deploymentName(testStorage.getClusterName()), Collections.singletonMap(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "true"));
+
+            RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), mm2LabelSelector, mirrorMakerReplicasCount, mm2PodsSnapshot);
+        }
 
         // TODO: https://github.com/strimzi/strimzi-kafka-operator/issues/8864
         // currently disabled for UTO, as KafkaTopic CR is not created -> we should check it directly in Kafka
@@ -1365,8 +1378,9 @@ class MirrorMaker2ST extends AbstractST {
 
     @BeforeAll
     void setup(ExtensionContext extensionContext) {
+
         clusterOperator = clusterOperator.defaultInstallation(extensionContext)
-            .withOperationTimeout(Constants.CO_OPERATION_TIMEOUT_SHORT)
+            .withOperationTimeout(Constants.CO_OPERATION_TIMEOUT_MEDIUM)
             .createInstallation()
             .runInstallation();
     }
