@@ -346,6 +346,7 @@ class UserST extends AbstractST {
     @ParallelNamespaceTest
     void testTlsExternalUser(ExtensionContext extensionContext) throws IOException {
         final TestStorage testStorage = storageMap.get(extensionContext);
+        String consumerGroupName = ClientUtils.generateRandomConsumerGroup();
 
         resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 1, 1)
             .editSpec()
@@ -376,8 +377,7 @@ class UserST extends AbstractST {
                     .endAcl()
                     .addNewAcl()
                         .withNewAclRuleGroupResource()
-                            .withName("my-consumer-group")
-                            .withPatternType(AclResourcePatternType.PREFIX)
+                            .withName(consumerGroupName)
                         .endAclRuleGroupResource()
                         .withOperations(AclOperation.READ)
                     .endAcl()
@@ -431,6 +431,7 @@ class UserST extends AbstractST {
             .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(testStorage.getClusterName()))
             .withTopicName(testStorage.getTopicName())
             .withUsername(testStorage.getKafkaUsername())
+            .withConsumerGroup(consumerGroupName)
             .build();
 
         resourceManager.createResourceWithWait(extensionContext, kafkaClients.producerTlsStrimzi(testStorage.getClusterName()), kafkaClients.consumerTlsStrimzi(testStorage.getClusterName()));
