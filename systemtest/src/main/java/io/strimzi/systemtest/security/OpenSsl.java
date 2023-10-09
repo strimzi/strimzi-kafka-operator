@@ -4,17 +4,11 @@
  */
 package io.strimzi.systemtest.security;
 
-import io.strimzi.certs.Subject;
-import io.strimzi.test.TestUtils;
 import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.util.Base64;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -47,12 +41,6 @@ public class OpenSsl {
         public OpenSslCommand withOptionAndArgument(String option, String argument) {
             pb.command().add(option);
             pb.command().add(argument);
-            return this;
-        }
-
-        public OpenSslCommand withOptionAndArgument(String option, Subject subject) {
-            pb.command().add(option);
-            pb.command().add(subject.opensslDn());
             return this;
         }
 
@@ -105,7 +93,7 @@ public class OpenSsl {
         }
     }
 
-    public static File generateCertSigningRequest(File privateKey, Subject subject) {
+    public static File generateCertSigningRequest(File privateKey, String subject) {
         try {
             LOGGER.info("Creating Certificate Signing Request file");
             File csr = Files.createTempFile("csr-", ".pem").toFile();

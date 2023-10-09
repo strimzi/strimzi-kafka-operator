@@ -17,7 +17,6 @@ import io.strimzi.api.kafka.model.KafkaUserScramSha512ClientAuthentication;
 import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.api.kafka.model.status.Condition;
-import io.strimzi.certs.Subject;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
@@ -400,11 +399,7 @@ class UserST extends AbstractST {
 
         File clientPrivateKey = OpenSsl.generatePrivateKey();
 
-        Subject clientSubject = new Subject.Builder()
-                .withCommonName(testStorage.getKafkaUsername())
-                .build();
-
-        File csr = OpenSsl.generateCertSigningRequest(clientPrivateKey, clientSubject);
+        File csr = OpenSsl.generateCertSigningRequest(clientPrivateKey, "/CN=" + testStorage.getKafkaUsername());
         String caCrt = KubeClusterResource.kubeClient(testStorage.getNamespaceName()).getSecret(KafkaResources.clientsCaCertificateSecretName(testStorage.getClusterName())).getData().get("ca.crt");
         String caKey = KubeClusterResource.kubeClient(testStorage.getNamespaceName()).getSecret(KafkaResources.clientsCaKeySecretName(testStorage.getClusterName())).getData().get("ca.key");
 
