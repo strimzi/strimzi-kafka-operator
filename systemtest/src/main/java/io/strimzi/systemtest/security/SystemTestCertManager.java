@@ -4,6 +4,7 @@
  */
 package io.strimzi.systemtest.security;
 
+import java.nio.charset.StandardCharsets;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
@@ -173,9 +174,10 @@ public class SystemTestCertManager {
         try {
             File tempFile = Files.createTempFile(prefix + "-", suffix).toFile();
 
-            FileWriter fileWriter = new FileWriter(tempFile.getAbsolutePath());
-            fileWriter.write(caData);
-            fileWriter.close();
+            try (FileWriter fileWriter = new FileWriter(tempFile, StandardCharsets.UTF_8)) {
+                fileWriter.write(caData);
+                fileWriter.flush();
+            }
 
             return tempFile;
         } catch (IOException e) {

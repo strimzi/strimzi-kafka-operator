@@ -4,11 +4,12 @@
  */
 package io.strimzi.systemtest.security;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -49,26 +50,43 @@ public class OpenSsl {
         }
 
         public void execute(boolean failOnNonZeroOutput) {
+
+            Path commandOutput = null;
             try {
+                commandOutput = Files.createTempFile("openssl-command-output-", ".txt");
+
+                pb.redirectErrorStream(true)
+                    .redirectOutput(commandOutput.toFile());
+
                 LOGGER.info("Running command: {}", pb.command());
 
                 Process process = pb.start();
+
+                OutputStream outputStream = process.getOutputStream();
+                outputStream.close();
+
                 int exitCode = process.waitFor();
 
-                String line;
-                BufferedReader reader = new BufferedReader(new InputStreamReader(process.getErrorStream()));
-                StringBuilder output = new StringBuilder();
-
-                while ((line = reader.readLine()) != null) {
-                    output.append("\n" + line);
-                }
-
                 if (exitCode != 0 && failOnNonZeroOutput) {
-                    throw new RuntimeException("openssl exit code " + exitCode);
+                    String outputText = Files.readString(commandOutput, StandardCharsets.UTF_8);
+                    throw new RuntimeException("Openssl command failed. " + outputText);
                 }
             } catch (InterruptedException | IOException e) {
                 throw new RuntimeException(e);
+            } finally {
+                removeFile(commandOutput);
             }
+        }
+
+        static void removeFile(Path fileToRemove) {
+            if (fileToRemove != null && Files.exists(fileToRemove)) {
+                try {
+                    Files.delete(fileToRemove);
+                } catch (IOException e) {
+                    LOGGER.debug("File could not be removed: {}", fileToRemove);
+                }
+            }
+
         }
     }
 
