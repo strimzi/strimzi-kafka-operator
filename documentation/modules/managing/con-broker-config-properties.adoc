@@ -346,11 +346,11 @@ log.cleaner.backoff.ms=15000
 
 If you choose only a compact policy, your log can still become arbitrarily large. 
 In such cases, you can set the cleanup policy for a topic to compact and delete logs.
-Kafka first applies log compaction, removing older versions of records and retaining only the latest version of each key. 
-After log compaction, Kafka deletes records based on the specified time-based or size-based log retention settings. 
+Kafka applies log compaction, removing older versions of records and retaining only the latest version of each key. 
+Kafka also deletes records based on the specified time-based or size-based log retention settings. 
 
 For example, in the following diagram only the latest message (with the highest offset) for a specific message key is retained up to the compaction point.
-Afterward, if there are any records remaining up to the retention point they are deleted.
+If there are any records remaining up to the retention point they are deleted.
 In this case, the compaction process would remove all duplicates. 
 
 .Log retention point and compaction point
