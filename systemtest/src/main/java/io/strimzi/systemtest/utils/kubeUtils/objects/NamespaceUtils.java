@@ -5,16 +5,13 @@
 package io.strimzi.systemtest.utils.kubeUtils.objects;
 
 import io.fabric8.kubernetes.api.model.Namespace;
-import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.resources.ResourceOperation;
-import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 public class NamespaceUtils {
@@ -50,7 +47,7 @@ public class NamespaceUtils {
                 return true;
             } else if (namespace.getStatus() != null && namespace.getStatus().getConditions() != null) {
                 if (namespace.getStatus().getConditions().stream().anyMatch(condition -> condition.getReason().contains("SomeFinalizersRemain"))) {
-                    LOGGER.info("There are KafkaTopics with finalizers remaining in Namespace: {}, going to set those finalizers to null", namespaceName);
+                    LOGGER.debug("There are KafkaTopics with finalizers remaining in Namespace: {}, going to set those finalizers to null", namespaceName);
                     KafkaTopicUtils.setFinalizersInAllTopicsToNull(namespaceName);
                 }
             }

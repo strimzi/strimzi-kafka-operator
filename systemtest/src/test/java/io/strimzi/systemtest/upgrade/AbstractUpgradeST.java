@@ -35,8 +35,12 @@ import io.strimzi.systemtest.utils.FileUtils;
 import io.strimzi.systemtest.utils.RollingUpdateUtils;
 import io.strimzi.systemtest.utils.StUtils;
 import io.strimzi.systemtest.utils.TestKafkaVersion;
-import io.strimzi.systemtest.utils.kafkaUtils.*;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
+import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectUtils;
+import io.strimzi.systemtest.utils.kafkaUtils.KafkaConnectorUtils;
+import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
+import io.strimzi.systemtest.utils.kafkaUtils.KafkaUserUtils;
+import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.test.TestUtils;
@@ -245,7 +249,6 @@ public class AbstractUpgradeST extends AbstractST {
     }
 
     protected void deleteInstalledYamls(File root, String namespace) {
-
         if (kafkaUserYaml != null) {
             LOGGER.info("Deleting KafkaUser configuration files");
             cmdKubeClient().delete(kafkaUserYaml);
