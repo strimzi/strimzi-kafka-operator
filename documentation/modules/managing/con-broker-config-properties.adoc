@@ -184,9 +184,9 @@ which multiplies the maximum bandwidth of the link (in bytes/s) with the round-t
 == Managing Kafka logs with delete and compact policies
 
 Kafka relies on logs to store message data. 
-Logs consist of a series of segments, each associated with offset-based and timestamp-based indexes.
+A log consists of a series of segments, where each segment is associated with offset-based and timestamp-based indexes.
 New messages are written to an _active_ segment and are never subsequently modified. 
-When serving fetch requests from consumers, segments are read. 
+When serving fetch requests from consumers, the segments are read. 
 Periodically, the active segment is _rolled_ to become read-only, and a new active segment is created to replace it. 
 There is only one active segment per topic-partition per broker. 
 Older segments are retained until they become eligible for deletion.
@@ -217,21 +217,21 @@ log.cleaner.enable=true
 # ...
 ----
 
-Delete cleanup policy:: Delete policy is the default cluster-wide policy for all topics.
+Delete cleanup policy:: Delete cleanup policy is the default cluster-wide policy for all topics.
 The policy is applied to topics that do not have a specific topic-level policy configured. 
 Kafka removes older segments based on time-based or size-based log retention limits. 
-Compact cleanup policy:: Compact policy is generally configured as a topic-level policy (`cleanup.policy=compact`).
+Compact cleanup policy:: Compact cleanup policy is generally configured as a topic-level policy (`cleanup.policy=compact`).
 Kafka's log cleaner applies compaction on specific topics, retaining only the most recent value for a key in the topic.
 You can also configure topics to use both policies (`cleanup.policy=compact,delete`). 
 
 .Setting up retention limits for the delete policy
 
-The delete policy corresponds to managing logs with data retention policies. 
+Delete cleanup policy corresponds to managing logs with data retention. 
 The policy is suitable when data does not need to be retained forever.
 You can establish time-based or size-based log retention and cleanup policies to keep logs bounded. 
 
 When log retention policies are employed, non-active log segments are removed when retention limits are reached.
-This deletion of old segments helps prevent exceeding disk capacity.
+Deletion of old segments helps to prevent exceeding disk capacity.
 
 For time-based log retention, you set a retention period based on hours, minutes, or milliseconds: 
 
@@ -296,7 +296,8 @@ The frequency of cleanup should be often enough to manage the disk space but not
 
 .Retaining the most recent messages using compact policy
 
-The compact policy guarantees that the most recent message for each message key is retained. 
+When you enable log compaction for a topic by setting `cleanup.policy=compact`, Kafka uses the log cleaner as a background thread to perform the compaction.
+The compact policy guarantees that the most recent message for each message key is retained, effectively cleaning up older versions of records. 
 The policy is suitable when message values are changeable, and you want to retain the latest update.
 
 If a cleanup policy is set for log compaction, the _head_ of the log operates as a standard Kafka log, with writes for new messages appended in order. 
@@ -304,42 +305,33 @@ In the _tail_ of a compacted log, where the log cleaner operates, records are de
 Messages with null values are also deleted. 
 To use compaction, you must have keys to identify related messages because Kafka guarantees that the latest messages for each key will be retained, but it does not guarantee that the whole compacted log will not contain duplicates.
 
-.Log Showing Key Value Writes with Offset Positions Before Compaction
+.Log showing key value writes with offset positions before compaction
 image::tuning/broker-tuning-compaction-before.png[Image of compaction showing key value writes]
 
-Using keys to identify messages, Kafka compaction keeps the latest message (with the highest offset) for a specific message key, eventually discarding earlier messages that have the same key. 
+Using keys to identify messages, Kafka compaction keeps the latest message (with the highest offset) that is present in the log tail for a specific message key, eventually discarding earlier messages that have the same key. 
 The message in its latest state is always available, and any out-of-date records of that particular message are eventually removed when the log cleaner runs. 
 You can restore a message back to a previous state.
 Records retain their original offsets even when surrounding records get deleted. 
 Consequently, the tail can have non-contiguous offsets. 
 When consuming an offset that's no longer available in the tail, the record with the next higher offset is found.
 
-.Log After Compaction
+.Log after compaction
 image::tuning/broker-tuning-compaction-after.png[Image of compaction after log cleanup]
 
-If you choose only a compact policy, your log can still become arbitrarily large. 
-In such cases, you can set the policy to compact and delete logs. 
-With this approach, log data is first compacted, removing records with a key in the head of the log. 
-Afterward, data that falls before the log retention threshold is deleted.
-
-.Log Retention Point and Compaction Point
-image::tuning/broker-tuning-compaction-retention.png[Image of compaction with retention point]
-
-You can set a period in milliseconds to retain deleted data before it is purged:
+If appropriate, you can add a delay to the compaction process:
 
 [source,env]
 ----
 # ...
 log.cleaner.delete.retention.ms=86400000
 # ...
-----
-
+---- 
 The deleted data retention period gives time to notice the data is gone before it is irretrievably deleted.
 
-To delete all messages related to a specific key, a producer can send a _tombstone_ message.
-A _tombstone_ has a null value and acts as a marker to tell a consumer the value is deleted.
-After compaction, only the tombstone is retained, which must be for a long enough period for the consumer to know that the message is deleted.
-When older messages are deleted, having no value, the tombstone key is also deleted from the partition.
+To delete all messages related to a specific key, a producer can send a _tombstone_ message. 
+A tombstone has a null value and acts as a marker to inform consumers that the corresponding message for that key has been deleted. 
+After some time, only the tombstone marker is retained. 
+Assuming new messages continue to come in, the marker is retained for a duration specified by `log.cleaner.delete.retention.ms` to allow consumers enough time to recognize the deletion.
 
 You can also set a time in milliseconds to put the cleaner on standby if there are no logs to clean:
 
@@ -349,6 +341,21 @@ You can also set a time in milliseconds to put the cleaner on standby if there a
 log.cleaner.backoff.ms=15000
 # ...
 ----
+
+.Using combined compact and delete policies 
+
+If you choose only a compact policy, your log can still become arbitrarily large. 
+In such cases, you can set the cleanup policy for a topic to compact and delete logs.
+Kafka applies log compaction, removing older versions of records and retaining only the latest version of each key. 
+Kafka also deletes records based on the specified time-based or size-based log retention settings. 
+
+For example, in the following diagram only the latest message (with the highest offset) for a specific message key is retained up to the compaction point.
+If there are any records remaining up to the retention point they are deleted.
+In this case, the compaction process would remove all duplicates. 
+
+.Log retention point and compaction point
+image::tuning/broker-tuning-compaction-retention.png[Image of compaction with retention point]
+
 
 == Managing efficient disk utilization for compaction
 
