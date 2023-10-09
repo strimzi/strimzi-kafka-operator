@@ -27,7 +27,7 @@ import java.util.List;
     "tlsTrustedCertificates", "disableTlsHostnameVerification",
     "delegateToKafkaAcls", "grantsRefreshPeriodSeconds", "grantsRefreshPoolSize",
     "grantsMaxIdleSeconds", "grantsGcPeriodSeconds", "grantsAlwaysLatest", "superUsers",
-    "connectTimeoutSeconds", "readTimeoutSeconds", "httpRetries", "enableMetrics"})
+    "connectTimeoutSeconds", "readTimeoutSeconds", "httpRetries", "enableMetrics", "includeAcceptHeader"})
 @EqualsAndHashCode(callSuper = true)
 public class KafkaAuthorizationKeycloak extends KafkaAuthorization {
     private static final long serialVersionUID = 1L;
@@ -51,6 +51,7 @@ public class KafkaAuthorizationKeycloak extends KafkaAuthorization {
     private Integer httpRetries;
     private List<String> superUsers;
     private boolean enableMetrics = false;
+    private boolean includeAcceptHeader = true;
 
     @Description("Must be `" + TYPE_KEYCLOAK + "`")
     @Override
@@ -227,5 +228,15 @@ public class KafkaAuthorizationKeycloak extends KafkaAuthorization {
 
     public void setEnableMetrics(boolean enableMetrics) {
         this.enableMetrics = enableMetrics;
+    }
+
+    @Description("Whether the Accept header should be set in requests to the authorization servers. The default value is `true`.")
+    @JsonInclude(JsonInclude.Include.NON_DEFAULT)
+    public boolean isIncludeAcceptHeader() {
+        return includeAcceptHeader;
+    }
+
+    public void setIncludeAcceptHeader(boolean includeAcceptHeader) {
+        this.includeAcceptHeader = includeAcceptHeader;
     }
 }

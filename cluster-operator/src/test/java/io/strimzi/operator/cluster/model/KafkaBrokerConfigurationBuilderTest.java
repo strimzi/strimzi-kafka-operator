@@ -318,6 +318,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .withReadTimeoutSeconds(10)
                 .withHttpRetries(2)
                 .withEnableMetrics(true)
+                .withIncludeAcceptHeader(false)
                 .build();
 
         String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, "2", false)
@@ -344,6 +345,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "strimzi.authorization.read.timeout.seconds=10",
                 "strimzi.authorization.http.retries=2",
                 "strimzi.authorization.enable.metrics=true",
+                "strimzi.authorization.include.accept.header=false",
                 "super.users=User:CN=my-cluster-kafka,O=io.strimzi;User:CN=my-cluster-entity-topic-operator,O=io.strimzi;User:CN=my-cluster-entity-user-operator,O=io.strimzi;User:CN=my-cluster-kafka-exporter,O=io.strimzi;User:CN=my-cluster-cruise-control,O=io.strimzi;User:CN=cluster-operator,O=io.strimzi;User:giada;User:CN=paccu"));
     }
 
@@ -1653,6 +1655,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                     .withConnectTimeoutSeconds(30)
                     .withReadTimeoutSeconds(30)
                     .withEnableMetrics(true)
+                    .withIncludeAcceptHeader(false)
                 .endKafkaListenerAuthenticationOAuth()
                 .build();
 
@@ -1685,9 +1688,9 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "ssl.endpoint.identification.algorithm=HTTPS",
                 "principal.builder.class=io.strimzi.kafka.oauth.server.OAuthKafkaPrincipalBuilder",
                 "listener.name.plain-9092.oauthbearer.sasl.server.callback.handler.class=io.strimzi.kafka.oauth.server.JaasServerOauthValidatorCallbackHandler",
-                "listener.name.plain-9092.oauthbearer.sasl.jaas.config=org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required unsecuredLoginStringClaim_sub=\"thePrincipalName\" oauth.valid.issuer.uri=\"http://valid-issuer\" oauth.jwks.endpoint.uri=\"http://jwks\" oauth.jwks.refresh.min.pause.seconds=\"5\" oauth.username.claim=\"preferred_username\" oauth.groups.claim=\"$.groups\" oauth.groups.claim.delimiter=\";\" oauth.connect.timeout.seconds=\"30\" oauth.read.timeout.seconds=\"30\" oauth.enable.metrics=\"true\" oauth.config.id=\"PLAIN-9092\";",
+                "listener.name.plain-9092.oauthbearer.sasl.jaas.config=org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required unsecuredLoginStringClaim_sub=\"thePrincipalName\" oauth.valid.issuer.uri=\"http://valid-issuer\" oauth.jwks.endpoint.uri=\"http://jwks\" oauth.jwks.refresh.min.pause.seconds=\"5\" oauth.username.claim=\"preferred_username\" oauth.groups.claim=\"$.groups\" oauth.groups.claim.delimiter=\";\" oauth.connect.timeout.seconds=\"30\" oauth.read.timeout.seconds=\"30\" oauth.enable.metrics=\"true\" oauth.include.accept.header=\"false\" oauth.config.id=\"PLAIN-9092\";",
                 "listener.name.plain-9092.plain.sasl.server.callback.handler.class=io.strimzi.kafka.oauth.server.plain.JaasServerOauthOverPlainValidatorCallbackHandler",
-                "listener.name.plain-9092.plain.sasl.jaas.config=org.apache.kafka.common.security.plain.PlainLoginModule required oauth.valid.issuer.uri=\"http://valid-issuer\" oauth.jwks.endpoint.uri=\"http://jwks\" oauth.jwks.refresh.min.pause.seconds=\"5\" oauth.username.claim=\"preferred_username\" oauth.groups.claim=\"$.groups\" oauth.groups.claim.delimiter=\";\" oauth.connect.timeout.seconds=\"30\" oauth.read.timeout.seconds=\"30\" oauth.enable.metrics=\"true\" oauth.config.id=\"PLAIN-9092\" oauth.token.endpoint.uri=\"http://token\";",
+                "listener.name.plain-9092.plain.sasl.jaas.config=org.apache.kafka.common.security.plain.PlainLoginModule required oauth.valid.issuer.uri=\"http://valid-issuer\" oauth.jwks.endpoint.uri=\"http://jwks\" oauth.jwks.refresh.min.pause.seconds=\"5\" oauth.username.claim=\"preferred_username\" oauth.groups.claim=\"$.groups\" oauth.groups.claim.delimiter=\";\" oauth.connect.timeout.seconds=\"30\" oauth.read.timeout.seconds=\"30\" oauth.enable.metrics=\"true\" oauth.include.accept.header=\"false\" oauth.config.id=\"PLAIN-9092\" oauth.token.endpoint.uri=\"http://token\";",
                 "listener.name.plain-9092.sasl.enabled.mechanisms=OAUTHBEARER,PLAIN",
                 "listener.name.plain-9092.connections.max.reauth.ms=3600000"));
     }
@@ -1935,6 +1938,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .withClientScope("messaging")
                 .withEnableMetrics(true)
                 .withFailFast(false)
+                .withIncludeAcceptHeader(false)
                 .build();
 
         Map<String, String> expectedOptions = new HashMap<>();
@@ -1965,6 +1969,7 @@ public class KafkaBrokerConfigurationBuilderTest {
         expectedOptions.put(ServerConfig.OAUTH_HTTP_RETRY_PAUSE_MILLIS, "500");
         expectedOptions.put(ServerConfig.OAUTH_ENABLE_METRICS, String.valueOf(true));
         expectedOptions.put(ServerConfig.OAUTH_FAIL_FAST, String.valueOf(false));
+        expectedOptions.put(ServerConfig.OAUTH_INCLUDE_ACCEPT_HEADER, String.valueOf(false));
 
         // enablePlain and tokenEndpointUri are handled separately from getOAuthOptions
         Map<String, String> actualOptions = KafkaBrokerConfigurationBuilder.getOAuthOptions(auth);

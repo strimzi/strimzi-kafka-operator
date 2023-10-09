@@ -49,6 +49,7 @@ public class KafkaClientAuthenticationOAuth extends KafkaClientAuthentication {
     private int maxTokenExpirySeconds = 0;
     private boolean accessTokenIsJwt = true;
     private boolean enableMetrics = false;
+    private boolean includeAcceptHeader = true;
 
     @Description("Must be `" + TYPE_OAUTH + "`")
     @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -239,5 +240,15 @@ public class KafkaClientAuthenticationOAuth extends KafkaClientAuthentication {
 
     public void setUsername(String username) {
         this.username = username;
+    }
+
+    @Description("Whether the Accept header should be set in requests to the authorization servers. The default value is `true`.")
+    @JsonInclude(JsonInclude.Include.NON_DEFAULT)
+    public boolean isIncludeAcceptHeader() {
+        return includeAcceptHeader;
+    }
+
+    public void setIncludeAcceptHeader(boolean includeAcceptHeader) {
+        this.includeAcceptHeader = includeAcceptHeader;
     }
 }

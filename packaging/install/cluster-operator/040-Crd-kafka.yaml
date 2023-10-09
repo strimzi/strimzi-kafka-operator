@@ -168,6 +168,9 @@ spec:
                             httpRetryPauseMs:
                               type: integer
                               description: "The pause to take before retrying a failed HTTP request. If not set, the default is to not pause at all but to immediately repeat a request."
+                            includeAcceptHeader:
+                              type: boolean
+                              description: Whether the Accept header should be set in requests to the authorization servers. The default value is `true`.
                             introspectionEndpointUri:
                               type: string
                               description: URI of the token introspection endpoint which can be used to validate opaque non-JWT tokens.
@@ -610,6 +613,9 @@ spec:
                         type: integer
                         minimum: 0
                         description: "The maximum number of retries to attempt if an initial HTTP request fails. If not set, the default is to not attempt any retries."
+                      includeAcceptHeader:
+                        type: boolean
+                        description: Whether the Accept header should be set in requests to the authorization servers. The default value is `true`.
                       initialCacheCapacity:
                         type: integer
                         description: Initial capacity of the local cache used by the authorizer to avoid querying the Open Policy Agent for every request Defaults to `5000`.

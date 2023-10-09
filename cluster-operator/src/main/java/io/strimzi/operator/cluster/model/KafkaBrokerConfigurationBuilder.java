@@ -573,6 +573,7 @@ public class KafkaBrokerConfigurationBuilder {
 
         addBooleanOptionIfTrue(options, ServerConfig.OAUTH_ENABLE_METRICS, oauth.isEnableMetrics());
         addBooleanOptionIfFalse(options, ServerConfig.OAUTH_FAIL_FAST, oauth.getFailFast());
+        addBooleanOptionIfFalse(options, ServerConfig.OAUTH_INCLUDE_ACCEPT_HEADER, oauth.isIncludeAcceptHeader());
 
         return options;
     }
@@ -723,6 +724,9 @@ public class KafkaBrokerConfigurationBuilder {
         }
         if (authorization.isEnableMetrics()) {
             writer.println("strimzi.authorization.enable.metrics=true");
+        }
+        if (!authorization.isIncludeAcceptHeader()) {
+            writer.println("strimzi.authorization.include.accept.header=false");
         }
 
         writer.println("strimzi.authorization.kafka.cluster.name=" + clusterName);
