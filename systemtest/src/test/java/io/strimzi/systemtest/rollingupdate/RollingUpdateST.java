@@ -162,14 +162,7 @@ class RollingUpdateST extends AbstractST {
         final TestStorage testStorage = new TestStorage(extensionContext, Environment.TEST_SUITE_NAMESPACE);
 
         resourceManager.createResourceWithWait(extensionContext,
-            KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), 3, 3)
-                .editSpec()
-                    .editKafka()
-                        // in case consumer is created after we move one Kafka Pod to pending state, we need just 2 replicas
-                        .addToConfig(singletonMap("offsets.topic.replication.factor", 2))
-                    .endKafka()
-                .endSpec()
-                .build(),
+            KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), 3, 3).build(),
             KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getTopicName(), 2, 2, testStorage.getNamespaceName()).build(),
             KafkaUserTemplates.tlsUser(testStorage).build()
         );
@@ -184,8 +177,11 @@ class RollingUpdateST extends AbstractST {
             .withUsername(testStorage.getUsername())
             .build();
 
-        resourceManager.createResourceWithWait(extensionContext, clients.producerTlsStrimzi(testStorage.getClusterName()));
-        ClientUtils.waitForProducerClientSuccess(testStorage);
+        resourceManager.createResourceWithWait(extensionContext,
+            clients.producerTlsStrimzi(testStorage.getClusterName()),
+            clients.consumerTlsStrimzi(testStorage.getClusterName())
+        );
+        ClientUtils.waitForClientsSuccess(testStorage);
 
         LOGGER.info("Update resources for Pods");
 
@@ -204,14 +200,15 @@ class RollingUpdateST extends AbstractST {
             }, testStorage.getNamespaceName());
         }
 
-        resourceManager.createResourceWithWait(extensionContext, clients.consumerTlsStrimzi(testStorage.getClusterName()));
-        ClientUtils.waitForConsumerClientSuccess(testStorage);
+        PodUtils.waitForPendingPod(testStorage.getNamespaceName(), testStorage.getKafkaStatefulSetName());
 
         clients = new KafkaClientsBuilder(clients)
             .withConsumerGroup(ClientUtils.generateRandomConsumerGroup())
             .build();
 
-        PodUtils.waitForPendingPod(testStorage.getNamespaceName(), testStorage.getKafkaStatefulSetName());
+        resourceManager.createResourceWithWait(extensionContext, clients.consumerTlsStrimzi(testStorage.getClusterName()));
+        ClientUtils.waitForConsumerClientSuccess(testStorage);
+
         LOGGER.info("Verifying stability of Kafka Pods except the one, which is in pending phase");
         PodUtils.verifyThatRunningPodsAreStable(testStorage.getNamespaceName(), testStorage.getKafkaStatefulSetName());
 
@@ -219,9 +216,6 @@ class RollingUpdateST extends AbstractST {
             LOGGER.info("Verifying stability of ZooKeeper Pods");
             PodUtils.verifyThatRunningPodsAreStable(testStorage.getNamespaceName(), testStorage.getZookeeperStatefulSetName());
         }
-
-        resourceManager.createResourceWithWait(extensionContext, clients.consumerTlsStrimzi(testStorage.getClusterName()));
-        ClientUtils.waitForConsumerClientSuccess(testStorage);
 
         if (Environment.isKafkaNodePoolsEnabled()) {
             KafkaNodePoolResource.replaceKafkaNodePoolResourceInSpecificNamespace(testStorage.getKafkaNodePoolName(), knp ->
