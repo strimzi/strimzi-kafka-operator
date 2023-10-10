@@ -140,6 +140,7 @@ public class OpenSsl {
                 .withOptionAndArgument("-CA", caCrt)
                 .withOptionAndArgument("-CAkey", caKey)
                 .withOptionAndArgument("-out", cert)
+                .withOption("-CAcreateserial")
                 .execute();
 
             return cert;
