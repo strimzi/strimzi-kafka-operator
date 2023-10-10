@@ -22,7 +22,12 @@ The [`kafka-with-kraft.yaml`](./kafka-with-kraft.yaml) deploys a Kafka cluster w
 The [`kafka-with-dual-role-kraft-nodes.yaml`](./kafka-with-dual-role-kraft-nodes.yaml) deploys a Kafka cluster with one pool of KRaft nodes that share the _broker_ and _controller_ roles.
 
 _NOTE: To use this example, you have to enable the `UseKRaft` feature gate in addition to the `KafkaNodePools` feature gate._
-
+```
+kubectl set env deployments/strimzi-cluster-operator STRIMZI_FEATURE_GATES=+UseKRaft,+KafkaNodePools -n kafka
+```
+```
+kubectl apply -f kafka-with-kraft.yaml -n kafka
+```
 Please be aware that ZooKeeper-less Kafka is still a work in progress and is still missing many features.
 For example:
 * The controller-only nodes are currently not rolled by Strimzi when their configuration changes due to the limitations of the Kafka Admin API. 
