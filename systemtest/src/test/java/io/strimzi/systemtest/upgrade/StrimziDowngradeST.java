@@ -8,6 +8,7 @@ import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.annotations.KRaftNotSupported;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.utils.StUtils;
+import io.strimzi.systemtest.utils.kubeUtils.objects.NamespaceUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -22,6 +23,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import java.io.IOException;
 import java.util.List;
 
+import static io.strimzi.systemtest.Constants.CO_NAMESPACE;
 import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
 import static io.strimzi.systemtest.Constants.UPGRADE;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
@@ -91,6 +93,6 @@ public class StrimziDowngradeST extends AbstractUpgradeST {
     @AfterEach
     void afterEach() {
         deleteInstalledYamls(coDir, Constants.CO_NAMESPACE);
-        cluster.deleteNamespaces();
+        NamespaceUtils.deleteNamespaceWithWait(CO_NAMESPACE);
     }
 }
