@@ -57,31 +57,4 @@ When the finalization tasks are successfully executed, the finalizer is removed 
 Finalizers also serve to prevent related resources from being deleted. 
 If the unidirectional Topic Operator is not running, it won't be able to remove its finalizer from the `metadata.finalizers`. 
 And any attempt to directly delete the `KafkaTopic` resources or the namespace will fail or timeout, leaving the namespace in a stuck terminating state.
-
-== Removing finalizers
-
-If the Topic Operator is not running, and you want to bypass the finalization process when deleting topics, you have to remove the finalizers.   
-You can do this manually by editing the resources directly or by using a command.
-
-To remove finalizers on all topics, use the following command:
-
-.Removing finalizers on topics
-[source,shell]
-----
-kubectl get kt -o=json | jq '.items[].metadata.finalizers = null' | kubectl apply -f -
-----
-
-The command uses the `jq` tool to modify the `KafkaTopic` (`kt`) resources by setting the finalizers to `null`.
-You can also use the command for a specific topic:
-
-.Removing a finalizer on a specific topic
-[source,shell]
-----
-kubectl get kt <topic_name> -o=json | jq '.metadata.finalizers = null' | kubectl apply -f -
-----
-
-After running the command, you can go ahead and delete the topics.
-Alternatively, if the topics were already being deleted but were blocked due to outstanding finalizers then their deletion should complete.
-
-WARNING: Be careful when removing finalizers, as any cleanup operations associated with the finalization process are not performed. 
-For example, if you remove the finalizer from a `KafkaTopic` resource and subsequently delete the resource, the related Kafka topic won't be deleted.  
+If this happens, you can bypass the finalization process by xref:con-removing-topic-finalizers-{context}[removing the finalizers on topics]. 
