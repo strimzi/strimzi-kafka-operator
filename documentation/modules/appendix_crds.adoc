@@ -224,6 +224,8 @@ It must have the value `oauth` for the type `KafkaListenerAuthenticationOAuth`.
 |integer
 |httpRetryPauseMs                   1.2+<.<a|The pause to take before retrying a failed HTTP request. If not set, the default is to not pause at all but to immediately repeat a request.
 |integer
+|includeAcceptHeader                1.2+<.<a|Whether the Accept header should be set in requests to the authorization servers. The default value is `true`.
+|boolean
 |introspectionEndpointUri           1.2+<.<a|URI of the token introspection endpoint which can be used to validate opaque non-JWT tokens.
 |string
 |jwksEndpointUri                    1.2+<.<a|URI of the JWKS certificate endpoint, which can be used for local JWT validation.
@@ -629,6 +631,8 @@ It must have the value `keycloak` for the type `KafkaAuthorizationKeycloak`.
 |httpRetries                     1.2+<.<a|The maximum number of retries to attempt if an initial HTTP request fails. If not set, the default is to not attempt any retries.
 |integer
 |enableMetrics                   1.2+<.<a|Enable or disable OAuth metrics. The default value is `false`.
+|boolean
+|includeAcceptHeader             1.2+<.<a|Whether the Accept header should be set in requests to the authorization servers. The default value is `true`.
 |boolean
 |grantsMaxIdleTimeSeconds        1.2+<.<a|The time, in seconds, after which an idle grant can be evicted from the cache. The default value is 300.
 |integer
@@ -1940,6 +1944,8 @@ It must have the value `oauth` for the type `KafkaClientAuthenticationOAuth`.
 |integer
 |httpRetryPauseMs                1.2+<.<a|The pause to take before retrying a failed HTTP request. If not set, the default is to not pause at all but to immediately repeat a request.
 |integer
+|includeAcceptHeader             1.2+<.<a|Whether the Accept header should be set in requests to the authorization servers. The default value is `true`.
+|boolean
 |maxTokenExpirySeconds           1.2+<.<a|Set or limit time-to-live of the access tokens to the specified number of seconds. This should be set if the authorization server returns opaque tokens.
 |integer
 |passwordSecret                  1.2+<.<a|Reference to the `Secret` which holds the password.

@@ -72,6 +72,7 @@ public class KafkaListenerAuthenticationOAuth extends KafkaListenerAuthenticatio
     private String clientAudience = null;
     private boolean enableMetrics = false;
     private boolean failFast = true;
+    private boolean includeAcceptHeader = true;
 
     @Description("Must be `" + TYPE_OAUTH + "`")
     @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -469,5 +470,15 @@ public class KafkaListenerAuthenticationOAuth extends KafkaListenerAuthenticatio
 
     public void setFailFast(boolean failFast) {
         this.failFast = failFast;
+    }
+
+    @Description("Whether the Accept header should be set in requests to the authorization servers. The default value is `true`.")
+    @JsonInclude(JsonInclude.Include.NON_DEFAULT)
+    public boolean isIncludeAcceptHeader() {
+        return includeAcceptHeader;
+    }
+
+    public void setIncludeAcceptHeader(boolean includeAcceptHeader) {
+        this.includeAcceptHeader = includeAcceptHeader;
     }
 }

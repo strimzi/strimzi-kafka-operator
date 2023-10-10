@@ -306,6 +306,9 @@ public class AuthenticationUtils {
         if (oauth.isEnableMetrics()) {
             options.put(ServerConfig.OAUTH_ENABLE_METRICS, "true");
         }
+        if (!oauth.isIncludeAcceptHeader()) {
+            options.put(ServerConfig.OAUTH_INCLUDE_ACCEPT_HEADER, "false");
+        }
         return options;
     }
 
