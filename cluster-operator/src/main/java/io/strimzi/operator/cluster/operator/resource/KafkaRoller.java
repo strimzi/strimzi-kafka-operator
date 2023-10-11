@@ -794,6 +794,7 @@ public class KafkaRoller {
      *
      * @return a Future which completes when the Pod has been recreated
      */
+    @SuppressWarnings("deprecation") // Uses a deprecated executeBlocking call that should be addressed later. This is tracked in https://github.com/strimzi/strimzi-kafka-operator/issues/9233
     protected Future<Void> restart(Pod pod, RestartContext restartContext) {
         return  podOperations.restart(reconciliation, pod, operationTimeoutMs)
                              .onComplete(i -> vertx.executeBlocking(ignored -> eventsPublisher.publishRestartEvents(pod, restartContext.restartReasons)));

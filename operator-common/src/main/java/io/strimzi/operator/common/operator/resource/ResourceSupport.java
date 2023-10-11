@@ -64,6 +64,7 @@ public class ResourceSupport {
             });
     }
 
+    @SuppressWarnings("deprecation") // Uses a deprecated executeBlocking call that should be addressed later. This is tracked in https://github.com/strimzi/strimzi-kafka-operator/issues/9233
     <T> Future<T> executeBlocking(Handler<Promise<T>> blockingCodeHandler) {
         Promise<T> result = Promise.promise();
         vertx.createSharedWorkerExecutor("kubernetes-ops-pool")
@@ -190,6 +191,7 @@ public class ResourceSupport {
             }
 
             @Override
+            @SuppressWarnings("deprecation") // Uses a deprecated executeBlocking call that should be addressed later. This is tracked in https://github.com/strimzi/strimzi-kafka-operator/issues/9233
             public void eventReceived(Action action, T resource) {
                 vertx.executeBlocking(
                     f -> {

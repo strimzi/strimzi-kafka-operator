@@ -61,6 +61,7 @@ public class K8sImpl implements K8s {
      * @return  Future which completes with result of the request. If the request was successful, this returns the Kafka topic
      */
     @Override
+    @SuppressWarnings("deprecation") // Uses a deprecated executeBlocking call that should be addressed later. This is tracked in https://github.com/strimzi/strimzi-kafka-operator/issues/9233
     public Future<KafkaTopic> createResource(KafkaTopic topicResource) {
         Promise<KafkaTopic> handler = Promise.promise();
         vertx.executeBlocking(future -> {
@@ -85,6 +86,7 @@ public class K8sImpl implements K8s {
      * @return  Future which completes with result of the request. If the request was successful, this returns the updated Kafka topic
      */
     @Override
+    @SuppressWarnings("deprecation") // Uses a deprecated executeBlocking call that should be addressed later. This is tracked in https://github.com/strimzi/strimzi-kafka-operator/issues/9233
     public Future<KafkaTopic> updateResource(KafkaTopic topicResource) {
         Promise<KafkaTopic> handler = Promise.promise();
         vertx.executeBlocking(future -> {
@@ -122,6 +124,7 @@ public class K8sImpl implements K8s {
      * @return  Future which completes when the resource is deleted successfully.
      */
     @Override
+    @SuppressWarnings("deprecation") // Uses a deprecated executeBlocking call that should be addressed later. This is tracked in https://github.com/strimzi/strimzi-kafka-operator/issues/9233
     public Future<Void> deleteResource(Reconciliation reconciliation, ResourceName resourceName) {
         Promise<Void> handler = Promise.promise();
         vertx.executeBlocking(future -> {
@@ -171,6 +174,7 @@ public class K8sImpl implements K8s {
      * Create the given k8s event
      */
     @Override
+    @SuppressWarnings("deprecation") // Uses a deprecated executeBlocking call that should be addressed later. This is tracked in https://github.com/strimzi/strimzi-kafka-operator/issues/9233
     public Future<Void> createEvent(Event event) {
         Promise<Void> handler = Promise.promise();
         vertx.executeBlocking(future -> {

@@ -52,6 +52,7 @@ public final class VertxUtil {
      *
      * @param <T>   Type of the result
      */
+    @SuppressWarnings("deprecation") // Uses a deprecated executeBlocking call that should be addressed later. This is tracked in https://github.com/strimzi/strimzi-kafka-operator/issues/9233
     public static <T> Future<T> async(Vertx vertx, Supplier<T> supplier) {
         Promise<T> result = Promise.promise();
         vertx.executeBlocking(
@@ -123,6 +124,7 @@ public final class VertxUtil {
         long deadline = System.currentTimeMillis() + timeoutMs;
         Handler<Long> handler = new Handler<>() {
             @Override
+            @SuppressWarnings("deprecation") // Uses a deprecated executeBlocking call that should be addressed later. This is tracked in https://github.com/strimzi/strimzi-kafka-operator/issues/9233
             public void handle(Long timerId) {
                 vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
                     future -> {
