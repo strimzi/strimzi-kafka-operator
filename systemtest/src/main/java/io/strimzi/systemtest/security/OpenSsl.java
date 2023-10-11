@@ -19,6 +19,15 @@ import java.time.format.DateTimeFormatter;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+/**
+ * The `OpenSsl` class encapsulates OpenSSL command execution using the OpenSSLCommand object,
+ * which interfaces with the command-line version of OpenSSL. It serves as a versatile tool
+ * for various OpenSSL operations, primarily focusing on the creation of private keys, the
+ * generation of certificate signing requests (CSRs), and the signing of these CSRs using
+ * a certificate authority (CA). The primary use case for this class is to facilitate the
+ * simulation of externally provided client certificates, offering a seamless solution for
+ * integrating secure authentication mechanisms into your application.
+ */
 public class OpenSsl {
     private static final Logger LOGGER = LogManager.getLogger(OpenSsl.class);
 
@@ -68,7 +77,7 @@ public class OpenSsl {
                 pb.redirectErrorStream(true)
                     .redirectOutput(commandOutput.toFile());
 
-                LOGGER.info("Running command: {}", pb.command());
+                LOGGER.debug("Running command: {}", pb.command());
 
                 Process process = pb.start();
 
@@ -108,7 +117,7 @@ public class OpenSsl {
 
     public static File generatePrivateKey(int keyLengthBits) {
         try {
-            LOGGER.info("Creating client rsa private key with size of {} bits", keyLengthBits);
+            LOGGER.info("Creating client RSA private key with size of {} bits", keyLengthBits);
             File privateKey = Files.createTempFile("private-key-", ".pem").toFile();
 
             new OpenSslCommand("genpkey")

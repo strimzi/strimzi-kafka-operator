@@ -170,6 +170,20 @@ public class SystemTestCertManager {
         return certFile;
     }
 
+    /**
+     * This method exports Certificate Authority (CA) data to a temporary file for cases in which mentioned data is
+     * necessary in form of file - for use in applications like OpenSSL. The primary purpose is to save CA files,
+     * such as certificates and private keys (e.g., ca.key and ca.cert), into temporary files.
+     * These files are essential when you need to provide CA data to other applications, such as OpenSSL,
+     * for signing user Certificate Signing Requests (CSRs).
+     *
+     * @param caData The Certificate Authority data to be saved to the temporary file.
+     * @param prefix The prefix for the temporary file's name.
+     * @param suffix The suffix for the temporary file's name.
+     * @return A File object representing the temporary file containing the CA data.
+     * @throws RuntimeException If an IOException occurs while creating a file or writing into the temporary file
+     * given the critical role these operations play in ensuring proper functionality.
+     */
     public static File exportCaDataToFile(String caData, String prefix, String suffix) {
         try {
             File tempFile = Files.createTempFile(prefix + "-", suffix).toFile();
