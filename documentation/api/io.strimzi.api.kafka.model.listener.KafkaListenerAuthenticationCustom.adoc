@@ -24,7 +24,7 @@ spec:
             oauthbearer.connections.max.reauth.ms: 999999999
             sasl.enabled.mechanisms: oauthbearer
             oauthbearer.sasl.jaas.config: |
-              org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required ;
+              io.strimzi.kafka.oauth.client.JaasClientOauthLoginCallbackHandler required ;
           secrets:
             - name: example
 ----
