@@ -425,8 +425,6 @@ class UserST extends AbstractST {
         kubeClient().namespace(testStorage.getNamespaceName()).createSecret(secretBuilder);
         SecretUtils.waitForSecretReady(testStorage.getNamespaceName(), testStorage.getKafkaUsername(), () -> { });
 
-        Thread.sleep(5000);
-
         KafkaClients kafkaClients = new KafkaClientsBuilder()
             .withProducerName(testStorage.getProducerName())
             .withConsumerName(testStorage.getConsumerName())

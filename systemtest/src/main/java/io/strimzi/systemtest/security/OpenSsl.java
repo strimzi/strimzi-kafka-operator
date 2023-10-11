@@ -4,12 +4,18 @@
  */
 package io.strimzi.systemtest.security;
 
+import io.strimzi.systemtest.Constants;
+import io.strimzi.test.TestUtils;
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -46,10 +52,14 @@ public class OpenSsl {
         }
 
         public void execute() {
-            execute(true);
+            executeAndReturnOnSuccess(true);
         }
 
-        public void execute(boolean failOnNonZeroOutput) {
+        public String executeAndReturn() {
+            return executeAndReturnOnSuccess(true);
+        }
+
+        public String executeAndReturnOnSuccess(boolean failOnNonZeroOutput) {
 
             Path commandOutput = null;
             try {
@@ -66,11 +76,13 @@ public class OpenSsl {
                 outputStream.close();
 
                 int exitCode = process.waitFor();
+                String outputText = Files.readString(commandOutput, StandardCharsets.UTF_8);
 
                 if (exitCode != 0 && failOnNonZeroOutput) {
-                    String outputText = Files.readString(commandOutput, StandardCharsets.UTF_8);
                     throw new RuntimeException("Openssl command failed. " + outputText);
                 }
+
+                return outputText;
             } catch (InterruptedException | IOException e) {
                 throw new RuntimeException(e);
             } finally {
@@ -143,9 +155,34 @@ public class OpenSsl {
                 .withOption("-CAcreateserial")
                 .execute();
 
+            waitForCertIsInValidDateRange(cert);
+
             return cert;
         } catch (IOException e)  {
             throw new RuntimeException(e);
         }
+    }
+
+    public static void waitForCertIsInValidDateRange(File certificate) {
+        String dates = new OpenSslCommand("x509")
+            .withOption("-noout")
+            .withOption("-dates")
+            .withOptionAndArgument("-in", certificate)
+            .executeAndReturn()
+            .trim().replace("\s\s", "\s");
+
+        String startDate = dates.split("\n")[0].replace("notBefore=", "");
+        String endDate = dates.split("\n")[1].replace("notAfter=", "");
+
+        ZoneId gmtZone = ZoneId.of("GMT");
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMM dd HH:mm:ss yyyy z");
+        ZonedDateTime notBefore = ZonedDateTime.of(LocalDateTime.parse(startDate, formatter), gmtZone);
+        ZonedDateTime notAfter = ZonedDateTime.of(LocalDateTime.parse(endDate, formatter), gmtZone);
+
+        TestUtils.waitFor("certificate to be in valid date range", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.CO_OPERATION_TIMEOUT_SHORT,
+                          () -> {
+                ZonedDateTime now = ZonedDateTime.now(gmtZone);
+                return (now.isAfter(notBefore.plusSeconds(4)) && now.isBefore(notAfter.minusSeconds(3)));
+            });
     }
 }
