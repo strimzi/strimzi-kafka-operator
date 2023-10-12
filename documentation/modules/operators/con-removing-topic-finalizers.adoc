@@ -1,0 +1,33 @@
+// Module included in the following assemblies:
+//
+// assembly-using-the-topic-operator.adoc
+
+[id='con-removing-topic-finalizers-{context}']
+= (Preview) Removing finalizers on topics
+
+[role="_abstract"]
+If the unidirectional Topic Operator is not running, and you want to bypass the finalization process when deleting managed topics, you have to remove the finalizers.   
+You can do this manually by editing the resources directly or by using a command.
+
+To remove finalizers on all topics, use the following command:
+
+.Removing finalizers on topics
+[source,shell]
+----
+kubectl get kt -o=json | jq '.items[].metadata.finalizers = null' | kubectl apply -f -
+----
+
+The command uses the `jq` tool to modify the `KafkaTopic` (`kt`) resources by setting the finalizers to `null`.
+You can also use the command for a specific topic:
+
+.Removing a finalizer on a specific topic
+[source,shell]
+----
+kubectl get kt <topic_name> -o=json | jq '.metadata.finalizers = null' | kubectl apply -f -
+----
+
+After running the command, you can go ahead and delete the topics.
+Alternatively, if the topics were already being deleted but were blocked due to outstanding finalizers then their deletion should complete.
+
+WARNING: Be careful when removing finalizers, as any cleanup operations associated with the finalization process are not performed if the Topic Operator is not running. 
+For example, if you remove the finalizer from a `KafkaTopic` resource and subsequently delete the resource, the related Kafka topic won't be deleted.  
