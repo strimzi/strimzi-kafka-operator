@@ -130,6 +130,7 @@ public class PlatformFeaturesAvailability implements PlatformFeatures {
         return vib.build();
     }
 
+    @SuppressWarnings("deprecation") // Uses a deprecated executeBlocking call that should be addressed later. This is tracked in https://github.com/strimzi/strimzi-kafka-operator/issues/9233
     private static Future<VersionInfo> getVersionInfoFromKubernetes(Vertx vertx, KubernetesClient client)   {
         Promise<VersionInfo> promise = Promise.promise();
 
@@ -145,6 +146,7 @@ public class PlatformFeaturesAvailability implements PlatformFeatures {
         return promise.future();
     }
 
+    @SuppressWarnings("deprecation") // Uses a deprecated executeBlocking call that should be addressed later. This is tracked in https://github.com/strimzi/strimzi-kafka-operator/issues/9233
     private static Future<Boolean> checkApiAvailability(Vertx vertx, KubernetesClient client, String group, String version)   {
         Promise<Boolean> promise = Promise.promise();
 

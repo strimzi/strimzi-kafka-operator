@@ -889,6 +889,7 @@ public class KafkaReconciler {
      *
      * @return  Future which completes when the Cluster ID is retrieved and set in the status
      */
+    @SuppressWarnings("deprecation") // Uses a deprecated executeBlocking call that should be addressed later. This is tracked in https://github.com/strimzi/strimzi-kafka-operator/issues/9233
     protected Future<Void> clusterId(KafkaStatus kafkaStatus) {
         return ReconcilerUtils.clientSecrets(reconciliation, secretOperator)
                 .compose(compositeFuture -> {

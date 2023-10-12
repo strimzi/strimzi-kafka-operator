@@ -73,6 +73,7 @@ public abstract class AbstractNonNamespacedResourceOperator<C extends Kubernetes
      * @param desired The desired state of the resource.
      * @return A future which completes when the resource was reconciled.
      */
+    @SuppressWarnings("deprecation") // Uses a deprecated executeBlocking call that should be addressed later. This is tracked in https://github.com/strimzi/strimzi-kafka-operator/issues/9233
     public Future<ReconcileResult<T>> reconcile(Reconciliation reconciliation, String name, T desired) {
         if (desired != null && !name.equals(desired.getMetadata().getName())) {
             return Future.failedFuture("Given name " + name + " incompatible with desired name "

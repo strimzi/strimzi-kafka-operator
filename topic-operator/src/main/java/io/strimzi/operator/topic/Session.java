@@ -133,6 +133,7 @@ public class Session extends AbstractVerticle {
      * Stop the operator.
      */
     @Override
+    @SuppressWarnings("deprecation") // Uses a deprecated executeBlocking call that should be addressed later. This is tracked in https://github.com/strimzi/strimzi-kafka-operator/issues/9233
     public void stop(Promise<Void> stop) throws Exception {
         this.stopped = true;
         Long timerId = this.timerId;
@@ -247,6 +248,7 @@ public class Session extends AbstractVerticle {
                 });
     }
 
+    @SuppressWarnings("deprecation") // Uses a deprecated executeBlocking call that should be addressed later. This is tracked in https://github.com/strimzi/strimzi-kafka-operator/issues/9233
     private Future<Promise<Void>> createK8sWatcher(TopicOperator topicOperator) {
         return executor.executeBlocking(blockingPromise -> {
             Promise<Void> initReconcilePromise = Promise.promise();
@@ -256,6 +258,7 @@ public class Session extends AbstractVerticle {
         });
     }
 
+    @SuppressWarnings("deprecation") // Uses a deprecated executeBlocking call that should be addressed later. This is tracked in https://github.com/strimzi/strimzi-kafka-operator/issues/9233
     private Future<TopicStore> createTopicStoreAsync(Zk zk, Config config) {
         return executor.executeBlocking(storePromise -> {
             Instant startedAt = Instant.now();

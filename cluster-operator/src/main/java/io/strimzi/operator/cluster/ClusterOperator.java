@@ -149,6 +149,7 @@ public class ClusterOperator extends AbstractVerticle {
                 .onComplete(start);
     }
 
+    @SuppressWarnings("deprecation") // Uses a deprecated executeBlocking call that should be addressed later. This is tracked in https://github.com/strimzi/strimzi-kafka-operator/issues/9233
     private Future<Void> maybeStartStrimziPodSetController() {
         Promise<Void> handler = Promise.promise();
         vertx.executeBlocking(future -> {

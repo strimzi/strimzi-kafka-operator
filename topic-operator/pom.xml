@@ -210,11 +210,6 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>org.scala-lang</groupId>
-            <artifactId>scala-library</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
             <groupId>io.strimzi</groupId>
             <artifactId>operator-common</artifactId>
         </dependency>
@@ -272,7 +267,6 @@
                                 <ignoredUnusedDeclaredDependency>io.fabric8:kubernetes-httpclient-jdk</ignoredUnusedDeclaredDependency>
                                 <ignoredUnusedDeclaredDependency>org.apache.logging.log4j:log4j-slf4j-impl</ignoredUnusedDeclaredDependency>
                                 <ignoredUnusedDeclaredDependency>org.mockito:mockito-inline</ignoredUnusedDeclaredDependency>
-                                <ignoredUnusedDeclaredDependency>org.scala-lang:scala-library</ignoredUnusedDeclaredDependency>
                             </ignoredUnusedDeclaredDependencies>
                         </configuration>
                     </execution>

@@ -91,6 +91,7 @@ public abstract class AbstractNamespacedResourceOperator<C extends KubernetesCli
      * @param desired The desired state of the resource.
      * @return A future which completes when the resource has been updated.
      */
+    @SuppressWarnings("deprecation") // Uses a deprecated executeBlocking call that should be addressed later. This is tracked in https://github.com/strimzi/strimzi-kafka-operator/issues/9233
     public Future<ReconcileResult<T>> reconcile(Reconciliation reconciliation, String namespace, String name, T desired) {
         if (desired != null && !namespace.equals(desired.getMetadata().getNamespace())) {
             return Future.failedFuture("Given namespace " + namespace + " incompatible with desired namespace " + desired.getMetadata().getNamespace());
