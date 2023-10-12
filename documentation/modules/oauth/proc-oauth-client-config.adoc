@@ -28,12 +28,12 @@ You can configure a truststore in PEM or PKCS #12 format.
 * A JAAS (Java Authentication and Authorization Service) module that implements the SASL mechanism:
 +
 --
-** `io.strimzi.kafka.oauth.client.JaasClientOauthLoginCallbackHandler` implements the OAUTHBEARER mechanism
-** `org.apache.kafka.common.security.plain.PlainLoginModule` implements the PLAIN mechanism
+** `org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule` implements the OAuthbearer mechanism
+** `org.apache.kafka.common.security.plain.PlainLoginModule` implements the plain mechanism
 --
 +
-`JaasClientOauthLoginCallbackHandler` is a custom JAAS module designed to handle OAuth callbacks during client login. 
-Implementing the OAUTHBEARER SASL mechanism, it manages callbacks to the authorization server for access tokens. 
+To be able to use the OAuthbearer mechanism, you must also add the custom `io.strimzi.kafka.oauth.client.JaasClientOauthLoginCallbackHandler` class as the callback handler.
+`JaasClientOauthLoginCallbackHandler` handles OAuth callbacks to the authorization server for access tokens during client login. 
 This enables automatic token renewal, ensuring continuous authentication without user intervention. 
 Additionally, it handles login credentials for clients using the OAuth 2.0 password grant method. 
 
@@ -46,7 +46,7 @@ Additionally, it handles login credentials for clients using the OAuth 2.0 passw
 ** Refresh token
 --
 +
-Add the SASL authentication properties as JAAS configuration (`sasl.jaas.config`).
+Add the SASL authentication properties as JAAS configuration (`sasl.jaas.config` and `sasl.login.callback.handler.class`).
 How you configure the authentication properties depends on the authentication method you are using to access the OAuth 2.0 authorization server.
 In this procedure, the properties are specified in a properties file, then loaded into the client configuration.
 
@@ -88,7 +88,7 @@ sasl.mechanism=OAUTHBEARER # <2>
 ssl.truststore.location=/tmp/truststore.p12 <3>
 ssl.truststore.password=$STOREPASS
 ssl.truststore.type=PKCS12
-sasl.jaas.config=io.strimzi.kafka.oauth.client.JaasClientOauthLoginCallbackHandler required \
+sasl.jaas.config=org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required \
   oauth.token.endpoint.uri="_<token_endpoint_url>_" \ # <4>
   oauth.client.id="_<client_id>_" \ # <5>
   oauth.client.secret="_<client_secret>_" \ # <6> 
@@ -96,7 +96,8 @@ sasl.jaas.config=io.strimzi.kafka.oauth.client.JaasClientOauthLoginCallbackHandl
   oauth.ssl.truststore.password="$STOREPASS" \ <8>
   oauth.ssl.truststore.type="PKCS12" \ <9>
   oauth.scope="_<scope>_" \ # <10> 
-  oauth.audience="_<audience>_" ; # <11> 
+  oauth.audience="_<audience>_" ; # <11>
+sasl.login.callback.handler.class=io.strimzi.kafka.oauth.client.JaasClientOauthLoginCallbackHandler  
 ----
 <1> `SASL_SSL` security protocol for TLS-encrypted connections. Use `SASL_PLAINTEXT` over unencrypted connections for local development only.
 <2> The SASL mechanism specified as `OAUTHBEARER` or `PLAIN`. 
@@ -122,7 +123,7 @@ sasl.mechanism=OAUTHBEARER
 ssl.truststore.location=/tmp/truststore.p12
 ssl.truststore.password=$STOREPASS
 ssl.truststore.type=PKCS12
-sasl.jaas.config=io.strimzi.kafka.oauth.client.JaasClientOauthLoginCallbackHandler required \
+sasl.jaas.config=org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required \
   oauth.token.endpoint.uri="_<token_endpoint_url>_" \
   oauth.client.id="_<client_id>_" \ # <1>
   oauth.client.secret="_<client_secret>_" \ # <2>
@@ -133,6 +134,7 @@ sasl.jaas.config=io.strimzi.kafka.oauth.client.JaasClientOauthLoginCallbackHandl
   oauth.ssl.truststore.type="PKCS12" \
   oauth.scope="_<scope>_" \
   oauth.audience="_<audience>_" ;
+sasl.login.callback.handler.class=io.strimzi.kafka.oauth.client.JaasClientOauthLoginCallbackHandler  
 ----
 <1> Client ID, which is the name used when creating the _client_ in the authorization server.
 <2> (Optional) Client secret created when creating the _client_ in the authorization server.
@@ -151,12 +153,13 @@ sasl.mechanism=OAUTHBEARER
 ssl.truststore.location=/tmp/truststore.p12
 ssl.truststore.password=$STOREPASS
 ssl.truststore.type=PKCS12
-sasl.jaas.config=io.strimzi.kafka.oauth.client.JaasClientOauthLoginCallbackHandler required \
+sasl.jaas.config=org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required \
   oauth.token.endpoint.uri="_<token_endpoint_url>_" \
   oauth.access.token="_<access_token>_" ; # <1>
   oauth.ssl.truststore.location="/tmp/oauth-truststore.p12" \
   oauth.ssl.truststore.password="$STOREPASS" \
   oauth.ssl.truststore.type="PKCS12" \
+sasl.login.callback.handler.class=io.strimzi.kafka.oauth.client.JaasClientOauthLoginCallbackHandler  
 ----
 <1> Long-lived access token for Kafka clients.
 --
@@ -170,7 +173,7 @@ sasl.mechanism=OAUTHBEARER
 ssl.truststore.location=/tmp/truststore.p12
 ssl.truststore.password=$STOREPASS
 ssl.truststore.type=PKCS12
-sasl.jaas.config=io.strimzi.kafka.oauth.client.JaasClientOauthLoginCallbackHandler required \
+sasl.jaas.config=org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required \
   oauth.token.endpoint.uri="_<token_endpoint_url>_" \
   oauth.client.id="_<client_id>_" \ # <1> 
   oauth.client.secret="_<client_secret>_" \ # <2> 
@@ -178,6 +181,7 @@ sasl.jaas.config=io.strimzi.kafka.oauth.client.JaasClientOauthLoginCallbackHandl
   oauth.ssl.truststore.location="/tmp/oauth-truststore.p12" \
   oauth.ssl.truststore.password="$STOREPASS" \
   oauth.ssl.truststore.type="PKCS12" \
+sasl.login.callback.handler.class=io.strimzi.kafka.oauth.client.JaasClientOauthLoginCallbackHandler
 ----
 <1> Client ID, which is the name used when creating the _client_ in the authorization server.
 <2> (Optional) Client secret created when creating the _client_ in the authorization server.
