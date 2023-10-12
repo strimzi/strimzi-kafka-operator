@@ -13,6 +13,7 @@
 * Allow running ZooKeeper and KRaft based Apache Kafka clusters in parallel when the `+UseKRaft` feature gate is enabled
 * Add support for metrics to the Unidirectional Topic Operator
 * Added the `includeAcceptHeader` option to OAuth client and listener authentication configuration and to `keycloak` authorization. If set to `false` it turns off sending of `Accept` header when communicating with OAuth / OIDC authorization server. This feature is enabled by the updated Strimzi Kafka OAuth library (0.14.0).
+* Update HTTP bridge to latest 0.27.0 release
 
 ### Changes, deprecations and removals
 
