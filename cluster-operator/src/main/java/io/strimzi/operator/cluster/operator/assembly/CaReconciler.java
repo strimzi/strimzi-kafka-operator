@@ -214,7 +214,7 @@ public class CaReconciler {
      * @param clock     The clock for supplying the reconciler with the time instant of each reconciliation cycle.
      *                  That time is used for checking maintenance windows
      */
-    @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:NPathComplexity"})
+    @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:NPathComplexity", "deprecation"}) // Uses a deprecated executeBlocking call that should be addressed later. This is tracked in https://github.com/strimzi/strimzi-kafka-operator/issues/9233
     Future<Void> reconcileCas(Clock clock) {
         Promise<Void> resultPromise = Promise.promise();
 

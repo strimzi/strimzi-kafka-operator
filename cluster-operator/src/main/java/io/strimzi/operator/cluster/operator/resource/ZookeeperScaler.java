@@ -208,6 +208,7 @@ public class ZookeeperScaler implements AutoCloseable {
      *
      * @return  Future containing Map with the current Zookeeper configuration
      */
+    @SuppressWarnings("deprecation") // Uses a deprecated executeBlocking call that should be addressed later. This is tracked in https://github.com/strimzi/strimzi-kafka-operator/issues/9233
     private Future<Map<String, String>> getCurrentConfig(ZooKeeperAdmin zkAdmin)    {
         Promise<Map<String, String>> configPromise = Promise.promise();
 
@@ -232,6 +233,7 @@ public class ZookeeperScaler implements AutoCloseable {
      * @param newServers    New configuration which will be used for the update
      * @return              Future with the updated configuration
      */
+    @SuppressWarnings("deprecation") // Uses a deprecated executeBlocking call that should be addressed later. This is tracked in https://github.com/strimzi/strimzi-kafka-operator/issues/9233
     private Future<Map<String, String>> updateConfig(ZooKeeperAdmin zkAdmin, Map<String, String> newServers)    {
         Promise<Map<String, String>> configPromise = Promise.promise();
 
@@ -255,6 +257,7 @@ public class ZookeeperScaler implements AutoCloseable {
     /**
      * Closes the Zookeeper connection
      */
+    @SuppressWarnings("deprecation") // Uses a deprecated executeBlocking call that should be addressed later. This is tracked in https://github.com/strimzi/strimzi-kafka-operator/issues/9233
     private Future<Void> closeConnection(ZooKeeperAdmin zkAdmin) {
         Promise<Void> closePromise = Promise.promise();
 
@@ -280,6 +283,7 @@ public class ZookeeperScaler implements AutoCloseable {
      *
      * @return
      */
+    @SuppressWarnings("deprecation") // Uses a deprecated executeBlocking call that should be addressed later. This is tracked in https://github.com/strimzi/strimzi-kafka-operator/issues/9233
     private Future<ZKClientConfig> getClientConfig()  {
         Promise<ZKClientConfig> configPromise = Promise.promise();
 

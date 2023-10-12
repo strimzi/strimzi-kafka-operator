@@ -132,18 +132,17 @@
         <fasterxml.jackson-databind.version>2.15.2</fasterxml.jackson-databind.version>
         <fasterxml.jackson-dataformat.version>2.15.2</fasterxml.jackson-dataformat.version>
         <fasterxml.jackson-annotations.version>2.15.2</fasterxml.jackson-annotations.version>
-        <vertx.version>4.4.4</vertx.version>
-        <vertx-junit5.version>4.4.4</vertx-junit5.version>
+        <vertx.version>4.4.6</vertx.version>
+        <vertx-junit5.version>4.4.6</vertx-junit5.version>
         <kafka.version>3.6.0</kafka.version>
         <yammer-metrics.version>2.2.0</yammer-metrics.version>
-        <scala-library.version>2.13.9</scala-library.version>
         <zookeeper.version>3.6.4</zookeeper.version>
         <zkclient.version>0.11</zkclient.version>
         <slf4j.version>1.7.36</slf4j.version>
         <log4j.version>2.17.2</log4j.version>
         <quartz.version>2.3.2</quartz.version>
         <opentelemetry.alpha-version>1.19.0-alpha</opentelemetry.alpha-version>
-        <jetty.version>9.4.51.v20230217</jetty.version>
+        <jetty.version>9.4.53.v20231009</jetty.version>
         <javax-servlet.version>3.1.0</javax-servlet.version>
         <strimzi-oauth.version>0.14.0</strimzi-oauth.version>
         <netty.version>4.1.100.Final</netty.version>
@@ -493,11 +492,6 @@
                 <groupId>org.slf4j</groupId>
                 <artifactId>slf4j-api</artifactId>
                 <version>${slf4j.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.scala-lang</groupId>
-                <artifactId>scala-library</artifactId>
-                <version>${scala-library.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>
@@ -1127,7 +1121,6 @@
                                 <ignoredUnusedDeclaredDependency>org.apache.kafka:kafka-streams</ignoredUnusedDeclaredDependency>
                                 <!-- Used in Kafka Agent through reflection -->
                                 <ignoredUnusedDeclaredDependency>org.apache.kafka:kafka-server-common</ignoredUnusedDeclaredDependency>
-                                <ignoredUnusedDeclaredDependency>org.scala-lang:scala-library</ignoredUnusedDeclaredDependency>
                                 <ignoredUnusedDeclaredDependency>org.apache.logging.log4j:log4j-core</ignoredUnusedDeclaredDependency>
                                 <ignoredUnusedDeclaredDependency>org.apache.logging.log4j:log4j-slf4j-impl</ignoredUnusedDeclaredDependency>
                                 <ignoredUnusedDeclaredDependency>io.sundr:builder-annotations</ignoredUnusedDeclaredDependency>

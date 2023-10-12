@@ -30,6 +30,7 @@ public interface Zk {
      * @param connectionTimeout Timeout for connection
      * @return  Future completes if the Zookeeper instance is created successfully.
      */
+    @SuppressWarnings("deprecation") // Uses a deprecated executeBlocking call that should be addressed later. This is tracked in https://github.com/strimzi/strimzi-kafka-operator/issues/9233
     static Future<Zk> create(Vertx vertx, String zkConnectionString, int sessionTimeout, int connectionTimeout) {
         return vertx.executeBlocking(f -> {
             try {

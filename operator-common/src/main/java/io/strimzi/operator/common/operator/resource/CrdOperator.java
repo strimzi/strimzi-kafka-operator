@@ -90,6 +90,7 @@ public class CrdOperator<C extends KubernetesClient,
      *
      * @return  Future which completes when the resource is patched
      */
+    @SuppressWarnings("deprecation") // Uses a deprecated executeBlocking call that should be addressed later. This is tracked in https://github.com/strimzi/strimzi-kafka-operator/issues/9233
     public Future<T> patchAsync(Reconciliation reconciliation, T resource) {
         Promise<T> blockingPromise = Promise.promise();
 
@@ -117,6 +118,7 @@ public class CrdOperator<C extends KubernetesClient,
      *
      * @return  Future which completes when the status is patched
      */
+    @SuppressWarnings("deprecation") // Uses a deprecated executeBlocking call that should be addressed later. This is tracked in https://github.com/strimzi/strimzi-kafka-operator/issues/9233
     public Future<T> updateStatusAsync(Reconciliation reconciliation, T resource) {
         Promise<T> blockingPromise = Promise.promise();
 
