@@ -10,6 +10,7 @@ import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.AclOperation;
 import io.strimzi.api.kafka.model.AclResourcePatternType;
+import io.strimzi.api.kafka.model.KafkaUserAuthorizationSimpleBuilder;
 import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationTls;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaUser;
@@ -55,7 +56,6 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 import static io.strimzi.systemtest.Constants.ACCEPTANCE;
 import static io.strimzi.systemtest.Constants.REGRESSION;
 import static io.strimzi.systemtest.enums.CustomResourceStatus.NotReady;
-import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
@@ -450,6 +450,23 @@ class UserST extends AbstractST {
 
         resourceManager.createResourceWithWait(extensionContext, kafkaClients.producerTlsStrimzi(testStorage.getClusterName()), kafkaClients.consumerTlsStrimzi(testStorage.getClusterName()));
         ClientUtils.waitForClientsSuccess(testStorage);
+
+
+        KafkaUserResource.replaceUserResourceInSpecificNamespace(testStorage.getKafkaUsername(),
+            user -> {
+                user.getSpec().setAuthorization(new KafkaUserAuthorizationSimpleBuilder()
+                        .addNewAcl()
+                            .withNewAclRuleTopicResource()
+                                .withPatternType(AclResourcePatternType.LITERAL)
+                                .withName(testStorage.getTopicName())
+                            .endAclRuleTopicResource()
+                            .withOperations(AclOperation.READ, AclOperation.DESCRIBE)
+                        .endAcl()
+                        .build());
+            }, testStorage.getNamespaceName());
+
+        resourceManager.createResourceWithWait(extensionContext, kafkaClients.producerTlsStrimzi(testStorage.getClusterName()));
+        ClientUtils.waitForProducerClientTimeout(testStorage);
     }
 
     @BeforeAll
