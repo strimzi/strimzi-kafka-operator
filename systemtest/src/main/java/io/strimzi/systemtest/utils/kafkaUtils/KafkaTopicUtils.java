@@ -269,4 +269,13 @@ public class KafkaTopicUtils {
             KafkaTopicResource.replaceTopicResourceInSpecificNamespace(kafkaTopic.getMetadata().getName(), kt -> kt.getMetadata().setFinalizers(null), namespaceName)
         );
     }
+
+    public static void waitForTopicStatusMessage(String namespaceName, String topicName, String message) {
+        LOGGER.info("Waiting for KafkaTopic: {}/{} to contain message: {} in its status", namespaceName, topicName, message);
+
+        TestUtils.waitFor(String.join("KafkaTopic: %s/%s status to contain message: %s", namespaceName, topicName, message), Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
+            () -> KafkaTopicResource.kafkaTopicClient().inNamespace(namespaceName).withName(topicName).get()
+                .getStatus().getConditions().stream().anyMatch(condition -> condition.getMessage().contains(message))
+        );
+    }
 }
