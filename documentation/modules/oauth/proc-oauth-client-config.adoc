@@ -89,14 +89,14 @@ ssl.truststore.location=/tmp/truststore.p12 <3>
 ssl.truststore.password=$STOREPASS
 ssl.truststore.type=PKCS12
 sasl.jaas.config=org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required \
-  oauth.token.endpoint.uri="_<token_endpoint_url>_" \ # <4>
-  oauth.client.id="_<client_id>_" \ # <5>
-  oauth.client.secret="_<client_secret>_" \ # <6> 
+  oauth.token.endpoint.uri="<token_endpoint_url>" \ # <4>
+  oauth.client.id="<client_id>" \ # <5>
+  oauth.client.secret="<client_secret>" \ # <6> 
   oauth.ssl.truststore.location="/tmp/oauth-truststore.p12" \ <7>
   oauth.ssl.truststore.password="$STOREPASS" \ <8>
   oauth.ssl.truststore.type="PKCS12" \ <9>
-  oauth.scope="_<scope>_" \ # <10> 
-  oauth.audience="_<audience>_" ; # <11>
+  oauth.scope="<scope>" \ # <10> 
+  oauth.audience="<audience>" ; # <11>
 sasl.login.callback.handler.class=io.strimzi.kafka.oauth.client.JaasClientOauthLoginCallbackHandler  
 ----
 <1> `SASL_SSL` security protocol for TLS-encrypted connections. Use `SASL_PLAINTEXT` over unencrypted connections for local development only.
@@ -124,16 +124,16 @@ ssl.truststore.location=/tmp/truststore.p12
 ssl.truststore.password=$STOREPASS
 ssl.truststore.type=PKCS12
 sasl.jaas.config=org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required \
-  oauth.token.endpoint.uri="_<token_endpoint_url>_" \
-  oauth.client.id="_<client_id>_" \ # <1>
-  oauth.client.secret="_<client_secret>_" \ # <2>
-  oauth.password.grant.username="_<username>_" \ # <3> 
-  oauth.password.grant.password="_<password>_" \ # <4> 
+  oauth.token.endpoint.uri="<token_endpoint_url>" \
+  oauth.client.id="<client_id>" \ # <1>
+  oauth.client.secret="<client_secret>" \ # <2>
+  oauth.password.grant.username="<username>" \ # <3> 
+  oauth.password.grant.password="<password>" \ # <4> 
   oauth.ssl.truststore.location="/tmp/oauth-truststore.p12" \
   oauth.ssl.truststore.password="$STOREPASS" \
   oauth.ssl.truststore.type="PKCS12" \
-  oauth.scope="_<scope>_" \
-  oauth.audience="_<audience>_" ;
+  oauth.scope="<scope>" \
+  oauth.audience="<audience>" ;
 sasl.login.callback.handler.class=io.strimzi.kafka.oauth.client.JaasClientOauthLoginCallbackHandler  
 ----
 <1> Client ID, which is the name used when creating the _client_ in the authorization server.
@@ -154,11 +154,11 @@ ssl.truststore.location=/tmp/truststore.p12
 ssl.truststore.password=$STOREPASS
 ssl.truststore.type=PKCS12
 sasl.jaas.config=org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required \
-  oauth.token.endpoint.uri="_<token_endpoint_url>_" \
-  oauth.access.token="_<access_token>_" ; # <1>
+  oauth.token.endpoint.uri="<token_endpoint_url>" \
+  oauth.access.token="<access_token>" \ # <1>
   oauth.ssl.truststore.location="/tmp/oauth-truststore.p12" \
   oauth.ssl.truststore.password="$STOREPASS" \
-  oauth.ssl.truststore.type="PKCS12" \
+  oauth.ssl.truststore.type="PKCS12" ;
 sasl.login.callback.handler.class=io.strimzi.kafka.oauth.client.JaasClientOauthLoginCallbackHandler  
 ----
 <1> Long-lived access token for Kafka clients.
@@ -174,13 +174,13 @@ ssl.truststore.location=/tmp/truststore.p12
 ssl.truststore.password=$STOREPASS
 ssl.truststore.type=PKCS12
 sasl.jaas.config=org.apache.kafka.common.security.oauthbearer.OAuthBearerLoginModule required \
-  oauth.token.endpoint.uri="_<token_endpoint_url>_" \
-  oauth.client.id="_<client_id>_" \ # <1> 
-  oauth.client.secret="_<client_secret>_" \ # <2> 
-  oauth.refresh.token="_<refresh_token>_" ; # <3>
+  oauth.token.endpoint.uri="<token_endpoint_url>" \
+  oauth.client.id="<client_id>" \ # <1> 
+  oauth.client.secret="<client_secret>" \ # <2> 
+  oauth.refresh.token="<refresh_token>" \ # <3>
   oauth.ssl.truststore.location="/tmp/oauth-truststore.p12" \
   oauth.ssl.truststore.password="$STOREPASS" \
-  oauth.ssl.truststore.type="PKCS12" \
+  oauth.ssl.truststore.type="PKCS12" ;
 sasl.login.callback.handler.class=io.strimzi.kafka.oauth.client.JaasClientOauthLoginCallbackHandler
 ----
 <1> Client ID, which is the name used when creating the _client_ in the authorization server.

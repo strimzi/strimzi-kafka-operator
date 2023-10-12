@@ -10,7 +10,7 @@ Collecting metrics is critical for understanding the health and performance of y
 By monitoring metrics, you can actively identify issues before they become critical and make informed decisions about resource allocation and capacity planning. Without metrics, you may be left with limited visibility into the behavior of your Kafka deployment, which can make troubleshooting more difficult and time-consuming. Setting up metrics can save you time and resources in the long run, and help ensure the reliability of your Kafka deployment.
 
 Metrics are available for each component in Strimzi, providing valuable insights into their individual performance. 
-While other components require configuration to expose metrics metric exposure, Strimzi operators automatically expose Prometheus metrics by default. 
+While other components require configuration to expose metrics, Strimzi operators automatically expose Prometheus metrics by default. 
 These metrics include:
 
 * Reconciliation count
