@@ -29,5 +29,5 @@ kubectl get kt <topic_name> -o=json | jq '.metadata.finalizers = null' | kubectl
 After running the command, you can go ahead and delete the topics.
 Alternatively, if the topics were already being deleted but were blocked due to outstanding finalizers then their deletion should complete.
 
-WARNING: Be careful when removing finalizers, as any cleanup operations associated with the finalization process are not performed. 
+WARNING: Be careful when removing finalizers, as any cleanup operations associated with the finalization process are not performed if the Topic Operator is not running. 
 For example, if you remove the finalizer from a `KafkaTopic` resource and subsequently delete the resource, the related Kafka topic won't be deleted.  
