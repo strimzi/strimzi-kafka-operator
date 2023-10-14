@@ -26,10 +26,15 @@ spec:
         replication.factor: -1
         offset-syncs.topic.replication.factor: -1
         sync.topic.acls.enabled: "false"
+        refresh.topics.interval.seconds: 600
     checkpointConnector:
       tasksMax: 1
       config:
         checkpoints.topic.replication.factor: -1
         sync.group.offsets.enabled: "true"
+        offset.lag.max: 100
+        emit.checkpoints.interval.seconds: 60
+        sync.group.offsets.interval.seconds: 60
+        refresh.groups.interval.seconds: 600
     topicsPattern: ".*"
     groupsPattern: ".*"
