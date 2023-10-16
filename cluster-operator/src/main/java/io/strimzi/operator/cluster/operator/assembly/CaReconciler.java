@@ -214,24 +214,20 @@ public class CaReconciler {
      * @param clock     The clock for supplying the reconciler with the time instant of each reconciliation cycle.
      *                  That time is used for checking maintenance windows
      */
-    @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:NPathComplexity", "deprecation"}) // Uses a deprecated executeBlocking call that should be addressed later. This is tracked in https://github.com/strimzi/strimzi-kafka-operator/issues/9233
+    @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:NPathComplexity"})
     Future<Void> reconcileCas(Clock clock) {
-        Promise<Void> resultPromise = Promise.promise();
+        String clusterCaCertName = AbstractModel.clusterCaCertSecretName(reconciliation.name());
+        String clusterCaKeyName = AbstractModel.clusterCaKeySecretName(reconciliation.name());
+        String clientsCaCertName = KafkaResources.clientsCaCertificateSecretName(reconciliation.name());
+        String clientsCaKeyName = KafkaResources.clientsCaKeySecretName(reconciliation.name());
 
-        vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
-            future -> {
-                try {
-                    String clusterCaCertName = AbstractModel.clusterCaCertSecretName(reconciliation.name());
-                    String clusterCaKeyName = AbstractModel.clusterCaKeySecretName(reconciliation.name());
-                    String clientsCaCertName = KafkaResources.clientsCaCertificateSecretName(reconciliation.name());
-                    String clientsCaKeyName = KafkaResources.clientsCaKeySecretName(reconciliation.name());
+        return secretOperator.listAsync(reconciliation.namespace(), Labels.EMPTY.withStrimziKind(reconciliation.kind()).withStrimziCluster(reconciliation.name()))
+                .compose(clusterSecrets -> vertx.executeBlocking(() -> {
                     Secret clusterCaCertSecret = null;
                     Secret clusterCaKeySecret = null;
                     Secret clientsCaCertSecret = null;
                     Secret clientsCaKeySecret = null;
                     Secret brokersSecret = null;
-
-                    List<Secret> clusterSecrets = secretOperator.list(reconciliation.namespace(), Labels.EMPTY.withStrimziKind(reconciliation.kind()).withStrimziCluster(reconciliation.name()));
 
                     for (Secret secret : clusterSecrets) {
                         String secretName = secret.getMetadata().getName();
@@ -280,6 +276,11 @@ public class CaReconciler {
                             clientsCaConfig != null && !clientsCaConfig.isGenerateSecretOwnerReference() ? null : ownerRef,
                             Util.isMaintenanceTimeWindowsSatisfied(reconciliation, maintenanceWindows, clock.instant()));
 
+                    return null;
+                }))
+                .compose(i -> {
+                    Promise<Void> caUpdatePromise = Promise.promise();
+
                     List<Future<ReconcileResult<Secret>>> secretReconciliations = new ArrayList<>(2);
 
                     if (clusterCaConfig == null || clusterCaConfig.isGenerateCertificateAuthority())   {
@@ -290,25 +291,20 @@ public class CaReconciler {
 
                     if (clientsCaConfig == null || clientsCaConfig.isGenerateCertificateAuthority())   {
                         Future<ReconcileResult<Secret>> clientsSecretReconciliation = secretOperator.reconcile(reconciliation, reconciliation.namespace(), clientsCaCertName, clientsCa.caCertSecret())
-                            .compose(ignored -> secretOperator.reconcile(reconciliation, reconciliation.namespace(), clientsCaKeyName, clientsCa.caKeySecret()));
+                                .compose(ignored -> secretOperator.reconcile(reconciliation, reconciliation.namespace(), clientsCaKeyName, clientsCa.caKeySecret()));
                         secretReconciliations.add(clientsSecretReconciliation);
                     }
 
                     Future.join(secretReconciliations).onComplete(res -> {
                         if (res.succeeded())    {
-                            future.complete();
+                            caUpdatePromise.complete();
                         } else {
-                            future.fail(res.cause());
+                            caUpdatePromise.fail(res.cause());
                         }
                     });
-                } catch (Throwable e) {
-                    future.fail(e);
-                }
-            }, true,
-            resultPromise
-        );
 
-        return resultPromise.future();
+                    return caUpdatePromise.future();
+                });
     }
 
     /**

@@ -16,7 +16,6 @@ import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.VertxUtil;
 import io.vertx.core.Future;
-import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 
 /**
@@ -90,24 +89,19 @@ public class CrdOperator<C extends KubernetesClient,
      *
      * @return  Future which completes when the resource is patched
      */
-    @SuppressWarnings("deprecation") // Uses a deprecated executeBlocking call that should be addressed later. This is tracked in https://github.com/strimzi/strimzi-kafka-operator/issues/9233
     public Future<T> patchAsync(Reconciliation reconciliation, T resource) {
-        Promise<T> blockingPromise = Promise.promise();
-
-        vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(future -> {
+        return vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(() -> {
             String namespace = resource.getMetadata().getNamespace();
             String name = resource.getMetadata().getName();
             try {
                 T result = operation().inNamespace(namespace).withName(name).patch(PatchContext.of(PatchType.JSON), resource);
                 LOGGER.debugCr(reconciliation, "{} {} in namespace {} has been patched", resourceKind, name, namespace);
-                future.complete(result);
+                return result;
             } catch (Throwable e) {
                 LOGGER.debugCr(reconciliation, "Caught exception while patching {} {} in namespace {}", resourceKind, name, namespace, e);
-                future.fail(e);
+                throw e;
             }
-        }, true, blockingPromise);
-
-        return blockingPromise.future();
+        });
     }
 
     /**
@@ -118,24 +112,19 @@ public class CrdOperator<C extends KubernetesClient,
      *
      * @return  Future which completes when the status is patched
      */
-    @SuppressWarnings("deprecation") // Uses a deprecated executeBlocking call that should be addressed later. This is tracked in https://github.com/strimzi/strimzi-kafka-operator/issues/9233
     public Future<T> updateStatusAsync(Reconciliation reconciliation, T resource) {
-        Promise<T> blockingPromise = Promise.promise();
-
-        vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(future -> {
+        return vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(() -> {
             String namespace = resource.getMetadata().getNamespace();
             String name = resource.getMetadata().getName();
 
             try {
                 T result = operation().inNamespace(namespace).resource(resource).updateStatus();
                 LOGGER.infoCr(reconciliation, "Status of {} {} in namespace {} has been updated", resourceKind, name, namespace);
-                future.complete(result);
+                return result;
             } catch (Throwable e) {
                 LOGGER.debugCr(reconciliation, "Caught exception while updating status of {} {} in namespace {}", resourceKind, name, namespace, e);
-                future.fail(e);
+                throw e;
             }
-        }, true, blockingPromise);
-
-        return blockingPromise.future();
+        });
     }
 }

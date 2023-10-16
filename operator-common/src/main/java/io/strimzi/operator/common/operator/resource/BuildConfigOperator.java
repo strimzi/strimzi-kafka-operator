@@ -71,13 +71,6 @@ public class BuildConfigOperator extends AbstractNamespacedResourceOperator<Open
      * @return              The Build which was created
      */
     public Future<Build> startBuild(String namespace, String name, BuildRequest buildRequest)   {
-        return resourceSupport.executeBlocking(
-            blockingFuture -> {
-                try {
-                    blockingFuture.complete(operation().inNamespace(namespace).withName(name).instantiate(buildRequest));
-                } catch (Throwable t) {
-                    blockingFuture.fail(t);
-                }
-            });
+        return resourceSupport.executeBlocking(() -> operation().inNamespace(namespace).withName(name).instantiate(buildRequest));
     }
 }

@@ -130,27 +130,19 @@ public class PlatformFeaturesAvailability implements PlatformFeatures {
         return vib.build();
     }
 
-    @SuppressWarnings("deprecation") // Uses a deprecated executeBlocking call that should be addressed later. This is tracked in https://github.com/strimzi/strimzi-kafka-operator/issues/9233
     private static Future<VersionInfo> getVersionInfoFromKubernetes(Vertx vertx, KubernetesClient client)   {
-        Promise<VersionInfo> promise = Promise.promise();
-
-        vertx.executeBlocking(request -> {
+        return vertx.executeBlocking(() -> {
             try {
-                request.complete(client.getKubernetesVersion());
+                return client.getKubernetesVersion();
             } catch (Exception e) {
                 LOGGER.error("Detection of Kubernetes version failed.", e);
-                request.fail(e);
+                throw e;
             }
-        }, promise);
-
-        return promise.future();
+        });
     }
 
-    @SuppressWarnings("deprecation") // Uses a deprecated executeBlocking call that should be addressed later. This is tracked in https://github.com/strimzi/strimzi-kafka-operator/issues/9233
     private static Future<Boolean> checkApiAvailability(Vertx vertx, KubernetesClient client, String group, String version)   {
-        Promise<Boolean> promise = Promise.promise();
-
-        vertx.executeBlocking(request -> {
+        return vertx.executeBlocking(() -> {
             try {
                 APIGroup apiGroup = client.getApiGroup(group);
                 boolean supported;
@@ -162,14 +154,12 @@ public class PlatformFeaturesAvailability implements PlatformFeatures {
                 }
 
                 LOGGER.warn("API Group {} is {}supported", group, supported ? "" : "not ");
-                request.complete(supported);
+                return supported;
             } catch (Exception e) {
                 LOGGER.error("Detection of API availability failed.", e);
-                request.fail(e);
+                throw e;
             }
-        }, promise);
-
-        return promise.future();
+        });
     }
 
     private PlatformFeaturesAvailability() {}

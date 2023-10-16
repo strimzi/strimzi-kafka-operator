@@ -12,7 +12,6 @@ import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.vertx.core.Future;
-import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 
 /**
@@ -64,11 +63,9 @@ public abstract class AbstractScalableNamespacedResourceOperator<C extends Kuber
      *         {@code scaleTo} then this value will be the original scale. The value will be null if the resource didn't
      *         exist (hence no scaling occurred).
      */
-    @SuppressWarnings("deprecation") // Uses a deprecated executeBlocking call that should be addressed later. This is tracked in https://github.com/strimzi/strimzi-kafka-operator/issues/9233
     public Future<Integer> scaleUp(Reconciliation reconciliation, String namespace, String name, int scaleTo, long timeoutMs) {
-        Promise<Integer> promise = Promise.promise();
-        vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
-            future -> {
+        return vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
+            () -> {
                 try {
                     Integer currentScale = currentScale(namespace, name);
                     if (currentScale != null && currentScale < scaleTo) {
@@ -76,16 +73,13 @@ public abstract class AbstractScalableNamespacedResourceOperator<C extends Kuber
                         resource(namespace, name).withTimeoutInMillis(timeoutMs).scale(scaleTo);
                         currentScale = scaleTo;
                     }
-                    future.complete(currentScale);
+
+                    return currentScale;
                 } catch (Exception e) {
                     LOGGER.errorCr(reconciliation, "Caught exception while scaling up", e);
-                    future.fail(e);
+                    throw e;
                 }
-            },
-            false,
-            promise
-        );
-        return promise.future();
+            }, false);
     }
 
     protected abstract Integer currentScale(String namespace, String name);
@@ -105,11 +99,9 @@ public abstract class AbstractScalableNamespacedResourceOperator<C extends Kuber
      *         {@code scaleTo} then this value will be the original scale. The value will be null if the resource
      *         didn't exist (hence no scaling occurred).
      */
-    @SuppressWarnings("deprecation") // Uses a deprecated executeBlocking call that should be addressed later. This is tracked in https://github.com/strimzi/strimzi-kafka-operator/issues/9233
     public Future<Integer> scaleDown(Reconciliation reconciliation, String namespace, String name, int scaleTo, long timeoutMs) {
-        Promise<Integer> promise = Promise.promise();
-        vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
-            future -> {
+        return vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
+            () -> {
                 try {
                     Integer nextReplicas = currentScale(namespace, name);
                     if (nextReplicas != null) {
@@ -119,15 +111,12 @@ public abstract class AbstractScalableNamespacedResourceOperator<C extends Kuber
                             resource(namespace, name).withTimeoutInMillis(timeoutMs).scale(nextReplicas);
                         }
                     }
-                    future.complete(nextReplicas);
+
+                    return nextReplicas;
                 } catch (Exception e) {
                     LOGGER.errorCr(reconciliation, "Caught exception while scaling down", e);
-                    future.fail(e);
+                    throw e;
                 }
-            },
-            false,
-            promise
-        );
-        return promise.future();
+            }, false);
     }
 }
