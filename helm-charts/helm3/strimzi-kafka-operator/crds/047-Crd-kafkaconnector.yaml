@@ -77,6 +77,13 @@ spec:
                 pause:
                   type: boolean
                   description: Whether the connector should be paused. Defaults to false.
+                state:
+                  type: string
+                  enum:
+                    - paused
+                    - stopped
+                    - running
+                  description: The state the connector should be in. Defaults to running.
               description: The specification of the Kafka Connector.
             status:
               type: object
