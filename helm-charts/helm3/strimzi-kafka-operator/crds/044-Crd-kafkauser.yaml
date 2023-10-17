@@ -162,7 +162,7 @@ spec:
                       type: string
                       enum:
                         - simple
-                      description: Authorization type. Currently the only supported type is `simple`. `simple` authorization type uses Kafka's `kafka.security.authorizer.AclAuthorizer` class for authorization.
+                      description: Authorization type. Currently the only supported type is `simple`. `simple` authorization type uses the Kafka Admin API for managing the ACL rules.
                   required:
                     - acls
                     - type
@@ -383,7 +383,7 @@ spec:
                       type: string
                       enum:
                         - simple
-                      description: Authorization type. Currently the only supported type is `simple`. `simple` authorization type uses Kafka's `kafka.security.authorizer.AclAuthorizer` class for authorization.
+                      description: Authorization type. Currently the only supported type is `simple`. `simple` authorization type uses the Kafka Admin API for managing the ACL rules.
                   required:
                     - acls
                     - type
@@ -604,7 +604,7 @@ spec:
                       type: string
                       enum:
                         - simple
-                      description: Authorization type. Currently the only supported type is `simple`. `simple` authorization type uses Kafka's `kafka.security.authorizer.AclAuthorizer` class for authorization.
+                      description: Authorization type. Currently the only supported type is `simple`. `simple` authorization type uses the Kafka Admin API for managing the ACL rules.
                   required:
                     - acls
                     - type

@@ -4,7 +4,7 @@ metadata:
   name: my-cluster
 spec:
   kafka:
-    version: 3.5.1
+    version: 3.6.0
     replicas: 3
     listeners:
       - name: plain
@@ -27,7 +27,7 @@ spec:
       transaction.state.log.min.isr: 2
       default.replication.factor: 3
       min.insync.replicas: 2
-      inter.broker.protocol.version: "3.5"
+      inter.broker.protocol.version: "3.6"
     storage:
       type: jbod
       volumes:
@@ -82,15 +82,15 @@ data:
       name: kafka_server_$1_$2
       type: GAUGE
       labels:
-       clientId: "$3"
-       topic: "$4"
-       partition: "$5"
+        clientId: "$3"
+        topic: "$4"
+        partition: "$5"
     - pattern: kafka.server<type=(.+), name=(.+), clientId=(.+), brokerHost=(.+), brokerPort=(.+)><>Value
       name: kafka_server_$1_$2
       type: GAUGE
       labels:
-       clientId: "$3"
-       broker: "$4:$5"
+        clientId: "$3"
+        broker: "$4:$5"
     - pattern: kafka.server<type=(.+), cipher=(.+), protocol=(.+), listener=(.+), networkProcessor=(.+)><>connections
       name: kafka_server_$1_connections_tls_info
       type: GAUGE
@@ -111,14 +111,14 @@ data:
       name: kafka_server_$1_$4
       type: GAUGE
       labels:
-       listener: "$2"
-       networkProcessor: "$3"
+        listener: "$2"
+        networkProcessor: "$3"
     - pattern: kafka.server<type=(.+), listener=(.+), networkProcessor=(.+)><>(.+)
       name: kafka_server_$1_$4
       type: GAUGE
       labels:
-       listener: "$2"
-       networkProcessor: "$3"
+        listener: "$2"
+        networkProcessor: "$3"
     # Some percent metrics use MeanRate attribute
     # Ex) kafka.server<type=(KafkaRequestHandlerPool), name=(RequestHandlerAvgIdlePercent)><>MeanRate
     - pattern: kafka.(\w+)<type=(.+), name=(.+)Percent\w*><>MeanRate

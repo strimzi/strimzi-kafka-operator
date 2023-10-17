@@ -32,9 +32,10 @@ metadata:
   name: my-cluster
   annotations:
     strimzi.io/node-pools: enabled
+    strimzi.io/kraft: enabled
 spec:
   kafka:
-    version: 3.5.1
+    version: 3.6.0
     # The replicas field is required by the Kafka CRD schema while the KafkaNodePools feature gate is in alpha phase.
     # But it will be ignored when Kafka Node Pools are used
     replicas: 3
@@ -53,7 +54,6 @@ spec:
       transaction.state.log.min.isr: 2
       default.replication.factor: 3
       min.insync.replicas: 2
-      inter.broker.protocol.version: "3.5"
     # The storage field is required by the Kafka CRD schema while the KafkaNodePools feature gate is in alpha phase.
     # But it will be ignored when Kafka Node Pools are used
     storage:
