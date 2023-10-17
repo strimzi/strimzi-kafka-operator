@@ -14,7 +14,6 @@ import io.strimzi.systemtest.resources.ResourceOperation;
 import io.strimzi.systemtest.security.CertAndKeyFiles;
 import io.strimzi.systemtest.security.OpenSsl;
 import io.strimzi.systemtest.security.SystemTestCertManager;
-import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.KubeClusterResource;
 import java.io.File;
