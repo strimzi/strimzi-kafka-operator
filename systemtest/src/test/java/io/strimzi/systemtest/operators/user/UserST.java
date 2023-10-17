@@ -210,11 +210,12 @@ class UserST extends AbstractST {
             .build());
 
         final String userName = user.getMetadata().getName();
+        final String statusUserName = KafkaUserResource.kafkaUserClient().inNamespace(Environment.TEST_SUITE_NAMESPACE).withName(userName).get().getStatus().getUsername();
 
         TestUtils.waitFor("all KafkaUser " + userName + " attributes are present", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
             () -> {
-                String result = KafkaCmdClient.describeUserUsingPodCli(Environment.TEST_SUITE_NAMESPACE, scraperPodName, KafkaResources.plainBootstrapAddress(userClusterName), userName);
-                return result.contains("Quota configs for user-principal '" + userName + "' are") &&
+                String result = KafkaCmdClient.describeUserUsingPodCli(Environment.TEST_SUITE_NAMESPACE, scraperPodName, KafkaResources.plainBootstrapAddress(userClusterName), statusUserName);
+                return result.contains("Quota configs for user-principal '" + statusUserName + "' are") &&
                     result.contains("request_percentage=" + reqPerc) &&
                     result.contains("producer_byte_rate=" + prodRate) &&
                     result.contains("consumer_byte_rate=" + consRate) &&
@@ -242,7 +243,7 @@ class UserST extends AbstractST {
                                                                      kafkaClients.consumerTlsStrimzi(userClusterName));
 
         } else if (user.getSpec().getAuthentication() instanceof KafkaUserTlsExternalClientAuthentication) {
-            //TODO - after merge add certificate before sending messages
+            SecretUtils.createExternalTlsUserSecret(testStorage.getNamespaceName(), userName, userClusterName);
 
             resourceManager.createResourceWithWait(extensionContext, kafkaClients.producerTlsStrimzi(userClusterName),
                                                                      kafkaClients.consumerTlsStrimzi(userClusterName));
@@ -251,15 +252,15 @@ class UserST extends AbstractST {
         ClientUtils.waitForClientsSuccess(testStorage);
 
         // delete user
-        KafkaUserResource.kafkaUserClient().inNamespace(Environment.TEST_SUITE_NAMESPACE).withName(user.getMetadata().getName()).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
-        KafkaUserUtils.waitForKafkaUserDeletion(Environment.TEST_SUITE_NAMESPACE, user.getMetadata().getName());
+        KafkaUserResource.kafkaUserClient().inNamespace(Environment.TEST_SUITE_NAMESPACE).withName(userName).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
+        KafkaUserUtils.waitForKafkaUserDeletion(Environment.TEST_SUITE_NAMESPACE, userName);
 
-        TestUtils.waitFor("all attributes of KafkaUser: " + userName + " to be cleaned", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
+        TestUtils.waitFor("all attributes of KafkaUser: " + statusUserName + " to be cleaned", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
             () -> {
-                String resultAfterDelete = KafkaCmdClient.describeUserUsingPodCli(Environment.TEST_SUITE_NAMESPACE, scraperPodName, KafkaResources.plainBootstrapAddress(userClusterName), userName);
+                String resultAfterDelete = KafkaCmdClient.describeUserUsingPodCli(Environment.TEST_SUITE_NAMESPACE, scraperPodName, KafkaResources.plainBootstrapAddress(userClusterName), statusUserName);
 
                 return
-                    !resultAfterDelete.contains(userName) &&
+                    !resultAfterDelete.contains(statusUserName) &&
                     !resultAfterDelete.contains("request_percentage") &&
                     !resultAfterDelete.contains("producer_byte_rate") &&
                     !resultAfterDelete.contains("consumer_byte_rate") &&
@@ -406,37 +407,7 @@ class UserST extends AbstractST {
         assertThat(kubeClient().getSecret(testStorage.getNamespaceName(), testStorage.getKafkaUsername()), nullValue());
         assertThat(KafkaUserResource.kafkaUserClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getKafkaUsername()).get().getStatus().getUsername(), is("CN=" + testStorage.getKafkaUsername()));
 
-        // To test tls-external authentication, client needs to have an external certificates provided
-        // To simulate externally provided certs, these steps are done:
-        // 1. Generate private key and csr (containing at least common name CN) for user
-        // 2. Generate a certificate by signing CSR using private key from secret generated for clients by operator
-        // 3. Create user secret from private key, generated certificate and certificate from secret created for clients by operator
-
-        File clientPrivateKey = OpenSsl.generatePrivateKey();
-
-        File csr = OpenSsl.generateCertSigningRequest(clientPrivateKey, "/CN=" + testStorage.getKafkaUsername());
-        String caCrt = KubeClusterResource.kubeClient(testStorage.getNamespaceName()).getSecret(KafkaResources.clientsCaCertificateSecretName(testStorage.getClusterName())).getData().get("ca.crt");
-        String caKey = KubeClusterResource.kubeClient(testStorage.getNamespaceName()).getSecret(KafkaResources.clientsCaKeySecretName(testStorage.getClusterName())).getData().get("ca.key");
-
-        File clientCert = OpenSsl.generateSignedCert(csr,
-            SystemTestCertManager.exportCaDataToFile(new String(Base64.getDecoder().decode(caCrt), StandardCharsets.UTF_8), "ca", ".crt"),
-            SystemTestCertManager.exportCaDataToFile(new String(Base64.getDecoder().decode(caKey), StandardCharsets.UTF_8), "ca", ".key"));
-
-        Secret secretBuilder = new SecretBuilder()
-            .withApiVersion("v1")
-            .withKind("Secret")
-            .withNewMetadata()
-                .withName(testStorage.getKafkaUsername())
-                .withNamespace(testStorage.getNamespaceName())
-            .endMetadata()
-            .addToData("ca.crt", caCrt)
-            .addToData("user.crt", Base64.getEncoder().encodeToString(Files.readAllBytes(clientCert.toPath())))
-            .addToData("user.key", Base64.getEncoder().encodeToString(Files.readAllBytes(clientPrivateKey.toPath())))
-            .withType("Opaque")
-            .build();
-
-        kubeClient().namespace(testStorage.getNamespaceName()).createSecret(secretBuilder);
-        SecretUtils.waitForSecretReady(testStorage.getNamespaceName(), testStorage.getKafkaUsername(), () -> { });
+        SecretUtils.createExternalTlsUserSecret(testStorage.getNamespaceName(), testStorage.getKafkaUsername(), testStorage.getClusterName());
 
         KafkaClients kafkaClients = new KafkaClientsBuilder()
             .withProducerName(testStorage.getProducerName())
