@@ -66,122 +66,122 @@ public class TopicOperatorMetricsHolder extends MetricsHolder {
     }
 
     /**
-     * Timer which measures how long the addFinalizer Kubernetes operation takes.
+     * Timer which measures how long the addFinalizer Kubernetes operations take.
      *
      * @param namespace Namespace of the resources being reconciled
      *
      * @return Metrics timer
      */
     public Timer addFinalizerTimer(String namespace) {
-        return getTimer(namespace, kind, METRICS_PREFIX + "add.finalizer.duration", metricsProvider, selectorLabels, addFinalizerTimerMap,
+        return getInternalTimer(namespace, kind, METRICS_PREFIX + "add.finalizer.duration", metricsProvider, selectorLabels, addFinalizerTimerMap,
             "The time the addFinalizer Kubernetes operation takes to complete");
     }
 
     /**
-     * Timer which measures how long the removeFinalizer Kubernetes operation takes.
+     * Timer which measures how long the removeFinalizer Kubernetes operations take.
      *
      * @param namespace Namespace of the resources being reconciled
      *
      * @return Metrics timer
      */
     public Timer removeFinalizerTimer(String namespace) {
-        return getTimer(namespace, kind, METRICS_PREFIX + "remove.finalizer.duration", metricsProvider, selectorLabels, removeFinalizerTimerMap,
+        return getInternalTimer(namespace, kind, METRICS_PREFIX + "remove.finalizer.duration", metricsProvider, selectorLabels, removeFinalizerTimerMap,
             "The time the removeFinalizer Kubernetes operation takes to complete");
     }
 
     /**
-     * Timer which measures how long the createTopics Kafka operation takes.
+     * Timer which measures how long the createTopics Kafka operations take.
      *
      * @param namespace Namespace of the resources being reconciled
      *
      * @return Metrics timer
      */
     public Timer createTopicsTimer(String namespace) {
-        return getTimer(namespace, kind, METRICS_PREFIX + "create.topics.duration", metricsProvider, selectorLabels, createTopicsTimerMap,
+        return getInternalTimer(namespace, kind, METRICS_PREFIX + "create.topics.duration", metricsProvider, selectorLabels, createTopicsTimerMap,
             "The time the createTopics Kafka operation takes to complete");
     }
 
     /**
-     * Timer which measures how long the updateStatus Kubernetes operation takes.
+     * Timer which measures how long the updateStatus Kubernetes operations take.
      *
      * @param namespace Namespace of the resources being reconciled
      *
      * @return Metrics timer
      */
     public Timer updateStatusTimer(String namespace) {
-        return getTimer(namespace, kind, METRICS_PREFIX + "update.status.duration", metricsProvider, selectorLabels, updateStatusTimerMap,
+        return getInternalTimer(namespace, kind, METRICS_PREFIX + "update.status.duration", metricsProvider, selectorLabels, updateStatusTimerMap,
             "The time the updateStatus Kubernetes operation takes to complete");
     }
 
     /**
-     * Timer which measures how long the listReassignments Kafka operation takes.
+     * Timer which measures how long the listReassignments Kafka operations take.
      *
      * @param namespace Namespace of the resources being reconciled
      *
      * @return Metrics timer
      */
     public Timer listReassignmentsTimer(String namespace) {
-        return getTimer(namespace, kind, METRICS_PREFIX + "list.reassignments.duration", metricsProvider, selectorLabels, listReassignmentsTimerMap,
+        return getInternalTimer(namespace, kind, METRICS_PREFIX + "list.reassignments.duration", metricsProvider, selectorLabels, listReassignmentsTimerMap,
             "The time the listPartitionReassignments Kafka operation takes to complete");
     }
 
     /**
-     * Timer which measures how long the incrementalAlterConfigs Kafka operation takes.
+     * Timer which measures how long the incrementalAlterConfigs Kafka operations take.
      *
      * @param namespace Namespace of the resources being reconciled
      *
      * @return Metrics timer
      */
     public Timer alterConfigsTimer(String namespace) {
-        return getTimer(namespace, kind, METRICS_PREFIX + "alter.configs.duration", metricsProvider, selectorLabels, alterConfigsTimerMap,
+        return getInternalTimer(namespace, kind, METRICS_PREFIX + "alter.configs.duration", metricsProvider, selectorLabels, alterConfigsTimerMap,
             "The time the incrementalAlterConfigs Kafka operation takes to complete");
     }
 
     /**
-     * Timer which measures how long the createPartitions Kafka operation takes.
+     * Timer which measures how long the createPartitions Kafka operations take.
      *
      * @param namespace Namespace of the resources being reconciled
      *
      * @return Metrics timer
      */
     public Timer createPartitionsTimer(String namespace) {
-        return getTimer(namespace, kind, METRICS_PREFIX + "create.partitions.duration", metricsProvider, selectorLabels, createPartitionsTimerMap,
+        return getInternalTimer(namespace, kind, METRICS_PREFIX + "create.partitions.duration", metricsProvider, selectorLabels, createPartitionsTimerMap,
             "The time the createPartitions Kafka operation takes to complete");
     }
 
     /**
-     * Timer which measures how long the describeTopics Kafka operation takes.
+     * Timer which measures how long the describeTopics Kafka operations take.
      *
      * @param namespace Namespace of the resources being reconciled
      *
      * @return Metrics timer
      */
     public Timer describeTopicsTimer(String namespace) {
-        return getTimer(namespace, kind, METRICS_PREFIX + "describe.topics.duration", metricsProvider, selectorLabels, describeTopicsTimerMap,
+        return getInternalTimer(namespace, kind, METRICS_PREFIX + "describe.topics.duration", metricsProvider, selectorLabels, describeTopicsTimerMap,
             "The time the describeTopics Kafka operation takes to complete");
     }
 
     /**
-     * Timer which measures how long the describeConfigs Kafka operation takes.
+     * Timer which measures how long the describeConfigs Kafka operations take.
      *
      * @param namespace Namespace of the resources being reconciled
      *
      * @return Metrics timer
      */
     public Timer describeConfigsTimer(String namespace) {
-        return getTimer(namespace, kind, METRICS_PREFIX + "describe.configs.duration", metricsProvider, selectorLabels, describeConfigsTimerMap,
+        return getInternalTimer(namespace, kind, METRICS_PREFIX + "describe.configs.duration", metricsProvider, selectorLabels, describeConfigsTimerMap,
             "The time the describeConfigs Kafka operation takes to complete");
     }
 
     /**
-     * Timer which measures how long the deleteTopics Kafka operation takes.
+     * Timer which measures how long the deleteTopics Kafka operations take.
      *
      * @param namespace Namespace of the resources being reconciled
      *
      * @return Metrics timer
      */
     public Timer deleteTopicsTimer(String namespace) {
-        return getTimer(namespace, kind, METRICS_PREFIX + "delete.topics.duration", metricsProvider, selectorLabels, deleteTopicsTimerMap,
+        return getInternalTimer(namespace, kind, METRICS_PREFIX + "delete.topics.duration", metricsProvider, selectorLabels, deleteTopicsTimerMap,
             "The time the deleteTopics Kafka operation takes to complete");
     }
 }

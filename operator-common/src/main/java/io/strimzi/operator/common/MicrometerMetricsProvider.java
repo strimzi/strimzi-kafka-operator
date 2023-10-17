@@ -9,6 +9,7 @@ import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tags;
 import io.micrometer.core.instrument.Timer;
+import io.strimzi.operator.common.metrics.FineGrainedTimerFilter;
 import io.vertx.micrometer.backends.BackendRegistries;
 
 import java.time.Duration;
@@ -74,9 +75,30 @@ public class MicrometerMetricsProvider implements MetricsProvider {
     public Timer timer(String name, String description, Tags tags) {
         return Timer.builder(name)
                 .description(description)
-                .sla(Duration.ofMillis(1000), Duration.ofMillis(5000), Duration.ofMillis(10000), Duration.ofMillis(30000), Duration.ofMillis(60000), Duration.ofMillis(120000), Duration.ofMillis(300000))
+                .sla(Duration.ofMillis(1000),
+                    Duration.ofMillis(5000),
+                    Duration.ofMillis(10000),
+                    Duration.ofMillis(30000),
+                    Duration.ofMillis(60000),
+                    Duration.ofMillis(120000),
+                    Duration.ofMillis(300000))
                 .tags(tags)
                 .register(metrics);
+    }
+
+    /**
+     * Creates new Timer type metric with fine grained histogram buckets.
+     * This can be used to measure the duration of internal operations.
+     *
+     * @param name          Name of the metric
+     * @param description   Description of the metric
+     * @param tags          Tags used for the metric
+     * @return              Timer metric
+     */
+    @Override
+    public Timer internalTimer(String name, String description, Tags tags) {
+        metrics.config().meterFilter(new FineGrainedTimerFilter(name));
+        return timer(name, description, tags);
     }
 
     /**

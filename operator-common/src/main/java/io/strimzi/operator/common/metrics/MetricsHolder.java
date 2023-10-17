@@ -242,4 +242,22 @@ public abstract class MetricsHolder {
     protected static Timer getTimer(String namespace, String kind, String metricName, MetricsProvider metrics, Labels selectorLabels, Map<String, Timer> timerMap, String metricHelp) {
         return metric(namespace, kind, selectorLabels, timerMap, tags -> metrics.timer(metricName, metricHelp, tags));
     }
+
+    /**
+     * Creates or gets an internal timer-type metric.
+     * This can be used to measure the duration of internal operations.
+     *
+     * @param namespace         Namespace of the resource
+     * @param kind              Kind of the resource
+     * @param metricName        Name of the metric
+     * @param metrics           Metrics provider
+     * @param selectorLabels    Selector labels used to filter the resources
+     * @param timerMap          Map with timers
+     * @param metricHelp        Help description of the metric
+     *
+     * @return  Timer metric
+     */
+    protected static Timer getInternalTimer(String namespace, String kind, String metricName, MetricsProvider metrics, Labels selectorLabels, Map<String, Timer> timerMap, String metricHelp) {
+        return metric(namespace, kind, selectorLabels, timerMap, tags -> metrics.internalTimer(metricName, metricHelp, tags));
+    }
 }

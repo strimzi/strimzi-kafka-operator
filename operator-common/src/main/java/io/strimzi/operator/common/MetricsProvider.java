@@ -43,6 +43,17 @@ public interface MetricsProvider {
     Timer timer(String name, String description, Tags tags);
 
     /**
+     * Creates new Timer type metric with fine grained histogram buckets.
+     * This can be used to measure the duration of internal operations.
+     *
+     * @param name          Name of the metric
+     * @param description   Description of the metric
+     * @param tags          Tags used for the metric
+     * @return              Timer metric
+     */
+    Timer internalTimer(String name, String description, Tags tags);
+
+    /**
      * Creates new Gauge type metric
      *
      * @param name          Name of the metric
