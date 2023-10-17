@@ -319,7 +319,7 @@ public class KafkaBrokerConfigurationBuilder {
             writer.println("inter.broker.listener.name=" + REPLICATION_LISTENER_NAME);
         }
 
-        // Control plane listener is on all ZooKeeper based brokers or on KRaft nodes with only the broker role (i.e. not mixed nodes)
+        // Control plane listener is on all ZooKeeper based brokers, it's not supported in KRaft mode
         if (!useKRaft) {
             writer.println("control.plane.listener.name=" + CONTROL_PLANE_LISTENER_NAME);
         }
