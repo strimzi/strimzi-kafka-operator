@@ -6,10 +6,17 @@
 = Kafka producer configuration tuning
 
 [role="_abstract"]
-Use a basic producer configuration with optional properties that are tailored to specific use cases.
-
+Use configuration properties to optimize the performance of Kafka producers.
+You can use standard Kafka producer configuration options.
 Adjusting your configuration to maximize throughput might increase latency or vice versa.
 You will need to experiment and tune your producer configuration to get the balance you need.
+
+When configuring a producer, consider the following aspects carefully, as they significantly impact its performance and behavior:
+
+Compression:: Implementing message compression can reduce network bandwidth usage, conserving resources and improving throughput.
+Batching:: Adjusting the batch size and time intervals when the producer sends messages can affect throughput and latency. 
+Partitioning:: Partitioning strategies in the Kafka cluster can support producers through parallelism and load balancing, whereby producers can write to multiple partitions concurrently and each partition receives an equal share of messages. Other strategies might include topic replication for fault tolerance.
+Securing access:: Implement security measures for authentication, encryption, and authorization by setting up user accounts to xref:assembly-securing-access-{context}[manage secure access to Kafka].
 
 == Basic producer configuration
 
@@ -214,7 +221,7 @@ such as worse batching, start to counteract the effect on throughput.
 
 .Lowering latency
 
-When your application calls `KafkaProducer.send()` the messages are:
+When your application calls `KafkaProducer.send()`, messages are handled as follows:
 
 * Processed by any interceptors
 * Serialized
@@ -223,7 +230,7 @@ When your application calls `KafkaProducer.send()` the messages are:
 * Added to a batch of messages in a per-partition queue
 
 At which point the `send()` method returns.
-So the time `send()` is blocked is determined by:
+So the time `send()` is blocked is determined by the following:
 
 * The time spent in the interceptors, serializers and partitioner
 * The compression algorithm used
@@ -236,7 +243,8 @@ Batches will remain in the queue until one of the following occurs:
 * The sender is about to send message batches for other partitions to the same broker, and it is possible to add this batch too
 * The producer is being flushed or closed
 
-Look at the configuration for batching and buffering to mitigate the impact of `send()` blocking on latency.
+Consider the configuration for batching and buffering to mitigate the impact of `send()` blocking on latency.
+Use the `linger.ms` and `batch.size` configuration properties to batch more messages into a single produce request for higher throughput. 
 
 [source,env]
 ----
@@ -249,12 +257,11 @@ buffer.memory=33554432 <3>
 <1> The `linger` property adds a delay in milliseconds so that larger batches of messages are accumulated and sent in a request. The default is `0'.`
 <2> If a maximum `batch.size` in bytes is used, a request is sent when the maximum is reached, or messages have been queued for longer than `linger.ms` (whichever comes sooner).
 Adding the delay allows batches to accumulate messages up to the batch size.
-<3> The buffer size must be at least as big as the batch size, and be able to accommodate buffering, compression and in-flight requests.
+<3> The buffer size must be at least as big as the batch size, and be able to accommodate buffering, compression, and in-flight requests.
 
 .Increasing throughput
 
-Improve throughput of your message requests by adjusting the maximum time to wait before a message is delivered and completes a send request.
-
+You can improve throughput of your message requests by using the `delivery.timeout.ms` property to adjust the maximum time to wait before a message is delivered and completes a send request.
 You can also direct messages to a specified partition by writing a custom partitioner to replace the default.
 
 [source,env]

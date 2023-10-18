@@ -6,10 +6,17 @@
 = Kafka consumer configuration tuning
 
 [role="_abstract"]
-Use a basic consumer configuration with optional properties that are tailored to specific use cases.
-
+Use configuration properties to optimize the performance of Kafka consumers.
+You can use standard Kafka consumer configuration options.
 When tuning your consumers your primary concern will be ensuring that they cope efficiently with the amount of data ingested.
 As with the producer tuning, be prepared to make incremental changes until the consumers operate as expected.
+
+When tuning a consumer, consider the following aspects carefully, as they significantly impact its performance and behavior:
+
+Scaling:: Consumer groups enable parallel processing of messages by distributing the load across multiple consumers. Properly configuring consumer groups can enhance scalability and throughput.
+Message ordering:: A consumer observes messages in a single partition in the same order that they were committed to the broker, which means that Kafka only provides ordering guarantees for messages in a single partition. If absolute ordering within a topic is important, use a single-partition topic. While a single-partition topic allows only one consumer instance, you can leverage a pool of worker threads to create a multi-threaded consumer for more efficient processing. When processing messages for specific entities (like users), you can use the ID (like user ID) as the message key and direct all messages to a single partition. This way, you can maintain message ordering for events specific to individual entities. If a new entity is created, you can create a new topic and migrate its data.
+Offset reset policy:: Setting the appropriate offset policy ensures that the consumer consumes messages from the desired starting point and handles message processing accordingly. The default Kafka reset value is `latest`, which starts at the end of the partition, and consequently means some messages might be missed, depending on the consumer's behavior and the state of the partition. Setting `auto.offset.reset` to `earliest` ensures that when connecting with a `new group.id`, all messages are retrieved from the beginning of the log.
+Securing access:: Implement security measures for authentication, encryption, and authorization by setting up user accounts to xref:assembly-securing-access-{context}[manage secure access to Kafka].
 
 == Basic consumer configuration
 
@@ -64,6 +71,21 @@ group.id=my-group-id <1>
 # ...
 ----
 <1> Add a consumer to a consumer group using a group id.
+
+== Choosing the right partition assignment strategy
+
+Select an appropriate partition assignment strategy, which determines how Kafka topic partitions are distributed among consumer instances in a group.
+
+Specify the strategy using the `partition.assignment.strategy` consumer configuration property. 
+The *range* assignment strategy assigns a range of partitions to each consumer, and is useful when you want to process related data together.
+
+Alternatively, opt for a *round robin* assignment strategy for equal partition distribution among consumers, which is ideal for high-throughput scenarios requiring parallel processing.
+
+For more stable partition assignments, consider the *sticky* and *cooperative sticky* strategies. 
+Sticky strategies maintain assigned partitions during rebalances, when possible. 
+The cooperative sticky strategy also supports cooperative rebalances, enabling uninterrupted consumption from partitions that are not reassigned.
+
+If none of the available strategies suit your data, you can create a custom strategy tailored to your specific requirements.
 
 == Message ordering guarantees
 
@@ -193,17 +215,17 @@ isolation.level=read_committed <1>
 
 == Recovering from failure to avoid data loss
 
-Use the `session.timeout.ms` and `heartbeat.interval.ms` properties to configure the time taken to check and recover from consumer failure within a consumer group.
+Kafka provides mechanisms to detect and recover from failures within consumer groups. Two useful properties that aid in this recovery process are `session.timeout.ms` and `heartbeat.interval.ms`.
 
-The `session.timeout.ms` property specifies the maximum amount of time in milliseconds a consumer within a consumer group can be out of contact with a broker before being considered inactive and a _rebalancing_ is triggered between the active consumers in the group.
-When the group rebalances, the partitions are reassigned to the members of the group.
+The `session.timeout.ms` property specifies the maximum amount of time a consumer in a group can go without sending a heartbeat to the Kafka broker. 
+This heartbeat is an indicator that the consumer is active in the group. 
+If a consumer fails to send a heartbeat within the specified session timeout, Kafka considers it as a failure, and the consumer is marked as inactive. 
+A consumer marked as inactive triggers a rebalancing of the partitions for the topic. 
+Setting this value too low can result in false-positive outcomes, while setting it too high can lead to delayed recovery from failures.
 
-The `heartbeat.interval.ms` property specifies the interval in milliseconds between _heartbeat_ checks to the consumer group coordinator to indicate that the consumer is active and connected.
-The heartbeat interval must be lower, usually by a third, than the session timeout interval.
-
-If you set the `session.timeout.ms` property lower, failing consumers are detected earlier, and rebalancing can take place quicker.
-However, take care not to set the timeout so low that the broker fails to receive a heartbeat in time and triggers an unnecessary rebalance.
-
+The `heartbeat.interval.ms` property determines how frequently a consumer sends heartbeats to the Kafka broker. 
+A shorter interval between consecutive heartbeats allows for quicker detection of consumer failures. 
+The heartbeat interval must be lower, usually by a third, than the session timeout. 
 Decreasing the heartbeat interval reduces the chance of accidental rebalancing, but more frequent heartbeats increases the overhead on broker resources.
 
 == Managing offset policy
@@ -239,26 +261,24 @@ In this case, you can lower `max.partition.fetch.bytes` or increase `session.tim
 
 == Minimizing the impact of rebalances
 
-The rebalancing of a partition between active consumers in a group is the time it takes for:
+The rebalancing of a partition between active consumers in a group is the time it takes for the following to take place:
 
 * Consumers to commit their offsets
 * The new consumer group to be formed
 * The group leader to assign partitions to group members
 * The consumers in the group to receive their assignments and start fetching
 
-Clearly, the process increases the downtime of a service, particularly when it happens repeatedly during a rolling restart of a consumer group cluster.
+The rebalancing process can increase the downtime of a service, particularly if it happens repeatedly during a rolling restart of a consumer group cluster.
 
-In this situation, you can use the concept of _static membership_ to reduce the number of rebalances.
-Rebalancing assigns topic partitions evenly among consumer group members.
+In this situation, you can introduce _static membership_ by assigning a unique identifier (`group.instance.id`) to each consumer instance within the group.
 Static membership uses persistence so that a consumer instance is recognized during a restart after a session timeout.
-
-The consumer group coordinator can identify a new consumer instance using a unique id that is specified using the `group.instance.id` property.
-During a restart, the consumer is assigned a new member id, but as a static member it continues with the same instance id,
-and the same assignment of topic partitions is made.
-
-If the consumer application does not make a call to poll at least every `max.poll.interval.ms` milliseconds, the consumer is considered to be failed, causing a rebalance.
-If the application cannot process all the records returned from poll in time, you can avoid a rebalance by using the `max.poll.interval.ms` property to specify the interval in milliseconds between polls for new messages from a consumer.
-Or you can use the `max.poll.records` property to set a maximum limit on the number of records returned from the consumer buffer, allowing your application to process fewer records within the `max.poll.interval.ms` limit.
+Consequently, the consumer maintains its assignment of topic partitions, reducing unnecessary rebalancing when it rejoins the group after a failure or restart.
+ 
+Additionally, adjusting the `max.poll.interval.ms` configuration can prevent rebalances caused by prolonged processing tasks, allowing you to specify the maximum interval between polls for new messages.
+Use the `max.poll.records` property to cap the number of records returned from the consumer buffer during each poll. 
+Reducing the number of records allows the consumer to process fewer messages more efficiently.  
+In cases where lengthy message processing is unavoidable, consider offloading such tasks to a pool of worker threads. 
+This parallel processing approach prevents delays and potential rebalances caused by overwhelming the consumer with a large volume of records.
 
 [source,shell,subs="+quotes"]
 ----
