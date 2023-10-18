@@ -8,7 +8,7 @@
 #  fromKafkaVersionsUrl: String - url, from which kafka-versions.yaml is downloaded
 #  additionalTopics: int - number of additional topics, which will be created
 #  oldestKafka: String - version of Kafka, used in initial deployment of Kafka CR
-#  imagesAfterOperations:  Strings - images that corresponding pods should contain. They are checked after upgrade
+#  imagesAfterOperations:  Strings - images that corresponding pods should contain. They are checked after downgrade
 #    zookeeper: 
 #    kafka: 
 #    topicOperator: 
@@ -34,11 +34,11 @@
   fromKafkaVersionsUrl: HEAD
   additionalTopics: 2
   imagesAfterOperations:
-    zookeeper: strimzi/kafka:0.38.0-kafka-3.5.1
-    kafka: strimzi/kafka:0.38.0-kafka-3.5.1
+    zookeeper: strimzi/kafka:0.38.0-kafka-3.6.0
+    kafka: strimzi/kafka:0.38.0-kafka-3.6.0
     topicOperator: strimzi/operator:0.38.0
     userOperator: strimzi/operator:0.38.0
-  deployKafkaVersion: 3.5.1
+  deployKafkaVersion: 3.6.0
   client:
     continuousClientsMessages: 500
   environmentInfo:
