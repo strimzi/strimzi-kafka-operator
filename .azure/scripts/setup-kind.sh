@@ -126,6 +126,8 @@ if [[ "$IP_FAMILY" = "ipv4" || "$IP_FAMILY" = "dual" ]]; then
     apiVersion: kind.x-k8s.io/v1alpha4
     nodes:
     - role: control-plane
+    - role: control-plane
+    - role: control-plane
     - role: worker
     - role: worker
     - role: worker
