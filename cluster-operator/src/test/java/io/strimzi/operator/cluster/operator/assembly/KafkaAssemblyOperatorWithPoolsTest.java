@@ -107,9 +107,7 @@ import static org.mockito.Mockito.when;
 public class KafkaAssemblyOperatorWithPoolsTest {
     private static final KafkaVersion.Lookup VERSIONS = KafkaVersionTestUtils.getKafkaVersionLookup();
     private static final SharedEnvironmentProvider SHARED_ENV_PROVIDER = new MockSharedEnvironmentProvider();
-    private static final ClusterOperatorConfig CONFIG = new ClusterOperatorConfig.ClusterOperatorConfigBuilder(ResourceUtils.dummyClusterOperatorConfig(), VERSIONS)
-            .with(ClusterOperatorConfig.FEATURE_GATES.key(), "+KafkaNodePools")
-            .build();
+    private static final ClusterOperatorConfig CONFIG = ResourceUtils.dummyClusterOperatorConfig();
     private static final KubernetesVersion KUBERNETES_VERSION = KubernetesVersion.MINIMAL_SUPPORTED_VERSION;
     private static final MockCertManager CERT_MANAGER = new MockCertManager();
     private static final PasswordGenerator PASSWORD_GENERATOR = new PasswordGenerator(10, "a", "a");
@@ -1335,7 +1333,7 @@ public class KafkaAssemblyOperatorWithPoolsTest {
         when(mockKafkaOps.getAsync(eq(NAMESPACE), eq(CLUSTER_NAME))).thenReturn(Future.succeededFuture(kafka));
 
         ClusterOperatorConfig config = new ClusterOperatorConfig.ClusterOperatorConfigBuilder(ResourceUtils.dummyClusterOperatorConfig(), VERSIONS)
-                .with(ClusterOperatorConfig.FEATURE_GATES.key(), "+KafkaNodePools,+UseKRaft")
+                .with(ClusterOperatorConfig.FEATURE_GATES.key(), "+UseKRaft")
                 .build();
 
         KafkaAssemblyOperator kao = new KafkaAssemblyOperator(
@@ -1391,7 +1389,7 @@ public class KafkaAssemblyOperatorWithPoolsTest {
         when(mockKafkaNodePoolOps.listAsync(any(), any(Labels.class))).thenReturn(Future.succeededFuture(null));
 
         ClusterOperatorConfig config = new ClusterOperatorConfig.ClusterOperatorConfigBuilder(ResourceUtils.dummyClusterOperatorConfig(), VERSIONS)
-                .with(ClusterOperatorConfig.FEATURE_GATES.key(), "+KafkaNodePools,+UseKRaft")
+                .with(ClusterOperatorConfig.FEATURE_GATES.key(), "+UseKRaft")
                 .build();
 
         KafkaAssemblyOperator kao = new KafkaAssemblyOperator(

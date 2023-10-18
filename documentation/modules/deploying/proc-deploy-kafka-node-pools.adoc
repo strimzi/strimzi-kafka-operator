@@ -34,11 +34,11 @@ NOTE: If you want to migrate an existing Kafka cluster to use node pools, see th
 
 .Procedure
 
-. Enable the `KafkaNodePools` feature gate from the command line:
+. If you want to use KRaft, enable the `UseKRaft` feature gate from the command line:
 +
 [source,shell]
 ----
-kubectl set env deployment/strimzi-cluster-operator STRIMZI_FEATURE_GATES="+KafkaNodePools"
+kubectl set env deployment/strimzi-cluster-operator STRIMZI_FEATURE_GATES="+UseKRaft"
 ----
 +
 Or by editing the Cluster Operator Deployment and updating the `STRIMZI_FEATURE_GATES` environment variable:
@@ -47,12 +47,10 @@ Or by editing the Cluster Operator Deployment and updating the `STRIMZI_FEATURE_
 ----
 env
   - name: STRIMZI_FEATURE_GATES
-    value: +KafkaNodePools
+    value: +UseKRaft
 ----
 +
 This updates the Cluster Operator.
-+
-If using KRaft mode, enable the `UseKRaft` feature gate as well.
 
 . Create a node pool.
 +

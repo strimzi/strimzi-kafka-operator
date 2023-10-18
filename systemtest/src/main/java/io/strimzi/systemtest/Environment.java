@@ -277,7 +277,7 @@ public class Environment {
     }
 
     public static boolean isKafkaNodePoolsEnabled() {
-        return STRIMZI_FEATURE_GATES.contains(Constants.USE_KAFKA_NODE_POOLS);
+        return !STRIMZI_FEATURE_GATES.contains(Constants.DONT_USE_KAFKA_NODE_POOLS);
     }
 
     public static boolean isUnidirectionalTopicOperatorEnabled() {

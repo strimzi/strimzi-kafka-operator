@@ -87,7 +87,7 @@ Currently, the KRaft mode in Strimzi has the following major limitations:
   The `type: jbod` storage can be used, but the JBOD array can contain only one disk.
 
 .Enabling the UseKRaft feature gate
-To enable the `UseKRaft` feature gate, specify `+UseKRaft,+KafkaNodePools` in the `STRIMZI_FEATURE_GATES` environment variable in the Cluster Operator configuration.
+To enable the `UseKRaft` feature gate, specify `+UseKRaft` in the `STRIMZI_FEATURE_GATES` environment variable in the Cluster Operator configuration.
 The `Kafka` custom resource using KRaft mode must also have the annotation `strimzi.io/kraft: enabled`.
 If such annotation is set to `disabled`, missing or any other value, the operator will handle the `Kafka` custom resource as using ZooKeeper mode.
 
@@ -108,7 +108,7 @@ IMPORTANT: The `StableConnectIdentities` feature gate must be disabled when down
 [id='ref-operator-kafka-node-pools-feature-gate-{context}']
 == (Preview) KafkaNodePools feature gate
 
-The `KafkaNodePools` feature gate has a default state of _disabled_.
+The `KafkaNodePools` feature gate has a default state of _enabled_.
 
 The `KafkaNodePools` feature gate introduces a new `KafkaNodePool` custom resource that enables the configuration of different _pools_ of Apache Kafka nodes.
 
@@ -126,10 +126,14 @@ The label must be set to the name of the `Kafka` custom resource.
 
 Examples of the `KafkaNodePool` resources can be found in the xref:config-examples-{context}[example configuration files] provided by Strimzi.
 
-.Enabling the KafkaNodePools feature gate
+.Disabling the KafkaNodePools feature gate
 
-To enable the `KafkaNodePools` feature gate, specify `+KafkaNodePools` in the `STRIMZI_FEATURE_GATES` environment variable in the Cluster Operator configuration.
+To disable the `KafkaNodePools` feature gate, specify `-KafkaNodePools` in the `STRIMZI_FEATURE_GATES` environment variable in the Cluster Operator configuration.
 The `Kafka` custom resource using the node pools must also have the annotation `strimzi.io/node-pools: enabled`.
+
+.Downgrading from KafkaNodePools
+
+If your cluster already uses the `KafkaNodePool` custom resources and want to downgrade to older version of Strimzi that does not support KafkaNodePools or has the `KafkaNodePool` feature gate disabled, you should first migrate from using the `KafkaNodePool` custom resources to use the `Kafka` custom resource only.
 
 [id='ref-operator-unidirectional-topic-operator-feature-gate-{context}']
 == (Preview) UnidirectionalTopicOperator feature gate

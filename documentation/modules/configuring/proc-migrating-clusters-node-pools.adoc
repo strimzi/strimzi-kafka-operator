@@ -63,19 +63,7 @@ By applying this resource, you switch Kafka to using node pools.
 +
 There is no change or rolling update and resources are identical to how they were before.
 
-. Update the `STRIMZI_FEATURE_GATES` environment variable in the Cluster Operator configuration to include `+KafkaNodePools`.
-+
-[source,yaml]
-----
-env:
-  - name: STRIMZI_FEATURE_GATES
-    value: +KafkaNodePools
-----
-+
-After restarting, the Cluster Operator logs a warning indicating that the Kafka node pool has been added but is not yet integrated with the Cluster Operator.
-This is an expected part of the process.
-
-. Enable the `KafkaNodePools` feature gate in the `Kafka` resource using the `strimzi.io/node-pools: enabled` annotation.
+. Enable the `KafkaNodePools` in the `Kafka` resource using the `strimzi.io/node-pools: enabled` annotation.
 +
 .Example configuration for a node pool in a cluster using ZooKeeper
 [source,yaml,subs="+attributes"]

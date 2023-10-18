@@ -24,7 +24,7 @@ public class FeatureGates {
     // When adding new feature gates, do not forget to add them to allFeatureGates() and toString() methods
     private final FeatureGate useKRaft = new FeatureGate(USE_KRAFT, false);
     private final FeatureGate stableConnectIdentities = new FeatureGate(STABLE_CONNECT_IDENTITIES, true);
-    private final FeatureGate kafkaNodePools = new FeatureGate(KAFKA_NODE_POOLS, false);
+    private final FeatureGate kafkaNodePools = new FeatureGate(KAFKA_NODE_POOLS, true);
     private final FeatureGate unidirectionalTopicOperator = new FeatureGate(UNIDIRECTIONAL_TOPIC_OPERATOR, false);
 
     /**

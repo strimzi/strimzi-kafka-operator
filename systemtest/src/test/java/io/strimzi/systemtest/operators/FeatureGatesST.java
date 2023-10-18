@@ -97,7 +97,7 @@ public class FeatureGatesST extends AbstractST {
         List<EnvVar> testEnvVars = new ArrayList<>();
         int kafkaReplicas = 3;
 
-        testEnvVars.add(new EnvVar(Environment.STRIMZI_FEATURE_GATES_ENV, "+UseKRaft,+KafkaNodePools", null));
+        testEnvVars.add(new EnvVar(Environment.STRIMZI_FEATURE_GATES_ENV, "+UseKRaft", null));
 
         this.clusterOperator = this.clusterOperator.defaultInstallation(extensionContext)
             .withNamespace(Constants.CO_NAMESPACE)
