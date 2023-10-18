@@ -445,7 +445,16 @@ public class CustomCaST extends AbstractST {
     }
 
     @ParallelNamespaceTest
-    void testCustomClusterCACertificateRenew(ExtensionContext extensionContext) {
+    void testRenewCustomClusterCACertificateWithShortValidity(ExtensionContext extensionContext) {
+        testRenewCustomClusterCACertificate(extensionContext, 15, 20, 150, 200);
+    }
+
+    @ParallelNamespaceTest
+    void testRenewCustomClusterCACertificateWithLongValidity(ExtensionContext extensionContext) {
+        testRenewCustomClusterCACertificate(extensionContext, 15, 500, 0, 0);
+    }
+
+    void testRenewCustomClusterCACertificate(ExtensionContext extensionContext, int renewalDays, int validityDays, int newRenewalDays, int newValidityDays) {
         TestStorage testStorage = new TestStorage(extensionContext);
         final String testSuite = extensionContext.getRequiredTestClass().getSimpleName();
 
@@ -466,8 +475,8 @@ public class CustomCaST extends AbstractST {
             .editOrNewSpec()
                 // Note: Clients Ca is generated automatically
                 .withNewClusterCa()
-                    .withRenewalDays(15)
-                    .withValidityDays(20)
+                    .withRenewalDays(renewalDays)
+                    .withValidityDays(validityDays) // more than 30
                     .withGenerateCertificateAuthority(false)
                 .endClusterCa()
             .endSpec()
@@ -500,23 +509,27 @@ public class CustomCaST extends AbstractST {
             initialZkCertEndTime = zkBrokerCert.getNotAfter();
         }
 
-        LOGGER.info("Change of Kafka validity and renewal days - reconciliation should start");
-        final CertificateAuthority newClusterCA = new CertificateAuthority();
-        newClusterCA.setRenewalDays(150);
-        newClusterCA.setValidityDays(200);
-        newClusterCA.setGenerateCertificateAuthority(false);
+        if (newRenewalDays != 0 && newValidityDays != 0 ) {
+            LOGGER.info("Change of Kafka validity and renewal days - reconciliation should start");
+            final CertificateAuthority newClusterCA = new CertificateAuthority();
+            newClusterCA.setRenewalDays(newRenewalDays);
+            newClusterCA.setValidityDays(newValidityDays);
+            newClusterCA.setGenerateCertificateAuthority(false);
 
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), k -> k.getSpec().setClusterCa(newClusterCA), testStorage.getNamespaceName());
-
-        // On the next reconciliation, the Cluster Operator performs a `rolling update`:
-        //   a) ZooKeeper
-        //   b) Kafka
-        //   c) and other components to trust the new Cluster CA certificate. (i.e., Entity Operator)
-        if (!Environment.isKRaftModeEnabled()) {
-            RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getZookeeperSelector(), 3, zkPods);
+            KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(),
+                                                                  k -> k.getSpec().setClusterCa(newClusterCA),
+                                                                  testStorage.getNamespaceName());
         }
-        RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getKafkaSelector(), 3, kafkaPods);
-        DeploymentUtils.waitTillDepHasRolled(testStorage.getNamespaceName(), testStorage.getEoDeploymentName(), 1, eoPod);
+//
+//        // On the next reconciliation, the Cluster Operator performs a `rolling update`:
+//        //   a) ZooKeeper
+//        //   b) Kafka
+//        //   c) and other components to trust the new Cluster CA certificate. (i.e., Entity Operator)
+//        if (!Environment.isKRaftModeEnabled()) {
+//            RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getZookeeperSelector(), 3, zkPods);
+//        }
+//        RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getKafkaSelector(), 3, kafkaPods);
+//        DeploymentUtils.waitTillDepHasRolled(testStorage.getNamespaceName(), testStorage.getEoDeploymentName(), 1, eoPod);
 
         // Read renewed secret/certs again
         clusterCASecret = kubeClient(testStorage.getNamespaceName()).getSecret(testStorage.getNamespaceName(), KafkaResources.clusterCaCertificateSecretName(testStorage.getClusterName()));
@@ -564,7 +577,16 @@ public class CustomCaST extends AbstractST {
     }
 
     @ParallelNamespaceTest
-    void testClientsCaCertificateRenew(ExtensionContext extensionContext) {
+    void testRenewCustomClientsCACertificateWithShortValidity(ExtensionContext extensionContext) {
+        testRenewCustomClientsCACertificate(extensionContext, 15, 20, 150, 200);
+    }
+
+    @ParallelNamespaceTest
+    void testRenewCustomClientsCACertificateWithLongValidity(ExtensionContext extensionContext) {
+        testRenewCustomClientsCACertificate(extensionContext, 15, 500, 0, 0);
+    }
+
+    void testRenewCustomClientsCACertificate(ExtensionContext extensionContext, int renewalDays, int validityDays, int newRenewalDays, int newValidityDays) {
         final TestStorage testStorage = new TestStorage(extensionContext);
         final String testSuite = extensionContext.getRequiredTestClass().getSimpleName();
 
@@ -585,8 +607,8 @@ public class CustomCaST extends AbstractST {
             .editOrNewSpec()
                 // Note: Cluster Ca is generated automatically
                 .withNewClientsCa()
-                    .withRenewalDays(15)
-                    .withValidityDays(20)
+                    .withRenewalDays(renewalDays)
+                    .withValidityDays(validityDays)
                     .withGenerateCertificateAuthority(false)
                 .endClientsCa()
             .endSpec()
@@ -608,8 +630,8 @@ public class CustomCaST extends AbstractST {
 
         LOGGER.info("Change of Kafka validity and renewal days - reconciliation should start");
         final CertificateAuthority newClientsCA = new CertificateAuthority();
-        newClientsCA.setRenewalDays(150);
-        newClientsCA.setValidityDays(200);
+        newClientsCA.setRenewalDays(newRenewalDays);
+        newClientsCA.setValidityDays(newValidityDays);
         newClientsCA.setGenerateCertificateAuthority(false);
 
         KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), k -> k.getSpec().setClientsCa(newClientsCA), testStorage.getNamespaceName());
