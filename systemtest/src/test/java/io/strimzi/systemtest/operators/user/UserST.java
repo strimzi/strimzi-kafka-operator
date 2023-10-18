@@ -92,7 +92,7 @@ class UserST extends AbstractST {
 
         KafkaUserUtils.waitUntilKafkaUserStatusConditionIsPresent(Environment.TEST_SUITE_NAMESPACE, userWithLongName);
 
-        Condition condition = KafkaUserResource.kafkaUserClient().inNamespace(Environment.TEST_SUITE_NAMESPACE).withName(userWithLongName).get().getStatus().getConditions().get(0);
+        final Condition condition = KafkaUserResource.kafkaUserClient().inNamespace(Environment.TEST_SUITE_NAMESPACE).withName(userWithLongName).get().getStatus().getConditions().get(0);
 
         verifyCRStatusCondition(condition, "only up to 64 characters", "ExecutionException", "True", NotReady);
     }
@@ -118,7 +118,7 @@ class UserST extends AbstractST {
         assertThat(kafkaUserAsJson, hasJsonPath("$.metadata.namespace", equalTo(Environment.TEST_SUITE_NAMESPACE)));
         assertThat(kafkaUserAsJson, hasJsonPath("$.spec.authentication.type", equalTo(Constants.TLS_LISTENER_DEFAULT_NAME)));
 
-        long observedGeneration = KafkaUserResource.kafkaUserClient().inNamespace(Environment.TEST_SUITE_NAMESPACE).withName(testStorage.getKafkaUsername()).get().getStatus().getObservedGeneration();
+        final long observedGeneration = KafkaUserResource.kafkaUserClient().inNamespace(Environment.TEST_SUITE_NAMESPACE).withName(testStorage.getKafkaUsername()).get().getStatus().getObservedGeneration();
 
         // Send and receive messages
         KafkaClients kafkaClients = new KafkaClientsBuilder()
@@ -185,8 +185,7 @@ class UserST extends AbstractST {
         KafkaUser user = KafkaUserTemplates.scramShaUser(Environment.TEST_SUITE_NAMESPACE, userClusterName, "scramed-arnost").build();
         testUserWithQuotas(extensionContext, user);
     }
-
-    synchronized void testUserWithQuotas(ExtensionContext extensionContext, KafkaUser user) {
+    void testUserWithQuotas(ExtensionContext extensionContext, KafkaUser user) {
         final TestStorage testStorage = storageMap.get(extensionContext);
 
         final Integer prodRate = 1111;
@@ -414,7 +413,6 @@ class UserST extends AbstractST {
 
         resourceManager.createResourceWithWait(extensionContext, kafkaClients.producerTlsStrimzi(testStorage.getClusterName()), kafkaClients.consumerTlsStrimzi(testStorage.getClusterName()));
         ClientUtils.waitForClientsSuccess(testStorage);
-
 
         KafkaUserResource.replaceUserResourceInSpecificNamespace(testStorage.getKafkaUsername(),
             user -> {

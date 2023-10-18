@@ -271,8 +271,6 @@ public class SecretUtils {
                                                          SystemTestCertManager.exportCaDataToFile(new String(Base64.getDecoder().decode(caKey), StandardCharsets.UTF_8), "ca", ".key"));
 
             Secret secretBuilder = new SecretBuilder()
-                .withApiVersion("v1")
-                .withKind("Secret")
                 .withNewMetadata()
                     .withName(userName)
                     .withNamespace(namespaceName)
