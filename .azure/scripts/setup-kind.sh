@@ -124,6 +124,11 @@ if [[ "$IP_FAMILY" = "ipv4" || "$IP_FAMILY" = "dual" ]]; then
     cat <<EOF | kind create cluster --config=-
     kind: Cluster
     apiVersion: kind.x-k8s.io/v1alpha4
+    nodes:
+    - role: control-plane
+    - role: worker
+    - role: worker
+    - role: worker
     name: kind-cluster
     containerdConfigPatches:
     - |-
