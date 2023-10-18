@@ -11,7 +11,8 @@ import io.micrometer.core.instrument.distribution.DistributionStatisticConfig;
 import java.time.Duration;
 
 /**
- * Timer filter that can be used to set a fine grained histogram buckets.
+ * Timer filter that can be used to get finer-grained histogram buckets
+ * by overriding the configuration of meters with the given name.
  */
 public class FineGrainedTimerFilter implements MeterFilter {
     private String name;

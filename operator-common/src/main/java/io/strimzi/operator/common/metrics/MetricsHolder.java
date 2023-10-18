@@ -257,7 +257,7 @@ public abstract class MetricsHolder {
      *
      * @return  Timer metric
      */
-    protected static Timer getInternalTimer(String namespace, String kind, String metricName, MetricsProvider metrics, Labels selectorLabels, Map<String, Timer> timerMap, String metricHelp) {
-        return metric(namespace, kind, selectorLabels, timerMap, tags -> metrics.internalTimer(metricName, metricHelp, tags));
+    protected static Timer getFineGrainedTimer(String namespace, String kind, String metricName, MetricsProvider metrics, Labels selectorLabels, Map<String, Timer> timerMap, String metricHelp) {
+        return metric(namespace, kind, selectorLabels, timerMap, tags -> metrics.fineGrainedTimer(metricName, metricHelp, tags));
     }
 }

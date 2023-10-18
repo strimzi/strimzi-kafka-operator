@@ -96,7 +96,7 @@ public class MicrometerMetricsProvider implements MetricsProvider {
      * @return              Timer metric
      */
     @Override
-    public Timer internalTimer(String name, String description, Tags tags) {
+    public Timer fineGrainedTimer(String name, String description, Tags tags) {
         metrics.config().meterFilter(new FineGrainedTimerFilter(name));
         return timer(name, description, tags);
     }

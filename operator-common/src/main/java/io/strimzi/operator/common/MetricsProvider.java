@@ -51,7 +51,7 @@ public interface MetricsProvider {
      * @param tags          Tags used for the metric
      * @return              Timer metric
      */
-    Timer internalTimer(String name, String description, Tags tags);
+    Timer fineGrainedTimer(String name, String description, Tags tags);
 
     /**
      * Creates new Gauge type metric
