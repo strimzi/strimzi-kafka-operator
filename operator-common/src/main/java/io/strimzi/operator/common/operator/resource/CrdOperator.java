@@ -55,12 +55,12 @@ public class CrdOperator<C extends KubernetesClient,
     }
 
     /**
-     * The selfClosingWatch does not work for Custom Resources. Therefore we override the method and delete custom
+     * The selfClosingWatch does not work for Custom Resources. Therefore, we override the method and delete custom
      * resources without it.
      *
      * @param namespace Namespace of the resource which should be deleted
      * @param name Name of the resource which should be deleted
-     * @param cascading Defines whether the delete should be cascading or not (e.g. whether a STS deletion should delete pods etc.)
+     * @param cascading Defines whether the deletion should be cascading or not (e.g. whether an STS deletion should delete pods etc.)
      *
      * @return A future which will be completed on the context thread
      *         once the resource has been deleted.

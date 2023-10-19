@@ -37,7 +37,7 @@ public class BuildConfigOperator extends AbstractNamespacedResourceOperator<Open
     @Override
     protected Future<ReconcileResult<BuildConfig>> internalUpdate(Reconciliation reconciliation, String namespace, String name, BuildConfig current, BuildConfig desired) {
         desired.getSpec().setTriggers(current.getSpec().getTriggers());
-        // Cascading needs to be set to false to make sure the Builds are not deleted during reconciliation
+        // Cascading needs to be set to false in order to make sure the Builds are not deleted during reconciliation
         return super.internalUpdate(reconciliation, namespace, name, current, desired);
     }
 
@@ -50,7 +50,7 @@ public class BuildConfigOperator extends AbstractNamespacedResourceOperator<Open
      * @param reconciliation The reconciliation
      * @param namespace Namespace of the resource which should be deleted
      * @param name Name of the resource which should be deleted
-     * @param cascading Defines whether the delete should be cascading or not (e.g. whether a STS deletion should delete pods etc.)
+     * @param cascading Defines whether the deletion should be cascading or not (e.g. whether an STS deletion should delete pods etc.)
      *
      * @return A future which will be completed on the context thread once the resource has been deleted.
      */

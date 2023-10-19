@@ -7,7 +7,6 @@ package io.strimzi.operator.common;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.CompletionStage;
 import java.util.function.BooleanSupplier;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
@@ -53,27 +52,7 @@ public final class VertxUtil {
      * @param <T>   Type of the result
      */
     public static <T> Future<T> async(Vertx vertx, Supplier<T> supplier) {
-        return vertx.executeBlocking(() -> supplier.get());
-    }
-
-    /**
-     * Converts a standard Java {@link CompletionStage} to a Vert.x {@link Future}.
-     *
-     * @param <T>   type of the asynchronous result
-     * @param stage {@link CompletionStage} to convert
-     * @return a Vert.x {@link Future} with the result or error of the
-     *         {@link CompletionStage}
-     */
-    public static <T> Future<T> toFuture(CompletionStage<T> stage) {
-        Promise<T> promise = Promise.promise();
-        stage.whenComplete(Util.unwrap((value, error) -> {
-            if (error != null) {
-                promise.fail(error);
-            } else {
-                promise.complete(value);
-            }
-        }));
-        return promise.future();
+        return vertx.executeBlocking(supplier::get);
     }
 
     /**
@@ -175,15 +154,13 @@ public final class VertxUtil {
     public static <T> Future<T> kafkaFutureToVertxFuture(Reconciliation reconciliation, Vertx vertx, KafkaFuture<T> kf) {
         Promise<T> promise = Promise.promise();
         if (kf != null) {
-            kf.whenComplete((result, error) -> {
-                vertx.runOnContext(ignored -> {
-                    if (error != null) {
-                        promise.fail(error);
-                    } else {
-                        promise.complete(result);
-                    }
-                });
-            });
+            kf.whenComplete((result, error) -> vertx.runOnContext(ignored -> {
+                if (error != null) {
+                    promise.fail(error);
+                } else {
+                    promise.complete(result);
+                }
+            }));
             return promise.future();
         } else {
             if (reconciliation != null) {
@@ -235,7 +212,6 @@ public final class VertxUtil {
                         tlsFuture.compose(tlsHash -> getCertificateAndKeyAsync(secretOperations, namespace, (KafkaClientAuthenticationTls) auth)
                         .compose(crtAndKey -> Future.succeededFuture(crtAndKey.certAsBase64String().hashCode() + crtAndKey.keyAsBase64String().hashCode() + tlsHash)));
             } else if (auth instanceof KafkaClientAuthenticationOAuth) {
-                @SuppressWarnings({ "rawtypes" }) // Has to use Raw type because of the CompositeFuture
                 List<Future<Integer>> futureList = ((KafkaClientAuthenticationOAuth) auth).getTlsTrustedCertificates() == null ?
                         new ArrayList<>() : ((KafkaClientAuthenticationOAuth) auth).getTlsTrustedCertificates().stream().map(certSecretSource ->
                         getCertificateAsync(secretOperations, namespace, certSecretSource)

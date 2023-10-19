@@ -594,5 +594,5 @@ public class CaReconciler {
     /**
      * Helper class to pass both Cluster and Clients CA as a result of the reconciliation
      */
-    protected record CaReconciliationResult(ClusterCa clusterCa, ClientsCa clientsCa) { }
+    public record CaReconciliationResult(ClusterCa clusterCa, ClientsCa clientsCa) { }
 }
