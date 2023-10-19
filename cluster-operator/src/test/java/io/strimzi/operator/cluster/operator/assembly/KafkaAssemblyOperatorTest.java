@@ -613,10 +613,7 @@ public class KafkaAssemblyOperatorTest {
         );
 
         Map<String, Secret> secretsMap = secrets.stream().collect(Collectors.toMap(s -> s.getMetadata().getName(), s -> s));
-
-        when(mockSecretOps.list(anyString(), any())).thenAnswer(i ->
-                new ArrayList<>(secretsMap.values())
-        );
+        when(mockSecretOps.listAsync(any(), any(Labels.class))).thenReturn(Future.succeededFuture(new ArrayList(secretsMap.values())));
         when(mockSecretOps.getAsync(anyString(), any())).thenAnswer(i ->
                 Future.succeededFuture(secretsMap.get(i.<String>getArgument(1)))
         );
@@ -1073,9 +1070,7 @@ public class KafkaAssemblyOperatorTest {
         }
 
         // Mock Secret gets
-        when(mockSecretOps.list(anyString(), any())).thenReturn(
-                emptyList()
-        );
+        when(mockSecretOps.listAsync(any(), any(Labels.class))).thenReturn(Future.succeededFuture(List.of()));
         when(mockSecretOps.getAsync(clusterNamespace, KafkaResources.kafkaJmxSecretName(clusterName))).thenReturn(
                 Future.succeededFuture(originalKafkaCluster.jmx().jmxSecret(null))
         );

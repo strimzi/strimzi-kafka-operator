@@ -16,7 +16,6 @@ import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.model.Labels;
 import io.vertx.core.Future;
-import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 
 import java.util.List;
@@ -73,41 +72,33 @@ public abstract class AbstractNonNamespacedResourceOperator<C extends Kubernetes
      * @param desired The desired state of the resource.
      * @return A future which completes when the resource was reconciled.
      */
-    @SuppressWarnings("deprecation") // Uses a deprecated executeBlocking call that should be addressed later. This is tracked in https://github.com/strimzi/strimzi-kafka-operator/issues/9233
     public Future<ReconcileResult<T>> reconcile(Reconciliation reconciliation, String name, T desired) {
         if (desired != null && !name.equals(desired.getMetadata().getName())) {
             return Future.failedFuture("Given name " + name + " incompatible with desired name "
                     + desired.getMetadata().getName());
         }
 
-        Promise<ReconcileResult<T>> promise = Promise.promise();
-        vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
-            future -> {
-                T current = operation().withName(name).get();
-                if (desired != null) {
-                    if (current == null) {
-                        LOGGER.debugCr(reconciliation, "{} {} does not exist, creating it", resourceKind, name);
-                        internalCreate(reconciliation, name, desired).onComplete(future);
+        return getAsync(name)
+                .compose(current -> {
+                    if (desired != null) {
+                        if (current == null) {
+                            LOGGER.debugCr(reconciliation, "{} {} does not exist, creating it", resourceKind, name);
+                            return internalCreate(reconciliation, name, desired);
+                        } else {
+                            LOGGER.debugCr(reconciliation, "{} {} already exists, updating it", resourceKind, name);
+                            return internalUpdate(reconciliation, name, current, desired);
+                        }
                     } else {
-                        LOGGER.debugCr(reconciliation, "{} {} already exists, updating it", resourceKind, name);
-                        internalUpdate(reconciliation, name, current, desired).onComplete(future);
+                        if (current != null) {
+                            // Deletion is desired
+                            LOGGER.debugCr(reconciliation, "{} {} exist, deleting it", resourceKind, name);
+                            return internalDelete(reconciliation, name);
+                        } else {
+                            LOGGER.debugCr(reconciliation, "{} {} does not exist, noop", resourceKind, name);
+                            return Future.succeededFuture(ReconcileResult.noop(null));
+                        }
                     }
-                } else {
-                    if (current != null) {
-                        // Deletion is desired
-                        LOGGER.debugCr(reconciliation, "{} {} exist, deleting it", resourceKind, name);
-                        internalDelete(reconciliation, name).onComplete(future);
-                    } else {
-                        LOGGER.debugCr(reconciliation, "{} {} does not exist, noop", resourceKind, name);
-                        future.complete(ReconcileResult.noop(null));
-                    }
-                }
-
-            },
-            false,
-            promise
-        );
-        return promise.future();
+                });
     }
 
     /**

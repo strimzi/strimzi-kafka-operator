@@ -81,7 +81,6 @@ import io.strimzi.operator.common.operator.resource.ServiceOperator;
 import io.strimzi.operator.common.operator.resource.StorageClassOperator;
 import io.strimzi.operator.common.operator.resource.StrimziPodSetOperator;
 import io.vertx.core.Future;
-import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import org.apache.kafka.clients.admin.Admin;
 import org.apache.kafka.common.KafkaException;
@@ -889,14 +888,12 @@ public class KafkaReconciler {
      *
      * @return  Future which completes when the Cluster ID is retrieved and set in the status
      */
-    @SuppressWarnings("deprecation") // Uses a deprecated executeBlocking call that should be addressed later. This is tracked in https://github.com/strimzi/strimzi-kafka-operator/issues/9233
     protected Future<Void> clusterId(KafkaStatus kafkaStatus) {
         return ReconcilerUtils.clientSecrets(reconciliation, secretOperator)
                 .compose(compositeFuture -> {
                     LOGGER.debugCr(reconciliation, "Attempt to get clusterId");
-                    Promise<Void> resultPromise = Promise.promise();
-                    vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
-                            future -> {
+                    return vertx.createSharedWorkerExecutor("kubernetes-ops-pool")
+                            .executeBlocking(() -> {
                                 Admin kafkaAdmin = null;
 
                                 try {
@@ -916,11 +913,8 @@ public class KafkaReconciler {
                                     }
                                 }
 
-                                future.complete();
-                            },
-                            true,
-                            resultPromise);
-                    return resultPromise.future();
+                                return null;
+                            });
                 });
     }
 

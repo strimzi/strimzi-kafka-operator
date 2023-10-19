@@ -18,7 +18,6 @@ import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.VertxUtil;
 import io.strimzi.operator.common.operator.resource.CrdOperator;
 import io.vertx.core.Future;
-import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -61,22 +60,15 @@ public class K8sImpl implements K8s {
      * @return  Future which completes with result of the request. If the request was successful, this returns the Kafka topic
      */
     @Override
-    @SuppressWarnings("deprecation") // Uses a deprecated executeBlocking call that should be addressed later. This is tracked in https://github.com/strimzi/strimzi-kafka-operator/issues/9233
     public Future<KafkaTopic> createResource(KafkaTopic topicResource) {
-        Promise<KafkaTopic> handler = Promise.promise();
-        vertx.executeBlocking(future -> {
-            try {
-                KafkaTopic kafkaTopic = operation().inNamespace(namespace).resource(topicResource).create();
-                LOGGER.debug("KafkaTopic {} created with version {}->{}",
-                        kafkaTopic.getMetadata().getName(),
-                        topicResource.getMetadata() != null ? topicResource.getMetadata().getResourceVersion() : null,
-                        kafkaTopic.getMetadata().getResourceVersion());
-                future.complete(kafkaTopic);
-            } catch (Exception e) {
-                future.fail(e);
-            }
-        }, handler);
-        return handler.future();
+        return vertx.executeBlocking(() -> {
+            KafkaTopic kafkaTopic = operation().inNamespace(namespace).resource(topicResource).create();
+            LOGGER.debug("KafkaTopic {} created with version {}->{}",
+                    kafkaTopic.getMetadata().getName(),
+                    topicResource.getMetadata() != null ? topicResource.getMetadata().getResourceVersion() : null,
+                    kafkaTopic.getMetadata().getResourceVersion());
+            return kafkaTopic;
+        });
     }
 
     /**
@@ -86,22 +78,15 @@ public class K8sImpl implements K8s {
      * @return  Future which completes with result of the request. If the request was successful, this returns the updated Kafka topic
      */
     @Override
-    @SuppressWarnings("deprecation") // Uses a deprecated executeBlocking call that should be addressed later. This is tracked in https://github.com/strimzi/strimzi-kafka-operator/issues/9233
     public Future<KafkaTopic> updateResource(KafkaTopic topicResource) {
-        Promise<KafkaTopic> handler = Promise.promise();
-        vertx.executeBlocking(future -> {
-            try {
-                KafkaTopic kafkaTopic = operation().inNamespace(namespace).withName(topicResource.getMetadata().getName()).patch(PatchContext.of(PatchType.JSON), topicResource);
-                LOGGER.debug("KafkaTopic {} updated with version {}->{}",
-                        kafkaTopic != null && kafkaTopic.getMetadata() != null ? kafkaTopic.getMetadata().getName() : null,
-                        topicResource.getMetadata() != null ? topicResource.getMetadata().getResourceVersion() : null,
-                        kafkaTopic != null && kafkaTopic.getMetadata() != null ? kafkaTopic.getMetadata().getResourceVersion() : null);
-                future.complete(kafkaTopic);
-            } catch (Exception e) {
-                future.fail(e);
-            }
-        }, handler);
-        return handler.future();
+        return vertx.executeBlocking(() -> {
+            KafkaTopic kafkaTopic = operation().inNamespace(namespace).withName(topicResource.getMetadata().getName()).patch(PatchContext.of(PatchType.JSON), topicResource);
+            LOGGER.debug("KafkaTopic {} updated with version {}->{}",
+                    kafkaTopic != null && kafkaTopic.getMetadata() != null ? kafkaTopic.getMetadata().getName() : null,
+                    topicResource.getMetadata() != null ? topicResource.getMetadata().getResourceVersion() : null,
+                    kafkaTopic != null && kafkaTopic.getMetadata() != null ? kafkaTopic.getMetadata().getResourceVersion() : null);
+            return kafkaTopic;
+        });
     }
 
     /**
@@ -124,25 +109,16 @@ public class K8sImpl implements K8s {
      * @return  Future which completes when the resource is deleted successfully.
      */
     @Override
-    @SuppressWarnings("deprecation") // Uses a deprecated executeBlocking call that should be addressed later. This is tracked in https://github.com/strimzi/strimzi-kafka-operator/issues/9233
     public Future<Void> deleteResource(Reconciliation reconciliation, ResourceName resourceName) {
-        Promise<Void> handler = Promise.promise();
-        vertx.executeBlocking(future -> {
-            try {
-                // Delete the resource by the topic name, because neither ZK nor Kafka know the resource name
-                operation().inNamespace(namespace).withName(resourceName.toString()).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
-
-                VertxUtil.waitFor(reconciliation, vertx, "sync resource deletion " + resourceName, "deleted", 1000, Long.MAX_VALUE, () -> {
-                    KafkaTopic kafkaTopic = operation().inNamespace(namespace).withName(resourceName.toString()).get();
-                    boolean notExists = kafkaTopic == null;
-                    LOGGER.debug("KafkaTopic {} deleted {}", resourceName.toString(), notExists);
-                    return notExists;
-                }).onComplete(future);
-            } catch (Exception e) {
-                future.fail(e);
-            }
-        }, handler);
-        return handler.future();
+        return vertx.executeBlocking(() -> {
+            // Delete the resource by the topic name, because neither ZK nor Kafka know the resource name
+            return operation().inNamespace(namespace).withName(resourceName.toString()).withPropagationPolicy(DeletionPropagation.FOREGROUND).delete();
+        }).compose(i -> VertxUtil.waitFor(reconciliation, vertx, "sync resource deletion " + resourceName, "deleted", 1000, Long.MAX_VALUE, () -> {
+            KafkaTopic kafkaTopic = operation().inNamespace(namespace).withName(resourceName.toString()).get();
+            boolean notExists = kafkaTopic == null;
+            LOGGER.debug("KafkaTopic {} deleted {}", resourceName.toString(), notExists);
+            return notExists;
+        }));
     }
 
     private MixedOperation<KafkaTopic, KafkaTopicList, Resource<KafkaTopic>> operation() {
@@ -174,22 +150,16 @@ public class K8sImpl implements K8s {
      * Create the given k8s event
      */
     @Override
-    @SuppressWarnings("deprecation") // Uses a deprecated executeBlocking call that should be addressed later. This is tracked in https://github.com/strimzi/strimzi-kafka-operator/issues/9233
     public Future<Void> createEvent(Event event) {
-        Promise<Void> handler = Promise.promise();
-        vertx.executeBlocking(future -> {
+        return vertx.executeBlocking(() -> {
             try {
-                try {
-                    LOGGER.debug("Creating event {}", event);
-                    client.v1().events().inNamespace(namespace).resource(event).create();
-                } catch (KubernetesClientException e) {
-                    LOGGER.error("Error creating event {}", event, e);
-                }
-                future.complete();
-            } catch (Exception e) {
-                future.fail(e);
+                LOGGER.debug("Creating event {}", event);
+                client.v1().events().inNamespace(namespace).resource(event).create();
+            } catch (KubernetesClientException e) {
+                LOGGER.error("Error creating event {}", event, e);
             }
-        }, handler);
-        return handler.future();
+
+            return null;
+        });
     }
 }

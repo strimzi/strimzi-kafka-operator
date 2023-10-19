@@ -19,11 +19,11 @@ import io.strimzi.operator.common.ReconciliationLogger;
 import io.vertx.core.AsyncResult;
 import io.vertx.core.Future;
 import io.vertx.core.Promise;
-import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 
 import java.io.Closeable;
 import java.util.List;
+import java.util.concurrent.Callable;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
@@ -52,24 +52,15 @@ public class ResourceSupport {
      * @return The Future
      */
     public Future<Void> closeOnWorkerThread(Closeable closeable) {
-        return executeBlocking(
-            blockingFuture -> {
-                try {
-                    LOGGER.debugOp("Closing {}", closeable);
-                    closeable.close();
-                    blockingFuture.complete();
-                } catch (Throwable t) {
-                    blockingFuture.fail(t);
-                }
-            });
+        return executeBlocking(() -> {
+            LOGGER.debugOp("Closing {}", closeable);
+            closeable.close();
+            return null;
+        });
     }
 
-    @SuppressWarnings("deprecation") // Uses a deprecated executeBlocking call that should be addressed later. This is tracked in https://github.com/strimzi/strimzi-kafka-operator/issues/9233
-    <T> Future<T> executeBlocking(Handler<Promise<T>> blockingCodeHandler) {
-        Promise<T> result = Promise.promise();
-        vertx.createSharedWorkerExecutor("kubernetes-ops-pool")
-                .executeBlocking(blockingCodeHandler, true, result);
-        return result.future();
+    <T> Future<T> executeBlocking(Callable<T> callable) {
+        return vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(callable);
     }
 
     /**
@@ -191,28 +182,25 @@ public class ResourceSupport {
             }
 
             @Override
-            @SuppressWarnings("deprecation") // Uses a deprecated executeBlocking call that should be addressed later. This is tracked in https://github.com/strimzi/strimzi-kafka-operator/issues/9233
             public void eventReceived(Action action, T resource) {
                 vertx.executeBlocking(
-                    f -> {
-                        try {
-                            U apply = watchFn.apply(action, resource);
-                            if (apply != null) {
-                                LOGGER.debugCr(reconciliation, "Satisfied: {}", watchFnDescription);
-                                f.tryComplete(apply);
-                                vertx.cancelTimer(timerId);
-                            } else {
-                                LOGGER.debugCr(reconciliation, "Not yet satisfied: {}", watchFnDescription);
+                        () -> {
+                            try {
+                                U apply = watchFn.apply(action, resource);
+                                if (apply != null) {
+                                    LOGGER.debugCr(reconciliation, "Satisfied: {}", watchFnDescription);
+                                    donePromise.tryComplete(apply);
+                                    vertx.cancelTimer(timerId);
+                                } else {
+                                    LOGGER.debugCr(reconciliation, "Not yet satisfied: {}", watchFnDescription);
+                                }
+
+                                return apply;
+                            } catch (Throwable t) {
+                                LOGGER.debugCr(reconciliation, "Ignoring exception thrown while evaluating watch {} because the future was already completed", watchFnDescription, t);
+                                throw t;
                             }
-                        } catch (Throwable t) {
-                            if (!f.tryFail(t)) {
-                                LOGGER.debugCr(reconciliation, "Ignoring exception thrown while " +
-                                        "evaluating watch {} because the future was already completed", watchFnDescription, t);
-                            }
-                        }
-                    },
-                    true,
-                        donePromise);
+                        });
             }
 
             @Override
@@ -233,18 +221,13 @@ public class ResourceSupport {
      * @return A Future which completes on the context thread.
      */
     Future<Void> deleteAsync(Deletable resource) {
-        return executeBlocking(
-            blockingFuture -> {
-                try {
-                    // Returns TRUE when resource was deleted and FALSE when it was not found (see BaseOperation Fabric8 class)
-                    // In both cases we return success since the end-result has been achieved
-                    // Throws an exception for other errors
-                    resource.delete();
-                    blockingFuture.complete();
-                } catch (Throwable t) {
-                    blockingFuture.fail(t);
-                }
-            });
+        return executeBlocking(() -> {
+            // Returns TRUE when resource was deleted and FALSE when it was not found (see BaseOperation Fabric8 class)
+            // In both cases we return success since the end-result has been achieved
+            // Throws an exception for other errors
+            resource.delete();
+            return null;
+        });
     }
 
     /**
@@ -254,14 +237,7 @@ public class ResourceSupport {
      * @return A Future which completes on the context thread.
      */
     <T> Future<T> getAsync(Gettable<T> resource) {
-        return executeBlocking(
-            blockingFuture -> {
-                try {
-                    blockingFuture.complete(resource.get());
-                } catch (Throwable t) {
-                    blockingFuture.fail(t);
-                }
-            });
+        return executeBlocking(() -> resource.get());
     }
 
     /**
@@ -271,13 +247,6 @@ public class ResourceSupport {
      * @return A Future which completes on the context thread.
      */
     <T extends HasMetadata, L extends KubernetesResourceList<T>> Future<List<T>> listAsync(Listable<L> resource) {
-        return executeBlocking(
-            blockingFuture -> {
-                try {
-                    blockingFuture.complete(resource.list(new ListOptionsBuilder().withResourceVersion("0").build()).getItems());
-                } catch (Throwable t) {
-                    blockingFuture.fail(t);
-                }
-            });
+        return executeBlocking(() -> resource.list(new ListOptionsBuilder().withResourceVersion("0").build()).getItems());
     }
 }

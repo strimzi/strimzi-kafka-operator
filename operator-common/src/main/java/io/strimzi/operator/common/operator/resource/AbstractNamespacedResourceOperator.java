@@ -22,7 +22,6 @@ import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.VertxUtil;
 import io.strimzi.operator.common.model.Labels;
 import io.vertx.core.Future;
-import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 
 import java.util.ArrayList;
@@ -91,7 +90,6 @@ public abstract class AbstractNamespacedResourceOperator<C extends KubernetesCli
      * @param desired The desired state of the resource.
      * @return A future which completes when the resource has been updated.
      */
-    @SuppressWarnings("deprecation") // Uses a deprecated executeBlocking call that should be addressed later. This is tracked in https://github.com/strimzi/strimzi-kafka-operator/issues/9233
     public Future<ReconcileResult<T>> reconcile(Reconciliation reconciliation, String namespace, String name, T desired) {
         if (desired != null && !namespace.equals(desired.getMetadata().getNamespace())) {
             return Future.failedFuture("Given namespace " + namespace + " incompatible with desired namespace " + desired.getMetadata().getNamespace());
@@ -99,34 +97,27 @@ public abstract class AbstractNamespacedResourceOperator<C extends KubernetesCli
             return Future.failedFuture("Given name " + name + " incompatible with desired name " + desired.getMetadata().getName());
         }
 
-        Promise<ReconcileResult<T>> promise = Promise.promise();
-        vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
-            future -> {
-                T current = operation().inNamespace(namespace).withName(name).get();
-                if (desired != null) {
-                    if (current == null) {
-                        LOGGER.debugCr(reconciliation, "{} {}/{} does not exist, creating it", resourceKind, namespace, name);
-                        internalCreate(reconciliation, namespace, name, desired).onComplete(future);
+        return getAsync(namespace, name)
+                .compose(current -> {
+                    if (desired != null) {
+                        if (current == null) {
+                            LOGGER.debugCr(reconciliation, "{} {}/{} does not exist, creating it", resourceKind, namespace, name);
+                            return internalCreate(reconciliation, namespace, name, desired);
+                        } else {
+                            LOGGER.debugCr(reconciliation, "{} {}/{} already exists, updating it", resourceKind, namespace, name);
+                            return internalUpdate(reconciliation, namespace, name, current, desired);
+                        }
                     } else {
-                        LOGGER.debugCr(reconciliation, "{} {}/{} already exists, updating it", resourceKind, namespace, name);
-                        internalUpdate(reconciliation, namespace, name, current, desired).onComplete(future);
+                        if (current != null) {
+                            // Deletion is desired
+                            LOGGER.debugCr(reconciliation, "{} {}/{} exist, deleting it", resourceKind, namespace, name);
+                            return internalDelete(reconciliation, namespace, name);
+                        } else {
+                            LOGGER.debugCr(reconciliation, "{} {}/{} does not exist, noop", resourceKind, namespace, name);
+                            return Future.succeededFuture(ReconcileResult.noop(null));
+                        }
                     }
-                } else {
-                    if (current != null) {
-                        // Deletion is desired
-                        LOGGER.debugCr(reconciliation, "{} {}/{} exist, deleting it", resourceKind, namespace, name);
-                        internalDelete(reconciliation, namespace, name).onComplete(future);
-                    } else {
-                        LOGGER.debugCr(reconciliation, "{} {}/{} does not exist, noop", resourceKind, namespace, name);
-                        future.complete(ReconcileResult.noop(null));
-                    }
-                }
-
-            },
-            false,
-            promise
-        );
-        return promise.future();
+                });
     }
 
     /**

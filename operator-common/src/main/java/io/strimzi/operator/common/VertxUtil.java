@@ -52,19 +52,8 @@ public final class VertxUtil {
      *
      * @param <T>   Type of the result
      */
-    @SuppressWarnings("deprecation") // Uses a deprecated executeBlocking call that should be addressed later. This is tracked in https://github.com/strimzi/strimzi-kafka-operator/issues/9233
     public static <T> Future<T> async(Vertx vertx, Supplier<T> supplier) {
-        Promise<T> result = Promise.promise();
-        vertx.executeBlocking(
-            future -> {
-                try {
-                    future.complete(supplier.get());
-                } catch (Throwable t) {
-                    future.fail(t);
-                }
-            }, result
-        );
-        return result.future();
+        return vertx.executeBlocking(() -> supplier.get());
     }
 
     /**
@@ -124,44 +113,45 @@ public final class VertxUtil {
         long deadline = System.currentTimeMillis() + timeoutMs;
         Handler<Long> handler = new Handler<>() {
             @Override
-            @SuppressWarnings("deprecation") // Uses a deprecated executeBlocking call that should be addressed later. This is tracked in https://github.com/strimzi/strimzi-kafka-operator/issues/9233
             public void handle(Long timerId) {
-                vertx.createSharedWorkerExecutor("kubernetes-ops-pool").executeBlocking(
-                    future -> {
-                        try {
-                            if (completed.getAsBoolean())   {
-                                future.complete();
+                vertx.createSharedWorkerExecutor("kubernetes-ops-pool")
+                        .executeBlocking(() -> {
+                            boolean result;
+
+                            try {
+                                result = completed.getAsBoolean();
+                            } catch (Throwable e) {
+                                LOGGER.warnCr(reconciliation, "Caught exception while waiting for {} to get {}", logContext, logState, e);
+                                throw e;
+                            }
+
+                            if (result) {
+                                return null;
                             } else {
                                 LOGGER.traceCr(reconciliation, "{} is not {}", logContext, logState);
-                                future.fail("Not " + logState + " yet");
+                                throw new RuntimeException("Not " + logState + " yet");
                             }
-                        } catch (Throwable e) {
-                            LOGGER.warnCr(reconciliation, "Caught exception while waiting for {} to get {}", logContext, logState, e);
-                            future.fail(e);
-                        }
-                    },
-                    true,
-                    res -> {
-                        if (res.succeeded()) {
-                            LOGGER.debugCr(reconciliation, "{} is {}", logContext, logState);
-                            promise.complete();
-                        } else {
-                            if (failOnError.test(res.cause())) {
-                                promise.fail(res.cause());
+                        })
+                        .onComplete(res -> {
+                            if (res.succeeded()) {
+                                LOGGER.debugCr(reconciliation, "{} is {}", logContext, logState);
+                                promise.complete();
                             } else {
-                                long timeLeft = deadline - System.currentTimeMillis();
-                                if (timeLeft <= 0) {
-                                    String exceptionMessage = String.format("Exceeded timeout of %dms while waiting for %s to be %s", timeoutMs, logContext, logState);
-                                    LOGGER.errorCr(reconciliation, exceptionMessage);
-                                    promise.fail(new TimeoutException(exceptionMessage));
+                                if (failOnError.test(res.cause())) {
+                                    promise.fail(res.cause());
                                 } else {
-                                    // Schedule ourselves to run again
-                                    vertx.setTimer(Math.min(pollIntervalMs, timeLeft), this);
+                                    long timeLeft = deadline - System.currentTimeMillis();
+                                    if (timeLeft <= 0) {
+                                        String exceptionMessage = String.format("Exceeded timeout of %dms while waiting for %s to be %s", timeoutMs, logContext, logState);
+                                        LOGGER.errorCr(reconciliation, exceptionMessage);
+                                        promise.fail(new TimeoutException(exceptionMessage));
+                                    } else {
+                                        // Schedule ourselves to run again
+                                        vertx.setTimer(Math.min(pollIntervalMs, timeLeft), this);
+                                    }
                                 }
                             }
-                        }
-                    }
-                );
+                        });
             }
         };
 
