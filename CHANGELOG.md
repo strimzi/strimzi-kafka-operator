@@ -2,7 +2,7 @@
 
 ## 0.39.0
 
-* The `KafkaNodePools` feature gate moves to beta stage and will be enabled by default.
+* The `KafkaNodePools` feature gate moves to beta stage and is enabled by default.
   If needed, `KafkaNodePools` can be disabled in the feature gates configuration in the Cluster Operator.
 
 

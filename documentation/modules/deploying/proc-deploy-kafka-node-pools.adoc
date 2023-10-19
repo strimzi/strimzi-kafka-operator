@@ -41,7 +41,7 @@ NOTE: If you want to migrate an existing Kafka cluster to use node pools, see th
 kubectl set env deployment/strimzi-cluster-operator STRIMZI_FEATURE_GATES="+UseKRaft"
 ----
 +
-Or by editing the Cluster Operator Deployment and updating the `STRIMZI_FEATURE_GATES` environment variable:
+Or by editing the Cluster Operator `Deployment` and updating the `STRIMZI_FEATURE_GATES` environment variable:
 +
 [source,yaml]
 ----
