@@ -177,9 +177,9 @@ finish:
   summary: Run acceptance strimzi test suite
   provision:
     hardware:
-      memory: ">= 16 GiB"
+      memory: ">= 24 GiB"
       cpu:
-        processors: ">= 4"
+        processors: ">= 8"
   discover+:
     test:
       - acceptance

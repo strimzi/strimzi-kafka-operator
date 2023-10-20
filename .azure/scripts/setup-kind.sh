@@ -100,9 +100,36 @@ function updateDockerDaemonConfiguration() {
     systemctl restart docker
 }
 
+: '
+@brief: Increases the inotify user watches and user instances limits on a Linux system.
+@param: None.
+@global: None.
+@note: Inotify is a Linux subsystem used for file system event notifications. This function
+       helps adjust the limits for applications or services that monitor a large number
+       of files or directories.
+       This is specifically needed for multi-node control plane cluster
+       https://github.com/kubernetes-sigs/kind/issues/2744#issuecomment-1127808069
+'
+function adjust_inotify_limits {
+    # Increase the inotify user watches limit
+    echo "Setting fs.inotify.max_user_watches to 655360..."
+    echo fs.inotify.max_user_watches=655360 | sudo tee -a /etc/sysctl.conf
+
+    # Increase the inotify user instances limit
+    echo "Setting fs.inotify.max_user_instances to 1280..."
+    echo fs.inotify.max_user_instances=1280 | sudo tee -a /etc/sysctl.conf
+
+    # Reload the system configuration settings
+    echo "Reloading sysctl settings..."
+    sudo sysctl -p
+
+    echo "Inotify limits adjusted successfully."
+}
+
 setup_kube_directory
 install_kubectl
 install_kubernetes_provisioner
+adjust_inotify_limits
 
 reg_name='kind-registry'
 reg_port='5001'
@@ -124,6 +151,13 @@ if [[ "$IP_FAMILY" = "ipv4" || "$IP_FAMILY" = "dual" ]]; then
     cat <<EOF | kind create cluster --config=-
     kind: Cluster
     apiVersion: kind.x-k8s.io/v1alpha4
+    nodes:
+    - role: control-plane
+    - role: control-plane
+    - role: control-plane
+    - role: worker
+    - role: worker
+    - role: worker
     name: kind-cluster
     containerdConfigPatches:
     - |-
@@ -178,6 +212,13 @@ elif [[ "$IP_FAMILY" = "ipv6" ]]; then
     cat <<EOF | kind create cluster --config=-
     kind: Cluster
     apiVersion: kind.x-k8s.io/v1alpha4
+    nodes:
+    - role: control-plane
+    - role: control-plane
+    - role: control-plane
+    - role: worker
+    - role: worker
+    - role: worker
     name: kind-cluster
     containerdConfigPatches:
     - |-
