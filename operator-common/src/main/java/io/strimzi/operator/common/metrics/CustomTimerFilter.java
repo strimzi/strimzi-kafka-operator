@@ -8,34 +8,29 @@ import io.micrometer.core.instrument.Meter;
 import io.micrometer.core.instrument.config.MeterFilter;
 import io.micrometer.core.instrument.distribution.DistributionStatisticConfig;
 
-import java.time.Duration;
-
 /**
- * Timer filter that can be used to get finer-grained histogram buckets
- * by overriding the configuration of meters with the given name.
+ * Custom timer filter that can be used to get custom histogram buckets
+ * by overriding the configuration of the meter with the given name.
  */
-public class FineGrainedTimerFilter implements MeterFilter {
+public class CustomTimerFilter implements MeterFilter {
     private String name;
+    private double[] sla;
 
     /**
      * Construct the timer filter.
      * @param name Name of the metric.
+     * @param sla Service level agreement (set of SLOs).
      */
-    public FineGrainedTimerFilter(String name) {
+    public CustomTimerFilter(String name, double[] sla) {
         this.name = name;
+        this.sla = sla;
     }
 
     @Override
     public DistributionStatisticConfig configure(Meter.Id id, DistributionStatisticConfig config) {
         if (id.getName().equals(name)) {
             return DistributionStatisticConfig.builder()
-                .serviceLevelObjectives(Duration.ofMillis(10).toNanos(),
-                    Duration.ofMillis(20).toNanos(),
-                    Duration.ofMillis(50).toNanos(),
-                    Duration.ofMillis(100).toNanos(),
-                    Duration.ofMillis(500).toNanos(),
-                    Duration.ofMillis(1000).toNanos(),
-                    Duration.ofMillis(5000).toNanos())
+                .serviceLevelObjectives(sla)
                 .build()
                 .merge(config);
         }

@@ -9,11 +9,12 @@ import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tags;
 import io.micrometer.core.instrument.Timer;
-import io.strimzi.operator.common.metrics.FineGrainedTimerFilter;
+import io.strimzi.operator.common.metrics.CustomTimerFilter;
 import io.vertx.micrometer.backends.BackendRegistries;
 
-import java.time.Duration;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import static java.time.Duration.ofMillis;
 
 /**
  * Wraps creation of Micrometer metrics.
@@ -73,17 +74,16 @@ public class MicrometerMetricsProvider implements MetricsProvider {
      */
     @Override
     public Timer timer(String name, String description, Tags tags) {
-        return Timer.builder(name)
-                .description(description)
-                .sla(Duration.ofMillis(1000),
-                    Duration.ofMillis(5000),
-                    Duration.ofMillis(10000),
-                    Duration.ofMillis(30000),
-                    Duration.ofMillis(60000),
-                    Duration.ofMillis(120000),
-                    Duration.ofMillis(300000))
-                .tags(tags)
-                .register(metrics);
+        metrics.config().meterFilter(new CustomTimerFilter(name, new double[]{
+            ofMillis(1000).toNanos(),
+            ofMillis(5000).toNanos(),
+            ofMillis(10000).toNanos(),
+            ofMillis(30000).toNanos(),
+            ofMillis(60000).toNanos(),
+            ofMillis(120000).toNanos(),
+            ofMillis(300000).toNanos()
+        }));
+        return buildTimer(name, description, tags);
     }
 
     /**
@@ -97,8 +97,23 @@ public class MicrometerMetricsProvider implements MetricsProvider {
      */
     @Override
     public Timer fineGrainedTimer(String name, String description, Tags tags) {
-        metrics.config().meterFilter(new FineGrainedTimerFilter(name));
-        return timer(name, description, tags);
+        metrics.config().meterFilter(new CustomTimerFilter(name, new double[]{
+            ofMillis(10).toNanos(),
+            ofMillis(20).toNanos(),
+            ofMillis(50).toNanos(),
+            ofMillis(100).toNanos(),
+            ofMillis(500).toNanos(),
+            ofMillis(1000).toNanos(),
+            ofMillis(5000).toNanos()
+        }));
+        return buildTimer(name, description, tags);
+    }
+
+    private Timer buildTimer(String name, String description, Tags tags) {
+        return Timer.builder(name)
+            .description(description)
+            .tags(tags)
+            .register(metrics);
     }
 
     /**

@@ -189,7 +189,7 @@ public class TopicOperatorMetricsTest {
 
     private KafkaTopic createResource(KubernetesClient client, String resourceName, String topicName) {
         var kt = Crds.topicOperation(client).
-            resource(new KafkaTopicBuilder()
+            resource(new KafkaTopicBuilder()    
                 .withNewMetadata()
                     .withName(resourceName)
                     .withNamespace(NAMESPACE)
