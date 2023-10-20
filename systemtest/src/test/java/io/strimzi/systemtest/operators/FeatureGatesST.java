@@ -208,7 +208,7 @@ public class FeatureGatesST extends AbstractST {
         final String disabledFgProducerName = "disabled-fg-producer";
 
         List<EnvVar> coEnvVars = new ArrayList<>();
-        coEnvVars.add(new EnvVar(Environment.STRIMZI_FEATURE_GATES_ENV, "-StableConnectIdentities", null));
+        coEnvVars.add(new EnvVar(Environment.STRIMZI_FEATURE_GATES_ENV, "-KafkaNodePools,-StableConnectIdentities", null));
 
         LOGGER.info("Deploying CO without Stable Connect Identities");
 
