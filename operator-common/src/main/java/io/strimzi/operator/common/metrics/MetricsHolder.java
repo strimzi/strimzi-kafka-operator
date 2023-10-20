@@ -244,7 +244,7 @@ public abstract class MetricsHolder {
     }
 
     /**
-     * Creates or gets an internal timer-type metric.
+     * Creates or gets a fine-grained timer-type metric.
      * This can be used to measure the duration of internal operations.
      *
      * @param namespace         Namespace of the resource
