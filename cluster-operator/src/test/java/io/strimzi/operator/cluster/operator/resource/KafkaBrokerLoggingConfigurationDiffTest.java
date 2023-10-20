@@ -22,8 +22,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 
 public class KafkaBrokerLoggingConfigurationDiffTest {
 
-    private final int brokerId = 0;
-
     private String getDesiredConfiguration(List<ConfigEntry> additional) {
         StringBuilder desiredConfigString = new StringBuilder();
         desiredConfigString.append("# Do not change this generated file. Logging can be configured in the corresponding Kubernetes resource.\n" +

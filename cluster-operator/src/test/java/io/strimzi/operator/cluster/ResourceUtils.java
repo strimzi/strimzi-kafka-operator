@@ -107,12 +107,12 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.List;
 import java.util.Properties;
-import java.util.Collection;
 
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyCollection;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -512,7 +512,7 @@ public class ResourceUtils {
                 } catch (ReflectiveOperationException e) {
                     throw new RuntimeException(e);
                 }
-                when(mock.describeTopics(any(Collection.class))).thenReturn(dtr);
+                when(mock.describeTopics(anyCollection())).thenReturn(dtr);
 
                 DescribeConfigsResult dcfr;
                 try {

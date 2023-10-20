@@ -930,7 +930,7 @@ public class KafkaConnectClusterTest {
 
             List<VolumeMount> volumeMounts = pod.getSpec().getContainers().get(0).getVolumeMounts();
             List<VolumeMount> selectedVolumeMounts = volumeMounts.stream().filter(vol -> vol.getName().equals(KafkaConnectCluster.EXTERNAL_CONFIGURATION_VOLUME_NAME_PREFIX + "my-volume")).toList();
-            assertThat(selected.size(), is(1));
+            assertThat(selectedVolumeMounts.size(), is(1));
             assertThat(selectedVolumeMounts.get(0).getName(), is(KafkaConnectCluster.EXTERNAL_CONFIGURATION_VOLUME_NAME_PREFIX + "my-volume"));
             assertThat(selectedVolumeMounts.get(0).getMountPath(), is(KafkaConnectCluster.EXTERNAL_CONFIGURATION_VOLUME_MOUNT_BASE_PATH + "my-volume"));
         });
@@ -963,7 +963,7 @@ public class KafkaConnectClusterTest {
 
             List<VolumeMount> volumeMounts = pod.getSpec().getContainers().get(0).getVolumeMounts();
             List<VolumeMount> selectedVolumeMounts = volumeMounts.stream().filter(vol -> vol.getName().startsWith(KafkaConnectCluster.EXTERNAL_CONFIGURATION_VOLUME_NAME_PREFIX + "my-volume")).toList();
-            assertThat(selected.size(), is(1));
+            assertThat(selectedVolumeMounts.size(), is(1));
             assertThat(selectedVolumeMounts.get(0).getName(), startsWith(KafkaConnectCluster.EXTERNAL_CONFIGURATION_VOLUME_NAME_PREFIX + "my-volume"));
             assertThat(selectedVolumeMounts.get(0).getMountPath(), is(KafkaConnectCluster.EXTERNAL_CONFIGURATION_VOLUME_MOUNT_BASE_PATH + "my.volume"));
         });
@@ -996,7 +996,7 @@ public class KafkaConnectClusterTest {
 
             List<VolumeMount> volumeMounts = pod.getSpec().getContainers().get(0).getVolumeMounts();
             List<VolumeMount> selectedVolumeMounts = volumeMounts.stream().filter(vol -> vol.getName().equals(KafkaConnectCluster.EXTERNAL_CONFIGURATION_VOLUME_NAME_PREFIX + "my-volume")).toList();
-            assertThat(selected.size(), is(1));
+            assertThat(selectedVolumeMounts.size(), is(1));
             assertThat(selectedVolumeMounts.get(0).getName(), is(KafkaConnectCluster.EXTERNAL_CONFIGURATION_VOLUME_NAME_PREFIX + "my-volume"));
             assertThat(selectedVolumeMounts.get(0).getMountPath(), is(KafkaConnectCluster.EXTERNAL_CONFIGURATION_VOLUME_MOUNT_BASE_PATH + "my-volume"));
         });
@@ -1029,7 +1029,7 @@ public class KafkaConnectClusterTest {
 
             List<VolumeMount> volumeMounts = pod.getSpec().getContainers().get(0).getVolumeMounts();
             List<VolumeMount> selectedVolumeMounts = volumeMounts.stream().filter(vol -> vol.getName().startsWith(KafkaConnectCluster.EXTERNAL_CONFIGURATION_VOLUME_NAME_PREFIX + "my-volume")).toList();
-            assertThat(selected.size(), is(1));
+            assertThat(selectedVolumeMounts.size(), is(1));
             assertThat(selectedVolumeMounts.get(0).getName(), startsWith(KafkaConnectCluster.EXTERNAL_CONFIGURATION_VOLUME_NAME_PREFIX + "my-volume"));
             assertThat(selectedVolumeMounts.get(0).getMountPath(), is(KafkaConnectCluster.EXTERNAL_CONFIGURATION_VOLUME_MOUNT_BASE_PATH + "my.volume"));
         });
@@ -1059,8 +1059,8 @@ public class KafkaConnectClusterTest {
             List<Volume> selected = volumes.stream().filter(vol -> vol.getName().equals(KafkaConnectCluster.EXTERNAL_CONFIGURATION_VOLUME_NAME_PREFIX + "my-volume")).toList();
             assertThat(selected.size(), is(0));
 
-            List<VolumeMount> volumeMounths = pod.getSpec().getContainers().get(0).getVolumeMounts();
-            List<VolumeMount> selectedVolumeMounts = volumeMounths.stream().filter(vol -> vol.getName().equals(KafkaConnectCluster.EXTERNAL_CONFIGURATION_VOLUME_NAME_PREFIX + "my-volume")).toList();
+            List<VolumeMount> volumeMounts = pod.getSpec().getContainers().get(0).getVolumeMounts();
+            List<VolumeMount> selectedVolumeMounts = volumeMounts.stream().filter(vol -> vol.getName().equals(KafkaConnectCluster.EXTERNAL_CONFIGURATION_VOLUME_NAME_PREFIX + "my-volume")).toList();
             assertThat(selectedVolumeMounts.size(), is(0));
         });
     }
@@ -1087,8 +1087,8 @@ public class KafkaConnectClusterTest {
             List<Volume> selected = volumes.stream().filter(vol -> vol.getName().equals(KafkaConnectCluster.EXTERNAL_CONFIGURATION_VOLUME_NAME_PREFIX + "my-volume")).toList();
             assertThat(selected.size(), is(0));
 
-            List<VolumeMount> volumeMounths = pod.getSpec().getContainers().get(0).getVolumeMounts();
-            List<VolumeMount> selectedVolumeMounts = volumeMounths.stream().filter(vol -> vol.getName().equals(KafkaConnectCluster.EXTERNAL_CONFIGURATION_VOLUME_NAME_PREFIX + "my-volume")).toList();
+            List<VolumeMount> volumeMounts = pod.getSpec().getContainers().get(0).getVolumeMounts();
+            List<VolumeMount> selectedVolumeMounts = volumeMounts.stream().filter(vol -> vol.getName().equals(KafkaConnectCluster.EXTERNAL_CONFIGURATION_VOLUME_NAME_PREFIX + "my-volume")).toList();
             assertThat(selectedVolumeMounts.size(), is(0));
         });
     }

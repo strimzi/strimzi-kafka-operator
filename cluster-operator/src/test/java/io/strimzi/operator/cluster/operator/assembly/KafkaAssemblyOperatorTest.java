@@ -104,7 +104,6 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.ArgumentMatchers;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -561,7 +560,7 @@ public class KafkaAssemblyOperatorTest {
                 });
 
         when(mockPvcOps.listAsync(eq(kafkaNamespace), ArgumentMatchers.any(Labels.class)))
-                .thenAnswer(invocation -> Future.succeededFuture(Collections.EMPTY_LIST));
+                .thenAnswer(invocation -> Future.succeededFuture(emptyList()));
 
         Set<String> expectedPvcs = new HashSet<>(zkPvcs.keySet());
         expectedPvcs.addAll(kafkaPvcs.keySet());
@@ -613,7 +612,7 @@ public class KafkaAssemblyOperatorTest {
         );
 
         Map<String, Secret> secretsMap = secrets.stream().collect(Collectors.toMap(s -> s.getMetadata().getName(), s -> s));
-        when(mockSecretOps.listAsync(any(), any(Labels.class))).thenReturn(Future.succeededFuture(new ArrayList(secretsMap.values())));
+        when(mockSecretOps.listAsync(any(), any(Labels.class))).thenReturn(Future.succeededFuture(new ArrayList<>(secretsMap.values())));
         when(mockSecretOps.getAsync(anyString(), any())).thenAnswer(i ->
                 Future.succeededFuture(secretsMap.get(i.<String>getArgument(1)))
         );
@@ -944,7 +943,7 @@ public class KafkaAssemblyOperatorTest {
                     } else if (labels.toMap().get(Labels.STRIMZI_NAME_LABEL).contains("zookeeper")) {
                         return Future.succeededFuture(new ArrayList<>(zkPvcs.values()));
                     }
-                    return Future.succeededFuture(Collections.EMPTY_LIST);
+                    return Future.succeededFuture(emptyList());
                 });
 
         when(mockPvcOps.reconcile(any(), anyString(), anyString(), any())).thenReturn(Future.succeededFuture());

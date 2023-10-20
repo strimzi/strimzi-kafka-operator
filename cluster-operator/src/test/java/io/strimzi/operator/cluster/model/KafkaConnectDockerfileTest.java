@@ -702,22 +702,4 @@ public class KafkaConnectDockerfileTest {
                 "USER 1001\n" +
                 "\n"));
     }
-
-    private static Build connectBuildFromGavAndUrl(String g, String a, String v, String url) {
-        MavenArtifact mvn = new MavenArtifactBuilder()
-                .withGroup(g)
-                .withArtifact(a)
-                .withVersion(v)
-                .build();
-        if (url != null) {
-            mvn.setRepository(url);
-        }
-
-        return new BuildBuilder()
-                .withPlugins(new PluginBuilder()
-                        .withName("my-connector-plugin")
-                        .withArtifacts(mvn)
-                        .build())
-                .build();
-    }
 }
