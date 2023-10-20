@@ -197,7 +197,7 @@ the documentation for more details.
 | `labels`                                    | Add labels to Operator Pod                                                      | `{}`                         |
 | `nodeSelector`                              | Add a node selector to Operator Pod                                             | `{}`                         |
 | `featureGates`                              | Feature Gates configuration                                                     | `nil`                        |
-| `tmpDirSizeLimit`                           | Set the `sizeLimit` for the tmp dir volume used by the operator                 | `1Mi`                        |
+| `tmpDirSizeLimit`                           | Set the `sizeLimit` for the tmp dir volume used by the operator                 | `10Mi`                        |
 | `labelsExclusionPattern`                    | Override the exclude pattern for exclude some labels                            | `""`                         |
 | `generateNetworkPolicy`                     | Controls whether Strimzi generates network policy resources                     | `true`                       |
 | `connectBuildTimeoutMs`                     | Overrides the default timeout value for building new Kafka Connect              | `300000`                     |

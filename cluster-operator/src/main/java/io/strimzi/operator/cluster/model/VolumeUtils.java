@@ -45,7 +45,7 @@ public class VolumeUtils {
      */
     /*test*/ static final String STRIMZI_TMP_DIRECTORY_DEFAULT_VOLUME_NAME = "strimzi-tmp";
     /*test*/ static final String STRIMZI_TMP_DIRECTORY_DEFAULT_MOUNT_PATH = "/tmp";
-    /*test*/ static final String STRIMZI_TMP_DIRECTORY_DEFAULT_SIZE = "5Mi";
+    /*test*/ static final String STRIMZI_TMP_DIRECTORY_DEFAULT_SIZE = "10Mi";
 
     private static final Pattern VOLUME_NAME_PATTERN = Pattern.compile("^([a-z0-9]{1}[a-z0-9-]{0,61}[a-z0-9]{1})$");
 

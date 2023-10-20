@@ -27,7 +27,7 @@ fullReconciliationIntervalMs: 120000
 operationTimeoutMs: 300000
 kubernetesServiceDnsDomain: cluster.local
 featureGates: ""
-tmpDirSizeLimit: 1Mi
+tmpDirSizeLimit: 10Mi
 
 # Example on how to configure extraEnvs
 # extraEnvs:

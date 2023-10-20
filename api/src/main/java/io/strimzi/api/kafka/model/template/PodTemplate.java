@@ -185,9 +185,9 @@ public class PodTemplate implements HasMetadataTemplate, Serializable, UnknownPr
     }
 
     @Pattern(Constants.MEMORY_REGEX)
-    @JsonProperty(defaultValue = "5Mi")
+    @JsonProperty(defaultValue = "10Mi")
     @Description("Defines the total amount (for example `1Gi`) of local storage required for temporary EmptyDir volume (`/tmp`). " +
-            "Default value is `5Mi`.")
+            "Default value is `10Mi`.")
     public String getTmpDirSizeLimit() {
         return tmpDirSizeLimit;
     }

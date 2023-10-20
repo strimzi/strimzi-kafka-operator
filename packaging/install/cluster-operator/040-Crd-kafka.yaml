@@ -1281,7 +1281,7 @@ spec:
                           tmpDirSizeLimit:
                             type: string
                             pattern: "^([0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$"
-                            description: Defines the total amount (for example `1Gi`) of local storage required for temporary EmptyDir volume (`/tmp`). Default value is `5Mi`.
+                            description: Defines the total amount (for example `1Gi`) of local storage required for temporary EmptyDir volume (`/tmp`). Default value is `10Mi`.
                           enableServiceLinks:
                             type: boolean
                             description: Indicates whether information about services should be injected into Pod's environment variables.
@@ -2415,7 +2415,7 @@ spec:
                           tmpDirSizeLimit:
                             type: string
                             pattern: "^([0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$"
-                            description: Defines the total amount (for example `1Gi`) of local storage required for temporary EmptyDir volume (`/tmp`). Default value is `5Mi`.
+                            description: Defines the total amount (for example `1Gi`) of local storage required for temporary EmptyDir volume (`/tmp`). Default value is `10Mi`.
                           enableServiceLinks:
                             type: boolean
                             description: Indicates whether information about services should be injected into Pod's environment variables.
@@ -3526,7 +3526,7 @@ spec:
                           tmpDirSizeLimit:
                             type: string
                             pattern: "^([0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$"
-                            description: Defines the total amount (for example `1Gi`) of local storage required for temporary EmptyDir volume (`/tmp`). Default value is `5Mi`.
+                            description: Defines the total amount (for example `1Gi`) of local storage required for temporary EmptyDir volume (`/tmp`). Default value is `10Mi`.
                           enableServiceLinks:
                             type: boolean
                             description: Indicates whether information about services should be injected into Pod's environment variables.
@@ -4558,7 +4558,7 @@ spec:
                           tmpDirSizeLimit:
                             type: string
                             pattern: "^([0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$"
-                            description: Defines the total amount (for example `1Gi`) of local storage required for temporary EmptyDir volume (`/tmp`). Default value is `5Mi`.
+                            description: Defines the total amount (for example `1Gi`) of local storage required for temporary EmptyDir volume (`/tmp`). Default value is `10Mi`.
                           enableServiceLinks:
                             type: boolean
                             description: Indicates whether information about services should be injected into Pod's environment variables.
@@ -5413,7 +5413,7 @@ spec:
                           tmpDirSizeLimit:
                             type: string
                             pattern: "^([0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$"
-                            description: Defines the total amount (for example `1Gi`) of local storage required for temporary EmptyDir volume (`/tmp`). Default value is `5Mi`.
+                            description: Defines the total amount (for example `1Gi`) of local storage required for temporary EmptyDir volume (`/tmp`). Default value is `10Mi`.
                           enableServiceLinks:
                             type: boolean
                             description: Indicates whether information about services should be injected into Pod's environment variables.
@@ -6029,7 +6029,7 @@ spec:
                           tmpDirSizeLimit:
                             type: string
                             pattern: "^([0-9.]+)([eEinumkKMGTP]*[-+]?[0-9]*)$"
-                            description: Defines the total amount (for example `1Gi`) of local storage required for temporary EmptyDir volume (`/tmp`). Default value is `5Mi`.
+                            description: Defines the total amount (for example `1Gi`) of local storage required for temporary EmptyDir volume (`/tmp`). Default value is `10Mi`.
                           enableServiceLinks:
                             type: boolean
                             description: Indicates whether information about services should be injected into Pod's environment variables.

@@ -1182,7 +1182,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
         List<Volume> volumeList = new ArrayList<>();
 
         if (rack != null || isExposedWithNodePort()) {
-            volumeList.add(VolumeUtils.createEmptyDirVolume(INIT_VOLUME_NAME, "1Mi", "Memory"));
+            volumeList.add(VolumeUtils.createEmptyDirVolume(INIT_VOLUME_NAME, "10Mi", "Memory"));
         }
 
         volumeList.add(VolumeUtils.createTempDirVolume(templatePod));

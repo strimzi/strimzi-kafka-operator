@@ -117,7 +117,7 @@ include::../api/io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaLi
 |string
 |port                1.2+<.<a|Port number used by the listener inside Kafka. The port number has to be unique within a given Kafka cluster. Allowed port numbers are 9092 and higher with the exception of ports 9404 and 9999, which are already used for Prometheus and JMX. Depending on the listener type, the port number might not be the same as the port number that connects Kafka clients.
 |integer
-|type                1.2+<.<a|Type of the listener. Currently the supported types are `internal`, `route`, `loadbalancer`, `nodeport` and `ingress`. 
+|type                1.2+<.<a|Type of the listener. Currently the supported types are `internal`, `route`, `loadbalancer`, `nodeport` and `ingress`.
 
 * `internal` type exposes Kafka internally only within the Kubernetes cluster.
 * `route` type uses OpenShift Routes to expose Kafka.
@@ -248,7 +248,7 @@ It must have the value `oauth` for the type `KafkaListenerAuthenticationOAuth`.
 |string
 |type                               1.2+<.<a|Must be `oauth`.
 |string
-|userInfoEndpointUri                1.2+<.<a|URI of the User Info Endpoint to use as a fallback to obtaining the user id when the Introspection Endpoint does not return information that can be used for the user id. 
+|userInfoEndpointUri                1.2+<.<a|URI of the User Info Endpoint to use as a fallback to obtaining the user id when the Introspection Endpoint does not return information that can be used for the user id.
 |string
 |userNameClaim                      1.2+<.<a|Name of the claim from the JWT authentication token, Introspection Endpoint response or User Info Endpoint response which will be used to extract the user id. Defaults to `sub`.
 |string
@@ -840,7 +840,7 @@ It must have the value `external` for the type `ExternalLogging`.
 |Property          |Description
 |type       1.2+<.<a|Must be `external`.
 |string
-|valueFrom  1.2+<.<a|`ConfigMap` entry where the logging configuration is stored. 
+|valueFrom  1.2+<.<a|`ConfigMap` entry where the logging configuration is stored.
 |xref:type-ExternalConfigurationReference-{context}[`ExternalConfigurationReference`]
 |====
 
@@ -974,7 +974,7 @@ include::../api/io.strimzi.api.kafka.model.template.PodTemplate.adoc[leveloffset
 
 
 |https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.23/#hostalias-v1-core[HostAlias] array
-|tmpDirSizeLimit                1.2+<.<a|Defines the total amount (for example `1Gi`) of local storage required for temporary EmptyDir volume (`/tmp`). Default value is `5Mi`.
+|tmpDirSizeLimit                1.2+<.<a|Defines the total amount (for example `1Gi`) of local storage required for temporary EmptyDir volume (`/tmp`). Default value is `10Mi`.
 |string
 |enableServiceLinks             1.2+<.<a|Indicates whether information about services should be injected into Pod's environment variables.
 |boolean
@@ -2221,7 +2221,7 @@ Used in: xref:type-Plugin-{context}[`Plugin`]
 |Property          |Description
 |url        1.2+<.<a|URL of the artifact which will be downloaded. Strimzi does not do any security scanning of the downloaded artifacts. For security reasons, you should first verify the artifacts manually and configure the checksum verification to make sure the same artifact is used in the automated build. Required for `jar`, `zip`, `tgz` and `other` artifacts. Not applicable to the `maven` artifact type.
 |string
-|sha512sum  1.2+<.<a|SHA512 checksum of the artifact. Optional. If specified, the checksum will be verified while building the new container. If not specified, the downloaded artifact will not be verified. Not applicable to the `maven` artifact type. 
+|sha512sum  1.2+<.<a|SHA512 checksum of the artifact. Optional. If specified, the checksum will be verified while building the new container. If not specified, the downloaded artifact will not be verified. Not applicable to the `maven` artifact type.
 |string
 |insecure   1.2+<.<a|By default, connections using TLS are verified to check they are secure. The server certificate used must be valid, trusted, and contain the server name. By setting this option to `true`, all TLS verification is disabled and the artifact will be downloaded, even when the server is considered insecure.
 |boolean
@@ -2240,7 +2240,7 @@ Used in: xref:type-Plugin-{context}[`Plugin`]
 |Property          |Description
 |url        1.2+<.<a|URL of the artifact which will be downloaded. Strimzi does not do any security scanning of the downloaded artifacts. For security reasons, you should first verify the artifacts manually and configure the checksum verification to make sure the same artifact is used in the automated build. Required for `jar`, `zip`, `tgz` and `other` artifacts. Not applicable to the `maven` artifact type.
 |string
-|sha512sum  1.2+<.<a|SHA512 checksum of the artifact. Optional. If specified, the checksum will be verified while building the new container. If not specified, the downloaded artifact will not be verified. Not applicable to the `maven` artifact type. 
+|sha512sum  1.2+<.<a|SHA512 checksum of the artifact. Optional. If specified, the checksum will be verified while building the new container. If not specified, the downloaded artifact will not be verified. Not applicable to the `maven` artifact type.
 |string
 |insecure   1.2+<.<a|By default, connections using TLS are verified to check they are secure. The server certificate used must be valid, trusted, and contain the server name. By setting this option to `true`, all TLS verification is disabled and the artifact will be downloaded, even when the server is considered insecure.
 |boolean
@@ -2259,7 +2259,7 @@ Used in: xref:type-Plugin-{context}[`Plugin`]
 |Property          |Description
 |url        1.2+<.<a|URL of the artifact which will be downloaded. Strimzi does not do any security scanning of the downloaded artifacts. For security reasons, you should first verify the artifacts manually and configure the checksum verification to make sure the same artifact is used in the automated build. Required for `jar`, `zip`, `tgz` and `other` artifacts. Not applicable to the `maven` artifact type.
 |string
-|sha512sum  1.2+<.<a|SHA512 checksum of the artifact. Optional. If specified, the checksum will be verified while building the new container. If not specified, the downloaded artifact will not be verified. Not applicable to the `maven` artifact type. 
+|sha512sum  1.2+<.<a|SHA512 checksum of the artifact. Optional. If specified, the checksum will be verified while building the new container. If not specified, the downloaded artifact will not be verified. Not applicable to the `maven` artifact type.
 |string
 |insecure   1.2+<.<a|By default, connections using TLS are verified to check they are secure. The server certificate used must be valid, trusted, and contain the server name. By setting this option to `true`, all TLS verification is disabled and the artifact will be downloaded, even when the server is considered insecure.
 |boolean
@@ -2303,7 +2303,7 @@ Used in: xref:type-Plugin-{context}[`Plugin`]
 |Property          |Description
 |url        1.2+<.<a|URL of the artifact which will be downloaded. Strimzi does not do any security scanning of the downloaded artifacts. For security reasons, you should first verify the artifacts manually and configure the checksum verification to make sure the same artifact is used in the automated build. Required for `jar`, `zip`, `tgz` and `other` artifacts. Not applicable to the `maven` artifact type.
 |string
-|sha512sum  1.2+<.<a|SHA512 checksum of the artifact. Optional. If specified, the checksum will be verified while building the new container. If not specified, the downloaded artifact will not be verified. Not applicable to the `maven` artifact type. 
+|sha512sum  1.2+<.<a|SHA512 checksum of the artifact. Optional. If specified, the checksum will be verified while building the new container. If not specified, the downloaded artifact will not be verified. Not applicable to the `maven` artifact type.
 |string
 |fileName   1.2+<.<a|Name under which the artifact will be stored.
 |string
@@ -2424,7 +2424,7 @@ Used in: xref:type-KafkaUser-{context}[`KafkaUser`]
 [options="header"]
 |====
 |Property               |Description
-|authentication  1.2+<.<a|Authentication mechanism enabled for this Kafka user. The supported authentication mechanisms are `scram-sha-512`, `tls`, and `tls-external`. 
+|authentication  1.2+<.<a|Authentication mechanism enabled for this Kafka user. The supported authentication mechanisms are `scram-sha-512`, `tls`, and `tls-external`.
 
 * `scram-sha-512` generates a secret with SASL SCRAM-SHA-512 credentials.
 * `tls` generates a secret with user certificate for mutual TLS authentication.
@@ -3365,7 +3365,7 @@ Used in: xref:type-KafkaRebalance-{context}[`KafkaRebalance`]
 |====
 |Property                                        |Description
 |mode                                     1.2+<.<a|Mode to run the rebalancing. The supported modes are `full`, `add-brokers`, `remove-brokers`.
-If not specified, the `full` mode is used by default. 
+If not specified, the `full` mode is used by default.
 
 * `full` mode runs the rebalancing across all the brokers in the cluster.
 * `add-brokers` mode can be used after scaling up the cluster to move some replicas to the newly added brokers.

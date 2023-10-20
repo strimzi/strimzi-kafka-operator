@@ -19,7 +19,7 @@ spec:
         - name: strimzi-tmp
           emptyDir:
             medium: Memory
-            sizeLimit: 5Mi
+            sizeLimit: 10Mi
       containers:
         - name: strimzi-user-operator
           image: quay.io/strimzi/operator:0.38.0

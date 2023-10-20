@@ -372,7 +372,7 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
         volumeList.add(VolumeUtils.createConfigMapVolume(LOG_AND_METRICS_CONFIG_VOLUME_NAME, loggingAndMetricsConfigMapName));
 
         if (rack != null) {
-            volumeList.add(VolumeUtils.createEmptyDirVolume(INIT_VOLUME_NAME, "1Mi", "Memory"));
+            volumeList.add(VolumeUtils.createEmptyDirVolume(INIT_VOLUME_NAME, "10Mi", "Memory"));
         }
 
         if (tls != null) {
