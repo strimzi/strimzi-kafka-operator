@@ -107,7 +107,6 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
     protected static final String COMPONENT_TYPE = "kafka";
 
     protected static final String ENV_VAR_KAFKA_INIT_EXTERNAL_ADDRESS = "EXTERNAL_ADDRESS";
-    /* test */ static final String ENV_VAR_STRIMZI_CLUSTER_ID = "STRIMZI_CLUSTER_ID";
     /* test */ static final String ENV_VAR_STRIMZI_KRAFT_ENABLED = "STRIMZI_KRAFT_ENABLED";
     private static final String ENV_VAR_KAFKA_METRICS_ENABLED = "KAFKA_METRICS_ENABLED";
 
@@ -194,6 +193,11 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
      * Key under which the listener configuration is stored in Config Map
      */
     public static final String BROKER_LISTENERS_FILENAME = "listeners.config";
+
+    /**
+     * Key under which the Kafka cluster.id is stored in Config Map
+     */
+    public static final String BROKER_CLUSTER_ID_FILENAME = "cluster.id";
 
     // Kafka configuration
     private Rack rack;
@@ -1428,7 +1432,6 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
         }
 
         if (useKRaft)   {
-            varList.add(ContainerUtils.createEnvVar(ENV_VAR_STRIMZI_CLUSTER_ID, clusterId));
             varList.add(ContainerUtils.createEnvVar(ENV_VAR_STRIMZI_KRAFT_ENABLED, "true"));
         }
 
@@ -1663,6 +1666,11 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
                 // List of configured listeners => StrimziPodSets still need this because of OAUTH and how the OAUTH secret
                 // environment variables are parsed in the container bash scripts
                 data.put(BROKER_LISTENERS_FILENAME, listeners.stream().map(ListenersUtils::envVarIdentifier).collect(Collectors.joining(" ")));
+
+                if (useKRaft) {
+                    // In KRaft, we need to pass the Kafka CLuster ID
+                    data.put(BROKER_CLUSTER_ID_FILENAME, clusterId);
+                }
 
                 configMaps.add(ConfigMapUtils.createConfigMap(node.podName(), namespace, pool.labels.withStrimziPodName(node.podName()), pool.ownerReference, data));
 

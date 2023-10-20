@@ -3898,11 +3898,8 @@ public class KafkaClusterTest {
         assertThat(config, CoreMatchers.containsString("process.roles"));
         assertThat(config, CoreMatchers.containsString("controller.quorum.voters"));
 
-        // Test that ClusterID KRaft flag are passed as environment variable
+        // Test that KRaft flag is passed as environment variable
         List<EnvVar> kafkaEnvVars = kc.getEnvVars(pools.get(0));
-        EnvVar clusterIdEnvVar = kafkaEnvVars.stream().filter(env -> KafkaCluster.ENV_VAR_STRIMZI_CLUSTER_ID.equals(env.getName())).findFirst().orElse(null);
-        assertThat(clusterIdEnvVar, is(Matchers.notNullValue()));
-        assertThat(clusterIdEnvVar.getValue().isEmpty(), is(false));
         EnvVar kraftEnabledEnvVar = kafkaEnvVars.stream().filter(env -> KafkaCluster.ENV_VAR_STRIMZI_KRAFT_ENABLED.equals(env.getName())).findFirst().orElse(null);
         assertThat(kraftEnabledEnvVar, is(Matchers.notNullValue()));
         assertThat(kraftEnabledEnvVar.getValue().isEmpty(), is(false));
@@ -3930,11 +3927,8 @@ public class KafkaClusterTest {
         assertThat(config, CoreMatchers.containsString("process.roles"));
         assertThat(config, CoreMatchers.containsString("controller.quorum.voters"));
 
-        // Test that ClusterID and KRaft flag are passed as environment variable
+        // Test that the KRaft flag is passed as environment variable
         List<EnvVar> kafkaEnvVars = kc.getEnvVars(pools.get(0));
-        EnvVar clusterIdEnvVar = kafkaEnvVars.stream().filter(env -> KafkaCluster.ENV_VAR_STRIMZI_CLUSTER_ID.equals(env.getName())).findFirst().orElse(null);
-        assertThat(clusterIdEnvVar, is(Matchers.notNullValue()));
-        assertThat(clusterIdEnvVar.getValue(), is(clusterId));
         EnvVar kraftEnabledEnvVar = kafkaEnvVars.stream().filter(env -> KafkaCluster.ENV_VAR_STRIMZI_KRAFT_ENABLED.equals(env.getName())).findFirst().orElse(null);
         assertThat(kraftEnabledEnvVar, is(Matchers.notNullValue()));
         assertThat(kraftEnabledEnvVar.getValue().isEmpty(), is(false));

@@ -133,15 +133,9 @@ public class NodePoolUtils {
 
                 // Validate JBOD storage
                 errors.addAll(validateKRaftJbodStorage(nodePools));
-
-                // Validate cluster IDs
-                errors.addAll(validateKRaftClusterIds(reconciliation, kafka, nodePools));
             } else {
                 // Validate process roles
                 errors.addAll(validateZooKeeperBasedProcessRoles(nodePools));
-
-                // Validate cluster IDs
-                errors.addAll(validateZooKeeperBasedClusterIds(reconciliation, kafka, nodePools));
             }
 
             validateNodeIdRanges(reconciliation, nodePools);
@@ -244,55 +238,6 @@ public class NodePoolUtils {
     }
 
     /**
-     * Extracts the cluster IDs found in the Kafka and KafkaNodePool custom resources and validates whether the
-     * resources do not belong to different Kafka cluster. This method is used for ZooKeeper based Kafka clusters. In
-     * ZooKeeper based clusters, Kafka generates the cluster ID on its own. So the Node Pools cannot have a cluster ID
-     * before the Kafka cluster.
-     *
-     * @param reconciliation    Reconciliation marker
-     * @param kafka             The Kafka custom resource which should be validated
-     * @param pools             The list of KafkaNodePool custom resources which should be validated
-     *
-     * @return  List with errors found while checking the cluster IDs or null if no issues found
-     */
-    public static List<String> validateZooKeeperBasedClusterIds(Reconciliation reconciliation, Kafka kafka, List<KafkaNodePool> pools)   {
-        String kafkaCrClusterId = null; // Stores the cluster ID found in the Kafka CR
-        boolean hasClusterIdTooEarly = false; // indicates if some node pool has a cluster ID before the Kafka CR
-        boolean hasConflict = false; // indicates if multiple different cluster IDs have been found
-
-        // Try to extract the cluster ID from the Kafka CR status first
-        if (kafka.getStatus() != null && kafka.getStatus().getClusterId() != null) {
-            kafkaCrClusterId = kafka.getStatus().getClusterId();
-        }
-
-        // Go through the pools, try to extract the Cluster ID and validate it against already found
-        // For ZooKeeper based clusters, the Node Pools are allowed to have:
-        //     * No cluster ID regardless whether the Kafka CR has some cluster ID or not (e.g. with new node pools)
-        //     * The same cluster ID as the Kafka CR if the Kafka CR has a cluster ID already
-        //
-        // But they are not allowed to have any cluster ID when the Kafka CR does not have one yet.
-        for (KafkaNodePool pool : pools)   {
-            if (pool.getStatus() != null && pool.getStatus().getClusterId() != null)   {
-                if (kafkaCrClusterId == null)   {
-                    hasClusterIdTooEarly = true;
-                    LOGGER.warnCr(reconciliation, "Cluster ID {} found in KafkaNodePool {} is not allowed without the same cluster ID being present in the Kafka custom resource", pool.getStatus().getClusterId(), pool.getMetadata().getName());
-                } else if (!kafkaCrClusterId.equals(pool.getStatus().getClusterId())) {
-                    hasConflict = true;
-                    LOGGER.warnCr(reconciliation, "Cluster ID {} found in KafkaNodePool {} is not the same as the cluster ID {} found in the Kafka custom resource", pool.getStatus().getClusterId(), pool.getMetadata().getName(), kafkaCrClusterId);
-                }
-            }
-        }
-
-        if (hasConflict) {
-            return List.of("The Kafka custom resource and its KafkaNodePool resources use different cluster IDs.");
-        } else if (hasClusterIdTooEarly)   {
-            return List.of("The KafkaNodePool resources should not have cluster ID set before the Kafka custom resource.");
-        } else {
-            return List.of();
-        }
-    }
-
-    /**
      * Validates the strimzi.io/next-node-ids and strimzi.io/remove-node-ids annotations on the KafkaNodePool resources
      * and if they are invalid, a warning is logged. Invalid annotations do not break reconciliation and do not throw
      * exception. If a scaling event happens and the corresponding annotation is invalid, the operator will ignore it
@@ -316,47 +261,6 @@ public class NodePoolUtils {
                 LOGGER.warnCr(reconciliation, "Invalid annotation {} on KafkaNodePool {} with value {}", Annotations.ANNO_STRIMZI_IO_REMOVE_NODE_IDS, pool.getMetadata().getName(), nextNodeIds);
             }
         });
-    }
-
-    /**
-     * Extracts the cluster IDs found in the Kafka and KafkaNodePool custom resources and validates whether the
-     * resources do not belong to different Kafka cluster. This method is used for KRaft based Kafka clusters. In Kraft
-     * based Kafka clusters, we set the cluster ID our-self. So it might happen that the KafkaNodePool status has the
-     * new cluster ID but the Kafka CR does not due to some intermittent failure. This differs from ZooKeeper based
-     * Kafka clusters which have their own validation method.
-     *
-     * @param reconciliation    Reconciliation marker
-     * @param kafka             The Kafka custom resource which should be validated
-     * @param pools             The list of KafkaNodePool custom resources which should be validated
-     *
-     * @return  List with errors found while checking the cluster IDs or null if no issues found
-     */
-    public static List<String> validateKRaftClusterIds(Reconciliation reconciliation, Kafka kafka, List<KafkaNodePool> pools)   {
-        String firstFoundClusterId = null; // Stores the first found Cluster ID
-        boolean hasConflict = false; // indicates if multiple different cluster IDs have been found
-
-        // Try to extract the cluster ID from the Kafka CR status first
-        if (kafka.getStatus() != null && kafka.getStatus().getClusterId() != null) {
-            firstFoundClusterId = kafka.getStatus().getClusterId();
-        }
-
-        // Go through the pools, try to extract the Cluster ID and validate it against already found cluster ID.
-        for (KafkaNodePool pool : pools)   {
-            if (pool.getStatus() != null && pool.getStatus().getClusterId() != null)   {
-                if (firstFoundClusterId == null)   {
-                    firstFoundClusterId = pool.getStatus().getClusterId();
-                } else if (!firstFoundClusterId.equals(pool.getStatus().getClusterId())) {
-                    hasConflict = true;
-                    LOGGER.warnCr(reconciliation, "Cluster ID {} found in KafkaNodePool {} is not the same as the previously found cluster ID {}", pool.getStatus().getClusterId(), pool.getMetadata().getName(), firstFoundClusterId);
-                }
-            }
-        }
-
-        if (hasConflict)   {
-            return List.of("The Kafka custom resource and its KafkaNodePool resources use different cluster IDs.");
-        } else {
-            return List.of();
-        }
     }
 
     /**

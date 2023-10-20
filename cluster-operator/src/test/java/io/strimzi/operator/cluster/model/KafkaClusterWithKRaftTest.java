@@ -320,7 +320,7 @@ public class KafkaClusterWithKRaftTest {
                 List.of(KAFKA_POOL_CONTROLLERS, KAFKA_POOL_BROKERS),
                 VERSIONS,
                 true,
-                null,
+                "my-cluster-id",
                 SHARED_ENV_PROVIDER
         );
 
@@ -335,6 +335,8 @@ public class KafkaClusterWithKRaftTest {
         List<ConfigMap> configMaps = kc.generatePerBrokerConfigurationConfigMaps(new MetricsAndLogging(null, null), advertisedHostnames, advertisedPorts);
         assertThat(configMaps.size(), is(6));
         assertThat(configMaps.stream().map(s -> s.getMetadata().getName()).toList(), hasItems("my-cluster-controllers-0", "my-cluster-controllers-1", "my-cluster-controllers-2", "my-cluster-brokers-1000", "my-cluster-brokers-1001", "my-cluster-brokers-1002"));
+
+        configMaps.forEach(cm -> assertThat(cm.getData().get(KafkaCluster.BROKER_CLUSTER_ID_FILENAME), is("my-cluster-id")));
 
         ConfigMap broker2 = configMaps.stream().filter(cm -> "my-cluster-controllers-2".equals(cm.getMetadata().getName())).findFirst().orElseThrow();
         assertThat(broker2.getData().get("server.config"), containsString("node.id=2\n"));
