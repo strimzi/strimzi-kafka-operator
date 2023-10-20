@@ -299,9 +299,15 @@ public class BatchingTopicController {
     }
 
     private static NewTopic buildNewTopic(KafkaTopic kt, String topicName) {
-        int partitions = kt.getSpec().getPartitions() != null ? kt.getSpec().getPartitions() : BROKER_DEFAULT;
-        short replicas = kt.getSpec().getReplicas() != null ? kt.getSpec().getReplicas().shortValue() : BROKER_DEFAULT;
-        return new NewTopic(topicName, partitions, replicas).configs(buildConfigsMap(kt));
+        return new NewTopic(topicName, partitions(kt), replicas(kt)).configs(buildConfigsMap(kt));
+    }
+
+    private static int partitions(KafkaTopic kt) {
+        return kt.getSpec().getPartitions() != null ? kt.getSpec().getPartitions() : BROKER_DEFAULT;
+    }
+
+    private static short replicas(KafkaTopic kt) {
+        return kt.getSpec().getReplicas() != null ? kt.getSpec().getReplicas().shortValue() : BROKER_DEFAULT;
     }
 
     private static Map<String, String> buildConfigsMap(KafkaTopic kt) {
@@ -436,8 +442,7 @@ public class BatchingTopicController {
         addOrRemoveFinalizer(useFinalizer, unmanaged).forEach(rt -> putResult(results, rt, Either.ofRight(null)));
 
         // skip reconciliation of paused KafkaTopics
-        var partitionedByPaused = validateManagedTopics(partitionedByManaged).stream()
-            .filter(skipKafkaTopicsWithMissingSpec())
+        var partitionedByPaused = validateManagedTopics(partitionedByManaged).stream().filter(hasTopicSpec)
             .collect(Collectors.partitioningBy(reconcilableTopic -> isPaused(reconcilableTopic.kt())));
         partitionedByPaused.get(true).forEach(reconcilableTopic -> putResult(results, reconcilableTopic, Either.ofRight(null)));
 
@@ -465,15 +470,13 @@ public class BatchingTopicController {
         LOGGER.traceOp("Total time reconciling batch of {} KafkaTopics: {}ns", results.size(), System.nanoTime() - t3);
     }
 
-    private static Predicate<ReconcilableTopic> skipKafkaTopicsWithMissingSpec() {
-        return reconcilableTopic -> {
-            var hasSpec = reconcilableTopic.kt().getSpec() != null;
-            if (!hasSpec) {
-                LOGGER.warnCr(reconcilableTopic.reconciliation(), "Topic has no spec.");
-            }
-            return hasSpec;
-        };
-    }
+    private Predicate<ReconcilableTopic> hasTopicSpec = reconcilableTopic -> {
+        var hasSpec = reconcilableTopic.kt().getSpec() != null;
+        if (!hasSpec) {
+            LOGGER.warnCr(reconcilableTopic.reconciliation(), "Topic has no spec.");
+        }
+        return hasSpec;
+    };
 
     private List<ReconcilableTopic> validateManagedTopics(Map<Boolean, List<ReconcilableTopic>> partitionedByManaged) {
         var mayNeedUpdate = partitionedByManaged.get(true).stream().filter(reconcilableTopic -> {
@@ -568,8 +571,7 @@ public class BatchingTopicController {
         });
         actuallyDifferentRf.ok().forEach(pair -> {
             var reconcilableTopic = pair.getKey();
-            var specPartitions = reconcilableTopic.kt().getSpec().getPartitions() != null
-                ? reconcilableTopic.kt().getSpec().getPartitions() : BROKER_DEFAULT;
+            var specPartitions = partitions(reconcilableTopic.kt());
             var partitions = pair.getValue().partitionsWithDifferentRfThan(specPartitions);
             putResult(results, reconcilableTopic, Either.ofLeft(new TopicOperatorException.NotSupported("Replication factor change not supported, but required for partitions " + partitions)));
         });
