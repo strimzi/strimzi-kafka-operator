@@ -35,9 +35,9 @@ public class InitWriterTest {
     @TempDir
     public File tempDir;
 
-    private static Map<String, String> envVars = new HashMap<>(3);
-    private static Map<String, String> labels = new HashMap<>(4);
-    private static List<NodeAddress> addresses = new ArrayList<>(3);
+    private static final Map<String, String> envVars = new HashMap<>(3);
+    private static final Map<String, String> labels = new HashMap<>(4);
+    private static final List<NodeAddress> addresses = new ArrayList<>(3);
 
     static {
         envVars.put(InitWriterConfig.NODE_NAME, "localhost");
@@ -68,7 +68,7 @@ public class InitWriterTest {
 
         InitWriterConfig config = InitWriterConfig.fromMap(envVars);
 
-        KubernetesClient client = mockKubernetesClient(config.getNodeName(), labels, Collections.EMPTY_LIST);
+        KubernetesClient client = mockKubernetesClient(config.getNodeName(), labels, Collections.emptyList());
 
         InitWriter writer = new InitWriter(client, config);
         assertThat(writer.writeRack(), is(true));
@@ -88,7 +88,7 @@ public class InitWriterTest {
 
         InitWriterConfig config = InitWriterConfig.fromMap(envVars);
 
-        KubernetesClient client = mockKubernetesClient(config.getNodeName(), Collections.EMPTY_MAP, addresses);
+        KubernetesClient client = mockKubernetesClient(config.getNodeName(), Collections.emptyMap(), addresses);
 
         InitWriter writer = new InitWriter(client, config);
         assertThat(writer.writeExternalAddress(), is(true));
@@ -109,7 +109,7 @@ public class InitWriterTest {
 
         InitWriterConfig config = InitWriterConfig.fromMap(envVars);
 
-        KubernetesClient client = mockKubernetesClient(config.getNodeName(), labels, Collections.EMPTY_LIST);
+        KubernetesClient client = mockKubernetesClient(config.getNodeName(), labels, Collections.emptyList());
 
         InitWriter writer = new InitWriter(client, config);
         assertThat(writer.writeRack(), is(false));

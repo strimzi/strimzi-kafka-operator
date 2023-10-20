@@ -18,11 +18,11 @@ public class InitWriterConfig {
 
     static final String DEFAULT_INIT_FOLDER = "/opt/kafka/init";
 
-    private String nodeName;
-    private String rackTopologyKey;
-    private boolean externalAddress;
-    private String addressType;
-    private String initFolder;
+    private final String nodeName;
+    private final String rackTopologyKey;
+    private final boolean externalAddress;
+    private final String addressType;
+    private final String initFolder;
 
     /**
      * Load configuration parameters from a related map

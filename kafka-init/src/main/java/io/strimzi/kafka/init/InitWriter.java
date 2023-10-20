@@ -14,6 +14,7 @@ import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -24,8 +25,8 @@ import java.util.Map;
 public class InitWriter {
     private static final Logger LOGGER = LogManager.getLogger(InitWriter.class);
 
-    private KubernetesClient client;
-    private InitWriterConfig config;
+    private final KubernetesClient client;
+    private final InitWriterConfig config;
 
     protected final static String FILE_RACK_ID = "rack.id";
     protected final static String FILE_EXTERNAL_ADDRESS = "external.address";
@@ -119,7 +120,7 @@ public class InitWriter {
     private boolean write(String file, String information) {
         boolean isWritten;
 
-        try (PrintWriter writer = new PrintWriter(config.getInitFolder() + "/" + file, "UTF-8")) {
+        try (PrintWriter writer = new PrintWriter(config.getInitFolder() + "/" + file, StandardCharsets.UTF_8)) {
             writer.write(information);
 
             if (writer.checkError())    {

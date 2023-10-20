@@ -17,7 +17,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class InitWriterConfigTest {
 
-    private static Map<String, String> envVars = new HashMap<>(3);
+    private static final Map<String, String> envVars = new HashMap<>(3);
     static {
         envVars.put(InitWriterConfig.NODE_NAME, "localhost");
         envVars.put(InitWriterConfig.RACK_TOPOLOGY_KEY, "failure-domain.beta.kubernetes.io/zone");
