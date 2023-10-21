@@ -97,7 +97,7 @@ public class FeatureGatesST extends AbstractST {
         List<EnvVar> testEnvVars = new ArrayList<>();
         int kafkaReplicas = 3;
 
-        testEnvVars.add(new EnvVar(Environment.STRIMZI_FEATURE_GATES_ENV, "+UseKRaft,+KafkaNodePools", null));
+        testEnvVars.add(new EnvVar(Environment.STRIMZI_FEATURE_GATES_ENV, "+UseKRaft", null));
 
         this.clusterOperator = this.clusterOperator.defaultInstallation(extensionContext)
             .withNamespace(Constants.CO_NAMESPACE)
@@ -208,7 +208,7 @@ public class FeatureGatesST extends AbstractST {
         final String disabledFgProducerName = "disabled-fg-producer";
 
         List<EnvVar> coEnvVars = new ArrayList<>();
-        coEnvVars.add(new EnvVar(Environment.STRIMZI_FEATURE_GATES_ENV, "-StableConnectIdentities", null));
+        coEnvVars.add(new EnvVar(Environment.STRIMZI_FEATURE_GATES_ENV, "-KafkaNodePools,-StableConnectIdentities", null));
 
         LOGGER.info("Deploying CO without Stable Connect Identities");
 
@@ -283,7 +283,7 @@ public class FeatureGatesST extends AbstractST {
 
         LOGGER.info("Changing FG env variable to enable Stable Connect Identities");
         coEnvVars = kubeClient().getDeployment(clusterOperator.getDeploymentNamespace(), Constants.STRIMZI_DEPLOYMENT_NAME).getSpec().getTemplate().getSpec().getContainers().get(0).getEnv();
-        coEnvVars.stream().filter(env -> env.getName().equals(Environment.STRIMZI_FEATURE_GATES_ENV)).findFirst().get().setValue("+StableConnectIdentities");
+        coEnvVars.stream().filter(env -> env.getName().equals(Environment.STRIMZI_FEATURE_GATES_ENV)).findFirst().get().setValue("-KafkaNodePools,+StableConnectIdentities");
 
         Deployment coDep = kubeClient().getDeployment(clusterOperator.getDeploymentNamespace(), Constants.STRIMZI_DEPLOYMENT_NAME);
         coDep.getSpec().getTemplate().getSpec().getContainers().get(0).setEnv(coEnvVars);
@@ -310,7 +310,7 @@ public class FeatureGatesST extends AbstractST {
         KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(testStorage.getNamespaceName(), enabledFgConnectorPodName, Constants.DEFAULT_SINK_FILE_PATH, continuousMessage);
 
         LOGGER.info("Changing FG env variable to disable again Stable Connect Identities");
-        coEnvVars.stream().filter(env -> env.getName().equals(Environment.STRIMZI_FEATURE_GATES_ENV)).findFirst().get().setValue("-StableConnectIdentities");
+        coEnvVars.stream().filter(env -> env.getName().equals(Environment.STRIMZI_FEATURE_GATES_ENV)).findFirst().get().setValue("-KafkaNodePools,-StableConnectIdentities");
 
         coDep = kubeClient().getDeployment(clusterOperator.getDeploymentNamespace(), Constants.STRIMZI_DEPLOYMENT_NAME);
         coDep.getSpec().getTemplate().getSpec().getContainers().get(0).setEnv(coEnvVars);
