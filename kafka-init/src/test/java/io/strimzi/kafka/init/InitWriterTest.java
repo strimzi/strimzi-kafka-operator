@@ -19,8 +19,6 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -35,25 +33,23 @@ public class InitWriterTest {
     @TempDir
     public File tempDir;
 
-    private static Map<String, String> envVars = new HashMap<>(3);
-    private static Map<String, String> labels = new HashMap<>(4);
-    private static List<NodeAddress> addresses = new ArrayList<>(3);
-
-    static {
-        envVars.put(InitWriterConfig.NODE_NAME, "localhost");
-        envVars.put(InitWriterConfig.RACK_TOPOLOGY_KEY, "failure-domain.beta.kubernetes.io/zone");
-        envVars.put(InitWriterConfig.EXTERNAL_ADDRESS, "true");
-
-        // metadata labels related to the Kubernetes cluster node
-        labels.put("beta.kubernetes.io/arch", "amd64");
-        labels.put("beta.kubernetes.io", "linux");
-        labels.put("kubernetes.io/hostname", "localhost");
-        labels.put("failure-domain.beta.kubernetes.io/zone", "eu-zone1");
-
-        addresses.add(new NodeAddressBuilder().withType("ExternalDNS").withAddress("my.external.address").build());
-        addresses.add(new NodeAddressBuilder().withType("InternalDNS").withAddress("my.internal.address").build());
-        addresses.add(new NodeAddressBuilder().withType("InternalIP").withAddress("192.168.2.94").build());
-    }
+    private static final Map<String, String> ENV_VARS = Map.of(
+            InitWriterConfig.NODE_NAME, "localhost",
+            InitWriterConfig.RACK_TOPOLOGY_KEY, "failure-domain.beta.kubernetes.io/zone",
+            InitWriterConfig.EXTERNAL_ADDRESS, "true"
+    );
+    // metadata labels related to the Kubernetes cluster node
+    private static final Map<String, String> LABELS = Map.of(
+            "beta.kubernetes.io/arch", "amd64",
+            "beta.kubernetes.io", "linux",
+            "kubernetes.io/hostname", "localhost",
+            "failure-domain.beta.kubernetes.io/zone", "eu-zone1"
+    );
+    private static final List<NodeAddress> ADDRESSES = List.of(
+            new NodeAddressBuilder().withType("ExternalDNS").withAddress("my.external.address").build(),
+            new NodeAddressBuilder().withType("InternalDNS").withAddress("my.internal.address").build(),
+            new NodeAddressBuilder().withType("InternalIP").withAddress("192.168.2.94").build()
+    );
 
     @Test
     public void testWriteRackId() throws IOException {
@@ -63,12 +59,12 @@ public class InitWriterTest {
         String rackFolder = kafkaFolder.getAbsolutePath() + "/rack";
         new File(rackFolder).mkdirs();
 
-        Map<String, String> envVars = new HashMap<>(InitWriterTest.envVars);
+        Map<String, String> envVars = new HashMap<>(ENV_VARS);
         envVars.put(InitWriterConfig.INIT_FOLDER, rackFolder);
 
         InitWriterConfig config = InitWriterConfig.fromMap(envVars);
 
-        KubernetesClient client = mockKubernetesClient(config.getNodeName(), labels, Collections.EMPTY_LIST);
+        KubernetesClient client = mockKubernetesClient(config.getNodeName(), LABELS, List.of());
 
         InitWriter writer = new InitWriter(client, config);
         assertThat(writer.writeRack(), is(true));
@@ -83,12 +79,12 @@ public class InitWriterTest {
         String addressFolder = kafkaFolder.getAbsolutePath() + "/external.address";
         new File(addressFolder).mkdirs();
 
-        Map<String, String> envVars = new HashMap<>(InitWriterTest.envVars);
+        Map<String, String> envVars = new HashMap<>(ENV_VARS);
         envVars.put(InitWriterConfig.INIT_FOLDER, addressFolder);
 
         InitWriterConfig config = InitWriterConfig.fromMap(envVars);
 
-        KubernetesClient client = mockKubernetesClient(config.getNodeName(), Collections.EMPTY_MAP, addresses);
+        KubernetesClient client = mockKubernetesClient(config.getNodeName(), Map.of(), ADDRESSES);
 
         InitWriter writer = new InitWriter(client, config);
         assertThat(writer.writeExternalAddress(), is(true));
@@ -104,12 +100,12 @@ public class InitWriterTest {
     public void testWriteRackFailWithMissingKubernetesZoneLabel() {
 
         // the cluster node will not have the requested label
-        Map<String, String> labels = new HashMap<>(InitWriterTest.labels);
+        Map<String, String> labels = new HashMap<>(LABELS);
         labels.remove("failure-domain.beta.kubernetes.io/zone");
 
-        InitWriterConfig config = InitWriterConfig.fromMap(envVars);
+        InitWriterConfig config = InitWriterConfig.fromMap(ENV_VARS);
 
-        KubernetesClient client = mockKubernetesClient(config.getNodeName(), labels, Collections.EMPTY_LIST);
+        KubernetesClient client = mockKubernetesClient(config.getNodeName(), labels, List.of());
 
         InitWriter writer = new InitWriter(client, config);
         assertThat(writer.writeRack(), is(false));
@@ -119,12 +115,12 @@ public class InitWriterTest {
     public void testWriteRackFailsWhenInitFolderDoesNotExist() {
 
         // specify a not existing folder for emulating IOException in the rack writer
-        Map<String, String> envVars = new HashMap<>(InitWriterTest.envVars);
+        Map<String, String> envVars = new HashMap<>(ENV_VARS);
         envVars.put(InitWriterConfig.INIT_FOLDER, "/no-folder");
 
         InitWriterConfig config = InitWriterConfig.fromMap(envVars);
 
-        KubernetesClient client = mockKubernetesClient(config.getNodeName(), labels, addresses);
+        KubernetesClient client = mockKubernetesClient(config.getNodeName(), LABELS, ADDRESSES);
 
         InitWriter writer = new InitWriter(client, config);
         assertThat(writer.writeRack(), is(false));

@@ -6,7 +6,6 @@ package io.strimzi.kafka.init;
 
 import org.junit.jupiter.api.Test;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -17,16 +16,15 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class InitWriterConfigTest {
 
-    private static Map<String, String> envVars = new HashMap<>(3);
-    static {
-        envVars.put(InitWriterConfig.NODE_NAME, "localhost");
-        envVars.put(InitWriterConfig.RACK_TOPOLOGY_KEY, "failure-domain.beta.kubernetes.io/zone");
-        envVars.put(InitWriterConfig.EXTERNAL_ADDRESS, "TRUE");
-    }
+    private static final Map<String, String> ENV_VARS = Map.of(
+            InitWriterConfig.NODE_NAME, "localhost",
+            InitWriterConfig.RACK_TOPOLOGY_KEY, "failure-domain.beta.kubernetes.io/zone",
+            InitWriterConfig.EXTERNAL_ADDRESS, "TRUE"
+    );
 
     @Test
     public void testFromMap() {
-        InitWriterConfig config = InitWriterConfig.fromMap(envVars);
+        InitWriterConfig config = InitWriterConfig.fromMap(ENV_VARS);
 
         assertThat(config.getNodeName(), is("localhost"));
         assertThat(config.getRackTopologyKey(), is("failure-domain.beta.kubernetes.io/zone"));
@@ -36,7 +34,7 @@ public class InitWriterConfigTest {
 
     @Test
     public void testFromMapWithAddressTypeEnvVar() {
-        Map<String, String> envs = new HashMap<>(envVars);
+        Map<String, String> envs = new HashMap<>(ENV_VARS);
         envs.put(InitWriterConfig.EXTERNAL_ADDRESS_TYPE, "InternalDNS");
 
         InitWriterConfig config = InitWriterConfig.fromMap(envs);
@@ -45,12 +43,12 @@ public class InitWriterConfigTest {
 
     @Test
     public void testFromMapEmptyEnvVarsThrows() {
-        assertThrows(IllegalArgumentException.class, () -> InitWriterConfig.fromMap(Collections.emptyMap()));
+        assertThrows(IllegalArgumentException.class, () -> InitWriterConfig.fromMap(Map.of()));
     }
 
     @Test
     public void testFromMapMissingNodeNameThrows() {
-        Map<String, String> envVars = new HashMap<>(InitWriterConfigTest.envVars);
+        Map<String, String> envVars = new HashMap<>(ENV_VARS);
         envVars.remove(InitWriterConfig.NODE_NAME);
 
         assertThrows(IllegalArgumentException.class, () -> InitWriterConfig.fromMap(envVars));
