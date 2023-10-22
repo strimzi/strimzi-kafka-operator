@@ -123,7 +123,6 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
     protected static final String ENV_VAR_KAFKA_CONNECT_OAUTH_REFRESH_TOKEN = "KAFKA_CONNECT_OAUTH_REFRESH_TOKEN";
     protected static final String ENV_VAR_KAFKA_CONNECT_OAUTH_PASSWORD_GRANT_PASSWORD = "KAFKA_CONNECT_OAUTH_PASSWORD_GRANT_PASSWORD";
     protected static final String ENV_VAR_STRIMZI_TRACING = "STRIMZI_TRACING";
-    protected static final String ENV_VAR_STRIMZI_STABLE_IDENTITIES_ENABLED = "STRIMZI_STABLE_IDENTITIES_ENABLED";
 
     protected static final String CO_ENV_VAR_CUSTOM_CONNECT_POD_LABELS = "STRIMZI_CUSTOM_KAFKA_CONNECT_LABELS";
 
@@ -517,7 +516,7 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
                         podAnnotations,
                         getMergedAffinity(),
                         ContainerUtils.listOrNull(createInitContainer(imagePullPolicy)),
-                        List.of(createContainer(imagePullPolicy, customContainerImage, false)),
+                        List.of(createContainer(imagePullPolicy, customContainerImage)),
                         getVolumes(isOpenShift),
                         imagePullSecrets,
                         securityProvider.kafkaConnectPodSecurityContext(new PodSecurityProviderContextImpl(templatePod))
@@ -575,7 +574,7 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
                         componentName,
                         getMergedAffinity(),
                         ContainerUtils.listOrNull(createInitContainer(imagePullPolicy)),
-                        List.of(createContainer(imagePullPolicy, customContainerImage, true)),
+                        List.of(createContainer(imagePullPolicy, customContainerImage)),
                         getVolumes(isOpenShift),
                         imagePullSecrets,
                         securityProvider.kafkaConnectPodSecurityContext(new PodSecurityProviderContextImpl(templatePod))
@@ -603,14 +602,14 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
         }
     }
 
-    private Container createContainer(ImagePullPolicy imagePullPolicy, String customContainerImage, boolean stableIdentities) {
+    private Container createContainer(ImagePullPolicy imagePullPolicy, String customContainerImage) {
         return ContainerUtils.createContainer(
                 componentName,
                 customContainerImage != null ? customContainerImage : image,
                 List.of(getCommand()),
                 securityProvider.kafkaConnectContainerSecurityContext(new ContainerSecurityProviderContextImpl(templateContainer)),
                 resources,
-                getEnvVars(stableIdentities),
+                getEnvVars(),
                 getContainerPortList(),
                 getVolumeMounts(),
                 ProbeUtils.httpProbe(livenessProbeOptions, "/", REST_API_PORT_NAME),
@@ -644,7 +643,7 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
         return "/opt/kafka/kafka_connect_run.sh";
     }
 
-    protected List<EnvVar> getEnvVars(boolean stableIdentities) {
+    protected List<EnvVar> getEnvVars() {
         List<EnvVar> varList = new ArrayList<>();
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_CONNECT_CONFIGURATION, configuration.getConfiguration()));
         varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_CONNECT_METRICS_ENABLED, String.valueOf(metrics.isEnabled())));
@@ -673,10 +672,6 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
         varList.addAll(getExternalConfigurationEnvVars());
 
         ContainerUtils.addContainerEnvsToExistingEnvs(reconciliation, varList, templateContainer);
-
-        if (stableIdentities)   {
-            varList.add(ContainerUtils.createEnvVar(ENV_VAR_STRIMZI_STABLE_IDENTITIES_ENABLED, "true"));
-        }
 
         return varList;
     }
@@ -774,16 +769,10 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
     /**
      * Generates the PodDisruptionBudget
      *
-     * @param stableIdentities  Indicates whether the StableConnectIdentities (use of StrimziPodSets) feature gate is enabled or not
-     *
      * @return The pod disruption budget.
      */
-    public PodDisruptionBudget generatePodDisruptionBudget(boolean stableIdentities) {
-        if (stableIdentities) {
-            return PodDisruptionBudgetUtils.createCustomControllerPodDisruptionBudget(componentName, namespace, labels, ownerReference, templatePodDisruptionBudget, replicas);
-        } else {
-            return PodDisruptionBudgetUtils.createPodDisruptionBudget(componentName, namespace, labels, ownerReference, templatePodDisruptionBudget);
-        }
+    public PodDisruptionBudget generatePodDisruptionBudget() {
+        return PodDisruptionBudgetUtils.createCustomControllerPodDisruptionBudget(componentName, namespace, labels, ownerReference, templatePodDisruptionBudget, replicas);
     }
 
     /**

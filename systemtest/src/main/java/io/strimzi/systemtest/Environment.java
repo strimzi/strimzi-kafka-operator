@@ -264,10 +264,6 @@ public class Environment {
         return STRIMZI_RBAC_SCOPE_NAMESPACE.equals(STRIMZI_RBAC_SCOPE);
     }
 
-    public static boolean isStableConnectIdentitiesEnabled() {
-        return !STRIMZI_FEATURE_GATES.contains(Constants.DONT_USE_STABLE_CONNECT_IDENTITIES);
-    }
-
     /**
      * Determine wheter KRaft mode of Kafka cluster is enabled in Cluster Operator or not.
      * @return true if KRaft mode is enabled, otherwise false

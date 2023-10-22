@@ -131,16 +131,12 @@ class ConnectST extends AbstractST {
         resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3).build());
         resourceManager.createResourceWithWait(extensionContext, KafkaConnectTemplates.kafkaConnect(testStorage.getClusterName(), testStorage.getNamespaceName(), connectReplicasCount).build());
 
-        if (Environment.isStableConnectIdentitiesEnabled()) {
-            LOGGER.info("KafkaConnect manual rolling update");
-
-            // set annotation to trigger connect rolling update
-            final LabelSelector connectLabelSelector = KafkaConnectResource.getLabelSelector(testStorage.getClusterName(), KafkaConnectResources.deploymentName(testStorage.getClusterName()));
-            final Map<String, String> connectPodsSnapshot = PodUtils.podSnapshot(testStorage.getNamespaceName(), connectLabelSelector);
-            StrimziPodSetUtils.annotateStrimziPodSet(testStorage.getNamespaceName(), KafkaConnectResources.deploymentName(testStorage.getClusterName()), Collections.singletonMap(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "true"));
-
-            RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), connectLabelSelector, connectReplicasCount, connectPodsSnapshot);
-        }
+        // Test ManualRolling Update
+        LOGGER.info("KafkaConnect manual rolling update");
+        final LabelSelector connectLabelSelector = KafkaConnectResource.getLabelSelector(testStorage.getClusterName(), KafkaConnectResources.deploymentName(testStorage.getClusterName()));
+        final Map<String, String> connectPodsSnapshot = PodUtils.podSnapshot(testStorage.getNamespaceName(), connectLabelSelector);
+        StrimziPodSetUtils.annotateStrimziPodSet(testStorage.getNamespaceName(), KafkaConnectResources.deploymentName(testStorage.getClusterName()), Collections.singletonMap(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "true"));
+        RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), connectLabelSelector, connectReplicasCount, connectPodsSnapshot);
 
         final String podName = PodUtils.getPodNameByPrefix(testStorage.getNamespaceName(), KafkaConnectResources.deploymentName(testStorage.getClusterName()));
         final String kafkaPodJson = TestUtils.toJsonString(kubeClient(testStorage.getNamespaceName()).getPod(podName));
@@ -841,14 +837,7 @@ class ConnectST extends AbstractST {
         );
 
         String workerNode = connectStatus.getJsonObject("connector").getString("worker_id").split(":")[0];
-        String connectorPodName;
-
-        if (Environment.isStableConnectIdentitiesEnabled()) {
-            connectorPodName = workerNode.substring(0, workerNode.indexOf("."));
-        } else {
-            connectorPodName = kubeClient(testStorage.getNamespaceName()).listPods().stream().filter(pod ->
-                    pod.getStatus().getPodIP().equals(workerNode)).findFirst().orElseThrow().getMetadata().getName();
-        }
+        String connectorPodName = workerNode.substring(0, workerNode.indexOf("."));
 
         resourceManager.createResourceWithWait(extensionContext, kafkaClients.producerStrimzi(), kafkaClients.consumerStrimzi());
         ClientUtils.waitForClientsSuccess(testStorage);
@@ -1138,11 +1127,6 @@ class ConnectST extends AbstractST {
         the observed generation is increased
         */
         assertThat(connectObsGen < KafkaConnectResource.kafkaConnectClient().inNamespace(namespaceName).withName(clusterName).get().getStatus().getObservedGeneration(), is(true));
-        if (!Environment.isStableConnectIdentitiesEnabled()) {
-            for (Pod pod : connectPods) {
-                assertThat(pod.getMetadata().getName().contains(connectGenName), is(true));
-            }
-        }
 
         LOGGER.info("-------> Scaling KafkaConnector subresource <-------");
         LOGGER.info("Scaling subresource task max to {}", scaleTo);

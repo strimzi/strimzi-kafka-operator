@@ -4,8 +4,11 @@
  */
 package io.strimzi.operator.cluster.operator.assembly;
 
+import io.fabric8.kubernetes.api.model.apps.Deployment;
+import io.fabric8.kubernetes.api.model.apps.DeploymentBuilder;
 import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnectBuilder;
+import io.strimzi.api.kafka.model.KafkaConnectResources;
 import io.strimzi.api.kafka.model.StrimziPodSet;
 import io.strimzi.api.kafka.model.template.DeploymentStrategy;
 import io.strimzi.operator.cluster.model.MockSharedEnvironmentProvider;
@@ -55,6 +58,15 @@ public class KafkaConnectMigrationTest {
             .endSpec()
             .build();
 
+    private final static Deployment DEPLOYMENT = new DeploymentBuilder()
+                .withNewMetadata()
+                    .withName(KafkaConnectResources.deploymentName(NAME))
+                .endMetadata()
+                .withNewSpec()
+                    .withReplicas(3)
+                .endSpec()
+                .build();
+
     private static final KafkaConnectCluster CLUSTER = KafkaConnectCluster.fromCrd(RECONCILIATION, CONNECT, VERSIONS, SHARED_ENV_PROVIDER);
 
     @Test
@@ -76,28 +88,6 @@ public class KafkaConnectMigrationTest {
 
         Checkpoint async = context.checkpoint();
         migration.migrateFromDeploymentToStrimziPodSets(null, CLUSTER.generatePodSet(3, null, null, false, null, null, null))
-                .onComplete(context.succeeding(v -> context.verify(async::flag)));
-    }
-
-    @Test
-    public void testNoMigrationToDeployment(VertxTestContext context)  {
-        KafkaConnectMigration migration = new KafkaConnectMigration(
-                RECONCILIATION,
-                CLUSTER,
-                null,
-                null,
-                1_000L,
-                false,
-                null,
-                null,
-                null,
-                null,
-                null,
-                null
-        );
-
-        Checkpoint async = context.checkpoint();
-        migration.migrateFromStrimziPodSetsToDeployment(CLUSTER.generateDeployment(3, null, null, false, null, null, null), null)
                 .onComplete(context.succeeding(v -> context.verify(async::flag)));
     }
 
@@ -125,7 +115,7 @@ public class KafkaConnectMigrationTest {
 
         Checkpoint async = context.checkpoint();
         migration.migrateFromDeploymentToStrimziPodSets(
-                CLUSTER.generateDeployment(3, null, null, false, null, null, null),
+                DEPLOYMENT,
                 null
         ).onComplete(context.succeeding(v -> context.verify(() -> {
             assertThat(events.size(), is(11));
@@ -181,7 +171,7 @@ public class KafkaConnectMigrationTest {
 
         Checkpoint async = context.checkpoint();
         migration.migrateFromDeploymentToStrimziPodSets(
-                CLUSTER.generateDeployment(3, null, null, false, null, null, null),
+                DEPLOYMENT,
                 null
         ).onComplete(context.succeeding(v -> context.verify(() -> {
             assertThat(events.size(), is(11));
@@ -226,7 +216,7 @@ public class KafkaConnectMigrationTest {
 
         Checkpoint async = context.checkpoint();
         migration.migrateFromDeploymentToStrimziPodSets(
-                CLUSTER.generateDeployment(2, null, null, false, null, null, null),
+                new DeploymentBuilder(DEPLOYMENT).editSpec().withReplicas(2).endSpec().build(),
                 CLUSTER.generatePodSet(1, null, null, false, null, null, null)
         ).onComplete(context.succeeding(v -> context.verify(() -> {
             assertThat(events.size(), is(7));
@@ -243,160 +233,12 @@ public class KafkaConnectMigrationTest {
         })));
     }
 
-    @Test
-    public void testMigrationToDeployment(VertxTestContext context)  {
-        DeploymentOperator mockDepOps = mock(DeploymentOperator.class);
-        StrimziPodSetOperator mockPodSetOps = mock(StrimziPodSetOperator.class);
-        PodOperator mockPodOps = mock(PodOperator.class);
-        LinkedList<String> events = mockKubernetes(mockDepOps, mockPodSetOps, mockPodOps);
-
-        KafkaConnectMigration migration = new KafkaConnectMigration(
-                RECONCILIATION,
-                CLUSTER,
-                null,
-                null,
-                1_000L,
-                false,
-                null,
-                null,
-                null,
-                mockDepOps,
-                mockPodSetOps,
-                mockPodOps
-        );
-
-        Checkpoint async = context.checkpoint();
-        migration.migrateFromStrimziPodSetsToDeployment(
-                null,
-                CLUSTER.generatePodSet(3, null, null, false, null, null, null)
-        ).onComplete(context.succeeding(v -> context.verify(() -> {
-            assertThat(events.size(), is(10));
-
-            assertThat(events.poll(), is("DEP-RECONCILE-" + COMPONENT_NAME));
-            assertThat(events.poll(), is("DEP-SCALE-UP-TO-1"));
-            assertThat(events.poll(), is("DEP-READINESS-" + COMPONENT_NAME));
-            assertThat(events.poll(), is("POD-SET-RECONCILE-TO-2"));
-            assertThat(events.poll(), is("DEP-SCALE-UP-TO-2"));
-            assertThat(events.poll(), is("DEP-READINESS-" + COMPONENT_NAME));
-            assertThat(events.poll(), is("POD-SET-RECONCILE-TO-1"));
-            assertThat(events.poll(), is("DEP-SCALE-UP-TO-3"));
-            assertThat(events.poll(), is("DEP-READINESS-" + COMPONENT_NAME));
-            assertThat(events.poll(), is("POD-SET-DELETE-" + COMPONENT_NAME));
-
-            async.flag();
-        })));
-    }
-
-    @Test
-    public void testMigrationToDeploymentWithRecreateStrategy(VertxTestContext context)  {
-        DeploymentOperator mockDepOps = mock(DeploymentOperator.class);
-        StrimziPodSetOperator mockPodSetOps = mock(StrimziPodSetOperator.class);
-        PodOperator mockPodOps = mock(PodOperator.class);
-        LinkedList<String> events = mockKubernetes(mockDepOps, mockPodSetOps, mockPodOps);
-
-        KafkaConnect connect = new KafkaConnectBuilder(CONNECT)
-                .editSpec()
-                    .withNewTemplate()
-                        .withNewDeployment()
-                            .withDeploymentStrategy(DeploymentStrategy.RECREATE)
-                        .endDeployment()
-                    .endTemplate()
-                .endSpec()
-                .build();
-        KafkaConnectCluster cluster = KafkaConnectCluster.fromCrd(RECONCILIATION, connect, VERSIONS, SHARED_ENV_PROVIDER);
-
-        KafkaConnectMigration migration = new KafkaConnectMigration(
-                RECONCILIATION,
-                cluster,
-                null,
-                null,
-                1_000L,
-                false,
-                null,
-                null,
-                null,
-                mockDepOps,
-                mockPodSetOps,
-                mockPodOps
-        );
-
-        Checkpoint async = context.checkpoint();
-        migration.migrateFromStrimziPodSetsToDeployment(
-                null,
-                CLUSTER.generatePodSet(3, null, null, false, null, null, null)
-        ).onComplete(context.succeeding(v -> context.verify(() -> {
-            assertThat(events.size(), is(10));
-
-            assertThat(events.poll(), is("DEP-RECONCILE-" + COMPONENT_NAME));
-            assertThat(events.poll(), is("POD-SET-RECONCILE-TO-2"));
-            assertThat(events.poll(), is("DEP-SCALE-UP-TO-1"));
-            assertThat(events.poll(), is("DEP-READINESS-" + COMPONENT_NAME));
-            assertThat(events.poll(), is("POD-SET-RECONCILE-TO-1"));
-            assertThat(events.poll(), is("DEP-SCALE-UP-TO-2"));
-            assertThat(events.poll(), is("DEP-READINESS-" + COMPONENT_NAME));
-            assertThat(events.poll(), is("POD-SET-DELETE-" + COMPONENT_NAME));
-            assertThat(events.poll(), is("DEP-SCALE-UP-TO-3"));
-            assertThat(events.poll(), is("DEP-READINESS-" + COMPONENT_NAME));
-
-            async.flag();
-        })));
-    }
-
-    @Test
-    public void testMigrationToDeploymentInTheMiddle(VertxTestContext context)  {
-        DeploymentOperator mockDepOps = mock(DeploymentOperator.class);
-        StrimziPodSetOperator mockPodSetOps = mock(StrimziPodSetOperator.class);
-        PodOperator mockPodOps = mock(PodOperator.class);
-        LinkedList<String> events = mockKubernetes(mockDepOps, mockPodSetOps, mockPodOps);
-
-        KafkaConnectMigration migration = new KafkaConnectMigration(
-                RECONCILIATION,
-                CLUSTER,
-                null,
-                null,
-                1_000L,
-                false,
-                null,
-                null,
-                null,
-                mockDepOps,
-                mockPodSetOps,
-                mockPodOps
-        );
-
-        Checkpoint async = context.checkpoint();
-        migration.migrateFromStrimziPodSetsToDeployment(
-                CLUSTER.generateDeployment(1, null, null, false, null, null, null),
-                CLUSTER.generatePodSet(2, null, null, false, null, null, null)
-        ).onComplete(context.succeeding(v -> context.verify(() -> {
-            assertThat(events.size(), is(7));
-
-            assertThat(events.poll(), is("DEP-RECONCILE-" + COMPONENT_NAME));
-            assertThat(events.poll(), is("DEP-SCALE-UP-TO-2"));
-            assertThat(events.poll(), is("DEP-READINESS-" + COMPONENT_NAME));
-            assertThat(events.poll(), is("POD-SET-RECONCILE-TO-1"));
-            assertThat(events.poll(), is("DEP-SCALE-UP-TO-3"));
-            assertThat(events.poll(), is("DEP-READINESS-" + COMPONENT_NAME));
-            assertThat(events.poll(), is("POD-SET-DELETE-" + COMPONENT_NAME));
-
-            async.flag();
-        })));
-    }
-
     private static LinkedList<String> mockKubernetes(DeploymentOperator mockDepOps, StrimziPodSetOperator mockPodSetOps, PodOperator mockPodOps)  {
         LinkedList<String> events = new LinkedList<>();
 
         // Deployments
-        when(mockDepOps.reconcile(any(), eq(NAMESPACE), eq(COMPONENT_NAME), any())).thenAnswer(i -> {
-            events.add("DEP-RECONCILE-" + i.getArgument(2));
-            return Future.succeededFuture();
-        });
         when(mockDepOps.scaleDown(any(), eq(NAMESPACE), eq(COMPONENT_NAME), anyInt(), anyLong())).thenAnswer(i -> {
             events.add("DEP-SCALE-DOWN-TO-" + i.getArgument(3));
-            return Future.succeededFuture();
-        });
-        when(mockDepOps.scaleUp(any(), eq(NAMESPACE), eq(COMPONENT_NAME), anyInt(), anyLong())).thenAnswer(i -> {
-            events.add("DEP-SCALE-UP-TO-" + i.getArgument(3));
             return Future.succeededFuture();
         });
         when(mockDepOps.waitForObserved(any(), eq(NAMESPACE), eq(COMPONENT_NAME), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
@@ -414,10 +256,6 @@ public class KafkaConnectMigrationTest {
             StrimziPodSet podSet = i.getArgument(3);
             events.add("POD-SET-RECONCILE-TO-" + podSet.getSpec().getPods().size());
             return Future.succeededFuture(ReconcileResult.patched(podSet));
-        });
-        when(mockPodSetOps.deleteAsync(any(), eq(NAMESPACE), eq(COMPONENT_NAME), anyBoolean())).thenAnswer(i -> {
-            events.add("POD-SET-DELETE-" + i.getArgument(2));
-            return Future.succeededFuture();
         });
 
         // Pods

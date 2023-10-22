@@ -17,13 +17,11 @@ public class FeatureGates {
     /* test */ static final FeatureGates NONE = new FeatureGates("");
 
     private static final String USE_KRAFT = "UseKRaft";
-    private static final String STABLE_CONNECT_IDENTITIES = "StableConnectIdentities";
     private static final String KAFKA_NODE_POOLS = "KafkaNodePools";
     private static final String UNIDIRECTIONAL_TOPIC_OPERATOR = "UnidirectionalTopicOperator";
 
     // When adding new feature gates, do not forget to add them to allFeatureGates() and toString() methods
     private final FeatureGate useKRaft = new FeatureGate(USE_KRAFT, false);
-    private final FeatureGate stableConnectIdentities = new FeatureGate(STABLE_CONNECT_IDENTITIES, true);
     private final FeatureGate kafkaNodePools = new FeatureGate(KAFKA_NODE_POOLS, true);
     private final FeatureGate unidirectionalTopicOperator = new FeatureGate(UNIDIRECTIONAL_TOPIC_OPERATOR, false);
 
@@ -49,9 +47,6 @@ public class FeatureGates {
                 switch (featureGate) {
                     case USE_KRAFT:
                         setValueOnlyOnce(useKRaft, value);
-                        break;
-                    case STABLE_CONNECT_IDENTITIES:
-                        setValueOnlyOnce(stableConnectIdentities, value);
                         break;
                     case KAFKA_NODE_POOLS:
                         setValueOnlyOnce(kafkaNodePools, value);
@@ -102,13 +97,6 @@ public class FeatureGates {
     }
 
     /**
-     * @return  Returns true when the StableConnectIdentities feature gate is enabled
-     */
-    public boolean stableConnectIdentitiesEnabled() {
-        return stableConnectIdentities.isEnabled();
-    }
-
-    /**
      * @return  Returns true when the KafkaNodePools feature gate is enabled
      */
     public boolean kafkaNodePoolsEnabled() {
@@ -130,7 +118,6 @@ public class FeatureGates {
     /*test*/ List<FeatureGate> allFeatureGates()  {
         return List.of(
                 useKRaft,
-                stableConnectIdentities,
                 kafkaNodePools,
                 unidirectionalTopicOperator
         );
@@ -140,7 +127,6 @@ public class FeatureGates {
     public String toString() {
         return "FeatureGates(" +
                 "UseKRaft=" + useKRaft.isEnabled() + "," +
-                "StableConnectIdentities=" + stableConnectIdentities.isEnabled() + "," +
                 "KafkaNodePools=" + kafkaNodePools.isEnabled() + "," +
                 "UnidirectionalTopicOperator=" + unidirectionalTopicOperator.isEnabled() +
                 ")";

@@ -521,11 +521,7 @@ class LogSettingST extends AbstractST {
     }
     private synchronized void checkGcLogging(final String namespaceName, final LabelSelector selector,
                                                 final String deploymentName, boolean exceptedValue) {
-        if (Environment.isStableConnectIdentitiesEnabled()) {
-            this.checkGcLoggingPods(namespaceName, selector, exceptedValue);
-        } else {
-            this.checkGcLoggingDeployments(namespaceName, deploymentName, exceptedValue);
-        }
+        this.checkGcLoggingPods(namespaceName, selector, exceptedValue);
     }
     private synchronized void checkGcLoggingDeployments(String namespaceName, String deploymentName, boolean expectedValue) {
         LOGGER.info("Checking deployment: {}", deploymentName);

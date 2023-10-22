@@ -2,11 +2,16 @@
 
 ## 0.39.0
 
+* The `StableConnectIdentities` feature gate moves to GA stage and is now permanently enabled without the possibility to disable it.
+  All Connect and Mirror Maker 2 operands will now use StrimziPodSets.
 * The `KafkaNodePools` feature gate moves to beta stage and is enabled by default.
   If needed, `KafkaNodePools` can be disabled in the feature gates configuration in the Cluster Operator.
 
 ### Changes, deprecations and removals
 
+* The `StableConnectIdentities` feature gate moves to GA stage and cannot be disabled anymore.
+  When using Connect or Mirror Maker 2 operands, direct downgrade to Strimzi versions older than 0.34 is not supported anymore.
+  You have to first downgrade to Strimzi version between 0.34 to 0.38, disable the `StableConnectIdentities` feature gate, and only then downgrade to an older Strimzi version.
 * Strimzi 0.39.0 (and any of its patch releases) is the last Strimzi version with support for Kubernetes 1.21 and 1.22.
   From Strimzi 0.40.0 on, we will support only Kubernetes 1.23 and newer.
 

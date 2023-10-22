@@ -5,14 +5,19 @@
 package io.strimzi.operator.cluster.operator.assembly;
 
 import io.fabric8.kubernetes.api.model.ContainerStatusBuilder;
+import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.fabric8.kubernetes.api.model.PodBuilder;
+import io.fabric8.kubernetes.api.model.Quantity;
+import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
+import io.fabric8.kubernetes.api.model.apps.DeploymentBuilder;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy;
 import io.fabric8.kubernetes.api.model.policy.v1.PodDisruptionBudget;
 import io.fabric8.kubernetes.api.model.rbac.ClusterRoleBinding;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.strimzi.api.kafka.KafkaConnectList;
 import io.strimzi.api.kafka.KafkaConnectorList;
 import io.strimzi.api.kafka.model.KafkaConnect;
@@ -20,6 +25,8 @@ import io.strimzi.api.kafka.model.KafkaConnectBuilder;
 import io.strimzi.api.kafka.model.KafkaConnectResources;
 import io.strimzi.api.kafka.model.KafkaConnector;
 import io.strimzi.api.kafka.model.StrimziPodSet;
+import io.strimzi.api.kafka.model.connect.ConnectorPlugin;
+import io.strimzi.api.kafka.model.connect.ConnectorPluginBuilder;
 import io.strimzi.api.kafka.model.connect.build.BuildBuilder;
 import io.strimzi.api.kafka.model.connect.build.JarArtifactBuilder;
 import io.strimzi.api.kafka.model.connect.build.PluginBuilder;
@@ -36,6 +43,7 @@ import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
+import io.strimzi.operator.common.model.OrderedProperties;
 import io.strimzi.operator.common.operator.resource.ClusterRoleBindingOperator;
 import io.strimzi.operator.common.operator.resource.ConfigMapOperator;
 import io.strimzi.operator.common.operator.resource.CrdOperator;
@@ -49,10 +57,12 @@ import io.strimzi.operator.common.operator.resource.ServiceOperator;
 import io.strimzi.operator.common.operator.resource.StrimziPodSetOperator;
 import io.strimzi.platform.KubernetesVersion;
 import io.vertx.core.Future;
+import io.vertx.core.Promise;
 import io.vertx.core.Vertx;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxExtension;
 import io.vertx.junit5.VertxTestContext;
+import org.hamcrest.Matchers;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -62,10 +72,16 @@ import org.mockito.Mockito;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.function.BiPredicate;
 
+import static java.util.Collections.emptyList;
+import static java.util.Collections.singletonList;
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasSize;
@@ -75,11 +91,14 @@ import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.ArgumentMatchers.startsWith;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+@SuppressWarnings({"checkstyle:ClassFanOutComplexity"})
 @ExtendWith(VertxExtension.class)
 public class KafkaConnectAssemblyOperatorPodSetTest {
     private final static String NAME = "my-connect";
@@ -145,7 +164,8 @@ public class KafkaConnectAssemblyOperatorPodSetTest {
 
         // Mock Network Policies
         NetworkPolicyOperator mockNetPolOps = supplier.networkPolicyOperator;
-        when(mockNetPolOps.reconcile(any(), eq(NAMESPACE), eq(COMPONENT_NAME), any())).thenReturn(Future.succeededFuture());
+        ArgumentCaptor<NetworkPolicy> npCaptor = ArgumentCaptor.forClass(NetworkPolicy.class);
+        when(mockNetPolOps.reconcile(any(), eq(NAMESPACE), eq(COMPONENT_NAME), npCaptor.capture())).thenReturn(Future.succeededFuture());
 
         // Mock Pods
         PodOperator mockPodOps = supplier.podOperations;
@@ -165,11 +185,23 @@ public class KafkaConnectAssemblyOperatorPodSetTest {
         ArgumentCaptor<KafkaConnect> connectCaptor = ArgumentCaptor.forClass(KafkaConnect.class);
         when(mockConnectOps.updateStatusAsync(any(), connectCaptor.capture())).thenReturn(Future.succeededFuture());
 
+        // Mock Connect REST API
+        KafkaConnectApi mockConnectClient = mock(KafkaConnectApi.class);
+        when(mockConnectClient.list(any(), anyString(), anyInt())).thenReturn(Future.succeededFuture(emptyList()));
+        ConnectorPlugin plugin1 = new ConnectorPluginBuilder()
+                .withConnectorClass("io.strimzi.MyClass")
+                .withType("sink")
+                .withVersion("1.0.0")
+                .build();
+        when(mockConnectClient.listConnectorPlugins(any(), anyString(), anyInt())).thenReturn(Future.succeededFuture(singletonList(plugin1)));
+        when(mockConnectClient.updateConnectLoggers(any(), anyString(), anyInt(), anyString(), any(OrderedProperties.class))).thenReturn(Future.succeededFuture());
+
         KafkaConnectAssemblyOperator ops = new KafkaConnectAssemblyOperator(
                 vertx,
                 new PlatformFeaturesAvailability(false, KUBERNETES_VERSION),
                 supplier,
-                ResourceUtils.dummyClusterOperatorConfig()
+                ResourceUtils.dummyClusterOperatorConfig(),
+                x -> mockConnectClient
         );
 
         Checkpoint async = context.checkpoint();
@@ -206,6 +238,239 @@ public class KafkaConnectAssemblyOperatorPodSetTest {
                     assertThat(pdb.getMetadata().getName(), is(COMPONENT_NAME));
                     assertThat(pdb.getSpec().getMinAvailable().getIntVal(), is(2));
 
+                    // NetworkPolicies => No ConnectorOperator, no policy
+                    assertThat(npCaptor.getValue(), is(nullValue()));
+
+                    // Verify CR status
+                    List<KafkaConnect> capturedConnects = connectCaptor.getAllValues();
+                    assertThat(capturedConnects, hasSize(1));
+                    KafkaConnectStatus connectStatus = capturedConnects.get(0).getStatus();
+
+                    assertThat(connectStatus.getUrl(), is("http://my-connect-connect-api.my-namespace.svc:8083"));
+                    assertThat(connectStatus.getReplicas(), is(3));
+                    assertThat(connectStatus.getLabelSelector(), is("strimzi.io/cluster=my-connect,strimzi.io/name=my-connect-connect,strimzi.io/kind=KafkaConnect"));
+                    assertThat(connectStatus.getConditions().get(0).getStatus(), is("True"));
+                    assertThat(connectStatus.getConditions().get(0).getType(), is("Ready"));
+
+                    assertThat(connectStatus.getConnectorPlugins(), nullValue());
+
+                    async.flag();
+                })));
+    }
+
+    @Test
+    public void testCreateClusterWithConnectorOperator(VertxTestContext context)  {
+        KafkaConnect connect = new KafkaConnectBuilder(CONNECT)
+                .editMetadata()
+                    .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
+                .endMetadata()
+                .build();
+        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
+
+        // Mock deployment
+        DeploymentOperator mockDepOps = supplier.deploymentOperations;
+        when(mockDepOps.getAsync(eq(NAMESPACE), eq(COMPONENT_NAME))).thenReturn(Future.succeededFuture());
+
+        // Mock PodSets
+        StrimziPodSetOperator mockPodSetOps = supplier.strimziPodSetOperator;
+        when(mockPodSetOps.getAsync(eq(NAMESPACE), eq(COMPONENT_NAME))).thenReturn(Future.succeededFuture());
+        when(mockPodSetOps.readiness(any(), eq(NAMESPACE), eq(COMPONENT_NAME), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+        ArgumentCaptor<StrimziPodSet> podSetCaptor = ArgumentCaptor.forClass(StrimziPodSet.class);
+        when(mockPodSetOps.reconcile(any(), eq(NAMESPACE), eq(COMPONENT_NAME), podSetCaptor.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.created(i.getArgument(3))));
+
+        // Mock PDBs
+        PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
+        ArgumentCaptor<PodDisruptionBudget> pdbCaptor = ArgumentCaptor.forClass(PodDisruptionBudget.class);
+        when(mockPdbOps.reconcile(any(), eq(NAMESPACE), eq(COMPONENT_NAME), pdbCaptor.capture())).thenReturn(Future.succeededFuture());
+
+        // Mock Config Maps
+        ConfigMapOperator mockCmOps = supplier.configMapOperations;
+        when(mockCmOps.reconcile(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), any())).thenReturn(Future.succeededFuture());
+
+        // Mock Services
+        ServiceOperator mockServiceOps = supplier.serviceOperations;
+        ArgumentCaptor<Service> serviceCaptor = ArgumentCaptor.forClass(Service.class);
+        when(mockServiceOps.reconcile(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), serviceCaptor.capture())).thenReturn(Future.succeededFuture());
+
+        // Mock Network Policies
+        NetworkPolicyOperator mockNetPolOps = supplier.networkPolicyOperator;
+        ArgumentCaptor<NetworkPolicy> npCaptor = ArgumentCaptor.forClass(NetworkPolicy.class);
+        when(mockNetPolOps.reconcile(any(), eq(NAMESPACE), eq(COMPONENT_NAME), npCaptor.capture())).thenReturn(Future.succeededFuture());
+
+        // Mock Pods
+        PodOperator mockPodOps = supplier.podOperations;
+        when(mockPodOps.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(Future.succeededFuture(List.of()));
+        when(mockPodOps.getAsync(eq(NAMESPACE), startsWith(COMPONENT_NAME))).thenReturn(Future.succeededFuture());
+        when(mockPodOps.reconcile(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), any())).thenReturn(Future.succeededFuture());
+        when(mockPodOps.readiness(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+
+        // Mock Secrets
+        SecretOperator mockSecretOps = supplier.secretOperations;
+        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(KafkaConnectResources.jmxSecretName(NAME)))).thenReturn(Future.succeededFuture());
+
+        // Mock Connect CRs
+        CrdOperator<KubernetesClient, KafkaConnect, KafkaConnectList> mockConnectOps = supplier.connectOperator;
+        when(mockConnectOps.get(eq(NAMESPACE), eq(NAME))).thenReturn(connect);
+        when(mockConnectOps.getAsync(eq(NAMESPACE), eq(NAME))).thenReturn(Future.succeededFuture(connect));
+        ArgumentCaptor<KafkaConnect> connectCaptor = ArgumentCaptor.forClass(KafkaConnect.class);
+        when(mockConnectOps.updateStatusAsync(any(), connectCaptor.capture())).thenReturn(Future.succeededFuture());
+
+        // Mock Connector CRs
+        CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList> mockConnectorOps = supplier.kafkaConnectorOperator;
+        when(mockConnectorOps.listAsync(anyString(), any(LabelSelector.class))).thenReturn(Future.succeededFuture(emptyList()));
+
+        // Mock Connect REST API
+        KafkaConnectApi mockConnectClient = mock(KafkaConnectApi.class);
+        when(mockConnectClient.list(any(), anyString(), anyInt())).thenReturn(Future.succeededFuture(emptyList()));
+        ConnectorPlugin plugin1 = new ConnectorPluginBuilder()
+                .withConnectorClass("io.strimzi.MyClass")
+                .withType("sink")
+                .withVersion("1.0.0")
+                .build();
+        when(mockConnectClient.listConnectorPlugins(any(), anyString(), anyInt())).thenReturn(Future.succeededFuture(singletonList(plugin1)));
+        when(mockConnectClient.updateConnectLoggers(any(), anyString(), anyInt(), anyString(), any(OrderedProperties.class))).thenReturn(Future.succeededFuture());
+
+        KafkaConnectAssemblyOperator ops = new KafkaConnectAssemblyOperator(
+                vertx,
+                new PlatformFeaturesAvailability(false, KUBERNETES_VERSION),
+                supplier,
+                ResourceUtils.dummyClusterOperatorConfig(),
+                x -> mockConnectClient
+        );
+
+        Checkpoint async = context.checkpoint();
+        ops.reconcile(new Reconciliation("test-trigger", KafkaConnect.RESOURCE_KIND, NAMESPACE, NAME))
+                .onComplete(context.succeeding(v -> context.verify(() -> {
+                    // Verify PodSets
+                    List<StrimziPodSet> capturesPodSets = podSetCaptor.getAllValues();
+                    assertThat(capturesPodSets.size(), is(1));
+                    StrimziPodSet podSet = capturesPodSets.get(0);
+                    assertThat(podSet.getMetadata().getName(), is(COMPONENT_NAME));
+                    assertThat(podSet.getSpec().getPods().size(), is(3));
+
+                    // Verify services => one regular and one headless
+                    List<Service> capturedServices = serviceCaptor.getAllValues();
+                    assertThat(capturedServices, hasSize(2));
+
+                    Service service = capturedServices.get(0);
+                    assertThat(service.getMetadata().getName(), is(KafkaConnectResources.serviceName(NAME)));
+                    assertThat(service.getSpec().getType(), is("ClusterIP"));
+                    assertThat(service.getSpec().getClusterIP(), is(not("None")));
+
+                    Service headlessService = capturedServices.get(1);
+                    assertThat(headlessService.getMetadata().getName(), is(COMPONENT_NAME));
+                    assertThat(headlessService.getSpec().getType(), is("ClusterIP"));
+                    assertThat(headlessService.getSpec().getClusterIP(), is("None"));
+
+                    // Verify Deployment => one getAsync call
+                    verify(mockDepOps, times(1)).getAsync(eq(NAMESPACE), eq(COMPONENT_NAME));
+
+                    // Verify PDB => should be set up for custom controller
+                    List<PodDisruptionBudget> capturedPdb = pdbCaptor.getAllValues();
+                    assertThat(capturedPdb.size(), is(1));
+                    PodDisruptionBudget pdb = capturedPdb.get(0);
+                    assertThat(pdb.getMetadata().getName(), is(COMPONENT_NAME));
+                    assertThat(pdb.getSpec().getMinAvailable().getIntVal(), is(2));
+
+                    // NetworkPolicies => Connector Operator, policy is created
+                    assertThat(npCaptor.getValue(), is(notNullValue()));
+
+                    // Verify CR status
+                    List<KafkaConnect> capturedConnects = connectCaptor.getAllValues();
+                    assertThat(capturedConnects, hasSize(1));
+                    KafkaConnectStatus connectStatus = capturedConnects.get(0).getStatus();
+
+                    assertThat(connectStatus.getUrl(), is("http://my-connect-connect-api.my-namespace.svc:8083"));
+                    assertThat(connectStatus.getReplicas(), is(3));
+                    assertThat(connectStatus.getLabelSelector(), is("strimzi.io/cluster=my-connect,strimzi.io/name=my-connect-connect,strimzi.io/kind=KafkaConnect"));
+                    assertThat(connectStatus.getConditions().get(0).getStatus(), is("True"));
+                    assertThat(connectStatus.getConditions().get(0).getType(), is("Ready"));
+
+                    assertThat(connectStatus.getConnectorPlugins(), hasSize(1));
+                    assertThat(connectStatus.getConnectorPlugins().get(0).getConnectorClass(), is("io.strimzi.MyClass"));
+                    assertThat(connectStatus.getConnectorPlugins().get(0).getType(), is("sink"));
+                    assertThat(connectStatus.getConnectorPlugins().get(0).getVersion(), is("1.0.0"));
+
+                    async.flag();
+                })));
+    }
+
+    @Test
+    public void testScaleUpCluster(VertxTestContext context)  {
+        KafkaConnect connect = new KafkaConnectBuilder(CONNECT).build();
+        StrimziPodSet oldPodSet = CLUSTER.generatePodSet(1, null, null, false, null, null, null);
+        List<Pod> oldPods = PodSetUtils.podSetToPods(oldPodSet);
+
+        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
+
+        // Mock deployment
+        DeploymentOperator mockDepOps = supplier.deploymentOperations;
+        when(mockDepOps.getAsync(eq(NAMESPACE), eq(COMPONENT_NAME))).thenReturn(Future.succeededFuture());
+
+        // Mock PodSets
+        StrimziPodSetOperator mockPodSetOps = supplier.strimziPodSetOperator;
+        when(mockPodSetOps.getAsync(eq(NAMESPACE), eq(COMPONENT_NAME))).thenReturn(Future.succeededFuture(oldPodSet));
+        when(mockPodSetOps.readiness(any(), eq(NAMESPACE), eq(COMPONENT_NAME), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+        ArgumentCaptor<StrimziPodSet> podSetCaptor = ArgumentCaptor.forClass(StrimziPodSet.class);
+        when(mockPodSetOps.reconcile(any(), eq(NAMESPACE), eq(COMPONENT_NAME), podSetCaptor.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.created(i.getArgument(3))));
+
+        // Mock PDBs
+        PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
+        ArgumentCaptor<PodDisruptionBudget> pdbCaptor = ArgumentCaptor.forClass(PodDisruptionBudget.class);
+        when(mockPdbOps.reconcile(any(), eq(NAMESPACE), eq(COMPONENT_NAME), pdbCaptor.capture())).thenReturn(Future.succeededFuture());
+
+        // Mock Config Maps
+        ConfigMapOperator mockCmOps = supplier.configMapOperations;
+        when(mockCmOps.reconcile(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), any())).thenReturn(Future.succeededFuture());
+
+        // Mock Services
+        ServiceOperator mockServiceOps = supplier.serviceOperations;
+        ArgumentCaptor<Service> serviceCaptor = ArgumentCaptor.forClass(Service.class);
+        when(mockServiceOps.reconcile(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), serviceCaptor.capture())).thenReturn(Future.succeededFuture());
+
+        // Mock Network Policies
+        NetworkPolicyOperator mockNetPolOps = supplier.networkPolicyOperator;
+        when(mockNetPolOps.reconcile(any(), eq(NAMESPACE), eq(COMPONENT_NAME), any())).thenReturn(Future.succeededFuture());
+
+        // Mock Pods
+        PodOperator mockPodOps = supplier.podOperations;
+        when(mockPodOps.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(Future.succeededFuture(oldPods));
+        when(mockPodOps.getAsync(eq(NAMESPACE), startsWith(COMPONENT_NAME))).thenAnswer(i -> {
+            Pod pod = oldPods.stream().filter(p -> i.getArgument(1).equals(p.getMetadata().getName())).findFirst().orElse(null);
+            return Future.succeededFuture(pod);
+        });
+        when(mockPodOps.deleteAsync(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), eq(false))).thenReturn(Future.succeededFuture());
+        when(mockPodOps.reconcile(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), any())).thenReturn(Future.succeededFuture());
+        when(mockPodOps.readiness(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+
+        // Mock Secrets
+        SecretOperator mockSecretOps = supplier.secretOperations;
+        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(KafkaConnectResources.jmxSecretName(NAME)))).thenReturn(Future.succeededFuture());
+
+        // Mock Connect CRs
+        CrdOperator<KubernetesClient, KafkaConnect, KafkaConnectList> mockConnectOps = supplier.connectOperator;
+        when(mockConnectOps.get(eq(NAMESPACE), eq(NAME))).thenReturn(connect);
+        when(mockConnectOps.getAsync(eq(NAMESPACE), eq(NAME))).thenReturn(Future.succeededFuture(connect));
+        ArgumentCaptor<KafkaConnect> connectCaptor = ArgumentCaptor.forClass(KafkaConnect.class);
+        when(mockConnectOps.updateStatusAsync(any(), connectCaptor.capture())).thenReturn(Future.succeededFuture());
+
+        KafkaConnectAssemblyOperator ops = new KafkaConnectAssemblyOperator(
+                vertx,
+                new PlatformFeaturesAvailability(false, KUBERNETES_VERSION),
+                supplier,
+                ResourceUtils.dummyClusterOperatorConfig()
+        );
+
+        Checkpoint async = context.checkpoint();
+        ops.reconcile(new Reconciliation("test-trigger", KafkaConnect.RESOURCE_KIND, NAMESPACE, NAME))
+                .onComplete(context.succeeding(v -> context.verify(() -> {
+                    // Verify PodSets
+                    List<StrimziPodSet> capturesPodSets = podSetCaptor.getAllValues();
+                    assertThat(capturesPodSets.size(), is(1));
+                    StrimziPodSet podSet = capturesPodSets.get(0);
+                    assertThat(podSet.getMetadata().getName(), is(COMPONENT_NAME));
+                    assertThat(podSet.getSpec().getPods().size(), is(3));
+
                     // Verify CR status
                     List<KafkaConnect> capturedConnects = connectCaptor.getAllValues();
                     assertThat(capturedConnects, hasSize(1));
@@ -222,9 +487,9 @@ public class KafkaConnectAssemblyOperatorPodSetTest {
     }
 
     @Test
-    public void testScaleCluster(VertxTestContext context)  {
+    public void testScaleDownCluster(VertxTestContext context)  {
         KafkaConnect connect = new KafkaConnectBuilder(CONNECT).build();
-        StrimziPodSet oldPodSet = CLUSTER.generatePodSet(1, null, null, false, null, null, null);
+        StrimziPodSet oldPodSet = CLUSTER.generatePodSet(5, null, null, false, null, null, null);
         List<Pod> oldPods = PodSetUtils.podSetToPods(oldPodSet);
 
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
@@ -409,12 +674,8 @@ public class KafkaConnectAssemblyOperatorPodSetTest {
     }
 
     @Test
-    public void testUpdateCluster(VertxTestContext context)  {
-        KafkaConnect connect = new KafkaConnectBuilder(CONNECT)
-                .editSpec()
-                    .withConfig(Map.of("group.id", "my-group"))
-                .endSpec()
-                .build();
+    public void testUpdateClusterNoDiff(VertxTestContext context)  {
+        KafkaConnect connect = new KafkaConnectBuilder(CONNECT).build();
         StrimziPodSet oldPodSet = CLUSTER.generatePodSet(3, null, null, false, null, null, null);
         List<Pod> oldPods = PodSetUtils.podSetToPods(oldPodSet);
 
@@ -481,9 +742,6 @@ public class KafkaConnectAssemblyOperatorPodSetTest {
         Checkpoint async = context.checkpoint();
         ops.reconcile(new Reconciliation("test-trigger", KafkaConnect.RESOURCE_KIND, NAMESPACE, NAME))
                 .onComplete(context.succeeding(v -> context.verify(() -> {
-                    // Check rolling happened
-                    verify(mockPodOps, times(3)).deleteAsync(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), eq(false));
-
                     // Verify PodSets
                     List<StrimziPodSet> capturesPodSets = podSetCaptor.getAllValues();
                     assertThat(capturesPodSets.size(), is(1));
@@ -504,6 +762,577 @@ public class KafkaConnectAssemblyOperatorPodSetTest {
 
                     async.flag();
                 })));
+    }
+
+    @Test
+    public void testUpdateCluster(VertxTestContext context)  {
+        KafkaConnect connect = new KafkaConnectBuilder(CONNECT)
+                .editSpec()
+                    .withImage("some/different:image")
+                    .withResources(new ResourceRequirementsBuilder().withRequests(Map.of("Memory", new Quantity("1Gi"))).build())
+                .endSpec()
+                .build();
+        StrimziPodSet oldPodSet = CLUSTER.generatePodSet(3, null, null, false, null, null, null);
+        List<Pod> oldPods = PodSetUtils.podSetToPods(oldPodSet);
+
+        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
+
+        // Mock deployment
+        DeploymentOperator mockDepOps = supplier.deploymentOperations;
+        when(mockDepOps.getAsync(eq(NAMESPACE), eq(COMPONENT_NAME))).thenReturn(Future.succeededFuture());
+
+        // Mock PodSets
+        StrimziPodSetOperator mockPodSetOps = supplier.strimziPodSetOperator;
+        when(mockPodSetOps.getAsync(eq(NAMESPACE), eq(COMPONENT_NAME))).thenReturn(Future.succeededFuture(oldPodSet));
+        when(mockPodSetOps.readiness(any(), eq(NAMESPACE), eq(COMPONENT_NAME), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+        ArgumentCaptor<StrimziPodSet> podSetCaptor = ArgumentCaptor.forClass(StrimziPodSet.class);
+        when(mockPodSetOps.reconcile(any(), eq(NAMESPACE), eq(COMPONENT_NAME), podSetCaptor.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.created(i.getArgument(3))));
+
+        // Mock PDBs
+        PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
+        ArgumentCaptor<PodDisruptionBudget> pdbCaptor = ArgumentCaptor.forClass(PodDisruptionBudget.class);
+        when(mockPdbOps.reconcile(any(), eq(NAMESPACE), eq(COMPONENT_NAME), pdbCaptor.capture())).thenReturn(Future.succeededFuture());
+
+        // Mock Config Maps
+        ConfigMapOperator mockCmOps = supplier.configMapOperations;
+        when(mockCmOps.reconcile(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), any())).thenReturn(Future.succeededFuture());
+
+        // Mock Services
+        ServiceOperator mockServiceOps = supplier.serviceOperations;
+        ArgumentCaptor<Service> serviceCaptor = ArgumentCaptor.forClass(Service.class);
+        when(mockServiceOps.reconcile(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), serviceCaptor.capture())).thenReturn(Future.succeededFuture());
+
+        // Mock Network Policies
+        NetworkPolicyOperator mockNetPolOps = supplier.networkPolicyOperator;
+        ArgumentCaptor<NetworkPolicy> npCaptor = ArgumentCaptor.forClass(NetworkPolicy.class);
+        when(mockNetPolOps.reconcile(any(), eq(NAMESPACE), eq(COMPONENT_NAME), npCaptor.capture())).thenReturn(Future.succeededFuture());
+
+        // Mock Pods
+        PodOperator mockPodOps = supplier.podOperations;
+        when(mockPodOps.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(Future.succeededFuture(oldPods));
+        when(mockPodOps.getAsync(eq(NAMESPACE), startsWith(COMPONENT_NAME))).thenAnswer(i -> {
+            Pod pod = oldPods.stream().filter(p -> i.getArgument(1).equals(p.getMetadata().getName())).findFirst().orElse(null);
+            return Future.succeededFuture(pod);
+        });
+        when(mockPodOps.deleteAsync(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), eq(false))).thenReturn(Future.succeededFuture());
+        when(mockPodOps.reconcile(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), any())).thenReturn(Future.succeededFuture());
+        when(mockPodOps.readiness(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+
+        // Mock Secrets
+        SecretOperator mockSecretOps = supplier.secretOperations;
+        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(KafkaConnectResources.jmxSecretName(NAME)))).thenReturn(Future.succeededFuture());
+
+        // Mock Connect CRs
+        CrdOperator<KubernetesClient, KafkaConnect, KafkaConnectList> mockConnectOps = supplier.connectOperator;
+        when(mockConnectOps.get(eq(NAMESPACE), eq(NAME))).thenReturn(connect);
+        when(mockConnectOps.getAsync(eq(NAMESPACE), eq(NAME))).thenReturn(Future.succeededFuture(connect));
+        ArgumentCaptor<KafkaConnect> connectCaptor = ArgumentCaptor.forClass(KafkaConnect.class);
+        when(mockConnectOps.updateStatusAsync(any(), connectCaptor.capture())).thenReturn(Future.succeededFuture());
+
+        KafkaConnectAssemblyOperator ops = new KafkaConnectAssemblyOperator(
+                vertx,
+                new PlatformFeaturesAvailability(false, KUBERNETES_VERSION),
+                supplier,
+                ResourceUtils.dummyClusterOperatorConfig()
+        );
+
+        Checkpoint async = context.checkpoint();
+        ops.reconcile(new Reconciliation("test-trigger", KafkaConnect.RESOURCE_KIND, NAMESPACE, NAME))
+                .onComplete(context.succeeding(v -> context.verify(() -> {
+                    // Check rolling happened
+                    verify(mockPodOps, times(3)).deleteAsync(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), eq(false));
+
+                    // Verify PodSets
+                    List<StrimziPodSet> capturesPodSets = podSetCaptor.getAllValues();
+                    assertThat(capturesPodSets.size(), is(1));
+                    StrimziPodSet podSet = capturesPodSets.get(0);
+                    assertThat(podSet.getMetadata().getName(), is(COMPONENT_NAME));
+                    assertThat(podSet.getSpec().getPods().size(), is(3));
+                    PodSetUtils.podSetToPods(podSet).forEach(pod -> {
+                        assertThat(pod.getSpec().getContainers().get(0).getImage(), is("some/different:image"));
+                        assertThat(pod.getSpec().getContainers().get(0).getResources(), is(new ResourceRequirementsBuilder().withRequests(Map.of("Memory", new Quantity("1Gi"))).build()));
+                    });
+
+                    // NetworkPolicies => No Connector Operator, no policy is created
+                    assertThat(npCaptor.getValue(), is(Matchers.nullValue()));
+
+                    // Verify CR status
+                    List<KafkaConnect> capturedConnects = connectCaptor.getAllValues();
+                    assertThat(capturedConnects, hasSize(1));
+                    KafkaConnectStatus connectStatus = capturedConnects.get(0).getStatus();
+
+                    assertThat(connectStatus.getUrl(), is("http://my-connect-connect-api.my-namespace.svc:8083"));
+                    assertThat(connectStatus.getReplicas(), is(3));
+                    assertThat(connectStatus.getLabelSelector(), is("strimzi.io/cluster=my-connect,strimzi.io/name=my-connect-connect,strimzi.io/kind=KafkaConnect"));
+                    assertThat(connectStatus.getConditions().get(0).getStatus(), is("True"));
+                    assertThat(connectStatus.getConditions().get(0).getType(), is("Ready"));
+
+                    assertThat(connectStatus.getConnectorPlugins(), nullValue());
+
+                    async.flag();
+                })));
+    }
+
+    @Test
+    public void testUpdateClusterWithConnectors(VertxTestContext context)  {
+        KafkaConnect connect = new KafkaConnectBuilder(CONNECT)
+                .editMetadata()
+                    .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
+                .endMetadata()
+                .editSpec()
+                    .withImage("some/different:image")
+                    .withResources(new ResourceRequirementsBuilder().withRequests(Map.of("Memory", new Quantity("1Gi"))).build())
+                .endSpec()
+                .build();
+        StrimziPodSet oldPodSet = CLUSTER.generatePodSet(3, null, null, false, null, null, null);
+        List<Pod> oldPods = PodSetUtils.podSetToPods(oldPodSet);
+
+        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
+
+        // Mock deployment
+        DeploymentOperator mockDepOps = supplier.deploymentOperations;
+        when(mockDepOps.getAsync(eq(NAMESPACE), eq(COMPONENT_NAME))).thenReturn(Future.succeededFuture());
+
+        // Mock PodSets
+        StrimziPodSetOperator mockPodSetOps = supplier.strimziPodSetOperator;
+        when(mockPodSetOps.getAsync(eq(NAMESPACE), eq(COMPONENT_NAME))).thenReturn(Future.succeededFuture(oldPodSet));
+        when(mockPodSetOps.readiness(any(), eq(NAMESPACE), eq(COMPONENT_NAME), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+        ArgumentCaptor<StrimziPodSet> podSetCaptor = ArgumentCaptor.forClass(StrimziPodSet.class);
+        when(mockPodSetOps.reconcile(any(), eq(NAMESPACE), eq(COMPONENT_NAME), podSetCaptor.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.created(i.getArgument(3))));
+
+        // Mock PDBs
+        PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
+        ArgumentCaptor<PodDisruptionBudget> pdbCaptor = ArgumentCaptor.forClass(PodDisruptionBudget.class);
+        when(mockPdbOps.reconcile(any(), eq(NAMESPACE), eq(COMPONENT_NAME), pdbCaptor.capture())).thenReturn(Future.succeededFuture());
+
+        // Mock Config Maps
+        ConfigMapOperator mockCmOps = supplier.configMapOperations;
+        when(mockCmOps.reconcile(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), any())).thenReturn(Future.succeededFuture());
+
+        // Mock Services
+        ServiceOperator mockServiceOps = supplier.serviceOperations;
+        ArgumentCaptor<Service> serviceCaptor = ArgumentCaptor.forClass(Service.class);
+        when(mockServiceOps.reconcile(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), serviceCaptor.capture())).thenReturn(Future.succeededFuture());
+
+        // Mock Network Policies
+        NetworkPolicyOperator mockNetPolOps = supplier.networkPolicyOperator;
+        ArgumentCaptor<NetworkPolicy> npCaptor = ArgumentCaptor.forClass(NetworkPolicy.class);
+        when(mockNetPolOps.reconcile(any(), eq(NAMESPACE), eq(COMPONENT_NAME), npCaptor.capture())).thenReturn(Future.succeededFuture());
+
+        // Mock Pods
+        PodOperator mockPodOps = supplier.podOperations;
+        when(mockPodOps.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(Future.succeededFuture(oldPods));
+        when(mockPodOps.getAsync(eq(NAMESPACE), startsWith(COMPONENT_NAME))).thenAnswer(i -> {
+            Pod pod = oldPods.stream().filter(p -> i.getArgument(1).equals(p.getMetadata().getName())).findFirst().orElse(null);
+            return Future.succeededFuture(pod);
+        });
+        when(mockPodOps.deleteAsync(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), eq(false))).thenReturn(Future.succeededFuture());
+        when(mockPodOps.reconcile(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), any())).thenReturn(Future.succeededFuture());
+        when(mockPodOps.readiness(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+
+        // Mock Secrets
+        SecretOperator mockSecretOps = supplier.secretOperations;
+        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(KafkaConnectResources.jmxSecretName(NAME)))).thenReturn(Future.succeededFuture());
+
+        // Mock Connect CRs
+        CrdOperator<KubernetesClient, KafkaConnect, KafkaConnectList> mockConnectOps = supplier.connectOperator;
+        when(mockConnectOps.get(eq(NAMESPACE), eq(NAME))).thenReturn(connect);
+        when(mockConnectOps.getAsync(eq(NAMESPACE), eq(NAME))).thenReturn(Future.succeededFuture(connect));
+        ArgumentCaptor<KafkaConnect> connectCaptor = ArgumentCaptor.forClass(KafkaConnect.class);
+        when(mockConnectOps.updateStatusAsync(any(), connectCaptor.capture())).thenReturn(Future.succeededFuture());
+
+        // Mock Connector CRs
+        CrdOperator<KubernetesClient, KafkaConnector, KafkaConnectorList> mockConnectorOps = supplier.kafkaConnectorOperator;
+        when(mockConnectorOps.listAsync(anyString(), any(LabelSelector.class))).thenReturn(Future.succeededFuture(emptyList()));
+
+        // Mock Connect REST API
+        KafkaConnectApi mockConnectClient = mock(KafkaConnectApi.class);
+        when(mockConnectClient.list(any(), anyString(), anyInt())).thenReturn(Future.succeededFuture(emptyList()));
+        ConnectorPlugin plugin1 = new ConnectorPluginBuilder()
+                .withConnectorClass("io.strimzi.MyClass")
+                .withType("sink")
+                .withVersion("1.0.0")
+                .build();
+        when(mockConnectClient.listConnectorPlugins(any(), anyString(), anyInt())).thenReturn(Future.succeededFuture(singletonList(plugin1)));
+        when(mockConnectClient.updateConnectLoggers(any(), anyString(), anyInt(), anyString(), any(OrderedProperties.class))).thenReturn(Future.succeededFuture());
+
+        KafkaConnectAssemblyOperator ops = new KafkaConnectAssemblyOperator(
+                vertx,
+                new PlatformFeaturesAvailability(false, KUBERNETES_VERSION),
+                supplier,
+                ResourceUtils.dummyClusterOperatorConfig(),
+                x -> mockConnectClient
+        );
+
+        Checkpoint async = context.checkpoint();
+        ops.reconcile(new Reconciliation("test-trigger", KafkaConnect.RESOURCE_KIND, NAMESPACE, NAME))
+                .onComplete(context.succeeding(v -> context.verify(() -> {
+                    // Check rolling happened
+                    verify(mockPodOps, times(3)).deleteAsync(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), eq(false));
+
+                    // Verify PodSets
+                    List<StrimziPodSet> capturesPodSets = podSetCaptor.getAllValues();
+                    assertThat(capturesPodSets.size(), is(1));
+                    StrimziPodSet podSet = capturesPodSets.get(0);
+                    assertThat(podSet.getMetadata().getName(), is(COMPONENT_NAME));
+                    assertThat(podSet.getSpec().getPods().size(), is(3));
+                    PodSetUtils.podSetToPods(podSet).forEach(pod -> {
+                        assertThat(pod.getSpec().getContainers().get(0).getImage(), is("some/different:image"));
+                        assertThat(pod.getSpec().getContainers().get(0).getResources(), is(new ResourceRequirementsBuilder().withRequests(Map.of("Memory", new Quantity("1Gi"))).build()));
+                    });
+
+                    // NetworkPolicies => Connector Operator, policy is created
+                    assertThat(npCaptor.getValue(), is(notNullValue()));
+
+                    // Verify CR status
+                    List<KafkaConnect> capturedConnects = connectCaptor.getAllValues();
+                    assertThat(capturedConnects, hasSize(1));
+                    KafkaConnectStatus connectStatus = capturedConnects.get(0).getStatus();
+
+                    assertThat(connectStatus.getUrl(), is("http://my-connect-connect-api.my-namespace.svc:8083"));
+                    assertThat(connectStatus.getReplicas(), is(3));
+                    assertThat(connectStatus.getLabelSelector(), is("strimzi.io/cluster=my-connect,strimzi.io/name=my-connect-connect,strimzi.io/kind=KafkaConnect"));
+                    assertThat(connectStatus.getConditions().get(0).getStatus(), is("True"));
+                    assertThat(connectStatus.getConditions().get(0).getType(), is("Ready"));
+
+                    assertThat(connectStatus.getConnectorPlugins(), hasSize(1));
+                    assertThat(connectStatus.getConnectorPlugins().get(0).getConnectorClass(), is("io.strimzi.MyClass"));
+                    assertThat(connectStatus.getConnectorPlugins().get(0).getType(), is("sink"));
+                    assertThat(connectStatus.getConnectorPlugins().get(0).getVersion(), is("1.0.0"));
+
+                    async.flag();
+                })));
+    }
+
+    @Test
+    public void testUpdateClusterWithFailure(VertxTestContext context)  {
+        KafkaConnect connect = new KafkaConnectBuilder(CONNECT).build();
+        StrimziPodSet oldPodSet = CLUSTER.generatePodSet(3, null, null, false, null, null, null);
+        List<Pod> oldPods = PodSetUtils.podSetToPods(oldPodSet);
+
+        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
+
+        // Mock deployment
+        DeploymentOperator mockDepOps = supplier.deploymentOperations;
+        when(mockDepOps.getAsync(eq(NAMESPACE), eq(COMPONENT_NAME))).thenReturn(Future.succeededFuture());
+
+        // Mock PodSets
+        StrimziPodSetOperator mockPodSetOps = supplier.strimziPodSetOperator;
+        when(mockPodSetOps.getAsync(eq(NAMESPACE), eq(COMPONENT_NAME))).thenReturn(Future.succeededFuture(oldPodSet));
+        when(mockPodSetOps.readiness(any(), eq(NAMESPACE), eq(COMPONENT_NAME), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+        ArgumentCaptor<StrimziPodSet> podSetCaptor = ArgumentCaptor.forClass(StrimziPodSet.class);
+        when(mockPodSetOps.reconcile(any(), eq(NAMESPACE), eq(COMPONENT_NAME), podSetCaptor.capture())).thenAnswer(i -> Future.failedFuture("Test failure"));
+
+        // Mock PDBs
+        PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
+        ArgumentCaptor<PodDisruptionBudget> pdbCaptor = ArgumentCaptor.forClass(PodDisruptionBudget.class);
+        when(mockPdbOps.reconcile(any(), eq(NAMESPACE), eq(COMPONENT_NAME), pdbCaptor.capture())).thenReturn(Future.succeededFuture());
+
+        // Mock Config Maps
+        ConfigMapOperator mockCmOps = supplier.configMapOperations;
+        when(mockCmOps.reconcile(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), any())).thenReturn(Future.succeededFuture());
+
+        // Mock Services
+        ServiceOperator mockServiceOps = supplier.serviceOperations;
+        ArgumentCaptor<Service> serviceCaptor = ArgumentCaptor.forClass(Service.class);
+        when(mockServiceOps.reconcile(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), serviceCaptor.capture())).thenReturn(Future.succeededFuture());
+
+        // Mock Network Policies
+        NetworkPolicyOperator mockNetPolOps = supplier.networkPolicyOperator;
+        ArgumentCaptor<NetworkPolicy> npCaptor = ArgumentCaptor.forClass(NetworkPolicy.class);
+        when(mockNetPolOps.reconcile(any(), eq(NAMESPACE), eq(COMPONENT_NAME), npCaptor.capture())).thenReturn(Future.succeededFuture());
+
+        // Mock Pods
+        PodOperator mockPodOps = supplier.podOperations;
+        when(mockPodOps.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(Future.succeededFuture(oldPods));
+        when(mockPodOps.getAsync(eq(NAMESPACE), startsWith(COMPONENT_NAME))).thenAnswer(i -> {
+            Pod pod = oldPods.stream().filter(p -> i.getArgument(1).equals(p.getMetadata().getName())).findFirst().orElse(null);
+            return Future.succeededFuture(pod);
+        });
+        when(mockPodOps.deleteAsync(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), eq(false))).thenReturn(Future.succeededFuture());
+        when(mockPodOps.reconcile(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), any())).thenReturn(Future.succeededFuture());
+        when(mockPodOps.readiness(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+
+        // Mock Secrets
+        SecretOperator mockSecretOps = supplier.secretOperations;
+        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(KafkaConnectResources.jmxSecretName(NAME)))).thenReturn(Future.succeededFuture());
+
+        // Mock Connect CRs
+        CrdOperator<KubernetesClient, KafkaConnect, KafkaConnectList> mockConnectOps = supplier.connectOperator;
+        when(mockConnectOps.get(eq(NAMESPACE), eq(NAME))).thenReturn(connect);
+        when(mockConnectOps.getAsync(eq(NAMESPACE), eq(NAME))).thenReturn(Future.succeededFuture(connect));
+        ArgumentCaptor<KafkaConnect> connectCaptor = ArgumentCaptor.forClass(KafkaConnect.class);
+        when(mockConnectOps.updateStatusAsync(any(), connectCaptor.capture())).thenReturn(Future.succeededFuture());
+
+        KafkaConnectAssemblyOperator ops = new KafkaConnectAssemblyOperator(
+                vertx,
+                new PlatformFeaturesAvailability(false, KUBERNETES_VERSION),
+                supplier,
+                ResourceUtils.dummyClusterOperatorConfig()
+        );
+
+        Checkpoint async = context.checkpoint();
+        ops.reconcile(new Reconciliation("test-trigger", KafkaConnect.RESOURCE_KIND, NAMESPACE, NAME))
+                .onComplete(context.failing(v -> context.verify(() -> {
+                    assertThat(v.getMessage(), is("Test failure"));
+
+                    // Verify CR status
+                    List<KafkaConnect> capturedConnects = connectCaptor.getAllValues();
+                    assertThat(capturedConnects, hasSize(1));
+                    KafkaConnectStatus connectStatus = capturedConnects.get(0).getStatus();
+
+                    assertThat(connectStatus.getUrl(), is("http://my-connect-connect-api.my-namespace.svc:8083"));
+                    assertThat(connectStatus.getReplicas(), is(3));
+                    assertThat(connectStatus.getLabelSelector(), is("strimzi.io/cluster=my-connect,strimzi.io/name=my-connect-connect,strimzi.io/kind=KafkaConnect"));
+                    assertThat(connectStatus.getConditions().get(0).getStatus(), is("True"));
+                    assertThat(connectStatus.getConditions().get(0).getType(), is("NotReady"));
+
+                    async.flag();
+                })));
+    }
+
+    @Test
+    public void testUpdateClusterWithoutRequiredRBACRights(VertxTestContext context)  {
+        KafkaConnect connect = new KafkaConnectBuilder(CONNECT)
+                .editSpec()
+                    .withNewRack()
+                        .withTopologyKey("my-zone-key")
+                    .endRack()
+                .endSpec()
+                .build();
+        StrimziPodSet oldPodSet = CLUSTER.generatePodSet(3, null, null, false, null, null, null);
+        List<Pod> oldPods = PodSetUtils.podSetToPods(oldPodSet);
+
+        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
+
+        // Mock deployment
+        DeploymentOperator mockDepOps = supplier.deploymentOperations;
+        when(mockDepOps.getAsync(eq(NAMESPACE), eq(COMPONENT_NAME))).thenReturn(Future.succeededFuture());
+
+        // Mock PodSets
+        StrimziPodSetOperator mockPodSetOps = supplier.strimziPodSetOperator;
+        when(mockPodSetOps.getAsync(eq(NAMESPACE), eq(COMPONENT_NAME))).thenReturn(Future.succeededFuture(oldPodSet));
+        when(mockPodSetOps.readiness(any(), eq(NAMESPACE), eq(COMPONENT_NAME), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+        ArgumentCaptor<StrimziPodSet> podSetCaptor = ArgumentCaptor.forClass(StrimziPodSet.class);
+        when(mockPodSetOps.reconcile(any(), eq(NAMESPACE), eq(COMPONENT_NAME), podSetCaptor.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.created(i.getArgument(3))));
+
+        // Mock PDBs
+        PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
+        ArgumentCaptor<PodDisruptionBudget> pdbCaptor = ArgumentCaptor.forClass(PodDisruptionBudget.class);
+        when(mockPdbOps.reconcile(any(), eq(NAMESPACE), eq(COMPONENT_NAME), pdbCaptor.capture())).thenReturn(Future.succeededFuture());
+
+        // Mock Config Maps
+        ConfigMapOperator mockCmOps = supplier.configMapOperations;
+        when(mockCmOps.reconcile(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), any())).thenReturn(Future.succeededFuture());
+
+        // Mock Services
+        ServiceOperator mockServiceOps = supplier.serviceOperations;
+        ArgumentCaptor<Service> serviceCaptor = ArgumentCaptor.forClass(Service.class);
+        when(mockServiceOps.reconcile(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), serviceCaptor.capture())).thenReturn(Future.succeededFuture());
+
+        // Mock Network Policies
+        NetworkPolicyOperator mockNetPolOps = supplier.networkPolicyOperator;
+        ArgumentCaptor<NetworkPolicy> npCaptor = ArgumentCaptor.forClass(NetworkPolicy.class);
+        when(mockNetPolOps.reconcile(any(), eq(NAMESPACE), eq(COMPONENT_NAME), npCaptor.capture())).thenReturn(Future.succeededFuture());
+
+        // Mock Pods
+        PodOperator mockPodOps = supplier.podOperations;
+        when(mockPodOps.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(Future.succeededFuture(oldPods));
+        when(mockPodOps.getAsync(eq(NAMESPACE), startsWith(COMPONENT_NAME))).thenAnswer(i -> {
+            Pod pod = oldPods.stream().filter(p -> i.getArgument(1).equals(p.getMetadata().getName())).findFirst().orElse(null);
+            return Future.succeededFuture(pod);
+        });
+        when(mockPodOps.deleteAsync(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), eq(false))).thenReturn(Future.succeededFuture());
+        when(mockPodOps.reconcile(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), any())).thenReturn(Future.succeededFuture());
+        when(mockPodOps.readiness(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+
+        // Mock Secrets
+        SecretOperator mockSecretOps = supplier.secretOperations;
+        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(KafkaConnectResources.jmxSecretName(NAME)))).thenReturn(Future.succeededFuture());
+
+        // Mock Connect CRs
+        CrdOperator<KubernetesClient, KafkaConnect, KafkaConnectList> mockConnectOps = supplier.connectOperator;
+        when(mockConnectOps.get(eq(NAMESPACE), eq(NAME))).thenReturn(connect);
+        when(mockConnectOps.getAsync(eq(NAMESPACE), eq(NAME))).thenReturn(Future.succeededFuture(connect));
+        ArgumentCaptor<KafkaConnect> connectCaptor = ArgumentCaptor.forClass(KafkaConnect.class);
+        when(mockConnectOps.updateStatusAsync(any(), connectCaptor.capture())).thenReturn(Future.succeededFuture());
+
+        // Mock ClusterRoleBindings
+        ClusterRoleBindingOperator mockCrbOps = supplier.clusterRoleBindingOperator;
+        when(mockCrbOps.reconcile(any(), any(), any())).thenReturn(Future.failedFuture(new KubernetesClientException("Forbidden!", 403, null)));
+
+        KafkaConnectAssemblyOperator ops = new KafkaConnectAssemblyOperator(
+                vertx,
+                new PlatformFeaturesAvailability(false, KUBERNETES_VERSION),
+                supplier,
+                ResourceUtils.dummyClusterOperatorConfig()
+        );
+
+        Checkpoint async = context.checkpoint();
+        ops.reconcile(new Reconciliation("test-trigger", KafkaConnect.RESOURCE_KIND, NAMESPACE, NAME))
+                .onComplete(context.failing(v -> context.verify(() -> {
+                    assertThat(v.getMessage(), containsString("Forbidden!"));
+
+                    // Verify CR status
+                    List<KafkaConnect> capturedConnects = connectCaptor.getAllValues();
+                    assertThat(capturedConnects, hasSize(1));
+                    KafkaConnectStatus connectStatus = capturedConnects.get(0).getStatus();
+
+                    assertThat(connectStatus.getUrl(), is("http://my-connect-connect-api.my-namespace.svc:8083"));
+                    assertThat(connectStatus.getReplicas(), is(3));
+                    assertThat(connectStatus.getLabelSelector(), is("strimzi.io/cluster=my-connect,strimzi.io/name=my-connect-connect,strimzi.io/kind=KafkaConnect"));
+                    assertThat(connectStatus.getConditions().get(0).getStatus(), is("True"));
+                    assertThat(connectStatus.getConditions().get(0).getType(), is("NotReady"));
+
+                    assertThat(connectStatus.getConnectorPlugins(), nullValue());
+
+                    async.flag();
+                })));
+    }
+
+    @Test
+    public void testUpdateClusterWithoutOptionalRBACRights(VertxTestContext context)  {
+        KafkaConnect connect = new KafkaConnectBuilder(CONNECT).build();
+        StrimziPodSet oldPodSet = CLUSTER.generatePodSet(3, null, null, false, null, null, null);
+        List<Pod> oldPods = PodSetUtils.podSetToPods(oldPodSet);
+
+        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
+
+        // Mock deployment
+        DeploymentOperator mockDepOps = supplier.deploymentOperations;
+        when(mockDepOps.getAsync(eq(NAMESPACE), eq(COMPONENT_NAME))).thenReturn(Future.succeededFuture());
+
+        // Mock PodSets
+        StrimziPodSetOperator mockPodSetOps = supplier.strimziPodSetOperator;
+        when(mockPodSetOps.getAsync(eq(NAMESPACE), eq(COMPONENT_NAME))).thenReturn(Future.succeededFuture(oldPodSet));
+        when(mockPodSetOps.readiness(any(), eq(NAMESPACE), eq(COMPONENT_NAME), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+        ArgumentCaptor<StrimziPodSet> podSetCaptor = ArgumentCaptor.forClass(StrimziPodSet.class);
+        when(mockPodSetOps.reconcile(any(), eq(NAMESPACE), eq(COMPONENT_NAME), podSetCaptor.capture())).thenAnswer(i -> Future.succeededFuture(ReconcileResult.created(i.getArgument(3))));
+
+        // Mock PDBs
+        PodDisruptionBudgetOperator mockPdbOps = supplier.podDisruptionBudgetOperator;
+        ArgumentCaptor<PodDisruptionBudget> pdbCaptor = ArgumentCaptor.forClass(PodDisruptionBudget.class);
+        when(mockPdbOps.reconcile(any(), eq(NAMESPACE), eq(COMPONENT_NAME), pdbCaptor.capture())).thenReturn(Future.succeededFuture());
+
+        // Mock Config Maps
+        ConfigMapOperator mockCmOps = supplier.configMapOperations;
+        when(mockCmOps.reconcile(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), any())).thenReturn(Future.succeededFuture());
+
+        // Mock Services
+        ServiceOperator mockServiceOps = supplier.serviceOperations;
+        ArgumentCaptor<Service> serviceCaptor = ArgumentCaptor.forClass(Service.class);
+        when(mockServiceOps.reconcile(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), serviceCaptor.capture())).thenReturn(Future.succeededFuture());
+
+        // Mock Network Policies
+        NetworkPolicyOperator mockNetPolOps = supplier.networkPolicyOperator;
+        ArgumentCaptor<NetworkPolicy> npCaptor = ArgumentCaptor.forClass(NetworkPolicy.class);
+        when(mockNetPolOps.reconcile(any(), eq(NAMESPACE), eq(COMPONENT_NAME), npCaptor.capture())).thenReturn(Future.succeededFuture());
+
+        // Mock Pods
+        PodOperator mockPodOps = supplier.podOperations;
+        when(mockPodOps.listAsync(eq(NAMESPACE), any(Labels.class))).thenReturn(Future.succeededFuture(oldPods));
+        when(mockPodOps.getAsync(eq(NAMESPACE), startsWith(COMPONENT_NAME))).thenAnswer(i -> {
+            Pod pod = oldPods.stream().filter(p -> i.getArgument(1).equals(p.getMetadata().getName())).findFirst().orElse(null);
+            return Future.succeededFuture(pod);
+        });
+        when(mockPodOps.deleteAsync(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), eq(false))).thenReturn(Future.succeededFuture());
+        when(mockPodOps.reconcile(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), any())).thenReturn(Future.succeededFuture());
+        when(mockPodOps.readiness(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), anyLong(), anyLong())).thenReturn(Future.succeededFuture());
+
+        // Mock Secrets
+        SecretOperator mockSecretOps = supplier.secretOperations;
+        when(mockSecretOps.getAsync(eq(NAMESPACE), eq(KafkaConnectResources.jmxSecretName(NAME)))).thenReturn(Future.succeededFuture());
+
+        // Mock Connect CRs
+        CrdOperator<KubernetesClient, KafkaConnect, KafkaConnectList> mockConnectOps = supplier.connectOperator;
+        when(mockConnectOps.get(eq(NAMESPACE), eq(NAME))).thenReturn(connect);
+        when(mockConnectOps.getAsync(eq(NAMESPACE), eq(NAME))).thenReturn(Future.succeededFuture(connect));
+        ArgumentCaptor<KafkaConnect> connectCaptor = ArgumentCaptor.forClass(KafkaConnect.class);
+        when(mockConnectOps.updateStatusAsync(any(), connectCaptor.capture())).thenReturn(Future.succeededFuture());
+
+        // Mock ClusterRoleBindings
+        ClusterRoleBindingOperator mockCrbOps = supplier.clusterRoleBindingOperator;
+        when(mockCrbOps.reconcile(any(), any(), any())).thenReturn(Future.failedFuture(new KubernetesClientException("Forbidden!", 403, null)));
+
+        KafkaConnectAssemblyOperator ops = new KafkaConnectAssemblyOperator(
+                vertx,
+                new PlatformFeaturesAvailability(false, KUBERNETES_VERSION),
+                supplier,
+                ResourceUtils.dummyClusterOperatorConfig()
+        );
+
+        Checkpoint async = context.checkpoint();
+        ops.reconcile(new Reconciliation("test-trigger", KafkaConnect.RESOURCE_KIND, NAMESPACE, NAME))
+                .onComplete(context.succeeding(v -> context.verify(() -> {
+                    // Check rolling happened
+                    verify(mockPodOps, times(3)).deleteAsync(any(), eq(NAMESPACE), startsWith(COMPONENT_NAME), eq(false));
+
+                    // Verify PodSets
+                    List<StrimziPodSet> capturesPodSets = podSetCaptor.getAllValues();
+                    assertThat(capturesPodSets.size(), is(1));
+                    StrimziPodSet podSet = capturesPodSets.get(0);
+                    assertThat(podSet.getMetadata().getName(), is(COMPONENT_NAME));
+                    assertThat(podSet.getSpec().getPods().size(), is(3));
+
+                    // NetworkPolicies => No Connector Operator, no policy is created
+                    assertThat(npCaptor.getValue(), is(Matchers.nullValue()));
+
+                    // Verify CR status
+                    List<KafkaConnect> capturedConnects = connectCaptor.getAllValues();
+                    assertThat(capturedConnects, hasSize(1));
+                    KafkaConnectStatus connectStatus = capturedConnects.get(0).getStatus();
+
+                    assertThat(connectStatus.getUrl(), is("http://my-connect-connect-api.my-namespace.svc:8083"));
+                    assertThat(connectStatus.getReplicas(), is(3));
+                    assertThat(connectStatus.getLabelSelector(), is("strimzi.io/cluster=my-connect,strimzi.io/name=my-connect-connect,strimzi.io/kind=KafkaConnect"));
+                    assertThat(connectStatus.getConditions().get(0).getStatus(), is("True"));
+                    assertThat(connectStatus.getConditions().get(0).getType(), is("Ready"));
+
+                    assertThat(connectStatus.getConnectorPlugins(), nullValue());
+
+                    async.flag();
+                })));
+    }
+
+    @Test
+    public void testReconcileAll(VertxTestContext context) {
+        ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(true);
+        var mockConnectOps = supplier.connectOperator;
+        var mockConnectorOps = supplier.kafkaConnectorOperator;
+
+        when(mockConnectorOps.listAsync(any(), any(LabelSelector.class))).thenReturn(Future.succeededFuture(List.of()));
+        String kcNamespace = "test";
+
+        KafkaConnect foo = ResourceUtils.createEmptyKafkaConnect(kcNamespace, "foo");
+        KafkaConnect bar = ResourceUtils.createEmptyKafkaConnect(kcNamespace, "bar");
+        when(mockConnectOps.listAsync(eq(kcNamespace), isNull(LabelSelector.class))).thenReturn(Future.succeededFuture(List.of(foo, bar)));
+        when(mockConnectOps.getAsync(eq(kcNamespace), eq("foo"))).thenReturn(Future.succeededFuture(foo));
+        when(mockConnectOps.getAsync(eq(kcNamespace), eq("bar"))).thenReturn(Future.succeededFuture(bar));
+
+        Checkpoint asyncCreated = context.checkpoint(2);
+        Checkpoint async = context.checkpoint();
+
+        Set<String> createdOrUpdated = new CopyOnWriteArraySet<>();
+
+        KafkaConnectAssemblyOperator ops = new KafkaConnectAssemblyOperator(vertx, new PlatformFeaturesAvailability(true, KUBERNETES_VERSION),
+                supplier, ResourceUtils.dummyClusterOperatorConfig()) {
+
+            @Override
+            public Future<KafkaConnectStatus> createOrUpdate(Reconciliation reconciliation, KafkaConnect kafkaConnectAssembly) {
+                createdOrUpdated.add(kafkaConnectAssembly.getMetadata().getName());
+                asyncCreated.flag();
+                return Future.succeededFuture();
+            }
+        };
+
+        Promise<Void> reconciled = Promise.promise();
+        // Now try to reconcile all the Kafka Connect clusters
+        ops.reconcileAll("test", kcNamespace, ignored -> reconciled.complete());
+
+        reconciled.future().onComplete(context.succeeding(v -> context.verify(() -> {
+            assertThat(createdOrUpdated, is(Set.of("foo", "bar")));
+            async.flag();
+        })));
     }
 
     @Test
@@ -651,7 +1480,15 @@ public class KafkaConnectAssemblyOperatorPodSetTest {
     @Test
     public void testClusterMigrationToPodSets(VertxTestContext context)  {
         KafkaConnect connect = new KafkaConnectBuilder(CONNECT).build();
-        Deployment deployment = CLUSTER.generateDeployment(3, null, null, false, null, null, null);
+
+        Deployment deployment = new DeploymentBuilder()
+                .withNewMetadata()
+                    .withName(KafkaConnectResources.deploymentName(NAME))
+                .endMetadata()
+                .withNewSpec()
+                    .withReplicas(3)
+                .endSpec()
+                .build();
 
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
@@ -816,7 +1653,7 @@ public class KafkaConnectAssemblyOperatorPodSetTest {
         when(mockConnectOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture(kc));
         ArgumentCaptor<KafkaConnect> connectCaptor = ArgumentCaptor.forClass(KafkaConnect.class);
         when(mockConnectOps.updateStatusAsync(any(), connectCaptor.capture())).thenReturn(Future.succeededFuture());
-        when(mockDcOps.getAsync(kcNamespace, connect.getComponentName())).thenReturn(Future.succeededFuture(connect.generateDeployment(3, null, Map.of(), true, null, null, null)));
+        when(mockDcOps.getAsync(kcNamespace, connect.getComponentName())).thenReturn(Future.succeededFuture(null));
         when(mockPodSetOps.getAsync(any(), any())).thenReturn(Future.succeededFuture());
         when(mockNetPolOps.reconcile(any(), eq(kc.getMetadata().getNamespace()), eq(KafkaConnectResources.deploymentName(kc.getMetadata().getName())), any())).thenReturn(Future.succeededFuture(ReconcileResult.created(new NetworkPolicy())));
         when(mockBcOps.getAsync(anyString(), anyString())).thenReturn(Future.succeededFuture());
