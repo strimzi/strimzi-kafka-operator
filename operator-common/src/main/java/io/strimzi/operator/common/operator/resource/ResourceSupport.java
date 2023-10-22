@@ -99,7 +99,7 @@ public class ResourceSupport {
      *
      * In some cases such as resource deletion, it might happen that the resource is deleted already before the watch is
      * started and as a result the watch never completes. The {@code preCheckFn} will be invoked on a worker thread
-     * after the watch has been created. It is expected to double check if we still need to wait for the watch to fire.
+     * after the watch has been created. It is expected to double-check if we still need to wait for the watch to fire.
      * When the {@code preCheckFn} returns non-null the watch will be closed and the future returned from this method
      * will be completed with the result of the {@code preCheckFn} on the context thread. In the deletion example
      * described above, the {@code preCheckFn} can check if the resource still exists and close the watch in case it was
@@ -111,7 +111,7 @@ public class ResourceSupport {
      * @param operationTimeoutMs The timeout in ms.
      * @param watchFnDescription A description of what {@code watchFn} is watching for.
      *                           E.g. "observe ${condition} of ${kind} ${namespace}/${name}".
-     * @param watchFn The function to determine if the event occured
+     * @param watchFn The function to determine if the event occurred
      * @param preCheckFn Pre-check function to avoid situation when the watch is never fired because ot was started too late.
      * @param <T> The type of watched resource.
      * @param <U> The result type of the {@code watchFn}.
@@ -164,7 +164,7 @@ public class ResourceSupport {
                     Watch watch = watchable.watch(this);
                     LOGGER.debugCr(reconciliation, "Opened watch {} for evaluation of {}", watch, watchFnDescription);
 
-                    // Pre-check is done after the watch is open to make sure we did not missed the event. In the worst
+                    // Pre-check is done after the watch is open to make sure we did not miss the event. In the worst
                     // case, both pre-check and watch complete the future. But at least one should always complete it.
                     U apply = preCheckFn.apply(gettable.get());
                     if (apply != null) {
@@ -237,7 +237,7 @@ public class ResourceSupport {
      * @return A Future which completes on the context thread.
      */
     <T> Future<T> getAsync(Gettable<T> resource) {
-        return executeBlocking(() -> resource.get());
+        return executeBlocking(resource::get);
     }
 
     /**

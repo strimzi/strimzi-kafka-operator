@@ -86,7 +86,7 @@ public abstract class AbstractScalableNamespacedResourceOperator<C extends Kuber
 
     /**
      * Asynchronously scale down the resource given by {@code namespace} and {@code name} to have the scale given by
-     * {@code scaleTo}, returning a future for the outcome. If the resource does not exists, is has a current
+     * {@code scaleTo}, returning a future for the outcome. If the resource does not exist, it has a current
      * scale &lt;= the given {@code scaleTo} then complete successfully.
      *
      * @param reconciliation    The reconciliation

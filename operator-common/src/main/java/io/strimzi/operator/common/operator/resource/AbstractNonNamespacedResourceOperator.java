@@ -164,7 +164,7 @@ public abstract class AbstractNonNamespacedResourceOperator<C extends Kubernetes
     }
 
     /**
-     * Method for patching or replacing a resource. By default is using JSON-type patch. Overriding this method can be
+     * Method for patching or replacing a resource. By default, is using JSON-type patch. Overriding this method can be
      * used to use replace instead of patch or different patch strategies.
      *
      * @param name          Name of the resource

@@ -44,9 +44,6 @@ public class ZookeeperScaler implements AutoCloseable {
     private final long operationTimeoutMs;
     private final int zkAdminSessionTimeoutMs;
 
-    private final Secret clusterCaCertSecret;
-    private final Secret coKeySecret;
-
     private final String trustStorePassword;
     private final File trustStoreFile;
 
@@ -82,8 +79,6 @@ public class ZookeeperScaler implements AutoCloseable {
         this.zkNodeAddress = zkNodeAddress;
         this.operationTimeoutMs = operationTimeoutMs;
         this.zkAdminSessionTimeoutMs = zkAdminSessionTimeoutMs;
-        this.clusterCaCertSecret = clusterCaCertSecret;
-        this.coKeySecret = coKeySecret;
 
         // Setup truststore from PEM file in cluster CA secret
         // We cannot use P12 because of custom CAs which for simplicity provide only PEM
@@ -266,7 +261,7 @@ public class ZookeeperScaler implements AutoCloseable {
     /**
      * Generates the TLS configuration for Zookeeper.
      *
-     * @return
+     * @return  A future with the ZooKeeper Client Configuration
      */
     private Future<ZKClientConfig> getClientConfig()  {
         return vertx.executeBlocking(() -> {

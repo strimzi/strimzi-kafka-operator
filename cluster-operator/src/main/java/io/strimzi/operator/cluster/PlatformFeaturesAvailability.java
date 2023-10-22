@@ -46,8 +46,8 @@ public class PlatformFeaturesAvailability implements PlatformFeatures {
         Future<VersionInfo> futureVersion = getVersionInfo(vertx, client);
 
         futureVersion.compose(versionInfo -> {
-            String major = versionInfo.getMajor().equals("") ? Integer.toString(KubernetesVersion.MINIMAL_SUPPORTED_MAJOR) : versionInfo.getMajor();
-            String minor = versionInfo.getMinor().equals("") ? Integer.toString(KubernetesVersion.MINIMAL_SUPPORTED_MINOR) : versionInfo.getMinor();
+            String major = versionInfo.getMajor().isEmpty() ? Integer.toString(KubernetesVersion.MINIMAL_SUPPORTED_MAJOR) : versionInfo.getMajor();
+            String minor = versionInfo.getMinor().isEmpty() ? Integer.toString(KubernetesVersion.MINIMAL_SUPPORTED_MINOR) : versionInfo.getMinor();
             pfa.setKubernetesVersion(new KubernetesVersion(Integer.parseInt(major.split("\\D")[0]), Integer.parseInt(minor.split("\\D")[0])));
 
             return checkApiAvailability(vertx, client, "route.openshift.io", "v1");
