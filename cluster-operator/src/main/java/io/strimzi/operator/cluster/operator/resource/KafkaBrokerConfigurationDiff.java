@@ -135,8 +135,9 @@ public class KafkaBrokerConfigurationDiff extends AbstractJsonDiff {
         // Otherwise, always ignore KRaft controller config properties.
         if (isCombined) {
             return IGNORABLE_PROPERTIES.matcher(key).matches();
+        } else {
+            return IGNORABLE_PROPERTIES.matcher(key).matches() || IGNORABLE_CONTROLLER_PROPERTIES.matcher(key).matches();
         }
-        return IGNORABLE_PROPERTIES.matcher(key).matches() || IGNORABLE_CONTROLLER_PROPERTIES.matcher(key).matches();
     }
 
     /**
@@ -182,18 +183,19 @@ public class KafkaBrokerConfigurationDiff extends AbstractJsonDiff {
                     .findFirst();
 
             String op = d.get("op").asText();
+            boolean isCombined = nodeRef.controller() && nodeRef.broker();
             if (optEntry.isPresent()) {
                 ConfigEntry entry = optEntry.get();
                 if ("remove".equals(op)) {
-                    removeProperty(configModel, updatedCE, pathValueWithoutSlash, entry, nodeRef.controller());
+                    removeProperty(configModel, updatedCE, pathValueWithoutSlash, entry, isCombined);
                 } else if ("replace".equals(op)) {
                     // entry is in the current, desired is updated value
-                    updateOrAdd(entry.name(), configModel, desiredMap, updatedCE, nodeRef.controller());
+                    updateOrAdd(entry.name(), configModel, desiredMap, updatedCE, isCombined);
                 }
             } else {
                 if ("add".equals(op)) {
                     // entry is not in the current, it is added
-                    updateOrAdd(pathValueWithoutSlash, configModel, desiredMap, updatedCE, nodeRef.controller());
+                    updateOrAdd(pathValueWithoutSlash, configModel, desiredMap, updatedCE, isCombined);
                 }
             }
 

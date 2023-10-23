@@ -18,7 +18,7 @@ import org.apache.kafka.clients.admin.QuorumInfo;
 import static java.lang.Math.ceil;
 
 /**
- * Provides a method that determines whether it's safe to restart a KRaft controller, which may be the active controller
+ * Provides a method that determines whether it's safe to restart a KRaft controller
  */
 class KafkaQuorumCheck {
 
@@ -27,7 +27,6 @@ class KafkaQuorumCheck {
     private final Admin admin;
     private final Vertx vertx;
     private final long controllerQuorumFetchTimeoutMs;
-    private Future<QuorumInfo> quorumInfoFuture;
 
     KafkaQuorumCheck(Reconciliation reconciliation, Admin ac, Vertx vertx, long controllerQuorumFetchTimeoutMs) {
         this.reconciliation = reconciliation;
@@ -42,10 +41,7 @@ class KafkaQuorumCheck {
      */
     Future<Boolean> canRollController(int podId) {
         LOGGER.debugCr(reconciliation, "Determining whether controller {} can be rolled", podId);
-        if (quorumInfoFuture == null) {
-            this.quorumInfoFuture = describeMetadataQuorum();
-        }
-        return quorumInfoFuture.map(info -> {
+        return describeMetadataQuorum().map(info -> {
             boolean canRoll = isQuorumHealthyWithoutPod(podId, info);
             if (!canRoll) {
                 LOGGER.debugCr(reconciliation, "Restart pod {} would affect the quorum", podId);
@@ -62,10 +58,7 @@ class KafkaQuorumCheck {
      **/
     Future<Integer> quorumLeaderId() {
         LOGGER.debugCr(reconciliation, "Determining the quorum leader id");
-        if (quorumInfoFuture == null) {
-            this.quorumInfoFuture = describeMetadataQuorum();
-        }
-        return quorumInfoFuture.map(QuorumInfo::leaderId).recover(error -> {
+        return describeMetadataQuorum().map(QuorumInfo::leaderId).recover(error -> {
             LOGGER.warnCr(reconciliation, "Error determining the quorum leader id", error);
             return Future.failedFuture(error);
         });
