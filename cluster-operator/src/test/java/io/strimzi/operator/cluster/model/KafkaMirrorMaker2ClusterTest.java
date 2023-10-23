@@ -76,7 +76,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import static java.util.Collections.singletonMap;
 import static org.hamcrest.CoreMatchers.is;
@@ -889,8 +888,8 @@ public class KafkaMirrorMaker2ClusterTest {
         Map<String, String> podSetLabels = TestUtils.map("l1", "v1", "l2", "v2",
                 Labels.KUBERNETES_PART_OF_LABEL, "custom-part",
                 Labels.KUBERNETES_MANAGED_BY_LABEL, "custom-managed-by");
-        Map<String, String> expectedPodSetLavels = new HashMap<>(podSetLabels);
-        expectedPodSetLavels.remove(Labels.KUBERNETES_MANAGED_BY_LABEL);
+        Map<String, String> expectedPodSetLabels = new HashMap<>(podSetLabels);
+        expectedPodSetLabels.remove(Labels.KUBERNETES_MANAGED_BY_LABEL);
         Map<String, String> podSetAnnos = TestUtils.map("a1", "v1", "a2", "v2");
 
         Map<String, String> podLabels = TestUtils.map("l3", "v3", "l4", "v4");
@@ -971,7 +970,7 @@ public class KafkaMirrorMaker2ClusterTest {
 
         // Check PodSet
         StrimziPodSet podSet = kmm2.generatePodSet(3, Map.of(), Map.of(), false, null, null, null);
-        assertThat(podSet.getMetadata().getLabels().entrySet().containsAll(expectedPodSetLavels.entrySet()), is(true));
+        assertThat(podSet.getMetadata().getLabels().entrySet().containsAll(expectedPodSetLabels.entrySet()), is(true));
         assertThat(podSet.getMetadata().getAnnotations().entrySet().containsAll(podSetAnnos.entrySet()), is(true));
 
         PodSetUtils.podSetToPods(podSet).forEach(pod -> {
@@ -1032,7 +1031,7 @@ public class KafkaMirrorMaker2ClusterTest {
         StrimziPodSet podSet = kmm2.generatePodSet(3, Map.of(), Map.of(), false, null, null, null);
         PodSetUtils.podSetToPods(podSet).forEach(pod -> {
             List<EnvVar> envs = pod.getSpec().getContainers().get(0).getEnv();
-            List<EnvVar> selected = envs.stream().filter(var -> var.getName().equals("MY_ENV_VAR")).collect(Collectors.toList());
+            List<EnvVar> selected = envs.stream().filter(var -> var.getName().equals("MY_ENV_VAR")).toList();
             assertThat(selected.size(), is(1));
             assertThat(selected.get(0).getName(), is("MY_ENV_VAR"));
             assertThat(selected.get(0).getValueFrom().getSecretKeyRef(), is(env.getValueFrom().getSecretKeyRef()));
@@ -1061,7 +1060,7 @@ public class KafkaMirrorMaker2ClusterTest {
         StrimziPodSet podSet = kmm2.generatePodSet(3, Map.of(), Map.of(), false, null, null, null);
         PodSetUtils.podSetToPods(podSet).forEach(pod -> {
             List<EnvVar> envs = pod.getSpec().getContainers().get(0).getEnv();
-            List<EnvVar> selected = envs.stream().filter(var -> var.getName().equals("MY_ENV_VAR")).collect(Collectors.toList());
+            List<EnvVar> selected = envs.stream().filter(var -> var.getName().equals("MY_ENV_VAR")).toList();
             assertThat(selected.size(), is(1));
             assertThat(selected.get(0).getName(), is("MY_ENV_VAR"));
             assertThat(selected.get(0).getValueFrom().getConfigMapKeyRef(), is(env.getValueFrom().getConfigMapKeyRef()));
@@ -1088,13 +1087,13 @@ public class KafkaMirrorMaker2ClusterTest {
         StrimziPodSet podSet = kmm2.generatePodSet(3, Map.of(), Map.of(), false, null, null, null);
         PodSetUtils.podSetToPods(podSet).forEach(pod -> {
             List<Volume> volumes = pod.getSpec().getVolumes();
-            List<Volume> selected = volumes.stream().filter(vol -> vol.getName().equals(KafkaMirrorMaker2Cluster.EXTERNAL_CONFIGURATION_VOLUME_NAME_PREFIX + "my-volume")).collect(Collectors.toList());
+            List<Volume> selected = volumes.stream().filter(vol -> vol.getName().equals(KafkaMirrorMaker2Cluster.EXTERNAL_CONFIGURATION_VOLUME_NAME_PREFIX + "my-volume")).toList();
             assertThat(selected.size(), is(1));
             assertThat(selected.get(0).getName(), is(KafkaMirrorMaker2Cluster.EXTERNAL_CONFIGURATION_VOLUME_NAME_PREFIX + "my-volume"));
             assertThat(selected.get(0).getSecret(), is(volume.getSecret()));
 
             List<VolumeMount> volumeMounts = pod.getSpec().getContainers().get(0).getVolumeMounts();
-            List<VolumeMount> selectedVolumeMounts = volumeMounts.stream().filter(vol -> vol.getName().equals(KafkaMirrorMaker2Cluster.EXTERNAL_CONFIGURATION_VOLUME_NAME_PREFIX + "my-volume")).collect(Collectors.toList());
+            List<VolumeMount> selectedVolumeMounts = volumeMounts.stream().filter(vol -> vol.getName().equals(KafkaMirrorMaker2Cluster.EXTERNAL_CONFIGURATION_VOLUME_NAME_PREFIX + "my-volume")).toList();
             assertThat(selectedVolumeMounts.size(), is(1));
             assertThat(selectedVolumeMounts.get(0).getName(), is(KafkaMirrorMaker2Cluster.EXTERNAL_CONFIGURATION_VOLUME_NAME_PREFIX + "my-volume"));
             assertThat(selectedVolumeMounts.get(0).getMountPath(), is(KafkaMirrorMaker2Cluster.EXTERNAL_CONFIGURATION_VOLUME_MOUNT_BASE_PATH + "my-volume"));
@@ -1121,13 +1120,13 @@ public class KafkaMirrorMaker2ClusterTest {
         StrimziPodSet podSet = kmm2.generatePodSet(3, Map.of(), Map.of(), false, null, null, null);
         PodSetUtils.podSetToPods(podSet).forEach(pod -> {
             List<Volume> volumes = pod.getSpec().getVolumes();
-            List<Volume> selected = volumes.stream().filter(vol -> vol.getName().equals(KafkaMirrorMaker2Cluster.EXTERNAL_CONFIGURATION_VOLUME_NAME_PREFIX + "my-volume")).collect(Collectors.toList());
+            List<Volume> selected = volumes.stream().filter(vol -> vol.getName().equals(KafkaMirrorMaker2Cluster.EXTERNAL_CONFIGURATION_VOLUME_NAME_PREFIX + "my-volume")).toList();
             assertThat(selected.size(), is(1));
             assertThat(selected.get(0).getName(), is(KafkaMirrorMaker2Cluster.EXTERNAL_CONFIGURATION_VOLUME_NAME_PREFIX + "my-volume"));
             assertThat(selected.get(0).getConfigMap(), is(volume.getConfigMap()));
 
             List<VolumeMount> volumeMounts = pod.getSpec().getContainers().get(0).getVolumeMounts();
-            List<VolumeMount> selectedVolumeMounts = volumeMounts.stream().filter(vol -> vol.getName().equals(KafkaMirrorMaker2Cluster.EXTERNAL_CONFIGURATION_VOLUME_NAME_PREFIX + "my-volume")).collect(Collectors.toList());
+            List<VolumeMount> selectedVolumeMounts = volumeMounts.stream().filter(vol -> vol.getName().equals(KafkaMirrorMaker2Cluster.EXTERNAL_CONFIGURATION_VOLUME_NAME_PREFIX + "my-volume")).toList();
             assertThat(selectedVolumeMounts.size(), is(1));
             assertThat(selectedVolumeMounts.get(0).getName(), is(KafkaMirrorMaker2Cluster.EXTERNAL_CONFIGURATION_VOLUME_NAME_PREFIX + "my-volume"));
             assertThat(selectedVolumeMounts.get(0).getMountPath(), is(KafkaMirrorMaker2Cluster.EXTERNAL_CONFIGURATION_VOLUME_MOUNT_BASE_PATH + "my-volume"));
@@ -1155,11 +1154,11 @@ public class KafkaMirrorMaker2ClusterTest {
         StrimziPodSet podSet = kmm2.generatePodSet(3, Map.of(), Map.of(), false, null, null, null);
         PodSetUtils.podSetToPods(podSet).forEach(pod -> {
             List<Volume> volumes = pod.getSpec().getVolumes();
-            List<Volume> selected = volumes.stream().filter(vol -> vol.getName().equals(KafkaMirrorMaker2Cluster.EXTERNAL_CONFIGURATION_VOLUME_NAME_PREFIX + "my-volume")).collect(Collectors.toList());
+            List<Volume> selected = volumes.stream().filter(vol -> vol.getName().equals(KafkaMirrorMaker2Cluster.EXTERNAL_CONFIGURATION_VOLUME_NAME_PREFIX + "my-volume")).toList();
             assertThat(selected.size(), is(0));
 
             List<VolumeMount> volumeMounts = pod.getSpec().getContainers().get(0).getVolumeMounts();
-            List<VolumeMount> selectedVolumeMounts = volumeMounts.stream().filter(vol -> vol.getName().equals(KafkaMirrorMaker2Cluster.EXTERNAL_CONFIGURATION_VOLUME_NAME_PREFIX + "my-volume")).collect(Collectors.toList());
+            List<VolumeMount> selectedVolumeMounts = volumeMounts.stream().filter(vol -> vol.getName().equals(KafkaMirrorMaker2Cluster.EXTERNAL_CONFIGURATION_VOLUME_NAME_PREFIX + "my-volume")).toList();
             assertThat(selectedVolumeMounts.size(), is(0));
         });
     }
@@ -1183,12 +1182,12 @@ public class KafkaMirrorMaker2ClusterTest {
         StrimziPodSet podSet = kmm2.generatePodSet(3, Map.of(), Map.of(), false, null, null, null);
         PodSetUtils.podSetToPods(podSet).forEach(pod -> {
             List<Volume> volumes = pod.getSpec().getVolumes();
-            List<Volume> selected = volumes.stream().filter(vol -> vol.getName().equals(KafkaMirrorMaker2Cluster.EXTERNAL_CONFIGURATION_VOLUME_NAME_PREFIX + "my-volume")).collect(Collectors.toList());
+            List<Volume> selected = volumes.stream().filter(vol -> vol.getName().equals(KafkaMirrorMaker2Cluster.EXTERNAL_CONFIGURATION_VOLUME_NAME_PREFIX + "my-volume")).toList();
             assertThat(selected.size(), is(0));
 
-            List<VolumeMount> volumeMounths = pod.getSpec().getContainers().get(0).getVolumeMounts();
-            List<VolumeMount> selectedVolumeMounths = volumeMounths.stream().filter(vol -> vol.getName().equals(KafkaMirrorMaker2Cluster.EXTERNAL_CONFIGURATION_VOLUME_NAME_PREFIX + "my-volume")).collect(Collectors.toList());
-            assertThat(selectedVolumeMounths.size(), is(0));
+            List<VolumeMount> volumeMounts = pod.getSpec().getContainers().get(0).getVolumeMounts();
+            List<VolumeMount> selectedVolumeMounts = volumeMounts.stream().filter(vol -> vol.getName().equals(KafkaMirrorMaker2Cluster.EXTERNAL_CONFIGURATION_VOLUME_NAME_PREFIX + "my-volume")).toList();
+            assertThat(selectedVolumeMounts.size(), is(0));
         });
     }
 
@@ -1215,7 +1214,7 @@ public class KafkaMirrorMaker2ClusterTest {
         StrimziPodSet podSet = kmm2.generatePodSet(3, Map.of(), Map.of(), false, null, null, null);
         PodSetUtils.podSetToPods(podSet).forEach(pod -> {
             List<EnvVar> envs = pod.getSpec().getContainers().get(0).getEnv();
-            List<EnvVar> selected = envs.stream().filter(var -> var.getName().equals("MY_ENV_VAR")).collect(Collectors.toList());
+            List<EnvVar> selected = envs.stream().filter(var -> var.getName().equals("MY_ENV_VAR")).toList();
             assertThat(selected.size(), is(0));
         });
     }
@@ -1241,7 +1240,7 @@ public class KafkaMirrorMaker2ClusterTest {
         StrimziPodSet podSet = kmm2.generatePodSet(3, Map.of(), Map.of(), false, null, null, null);
         PodSetUtils.podSetToPods(podSet).forEach(pod -> {
             List<EnvVar> envs = pod.getSpec().getContainers().get(0).getEnv();
-            List<EnvVar> selected = envs.stream().filter(var -> var.getName().equals("MY_ENV_VAR")).collect(Collectors.toList());
+            List<EnvVar> selected = envs.stream().filter(var -> var.getName().equals("MY_ENV_VAR")).toList();
             assertThat(selected.size(), is(0));
         });
     }
@@ -1605,10 +1604,6 @@ public class KafkaMirrorMaker2ClusterTest {
         });
     }
 
-    public void testTracing(String type, String consumerInterceptor, String producerInterceptor) {
-
-    }
-
     @ParallelTest
     public void testPodSetWithOAuthWithAccessToken() {
         KafkaMirrorMaker2ClusterSpec targetClusterWithOAuthWithAccessToken = new KafkaMirrorMaker2ClusterSpecBuilder(this.targetCluster)
@@ -1768,7 +1763,7 @@ public class KafkaMirrorMaker2ClusterTest {
                     .endSpec()
                     .build();
 
-            KafkaMirrorMaker2Cluster kmm2 = KafkaMirrorMaker2Cluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS, SHARED_ENV_PROVIDER);
+            KafkaMirrorMaker2Cluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS, SHARED_ENV_PROVIDER);
         });
     }
 
@@ -1791,7 +1786,7 @@ public class KafkaMirrorMaker2ClusterTest {
                     .endSpec()
                     .build();
 
-            KafkaMirrorMaker2Cluster kmm2 = KafkaMirrorMaker2Cluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS, SHARED_ENV_PROVIDER);
+            KafkaMirrorMaker2Cluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS, SHARED_ENV_PROVIDER);
         });
     }
 

@@ -34,12 +34,12 @@ import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.util.List;
 import java.util.Set;
-import java.util.Collection;
 import java.util.Map;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.ArgumentMatchers.anyCollection;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.mock;
@@ -71,7 +71,7 @@ public class PreventBrokerScaleDownCheckTest {
 
 
     private void mockDescribeTopics(Admin mockAc) {
-        when(mockAc.describeTopics(any(Collection.class))).thenAnswer(invocation -> {
+        when(mockAc.describeTopics(anyCollection())).thenAnswer(invocation -> {
             DescribeTopicsResult dtr = mock(DescribeTopicsResult.class);
             Node leader = new Node(3, Node.noNode().host(), Node.noNode().port());
 

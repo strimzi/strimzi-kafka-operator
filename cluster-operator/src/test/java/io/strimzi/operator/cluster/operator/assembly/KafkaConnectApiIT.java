@@ -129,7 +129,7 @@ public class KafkaConnectApiIT {
                         client.status(Reconciliation.DUMMY_RECONCILIATION, "localhost", port, "test").onComplete(result -> {
                             if (result.succeeded()) {
                                 Map<String, Object> status = result.result();
-                                if ("RUNNING".equals(((Map) status.getOrDefault("connector", emptyMap())).get("state"))) {
+                                if ("RUNNING".equals(((Map<String, Object>) status.getOrDefault("connector", emptyMap())).get("state"))) {
                                     promise.complete(status);
                                     return;
                                 } else {
@@ -151,10 +151,10 @@ public class KafkaConnectApiIT {
                 assertThat(connectorStatus.get("state"), is("RUNNING"));
                 assertThat(connectorStatus.get("worker_id").toString(), startsWith("localhost:"));
 
-                List<Map> tasks = (List<Map>) status.get("tasks");
-                for (Map an : tasks) {
+                List<Map<String, String>> tasks = (List<Map<String, String>>) status.get("tasks");
+                for (Map<String, String> an : tasks) {
                     assertThat(an.get("state"), is("RUNNING"));
-                    assertThat(an.get("worker_id").toString(), startsWith("localhost:"));
+                    assertThat(an.get("worker_id"), startsWith("localhost:"));
                 }
             })))
             .compose(status -> client.getConnectorConfig(Reconciliation.DUMMY_RECONCILIATION, new BackOff(10), "localhost", port, "test"))

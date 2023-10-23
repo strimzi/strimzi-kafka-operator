@@ -76,6 +76,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+@SuppressWarnings("deprecation")
 @ExtendWith(VertxExtension.class)
 public class KafkaMirrorMakerAssemblyOperatorTest {
     private static final KafkaVersion.Lookup VERSIONS = KafkaVersionTestUtils.getKafkaVersionLookup();

@@ -42,6 +42,7 @@ import static org.hamcrest.Matchers.instanceOf;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyCollection;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -180,7 +181,7 @@ public class KafkaAvailabilityTest {
         }
 
         void mockDescribeTopics(Admin mockAc) {
-            when(mockAc.describeTopics(any(Collection.class))).thenAnswer(invocation -> {
+            when(mockAc.describeTopics(anyCollection())).thenAnswer(invocation -> {
                 DescribeTopicsResult dtr = mock(DescribeTopicsResult.class);
                 Collection<String> topicNames = invocation.getArgument(0);
                 Throwable throwable = null;

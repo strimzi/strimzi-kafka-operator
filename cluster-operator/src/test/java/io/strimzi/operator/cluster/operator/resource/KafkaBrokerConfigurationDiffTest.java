@@ -79,9 +79,7 @@ public class KafkaBrokerConfigurationDiffTest {
                 String val = split.length == 1 ? "" : split[1];
                 entryList.add(instantiateConfigEntry(split[0].replace("\n", ""), val));
             });
-            for (ConfigEntry ce : additional) {
-                entryList.add(ce);
-            }
+            entryList.addAll(additional);
         } catch (IOException e) {
             fail(e);
         }

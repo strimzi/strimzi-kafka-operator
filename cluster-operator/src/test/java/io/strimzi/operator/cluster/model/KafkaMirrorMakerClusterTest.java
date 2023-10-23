@@ -1173,7 +1173,7 @@ public class KafkaMirrorMakerClusterTest {
                 .endSpec()
                 .build();
 
-            KafkaMirrorMakerCluster kc = KafkaMirrorMakerCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS, SHARED_ENV_PROVIDER);
+            KafkaMirrorMakerCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS, SHARED_ENV_PROVIDER);
         });
     }
 
@@ -1195,7 +1195,7 @@ public class KafkaMirrorMakerClusterTest {
                 .endSpec()
                 .build();
 
-            KafkaMirrorMakerCluster kc = KafkaMirrorMakerCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS, SHARED_ENV_PROVIDER);
+            KafkaMirrorMakerCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS, SHARED_ENV_PROVIDER);
         });
     }
 
@@ -1402,7 +1402,7 @@ public class KafkaMirrorMakerClusterTest {
                 .endSpec()
                 .build();
 
-            KafkaMirrorMakerCluster kc = KafkaMirrorMakerCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS, SHARED_ENV_PROVIDER);
+            KafkaMirrorMakerCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS, SHARED_ENV_PROVIDER);
         });
     }
 
@@ -1424,7 +1424,7 @@ public class KafkaMirrorMakerClusterTest {
                 .endSpec()
                 .build();
 
-            KafkaMirrorMakerCluster kc = KafkaMirrorMakerCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS, SHARED_ENV_PROVIDER);
+            KafkaMirrorMakerCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, resource, VERSIONS, SHARED_ENV_PROVIDER);
         });
     }
 

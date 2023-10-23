@@ -122,7 +122,7 @@ public class AuthenticationUtilsTest {
     }
 
     //used for testing what keys and values does kafka accept.
-    public static void main(String[] a) throws Exception {
+    public static void main(String[] a) {
         String jaasConfig = "modulename required oauth.groups.claim.delimiter=\"value;1\";";
         AppConfigurationEntry configEntry = parseJaasConfig(jaasConfig);
         configEntry.getLoginModuleName();
