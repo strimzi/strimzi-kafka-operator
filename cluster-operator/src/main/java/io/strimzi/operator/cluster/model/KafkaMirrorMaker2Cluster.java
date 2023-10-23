@@ -202,8 +202,8 @@ public class KafkaMirrorMaker2Cluster extends KafkaConnectCluster {
 
     @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:NPathComplexity"})
     @Override
-    protected List<EnvVar> getEnvVars(boolean stableIdentities) {
-        List<EnvVar> varList = super.getEnvVars(stableIdentities);
+    protected List<EnvVar> getEnvVars() {
+        List<EnvVar> varList = super.getEnvVars();
 
         final StringBuilder clusterAliases = new StringBuilder();
         final StringBuilder clustersTrustedCerts = new StringBuilder();

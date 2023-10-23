@@ -174,16 +174,13 @@ class MirrorMaker2ST extends AbstractST {
 
         LOGGER.info("Mirrored successful");
 
-        if (Environment.isStableConnectIdentitiesEnabled()) {
-            LOGGER.info("MirrorMaker2 manual rolling update");
+        // Test Manual Rolling Update
+        LOGGER.info("MirrorMaker2 manual rolling update");
+        final LabelSelector mm2LabelSelector = KafkaMirrorMaker2Resource.getLabelSelector(testStorage.getClusterName(), KafkaMirrorMaker2Resources.deploymentName(testStorage.getClusterName()));
+        final Map<String, String> mm2PodsSnapshot = PodUtils.podSnapshot(testStorage.getNamespaceName(), mm2LabelSelector);
+        StrimziPodSetUtils.annotateStrimziPodSet(testStorage.getNamespaceName(), KafkaMirrorMaker2Resources.deploymentName(testStorage.getClusterName()), Collections.singletonMap(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "true"));
 
-            // set annotation to trigger mm2 rolling update
-            final LabelSelector mm2LabelSelector = KafkaMirrorMaker2Resource.getLabelSelector(testStorage.getClusterName(), KafkaMirrorMaker2Resources.deploymentName(testStorage.getClusterName()));
-            final Map<String, String> mm2PodsSnapshot = PodUtils.podSnapshot(testStorage.getNamespaceName(), mm2LabelSelector);
-            StrimziPodSetUtils.annotateStrimziPodSet(testStorage.getNamespaceName(), KafkaMirrorMaker2Resources.deploymentName(testStorage.getClusterName()), Collections.singletonMap(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "true"));
-
-            RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), mm2LabelSelector, mirrorMakerReplicasCount, mm2PodsSnapshot);
-        }
+        RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), mm2LabelSelector, mirrorMakerReplicasCount, mm2PodsSnapshot);
 
         // TODO: https://github.com/strimzi/strimzi-kafka-operator/issues/8864
         // currently disabled for UTO, as KafkaTopic CR is not created -> we should check it directly in Kafka
@@ -509,12 +506,6 @@ class MirrorMaker2ST extends AbstractST {
         long actualObsGen = KafkaMirrorMaker2Resource.kafkaMirrorMaker2Client().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get().getMetadata().getGeneration();
 
         assertTrue(mm2ObsGen < actualObsGen);
-        // StrimziPodSet does not have .metadata.generateName attribute and thus we ignoring such assert here
-        if (!Environment.isStableConnectIdentitiesEnabled()) {
-            for (String pod : mm2Pods) {
-                assertTrue(pod.contains(mm2GenName));
-            }
-        }
 
         mm2ObsGen = actualObsGen;
 

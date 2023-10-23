@@ -21,7 +21,6 @@ import io.strimzi.api.kafka.model.ContainerEnvVarBuilder;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
-import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StrimziPodSetUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.KubeClusterResource;
@@ -512,23 +511,15 @@ public class StUtils {
     }
 
     public static Affinity getDeploymentOrStrimziPodSetAffinity(String namespaceName, String resourceName) {
-        if (Environment.isStableConnectIdentitiesEnabled()) {
-            Pod firstPod = StrimziPodSetUtils.getFirstPodFromSpec(namespaceName, resourceName);
-            return firstPod.getSpec().getAffinity();
-        } else {
-            return kubeClient().getDeployment(namespaceName, resourceName).getSpec().getTemplate().getSpec().getAffinity();
-        }
+        Pod firstPod = StrimziPodSetUtils.getFirstPodFromSpec(namespaceName, resourceName);
+        return firstPod.getSpec().getAffinity();
     }
 
     public static void waitTillStrimziPodSetOrDeploymentRolled(final String namespaceName, final String depName,
                                                                final int expectPods, final Map<String, String> snapShot,
                                                                final LabelSelector labelSelector) {
-        if (Environment.isStableConnectIdentitiesEnabled()) {
-            RollingUpdateUtils.waitTillComponentHasRolled(namespaceName, labelSelector, snapShot);
-            RollingUpdateUtils.waitForComponentAndPodsReady(namespaceName, labelSelector, expectPods);
-        } else {
-            DeploymentUtils.waitTillDepHasRolled(namespaceName, depName, expectPods, snapShot);
-        }
+        RollingUpdateUtils.waitTillComponentHasRolled(namespaceName, labelSelector, snapShot);
+        RollingUpdateUtils.waitForComponentAndPodsReady(namespaceName, labelSelector, expectPods);
     }
 
     /**

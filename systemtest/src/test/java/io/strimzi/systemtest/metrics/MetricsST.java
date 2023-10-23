@@ -272,11 +272,8 @@ public class MetricsST extends AbstractST {
         assertCoMetricResources(clusterOperatorCollector, KafkaConnector.RESOURCE_KIND, namespaceFirst, 1);
         assertCoMetricResourcesNullOrZero(clusterOperatorCollector, KafkaConnector.RESOURCE_KIND, namespaceSecond);
 
-        if (Environment.isStableConnectIdentitiesEnabled()) {
-            // check StrimziPodSet metrics in CO
-            assertMetricValueHigherThan(clusterOperatorCollector, getResourceMetricPattern(StrimziPodSet.RESOURCE_KIND, namespaceFirst), 1);
-            assertMetricValueHigherThan(clusterOperatorCollector, getResourceMetricPattern(StrimziPodSet.RESOURCE_KIND, namespaceSecond), 0);
-        }
+        assertMetricValueHigherThan(clusterOperatorCollector, getResourceMetricPattern(StrimziPodSet.RESOURCE_KIND, namespaceFirst), 1);
+        assertMetricValueHigherThan(clusterOperatorCollector, getResourceMetricPattern(StrimziPodSet.RESOURCE_KIND, namespaceSecond), 0);
     }
 
     /**
@@ -515,11 +512,7 @@ public class MetricsST extends AbstractST {
         assertCoMetricResources(clusterOperatorCollector, KafkaMirrorMaker2.RESOURCE_KIND, namespaceFirst, 1);
         assertCoMetricResourcesNullOrZero(clusterOperatorCollector, KafkaMirrorMaker2.RESOURCE_KIND, namespaceSecond);
         assertCoMetricResourceState(clusterOperatorCollector, KafkaMirrorMaker2.RESOURCE_KIND, mm2ClusterName, namespaceFirst, 1, "none");
-
-        if (Environment.isStableConnectIdentitiesEnabled()) {
-            // check StrimziPodSet metrics in CO
-            assertMetricValueHigherThan(clusterOperatorCollector, getResourceMetricPattern(StrimziPodSet.RESOURCE_KIND, namespaceFirst), 1);
-        }
+        assertMetricValueHigherThan(clusterOperatorCollector, getResourceMetricPattern(StrimziPodSet.RESOURCE_KIND, namespaceFirst), 1);
     }
 
     /**

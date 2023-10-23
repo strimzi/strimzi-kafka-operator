@@ -13,16 +13,9 @@ if [ -e "$KAFKA_HOME/init/rack.id" ]; then
   export STRIMZI_RACK_ID
 fi
 
-# Prepare hostname depending on whether we use StrimziPodSets (Stable Pod Identities) or Deployments
-# For StrimziPodSets we use the Pod DNS name assigned through the headless service
-# For Deployments we use the Pod IP address
-if [ "$STRIMZI_STABLE_IDENTITIES_ENABLED" = "true" ]; then
-  ADVERTISED_HOSTNAME=$(hostname -f | cut -d "." -f1-4)
-  export ADVERTISED_HOSTNAME
-else
-  ADVERTISED_HOSTNAME=$(hostname -I | awk '{ print $1 }')
-  export ADVERTISED_HOSTNAME
-fi
+# Prepare hostname - for StrimziPodSets we use the Pod DNS name assigned through the headless service
+ADVERTISED_HOSTNAME=$(hostname -f | cut -d "." -f1-4)
+export ADVERTISED_HOSTNAME
 
 # Generate temporary keystore password
 CERTS_STORE_PASSWORD=$(< /dev/urandom tr -dc _A-Z-a-z-0-9 | head -c32)

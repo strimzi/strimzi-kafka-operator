@@ -163,7 +163,7 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
                     return Future.succeededFuture();
                 })
                 .compose(i -> serviceOperations.reconcile(reconciliation, namespace, connect.getServiceName(), connect.generateService()))
-                .compose(i -> serviceOperations.reconcile(reconciliation, namespace, connect.getComponentName(), stableIdentities ? connect.generateHeadlessService() : null))
+                .compose(i -> serviceOperations.reconcile(reconciliation, namespace, connect.getComponentName(), connect.generateHeadlessService()))
                 .compose(i -> generateMetricsAndLoggingConfigMap(reconciliation, namespace, connect))
                 .compose(logAndMetricsConfigMap -> {
                     String logging = logAndMetricsConfigMap.getData().get(connect.logging().configMapKey());
@@ -172,41 +172,28 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
                     return configMapOperations.reconcile(reconciliation, namespace, logAndMetricsConfigMap.getMetadata().getName(), logAndMetricsConfigMap);
                 })
                 .compose(i -> ReconcilerUtils.reconcileJmxSecret(reconciliation, secretOperations, connect))
-                .compose(i -> podDisruptionBudgetOperator.reconcile(reconciliation, namespace, connect.getComponentName(), connect.generatePodDisruptionBudget(stableIdentities)))
+                .compose(i -> podDisruptionBudgetOperator.reconcile(reconciliation, namespace, connect.getComponentName(), connect.generatePodDisruptionBudget()))
                 .compose(i -> generateAuthHash(namespace, kafkaConnect.getSpec()))
                 .compose(hash -> {
                     podAnnotations.put(Annotations.ANNO_STRIMZI_AUTH_HASH, Integer.toString(hash));
                     return Future.succeededFuture();
                 })
-                .compose(i -> {
-                    KafkaConnectMigration migration = new KafkaConnectMigration(
-                            reconciliation,
-                            connect,
-                            controllerAnnotations,
-                            podAnnotations,
-                            operationTimeoutMs,
-                            pfa.isOpenshift(),
-                            imagePullPolicy,
-                            imagePullSecrets,
-                            image.get(),
-                            deploymentOperations,
-                            podSetOperations,
-                            podOperations
-                    );
-
-                    if (stableIdentities)   {
-                        return migration.migrateFromDeploymentToStrimziPodSets(deployment.get(), podSet.get());
-                    } else {
-                        return migration.migrateFromStrimziPodSetsToDeployment(deployment.get(), podSet.get());
-                    }
-                })
-                .compose(i -> {
-                    if (stableIdentities)   {
-                        return reconcilePodSet(reconciliation, connect, podAnnotations, controllerAnnotations, image.get());
-                    } else {
-                        return reconcileDeployment(reconciliation, connect, podAnnotations, controllerAnnotations, image.get(), hasZeroReplicas);
-                    }
-                })
+                .compose(i -> new KafkaConnectMigration(
+                                reconciliation,
+                                connect,
+                                controllerAnnotations,
+                                podAnnotations,
+                                operationTimeoutMs,
+                                pfa.isOpenshift(),
+                                imagePullPolicy,
+                                imagePullSecrets,
+                                image.get(),
+                                deploymentOperations,
+                                podSetOperations,
+                                podOperations
+                        )
+                        .migrateFromDeploymentToStrimziPodSets(deployment.get(), podSet.get()))
+                .compose(i -> reconcilePodSet(reconciliation, connect, podAnnotations, controllerAnnotations, image.get()))
                 .compose(i -> reconcileConnectors(reconciliation, kafkaConnect, kafkaConnectStatus, hasZeroReplicas, desiredLogging.get(), connect.defaultLogConfig()))
                 .onComplete(reconciliationResult -> {
                     StatusUtils.setStatusConditionAndObservedGeneration(kafkaConnect, kafkaConnectStatus, reconciliationResult.cause());
@@ -255,24 +242,8 @@ public class KafkaConnectAssemblyOperator extends AbstractConnectOperator<Kubern
      * @return  The active controller resource
      */
     private HasMetadata activeController(Deployment deployment, StrimziPodSet podSet)  {
-        if (stableIdentities) {
-            return podSet != null ? podSet : deployment;
-        } else  {
-            return deployment != null ? deployment : podSet;
-        }
-    }
-
-    private Future<Void> reconcileDeployment(Reconciliation reconciliation,
-                                             KafkaConnectCluster connect,
-                                             Map<String, String> podAnnotations,
-                                             Map<String, String> deploymentAnnotations,
-                                             String customContainerImage,
-                                             boolean hasZeroReplicas)  {
-        return deploymentOperations.scaleDown(reconciliation, reconciliation.namespace(), connect.getComponentName(), connect.getReplicas(), operationTimeoutMs)
-                .compose(i -> deploymentOperations.reconcile(reconciliation, reconciliation.namespace(), connect.getComponentName(), connect.generateDeployment(connect.getReplicas(), deploymentAnnotations, podAnnotations, pfa.isOpenshift(), imagePullPolicy, imagePullSecrets, customContainerImage)))
-                .compose(i -> deploymentOperations.scaleUp(reconciliation, reconciliation.namespace(), connect.getComponentName(), connect.getReplicas(), operationTimeoutMs))
-                .compose(i -> deploymentOperations.waitForObserved(reconciliation, reconciliation.namespace(), connect.getComponentName(), 1_000, operationTimeoutMs))
-                .compose(i -> hasZeroReplicas ? Future.succeededFuture() : deploymentOperations.readiness(reconciliation, reconciliation.namespace(), connect.getComponentName(), 1_000, operationTimeoutMs));
+        // TODO: Do we really need this?
+        return podSet != null ? podSet : deployment;
     }
 
     private Future<Void> reconcilePodSet(Reconciliation reconciliation,
