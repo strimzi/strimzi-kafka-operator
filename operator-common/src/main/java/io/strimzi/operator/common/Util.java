@@ -167,6 +167,21 @@ public class Util {
     }
 
     /**
+     * Decode binary item that holds Private key in PEM format from Kubernetes Secret from base64 into byte array
+     * Before decoding it into byte array, it removes the PEM header and footer
+     * @param secret    Kubernetes Secret
+     * @param key       Key which should be retrieved and decoded
+     * @return          Decoded bytes
+     */
+    public static byte[] decodePemPrivateKeyFromSecret(Secret secret, String key) {
+        String privateKey = new String(decodeFromSecret(secret, key), StandardCharsets.UTF_8)
+                .replace("-----BEGIN PRIVATE KEY-----", "")
+                .replaceAll(System.lineSeparator(), "")
+                .replace("-----END PRIVATE KEY-----", "");
+        return Base64.getDecoder().decode(privateKey);
+    }
+
+    /**
      * Create a Truststore file containing the given {@code certificate} and protected with {@code password}.
      * The file will be set to get deleted when the JVM exist.
      *

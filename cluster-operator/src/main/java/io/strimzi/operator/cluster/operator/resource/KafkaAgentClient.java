@@ -14,8 +14,17 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
+import java.security.KeyFactory;
 import java.security.KeyStore;
 
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
+import java.security.cert.Certificate;
+import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.PKCS8EncodedKeySpec;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManagerFactory;
@@ -68,26 +77,17 @@ class KafkaAgentClient {
         }
 
         try {
-            SSLContext sslContext = SSLContext.getInstance("TLS");
-            KeyStore trustStore = KeyStore.getInstance("PKCS12");
-            trustStore.load(new ByteArrayInputStream(
-                            Util.decodeFromSecret(clusterCaCertSecret, "ca.p12")),
-                    new String(Util.decodeFromSecret(clusterCaCertSecret, "ca.password"), StandardCharsets.UTF_8).toCharArray());
-
             String trustManagerFactoryAlgorithm = TrustManagerFactory.getDefaultAlgorithm();
             TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance(trustManagerFactoryAlgorithm);
-            trustManagerFactory.init(trustStore);
+            trustManagerFactory.init(getTrustStore());
+
             char[] keyPassword = new String(Util.decodeFromSecret(coKeySecret, "cluster-operator.password"), StandardCharsets.UTF_8).toCharArray();
-            KeyStore coKeyStore = KeyStore.getInstance("PKCS12");
-            coKeyStore.load(new ByteArrayInputStream(
-                            Util.decodeFromSecret(coKeySecret, "cluster-operator.p12")),
-                    keyPassword
-            );
 
             String keyManagerFactoryAlgorithm = KeyManagerFactory.getDefaultAlgorithm();
             KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance(keyManagerFactoryAlgorithm);
-            keyManagerFactory.init(coKeyStore, keyPassword);
+            keyManagerFactory.init(getKeyStore(keyPassword), keyPassword);
 
+            SSLContext sslContext = SSLContext.getInstance("TLS");
             sslContext.init(keyManagerFactory.getKeyManagers(), trustManagerFactory.getTrustManagers(), null);
 
             return HttpClient.newBuilder()
@@ -96,6 +96,33 @@ class KafkaAgentClient {
         } catch (GeneralSecurityException | IOException e) {
             throw new RuntimeException("Failed to configure HTTP client", e);
         }
+    }
+
+    private KeyStore getTrustStore() throws CertificateException, KeyStoreException, IOException, NoSuchAlgorithmException {
+        final CertificateFactory caCertFactory = CertificateFactory.getInstance("X.509");
+        final Certificate caCert = caCertFactory.generateCertificate(new ByteArrayInputStream(
+                Util.decodeFromSecret(clusterCaCertSecret, "ca.crt")));
+        KeyStore trustStore = KeyStore.getInstance("JKS");
+        trustStore.load(null);
+        trustStore.setCertificateEntry("ca", caCert);
+        return trustStore;
+    }
+
+    private KeyStore getKeyStore(char[] keyPassword) throws KeyStoreException, CertificateException, NoSuchAlgorithmException, InvalidKeySpecException, IOException {
+        final CertificateFactory coCertFactory = CertificateFactory.getInstance("X.509");
+        final Certificate coCert = coCertFactory.generateCertificate(new ByteArrayInputStream(
+                Util.decodeFromSecret(coKeySecret, "cluster-operator.crt")));
+
+        byte[] decodedKey = Util.decodePemPrivateKeyFromSecret(coKeySecret, "cluster-operator.key");
+        PKCS8EncodedKeySpec keySpec = new PKCS8EncodedKeySpec(decodedKey);
+        final KeyFactory keyFactory = KeyFactory.getInstance("RSA");
+        final PrivateKey key = keyFactory.generatePrivate(keySpec);
+
+        KeyStore coKeyStore = KeyStore.getInstance("JKS");
+        coKeyStore.load(null);
+        coKeyStore.setKeyEntry("cluster-operator", key, keyPassword, new Certificate[]{coCert});
+
+        return coKeyStore;
     }
 
     String doGet(URI uri) {
