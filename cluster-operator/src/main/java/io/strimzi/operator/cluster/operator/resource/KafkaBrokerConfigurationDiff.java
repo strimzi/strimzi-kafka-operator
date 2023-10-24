@@ -5,7 +5,6 @@
 
 package io.strimzi.operator.cluster.operator.resource;
 
-import io.strimzi.operator.cluster.model.NodeRef;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -20,6 +19,7 @@ import io.strimzi.kafka.config.model.ConfigModel;
 import io.strimzi.kafka.config.model.Scope;
 import io.strimzi.operator.cluster.model.KafkaConfiguration;
 import io.strimzi.operator.cluster.model.KafkaVersion;
+import io.strimzi.operator.cluster.model.NodeRef;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.model.OrderedProperties;

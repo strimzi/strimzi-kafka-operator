@@ -70,15 +70,15 @@ class KafkaQuorumCheck {
             LOGGER.warnCr(reconciliation, "No quorum leader is found because the leader id is set to {}", leaderId);
             return false;
         }
-        Map<Integer, Long> replicaStates = info.voters().stream().collect(Collectors.toMap(
+        Map<Integer, Long> controllerStates = info.voters().stream().collect(Collectors.toMap(
                 QuorumInfo.ReplicaState::replicaId,
-                replicaState -> replicaState.lastCaughtUpTimestamp().isPresent() ? replicaState.lastCaughtUpTimestamp().getAsLong() : -1));
-        int totalNumOfControllers = replicaStates.size();
+                state -> state.lastCaughtUpTimestamp().isPresent() ? state.lastCaughtUpTimestamp().getAsLong() : -1));
+        int totalNumOfControllers = controllerStates.size();
         //cannot use normal integer as it's being incremented inside the lambda expression
         AtomicInteger numOfCaughtUpControllers = new AtomicInteger();
-        long leaderLastCaughtUpTimestamp = replicaStates.get(leaderId);
+        long leaderLastCaughtUpTimestamp = controllerStates.get(leaderId);
         LOGGER.debugCr(reconciliation, "The lastCaughtUpTimestamp for the leader replica {} is {}", leaderId, leaderLastCaughtUpTimestamp);
-        replicaStates.forEach((replicaId, lastCaughtUpTimestamp) -> {
+        controllerStates.forEach((replicaId, lastCaughtUpTimestamp) -> {
             if (lastCaughtUpTimestamp < 0) {
                 LOGGER.warnCr(reconciliation, "No valid lastCaughtUpTimestamp is found for the replica {} ", replicaId);
             } else {

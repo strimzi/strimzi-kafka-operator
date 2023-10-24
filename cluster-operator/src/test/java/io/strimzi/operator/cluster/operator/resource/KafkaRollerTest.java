@@ -31,6 +31,7 @@ import org.apache.kafka.clients.admin.DescribeClusterResult;
 import org.apache.kafka.clients.admin.DescribeMetadataQuorumResult;
 import org.apache.kafka.clients.admin.QuorumInfo;
 import org.apache.kafka.clients.admin.TopicDescription;
+import org.apache.kafka.common.KafkaFuture;
 import org.apache.kafka.common.Node;
 import org.apache.kafka.common.internals.KafkaFutureImpl;
 import org.apache.logging.log4j.LogManager;
@@ -148,7 +149,7 @@ public class KafkaRollerTest {
 
     private static AdminClientProvider givenControllerFutureFailsWithTimeout() {
         KafkaFutureImpl<Node> controllerFuture = new KafkaFutureImpl<>();
-        controllerFuture.completeExceptionally(new java.util.concurrent.TimeoutException("fail"));
+        controllerFuture.completeExceptionally(new TimeoutException("fail"));
         DescribeClusterResult mockResult = mock(DescribeClusterResult.class);
         when(mockResult.controller()).thenReturn(controllerFuture);
         Admin admin = mock(Admin.class);
@@ -173,7 +174,7 @@ public class KafkaRollerTest {
         AtomicBoolean podUnready = new AtomicBoolean(true);
         PodOperator podOps = mockPodOps(podId -> {
             if (podId == 1 && podUnready.getAndSet(false)) {
-                return failedFuture(new java.util.concurrent.TimeoutException("fail"));
+                return failedFuture(new TimeoutException("fail"));
             } else {
                 return succeededFuture();
             }
@@ -683,15 +684,15 @@ public class KafkaRollerTest {
         PodOperator podOps = mockPodOps(podId -> {
             //unready broker is 1
             if (podId == 1 && pod1Unready.getAndSet(false)) {
-                return failedFuture(new java.util.concurrent.TimeoutException("fail"));
+                return failedFuture(new TimeoutException("fail"));
             }
             //unready combined node is 4
             if (podId == 4 && pod4Unready.getAndSet(false)) {
-                return failedFuture(new java.util.concurrent.TimeoutException("fail"));
+                return failedFuture(new TimeoutException("fail"));
             }
             //unready controller is 7
             if (podId == 7 && pod7Unready.getAndSet(false)) {
-                return failedFuture(new java.util.concurrent.TimeoutException("fail"));
+                return failedFuture(new TimeoutException("fail"));
             }
             return succeededFuture();
         });
@@ -944,8 +945,7 @@ public class KafkaRollerTest {
             Admin admin = mock(Admin.class);
             DescribeMetadataQuorumResult qrmResult = mock(DescribeMetadataQuorumResult.class);
             when(admin.describeMetadataQuorum()).thenReturn(qrmResult);
-            KafkaFutureImpl<QuorumInfo> kafkaFuture = new KafkaFutureImpl<>();
-            kafkaFuture.complete(null);
+            KafkaFuture<QuorumInfo> kafkaFuture = KafkaFuture.completedFuture(null);
             when(qrmResult.quorumInfo()).thenReturn(kafkaFuture);
             return new KafkaQuorumCheck(null, admin, null, 0) {
                 @Override

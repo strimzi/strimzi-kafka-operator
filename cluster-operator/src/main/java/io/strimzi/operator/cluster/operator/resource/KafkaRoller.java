@@ -421,7 +421,7 @@ public class KafkaRoller {
                 if (deferController(nodeRef, restartContext)) {
                     LOGGER.debugCr(reconciliation, "Pod {} is the active controller and there are other pods to verify. Other pods will be verified first.", nodeRef);
                     throw new ForceableProblem("Pod " + nodeRef.podName() + " is the active controller and there are other pods to verify. Other pods will be verified first.");
-                } else if (!canRoll(nodeRef, 60_000, TimeUnit.MILLISECONDS, false, restartContext)) {
+                } else if (!canRoll(nodeRef, 60, TimeUnit.SECONDS, false, restartContext)) {
                     LOGGER.debugCr(reconciliation, "Pod {} cannot be updated right now", nodeRef);
                     throw new UnforceableProblem("Pod " + nodeRef.podName() + " cannot be updated right now.");
                 } else {
@@ -444,7 +444,7 @@ public class KafkaRoller {
             }
         } catch (ForceableProblem e) {
             if (restartContext.podStuck || restartContext.backOff.done() || e.forceNow) {
-                if (canRoll(nodeRef, 60_000, TimeUnit.MILLISECONDS, true, restartContext)) {
+                if (canRoll(nodeRef, 60, TimeUnit.SECONDS, true, restartContext)) {
                     String errorMsg = e.getMessage();
                     if (e.getCause() != null) {
                         errorMsg += ", caused by:" + (e.getCause().getMessage() != null ? e.getCause().getMessage() : e.getCause());

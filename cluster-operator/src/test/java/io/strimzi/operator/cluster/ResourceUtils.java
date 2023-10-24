@@ -494,8 +494,8 @@ public class ResourceUtils {
                 try {
                     Constructor<DescribeClusterResult> declaredConstructor = DescribeClusterResult.class.getDeclaredConstructor(KafkaFuture.class, KafkaFuture.class, KafkaFuture.class, KafkaFuture.class);
                     declaredConstructor.setAccessible(true);
-                    KafkaFuture<Node> objectKafkaFuture = KafkaFutureImpl.completedFuture(new Node(0, "localhost", 9091));
-                    KafkaFuture<String> stringKafkaFuture = KafkaFutureImpl.completedFuture("CLUSTERID");
+                    KafkaFuture<Node> objectKafkaFuture = KafkaFuture.completedFuture(new Node(0, "localhost", 9091));
+                    KafkaFuture<String> stringKafkaFuture = KafkaFuture.completedFuture("CLUSTERID");
                     dcr = declaredConstructor.newInstance(null, objectKafkaFuture, stringKafkaFuture, null);
                 } catch (ReflectiveOperationException e) {
                     throw new RuntimeException(e);
@@ -506,7 +506,7 @@ public class ResourceUtils {
                 try {
                     Constructor<ListTopicsResult> declaredConstructor = ListTopicsResult.class.getDeclaredConstructor(KafkaFuture.class);
                     declaredConstructor.setAccessible(true);
-                    KafkaFuture<Map<String, TopicListing>> future = KafkaFutureImpl.completedFuture(emptyMap());
+                    KafkaFuture<Map<String, TopicListing>> future = KafkaFuture.completedFuture(emptyMap());
                     ltr = declaredConstructor.newInstance(future);
                 } catch (ReflectiveOperationException e) {
                     throw new RuntimeException(e);
@@ -557,7 +557,7 @@ public class ResourceUtils {
                 try {
                     Constructor<DescribeMetadataQuorumResult> declaredConstructor = DescribeMetadataQuorumResult.class.getDeclaredConstructor(KafkaFuture.class);
                     QuorumInfo qrminfo = mock(QuorumInfo.class);
-                    KafkaFuture<QuorumInfo> future = KafkaFutureImpl.completedFuture(qrminfo);
+                    KafkaFuture<QuorumInfo> future = KafkaFuture.completedFuture(qrminfo);
                     when(qrminfo.leaderId()).thenReturn(0);
                     QuorumInfo.ReplicaState replicaState0 = mock(QuorumInfo.ReplicaState.class);
                     QuorumInfo.ReplicaState replicaState1 = mock(QuorumInfo.ReplicaState.class);
