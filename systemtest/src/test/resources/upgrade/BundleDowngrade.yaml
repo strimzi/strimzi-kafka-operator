@@ -8,7 +8,7 @@
 #  fromKafkaVersionsUrl: String - url, from which kafka-versions.yaml is downloaded
 #  additionalTopics: int - number of additional topics, which will be created
 #  oldestKafka: String - version of Kafka, used in initial deployment of Kafka CR
-#  imagesAfterOperations:  Strings - images that corresponding pods should contain. They are checked after upgrade
+#  imagesAfterOperations:  Strings - images that corresponding pods should contain. They are checked after downgrade
 #    zookeeper: 
 #    kafka: 
 #    topicOperator: 
@@ -26,19 +26,19 @@
 # --- Structure ---
   
 - fromVersion: HEAD
-  toVersion: 0.37.0
+  toVersion: 0.38.0
   fromExamples: HEAD
-  toExamples: strimzi-0.37.0
+  toExamples: strimzi-0.38.0
   fromUrl: HEAD
-  toUrl: https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.37.0/strimzi-0.37.0.zip
+  toUrl: https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.38.0/strimzi-0.38.0.zip
   fromKafkaVersionsUrl: HEAD
   additionalTopics: 2
   imagesAfterOperations:
-    zookeeper: strimzi/kafka:0.37.0-kafka-3.5.1
-    kafka: strimzi/kafka:0.37.0-kafka-3.5.1
-    topicOperator: strimzi/operator:0.37.0
-    userOperator: strimzi/operator:0.37.0
-  deployKafkaVersion: 3.5.1
+    zookeeper: strimzi/kafka:0.38.0-kafka-3.6.0
+    kafka: strimzi/kafka:0.38.0-kafka-3.6.0
+    topicOperator: strimzi/operator:0.38.0
+    userOperator: strimzi/operator:0.38.0
+  deployKafkaVersion: 3.6.0
   client:
     continuousClientsMessages: 500
   environmentInfo:
@@ -49,18 +49,18 @@
   featureGatesBefore: "-KafkaNodePools,+UnidirectionalTopicOperator"
   featureGatesAfter: "-StableConnectIdentities,-UnidirectionalTopicOperator"
 - fromVersion: HEAD
-  toVersion: 0.37.0
+  toVersion: 0.38.0
   fromExamples: HEAD
-  toExamples: strimzi-0.37.0
+  toExamples: strimzi-0.38.0
   fromUrl: HEAD
-  toUrl: https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.37.0/strimzi-0.37.0.zip
+  toUrl: https://github.com/strimzi/strimzi-kafka-operator/releases/download/0.38.0/strimzi-0.38.0.zip
   fromKafkaVersionsUrl: HEAD
   additionalTopics: 2
   imagesAfterOperations:
-    zookeeper: strimzi/kafka:0.37.0-kafka-3.5.1
-    kafka: strimzi/kafka:0.37.0-kafka-3.5.1
-    topicOperator: strimzi/operator:0.37.0
-    userOperator: strimzi/operator:0.37.0
+    zookeeper: strimzi/kafka:0.38.0-kafka-3.5.1
+    kafka: strimzi/kafka:0.38.0-kafka-3.5.1
+    topicOperator: strimzi/operator:0.38.0
+    userOperator: strimzi/operator:0.38.0
   deployKafkaVersion: 3.5.1
   client:
     continuousClientsMessages: 500
