@@ -6,12 +6,17 @@ package io.strimzi.systemtest.utils.kubeUtils.objects;
 
 import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
+import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.ResourceOperation;
 import io.strimzi.systemtest.security.CertAndKeyFiles;
+import io.strimzi.systemtest.security.OpenSsl;
+import io.strimzi.systemtest.security.SystemTestCertManager;
 import io.strimzi.test.TestUtils;
+import io.strimzi.test.k8s.KubeClusterResource;
+import java.io.File;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -240,5 +245,46 @@ public class SecretUtils {
                     && secret.getMetadata().getLabels().get(Labels.STRIMZI_CLUSTER_LABEL).equals(labelValue)
                 )
         );
+    }
+
+    /**
+     * To test tls-external authentication, client needs to have an external certificates provided
+     * To simulate externally provided certs, these steps are done:
+     * 1. Generate private key and csr (containing at least common name CN) for user
+     * 2. Generate a certificate by signing CSR using private key from secret generated for clients by operator
+     * 3. Create user secret from private key, generated certificate and certificate from secret created for clients by operator
+     * @param namespaceName Namespace name where kafka is deployed
+     * @param userName User name of kafkaUser
+     * @param clusterName Name of cluster which kafkaUser belongs to
+     */
+    public static void createExternalTlsUserSecret(String namespaceName, String userName, String clusterName) {
+        try {
+            File clientPrivateKey = OpenSsl.generatePrivateKey();
+
+            File csr = OpenSsl.generateCertSigningRequest(clientPrivateKey, "/CN=" + userName);
+            String caCrt = KubeClusterResource.kubeClient(namespaceName).getSecret(
+                KafkaResources.clientsCaCertificateSecretName(clusterName)).getData().get("ca.crt");
+            String caKey = KubeClusterResource.kubeClient(namespaceName).getSecret(KafkaResources.clientsCaKeySecretName(clusterName)).getData().get("ca.key");
+
+            File clientCert = OpenSsl.generateSignedCert(csr,
+                                                         SystemTestCertManager.exportCaDataToFile(new String(Base64.getDecoder().decode(caCrt), StandardCharsets.UTF_8), "ca", ".crt"),
+                                                         SystemTestCertManager.exportCaDataToFile(new String(Base64.getDecoder().decode(caKey), StandardCharsets.UTF_8), "ca", ".key"));
+
+            Secret secretBuilder = new SecretBuilder()
+                .withNewMetadata()
+                    .withName(userName)
+                    .withNamespace(namespaceName)
+                .endMetadata()
+                .addToData("ca.crt", caCrt)
+                .addToData("user.crt", Base64.getEncoder().encodeToString(Files.readAllBytes(clientCert.toPath())))
+                .addToData("user.key", Base64.getEncoder().encodeToString(Files.readAllBytes(clientPrivateKey.toPath())))
+                .withType("Opaque")
+                .build();
+
+            kubeClient().namespace(namespaceName).createSecret(secretBuilder);
+            SecretUtils.waitForSecretReady(namespaceName, userName, () -> { });
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 }
