@@ -191,7 +191,7 @@ public class OpenSsl {
         TestUtils.waitFor("certificate to be in valid date range", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.CO_OPERATION_TIMEOUT_SHORT,
                           () -> {
                 ZonedDateTime now = ZonedDateTime.now(gmtZone);
-                return (now.isAfter(notBefore.plusSeconds(10)) && now.isBefore(notAfter.minusSeconds(10)));
+                return (now.isAfter(notBefore.plusSeconds(Constants.CA_CERT_VALIDITY_DELAY)) && now.isBefore(notAfter.minusSeconds(Constants.CA_CERT_VALIDITY_DELAY)));
             });
     }
 }

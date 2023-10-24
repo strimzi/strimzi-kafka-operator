@@ -56,6 +56,7 @@ public interface Constants {
     // Keycloak
     long KEYCLOAK_DEPLOYMENT_POLL = Duration.ofSeconds(5).toMillis();
     long KEYCLOAK_DEPLOYMENT_TIMEOUT = Duration.ofMinutes(10).toMillis();
+    long CA_CERT_VALIDITY_DELAY = 10;
 
     // stability count ensures that after some reconciliation we have some additional time
     int GLOBAL_STABILITY_OFFSET_COUNT = 20;
