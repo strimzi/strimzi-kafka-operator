@@ -896,7 +896,7 @@ public class KafkaRoller {
                     t -> new UnforceableProblem("An error while trying to determine the quorum leader id", t));
             LOGGER.debugCr(reconciliation, "KRaft active controller is {}", id);
         } else {
-            // Don't use all allClient here, because it will have cache metadata about which is the controller.
+            // Don't use allClient here, because it will have cache metadata about which is the controller.
             try (Admin ac = adminClient(Set.of(nodeRef), false)) {
                 Node controllerNode = null;
                 try {

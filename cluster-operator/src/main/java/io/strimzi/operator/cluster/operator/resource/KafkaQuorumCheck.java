@@ -66,30 +66,31 @@ class KafkaQuorumCheck {
 
     private boolean isQuorumHealthyWithoutPod(int podId, QuorumInfo info) {
         int leaderId = info.leaderId();
-        Map<Integer, Long> replicaStates = info.voters().stream().collect(Collectors.toMap(
-                QuorumInfo.ReplicaState::replicaId,
-                replicaState -> replicaState.lastCaughtUpTimestamp().isPresent() ? replicaState.lastCaughtUpTimestamp().getAsLong() : -1));
-        int totalNumOfControllers = replicaStates.size();
-        AtomicInteger numOfCaughtUpControllers = new AtomicInteger();
         if (leaderId < 0) {
             LOGGER.warnCr(reconciliation, "No quorum leader is found because the leader id is set to {}", leaderId);
             return false;
         }
+        Map<Integer, Long> replicaStates = info.voters().stream().collect(Collectors.toMap(
+                QuorumInfo.ReplicaState::replicaId,
+                replicaState -> replicaState.lastCaughtUpTimestamp().isPresent() ? replicaState.lastCaughtUpTimestamp().getAsLong() : -1));
+        int totalNumOfControllers = replicaStates.size();
+        //cannot use normal integer as it's being incremented inside the lambda expression
+        AtomicInteger numOfCaughtUpControllers = new AtomicInteger();
         long leaderLastCaughtUpTimestamp = replicaStates.get(leaderId);
         LOGGER.debugCr(reconciliation, "The lastCaughtUpTimestamp for the leader replica {} is {}", leaderId, leaderLastCaughtUpTimestamp);
         replicaStates.forEach((replicaId, lastCaughtUpTimestamp) -> {
             if (lastCaughtUpTimestamp < 0) {
                 LOGGER.warnCr(reconciliation, "No valid lastCaughtUpTimestamp is found for the replica {} ", replicaId);
             } else {
+                LOGGER.debugCr(reconciliation, "The lastCaughtUpTimestamp for controller {} is {}", replicaId, lastCaughtUpTimestamp);
                 if (replicaId == leaderId || (leaderLastCaughtUpTimestamp - lastCaughtUpTimestamp) < controllerQuorumFetchTimeoutMs) {
                     // skip the controller that we are considering to roll
                     if (replicaId != podId) {
                         numOfCaughtUpControllers.getAndIncrement();
                     }
                     LOGGER.debugCr(reconciliation, "The controller {} has caught up with the quorum leader", replicaId);
-                    LOGGER.debugCr(reconciliation, "The lastCaughtUpTimestamp for controller {} is {}", replicaId, lastCaughtUpTimestamp);
                 } else {
-                    LOGGER.debugCr(reconciliation, "The controller {} is behind from the leader", replicaId);
+                    LOGGER.debugCr(reconciliation, "The controller {} has fallen behind the leader", replicaId);
                 }
             }
         });
