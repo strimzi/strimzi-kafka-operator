@@ -74,6 +74,11 @@ class KafkaQuorumCheck {
                 QuorumInfo.ReplicaState::replicaId,
                 state -> state.lastCaughtUpTimestamp().isPresent() ? state.lastCaughtUpTimestamp().getAsLong() : -1));
         int totalNumOfControllers = controllerStates.size();
+        if (totalNumOfControllers == 1) {
+            LOGGER.warnCr(reconciliation, "Performing rolling update on a controller quorum with a single node. The cluster may be " +
+                    "in a defective state once the rolling update is complete. It is recommended that a minimum of three controllers are used.");
+            return true;
+        }
         //cannot use normal integer as it's being incremented inside the lambda expression
         AtomicInteger numOfCaughtUpControllers = new AtomicInteger();
         long leaderLastCaughtUpTimestamp = controllerStates.get(leaderId);
@@ -94,8 +99,19 @@ class KafkaQuorumCheck {
                 }
             }
         });
-        LOGGER.debugCr(reconciliation, "Out of {} voters, there are {} controllers that have caught up with the quorum leader, not including the controller {}", totalNumOfControllers, numOfCaughtUpControllers, podId);
-        return numOfCaughtUpControllers.get() >= ceil((double) (totalNumOfControllers + 1) / 2);
+        LOGGER.debugCr(reconciliation, "Out of {} controllers, there are {} that have caught up with the quorum leader, not including the controller {}", totalNumOfControllers, numOfCaughtUpControllers, podId);
+        if (totalNumOfControllers == 2) {
+            // Only roll the controller if the other one in the quorum has caught up or is the active controller.
+            if (numOfCaughtUpControllers.get() == 1) {
+                LOGGER.warnCr(reconciliation, "Performing rolling update on a controller quorum with 2 nodes. The cluster may be " +
+                        "in a defective state once the rolling update is complete. It is recommended that a minimum of three controllers are used.");
+                return true;
+            } else {
+                return false;
+            }
+        } else {
+            return numOfCaughtUpControllers.get() >= ceil((double) (totalNumOfControllers + 1) / 2);
+        }
     }
 
     private Future<QuorumInfo> describeMetadataQuorum() {

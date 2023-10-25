@@ -180,4 +180,42 @@ class KafkaQuorumCheckTest {
         }));
     }
 
+    @Test
+    public void canRollControllerSingleNodeQuorum(VertxTestContext context) {
+        Map<Integer, OptionalLong> controllers = new HashMap<>();
+        controllers.put(1, OptionalLong.of(10000L));
+        Admin admin = setUpMocks(1, controllers);
+        KafkaQuorumCheck quorumCheck = new KafkaQuorumCheck(Reconciliation.DUMMY_RECONCILIATION, admin, vertx, CONTROLLER_QUORUM_FETCH_TIMEOUT_MS);
+        quorumCheck.canRollController(1).onComplete(context.succeeding(result -> {
+            context.verify(() -> assertTrue(result));
+            context.completeNow();
+        }));
+    }
+
+    @Test
+    public void canRollController2NodesQuorum(VertxTestContext context) {
+        Map<Integer, OptionalLong> controllers = new HashMap<>();
+        controllers.put(1, OptionalLong.of(10000L));
+        controllers.put(2, OptionalLong.of(9500L));
+        Admin admin = setUpMocks(1, controllers);
+        KafkaQuorumCheck quorumCheck = new KafkaQuorumCheck(Reconciliation.DUMMY_RECONCILIATION, admin, vertx, CONTROLLER_QUORUM_FETCH_TIMEOUT_MS);
+        quorumCheck.canRollController(1).onComplete(context.succeeding(result -> {
+            context.verify(() -> assertTrue(result));
+            context.completeNow();
+        }));
+    }
+
+    @Test
+    public void cannotRollController2NodeQuorumFollowerBehind(VertxTestContext context) {
+        Map<Integer, OptionalLong> controllers = new HashMap<>();
+        controllers.put(1, OptionalLong.of(10000L));
+        controllers.put(2, OptionalLong.of(7000L));
+        Admin admin = setUpMocks(1, controllers);
+        KafkaQuorumCheck quorumCheck = new KafkaQuorumCheck(Reconciliation.DUMMY_RECONCILIATION, admin, vertx, CONTROLLER_QUORUM_FETCH_TIMEOUT_MS);
+        quorumCheck.canRollController(1).onComplete(context.succeeding(result -> {
+            context.verify(() -> assertFalse(result));
+            context.completeNow();
+        }));
+    }
+
 }
