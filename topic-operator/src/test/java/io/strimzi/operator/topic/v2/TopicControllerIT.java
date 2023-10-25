@@ -97,7 +97,7 @@ class TopicControllerIT {
 
     private static final Logger LOGGER = LogManager.getLogger(TopicControllerIT.class);
     public static final Map<String, String> SELECTOR = Map.of("foo", "FOO", "bar", "BAR");
-    private static final String NAMESPACE = "test-" + UUID.randomUUID();
+    private static final String NAMESPACE = "uto-test";
 
     KubernetesClient client;
 
