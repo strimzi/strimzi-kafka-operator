@@ -233,11 +233,19 @@ spec:
                           name:
                             type: string
                     limits:
-                      x-kubernetes-preserve-unknown-fields: true
                       type: object
+                      properties:
+                        cpu:
+                          type: string
+                        memory:
+                          type: string
                     requests:
-                      x-kubernetes-preserve-unknown-fields: true
                       type: object
+                      properties:
+                        cpu:
+                          type: string
+                        memory:
+                          type: string
                   description: The maximum limits for CPU and memory resources and the requested initial resources.
                 livenessProbe:
                   type: object
@@ -1858,11 +1866,19 @@ spec:
                               name:
                                 type: string
                         limits:
-                          x-kubernetes-preserve-unknown-fields: true
                           type: object
+                          properties:
+                            cpu:
+                              type: string
+                            memory:
+                              type: string
                         requests:
-                          x-kubernetes-preserve-unknown-fields: true
                           type: object
+                          properties:
+                            cpu:
+                              type: string
+                            memory:
+                              type: string
                       description: CPU and memory resources to reserve for the build.
                     plugins:
                       type: array
