@@ -5,6 +5,7 @@
 package io.strimzi.systemtest.security.custom;
 
 import io.fabric8.kubernetes.api.model.Secret;
+import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.strimzi.api.kafka.model.CertificateAuthority;
 import io.strimzi.api.kafka.model.KafkaResources;
@@ -16,9 +17,12 @@ import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
+import io.strimzi.systemtest.resources.crd.KafkaRebalanceResource;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
+import io.strimzi.systemtest.resources.kubernetes.SecretResource;
 import io.strimzi.systemtest.security.SystemTestCertHolder;
 import io.strimzi.systemtest.security.SystemTestCertManager;
+import static io.strimzi.systemtest.security.SystemTestCertManager.convertPrivateKeyToPKCS8File;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
@@ -29,6 +33,10 @@ import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StrimziPodSetUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
@@ -445,12 +453,12 @@ public class CustomCaST extends AbstractST {
     }
 
     @ParallelNamespaceTest
-    void testRenewCustomClusterCACertificateWithShortValidity(ExtensionContext extensionContext) {
-        testRenewCustomClusterCACertificate(extensionContext, 15, 20, 150, 200);
+    void testCustomClusterCACertificateNotRenewedByValidityDateChange(ExtensionContext extensionContext) {
+        testRenewCustomClusterCACertificate(extensionContext, 3, 5, 150, 200);
     }
 
     @ParallelNamespaceTest
-    void testRenewCustomClusterCACertificateWithLongValidity(ExtensionContext extensionContext) {
+    void testManualRenewCustomClusterCACertificateWithLongValidity(ExtensionContext extensionContext) {
         testRenewCustomClusterCACertificate(extensionContext, 15, 500, 0, 0);
     }
 
@@ -463,7 +471,7 @@ public class CustomCaST extends AbstractST {
             KafkaResources.clusterCaCertificateSecretName(testStorage.getClusterName()),
             KafkaResources.clusterCaKeySecretName(testStorage.getClusterName()));
 
-        // prepare custom Ca and copy that to the related Secrets
+        // Create secrets for cluster CA
         clusterCa.prepareCustomSecretsFromBundles(testStorage.getNamespaceName(), testStorage.getClusterName());
 
         final X509Certificate clusterCert = SecretUtils.getCertificateFromSecret(kubeClient(testStorage.getNamespaceName()).getSecret(testStorage.getNamespaceName(),
@@ -471,17 +479,19 @@ public class CustomCaST extends AbstractST {
 
         checkCustomCaCorrectness(clusterCa, clusterCert);
 
+        // GenerateCertificateAuthority must be false, to enable using custom CA
+        // Note: Clients Ca is generated automatically
         resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3)
             .editOrNewSpec()
-                // Note: Clients Ca is generated automatically
                 .withNewClusterCa()
                     .withRenewalDays(renewalDays)
-                    .withValidityDays(validityDays) // more than 30
+                    .withValidityDays(validityDays)
                     .withGenerateCertificateAuthority(false)
                 .endClusterCa()
             .endSpec()
             .build());
 
+        // Make snapshots with original CA
         final Map<String, String> zkPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getZookeeperSelector());
         final Map<String, String> kafkaPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getKafkaSelector());
         final Map<String, String> eoPod = DeploymentUtils.depSnapshot(testStorage.getNamespaceName(), testStorage.getEoDeploymentName());
@@ -502,6 +512,7 @@ public class CustomCaST extends AbstractST {
         X509Certificate zkBrokerCert;
         Date initialZkCertStartTime = null;
         Date initialZkCertEndTime = null;
+
         if (!Environment.isKRaftModeEnabled()) {
             zkCertCreationSecret = kubeClient(testStorage.getNamespaceName()).getSecret(testStorage.getNamespaceName(), testStorage.getClusterName() + "-zookeeper-nodes");
             zkBrokerCert = SecretUtils.getCertificateFromSecret(zkCertCreationSecret, testStorage.getClusterName() + "-zookeeper-0.crt");
@@ -509,27 +520,64 @@ public class CustomCaST extends AbstractST {
             initialZkCertEndTime = zkBrokerCert.getNotAfter();
         }
 
-        if (newRenewalDays != 0 && newValidityDays != 0 ) {
+        // To test trigger of renewal of CA with short validity dates, both dates need to be set
+        // Otherwise we apply completely new CA using retained old certificate to change manually
+        if (newRenewalDays != 0 && newValidityDays != 0) {
             LOGGER.info("Change of Kafka validity and renewal days - reconciliation should start");
             final CertificateAuthority newClusterCA = new CertificateAuthority();
             newClusterCA.setRenewalDays(newRenewalDays);
             newClusterCA.setValidityDays(newValidityDays);
             newClusterCA.setGenerateCertificateAuthority(false);
 
+            KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), k -> k.getSpec().setClusterCa(newClusterCA), testStorage.getNamespaceName());
+        } else {
+            // Pause Kafka reconciliation
             KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(),
-                                                                  k -> k.getSpec().setClusterCa(newClusterCA),
-                                                                  testStorage.getNamespaceName());
+                kafka -> kafka.getMetadata().setAnnotations(Collections.singletonMap(Annotations.ANNO_STRIMZI_IO_PAUSE_RECONCILIATION, "true")), testStorage.getNamespaceName());
+
+            // Retrieve current CA cert and key
+            Secret clusterCaCertificateSecret = kubeClient(testStorage.getNamespaceName()).getSecret(testStorage.getNamespaceName(), KafkaResources.clusterCaCertificateSecretName(testStorage.getClusterName()));
+            Secret clusterCaKeySecret = kubeClient(testStorage.getNamespaceName()).getSecret(testStorage.getNamespaceName(), KafkaResources.clusterCaKeySecretName(testStorage.getClusterName()));
+
+            // Generate new CA
+            final SystemTestCertHolder newClusterCa = new SystemTestCertHolder(
+                "CN=" + extensionContext.getRequiredTestClass().getSimpleName() + "ClusterCAv2",
+                KafkaResources.clusterCaCertificateSecretName(testStorage.getClusterName()),
+                KafkaResources.clusterCaKeySecretName(testStorage.getClusterName()));
+
+            // Get old certifcate ca.crt key name in format of YEAR-MONTH-DAY'T'HOUR-MINUTE-SECOND'Z'
+            final String oldCaCertName = clusterCa.retrieveOldCertificateName(clusterCaCertificateSecret, "ca.crt");
+            clusterCaCertificateSecret.getData().put(oldCaCertName, clusterCaCertificateSecret.getData().get("ca.crt"));
+
+            try {
+                // Put new CA cert into the ca-cert secret
+                clusterCaCertificateSecret.getData().put("ca.crt", Base64.getEncoder().encodeToString(Files.readAllBytes(Paths.get(newClusterCa.getBundle().getCertPath()))));
+                // Put new CA key into the ca secret
+                final File strimziKeyPKCS8 = SystemTestCertManager.convertPrivateKeyToPKCS8File(newClusterCa.getSystemTestCa().getPrivateKey());
+                clusterCaKeySecret.getData().put("ca.key", Base64.getEncoder().encodeToString(Files.readAllBytes(Paths.get(strimziKeyPKCS8.getAbsolutePath()))));
+            } catch (IOException | NoSuchAlgorithmException | InvalidKeySpecException e) {
+                throw new RuntimeException(e);
+            }
+
+            // Patch secrets with new values and increase generation counter
+            SystemTestCertHolder.increaseCertGenerationCounterInSecret(clusterCaCertificateSecret, testStorage, Ca.ANNO_STRIMZI_IO_CA_CERT_GENERATION);
+            SystemTestCertHolder.increaseCertGenerationCounterInSecret(clusterCaKeySecret, testStorage, Ca.ANNO_STRIMZI_IO_CA_KEY_GENERATION);
+
+            // Resume Kafka reconciliation
+            KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), kafka -> {
+                kafka.getMetadata().getAnnotations().remove(Annotations.ANNO_STRIMZI_IO_PAUSE_RECONCILIATION);
+            }, testStorage.getNamespaceName());
         }
-//
-//        // On the next reconciliation, the Cluster Operator performs a `rolling update`:
-//        //   a) ZooKeeper
-//        //   b) Kafka
-//        //   c) and other components to trust the new Cluster CA certificate. (i.e., Entity Operator)
-//        if (!Environment.isKRaftModeEnabled()) {
-//            RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getZookeeperSelector(), 3, zkPods);
-//        }
-//        RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getKafkaSelector(), 3, kafkaPods);
-//        DeploymentUtils.waitTillDepHasRolled(testStorage.getNamespaceName(), testStorage.getEoDeploymentName(), 1, eoPod);
+
+        // On the next reconciliation, the Cluster Operator performs a `rolling update`:
+        //   a) ZooKeeper
+        //   b) Kafka
+        //   c) and other components to trust the new Cluster CA certificate. (i.e., Entity Operator)
+        if (!Environment.isKRaftModeEnabled()) {
+            RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getZookeeperSelector(), 3, zkPods);
+        }
+        RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getKafkaSelector(), 3, kafkaPods);
+        DeploymentUtils.waitTillDepHasRolled(testStorage.getNamespaceName(), testStorage.getEoDeploymentName(), 1, eoPod);
 
         // Read renewed secret/certs again
         clusterCASecret = kubeClient(testStorage.getNamespaceName()).getSecret(testStorage.getNamespaceName(), KafkaResources.clusterCaCertificateSecretName(testStorage.getClusterName()));
@@ -553,6 +601,7 @@ public class CustomCaST extends AbstractST {
             changedZkCertEndTime = zkBrokerCert.getNotAfter();
         }
 
+        // Print out dates
         LOGGER.info("Initial ClusterCA cert dates: " + initialCertStartTime + " --> " + initialCertEndTime);
         LOGGER.info("Changed ClusterCA cert dates: " + changedCertStartTime + " --> " + changedCertEndTime);
         LOGGER.info("Kafka Broker cert creation dates: " + initialKafkaBrokerCertStartTime + " --> " + initialKafkaBrokerCertEndTime);
@@ -562,17 +611,19 @@ public class CustomCaST extends AbstractST {
             LOGGER.info("ZooKeeper cert changed dates:  " + changedZkCertStartTime + " --> " + changedZkCertEndTime);
         }
 
-        assertThat("ClusterCA cert should not have changed.",
-            initialCertEndTime.compareTo(changedCertEndTime) == 0);
-        assertThat("Broker certificates start dates have not been renewed.",
-            initialKafkaBrokerCertStartTime.compareTo(changedKafkaBrokerCertStartTime) < 0);
-        assertThat("Broker certificates end dates have not been renewed.",
-            initialKafkaBrokerCertEndTime.compareTo(changedKafkaBrokerCertEndTime) < 0);
+        // Verify renewal result
+        if (newRenewalDays != 0 && newValidityDays != 0) {
+            assertThat("ClusterCA cert should not have changed start date.", initialCertEndTime.compareTo(changedCertEndTime) == 0);
+        } else {
+            assertThat("ClusterCA cert should have changed start date.", initialCertEndTime.compareTo(changedCertEndTime) < 0);
+        }
+
+        assertThat("Broker certificates start dates should have been renewed.", initialKafkaBrokerCertStartTime.compareTo(changedKafkaBrokerCertStartTime) < 0);
+        assertThat("Broker certificates end dates should have been renewed.", initialKafkaBrokerCertEndTime.compareTo(changedKafkaBrokerCertEndTime) < 0);
+
         if (!Environment.isKRaftModeEnabled()) {
-            assertThat("Zookeeper certificates start dates have not been renewed.",
-                    initialZkCertStartTime.compareTo(changedZkCertStartTime) < 0);
-            assertThat("Zookeeper certificates end dates have not been renewed.",
-                    initialZkCertEndTime.compareTo(changedZkCertEndTime) < 0);
+            assertThat("Zookeeper certificates start dates should have been renewed.", initialZkCertStartTime.compareTo(changedZkCertStartTime) < 0);
+            assertThat("Zookeeper certificates end dates should have been renewed.", initialZkCertEndTime.compareTo(changedZkCertEndTime) < 0);
         }
     }
 
