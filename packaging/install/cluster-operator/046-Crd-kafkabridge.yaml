@@ -280,11 +280,19 @@ spec:
                         name:
                           type: string
                   limits:
-                    x-kubernetes-preserve-unknown-fields: true
                     type: object
+                    properties:
+                      cpu:
+                        type: string
+                      memory:
+                        type: string
                   requests:
-                    x-kubernetes-preserve-unknown-fields: true
                     type: object
+                    properties:
+                      cpu:
+                        type: string
+                      memory:
+                        type: string
                 description: CPU and memory resources to reserve.
               jvmOptions:
                 type: object

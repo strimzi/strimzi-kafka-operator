@@ -785,11 +785,19 @@ spec:
                             name:
                               type: string
                       limits:
-                        x-kubernetes-preserve-unknown-fields: true
                         type: object
+                        properties:
+                          cpu:
+                            type: string
+                          memory:
+                            type: string
                       requests:
-                        x-kubernetes-preserve-unknown-fields: true
                         type: object
+                        properties:
+                          cpu:
+                            type: string
+                          memory:
+                            type: string
                     description: CPU and memory resources to reserve.
                   metricsConfig:
                     type: object
@@ -1919,11 +1927,19 @@ spec:
                             name:
                               type: string
                       limits:
-                        x-kubernetes-preserve-unknown-fields: true
                         type: object
+                        properties:
+                          cpu:
+                            type: string
+                          memory:
+                            type: string
                       requests:
-                        x-kubernetes-preserve-unknown-fields: true
                         type: object
+                        properties:
+                          cpu:
+                            type: string
+                          memory:
+                            type: string
                     description: CPU and memory resources to reserve.
                   metricsConfig:
                     type: object
@@ -2789,11 +2805,19 @@ spec:
                                 name:
                                   type: string
                           limits:
-                            x-kubernetes-preserve-unknown-fields: true
                             type: object
+                            properties:
+                              cpu:
+                                type: string
+                              memory:
+                                type: string
                           requests:
-                            x-kubernetes-preserve-unknown-fields: true
                             type: object
+                            properties:
+                              cpu:
+                                type: string
+                              memory:
+                                type: string
                         description: CPU and memory resources to reserve.
                       topicMetadataMaxAttempts:
                         type: integer
@@ -2940,11 +2964,19 @@ spec:
                                 name:
                                   type: string
                           limits:
-                            x-kubernetes-preserve-unknown-fields: true
                             type: object
+                            properties:
+                              cpu:
+                                type: string
+                              memory:
+                                type: string
                           requests:
-                            x-kubernetes-preserve-unknown-fields: true
                             type: object
+                            properties:
+                              cpu:
+                                type: string
+                              memory:
+                                type: string
                         description: CPU and memory resources to reserve.
                       logging:
                         type: object
@@ -3085,11 +3117,19 @@ spec:
                                 name:
                                   type: string
                           limits:
-                            x-kubernetes-preserve-unknown-fields: true
                             type: object
+                            properties:
+                              cpu:
+                                type: string
+                              memory:
+                                type: string
                           requests:
-                            x-kubernetes-preserve-unknown-fields: true
                             type: object
+                            properties:
+                              cpu:
+                                type: string
+                              memory:
+                                type: string
                         description: CPU and memory resources to reserve.
                     description: TLS sidecar configuration.
                   template:
@@ -3991,11 +4031,19 @@ spec:
                                 name:
                                   type: string
                           limits:
-                            x-kubernetes-preserve-unknown-fields: true
                             type: object
+                            properties:
+                              cpu:
+                                type: string
+                              memory:
+                                type: string
                           requests:
-                            x-kubernetes-preserve-unknown-fields: true
                             type: object
+                            properties:
+                              cpu:
+                                type: string
+                              memory:
+                                type: string
                         description: CPU and memory resources to reserve.
                     description: TLS sidecar configuration.
                   resources:
@@ -4009,11 +4057,19 @@ spec:
                             name:
                               type: string
                       limits:
-                        x-kubernetes-preserve-unknown-fields: true
                         type: object
+                        properties:
+                          cpu:
+                            type: string
+                          memory:
+                            type: string
                       requests:
-                        x-kubernetes-preserve-unknown-fields: true
                         type: object
+                        properties:
+                          cpu:
+                            type: string
+                          memory:
+                            type: string
                     description: CPU and memory resources to reserve for the Cruise Control container.
                   livenessProbe:
                     type: object
@@ -4973,11 +5029,19 @@ spec:
                             name:
                               type: string
                       limits:
-                        x-kubernetes-preserve-unknown-fields: true
                         type: object
+                        properties:
+                          cpu:
+                            type: string
+                          memory:
+                            type: string
                       requests:
-                        x-kubernetes-preserve-unknown-fields: true
                         type: object
+                        properties:
+                          cpu:
+                            type: string
+                          memory:
+                            type: string
                     description: CPU and memory resources to reserve.
                   template:
                     type: object
@@ -5583,11 +5647,19 @@ spec:
                             name:
                               type: string
                       limits:
-                        x-kubernetes-preserve-unknown-fields: true
                         type: object
+                        properties:
+                          cpu:
+                            type: string
+                          memory:
+                            type: string
                       requests:
-                        x-kubernetes-preserve-unknown-fields: true
                         type: object
+                        properties:
+                          cpu:
+                            type: string
+                          memory:
+                            type: string
                     description: CPU and memory resources to reserve.
                   logging:
                     type: string
