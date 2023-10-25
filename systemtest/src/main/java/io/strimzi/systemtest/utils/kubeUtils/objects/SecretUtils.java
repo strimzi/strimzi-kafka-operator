@@ -211,17 +211,9 @@ public class SecretUtils {
     public static String annotateSecret(String namespaceName, String secretName, String annotationKey, String annotationValue) {
         LOGGER.info("Annotating Secret: {}/{} with annotation {}={}", namespaceName, secretName, annotationKey, annotationValue);
         return ResourceManager.cmdKubeClient().namespace(namespaceName)
-                .execInCurrentNamespace("annotate", "secret", secretName, annotationKey + "=" + annotationValue, "--overwrite")
-                .out()
-                .trim();
-    }
-
-    public static String annotateOverwriteSecret(String namespaceName, String secretName, String annotationKey, String annotationValue) {
-        LOGGER.info("Annotating Secret: {}/{} with annotation {}={}", namespaceName, secretName, annotationKey, annotationValue);
-        return ResourceManager.cmdKubeClient().namespace(namespaceName)
-                .execInCurrentNamespace("annotate", "secret", secretName, annotationKey + "=" + annotationValue, "--overwrite")
-                .out()
-                .trim();
+            .execInCurrentNamespace("annotate", "secret", secretName, annotationKey + "=" + annotationValue)
+            .out()
+            .trim();
     }
 
     public static SecretBuilder createCopyOfSecret(String fromNamespace, String toNamespace, String secretName) {

@@ -454,7 +454,7 @@ public class CustomCaST extends AbstractST {
         renewCustomClusterCACertificate(extensionContext, 15, 500, 0, 0);
     }
 
-    void renewCustomClusterCACertificate(ExtensionContext extensionContext, int renewalDays, int validityDays, int newRenewalDays, int newValidityDays) {
+    private void renewCustomClusterCACertificate(ExtensionContext extensionContext, int renewalDays, int validityDays, int newRenewalDays, int newValidityDays) {
 
         TestStorage testStorage = new TestStorage(extensionContext);
         SystemTestCertHolder customCa = prepareCustomCA(testStorage);
