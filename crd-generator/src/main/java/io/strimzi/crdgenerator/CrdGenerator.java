@@ -753,7 +753,21 @@ class CrdGenerator {
         PropertyType propertyType = property.getType();
         Class<?> returnType = propertyType.getType();
         final ObjectNode schema;
-        if (propertyType.getGenericType() instanceof ParameterizedType
+        if (property.getName().equals("limits")
+                || property.getName().equals("requests")) {
+            ObjectNode properties = nf.objectNode();
+            ObjectNode cpuProperty = nf.objectNode();
+            ObjectNode memoryProperty = nf.objectNode();
+            schema = nf.objectNode();
+            schema.put("type", "object");
+            schema.set("properties", properties);
+
+            cpuProperty.put("type", "string");
+            memoryProperty.put("type", "string");
+
+            properties.set("cpu", cpuProperty);
+            properties.set("memory", memoryProperty);
+        } else if (propertyType.getGenericType() instanceof ParameterizedType
                 && ((ParameterizedType) propertyType.getGenericType()).getRawType().equals(Map.class)
                 && ((ParameterizedType) propertyType.getGenericType()).getActualTypeArguments()[0].equals(Integer.class)) {
             System.err.println("It's OK");
@@ -761,7 +775,7 @@ class CrdGenerator {
             schema.put("type", "object");
             schema.putObject("patternProperties").set("-?[0-9]+", buildArraySchema(crApiVersion, property, new PropertyType(null, ((ParameterizedType) propertyType.getGenericType()).getActualTypeArguments()[1]), description));
         } else if (Schema.isJsonScalarType(returnType)
-                || Map.class.equals(returnType)) {            
+                || Map.class.equals(returnType)) {
             schema = addSimpleTypeConstraints(crApiVersion, buildBasicTypeSchema(property, returnType), property);
         } else if (returnType.isArray() || List.class.equals(returnType)) {
             schema = buildArraySchema(crApiVersion, property, property.getType(), description);
