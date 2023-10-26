@@ -20,6 +20,7 @@ import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaUserTemplates;
 import io.strimzi.systemtest.templates.specific.AdminClientTemplates;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
+import org.apache.kafka.clients.CommonClientConfigs;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
@@ -43,6 +44,7 @@ public class ThrottlingQuotaST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(ThrottlingQuotaST.class);
 
+    private static final int TIMEOUT_REQUEST_MS = 240000;
     private static final String THROTTLING_ERROR_MSG =
         "org.apache.kafka.common.errors.ThrottlingQuotaExceededException: The throttling quota has been exceeded.";
     private TestStorage sharedTestStorage;
@@ -66,7 +68,7 @@ public class ThrottlingQuotaST extends AbstractST {
         String commandOutput = adminClient.createTopics(testStorage.getTopicName(), numOfTopics, numOfPartitions, numOfReplicas);
         assertThat(commandOutput, containsString(THROTTLING_ERROR_MSG));
 
-        adminClient.deleteTopicsWithPrefix(testStorage.getTopicName());
+        KafkaTopicUtils.deleteAllKafkaTopicsByPrefixWithWait(testStorage.getNamespaceName(), testStorage.getTopicName());
         KafkaTopicUtils.waitForDeletionOfTopicsWithPrefix(testStorage.getTopicName(), adminClient);
 
         numOfPartitions = 5;
@@ -103,7 +105,7 @@ public class ThrottlingQuotaST extends AbstractST {
         // delete few topics
         LOGGER.info("Deleting first {} Topics, we will not hit the quota", numOfTopicsIter);
         commandOutput = adminClient.deleteTopicsWithPrefixAndCount(testStorage.getTopicName(), numOfTopicsIter);
-        assertThat(commandOutput, containsString("successfully deleted."));
+        assertThat(commandOutput, containsString("successfully deleted"));
 
         int remainingTopics = numOfTopics - numOfTopicsIter;
 
@@ -173,7 +175,8 @@ public class ThrottlingQuotaST extends AbstractST {
             AdminClientTemplates.scramShaAdminClient(sharedTestStorage.getNamespaceName(),
                 sharedTestStorage.getUsername(),
                 sharedTestStorage.getAdminName(),
-                KafkaResources.plainBootstrapAddress(sharedTestStorage.getClusterName())
+                KafkaResources.plainBootstrapAddress(sharedTestStorage.getClusterName()),
+                CommonClientConfigs.REQUEST_TIMEOUT_MS_CONFIG + "=" + TIMEOUT_REQUEST_MS
             )
         );
 

@@ -26,10 +26,14 @@ public class AdminClientTemplates {
 
     private AdminClientTemplates() {}
 
-    public static Deployment scramShaAdminClient(String namespaceName, String userName, String adminName, String bootstrapName) {
-        String additionalConfig = getAdminClientScramConfig(namespaceName, userName);
+    public static Deployment scramShaAdminClient(String namespaceName, String userName, String adminName, String bootstrapName, String additionalConfig) {
+        String finalAdditionalConfig = getAdminClientScramConfig(namespaceName, userName) + "\n" + additionalConfig;
 
-        return defaultAdminClient(namespaceName, adminName, bootstrapName, additionalConfig).build();
+        return defaultAdminClient(namespaceName, adminName, bootstrapName, finalAdditionalConfig).build();
+    }
+
+    public static DeploymentBuilder defaultAdminClient(String namespaceName, String adminName, String bootstrapName) {
+        return defaultAdminClient(namespaceName, adminName, bootstrapName, "");
     }
 
     public static DeploymentBuilder defaultAdminClient(String namespaceName, String adminName, String bootstrapName, String additionalConfig) {
