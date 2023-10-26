@@ -10,6 +10,7 @@ import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.cli.KafkaCmdClient;
 import io.strimzi.systemtest.enums.ConditionStatus;
+import io.strimzi.systemtest.kafkaclients.internalClients.admin.AdminClient;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.ResourceOperation;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
@@ -206,6 +207,12 @@ public class KafkaTopicUtils {
         LOGGER.info("Waiting for all Topics with prefix: {} to be deleted from Kafka", prefix);
         TestUtils.waitFor("deletion of all Topics with prefix: " + prefix, Constants.GLOBAL_POLL_INTERVAL, DELETION_TIMEOUT,
             () -> !KafkaCmdClient.listTopicsUsingPodCliWithConfigProperties(namespace, scraperPodName, bootstrapName, properties).contains(prefix));
+    }
+
+    public static void waitForDeletionOfTopicsWithPrefix(String topicPrefix, AdminClient adminClient) {
+        LOGGER.info("Waiting for all Topics with prefix: {} to be deleted from Kafka", topicPrefix);
+        TestUtils.waitFor("deletion of all Topics with prefix: " + topicPrefix, Constants.GLOBAL_POLL_INTERVAL, DELETION_TIMEOUT,
+            () -> !adminClient.listTopics().contains(topicPrefix));
     }
 
     public static void waitForTopicWillBePresentInKafka(String namespaceName, String topicName, String bootstrapName, String scraperPodName) {

@@ -21,7 +21,6 @@ import io.strimzi.systemtest.annotations.UTONotSupported;
 import io.strimzi.systemtest.cli.KafkaCmdClient;
 import io.strimzi.systemtest.enums.ConditionStatus;
 import io.strimzi.systemtest.enums.CustomResourceStatus;
-import io.strimzi.systemtest.kafkaclients.internalClients.AdminClientOperation;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaAdminClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaAdminClientsBuilder;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
@@ -152,7 +151,6 @@ public class TopicST extends AbstractST {
             .withNamespaceName(testStorage.getNamespaceName())
             .withAdminName(testStorage.getAdminName())
             .withTopicName("")
-            .withAdminOperation(AdminClientOperation.LIST_TOPICS)
             .build();
 
         resourceManager.createResourceWithWait(extensionContext, KafkaTopicTemplates.topic(KAFKA_CLUSTER_NAME, testStorage.getTopicName(), Environment.TEST_SUITE_NAMESPACE)

@@ -2,7 +2,7 @@
  * Copyright Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.strimzi.systemtest.kafkaclients.internalClients;
+package io.strimzi.systemtest.templates.specific;
 
 import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.PodSpecBuilder;
@@ -11,7 +11,6 @@ import io.fabric8.kubernetes.api.model.apps.DeploymentBuilder;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.enums.DeploymentTypes;
-import io.sundr.builder.annotations.Buildable;
 import org.apache.kafka.common.security.auth.SecurityProtocol;
 
 import java.nio.charset.StandardCharsets;
@@ -23,31 +22,19 @@ import java.util.Map;
 
 import static io.strimzi.systemtest.resources.ResourceManager.kubeClient;
 
-@Buildable(editableEnabled = false)
-public class KafkaAdminClients extends BaseClients {
-    private String adminName;
+public class AdminClientTemplates {
 
-    public String getAdminName() {
-        return adminName;
+    private AdminClientTemplates() {}
+
+    public static Deployment scramShaAdminClient(String namespaceName, String userName, String adminName, String bootstrapName) {
+        String additionalConfig = getAdminClientScramConfig(namespaceName, userName);
+
+        return defaultAdminClient(namespaceName, adminName, bootstrapName, additionalConfig).build();
     }
 
-    public void setAdminName(String adminName) {
-        this.adminName = adminName;
-    }
-
-    public static String getAdminClientScramConfig(String namespace, String kafkaUsername, int timeoutMs) {
-        final String saslJaasConfigEncrypted = kubeClient().getSecret(namespace, kafkaUsername).getData().get("sasl.jaas.config");
-        final String saslJaasConfigDecrypted = new String(Base64.getDecoder().decode(saslJaasConfigEncrypted), StandardCharsets.US_ASCII);
-        return
-            "request.timeout.ms=" + timeoutMs + "\n" +
-            "sasl.mechanism=SCRAM-SHA-512\n" +
-            "security.protocol=" + SecurityProtocol.SASL_PLAINTEXT + "\n" +
-            "sasl.jaas.config=" + saslJaasConfigDecrypted;
-    }
-
-    public Deployment defaultAdmin() {
+    public static DeploymentBuilder defaultAdminClient(String namespaceName, String adminName, String bootstrapName, String additionalConfig) {
         Map<String, String> adminLabels = new HashMap<>();
-        adminLabels.put("app", adminName);
+        adminLabels.put(Constants.APP_POD_LABEL, Constants.ADMIN_CLIENT_NAME);
         adminLabels.put(Constants.KAFKA_ADMIN_CLIENT_LABEL_KEY, Constants.KAFKA_ADMIN_CLIENT_LABEL_VALUE);
         adminLabels.put(Constants.DEPLOYMENT_TYPE, DeploymentTypes.AdminClient.name());
 
@@ -60,9 +47,9 @@ public class KafkaAdminClients extends BaseClients {
 
         return new DeploymentBuilder()
             .withNewMetadata()
-                .withNamespace(this.getNamespaceName())
+                .withNamespace(namespaceName)
                 .withLabels(adminLabels)
-                .withName(this.getAdminName())
+                .withName(adminName)
             .endMetadata()
             .withNewSpec()
                 .withNewSelector()
@@ -70,22 +57,22 @@ public class KafkaAdminClients extends BaseClients {
                 .endSelector()
                 .withNewTemplate()
                     .withNewMetadata()
-                        .withName(this.getAdminName())
-                        .withNamespace(this.getNamespaceName())
+                        .withName(adminName)
+                        .withNamespace(namespaceName)
                         .withLabels(adminLabels)
                     .endMetadata()
                     .withNewSpecLike(podSpecBuilder.build())
                         .addNewContainer()
-                            .withName(this.getAdminName())
+                            .withName(adminName)
                             .withImagePullPolicy(Constants.IF_NOT_PRESENT_IMAGE_PULL_POLICY)
                             .withImage(Environment.TEST_CLIENTS_IMAGE)
                             .addNewEnv()
                                 .withName("BOOTSTRAP_SERVERS")
-                                .withValue(this.getBootstrapAddress())
+                                .withValue(bootstrapName)
                             .endEnv()
                             .addNewEnv()
                                 .withName("ADDITIONAL_CONFIG")
-                                .withValue(this.getAdditionalConfig())
+                                .withValue(additionalConfig)
                             .endEnv()
                             .addNewEnv()
                                 // use custom config folder for admin-client, so we don't need to use service account etc.
@@ -97,7 +84,15 @@ public class KafkaAdminClients extends BaseClients {
                         .endContainer()
                     .endSpec()
                 .endTemplate()
-            .endSpec()
-            .build();
+            .endSpec();
+    }
+
+    private static String getAdminClientScramConfig(String namespaceName, String userName) {
+        final String saslJaasConfigEncrypted = kubeClient().getSecret(namespaceName, userName).getData().get("sasl.jaas.config");
+        final String saslJaasConfigDecrypted = new String(Base64.getDecoder().decode(saslJaasConfigEncrypted), StandardCharsets.US_ASCII);
+
+        return "sasl.mechanism=SCRAM-SHA-512\n" +
+            "security.protocol=" + SecurityProtocol.SASL_PLAINTEXT + "\n" +
+            "sasl.jaas.config=" + saslJaasConfigDecrypted;
     }
 }
