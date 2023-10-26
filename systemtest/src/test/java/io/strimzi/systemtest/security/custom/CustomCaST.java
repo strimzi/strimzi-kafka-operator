@@ -461,6 +461,19 @@ public class CustomCaST extends AbstractST {
         assertThat("UserCert end date has been renewed", initialKafkaUserCertEndTime.compareTo(changedKafkaUserCertEndTime) < 0);
     }
 
+    /**
+     * This method simulates user doing manual renewal of Cluster Authority. Process consists of:
+     * 1. Pause Kafka reconciliation
+     * 2. Retain old ca.crt value in new key in format of YEAR-MONTH-DAY'T'HOUR-MINUTE-SECOND'Z'
+     * 3. Change ca.crt and ca.key values in secrets from oldCa to newCa
+     * 4. Increase cert annotation value by one
+     * 5. Patch the secrets to apply mentioned changes
+     * 6. Resume Kafka reconciliation
+     * Based on which CA is changed, different rolling update checks should be done
+     * @param testStorage is necessary for common variables like namespace name and cluster name
+     * @param oldCa represents currently deployed CA which will be replaced - needed for retaining ca.crt value
+     * @param newCa stands for a CA which will be used after the renewal is done
+     */
     private void manuallyRenewCa(TestStorage testStorage, SystemTestCertHolder oldCa, SystemTestCertHolder newCa) {
         // Pause Kafka reconciliation
         LOGGER.info("Pause the reconciliation of the Kafka custom resource ({})", KafkaResources.kafkaStatefulSetName(testStorage.getClusterName()));
