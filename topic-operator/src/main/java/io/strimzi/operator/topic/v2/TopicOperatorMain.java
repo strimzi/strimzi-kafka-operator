@@ -19,14 +19,14 @@ import io.micrometer.prometheus.PrometheusConfig;
 import io.micrometer.prometheus.PrometheusMeterRegistry;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.KafkaTopic;
-import io.strimzi.operator.common.MetricsProvider;
-import io.strimzi.operator.common.MicrometerMetricsProvider;
 import io.strimzi.operator.common.OperatorKubernetesClientBuilder;
 import io.strimzi.operator.common.ReconciliationLogger;
 import io.strimzi.operator.common.http.HealthCheckAndMetricsServer;
 import io.strimzi.operator.common.http.Liveness;
 import io.strimzi.operator.common.http.Readiness;
 import io.strimzi.operator.common.model.Labels;
+import io.strimzi.operator.topic.v2.metrics.TopicOperatorMetricsHolder;
+import io.strimzi.operator.topic.v2.metrics.TopicOperatorMetricsProvider;
 import org.apache.kafka.clients.admin.Admin;
 
 import java.util.Map;
@@ -65,7 +65,7 @@ public class TopicOperatorMain implements Liveness, Readiness {
         this.client = client;
         this.resyncIntervalMs = config.fullReconciliationIntervalMs();
         this.admin = admin;
-        MetricsProvider metricsProvider = createMetricsProvider();
+        TopicOperatorMetricsProvider metricsProvider = createMetricsProvider();
         TopicOperatorMetricsHolder metrics = new TopicOperatorMetricsHolder(KafkaTopic.RESOURCE_KIND, Labels.fromMap(selector), metricsProvider);
         this.controller = new BatchingTopicController(selector, admin, client, config.useFinalizer(), metrics, namespace);
         this.itemStore = new BasicItemStore<KafkaTopic>(Cache::metaNamespaceKeyFunc);
@@ -193,13 +193,13 @@ public class TopicOperatorMain implements Liveness, Readiness {
      *
      * @return MetricsProvider instance
      */
-    private static MetricsProvider createMetricsProvider()  {
+    private static TopicOperatorMetricsProvider createMetricsProvider()  {
         MeterRegistry registry = new PrometheusMeterRegistry(PrometheusConfig.DEFAULT);
         new ClassLoaderMetrics().bindTo(registry);
         new JvmMemoryMetrics().bindTo(registry);
         new JvmGcMetrics().bindTo(registry);
         new ProcessorMetrics().bindTo(registry);
         new JvmThreadMetrics().bindTo(registry);
-        return new MicrometerMetricsProvider(registry);
+        return new TopicOperatorMetricsProvider(registry);
     }
 }

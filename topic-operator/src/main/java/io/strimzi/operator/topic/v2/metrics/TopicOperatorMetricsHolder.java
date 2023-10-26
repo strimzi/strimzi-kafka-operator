@@ -2,7 +2,7 @@
  * Copyright Strimzi authors.
  * License: Apache License 2.0 (see the file LICENSE or http://apache.org/licenses/LICENSE-2.0.html).
  */
-package io.strimzi.operator.topic.v2;
+package io.strimzi.operator.topic.v2.metrics;
 
 import io.micrometer.core.instrument.Timer;
 import io.strimzi.operator.common.MetricsProvider;
@@ -31,14 +31,41 @@ public class TopicOperatorMetricsHolder extends MetricsHolder {
     private final Map<String, Timer> deleteTopicsTimerMap = new ConcurrentHashMap<>(1);
 
     /**
-     * Constructs the operator metrics holder
+     * Constructs the operator metrics holder.
      *
      * @param kind              Kind of the resources for which these metrics apply
      * @param selectorLabels    Selector labels to select the controller resources
-     * @param metricsProvider   Metrics provider
+     * @param metricsProvider   Topic Operator metrics provider
      */
-    public TopicOperatorMetricsHolder(String kind, Labels selectorLabels, MetricsProvider metricsProvider) {
+    public TopicOperatorMetricsHolder(String kind,
+                                      Labels selectorLabels,
+                                      TopicOperatorMetricsProvider metricsProvider) {
         super(kind, selectorLabels, metricsProvider);
+    }
+
+    /**
+     * Creates or gets a fine-grained timer-type metric.
+     * This can be used to measure the duration of internal operations.
+     *
+     * @param namespace         Namespace of the resource
+     * @param kind              Kind of the resource
+     * @param metricName        Name of the metric
+     * @param metrics           Metrics provider
+     * @param selectorLabels    Selector labels used to filter the resources
+     * @param timerMap          Map with timers
+     * @param metricHelp        Help description of the metric
+     *
+     * @return  Timer metric
+     */
+    private static Timer getFineGrainedTimer(String namespace,
+                                               String kind,
+                                               String metricName,
+                                               MetricsProvider metrics,
+                                               Labels selectorLabels,
+                                               Map<String, Timer> timerMap,
+                                               String metricHelp) {
+        return metric(namespace, kind, selectorLabels, timerMap,
+            tags -> ((TopicOperatorMetricsProvider) metrics).fineGrainedTimer(metricName, metricHelp, tags));
     }
 
     /**

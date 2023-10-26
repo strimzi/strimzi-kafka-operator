@@ -9,6 +9,7 @@ import io.fabric8.kubernetes.client.informers.cache.ItemStore;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
+import io.strimzi.operator.topic.v2.metrics.TopicOperatorMetricsHolder;
 
 import java.util.ArrayList;
 import java.util.HashSet;

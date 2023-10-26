@@ -15,9 +15,9 @@ import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaTopicBuilder;
-import io.strimzi.operator.common.MetricsProvider;
-import io.strimzi.operator.common.MicrometerMetricsProvider;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.topic.v2.metrics.TopicOperatorMetricsHolder;
+import io.strimzi.operator.topic.v2.metrics.TopicOperatorMetricsProvider;
 import org.apache.kafka.clients.admin.Admin;
 import org.apache.kafka.clients.admin.AdminClientConfig;
 import org.hamcrest.Matcher;
@@ -58,7 +58,7 @@ public class TopicOperatorMetricsTest {
     public static void beforeAll() {
         TopicOperatorTestUtil.setupKubeCluster(NAMESPACE);
         client = new KubernetesClientBuilder().build();
-        MetricsProvider metricsProvider = new MicrometerMetricsProvider(new SimpleMeterRegistry());
+        TopicOperatorMetricsProvider metricsProvider = new TopicOperatorMetricsProvider(new SimpleMeterRegistry());
         metrics = new TopicOperatorMetricsHolder(RESOURCE_KIND, null, metricsProvider);
     }
 

@@ -178,7 +178,7 @@ public abstract class MetricsHolder {
      *
      * @param <M>   Type of the metric
      */
-    private static <M> M metric(String namespace, String kind, Labels selectorLabels, Map<String, M> metricMap, Function<Tags, M> fn) {
+    protected static <M> M metric(String namespace, String kind, Labels selectorLabels, Map<String, M> metricMap, Function<Tags, M> fn) {
         String selectorValue = selectorLabels != null ? selectorLabels.toSelectorString() : "";
         Tags metricTags;
         String metricKey = namespace + "/" + kind;
@@ -241,23 +241,5 @@ public abstract class MetricsHolder {
      */
     protected static Timer getTimer(String namespace, String kind, String metricName, MetricsProvider metrics, Labels selectorLabels, Map<String, Timer> timerMap, String metricHelp) {
         return metric(namespace, kind, selectorLabels, timerMap, tags -> metrics.timer(metricName, metricHelp, tags));
-    }
-
-    /**
-     * Creates or gets a fine-grained timer-type metric.
-     * This can be used to measure the duration of internal operations.
-     *
-     * @param namespace         Namespace of the resource
-     * @param kind              Kind of the resource
-     * @param metricName        Name of the metric
-     * @param metrics           Metrics provider
-     * @param selectorLabels    Selector labels used to filter the resources
-     * @param timerMap          Map with timers
-     * @param metricHelp        Help description of the metric
-     *
-     * @return  Timer metric
-     */
-    protected static Timer getFineGrainedTimer(String namespace, String kind, String metricName, MetricsProvider metrics, Labels selectorLabels, Map<String, Timer> timerMap, String metricHelp) {
-        return metric(namespace, kind, selectorLabels, timerMap, tags -> metrics.fineGrainedTimer(metricName, metricHelp, tags));
     }
 }
