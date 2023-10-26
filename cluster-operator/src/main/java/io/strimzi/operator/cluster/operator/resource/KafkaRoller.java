@@ -234,7 +234,7 @@ public class KafkaRoller {
                         brokerPods.add(isReady ? brokerPods.size() : 0, node);
                     }
                 }
-                LOGGER.debugCr(reconciliation, "Initial order for updating pods (rolling restart or dynamic update) is {},{}", controllerPods, brokerPods);
+                LOGGER.debugCr(reconciliation, "Initial order for updating pods (rolling restart or dynamic update) is controller pods={}, broker pods={}", controllerPods, brokerPods);
 
                 List<Future<Void>> controllerFutures = new ArrayList<>(controllerPods.size());
                 for (NodeRef node : controllerPods) {

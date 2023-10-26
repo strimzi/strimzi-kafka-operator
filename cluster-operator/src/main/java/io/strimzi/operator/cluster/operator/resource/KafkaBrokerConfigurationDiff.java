@@ -130,13 +130,12 @@ public class KafkaBrokerConfigurationDiff extends AbstractJsonDiff {
         return diff.size();
     }
 
-    private static boolean isIgnorableProperty(String key, boolean isCombined) {
-        // If node is both KRaft controller and broker (combined), do not ignore controller config properties.
-        // Otherwise, always ignore KRaft controller config properties.
-        if (isCombined) {
-            return IGNORABLE_PROPERTIES.matcher(key).matches();
-        } else {
+    private static boolean isIgnorableProperty(String key, boolean nodeIsController) {
+        // If node is not a KRaft controller, ignore KRaft controller config properties.
+        if (!nodeIsController) {
             return IGNORABLE_PROPERTIES.matcher(key).matches() || IGNORABLE_CONTROLLER_PROPERTIES.matcher(key).matches();
+        } else {
+            return IGNORABLE_PROPERTIES.matcher(key).matches();
         }
     }
 
@@ -183,19 +182,19 @@ public class KafkaBrokerConfigurationDiff extends AbstractJsonDiff {
                     .findFirst();
 
             String op = d.get("op").asText();
-            boolean isCombined = nodeRef.controller() && nodeRef.broker();
+            boolean nodeIsController = nodeRef.controller();
             if (optEntry.isPresent()) {
                 ConfigEntry entry = optEntry.get();
                 if ("remove".equals(op)) {
-                    removeProperty(configModel, updatedCE, pathValueWithoutSlash, entry, isCombined);
+                    removeProperty(configModel, updatedCE, pathValueWithoutSlash, entry, nodeIsController);
                 } else if ("replace".equals(op)) {
                     // entry is in the current, desired is updated value
-                    updateOrAdd(entry.name(), configModel, desiredMap, updatedCE, isCombined);
+                    updateOrAdd(entry.name(), configModel, desiredMap, updatedCE, nodeIsController);
                 }
             } else {
                 if ("add".equals(op)) {
                     // entry is not in the current, it is added
-                    updateOrAdd(pathValueWithoutSlash, configModel, desiredMap, updatedCE, isCombined);
+                    updateOrAdd(pathValueWithoutSlash, configModel, desiredMap, updatedCE, nodeIsController);
                 }
             }
 
@@ -214,8 +213,8 @@ public class KafkaBrokerConfigurationDiff extends AbstractJsonDiff {
         return updatedCE;
     }
 
-    private void updateOrAdd(String propertyName, Map<String, ConfigModel> configModel, Map<String, String> desiredMap, Collection<AlterConfigOp> updatedCE, boolean isCombined) {
-        if (!isIgnorableProperty(propertyName, isCombined)) {
+    private void updateOrAdd(String propertyName, Map<String, ConfigModel> configModel, Map<String, String> desiredMap, Collection<AlterConfigOp> updatedCE, boolean nodeIsController) {
+        if (!isIgnorableProperty(propertyName, nodeIsController)) {
             if (isCustomEntry(propertyName, configModel)) {
                 LOGGER.traceCr(reconciliation, "custom property {} has been updated/added {}", propertyName, desiredMap.get(propertyName));
             } else {
@@ -227,7 +226,7 @@ public class KafkaBrokerConfigurationDiff extends AbstractJsonDiff {
         }
     }
 
-    private void removeProperty(Map<String, ConfigModel> configModel, Collection<AlterConfigOp> updatedCE, String pathValueWithoutSlash, ConfigEntry entry, boolean isCombined) {
+    private void removeProperty(Map<String, ConfigModel> configModel, Collection<AlterConfigOp> updatedCE, String pathValueWithoutSlash, ConfigEntry entry, boolean nodeIsController) {
         if (isCustomEntry(entry.name(), configModel)) {
             // we are deleting custom option
             LOGGER.traceCr(reconciliation, "removing custom property {}", entry.name());
@@ -240,7 +239,7 @@ public class KafkaBrokerConfigurationDiff extends AbstractJsonDiff {
         } else {
             // entry is in current, is not in desired, is not default -> it was using non-default value and was removed
             // if the entry was custom, it should be deleted
-            if (!isIgnorableProperty(pathValueWithoutSlash, isCombined)) {
+            if (!isIgnorableProperty(pathValueWithoutSlash, nodeIsController)) {
                 updatedCE.add(new AlterConfigOp(new ConfigEntry(pathValueWithoutSlash, null), AlterConfigOp.OpType.DELETE));
                 LOGGER.infoCr(reconciliation, "{} not set in desired, unsetting back to default {}", entry.name(), "deleted entry");
             } else {

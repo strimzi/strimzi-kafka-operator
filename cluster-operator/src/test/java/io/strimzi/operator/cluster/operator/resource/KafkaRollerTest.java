@@ -949,8 +949,8 @@ public class KafkaRollerTest {
             when(qrmResult.quorumInfo()).thenReturn(kafkaFuture);
             return new KafkaQuorumCheck(null, admin, null, 0) {
                 @Override
-                Future<Boolean> canRollController(int podId) {
-                    return canRollFn.apply(podId);
+                Future<Boolean> canRollController(int nodeId) {
+                    return canRollFn.apply(nodeId);
                 }
             };
         }

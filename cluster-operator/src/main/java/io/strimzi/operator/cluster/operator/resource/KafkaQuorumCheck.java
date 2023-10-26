@@ -28,7 +28,7 @@ class KafkaQuorumCheck {
     private final Vertx vertx;
     private final long controllerQuorumFetchTimeoutMs;
 
-    KafkaQuorumCheck(Reconciliation reconciliation, Admin ac, Vertx vertx, long controllerQuorumFetchTimeoutMs) {
+    protected KafkaQuorumCheck(Reconciliation reconciliation, Admin ac, Vertx vertx, long controllerQuorumFetchTimeoutMs) {
         this.reconciliation = reconciliation;
         this.admin = ac;
         this.vertx = vertx;
@@ -39,16 +39,16 @@ class KafkaQuorumCheck {
      * Returns future that completes with true if the given controller can be rolled based on the quorum state. Quorum is considered
      * healthy if the majority of controllers have caught up with the quorum leader within the controller.quorum.fetch.timeout.ms.
      */
-    Future<Boolean> canRollController(int podId) {
-        LOGGER.debugCr(reconciliation, "Determining whether controller {} can be rolled", podId);
+    Future<Boolean> canRollController(int nodeId) {
+        LOGGER.debugCr(reconciliation, "Determining whether controller pod {} can be rolled", nodeId);
         return describeMetadataQuorum().map(info -> {
-            boolean canRoll = isQuorumHealthyWithoutPod(podId, info);
+            boolean canRoll = isQuorumHealthyWithoutNode(nodeId, info);
             if (!canRoll) {
-                LOGGER.debugCr(reconciliation, "Restart pod {} would affect the quorum", podId);
+                LOGGER.debugCr(reconciliation, "Not restarting controller pod {}. Restart would affect the quorum health", nodeId);
             }
             return canRoll;
         }).recover(error -> {
-            LOGGER.warnCr(reconciliation, "Error determining whether it is safe to restart pod {}", podId, error);
+            LOGGER.warnCr(reconciliation, "Error determining whether it is safe to restart controller pod {}", nodeId, error);
             return Future.failedFuture(error);
         });
     }
@@ -57,17 +57,17 @@ class KafkaQuorumCheck {
      * Returns id of the quorum leader.
      **/
     Future<Integer> quorumLeaderId() {
-        LOGGER.debugCr(reconciliation, "Determining the quorum leader id");
+        LOGGER.debugCr(reconciliation, "Determining the controller quorum leader id");
         return describeMetadataQuorum().map(QuorumInfo::leaderId).recover(error -> {
-            LOGGER.warnCr(reconciliation, "Error determining the quorum leader id", error);
+            LOGGER.warnCr(reconciliation, "Error determining the controller quorum leader id", error);
             return Future.failedFuture(error);
         });
     }
 
-    private boolean isQuorumHealthyWithoutPod(int podId, QuorumInfo info) {
+    private boolean isQuorumHealthyWithoutNode(int nodeId, QuorumInfo info) {
         int leaderId = info.leaderId();
         if (leaderId < 0) {
-            LOGGER.warnCr(reconciliation, "No quorum leader is found because the leader id is set to {}", leaderId);
+            LOGGER.warnCr(reconciliation, "No controller quorum leader is found because the leader id is set to {}", leaderId);
             return false;
         }
         Map<Integer, Long> controllerStates = info.voters().stream().collect(Collectors.toMap(
@@ -82,24 +82,24 @@ class KafkaQuorumCheck {
         //cannot use normal integer as it's being incremented inside the lambda expression
         AtomicInteger numOfCaughtUpControllers = new AtomicInteger();
         long leaderLastCaughtUpTimestamp = controllerStates.get(leaderId);
-        LOGGER.debugCr(reconciliation, "The lastCaughtUpTimestamp for the leader replica {} is {}", leaderId, leaderLastCaughtUpTimestamp);
-        controllerStates.forEach((replicaId, lastCaughtUpTimestamp) -> {
+        LOGGER.debugCr(reconciliation, "The lastCaughtUpTimestamp for the controller quorum leader (node id {}) is {}", leaderId, leaderLastCaughtUpTimestamp);
+        controllerStates.forEach((controllerNodeId, lastCaughtUpTimestamp) -> {
             if (lastCaughtUpTimestamp < 0) {
-                LOGGER.warnCr(reconciliation, "No valid lastCaughtUpTimestamp is found for the replica {} ", replicaId);
+                LOGGER.warnCr(reconciliation, "No valid lastCaughtUpTimestamp is found for controller {} ", controllerNodeId);
             } else {
-                LOGGER.debugCr(reconciliation, "The lastCaughtUpTimestamp for controller {} is {}", replicaId, lastCaughtUpTimestamp);
-                if (replicaId == leaderId || (leaderLastCaughtUpTimestamp - lastCaughtUpTimestamp) < controllerQuorumFetchTimeoutMs) {
+                LOGGER.debugCr(reconciliation, "The lastCaughtUpTimestamp for controller {} is {}", controllerNodeId, lastCaughtUpTimestamp);
+                if (controllerNodeId == leaderId || (leaderLastCaughtUpTimestamp - lastCaughtUpTimestamp) < controllerQuorumFetchTimeoutMs) {
                     // skip the controller that we are considering to roll
-                    if (replicaId != podId) {
+                    if (controllerNodeId != nodeId) {
                         numOfCaughtUpControllers.getAndIncrement();
                     }
-                    LOGGER.debugCr(reconciliation, "The controller {} has caught up with the quorum leader", replicaId);
+                    LOGGER.debugCr(reconciliation, "Controller {} has caught up with the controller quorum leader", controllerNodeId);
                 } else {
-                    LOGGER.debugCr(reconciliation, "The controller {} has fallen behind the leader", replicaId);
+                    LOGGER.debugCr(reconciliation, "Controller {} has fallen behind the controller quorum leader", controllerNodeId);
                 }
             }
         });
-        LOGGER.debugCr(reconciliation, "Out of {} controllers, there are {} that have caught up with the quorum leader, not including the controller {}", totalNumOfControllers, numOfCaughtUpControllers, podId);
+        LOGGER.debugCr(reconciliation, "Out of {} controllers, there are {} that have caught up with the controller quorum leader, not including controller {}", totalNumOfControllers, numOfCaughtUpControllers, nodeId);
         if (totalNumOfControllers == 2) {
             // Only roll the controller if the other one in the quorum has caught up or is the active controller.
             if (numOfCaughtUpControllers.get() == 1) {
