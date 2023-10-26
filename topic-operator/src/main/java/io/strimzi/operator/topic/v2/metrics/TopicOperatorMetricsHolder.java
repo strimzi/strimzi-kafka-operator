@@ -19,6 +19,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class TopicOperatorMetricsHolder extends MetricsHolder {
     private final Map<String, AtomicInteger> reconciliationsMaxQueueMap = new ConcurrentHashMap<>(1);
     private final Map<String, AtomicInteger> reconciliationsMaxBatchMap = new ConcurrentHashMap<>(1);
+
+    // additional metrics, useful for tuning or monitoring specific internal operations
     private final Map<String, Timer> addFinalizerTimerMap = new ConcurrentHashMap<>(1);
     private final Map<String, Timer> removeFinalizerTimerMap = new ConcurrentHashMap<>(1);
     private final Map<String, Timer> createTopicsTimerMap = new ConcurrentHashMap<>(1);

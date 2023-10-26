@@ -53,6 +53,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Predicate;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -69,6 +70,7 @@ public class BatchingTopicController {
     static final String AUTO_CREATE_TOPICS_ENABLE = "auto.create.topics.enable";
     private static final int BROKER_DEFAULT = -1;
     private final boolean useFinalizer;
+    private final boolean enableAdditionalMetrics;
 
     private final Admin admin;
 
@@ -87,7 +89,8 @@ public class BatchingTopicController {
                             KubernetesClient kubeClient,
                             boolean useFinalizer,
                             TopicOperatorMetricsHolder metrics,
-                            String namespace) throws ExecutionException, InterruptedException {
+                            String namespace,
+                            boolean enableAdditionalMetrics) throws ExecutionException, InterruptedException {
         this.selector = Objects.requireNonNull(selector);
         this.useFinalizer = useFinalizer;
         this.admin = admin;
@@ -113,6 +116,7 @@ public class BatchingTopicController {
         this.kubeClient = kubeClient;
         this.metrics = metrics;
         this.namespace = namespace;
+        this.enableAdditionalMetrics = enableAdditionalMetrics;
     }
 
     /* test */ static boolean isManaged(KafkaTopic kt) {
@@ -163,10 +167,10 @@ public class BatchingTopicController {
     private KafkaTopic addFinalizer(ReconcilableTopic reconcilableTopic) {
         if (!reconcilableTopic.kt().getMetadata().getFinalizers().contains(FINALIZER)) {
             LOGGER.debugCr(reconcilableTopic.reconciliation(), "Adding finalizer {}", FINALIZER);
-            Timer.Sample timerSample = Timer.start(metrics.metricsProvider().meterRegistry());
+            Timer.Sample timerSample = startOperationTimer();
             KafkaTopic edit = Crds.topicOperation(kubeClient).resource(reconcilableTopic.kt()).edit(old ->
                     new KafkaTopicBuilder(old).editOrNewMetadata().addToFinalizers(FINALIZER).endMetadata().build());
-            timerSample.stop(metrics.addFinalizerTimer(namespace));
+            stopOperationTimer(timerSample, metrics::addFinalizerTimer);
             LOGGER.traceCr(reconcilableTopic.reconciliation(), "Added finalizer {}, resourceVersion now {}", FINALIZER, resourceVersion(edit));
             return edit;
         }
@@ -176,10 +180,10 @@ public class BatchingTopicController {
     private KafkaTopic removeFinalizer(ReconcilableTopic reconcilableTopic) {
         if (reconcilableTopic.kt().getMetadata().getFinalizers().contains(FINALIZER)) {
             LOGGER.debugCr(reconcilableTopic.reconciliation(), "Removing finalizer {}", FINALIZER);
-            Timer.Sample timerSample = Timer.start(metrics.metricsProvider().meterRegistry());
+            Timer.Sample timerSample = startOperationTimer();
             var result = Crds.topicOperation(kubeClient).resource(reconcilableTopic.kt()).edit(old ->
                     new KafkaTopicBuilder(old).editOrNewMetadata().removeFromFinalizers(FINALIZER).endMetadata().build());
-            timerSample.stop(metrics.removeFinalizerTimer(namespace));
+            stopOperationTimer(timerSample, metrics::removeFinalizerTimer);
             LOGGER.traceCr(reconcilableTopic.reconciliation(), "Removed finalizer {}, resourceVersion now {}", FINALIZER, resourceVersion(result));
             return result;
         } else {
@@ -263,10 +267,10 @@ public class BatchingTopicController {
         }).collect(Collectors.toSet());
 
         LOGGER.debugOp("Admin.createTopics({})", newTopics);
-        Timer.Sample timerSample = Timer.start(metrics.metricsProvider().meterRegistry());
+        Timer.Sample timerSample = startOperationTimer();
         CreateTopicsResult ctr = admin.createTopics(newTopics);
         ctr.all().whenComplete((i, e) -> {
-            timerSample.stop(metrics.createTopicsTimer(namespace));
+            stopOperationTimer(timerSample, metrics::createTopicsTimer);
             if (e != null) {
                 LOGGER.traceOp("Admin.createTopics({}) failed with {}", newTopics, String.valueOf(e));
             } else {
@@ -622,13 +626,13 @@ public class BatchingTopicController {
 
         Map<TopicPartition, PartitionReassignment> reassignments;
         LOGGER.traceOp("Admin.listPartitionReassignments({})", apparentDifferentRfPartitions);
-        Timer.Sample timerSample = Timer.start(metrics.metricsProvider().meterRegistry());
+        Timer.Sample timerSample = startOperationTimer();
         try {
             reassignments = admin.listPartitionReassignments(apparentDifferentRfPartitions).reassignments().get();
-            timerSample.stop(metrics.listReassignmentsTimer(namespace));
+            stopOperationTimer(timerSample, metrics::listReassignmentsTimer);
             LOGGER.traceOp("Admin.listPartitionReassignments({}) completed", apparentDifferentRfPartitions);
         } catch (ExecutionException e) {
-            timerSample.stop(metrics.listReassignmentsTimer(namespace));
+            stopOperationTimer(timerSample, metrics::listReassignmentsTimer);
             LOGGER.traceOp("Admin.listPartitionReassignments({}) failed with {}", apparentDifferentRfPartitions, e);
             return apparentlyDifferentRfTopics.stream().map(pair ->
                     pair(pair.getKey, Either.<TopicOperatorException, CurrentState>ofLeft(handleAdminException(e)))).toList();
@@ -672,11 +676,11 @@ public class BatchingTopicController {
         }
         Map<ConfigResource, Collection<AlterConfigOp>> alteredConfigs = someAlterConfigs.stream().collect(Collectors.toMap(entry -> topicConfigResource(entry.getKey().topicName()), Pair::getValue));
         LOGGER.debugOp("Admin.incrementalAlterConfigs({})", alteredConfigs);
-        Timer.Sample timerSample = Timer.start(metrics.metricsProvider().meterRegistry());
+        Timer.Sample timerSample = startOperationTimer();
         AlterConfigsResult acr = admin.incrementalAlterConfigs(alteredConfigs);
-        timerSample.stop(metrics.alterConfigsTimer(namespace));
+        stopOperationTimer(timerSample, metrics::alterConfigsTimer);
         acr.all().whenComplete((i, e) -> {
-            timerSample.stop(metrics.alterConfigsTimer(namespace));
+            stopOperationTimer(timerSample, metrics::alterConfigsTimer);
             if (e != null) {
                 LOGGER.traceOp("Admin.incrementalAlterConfigs({}) failed with {}", alteredConfigs, String.valueOf(e));
             } else {
@@ -702,10 +706,10 @@ public class BatchingTopicController {
         }
         Map<String, NewPartitions> newPartitions = someCreatePartitions.stream().collect(Collectors.toMap(pair -> pair.getKey().topicName(), Pair::getValue));
         LOGGER.debugOp("Admin.createPartitions({})", newPartitions);
-        Timer.Sample timerSample = Timer.start(metrics.metricsProvider().meterRegistry());
+        Timer.Sample timerSample = startOperationTimer();
         CreatePartitionsResult cpr = admin.createPartitions(newPartitions);
         cpr.all().whenComplete((i, e) -> {
-            timerSample.stop(metrics.createPartitionsTimer(namespace));
+            stopOperationTimer(timerSample, metrics::createPartitionsTimer);
             if (e != null) {
                 LOGGER.traceOp("Admin.createPartitions({}) failed with {}", newPartitions, String.valueOf(e));
             } else {
@@ -742,10 +746,10 @@ public class BatchingTopicController {
         DescribeTopicsResult describeTopicsResult;
         {
             LOGGER.debugOp("Admin.describeTopics({})", tns);
-            Timer.Sample timerSample = Timer.start(metrics.metricsProvider().meterRegistry());
+            Timer.Sample timerSample = startOperationTimer();
             describeTopicsResult = admin.describeTopics(tns);
             describeTopicsResult.allTopicNames().whenComplete((i, e) -> {
-                timerSample.stop(metrics.describeTopicsTimer(namespace));
+                stopOperationTimer(timerSample, metrics::describeTopicsTimer);
                 if (e != null) {
                     LOGGER.traceOp("Admin.describeTopics({}) failed with {}", tns, String.valueOf(e));
                 } else {
@@ -756,10 +760,10 @@ public class BatchingTopicController {
         DescribeConfigsResult describeConfigsResult;
         {
             LOGGER.debugOp("Admin.describeConfigs({})", configResources);
-            Timer.Sample timerSample = Timer.start(metrics.metricsProvider().meterRegistry());
+            Timer.Sample timerSample = startOperationTimer();
             describeConfigsResult = admin.describeConfigs(configResources);
             describeConfigsResult.all().whenComplete((i, e) -> {
-                timerSample.stop(metrics.describeConfigsTimer(namespace));
+                stopOperationTimer(timerSample, metrics::describeConfigsTimer);
                 if (e != null) {
                     LOGGER.traceOp("Admin.describeConfigs({}) failed with {}", configResources, String.valueOf(e));
                 } else {
@@ -891,10 +895,10 @@ public class BatchingTopicController {
         LOGGER.debugOp("Admin.deleteTopics({})", someDeleteTopics.topicNames());
 
         // Admin delete
-        Timer.Sample timerSample = Timer.start(metrics.metricsProvider().meterRegistry());
+        Timer.Sample timerSample = startOperationTimer();
         DeleteTopicsResult dtr = admin.deleteTopics(someDeleteTopics);
         dtr.all().whenComplete((i, e) -> {
-            timerSample.stop(metrics.deleteTopicsTimer(namespace));
+            stopOperationTimer(timerSample, metrics::deleteTopicsTimer);
             if (e != null) {
                 LOGGER.traceOp("Admin.deleteTopics({}) failed with {}", someDeleteTopics.topicNames(), String.valueOf(e));
             } else {
@@ -1047,11 +1051,11 @@ public class BatchingTopicController {
                         .withConditions(condition)
                     .endStatus().build();
             LOGGER.debugCr(reconciliation, "Updating status with {}", updatedTopic.getStatus());
-            Timer.Sample timerSample = Timer.start(metrics.metricsProvider().meterRegistry());
+            Timer.Sample timerSample = startOperationTimer();
             var got = Crds.topicOperation(kubeClient)
                     .resource(updatedTopic)
                     .updateStatus();
-            timerSample.stop(metrics.updateStatusTimer(namespace));
+            stopOperationTimer(timerSample, metrics::updateStatusTimer);
             LOGGER.traceCr(reconciliation, "Updated status to observedGeneration {}, resourceVersion now {}",
                     got.getStatus().getObservedGeneration());
         } else {
@@ -1076,6 +1080,20 @@ public class BatchingTopicController {
     private void stopReconciliationTimer(ReconcilableTopic topic) {
         if (topic.reconciliationTimerSample() != null) {
             topic.reconciliationTimerSample().stop(metrics.reconciliationsTimer(namespace));
+        }
+    }
+
+    private Timer.Sample startOperationTimer() {
+        if (enableAdditionalMetrics) {
+            return Timer.start(metrics.metricsProvider().meterRegistry());
+        } else {
+            return null;
+        }
+    }
+
+    private void stopOperationTimer(Timer.Sample sample, Function<String, Timer> addMetric) {
+        if (sample != null && enableAdditionalMetrics) {
+            sample.stop(addMetric.apply(namespace));
         }
     }
 }

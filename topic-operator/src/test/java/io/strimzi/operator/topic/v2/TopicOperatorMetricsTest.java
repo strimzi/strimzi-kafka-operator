@@ -155,7 +155,7 @@ public class TopicOperatorMetricsTest {
     @Test
     public void shouldHaveMetricsAfterSomeReconciliations(KafkaCluster cluster) throws ExecutionException, InterruptedException {
         Admin admin = Admin.create(Map.of(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, cluster.getBootstrapServers()));
-        BatchingTopicController controller = new BatchingTopicController(Map.of("key", "VALUE"), admin, client, true, metrics, NAMESPACE);
+        BatchingTopicController controller = new BatchingTopicController(Map.of("key", "VALUE"), admin, client, true, metrics, NAMESPACE, true);
 
         KafkaTopic t1 = createResource(client, "t1", "t1");
         KafkaTopic t2 = createResource(client, "t2", "t1");

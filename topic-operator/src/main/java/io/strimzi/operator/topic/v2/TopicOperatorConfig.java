@@ -49,6 +49,7 @@ import static io.strimzi.operator.common.operator.resource.ConfigParameterParser
  * @param maxQueueSize                  The capacity of the queue
  * @param maxBatchSize                  The maximum size of a reconciliation batch
  * @param maxBatchLingerMs              The maximum time to wait for a reconciliation batch to contain {@code maxBatchSize} items.
+ * @param enableAdditionalMetrics       Whether to enable additional metrics
  */
 record TopicOperatorConfig(
         String namespace,
@@ -70,7 +71,8 @@ record TopicOperatorConfig(
         boolean useFinalizer,
         int maxQueueSize,
         int maxBatchSize,
-        long maxBatchLingerMs
+        long maxBatchLingerMs,
+        boolean enableAdditionalMetrics
 ) {
     private final static ReconciliationLogger LOGGER = ReconciliationLogger.create(TopicOperatorConfig.class);
 
@@ -96,6 +98,7 @@ record TopicOperatorConfig(
     static final ConfigParameter<Integer> MAX_QUEUE_SIZE = new ConfigParameter<>("STRIMZI_MAX_QUEUE_SIZE", strictlyPositive(INTEGER), "1024", CONFIG_VALUES);
     static final ConfigParameter<Integer> MAX_BATCH_SIZE = new ConfigParameter<>("STRIMZI_MAX_BATCH_SIZE", strictlyPositive(INTEGER), "100", CONFIG_VALUES);
     static final ConfigParameter<Long> MAX_BATCH_LINGER_MS = new ConfigParameter<>("STRIMZI_MAX_BATCH_LINGER_MS", strictlyPositive(LONG), "100", CONFIG_VALUES);
+    static final ConfigParameter<Boolean> ENABLE_ADDITIONAL_METRICS = new ConfigParameter<>("STRIMZI_ENABLE_ADDITIONAL_METRICS", BOOLEAN, "false", CONFIG_VALUES);
 
     @SuppressWarnings("unchecked")
     private static <T> T get(Map<String, Object> map, ConfigParameter<T> value) {
@@ -138,7 +141,8 @@ record TopicOperatorConfig(
                 get(map, USE_FINALIZERS),
                 get(map, MAX_QUEUE_SIZE),
                 get(map, MAX_BATCH_SIZE),
-                get(map, MAX_BATCH_LINGER_MS)
+                get(map, MAX_BATCH_LINGER_MS),
+                get(map, ENABLE_ADDITIONAL_METRICS)
         );
     }
 
@@ -242,6 +246,7 @@ record TopicOperatorConfig(
                 "\n\tmaxQueueSize=" + maxQueueSize +
                 "\n\tmaxBatchSize=" + maxBatchSize +
                 "\n\tmaxBatchLingerMs=" + maxBatchLingerMs +
+                "\n\tenableAdditionalMetrics=" + enableAdditionalMetrics +
                 '}';
     }
 }
