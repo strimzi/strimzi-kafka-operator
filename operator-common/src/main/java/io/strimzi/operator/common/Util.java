@@ -167,8 +167,8 @@ public class Util {
     }
 
     /**
-     * Decode binary item that holds Private key in PEM format from Kubernetes Secret from base64 into byte array
-     * Before decoding it into byte array, it removes the PEM header and footer
+     * Decode the binary item in a Kubernetes Secret, which holds a private key in PEM format, from base64 to a byte array.
+     * Before decoding it into byte array, it removes the PEM header and footer.
      * @param secret    Kubernetes Secret
      * @param key       Key which should be retrieved and decoded
      * @return          Decoded bytes

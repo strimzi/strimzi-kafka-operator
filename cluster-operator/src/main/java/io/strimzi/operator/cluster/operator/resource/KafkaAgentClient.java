@@ -48,7 +48,8 @@ class KafkaAgentClient {
 
     private static final String BROKER_STATE_REST_PATH = "/v1/broker-state/";
     private static final int BROKER_STATE_HTTPS_PORT = 8443;
-
+    private static final String KEYSTORE_TYPE_JKS = "JKS";
+    private static final String CERT_TYPE_X509 = "X.509";
     private final String namespace;
     private final Reconciliation reconciliation;
     private final String cluster;
@@ -99,17 +100,17 @@ class KafkaAgentClient {
     }
 
     private KeyStore getTrustStore() throws CertificateException, KeyStoreException, IOException, NoSuchAlgorithmException {
-        final CertificateFactory caCertFactory = CertificateFactory.getInstance("X.509");
+        final CertificateFactory caCertFactory = CertificateFactory.getInstance(CERT_TYPE_X509);
         final Certificate caCert = caCertFactory.generateCertificate(new ByteArrayInputStream(
                 Util.decodeFromSecret(clusterCaCertSecret, "ca.crt")));
-        KeyStore trustStore = KeyStore.getInstance("JKS");
+        KeyStore trustStore = KeyStore.getInstance(KEYSTORE_TYPE_JKS);
         trustStore.load(null);
         trustStore.setCertificateEntry("ca", caCert);
         return trustStore;
     }
 
     private KeyStore getKeyStore(char[] keyPassword) throws KeyStoreException, CertificateException, NoSuchAlgorithmException, InvalidKeySpecException, IOException {
-        final CertificateFactory coCertFactory = CertificateFactory.getInstance("X.509");
+        final CertificateFactory coCertFactory = CertificateFactory.getInstance(CERT_TYPE_X509);
         final Certificate coCert = coCertFactory.generateCertificate(new ByteArrayInputStream(
                 Util.decodeFromSecret(coKeySecret, "cluster-operator.crt")));
 
@@ -118,7 +119,7 @@ class KafkaAgentClient {
         final KeyFactory keyFactory = KeyFactory.getInstance("RSA");
         final PrivateKey key = keyFactory.generatePrivate(keySpec);
 
-        KeyStore coKeyStore = KeyStore.getInstance("JKS");
+        KeyStore coKeyStore = KeyStore.getInstance(KEYSTORE_TYPE_JKS);
         coKeyStore.load(null);
         coKeyStore.setKeyEntry("cluster-operator", key, keyPassword, new Certificate[]{coCert});
 
