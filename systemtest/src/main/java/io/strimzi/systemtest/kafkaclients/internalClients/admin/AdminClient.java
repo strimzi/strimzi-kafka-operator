@@ -15,7 +15,7 @@ public class AdminClient {
 
     private final String namespaceName;
     private final String podName;
-    private final String cmd = "admin-client";
+    private final static String CMD = "admin-client";
 
     public AdminClient(String namespaceName, String podName) {
         this.namespaceName = namespaceName;
@@ -91,12 +91,12 @@ public class AdminClient {
     }
 
     public void configureFromEnv() {
-        cmdKubeClient(namespaceName).execInPod(podName, cmd, "configure", "common", "--from-env");
+        cmdKubeClient(namespaceName).execInPod(podName, CMD, "configure", "common", "--from-env");
     }
 
-    class AdminTopicCommand {
-        private final String topicSubcommand = "topic";
-        private List<String> command = new ArrayList<>(List.of(cmd, topicSubcommand));
+    static class AdminTopicCommand {
+        private final static String TOPIC_SUBCOMMAND = "topic";
+        private List<String> command = new ArrayList<>(List.of(CMD, TOPIC_SUBCOMMAND));
 
         public AdminTopicCommand withCreateSubcommand() {
             this.command.add("create");
