@@ -197,6 +197,16 @@
             <artifactId>mockkube</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>io.javaoperatorsdk</groupId>
+            <artifactId>jenvtest</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.javaoperatorsdk</groupId>
+            <artifactId>jenvtest-fabric8-client-support</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>

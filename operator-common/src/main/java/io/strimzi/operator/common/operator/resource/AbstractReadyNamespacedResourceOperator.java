@@ -33,9 +33,21 @@ public abstract class AbstractReadyNamespacedResourceOperator<C extends Kubernet
      * @param vertx        The vertx instance.
      * @param client       The kubernetes client.
      * @param resourceKind The mind of Kubernetes resource (used for logging).
+     * @param useServerSideApply whether to use server side apply patch requests
+     */
+    public AbstractReadyNamespacedResourceOperator(Vertx vertx, C client, String resourceKind, boolean useServerSideApply) {
+        super(vertx, client, resourceKind, useServerSideApply);
+    }
+
+    /**
+     * Constructor.
+     *
+     * @param vertx        The vertx instance.
+     * @param client       The kubernetes client.
+     * @param resourceKind The mind of Kubernetes resource (used for logging).
      */
     public AbstractReadyNamespacedResourceOperator(Vertx vertx, C client, String resourceKind) {
-        super(vertx, client, resourceKind);
+        super(vertx, client, resourceKind, false);
     }
 
     /**
