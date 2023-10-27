@@ -473,7 +473,10 @@ public class KafkaReconciler {
                                 compositeFuture.resultAt(0),
                                 compositeFuture.resultAt(1),
                                 adminClientProvider,
-                                brokerId -> kafka.generatePerBrokerConfiguration(brokerId, kafkaAdvertisedHostnames, kafkaAdvertisedPorts),
+                                // if not allowing reconfigurations, provide the configurations defined by the user in the CR to be used for checking controller quorum health
+                                allowReconfiguration ?
+                                        brokerId -> kafka.generatePerBrokerConfiguration(brokerId, kafkaAdvertisedHostnames, kafkaAdvertisedPorts) :
+                                        brokerId -> kafka.getConfiguration().getConfiguration(),
                                 logging,
                                 kafka.getKafkaVersion(),
                                 allowReconfiguration,

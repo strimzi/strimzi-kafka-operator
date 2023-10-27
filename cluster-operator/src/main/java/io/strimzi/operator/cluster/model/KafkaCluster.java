@@ -1643,6 +1643,10 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
      * @return  String with the Kafka broker configuration
      */
     private String generatePerBrokerConfiguration(NodeRef node, KafkaPool pool, Map<Integer, Map<String, String>> advertisedHostnames, Map<Integer, Map<String, String>> advertisedPorts)   {
+        // When doing manual rolling updates, empty maps are passed for advertised listeners and allowReconfiguration set to false.
+        // In broker case, we do not generate configurations if allowReconfiguration is set to false therefore this functions is never called.
+        // However, for controllers, we always generate configuration to read a controller specific configuration to use it for quorum healthcheck.
+        // Therefore, advertised hostname and ports should be nullable if empty maps are passed.
         KafkaBrokerConfigurationBuilder builder =
                 new KafkaBrokerConfigurationBuilder(reconciliation, String.valueOf(node.nodeId()), useKRaft)
                         .withRackId(rack)
