@@ -5,7 +5,7 @@
 package io.strimzi.systemtest.resources.kubernetes;
 
 import io.fabric8.kubernetes.api.model.rbac.ClusterRole;
-import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.resources.ResourceType;
 import io.strimzi.test.k8s.KubeClusterResource;
 
@@ -15,7 +15,7 @@ public class ClusterRoleResource implements ResourceType<ClusterRole> {
 
     @Override
     public String getKind() {
-        return Constants.CLUSTER_ROLE;
+        return TestConstants.CLUSTER_ROLE;
     }
     @Override
     public ClusterRole get(String namespace, String name) {

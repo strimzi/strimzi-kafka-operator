@@ -33,7 +33,7 @@ import io.strimzi.api.kafka.model.status.ListenerStatus;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
-import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.kafkaclients.externalClients.ExternalKafkaClient;
 import io.strimzi.systemtest.resources.crd.KafkaBridgeResource;
@@ -78,15 +78,15 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import static io.strimzi.api.kafka.model.KafkaResources.externalBootstrapServiceName;
-import static io.strimzi.systemtest.Constants.BRIDGE;
-import static io.strimzi.systemtest.Constants.CONNECT;
-import static io.strimzi.systemtest.Constants.CONNECTOR_OPERATOR;
-import static io.strimzi.systemtest.Constants.CONNECT_COMPONENTS;
-import static io.strimzi.systemtest.Constants.EXTERNAL_CLIENTS_USED;
-import static io.strimzi.systemtest.Constants.MIRROR_MAKER;
-import static io.strimzi.systemtest.Constants.MIRROR_MAKER2;
-import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
-import static io.strimzi.systemtest.Constants.REGRESSION;
+import static io.strimzi.systemtest.TestConstants.BRIDGE;
+import static io.strimzi.systemtest.TestConstants.CONNECT;
+import static io.strimzi.systemtest.TestConstants.CONNECTOR_OPERATOR;
+import static io.strimzi.systemtest.TestConstants.CONNECT_COMPONENTS;
+import static io.strimzi.systemtest.TestConstants.EXTERNAL_CLIENTS_USED;
+import static io.strimzi.systemtest.TestConstants.MIRROR_MAKER;
+import static io.strimzi.systemtest.TestConstants.MIRROR_MAKER2;
+import static io.strimzi.systemtest.TestConstants.NODEPORT_SUPPORTED;
+import static io.strimzi.systemtest.TestConstants.REGRESSION;
 import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
 import static io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils.getKafkaSecretCertificates;
 import static io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils.getKafkaStatusCertificates;
@@ -117,7 +117,7 @@ class CustomResourceStatusST extends AbstractST {
             .withNamespaceName(Environment.TEST_SUITE_NAMESPACE)
             .withClusterName(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME)
             .withMessageCount(MESSAGE_COUNT)
-            .withListenerName(Constants.EXTERNAL_LISTENER_DEFAULT_NAME)
+            .withListenerName(TestConstants.EXTERNAL_LISTENER_DEFAULT_NAME)
             .build();
 
         externalKafkaClient.verifyProducedAndConsumedMessages(
@@ -333,7 +333,7 @@ class CustomResourceStatusST extends AbstractST {
 
     @ParallelTest
     void testKafkaStatusCertificate(ExtensionContext extensionContext) {
-        String certs = getKafkaStatusCertificates(Constants.TLS_LISTENER_DEFAULT_NAME, Environment.TEST_SUITE_NAMESPACE, CUSTOM_RESOURCE_STATUS_CLUSTER_NAME);
+        String certs = getKafkaStatusCertificates(TestConstants.TLS_LISTENER_DEFAULT_NAME, Environment.TEST_SUITE_NAMESPACE, CUSTOM_RESOURCE_STATUS_CLUSTER_NAME);
         String secretCerts = getKafkaSecretCertificates(Environment.TEST_SUITE_NAMESPACE, CUSTOM_RESOURCE_STATUS_CLUSTER_NAME + "-cluster-ca-cert", "ca.crt");
 
         LOGGER.info("Check if KafkaStatus certificates are the same as Secret certificates");
@@ -417,24 +417,24 @@ class CustomResourceStatusST extends AbstractST {
     @BeforeAll
     void setup(ExtensionContext extensionContext) {
         this.clusterOperator = this.clusterOperator.defaultInstallation(extensionContext)
-            .withOperationTimeout(Constants.CO_OPERATION_TIMEOUT_SHORT)
+            .withOperationTimeout(TestConstants.CO_OPERATION_TIMEOUT_SHORT)
             .createInstallation()
             .runInstallation();
 
         GenericKafkaListener plain = new GenericKafkaListenerBuilder()
-                .withName(Constants.PLAIN_LISTENER_DEFAULT_NAME)
+                .withName(TestConstants.PLAIN_LISTENER_DEFAULT_NAME)
                 .withPort(9092)
                 .withType(KafkaListenerType.INTERNAL)
                 .withTls(false)
                 .build();
         GenericKafkaListener tls = new GenericKafkaListenerBuilder()
-                .withName(Constants.TLS_LISTENER_DEFAULT_NAME)
+                .withName(TestConstants.TLS_LISTENER_DEFAULT_NAME)
                 .withPort(9093)
                 .withType(KafkaListenerType.INTERNAL)
                 .withTls(true)
                 .build();
         GenericKafkaListener nodePort = new GenericKafkaListenerBuilder()
-                .withName(Constants.EXTERNAL_LISTENER_DEFAULT_NAME)
+                .withName(TestConstants.EXTERNAL_LISTENER_DEFAULT_NAME)
                 .withPort(9094)
                 .withType(KafkaListenerType.NODEPORT)
                 .withTls(false)
@@ -477,15 +477,15 @@ class CustomResourceStatusST extends AbstractST {
 
         for (ListenerStatus listener : kafkaStatus.getListeners()) {
             switch (listener.getName()) {
-                case Constants.TLS_LISTENER_DEFAULT_NAME:
+                case TestConstants.TLS_LISTENER_DEFAULT_NAME:
                     assertThat("TLS bootstrap has incorrect port", listener.getAddresses().get(0).getPort(), is(9093));
                     assertThat("TLS bootstrap has incorrect host", listener.getAddresses().get(0).getHost(), is(internalAddress));
                     break;
-                case Constants.PLAIN_LISTENER_DEFAULT_NAME:
+                case TestConstants.PLAIN_LISTENER_DEFAULT_NAME:
                     assertThat("Plain bootstrap has incorrect port", listener.getAddresses().get(0).getPort(), is(9092));
                     assertThat("Plain bootstrap has incorrect host", listener.getAddresses().get(0).getHost(), is(internalAddress));
                     break;
-                case Constants.EXTERNAL_LISTENER_DEFAULT_NAME:
+                case TestConstants.EXTERNAL_LISTENER_DEFAULT_NAME:
                     Service extBootstrapService = kubeClient(Environment.TEST_SUITE_NAMESPACE).getClient().services()
                             .inNamespace(Environment.TEST_SUITE_NAMESPACE)
                             .withName(externalBootstrapServiceName(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME))
@@ -537,8 +537,8 @@ class CustomResourceStatusST extends AbstractST {
 
     @SuppressWarnings("unchecked")
     void assertKafkaConnectorStatus(long expectedObservedGeneration, String connectorStates, String type, List<String> topics) {
-        TestUtils.waitFor("KafkaConnector status to except observed generation", Constants.GLOBAL_POLL_INTERVAL,
-            Constants.GLOBAL_TIMEOUT, () -> {
+        TestUtils.waitFor("KafkaConnector status to except observed generation", TestConstants.GLOBAL_POLL_INTERVAL,
+            TestConstants.GLOBAL_TIMEOUT, () -> {
                 KafkaConnectorStatus kafkaConnectorStatus = KafkaConnectorResource.kafkaConnectorClient().inNamespace(Environment.TEST_SUITE_NAMESPACE).withName(CUSTOM_RESOURCE_STATUS_CLUSTER_NAME).get().getStatus();
                 boolean formulaResult = kafkaConnectorStatus.getObservedGeneration() == expectedObservedGeneration;
 

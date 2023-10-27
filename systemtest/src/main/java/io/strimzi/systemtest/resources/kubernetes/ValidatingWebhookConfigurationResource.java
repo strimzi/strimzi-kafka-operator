@@ -5,7 +5,7 @@
 package io.strimzi.systemtest.resources.kubernetes;
 
 import io.fabric8.kubernetes.api.model.admissionregistration.v1.ValidatingWebhookConfiguration;
-import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.resources.ResourceType;
 import io.strimzi.test.k8s.KubeClusterResource;
 
@@ -15,7 +15,7 @@ public class ValidatingWebhookConfigurationResource implements ResourceType<Vali
 
     @Override
     public String getKind() {
-        return Constants.VALIDATION_WEBHOOK_CONFIG;
+        return TestConstants.VALIDATION_WEBHOOK_CONFIG;
     }
 
     @Override

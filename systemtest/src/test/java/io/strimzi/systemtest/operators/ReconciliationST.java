@@ -50,10 +50,10 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 import java.util.Collections;
 import java.util.Map;
 
-import static io.strimzi.systemtest.Constants.CONNECT;
-import static io.strimzi.systemtest.Constants.CONNECT_COMPONENTS;
-import static io.strimzi.systemtest.Constants.CRUISE_CONTROL;
-import static io.strimzi.systemtest.Constants.REGRESSION;
+import static io.strimzi.systemtest.TestConstants.CONNECT;
+import static io.strimzi.systemtest.TestConstants.CONNECT_COMPONENTS;
+import static io.strimzi.systemtest.TestConstants.CRUISE_CONTROL;
+import static io.strimzi.systemtest.TestConstants.REGRESSION;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 @Tag(REGRESSION)

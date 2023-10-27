@@ -13,7 +13,7 @@ import io.strimzi.api.kafka.model.status.KafkaBridgeStatus;
 import io.strimzi.api.kafka.model.template.DeploymentStrategy;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
-import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.BridgeClients;
@@ -47,10 +47,10 @@ import java.util.Map;
 import java.util.Random;
 import java.util.stream.Collectors;
 
-import static io.strimzi.systemtest.Constants.BRIDGE;
-import static io.strimzi.systemtest.Constants.CO_NAMESPACE;
-import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
-import static io.strimzi.systemtest.Constants.REGRESSION;
+import static io.strimzi.systemtest.TestConstants.BRIDGE;
+import static io.strimzi.systemtest.TestConstants.CO_NAMESPACE;
+import static io.strimzi.systemtest.TestConstants.INTERNAL_CLIENTS_USED;
+import static io.strimzi.systemtest.TestConstants.REGRESSION;
 import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
@@ -81,7 +81,7 @@ class HttpBridgeST extends AbstractST {
             .withBootstrapAddress(KafkaBridgeResources.serviceName(httpBridgeClusterName))
             .withTopicName(topicName)
             .withMessageCount(MESSAGE_COUNT)
-            .withPort(Constants.HTTP_BRIDGE_DEFAULT_PORT)
+            .withPort(TestConstants.HTTP_BRIDGE_DEFAULT_PORT)
             .withDelayMs(1000)
             .withPollInterval(1000)
             .withNamespaceName(Environment.TEST_SUITE_NAMESPACE)
@@ -125,7 +125,7 @@ class HttpBridgeST extends AbstractST {
             .withBootstrapAddress(KafkaBridgeResources.serviceName(httpBridgeClusterName))
             .withTopicName(topicName)
             .withMessageCount(MESSAGE_COUNT)
-            .withPort(Constants.HTTP_BRIDGE_DEFAULT_PORT)
+            .withPort(TestConstants.HTTP_BRIDGE_DEFAULT_PORT)
             .withDelayMs(1000)
             .withPollInterval(1000)
             .withNamespaceName(Environment.TEST_SUITE_NAMESPACE)
@@ -409,7 +409,7 @@ class HttpBridgeST extends AbstractST {
 
     @BeforeAll
     void createClassResources(ExtensionContext extensionContext) {
-        final String namespaceToWatch = Environment.isNamespaceRbacScope() ? CO_NAMESPACE : Constants.WATCH_ALL_NAMESPACES;
+        final String namespaceToWatch = Environment.isNamespaceRbacScope() ? CO_NAMESPACE : TestConstants.WATCH_ALL_NAMESPACES;
 
         clusterOperator = clusterOperator.defaultInstallation(extensionContext)
                 .withNamespace(CO_NAMESPACE)

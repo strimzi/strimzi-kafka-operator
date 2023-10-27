@@ -15,7 +15,7 @@ import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.systemtest.AbstractST;
-import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
@@ -44,10 +44,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static io.strimzi.systemtest.Constants.CRUISE_CONTROL;
-import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
-import static io.strimzi.systemtest.Constants.NETWORKPOLICIES_SUPPORTED;
-import static io.strimzi.systemtest.Constants.REGRESSION;
+import static io.strimzi.systemtest.TestConstants.CRUISE_CONTROL;
+import static io.strimzi.systemtest.TestConstants.INTERNAL_CLIENTS_USED;
+import static io.strimzi.systemtest.TestConstants.NETWORKPOLICIES_SUPPORTED;
+import static io.strimzi.systemtest.TestConstants.REGRESSION;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
@@ -114,7 +114,7 @@ public class NetworkPoliciesST extends AbstractST {
                 .editKafka()
                     .withListeners(
                         new GenericKafkaListenerBuilder()
-                            .withName(Constants.PLAIN_LISTENER_DEFAULT_NAME)
+                            .withName(TestConstants.PLAIN_LISTENER_DEFAULT_NAME)
                             .withPort(9092)
                             .withType(KafkaListenerType.INTERNAL)
                             .withTls(false)
@@ -134,7 +134,7 @@ public class NetworkPoliciesST extends AbstractST {
                             )
                             .build(),
                         new GenericKafkaListenerBuilder()
-                            .withName(Constants.TLS_LISTENER_DEFAULT_NAME)
+                            .withName(TestConstants.TLS_LISTENER_DEFAULT_NAME)
                             .withPort(9093)
                             .withType(KafkaListenerType.INTERNAL)
                             .withTls(true)
@@ -254,7 +254,7 @@ public class NetworkPoliciesST extends AbstractST {
         clusterOperator = new SetupClusterOperator.SetupClusterOperatorBuilder()
             .withExtensionContext(extensionContext)
             .withNamespace(Environment.TEST_SUITE_NAMESPACE)
-            .withWatchingNamespaces(Constants.WATCH_ALL_NAMESPACES)
+            .withWatchingNamespaces(TestConstants.WATCH_ALL_NAMESPACES)
             .withBindingsNamespaces(Arrays.asList(Environment.TEST_SUITE_NAMESPACE, secondNamespace))
             .withExtraEnvVars(Collections.singletonList(operatorLabelsEnv))
             .createInstallation()

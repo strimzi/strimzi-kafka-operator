@@ -29,7 +29,7 @@ import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.api.kafka.model.status.Status;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.model.Labels;
-import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.enums.ConditionStatus;
 import io.strimzi.systemtest.enums.DeploymentTypes;
@@ -100,7 +100,7 @@ public class ResourceManager {
 
     public static final Map<String, Stack<ResourceItem>> STORED_RESOURCES = new LinkedHashMap<>();
 
-    private static String coDeploymentName = Constants.STRIMZI_DEPLOYMENT_NAME;
+    private static String coDeploymentName = TestConstants.STRIMZI_DEPLOYMENT_NAME;
     private static ResourceManager instance;
 
     public static synchronized ResourceManager getInstance() {
@@ -152,6 +152,7 @@ public class ResourceManager {
         new OperatorGroupResource(),
         new KafkaNodePoolResource()
     };
+
     @SafeVarargs
     public final <T extends HasMetadata> void createResourceWithoutWait(ExtensionContext testContext, T... resources) {
         createResource(testContext, false, resources);
@@ -171,10 +172,10 @@ public class ResourceManager {
 
             if (resource.getMetadata().getNamespace() == null) {
                 LOGGER.info("Creating/Updating {} {}",
-                        resource.getKind(), resource.getMetadata().getName());
+                    resource.getKind(), resource.getMetadata().getName());
             } else {
                 LOGGER.info("Creating/Updating {} {}/{}",
-                        resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName());
+                    resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName());
             }
 
             if (resource.getKind().equals(Kafka.RESOURCE_KIND)) {
@@ -209,9 +210,9 @@ public class ResourceManager {
             labelResource(testContext, resource);
 
             // adding test.suite and test.case labels to the PodTemplate
-            if (resource.getKind().equals(Constants.JOB)) {
+            if (resource.getKind().equals(TestConstants.JOB)) {
                 this.copyTestSuiteAndTestCaseControllerLabelsIntoPodTemplate(resource, ((Job) resource).getSpec().getTemplate());
-            } else if (resource.getKind().equals(Constants.DEPLOYMENT)) {
+            } else if (resource.getKind().equals(TestConstants.DEPLOYMENT)) {
                 this.copyTestSuiteAndTestCaseControllerLabelsIntoPodTemplate(resource, ((Deployment) resource).getSpec().getTemplate());
             }
             type.create(resource);
@@ -291,10 +292,10 @@ public class ResourceManager {
 
             if (resource.getMetadata().getLabels() == null) {
                 labels = new HashMap<>();
-                labels.put(Constants.TEST_CASE_NAME_LABEL, testCaseName);
+                labels.put(TestConstants.TEST_CASE_NAME_LABEL, testCaseName);
             } else {
                 labels = new HashMap<>(resource.getMetadata().getLabels());
-                labels.put(Constants.TEST_CASE_NAME_LABEL, testCaseName);
+                labels.put(TestConstants.TEST_CASE_NAME_LABEL, testCaseName);
             }
             resource.getMetadata().setLabels(labels);
         } else {
@@ -304,10 +305,10 @@ public class ResourceManager {
 
                 if (resource.getMetadata().getLabels() == null) {
                     labels = new HashMap<>();
-                    labels.put(Constants.TEST_SUITE_NAME_LABEL, testSuiteName);
+                    labels.put(TestConstants.TEST_SUITE_NAME_LABEL, testSuiteName);
                 } else {
                     labels = new HashMap<>(resource.getMetadata().getLabels());
-                    labels.put(Constants.TEST_SUITE_NAME_LABEL, testSuiteName);
+                    labels.put(TestConstants.TEST_SUITE_NAME_LABEL, testSuiteName);
                 }
                 resource.getMetadata().setLabels(labels);
             }
@@ -318,7 +319,7 @@ public class ResourceManager {
         // if it is parallel namespace test we are gonna replace resource a namespace
         if (StUtils.isParallelNamespaceTest(testContext)) {
             if (!Environment.isNamespaceRbacScope()) {
-                final String namespace = testContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
+                final String namespace = testContext.getStore(ExtensionContext.Namespace.GLOBAL).get(TestConstants.NAMESPACE_KEY).toString();
                 LOGGER.info("Setting Namespace: {} to resource: {}/{}", namespace, resource.getKind(), resource.getMetadata().getName());
                 resource.getMetadata().setNamespace(namespace);
             }
@@ -336,17 +337,17 @@ public class ResourceManager {
 
             if (resource.getMetadata().getNamespace() == null) {
                 LOGGER.info("Deleting of {} {}",
-                        resource.getKind(), resource.getMetadata().getName());
+                    resource.getKind(), resource.getMetadata().getName());
             } else {
                 LOGGER.info("Deleting of {} {}/{}",
-                        resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName());
+                    resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName());
             }
 
             try {
                 type.delete(resource);
                 assertTrue(waitResourceCondition(resource, ResourceCondition.deletion()),
-                        String.format("Timed out deleting %s %s/%s", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()));
-            } catch (Exception e)   {
+                    String.format("Timed out deleting %s %s/%s", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()));
+            } catch (Exception e) {
                 if (resource.getMetadata().getNamespace() == null) {
                     LOGGER.error("Failed to delete {} {}", resource.getKind(), resource.getMetadata().getName(), e);
                 } else {
@@ -380,10 +381,10 @@ public class ResourceManager {
         boolean[] resourceReady = new boolean[1];
 
         TestUtils.waitFor("resource condition: " + condition.getConditionName() + " to be fulfilled for resource " + resource.getKind() + ":" + resource.getMetadata().getName(),
-            Constants.GLOBAL_POLL_INTERVAL_MEDIUM, ResourceOperation.getTimeoutForResourceReadiness(resource.getKind()),
+            TestConstants.GLOBAL_POLL_INTERVAL_MEDIUM, ResourceOperation.getTimeoutForResourceReadiness(resource.getKind()),
             () -> {
                 T res = type.get(resource.getMetadata().getNamespace(), resource.getMetadata().getName());
-                resourceReady[0] =  condition.getPredicate().test(res);
+                resourceReady[0] = condition.getPredicate().test(res);
                 if (!resourceReady[0]) {
                     type.delete(res);
                 }
@@ -394,14 +395,14 @@ public class ResourceManager {
     }
 
     /**
-     * Auxiliary method for copying {@link Constants#TEST_SUITE_NAME_LABEL} and {@link Constants#TEST_CASE_NAME_LABEL} labels
+     * Auxiliary method for copying {@link TestConstants#TEST_SUITE_NAME_LABEL} and {@link TestConstants#TEST_CASE_NAME_LABEL} labels
      * into PodTemplate ensuring that in case of failure {@link io.strimzi.systemtest.logs.LogCollector} will collect all
      * related Pods, which corespondents to such Controller (i.e., Job, Deployment)
      *
-     * @param resource controller resource from which we copy test suite or test case labels
+     * @param resource            controller resource from which we copy test suite or test case labels
      * @param resourcePodTemplate {@link PodTemplateSpec} of the specific resource
-     * @param <T> resource, which sings contract with {@link HasMetadata} interface
-     * @param <R> {@link PodTemplateSpec}
+     * @param <T>                 resource, which sings contract with {@link HasMetadata} interface
+     * @param <R>                 {@link PodTemplateSpec}
      */
     private final <T extends HasMetadata, R extends PodTemplateSpec> void copyTestSuiteAndTestCaseControllerLabelsIntoPodTemplate(final T resource, final R resourcePodTemplate) {
         if (resource.getMetadata().getLabels() != null && resourcePodTemplate.getMetadata().getLabels() != null) {
@@ -410,12 +411,12 @@ public class ResourceManager {
             final Map<String, String> podLabels = new HashMap<>(resourcePodTemplate.getMetadata().getLabels());
 
             // 2. a) add label for test.suite
-            if (controllerLabels.containsKey(Constants.TEST_SUITE_NAME_LABEL)) {
-                podLabels.putIfAbsent(Constants.TEST_SUITE_NAME_LABEL, controllerLabels.get(Constants.TEST_SUITE_NAME_LABEL));
+            if (controllerLabels.containsKey(TestConstants.TEST_SUITE_NAME_LABEL)) {
+                podLabels.putIfAbsent(TestConstants.TEST_SUITE_NAME_LABEL, controllerLabels.get(TestConstants.TEST_SUITE_NAME_LABEL));
             }
             // 2. b) add label for test.case
-            if (controllerLabels.containsKey(Constants.TEST_CASE_NAME_LABEL)) {
-                podLabels.putIfAbsent(Constants.TEST_CASE_NAME_LABEL, controllerLabels.get(Constants.TEST_CASE_NAME_LABEL));
+            if (controllerLabels.containsKey(TestConstants.TEST_CASE_NAME_LABEL)) {
+                podLabels.putIfAbsent(TestConstants.TEST_CASE_NAME_LABEL, controllerLabels.get(TestConstants.TEST_CASE_NAME_LABEL));
             }
             // 3. modify PodTemplates labels for LogCollector using reference and thus not need to return
             resourcePodTemplate.getMetadata().setLabels(podLabels);
@@ -424,8 +425,9 @@ public class ResourceManager {
 
     /**
      * Synchronizing all resources which are inside specific extension context.
+     *
      * @param testContext context of the test case
-     * @param <T> type of the resource which inherits from HasMetadata f.e Kafka, KafkaConnect, Pod, Deployment etc..
+     * @param <T>         type of the resource which inherits from HasMetadata f.e Kafka, KafkaConnect, Pod, Deployment etc..
      */
     @SuppressWarnings(value = "unchecked")
     public final <T extends HasMetadata> void synchronizeResources(ExtensionContext testContext) {
@@ -481,6 +483,7 @@ public class ResourceManager {
 
     /**
      * Log actual status of custom resource with Pods.
+     *
      * @param customResource - Kafka, KafkaConnect etc. - every resource that HasMetadata and HasStatus (Strimzi status)
      */
     public static <T extends CustomResource<? extends Spec, ? extends Status>> void logCurrentResourceStatus(T customResource) {
@@ -529,8 +532,9 @@ public class ResourceManager {
 
     /**
      * Wait until the CR is in desired state
-     * @param operation - client of CR - for example kafkaClient()
-     * @param resource - custom resource
+     *
+     * @param operation  - client of CR - for example kafkaClient()
+     * @param resource   - custom resource
      * @param statusType - desired status
      * @return returns CR
      */
@@ -550,7 +554,7 @@ public class ResourceManager {
         LOGGER.info("Waiting for {}: {}/{} will have desired state: {}", kind, namespace, name, statusType);
 
         TestUtils.waitFor(String.format("%s: %s#%s will have desired state: %s", kind, namespace, name, statusType),
-            Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, resourceTimeoutMs,
+            TestConstants.POLL_INTERVAL_FOR_RESOURCE_READINESS, resourceTimeoutMs,
             () -> operation.inNamespace(namespace)
                 .withName(name)
                 .get().getStatus().getConditions().stream().anyMatch(condition -> condition.getType().equals(statusType.toString()) && condition.getStatus().equals(conditionStatus.toString())),
@@ -579,7 +583,7 @@ public class ResourceManager {
         LOGGER.info("Waiting for " + resourceType + "/" + resourceName + " readiness");
 
         TestUtils.waitFor("readiness of resource " + resourceType + "/" + resourceName,
-                Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_CMD_CLIENT_TIMEOUT,
+            TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_CMD_CLIENT_TIMEOUT,
             () -> ResourceManager.cmdKubeClient().getResourceReadiness(resourceType, resourceName));
         LOGGER.info("Resource " + resourceType + "/" + resourceName + " is ready");
     }
@@ -598,7 +602,7 @@ public class ResourceManager {
         LOGGER.info("Waiting for {}: {}/{} will contain desired status message: {}", kind, namespace, name, message);
 
         TestUtils.waitFor(String.format("%s: %s#%s will contain desired status message: %s", kind, namespace, name, message),
-            Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, resourceTimeoutMs,
+            TestConstants.POLL_INTERVAL_FOR_RESOURCE_READINESS, resourceTimeoutMs,
             () -> operation.inNamespace(namespace)
                 .withName(name)
                 .get().getStatus().getConditions().stream().anyMatch(condition -> condition.getMessage().contains(message) && condition.getStatus().equals("True")),
@@ -614,8 +618,8 @@ public class ResourceManager {
     private <T extends HasMetadata> ResourceType<T> findResourceType(T resource) {
 
         // for conflicting deployment types
-        if (resource.getKind().equals(Constants.DEPLOYMENT)) {
-            String deploymentType = resource.getMetadata().getLabels().get(Constants.DEPLOYMENT_TYPE);
+        if (resource.getKind().equals(TestConstants.DEPLOYMENT)) {
+            String deploymentType = resource.getMetadata().getLabels().get(TestConstants.DEPLOYMENT_TYPE);
             DeploymentTypes deploymentTypes = DeploymentTypes.valueOf(deploymentType);
 
             switch (deploymentTypes) {

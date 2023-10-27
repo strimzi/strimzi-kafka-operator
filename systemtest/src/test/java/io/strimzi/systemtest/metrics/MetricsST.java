@@ -27,7 +27,7 @@ import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.StrimziPodSet;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.systemtest.AbstractST;
-import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.annotations.KRaftNotSupported;
@@ -73,16 +73,16 @@ import java.util.concurrent.ExecutionException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static io.strimzi.systemtest.Constants.ACCEPTANCE;
-import static io.strimzi.systemtest.Constants.BRIDGE;
-import static io.strimzi.systemtest.Constants.CONNECT;
-import static io.strimzi.systemtest.Constants.CONNECT_COMPONENTS;
-import static io.strimzi.systemtest.Constants.CRUISE_CONTROL;
-import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
-import static io.strimzi.systemtest.Constants.METRICS;
-import static io.strimzi.systemtest.Constants.MIRROR_MAKER2;
-import static io.strimzi.systemtest.Constants.REGRESSION;
-import static io.strimzi.systemtest.Constants.SANITY;
+import static io.strimzi.systemtest.TestConstants.ACCEPTANCE;
+import static io.strimzi.systemtest.TestConstants.BRIDGE;
+import static io.strimzi.systemtest.TestConstants.CONNECT;
+import static io.strimzi.systemtest.TestConstants.CONNECT_COMPONENTS;
+import static io.strimzi.systemtest.TestConstants.CRUISE_CONTROL;
+import static io.strimzi.systemtest.TestConstants.INTERNAL_CLIENTS_USED;
+import static io.strimzi.systemtest.TestConstants.METRICS;
+import static io.strimzi.systemtest.TestConstants.MIRROR_MAKER2;
+import static io.strimzi.systemtest.TestConstants.REGRESSION;
+import static io.strimzi.systemtest.TestConstants.SANITY;
 import static io.strimzi.systemtest.utils.specific.MetricsUtils.assertCoMetricResourceNotNull;
 import static io.strimzi.systemtest.utils.specific.MetricsUtils.assertCoMetricResourceState;
 import static io.strimzi.systemtest.utils.specific.MetricsUtils.assertCoMetricResourceStateNotExists;
@@ -109,34 +109,28 @@ import static org.junit.jupiter.api.Assumptions.assumeFalse;
 
 /**
  * @description This test suite is designed for testing metrics exposed by operators and operands.
- *
  * @info the class should be executed without issues with all the following combinations
- *  - All install types
- *  - All feature gates
- *  - In parallel with restrictions based on test-case annotations
- *
- * @beforeAll
- *  1. - Create namespaces {@namespaceFirst} and {@namespaceSecond}
- *     - Namespaces {@namespaceFirst} and {@namespaceSecond} are created
- *  2. - Deploy Cluster Operator
- *     - Cluster Operator is deployed
- *  3. - Deploy Kafka {@kafkaClusterFirstName} with metrics and CruiseControl configured
- *     - Kafka @{kafkaClusterFirstName} is deployed
- *  4. - Deploy Kafka {@kafkaClusterSecondtName} with metrics configured
- *     - Kafka @{kafkaClusterFirstName} is deployed
- *  5. - Deploy scraper Pods in namespace {@namespaceFirst} and {@namespaceSecond} for collecting metrics from Strimzi pods
- *     - Scraper Pods are deployed
- *  6. - Create KafkaUsers and KafkaTopics
- *     - All KafkaUsers and KafkaTopics are Ready
- *  7. - Setup NetworkPolicies to grant access to Operator Pods and KafkaExporter
- *     - NetworkPolicies created
- *  8. - Create collectors for Cluster Operator, Kafka, KafkaExporter, and Zookeeper (Non-KRaft)
- *     - Metrics collected in collectors structs
- *
- * @afterAll
- *  1. - Common cleaning of all resources created by this test class
- *     - All resources deleted.
- *
+ * - All install types
+ * - All feature gates
+ * - In parallel with restrictions based on test-case annotations
+ * @beforeAll 1. - Create namespaces {@namespaceFirst} and {@namespaceSecond}
+ * - Namespaces {@namespaceFirst} and {@namespaceSecond} are created
+ * 2. - Deploy Cluster Operator
+ * - Cluster Operator is deployed
+ * 3. - Deploy Kafka {@kafkaClusterFirstName} with metrics and CruiseControl configured
+ * - Kafka @{kafkaClusterFirstName} is deployed
+ * 4. - Deploy Kafka {@kafkaClusterSecondtName} with metrics configured
+ * - Kafka @{kafkaClusterFirstName} is deployed
+ * 5. - Deploy scraper Pods in namespace {@namespaceFirst} and {@namespaceSecond} for collecting metrics from Strimzi pods
+ * - Scraper Pods are deployed
+ * 6. - Create KafkaUsers and KafkaTopics
+ * - All KafkaUsers and KafkaTopics are Ready
+ * 7. - Setup NetworkPolicies to grant access to Operator Pods and KafkaExporter
+ * - NetworkPolicies created
+ * 8. - Create collectors for Cluster Operator, Kafka, KafkaExporter, and Zookeeper (Non-KRaft)
+ * - Metrics collected in collectors structs
+ * @afterAll 1. - Common cleaning of all resources created by this test class
+ * - All resources deleted.
  * @updated 2023-17-04
  */
 @Tag(SANITY)
@@ -171,14 +165,10 @@ public class MetricsST extends AbstractST {
 
     /**
      * @description This test case check several random metrics exposed by Kafka.
-     *
-     * @steps
-     *  1. - Check if specific metric is available in collected metrics from Kafka Pods
-     *     - Metric is available with expected value
-     *
-     * @usecase
-     *  - metrics
-     *  - kafka-metrics
+     * @steps 1. - Check if specific metric is available in collected metrics from Kafka Pods
+     * - Metric is available with expected value
+     * @usecase - metrics
+     * - kafka-metrics
      */
     @ParallelTest
     @Tag(ACCEPTANCE)
@@ -191,14 +181,10 @@ public class MetricsST extends AbstractST {
 
     /**
      * @description This test case check several random metrics exposed by Zookeeper.
-     *
-     * @steps
-     *  1. - Check if specific metric is available in collected metrics from Zookeeper Pods
-     *     - Metric is available with expected value
-     *
-     * @usecase
-     *  - metrics
-     *  - zookeeper-metrics
+     * @steps 1. - Check if specific metric is available in collected metrics from Zookeeper Pods
+     * - Metric is available with expected value
+     * @usecase - metrics
+     * - zookeeper-metrics
      */
     @ParallelTest
     @Tag(ACCEPTANCE)
@@ -211,51 +197,47 @@ public class MetricsST extends AbstractST {
 
     /**
      * @description This test case check several random metrics exposed by Kafka Connect.
-     *
-     * @steps
-     *  1. - Deploy KafkaConnect into {@namespaceFirst} with {@Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES} set to true
-     *     - KafkaConnect is up and running
-     *  2. - Create KafkaConnector for KafkaConnect from step 1
-     *     - KafkaConnector is in Ready state.
-     *  3. - Create metrics collector and collect metrics from KafkaConnect Pods
-     *     - Metrics are collected
-     *  4. - Check if specific metric is available in collected metrics from KafkaConnect Pods
-     *     - Metric is available with expected value
-     *  5. - Collect current metrics from Cluster Operator Pod
-     *     - Cluster Operator metrics are collected
-     *  6. - Check that CO metrics contain data about KafkaConnect and KafkaConnector in namespace {@namespaceFirst}
-     *     - CO metrics contain expected data
-     *  7. - Check that CO metrics don't contain data about KafkaConnect and KafkaConnector in namespace {@namespaceFirst}
-     *     - CO metrics don't contain expected data
-     *  8. - Check that CO metrics contain data about KafkaConnect state
-     *     - CO metrics contain expected data
-     *
-     * @usecase
-     *  - metrics
-     *  - connect-metrics
-     *  - cluster-operator-metrics
+     * @steps 1. - Deploy KafkaConnect into {@namespaceFirst} with {@Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES} set to true
+     * - KafkaConnect is up and running
+     * 2. - Create KafkaConnector for KafkaConnect from step 1
+     * - KafkaConnector is in Ready state.
+     * 3. - Create metrics collector and collect metrics from KafkaConnect Pods
+     * - Metrics are collected
+     * 4. - Check if specific metric is available in collected metrics from KafkaConnect Pods
+     * - Metric is available with expected value
+     * 5. - Collect current metrics from Cluster Operator Pod
+     * - Cluster Operator metrics are collected
+     * 6. - Check that CO metrics contain data about KafkaConnect and KafkaConnector in namespace {@namespaceFirst}
+     * - CO metrics contain expected data
+     * 7. - Check that CO metrics don't contain data about KafkaConnect and KafkaConnector in namespace {@namespaceFirst}
+     * - CO metrics don't contain expected data
+     * 8. - Check that CO metrics contain data about KafkaConnect state
+     * - CO metrics contain expected data
+     * @usecase - metrics
+     * - connect-metrics
+     * - cluster-operator-metrics
      */
     @ParallelTest
     @KindIPv6NotSupported("error checking push permissions -- make sure you entered the correct tag name, and that " +
-            "you are authenticated correctly, and try again: checking push permission for " +
-            "\"myregistry.local:5001/metrics-test-0/strimzi-sts-connect-build:1904341592\": creating push check " +
-            "transport for myregistry.local:5001 failed: Get \"https://myregistry.local:5001/v2/\": dial tcp: lookup " +
-            "myregistry.local on [fd00:10:96::a]:53: server misbehaving; Get \"http://myregistry.local:5001/v2/\": dial " +
-            "tcp: lookup myregistry.local on [fd00:10:96::a]:53: server misbehaving")
+        "you are authenticated correctly, and try again: checking push permission for " +
+        "\"myregistry.local:5001/metrics-test-0/strimzi-sts-connect-build:1904341592\": creating push check " +
+        "transport for myregistry.local:5001 failed: Get \"https://myregistry.local:5001/v2/\": dial tcp: lookup " +
+        "myregistry.local on [fd00:10:96::a]:53: server misbehaving; Get \"http://myregistry.local:5001/v2/\": dial " +
+        "tcp: lookup myregistry.local on [fd00:10:96::a]:53: server misbehaving")
     @Tag(CONNECT)
     @Tag(CONNECT_COMPONENTS)
     void testKafkaConnectAndConnectorMetrics(ExtensionContext extensionContext) {
         resourceManager.createResourceWithWait(extensionContext,
             KafkaConnectTemplates.kafkaConnectWithMetricsAndFileSinkPlugin(kafkaClusterFirstName, namespaceFirst, kafkaClusterFirstName, 1)
                 .editMetadata()
-                    .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
+                .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
                 .endMetadata()
                 .build());
         resourceManager.createResourceWithWait(extensionContext, KafkaConnectorTemplates.kafkaConnector(kafkaClusterFirstName).build());
 
         MetricsCollector kafkaConnectCollector = kafkaCollector.toBuilder()
-                .withComponentType(ComponentType.KafkaConnect)
-                .build();
+            .withComponentType(ComponentType.KafkaConnect)
+            .build();
 
         kafkaConnectCollector.collectMetricsFromPods();
 
@@ -278,18 +260,14 @@ public class MetricsST extends AbstractST {
 
     /**
      * @description This test case check several metrics exposed by KafkaExporter.
-     *
-     * @steps
-     *  1. - Create Kafka producer and consumer and exchange some messages
-     *     - Clients successfully exchange the messages
-     *  2. - Check if metric kafka_topic_partitions is available in collected metrics from KafkaExporter Pods
-     *     - Metric is available with expected value
-     *  3. - Check if metric kafka_broker_info is available in collected metrics from KafkaExporter pods for each Kafka Broker pod
-     *     - Metric is available with expected value
-     *
-     * @usecase
-     *  - metrics
-     *  - kafka-exporter-metrics
+     * @steps 1. - Create Kafka producer and consumer and exchange some messages
+     * - Clients successfully exchange the messages
+     * 2. - Check if metric kafka_topic_partitions is available in collected metrics from KafkaExporter Pods
+     * - Metric is available with expected value
+     * 3. - Check if metric kafka_broker_info is available in collected metrics from KafkaExporter pods for each Kafka Broker pod
+     * - Metric is available with expected value
+     * @usecase - metrics
+     * - kafka-exporter-metrics
      */
     @IsolatedTest
     @Tag(INTERNAL_CLIENTS_USED)
@@ -330,24 +308,20 @@ public class MetricsST extends AbstractST {
     /**
      * @description This test case check several metrics exposed by KafkaExporter with different from default configuration.
      * Rolling update is performed during the test case to change KafkaExporter configuration.
-     *
-     * @steps
-     *  1. - Get KafkaExporter run.sh script and check it has configured proper values
-     *     - Script has proper values set
-     *  2. - Check that KafkaExporter metrics contains info about consumer_offset topic
-     *     - Metrics contains proper data
-     *  3. - Change configuration of KafkaExporter in Kafka CR to match 'my-group.*' group regex and {@topicName} as topic name regex, than wait for KafkaExporter rolling update.
-     *     - Rolling update finished
-     *  4. - Get KafkaExporter run.sh script and check it has configured proper values
-     *     - Script has proper values set
-     *  5. - Check that KafkaExporter metrics don't contain info about consumer_offset topic
-     *     - Metrics contains proper data (consumer_offset is not in the metrics)
-     *  6. - Revert all changes in KafkaExporter configuration and wait for Rolling Update
-     *     - Rolling update finished
-     *
-     * @usecase
-     *  - metrics
-     *  - kafka-exporter-metrics
+     * @steps 1. - Get KafkaExporter run.sh script and check it has configured proper values
+     * - Script has proper values set
+     * 2. - Check that KafkaExporter metrics contains info about consumer_offset topic
+     * - Metrics contains proper data
+     * 3. - Change configuration of KafkaExporter in Kafka CR to match 'my-group.*' group regex and {@topicName} as topic name regex, than wait for KafkaExporter rolling update.
+     * - Rolling update finished
+     * 4. - Get KafkaExporter run.sh script and check it has configured proper values
+     * - Script has proper values set
+     * 5. - Check that KafkaExporter metrics don't contain info about consumer_offset topic
+     * - Metrics contains proper data (consumer_offset is not in the metrics)
+     * 6. - Revert all changes in KafkaExporter configuration and wait for Rolling Update
+     * - Rolling update finished
+     * @usecase - metrics
+     * - kafka-exporter-metrics
      */
     @ParallelTest
     void testKafkaExporterDifferentSetting() throws InterruptedException, ExecutionException, IOException {
@@ -386,18 +360,14 @@ public class MetricsST extends AbstractST {
 
     /**
      * @description This test case check several random metrics exposed by CLuster Operator.
-     *
-     * @steps
-     *  1. - Check that specific metric for Kafka reconciliation are available in metrics from Cluster Operator pod
-     *     - Metric is available with expected value
-     *  2. - Check that collected metrics contain data about Kafka resource
-     *     - Metric is available with expected value
-     *  3. - Check that collected metrics don't contain data about KafkaMirrorMaker and KafkaRebalance resource
-     *     - Metric is not exposed
-     *
-     * @usecase
-     *  - metrics
-     *  - cluster-operator-metrics
+     * @steps 1. - Check that specific metric for Kafka reconciliation are available in metrics from Cluster Operator pod
+     * - Metric is available with expected value
+     * 2. - Check that collected metrics contain data about Kafka resource
+     * - Metric is available with expected value
+     * 3. - Check that collected metrics don't contain data about KafkaMirrorMaker and KafkaRebalance resource
+     * - Metric is not exposed
+     * @usecase - metrics
+     * - cluster-operator-metrics
      */
     @ParallelTest
     void testClusterOperatorMetrics() {
@@ -439,16 +409,12 @@ public class MetricsST extends AbstractST {
 
     /**
      * @description This test case check several metrics exposed by User Operator.
-     *
-     * @steps
-     *  1. - Collect metrics from User Operator pod
-     *     - Metrics are collected
-     *  2. - Check that specific metrics about KafkaUser are available in collected metrics
-     *     - Metric is available with expected value
-     *
-     * @usecase
-     *  - metrics
-     *  - user-operator-metrics
+     * @steps 1. - Collect metrics from User Operator pod
+     * - Metrics are collected
+     * 2. - Check that specific metrics about KafkaUser are available in collected metrics
+     * - Metric is available with expected value
+     * @usecase - metrics
+     * - user-operator-metrics
      */
     @ParallelTest
     void testUserOperatorMetrics() {
@@ -470,34 +436,30 @@ public class MetricsST extends AbstractST {
 
     /**
      * @description This test case check several metrics exposed by KafkaMirrorMaker2.
-     *
-     * @steps
-     *  1. - Deploy KafkaMirrorMaker2 into {@namespaceFirst}
-     *     - KafkaMirrorMaker2 is in Ready state
-     *  2. - Collect metrics from KafkaMirrorMaker2 pod
-     *     - Metrics are collected
-     *  3. - Check if specific metric is available in collected metrics from KafkaMirrorMaker2 pods
-     *     - Metric is available with expected value
-     *  4. - Collect current metrics from Cluster Operator pod
-     *     - Cluster Operator metrics are collected
-     *  5. - Check that CO metrics contain data about KafkaMirrorMaker2 in namespace {@namespaceFirst}
-     *     - CO metrics contain expected data
-     *
-     * @usecase
-     *  - metrics
-     *  - mirrormaker2-metrics
-     *  - cluster-operator-metrics
+     * @steps 1. - Deploy KafkaMirrorMaker2 into {@namespaceFirst}
+     * - KafkaMirrorMaker2 is in Ready state
+     * 2. - Collect metrics from KafkaMirrorMaker2 pod
+     * - Metrics are collected
+     * 3. - Check if specific metric is available in collected metrics from KafkaMirrorMaker2 pods
+     * - Metric is available with expected value
+     * 4. - Collect current metrics from Cluster Operator pod
+     * - Cluster Operator metrics are collected
+     * 5. - Check that CO metrics contain data about KafkaMirrorMaker2 in namespace {@namespaceFirst}
+     * - CO metrics contain expected data
+     * @usecase - metrics
+     * - mirrormaker2-metrics
+     * - cluster-operator-metrics
      */
     @ParallelTest
     @Tag(MIRROR_MAKER2)
     @Tag(CONNECT_COMPONENTS)
     void testMirrorMaker2Metrics(ExtensionContext extensionContext) {
         resourceManager.createResourceWithWait(extensionContext,
-                KafkaMirrorMaker2Templates.kafkaMirrorMaker2WithMetrics(namespaceFirst, mm2ClusterName, kafkaClusterFirstName, kafkaClusterSecondName, 1, namespaceSecond, namespaceFirst)
-                    .editMetadata()
-                        .withNamespace(namespaceFirst)
-                    .endMetadata()
-                    .build());
+            KafkaMirrorMaker2Templates.kafkaMirrorMaker2WithMetrics(namespaceFirst, mm2ClusterName, kafkaClusterFirstName, kafkaClusterSecondName, 1, namespaceSecond, namespaceFirst)
+                .editMetadata()
+                .withNamespace(namespaceFirst)
+                .endMetadata()
+                .build());
 
         MetricsCollector kmm2Collector = kafkaCollector.toBuilder()
             .withComponentName(mm2ClusterName)
@@ -517,25 +479,21 @@ public class MetricsST extends AbstractST {
 
     /**
      * @description This test case check several metrics exposed by KafkaBridge.
-     *
-     * @steps
-     *  1. - Deploy KafkaBridge into {@namespaceFirst}
-     *     - KafkaMirrorMaker2 is in Ready state
-     *  2. - Attach producer and consumer clients to KafkaBridge
-     *     - Clients and up and running
-     *  3. - Collect metrics from KafkaBridge pod
-     *     - Metrics are collected
-     *  4. - Check that specific metric is available in collected metrics from KafkaBridge pods
-     *     - Metric is available with expected value
-     *  5. - Collect current metrics from Cluster Operator pod
-     *     - Cluster Operator metrics are collected
-     *  6. - Check that CO metrics contain data about KafkaBridge in namespace {@namespaceFirst}
-     *     - CO metrics contain expected data
-     *
-     * @usecase
-     *  - metrics
-     *  - kafka-bridge-metrics
-     *  - cluster-operator-metrics
+     * @steps 1. - Deploy KafkaBridge into {@namespaceFirst}
+     * - KafkaMirrorMaker2 is in Ready state
+     * 2. - Attach producer and consumer clients to KafkaBridge
+     * - Clients and up and running
+     * 3. - Collect metrics from KafkaBridge pod
+     * - Metrics are collected
+     * 4. - Check that specific metric is available in collected metrics from KafkaBridge pods
+     * - Metric is available with expected value
+     * 5. - Collect current metrics from Cluster Operator pod
+     * - Cluster Operator metrics are collected
+     * 6. - Check that CO metrics contain data about KafkaBridge in namespace {@namespaceFirst}
+     * - CO metrics contain expected data
+     * @usecase - metrics
+     * - kafka-bridge-metrics
+     * - cluster-operator-metrics
      */
     @ParallelTest
     @Tag(BRIDGE)
@@ -544,11 +502,11 @@ public class MetricsST extends AbstractST {
         String consumerName = "bridge-consumer";
 
         resourceManager.createResourceWithWait(extensionContext,
-                KafkaBridgeTemplates.kafkaBridgeWithMetrics(bridgeClusterName, kafkaClusterFirstName, KafkaResources.plainBootstrapAddress(kafkaClusterFirstName), 1)
-                    .editMetadata()
-                        .withNamespace(namespaceFirst)
-                    .endMetadata()
-                    .build());
+            KafkaBridgeTemplates.kafkaBridgeWithMetrics(bridgeClusterName, kafkaClusterFirstName, KafkaResources.plainBootstrapAddress(kafkaClusterFirstName), 1)
+                .editMetadata()
+                .withNamespace(namespaceFirst)
+                .endMetadata()
+                .build());
 
         MetricsCollector bridgeCollector = kafkaCollector.toBuilder()
             .withComponentName(bridgeClusterName)
@@ -563,7 +521,7 @@ public class MetricsST extends AbstractST {
             .withBootstrapAddress(KafkaBridgeResources.serviceName(bridgeClusterName))
             .withTopicName(bridgeTopicName)
             .withMessageCount(MESSAGE_COUNT)
-            .withPort(Constants.HTTP_BRIDGE_DEFAULT_PORT)
+            .withPort(TestConstants.HTTP_BRIDGE_DEFAULT_PORT)
             .withDelayMs(200)
             .withPollInterval(200)
             .build();
@@ -585,14 +543,10 @@ public class MetricsST extends AbstractST {
 
     /**
      * @description This test case check several random metrics exposed by CruiseControl.
-     *
-     * @steps
-     *  1. - Check if specific metric is available in collected metrics from CruiseControl pods
-     *     - Metric is available with expected value
-     *
-     * @usecase
-     *  - metrics
-     *  - cruise-control-metrics
+     * @steps 1. - Check if specific metric is available in collected metrics from CruiseControl pods
+     * - Metric is available with expected value
+     * @usecase - metrics
+     * - cruise-control-metrics
      */
     @ParallelTest
     void testCruiseControlMetrics() {
@@ -618,25 +572,21 @@ public class MetricsST extends AbstractST {
 
     /**
      * @description This test case check that Cluster Operator propagate changes from metrics configuration done in kafka CR into corresponding config map.
-     *
-     * @steps
-     *  1. - Create config map with external metrics configuration
-     *     - Config map created
-     *  2. - Set ConfigMap reference from step 1 into Kafka CR and wait for pod stabilization (CO shouldn't trigger rolling update)
-     *     - Wait for Kafka pods stability (60 seconds without rolling update in the row)
-     *  3. - Check that metrics config maps for each pod contains data from external metrics config map
-     *     - All config maps contains proper values
-     *  4. - Change config in external metrics config map
-     *     - Config map changed
-     *  5. - SWait for Kafka pods stabilization (CO shouldn't trigger rolling update)
-     *     - Wait for Kafka pods stability (60 seconds without rolling update in the row)
-     *  6. - Check that metrics config maps for each pod contains data from external metrics config map
-     *     - All config maps contains proper values
-     *
-     * @usecase
-     *  - metrics
-     *  - kafka-metrics-rolling-update
-     *  - kafka-metrics-external
+     * @steps 1. - Create config map with external metrics configuration
+     * - Config map created
+     * 2. - Set ConfigMap reference from step 1 into Kafka CR and wait for pod stabilization (CO shouldn't trigger rolling update)
+     * - Wait for Kafka pods stability (60 seconds without rolling update in the row)
+     * 3. - Check that metrics config maps for each pod contains data from external metrics config map
+     * - All config maps contains proper values
+     * 4. - Change config in external metrics config map
+     * - Config map changed
+     * 5. - SWait for Kafka pods stabilization (CO shouldn't trigger rolling update)
+     * - Wait for Kafka pods stability (60 seconds without rolling update in the row)
+     * 6. - Check that metrics config maps for each pod contains data from external metrics config map
+     * - All config maps contains proper values
+     * @usecase - metrics
+     * - kafka-metrics-rolling-update
+     * - kafka-metrics-external
      */
     @ParallelTest
     void testKafkaMetricsSettings() {
@@ -645,30 +595,30 @@ public class MetricsST extends AbstractST {
 
         ObjectMapper mapper = new ObjectMapper();
         mapper.configure(
-                JsonReadFeature.ALLOW_UNESCAPED_CONTROL_CHARS.mappedFeature(),
-                true
+            JsonReadFeature.ALLOW_UNESCAPED_CONTROL_CHARS.mappedFeature(),
+            true
         );
 
         ConfigMap externalMetricsCm = new ConfigMapBuilder()
-                .withData(Collections.singletonMap(Constants.METRICS_CONFIG_YAML_NAME, metricsConfigYaml))
-                .withNewMetadata()
-                    .withName("external-metrics-cm")
-                    .withNamespace(namespaceSecond)
-                .endMetadata()
-                .build();
+            .withData(Collections.singletonMap(TestConstants.METRICS_CONFIG_YAML_NAME, metricsConfigYaml))
+            .withNewMetadata()
+            .withName("external-metrics-cm")
+            .withNamespace(namespaceSecond)
+            .endMetadata()
+            .build();
 
         kubeClient().createConfigMapInNamespace(namespaceSecond, externalMetricsCm);
 
         // spec.kafka.metrics -> spec.kafka.jmxExporterMetrics
         ConfigMapKeySelector cmks = new ConfigMapKeySelectorBuilder()
-                .withName("external-metrics-cm")
-                .withKey(Constants.METRICS_CONFIG_YAML_NAME)
-                .build();
+            .withName("external-metrics-cm")
+            .withKey(TestConstants.METRICS_CONFIG_YAML_NAME)
+            .build();
         JmxPrometheusExporterMetrics jmxPrometheusExporterMetrics = new JmxPrometheusExporterMetricsBuilder()
-                .withNewValueFrom()
-                    .withConfigMapKeyRef(cmks)
-                .endValueFrom()
-                .build();
+            .withNewValueFrom()
+            .withConfigMapKeyRef(cmks)
+            .endValueFrom()
+            .build();
 
         KafkaResource.replaceKafkaResourceInSpecificNamespace(kafkaClusterSecondName, k -> {
             k.getSpec().getKafka().setMetricsConfig(jmxPrometheusExporterMetrics);
@@ -678,24 +628,24 @@ public class MetricsST extends AbstractST {
 
         for (String cmName : StUtils.getKafkaConfigurationConfigMaps(kafkaClusterSecondName, 1)) {
             ConfigMap actualCm = kubeClient(namespaceSecond).getConfigMap(cmName);
-            assertThat(actualCm.getData().get(Constants.METRICS_CONFIG_JSON_NAME), is(metricsConfigJson));
+            assertThat(actualCm.getData().get(TestConstants.METRICS_CONFIG_JSON_NAME), is(metricsConfigJson));
         }
 
         // update metrics
         ConfigMap externalMetricsUpdatedCm = new ConfigMapBuilder()
-                .withData(Collections.singletonMap(Constants.METRICS_CONFIG_YAML_NAME, metricsConfigYaml.replace("true", "false")))
-                .withNewMetadata()
-                    .withName("external-metrics-cm")
-                    .withNamespace(namespaceSecond)
-                .endMetadata()
-                .build();
+            .withData(Collections.singletonMap(TestConstants.METRICS_CONFIG_YAML_NAME, metricsConfigYaml.replace("true", "false")))
+            .withNewMetadata()
+            .withName("external-metrics-cm")
+            .withNamespace(namespaceSecond)
+            .endMetadata()
+            .build();
 
         kubeClient().updateConfigMapInNamespace(namespaceSecond, externalMetricsUpdatedCm);
         PodUtils.verifyThatRunningPodsAreStable(namespaceSecond, kafkaClusterSecondName);
 
         for (String cmName : StUtils.getKafkaConfigurationConfigMaps(kafkaClusterSecondName, 1)) {
             ConfigMap actualCm = kubeClient(namespaceSecond).getConfigMap(cmName);
-            assertThat(actualCm.getData().get(Constants.METRICS_CONFIG_JSON_NAME), is(metricsConfigJson.replace("true", "false")));
+            assertThat(actualCm.getData().get(TestConstants.METRICS_CONFIG_JSON_NAME), is(metricsConfigJson.replace("true", "false")));
         }
     }
 
@@ -712,10 +662,10 @@ public class MetricsST extends AbstractST {
             .createInstallation()
             .runInstallation();
 
-        final String coScraperName = Constants.CO_NAMESPACE + "-" + Constants.SCRAPER_NAME;
-        final String testSuiteScraperName = Environment.TEST_SUITE_NAMESPACE + "-" + Constants.SCRAPER_NAME;
-        final String scraperName = namespaceFirst + "-" + Constants.SCRAPER_NAME;
-        final String secondScraperName = namespaceSecond + "-" + Constants.SCRAPER_NAME;
+        final String coScraperName = TestConstants.CO_NAMESPACE + "-" + TestConstants.SCRAPER_NAME;
+        final String testSuiteScraperName = Environment.TEST_SUITE_NAMESPACE + "-" + TestConstants.SCRAPER_NAME;
+        final String scraperName = namespaceFirst + "-" + TestConstants.SCRAPER_NAME;
+        final String secondScraperName = namespaceSecond + "-" + TestConstants.SCRAPER_NAME;
 
         cluster.setNamespace(namespaceFirst);
 
@@ -724,18 +674,18 @@ public class MetricsST extends AbstractST {
             // Kafka with CruiseControl and metrics
             KafkaTemplates.kafkaWithMetricsAndCruiseControlWithMetrics(kafkaClusterFirstName, namespaceFirst, 3, 3)
                 .editOrNewSpec()
-                    .editEntityOperator()
-                        .editTopicOperator()
-                            .withReconciliationIntervalSeconds(30)
-                        .endTopicOperator()
-                        .editUserOperator()
-                            .withReconciliationIntervalSeconds(30)
-                        .endUserOperator()
-                    .endEntityOperator()
+                .editEntityOperator()
+                .editTopicOperator()
+                .withReconciliationIntervalSeconds(30)
+                .endTopicOperator()
+                .editUserOperator()
+                .withReconciliationIntervalSeconds(30)
+                .endUserOperator()
+                .endEntityOperator()
                 .endSpec()
                 .build(),
             KafkaTemplates.kafkaWithMetrics(kafkaClusterSecondName, namespaceSecond, 1, 1).build(),
-            ScraperTemplates.scraperPod(Constants.CO_NAMESPACE, coScraperName).build(),
+            ScraperTemplates.scraperPod(TestConstants.CO_NAMESPACE, coScraperName).build(),
             ScraperTemplates.scraperPod(Environment.TEST_SUITE_NAMESPACE, testSuiteScraperName).build(),
             ScraperTemplates.scraperPod(namespaceFirst, scraperName).build(),
             ScraperTemplates.scraperPod(namespaceSecond, secondScraperName).build()
@@ -750,18 +700,18 @@ public class MetricsST extends AbstractST {
         resourceManager.createResourceWithWait(extensionContext, KafkaUserTemplates.tlsUser(namespaceFirst, kafkaClusterFirstName, KafkaUserUtils.generateRandomNameOfKafkaUser()).build());
         resourceManager.createResourceWithWait(extensionContext, KafkaUserTemplates.tlsUser(namespaceFirst, kafkaClusterFirstName, KafkaUserUtils.generateRandomNameOfKafkaUser()).build());
 
-        coScraperPodName = ResourceManager.kubeClient().listPodsByPrefixInName(Constants.CO_NAMESPACE, coScraperName).get(0).getMetadata().getName();
+        coScraperPodName = ResourceManager.kubeClient().listPodsByPrefixInName(TestConstants.CO_NAMESPACE, coScraperName).get(0).getMetadata().getName();
         testSuiteScraperPodName = ResourceManager.kubeClient().listPodsByPrefixInName(Environment.TEST_SUITE_NAMESPACE, testSuiteScraperName).get(0).getMetadata().getName();
         scraperPodName = ResourceManager.kubeClient().listPodsByPrefixInName(namespaceFirst, scraperName).get(0).getMetadata().getName();
         secondNamespaceScraperPodName = ResourceManager.kubeClient().listPodsByPrefixInName(namespaceSecond, secondScraperName).get(0).getMetadata().getName();
 
         // Allow connections from clients to operators pods when NetworkPolicies are set to denied by default
-        NetworkPolicyResource.allowNetworkPolicySettingsForClusterOperator(extensionContext, Constants.CO_NAMESPACE);
+        NetworkPolicyResource.allowNetworkPolicySettingsForClusterOperator(extensionContext, TestConstants.CO_NAMESPACE);
 
         // wait some time for metrics to be stable - at least reconciliation interval + 10s
         LOGGER.info("Sleeping for {} to give operators and operands some time to stable the metrics values before collecting",
-                Constants.SAFETY_RECONCILIATION_INTERVAL);
-        Thread.sleep(Constants.SAFETY_RECONCILIATION_INTERVAL);
+            TestConstants.SAFETY_RECONCILIATION_INTERVAL);
+        Thread.sleep(TestConstants.SAFETY_RECONCILIATION_INTERVAL);
 
         kafkaCollector = new MetricsCollector.Builder()
             .withScraperPodName(scraperPodName)
@@ -783,7 +733,7 @@ public class MetricsST extends AbstractST {
 
         clusterOperatorCollector = new MetricsCollector.Builder()
             .withScraperPodName(coScraperPodName)
-            .withNamespaceName(Constants.CO_NAMESPACE)
+            .withNamespaceName(TestConstants.CO_NAMESPACE)
             .withComponentType(ComponentType.ClusterOperator)
             .withComponentName(clusterOperator.getClusterOperatorName())
             .build();

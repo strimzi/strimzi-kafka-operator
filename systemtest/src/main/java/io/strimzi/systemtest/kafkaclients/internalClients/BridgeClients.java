@@ -8,7 +8,7 @@ import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.PodSpecBuilder;
 import io.fabric8.kubernetes.api.model.batch.v1.Job;
 import io.fabric8.kubernetes.api.model.batch.v1.JobBuilder;
-import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.Environment;
 import io.sundr.builder.annotations.Buildable;
 
@@ -40,7 +40,7 @@ public class BridgeClients extends KafkaClients {
     public JobBuilder defaultProducerStrimziBridge() {
         Map<String, String> producerLabels = new HashMap<>();
         producerLabels.put("app", this.getProducerName());
-        producerLabels.put(Constants.KAFKA_CLIENTS_LABEL_KEY, Constants.KAFKA_BRIDGE_CLIENTS_LABEL_VALUE);
+        producerLabels.put(TestConstants.KAFKA_CLIENTS_LABEL_KEY, TestConstants.KAFKA_BRIDGE_CLIENTS_LABEL_VALUE);
 
         PodSpecBuilder podSpecBuilder = new PodSpecBuilder();
 
@@ -65,7 +65,7 @@ public class BridgeClients extends KafkaClients {
                         .withRestartPolicy("Never")
                         .addNewContainer()
                             .withName(this.getProducerName())
-                            .withImagePullPolicy(Constants.IF_NOT_PRESENT_IMAGE_PULL_POLICY)
+                            .withImagePullPolicy(TestConstants.IF_NOT_PRESENT_IMAGE_PULL_POLICY)
                             .withImage(Environment.TEST_CLIENTS_IMAGE)
                             .addNewEnv()
                                 .withName("HOSTNAME")
@@ -105,7 +105,7 @@ public class BridgeClients extends KafkaClients {
     public JobBuilder defaultConsumerStrimziBridge() {
         Map<String, String> consumerLabels = new HashMap<>();
         consumerLabels.put("app", this.getConsumerName());
-        consumerLabels.put(Constants.KAFKA_CLIENTS_LABEL_KEY, Constants.KAFKA_BRIDGE_CLIENTS_LABEL_VALUE);
+        consumerLabels.put(TestConstants.KAFKA_CLIENTS_LABEL_KEY, TestConstants.KAFKA_BRIDGE_CLIENTS_LABEL_VALUE);
 
         PodSpecBuilder podSpecBuilder = new PodSpecBuilder();
 
@@ -130,7 +130,7 @@ public class BridgeClients extends KafkaClients {
                         .withRestartPolicy("Never")
                         .addNewContainer()
                             .withName(this.getConsumerName())
-                            .withImagePullPolicy(Constants.IF_NOT_PRESENT_IMAGE_PULL_POLICY)
+                            .withImagePullPolicy(TestConstants.IF_NOT_PRESENT_IMAGE_PULL_POLICY)
                             .withImage(Environment.TEST_CLIENTS_IMAGE)
                             .addNewEnv()
                                 .withName("HOSTNAME")

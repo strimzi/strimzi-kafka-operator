@@ -8,7 +8,7 @@ import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaTopicBuilder;
-import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.KRaftNotSupported;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
@@ -35,8 +35,8 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
 
-import static io.strimzi.systemtest.Constants.OLM_UPGRADE;
-import static io.strimzi.systemtest.Constants.CO_NAMESPACE;
+import static io.strimzi.systemtest.TestConstants.OLM_UPGRADE;
+import static io.strimzi.systemtest.TestConstants.CO_NAMESPACE;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -87,7 +87,7 @@ public class OlmUpgradeST extends AbstractUpgradeST {
         KafkaTopic kafkaUpgradeTopic = new YAMLMapper().readValue(new File(dir, olmUpgradeData.getFromExamples() + "/examples/topic/kafka-topic.yaml"), KafkaTopic.class);
         kafkaUpgradeTopic = new KafkaTopicBuilder(kafkaUpgradeTopic)
             .editMetadata()
-                .withNamespace(Constants.CO_NAMESPACE)
+                .withNamespace(TestConstants.CO_NAMESPACE)
                 .withName(topicUpgradeName)
             .endMetadata()
             .editSpec()
@@ -101,7 +101,7 @@ public class OlmUpgradeST extends AbstractUpgradeST {
         KafkaClients kafkaBasicClientJob = new KafkaClientsBuilder()
             .withProducerName(testStorage.getProducerName())
             .withConsumerName(testStorage.getConsumerName())
-            .withNamespaceName(Constants.CO_NAMESPACE)
+            .withNamespaceName(TestConstants.CO_NAMESPACE)
             .withBootstrapAddress(KafkaResources.plainBootstrapAddress(clusterName))
             .withTopicName(topicUpgradeName)
             .withMessageCount(testStorage.getMessageCount())
@@ -129,13 +129,13 @@ public class OlmUpgradeST extends AbstractUpgradeST {
         ResourceManager.setCoDeploymentName(clusterOperatorDeploymentName);
 
         // Verification that Cluster Operator has been upgraded to a correct version
-        String afterUpgradeVersionOfCo = kubeClient().getCsvWithPrefix(Constants.CO_NAMESPACE, upgradeOlmConfig.getOlmAppBundlePrefix()).getSpec().getVersion();
+        String afterUpgradeVersionOfCo = kubeClient().getCsvWithPrefix(TestConstants.CO_NAMESPACE, upgradeOlmConfig.getOlmAppBundlePrefix()).getSpec().getVersion();
         assertThat(afterUpgradeVersionOfCo, is(toVersion));
 
         // Wait for Rolling Update to finish
-        zkPods = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(Constants.CO_NAMESPACE, zkSelector, 3, zkPods);
-        kafkaPods = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(Constants.CO_NAMESPACE, kafkaSelector, 3, kafkaPods);
-        eoPods = DeploymentUtils.waitTillDepHasRolled(Constants.CO_NAMESPACE, KafkaResources.entityOperatorDeploymentName(clusterName), 1, eoPods);
+        zkPods = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(TestConstants.CO_NAMESPACE, zkSelector, 3, zkPods);
+        kafkaPods = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(TestConstants.CO_NAMESPACE, kafkaSelector, 3, kafkaPods);
+        eoPods = DeploymentUtils.waitTillDepHasRolled(TestConstants.CO_NAMESPACE, KafkaResources.entityOperatorDeploymentName(clusterName), 1, eoPods);
         // ======== Cluster Operator upgrade ends ========
 
         // ======== Kafka upgrade starts ========
@@ -145,7 +145,7 @@ public class OlmUpgradeST extends AbstractUpgradeST {
         // ======== Kafka upgrade ends ========
 
         // Wait for messages of previously created clients
-        ClientUtils.waitForClientsSuccess(testStorage.getProducerName(), testStorage.getConsumerName(), Constants.CO_NAMESPACE, testStorage.getMessageCount());
+        ClientUtils.waitForClientsSuccess(testStorage.getProducerName(), testStorage.getConsumerName(), TestConstants.CO_NAMESPACE, testStorage.getMessageCount());
     }
 
     @BeforeAll

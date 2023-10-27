@@ -15,7 +15,7 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
-import static io.strimzi.systemtest.Constants.PARALLEL_TEST;
+import static io.strimzi.systemtest.TestConstants.PARALLEL_TEST;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
 /***

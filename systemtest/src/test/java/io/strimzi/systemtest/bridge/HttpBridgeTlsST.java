@@ -11,7 +11,7 @@ import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.systemtest.AbstractST;
-import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.BridgeClients;
@@ -34,10 +34,10 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.util.Random;
 
-import static io.strimzi.systemtest.Constants.ACCEPTANCE;
-import static io.strimzi.systemtest.Constants.BRIDGE;
-import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
-import static io.strimzi.systemtest.Constants.REGRESSION;
+import static io.strimzi.systemtest.TestConstants.ACCEPTANCE;
+import static io.strimzi.systemtest.TestConstants.BRIDGE;
+import static io.strimzi.systemtest.TestConstants.INTERNAL_CLIENTS_USED;
+import static io.strimzi.systemtest.TestConstants.REGRESSION;
 
 @Tag(REGRESSION)
 @Tag(BRIDGE)
@@ -127,7 +127,7 @@ class HttpBridgeTlsST extends AbstractST {
             .editSpec()
                 .editKafka()
                     .withListeners(new GenericKafkaListenerBuilder()
-                            .withName(Constants.TLS_LISTENER_DEFAULT_NAME)
+                            .withName(TestConstants.TLS_LISTENER_DEFAULT_NAME)
                             .withPort(9093)
                             .withType(KafkaListenerType.INTERNAL)
                             .withTls(true)
@@ -173,7 +173,7 @@ class HttpBridgeTlsST extends AbstractST {
             .withBootstrapAddress(KafkaBridgeResources.serviceName(httpBridgeTlsClusterName))
             .withTopicName(TOPIC_NAME)
             .withMessageCount(MESSAGE_COUNT)
-            .withPort(Constants.HTTP_BRIDGE_DEFAULT_PORT)
+            .withPort(TestConstants.HTTP_BRIDGE_DEFAULT_PORT)
             .withNamespaceName(Environment.TEST_SUITE_NAMESPACE)
             .build();
     }

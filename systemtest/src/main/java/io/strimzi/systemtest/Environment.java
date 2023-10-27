@@ -168,10 +168,10 @@ public class Environment {
     public static final String TEST_CLIENTS_ORG_DEFAULT = "strimzi-test-clients";
     private static final String TEST_LOG_DIR_DEFAULT = TestUtils.USER_PATH + "/../systemtest/target/logs/";
     private static final String STRIMZI_LOG_LEVEL_DEFAULT = "DEBUG";
-    public static final String COMPONENTS_IMAGE_PULL_POLICY_ENV_DEFAULT = Constants.IF_NOT_PRESENT_IMAGE_PULL_POLICY;
-    public static final String OPERATOR_IMAGE_PULL_POLICY_ENV_DEFAULT = Constants.ALWAYS_IMAGE_PULL_POLICY;
+    public static final String COMPONENTS_IMAGE_PULL_POLICY_ENV_DEFAULT = TestConstants.IF_NOT_PRESENT_IMAGE_PULL_POLICY;
+    public static final String OPERATOR_IMAGE_PULL_POLICY_ENV_DEFAULT = TestConstants.ALWAYS_IMAGE_PULL_POLICY;
     public static final String OLM_OPERATOR_NAME_DEFAULT = "strimzi-kafka-operator";
-    public static final String OLM_OPERATOR_DEPLOYMENT_NAME_DEFAULT = Constants.STRIMZI_DEPLOYMENT_NAME;
+    public static final String OLM_OPERATOR_DEPLOYMENT_NAME_DEFAULT = TestConstants.STRIMZI_DEPLOYMENT_NAME;
     public static final String OLM_SOURCE_NAME_DEFAULT = "community-operators";
     public static final String OLM_APP_BUNDLE_PREFIX_DEFAULT = "strimzi-cluster-operator";
     private static final boolean DEFAULT_TO_DENY_NETWORK_POLICIES_DEFAULT = true;
@@ -238,7 +238,7 @@ public class Environment {
 
     public static final String CONNECT_BUILD_IMAGE_PATH = getOrDefault(CONNECT_BUILD_IMAGE_PATH_ENV, "");
     public static final String CONNECT_BUILD_REGISTRY_SECRET = getOrDefault(CONNECT_BUILD_REGISTRY_SECRET_ENV, "");
-    public static final String TEST_SUITE_NAMESPACE = Environment.isNamespaceRbacScope() ? Constants.CO_NAMESPACE : "test-suite-namespace";
+    public static final String TEST_SUITE_NAMESPACE = Environment.isNamespaceRbacScope() ? TestConstants.CO_NAMESPACE : "test-suite-namespace";
 
     public static final String IP_FAMILY = getOrDefault(IP_FAMILY_ENV, IP_FAMILY_DEFAULT);
 
@@ -271,15 +271,15 @@ public class Environment {
      * @return true if KRaft mode is enabled, otherwise false
      */
     public static boolean isKRaftModeEnabled() {
-        return STRIMZI_FEATURE_GATES.contains(Constants.USE_KRAFT_MODE);
+        return STRIMZI_FEATURE_GATES.contains(TestConstants.USE_KRAFT_MODE);
     }
 
     public static boolean isKafkaNodePoolsEnabled() {
-        return !STRIMZI_FEATURE_GATES.contains(Constants.DONT_USE_KAFKA_NODE_POOLS);
+        return !STRIMZI_FEATURE_GATES.contains(TestConstants.DONT_USE_KAFKA_NODE_POOLS);
     }
 
     public static boolean isUnidirectionalTopicOperatorEnabled() {
-        return !STRIMZI_FEATURE_GATES.contains(Constants.DONT_USE_UNIDIRECTIONAL_TOPIC_OPERATOR);
+        return !STRIMZI_FEATURE_GATES.contains(TestConstants.DONT_USE_UNIDIRECTIONAL_TOPIC_OPERATOR);
     }
 
     /**

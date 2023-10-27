@@ -6,7 +6,7 @@ package io.strimzi.systemtest.resources.kubernetes;
 
 import io.fabric8.kubernetes.api.model.rbac.Role;
 import io.fabric8.kubernetes.api.model.rbac.RoleBuilder;
-import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.ResourceType;
 import io.strimzi.test.TestUtils;
@@ -20,7 +20,7 @@ public class RoleResource implements ResourceType<Role> {
 
     @Override
     public String getKind() {
-        return Constants.ROLE;
+        return TestConstants.ROLE;
     }
     @Override
     public Role get(String namespace, String name) {

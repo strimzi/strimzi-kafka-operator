@@ -23,7 +23,7 @@ import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.api.kafka.model.balancing.KafkaRebalanceAnnotation;
 import io.strimzi.api.kafka.model.balancing.KafkaRebalanceState;
-import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.annotations.KRaftNotSupported;
@@ -58,10 +58,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static io.strimzi.systemtest.Constants.ACCEPTANCE;
-import static io.strimzi.systemtest.Constants.CRUISE_CONTROL;
-import static io.strimzi.systemtest.Constants.REGRESSION;
-import static io.strimzi.systemtest.Constants.SANITY;
+import static io.strimzi.systemtest.TestConstants.ACCEPTANCE;
+import static io.strimzi.systemtest.TestConstants.CRUISE_CONTROL;
+import static io.strimzi.systemtest.TestConstants.REGRESSION;
+import static io.strimzi.systemtest.TestConstants.SANITY;
 import static io.strimzi.systemtest.resources.ResourceManager.kubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -320,7 +320,7 @@ public class CruiseControlST extends AbstractST {
         // Check that config contains only configurations for max.active.user.tasks
         assertThat(actualStrategies.size(), is(1));
 
-        String ccConfFileContent = cmdKubeClient(namespaceName).execInPodContainer(ccPodName, Constants.CRUISE_CONTROL_CONTAINER_NAME, "cat", Constants.CRUISE_CONTROL_CONFIGURATION_FILE_PATH).out();
+        String ccConfFileContent = cmdKubeClient(namespaceName).execInPodContainer(ccPodName, TestConstants.CRUISE_CONTROL_CONTAINER_NAME, "cat", TestConstants.CRUISE_CONTROL_CONFIGURATION_FILE_PATH).out();
         assertThat(ccConfFileContent, not(containsString(replicaMovementStrategies)));
 
         Map<String, String> kafkaRebalanceSnapshot = DeploymentUtils.depSnapshot(namespaceName, CruiseControlResources.deploymentName(clusterName));
@@ -337,7 +337,7 @@ public class CruiseControlST extends AbstractST {
         DeploymentUtils.waitTillDepHasRolled(namespaceName, CruiseControlResources.deploymentName(clusterName), 1, kafkaRebalanceSnapshot);
 
         ccPodName = kubeClient().listPodsByPrefixInName(namespaceName, CruiseControlResources.deploymentName(clusterName)).get(0).getMetadata().getName();
-        ccConfFileContent = cmdKubeClient(namespaceName).execInPodContainer(ccPodName, Constants.CRUISE_CONTROL_CONTAINER_NAME, "cat", Constants.CRUISE_CONTROL_CONFIGURATION_FILE_PATH).out();
+        ccConfFileContent = cmdKubeClient(namespaceName).execInPodContainer(ccPodName, TestConstants.CRUISE_CONTROL_CONTAINER_NAME, "cat", TestConstants.CRUISE_CONTROL_CONFIGURATION_FILE_PATH).out();
         assertThat(ccConfFileContent, containsString(newReplicaMovementStrategies));
     }
 

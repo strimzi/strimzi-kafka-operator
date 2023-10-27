@@ -7,7 +7,7 @@ package io.strimzi.systemtest.logs;
 import io.fabric8.kubernetes.api.model.ContainerStatus;
 import io.fabric8.kubernetes.api.model.Pod;
 import io.strimzi.api.kafka.model.StrimziPodSet;
-import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.enums.ClusterOperatorInstallType;
 import io.strimzi.systemtest.utils.StUtils;
@@ -90,7 +90,7 @@ public class LogCollector {
 
         // contract only one Cluster Operator deployment inside all namespaces
         Pod clusterOperatorPod = kubeClient.getClient().pods().inAnyNamespace().list().getItems().stream()
-                .filter(pod -> pod.getMetadata().getName().contains(Constants.STRIMZI_DEPLOYMENT_NAME))
+                .filter(pod -> pod.getMetadata().getName().contains(TestConstants.STRIMZI_DEPLOYMENT_NAME))
                 // contract only one Cluster Operator deployment inside all namespaces
                 .findFirst()
                 .orElseGet(Pod::new);
@@ -197,8 +197,8 @@ public class LogCollector {
     }
 
     private final void collectLogsForTestSuite(final Pod pod) {
-        if (pod.getMetadata().getLabels().containsKey(Constants.TEST_SUITE_NAME_LABEL)) {
-            if (pod.getMetadata().getLabels().get(Constants.TEST_SUITE_NAME_LABEL).equals(StUtils.removePackageName(this.collectorElement.getTestClassName()))) {
+        if (pod.getMetadata().getLabels().containsKey(TestConstants.TEST_SUITE_NAME_LABEL)) {
+            if (pod.getMetadata().getLabels().get(TestConstants.TEST_SUITE_NAME_LABEL).equals(StUtils.removePackageName(this.collectorElement.getTestClassName()))) {
                 LOGGER.debug("Collecting logs for TestSuite: {}, and Pod: {}/{}", this.collectorElement.getTestClassName(), pod.getMetadata().getNamespace(), pod.getMetadata().getName());
                 pod.getStatus().getContainerStatuses().forEach(
                     containerStatus -> scrapeAndCreateLogs(namespaceFile, pod.getMetadata().getName(), containerStatus, pod.getMetadata().getNamespace()));
@@ -212,11 +212,11 @@ public class LogCollector {
     }
 
     private final void collectLogsForTestCase(final Pod pod) {
-        if (pod.getMetadata().getLabels().containsKey(Constants.TEST_CASE_NAME_LABEL)) {
+        if (pod.getMetadata().getLabels().containsKey(TestConstants.TEST_CASE_NAME_LABEL)) {
             // collect these Pods, which are deployed in that test case
             // startWith is used because when we put inside Pod label with test case sometimes this test case exceed 63
             // characters and we have to cut it to avoid exception
-            if (this.collectorElement.getTestMethodName().startsWith(pod.getMetadata().getLabels().get(Constants.TEST_CASE_NAME_LABEL))) {
+            if (this.collectorElement.getTestMethodName().startsWith(pod.getMetadata().getLabels().get(TestConstants.TEST_CASE_NAME_LABEL))) {
                 LOGGER.debug("Collecting logs for TestCase: {}, and Pod: {}/{}", this.collectorElement.getTestMethodName(), pod.getMetadata().getNamespace(), pod.getMetadata().getName());
                 pod.getStatus().getContainerStatuses().forEach(
                     containerStatus -> scrapeAndCreateLogs(namespaceFile, pod.getMetadata().getName(), containerStatus, pod.getMetadata().getNamespace()));
@@ -274,7 +274,7 @@ public class LogCollector {
     }
 
     private void collectAllResourcesFromNamespace(String namespace) {
-        List<String> resources = new ArrayList<>(Arrays.asList(Constants.DEPLOYMENT, Constants.REPLICA_SET));
+        List<String> resources = new ArrayList<>(Arrays.asList(TestConstants.DEPLOYMENT, TestConstants.REPLICA_SET));
 
         // check if StrimziPodSets CRD is applied, if so, collect the yamls
         if (kubeClient.getCustomResourceDefinition(StrimziPodSet.CRD_NAME) != null) {

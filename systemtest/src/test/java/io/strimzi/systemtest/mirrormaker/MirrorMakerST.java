@@ -19,7 +19,7 @@ import io.strimzi.api.kafka.model.status.KafkaMirrorMakerStatus;
 import io.strimzi.api.kafka.model.template.DeploymentStrategy;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
-import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
@@ -50,11 +50,11 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import static io.strimzi.systemtest.Constants.ACCEPTANCE;
-import static io.strimzi.systemtest.Constants.COMPONENT_SCALING;
-import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
-import static io.strimzi.systemtest.Constants.MIRROR_MAKER;
-import static io.strimzi.systemtest.Constants.REGRESSION;
+import static io.strimzi.systemtest.TestConstants.ACCEPTANCE;
+import static io.strimzi.systemtest.TestConstants.COMPONENT_SCALING;
+import static io.strimzi.systemtest.TestConstants.INTERNAL_CLIENTS_USED;
+import static io.strimzi.systemtest.TestConstants.MIRROR_MAKER;
+import static io.strimzi.systemtest.TestConstants.REGRESSION;
 import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
@@ -154,7 +154,7 @@ public class MirrorMakerST extends AbstractST {
             .editSpec()
                 .editKafka()
                     .withListeners(new GenericKafkaListenerBuilder()
-                            .withName(Constants.TLS_LISTENER_DEFAULT_NAME)
+                            .withName(TestConstants.TLS_LISTENER_DEFAULT_NAME)
                             .withPort(9093)
                             .withType(KafkaListenerType.INTERNAL)
                             .withTls(true)
@@ -169,7 +169,7 @@ public class MirrorMakerST extends AbstractST {
             .editSpec()
                 .editKafka()
                     .withListeners(new GenericKafkaListenerBuilder()
-                            .withName(Constants.TLS_LISTENER_DEFAULT_NAME)
+                            .withName(TestConstants.TLS_LISTENER_DEFAULT_NAME)
                             .withPort(9093)
                             .withType(KafkaListenerType.INTERNAL)
                             .withTls(true)
@@ -260,7 +260,7 @@ public class MirrorMakerST extends AbstractST {
             .editSpec()
                 .editKafka()
                     .withListeners(new GenericKafkaListenerBuilder()
-                            .withName(Constants.TLS_LISTENER_DEFAULT_NAME)
+                            .withName(TestConstants.TLS_LISTENER_DEFAULT_NAME)
                             .withPort(9093)
                             .withType(KafkaListenerType.INTERNAL)
                             .withTls(true)
@@ -275,7 +275,7 @@ public class MirrorMakerST extends AbstractST {
             .editSpec()
                 .editKafka()
                     .withListeners(new GenericKafkaListenerBuilder()
-                            .withName(Constants.TLS_LISTENER_DEFAULT_NAME)
+                            .withName(TestConstants.TLS_LISTENER_DEFAULT_NAME)
                             .withPort(9093)
                             .withType(KafkaListenerType.INTERNAL)
                             .withTls(true)
@@ -662,7 +662,7 @@ public class MirrorMakerST extends AbstractST {
     @BeforeAll
     void setupEnvironment(ExtensionContext extensionContext) {
         clusterOperator = clusterOperator.defaultInstallation(extensionContext)
-            .withOperationTimeout(Constants.CO_OPERATION_TIMEOUT_MEDIUM)
+            .withOperationTimeout(TestConstants.CO_OPERATION_TIMEOUT_MEDIUM)
             .createInstallation()
             .runInstallation();
     }

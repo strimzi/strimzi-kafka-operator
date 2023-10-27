@@ -16,7 +16,7 @@ import io.strimzi.api.kafka.model.connect.build.DockerOutputBuilder;
 import io.strimzi.api.kafka.model.connect.build.JarArtifactBuilder;
 import io.strimzi.api.kafka.model.connect.build.Plugin;
 import io.strimzi.api.kafka.model.connect.build.PluginBuilder;
-import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.k8s.KubeClusterResource;
@@ -39,11 +39,11 @@ public class KafkaConnectTemplates {
     }
 
     public static KafkaConnectBuilder kafkaConnect(String name, final String namespaceName, String clusterName, int kafkaConnectReplicas) {
-        return kafkaConnect(name, namespaceName, clusterName, kafkaConnectReplicas, Constants.PATH_TO_KAFKA_CONNECT_CONFIG);
+        return kafkaConnect(name, namespaceName, clusterName, kafkaConnectReplicas, TestConstants.PATH_TO_KAFKA_CONNECT_CONFIG);
     }
 
     public static KafkaConnectBuilder kafkaConnect(String name, final String namespaceName, int kafkaConnectReplicas) {
-        return kafkaConnect(name, namespaceName, name, kafkaConnectReplicas, Constants.PATH_TO_KAFKA_CONNECT_CONFIG);
+        return kafkaConnect(name, namespaceName, name, kafkaConnectReplicas, TestConstants.PATH_TO_KAFKA_CONNECT_CONFIG);
     }
 
     public static KafkaConnectBuilder kafkaConnectWithMetrics(String name, String namespaceName, int kafkaConnectReplicas) {
@@ -51,18 +51,18 @@ public class KafkaConnectTemplates {
     }
 
     public static KafkaConnectBuilder kafkaConnectWithMetrics(String name, String namespaceName, String clusterName, int kafkaConnectReplicas) {
-        KafkaConnect kafkaConnect = getKafkaConnectFromYaml(Constants.PATH_TO_KAFKA_CONNECT_METRICS_CONFIG);
+        KafkaConnect kafkaConnect = getKafkaConnectFromYaml(TestConstants.PATH_TO_KAFKA_CONNECT_METRICS_CONFIG);
         createOrReplaceConnectMetrics(namespaceName);
         return defaultKafkaConnect(kafkaConnect, namespaceName, name, clusterName, kafkaConnectReplicas);
     }
 
     public static KafkaConnectBuilder kafkaConnectWithMetricsAndFileSinkPlugin(String name, String namespaceName, String clusterName, int replicas) {
         createOrReplaceConnectMetrics(namespaceName);
-        return kafkaConnectWithFilePlugin(name, namespaceName, clusterName, replicas, Constants.PATH_TO_KAFKA_CONNECT_METRICS_CONFIG);
+        return kafkaConnectWithFilePlugin(name, namespaceName, clusterName, replicas, TestConstants.PATH_TO_KAFKA_CONNECT_METRICS_CONFIG);
     }
 
     private static void createOrReplaceConnectMetrics(String namespaceName) {
-        ConfigMap metricsCm = TestUtils.configMapFromYaml(Constants.PATH_TO_KAFKA_CONNECT_METRICS_CONFIG, "connect-metrics");
+        ConfigMap metricsCm = TestUtils.configMapFromYaml(TestConstants.PATH_TO_KAFKA_CONNECT_METRICS_CONFIG, "connect-metrics");
         kubeClient().createConfigMapInNamespace(namespaceName, metricsCm);
     }
 
@@ -94,7 +94,7 @@ public class KafkaConnectTemplates {
     }
 
     public static KafkaConnectBuilder kafkaConnectWithFilePlugin(String name, String namespaceName, String clusterName, int replicas) {
-        return kafkaConnectWithFilePlugin(name, namespaceName, clusterName, replicas, Constants.PATH_TO_KAFKA_CONNECT_CONFIG);
+        return kafkaConnectWithFilePlugin(name, namespaceName, clusterName, replicas, TestConstants.PATH_TO_KAFKA_CONNECT_CONFIG);
     }
 
     /**
@@ -128,7 +128,7 @@ public class KafkaConnectTemplates {
                 )
                 .build();
 
-            final String imageFullPath = Environment.getImageOutputRegistry(namespaceName, Constants.ST_CONNECT_BUILD_IMAGE_NAME, String.valueOf(new Random().nextInt(Integer.MAX_VALUE)));
+            final String imageFullPath = Environment.getImageOutputRegistry(namespaceName, TestConstants.ST_CONNECT_BUILD_IMAGE_NAME, String.valueOf(new Random().nextInt(Integer.MAX_VALUE)));
 
             return connectBuilder
                 .editOrNewSpec()

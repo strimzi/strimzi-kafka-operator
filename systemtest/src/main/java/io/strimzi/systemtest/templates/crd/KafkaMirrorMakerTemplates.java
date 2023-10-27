@@ -9,7 +9,7 @@ import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker;
 import io.strimzi.api.kafka.model.KafkaMirrorMakerBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
-import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.test.TestUtils;
@@ -23,7 +23,7 @@ public class KafkaMirrorMakerTemplates {
     private KafkaMirrorMakerTemplates() {}
 
     public static KafkaMirrorMakerBuilder kafkaMirrorMaker(String name, String sourceBootstrapServer, String targetBootstrapServer, String groupId, int mirrorMakerReplicas, boolean tlsListener) {
-        KafkaMirrorMaker kafkaMirrorMaker = getKafkaMirrorMakerFromYaml(Constants.PATH_TO_KAFKA_MIRROR_MAKER_CONFIG);
+        KafkaMirrorMaker kafkaMirrorMaker = getKafkaMirrorMakerFromYaml(TestConstants.PATH_TO_KAFKA_MIRROR_MAKER_CONFIG);
         return defaultKafkaMirrorMaker(kafkaMirrorMaker, name, sourceBootstrapServer, targetBootstrapServer, groupId, mirrorMakerReplicas, tlsListener);
     }
 

@@ -5,7 +5,7 @@
 package io.strimzi.systemtest.resources.operator.specific;
 
 import io.fabric8.kubernetes.api.model.EnvVar;
-import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.resources.ResourceItem;
 import io.strimzi.systemtest.resources.ResourceManager;
@@ -39,7 +39,7 @@ public class HelmResource implements SpecificResourceType {
     }
 
     public void create(ExtensionContext extensionContext) {
-        this.create(extensionContext, Constants.CO_OPERATION_TIMEOUT_DEFAULT, Constants.RECONCILIATION_INTERVAL, null, 1);
+        this.create(extensionContext, TestConstants.CO_OPERATION_TIMEOUT_DEFAULT, TestConstants.RECONCILIATION_INTERVAL, null, 1);
     }
 
     public void create(ExtensionContext extensionContext, long operationTimeout, long reconciliationInterval, List<EnvVar> extraEnvVars, int replicas) {
@@ -70,16 +70,16 @@ public class HelmResource implements SpecificResourceType {
 
         // Additional config
         values.put("image.imagePullPolicy", Environment.OPERATOR_IMAGE_PULL_POLICY);
-        values.put("resources.requests.memory", Constants.CO_REQUESTS_MEMORY);
-        values.put("resources.requests.cpu", Constants.CO_REQUESTS_CPU);
-        values.put("resources.limits.memory", Constants.CO_LIMITS_MEMORY);
-        values.put("resources.limits.cpu", Constants.CO_LIMITS_CPU);
+        values.put("resources.requests.memory", TestConstants.CO_REQUESTS_MEMORY);
+        values.put("resources.requests.cpu", TestConstants.CO_REQUESTS_CPU);
+        values.put("resources.limits.memory", TestConstants.CO_LIMITS_MEMORY);
+        values.put("resources.limits.cpu", TestConstants.CO_LIMITS_CPU);
         values.put("logLevelOverride", Environment.STRIMZI_LOG_LEVEL);
         values.put("fullReconciliationIntervalMs", Long.toString(reconciliationInterval));
         values.put("operationTimeoutMs", Long.toString(operationTimeout));
         // As FG is CSV, we need to escape commas for interpretation of helm installation string
         values.put("featureGates", Environment.STRIMZI_FEATURE_GATES.replaceAll(",", "\\\\,"));
-        values.put("watchAnyNamespace", this.namespaceToWatch.equals(Constants.WATCH_ALL_NAMESPACES));
+        values.put("watchAnyNamespace", this.namespaceToWatch.equals(TestConstants.WATCH_ALL_NAMESPACES));
         values.put("replicas", replicas);
 
         if (!this.namespaceToWatch.equals("*") && !this.namespaceToWatch.equals(this.namespaceInstallTo)) {

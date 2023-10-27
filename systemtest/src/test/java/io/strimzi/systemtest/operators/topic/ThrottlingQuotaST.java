@@ -9,7 +9,7 @@ import io.strimzi.api.kafka.model.KafkaUserScramSha512ClientAuthentication;
 import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.systemtest.AbstractST;
-import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.KRaftWithoutUTONotSupported;
 import io.strimzi.systemtest.annotations.ParallelTest;
@@ -27,8 +27,8 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
-import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
-import static io.strimzi.systemtest.Constants.REGRESSION;
+import static io.strimzi.systemtest.TestConstants.INTERNAL_CLIENTS_USED;
+import static io.strimzi.systemtest.TestConstants.REGRESSION;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.not;
@@ -142,7 +142,7 @@ public class ThrottlingQuotaST extends AbstractST {
                 .editKafka()
                     .withListeners(
                         new GenericKafkaListenerBuilder()
-                            .withName(Constants.PLAIN_LISTENER_DEFAULT_NAME)
+                            .withName(TestConstants.PLAIN_LISTENER_DEFAULT_NAME)
                             .withPort(9092)
                             .withType(KafkaListenerType.INTERNAL)
                             .withTls(false)
@@ -150,7 +150,7 @@ public class ThrottlingQuotaST extends AbstractST {
                             .endKafkaListenerAuthenticationScramSha512Auth()
                             .build(),
                         new GenericKafkaListenerBuilder()
-                            .withName(Constants.TLS_LISTENER_DEFAULT_NAME)
+                            .withName(TestConstants.TLS_LISTENER_DEFAULT_NAME)
                             .withPort(9093)
                             .withType(KafkaListenerType.INTERNAL)
                             .withTls(true)
@@ -180,7 +180,7 @@ public class ThrottlingQuotaST extends AbstractST {
             )
         );
 
-        String adminClientPodName = kubeClient().listPods(sharedTestStorage.getNamespaceName(), Constants.ADMIN_CLIENT_LABEL_SELECTOR).get(0).getMetadata().getName();
+        String adminClientPodName = kubeClient().listPods(sharedTestStorage.getNamespaceName(), TestConstants.ADMIN_CLIENT_LABEL_SELECTOR).get(0).getMetadata().getName();
 
         adminClient = new AdminClient(sharedTestStorage.getNamespaceName(), adminClientPodName);
         adminClient.configureFromEnv();

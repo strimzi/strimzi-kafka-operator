@@ -30,7 +30,7 @@ import io.strimzi.api.kafka.model.storage.PersistentClaimStorage;
 import io.strimzi.api.kafka.model.storage.PersistentClaimStorageBuilder;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
-import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.KRaftNotSupported;
 import io.strimzi.systemtest.annotations.KRaftWithoutUTONotSupported;
@@ -66,10 +66,10 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import static io.strimzi.systemtest.Constants.CRUISE_CONTROL;
-import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
-import static io.strimzi.systemtest.Constants.LOADBALANCER_SUPPORTED;
-import static io.strimzi.systemtest.Constants.REGRESSION;
+import static io.strimzi.systemtest.TestConstants.CRUISE_CONTROL;
+import static io.strimzi.systemtest.TestConstants.INTERNAL_CLIENTS_USED;
+import static io.strimzi.systemtest.TestConstants.LOADBALANCER_SUPPORTED;
+import static io.strimzi.systemtest.TestConstants.REGRESSION;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static java.util.Arrays.asList;
@@ -418,7 +418,7 @@ class KafkaST extends AbstractST {
             }, testStorage.getNamespaceName());
         }
 
-        TestUtils.waitFor("PVC(s)' annotation to change according to Kafka JBOD storage 'delete claim'", Constants.GLOBAL_POLL_INTERVAL, Constants.SAFETY_RECONCILIATION_INTERVAL,
+        TestUtils.waitFor("PVC(s)' annotation to change according to Kafka JBOD storage 'delete claim'", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.SAFETY_RECONCILIATION_INTERVAL,
             () -> kubeClient().listPersistentVolumeClaims(testStorage.getNamespaceName(), testStorage.getClusterName()).stream()
                 .filter(pvc -> pvc.getMetadata().getName().startsWith("data-0") && pvc.getMetadata().getName().contains("-kafka"))
                 .allMatch(volume -> "false".equals(volume.getMetadata().getAnnotations().get("strimzi.io/delete-claim")))
@@ -461,13 +461,13 @@ class KafkaST extends AbstractST {
         KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, kafka -> {
             List<GenericKafkaListener> lst = asList(
                     new GenericKafkaListenerBuilder()
-                            .withName(Constants.PLAIN_LISTENER_DEFAULT_NAME)
+                            .withName(TestConstants.PLAIN_LISTENER_DEFAULT_NAME)
                             .withPort(9092)
                             .withType(KafkaListenerType.INTERNAL)
                             .withTls(false)
                             .build(),
                     new GenericKafkaListenerBuilder()
-                            .withName(Constants.EXTERNAL_LISTENER_DEFAULT_NAME)
+                            .withName(TestConstants.EXTERNAL_LISTENER_DEFAULT_NAME)
                             .withPort(9094)
                             .withType(KafkaListenerType.LOADBALANCER)
                             .withTls(true)
@@ -845,7 +845,7 @@ class KafkaST extends AbstractST {
             .withMessageCount(testStorage.getMessageCount())
             .build();
 
-        TestUtils.waitFor("KafkaTopic creation inside Kafka Pod", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
+        TestUtils.waitFor("KafkaTopic creation inside Kafka Pod", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_TIMEOUT,
             () -> cmdKubeClient(testStorage.getNamespaceName()).execInPod(KafkaResource.getKafkaPodName(testStorage.getClusterName(), 0), "/bin/bash",
                         "-c", "cd /var/lib/kafka/data/kafka-log0; ls -1").out().contains(testStorage.getTopicName()));
 

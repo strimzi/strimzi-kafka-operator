@@ -18,7 +18,7 @@ import io.strimzi.api.kafka.model.KafkaMirrorMakerResources;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
-import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.annotations.ParallelTest;
@@ -59,15 +59,15 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static io.strimzi.systemtest.Constants.BRIDGE;
-import static io.strimzi.systemtest.Constants.CC_LOG_CONFIG_RELOAD;
-import static io.strimzi.systemtest.Constants.CONNECT;
-import static io.strimzi.systemtest.Constants.CO_OPERATION_TIMEOUT_MEDIUM;
-import static io.strimzi.systemtest.Constants.CRUISE_CONTROL;
-import static io.strimzi.systemtest.Constants.MIRROR_MAKER;
-import static io.strimzi.systemtest.Constants.MIRROR_MAKER2;
-import static io.strimzi.systemtest.Constants.REGRESSION;
-import static io.strimzi.systemtest.Constants.TIMEOUT_FOR_LOG;
+import static io.strimzi.systemtest.TestConstants.BRIDGE;
+import static io.strimzi.systemtest.TestConstants.CC_LOG_CONFIG_RELOAD;
+import static io.strimzi.systemtest.TestConstants.CONNECT;
+import static io.strimzi.systemtest.TestConstants.CO_OPERATION_TIMEOUT_MEDIUM;
+import static io.strimzi.systemtest.TestConstants.CRUISE_CONTROL;
+import static io.strimzi.systemtest.TestConstants.MIRROR_MAKER;
+import static io.strimzi.systemtest.TestConstants.MIRROR_MAKER2;
+import static io.strimzi.systemtest.TestConstants.REGRESSION;
+import static io.strimzi.systemtest.TestConstants.TIMEOUT_FOR_LOG;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.CoreMatchers.containsString;
@@ -212,9 +212,9 @@ class LogSettingST extends AbstractST {
 
         LOGGER.info("Checking if Kafka, ZooKeeper, TO and UO of cluster: {} has log level set properly", LOG_SETTING_CLUSTER_NAME);
         StUtils.getKafkaConfigurationConfigMaps(LOG_SETTING_CLUSTER_NAME, 3)
-                .forEach(cmName -> {
-                    assertThat("Kafka's log level is set properly", checkLoggersLevel(Environment.TEST_SUITE_NAMESPACE, KAFKA_LOGGERS, cmName), is(true));
-                });
+            .forEach(cmName -> {
+                assertThat("Kafka's log level is set properly", checkLoggersLevel(Environment.TEST_SUITE_NAMESPACE, KAFKA_LOGGERS, cmName), is(true));
+            });
         if (!Environment.isKRaftModeEnabled()) {
             assertThat("ZooKeeper's log level is set properly", checkLoggersLevel(Environment.TEST_SUITE_NAMESPACE, ZOOKEEPER_LOGGERS, zookeeperMap), is(true));
             assertThat("Topic Operator's log level is set properly", checkLoggersLevel(Environment.TEST_SUITE_NAMESPACE, OPERATORS_LOGGERS, topicOperatorMap), is(true));
@@ -282,15 +282,15 @@ class LogSettingST extends AbstractST {
 
         resourceManager.createResourceWithWait(extensionContext, KafkaConnectTemplates.kafkaConnect(connectClusterName, Environment.TEST_SUITE_NAMESPACE, LOG_SETTING_CLUSTER_NAME, 1)
             .editMetadata()
-                .withNamespace(Environment.TEST_SUITE_NAMESPACE)
+            .withNamespace(Environment.TEST_SUITE_NAMESPACE)
             .endMetadata()
             .editSpec()
-                .withNewInlineLogging()
-                    .withLoggers(CONNECT_LOGGERS)
-                .endInlineLogging()
-                .withNewJvmOptions()
-                    .withGcLoggingEnabled(true)
-                .endJvmOptions()
+            .withNewInlineLogging()
+            .withLoggers(CONNECT_LOGGERS)
+            .endInlineLogging()
+            .withNewJvmOptions()
+            .withGcLoggingEnabled(true)
+            .endJvmOptions()
             .endSpec()
             .build());
 
@@ -320,15 +320,15 @@ class LogSettingST extends AbstractST {
 
         resourceManager.createResourceWithWait(extensionContext, KafkaMirrorMakerTemplates.kafkaMirrorMaker(mirrorMakerName, LOG_SETTING_CLUSTER_NAME, GC_LOGGING_SET_NAME, "my-group", 1, false)
             .editMetadata()
-                .withNamespace(Environment.TEST_SUITE_NAMESPACE)
+            .withNamespace(Environment.TEST_SUITE_NAMESPACE)
             .endMetadata()
             .editSpec()
-                .withNewInlineLogging()
-                    .withLoggers(MIRROR_MAKER_LOGGERS)
-                .endInlineLogging()
-                .withNewJvmOptions()
-                    .withGcLoggingEnabled(true)
-                .endJvmOptions()
+            .withNewInlineLogging()
+            .withLoggers(MIRROR_MAKER_LOGGERS)
+            .endInlineLogging()
+            .withNewJvmOptions()
+            .withGcLoggingEnabled(true)
+            .endJvmOptions()
             .endSpec()
             .build());
 
@@ -356,15 +356,15 @@ class LogSettingST extends AbstractST {
 
         resourceManager.createResourceWithWait(extensionContext, KafkaMirrorMaker2Templates.kafkaMirrorMaker2(clusterName, LOG_SETTING_CLUSTER_NAME, GC_LOGGING_SET_NAME, 1, false)
             .editMetadata()
-                .withNamespace(Environment.TEST_SUITE_NAMESPACE)
+            .withNamespace(Environment.TEST_SUITE_NAMESPACE)
             .endMetadata()
             .editSpec()
-                .withNewInlineLogging()
-                    .withLoggers(MIRROR_MAKER_LOGGERS)
-                .endInlineLogging()
-                .withNewJvmOptions()
-                    .withGcLoggingEnabled(true)
-                .endJvmOptions()
+            .withNewInlineLogging()
+            .withLoggers(MIRROR_MAKER_LOGGERS)
+            .endInlineLogging()
+            .withNewJvmOptions()
+            .withGcLoggingEnabled(true)
+            .endJvmOptions()
             .endSpec()
             .build());
 
@@ -381,7 +381,7 @@ class LogSettingST extends AbstractST {
         KafkaMirrorMaker2Resource.replaceKafkaMirrorMaker2ResourceInSpecificNamespace(clusterName, mm2 -> mm2.getSpec().setJvmOptions(JVM_OPTIONS), Environment.TEST_SUITE_NAMESPACE);
         StUtils.waitTillStrimziPodSetOrDeploymentRolled(Environment.TEST_SUITE_NAMESPACE, mm2DepName, 1, mm2Pods, labelSelector);
 
-        this.checkGcLogging(Environment.TEST_SUITE_NAMESPACE, labelSelector, mm2DepName,  false);
+        this.checkGcLogging(Environment.TEST_SUITE_NAMESPACE, labelSelector, mm2DepName, false);
 
         kubectlGetStrimziUntilOperationIsSuccessful(Environment.TEST_SUITE_NAMESPACE, clusterName);
         checkContainersHaveProcessOneAsTini(Environment.TEST_SUITE_NAMESPACE, clusterName);
@@ -396,15 +396,15 @@ class LogSettingST extends AbstractST {
 
         resourceManager.createResourceWithWait(extensionContext, KafkaBridgeTemplates.kafkaBridge(bridgeName, LOG_SETTING_CLUSTER_NAME, KafkaResources.plainBootstrapAddress(LOG_SETTING_CLUSTER_NAME), 1)
             .editMetadata()
-                .withNamespace(Environment.TEST_SUITE_NAMESPACE)
+            .withNamespace(Environment.TEST_SUITE_NAMESPACE)
             .endMetadata()
             .editSpec()
-                .withNewInlineLogging()
-                    .withLoggers(BRIDGE_LOGGERS)
-                .endInlineLogging()
-                .withNewJvmOptions()
-                    .withGcLoggingEnabled(true)
-                .endJvmOptions()
+            .withNewInlineLogging()
+            .withLoggers(BRIDGE_LOGGERS)
+            .endInlineLogging()
+            .withNewJvmOptions()
+            .withGcLoggingEnabled(true)
+            .endJvmOptions()
             .endSpec()
             .build());
 
@@ -428,17 +428,17 @@ class LogSettingST extends AbstractST {
     }
 
     @IsolatedTest("Updating shared Kafka")
-    // This test might be flaky, as it gets real logs from CruiseControl pod
+        // This test might be flaky, as it gets real logs from CruiseControl pod
     void testCruiseControlLogChange(ExtensionContext extensionContext) {
         final String debugText = " DEBUG ";
-        String cruiseControlPodName = PodUtils.getPodNameByPrefix(Environment.TEST_SUITE_NAMESPACE, LOG_SETTING_CLUSTER_NAME + "-" + Constants.CRUISE_CONTROL_CONTAINER_NAME);
+        String cruiseControlPodName = PodUtils.getPodNameByPrefix(Environment.TEST_SUITE_NAMESPACE, LOG_SETTING_CLUSTER_NAME + "-" + TestConstants.CRUISE_CONTROL_CONTAINER_NAME);
         LOGGER.info("Check that default/actual root logging level is info");
         String containerLogLevel = cmdKubeClient().namespace(Environment.TEST_SUITE_NAMESPACE).execInPod(cruiseControlPodName, "grep", "-i", "rootlogger.level",
-                Constants.CRUISE_CONTROL_LOG_FILE_PATH).out().trim().split("=")[1];
+            TestConstants.CRUISE_CONTROL_LOG_FILE_PATH).out().trim().split("=")[1];
         assertThat(containerLogLevel.toUpperCase(Locale.ENGLISH), is(not(debugText.strip())));
 
         LOGGER.info("Checking logs in CruiseControl - make sure no DEBUG is found there");
-        String logOut = StUtils.getLogFromPodByTime(Environment.TEST_SUITE_NAMESPACE, cruiseControlPodName, Constants.CRUISE_CONTROL_CONTAINER_NAME, "20s");
+        String logOut = StUtils.getLogFromPodByTime(Environment.TEST_SUITE_NAMESPACE, cruiseControlPodName, TestConstants.CRUISE_CONTROL_CONTAINER_NAME, "20s");
         assertThat(logOut.toUpperCase(Locale.ENGLISH), not(containsString(debugText)));
 
         InlineLogging logging = new InlineLogging();
@@ -447,13 +447,13 @@ class LogSettingST extends AbstractST {
 
         LOGGER.info("Waiting for change of root logger in {}", cruiseControlPodName);
         TestUtils.waitFor(" for log to be changed", CC_LOG_CONFIG_RELOAD, CO_OPERATION_TIMEOUT_MEDIUM, () -> {
-            String line = StUtils.getLineFromPodContainer(Environment.TEST_SUITE_NAMESPACE, cruiseControlPodName, null, Constants.CRUISE_CONTROL_LOG_FILE_PATH, "rootlogger.level");
+            String line = StUtils.getLineFromPodContainer(Environment.TEST_SUITE_NAMESPACE, cruiseControlPodName, null, TestConstants.CRUISE_CONTROL_LOG_FILE_PATH, "rootlogger.level");
             return line.toUpperCase(Locale.ENGLISH).contains(debugText.strip());
         });
 
-        LOGGER.info("Check CruiseControl logs in Pod: {}/{} and it's container {}", Environment.TEST_SUITE_NAMESPACE, cruiseControlPodName, Constants.CRUISE_CONTROL_CONTAINER_NAME);
+        LOGGER.info("Check CruiseControl logs in Pod: {}/{} and it's container {}", Environment.TEST_SUITE_NAMESPACE, cruiseControlPodName, TestConstants.CRUISE_CONTROL_CONTAINER_NAME);
         TestUtils.waitFor("debug log line to be present in logs", CC_LOG_CONFIG_RELOAD, TIMEOUT_FOR_LOG, () -> {
-            String log = StUtils.getLogFromPodByTime(Environment.TEST_SUITE_NAMESPACE, cruiseControlPodName, Constants.CRUISE_CONTROL_CONTAINER_NAME, "20s");
+            String log = StUtils.getLogFromPodByTime(Environment.TEST_SUITE_NAMESPACE, cruiseControlPodName, TestConstants.CRUISE_CONTROL_CONTAINER_NAME, "20s");
             return log.toUpperCase(Locale.ENGLISH).contains(debugText);
         });
     }
@@ -461,7 +461,7 @@ class LogSettingST extends AbstractST {
     // only one thread can access (eliminate data-race)
     private synchronized void kubectlGetStrimziUntilOperationIsSuccessful(String namespaceName, String resourceName) {
         TestUtils.waitFor("Checking if kubectl get strimzi contains:" + resourceName, Duration.ofSeconds(10).toMillis(),
-            Constants.GLOBAL_TIMEOUT, () -> cmdKubeClient().namespace(namespaceName).execInCurrentNamespace("get", "strimzi").out().contains(resourceName));
+            TestConstants.GLOBAL_TIMEOUT, () -> cmdKubeClient().namespace(namespaceName).execInCurrentNamespace("get", "strimzi").out().contains(resourceName));
     }
 
     // only one thread can access (eliminate data-race)
@@ -488,10 +488,10 @@ class LogSettingST extends AbstractST {
         Map<String, String> configMapData = kubeClient(namespaceName).getConfigMap(configMapName).getData();
         // tries to get a log4j2 configuration file first (operator, bridge, ...) otherwise log4j one (kafka, zookeeper, ...)
         String configMapKey = configMapData.keySet()
-                .stream()
-                .filter(key -> key.equals("log4j2.properties") || key.equals("log4j.properties"))
-                .findAny()
-                .orElseThrow();
+            .stream()
+            .filter(key -> key.equals("log4j2.properties") || key.equals("log4j.properties"))
+            .findAny()
+            .orElseThrow();
         return configMapData.get(configMapKey);
     }
 
@@ -519,10 +519,12 @@ class LogSettingST extends AbstractST {
         LOGGER.info("Checking container with name: {}", container.getName());
         return checkEnvVarValue(container);
     }
+
     private synchronized void checkGcLogging(final String namespaceName, final LabelSelector selector,
-                                                final String deploymentName, boolean exceptedValue) {
+                                             final String deploymentName, boolean exceptedValue) {
         this.checkGcLoggingPods(namespaceName, selector, exceptedValue);
     }
+
     private synchronized void checkGcLoggingDeployments(String namespaceName, String deploymentName, boolean expectedValue) {
         LOGGER.info("Checking deployment: {}", deploymentName);
         Container container = kubeClient(namespaceName).getDeployment(namespaceName, deploymentName).getSpec().getTemplate().getSpec().getContainers().get(0);
@@ -535,9 +537,9 @@ class LogSettingST extends AbstractST {
         LOGGER.info("Checking Pods with selector: {}", selector);
         List<Pod> pods = kubeClient(namespaceName).getClient().pods().inNamespace(namespaceName).withLabelSelector(selector).list().getItems();
 
-        for (Pod pod : pods)    {
+        for (Pod pod : pods) {
             LOGGER.info("Checking Pod: {}/{}, container: {}", namespaceName, pod.getMetadata().getName(), pod.getSpec().getContainers().get(0).getName());
-            assertThat("Kafka GC logging in Pod: "  + pod.getMetadata().getName() + " has wrong value", checkEnvVarValue(pod.getSpec().getContainers().get(0)), is(expectedValue));
+            assertThat("Kafka GC logging in Pod: " + pod.getMetadata().getName() + " has wrong value", checkEnvVarValue(pod.getSpec().getContainers().get(0)), is(expectedValue));
         }
     }
 
@@ -562,74 +564,74 @@ class LogSettingST extends AbstractST {
 
         resourceManager.createResourceWithoutWait(extensionContext, KafkaTemplates.kafkaPersistent(LOG_SETTING_CLUSTER_NAME, 3, 1)
             .editMetadata()
-                .withNamespace(Environment.TEST_SUITE_NAMESPACE)
+            .withNamespace(Environment.TEST_SUITE_NAMESPACE)
             .endMetadata()
             .editSpec()
-                .editKafka()
-                    .withNewInlineLogging()
-                        .withLoggers(KAFKA_LOGGERS)
-                    .endInlineLogging()
-                    .withNewJvmOptions()
-                        .withGcLoggingEnabled(true)
-                    .endJvmOptions()
-                .endKafka()
-                .editZookeeper()
-                    .withNewInlineLogging()
-                        .withLoggers(ZOOKEEPER_LOGGERS)
-                    .endInlineLogging()
-                    .withNewJvmOptions()
-                        .withGcLoggingEnabled(true)
-                    .endJvmOptions()
-                .endZookeeper()
-                .editEntityOperator()
-                    .editOrNewUserOperator()
-                        .withNewInlineLogging()
-                            .withLoggers(OPERATORS_LOGGERS)
-                        .endInlineLogging()
-                        .withNewJvmOptions()
-                            .withGcLoggingEnabled(true)
-                        .endJvmOptions()
-                    .endUserOperator()
-                    .editOrNewTopicOperator()
-                        .withNewInlineLogging()
-                            .withLoggers(OPERATORS_LOGGERS)
-                        .endInlineLogging()
-                        .withNewJvmOptions()
-                            .withGcLoggingEnabled(true)
-                        .endJvmOptions()
-                    .endTopicOperator()
-                .endEntityOperator()
-                .withNewCruiseControl()
-                .endCruiseControl()
-                .withNewKafkaExporter()
-                .endKafkaExporter()
+            .editKafka()
+            .withNewInlineLogging()
+            .withLoggers(KAFKA_LOGGERS)
+            .endInlineLogging()
+            .withNewJvmOptions()
+            .withGcLoggingEnabled(true)
+            .endJvmOptions()
+            .endKafka()
+            .editZookeeper()
+            .withNewInlineLogging()
+            .withLoggers(ZOOKEEPER_LOGGERS)
+            .endInlineLogging()
+            .withNewJvmOptions()
+            .withGcLoggingEnabled(true)
+            .endJvmOptions()
+            .endZookeeper()
+            .editEntityOperator()
+            .editOrNewUserOperator()
+            .withNewInlineLogging()
+            .withLoggers(OPERATORS_LOGGERS)
+            .endInlineLogging()
+            .withNewJvmOptions()
+            .withGcLoggingEnabled(true)
+            .endJvmOptions()
+            .endUserOperator()
+            .editOrNewTopicOperator()
+            .withNewInlineLogging()
+            .withLoggers(OPERATORS_LOGGERS)
+            .endInlineLogging()
+            .withNewJvmOptions()
+            .withGcLoggingEnabled(true)
+            .endJvmOptions()
+            .endTopicOperator()
+            .endEntityOperator()
+            .withNewCruiseControl()
+            .endCruiseControl()
+            .withNewKafkaExporter()
+            .endKafkaExporter()
             .endSpec()
             .build());
 
 //         deploying second Kafka here because of MM and MM2 tests
         resourceManager.createResourceWithoutWait(extensionContext, KafkaTemplates.kafkaPersistent(GC_LOGGING_SET_NAME, 1, 1)
             .editMetadata()
-                .withNamespace(Environment.TEST_SUITE_NAMESPACE)
+            .withNamespace(Environment.TEST_SUITE_NAMESPACE)
             .endMetadata()
             .editSpec()
-                .editKafka()
-                    .withNewJvmOptions()
-                    .endJvmOptions()
-                .endKafka()
-                .editZookeeper()
-                    .withNewJvmOptions()
-                    .endJvmOptions()
-                .endZookeeper()
-                .editEntityOperator()
-                    .editTopicOperator()
-                        .withNewJvmOptions()
-                        .endJvmOptions()
-                    .endTopicOperator()
-                    .editUserOperator()
-                        .withNewJvmOptions()
-                        .endJvmOptions()
-                    .endUserOperator()
-                .endEntityOperator()
+            .editKafka()
+            .withNewJvmOptions()
+            .endJvmOptions()
+            .endKafka()
+            .editZookeeper()
+            .withNewJvmOptions()
+            .endJvmOptions()
+            .endZookeeper()
+            .editEntityOperator()
+            .editTopicOperator()
+            .withNewJvmOptions()
+            .endJvmOptions()
+            .endTopicOperator()
+            .editUserOperator()
+            .withNewJvmOptions()
+            .endJvmOptions()
+            .endUserOperator()
+            .endEntityOperator()
             .endSpec()
             .build());
 

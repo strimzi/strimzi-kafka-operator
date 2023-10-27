@@ -6,7 +6,7 @@ package io.strimzi.systemtest.resources.kubernetes;
 
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.DeploymentList;
-import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.ResourceType;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
@@ -19,7 +19,7 @@ public class DeploymentResource implements ResourceType<Deployment> {
 
     @Override
     public String getKind() {
-        return Constants.DEPLOYMENT;
+        return TestConstants.DEPLOYMENT;
     }
     @Override
     public Deployment get(String namespace, String name) {

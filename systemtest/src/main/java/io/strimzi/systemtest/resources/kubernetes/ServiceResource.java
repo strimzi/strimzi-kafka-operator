@@ -5,7 +5,7 @@
 package io.strimzi.systemtest.resources.kubernetes;
 
 import io.fabric8.kubernetes.api.model.Service;
-import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.ResourceType;
 import org.apache.logging.log4j.LogManager;
@@ -18,7 +18,7 @@ public class ServiceResource implements ResourceType<Service> {
 
     @Override
     public String getKind() {
-        return Constants.SERVICE;
+        return TestConstants.SERVICE;
     }
     @Override
     public Service get(String namespace, String name) {

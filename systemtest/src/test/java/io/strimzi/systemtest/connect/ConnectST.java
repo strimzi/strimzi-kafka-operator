@@ -37,7 +37,7 @@ import io.strimzi.api.kafka.model.status.KafkaConnectorStatus;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
-import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.KindIPv6NotSupported;
 import io.strimzi.systemtest.annotations.MicroShiftNotSupported;
@@ -80,17 +80,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
-import static io.strimzi.systemtest.Constants.ACCEPTANCE;
-import static io.strimzi.systemtest.Constants.COMPONENT_SCALING;
-import static io.strimzi.systemtest.Constants.CONNECT;
-import static io.strimzi.systemtest.Constants.CONNECTOR_OPERATOR;
-import static io.strimzi.systemtest.Constants.CONNECT_COMPONENTS;
-import static io.strimzi.systemtest.Constants.EXTERNAL_CLIENTS_USED;
-import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
-import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
-import static io.strimzi.systemtest.Constants.REGRESSION;
-import static io.strimzi.systemtest.Constants.SANITY;
-import static io.strimzi.systemtest.Constants.SMOKE;
+import static io.strimzi.systemtest.TestConstants.ACCEPTANCE;
+import static io.strimzi.systemtest.TestConstants.COMPONENT_SCALING;
+import static io.strimzi.systemtest.TestConstants.CONNECT;
+import static io.strimzi.systemtest.TestConstants.CONNECTOR_OPERATOR;
+import static io.strimzi.systemtest.TestConstants.CONNECT_COMPONENTS;
+import static io.strimzi.systemtest.TestConstants.EXTERNAL_CLIENTS_USED;
+import static io.strimzi.systemtest.TestConstants.INTERNAL_CLIENTS_USED;
+import static io.strimzi.systemtest.TestConstants.NODEPORT_SUPPORTED;
+import static io.strimzi.systemtest.TestConstants.REGRESSION;
+import static io.strimzi.systemtest.TestConstants.SANITY;
+import static io.strimzi.systemtest.TestConstants.SMOKE;
 import static io.strimzi.systemtest.enums.CustomResourceStatus.NotReady;
 import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
@@ -199,7 +199,7 @@ class ConnectST extends AbstractST {
             .editSpec()
                 .withClassName("org.apache.kafka.connect.file.FileStreamSinkConnector")
                 .addToConfig("topics", testStorage.getTopicName())
-                .addToConfig("file", Constants.DEFAULT_SINK_FILE_PATH)
+                .addToConfig("file", TestConstants.DEFAULT_SINK_FILE_PATH)
                 .addToConfig("key.converter", "org.apache.kafka.connect.storage.StringConverter")
                 .addToConfig("value.converter", "org.apache.kafka.connect.storage.StringConverter")
             .endSpec()
@@ -217,7 +217,7 @@ class ConnectST extends AbstractST {
         resourceManager.createResourceWithWait(extensionContext, kafkaClients.producerStrimzi(), kafkaClients.consumerStrimzi());
         ClientUtils.waitForClientsSuccess(testStorage);
 
-        KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(testStorage.getNamespaceName(), kafkaConnectPodName, Constants.DEFAULT_SINK_FILE_PATH, "99");
+        KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(testStorage.getNamespaceName(), kafkaConnectPodName, TestConstants.DEFAULT_SINK_FILE_PATH, "99");
 
         LOGGER.info("Pausing KafkaConnector: {}", testStorage.getClusterName());
         KafkaConnectorResource.replaceKafkaConnectorResourceInSpecificNamespace(testStorage.getClusterName(),
@@ -226,13 +226,13 @@ class ConnectST extends AbstractST {
         KafkaConnectorUtils.waitForConnectorReady(testStorage.getNamespaceName(), testStorage.getClusterName());
 
         LOGGER.info("Clearing FileSink file to check if KafkaConnector will be really paused");
-        KafkaConnectUtils.clearFileSinkFile(testStorage.getNamespaceName(), kafkaConnectPodName, Constants.DEFAULT_SINK_FILE_PATH);
+        KafkaConnectUtils.clearFileSinkFile(testStorage.getNamespaceName(), kafkaConnectPodName, TestConstants.DEFAULT_SINK_FILE_PATH);
 
         resourceManager.createResourceWithWait(extensionContext, kafkaClients.producerStrimzi(), kafkaClients.consumerStrimzi());
         ClientUtils.waitForClientsSuccess(testStorage);
 
         LOGGER.info("Because KafkaConnector is paused, no messages should appear to FileSink file");
-        assertThrows(Exception.class, () -> KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(testStorage.getNamespaceName(), kafkaConnectPodName, Constants.DEFAULT_SINK_FILE_PATH, "99"));
+        assertThrows(Exception.class, () -> KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(testStorage.getNamespaceName(), kafkaConnectPodName, TestConstants.DEFAULT_SINK_FILE_PATH, "99"));
 
         LOGGER.info("Unpausing KafkaConnector, messages should again appear to FileSink file");
         KafkaConnectorResource.replaceKafkaConnectorResourceInSpecificNamespace(testStorage.getClusterName(),
@@ -240,7 +240,7 @@ class ConnectST extends AbstractST {
 
         KafkaConnectorUtils.waitForConnectorReady(testStorage.getNamespaceName(), testStorage.getClusterName());
 
-        KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(testStorage.getNamespaceName(), kafkaConnectPodName, Constants.DEFAULT_SINK_FILE_PATH, "99");
+        KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(testStorage.getNamespaceName(), kafkaConnectPodName, TestConstants.DEFAULT_SINK_FILE_PATH, "99");
     }
 
     @ParallelNamespaceTest
@@ -253,7 +253,7 @@ class ConnectST extends AbstractST {
             .editSpec()
                 .editKafka()
                     .withListeners(new GenericKafkaListenerBuilder()
-                            .withName(Constants.PLAIN_LISTENER_DEFAULT_NAME)
+                            .withName(TestConstants.PLAIN_LISTENER_DEFAULT_NAME)
                             .withPort(9092)
                             .withType(KafkaListenerType.INTERNAL)
                             .withTls(false)
@@ -305,7 +305,7 @@ class ConnectST extends AbstractST {
 
         LOGGER.info("Creating FileStreamSink KafkaConnector via Pod: {}/{} with Topic: {}", testStorage.getNamespaceName(), scraperPodName, testStorage.getTopicName());
         KafkaConnectorUtils.createFileSinkConnector(testStorage.getNamespaceName(), scraperPodName, testStorage.getTopicName(),
-            Constants.DEFAULT_SINK_FILE_PATH, KafkaConnectResources.url(testStorage.getClusterName(), testStorage.getNamespaceName(), 8083));
+            TestConstants.DEFAULT_SINK_FILE_PATH, KafkaConnectResources.url(testStorage.getClusterName(), testStorage.getNamespaceName(), 8083));
 
         KafkaClients kafkaClients = new KafkaClientsBuilder()
             .withTopicName(testStorage.getTopicName())
@@ -321,7 +321,7 @@ class ConnectST extends AbstractST {
             kafkaClients.consumerScramShaPlainStrimzi());
         ClientUtils.waitForClientsSuccess(testStorage);
 
-        KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(testStorage.getNamespaceName(), kafkaConnectPodName, Constants.DEFAULT_SINK_FILE_PATH, "99");
+        KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(testStorage.getNamespaceName(), kafkaConnectPodName, TestConstants.DEFAULT_SINK_FILE_PATH, "99");
     }
 
     @ParallelNamespaceTest
@@ -454,7 +454,7 @@ class ConnectST extends AbstractST {
             .editSpec()
                 .editKafka()
                     .withListeners(new GenericKafkaListenerBuilder()
-                            .withName(Constants.TLS_LISTENER_DEFAULT_NAME)
+                            .withName(TestConstants.TLS_LISTENER_DEFAULT_NAME)
                             .withPort(9093)
                             .withType(KafkaListenerType.INTERNAL)
                             .withTls(true)
@@ -508,7 +508,7 @@ class ConnectST extends AbstractST {
 
         LOGGER.info("Creating FileStreamSink KafkaConnector via Pod: {}/{} with Topic: {}", testStorage.getNamespaceName(), scraperPodName, testStorage.getTopicName());
         KafkaConnectorUtils.createFileSinkConnector(testStorage.getNamespaceName(), scraperPodName, testStorage.getTopicName(),
-            Constants.DEFAULT_SINK_FILE_PATH, KafkaConnectResources.url(testStorage.getClusterName(), testStorage.getNamespaceName(), 8083));
+            TestConstants.DEFAULT_SINK_FILE_PATH, KafkaConnectResources.url(testStorage.getClusterName(), testStorage.getNamespaceName(), 8083));
 
         KafkaClients kafkaClients = new KafkaClientsBuilder()
             .withTopicName(testStorage.getTopicName())
@@ -523,7 +523,7 @@ class ConnectST extends AbstractST {
         resourceManager.createResourceWithWait(extensionContext, kafkaClients.producerTlsStrimzi(testStorage.getClusterName()), kafkaClients.consumerTlsStrimzi(testStorage.getClusterName()));
         ClientUtils.waitForClientsSuccess(testStorage);
 
-        KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(testStorage.getNamespaceName(), kafkaConnectPodName, Constants.DEFAULT_SINK_FILE_PATH, "99");
+        KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(testStorage.getNamespaceName(), kafkaConnectPodName, TestConstants.DEFAULT_SINK_FILE_PATH, "99");
     }
 
     @ParallelNamespaceTest
@@ -535,7 +535,7 @@ class ConnectST extends AbstractST {
             .editSpec()
                 .editKafka()
                     .withListeners(new GenericKafkaListenerBuilder()
-                            .withName(Constants.TLS_LISTENER_DEFAULT_NAME)
+                            .withName(TestConstants.TLS_LISTENER_DEFAULT_NAME)
                             .withPort(9093)
                             .withType(KafkaListenerType.INTERNAL)
                             .withTls(true)
@@ -587,7 +587,7 @@ class ConnectST extends AbstractST {
 
         LOGGER.info("Creating FileStreamSink KafkaConnector via Pod: {}/{} with Topic: {}", testStorage.getNamespaceName(), scraperPodName, testStorage.getTopicName());
         KafkaConnectorUtils.createFileSinkConnector(testStorage.getNamespaceName(), scraperPodName, testStorage.getTopicName(),
-            Constants.DEFAULT_SINK_FILE_PATH, KafkaConnectResources.url(testStorage.getClusterName(), testStorage.getNamespaceName(), 8083));
+            TestConstants.DEFAULT_SINK_FILE_PATH, KafkaConnectResources.url(testStorage.getClusterName(), testStorage.getNamespaceName(), 8083));
 
         KafkaClients kafkaClients = new KafkaClientsBuilder()
             .withTopicName(testStorage.getTopicName())
@@ -602,7 +602,7 @@ class ConnectST extends AbstractST {
         resourceManager.createResourceWithWait(extensionContext, kafkaClients.producerScramShaTlsStrimzi(testStorage.getClusterName()), kafkaClients.consumerScramShaTlsStrimzi(testStorage.getClusterName()));
         ClientUtils.waitForClientsSuccess(testStorage);
 
-        KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(testStorage.getNamespaceName(), kafkaConnectPodName, Constants.DEFAULT_SINK_FILE_PATH, "99");
+        KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(testStorage.getNamespaceName(), kafkaConnectPodName, TestConstants.DEFAULT_SINK_FILE_PATH, "99");
     }
 
     @ParallelNamespaceTest
@@ -612,16 +612,16 @@ class ConnectST extends AbstractST {
 
         resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3).build());
 
-        final String imageFullPath = Environment.getImageOutputRegistry(testStorage.getNamespaceName(), Constants.ST_CONNECT_BUILD_IMAGE_NAME, String.valueOf(new Random().nextInt(Integer.MAX_VALUE)));
+        final String imageFullPath = Environment.getImageOutputRegistry(testStorage.getNamespaceName(), TestConstants.ST_CONNECT_BUILD_IMAGE_NAME, String.valueOf(new Random().nextInt(Integer.MAX_VALUE)));
 
         resourceManager.createResourceWithWait(extensionContext, KafkaTopicTemplates.topic(testStorage).build());
 
         final Plugin echoSinkPlugin = new PluginBuilder()
-            .withName(Constants.ECHO_SINK_CONNECTOR_NAME)
+            .withName(TestConstants.ECHO_SINK_CONNECTOR_NAME)
             .withArtifacts(
                 new JarArtifactBuilder()
-                    .withUrl(Constants.ECHO_SINK_JAR_URL)
-                    .withSha512sum(Constants.ECHO_SINK_JAR_CHECKSUM)
+                    .withUrl(TestConstants.ECHO_SINK_JAR_URL)
+                    .withSha512sum(TestConstants.ECHO_SINK_JAR_CHECKSUM)
                     .build())
             .build();
 
@@ -654,10 +654,10 @@ class ConnectST extends AbstractST {
         echoSinkConfig.put("fail.task.after.records", failMessageCount);
 
         LOGGER.info("Creating EchoSink KafkaConnector");
-        resourceManager.createResourceWithWait(extensionContext, KafkaConnectorTemplates.kafkaConnector(Constants.ECHO_SINK_CONNECTOR_NAME, testStorage.getClusterName())
+        resourceManager.createResourceWithWait(extensionContext, KafkaConnectorTemplates.kafkaConnector(TestConstants.ECHO_SINK_CONNECTOR_NAME, testStorage.getClusterName())
             .editOrNewSpec()
                 .withTasksMax(1)
-                .withClassName(Constants.ECHO_SINK_CLASS_NAME)
+                .withClassName(TestConstants.ECHO_SINK_CLASS_NAME)
                 .withConfig(echoSinkConfig)
                 .withAutoRestart(new AutoRestartBuilder().withEnabled().build())
             .endSpec()
@@ -677,14 +677,14 @@ class ConnectST extends AbstractST {
 
         // After connector picks up messages from topic it fails task
         // If it's the first time echo-sink task failed - it's immediately restarted and connector adds count to autoRestartCount.
-        KafkaConnectorUtils.waitForConnectorAutoRestartCount(testStorage.getNamespaceName(), Constants.ECHO_SINK_CONNECTOR_NAME, 1);
+        KafkaConnectorUtils.waitForConnectorAutoRestartCount(testStorage.getNamespaceName(), TestConstants.ECHO_SINK_CONNECTOR_NAME, 1);
         // Give some time to connector task to get back to running state after recovery
-        KafkaConnectorUtils.waitForConnectorTaskState(testStorage.getNamespaceName(), Constants.ECHO_SINK_CONNECTOR_NAME, 0, "RUNNING");
+        KafkaConnectorUtils.waitForConnectorTaskState(testStorage.getNamespaceName(), TestConstants.ECHO_SINK_CONNECTOR_NAME, 0, "RUNNING");
         // If task is in running state for about 2 minutes, it resets the auto-restart count back to 0
 
         // TODO: the check is currently not working - there is some issue with committing the consumer offset and the Connector is restarted multiple times
         // https://github.com/strimzi/strimzi-kafka-operator/issues/8560
-        // KafkaConnectorUtils.waitForConnectorAutoRestartCount(testStorage.getNamespaceName(), Constants.ECHO_SINK_CONNECTOR_NAME, 0);
+        // KafkaConnectorUtils.waitForConnectorAutoRestartCount(testStorage.getNamespaceName(), TestConstants.ECHO_SINK_CONNECTOR_NAME, 0);
     }
 
     @ParallelNamespaceTest
@@ -815,7 +815,7 @@ class ConnectST extends AbstractST {
             .editSpec()
                 .withClassName("org.apache.kafka.connect.file.FileStreamSinkConnector")
                 .addToConfig("topics", testStorage.getTopicName())
-                .addToConfig("file", Constants.DEFAULT_SINK_FILE_PATH)
+                .addToConfig("file", TestConstants.DEFAULT_SINK_FILE_PATH)
                 .addToConfig("key.converter", "org.apache.kafka.connect.storage.StringConverter")
                 .addToConfig("value.converter", "org.apache.kafka.connect.storage.StringConverter")
             .endSpec()
@@ -843,7 +843,7 @@ class ConnectST extends AbstractST {
         resourceManager.createResourceWithWait(extensionContext, kafkaClients.producerStrimzi(), kafkaClients.consumerStrimzi());
         ClientUtils.waitForClientsSuccess(testStorage);
 
-        KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(testStorage.getNamespaceName(), connectorPodName, Constants.DEFAULT_SINK_FILE_PATH, "99");
+        KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(testStorage.getNamespaceName(), connectorPodName, TestConstants.DEFAULT_SINK_FILE_PATH, "99");
     }
 
     @Tag(NODEPORT_SUPPORTED)
@@ -863,14 +863,14 @@ class ConnectST extends AbstractST {
             .editSpec()
                 .editKafka()
                     .withListeners(new GenericKafkaListenerBuilder()
-                                .withName(Constants.TLS_LISTENER_DEFAULT_NAME)
+                                .withName(TestConstants.TLS_LISTENER_DEFAULT_NAME)
                                 .withPort(9093)
                                 .withType(KafkaListenerType.INTERNAL)
                                 .withTls(true)
                                 .withAuth(new KafkaListenerAuthenticationTls())
                                 .build(),
                             new GenericKafkaListenerBuilder()
-                                .withName(Constants.EXTERNAL_LISTENER_DEFAULT_NAME)
+                                .withName(TestConstants.EXTERNAL_LISTENER_DEFAULT_NAME)
                                 .withPort(9094)
                                 .withType(KafkaListenerType.NODEPORT)
                                 .withTls(true)
@@ -928,14 +928,14 @@ class ConnectST extends AbstractST {
             .editSpec()
                 .editKafka()
                     .withListeners(new GenericKafkaListenerBuilder()
-                                .withName(Constants.TLS_LISTENER_DEFAULT_NAME)
+                                .withName(TestConstants.TLS_LISTENER_DEFAULT_NAME)
                                 .withPort(9093)
                                 .withType(KafkaListenerType.INTERNAL)
                                 .withTls(true)
                                 .withAuth(new KafkaListenerAuthenticationScramSha512())
                                 .build(),
                             new GenericKafkaListenerBuilder()
-                                .withName(Constants.EXTERNAL_LISTENER_DEFAULT_NAME)
+                                .withName(TestConstants.EXTERNAL_LISTENER_DEFAULT_NAME)
                                 .withPort(9094)
                                 .withType(KafkaListenerType.NODEPORT)
                                 .withTls(true)
@@ -984,7 +984,7 @@ class ConnectST extends AbstractST {
             .editSpec()
                 .withClassName("org.apache.kafka.connect.file.FileStreamSinkConnector")
                 .addToConfig("topics", topicName)
-                .addToConfig("file", Constants.DEFAULT_SINK_FILE_PATH)
+                .addToConfig("file", TestConstants.DEFAULT_SINK_FILE_PATH)
             .endSpec()
             .build());
 
@@ -995,12 +995,12 @@ class ConnectST extends AbstractST {
             .withMessageCount(MESSAGE_COUNT)
             .withSecurityProtocol(securityProtocol)
             .withTopicName(topicName)
-            .withListenerName(Constants.EXTERNAL_LISTENER_DEFAULT_NAME)
+            .withListenerName(TestConstants.EXTERNAL_LISTENER_DEFAULT_NAME)
             .build();
 
         assertThat(externalKafkaClient.sendMessagesTls(), is(MESSAGE_COUNT));
 
-        KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(namespaceName, connectorPodName, Constants.DEFAULT_SINK_FILE_PATH, "\"Hello-world - 99\"");
+        KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(namespaceName, connectorPodName, TestConstants.DEFAULT_SINK_FILE_PATH, "\"Hello-world - 99\"");
     }
 
     @ParallelNamespaceTest
@@ -1050,7 +1050,7 @@ class ConnectST extends AbstractST {
         resourceManager.createResourceWithWait(extensionContext, KafkaConnectorTemplates.kafkaConnector(clusterName)
             .editSpec()
                 .withClassName("org.apache.kafka.connect.file.FileStreamSinkConnector")
-                .addToConfig("file", Constants.DEFAULT_SINK_FILE_PATH)
+                .addToConfig("file", TestConstants.DEFAULT_SINK_FILE_PATH)
                 .addToConfig("key.converter", "org.apache.kafka.connect.storage.StringConverter")
                 .addToConfig("value.converter", "org.apache.kafka.connect.storage.StringConverter")
                 .addToConfig("topics", topicName)
@@ -1099,7 +1099,7 @@ class ConnectST extends AbstractST {
         resourceManager.createResourceWithWait(extensionContext, KafkaConnectorTemplates.kafkaConnector(clusterName)
             .editSpec()
                 .withClassName("org.apache.kafka.connect.file.FileStreamSinkConnector")
-                .addToConfig("file", Constants.DEFAULT_SINK_FILE_PATH)
+                .addToConfig("file", TestConstants.DEFAULT_SINK_FILE_PATH)
                 .addToConfig("key.converter", "org.apache.kafka.connect.storage.StringConverter")
                 .addToConfig("value.converter", "org.apache.kafka.connect.storage.StringConverter")
                 .addToConfig("topics", topicName)
@@ -1142,7 +1142,7 @@ class ConnectST extends AbstractST {
         for (Pod pod : connectPods) {
             LOGGER.info("Checking taskMax over API for Pod: {}/{}", pod.getMetadata().getNamespace(), pod.getMetadata().getName());
             TestUtils.waitFor(String.format("pod's %s API return tasksMax=%s", pod.getMetadata().getName(), scaleTo),
-                Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT_SHORT, () -> {
+                TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_TIMEOUT_SHORT, () -> {
                     JsonObject json = new JsonObject(KafkaConnectorUtils.getConnectorSpecFromConnectAPI(namespaceName, pod.getMetadata().getName(), clusterName));
                     return Integer.parseInt(json.getJsonObject("config").getString("tasks.max")) == scaleTo;
                 });
@@ -1327,7 +1327,7 @@ class ConnectST extends AbstractST {
                 .editSpec()
                 .editKafka()
                 .withListeners(new GenericKafkaListenerBuilder()
-                        .withName(Constants.PLAIN_LISTENER_DEFAULT_NAME)
+                        .withName(TestConstants.PLAIN_LISTENER_DEFAULT_NAME)
                         .withPort(9092)
                         .withType(KafkaListenerType.INTERNAL)
                         .withTls(false)
@@ -1420,7 +1420,7 @@ class ConnectST extends AbstractST {
     void setUp(final ExtensionContext extensionContext) {
         clusterOperator = clusterOperator
             .defaultInstallation(extensionContext)
-            .withOperationTimeout(Constants.CO_OPERATION_TIMEOUT_MEDIUM)
+            .withOperationTimeout(TestConstants.CO_OPERATION_TIMEOUT_MEDIUM)
             .createInstallation()
             .runInstallation();
     }

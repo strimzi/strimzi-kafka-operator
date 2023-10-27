@@ -10,7 +10,7 @@ import io.strimzi.api.kafka.model.KafkaConnectResources;
 import io.strimzi.api.kafka.model.KafkaExporterResources;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2Resources;
 import io.strimzi.api.kafka.model.KafkaResources;
-import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.resources.ComponentType;
 import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
@@ -32,8 +32,8 @@ import java.util.concurrent.ExecutionException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static io.strimzi.systemtest.Constants.GLOBAL_POLL_INTERVAL;
-import static io.strimzi.systemtest.Constants.GLOBAL_TIMEOUT;
+import static io.strimzi.systemtest.TestConstants.GLOBAL_POLL_INTERVAL;
+import static io.strimzi.systemtest.TestConstants.GLOBAL_TIMEOUT;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
@@ -202,15 +202,15 @@ public class MetricsCollector {
     private int getDefaultMetricsPortForComponent() {
         switch (this.componentType) {
             case UserOperator:
-                return Constants.USER_OPERATOR_METRICS_PORT;
+                return TestConstants.USER_OPERATOR_METRICS_PORT;
             case TopicOperator:
-                return Constants.TOPIC_OPERATOR_METRICS_PORT;
+                return TestConstants.TOPIC_OPERATOR_METRICS_PORT;
             case ClusterOperator:
-                return Constants.CLUSTER_OPERATOR_METRICS_PORT;
+                return TestConstants.CLUSTER_OPERATOR_METRICS_PORT;
             case KafkaBridge:
-                return Constants.KAFKA_BRIDGE_METRICS_PORT;
+                return TestConstants.KAFKA_BRIDGE_METRICS_PORT;
             default:
-                return Constants.COMPONENTS_METRICS_PORT;
+                return TestConstants.COMPONENTS_METRICS_PORT;
         }
     }
 
@@ -244,7 +244,7 @@ public class MetricsCollector {
         ArrayList<Double> values = collectSpecificMetric(pattern);
 
         if (values.isEmpty()) {
-            TestUtils.waitFor(String.format("metrics contain pattern: %s", pattern.toString()), Constants.GLOBAL_POLL_INTERVAL_MEDIUM, Constants.GLOBAL_STATUS_TIMEOUT, () -> {
+            TestUtils.waitFor(String.format("metrics contain pattern: %s", pattern.toString()), TestConstants.GLOBAL_POLL_INTERVAL_MEDIUM, TestConstants.GLOBAL_STATUS_TIMEOUT, () -> {
                 this.collectMetricsFromPods();
                 LOGGER.debug("Collected data: {}", collectedData);
                 ArrayList<Double> vals = this.collectSpecificMetric(pattern);

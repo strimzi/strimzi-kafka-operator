@@ -14,7 +14,7 @@ import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
-import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.KRaftWithoutUTONotSupported;
 import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.cli.KafkaCmdClient;
@@ -42,10 +42,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static io.strimzi.systemtest.Constants.CONNECT;
-import static io.strimzi.systemtest.Constants.CONNECTOR_OPERATOR;
-import static io.strimzi.systemtest.Constants.CONNECT_COMPONENTS;
-import static io.strimzi.systemtest.Constants.MIRROR_MAKER2;
+import static io.strimzi.systemtest.TestConstants.CONNECT;
+import static io.strimzi.systemtest.TestConstants.CONNECTOR_OPERATOR;
+import static io.strimzi.systemtest.TestConstants.CONNECT_COMPONENTS;
+import static io.strimzi.systemtest.TestConstants.MIRROR_MAKER2;
 import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -296,7 +296,7 @@ public abstract class AbstractNamespaceST extends AbstractST {
         // Deploy Kafka Connector
         Map<String, Object> connectorConfig = new HashMap<>();
         connectorConfig.put("topics", TOPIC_NAME);
-        connectorConfig.put("file", Constants.DEFAULT_SINK_FILE_PATH);
+        connectorConfig.put("file", TestConstants.DEFAULT_SINK_FILE_PATH);
         connectorConfig.put("key.converter", "org.apache.kafka.connect.storage.StringConverter");
         connectorConfig.put("value.converter", "org.apache.kafka.connect.storage.StringConverter");
 
@@ -328,7 +328,7 @@ public abstract class AbstractNamespaceST extends AbstractST {
         resourceManager.createResourceWithWait(extensionContext, kafkaClients.producerStrimzi(), kafkaClients.consumerStrimzi());
         ClientUtils.waitForClientsSuccess(testStorage);
 
-        KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(testStorage.getNamespaceName(), kafkaConnectPodName, Constants.DEFAULT_SINK_FILE_PATH, "99");
+        KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(testStorage.getNamespaceName(), kafkaConnectPodName, TestConstants.DEFAULT_SINK_FILE_PATH, "99");
     }
 
     /**
@@ -340,7 +340,7 @@ public abstract class AbstractNamespaceST extends AbstractST {
 
         LOGGER.info("Deploying additional Kafka cluster and Scraper in Namespace: {}", MAIN_TEST_NAMESPACE);
 
-        final String scraperName = PRIMARY_KAFKA_NAME + "-" + Constants.SCRAPER_NAME;
+        final String scraperName = PRIMARY_KAFKA_NAME + "-" + TestConstants.SCRAPER_NAME;
 
         cluster.setNamespace(MAIN_TEST_NAMESPACE);
 

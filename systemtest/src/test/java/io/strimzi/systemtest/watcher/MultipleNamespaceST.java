@@ -14,8 +14,8 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.util.Arrays;
 
-import static io.strimzi.systemtest.Constants.REGRESSION;
-import static io.strimzi.systemtest.Constants.CO_NAMESPACE;
+import static io.strimzi.systemtest.TestConstants.REGRESSION;
+import static io.strimzi.systemtest.TestConstants.CO_NAMESPACE;
 
 @Tag(REGRESSION)
 class MultipleNamespaceST extends AbstractNamespaceST {

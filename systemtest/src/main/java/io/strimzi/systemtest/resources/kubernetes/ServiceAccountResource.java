@@ -5,7 +5,7 @@
 package io.strimzi.systemtest.resources.kubernetes;
 
 import io.fabric8.kubernetes.api.model.ServiceAccount;
-import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.resources.ResourceType;
 
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
@@ -14,7 +14,7 @@ public class ServiceAccountResource implements ResourceType<ServiceAccount> {
 
     @Override
     public String getKind() {
-        return Constants.SERVICE_ACCOUNT;
+        return TestConstants.SERVICE_ACCOUNT;
     }
     @Override
     public ServiceAccount get(String namespace, String name) {

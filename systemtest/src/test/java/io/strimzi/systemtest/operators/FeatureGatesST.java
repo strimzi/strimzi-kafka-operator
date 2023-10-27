@@ -17,7 +17,7 @@ import io.strimzi.api.kafka.model.nodepool.ProcessRoles;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
-import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
@@ -43,9 +43,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-import static io.strimzi.systemtest.Constants.CO_NAMESPACE;
-import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
-import static io.strimzi.systemtest.Constants.REGRESSION;
+import static io.strimzi.systemtest.TestConstants.CO_NAMESPACE;
+import static io.strimzi.systemtest.TestConstants.INTERNAL_CLIENTS_USED;
+import static io.strimzi.systemtest.TestConstants.REGRESSION;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assumptions.assumeFalse;
@@ -84,8 +84,8 @@ public class FeatureGatesST extends AbstractST {
         testEnvVars.add(new EnvVar(Environment.STRIMZI_FEATURE_GATES_ENV, "+UseKRaft", null));
 
         this.clusterOperator = this.clusterOperator.defaultInstallation(extensionContext)
-            .withNamespace(Constants.CO_NAMESPACE)
-            .withBindingsNamespaces(Arrays.asList(Constants.CO_NAMESPACE, Environment.TEST_SUITE_NAMESPACE))
+            .withNamespace(TestConstants.CO_NAMESPACE)
+            .withBindingsNamespaces(Arrays.asList(TestConstants.CO_NAMESPACE, Environment.TEST_SUITE_NAMESPACE))
             .withExtraEnvVars(testEnvVars)
             .createInstallation()
             .runInstallation();
@@ -101,13 +101,13 @@ public class FeatureGatesST extends AbstractST {
                 .withListeners(
                         new GenericKafkaListenerBuilder()
                                 .withType(KafkaListenerType.INTERNAL)
-                                .withName(Constants.PLAIN_LISTENER_DEFAULT_NAME)
+                                .withName(TestConstants.PLAIN_LISTENER_DEFAULT_NAME)
                                 .withPort(9092)
                                 .withTls(false)
                                 .build(),
                         new GenericKafkaListenerBuilder()
                                 .withType(KafkaListenerType.INTERNAL)
-                                .withName(Constants.TLS_LISTENER_DEFAULT_NAME)
+                                .withName(TestConstants.TLS_LISTENER_DEFAULT_NAME)
                                 .withPort(9093)
                                 .withTls(true)
                                 .withNewKafkaListenerAuthenticationTlsAuth()

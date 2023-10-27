@@ -10,7 +10,7 @@ import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.systemtest.AbstractST;
-import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 import io.strimzi.systemtest.storage.TestStorage;
@@ -27,7 +27,7 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
-import static io.strimzi.systemtest.Constants.KAFKA_SMOKE;
+import static io.strimzi.systemtest.TestConstants.KAFKA_SMOKE;
 
 @Tag(KAFKA_SMOKE)
 public class KafkaVersionsST extends AbstractST {
@@ -71,7 +71,7 @@ public class KafkaVersionsST extends AbstractST {
                     .endKafkaAuthorizationSimple()
                     .withListeners(
                             new GenericKafkaListenerBuilder()
-                                    .withName(Constants.PLAIN_LISTENER_DEFAULT_NAME)
+                                    .withName(TestConstants.PLAIN_LISTENER_DEFAULT_NAME)
                                     .withPort(9092)
                                     .withType(KafkaListenerType.INTERNAL)
                                     .withTls(false)
@@ -79,7 +79,7 @@ public class KafkaVersionsST extends AbstractST {
                                     .endKafkaListenerAuthenticationScramSha512Auth()
                                     .build(),
                             new GenericKafkaListenerBuilder()
-                                    .withName(Constants.TLS_LISTENER_DEFAULT_NAME)
+                                    .withName(TestConstants.TLS_LISTENER_DEFAULT_NAME)
                                     .withPort(9093)
                                     .withType(KafkaListenerType.INTERNAL)
                                     .withTls(true)

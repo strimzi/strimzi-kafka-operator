@@ -22,7 +22,7 @@ import io.strimzi.api.kafka.model.template.KafkaClusterTemplateBuilder;
 import io.strimzi.api.kafka.model.template.PodTemplate;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.systemtest.AbstractST;
-import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.KRaftNotSupported;
 import io.strimzi.systemtest.annotations.KRaftWithoutUTONotSupported;
@@ -53,9 +53,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-import static io.strimzi.systemtest.Constants.REGRESSION;
-import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
-import static io.strimzi.systemtest.Constants.ROLLING_UPDATE;
+import static io.strimzi.systemtest.TestConstants.REGRESSION;
+import static io.strimzi.systemtest.TestConstants.INTERNAL_CLIENTS_USED;
+import static io.strimzi.systemtest.TestConstants.ROLLING_UPDATE;
 import static io.strimzi.systemtest.k8s.Events.Created;
 import static io.strimzi.systemtest.k8s.Events.Pulled;
 import static io.strimzi.systemtest.k8s.Events.Scheduled;
@@ -332,7 +332,7 @@ public class KafkaRollerST extends AbstractST {
     @BeforeAll
     void setup(ExtensionContext extensionContext) {
         this.clusterOperator = this.clusterOperator.defaultInstallation(extensionContext)
-            .withOperationTimeout(Constants.CO_OPERATION_TIMEOUT_MEDIUM)
+            .withOperationTimeout(TestConstants.CO_OPERATION_TIMEOUT_MEDIUM)
             .createInstallation()
             .runInstallation();
     }

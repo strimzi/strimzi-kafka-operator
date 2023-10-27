@@ -5,7 +5,7 @@
 package io.strimzi.systemtest.utils.kubeUtils.objects;
 
 import io.fabric8.kubernetes.api.model.Namespace;
-import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.resources.ResourceOperation;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
 import io.strimzi.test.TestUtils;
@@ -24,7 +24,7 @@ public class NamespaceUtils {
     public static void waitForNamespaceDeletion(String name) {
         LOGGER.info("Waiting for Namespace: {} deletion", name);
 
-        TestUtils.waitFor("Namespace: " + name, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, DELETION_TIMEOUT,
+        TestUtils.waitFor("Namespace: " + name, TestConstants.POLL_INTERVAL_FOR_RESOURCE_READINESS, DELETION_TIMEOUT,
             () -> kubeClient().getNamespace(name) == null);
         LOGGER.info("Namespace: {} was deleted", name);
     }
@@ -40,7 +40,7 @@ public class NamespaceUtils {
 
         kubeClient().deleteNamespace(namespaceName);
 
-        TestUtils.waitFor("Namespace: " + namespaceName + "to be deleted", Constants.POLL_INTERVAL_FOR_RESOURCE_DELETION, DELETION_TIMEOUT, () -> {
+        TestUtils.waitFor("Namespace: " + namespaceName + "to be deleted", TestConstants.POLL_INTERVAL_FOR_RESOURCE_DELETION, DELETION_TIMEOUT, () -> {
             Namespace namespace = kubeClient().getNamespace(namespaceName);
 
             if (namespace == null) {

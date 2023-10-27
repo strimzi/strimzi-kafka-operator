@@ -19,8 +19,8 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
-import static io.strimzi.systemtest.Constants.HELM;
-import static io.strimzi.systemtest.Constants.REGRESSION;
+import static io.strimzi.systemtest.TestConstants.HELM;
+import static io.strimzi.systemtest.TestConstants.REGRESSION;
 
 @Tag(HELM)
 @Tag(REGRESSION)

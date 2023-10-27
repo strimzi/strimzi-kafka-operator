@@ -11,7 +11,7 @@ import io.fabric8.kubernetes.api.model.PodSpecBuilder;
 import io.fabric8.kubernetes.api.model.batch.v1.Job;
 import io.fabric8.kubernetes.api.model.batch.v1.JobBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
-import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.enums.PodSecurityProfile;
 import io.strimzi.systemtest.resources.ResourceManager;
@@ -182,7 +182,7 @@ public class KafkaClients extends BaseClients {
 
         Map<String, String> producerLabels = new HashMap<>();
         producerLabels.put("app", producerName);
-        producerLabels.put(Constants.KAFKA_CLIENTS_LABEL_KEY, Constants.KAFKA_CLIENTS_LABEL_VALUE);
+        producerLabels.put(TestConstants.KAFKA_CLIENTS_LABEL_KEY, TestConstants.KAFKA_CLIENTS_LABEL_VALUE);
 
         PodSpecBuilder podSpecBuilder = new PodSpecBuilder();
 
@@ -210,7 +210,7 @@ public class KafkaClients extends BaseClients {
                         .withContainers()
                             .addNewContainer()
                                 .withName(producerName)
-                                .withImagePullPolicy(Constants.IF_NOT_PRESENT_IMAGE_PULL_POLICY)
+                                .withImagePullPolicy(TestConstants.IF_NOT_PRESENT_IMAGE_PULL_POLICY)
                                 .withImage(Environment.TEST_CLIENTS_IMAGE)
                                 .addNewEnv()
                                     .withName("BOOTSTRAP_SERVERS")
@@ -329,7 +329,7 @@ public class KafkaClients extends BaseClients {
 
         Map<String, String> consumerLabels = new HashMap<>();
         consumerLabels.put("app", consumerName);
-        consumerLabels.put(Constants.KAFKA_CLIENTS_LABEL_KEY, Constants.KAFKA_CLIENTS_LABEL_VALUE);
+        consumerLabels.put(TestConstants.KAFKA_CLIENTS_LABEL_KEY, TestConstants.KAFKA_CLIENTS_LABEL_VALUE);
 
         PodSpecBuilder podSpecBuilder = new PodSpecBuilder();
 
@@ -357,7 +357,7 @@ public class KafkaClients extends BaseClients {
                             .withContainers()
                                 .addNewContainer()
                                     .withName(consumerName)
-                                    .withImagePullPolicy(Constants.IF_NOT_PRESENT_IMAGE_PULL_POLICY)
+                                    .withImagePullPolicy(TestConstants.IF_NOT_PRESENT_IMAGE_PULL_POLICY)
                                     .withImage(Environment.TEST_CLIENTS_IMAGE)
                                     .addNewEnv()
                                         .withName("BOOTSTRAP_SERVERS")

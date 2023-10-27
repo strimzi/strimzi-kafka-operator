@@ -16,11 +16,11 @@ import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
-import static io.strimzi.systemtest.Constants.CONNECT;
-import static io.strimzi.systemtest.Constants.MIRROR_MAKER2;
-import static io.strimzi.systemtest.Constants.REGRESSION;
+import static io.strimzi.systemtest.TestConstants.CONNECT;
+import static io.strimzi.systemtest.TestConstants.MIRROR_MAKER2;
+import static io.strimzi.systemtest.TestConstants.REGRESSION;
 
-import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 
@@ -322,7 +322,7 @@ class RackAwarenessST extends AbstractST {
         LOGGER.info("Deploying Sink KafkaConnector in KafkaConnect Cluster: {}/{}", namespace, newConnectorName);
         Map<String, Object> connectorConfig = new HashMap<>();
         connectorConfig.put("topics", topicName);
-        connectorConfig.put("file", Constants.DEFAULT_SINK_FILE_PATH);
+        connectorConfig.put("file", TestConstants.DEFAULT_SINK_FILE_PATH);
         connectorConfig.put("key.converter", "org.apache.kafka.connect.storage.StringConverter");
         connectorConfig.put("value.converter", "org.apache.kafka.connect.storage.StringConverter");
 
@@ -340,7 +340,7 @@ class RackAwarenessST extends AbstractST {
         LOGGER.info("KafkaConnect Pod: {}/{}", namespace, kafkaConnectPodName);
         KafkaConnectUtils.waitUntilKafkaConnectRestApiIsAvailable(namespace, kafkaConnectPodName);
 
-        KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(namespace, kafkaConnectPodName, Constants.DEFAULT_SINK_FILE_PATH, "99");
+        KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(namespace, kafkaConnectPodName, TestConstants.DEFAULT_SINK_FILE_PATH, "99");
     }
 
     @BeforeEach

@@ -5,7 +5,7 @@
 package io.strimzi.systemtest.utils.specific;
 
 import io.fabric8.openshift.api.model.operatorhub.v1alpha1.InstallPlan;
-import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.resources.operator.SetupClusterOperator;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
@@ -20,12 +20,12 @@ public class OlmUtils {
     private OlmUtils() {}
 
     public static void waitUntilNonUsedInstallPlanIsPresent(String namespaceName) {
-        TestUtils.waitFor("unused InstallPlan to be present", Constants.OLM_UPGRADE_INSTALL_PLAN_POLL, Constants.OLM_UPGRADE_INSTALL_PLAN_TIMEOUT,
+        TestUtils.waitFor("unused InstallPlan to be present", TestConstants.OLM_UPGRADE_INSTALL_PLAN_POLL, TestConstants.OLM_UPGRADE_INSTALL_PLAN_TIMEOUT,
             () -> kubeClient().getNonApprovedInstallPlan(namespaceName) != null);
     }
 
     public static void waitUntilNonUsedInstallPlanWithSpecificCsvIsPresentAndApprove(String namespaceName, String csvName) {
-        TestUtils.waitFor("unused InstallPlan with CSV: " + namespaceName + "/" + csvName + " to be present", Constants.OLM_UPGRADE_INSTALL_PLAN_POLL, Constants.OLM_UPGRADE_INSTALL_PLAN_TIMEOUT,
+        TestUtils.waitFor("unused InstallPlan with CSV: " + namespaceName + "/" + csvName + " to be present", TestConstants.OLM_UPGRADE_INSTALL_PLAN_POLL, TestConstants.OLM_UPGRADE_INSTALL_PLAN_TIMEOUT,
             () -> {
                 if (kubeClient().getNonApprovedInstallPlan(namespaceName) != null) {
                     InstallPlan installPlan = kubeClient().getNonApprovedInstallPlan(namespaceName);

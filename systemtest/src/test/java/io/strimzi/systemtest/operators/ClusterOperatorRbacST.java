@@ -6,7 +6,7 @@ package io.strimzi.systemtest.operators;
 
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.systemtest.AbstractST;
-import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.enums.ClusterOperatorRBACType;
@@ -25,9 +25,9 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.util.Arrays;
 
-import static io.strimzi.systemtest.Constants.CONNECT;
-import static io.strimzi.systemtest.Constants.CONNECT_COMPONENTS;
-import static io.strimzi.systemtest.Constants.REGRESSION;
+import static io.strimzi.systemtest.TestConstants.CONNECT;
+import static io.strimzi.systemtest.TestConstants.CONNECT_COMPONENTS;
+import static io.strimzi.systemtest.TestConstants.REGRESSION;
 import static io.strimzi.systemtest.enums.CustomResourceStatus.NotReady;
 import static io.strimzi.systemtest.resources.ResourceManager.cmdKubeClient;
 import static io.strimzi.systemtest.resources.ResourceManager.kubeClient;
@@ -54,25 +54,25 @@ public class ClusterOperatorRbacST extends AbstractST {
         this.clusterOperator = this.clusterOperator.defaultInstallation(extensionContext)
             .withClusterOperatorRBACType(ClusterOperatorRBACType.NAMESPACE)
             .withWatchingNamespaces(Environment.TEST_SUITE_NAMESPACE)
-            .withBindingsNamespaces(Arrays.asList(Constants.CO_NAMESPACE, Environment.TEST_SUITE_NAMESPACE))
+            .withBindingsNamespaces(Arrays.asList(TestConstants.CO_NAMESPACE, Environment.TEST_SUITE_NAMESPACE))
             .createInstallation()
             .runBundleInstallation();
 
         cluster.setNamespace(Environment.TEST_SUITE_NAMESPACE);
 
-        String coPodName = kubeClient().getClusterOperatorPodName(Constants.CO_NAMESPACE);
+        String coPodName = kubeClient().getClusterOperatorPodName(TestConstants.CO_NAMESPACE);
         LOGGER.info("Deploying Kafka: {}, which should be deployed even the CRBs are not present", clusterName);
 
         resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3).build());
         LOGGER.info("CO log should contain some information about ignoring forbidden access to CRB for Kafka");
-        String log = cmdKubeClient().namespace(Constants.CO_NAMESPACE).execInCurrentNamespace(Level.DEBUG, "logs", coPodName).out();
+        String log = cmdKubeClient().namespace(TestConstants.CO_NAMESPACE).execInCurrentNamespace(Level.DEBUG, "logs", coPodName).out();
         assertTrue(log.contains("Kafka(" + cmdKubeClient().namespace() + "/" + clusterName + "): Ignoring forbidden access to ClusterRoleBindings resource which does not seem to be required."));
 
         LOGGER.info("Deploying KafkaConnect: {} without rack awareness, the CR should be deployed without error", clusterName);
         resourceManager.createResourceWithWait(extensionContext, KafkaConnectTemplates.kafkaConnect(clusterName, Environment.TEST_SUITE_NAMESPACE, 1).build());
 
         LOGGER.info("CO log should contain some information about ignoring forbidden access to CRB for KafkaConnect");
-        log = cmdKubeClient().namespace(Constants.CO_NAMESPACE).execInCurrentNamespace(Level.DEBUG, "logs", coPodName).out();
+        log = cmdKubeClient().namespace(TestConstants.CO_NAMESPACE).execInCurrentNamespace(Level.DEBUG, "logs", coPodName).out();
         assertTrue(log.contains("KafkaConnect(" + cmdKubeClient().namespace() + "/" + clusterName + "): Ignoring forbidden access to ClusterRoleBindings resource which does not seem to be required."));
     }
 
@@ -89,7 +89,7 @@ public class ClusterOperatorRbacST extends AbstractST {
         this.clusterOperator = this.clusterOperator.defaultInstallation(extensionContext)
             .withClusterOperatorRBACType(ClusterOperatorRBACType.NAMESPACE)
             .withWatchingNamespaces(Environment.TEST_SUITE_NAMESPACE)
-            .withBindingsNamespaces(Arrays.asList(Constants.CO_NAMESPACE, Environment.TEST_SUITE_NAMESPACE))
+            .withBindingsNamespaces(Arrays.asList(TestConstants.CO_NAMESPACE, Environment.TEST_SUITE_NAMESPACE))
             .createInstallation()
             .runBundleInstallation();
 

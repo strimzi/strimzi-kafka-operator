@@ -16,7 +16,7 @@ import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
-import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.KRaftNotSupported;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
@@ -56,10 +56,10 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-import static io.strimzi.systemtest.Constants.CONNECT;
-import static io.strimzi.systemtest.Constants.CONNECT_COMPONENTS;
-import static io.strimzi.systemtest.Constants.CRUISE_CONTROL;
-import static io.strimzi.systemtest.Constants.REGRESSION;
+import static io.strimzi.systemtest.TestConstants.CONNECT;
+import static io.strimzi.systemtest.TestConstants.CONNECT_COMPONENTS;
+import static io.strimzi.systemtest.TestConstants.CRUISE_CONTROL;
+import static io.strimzi.systemtest.TestConstants.REGRESSION;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -75,8 +75,8 @@ public class MultipleClusterOperatorsST extends AbstractST {
     public static final String FIRST_NAMESPACE = "first-co-namespace";
     public static final String SECOND_NAMESPACE = "second-co-namespace";
 
-    public static final String FIRST_CO_NAME = "first-" + Constants.STRIMZI_DEPLOYMENT_NAME;
-    public static final String SECOND_CO_NAME = "second-" + Constants.STRIMZI_DEPLOYMENT_NAME;
+    public static final String FIRST_CO_NAME = "first-" + TestConstants.STRIMZI_DEPLOYMENT_NAME;
+    public static final String SECOND_CO_NAME = "second-" + TestConstants.STRIMZI_DEPLOYMENT_NAME;
 
     public static final EnvVar FIRST_CO_SELECTOR_ENV = new EnvVar("STRIMZI_CUSTOM_RESOURCE_SELECTOR", "app.kubernetes.io/operator=" + FIRST_CO_NAME, null);
     public static final EnvVar SECOND_CO_SELECTOR_ENV = new EnvVar("STRIMZI_CUSTOM_RESOURCE_SELECTOR", "app.kubernetes.io/operator=" + SECOND_CO_NAME, null);
@@ -130,8 +130,8 @@ public class MultipleClusterOperatorsST extends AbstractST {
 
         TestStorage testStorage = new TestStorage(extensionContext, DEFAULT_NAMESPACE);
 
-        String firstCOScraperName = FIRST_NAMESPACE + "-" + Constants.SCRAPER_NAME;
-        String secondCOScraperName = SECOND_NAMESPACE + "-" + Constants.SCRAPER_NAME;
+        String firstCOScraperName = FIRST_NAMESPACE + "-" + TestConstants.SCRAPER_NAME;
+        String secondCOScraperName = SECOND_NAMESPACE + "-" + TestConstants.SCRAPER_NAME;
 
         LOGGER.info("Deploying Cluster Operators: {}, {} in respective namespaces: {}, {}", FIRST_CO_NAME, SECOND_CO_NAME, FIRST_NAMESPACE, SECOND_NAMESPACE);
         deployCOInNamespace(extensionContext, FIRST_CO_NAME, FIRST_NAMESPACE, Collections.singletonList(FIRST_CO_SELECTOR_ENV), true);
@@ -144,9 +144,9 @@ public class MultipleClusterOperatorsST extends AbstractST {
         );
 
         LOGGER.info("Setting up metric collectors targeting Cluster Operators: {}, {}", FIRST_CO_NAME, SECOND_CO_NAME);
-        String firstCOScraper = FIRST_NAMESPACE + "-" + Constants.SCRAPER_NAME;
+        String firstCOScraper = FIRST_NAMESPACE + "-" + TestConstants.SCRAPER_NAME;
         MetricsCollector firstCoMetricsCollector = setupCOMetricsCollectorInNamespace(FIRST_CO_NAME, FIRST_NAMESPACE, firstCOScraper);
-        String secondCOScraper = SECOND_NAMESPACE + "-" + Constants.SCRAPER_NAME;
+        String secondCOScraper = SECOND_NAMESPACE + "-" + TestConstants.SCRAPER_NAME;
         MetricsCollector secondCoMetricsCollector = setupCOMetricsCollectorInNamespace(SECOND_CO_NAME, SECOND_NAMESPACE, secondCOScraper);
 
         LOGGER.info("Deploying Namespace: {} to host all additional operands", testStorage.getNamespaceName());
@@ -185,7 +185,7 @@ public class MultipleClusterOperatorsST extends AbstractST {
         resourceManager.createResourceWithWait(extensionContext, KafkaConnectorTemplates.kafkaConnector(testStorage.getClusterName())
             .editSpec()
                 .withClassName("org.apache.kafka.connect.file.FileStreamSinkConnector")
-                .addToConfig("file", Constants.DEFAULT_SINK_FILE_PATH)
+                .addToConfig("file", TestConstants.DEFAULT_SINK_FILE_PATH)
                 .addToConfig("key.converter", "org.apache.kafka.connect.storage.StringConverter")
                 .addToConfig("value.converter", "org.apache.kafka.connect.storage.StringConverter")
                 .addToConfig("topics", testStorage.getTopicName())
@@ -204,7 +204,7 @@ public class MultipleClusterOperatorsST extends AbstractST {
         resourceManager.createResourceWithWait(extensionContext, basicClients.producerStrimzi());
         ClientUtils.waitForClientSuccess(testStorage.getProducerName(), testStorage.getNamespaceName(), MESSAGE_COUNT);
 
-        KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(testStorage.getNamespaceName(), kafkaConnectPodName, Constants.DEFAULT_SINK_FILE_PATH, "Hello-world - 99");
+        KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(testStorage.getNamespaceName(), kafkaConnectPodName, TestConstants.DEFAULT_SINK_FILE_PATH, "Hello-world - 99");
 
         LOGGER.info("Verifying that all operands in Namespace: {} are managed by Cluster Operator: {}", testStorage.getNamespaceName(), FIRST_CO_NAME);
         MetricsUtils.assertMetricResourcesHigherThanOrEqualTo(firstCoMetricsCollector, Kafka.RESOURCE_KIND, 1);
@@ -266,13 +266,13 @@ public class MultipleClusterOperatorsST extends AbstractST {
         deployCOInNamespace(extensionContext, FIRST_CO_NAME, testStorage.getNamespaceName(), List.of(FIRST_CO_SELECTOR_ENV, FIRST_CO_LEASE_NAME_ENV), false);
         deployCOInNamespace(extensionContext, SECOND_CO_NAME, testStorage.getNamespaceName(), List.of(SECOND_CO_SELECTOR_ENV, SECOND_CO_LEASE_NAME_ENV), false);
 
-        String secondCOScraperName = testStorage.getNamespaceName() + "-" + Constants.SCRAPER_NAME;
+        String secondCOScraperName = testStorage.getNamespaceName() + "-" + TestConstants.SCRAPER_NAME;
 
         LOGGER.info("Deploying scraper Pod: {}, for later metrics retrieval", secondCOScraperName);
         resourceManager.createResourceWithWait(extensionContext, ScraperTemplates.scraperPod(testStorage.getNamespaceName(), secondCOScraperName).build());
 
         LOGGER.info("Setting up metric collectors targeting Cluster Operator: {}", SECOND_CO_NAME);
-        String coScraperName = testStorage.getNamespaceName() + "-" + Constants.SCRAPER_NAME;
+        String coScraperName = testStorage.getNamespaceName() + "-" + TestConstants.SCRAPER_NAME;
         MetricsCollector secondCoMetricsCollector = setupCOMetricsCollectorInNamespace(SECOND_CO_NAME, testStorage.getNamespaceName(), coScraperName);
 
         LOGGER.info("Deploying Kafka with {} selector of {}", FIRST_CO_NAME, FIRST_CO_SELECTOR);
@@ -343,7 +343,7 @@ public class MultipleClusterOperatorsST extends AbstractST {
     }
 
     void deployCOInNamespace(ExtensionContext extensionContext, String coName, String coNamespace, List<EnvVar> extraEnvs, boolean multipleNamespaces) {
-        String namespace = multipleNamespaces ? Constants.WATCH_ALL_NAMESPACES : coNamespace;
+        String namespace = multipleNamespaces ? TestConstants.WATCH_ALL_NAMESPACES : coNamespace;
 
         if (multipleNamespaces) {
             // Create ClusterRoleBindings that grant cluster-wide access to all OpenShift projects

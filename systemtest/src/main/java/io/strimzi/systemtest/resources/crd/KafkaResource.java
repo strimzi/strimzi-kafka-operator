@@ -16,7 +16,7 @@ import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.status.KafkaStatus;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.model.Labels;
-import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.ResourceOperation;
@@ -101,11 +101,11 @@ public class KafkaResource implements ResourceType<Kafka> {
 
         // KafkaExporter is not setup every time
         if (resource.getSpec().getKafkaExporter() != null) {
-            timeout += ResourceOperation.getTimeoutForResourceReadiness(Constants.KAFKA_EXPORTER_DEPLOYMENT);
+            timeout += ResourceOperation.getTimeoutForResourceReadiness(TestConstants.KAFKA_EXPORTER_DEPLOYMENT);
         }
         // CruiseControl is not setup every time
         if (resource.getSpec().getCruiseControl() != null) {
-            timeout += ResourceOperation.getTimeoutForResourceReadiness(Constants.KAFKA_CRUISE_CONTROL_DEPLOYMENT);
+            timeout += ResourceOperation.getTimeoutForResourceReadiness(TestConstants.KAFKA_CRUISE_CONTROL_DEPLOYMENT);
         }
         return ResourceManager.waitForResourceStatus(kafkaClient(), resource, Ready, timeout);
     }
@@ -134,7 +134,7 @@ public class KafkaResource implements ResourceType<Kafka> {
     }
 
     public static String getKafkaNodePoolName(String clusterName) {
-        return Constants.KAFKA_NODE_POOL_PREFIX + hashStub(clusterName);
+        return TestConstants.KAFKA_NODE_POOL_PREFIX + hashStub(clusterName);
     }
 
     public static String getStrimziPodSetName(String clusterName) {
@@ -167,6 +167,6 @@ public class KafkaResource implements ResourceType<Kafka> {
     }
 
     public static String getNodePoolName(String clusterName) {
-        return Constants.KAFKA_NODE_POOL_PREFIX + hashStub(clusterName);
+        return TestConstants.KAFKA_NODE_POOL_PREFIX + hashStub(clusterName);
     }
 }

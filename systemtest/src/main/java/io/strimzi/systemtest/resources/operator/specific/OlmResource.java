@@ -12,7 +12,7 @@ import io.fabric8.openshift.api.model.operatorhub.v1.OperatorGroupBuilder;
 import io.fabric8.openshift.api.model.operatorhub.v1alpha1.Subscription;
 import io.fabric8.openshift.api.model.operatorhub.v1alpha1.SubscriptionBuilder;
 import io.fabric8.openshift.client.OpenShiftClient;
-import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.enums.OlmInstallationStrategy;
 import io.strimzi.systemtest.resources.ResourceItem;
 import io.strimzi.systemtest.resources.ResourceManager;
@@ -67,7 +67,7 @@ public class OlmResource implements SpecificResourceType {
         }
 
         // Make sure that operator will be created
-        TestUtils.waitFor("Cluster Operator deployment creation", Constants.GLOBAL_POLL_INTERVAL, CR_CREATION_TIMEOUT,
+        TestUtils.waitFor("Cluster Operator deployment creation", TestConstants.GLOBAL_POLL_INTERVAL, CR_CREATION_TIMEOUT,
             () -> kubeClient(olmConfiguration.getNamespaceName()).getDeploymentNameByPrefix(olmConfiguration.getOlmOperatorDeploymentName()) != null);
 
         deploymentName = kubeClient(olmConfiguration.getNamespaceName()).getDeploymentNameByPrefix(olmConfiguration.getOlmOperatorDeploymentName());
@@ -96,7 +96,7 @@ public class OlmResource implements SpecificResourceType {
             .endMetadata();
 
         // single or multiple specific namespaces to watch
-        if (!olmConfiguration.getNamespaceToWatch().equals(Constants.WATCH_ALL_NAMESPACES)) {
+        if (!olmConfiguration.getNamespaceToWatch().equals(TestConstants.WATCH_ALL_NAMESPACES)) {
             operatorGroup
                 .editOrNewSpec()
                     .withTargetNamespaces(olmConfiguration.getNamespaceToWatch())
@@ -154,8 +154,10 @@ public class OlmResource implements SpecificResourceType {
         // Change default values for Cluster Operator memory when RESOURCE_ALLOCATION_STRATEGY is not set to NOT_SHARED
         if (KubeClusterResource.getInstance().fipsEnabled()) {
             ResourceRequirements resourceRequirements = new ResourceRequirementsBuilder()
-                    .withRequests(Map.of("memory", new Quantity(Constants.CO_REQUESTS_MEMORY), "cpu", new Quantity(Constants.CO_REQUESTS_CPU)))
-                    .withLimits(Map.of("memory", new Quantity(Constants.CO_LIMITS_MEMORY), "cpu", new Quantity(Constants.CO_LIMITS_CPU)))
+                    .withRequests(Map.of("memory", new Quantity(TestConstants.CO_REQUESTS_MEMORY), "cpu", new Quantity(
+                        TestConstants.CO_REQUESTS_CPU)))
+                    .withLimits(Map.of("memory", new Quantity(TestConstants.CO_LIMITS_MEMORY), "cpu", new Quantity(
+                        TestConstants.CO_LIMITS_CPU)))
                     .build();
 
             subscription.getSpec().getConfig().setResources(resourceRequirements);

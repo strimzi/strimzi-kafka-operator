@@ -32,7 +32,7 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 import java.util.ArrayList;
 import java.util.List;
 
-import static io.strimzi.systemtest.Constants.SCALABILITY;
+import static io.strimzi.systemtest.TestConstants.SCALABILITY;
 
 @Tag(SCALABILITY)
 public class UserScalabilityST extends AbstractST {

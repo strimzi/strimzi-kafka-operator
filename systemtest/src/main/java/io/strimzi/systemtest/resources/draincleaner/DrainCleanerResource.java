@@ -6,7 +6,7 @@ package io.strimzi.systemtest.resources.draincleaner;
 
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.DeploymentBuilder;
-import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.enums.DeploymentTypes;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.ResourceType;
@@ -19,7 +19,7 @@ public class DrainCleanerResource implements ResourceType<Deployment> {
 
     @Override
     public String getKind() {
-        return Constants.DEPLOYMENT;
+        return TestConstants.DEPLOYMENT;
     }
 
     @Override
@@ -57,7 +57,7 @@ public class DrainCleanerResource implements ResourceType<Deployment> {
 
         return new DeploymentBuilder(drainCleaner)
             .editOrNewMetadata()
-                .addToLabels(Constants.DEPLOYMENT_TYPE, DeploymentTypes.DrainCleaner.name())
+                .addToLabels(TestConstants.DEPLOYMENT_TYPE, DeploymentTypes.DrainCleaner.name())
             .endMetadata();
     }
 }

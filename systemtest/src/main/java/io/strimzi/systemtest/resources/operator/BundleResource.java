@@ -12,7 +12,7 @@ import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.DeploymentBuilder;
-import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.enums.DeploymentTypes;
 import io.strimzi.systemtest.resources.ResourceManager;
@@ -44,7 +44,7 @@ public class BundleResource implements ResourceType<Deployment> {
 
     @Override
     public String getKind() {
-        return Constants.DEPLOYMENT;
+        return TestConstants.DEPLOYMENT;
     }
     @Override
     public Deployment get(String namespace, String name) {
@@ -89,10 +89,10 @@ public class BundleResource implements ResourceType<Deployment> {
         this.replicas = builder.replicas;
 
         // assign defaults is something is not specified
-        if (this.name == null || this.name.isEmpty()) this.name = Constants.STRIMZI_DEPLOYMENT_NAME;
+        if (this.name == null || this.name.isEmpty()) this.name = TestConstants.STRIMZI_DEPLOYMENT_NAME;
         if (this.namespaceToWatch == null) this.namespaceToWatch = this.namespaceInstallTo;
-        if (this.operationTimeout == 0) this.operationTimeout = Constants.CO_OPERATION_TIMEOUT_DEFAULT;
-        if (this.reconciliationInterval == 0) this.reconciliationInterval = Constants.RECONCILIATION_INTERVAL;
+        if (this.operationTimeout == 0) this.operationTimeout = TestConstants.CO_OPERATION_TIMEOUT_DEFAULT;
+        if (this.reconciliationInterval == 0) this.reconciliationInterval = TestConstants.RECONCILIATION_INTERVAL;
         if (this.extraEnvVars == null) this.extraEnvVars = new ArrayList<>();
         if (this.extraLabels == null) this.extraLabels = new HashMap<>();
     }
@@ -150,11 +150,11 @@ public class BundleResource implements ResourceType<Deployment> {
         }
 
         public BundleResourceBuilder defaultConfigurationWithNamespace(String namespaceName) {
-            this.name = Constants.STRIMZI_DEPLOYMENT_NAME;
+            this.name = TestConstants.STRIMZI_DEPLOYMENT_NAME;
             this.namespaceInstallTo = namespaceName;
             this.namespaceToWatch = this.namespaceInstallTo;
-            this.operationTimeout = Constants.CO_OPERATION_TIMEOUT_DEFAULT;
-            this.reconciliationInterval = Constants.RECONCILIATION_INTERVAL;
+            this.operationTimeout = TestConstants.CO_OPERATION_TIMEOUT_DEFAULT;
+            this.reconciliationInterval = TestConstants.RECONCILIATION_INTERVAL;
             return self();
         }
 
@@ -246,8 +246,10 @@ public class BundleResource implements ResourceType<Deployment> {
         // Change default values for Cluster Operator memory when RESOURCE_ALLOCATION_STRATEGY is not set to NOT_SHARED
         if (KubeClusterResource.getInstance().fipsEnabled()) {
             ResourceRequirements resourceRequirements = new ResourceRequirementsBuilder()
-                .withRequests(Map.of("memory", new Quantity(Constants.CO_REQUESTS_MEMORY), "cpu", new Quantity(Constants.CO_REQUESTS_CPU)))
-                .withLimits(Map.of("memory", new Quantity(Constants.CO_LIMITS_MEMORY), "cpu", new Quantity(Constants.CO_LIMITS_CPU)))
+                .withRequests(Map.of("memory", new Quantity(TestConstants.CO_REQUESTS_MEMORY), "cpu", new Quantity(
+                    TestConstants.CO_REQUESTS_CPU)))
+                .withLimits(Map.of("memory", new Quantity(TestConstants.CO_LIMITS_MEMORY), "cpu", new Quantity(
+                    TestConstants.CO_LIMITS_CPU)))
                 .build();
 
             clusterOperator.getSpec().getTemplate().getSpec().getContainers().get(0).setResources(resourceRequirements);
@@ -257,12 +259,12 @@ public class BundleResource implements ResourceType<Deployment> {
             .editMetadata()
                 .withName(name)
                 .withNamespace(namespaceInstallTo)
-                .addToLabels(Constants.DEPLOYMENT_TYPE, DeploymentTypes.BundleClusterOperator.name())
+                .addToLabels(TestConstants.DEPLOYMENT_TYPE, DeploymentTypes.BundleClusterOperator.name())
             .endMetadata()
             .editSpec()
                 .withReplicas(this.replicas)
                 .withNewSelector()
-                    .addToMatchLabels("name", Constants.STRIMZI_DEPLOYMENT_NAME)
+                    .addToMatchLabels("name", TestConstants.STRIMZI_DEPLOYMENT_NAME)
                     .addToMatchLabels(this.extraLabels)
                 .endSelector()
                 .editTemplate()

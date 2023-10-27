@@ -16,7 +16,7 @@ import io.fabric8.kubernetes.api.model.rbac.Role;
 import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
 import io.fabric8.kubernetes.api.model.rbac.RoleBindingBuilder;
 import io.fabric8.kubernetes.api.model.rbac.RoleBuilder;
-import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.security.CertAndKeyFiles;
 import io.strimzi.systemtest.security.SystemTestCertAndKey;
@@ -52,10 +52,10 @@ public class SetupDrainCleaner {
             .generateRootCaCertAndKey("C=CZ, L=Prague, O=Strimzi Drain Cleaner, CN=StrimziDrainCleanerCA",
                 // add hostnames (i.e., SANs) to the certificate
                 new ASN1Encodable[] {
-                    new GeneralName(GeneralName.dNSName, Constants.DRAIN_CLEANER_DEPLOYMENT_NAME),
-                    new GeneralName(GeneralName.dNSName, Constants.DRAIN_CLEANER_DEPLOYMENT_NAME + "." + Constants.DRAIN_CLEANER_DEPLOYMENT_NAME),
-                    new GeneralName(GeneralName.dNSName, Constants.DRAIN_CLEANER_DEPLOYMENT_NAME + "." + Constants.DRAIN_CLEANER_DEPLOYMENT_NAME + ".svc"),
-                    new GeneralName(GeneralName.dNSName, Constants.DRAIN_CLEANER_DEPLOYMENT_NAME + "." + Constants.DRAIN_CLEANER_DEPLOYMENT_NAME + ".svc.cluster.local")
+                    new GeneralName(GeneralName.dNSName, TestConstants.DRAIN_CLEANER_DEPLOYMENT_NAME),
+                    new GeneralName(GeneralName.dNSName, TestConstants.DRAIN_CLEANER_DEPLOYMENT_NAME + "." + TestConstants.DRAIN_CLEANER_DEPLOYMENT_NAME),
+                    new GeneralName(GeneralName.dNSName, TestConstants.DRAIN_CLEANER_DEPLOYMENT_NAME + "." + TestConstants.DRAIN_CLEANER_DEPLOYMENT_NAME + ".svc"),
+                    new GeneralName(GeneralName.dNSName, TestConstants.DRAIN_CLEANER_DEPLOYMENT_NAME + "." + TestConstants.DRAIN_CLEANER_DEPLOYMENT_NAME + ".svc.cluster.local")
                 });
         final CertAndKeyFiles drainCleanerKeyPairPemFormat = SystemTestCertManager.exportToPemFiles(drainCleanerKeyPair);
 
@@ -64,57 +64,57 @@ public class SetupDrainCleaner {
         certsPaths.put("tls.key", drainCleanerKeyPairPemFormat.getKeyPath());
 
         final SecretBuilder customDrainCleanerSecretBuilder = SecretUtils.retrieveSecretBuilderFromFile(certsPaths,
-            Constants.DRAIN_CLEANER_DEPLOYMENT_NAME, Constants.DRAIN_CLEANER_NAMESPACE,
-            Collections.singletonMap("app", Constants.DRAIN_CLEANER_DEPLOYMENT_NAME), "kubernetes.io/tls");
+            TestConstants.DRAIN_CLEANER_DEPLOYMENT_NAME, TestConstants.DRAIN_CLEANER_NAMESPACE,
+            Collections.singletonMap("app", TestConstants.DRAIN_CLEANER_DEPLOYMENT_NAME), "kubernetes.io/tls");
 
         drainCleanerFiles.forEach(file -> {
             if (!file.getName().contains("README") && !file.getName().contains("Namespace") && !file.getName().contains("Deployment")) {
                 final String resourceType = file.getName().split("-")[1].split(".yaml")[0];
 
                 switch (resourceType) {
-                    case Constants.ROLE:
+                    case TestConstants.ROLE:
                         Role role = TestUtils.configFromYaml(file, Role.class);
                         ResourceManager.getInstance().createResourceWithWait(extensionContext, new RoleBuilder(role)
                             .editMetadata()
-                                .withNamespace(Constants.DRAIN_CLEANER_NAMESPACE)
+                                .withNamespace(TestConstants.DRAIN_CLEANER_NAMESPACE)
                             .endMetadata()
                             .build());
                         break;
-                    case Constants.ROLE_BINDING:
+                    case TestConstants.ROLE_BINDING:
                         RoleBinding roleBinding = TestUtils.configFromYaml(file, RoleBinding.class);
                         ResourceManager.getInstance().createResourceWithWait(extensionContext, new RoleBindingBuilder(roleBinding)
                             .editMetadata()
-                                .withNamespace(Constants.DRAIN_CLEANER_NAMESPACE)
+                                .withNamespace(TestConstants.DRAIN_CLEANER_NAMESPACE)
                             .endMetadata()
                             .editFirstSubject()
-                                .withNamespace(Constants.DRAIN_CLEANER_NAMESPACE)
+                                .withNamespace(TestConstants.DRAIN_CLEANER_NAMESPACE)
                             .endSubject()
                             .build());
                         break;
-                    case Constants.CLUSTER_ROLE:
+                    case TestConstants.CLUSTER_ROLE:
                         ClusterRole clusterRole = TestUtils.configFromYaml(file, ClusterRole.class);
                         ResourceManager.getInstance().createResourceWithWait(extensionContext, clusterRole);
                         break;
-                    case Constants.SERVICE_ACCOUNT:
+                    case TestConstants.SERVICE_ACCOUNT:
                         ServiceAccount serviceAccount = TestUtils.configFromYaml(file, ServiceAccount.class);
                         ResourceManager.getInstance().createResourceWithWait(extensionContext, new ServiceAccountBuilder(serviceAccount)
                             .editMetadata()
-                                .withNamespace(Constants.DRAIN_CLEANER_NAMESPACE)
+                                .withNamespace(TestConstants.DRAIN_CLEANER_NAMESPACE)
                             .endMetadata()
                             .build());
                         break;
-                    case Constants.CLUSTER_ROLE_BINDING:
+                    case TestConstants.CLUSTER_ROLE_BINDING:
                         ClusterRoleBinding clusterRoleBinding = TestUtils.configFromYaml(file, ClusterRoleBinding.class);
                         ResourceManager.getInstance().createResourceWithWait(extensionContext, new ClusterRoleBindingBuilder(clusterRoleBinding).build());
                         break;
-                    case Constants.SECRET:
+                    case TestConstants.SECRET:
                         ResourceManager.getInstance().createResourceWithWait(extensionContext, customDrainCleanerSecretBuilder.build());
                         break;
-                    case Constants.SERVICE:
+                    case TestConstants.SERVICE:
                         Service service = TestUtils.configFromYaml(file, Service.class);
                         ResourceManager.getInstance().createResourceWithWait(extensionContext, service);
                         break;
-                    case Constants.VALIDATION_WEBHOOK_CONFIG:
+                    case TestConstants.VALIDATION_WEBHOOK_CONFIG:
                         ValidatingWebhookConfiguration webhookConfiguration = TestUtils.configFromYaml(file, ValidatingWebhookConfiguration.class);
 
                         // we fetch public key from strimzi-drain-cleaner Secret and then patch ValidationWebhookConfiguration.

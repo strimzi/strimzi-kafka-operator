@@ -4,7 +4,7 @@
  */
 package io.strimzi.systemtest.upgrade;
 
-import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.KRaftNotSupported;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.utils.StUtils;
@@ -23,9 +23,9 @@ import org.junit.jupiter.params.provider.MethodSource;
 import java.io.IOException;
 import java.util.List;
 
-import static io.strimzi.systemtest.Constants.CO_NAMESPACE;
-import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
-import static io.strimzi.systemtest.Constants.UPGRADE;
+import static io.strimzi.systemtest.TestConstants.CO_NAMESPACE;
+import static io.strimzi.systemtest.TestConstants.INTERNAL_CLIENTS_USED;
+import static io.strimzi.systemtest.TestConstants.UPGRADE;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 /**
@@ -53,7 +53,7 @@ public class StrimziDowngradeST extends AbstractUpgradeST {
 
     @Test
     void testDowngradeOfKafkaConnectAndKafkaConnector(final ExtensionContext extensionContext) throws IOException {
-        final TestStorage testStorage = new TestStorage(extensionContext, Constants.CO_NAMESPACE);
+        final TestStorage testStorage = new TestStorage(extensionContext, TestConstants.CO_NAMESPACE);
         final BundleVersionModificationData bundleDowngradeDataWithFeatureGates = bundleDowngradeMetadata.stream()
                 .filter(bundleMetadata -> bundleMetadata.getFeatureGatesBefore() != null && !bundleMetadata.getFeatureGatesBefore().isEmpty() ||
                         bundleMetadata.getFeatureGatesAfter() != null && !bundleMetadata.getFeatureGatesAfter().isEmpty()).toList().get(0);
@@ -70,29 +70,29 @@ public class StrimziDowngradeST extends AbstractUpgradeST {
         // Setup env
         // We support downgrade only when you didn't upgrade to new inter.broker.protocol.version and log.message.format.version
         // https://strimzi.io/docs/operators/latest/full/deploying.html#con-target-downgrade-version-str
-        setupEnvAndUpgradeClusterOperator(extensionContext, downgradeData, testStorage, testUpgradeKafkaVersion, Constants.CO_NAMESPACE);
+        setupEnvAndUpgradeClusterOperator(extensionContext, downgradeData, testStorage, testUpgradeKafkaVersion, TestConstants.CO_NAMESPACE);
         logPodImages(clusterName);
         // Downgrade CO
-        changeClusterOperator(downgradeData, Constants.CO_NAMESPACE, extensionContext);
+        changeClusterOperator(downgradeData, TestConstants.CO_NAMESPACE, extensionContext);
         // Wait for Kafka cluster rolling update
         waitForKafkaClusterRollingUpdate();
         logPodImages(clusterName);
         // Verify that pods are stable
-        PodUtils.verifyThatRunningPodsAreStable(Constants.CO_NAMESPACE, clusterName);
-        checkAllImages(downgradeData, Constants.CO_NAMESPACE);
+        PodUtils.verifyThatRunningPodsAreStable(TestConstants.CO_NAMESPACE, clusterName);
+        checkAllImages(downgradeData, TestConstants.CO_NAMESPACE);
         // Verify upgrade
-        verifyProcedure(downgradeData, testStorage.getProducerName(), testStorage.getConsumerName(), Constants.CO_NAMESPACE);
+        verifyProcedure(downgradeData, testStorage.getProducerName(), testStorage.getConsumerName(), TestConstants.CO_NAMESPACE);
     }
 
     @BeforeEach
     void setupEnvironment() {
-        cluster.createNamespace(Constants.CO_NAMESPACE);
-        StUtils.copyImagePullSecrets(Constants.CO_NAMESPACE);
+        cluster.createNamespace(TestConstants.CO_NAMESPACE);
+        StUtils.copyImagePullSecrets(TestConstants.CO_NAMESPACE);
     }
 
     @AfterEach
     void afterEach() {
-        deleteInstalledYamls(coDir, Constants.CO_NAMESPACE);
+        deleteInstalledYamls(coDir, TestConstants.CO_NAMESPACE);
         NamespaceUtils.deleteNamespaceWithWait(CO_NAMESPACE);
     }
 }

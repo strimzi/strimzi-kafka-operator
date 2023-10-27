@@ -10,7 +10,7 @@ import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.systemtest.AbstractST;
-import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.cli.KafkaCmdClient;
@@ -39,11 +39,11 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static io.strimzi.systemtest.Constants.DYNAMIC_CONFIGURATION;
-import static io.strimzi.systemtest.Constants.EXTERNAL_CLIENTS_USED;
-import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
-import static io.strimzi.systemtest.Constants.REGRESSION;
-import static io.strimzi.systemtest.Constants.ROLLING_UPDATE;
+import static io.strimzi.systemtest.TestConstants.DYNAMIC_CONFIGURATION;
+import static io.strimzi.systemtest.TestConstants.EXTERNAL_CLIENTS_USED;
+import static io.strimzi.systemtest.TestConstants.NODEPORT_SUPPORTED;
+import static io.strimzi.systemtest.TestConstants.REGRESSION;
+import static io.strimzi.systemtest.TestConstants.ROLLING_UPDATE;
 import static io.strimzi.systemtest.resources.ResourceManager.kubeClient;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
@@ -137,19 +137,19 @@ public class DynamicConfST extends AbstractST {
             .editSpec()
                 .editKafka()
                     .withListeners(new GenericKafkaListenerBuilder()
-                                .withName(Constants.PLAIN_LISTENER_DEFAULT_NAME)
+                                .withName(TestConstants.PLAIN_LISTENER_DEFAULT_NAME)
                                 .withPort(9092)
                                 .withType(KafkaListenerType.INTERNAL)
                                 .withTls(false)
                                 .build(),
                             new GenericKafkaListenerBuilder()
-                                .withName(Constants.TLS_LISTENER_DEFAULT_NAME)
+                                .withName(TestConstants.TLS_LISTENER_DEFAULT_NAME)
                                 .withPort(9093)
                                 .withType(KafkaListenerType.INTERNAL)
                                 .withTls(true)
                                 .build(),
                             new GenericKafkaListenerBuilder()
-                                .withName(Constants.EXTERNAL_LISTENER_DEFAULT_NAME)
+                                .withName(TestConstants.EXTERNAL_LISTENER_DEFAULT_NAME)
                                 .withPort(9094)
                                 .withType(KafkaListenerType.NODEPORT)
                                 .withTls(false)
@@ -180,19 +180,19 @@ public class DynamicConfST extends AbstractST {
         KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, k -> {
             k.getSpec().getKafka().setListeners(Arrays.asList(
                 new GenericKafkaListenerBuilder()
-                    .withName(Constants.PLAIN_LISTENER_DEFAULT_NAME)
+                    .withName(TestConstants.PLAIN_LISTENER_DEFAULT_NAME)
                     .withPort(9092)
                     .withType(KafkaListenerType.INTERNAL)
                     .withTls(false)
                     .build(),
                 new GenericKafkaListenerBuilder()
-                    .withName(Constants.TLS_LISTENER_DEFAULT_NAME)
+                    .withName(TestConstants.TLS_LISTENER_DEFAULT_NAME)
                     .withPort(9093)
                     .withType(KafkaListenerType.INTERNAL)
                     .withTls(true)
                     .build(),
                 new GenericKafkaListenerBuilder()
-                    .withName(Constants.EXTERNAL_LISTENER_DEFAULT_NAME)
+                    .withName(TestConstants.EXTERNAL_LISTENER_DEFAULT_NAME)
                     .withPort(9094)
                     .withType(KafkaListenerType.NODEPORT)
                     .withTls(true)
@@ -231,13 +231,13 @@ public class DynamicConfST extends AbstractST {
         KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, k -> {
             k.getSpec().getKafka().setListeners(Arrays.asList(
                 new GenericKafkaListenerBuilder()
-                    .withName(Constants.PLAIN_LISTENER_DEFAULT_NAME)
+                    .withName(TestConstants.PLAIN_LISTENER_DEFAULT_NAME)
                     .withPort(9092)
                     .withType(KafkaListenerType.INTERNAL)
                     .withTls(false)
                     .build(),
                 new GenericKafkaListenerBuilder()
-                    .withName(Constants.EXTERNAL_LISTENER_DEFAULT_NAME)
+                    .withName(TestConstants.EXTERNAL_LISTENER_DEFAULT_NAME)
                     .withPort(9094)
                     .withType(KafkaListenerType.NODEPORT)
                     .withTls(true)
@@ -279,7 +279,7 @@ public class DynamicConfST extends AbstractST {
             .editSpec()
                 .editKafka()
                     .withListeners(new GenericKafkaListenerBuilder()
-                            .withName(Constants.EXTERNAL_LISTENER_DEFAULT_NAME)
+                            .withName(TestConstants.EXTERNAL_LISTENER_DEFAULT_NAME)
                             .withPort(9094)
                             .withType(KafkaListenerType.NODEPORT)
                             .withTls(false)
@@ -301,7 +301,7 @@ public class DynamicConfST extends AbstractST {
             .withMessageCount(MESSAGE_COUNT)
             .withKafkaUsername(userName)
             .withSecurityProtocol(SecurityProtocol.SSL)
-            .withListenerName(Constants.EXTERNAL_LISTENER_DEFAULT_NAME)
+            .withListenerName(TestConstants.EXTERNAL_LISTENER_DEFAULT_NAME)
             .build();
 
         ExternalKafkaClient externalKafkaClientPlain = new ExternalKafkaClient.Builder()
@@ -310,7 +310,7 @@ public class DynamicConfST extends AbstractST {
             .withClusterName(clusterName)
             .withMessageCount(MESSAGE_COUNT)
             .withSecurityProtocol(SecurityProtocol.PLAINTEXT)
-            .withListenerName(Constants.EXTERNAL_LISTENER_DEFAULT_NAME)
+            .withListenerName(TestConstants.EXTERNAL_LISTENER_DEFAULT_NAME)
             .build();
 
         externalKafkaClientPlain.verifyProducedAndConsumedMessages(
@@ -328,13 +328,13 @@ public class DynamicConfST extends AbstractST {
         KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, k -> {
             k.getSpec().getKafka().setListeners(Arrays.asList(
                 new GenericKafkaListenerBuilder()
-                    .withName(Constants.TLS_LISTENER_DEFAULT_NAME)
+                    .withName(TestConstants.TLS_LISTENER_DEFAULT_NAME)
                     .withPort(9093)
                     .withType(KafkaListenerType.INTERNAL)
                     .withTls(true)
                     .build(),
                 new GenericKafkaListenerBuilder()
-                    .withName(Constants.EXTERNAL_LISTENER_DEFAULT_NAME)
+                    .withName(TestConstants.EXTERNAL_LISTENER_DEFAULT_NAME)
                     .withPort(9094)
                     .withType(KafkaListenerType.NODEPORT)
                     .withTls(true)
@@ -362,7 +362,7 @@ public class DynamicConfST extends AbstractST {
         KafkaResource.replaceKafkaResourceInSpecificNamespace(clusterName, k -> {
             k.getSpec().getKafka().setListeners(Collections.singletonList(
                 new GenericKafkaListenerBuilder()
-                    .withName(Constants.EXTERNAL_LISTENER_DEFAULT_NAME)
+                    .withName(TestConstants.EXTERNAL_LISTENER_DEFAULT_NAME)
                     .withPort(9094)
                     .withType(KafkaListenerType.NODEPORT)
                     .withTls(false)

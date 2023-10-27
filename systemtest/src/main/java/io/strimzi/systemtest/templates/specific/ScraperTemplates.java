@@ -10,7 +10,7 @@ import io.fabric8.kubernetes.api.model.PodSpecBuilder;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.fabric8.kubernetes.api.model.apps.DeploymentBuilder;
-import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.enums.DeploymentTypes;
 
@@ -26,8 +26,8 @@ public class ScraperTemplates {
     public static DeploymentBuilder scraperPod(String namespaceName, String podName) {
         Map<String, String> label = new HashMap<>();
 
-        label.put(Constants.SCRAPER_LABEL_KEY, Constants.SCRAPER_LABEL_VALUE);
-        label.put(Constants.DEPLOYMENT_TYPE, DeploymentTypes.Scraper.name());
+        label.put(TestConstants.SCRAPER_LABEL_KEY, TestConstants.SCRAPER_LABEL_VALUE);
+        label.put(TestConstants.DEPLOYMENT_TYPE, DeploymentTypes.Scraper.name());
 
         PodSpecBuilder podSpecBuilder = new PodSpecBuilder();
 

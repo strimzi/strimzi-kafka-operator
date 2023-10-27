@@ -6,7 +6,7 @@ package io.strimzi.systemtest.resources.jaeger;
 
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyBuilder;
-import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.resources.ResourceItem;
 import io.strimzi.systemtest.resources.ResourceManager;
@@ -24,8 +24,8 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Stack;
 
-import static io.strimzi.systemtest.Constants.JAEGER_DEPLOYMENT_POLL;
-import static io.strimzi.systemtest.Constants.JAEGER_DEPLOYMENT_TIMEOUT;
+import static io.strimzi.systemtest.TestConstants.JAEGER_DEPLOYMENT_POLL;
+import static io.strimzi.systemtest.TestConstants.JAEGER_DEPLOYMENT_TIMEOUT;
 import static io.strimzi.systemtest.tracing.TracingConstants.CERT_MANAGER_CA_INJECTOR_DEPLOYMENT;
 import static io.strimzi.systemtest.tracing.TracingConstants.CERT_MANAGER_DEPLOYMENT;
 import static io.strimzi.systemtest.tracing.TracingConstants.CERT_MANAGER_NAMESPACE;
@@ -140,7 +140,7 @@ public class SetupJaeger {
 
         NetworkPolicy networkPolicy = new NetworkPolicyBuilder()
             .withApiVersion("networking.k8s.io/v1")
-            .withKind(Constants.NETWORK_POLICY)
+            .withKind(TestConstants.NETWORK_POLICY)
             .withNewMetadata()
                 .withName("jaeger-allow")
                 .withNamespace(Environment.TEST_SUITE_NAMESPACE)
