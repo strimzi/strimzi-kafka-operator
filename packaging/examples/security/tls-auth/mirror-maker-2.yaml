@@ -253,6 +253,7 @@ spec:
           offset-syncs.topic.replication.factor: -1
           sync.topic.acls.enabled: "false"
           refresh.topics.interval.seconds: 600
+          offset.lag.max: 100
       checkpointConnector:
         tasksMax: 1
         config:
