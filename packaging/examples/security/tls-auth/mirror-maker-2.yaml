@@ -253,13 +253,13 @@ spec:
           offset-syncs.topic.replication.factor: -1
           sync.topic.acls.enabled: "false"
           refresh.topics.interval.seconds: 600
+          offset.lag.max: 100
       checkpointConnector:
         tasksMax: 1
         config:
           # -1 means it will use the default replication factor configured in the broker
           checkpoints.topic.replication.factor: -1
           sync.group.offsets.enabled: "true"
-          offset.lag.max: 100
           emit.checkpoints.interval.seconds: 60
           sync.group.offsets.interval.seconds: 60
           refresh.groups.interval.seconds: 600
