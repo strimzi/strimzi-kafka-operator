@@ -63,7 +63,7 @@ if [ "$STRIMZI_KRAFT_ENABLED" = "true" ]; then
     STRIMZI_CLUSTER_ID=$(cat "$KAFKA_HOME/custom-config/cluster.id")
     echo "Formatting Kraft storage with cluster ID $STRIMZI_CLUSTER_ID"
     mkdir -p "$KRAFT_LOG_DIR"
-    ./bin/kafka-storage.sh format -t "$STRIMZI_CLUSTER_ID" -c /tmp/strimzi.properties
+    ./bin/kafka-storage.sh format -t="$STRIMZI_CLUSTER_ID" -c=/tmp/strimzi.properties
   else
     echo "Kraft storage is already formatted"
   fi
