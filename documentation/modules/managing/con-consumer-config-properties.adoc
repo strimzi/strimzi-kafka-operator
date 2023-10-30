@@ -7,15 +7,22 @@
 
 [role="_abstract"]
 Use configuration properties to optimize the performance of Kafka consumers.
-You can use standard Kafka consumer configuration options.
 When tuning your consumers your primary concern will be ensuring that they cope efficiently with the amount of data ingested.
 As with the producer tuning, be prepared to make incremental changes until the consumers operate as expected.
 
 When tuning a consumer, consider the following aspects carefully, as they significantly impact its performance and behavior:
 
-Scaling:: Consumer groups enable parallel processing of messages by distributing the load across multiple consumers. Properly configuring consumer groups can enhance scalability and throughput.
-Message ordering:: A consumer observes messages in a single partition in the same order that they were committed to the broker, which means that Kafka only provides ordering guarantees for messages in a single partition. If absolute ordering within a topic is important, use a single-partition topic. While a single-partition topic allows only one consumer instance, you can leverage a pool of worker threads to create a multi-threaded consumer for more efficient processing. When processing messages for specific entities (like users), you can use the ID (like user ID) as the message key and direct all messages to a single partition. This way, you can maintain message ordering for events specific to individual entities. If a new entity is created, you can create a new topic and migrate its data.
-Offset reset policy:: Setting the appropriate offset policy ensures that the consumer consumes messages from the desired starting point and handles message processing accordingly. The default Kafka reset value is `latest`, which starts at the end of the partition, and consequently means some messages might be missed, depending on the consumer's behavior and the state of the partition. Setting `auto.offset.reset` to `earliest` ensures that when connecting with a `new group.id`, all messages are retrieved from the beginning of the log.
+Scaling:: Consumer groups enable parallel processing of messages by distributing the load across multiple consumers, enhancing scalability and throughput. 
+The number of topic partitions determines the maximum level of parallelism that you can achieve, as one partition can only be assigned to one consumer in a consumer group. 
+Message ordering:: 
+If absolute ordering within a topic is important, use a single-partition topic. 
+A consumer observes messages in a single partition in the same order that they were committed to the broker, which means that Kafka only provides ordering guarantees for messages in a single partition. 
+It is also possible to maintain message ordering for events specific to individual entities, such as users.
+If a new entity is created, you can create a new topic dedicated to that entity.
+You can use a unique ID, like a user ID, as the message key and route all messages with the same key to a single partition within the topic. 
+Offset reset policy:: Setting the appropriate offset policy ensures that the consumer consumes messages from the desired starting point and handles message processing accordingly. 
+The default Kafka reset value is `latest`, which starts at the end of the partition, and consequently means some messages might be missed, depending on the consumer's behavior and the state of the partition. 
+Setting `auto.offset.reset` to `earliest` ensures that when connecting with a new `group.id`, all messages are retrieved from the beginning of the log.
 Securing access:: Implement security measures for authentication, encryption, and authorization by setting up user accounts to xref:assembly-securing-access-{context}[manage secure access to Kafka].
 
 == Basic consumer configuration
@@ -76,13 +83,22 @@ group.id=my-group-id <1>
 
 Select an appropriate partition assignment strategy, which determines how Kafka topic partitions are distributed among consumer instances in a group.
 
-Specify the strategy using the `partition.assignment.strategy` consumer configuration property. 
+Partition strategies are supported by the following classes:
+
+* `org.apache.kafka.clients.consumer.RangeAssignor`
+* `org.apache.kafka.clients.consumer.RoundRobinAssignor`
+* `org.apache.kafka.clients.consumer.StickyAssignor`
+* `org.apache.kafka.clients.consumer.CooperativeStickyAssignor`
+
+Specify a class using the `partition.assignment.strategy` consumer configuration property. 
 The *range* assignment strategy assigns a range of partitions to each consumer, and is useful when you want to process related data together.
 
 Alternatively, opt for a *round robin* assignment strategy for equal partition distribution among consumers, which is ideal for high-throughput scenarios requiring parallel processing.
 
 For more stable partition assignments, consider the *sticky* and *cooperative sticky* strategies. 
 Sticky strategies maintain assigned partitions during rebalances, when possible. 
+If a consumer was previously assigned certain partitions, the sticky strategies aim to reassign those same partitions back to the same consumer after a rebalance.
+Leaving partition assignments in place reduces the overhead on partition movements.
 The cooperative sticky strategy also supports cooperative rebalances, enabling uninterrupted consumption from partitions that are not reassigned.
 
 If none of the available strategies suit your data, you can create a custom strategy tailored to your specific requirements.

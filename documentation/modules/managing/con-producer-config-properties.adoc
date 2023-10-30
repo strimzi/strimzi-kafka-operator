@@ -13,7 +13,8 @@ You will need to experiment and tune your producer configuration to get the bala
 
 When configuring a producer, consider the following aspects carefully, as they significantly impact its performance and behavior:
 
-Compression:: Implementing message compression can reduce network bandwidth usage, conserving resources and improving throughput.
+Compression:: 
+By compressing messages before they are sent over the network, you can conserve network bandwidth and reduce disk storage requirements, but with the additional cost of increased CPU utilization due to the compression and decompression processes.
 Batching:: Adjusting the batch size and time intervals when the producer sends messages can affect throughput and latency. 
 Partitioning:: Partitioning strategies in the Kafka cluster can support producers through parallelism and load balancing, whereby producers can write to multiple partitions concurrently and each partition receives an equal share of messages. Other strategies might include topic replication for fault tolerance.
 Securing access:: Implement security measures for authentication, encryption, and authorization by setting up user accounts to xref:assembly-securing-access-{context}[manage secure access to Kafka].
