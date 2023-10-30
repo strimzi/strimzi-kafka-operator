@@ -152,7 +152,8 @@ public class Main {
                 metricsProvider,
                 pfa,
                 config.getOperationTimeoutMs(),
-                config.getOperatorName()
+                config.getOperatorName(),
+                config.featureGates()
         );
 
         // Initialize the PodSecurityProvider factory to provide the user configured provider

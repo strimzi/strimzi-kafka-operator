@@ -4,7 +4,11 @@
  */
 package io.strimzi.operator.common.operator.resource;
 
-import io.fabric8.kubernetes.api.model.*;
+import io.fabric8.kubernetes.api.model.ContainerBuilder;
+import io.fabric8.kubernetes.api.model.ManagedFieldsEntry;
+import io.fabric8.kubernetes.api.model.NamespaceBuilder;
+import io.fabric8.kubernetes.api.model.Pod;
+import io.fabric8.kubernetes.api.model.PodBuilder;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.javaoperatorsdk.jenvtest.junit.EnableKubeAPIServer;
 import io.strimzi.operator.common.Reconciliation;
@@ -167,7 +171,7 @@ public class PodOperatorServerSideApplyApiServerTest {
                     var properties = managedFieldsEntry.getFieldsV1().getAdditionalProperties();
                     Map<String, Object> metadata = (Map<String, Object>) properties.get("f:metadata");
                     Map<String, Object> annotations = (Map<String, Object>) metadata.get("f:annotations");
-                    return annotations.containsKey("f:"+annotationName);
+                    return annotations.containsKey("f:" + annotationName);
                 });
     }
 

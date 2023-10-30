@@ -4,32 +4,45 @@
  */
 package io.strimzi.operator.common.operator.resource;
 
-import io.fabric8.kubernetes.api.model.*;
+import io.fabric8.kubernetes.api.model.DeletionPropagation;
+import io.fabric8.kubernetes.api.model.KubernetesResourceList;
+import io.fabric8.kubernetes.api.model.Pod;
+import io.fabric8.kubernetes.api.model.PodBuilder;
+import io.fabric8.kubernetes.api.model.PodList;
 import io.fabric8.kubernetes.client.GracePeriodConfigurable;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.Watch;
 import io.fabric8.kubernetes.client.Watcher;
-import io.fabric8.kubernetes.client.dsl.*;
+import io.fabric8.kubernetes.client.dsl.Deletable;
+import io.fabric8.kubernetes.client.dsl.FilterWatchListDeletable;
+import io.fabric8.kubernetes.client.dsl.MixedOperation;
+import io.fabric8.kubernetes.client.dsl.NonNamespaceOperation;
+import io.fabric8.kubernetes.client.dsl.PodResource;
+import io.fabric8.kubernetes.client.dsl.Resource;
 import io.fabric8.kubernetes.client.dsl.base.PatchContext;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.Labels;
 import io.vertx.core.Vertx;
 import io.vertx.junit5.Checkpoint;
 import io.vertx.junit5.VertxTestContext;
-import org.junit.Ignore;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Disabled;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.matches;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.anyLong;
+import static org.mockito.Mockito.anyString;
+import static org.mockito.Mockito.atLeast;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 public class PodOperatorServerSideApplyTest extends
         AbstractReadyResourceOperatorTest<KubernetesClient, Pod, PodList, PodResource> {
@@ -132,14 +145,14 @@ public class PodOperatorServerSideApplyTest extends
     }
 
     @Override
-    @Ignore
+    @Disabled
     public void testCreateOrUpdateThrowsWhenCreateThrows(VertxTestContext context) {
         //not valid as we no longer perform the create (this is done as a patch)
         //TODO could rewrite this test as the patch throws
     }
 
     @Override
-    @Ignore
+    @Disabled
     public void testExistenceCheckThrows(VertxTestContext context) {
         //not valid as we no longer perform the get
         //TODO UNLESS we end up doing the get before the delete

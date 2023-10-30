@@ -28,6 +28,7 @@ public class PodOperator extends AbstractReadyNamespacedResourceOperator<Kuberne
      * Constructor
      * @param vertx The Vertx instance
      * @param client The Kubernetes client
+     * @param useServerSideApply Whether to use server side apply
      */
     public PodOperator(Vertx vertx, KubernetesClient client, boolean useServerSideApply) {
         super(vertx, client, "Pods", useServerSideApply);

@@ -1225,6 +1225,7 @@
                                 <ignoredUnusedDeclaredDependency>io.micrometer:micrometer-registry-prometheus</ignoredUnusedDeclaredDependency>
                                 <ignoredUnusedDeclaredDependency>org.mockito:mockito-inline</ignoredUnusedDeclaredDependency>
                                 <ignoredUnusedDeclaredDependency>junit:junit</ignoredUnusedDeclaredDependency>
+                                <ignoredUnusedDeclaredDependency>io.javaoperatorsdk:jenvtest-fabric8-client-support</ignoredUnusedDeclaredDependency>
                             </ignoredUnusedDeclaredDependencies>
                             <ignoredUsedUndeclaredDependencies>
                                 <ignoredUsedUndeclaredDependency>org.apache.kafka:kafka-raft:jar</ignoredUsedUndeclaredDependency>
