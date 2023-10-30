@@ -101,7 +101,11 @@ public interface KubeCmdClient<K extends KubeCmdClient<K>> {
      */
     ExecResult execInPod(String pod, String... command);
 
+    ExecResult execInPod(String pod, boolean throwErrors, String... command);
+
     ExecResult execInPod(Level logLevel, String pod, String... command);
+
+    ExecResult execInPod(Level logLevel, String pod, boolean throwErrors, String... command);
 
     ExecResult execInCurrentNamespace(String... commands);
 

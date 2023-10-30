@@ -4,6 +4,7 @@
  */
 package io.strimzi.systemtest;
 
+import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.strimzi.test.TestUtils;
 
 import java.time.Duration;
@@ -97,6 +98,8 @@ public interface Constants {
      */
     String KAFKA_CLIENTS_LABEL_KEY = "user-test-app";
     String KAFKA_ADMIN_CLIENT_LABEL_KEY = "user-test-admin-app";
+    String ADMIN_CLIENT_NAME = "admin-client";
+
     String KAFKA_CLIENTS_LABEL_VALUE = "kafka-clients";
     String KAFKA_ADMIN_CLIENT_LABEL_VALUE = "kafka-clients";
     String KAFKA_BRIDGE_CLIENTS_LABEL_VALUE = "kafka-clients";
@@ -115,6 +118,11 @@ public interface Constants {
      * Deployment labels related constants
      */
     String APP_POD_LABEL = "app";
+
+    /**
+     * Label selectors for our resources
+     */
+    LabelSelector ADMIN_CLIENT_LABEL_SELECTOR = new LabelSelector(null, Map.of(APP_POD_LABEL, ADMIN_CLIENT_NAME));
 
     /**
      * Constants for specific ports

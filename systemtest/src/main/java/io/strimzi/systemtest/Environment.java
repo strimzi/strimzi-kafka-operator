@@ -175,8 +175,8 @@ public class Environment {
     private static final String RESOURCE_ALLOCATION_STRATEGY_DEFAULT = "SHARE_MEMORY_FOR_ALL_COMPONENTS";
 
     private static final String ST_KAFKA_VERSION_DEFAULT = TestKafkaVersion.getDefaultSupportedKafkaVersion();
-    private static final String ST_CLIENTS_KAFKA_VERSION_DEFAULT = "3.4.0";
-    public static final String TEST_CLIENTS_VERSION_DEFAULT = "0.5.2";
+    private static final String ST_CLIENTS_KAFKA_VERSION_DEFAULT = "3.6.0";
+    public static final String TEST_CLIENTS_VERSION_DEFAULT = "0.6.0";
     public static final String ST_FILE_PLUGIN_URL_DEFAULT = "https://repo1.maven.org/maven2/org/apache/kafka/connect-file/" + ST_KAFKA_VERSION_DEFAULT + "/connect-file-" + ST_KAFKA_VERSION_DEFAULT + ".jar";
     public static final String OLM_OPERATOR_VERSION_DEFAULT = "0.38.0";
 
@@ -203,11 +203,7 @@ public class Environment {
     // variables for kafka client app images
     private static final String TEST_CLIENTS_VERSION = getOrDefault(TEST_CLIENTS_VERSION_ENV, TEST_CLIENTS_VERSION_DEFAULT);
     private static final String TEST_CLIENTS_IMAGE_DEFAULT = STRIMZI_REGISTRY_DEFAULT + "/" + TEST_CLIENTS_ORG_DEFAULT + "/test-clients:" + TEST_CLIENTS_VERSION + "-kafka-" + CLIENTS_KAFKA_VERSION;
-    // Admin client is not part of the test-clients, but the changes need to be made in ThrottlingQuotaST to remove this image
-    private static final String TEST_ADMIN_IMAGE_DEFAULT = STRIMZI_REGISTRY_DEFAULT + "/" + TEST_CLIENTS_ORG_DEFAULT + "/test-client-kafka-admin:0.4.2-kafka-3.3.1";
     public static final String TEST_CLIENTS_IMAGE = getOrDefault(TEST_CLIENTS_IMAGE_ENV, TEST_CLIENTS_IMAGE_DEFAULT);
-    public static final String TEST_ADMIN_IMAGE = getOrDefault(TEST_ADMIN_IMAGE_ENV, TEST_ADMIN_IMAGE_DEFAULT);
-
     private static final String SCRAPER_IMAGE_DEFAULT = STRIMZI_REGISTRY + "/" + STRIMZI_ORG + "/kafka:" + STRIMZI_TAG + "-kafka-" + ST_KAFKA_VERSION;
     public static final String SCRAPER_IMAGE = getOrDefault(SCRAPER_IMAGE_ENV, SCRAPER_IMAGE_DEFAULT);
 

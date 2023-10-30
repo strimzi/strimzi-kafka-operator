@@ -21,11 +21,9 @@ import io.strimzi.systemtest.annotations.UTONotSupported;
 import io.strimzi.systemtest.cli.KafkaCmdClient;
 import io.strimzi.systemtest.enums.ConditionStatus;
 import io.strimzi.systemtest.enums.CustomResourceStatus;
-import io.strimzi.systemtest.kafkaclients.internalClients.AdminClientOperation;
-import io.strimzi.systemtest.kafkaclients.internalClients.KafkaAdminClients;
-import io.strimzi.systemtest.kafkaclients.internalClients.KafkaAdminClientsBuilder;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
+import io.strimzi.systemtest.kafkaclients.internalClients.admin.AdminClient;
 import io.strimzi.systemtest.metrics.MetricsCollector;
 import io.strimzi.systemtest.resources.ComponentType;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
@@ -33,6 +31,7 @@ import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.templates.crd.KafkaTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
+import io.strimzi.systemtest.templates.specific.AdminClientTemplates;
 import io.strimzi.systemtest.templates.specific.ScraperTemplates;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaTopicUtils;
@@ -147,13 +146,14 @@ public class TopicST extends AbstractST {
     void testCreateDeleteCreate(ExtensionContext extensionContext) throws InterruptedException {
         final TestStorage testStorage = new TestStorage(extensionContext, Environment.TEST_SUITE_NAMESPACE);
 
-        KafkaAdminClients listTopicJob = new KafkaAdminClientsBuilder()
-            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(KAFKA_CLUSTER_NAME))
-            .withNamespaceName(testStorage.getNamespaceName())
-            .withAdminName(testStorage.getAdminName())
-            .withTopicName("")
-            .withAdminOperation(AdminClientOperation.LIST_TOPICS)
-            .build();
+        resourceManager.createResourceWithWait(extensionContext,
+            AdminClientTemplates.defaultAdminClient(testStorage.getNamespaceName(), testStorage.getAdminName(), KafkaResources.plainBootstrapAddress(KAFKA_CLUSTER_NAME)).build()
+        );
+
+        String adminClientPodName = kubeClient().listPods(testStorage.getNamespaceName(), Constants.ADMIN_CLIENT_LABEL_SELECTOR).get(0).getMetadata().getName();
+
+        AdminClient adminClient = new AdminClient(testStorage.getNamespaceName(), adminClientPodName);
+        adminClient.configureFromEnv();
 
         resourceManager.createResourceWithWait(extensionContext, KafkaTopicTemplates.topic(KAFKA_CLUSTER_NAME, testStorage.getTopicName(), Environment.TEST_SUITE_NAMESPACE)
             .editMetadata()
@@ -164,8 +164,7 @@ public class TopicST extends AbstractST {
             .endSpec()
             .build());
 
-        resourceManager.createResourceWithWait(extensionContext, listTopicJob.defaultAdmin());
-        ClientUtils.waitForClientContainsMessage(testStorage.getAdminName(), testStorage.getNamespaceName(), testStorage.getTopicName());
+        assertThat(adminClient.listTopics(), containsString(testStorage.getTopicName()));
 
         for (int i = 0; i < 10; i++) {
             Thread.sleep(2_000);
@@ -174,8 +173,7 @@ public class TopicST extends AbstractST {
             cmdKubeClient(Environment.TEST_SUITE_NAMESPACE).deleteByName(KafkaTopic.RESOURCE_KIND, testStorage.getTopicName());
             KafkaTopicUtils.waitForKafkaTopicDeletion(Environment.TEST_SUITE_NAMESPACE, testStorage.getTopicName());
 
-            resourceManager.createResourceWithWait(extensionContext, listTopicJob.defaultAdmin());
-            ClientUtils.waitForClientNotContainsMessage(testStorage.getAdminName(), testStorage.getNamespaceName(), testStorage.getTopicName());
+            assertThat(adminClient.listTopics(), not(containsString(testStorage.getTopicName())));
 
             Thread.sleep(2_000);
             long t0 = System.currentTimeMillis();
@@ -187,8 +185,7 @@ public class TopicST extends AbstractST {
                 .endSpec()
                 .build());
 
-            resourceManager.createResourceWithWait(extensionContext, listTopicJob.defaultAdmin());
-            ClientUtils.waitForClientContainsMessage(testStorage.getAdminName(), testStorage.getNamespaceName(), testStorage.getTopicName());
+            assertThat(adminClient.listTopics(), containsString(testStorage.getTopicName()));
         }
     }
 
