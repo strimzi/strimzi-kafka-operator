@@ -101,7 +101,7 @@ public class KafkaUtils {
                 List<Condition> conditions = KafkaResource.kafkaClient().inNamespace(namespace).withName(clusterName).get().getStatus().getConditions();
                 for (Condition condition : conditions) {
                     String conditionMessage = condition.getMessage();
-                    if (conditionMessage.matches(pattern)) {
+                    if (conditionMessage != null && conditionMessage.matches(pattern)) {
                         return true;
                     }
                 }
