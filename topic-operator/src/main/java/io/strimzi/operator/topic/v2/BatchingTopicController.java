@@ -52,6 +52,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -66,6 +67,7 @@ public class BatchingTopicController {
     static final String FINALIZER = "strimzi.io/topic-operator";
     static final String MANAGED = "strimzi.io/managed";
     static final String AUTO_CREATE_TOPICS_ENABLE = "auto.create.topics.enable";
+    private static final int BROKER_DEFAULT = -1;
     private final boolean useFinalizer;
 
     private final Admin admin;
@@ -296,13 +298,16 @@ public class BatchingTopicController {
         }
     }
 
-    private static NewTopic buildNewTopic(KafkaTopic kt, String tn) {
+    private static NewTopic buildNewTopic(KafkaTopic kt, String topicName) {
+        return new NewTopic(topicName, partitions(kt), replicas(kt)).configs(buildConfigsMap(kt));
+    }
 
-        return new NewTopic(
-                tn,
-                kt.getSpec() == null || kt.getSpec().getPartitions() == null ? -1 : kt.getSpec().getPartitions(),
-                kt.getSpec() == null || kt.getSpec().getReplicas() == null ? -1 : kt.getSpec().getReplicas().shortValue())
-            .configs(buildConfigsMap(kt));
+    private static int partitions(KafkaTopic kt) {
+        return kt.getSpec().getPartitions() != null ? kt.getSpec().getPartitions() : BROKER_DEFAULT;
+    }
+
+    private static short replicas(KafkaTopic kt) {
+        return kt.getSpec().getReplicas() != null ? kt.getSpec().getReplicas().shortValue() : BROKER_DEFAULT;
     }
 
     private static Map<String, String> buildConfigsMap(KafkaTopic kt) {
@@ -437,7 +442,7 @@ public class BatchingTopicController {
         addOrRemoveFinalizer(useFinalizer, unmanaged).forEach(rt -> putResult(results, rt, Either.ofRight(null)));
 
         // skip reconciliation of paused KafkaTopics
-        var partitionedByPaused = validateManagedTopics(partitionedByManaged).stream()
+        var partitionedByPaused = validateManagedTopics(partitionedByManaged).stream().filter(hasTopicSpec)
             .collect(Collectors.partitioningBy(reconcilableTopic -> isPaused(reconcilableTopic.kt())));
         partitionedByPaused.get(true).forEach(reconcilableTopic -> putResult(results, reconcilableTopic, Either.ofRight(null)));
 
@@ -464,6 +469,14 @@ public class BatchingTopicController {
 
         LOGGER.traceOp("Total time reconciling batch of {} KafkaTopics: {}ns", results.size(), System.nanoTime() - t3);
     }
+
+    private Predicate<ReconcilableTopic> hasTopicSpec = reconcilableTopic -> {
+        var hasSpec = reconcilableTopic.kt().getSpec() != null;
+        if (!hasSpec) {
+            LOGGER.warnCr(reconcilableTopic.reconciliation(), "Topic has no spec.");
+        }
+        return hasSpec;
+    };
 
     private List<ReconcilableTopic> validateManagedTopics(Map<Boolean, List<ReconcilableTopic>> partitionedByManaged) {
         var mayNeedUpdate = partitionedByManaged.get(true).stream().filter(reconcilableTopic -> {
@@ -534,7 +547,10 @@ public class BatchingTopicController {
         LOGGER.traceOp("Updated status of {} KafkaTopics in {}ns", results.size(), System.nanoTime() - t0);
     }
 
-    private void accumulateResults(Map<ReconcilableTopic, Either<TopicOperatorException, Object>> results, PartitionedByError<ReconcilableTopic, CurrentState> currentStatesOrError, PartitionedByError<ReconcilableTopic, Void> alterConfigsResults, PartitionedByError<ReconcilableTopic, Void> createPartitionsResults) {
+    private void accumulateResults(Map<ReconcilableTopic, Either<TopicOperatorException, Object>> results,
+                                   PartitionedByError<ReconcilableTopic, CurrentState> currentStatesOrError,
+                                   PartitionedByError<ReconcilableTopic, Void> alterConfigsResults,
+                                   PartitionedByError<ReconcilableTopic, Void> createPartitionsResults) {
         // add the successes to the results
         alterConfigsResults.ok().forEach(pair -> putResult(results, pair.getKey(), Either.ofRight(null)));
         createPartitionsResults.ok().forEach(pair -> putResult(results, pair.getKey(), Either.ofRight(null)));
@@ -545,7 +561,8 @@ public class BatchingTopicController {
         var apparentlyDifferentRf = currentStatesOrError.ok().filter(pair -> {
             var reconcilableTopic = pair.getKey();
             var currentState = pair.getValue();
-            return currentState.uniqueReplicationFactor() != reconcilableTopic.kt().getSpec().getReplicas();
+            return reconcilableTopic.kt().getSpec().getReplicas() != null
+                && currentState.uniqueReplicationFactor() != reconcilableTopic.kt().getSpec().getReplicas();
         }).toList();
 
         var actuallyDifferentRf = partitionedByError(filterByReassignmentTargetReplicas(apparentlyDifferentRf).stream());
@@ -554,7 +571,8 @@ public class BatchingTopicController {
         });
         actuallyDifferentRf.ok().forEach(pair -> {
             var reconcilableTopic = pair.getKey();
-            var partitions = pair.getValue().partitionsWithDifferentRfThan(reconcilableTopic.kt().getSpec().getReplicas());
+            var specPartitions = partitions(reconcilableTopic.kt());
+            var partitions = pair.getValue().partitionsWithDifferentRfThan(specPartitions);
             putResult(results, reconcilableTopic, Either.ofLeft(new TopicOperatorException.NotSupported("Replication factor change not supported, but required for partitions " + partitions)));
         });
     }
@@ -928,11 +946,11 @@ public class BatchingTopicController {
     }
 
     private static Either<TopicOperatorException, NewPartitions> buildNewPartitions(Reconciliation reconciliation, KafkaTopic kt, int currentNumPartitions) {
-        Integer requested = kt.getSpec().getPartitions();
+        int requested = kt.getSpec() == null || kt.getSpec().getPartitions() == null ? BROKER_DEFAULT : kt.getSpec().getPartitions();
         if (requested > currentNumPartitions) {
             LOGGER.debugCr(reconciliation, "Partition increase from {} to {}", currentNumPartitions, requested);
             return Either.ofRight(NewPartitions.increaseTo(requested));
-        } else if (requested < currentNumPartitions) {
+        } else if (requested != BROKER_DEFAULT && requested < currentNumPartitions) {
             LOGGER.debugCr(reconciliation, "Partition decrease from {} to {}", currentNumPartitions, requested);
             return Either.ofLeft(new TopicOperatorException.NotSupported("Decreasing partitions not supported"));
         } else {

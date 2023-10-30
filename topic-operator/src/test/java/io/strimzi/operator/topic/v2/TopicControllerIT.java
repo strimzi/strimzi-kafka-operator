@@ -79,6 +79,7 @@ import java.util.stream.Collectors;
 
 import static io.strimzi.api.ResourceAnnotations.ANNO_STRIMZI_IO_PAUSE_RECONCILIATION;
 import static io.strimzi.operator.topic.v2.BatchingTopicController.isPaused;
+import static java.lang.String.format;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
@@ -96,7 +97,7 @@ class TopicControllerIT {
 
     private static final Logger LOGGER = LogManager.getLogger(TopicControllerIT.class);
     public static final Map<String, String> SELECTOR = Map.of("foo", "FOO", "bar", "BAR");
-    private static final String NAMESPACE = "ns";
+    private static final String NAMESPACE = "uto-test";
 
     KubernetesClient client;
 
@@ -156,6 +157,10 @@ class TopicControllerIT {
         namespaces.push(ns);
         TopicOperatorTestUtil.namespace(client, ns);
         return ns;
+    }
+
+    private String randomTopicName() {
+        return "topic-" + UUID.randomUUID();
     }
 
     private static Predicate<KafkaTopic> isReconcilatedAndHasConditionMatching(String description,
@@ -318,8 +323,8 @@ class TopicControllerIT {
                                          String metadataName,
                                          Boolean managed,
                                          String topicName,
-                                         int partitions,
-                                         int replicas) {
+                                         Integer partitions,
+                                         Integer replicas) {
         return kafkaTopic(ns, metadataName, SELECTOR, null, managed, topicName, partitions, replicas, null);
     }
 
@@ -329,8 +334,8 @@ class TopicControllerIT {
                                          Map<String, String> annotations,
                                          Boolean managed,
                                          String topicName,
-                                         int partitions,
-                                         int replicas,
+                                         Integer partitions,
+                                         Integer replicas,
                                          Map<String, Object> configs) {
 
         var metadataBuilder = new KafkaTopicBuilder()
@@ -353,25 +358,39 @@ class TopicControllerIT {
         return kt;
     }
 
+    private static KafkaTopic kafkaTopicWithNoSpec(String ns, String metadataName, boolean spec) {
+        var builder = new KafkaTopicBuilder()
+            .withNewMetadata()
+            .withName(metadataName)
+            .withNamespace(ns)
+            .withLabels(SELECTOR)
+            .addToAnnotations(BatchingTopicController.MANAGED, "true")
+            .endMetadata();
+        if (spec) {
+            builder = builder.editOrNewSpec().endSpec();
+        }
+        return builder.build();
+    }
+
     static KafkaTopic[] managedKafkaTopics() {
         return new KafkaTopic[] {
-                kafkaTopic("ns", "foo", true, "foo", 2, 1),
-                kafkaTopic("ns", "foo", true, null, 2, 1),
-                kafkaTopic("ns", "foo", true, "FOO", 2, 1),
-                kafkaTopic("ns", "foo", null, "foo", 2, 1),
-                kafkaTopic("ns", "foo", null, null, 2, 1),
-                kafkaTopic("ns", "foo", null, "FOO", 2, 1),
+                kafkaTopic(NAMESPACE, "foo", true, "foo", 2, 1),
+                kafkaTopic(NAMESPACE, "foo", true, null, 2, 1),
+                kafkaTopic(NAMESPACE, "foo", true, "FOO", 2, 1),
+                kafkaTopic(NAMESPACE, "foo", null, "foo", 2, 1),
+                kafkaTopic(NAMESPACE, "foo", null, null, 2, 1),
+                kafkaTopic(NAMESPACE, "foo", null, "FOO", 2, 1),
                 // With a superset of the selector mappings
-                kafkaTopic("ns", "foo", Map.of("foo", "FOO", "bar", "BAR", "quux", "QUUX"), null, true, "foo", 2, 1, null),
+                kafkaTopic(NAMESPACE, "foo", Map.of("foo", "FOO", "bar", "BAR", "quux", "QUUX"), null, true, "foo", 2, 1, null),
         };
     }
 
     static KafkaTopic[] managedKafkaTopicsWithIllegalTopicNames() {
         return new KafkaTopic[] {
-                kafkaTopic("ns", "foo", true, "..", 2, 1),
-                kafkaTopic("ns", "foo", true, ".", 2, 1),
-                kafkaTopic("ns", "foo", null, "foo{}", 2, 1),
-                kafkaTopic("ns", "foo", null, "x".repeat(256), 2, 1),
+                kafkaTopic(NAMESPACE, "foo", true, "..", 2, 1),
+                kafkaTopic(NAMESPACE, "foo", true, ".", 2, 1),
+                kafkaTopic(NAMESPACE, "foo", null, "foo{}", 2, 1),
+                kafkaTopic(NAMESPACE, "foo", null, "x".repeat(256), 2, 1),
         };
     }
 
@@ -385,28 +404,28 @@ class TopicControllerIT {
                 TopicConfig.UNCLEAN_LEADER_ELECTION_ENABLE_CONFIG, true // boolean typed
                 );
         return new KafkaTopic[] {
-                kafkaTopic("ns", "foo", SELECTOR, null, true, "foo", 2, 1, configs),
-                kafkaTopic("ns", "foo", SELECTOR, null, true, null, 2, 1, configs),
-                kafkaTopic("ns", "foo", SELECTOR, null, true, "FOO", 2, 1, configs),
-                kafkaTopic("ns", "foo", SELECTOR, null, null, "foo", 2, 1, configs),
-                kafkaTopic("ns", "foo", SELECTOR, null, null, null, 2, 1, configs),
-                kafkaTopic("ns", "foo", SELECTOR, null, null, "FOO", 2, 1, configs),
+                kafkaTopic(NAMESPACE, "foo", SELECTOR, null, true, "foo", 2, 1, configs),
+                kafkaTopic(NAMESPACE, "foo", SELECTOR, null, true, null, 2, 1, configs),
+                kafkaTopic(NAMESPACE, "foo", SELECTOR, null, true, "FOO", 2, 1, configs),
+                kafkaTopic(NAMESPACE, "foo", SELECTOR, null, null, "foo", 2, 1, configs),
+                kafkaTopic(NAMESPACE, "foo", SELECTOR, null, null, null, 2, 1, configs),
+                kafkaTopic(NAMESPACE, "foo", SELECTOR, null, null, "FOO", 2, 1, configs),
         };
     }
 
     static KafkaTopic[] unmanagedKafkaTopics() {
         return new KafkaTopic[] {
-                kafkaTopic("ns", "foo", false, "foo", 2, 1),
-                kafkaTopic("ns", "foo", false, null, 2, 1),
-                kafkaTopic("ns", "foo", false, "FOO", 2, 1),
+                kafkaTopic(NAMESPACE, "foo", false, "foo", 2, 1),
+                kafkaTopic(NAMESPACE, "foo", false, null, 2, 1),
+                kafkaTopic(NAMESPACE, "foo", false, "FOO", 2, 1),
         };
     }
 
     static KafkaTopic[] unselectedKafkaTopics() {
         return new KafkaTopic[] {
-                kafkaTopic("ns", "foo", Map.of(), null, true, "FOO", 2, 1, null),
-                kafkaTopic("ns", "foo", Map.of("foo", "FOO"), null, true, "foo", 2, 1, null),
-                kafkaTopic("ns", "foo", Map.of("quux", "QUUX"), null, true, null, 2, 1, null),
+                kafkaTopic(NAMESPACE, "foo", Map.of(), null, true, "FOO", 2, 1, null),
+                kafkaTopic(NAMESPACE, "foo", Map.of("foo", "FOO"), null, true, "foo", 2, 1, null),
+                kafkaTopic(NAMESPACE, "foo", Map.of("quux", "QUUX"), null, true, null, 2, 1, null),
         };
     }
 
@@ -515,24 +534,6 @@ class TopicControllerIT {
     }
 
     @Test
-    public void shouldCreateTopicInKafkaWhenKafkaTopicHasNoSpec(
-                @BrokerConfig(name = "auto.create.topics.enable", value = "false")
-                @BrokerConfig(name = "num.partitions", value = "4")
-                @BrokerConfig(name = "default.replication.factor", value = "1")
-                KafkaCluster kafkaCluster)
-            throws ExecutionException, InterruptedException, TimeoutException {
-        KafkaTopic kt = new KafkaTopicBuilder()
-                .withNewMetadata()
-                    .withNamespace("ns")
-                    .withName("foo")
-                    .withLabels(SELECTOR)
-                .endMetadata()
-                .build();
-        var created = createTopic(kafkaCluster, kt);
-        assertCreateSuccess(kt, created, 4, 1, Map.of());
-    }
-
-    @Test
     public void shouldCreateTopicInKafkaWhenKafkaTopicHasOnlyPartitions(
                 @BrokerConfig(name = "auto.create.topics.enable", value = "false")
                 @BrokerConfig(name = "num.partitions", value = "4")
@@ -541,8 +542,8 @@ class TopicControllerIT {
             throws ExecutionException, InterruptedException, TimeoutException {
         KafkaTopic kt = new KafkaTopicBuilder()
                 .withNewMetadata()
-                    .withNamespace("ns")
-                    .withName("foo")
+                    .withNamespace(NAMESPACE)
+                    .withName(randomTopicName())
                     .withLabels(SELECTOR)
                 .endMetadata()
                 .withNewSpec()
@@ -562,8 +563,8 @@ class TopicControllerIT {
             throws ExecutionException, InterruptedException, TimeoutException {
         KafkaTopic kt = new KafkaTopicBuilder()
                 .withNewMetadata()
-                    .withNamespace("ns")
-                    .withName("foo")
+                    .withNamespace(NAMESPACE)
+                    .withName(randomTopicName())
                 .withLabels(SELECTOR)
                 .endMetadata()
                 .withNewSpec()
@@ -583,8 +584,8 @@ class TopicControllerIT {
             throws ExecutionException, InterruptedException, TimeoutException {
         KafkaTopic kt = new KafkaTopicBuilder()
                 .withNewMetadata()
-                    .withNamespace("ns")
-                    .withName("foo")
+                    .withNamespace(NAMESPACE)
+                    .withName(randomTopicName())
                     .withLabels(SELECTOR)
                 .endMetadata()
                 .withNewSpec()
@@ -922,12 +923,12 @@ class TopicControllerIT {
                 new ConfigResource(ConfigResource.Type.BROKER, ""), List.of(
                         new AlterConfigOp(new ConfigEntry("log.segment.delete.delay.ms", "" + (1000L * 60 * 60)), AlterConfigOp.OpType.SET)))).all().get();
 
-        TopicOperatorConfig config = topicOperatorConfig("ns", kafkaCluster, true, 500);
+        TopicOperatorConfig config = topicOperatorConfig(NAMESPACE, kafkaCluster, true, 500);
         operatorAdmin = new Admin[]{Mockito.spy(Admin.create(config.adminClientConfig()))};
 
         maybeStartOperator(config);
 
-        KafkaTopic kt = kafkaTopic("ns", "bar", SELECTOR, null, null, null, 1, 1,
+        KafkaTopic kt = kafkaTopic(NAMESPACE, "bar", SELECTOR, null, null, null, 1, 1,
                 Map.of("flush.messages", "1234"));
         var barKt = createTopic(kafkaCluster, kt);
         assertCreateSuccess(kt, barKt, Map.of("flush.messages", "1234"));
@@ -1305,7 +1306,7 @@ class TopicControllerIT {
     }
 
     static KafkaTopic[][] collidingManagedTopics_sameNamespace() {
-        return collidingManagedTopics("ns", "ns");
+        return collidingManagedTopics(NAMESPACE, NAMESPACE);
     }
 
     @ParameterizedTest
@@ -1330,7 +1331,7 @@ class TopicControllerIT {
         // then
         assertNull(st1.getConditions().get(0).getReason());
         assertEquals(TopicOperatorException.Reason.RESOURCE_CONFLICT.reason, st2.getConditions().get(0).getReason());
-        assertEquals("Managed by Ref{namespace='ns', name='kt1'}",
+        assertEquals(format("Managed by Ref{namespace='%s', name='%s'}", NAMESPACE, "kt1"),
                 st2.getConditions().get(0).getMessage());
     }
 
@@ -1345,7 +1346,8 @@ class TopicControllerIT {
             KafkaCluster kafkaCluster
     ) throws ExecutionException, InterruptedException {
         // given
-        var kt = kafkaTopic("ns", "foo", true, "foo", 1, Short.MAX_VALUE);
+        var topicName = randomTopicName();
+        var kt = kafkaTopic(NAMESPACE, topicName, true, topicName, 1, (int) Short.MAX_VALUE);
         // and kafkaCluster.numBrokers <= Short.MAX_VALUE
 
         // when
@@ -1364,12 +1366,13 @@ class TopicControllerIT {
             KafkaCluster kafkaCluster
     ) throws ExecutionException, InterruptedException {
         // given
-        var kt = kafkaTopic("ns",
-                "foo",
+        var topicName = randomTopicName();
+        var kt = kafkaTopic(NAMESPACE,
+                topicName,
                 SELECTOR,
                 null,
                 true,
-                "foo",
+                topicName,
                 1,
                 1,
                 Map.of("unknown.config.parameter", "????"));
@@ -1432,10 +1435,7 @@ class TopicControllerIT {
                                           UnaryOperator<KafkaTopic> reverter
                                           ) throws ExecutionException, InterruptedException, TimeoutException {
         // given
-        String ns = namespace(kt.getMetadata().getNamespace());
-        String metadataName = kt.getMetadata().getName();
-        String specTopicName = kt.getSpec().getTopicName();
-        var created = createTopicAndAssertSuccess(kc, kt);
+        createTopicAndAssertSuccess(kc, kt);
 
         // when
         KafkaTopic broken = modifyTopicAndAwait(kt, changer, readyIsFalse());
@@ -1520,7 +1520,8 @@ class TopicControllerIT {
             KafkaCluster kafkaCluster,
             Producer<String, String> producer)
             throws ExecutionException, InterruptedException, TimeoutException {
-        var kt = kafkaTopic("ns", "foo", true, "foo", 1, 1);
+        var topicName = randomTopicName();
+        var kt = kafkaTopic(NAMESPACE, topicName, true, topicName, 1, 1);
         accountForReassigningPartitions(kafkaCluster, producer, kt,
                 initialReplicas -> {
                     assertEquals(1, initialReplicas.size());
@@ -1538,7 +1539,8 @@ class TopicControllerIT {
             KafkaCluster kafkaCluster,
             Producer<String, String> producer)
             throws ExecutionException, InterruptedException, TimeoutException {
-        var kt = kafkaTopic("ns", "foo", true, "foo", 1, 1);
+        var topicName = randomTopicName();
+        var kt = kafkaTopic(NAMESPACE, topicName, true, topicName, 1, 1);
         accountForReassigningPartitions(kafkaCluster, producer, kt,
                 initialReplicas -> {
                     assertEquals(1, initialReplicas.size());
@@ -1558,7 +1560,8 @@ class TopicControllerIT {
             KafkaCluster kafkaCluster,
             Producer<String, String> producer)
             throws ExecutionException, InterruptedException, TimeoutException {
-        var kt = kafkaTopic("ns", "foo", true, "foo", 1, 2);
+        var topicName = randomTopicName();
+        var kt = kafkaTopic(NAMESPACE, topicName, true, topicName, 1, 2);
         accountForReassigningPartitions(kafkaCluster, producer, kt,
                 initialReplicas -> {
                     assertEquals(2, initialReplicas.size());
@@ -1714,7 +1717,7 @@ class TopicControllerIT {
                                                        String expectedReason)
             throws ExecutionException, InterruptedException {
         // given
-        var config = topicOperatorConfig("ns", kafkaCluster);
+        var config = topicOperatorConfig(NAMESPACE, kafkaCluster);
         operatorAdmin = new Admin[]{Mockito.spy(Admin.create(config.adminClientConfig()))};
         var ctr = mock(CreateTopicsResult.class);
         Mockito.doReturn(failedFuture(exception)).when(ctr).all();
@@ -1738,7 +1741,7 @@ class TopicControllerIT {
                                                  @BrokerConfig(name = "auto.create.topics.enable", value = "false")
                                                  KafkaCluster kafkaCluster)
             throws ExecutionException, InterruptedException, TimeoutException {
-        var config = topicOperatorConfig("ns", kafkaCluster);
+        var config = topicOperatorConfig(NAMESPACE, kafkaCluster);
         operatorAdmin = new Admin[]{Mockito.spy(Admin.create(config.adminClientConfig()))};
         var ctr = mock(AlterConfigsResult.class);
         Mockito.doReturn(failedFuture(new TopicAuthorizationException("not allowed"))).when(ctr).all();
@@ -1774,7 +1777,7 @@ class TopicControllerIT {
                                                     @BrokerConfig(name = "auto.create.topics.enable", value = "false")
                                                     KafkaCluster kafkaCluster)
             throws ExecutionException, InterruptedException, TimeoutException {
-        var config = topicOperatorConfig("ns", kafkaCluster);
+        var config = topicOperatorConfig(NAMESPACE, kafkaCluster);
         operatorAdmin = new Admin[]{Mockito.spy(Admin.create(config.adminClientConfig()))};
         var ctr = mock(CreatePartitionsResult.class);
         Mockito.doReturn(failedFuture(new TopicAuthorizationException("not allowed"))).when(ctr).all();
@@ -1805,7 +1808,7 @@ class TopicControllerIT {
             throws ExecutionException, InterruptedException, TimeoutException {
 
         // given
-        var config = topicOperatorConfig("ns", kafkaCluster);
+        var config = topicOperatorConfig(NAMESPACE, kafkaCluster);
         operatorAdmin = new Admin[]{Mockito.spy(Admin.create(config.adminClientConfig()))};
         var ctr = mock(DeleteTopicsResult.class);
         Mockito.doReturn(failedFuture(new TopicAuthorizationException("not allowed"))).when(ctr).all();
@@ -1836,19 +1839,23 @@ class TopicControllerIT {
         // given
 
         // create foo
+        var topicName = randomTopicName();
         LOGGER.info("Create foo");
-        var foo = kafkaTopic("ns", "foo", null, null, 1, 1);
+        var foo = kafkaTopic(NAMESPACE, "foo", null, null, 1, 1);
         var createdFoo = createTopicAndAssertSuccess(kafkaCluster, foo);
+
+        // TODO remove after fixing https://github.com/strimzi/strimzi-kafka-operator/issues/9270
+        Thread.sleep(1000);
 
         // create conflicting bar
         LOGGER.info("Create conflicting bar");
-        var bar = kafkaTopic("ns", "bar", SELECTOR, null, null, "foo", 1, 1,
+        var bar = kafkaTopic(NAMESPACE, "bar", SELECTOR, null, null, "foo", 1, 1,
                 Map.of(TopicConfig.COMPRESSION_TYPE_CONFIG, "snappy"));
         var createdBar = createTopic(kafkaCluster, bar);
         assertTrue(readyIsFalse().test(createdBar));
         var condition = assertExactlyOneCondition(createdBar);
         assertEquals(TopicOperatorException.Reason.RESOURCE_CONFLICT.reason, condition.getReason());
-        assertEquals("Managed by Ref{namespace='ns', name='foo'}", condition.getMessage());
+        assertEquals(format("Managed by Ref{namespace='%s', name='%s'}", NAMESPACE, "foo"), condition.getMessage());
 
         // increase partitions of foo
         LOGGER.info("Increase partitions of foo");
@@ -1893,7 +1900,7 @@ class TopicControllerIT {
                         "to avoid races between the operator and Kafka applications auto-creating topics",
                 5L,
                 TimeUnit.SECONDS)) {
-            maybeStartOperator(topicOperatorConfig("ns", kafkaCluster));
+            maybeStartOperator(topicOperatorConfig(NAMESPACE, kafkaCluster));
         }
     }
 
@@ -1906,7 +1913,7 @@ class TopicControllerIT {
             throws ExecutionException, InterruptedException, TimeoutException {
 
         // given
-        String ns = namespace("ns");
+        String ns = namespace(NAMESPACE);
 
         var config = new TopicOperatorConfig(ns, Labels.fromMap(SELECTOR),
                 kafkaCluster.getBootstrapServers(), TopicControllerIT.class.getSimpleName(), 10_000,
@@ -1921,8 +1928,8 @@ class TopicControllerIT {
 
         KafkaTopic kt = new KafkaTopicBuilder()
                 .withNewMetadata()
-                .withNamespace("ns")
-                .withName("foo")
+                .withNamespace(NAMESPACE)
+                .withName(randomTopicName())
                 .withLabels(SELECTOR)
                 .endMetadata()
                 .build();
@@ -1939,7 +1946,8 @@ class TopicControllerIT {
                 TimeUnit.SECONDS)) {
 
             Crds.topicOperation(client).resource(kt).create();
-            Crds.topicOperation(client).resource(new KafkaTopicBuilder(kt).editMetadata().withName("bar").endMetadata().build()).create();
+            Crds.topicOperation(client).resource(new KafkaTopicBuilder(kt)
+                .editMetadata().withName(randomTopicName()).endMetadata().build()).create();
         }
 
         // then
@@ -1950,20 +1958,19 @@ class TopicControllerIT {
         admin = null;
         operatorAdmin = null;
         operator = null;
-        maybeStartOperator(topicOperatorConfig("ns", kafkaCluster));
+        maybeStartOperator(topicOperatorConfig(NAMESPACE, kafkaCluster));
     }
 
     @Test
     public void shouldNotReconcilePausedKafkaTopicOnAdd(
             @BrokerConfig(name = "auto.create.topics.enable", value = "false")
             KafkaCluster kafkaCluster) throws ExecutionException, InterruptedException {
-        String namespace = "ns";
-        String topicName = "foo";
+        String topicName = randomTopicName();
 
         // generation: 1, observedGeneration: 0
         KafkaTopic kt = createTopic(
             kafkaCluster,
-            kafkaTopic(namespace, topicName, SELECTOR,
+            kafkaTopic(NAMESPACE, topicName, SELECTOR,
                 Map.of(ANNO_STRIMZI_IO_PAUSE_RECONCILIATION, "true"),
                 true, topicName, 1, 1, Map.of()),
             pausedIsTrue()
@@ -1977,15 +1984,14 @@ class TopicControllerIT {
     public void shouldNotReconcilePausedKafkaTopicOnUpdate(
             @BrokerConfig(name = "auto.create.topics.enable", value = "false")
             KafkaCluster kafkaCluster) throws ExecutionException, InterruptedException {
-        String namespace = "ns";
-        String topicName = "foo";
+        String topicName = randomTopicName();
 
         // generation: 1, observedGeneration: 1
         createTopic(kafkaCluster,
-            kafkaTopic(namespace, topicName, SELECTOR, null, true, topicName, 1, 1, Map.of()));
+            kafkaTopic(NAMESPACE, topicName, SELECTOR, null, true, topicName, 1, 1, Map.of()));
 
         // generation: 2, observedGeneration: 1
-        KafkaTopic kt = pauseTopic(namespace, topicName);
+        KafkaTopic kt = pauseTopic(NAMESPACE, topicName);
 
         // generation: 3, observedGeneration: 1
         modifyTopic(kt, theKt -> {
@@ -2001,15 +2007,14 @@ class TopicControllerIT {
     public void shouldReconcilePausedKafkaTopicOnDelete(
             @BrokerConfig(name = "auto.create.topics.enable", value = "false")
             KafkaCluster kafkaCluster) throws ExecutionException, InterruptedException {
-        String namespace = "ns";
-        String topicName = "foo";
+        String topicName = randomTopicName();
 
         // generation: 1, observedGeneration: 1
         createTopic(kafkaCluster,
-            kafkaTopic(namespace, topicName, SELECTOR, null, true, topicName, 1, 1, Map.of()));
+            kafkaTopic(NAMESPACE, topicName, SELECTOR, null, true, topicName, 1, 1, Map.of()));
 
         // generation: 2, observedGeneration: 1
-        KafkaTopic kt = pauseTopic(namespace, topicName);
+        KafkaTopic kt = pauseTopic(NAMESPACE, topicName);
 
         Crds.topicOperation(client).resource(kt).delete();
         LOGGER.info("Test deleted KafkaTopic {} with resourceVersion {}",
@@ -2018,5 +2023,61 @@ class TopicControllerIT {
         TopicOperatorTestUtil.waitUntilCondition(resource, Objects::isNull);
 
         assertNotExistsInKafka(expectedTopicName(kt));
+    }
+
+    @Test
+    public void shouldReconcileKafkaTopicWithoutPartitions(
+            @BrokerConfig(name = "auto.create.topics.enable", value = "false")
+            @BrokerConfig(name = "num.partitions", value = "3")
+            KafkaCluster kafkaCluster) throws ExecutionException, InterruptedException, TimeoutException {
+        String topicName = randomTopicName();
+
+        createTopic(kafkaCluster,
+            kafkaTopic(NAMESPACE, topicName, SELECTOR, null, true, topicName, null, 1, Map.of()));
+
+        TopicDescription topicDescription = awaitTopicDescription(topicName);
+        assertEquals(3, numPartitions(topicDescription));
+    }
+
+    @Test
+    public void shouldReconcileKafkaTopicWithoutReplicas(
+            @BrokerConfig(name = "auto.create.topics.enable", value = "false")
+            @BrokerConfig(name = "default.replication.factor", value = "1")
+            KafkaCluster kafkaCluster) throws ExecutionException, InterruptedException, TimeoutException {
+        String topicName = randomTopicName();
+
+        createTopic(kafkaCluster,
+            kafkaTopic(NAMESPACE, topicName, SELECTOR, null, true, topicName, 1, null, Map.of()));
+
+        TopicDescription topicDescription = awaitTopicDescription(topicName);
+        assertEquals(Set.of(1), replicationFactors(topicDescription));
+    }
+
+    @Test
+    public void shouldReconcileKafkaTopicWithEmptySpec(
+        @BrokerConfig(name = "auto.create.topics.enable", value = "false")
+        @BrokerConfig(name = "num.partitions", value = "3")
+        @BrokerConfig(name = "default.replication.factor", value = "1")
+        KafkaCluster kafkaCluster) throws ExecutionException, InterruptedException, TimeoutException {
+        String topicName = randomTopicName();
+        createTopic(kafkaCluster, kafkaTopicWithNoSpec(NAMESPACE, topicName, true));
+        TopicDescription topicDescription = awaitTopicDescription(topicName);
+        assertEquals(3, numPartitions(topicDescription));
+        assertEquals(Set.of(1), replicationFactors(topicDescription));
+    }
+
+    @Test
+    public void shouldNotReconcileKafkaTopicWithMissingSpec(
+        @BrokerConfig(name = "auto.create.topics.enable", value = "false")
+        @BrokerConfig(name = "num.partitions", value = "3")
+        @BrokerConfig(name = "default.replication.factor", value = "1")
+        KafkaCluster kafkaCluster) throws ExecutionException, InterruptedException {
+        maybeStartOperator(topicOperatorConfig(NAMESPACE, kafkaCluster));
+
+        var created = Crds.topicOperation(client)
+            .resource(kafkaTopicWithNoSpec(NAMESPACE, randomTopicName(), false))
+            .create();
+
+        assertNotExistsInKafka(expectedTopicName(created));
     }
 }
