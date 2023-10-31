@@ -21,13 +21,12 @@ function buildDockerImage() {
   fi
 }
 
+# in case that Kafka version wasn't supplied or we specify "latest" as a version, we will take the default version from kafka-versions.yaml
 if [ -z "${KAFKA_VERSION}" ] || [ "${KAFKA_VERSION}" == "latest" ]; then
-  echo "[WARN] Kafka version was not supplied or 'latest' was specified, going to get latest version from kafka-versions.yaml"
   getLatestKafkaVersionFromYAML
   BASE_IMAGE=$(echo $BASE_IMAGE | sed "s/KAFKA_VERSION/${KAFKA_VERSION}/g")
 fi
 
-echo $(dirname "$0")
 buildDockerImage
 
-echo export CONNECT_IMAGE_WITH_FILE_SINK_PLUGIN=$CONNECT_IMAGE
+echo "export CONNECT_IMAGE_WITH_FILE_SINK_PLUGIN=$CONNECT_IMAGE"
