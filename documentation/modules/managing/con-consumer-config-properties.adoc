@@ -231,7 +231,8 @@ isolation.level=read_committed <1>
 
 == Recovering from failure to avoid data loss
 
-Kafka provides mechanisms to detect and recover from failures within consumer groups. Two useful properties that aid in this recovery process are `session.timeout.ms` and `heartbeat.interval.ms`.
+Kafka provides a rebalance protocol which helps with failure detection and recovery within a consumer group.  
+Two useful properties that aid in this recovery process are `session.timeout.ms` and `heartbeat.interval.ms`.
 
 The `session.timeout.ms` property specifies the maximum amount of time a consumer in a group can go without sending a heartbeat to the Kafka broker. 
 This heartbeat is an indicator that the consumer is active in the group. 

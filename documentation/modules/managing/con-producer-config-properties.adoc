@@ -222,30 +222,26 @@ such as worse batching, start to counteract the effect on throughput.
 
 .Lowering latency
 
-When your application calls `KafkaProducer.send()`, messages are handled as follows:
+When your application calls the `KafkaProducer.send()` method, messages undergo a series of operations before being sent:
 
-* Processed by any interceptors
-* Serialized
-* Assigned to a partition
-* Compressed
-* Added to a batch of messages in a per-partition queue
+* Interception: Messages are processed by any configured interceptors.
+* Serialization: Messages are serialized into the appropriate format.
+* Partition assignment: Each message is assigned to a specific partition.
+* Compression: Messages are compressed to conserve network bandwidth.
+* Batching: Compressed messages are added to a batch in a partition-specific queue.
 
-At which point the `send()` method returns.
-So the time `send()` is blocked is determined by the following:
-
-* The time spent in the interceptors, serializers and partitioner
-* The compression algorithm used
-* The time spent waiting for a buffer to use for compression
+During these operations, the `send()` method is momentarily blocked. 
+It also remains blocked if the `buffer.memory` is full or if metadata is unavailable.
 
 Batches will remain in the queue until one of the following occurs:
 
-* The batch is full (according to `batch.size`)
-* The delay introduced by `linger.ms` has passed
-* The sender is about to send message batches for other partitions to the same broker, and it is possible to add this batch too
-* The producer is being flushed or closed
+* The batch is full (according to `batch.size`).
+* The delay introduced by `linger.ms` has passed.
+* The sender is ready to dispatch batches for other partitions to the same broker and can include this batch.
+* The producer is being flushed or closed.
 
-Consider the configuration for batching and buffering to mitigate the impact of `send()` blocking on latency.
-Use the `linger.ms` and `batch.size` configuration properties to batch more messages into a single produce request for higher throughput. 
+To minimize the impact of `send()` blocking on latency, optimize batching and buffering configurations. 
+Use the `linger.ms` and `batch.size` properties to batch more messages into a single produce request for higher throughput.
 
 [source,env]
 ----
@@ -255,7 +251,7 @@ batch.size=16384 <2>
 buffer.memory=33554432 <3>
 # ...
 ----
-<1> The `linger` property adds a delay in milliseconds so that larger batches of messages are accumulated and sent in a request. The default is `0'.`
+<1> The `linger` property adds a delay in milliseconds so that larger batches of messages are accumulated and sent in a request. The default is `0`.
 <2> If a maximum `batch.size` in bytes is used, a request is sent when the maximum is reached, or messages have been queued for longer than `linger.ms` (whichever comes sooner).
 Adding the delay allows batches to accumulate messages up to the batch size.
 <3> The buffer size must be at least as big as the batch size, and be able to accommodate buffering, compression, and in-flight requests.
