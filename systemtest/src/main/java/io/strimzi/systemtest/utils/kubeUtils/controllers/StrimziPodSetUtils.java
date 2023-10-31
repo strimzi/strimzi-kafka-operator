@@ -106,7 +106,6 @@ public class StrimziPodSetUtils {
                 Pod[] spsPods = objectMapper.convertValue(podMap, Pod[].class);
                 Pod pod = Arrays.stream(spsPods).filter(p -> p.getMetadata().getName().contains(podName)).findAny().get();
 
-
                 if (annotationValue.equals(pod.getMetadata().getAnnotations().get(annotationKey))) {
                     stableCounter[0]++;
                     if (stableCounter[0] == Constants.GLOBAL_STABILITY_OFFSET_COUNT) {
@@ -122,7 +121,6 @@ public class StrimziPodSetUtils {
             });
         LOGGER.info("Pod: {}/{} kept annotation: {}-{} ", namespaceName, podName, annotationKey, annotationValue);
     }
-
 
     /**
      * Waits for all of specified labels of a StrimziPodSet (SPS) resource to change.

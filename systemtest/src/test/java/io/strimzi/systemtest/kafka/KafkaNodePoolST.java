@@ -422,15 +422,16 @@ public class KafkaNodePoolST extends AbstractST {
 
         LOGGER.info("Modifying configuration relevant or irrelevant based on role of given KafkaNodePools");
 
+        final Pod podFromKnpC = PodUtils.getPodsByPrefixInNameWithDynamicWait(testStorage.getNamespaceName(), testStorage.getClusterName() + "-" + nodePoolNameC).get(0);
+        final String podCName = podFromKnpC.getMetadata().getName();
+        final String knpCConfigHashAnnotationValue = podFromKnpC.getMetadata().getAnnotations().get(Constants.NODE_BROKER_CONFIG_HASH_ANNOTATION);
+        final String knpCStrimziPodSetName = KafkaNodePoolUtils.getStrimziPodSetName(testStorage.getClusterName(), nodePoolNameC);
+
         // replacing config which is not relevant to control (also it is part of dynamic config, therefore should not trigger Rolling Update)
         KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), k -> {
             k.getSpec().getKafka().getConfig().put("compression.type", "gzip");
         }, testStorage.getNamespaceName());
 
-        final Pod podFromKnpC = PodUtils.getPodsByPrefixInNameWithDynamicWait(testStorage.getNamespaceName(), testStorage.getClusterName() + "-" + nodePoolNameC).get(0);
-        final String podCName = podFromKnpC.getMetadata().getName();
-        final String knpCConfigHashAnnotationValue = podFromKnpC.getMetadata().getAnnotations().get(Constants.NODE_BROKER_CONFIG_HASH_ANNOTATION);
-        final String knpCStrimziPodSetName = KafkaNodePoolUtils.getStrimziPodSetName(testStorage.getClusterName(), nodePoolNameC);
         StrimziPodSetUtils.waitForPrevailedPodAnnotationKeyValuePairs(testStorage.getNamespaceName(), Constants.NODE_BROKER_CONFIG_HASH_ANNOTATION, knpCConfigHashAnnotationValue, knpCStrimziPodSetName, podCName);
 
         // replacing config relevant only to controllers
