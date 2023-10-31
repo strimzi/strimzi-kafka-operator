@@ -215,7 +215,7 @@ public class PvcReconcilerTest {
     // Tests volume reconciliation when the PVC has some weird value
     //         => we cannot handle it successfully, but we should fail the reconciliation
     @Test
-    public void testVolumesBoundExpandableStorageClassWithInvalidUnit(VertxTestContext context)  {
+    public void testVolumesBoundExpandableStorageClassWithInvalidSize(VertxTestContext context)  {
         List<PersistentVolumeClaim> pvcs = List.of(
                 createPvc("data-pod-0"),
                 createPvc("data-pod-1"),
@@ -235,7 +235,7 @@ public class PvcReconcilerTest {
                         PersistentVolumeClaim pvcWithStatus = new PersistentVolumeClaimBuilder(currentPvc)
                                 .editSpec()
                                     .withNewResources()
-                                        .withRequests(Map.of("storage", new Quantity("50000000000200inv", null)))
+                                        .withRequests(Map.of("storage", new Quantity("-50000000000200Gi", null)))
                                     .endResources()
                                 .endSpec()
                                 .withNewStatus()
@@ -268,7 +268,7 @@ public class PvcReconcilerTest {
                 .onComplete(res -> {
                     assertThat(res.succeeded(), is(false));
                     assertThat(res.cause(), is(instanceOf(IllegalArgumentException.class)));
-                    assertThat(res.cause().getMessage(), is("Invalid memory suffix: inv"));
+                    assertThat(res.cause().getMessage(), is("Invalid memory suffix: -50000000000200Gi"));
                     async.flag();
                 });
     }
