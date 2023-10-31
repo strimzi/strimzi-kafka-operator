@@ -239,6 +239,61 @@ public class PodUtils {
     }
 
     /**
+     * Waits until the single specified annotation of a Pod changes its value.
+     *
+     * @param namespaceName    the namespace in which the Pod is located.
+     * @param podName          the name of the Pod whose annotation value needs to be checked.
+     * @param annotationKey    the key of the annotation whose value needs to be checked.
+     * @param annotationValue  the expected value of the annotation to change from.
+     *
+     * @throws TimeoutException if the annotation value does not change within the {@code DELETION_TIMEOUT} period.
+     */
+    public static void waitUntilPodAnnotationChange(String namespaceName, String podName, String annotationKey, String annotationValue) {
+
+        LOGGER.info("Waiting for Pod: {}/{} to change annotation value: {}-{}", namespaceName, podName, annotationKey, annotationValue);
+        TestUtils.waitFor("Pod to change value of annotation" + annotationKey + " with key " + annotationKey, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS,
+            DELETION_TIMEOUT, () ->
+                !annotationValue.equals(kubeClient(namespaceName).getPod(namespaceName, podName).getMetadata().getAnnotations().get(annotationKey))
+        );
+        LOGGER.info("Pod: {}/{} changed annotation value: {}-{}", namespaceName, podName, annotationKey, annotationValue);
+    }
+
+    /**
+     * Waits for a specific annotation key-value pair to remain stable (from start to beginning) on a given Pod.
+     *
+     * @param namespaceName   the namespace in which the Pod is located.
+     * @param annotationKey   the key of the annotation to be checked.
+     * @param annotationValue the expected value of the annotation to be checked.
+     * @param observedPodName the name of the Pod whose annotation is being observed.
+     *
+     * @throws TimeoutException if the annotation does not remain stable within the {@code Constants.GLOBAL_STATUS_TIMEOUT} period.
+     */
+    public static void waitForPrevailedPodAnnotationKeyValuePairs(String namespaceName, String annotationKey, String annotationValue, String observedPodName) {
+        LOGGER.info("Waiting for label: {}-{} to keep its value", namespaceName, annotationKey, annotationValue);
+        int[] stableCounter = {0};
+        TestUtils.waitFor("Label: " + annotationKey + "to prevail its value: " + annotationValue,
+            Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_STATUS_TIMEOUT,
+            
+            () -> {
+                Pod pod = kubeClient(namespaceName).getPod(observedPodName);
+
+                if (annotationValue.equals(pod.getMetadata().getAnnotations().get(annotationKey))) {
+                    stableCounter[0]++;
+                    if (stableCounter[0] == Constants.GLOBAL_STABILITY_OFFSET_COUNT) {
+                        LOGGER.info("Pod replicas are stable for {} poll intervals", stableCounter[0]);
+                        return true;
+                    }
+                } else {
+                    LOGGER.info("Annotations does not have expected value");
+                    return false;
+                }
+                LOGGER.info("Annotation be assumed stable in {} polls", Constants.GLOBAL_STABILITY_OFFSET_COUNT - stableCounter[0]);
+                return false;
+            });
+        LOGGER.info("Pod: {}/{} kept annotation: {}-{} ", namespaceName, observedPodName, annotationKey, annotationValue);
+    }
+
+    /**
      * Ensures that at least one pod from listed (by prefix) is in {@code Pending} phase
      * @param namespaceName Namespace name
      * @param podPrefix - all pods that matched the prefix will be verified

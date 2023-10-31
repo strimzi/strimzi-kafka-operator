@@ -4,6 +4,8 @@
  */
 package io.strimzi.systemtest.resources.crd;
 
+import io.fabric8.kubernetes.api.model.LabelSelector;
+import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 import io.strimzi.api.kafka.Crds;
@@ -21,7 +23,9 @@ import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PersistentVolumeClaimUtils;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
 
 import static io.strimzi.operator.common.Util.hashStub;
@@ -67,6 +71,24 @@ public class KafkaNodePoolResource implements ResourceType<KafkaNodePool> {
     @Override
     public boolean waitForReadiness(KafkaNodePool resource) {
         return resource != null;
+    }
+
+    /**
+     * Constructs a LabelSelector specific enough to match all Pods Managed by given {@code kafkaNodePoolName}.
+     *
+     * @param clusterName       the name of the Kafka cluster for which the label selector is to be created.
+     * @param kafkaNodePoolName the name of the Kafka node pool within the specified cluster.
+     * @return a LabelSelector tailored for the specified Kafka cluster and node pool.
+     */
+    public static LabelSelector getLabelSelector(String clusterName, String kafkaNodePoolName) {
+        Map<String, String> matchLabels = new HashMap<>();
+        matchLabels.put(Labels.STRIMZI_CLUSTER_LABEL, clusterName);
+        matchLabels.put(Labels.STRIMZI_KIND_LABEL, "Kafka");
+        matchLabels.put(Constants.NODE_POOL_LABEL, kafkaNodePoolName);
+
+        return new LabelSelectorBuilder()
+            .withMatchLabels(matchLabels)
+            .build();
     }
 
     public static MixedOperation<KafkaNodePool, KafkaNodePoolList, Resource<KafkaNodePool>> kafkaNodePoolClient() {

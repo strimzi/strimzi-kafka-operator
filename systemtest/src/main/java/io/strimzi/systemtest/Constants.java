@@ -5,6 +5,7 @@
 package io.strimzi.systemtest;
 
 import io.fabric8.kubernetes.api.model.LabelSelector;
+import io.strimzi.api.ResourceLabels;
 import io.strimzi.test.TestUtils;
 
 import java.time.Duration;
@@ -84,6 +85,14 @@ public interface Constants {
     String ECHO_SINK_JAR_CHECKSUM = "3f30d48079578f9f2d0a097ed9a7088773b135dff3dc8e70d87f8422c073adc1181cb41d823c1d1472b0447a337e4877e535daa34ca8ef21d608f8ee6f5e4a9c";
     String ECHO_SINK_FILE_NAME = "echo-sink-test.jar";
     String ECHO_SINK_JAR_WRONG_CHECKSUM = "f1f167902325062efc8c755647bc1b782b2b067a87a6e507ff7a3f6205803220";
+
+
+    String NODE_BROKER_CONFIG_HASH_ANNOTATION = ResourceLabels.STRIMZI_DOMAIN + "broker-configuration-hash";
+
+    /**
+     * Node pool labels
+     */
+    String NODE_POOL_LABEL = ResourceLabels.STRIMZI_DOMAIN + "pool-name";
 
     /**
      * Scraper pod labels

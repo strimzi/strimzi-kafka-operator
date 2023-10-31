@@ -4,8 +4,10 @@
  */
 package io.strimzi.systemtest.utils.kafkaUtils;
 
+import io.strimzi.api.kafka.model.StrimziPodSet;
 import io.strimzi.api.kafka.model.nodepool.KafkaNodePool;
 import io.strimzi.systemtest.resources.crd.KafkaNodePoolResource;
+import io.strimzi.systemtest.resources.crd.StrimziPodSetResource;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import java.util.List;
 import java.util.Map;
@@ -37,4 +39,21 @@ public class KafkaNodePoolUtils {
         LOGGER.info("Scaling KafkaNodePool: {}/{} to {} replicas", namespaceName, kafkaNodePoolName, scaleToReplicas);
         KafkaNodePoolResource.kafkaNodePoolClient().inNamespace(namespaceName).withName(kafkaNodePoolName).scale(scaleToReplicas);
     }
+
+    public static String getStrimziPodSetName(String clusterName, String nodePoolName) {
+        return clusterName + "-" + nodePoolName;
+    }
+
+    /**
+     * Retrieves a StrimziPodSet associated with a specific KafkaNodePool.
+     *
+     * @param namespaceName      the namespace in which the Kafka cluster and its node pools reside.
+     * @param clusterName  the name of the Kafka cluster.
+     * @param kafkaNodePoolName the name of the Kafka node pool within the specified Kafka cluster.
+     * @return the StrimziPodSet associated with the given Kafka node pool, or null if not found.
+     */
+    public static StrimziPodSet getStrimziPodSetByKafkaNodePool(String namespaceName, String clusterName, String kafkaNodePoolName) {
+        return StrimziPodSetResource.strimziPodSetClient().inNamespace(namespaceName).withName(getStrimziPodSetName(clusterName, kafkaNodePoolName)).get();
+    }
+
 }
