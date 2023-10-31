@@ -1,7 +1,7 @@
-ARG BASE_IMAGE=quay.io/strimzi/kafka:latest-kafka
 ARG KAFKA_VERSION
+ARG BASE_IMAGE=quay.io/strimzi/kafka:latest-kafka-${KAFKA_VERSION}
 
-FROM ${BASE_IMAGE}-${KAFKA_VERSION}
+FROM ${BASE_IMAGE}
 
 USER root:root
 RUN mkdir -p /opt/kafka/plugins/file-sink
