@@ -3,6 +3,9 @@ ARG BASE_IMAGE=quay.io/strimzi/kafka:latest-kafka-${KAFKA_VERSION}
 
 FROM ${BASE_IMAGE}
 
+# to make KAFKA_VERSION arg available again after FROM, we need to specify it once more (different build stage)
+ARG KAFKA_VERSION
+
 USER root:root
 RUN mkdir -p /opt/kafka/plugins/file-sink
 

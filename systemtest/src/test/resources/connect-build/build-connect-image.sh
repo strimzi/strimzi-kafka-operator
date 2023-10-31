@@ -17,7 +17,7 @@ function buildDockerImage() {
   if [ -z "${BASE_IMAGE}" ]; then
     docker build $dockerFileDir --build-arg KAFKA_VERSION=$KAFKA_VERSION -t $CONNECT_IMAGE
   else
-    docker build $dockerFileDir --build-arg KAFKA_VERSION=$KAFKA_VERSION BASE_IMAGE=$BASE_IMAGE -t $CONNECT_IMAGE
+    docker build $dockerFileDir --build-arg KAFKA_VERSION=$KAFKA_VERSION --build-arg BASE_IMAGE=$BASE_IMAGE -t $CONNECT_IMAGE
   fi
 }
 
