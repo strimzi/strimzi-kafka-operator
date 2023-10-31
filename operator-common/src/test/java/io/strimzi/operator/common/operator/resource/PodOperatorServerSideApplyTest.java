@@ -91,6 +91,7 @@ public class PodOperatorServerSideApplyTest extends
     @Override
     @Test
     public void testSuccessfulCreation(VertxTestContext context) {
+        //this is rewritten as using ServerSideApply the get and create will no longer be called
         Pod resource = resource();
         Resource mockResource = mock(resourceType());
 
@@ -119,6 +120,7 @@ public class PodOperatorServerSideApplyTest extends
     @Override
     @Test
     public void testCreateWhenExistsWithChangeIsAPatch(VertxTestContext context) {
+        //this is rewritten as using ServerSideApply the get will no longer be called
         Pod resource = resource();
         Resource mockResource = mock(resourceType());
         when(mockResource.get()).thenReturn(resource);
@@ -148,20 +150,17 @@ public class PodOperatorServerSideApplyTest extends
     @Disabled
     public void testCreateOrUpdateThrowsWhenCreateThrows(VertxTestContext context) {
         //not valid as we no longer perform the create (this is done as a patch)
-        //TODO could rewrite this test as the patch throws
     }
 
     @Override
     @Disabled
     public void testExistenceCheckThrows(VertxTestContext context) {
-        //not valid as we no longer perform the get
-        //TODO UNLESS we end up doing the get before the delete
+        //not valid as we no longer perform the get (the get is only done prior to delete)
     }
 
     @Test
     public void testDeleteWhenResourceDoesNotExistIsANop(VertxTestContext context) {
-        //TODO this test is fine if we perform the get (i.e. we can delete this override)
-        //if not we should rewrite such that we always call delete
+        //this is rewritten as using ServerSideApply the delete will now be called whenever desired is null
         Deletable mockDeletable = mock(Deletable.class);
         when(mockDeletable.delete()).thenReturn(List.of());
         GracePeriodConfigurable mockDeletableGrace = mock(GracePeriodConfigurable.class);
@@ -201,7 +200,7 @@ public class PodOperatorServerSideApplyTest extends
 
     @Test
     public void testCreateWhenExistsWithoutChangeIsNotAPatch(VertxTestContext context) {
-        //Using ServerSideApply this will now be a patch
+        //this is rewritten as using ServerSideApply the patch will now be called whenever desired is not null
         Pod resource = resource();
         Resource mockResource = mock(resourceType());
         when(mockResource.withPropagationPolicy(DeletionPropagation.FOREGROUND)).thenReturn(mockResource);
@@ -297,12 +296,10 @@ public class PodOperatorServerSideApplyTest extends
             verify(mockResource1, never()).create();
             verify(mockDeletable1, times(1)).delete();
 
-    //            verify(mockResource2, times(1)).get();
             verify(mockResource2, times(1)).patch(any(), eq(resource2Mod));
             verify(mockResource2, never()).create();
             verify(mockResource2, never()).delete();
 
-    //            verify(mockResource3, times(1)).get();
             verify(mockResource3, never()).patch(any(), any());
             verify(mockResource3, times(1)).patch(any(), eq(resource3));
             verify(mockResource3, never()).delete();

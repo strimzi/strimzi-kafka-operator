@@ -49,7 +49,7 @@ public class PodOperatorServerSideApplyApiServerTest {
     protected static Vertx vertx;
     private static WorkerExecutor sharedWorkerExecutor;
 
-    // Injected by Fabric8 Mock Kubernetes Server
+    // Injected by jenvtest Kubernetes Api Server
     @SuppressWarnings("unused")
     static KubernetesClient client;
 
