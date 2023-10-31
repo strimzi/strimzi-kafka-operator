@@ -111,7 +111,7 @@ public class KafkaRollerST extends AbstractST {
         }
 
         kubeClient().listPodsByPrefixInName(Environment.TEST_SUITE_NAMESPACE, testStorage.getClusterName()).size();
-        LOGGER.info("Waiting for warning preventing Kafka from scaling down while broker to be scaled down has some partitions");
+        LOGGER.info("Waiting for warning regarding preventing Kafka from scaling down when the broker to be scaled down have some partitions");
         KafkaUtils.waitUntilKafkaStatusConditionContainsMessage(testStorage.getClusterName(), testStorage.getNamespaceName(), "Cannot scale down broker.*");
         waitForPodsReady(testStorage.getNamespaceName(), testStorage.getKafkaSelector(), scaledUpBrokerReplicaCount, false);
 
