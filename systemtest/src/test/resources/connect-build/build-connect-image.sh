@@ -4,7 +4,7 @@ RANDOM=$(shuf -i 60000-99999 -n 1)
 
 KAFKA_VERSION=$1
 BASE_IMAGE=$2
-CONNECT_IMAGE=${3:-"quay.io/strimzi/connect:$RANDOM"}
+CONNECT_IMAGE=${3:-"strimzi/connect:$RANDOM"}
 
 function getLatestKafkaVersionFromYAML() {
   local strimziRoot=$(git rev-parse --show-toplevel)
