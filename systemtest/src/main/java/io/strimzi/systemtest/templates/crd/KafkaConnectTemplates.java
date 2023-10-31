@@ -127,7 +127,12 @@ public class KafkaConnectTemplates {
                     .endBuild()
                 .endSpec();
         } else {
-            LOGGER.warn("Using MicroShift cluster - you should have created your own Connect image with file-sink plugin and pass the image into {} env variable", Environment.CONNECT_IMAGE_WITH_FILE_SINK_PLUGIN_ENV);
+            if (KubeClusterResource.getInstance().isMicroShift()) {
+                LOGGER.warn("Using MicroShift cluster - you should have created your own Connect image with file-sink plugin and pass the image into {} env variable", Environment.CONNECT_IMAGE_WITH_FILE_SINK_PLUGIN_ENV);
+            }
+
+            LOGGER.info("Using {} image from {} env variable", Environment.CONNECT_IMAGE_WITH_FILE_SINK_PLUGIN, Environment.CONNECT_IMAGE_WITH_FILE_SINK_PLUGIN_ENV);
+
             return kafkaConnect(name, namespaceName, clusterName, replicas, pathToConnectConfig)
                 .editOrNewSpec()
                     .withImage(Environment.CONNECT_IMAGE_WITH_FILE_SINK_PLUGIN)
