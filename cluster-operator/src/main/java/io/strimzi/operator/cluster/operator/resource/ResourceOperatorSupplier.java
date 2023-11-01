@@ -23,7 +23,6 @@ import io.strimzi.api.kafka.model.nodepool.KafkaNodePoolList;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalance;
 import io.strimzi.api.kafka.model.rebalance.KafkaRebalanceList;
 import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
-import io.strimzi.operator.cluster.FeatureGates;
 import io.strimzi.operator.cluster.model.DefaultSharedEnvironmentProvider;
 import io.strimzi.operator.cluster.model.SharedEnvironmentProvider;
 import io.strimzi.operator.cluster.operator.assembly.BrokersInUseCheck;
@@ -263,7 +262,7 @@ public class ResourceOperatorSupplier {
                                     PlatformFeaturesAvailability pfa,
                                     long operationTimeoutMs,
                                     String operatorName,
-                                    FeatureGates featureGates) {
+                                    boolean useServerSideApply) {
         this(vertx,
                 client,
                 new ZookeeperLeaderFinder(vertx,
@@ -276,7 +275,7 @@ public class ResourceOperatorSupplier {
                 pfa,
                 operationTimeoutMs,
                 new KubernetesRestartEventPublisher(client, operatorName),
-                featureGates
+                useServerSideApply
         );
     }
 
@@ -312,21 +311,21 @@ public class ResourceOperatorSupplier {
                 pfa,
                 operationTimeoutMs,
                 new KubernetesRestartEventPublisher(client, "operatorName"),
-                null
+                false
         );
     }
 
     private ResourceOperatorSupplier(Vertx vertx,
-                                     KubernetesClient client,
-                                     ZookeeperLeaderFinder zlf,
-                                     AdminClientProvider adminClientProvider,
-                                     ZookeeperScalerProvider zkScalerProvider,
-                                     KafkaAgentClientProvider kafkaAgentClientProvider,
-                                     MetricsProvider metricsProvider,
-                                     PlatformFeaturesAvailability pfa,
-                                     long operationTimeoutMs,
-                                     KubernetesRestartEventPublisher restartEventPublisher,
-                                     FeatureGates featureGates) {
+                                    KubernetesClient client,
+                                    ZookeeperLeaderFinder zlf,
+                                    AdminClientProvider adminClientProvider,
+                                    ZookeeperScalerProvider zkScalerProvider,
+                                    KafkaAgentClientProvider kafkaAgentClientProvider,
+                                    MetricsProvider metricsProvider,
+                                    PlatformFeaturesAvailability pfa,
+                                    long operationTimeoutMs,
+                                    KubernetesRestartEventPublisher restartEventPublisher,
+                                    boolean useServerSideApply) {
         this(new ServiceOperator(vertx, client),
                 pfa.hasRoutes() ? new RouteOperator(vertx, client.adapt(OpenShiftClient.class)) : null,
                 pfa.hasImages() ? new ImageStreamOperator(vertx, client.adapt(OpenShiftClient.class)) : null,
@@ -341,7 +340,7 @@ public class ResourceOperatorSupplier {
                 new ClusterRoleBindingOperator(vertx, client),
                 new NetworkPolicyOperator(vertx, client),
                 new PodDisruptionBudgetOperator(vertx, client),
-                new PodOperator(vertx, client, featureGates.useServerSideApply()),
+                new PodOperator(vertx, client, useServerSideApply),
                 new IngressOperator(vertx, client),
                 pfa.hasBuilds() ? new BuildConfigOperator(vertx, client.adapt(OpenShiftClient.class)) : null,
                 pfa.hasBuilds() ? new BuildOperator(vertx, client.adapt(OpenShiftClient.class)) : null,

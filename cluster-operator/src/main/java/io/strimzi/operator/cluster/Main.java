@@ -153,7 +153,7 @@ public class Main {
                 pfa,
                 config.getOperationTimeoutMs(),
                 config.getOperatorName(),
-                config.featureGates()
+                config.featureGates().useServerSideApply()
         );
 
         // Initialize the PodSecurityProvider factory to provide the user configured provider
