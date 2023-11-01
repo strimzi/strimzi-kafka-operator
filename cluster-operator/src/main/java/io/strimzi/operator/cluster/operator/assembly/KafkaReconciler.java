@@ -480,7 +480,8 @@ public class KafkaReconciler {
                                 logging,
                                 kafka.getKafkaVersion(),
                                 allowReconfiguration,
-                                eventsPublisher
+                                eventsPublisher,
+                                kafka.brokerNodes()
                         ).rollingRestart(podNeedsRestart));
     }
 

@@ -119,6 +119,7 @@ public class KafkaRoller {
     private final Set<NodeRef> nodes;
     private final KubernetesRestartEventPublisher eventsPublisher;
     private final Supplier<BackOff> backoffSupplier;
+    private final Set<NodeRef> brokerNodesForBootstrap;
     protected String namespace;
     private final AdminClientProvider adminClientProvider;
     private final Function<Integer, String> kafkaConfigProvider;
@@ -134,27 +135,28 @@ public class KafkaRoller {
     /**
      * Constructor
      *
-     * @param reconciliation        Reconciliation marker
-     * @param vertx                 Vert.x instance
-     * @param podOperations         Pod operator for managing pods
-     * @param pollingIntervalMs     Polling interval in milliseconds
-     * @param operationTimeoutMs    Operation timeout in milliseconds
-     * @param backOffSupplier       Backoff supplier
-     * @param nodes                 List of Kafka node references
-     * @param clusterCaCertSecret   Secret with the Cluster CA public key
-     * @param coKeySecret           Secret with the Cluster CA private key
-     * @param adminClientProvider   Kafka Admin client provider
-     * @param kafkaConfigProvider   Kafka configuration provider
-     * @param kafkaLogging          Kafka logging configuration
-     * @param kafkaVersion          Kafka version
-     * @param allowReconfiguration  Flag indicting whether reconfiguration is allowed or not
-     * @param eventsPublisher       Kubernetes Events publisher for publishing events about pod restarts
+     * @param reconciliation       Reconciliation marker
+     * @param vertx                Vert.x instance
+     * @param podOperations        Pod operator for managing pods
+     * @param pollingIntervalMs    Polling interval in milliseconds
+     * @param operationTimeoutMs   Operation timeout in milliseconds
+     * @param backOffSupplier      Backoff supplier
+     * @param nodes                List of Kafka node references to consider rolling
+     * @param clusterCaCertSecret  Secret with the Cluster CA public key
+     * @param coKeySecret          Secret with the Cluster CA private key
+     * @param adminClientProvider  Kafka Admin client provider
+     * @param kafkaConfigProvider  Kafka configuration provider
+     * @param kafkaLogging         Kafka logging configuration
+     * @param kafkaVersion         Kafka version
+     * @param allowReconfiguration Flag indicting whether reconfiguration is allowed or not
+     * @param eventsPublisher      Kubernetes Events publisher for publishing events about pod restarts
+     * @param brokerNodesForBootstrap    List of Kafka node references for all broker nodes in the cluster
      */
     public KafkaRoller(Reconciliation reconciliation, Vertx vertx, PodOperator podOperations,
                        long pollingIntervalMs, long operationTimeoutMs, Supplier<BackOff> backOffSupplier, Set<NodeRef> nodes,
                        Secret clusterCaCertSecret, Secret coKeySecret,
                        AdminClientProvider adminClientProvider,
-                       Function<Integer, String> kafkaConfigProvider, String kafkaLogging, KafkaVersion kafkaVersion, boolean allowReconfiguration, KubernetesRestartEventPublisher eventsPublisher) {
+                       Function<Integer, String> kafkaConfigProvider, String kafkaLogging, KafkaVersion kafkaVersion, boolean allowReconfiguration, KubernetesRestartEventPublisher eventsPublisher, Set<NodeRef> brokerNodesForBootstrap) {
         this.namespace = reconciliation.namespace();
         this.cluster = reconciliation.name();
         this.nodes = nodes;
@@ -175,6 +177,7 @@ public class KafkaRoller {
         this.kafkaVersion = kafkaVersion;
         this.reconciliation = reconciliation;
         this.allowReconfiguration = allowReconfiguration;
+        this.brokerNodesForBootstrap = brokerNodesForBootstrap;
     }
 
     /**
@@ -198,7 +201,12 @@ public class KafkaRoller {
     private boolean initAdminClient() {
         if (this.allClient == null) {
             try {
-                this.allClient = adminClient(nodes, false);
+                // TODO: Currently, when running in KRaft mode Kafka does not support using Kafka Admin API with controller
+                //       nodes. This is tracked in https://github.com/strimzi/strimzi-kafka-operator/issues/8593.
+                //       Therefore use broker nodes of the cluster to initialise adminClient for allClient.
+                //       Once Kafka Admin API is supported for controllers, brokerNodesForBootstrap can be removed
+                //       from KafkaRoller and we can use "nodes" here instead of it.
+                this.allClient = adminClient(brokerNodesForBootstrap, false);
             } catch (ForceableProblem | FatalProblem e) {
                 LOGGER.warnCr(reconciliation, "Failed to create adminClient.", e);
                 return false;
@@ -838,10 +846,7 @@ public class KafkaRoller {
      * Returns an AdminClient instance bootstrapped from the given pod.
      */
     protected Admin adminClient(Set<NodeRef> nodes, boolean ceShouldBeFatal) throws ForceableProblem, FatalProblem {
-        // TODO: Currently, when running in KRaft mode, only nodes which have the broker process role can be roller due
-        //       to Kafka limitations. This should be fixed once Kafka supports using Kafka Admin APi with controller
-        //       nodes. This is tracked in https://github.com/strimzi/strimzi-kafka-operator/issues/8593.
-        String bootstrapHostnames = nodes.stream().filter(NodeRef::broker).map(node -> DnsNameGenerator.podDnsName(namespace, KafkaResources.brokersServiceName(cluster), node.podName()) + ":" + KafkaCluster.REPLICATION_PORT).collect(Collectors.joining(","));
+        String bootstrapHostnames = nodes.stream().map(node -> DnsNameGenerator.podDnsName(namespace, KafkaResources.brokersServiceName(cluster), node.podName()) + ":" + KafkaCluster.REPLICATION_PORT).collect(Collectors.joining(","));
 
         try {
             LOGGER.debugCr(reconciliation, "Creating AdminClient for {}", bootstrapHostnames);
