@@ -255,6 +255,7 @@ public class ResourceOperatorSupplier {
      * @param pfa                   Platform Availability Features
      * @param operationTimeoutMs    Operation timeout in milliseconds
      * @param operatorName          Name of this operator instance
+     * @param useServerSideApply    whether operators should use Server Side Apply
      */
     public ResourceOperatorSupplier(Vertx vertx,
                                     KubernetesClient client,
