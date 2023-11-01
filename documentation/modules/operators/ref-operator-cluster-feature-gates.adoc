@@ -53,7 +53,7 @@ You have to first downgrade through one of the Strimzi versions in-between, disa
 
 The `StableConnectIdentities` feature gate has moved to GA, which means it is now permanently enabled and cannot be disabled.
 The `StrimziPodSet` resources are now always used to manage Kafka Connect and Kafka MirrorMaker 2 pods instead of using Kubernetes `Deployment` resources.
-`StrimziPodSets` give the pods stable names and stable addresses, which do not change during rolling upgrades.
+`StrimziPodSet` resources give the pods stable names and stable addresses, which do not change during rolling upgrades.
 This helps to minimize the number of rebalances of connector tasks.
 
 IMPORTANT: With the `StableConnectIdentities` feature gate permanently enabled, it is no longer possible to downgrade directly from Strimzi 0.39 and newer to Strimzi 0.33 or earlier.

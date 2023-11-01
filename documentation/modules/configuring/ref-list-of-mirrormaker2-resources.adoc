@@ -12,7 +12,7 @@ The following resources are created by the Cluster Operator in the Kubernetes cl
 - StrimziPodSet that creates the MirrorMaker 2 worker node pods.
 - Headless service that provides stable DNS names to the MirrorMaker 2 pods.
 - Service account used by the MirrorMaker 2 pods.
-- Pod Disruption Budget configured for the MirrorMaker 2 worker nodes.
+- Pod disruption budget configured for the MirrorMaker 2 worker nodes.
 - Network Policy managing access to the MirrorMaker 2 REST API.
 <mirrormaker2_cluster_name>-mirrormaker2-<pod_id>:: Pods created by the MirrorMaker 2 StrimziPodSet.
 <mirrormaker2_cluster_name>-mirrormaker2-api:: Service which exposes the REST interface for managing the MirrorMaker 2 cluster.
