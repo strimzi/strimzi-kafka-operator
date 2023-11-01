@@ -37,6 +37,17 @@ public abstract class AbstractWatchableStatusedNamespacedResourceOperator<
     public AbstractWatchableStatusedNamespacedResourceOperator(Vertx vertx, C client, String resourceKind) {
         super(vertx, client, resourceKind);
     }
+    /**
+     * Constructor.
+     *
+     * @param vertx                 The vertx instance.
+     * @param client                The kubernetes client.
+     * @param resourceKind          The mind of Kubernetes resource (used for logging).
+     * @param useServerSideApply    Whether to use server side apply
+     */
+    public AbstractWatchableStatusedNamespacedResourceOperator(Vertx vertx, C client, String resourceKind, boolean useServerSideApply) {
+        super(vertx, client, resourceKind, useServerSideApply);
+    }
 
     /**
      * Updates status of the resource

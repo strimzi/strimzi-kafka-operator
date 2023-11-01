@@ -49,6 +49,21 @@ public class CrdOperator<C extends KubernetesClient,
         this.listCls = listCls;
     }
 
+    /**
+     * Constructor
+     * @param vertx                 The Vertx instance
+     * @param client                The Kubernetes client
+     * @param cls                   The class of the CR
+     * @param listCls               The class of the list.
+     * @param kind                  The Kind of the CR for which this operator should be used
+     * @param useServerSideApply    Whether to use server side apply
+     */
+    public CrdOperator(Vertx vertx, C client, Class<T> cls, Class<L> listCls, String kind, boolean useServerSideApply) {
+        super(vertx, client, kind, useServerSideApply);
+        this.cls = cls;
+        this.listCls = listCls;
+    }
+
     @Override
     protected MixedOperation<T, L, Resource<T>> operation() {
         return client.resources(cls, listCls);

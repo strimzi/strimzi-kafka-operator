@@ -27,6 +27,17 @@ public class StrimziPodSetOperator extends CrdOperator<KubernetesClient, Strimzi
     }
 
     /**
+     * Constructs the StrimziPodSet operator
+     *
+     * @param vertx                 The Vertx instance.
+     * @param client                The Kubernetes client.
+     * @param useServerSideApply    Whether to use server side apply
+     */
+    public StrimziPodSetOperator(Vertx vertx, KubernetesClient client, boolean useServerSideApply) {
+        super(vertx, client, StrimziPodSet.class, StrimziPodSetList.class, StrimziPodSet.RESOURCE_KIND, useServerSideApply);
+    }
+
+    /**
      * StrimziPodSetOperator overrides this method in order to use replace instead of patch.
      *
      * @param name          Name of the resource
