@@ -301,7 +301,7 @@ public abstract class AbstractNamespacedResourceOperator<C extends KubernetesCli
         try {
             return operation().inNamespace(namespace).withName(name).patch(serverSideApplyPatchContext(false), desired);
         } catch (Exception e) {
-            LOGGER.debugCr(reconciliation, "{} {} in namespace {} failed to apply, using force", resourceKind, name, namespace);
+            LOGGER.debugCr(reconciliation, "{} {} in namespace {} failed to apply, using force", resourceKind, name, namespace, e);
             return operation().inNamespace(namespace).withName(name).patch(serverSideApplyPatchContext(true), desired);
         }
     }
