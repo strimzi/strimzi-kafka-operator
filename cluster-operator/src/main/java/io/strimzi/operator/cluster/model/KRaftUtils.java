@@ -45,7 +45,7 @@ public class KRaftUtils {
      */
     /* test */ static void validateEntityOperatorSpec(Set<String> errors, EntityOperatorSpec entityOperator, boolean utoEnabled) {
         if (entityOperator != null && entityOperator.getTopicOperator() != null && !utoEnabled) {
-            errors.add("Only Unidirectional Topic Operator is supported when the UseKRaft feature gate is enabled. You can enable it using the UnidirectionalTopicOperator feature gate.");
+            errors.add("Only Unidirectional Topic Operator is supported when the UseKRaft feature gate is enabled.");
         }
     }
 }

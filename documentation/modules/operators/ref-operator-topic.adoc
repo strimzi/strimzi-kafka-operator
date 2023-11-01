@@ -12,9 +12,6 @@ Bidirectional mode:: Bidirectional mode requires ZooKeeper for cluster managemen
 
 (Preview) Unidirectional mode:: Unidirectional mode does not require ZooKeeper for cluster management. It is compatible with using Strimzi in KRaft mode.
 
-NOTE: Unidirectional topic management is available as a preview. 
-Unidirectional topic management is not enabled by default, so you must xref:ref-operator-unidirectional-topic-operator-feature-gate-{context}[enable the `UnidirectionalTopicOperator` feature gate] to be able to use it.
-
 == Bidirectional topic management
 
 In bidirectional mode, the Topic Operator operates as follows: 

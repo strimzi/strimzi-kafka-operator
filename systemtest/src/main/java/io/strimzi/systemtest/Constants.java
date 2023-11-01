@@ -201,7 +201,7 @@ public interface Constants {
      */
     String USE_KRAFT_MODE = "+UseKRaft";
     String DONT_USE_KAFKA_NODE_POOLS = "-KafkaNodePools";
-    String UNIDIRECTIONAL_TOPIC_OPERATOR = "+UnidirectionalTopicOperator";
+    String DONT_USE_UNIDIRECTIONAL_TOPIC_OPERATOR = "-UnidirectionalTopicOperator";
 
     /**
      * Default value which allows execution of tests with any tags

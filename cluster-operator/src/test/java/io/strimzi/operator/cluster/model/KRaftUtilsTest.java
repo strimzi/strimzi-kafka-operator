@@ -76,7 +76,7 @@ public class KRaftUtilsTest {
 
         InvalidResourceException ex = assertThrows(InvalidResourceException.class, () -> KRaftUtils.validateKafkaCrForKRaft(spec, false));
 
-        assertThat(ex.getMessage(), is("Kafka configuration is not valid: [Only Unidirectional Topic Operator is supported when the UseKRaft feature gate is enabled. You can enable it using the UnidirectionalTopicOperator feature gate.]"));
+        assertThat(ex.getMessage(), is("Kafka configuration is not valid: [Only Unidirectional Topic Operator is supported when the UseKRaft feature gate is enabled.]"));
     }
 
     @ParallelTest
@@ -111,7 +111,7 @@ public class KRaftUtilsTest {
 
         KRaftUtils.validateEntityOperatorSpec(errors, eo, false);
 
-        assertThat(errors, is(Set.of("Only Unidirectional Topic Operator is supported when the UseKRaft feature gate is enabled. You can enable it using the UnidirectionalTopicOperator feature gate.")));
+        assertThat(errors, is(Set.of("Only Unidirectional Topic Operator is supported when the UseKRaft feature gate is enabled.")));
     }
 
     @ParallelTest
@@ -139,6 +139,6 @@ public class KRaftUtilsTest {
 
         KRaftUtils.validateEntityOperatorSpec(errors, eo, false);
 
-        assertThat(errors, is(Set.of("Only Unidirectional Topic Operator is supported when the UseKRaft feature gate is enabled. You can enable it using the UnidirectionalTopicOperator feature gate.")));
+        assertThat(errors, is(Set.of("Only Unidirectional Topic Operator is supported when the UseKRaft feature gate is enabled.")));
     }
 }
