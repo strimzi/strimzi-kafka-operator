@@ -211,7 +211,7 @@ public class BatchingTopicController {
         var existing = topics.get(tn);
         KubeRef thisRef = new KubeRef(reconcilableTopic.kt());
         if (existing.size() != 1) {
-            var byCreationTime = existing.stream().sorted(Comparator.comparing(KubeRef::creationTime)).toList();
+            var byCreationTime = existing.stream().sorted(Comparator.comparing(KubeRef::creationTimeNs)).toList();
 
             var oldest = byCreationTime.get(0);
             var nextOldest = byCreationTime.size() >= 2 ? byCreationTime.get(1) : null;
@@ -219,7 +219,7 @@ public class BatchingTopicController {
             if (nextOldest == null) {
                 // This is only resource for that topic => it is the unique oldest
                 return Either.ofRight(true);
-            } else if (thisRef.equals(oldest) && nextOldest.creationTime() != oldest.creationTime()) {
+            } else if (thisRef.equals(oldest) && nextOldest.creationTimeNs() != oldest.creationTimeNs()) {
                 // This resource is the unique oldest, so it's OK.
                 // The others will eventually get reconciled and put into ResourceConflict
                 return Either.ofRight(true);

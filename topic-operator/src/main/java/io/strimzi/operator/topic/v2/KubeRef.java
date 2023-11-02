@@ -5,18 +5,17 @@
 package io.strimzi.operator.topic.v2;
 
 import io.strimzi.api.kafka.model.KafkaTopic;
-import io.strimzi.operator.common.model.StatusUtils;
 
 import java.util.Objects;
 
 /**
  * Reference to a resource in Kube.
  * Equality is based on {@link #namespace()} and {@link #name()}.
- * {@link #creationTime()} is present to allow disambiguation of multiple KafkaTopics managing the same topic in Kafka.
+ * {@link #creationTimeNs()} is present to allow disambiguation of multiple KafkaTopics managing the same topic in Kafka.
  */
-record KubeRef(String namespace, String name, long creationTime) {
+record KubeRef(String namespace, String name, long creationTimeNs) {
     KubeRef(KafkaTopic kt) {
-        this(kt.getMetadata().getNamespace(), kt.getMetadata().getName(), StatusUtils.isoUtcDatetime(kt.getMetadata().getCreationTimestamp()).toEpochMilli());
+        this(kt.getMetadata().getNamespace(), kt.getMetadata().getName(), System.nanoTime());
     }
 
     @Override
