@@ -20,7 +20,7 @@ The following procedure should only be performed if you have encountered storage
 
 . Find the name of the `Pod` that you want to delete.
 +
-ZooKeeper pods are named <cluster_name>-zookeeper-<index_number>, where <index_number> starts at zero and ends at the total number of replicas minus one.
+ZooKeeper pods are named `<cluster_name>-zookeeper-<index_number>`, where `<index_number>` starts at zero and ends at the total number of replicas minus one.
 For example, `my-cluster-zookeeper-0`.
 
 . Use `kubectl annotate` to annotate the `Pod` resource in Kubernetes:

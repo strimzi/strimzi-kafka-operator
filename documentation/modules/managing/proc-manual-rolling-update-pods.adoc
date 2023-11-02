@@ -46,13 +46,13 @@ spec:
 Pod naming conventions are as follows:
 +
 --
-* <cluster_name>-kafka-<index_number> for a Kafka cluster
-* <cluster_name>-zookeeper-<index_number> for a ZooKeeper cluster
-* <cluster_name>-connect-<index_number> for a Kafka Connect cluster
-* <cluster_name>-mirrormaker2-<index_number> for a MirrorMaker 2 cluster
+* `<cluster_name>-kafka-<index_number>` for a Kafka cluster
+* `<cluster_name>-zookeeper-<index_number>` for a ZooKeeper cluster
+* `<cluster_name>-connect-<index_number>` for a Kafka Connect cluster
+* `<cluster_name>-mirrormaker2-<index_number>` for a MirrorMaker 2 cluster
 --
 +
-The <index_number> assigned to a pod starts at zero and ends at the total number of replicas minus one.
+The `<index_number>` assigned to a pod starts at zero and ends at the total number of replicas minus one.
 
 . Use `kubectl annotate` to annotate the `Pod` resource in Kubernetes:
 +
