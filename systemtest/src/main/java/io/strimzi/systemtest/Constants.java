@@ -86,13 +86,7 @@ public interface Constants {
     String ECHO_SINK_FILE_NAME = "echo-sink-test.jar";
     String ECHO_SINK_JAR_WRONG_CHECKSUM = "f1f167902325062efc8c755647bc1b782b2b067a87a6e507ff7a3f6205803220";
 
-
     String NODE_BROKER_CONFIG_HASH_ANNOTATION = ResourceLabels.STRIMZI_DOMAIN + "broker-configuration-hash";
-
-    /**
-     * Node pool labels
-     */
-    String NODE_POOL_LABEL = ResourceLabels.STRIMZI_DOMAIN + "pool-name";
 
     /**
      * Scraper pod labels

@@ -23,7 +23,6 @@ import io.strimzi.systemtest.templates.crd.KafkaNodePoolTemplates;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PersistentVolumeClaimUtils;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
@@ -81,10 +80,11 @@ public class KafkaNodePoolResource implements ResourceType<KafkaNodePool> {
      * @return a LabelSelector tailored for the specified Kafka cluster and node pool.
      */
     public static LabelSelector getLabelSelector(String clusterName, String kafkaNodePoolName) {
-        Map<String, String> matchLabels = new HashMap<>();
-        matchLabels.put(Labels.STRIMZI_CLUSTER_LABEL, clusterName);
-        matchLabels.put(Labels.STRIMZI_KIND_LABEL, "Kafka");
-        matchLabels.put(Constants.NODE_POOL_LABEL, kafkaNodePoolName);
+        Map<String, String> matchLabels = Map.of(
+            Labels.STRIMZI_CLUSTER_LABEL, clusterName,
+            Labels.STRIMZI_KIND_LABEL, Kafka.RESOURCE_KIND,
+            Labels.STRIMZI_POOL_NAME_LABEL, kafkaNodePoolName
+        );
 
         return new LabelSelectorBuilder()
             .withMatchLabels(matchLabels)

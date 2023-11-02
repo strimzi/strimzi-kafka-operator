@@ -20,6 +20,7 @@ import io.strimzi.operator.common.Annotations;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
+import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
@@ -84,8 +85,9 @@ public class KafkaNodePoolST extends AbstractST {
      * @usecase
      * - kafka-node-pool
      */
-    @ParallelNamespaceTest
+    @IsolatedTest
     void testKafkaManagementTransferToAndFromKafkaNodePool(ExtensionContext extensionContext) {
+        assumeFalse(Environment.isKRaftModeEnabled());
 
         final TestStorage testStorage = new TestStorage(extensionContext);
 
@@ -108,9 +110,10 @@ public class KafkaNodePoolST extends AbstractST {
 
         LOGGER.info("Deploying Kafka Cluster: {}/{} controlled by KafkaNodePool: {}", testStorage.getNamespaceName(), testStorage.getClusterName(), kafkaNodePoolName);
 
-        Kafka kafkaCr = KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), originalKafkaReplicaCount, 1)
+        Kafka kafkaCr = KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), originalKafkaReplicaCount, 3)
             .editOrNewMetadata()
                 .addToAnnotations(Annotations.ANNO_STRIMZI_IO_NODE_POOLS, "enabled")
+                .withNamespace(testStorage.getNamespaceName())
             .endMetadata()
             .build();
 
@@ -319,7 +322,6 @@ public class KafkaNodePoolST extends AbstractST {
 
     @ParallelNamespaceTest
     void testKNPConfigurationPropagationAndModification(ExtensionContext extensionContext) {
-
         // unless kraft is enabled there is no point testing controllers as only allowed role without KRaft is 'Broker'
         assumeTrue(Environment.isKRaftModeEnabled());
 
@@ -422,22 +424,18 @@ public class KafkaNodePoolST extends AbstractST {
 
         LOGGER.info("Modifying configuration relevant or irrelevant based on role of given KafkaNodePools");
 
-        final Pod podFromKnpC = PodUtils.getPodsByPrefixInNameWithDynamicWait(testStorage.getNamespaceName(), testStorage.getClusterName() + "-" + nodePoolNameC).get(0);
+        final Pod podFromKnpC = PodUtils.getPodsByPrefixInNameWithDynamicWait(testStorage.getNamespaceName(), KafkaNodePoolUtils.getStrimziPodSetName(testStorage.getClusterName(), nodePoolNameC)).get(0);
         final String podCName = podFromKnpC.getMetadata().getName();
         final String knpCConfigHashAnnotationValue = podFromKnpC.getMetadata().getAnnotations().get(Constants.NODE_BROKER_CONFIG_HASH_ANNOTATION);
         final String knpCStrimziPodSetName = KafkaNodePoolUtils.getStrimziPodSetName(testStorage.getClusterName(), nodePoolNameC);
 
         // replacing config which is not relevant to control (also it is part of dynamic config, therefore should not trigger Rolling Update)
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), k -> {
-            k.getSpec().getKafka().getConfig().put("compression.type", "gzip");
-        }, testStorage.getNamespaceName());
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), k -> k.getSpec().getKafka().getConfig().put("compression.type", "gzip"), testStorage.getNamespaceName());
 
         StrimziPodSetUtils.waitForPrevailedPodAnnotationKeyValuePairs(testStorage.getNamespaceName(), Constants.NODE_BROKER_CONFIG_HASH_ANNOTATION, knpCConfigHashAnnotationValue, knpCStrimziPodSetName, podCName);
 
         // replacing config relevant only to controllers
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), k -> {
-            k.getSpec().getKafka().getConfig().put("max.connections", "456");
-        }, testStorage.getNamespaceName());
+        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), k -> k.getSpec().getKafka().getConfig().put("max.connections", "456"), testStorage.getNamespaceName());
 
         StrimziPodSetUtils.waitUntilPodAnnotationChange(testStorage.getNamespaceName(), podCName, knpCStrimziPodSetName, Constants.NODE_BROKER_CONFIG_HASH_ANNOTATION, knpCConfigHashAnnotationValue);
     }
@@ -454,7 +452,7 @@ public class KafkaNodePoolST extends AbstractST {
      *
      * @throws AssertionError if configurations obtained from Pods do not match the expected values.
      */
-    public static void verifyResourcesConfigurationPropagatedToKnpPods(TestStorage testStorage, String nodePoolName, String expectedJvmXmxLimit, String expectedMemoryLimit) {
+    private void verifyResourcesConfigurationPropagatedToKnpPods(TestStorage testStorage, String nodePoolName, String expectedJvmXmxLimit, String expectedMemoryLimit) {
         Pod nodePoolPod = PodUtils.getPodsByPrefixInNameWithDynamicWait(testStorage.getNamespaceName(), testStorage.getClusterName() + "-" + nodePoolName).get(0);
         Container container = nodePoolPod.getSpec().getContainers().stream().findFirst().get();
         Quantity  obtainedMemory = container.getResources().getLimits().get("memory");

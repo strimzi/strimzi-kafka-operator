@@ -23,7 +23,9 @@ import org.apache.logging.log4j.Logger;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class StrimziPodSetUtils {
 
@@ -63,20 +65,13 @@ public class StrimziPodSetUtils {
      * @param annotationValue  the expected value of the annotation to change from.
      */
     public static void waitUntilPodAnnotationChange(String namespaceName, String podName, String strimziPodSetName, String annotationKey, String annotationValue) {
-
         LOGGER.info("Waiting for Pod: {}/{} to change annotation value: {}-{}", namespaceName, podName, annotationKey, annotationValue);
-        final ObjectMapper objectMapper = new ObjectMapper();
-
 
         TestUtils.waitFor("Pod to change value of annotation" + annotationKey + " with key " + annotationKey, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS,
             DELETION_TIMEOUT, () -> {
-                // parse pod from SPS
-                StrimziPodSet sps = StrimziPodSetResource.strimziPodSetClient().inNamespace(namespaceName).withName(strimziPodSetName).get();
-                var podMap = sps.getSpec().getPods();
-                Pod[] spsPods = objectMapper.convertValue(podMap, Pod[].class);
-                Pod pod = Arrays.stream(spsPods).filter(p -> p.getMetadata().getName().contains(podName)).findAny().get();
-
-                return !annotationValue.equals(pod.getMetadata().getAnnotations().get(annotationKey));
+                final Pod pod = getPodFromStrimziPodSet(strimziPodSetName, podName, namespaceName);
+                final String podAnnotation = pod.getMetadata().getAnnotations().get(annotationKey);
+                return !annotationValue.equals(podAnnotation);
             });
         LOGGER.info("Pod: {}/{} changed annotation value: {}-{}", namespaceName, podName, annotationKey, annotationValue);
     }
@@ -91,32 +86,26 @@ public class StrimziPodSetUtils {
      * @param podName the name of the Pod whose annotation is being observed.
      */
     public static void waitForPrevailedPodAnnotationKeyValuePairs(String namespaceName, String annotationKey, String annotationValue, String strimziPodSetName, String podName) {
-        LOGGER.info("Waiting for label: {}-{} to keep its value in namespace: {}", namespaceName, annotationKey, annotationValue);
-        int[] stableCounter = {0};
-        final ObjectMapper objectMapper = new ObjectMapper();
+        LOGGER.info("Waiting for label: {}-{} to keep its value in namespace: {}", annotationKey, annotationValue, namespaceName);
+        AtomicInteger stableCounter = new AtomicInteger(0);
 
         TestUtils.waitFor("Label: " + annotationKey + "to prevail its value: " + annotationValue,
             Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_STATUS_TIMEOUT,
 
             () -> {
-                // parse pod from SPS
-                StrimziPodSet sps =  StrimziPodSetResource.strimziPodSetClient().inNamespace(namespaceName).withName(strimziPodSetName).get();
-                var podMap = sps.getSpec().getPods();
+                final Pod pod = getPodFromStrimziPodSet(strimziPodSetName, podName, namespaceName);
+                final String podAnnotation = pod.getMetadata().getAnnotations().get(annotationKey);
 
-                Pod[] spsPods = objectMapper.convertValue(podMap, Pod[].class);
-                Pod pod = Arrays.stream(spsPods).filter(p -> p.getMetadata().getName().contains(podName)).findAny().get();
-
-                if (annotationValue.equals(pod.getMetadata().getAnnotations().get(annotationKey))) {
-                    stableCounter[0]++;
-                    if (stableCounter[0] == Constants.GLOBAL_STABILITY_OFFSET_COUNT) {
-                        LOGGER.info("Pod replicas are stable for {} poll intervals", stableCounter[0]);
+                if (annotationValue.equals(podAnnotation)) {
+                    if (stableCounter.incrementAndGet() == Constants.GLOBAL_STABILITY_OFFSET_COUNT) {
+                        LOGGER.debug("Pod replicas are stable for {} poll intervals", stableCounter.get());
                         return true;
                     }
                 } else {
                     LOGGER.info("Annotations does not have expected value");
                     return false;
                 }
-                LOGGER.info("Annotation be assumed stable in {} polls", Constants.GLOBAL_STABILITY_OFFSET_COUNT - stableCounter[0]);
+                LOGGER.info("Annotation be assumed stable in {} polls", Constants.GLOBAL_STABILITY_OFFSET_COUNT - stableCounter.get());
                 return false;
             });
         LOGGER.info("Pod: {}/{} kept annotation: {}-{} ", namespaceName, podName, annotationKey, annotationValue);
@@ -218,5 +207,18 @@ public class StrimziPodSetUtils {
 
     public static String getStrimziPodSetUID(String namespaceName, String resourceName) {
         return StrimziPodSetResource.strimziPodSetClient().inNamespace(namespaceName).withName(resourceName).get().getMetadata().getUid();
+    }
+
+    private static Pod getPodFromStrimziPodSet(String strimziPodSetName, String podName, String namespaceName) {
+
+        final ObjectMapper objectMapper = new ObjectMapper();
+        final StrimziPodSet sps = StrimziPodSetResource.strimziPodSetClient().inNamespace(namespaceName).withName(strimziPodSetName).get();
+
+        final List<Map<String, Object>> podMap = sps.getSpec().getPods();
+        final Pod[] spsPods = objectMapper.convertValue(podMap, Pod[].class);
+        return Arrays.stream(spsPods)
+            .filter(p -> p.getMetadata().getName().contains(podName))
+            .findAny()
+            .orElse(null);
     }
 }
