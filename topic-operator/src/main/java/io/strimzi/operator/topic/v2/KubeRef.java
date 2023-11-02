@@ -5,17 +5,71 @@
 package io.strimzi.operator.topic.v2;
 
 import io.strimzi.api.kafka.model.KafkaTopic;
+import io.strimzi.operator.common.model.StatusUtils;
 
 import java.util.Objects;
 
 /**
  * Reference to a resource in Kube.
  * Equality is based on {@link #namespace()} and {@link #name()}.
- * {@link #creationTimeNs()} is present to allow disambiguation of multiple KafkaTopics managing the same topic in Kafka.
+ * {@link #creationTime()} is present to allow disambiguation of multiple KafkaTopics with the same topicName.
+ * {@link #processingOrder()} is present to allow disambiguation of multiple KafkaTopics with the same topicName in the same batch.
  */
-record KubeRef(String namespace, String name, long creationTimeNs) {
+public class KubeRef {
+    private String namespace;
+    private String name; 
+    private long creationTime;
+    private long processingOrder;
+
+    KubeRef(String namespace, String name, long creationTime) {
+        this.namespace = namespace;
+        this.name = name;
+        this.creationTime = creationTime;
+    }
+
     KubeRef(KafkaTopic kt) {
-        this(kt.getMetadata().getNamespace(), kt.getMetadata().getName(), System.nanoTime());
+        this(kt.getMetadata().getNamespace(), kt.getMetadata().getName(), 
+            StatusUtils.isoUtcDatetime(kt.getMetadata().getCreationTimestamp()).toEpochMilli());
+    }
+
+    /**
+     * Returns the metadata.namespace.
+     * @return metadata.namespace
+     */
+    public String namespace() {
+        return namespace;
+    }
+
+    /**
+     * Returns the metadata.name.
+     * @return metadata.name
+     */
+    public String name() {
+        return name;
+    }
+
+    /**
+     * Returns the metadata.creationTime.
+     * @return metadata.creationTime
+     */
+    public long creationTime() {
+        return creationTime;
+    }
+
+    /**
+     * Returns the processing order
+     * @return processing order
+     */
+    public long processingOrder() {
+        return processingOrder;
+    }
+
+    /**
+     * Sets the processing order.
+     * @param processingOrder processing order
+     */
+    public void processingOrder(long processingOrder) {
+        this.processingOrder = processingOrder;
     }
 
     @Override

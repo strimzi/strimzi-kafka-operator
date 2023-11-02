@@ -202,6 +202,7 @@ public class BatchingTopicController {
         String tn = reconcilableTopic.topicName();
         var existing = topics.computeIfAbsent(tn, k -> new HashSet<>());
         KubeRef thisRef = new KubeRef(reconcilableTopic.kt());
+        thisRef.processingOrder(existing.size() + 1);
         existing.add(thisRef);
         return true;
     }
@@ -210,26 +211,26 @@ public class BatchingTopicController {
         String tn = reconcilableTopic.topicName();
         var existing = topics.get(tn);
         KubeRef thisRef = new KubeRef(reconcilableTopic.kt());
-        if (existing.size() != 1) {
-            var byCreationTime = existing.stream().sorted(Comparator.comparing(KubeRef::creationTimeNs)).toList();
-
-            var oldest = byCreationTime.get(0);
-            var nextOldest = byCreationTime.size() >= 2 ? byCreationTime.get(1) : null;
-            TopicOperatorException e = new TopicOperatorException.ResourceConflict("Managed by " + oldest);
-            if (nextOldest == null) {
-                // This is only resource for that topic => it is the unique oldest
-                return Either.ofRight(true);
-            } else if (thisRef.equals(oldest) && nextOldest.creationTimeNs() != oldest.creationTimeNs()) {
-                // This resource is the unique oldest, so it's OK.
+        if (existing.size() > 1) {
+            var byCreationTimeAndProcessingOrder = existing.stream()
+                .sorted(Comparator.comparing(KubeRef::creationTime)
+                .thenComparing(Comparator.comparing(KubeRef::processingOrder))).toList();
+            var oldest = byCreationTimeAndProcessingOrder.get(0);
+            var nextOldest = byCreationTimeAndProcessingOrder.get(1);
+            if (thisRef.equals(oldest) && nextOldest.creationTime() != oldest.creationTime()) {
+                // This resource is the unique oldest, so it's OK
                 // The others will eventually get reconciled and put into ResourceConflict
                 return Either.ofRight(true);
             } else if (thisRef.equals(oldest)
                     && reconcilableTopic.kt().getStatus() != null
                     && reconcilableTopic.kt().getStatus().getConditions() != null
-                    && reconcilableTopic.kt().getStatus().getConditions().stream().anyMatch(c -> "Ready".equals(c.getType()) && "True".equals(c.getStatus()))) {
+                    && reconcilableTopic.kt().getStatus().getConditions().stream()
+                        .anyMatch(c -> "Ready".equals(c.getType()) && "True".equals(c.getStatus()))) {
+                // This is the unique oldest because it is reconciled
                 return Either.ofRight(true);
             } else {
                 // Return an error putting this resource into ResourceConflict
+                TopicOperatorException e = new TopicOperatorException.ResourceConflict("Managed by " + oldest);
                 return Either.ofLeft(e);
             }
 
