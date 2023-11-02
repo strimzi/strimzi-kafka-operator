@@ -15,10 +15,9 @@ import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaTopicBuilder;
-import io.strimzi.operator.common.MetricsProvider;
-import io.strimzi.operator.common.MicrometerMetricsProvider;
 import io.strimzi.operator.common.Reconciliation;
-import io.strimzi.operator.common.metrics.BatchOperatorMetricsHolder;
+import io.strimzi.operator.topic.v2.metrics.TopicOperatorMetricsHolder;
+import io.strimzi.operator.topic.v2.metrics.TopicOperatorMetricsProvider;
 import org.apache.kafka.clients.admin.Admin;
 import org.apache.kafka.clients.admin.AdminClientConfig;
 import org.hamcrest.Matcher;
@@ -53,15 +52,14 @@ public class TopicOperatorMetricsTest {
     private static final long MAX_BATCH_LINGER_MS = 10_000;
 
     private static KubernetesClient client;
-    private static BatchOperatorMetricsHolder metrics;
+    private static TopicOperatorMetricsHolder metrics;
 
     @BeforeAll
     public static void beforeAll() {
         TopicOperatorTestUtil.setupKubeCluster(NAMESPACE);
         client = new KubernetesClientBuilder().build();
-
-        MetricsProvider metricsProvider = new MicrometerMetricsProvider(new SimpleMeterRegistry());
-        metrics = new BatchOperatorMetricsHolder(RESOURCE_KIND, null, metricsProvider);
+        TopicOperatorMetricsProvider metricsProvider = new TopicOperatorMetricsProvider(new SimpleMeterRegistry());
+        metrics = new TopicOperatorMetricsHolder(RESOURCE_KIND, null, metricsProvider);
     }
 
     @AfterAll
@@ -157,7 +155,7 @@ public class TopicOperatorMetricsTest {
     @Test
     public void shouldHaveMetricsAfterSomeReconciliations(KafkaCluster cluster) throws ExecutionException, InterruptedException {
         Admin admin = Admin.create(Map.of(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, cluster.getBootstrapServers()));
-        BatchingTopicController controller = new BatchingTopicController(Map.of("key", "VALUE"), admin, client, true, metrics, NAMESPACE);
+        BatchingTopicController controller = new BatchingTopicController(Map.of("key", "VALUE"), admin, client, true, metrics, NAMESPACE, true);
 
         KafkaTopic t1 = createResource(client, "t1", "t1");
         KafkaTopic t2 = createResource(client, "t2", "t1");
@@ -176,11 +174,22 @@ public class TopicOperatorMetricsTest {
         assertMetricMatches("strimzi.reconciliations.successful", tags, "counter", is(2.0));
         assertMetricMatches("strimzi.reconciliations.failed", tags, "counter", is(1.0));
         assertMetricMatches("strimzi.reconciliations.duration", tags, "timer", greaterThan(0.0));
+
+        assertMetricMatches("strimzi.add.finalizer.duration", tags, "timer", greaterThan(0.0));
+        assertMetricMatches("strimzi.remove.finalizer.duration", tags, "timer", greaterThan(0.0));
+        assertMetricMatches("strimzi.create.topics.duration", tags, "timer", greaterThan(0.0));
+        assertMetricMatches("strimzi.update.status.duration", tags, "timer", greaterThan(0.0));
+        assertMetricMatches("strimzi.list.reassignments.duration", tags, "timer", greaterThan(0.0));
+        assertMetricMatches("strimzi.alter.configs.duration", tags, "timer", greaterThan(0.0));
+        assertMetricMatches("strimzi.create.partitions.duration", tags, "timer", greaterThan(0.0));
+        assertMetricMatches("strimzi.describe.topics.duration", tags, "timer", greaterThan(0.0));
+        assertMetricMatches("strimzi.describe.configs.duration", tags, "timer", greaterThan(0.0));
+        assertMetricMatches("strimzi.delete.topics.duration", tags, "timer", greaterThan(0.0));
     }
 
     private KafkaTopic createResource(KubernetesClient client, String resourceName, String topicName) {
         var kt = Crds.topicOperation(client).
-            resource(new KafkaTopicBuilder()
+            resource(new KafkaTopicBuilder()    
                 .withNewMetadata()
                     .withName(resourceName)
                     .withNamespace(NAMESPACE)

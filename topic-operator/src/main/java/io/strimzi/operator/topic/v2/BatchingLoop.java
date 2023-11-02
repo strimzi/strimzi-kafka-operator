@@ -9,7 +9,7 @@ import io.fabric8.kubernetes.client.informers.cache.ItemStore;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
-import io.strimzi.operator.common.metrics.BatchOperatorMetricsHolder;
+import io.strimzi.operator.topic.v2.metrics.TopicOperatorMetricsHolder;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -44,7 +44,7 @@ class BatchingLoop {
     private final ItemStore<KafkaTopic> itemStore;
     private final Runnable stop;
     private final int maxQueueSize;
-    private final BatchOperatorMetricsHolder metrics;
+    private final TopicOperatorMetricsHolder metrics;
     private final String namespace;
 
     public BatchingLoop(
@@ -55,7 +55,7 @@ class BatchingLoop {
             long maxBatchLingerMs,
             ItemStore<KafkaTopic> itemStore,
             Runnable stop,
-            BatchOperatorMetricsHolder metrics,
+            TopicOperatorMetricsHolder metrics,
             String namespace) {
         this.maxQueueSize = maxQueueSize;
         this.queue = new LinkedBlockingDeque<>(maxQueueSize);
