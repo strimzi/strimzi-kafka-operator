@@ -132,7 +132,7 @@ The `Kafka` custom resource using the node pools must also have the annotation `
 If your cluster already uses `KafkaNodePool` custom resources, and you wish to downgrade to an older version of Strimzi that does not support them or with the `KafkaNodePools` feature gate disabled, you must first migrate from `KafkaNodePool` custom resources to managing Kafka nodes using only `Kafka` custom resources.
 
 [id='ref-operator-unidirectional-topic-operator-feature-gate-{context}']
-== (Preview) UnidirectionalTopicOperator feature gate
+== UnidirectionalTopicOperator feature gate
 
 The `UnidirectionalTopicOperator` feature gate has a default state of _enabled_.
 
