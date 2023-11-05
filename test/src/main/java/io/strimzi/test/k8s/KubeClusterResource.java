@@ -7,6 +7,7 @@ package io.strimzi.test.k8s;
 import com.fasterxml.jackson.databind.JsonNode;
 import io.strimzi.test.k8s.cluster.Kind;
 import io.strimzi.test.k8s.cluster.KubeCluster;
+import io.strimzi.test.k8s.cluster.Microshift;
 import io.strimzi.test.k8s.cluster.OpenShift;
 import io.strimzi.test.k8s.cmdClient.KubeCmdClient;
 import io.strimzi.test.logs.CollectorElement;
@@ -369,6 +370,10 @@ public class KubeClusterResource {
 
     public boolean isKind() {
         return kubeClusterResource.cluster() instanceof Kind;
+    }
+
+    public boolean isMicroShift() {
+        return kubeClusterResource.cluster() instanceof Microshift;
     }
 
     /** Returns list of currently deployed resources */

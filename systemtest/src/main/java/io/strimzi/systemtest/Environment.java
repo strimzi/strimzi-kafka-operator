@@ -154,6 +154,12 @@ public class Environment {
     public static final String IP_FAMILY_ENV = "IP_FAMILY";
 
     /**
+     * Connect image with file sink plugin
+     */
+    public static final String CONNECT_IMAGE_WITH_FILE_SINK_PLUGIN_ENV = "CONNECT_IMAGE_WITH_FILE_SINK_PLUGIN";
+    public static final String CONNECT_IMAGE_WITH_FILE_SINK_PLUGIN = getOrDefault(CONNECT_IMAGE_WITH_FILE_SINK_PLUGIN_ENV, "");
+
+    /**
      * Defaults
      */
     public static final String STRIMZI_ORG_DEFAULT = "strimzi";
