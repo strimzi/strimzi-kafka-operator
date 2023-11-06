@@ -16,9 +16,6 @@ This allows you to retain the Kafka topic while making changes to the resource's
 
 You can perform this task if you are using unidirectional topic management.
 
-NOTE: Unidirectional topic management is available as a preview. 
-Unidirectional topic management is not enabled by default, so you must xref:ref-operator-unidirectional-topic-operator-feature-gate-{context}[enable the `UnidirectionalTopicOperator` feature gate] to be able to use it.
-
 .Prerequisites
 
 * xref:deploying-cluster-operator-str[The Cluster Operator must be deployed.]

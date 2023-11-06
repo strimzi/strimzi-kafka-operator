@@ -279,7 +279,7 @@ public class Environment {
     }
 
     public static boolean isUnidirectionalTopicOperatorEnabled() {
-        return STRIMZI_FEATURE_GATES.contains(Constants.UNIDIRECTIONAL_TOPIC_OPERATOR);
+        return !STRIMZI_FEATURE_GATES.contains(Constants.DONT_USE_UNIDIRECTIONAL_TOPIC_OPERATOR);
     }
 
     /**

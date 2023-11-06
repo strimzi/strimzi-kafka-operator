@@ -92,7 +92,6 @@ Currently, the KRaft mode in Strimzi has the following major limitations:
 * Upgrades and downgrades of Apache Kafka versions or the Strimzi operator are not supported.
   Users might need to delete the cluster, upgrade the operator and deploy a new Kafka cluster.
 * Only the _Unidirectional_ Topic Operator is supported in KRaft mode.
-  You can enable it using the `UnidirectionalTopicOperator` feature gate.
   The _Bidirectional_ Topic Operator is not supported and when the `UnidirectionalTopicOperator` feature gate is not enabled, the `spec.entityOperator.topicOperator` property *must be removed* from the `Kafka` custom resource.
 * JBOD storage is not supported. 
   The `type: jbod` storage can be used, but the JBOD array can contain only one disk.
@@ -133,9 +132,9 @@ The `Kafka` custom resource using the node pools must also have the annotation `
 If your cluster already uses `KafkaNodePool` custom resources, and you wish to downgrade to an older version of Strimzi that does not support them or with the `KafkaNodePools` feature gate disabled, you must first migrate from `KafkaNodePool` custom resources to managing Kafka nodes using only `Kafka` custom resources.
 
 [id='ref-operator-unidirectional-topic-operator-feature-gate-{context}']
-== (Preview) UnidirectionalTopicOperator feature gate
+== UnidirectionalTopicOperator feature gate
 
-The `UnidirectionalTopicOperator` feature gate has a default state of _disabled_.
+The `UnidirectionalTopicOperator` feature gate has a default state of _enabled_.
 
 The `UnidirectionalTopicOperator` feature gate introduces a unidirectional topic management mode for creating Kafka topics using the `KafkaTopic` resource.
 Unidirectional mode is compatible with using KRaft for cluster management.
@@ -143,7 +142,6 @@ With unidirectional mode, you create Kafka topics using the `KafkaTopic` resourc
 Any configuration changes to a topic outside the `KafkaTopic` resource are reverted.
 For more information on topic management, see xref:ref-operator-topic-str[].
 
-.Enabling the UnidirectionalTopicOperator feature gate
+.Disabling the `UnidirectionalTopicOperator` feature gate
 
-To enable the `UnidirectionalTopicOperator` feature gate, specify `+UnidirectionalTopicOperator` in the `STRIMZI_FEATURE_GATES` environment variable in the Cluster Operator configuration.
-For the `KafkaTopic` custom resource to use this feature, the `strimzi.io/managed` annotation is set to `true` by default. 
+To disable the `UnidirectionalTopicOperator` feature gate, specify `-UnidirectionalTopicOperator` in the `STRIMZI_FEATURE_GATES` environment variable in the Cluster Operator configuration.
