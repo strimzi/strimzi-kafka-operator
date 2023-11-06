@@ -145,7 +145,3 @@ For more information on topic management, see xref:ref-operator-topic-str[].
 .Disabling the `UnidirectionalTopicOperator` feature gate
 
 To disable the `UnidirectionalTopicOperator` feature gate, specify `-UnidirectionalTopicOperator` in the `STRIMZI_FEATURE_GATES` environment variable in the Cluster Operator configuration.
-
-.Downgrading from UnidirectionalTopicOperator
-
-If you want to downgrade to the previous Topic Operator implementation, you can simply disable the feature gate and then remove all the `KafkaTopic` finalizers.
