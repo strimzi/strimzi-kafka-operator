@@ -61,4 +61,24 @@ public class KafkaAgentClientTest {
         assertEquals(0, actual.remainingLogsToRecover());
         assertEquals(0, actual.remainingSegmentsToRecover());
     }
+
+    @Test
+    public void testZkMigrationDone() {
+        KafkaAgentClient kafkaAgentClient = spy(new KafkaAgentClient(RECONCILIATION, "my-cluster", "namespace"));
+        doAnswer(invocation -> "{\"state\":1}").when(kafkaAgentClient).doGet(any());
+
+        KRaftMigrationState actual = kafkaAgentClient.getKRaftMigrationState("mypod");
+        assertEquals(true, actual.isMigrationDone());
+        assertEquals(1, actual.state());
+    }
+
+    @Test
+    public void testZkMigrationRunning() {
+        KafkaAgentClient kafkaAgentClient = spy(new KafkaAgentClient(RECONCILIATION, "my-cluster", "namespace"));
+        doAnswer(invocation -> "{\"state\":2}").when(kafkaAgentClient).doGet(any());
+
+        KRaftMigrationState actual = kafkaAgentClient.getKRaftMigrationState("mypod");
+        assertEquals(false, actual.isMigrationDone());
+        assertEquals(2, actual.state());
+    }
 }
