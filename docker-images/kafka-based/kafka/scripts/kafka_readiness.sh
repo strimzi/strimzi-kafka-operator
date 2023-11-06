@@ -1,7 +1,10 @@
 #!/usr/bin/env bash
 set -e
 
-if [ "$STRIMZI_KRAFT_ENABLED" = "true" ]; then
+source ./kraft_utils.sh
+USE_KRAFT=$(useKRaft)
+
+if [ "$USE_KRAFT" == "true" ]; then
   # Test KRaft broker/controller readiness
   . ./kafka_readiness_kraft.sh
 else

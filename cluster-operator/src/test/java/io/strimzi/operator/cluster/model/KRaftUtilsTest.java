@@ -371,4 +371,17 @@ public class KRaftUtilsTest {
         assertThat(condition.getType(), is("Warning"));
         assertThat(condition.getStatus(), is("True"));
     }
+
+    @ParallelTest
+    public void testsVersionsForKRaftMigrationValidation() {
+        // Valid values
+        assertDoesNotThrow(() -> KRaftUtils.validateVersionsForKRaftMigration("3.6.1", "3.6-IV2", "3.6", "3.6"));
+
+        // Invalid Values
+        InvalidResourceException e = assertThrows(InvalidResourceException.class, () -> KRaftUtils.validateVersionsForKRaftMigration("3.6.1", "3.6-IV2", "3.5", "3.5"));
+        assertThat(e.getMessage(), containsString("Migration cannot be performed with Kafka version 3.6-IV2, metadata version 3.6-IV2, inter.broker.protocol.version 3.5-IV2, log.message.format.version 3.5-IV2."));
+
+        e = assertThrows(InvalidResourceException.class, () -> KRaftUtils.validateVersionsForKRaftMigration("3.6.1", "3.5-IV2", "3.6", "3.6"));
+        assertThat(e.getMessage(), containsString("Migration cannot be performed with Kafka version 3.6-IV2, metadata version 3.5-IV2, inter.broker.protocol.version 3.6-IV2, log.message.format.version 3.6-IV2."));
+    }
 }
