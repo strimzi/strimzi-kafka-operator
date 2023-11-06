@@ -39,6 +39,8 @@ final public class TestStorage {
     private static final String ADMIN = "admin-client";
     private static final String USER = "user";
     private static final String CLUSTER_NAME_PREFIX = "my-cluster-";
+    private static final String BROKER_ROLE_PREFIX = "broker-";
+    private static final String CONTROLLER_ROLE_PREFIX = "controller-";
     private static final Random RANDOM = new Random();
 
     private ExtensionContext extensionContext;

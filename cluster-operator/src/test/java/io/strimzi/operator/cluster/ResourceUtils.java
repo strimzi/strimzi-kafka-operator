@@ -48,7 +48,8 @@ import io.strimzi.operator.cluster.ClusterOperatorConfig.ClusterOperatorConfigBu
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.MockSharedEnvironmentProvider;
 import io.strimzi.operator.cluster.operator.assembly.BrokersInUseCheck;
-import io.strimzi.operator.cluster.operator.resource.DefaultKafkaAgentClientProvider;
+import io.strimzi.operator.cluster.operator.resource.KRaftMigrationState;
+import io.strimzi.operator.cluster.operator.resource.KafkaAgentClient;
 import io.strimzi.operator.cluster.operator.resource.KafkaAgentClientProvider;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.StatefulSetOperator;
@@ -603,8 +604,26 @@ public class ResourceUtils {
         };
     }
 
+    public static KafkaAgentClient kafkaAgentClient() {
+        KafkaAgentClient mock = mock(KafkaAgentClient.class);
+        // simulating a longer KRaft migration, returning it's ended on the second call
+        when(mock.getKRaftMigrationState(any()))
+                .thenReturn(new KRaftMigrationState(KRaftMigrationState.PRE_MIGRATION))
+                .thenReturn(new KRaftMigrationState(KRaftMigrationState.MIGRATION));
+        return mock;
+    }
+
     public static KafkaAgentClientProvider kafkaAgentClientProvider() {
-        return new DefaultKafkaAgentClientProvider();
+        return kafkaAgentClientProvider(kafkaAgentClient());
+    }
+
+    public static KafkaAgentClientProvider kafkaAgentClientProvider(KafkaAgentClient mockKafkaAgentClient) {
+        return new KafkaAgentClientProvider() {
+            @Override
+            public KafkaAgentClient createKafkaAgentClient(Reconciliation reconciliation, Secret clusterCaCertSecret, Secret coKeySecret) {
+                return mockKafkaAgentClient;
+            }
+        };
     }
 
     public static MetricsProvider metricsProvider() {
