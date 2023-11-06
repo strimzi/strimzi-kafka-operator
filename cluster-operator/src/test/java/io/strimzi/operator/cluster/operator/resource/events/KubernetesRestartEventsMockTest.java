@@ -34,6 +34,7 @@ import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
+import io.strimzi.operator.cluster.operator.resource.KafkaMetadataStateManager;
 import io.strimzi.operator.common.model.Ca;
 import io.strimzi.operator.common.model.ClientsCa;
 import io.strimzi.operator.cluster.model.ClusterCa;
@@ -212,7 +213,8 @@ public class KubernetesRestartEventsMockTest {
                 clusterOperatorConfig,
                 supplier,
                 PFA,
-                vertx
+                vertx,
+                new KafkaMetadataStateManager(reconciliation, kafkaWithLessVolumes, clusterOperatorConfig.featureGates().useKRaftEnabled())
         );
 
         lowerVolumes.reconcile(ks, Clock.systemUTC()).onComplete(verifyEventPublished(POD_HAS_OLD_REVISION, context));
@@ -254,7 +256,8 @@ public class KubernetesRestartEventsMockTest {
                 clusterOperatorConfig,
                 supplier,
                 PFA,
-                vertx);
+                vertx,
+                new KafkaMetadataStateManager(reconciliation, KAFKA, clusterOperatorConfig.featureGates().useKRaftEnabled()));
 
         reconciler.reconcile(ks, Clock.systemUTC()).onComplete(verifyEventPublished(CA_CERT_HAS_OLD_GENERATION, context));
     }
@@ -279,7 +282,8 @@ public class KubernetesRestartEventsMockTest {
                 clusterOperatorConfig,
                 supplier,
                 PFA,
-                vertx);
+                vertx,
+                new KafkaMetadataStateManager(reconciliation, KAFKA, clusterOperatorConfig.featureGates().useKRaftEnabled()));
 
         reconciler.reconcile(ks, Clock.systemUTC()).onComplete(verifyEventPublished(CA_CERT_REMOVED, context));
     }
@@ -304,7 +308,8 @@ public class KubernetesRestartEventsMockTest {
                 clusterOperatorConfig,
                 supplier,
                 PFA,
-                vertx);
+                vertx,
+                new KafkaMetadataStateManager(reconciliation, KAFKA, clusterOperatorConfig.featureGates().useKRaftEnabled()));
 
         reconciler.reconcile(ks, Clock.systemUTC()).onComplete(verifyEventPublished(CA_CERT_RENEWED, context));
     }
@@ -362,7 +367,8 @@ public class KubernetesRestartEventsMockTest {
                 clusterOperatorConfig,
                 supplierWithModifiedAdmin,
                 PFA,
-                vertx);
+                vertx,
+                new KafkaMetadataStateManager(reconciliation, KAFKA, clusterOperatorConfig.featureGates().useKRaftEnabled()));
 
         reconciler.reconcile(ks, Clock.systemUTC()).onComplete(verifyEventPublished(CONFIG_CHANGE_REQUIRES_RESTART, context));
     }
@@ -415,7 +421,8 @@ public class KubernetesRestartEventsMockTest {
                 clusterOperatorConfig,
                 supplierWithModifiedAdmin,
                 PFA,
-                vertx);
+                vertx,
+                new KafkaMetadataStateManager(reconciliation, KAFKA, clusterOperatorConfig.featureGates().useKRaftEnabled()));
 
         reconciler.reconcile(ks, Clock.systemUTC()).onComplete(verifyEventPublished(POD_UNRESPONSIVE, context));
     }
@@ -460,7 +467,7 @@ public class KubernetesRestartEventsMockTest {
                 createInitialCaKeySecret(NAMESPACE, CLUSTER_NAME, clusterCaKeySecretName(CLUSTER_NAME), MockCertManager.clusterCaKey())
         );
 
-        KafkaReconciler reconciler = new KafkaReconciler(reconciliation, KAFKA, null, Map.of(), Map.of(CLUSTER_NAME + "-kafka", List.of(CLUSTER_NAME + "-kafka-0")), changedCa, clientsCa, VERSION_CHANGE, clusterOperatorConfig, supplier, PFA, vertx);
+        KafkaReconciler reconciler = new KafkaReconciler(reconciliation, KAFKA, null, Map.of(), Map.of(CLUSTER_NAME + "-kafka", List.of(CLUSTER_NAME + "-kafka-0")), changedCa, clientsCa, VERSION_CHANGE, clusterOperatorConfig, supplier, PFA, vertx, new KafkaMetadataStateManager(reconciliation, KAFKA, clusterOperatorConfig.featureGates().useKRaftEnabled()));
         reconciler.reconcile(ks, Clock.systemUTC()).onComplete(verifyEventPublished(KAFKA_CERTIFICATES_CHANGED, context));
 
     }
@@ -485,7 +492,7 @@ public class KubernetesRestartEventsMockTest {
     }
 
     private KafkaReconciler defaultReconciler(Vertx vertx) {
-        return new KafkaReconciler(reconciliation, KAFKA, null, Map.of(), Map.of(CLUSTER_NAME + "-kafka", List.of(CLUSTER_NAME + "-kafka-0")), clusterCa, clientsCa, VERSION_CHANGE, clusterOperatorConfig, supplier, PFA, vertx);
+        return new KafkaReconciler(reconciliation, KAFKA, null, Map.of(), Map.of(CLUSTER_NAME + "-kafka", List.of(CLUSTER_NAME + "-kafka-0")), clusterCa, clientsCa, VERSION_CHANGE, clusterOperatorConfig, supplier, PFA, vertx, new KafkaMetadataStateManager(reconciliation, KAFKA, clusterOperatorConfig.featureGates().useKRaftEnabled()));
     }
 
     private ResourceOperatorSupplier supplierWithAdmin(Vertx vertx, Supplier<Admin> adminClientSupplier) {

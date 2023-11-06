@@ -372,14 +372,4 @@ public class ReconcilerUtils {
     public static boolean nodePoolsEnabled(Kafka kafka) {
         return KafkaCluster.ENABLED_VALUE_STRIMZI_IO_NODE_POOLS.equals(Annotations.stringAnnotation(kafka, Annotations.ANNO_STRIMZI_IO_NODE_POOLS, "disabled").toLowerCase(Locale.ENGLISH));
     }
-
-    /**
-     * Checks whether the KRaft mode is enabled for given Kafka custom resource using the strimzi.io/kraft annotation
-     *
-     * @param kafka Tha Kafka custom resource which might have the node-pools annotation
-     * @return True when the KRaft mode is enabled. False otherwise (using ZooKeeper mode).
-     */
-    public static boolean kraftEnabled(Kafka kafka) {
-        return KafkaCluster.ENABLED_VALUE_STRIMZI_IO_KRAFT.equals(Annotations.stringAnnotation(kafka, Annotations.ANNO_STRIMZI_IO_KRAFT, "disabled").toLowerCase(Locale.ENGLISH));
-    }
 }

@@ -15,6 +15,7 @@ import io.strimzi.api.kafka.model.storage.JbodStorageBuilder;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
 import io.strimzi.operator.cluster.model.nodepools.NodePoolUtils;
+import io.strimzi.operator.cluster.operator.resource.KafkaMetadataConfigurationState;
 import io.strimzi.operator.common.Reconciliation;
 import org.junit.jupiter.api.Test;
 
@@ -40,7 +41,7 @@ public class KafkaSpecCheckerTest {
 
     private KafkaSpecChecker generateChecker(Kafka kafka, KafkaVersionChange versionChange) {
         List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafka, null, Map.of(), Map.of(), false, SHARED_ENV_PROVIDER);
-        KafkaCluster kafkaCluster = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, pools, VERSIONS, versionChange, false, null, SHARED_ENV_PROVIDER);
+        KafkaCluster kafkaCluster = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, pools, VERSIONS, versionChange, KafkaMetadataConfigurationState.ZK, null, SHARED_ENV_PROVIDER);
 
         return new KafkaSpecChecker(kafka.getSpec(), VERSIONS, kafkaCluster);
     }

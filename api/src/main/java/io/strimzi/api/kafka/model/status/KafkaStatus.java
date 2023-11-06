@@ -22,7 +22,7 @@ import java.util.List;
         builderPackage = Constants.FABRIC8_KUBERNETES_API
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonPropertyOrder({ "conditions", "observedGeneration", "listeners", "kafkaNodePools", "clusterId", "operatorLastSuccessfulVersion", "kafkaVersion", "kafkaMetadataVersion" })
+@JsonPropertyOrder({ "conditions", "observedGeneration", "listeners", "kafkaNodePools", "clusterId", "operatorLastSuccessfulVersion", "kafkaVersion", "kafkaMetadataVersion", "kafkaMetadataState" })
 @EqualsAndHashCode
 @ToString(callSuper = true)
 public class KafkaStatus extends Status {
@@ -35,6 +35,7 @@ public class KafkaStatus extends Status {
     private String operatorLastSuccessfulVersion;
     private String kafkaVersion;
     private String kafkaMetadataVersion;
+    private String kafkaMetadataState;
 
     @Description("Addresses of the internal and external listeners")
     public List<ListenerStatus> getListeners() {
@@ -88,5 +89,19 @@ public class KafkaStatus extends Status {
 
     public void setKafkaMetadataVersion(String kafkaMetadataVersion) {
         this.kafkaMetadataVersion = kafkaMetadataVersion;
+    }
+
+    @Description("Defines where cluster metadata are stored. Possible values are: " +
+            "ZooKeeper if the metadata are stored in ZooKeeper " +
+            "KRaftMigration if the controllers are connected to ZooKeeper, together with brokers, and the migration process is running " +
+            "KRaftDualWriting if the migration process finished and the cluster is in dual-write mode " +
+            "KRaftPostMigration if the brokers are fully KRaft-based but controllers being rolled to disconnect from ZooKeeper " +
+            "KRaft if the metadata are stored in KRaft")
+    public String getKafkaMetadataState() {
+        return kafkaMetadataState;
+    }
+
+    public void setKafkaMetadataState(String metadataState) {
+        this.kafkaMetadataState = metadataState;
     }
 }

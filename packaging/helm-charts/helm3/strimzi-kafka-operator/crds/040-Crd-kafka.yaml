@@ -39,6 +39,10 @@ spec:
           description: The state of the custom resource
           jsonPath: ".status.conditions[?(@.type==\"Ready\")].status"
           type: string
+        - name: Metadata State
+          description: The state of the cluster metadata
+          jsonPath: .status.kafkaMetadataState
+          type: string
         - name: Warnings
           description: Warnings related to the custom resource
           jsonPath: ".status.conditions[?(@.type==\"Warning\")].status"
@@ -6324,4 +6328,7 @@ spec:
                 kafkaMetadataVersion:
                   type: string
                   description: The KRaft metadata.version currently used by the Kafka cluster.
+                kafkaMetadataState:
+                  type: string
+                  description: "Defines where cluster metadata are stored. Possible values are: ZooKeeper if the metadata are stored in ZooKeeper KRaftMigration if the controllers are connected to ZooKeeper, together with brokers, and the migration process is running KRaftDualWriting if the migration process finished and the cluster is in dual-write mode KRaftPostMigration if the brokers are fully KRaft-based but controllers being rolled to disconnect from ZooKeeper KRaft if the metadata are stored in KRaft."
               description: "The status of the Kafka and ZooKeeper clusters, and Topic Operator."

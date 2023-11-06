@@ -25,6 +25,8 @@ import io.strimzi.operator.cluster.PlatformFeaturesAvailability;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
+import io.strimzi.operator.cluster.operator.resource.KafkaMetadataConfigurationState;
+import io.strimzi.operator.cluster.operator.resource.KafkaMetadataStateManager;
 import io.strimzi.operator.common.model.ClientsCa;
 import io.strimzi.operator.cluster.model.ClusterCa;
 import io.strimzi.operator.cluster.model.KafkaCluster;
@@ -137,7 +139,7 @@ public class KafkaAssemblyOperatorManualRollingUpdatesTest {
                 .build();
 
         List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafka, null, Map.of(), Map.of(), false, SHARED_ENV_PROVIDER);
-        KafkaCluster kafkaCluster = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_ZOOKEEPER_VERSION_CHANGE, false, null, SHARED_ENV_PROVIDER);
+        KafkaCluster kafkaCluster = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_ZOOKEEPER_VERSION_CHANGE, KafkaMetadataConfigurationState.ZK, null, SHARED_ENV_PROVIDER);
         ZookeeperCluster zkCluster = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, VERSIONS, SHARED_ENV_PROVIDER);
 
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
@@ -233,7 +235,7 @@ public class KafkaAssemblyOperatorManualRollingUpdatesTest {
                 .build();
 
         List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafka, null, Map.of(), Map.of(), false, SHARED_ENV_PROVIDER);
-        KafkaCluster kafkaCluster = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_ZOOKEEPER_VERSION_CHANGE, false, null, SHARED_ENV_PROVIDER);
+        KafkaCluster kafkaCluster = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_ZOOKEEPER_VERSION_CHANGE, KafkaMetadataConfigurationState.ZK, null, SHARED_ENV_PROVIDER);
         ZookeeperCluster zkCluster = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, VERSIONS, SHARED_ENV_PROVIDER);
 
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
@@ -343,7 +345,7 @@ public class KafkaAssemblyOperatorManualRollingUpdatesTest {
                 .build();
 
         List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafka, null, Map.of(), Map.of(), false, SHARED_ENV_PROVIDER);
-        KafkaCluster kafkaCluster = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_ZOOKEEPER_VERSION_CHANGE, false, null, SHARED_ENV_PROVIDER);
+        KafkaCluster kafkaCluster = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_ZOOKEEPER_VERSION_CHANGE, KafkaMetadataConfigurationState.ZK, null, SHARED_ENV_PROVIDER);
         ZookeeperCluster zkCluster = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, VERSIONS, SHARED_ENV_PROVIDER);
 
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
@@ -486,7 +488,7 @@ public class KafkaAssemblyOperatorManualRollingUpdatesTest {
             .build();
 
         List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafka, List.of(poolA, poolB), Map.of(), Map.of(), false, SHARED_ENV_PROVIDER);
-        KafkaCluster kafkaCluster = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_ZOOKEEPER_VERSION_CHANGE, false, null, SHARED_ENV_PROVIDER);
+        KafkaCluster kafkaCluster = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_ZOOKEEPER_VERSION_CHANGE, KafkaMetadataConfigurationState.ZK, null, SHARED_ENV_PROVIDER);
         ZookeeperCluster zkCluster = ZookeeperCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, VERSIONS, SHARED_ENV_PROVIDER);
 
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
@@ -661,7 +663,7 @@ public class KafkaAssemblyOperatorManualRollingUpdatesTest {
         List<String> kafkaNodesNeedRestart = new ArrayList<>();
 
         public MockKafkaReconciler(Reconciliation reconciliation, Vertx vertx, ClusterOperatorConfig config, ResourceOperatorSupplier supplier, PlatformFeaturesAvailability pfa, Kafka kafkaAssembly, List<KafkaNodePool> nodePools, KafkaVersionChange versionChange, Map<String, Storage> oldStorage, Map<String, List<String>> currentPods, ClusterCa clusterCa, ClientsCa clientsCa) {
-            super(reconciliation, kafkaAssembly, nodePools, oldStorage, currentPods, clusterCa, clientsCa, versionChange, config, supplier, pfa, vertx);
+            super(reconciliation, kafkaAssembly, nodePools, oldStorage, currentPods, clusterCa, clientsCa, versionChange, config, supplier, pfa, vertx, new KafkaMetadataStateManager(reconciliation, kafkaAssembly, config.featureGates().useKRaftEnabled()));
         }
 
         @Override

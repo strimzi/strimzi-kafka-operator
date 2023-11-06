@@ -27,6 +27,7 @@ import io.strimzi.api.kafka.model.storage.SingleVolumeStorage;
 import io.strimzi.api.kafka.model.storage.Storage;
 import io.strimzi.kafka.oauth.server.ServerConfig;
 import io.strimzi.operator.cluster.model.cruisecontrol.CruiseControlMetricsReporter;
+import io.strimzi.operator.cluster.operator.resource.KafkaMetadataConfigurationState;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlConfigurationParameters;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.test.annotations.ParallelSuite;
@@ -60,7 +61,7 @@ public class KafkaBrokerConfigurationBuilderTest {
 
     @ParallelTest
     public void testBrokerId()  {
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, "2", false)
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, KafkaMetadataConfigurationState.ZK)
                 .build();
 
         assertThat(configuration, isEquivalent("broker.id=2",
@@ -75,7 +76,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 new NodeRef("my-cluster-kafka-2", 2, "kafka", true, true)
         );
 
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, "2", true)
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, KafkaMetadataConfigurationState.KRAFT)
                 .withKRaft("my-cluster", "my-namespace", Set.of(ProcessRoles.BROKER, ProcessRoles.CONTROLLER), nodes)
                 .build();
 
@@ -97,7 +98,7 @@ public class KafkaBrokerConfigurationBuilderTest {
         );
 
         // Controller-only node
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, "2", true)
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, KafkaMetadataConfigurationState.KRAFT)
                 .withKRaft("my-cluster", "my-namespace", Set.of(ProcessRoles.CONTROLLER), nodes)
                 .build();
 
@@ -106,8 +107,9 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "controller.listener.names=CONTROLPLANE-9090",
                 "controller.quorum.voters=0@my-cluster-controllers-0.my-cluster-kafka-brokers.my-namespace.svc.cluster.local:9090,1@my-cluster-controllers-1.my-cluster-kafka-brokers.my-namespace.svc.cluster.local:9090,2@my-cluster-controllers-2.my-cluster-kafka-brokers.my-namespace.svc.cluster.local:9090"));
 
+        NodeRef nodeRef = nodes.stream().filter(nr -> nr.nodeId() == 11).findFirst().get();
         // Broker-only node
-        configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, "11", true)
+        configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, nodeRef, KafkaMetadataConfigurationState.KRAFT)
                 .withKRaft("my-cluster", "my-namespace", Set.of(ProcessRoles.BROKER), nodes)
                 .build();
 
@@ -119,7 +121,7 @@ public class KafkaBrokerConfigurationBuilderTest {
 
     @ParallelTest
     public void testNoCruiseControl()  {
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, "2", false)
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, KafkaMetadataConfigurationState.ZK)
                 .withCruiseControl("my-cluster", null, true)
                 .build();
 
@@ -132,7 +134,7 @@ public class KafkaBrokerConfigurationBuilderTest {
         CruiseControlMetricsReporter ccMetricsReporter = new CruiseControlMetricsReporter("strimzi.cruisecontrol.metrics", 1, 1, 1);
 
         // Broker configuration
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, "2", false)
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, KafkaMetadataConfigurationState.ZK)
                 .withCruiseControl("my-cluster", ccMetricsReporter, true)
                 .build();
 
@@ -154,7 +156,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 CruiseControlConfigurationParameters.METRICS_TOPIC_MIN_ISR + "=1"));
 
         // Controller configuration
-        configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, "2", false)
+        configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, KafkaMetadataConfigurationState.ZK)
                 .withCruiseControl("my-cluster", ccMetricsReporter, false)
                 .build();
 
@@ -166,7 +168,7 @@ public class KafkaBrokerConfigurationBuilderTest {
     public void testCruiseControlCustomMetricReporterTopic()  {
         CruiseControlMetricsReporter ccMetricsReporter = new CruiseControlMetricsReporter("metric-reporter-topic", 2, 3, 4);
 
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, "2", false)
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, KafkaMetadataConfigurationState.ZK)
                 .withCruiseControl("my-cluster", ccMetricsReporter, true)
                 .build();
 
@@ -190,7 +192,7 @@ public class KafkaBrokerConfigurationBuilderTest {
 
     @ParallelTest
     public void testNoRackAwareness()  {
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, "2", false)
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, KafkaMetadataConfigurationState.ZK)
                 .withRackId(null)
                 .build();
 
@@ -200,7 +202,7 @@ public class KafkaBrokerConfigurationBuilderTest {
 
     @ParallelTest
     public void testRackId()  {
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, "2", false)
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, KafkaMetadataConfigurationState.ZK)
                 .withRackId(new Rack("failure-domain.kubernetes.io/zone"))
                 .build();
 
@@ -211,18 +213,18 @@ public class KafkaBrokerConfigurationBuilderTest {
 
     @ParallelTest
     public void testRackAndBrokerId()  {
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, "0", false)
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, KafkaMetadataConfigurationState.ZK)
                 .withRackId(new Rack("failure-domain.kubernetes.io/zone"))
                 .build();
 
-        assertThat(configuration, isEquivalent("broker.id=0",
-                "node.id=0",
+        assertThat(configuration, isEquivalent("broker.id=2",
+                "node.id=2",
                 "broker.rack=${STRIMZI_RACK_ID}"));
     }
 
     @ParallelTest
     public void testZookeeperConfig()  {
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, "2", false)
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, KafkaMetadataConfigurationState.ZK)
                 .withZookeeper("my-cluster")
                 .build();
 
@@ -241,7 +243,7 @@ public class KafkaBrokerConfigurationBuilderTest {
 
     @ParallelTest
     public void testNoAuthorization()  {
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, "2", false)
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, KafkaMetadataConfigurationState.ZK)
                 .withAuthorization("my-cluster", null)
                 .build();
 
@@ -255,7 +257,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .addToSuperUsers("jakub", "CN=kuba")
                 .build();
 
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, "2", false)
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, KafkaMetadataConfigurationState.ZK)
                 .withAuthorization("my-cluster", auth)
                 .build();
 
@@ -271,7 +273,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .addToSuperUsers("jakub", "CN=kuba")
                 .build();
 
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, "2", true)
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, KafkaMetadataConfigurationState.KRAFT)
                 .withAuthorization("my-cluster", auth)
                 .build();
 
@@ -285,7 +287,7 @@ public class KafkaBrokerConfigurationBuilderTest {
         KafkaAuthorization auth = new KafkaAuthorizationSimpleBuilder()
                 .build();
 
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, "2", false)
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, KafkaMetadataConfigurationState.ZK)
                 .withAuthorization("my-cluster", auth)
                 .build();
 
@@ -321,7 +323,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .withIncludeAcceptHeader(false)
                 .build();
 
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, "2", false)
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, KafkaMetadataConfigurationState.ZK)
                 .withAuthorization("my-cluster", auth)
                 .build();
 
@@ -363,7 +365,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .withReadTimeoutSeconds(30)
                 .build();
 
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, "2", false)
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, KafkaMetadataConfigurationState.ZK)
                 .withAuthorization("my-cluster", auth)
                 .build();
 
@@ -388,7 +390,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .withUrl("http://opa:8181/v1/data/kafka/allow")
                 .build();
 
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, "2", false)
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, KafkaMetadataConfigurationState.ZK)
                 .withAuthorization("my-cluster", auth)
                 .build();
 
@@ -415,7 +417,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .addToSuperUsers("jack", "CN=conor")
                 .build();
 
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, "2", false)
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, KafkaMetadataConfigurationState.ZK)
                 .withAuthorization("my-cluster", auth)
                 .build();
 
@@ -448,7 +450,7 @@ public class KafkaBrokerConfigurationBuilderTest {
             .addToSuperUsers("jack", "CN=conor")
             .build();
 
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, "2", false)
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, KafkaMetadataConfigurationState.ZK)
             .withAuthorization("my-cluster", auth)
             .build();
 
@@ -469,7 +471,7 @@ public class KafkaBrokerConfigurationBuilderTest {
 
     @ParallelTest
     public void testNullUserConfiguration()  {
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, "2", false)
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, KafkaMetadataConfigurationState.ZK)
                 .withUserConfiguration(null, false)
                 .build();
 
@@ -479,7 +481,7 @@ public class KafkaBrokerConfigurationBuilderTest {
 
     @ParallelTest
     public void testNullUserConfigurationAndCCReporter()  {
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, "2", false)
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, KafkaMetadataConfigurationState.ZK)
                 .withUserConfiguration(null, true)
                 .build();
 
@@ -493,7 +495,7 @@ public class KafkaBrokerConfigurationBuilderTest {
         Map<String, Object> userConfiguration = new HashMap<>();
         KafkaConfiguration kafkaConfiguration = new KafkaConfiguration(Reconciliation.DUMMY_RECONCILIATION, userConfiguration.entrySet());
 
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, "2", false)
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, KafkaMetadataConfigurationState.ZK)
                 .withUserConfiguration(kafkaConfiguration, false)
                 .build();
 
@@ -511,7 +513,7 @@ public class KafkaBrokerConfigurationBuilderTest {
 
         KafkaConfiguration kafkaConfiguration = new KafkaConfiguration(Reconciliation.DUMMY_RECONCILIATION, userConfiguration.entrySet());
 
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, "2", false)
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, KafkaMetadataConfigurationState.ZK)
                 .withUserConfiguration(kafkaConfiguration, false)
                 .build();
 
@@ -533,7 +535,7 @@ public class KafkaBrokerConfigurationBuilderTest {
 
         KafkaConfiguration kafkaConfiguration = new KafkaConfiguration(Reconciliation.DUMMY_RECONCILIATION, userConfiguration.entrySet());
 
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, "2", false)
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, KafkaMetadataConfigurationState.ZK)
                 .withUserConfiguration(kafkaConfiguration, true)
                 .build();
 
@@ -553,7 +555,7 @@ public class KafkaBrokerConfigurationBuilderTest {
 
         KafkaConfiguration kafkaConfiguration = new KafkaConfiguration(Reconciliation.DUMMY_RECONCILIATION, userConfiguration.entrySet());
 
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, "2", false)
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, KafkaMetadataConfigurationState.ZK)
                 .withUserConfiguration(kafkaConfiguration, true)
                 .build();
 
@@ -568,7 +570,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .withSizeLimit("5Gi")
                 .build();
 
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, "2", false)
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, KafkaMetadataConfigurationState.ZK)
                 .withLogDirs(VolumeUtils.createVolumeMounts(storage, "/var/lib/kafka", false))
                 .build();
 
@@ -585,7 +587,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .withDeleteClaim(true)
                 .build();
 
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, "2", false)
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, KafkaMetadataConfigurationState.ZK)
                 .withLogDirs(VolumeUtils.createVolumeMounts(storage, "/var/lib/kafka", false))
                 .build();
 
@@ -619,7 +621,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .withVolumes(vol1, vol2, vol5)
                 .build();
 
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, "2", false)
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, KafkaMetadataConfigurationState.ZK)
                 .withLogDirs(VolumeUtils.createVolumeMounts(storage, "/var/lib/kafka", false))
                 .build();
 
@@ -630,7 +632,7 @@ public class KafkaBrokerConfigurationBuilderTest {
 
     @ParallelTest
     public void testWithNoListeners() {
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, "2", false)
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, KafkaMetadataConfigurationState.ZK)
                 .withListeners("my-cluster", "my-namespace", NODE_REF, emptyList(), null, null)
                 .build();
 
@@ -699,7 +701,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .withTls(false)
                 .build();
 
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, "2", false)
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, KafkaMetadataConfigurationState.ZK)
                 .withListeners("my-cluster", "my-namespace", NODE_REF, asList(listener1, listener2, listener3, listener4), listenerId -> "dummy-advertised-address", listenerId -> "1919")
                 .build();
 
@@ -741,7 +743,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .withTls(false)
                 .build();
 
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, "2", false)
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, KafkaMetadataConfigurationState.ZK)
                 .withListeners("my-cluster", "my-namespace", NODE_REF, singletonList(listener), listenerId -> "my-cluster-kafka-2.my-cluster-kafka-brokers.my-namespace.svc", listenerId -> "9092")
                 .build();
 
@@ -785,7 +787,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .withTls(false)
                 .build();
 
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, "2", true)
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, KafkaMetadataConfigurationState.KRAFT)
                 .withKRaft("my-cluster", "my-namespace", Set.of(ProcessRoles.BROKER, ProcessRoles.CONTROLLER), nodes)
                 .withListeners("my-cluster", "my-namespace", new NodeRef("my-cluster-kafka-2", 2, "kafka", true, true), singletonList(listener), listenerId -> "my-cluster-kafka-2.my-cluster-kafka-brokers.my-namespace.svc", listenerId -> "9092")
                 .build();
@@ -835,7 +837,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .build();
 
         // Controller-only node
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, "2", true)
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, KafkaMetadataConfigurationState.KRAFT)
                 .withKRaft("my-cluster", "my-namespace", Set.of(ProcessRoles.CONTROLLER), nodes)
                 .withListeners("my-cluster", "my-namespace", new NodeRef("my-cluster-controllers-2", 2, "controllers", true, false), singletonList(listener), listenerId -> "my-cluster-controllers-2.my-cluster-kafka-brokers.my-namespace.svc", listenerId -> "9092")
                 .build();
@@ -856,8 +858,9 @@ public class KafkaBrokerConfigurationBuilderTest {
                 "sasl.enabled.mechanisms=",
                 "ssl.endpoint.identification.algorithm=HTTPS"));
 
+        NodeRef nodeRef = nodes.stream().filter(nr -> nr.nodeId() == 11).findFirst().get();
         // Broker-only node
-        configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, "11", true)
+        configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, nodeRef, KafkaMetadataConfigurationState.KRAFT)
                 .withKRaft("my-cluster", "my-namespace", Set.of(ProcessRoles.BROKER), nodes)
                 .withListeners("my-cluster", "my-namespace", new NodeRef("my-cluster-brokers-11", 11, "brokers", false, true), singletonList(listener), listenerId -> "my-cluster-brokers-11.my-cluster-kafka-brokers.my-namespace.svc", listenerId -> "9092")
                 .build();
@@ -899,7 +902,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .endKafkaListenerAuthenticationScramSha512Auth()
                 .build();
 
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, "2", false)
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, KafkaMetadataConfigurationState.ZK)
                 .withListeners("my-cluster", "my-namespace", NODE_REF, singletonList(listener), listenerId -> "dummy-advertised-address", listenerId -> "1919")
                 .build();
 
@@ -939,7 +942,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .withTls(true)
                 .build();
 
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, "2", false)
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, KafkaMetadataConfigurationState.ZK)
                 .withListeners("my-cluster", "my-namespace", NODE_REF, singletonList(listener), listenerId -> "dummy-advertised-address", listenerId -> "1919")
                 .build();
 
@@ -982,7 +985,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .endKafkaListenerAuthenticationTlsAuth()
                 .build();
 
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, "2", false)
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, KafkaMetadataConfigurationState.ZK)
                 .withListeners("my-cluster", "my-namespace", NODE_REF, singletonList(listener), listenerId -> "dummy-advertised-address", listenerId -> "1919")
                 .build();
 
@@ -1034,7 +1037,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .endConfiguration()
                 .build();
 
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, "2", false)
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, KafkaMetadataConfigurationState.ZK)
                 .withListeners("my-cluster", "my-namespace", NODE_REF, singletonList(listener), listenerId -> "dummy-advertised-address", listenerId -> "1919")
                 .build();
 
@@ -1075,7 +1078,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .withTls(true)
                 .build();
 
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, "2", false)
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, KafkaMetadataConfigurationState.ZK)
                 .withListeners("my-cluster", "my-namespace", NODE_REF, singletonList(listener), listenerId -> "dummy-advertised-address", listenerId -> "1919")
                 .build();
 
@@ -1118,7 +1121,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .endKafkaListenerAuthenticationTlsAuth()
                 .build();
 
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, "2", false)
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, KafkaMetadataConfigurationState.ZK)
                 .withListeners("my-cluster", "my-namespace", NODE_REF, singletonList(listener), listenerId -> "dummy-advertised-address", listenerId -> "1919")
                 .build();
 
@@ -1165,7 +1168,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .endKafkaListenerAuthenticationScramSha512Auth()
                 .build();
 
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, "2", false)
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, KafkaMetadataConfigurationState.ZK)
                 .withListeners("my-cluster", "my-namespace", NODE_REF, singletonList(listener), listenerId -> "dummy-advertised-address", listenerId -> "1919")
                 .build();
 
@@ -1215,7 +1218,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .endConfiguration()
                 .build();
 
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, "2", false)
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, KafkaMetadataConfigurationState.ZK)
                 .withListeners("my-cluster", "my-namespace", NODE_REF, singletonList(listener), listenerId -> "dummy-advertised-address", listenerId -> "1919")
                 .build();
 
@@ -1256,7 +1259,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .withTls(true)
                 .build();
       
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, "2", false)
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, KafkaMetadataConfigurationState.ZK)
                 .withListeners("my-cluster", "my-namespace", NODE_REF, singletonList(listener), listenerId -> "dummy-advertised-address", listenerId -> "1919")
                 .build();
 
@@ -1297,7 +1300,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .withTls(true)
                 .build();
 
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, "2", false)
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, KafkaMetadataConfigurationState.ZK)
                 .withListeners("my-cluster", "my-namespace", NODE_REF, singletonList(listener), listenerId -> "my-lb.com", listenerId -> "9094")
                 .build();
 
@@ -1338,7 +1341,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .withTls(false)
                 .build();
 
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, "2", false)
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, KafkaMetadataConfigurationState.ZK)
                 .withListeners("my-cluster", "my-namespace", NODE_REF, singletonList(listener), listenerId -> "dummy-advertised-address", listenerId -> "1919")
                 .build();
 
@@ -1376,7 +1379,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .withTls(true)
                 .build();
 
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, "2", false)
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, KafkaMetadataConfigurationState.ZK)
                 .withListeners("my-cluster", "my-namespace", NODE_REF, singletonList(listener), listenerId -> "dummy-advertised-address", listenerId -> "1919")
                 .build();
 
@@ -1417,7 +1420,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .withTls(false)
                 .build();
 
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, "2", false)
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, KafkaMetadataConfigurationState.ZK)
                 .withListeners("my-cluster", "my-namespace", NODE_REF, singletonList(listener), listenerId -> "dummy-advertised-address", listenerId -> "1919")
                 .build();
 
@@ -1455,7 +1458,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .withTls(false)
                 .build();
 
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, "2", false)
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, KafkaMetadataConfigurationState.ZK)
                 .withListeners("my-cluster", "my-namespace", NODE_REF, singletonList(listener), listenerId -> "${STRIMZI_NODEPORT_DEFAULT_ADDRESS}", listenerId -> "31234")
                 .build();
 
@@ -1505,7 +1508,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .endConfiguration()
                 .build();
 
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, "2", false)
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, KafkaMetadataConfigurationState.ZK)
                 .withListeners("my-cluster", "my-namespace", NODE_REF, singletonList(listener), listenerId -> "dummy-advertised-address", listenerId -> "1919")
                 .build();
 
@@ -1555,7 +1558,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .endConfiguration()
                 .build();
 
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, "2", false)
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, KafkaMetadataConfigurationState.ZK)
                 .withListeners("my-cluster", "my-namespace", NODE_REF, singletonList(listener), listenerId -> "dummy-advertised-address", listenerId -> "1919")
                 .build();
 
@@ -1605,7 +1608,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .endConfiguration()
                 .build();
 
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, "2", false)
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, KafkaMetadataConfigurationState.ZK)
                 .withListeners("my-cluster", "my-namespace", NODE_REF, singletonList(listener), listenerId -> "dummy-advertised-address", listenerId -> "1919")
                 .build();
 
@@ -1659,7 +1662,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .endKafkaListenerAuthenticationOAuth()
                 .build();
 
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, "2", false)
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, KafkaMetadataConfigurationState.ZK)
                 .withListeners("my-cluster", "my-namespace", NODE_REF, singletonList(listener), listenerId -> "dummy-advertised-address", listenerId -> "1919")
                 .build();
 
@@ -1718,7 +1721,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .endKafkaListenerAuthenticationOAuth()
                 .build();
 
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, "2", false)
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, KafkaMetadataConfigurationState.ZK)
                 .withListeners("my-cluster", "my-namespace", NODE_REF, singletonList(listener), listenerId -> "dummy-advertised-address", listenerId -> "1919")
                 .build();
 
@@ -1763,7 +1766,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .endKafkaListenerAuthenticationOAuth()
                 .build();
 
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, "2", false)
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, KafkaMetadataConfigurationState.ZK)
                 .withListeners("my-cluster", "my-namespace", NODE_REF, singletonList(listener), listenerId -> "dummy-advertised-address", listenerId -> "1919")
                 .build();
 
@@ -1818,7 +1821,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .endKafkaListenerAuthenticationOAuth()
                 .build();
 
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, "2", false)
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, KafkaMetadataConfigurationState.ZK)
                 .withListeners("my-cluster", "my-namespace", NODE_REF, singletonList(listener), listenerId -> "dummy-advertised-address", listenerId -> "1919")
                 .build();
 
@@ -1871,7 +1874,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .endKafkaListenerAuthenticationOAuth()
                 .build();
 
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, "2", false)
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, KafkaMetadataConfigurationState.ZK)
                 .withListeners("my-cluster", "my-namespace", NODE_REF, singletonList(listener), listenerId -> "dummy-advertised-address", listenerId -> "1919")
                 .build();
 
@@ -1990,7 +1993,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .endKafkaListenerAuthenticationCustomAuth()
                 .build();
 
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, "2", false)
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, KafkaMetadataConfigurationState.ZK)
                 .withListeners("my-cluster", "my-namespace", NODE_REF, singletonList(listener), listenerId -> "dummy-advertised-address", listenerId -> "1919")
                 .build();
 
@@ -2010,7 +2013,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .endKafkaListenerAuthenticationCustomAuth()
                 .build();
 
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, "2", false)
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, KafkaMetadataConfigurationState.ZK)
                 .withListeners("my-cluster", "my-namespace", NODE_REF, singletonList(listener), listenerId -> "dummy-advertised-address", listenerId -> "1919")
                 .build();
 
@@ -2031,7 +2034,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .endKafkaListenerAuthenticationCustomAuth()
                 .build();
 
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, "2", false)
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, KafkaMetadataConfigurationState.ZK)
                 .withListeners("my-cluster", "my-namespace", NODE_REF, singletonList(listener), listenerId -> "dummy-advertised-address", listenerId -> "1919")
                 .build();
 
@@ -2051,7 +2054,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .endKafkaListenerAuthenticationCustomAuth()
                 .build();
 
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, "2", false)
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, KafkaMetadataConfigurationState.ZK)
                 .withListeners("my-cluster", "my-namespace", NODE_REF, singletonList(listener), listenerId -> "dummy-advertised-address", listenerId -> "1919")
                 .build();
 
@@ -2076,7 +2079,7 @@ public class KafkaBrokerConfigurationBuilderTest {
                 .endKafkaListenerAuthenticationCustomAuth()
                 .build();
 
-        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, "2", false)
+        String configuration = new KafkaBrokerConfigurationBuilder(Reconciliation.DUMMY_RECONCILIATION, NODE_REF, KafkaMetadataConfigurationState.ZK)
                 .withListeners("my-cluster", "my-namespace", NODE_REF, singletonList(listener), listenerId -> "dummy-advertised-address", listenerId -> "1919")
                 .build();
 

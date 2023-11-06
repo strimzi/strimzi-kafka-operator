@@ -55,8 +55,14 @@ echo ""
 # Configure heap based on the available resources if needed
 . ./dynamic_resources.sh
 
+source ./kraft_utils.sh
+USE_KRAFT=$(useKRaft)
+
+STRIMZI_KAFKA_METADATA_CONFIG_STATE=$(cat "$KAFKA_HOME"/custom-config/metadata.state)
+echo "Kafka metadata config state [${STRIMZI_KAFKA_METADATA_CONFIG_STATE}], using KRaft [${USE_KRAFT}]"
+
 # Prepare for Kraft
-if [ "$STRIMZI_KRAFT_ENABLED" = "true" ]; then
+if [ "$USE_KRAFT" == "true" ]; then
   KRAFT_LOG_DIR=$(grep "log\.dirs=" /tmp/strimzi.properties | sed "s/log\.dirs=*//")
 
   if [ ! -f "$KRAFT_LOG_DIR/meta.properties" ]; then
