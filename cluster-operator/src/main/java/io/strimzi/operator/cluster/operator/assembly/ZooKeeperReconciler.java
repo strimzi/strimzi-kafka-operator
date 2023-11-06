@@ -22,6 +22,7 @@ import io.strimzi.operator.cluster.model.DnsNameGenerator;
 import io.strimzi.operator.cluster.model.ImagePullPolicy;
 import io.strimzi.operator.cluster.model.KafkaVersionChange;
 import io.strimzi.operator.cluster.model.ZookeeperCluster;
+import io.strimzi.operator.cluster.operator.resource.KafkaMetadataStateManager;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.StatefulSetOperator;
 import io.strimzi.operator.cluster.operator.resource.ZooKeeperRoller;
@@ -110,6 +111,8 @@ public class ZooKeeperReconciler {
 
     private String loggingHash = "";
 
+    private final KafkaMetadataStateManager kafkaMetadataStateManager;
+
     /**
      * Constructs the ZooKeeper reconciler
      *
@@ -123,6 +126,7 @@ public class ZooKeeperReconciler {
      * @param currentReplicas           The current number of replicas
      * @param oldStorage                The storage configuration of the current cluster (null if it does not exist yet)
      * @param clusterCa                 The Cluster CA instance
+     * @param kafkaMetadataStateManager Instance of the Kafka metadata state manager
      */
     public ZooKeeperReconciler(
             Reconciliation reconciliation,
@@ -134,7 +138,8 @@ public class ZooKeeperReconciler {
             KafkaVersionChange versionChange,
             Storage oldStorage,
             int currentReplicas,
-            ClusterCa clusterCa
+            ClusterCa clusterCa,
+            KafkaMetadataStateManager kafkaMetadataStateManager
     ) {
         this.reconciliation = reconciliation;
         this.vertx = vertx;
@@ -151,6 +156,7 @@ public class ZooKeeperReconciler {
         this.adminSessionTimeoutMs = config.getZkAdminSessionTimeoutMs();
         this.imagePullPolicy = config.getImagePullPolicy();
         this.imagePullSecrets = config.getImagePullSecrets();
+        this.kafkaMetadataStateManager = kafkaMetadataStateManager;
 
         this.stsOperator = supplier.stsOperations;
         this.strimziPodSetOperator = supplier.strimziPodSetOperator;
@@ -201,7 +207,8 @@ public class ZooKeeperReconciler {
                 .compose(i -> scalingCheck())
                 .compose(i -> serviceEndpointsReady())
                 .compose(i -> headlessServiceEndpointsReady())
-                .compose(i -> deletePersistentClaims());
+                .compose(i -> deletePersistentClaims())
+                .compose(i -> maybeDeleteControllerZnode());
     }
 
     /**
@@ -862,6 +869,29 @@ public class ZooKeeperReconciler {
 
                     return new PvcReconciler(reconciliation, pvcOperator, storageClassOperator)
                             .deletePersistentClaims(maybeDeletePvcs, desiredPvcs);
+                });
+    }
+
+    /**
+     * Defers to the Kafka metadata state manager if there is a KRaft migration rollback ongoing and in such case,
+     * it will delete the /controller znode to allow brokers to elect a new controller among them, now that KRaft
+     * controllers are out of the picture.
+     *
+     * @return  Completes when the possible /controller znode deletion is done
+     */
+    protected Future<Void> maybeDeleteControllerZnode() {
+        return ReconcilerUtils.clientSecrets(reconciliation, secretOperator)
+                .compose(compositeFuture -> {
+                    String zkConnectionString = KafkaResources.zookeeperServiceName(reconciliation.name()) + ":" + ZookeeperCluster.CLIENT_TLS_PORT;
+                    LOGGER.infoCr(reconciliation, "Maybe deleting /controller znode on {}", zkConnectionString);
+                    this.kafkaMetadataStateManager.maybeDeleteZooKeeperControllerZnode(
+                            reconciliation,
+                            compositeFuture.resultAt(0),
+                            compositeFuture.resultAt(1),
+                            operationTimeoutMs,
+                            zkConnectionString
+                    );
+                    return Future.succeededFuture();
                 });
     }
 }

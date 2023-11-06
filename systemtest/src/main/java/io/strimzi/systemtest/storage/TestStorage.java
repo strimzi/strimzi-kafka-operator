@@ -35,6 +35,8 @@ final public class TestStorage {
     private static final String ADMIN = "admin-client";
     private static final String USER = "user";
     private static final String CLUSTER_NAME_PREFIX = "my-cluster-";
+    private static final String BROKER_ROLE_PREFIX = "broker-";
+    private static final String CONTROLLER_ROLE_PREFIX = "controller-";
     private static final Random RANDOM = new Random();
 
     private ExtensionContext extensionContext;
@@ -59,6 +61,8 @@ final public class TestStorage {
     private String eoDeploymentName;
     private String kafkaStatefulSetName;
     private String zkStatefulSetName;
+    private String brokerPoolName;
+    private String controllerPoolName;
     private LabelSelector kafkaSelector;
     private LabelSelector zkSelector;
     private LabelSelector kafkaConnectSelector;
@@ -82,6 +86,8 @@ final public class TestStorage {
         this.namespaceName = StUtils.isParallelNamespaceTest(extensionContext) ? StUtils.getNamespaceBasedOnRbac(namespaceName, extensionContext) : namespaceName;
         this.clusterName = CLUSTER_NAME_PREFIX + hashStub(String.valueOf(RANDOM.nextInt(Integer.MAX_VALUE)));
         this.kafkaNodePoolName = TestConstants.KAFKA_NODE_POOL_PREFIX + hashStub(clusterName);
+        this.brokerPoolName = BROKER_ROLE_PREFIX + hashStub(clusterName);
+        this.controllerPoolName = CONTROLLER_ROLE_PREFIX + hashStub(clusterName);
         this.sourceClusterName = clusterName + "-source";
         this.targetClusterName = clusterName + "-target";
         this.topicName = KafkaTopicUtils.generateRandomNameOfTopic();
@@ -111,6 +117,8 @@ final public class TestStorage {
         extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(TestConstants.NAMESPACE_KEY, this.namespaceName);
         extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(TestConstants.CLUSTER_KEY, this.clusterName);
         extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(TestConstants.KAFKA_NODE_POOL_KEY, this.kafkaNodePoolName);
+        extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(TestConstants.BROKER_POOL_KEY, this.brokerPoolName);
+        extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(TestConstants.CONTROLLER_POOL_KEY, this.controllerPoolName);
         extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(TestConstants.SOURCE_CLUSTER_KEY, this.sourceClusterName);
         extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(TestConstants.TARGET_CLUSTER_KEY, this.targetClusterName);
         extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(TestConstants.TOPIC_KEY, this.topicName);
@@ -162,6 +170,14 @@ final public class TestStorage {
 
     public String getKafkaNodePoolName() {
         return extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(TestConstants.KAFKA_NODE_POOL_KEY).toString();
+    }
+
+    public String getBrokerPoolName() {
+        return extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(TestConstants.BROKER_POOL_KEY).toString();
+    }
+
+    public String getControllerPoolName() {
+        return extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(TestConstants.CONTROLLER_POOL_KEY).toString();
     }
 
     public String getSourceClusterName() {
