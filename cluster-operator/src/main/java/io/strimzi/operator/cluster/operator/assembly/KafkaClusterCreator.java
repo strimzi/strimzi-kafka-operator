@@ -12,6 +12,7 @@ import io.strimzi.api.kafka.model.nodepool.KafkaNodePoolBuilder;
 import io.strimzi.api.kafka.model.nodepool.ProcessRoles;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.model.KafkaCluster;
+import io.strimzi.operator.cluster.model.KafkaMetadataConfigurationState;
 import io.strimzi.operator.cluster.model.KafkaPool;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.KafkaVersionChange;
@@ -41,7 +42,6 @@ public class KafkaClusterCreator {
 
     // Settings
     private final Reconciliation reconciliation;
-    private final boolean useKRaftFGEnabled;
     private final KafkaVersion.Lookup versions;
 
     // Operators and other tools
@@ -50,7 +50,7 @@ public class KafkaClusterCreator {
     private final SecretOperator secretOperator;
     private final SharedEnvironmentProvider sharedEnvironmentProvider;
     private final BrokersInUseCheck brokerScaleDownOperations;
-
+    private final KafkaMetadataConfigurationState kafkaMetadataConfigState;
     // State
     private boolean scaleDownCheckFailed = false;
     private boolean usedToBeBrokersCheckFailed = false;
@@ -58,20 +58,22 @@ public class KafkaClusterCreator {
     /**
      * Constructor
      *
-     * @param vertx             Vert.x instance
-     * @param reconciliation    Reconciliation marker
-     * @param config            Cluster Operator configuration
-     * @param supplier          Resource Operators supplier
+     * @param vertx                     Vert.x instance
+     * @param reconciliation            Reconciliation marker
+     * @param config                    Cluster Operator configuration
+     * @param supplier                  Resource Operators supplier
+     * @param kafkaMetadataConfigState  Metadata state related to nodes configuration
      */
     public KafkaClusterCreator(
             Vertx vertx,
             Reconciliation reconciliation,
             ClusterOperatorConfig config,
-            ResourceOperatorSupplier supplier
+            ResourceOperatorSupplier supplier,
+            KafkaMetadataConfigurationState kafkaMetadataConfigState
     ) {
         this.reconciliation = reconciliation;
         this.versions = config.versions();
-        this.useKRaftFGEnabled = config.featureGates().useKRaftEnabled();
+        this.kafkaMetadataConfigState = kafkaMetadataConfigState;
 
         this.vertx = vertx;
         this.adminClientProvider = supplier.adminClientProvider;
@@ -149,7 +151,7 @@ public class KafkaClusterCreator {
             Map<String, List<String>> currentPods,
             KafkaVersionChange versionChange
     )   {
-        return Future.succeededFuture(createKafkaCluster(reconciliation, kafkaCr, nodePoolCrs, oldStorage, currentPods, versionChange, useKRaftFGEnabled, versions, sharedEnvironmentProvider));
+        return Future.succeededFuture(createKafkaCluster(reconciliation, kafkaCr, nodePoolCrs, oldStorage, currentPods, versionChange, kafkaMetadataConfigState, versions, sharedEnvironmentProvider));
     }
 
     /**
@@ -315,7 +317,7 @@ public class KafkaClusterCreator {
      * @param oldStorage                    Old storage configuration
      * @param currentPods                   List of current Kafka pods
      * @param versionChange                 Version change descriptor containing any upgrade / downgrade changes
-     * @param useKRaftEnabled               Flag indicating if UseKRaft feature gate is enabled or not
+     * @param kafkaMetadataConfigState      Metadata state related to nodes configuration
      * @param versions                      List of supported Kafka versions
      * @param sharedEnvironmentProvider     Shared environment variables
      *
@@ -328,14 +330,17 @@ public class KafkaClusterCreator {
             Map<String, Storage> oldStorage,
             Map<String, List<String>> currentPods,
             KafkaVersionChange versionChange,
-            boolean useKRaftEnabled,
+            KafkaMetadataConfigurationState kafkaMetadataConfigState,
             KafkaVersion.Lookup versions,
             SharedEnvironmentProvider sharedEnvironmentProvider
     ) {
-        boolean isKRaftEnabled = useKRaftEnabled && ReconcilerUtils.kraftEnabled(kafkaCr);
-        List<KafkaPool> pools = NodePoolUtils.createKafkaPools(reconciliation, kafkaCr, nodePoolCrs, oldStorage, currentPods, isKRaftEnabled, sharedEnvironmentProvider);
-        String clusterId = isKRaftEnabled ? NodePoolUtils.getOrGenerateKRaftClusterId(kafkaCr, nodePoolCrs) : NodePoolUtils.getClusterIdIfSet(kafkaCr, nodePoolCrs);
-        return KafkaCluster.fromCrd(reconciliation, kafkaCr, pools, versions, versionChange, isKRaftEnabled, clusterId, sharedEnvironmentProvider);
+        // KRaft to be considered not only when fully enabled (KRAFT = 4) but also when a migration is about to start (PRE_MIGRATION = 1)
+        // NOTE: this is important to drive the right validation happening in node pools (i.e. roles on node pools, storage, number of controllers, ...)
+
+        // We prepare the KafkaPool models and create the KafkaCluster model
+        List<KafkaPool> pools = NodePoolUtils.createKafkaPools(reconciliation, kafkaCr, nodePoolCrs, oldStorage, currentPods, kafkaMetadataConfigState.isPreMigrationOrKRaft(), sharedEnvironmentProvider);
+        String clusterId = kafkaMetadataConfigState.isPreMigrationOrKRaft() ? NodePoolUtils.getOrGenerateKRaftClusterId(kafkaCr, nodePoolCrs) : NodePoolUtils.getClusterIdIfSet(kafkaCr, nodePoolCrs);
+        return KafkaCluster.fromCrd(reconciliation, kafkaCr, pools, versions, versionChange, kafkaMetadataConfigState, clusterId, sharedEnvironmentProvider);
     }
 
     /**

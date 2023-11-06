@@ -15,6 +15,7 @@ import io.strimzi.api.kafka.model.nodepool.ProcessRoles;
 import io.strimzi.operator.cluster.ClusterOperatorConfig;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
 import io.strimzi.operator.cluster.ResourceUtils;
+import io.strimzi.operator.cluster.model.KafkaMetadataConfigurationState;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.KafkaVersionChange;
 import io.strimzi.operator.cluster.model.NodeRef;
@@ -245,7 +246,7 @@ public class KafkaClusterCreatorTest {
     public void testNewClusterWithoutNodePools(VertxTestContext context) {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
-        KafkaClusterCreator creator = new KafkaClusterCreator(vertx, RECONCILIATION, CO_CONFIG, supplier);
+        KafkaClusterCreator creator = new KafkaClusterCreator(vertx, RECONCILIATION, CO_CONFIG, supplier, KafkaMetadataConfigurationState.ZK);
 
         Checkpoint async = context.checkpoint();
         creator.prepareKafkaCluster(KAFKA, null, Map.of(), Map.of(), VERSION_CHANGE, true)
@@ -267,7 +268,7 @@ public class KafkaClusterCreatorTest {
     public void testExistingClusterWithoutNodePools(VertxTestContext context) {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
-        KafkaClusterCreator creator = new KafkaClusterCreator(vertx, RECONCILIATION, CO_CONFIG, supplier);
+        KafkaClusterCreator creator = new KafkaClusterCreator(vertx, RECONCILIATION, CO_CONFIG, supplier, KafkaMetadataConfigurationState.ZK);
 
         Checkpoint async = context.checkpoint();
         creator.prepareKafkaCluster(KAFKA, null, Map.of(), CURRENT_PODS_3_NODES, VERSION_CHANGE, true)
@@ -293,7 +294,7 @@ public class KafkaClusterCreatorTest {
         BrokersInUseCheck brokersInUseOps = supplier.brokersInUseCheck;
         when(brokersInUseOps.brokersInUse(any(), any(), any(), any())).thenReturn(Future.succeededFuture(Set.of(0, 1, 2, 3, 4)));
 
-        KafkaClusterCreator creator = new KafkaClusterCreator(vertx, RECONCILIATION, CO_CONFIG, supplier);
+        KafkaClusterCreator creator = new KafkaClusterCreator(vertx, RECONCILIATION, CO_CONFIG, supplier, KafkaMetadataConfigurationState.ZK);
 
         Checkpoint async = context.checkpoint();
         creator.prepareKafkaCluster(KAFKA, null, Map.of(), CURRENT_PODS_5_NODES, VERSION_CHANGE, true)
@@ -319,7 +320,7 @@ public class KafkaClusterCreatorTest {
         BrokersInUseCheck brokersInUseOps = supplier.brokersInUseCheck;
         when(brokersInUseOps.brokersInUse(any(), any(), any(), any())).thenReturn(Future.succeededFuture(Set.of(0, 1, 2)));
 
-        KafkaClusterCreator creator = new KafkaClusterCreator(vertx, RECONCILIATION, CO_CONFIG, supplier);
+        KafkaClusterCreator creator = new KafkaClusterCreator(vertx, RECONCILIATION, CO_CONFIG, supplier, KafkaMetadataConfigurationState.ZK);
 
         Checkpoint async = context.checkpoint();
         creator.prepareKafkaCluster(KAFKA, null, Map.of(), CURRENT_PODS_5_NODES, VERSION_CHANGE, true)
@@ -345,7 +346,7 @@ public class KafkaClusterCreatorTest {
         BrokersInUseCheck brokersInUseOps = supplier.brokersInUseCheck;
         when(brokersInUseOps.brokersInUse(any(), any(), any(), any())).thenReturn(Future.succeededFuture(Set.of(0, 1, 2, 3, 4)));
 
-        KafkaClusterCreator creator = new KafkaClusterCreator(vertx, RECONCILIATION, CO_CONFIG, supplier);
+        KafkaClusterCreator creator = new KafkaClusterCreator(vertx, RECONCILIATION, CO_CONFIG, supplier, KafkaMetadataConfigurationState.ZK);
 
         Checkpoint async = context.checkpoint();
         creator.prepareKafkaCluster(KAFKA, null, Map.of(), CURRENT_PODS_5_NODES, VERSION_CHANGE, false)
@@ -375,7 +376,7 @@ public class KafkaClusterCreatorTest {
         BrokersInUseCheck brokersInUseOps = supplier.brokersInUseCheck;
         when(brokersInUseOps.brokersInUse(any(), any(), any(), any())).thenReturn(Future.succeededFuture(Set.of(0, 1, 2, 3, 4)));
 
-        KafkaClusterCreator creator = new KafkaClusterCreator(vertx, RECONCILIATION, CO_CONFIG, supplier);
+        KafkaClusterCreator creator = new KafkaClusterCreator(vertx, RECONCILIATION, CO_CONFIG, supplier, KafkaMetadataConfigurationState.ZK);
 
         Checkpoint async = context.checkpoint();
         creator.prepareKafkaCluster(kafka, null, Map.of(), CURRENT_PODS_5_NODES, VERSION_CHANGE, false)
@@ -401,7 +402,7 @@ public class KafkaClusterCreatorTest {
     public void testNewClusterWithNodePools(VertxTestContext context) {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
-        KafkaClusterCreator creator = new KafkaClusterCreator(vertx, RECONCILIATION, CO_CONFIG, supplier);
+        KafkaClusterCreator creator = new KafkaClusterCreator(vertx, RECONCILIATION, CO_CONFIG, supplier, KafkaMetadataConfigurationState.ZK);
 
         Checkpoint async = context.checkpoint();
         creator.prepareKafkaCluster(KAFKA_WITH_POOLS, List.of(POOL_A, POOL_B), Map.of(), null, VERSION_CHANGE, true)
@@ -423,7 +424,7 @@ public class KafkaClusterCreatorTest {
     public void testExistingClusterWithNodePools(VertxTestContext context) {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
-        KafkaClusterCreator creator = new KafkaClusterCreator(vertx, RECONCILIATION, CO_CONFIG, supplier);
+        KafkaClusterCreator creator = new KafkaClusterCreator(vertx, RECONCILIATION, CO_CONFIG, supplier, KafkaMetadataConfigurationState.ZK);
 
         Checkpoint async = context.checkpoint();
         creator.prepareKafkaCluster(KAFKA_WITH_POOLS, List.of(POOL_A_WITH_STATUS, POOL_B_WITH_STATUS), Map.of(), null, VERSION_CHANGE, true)
@@ -449,7 +450,7 @@ public class KafkaClusterCreatorTest {
         BrokersInUseCheck brokersInUseOps = supplier.brokersInUseCheck;
         when(brokersInUseOps.brokersInUse(any(), any(), any(), any())).thenReturn(Future.succeededFuture(Set.of(1000, 1001, 1002, 1003, 2004)));
 
-        KafkaClusterCreator creator = new KafkaClusterCreator(vertx, RECONCILIATION, CO_CONFIG, supplier);
+        KafkaClusterCreator creator = new KafkaClusterCreator(vertx, RECONCILIATION, CO_CONFIG, supplier, KafkaMetadataConfigurationState.ZK);
 
         Checkpoint async = context.checkpoint();
         creator.prepareKafkaCluster(KAFKA_WITH_POOLS, List.of(POOL_A_WITH_STATUS_5_NODES, POOL_B_WITH_STATUS_5_NODES), Map.of(), null, VERSION_CHANGE, true)
@@ -475,7 +476,7 @@ public class KafkaClusterCreatorTest {
         BrokersInUseCheck brokersInUseOps = supplier.brokersInUseCheck;
         when(brokersInUseOps.brokersInUse(any(), any(), any(), any())).thenReturn(Future.succeededFuture(Set.of(1000, 1001, 1002, 2000, 2001, 2002)));
 
-        KafkaClusterCreator creator = new KafkaClusterCreator(vertx, RECONCILIATION, CO_CONFIG, supplier);
+        KafkaClusterCreator creator = new KafkaClusterCreator(vertx, RECONCILIATION, CO_CONFIG, supplier, KafkaMetadataConfigurationState.ZK);
 
         Checkpoint async = context.checkpoint();
         creator.prepareKafkaCluster(KAFKA_WITH_POOLS, List.of(POOL_A_WITH_STATUS_5_NODES, POOL_B_WITH_STATUS_5_NODES), Map.of(), CURRENT_PODS_5_NODES, VERSION_CHANGE, true)
@@ -501,7 +502,7 @@ public class KafkaClusterCreatorTest {
         BrokersInUseCheck brokersInUseOps = supplier.brokersInUseCheck;
         when(brokersInUseOps.brokersInUse(any(), any(), any(), any())).thenReturn(Future.succeededFuture(Set.of(1000, 1001, 1002, 1003, 1004, 2003, 2004)));
 
-        KafkaClusterCreator creator = new KafkaClusterCreator(vertx, RECONCILIATION, CO_CONFIG, supplier);
+        KafkaClusterCreator creator = new KafkaClusterCreator(vertx, RECONCILIATION, CO_CONFIG, supplier, KafkaMetadataConfigurationState.ZK);
 
         Checkpoint async = context.checkpoint();
         creator.prepareKafkaCluster(KAFKA_WITH_POOLS, List.of(POOL_A_WITH_STATUS_5_NODES, POOL_B_WITH_STATUS_5_NODES), Map.of(), null, VERSION_CHANGE, false)
@@ -531,7 +532,7 @@ public class KafkaClusterCreatorTest {
         BrokersInUseCheck brokersInUseOps = supplier.brokersInUseCheck;
         when(brokersInUseOps.brokersInUse(any(), any(), any(), any())).thenReturn(Future.succeededFuture(Set.of(1000, 1001, 1002, 1003, 1004, 2003, 2004)));
 
-        KafkaClusterCreator creator = new KafkaClusterCreator(vertx, RECONCILIATION, CO_CONFIG, supplier);
+        KafkaClusterCreator creator = new KafkaClusterCreator(vertx, RECONCILIATION, CO_CONFIG, supplier, KafkaMetadataConfigurationState.ZK);
 
         Checkpoint async = context.checkpoint();
         creator.prepareKafkaCluster(kafka, List.of(POOL_A_WITH_STATUS_5_NODES, POOL_B_WITH_STATUS_5_NODES), Map.of(), null, VERSION_CHANGE, false)
@@ -557,7 +558,7 @@ public class KafkaClusterCreatorTest {
     public void testNewClusterWithKRaft(VertxTestContext context) {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
-        KafkaClusterCreator creator = new KafkaClusterCreator(vertx, RECONCILIATION, CO_CONFIG, supplier);
+        KafkaClusterCreator creator = new KafkaClusterCreator(vertx, RECONCILIATION, CO_CONFIG, supplier, KafkaMetadataConfigurationState.KRAFT);
 
         Checkpoint async = context.checkpoint();
         creator.prepareKafkaCluster(KAFKA_WITH_KRAFT, List.of(POOL_CONTROLLERS, POOL_A, POOL_B), Map.of(), null, VERSION_CHANGE, true)
@@ -579,7 +580,7 @@ public class KafkaClusterCreatorTest {
     public void testExistingClusterWithKRaft(VertxTestContext context) {
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
-        KafkaClusterCreator creator = new KafkaClusterCreator(vertx, RECONCILIATION, CO_CONFIG, supplier);
+        KafkaClusterCreator creator = new KafkaClusterCreator(vertx, RECONCILIATION, CO_CONFIG, supplier, KafkaMetadataConfigurationState.KRAFT);
 
         Checkpoint async = context.checkpoint();
         creator.prepareKafkaCluster(KAFKA_WITH_KRAFT, List.of(POOL_CONTROLLERS_WITH_STATUS, POOL_A_WITH_STATUS, POOL_B_WITH_STATUS), Map.of(), null, VERSION_CHANGE, true)
@@ -605,7 +606,7 @@ public class KafkaClusterCreatorTest {
         BrokersInUseCheck brokersInUseOps = supplier.brokersInUseCheck;
         when(brokersInUseOps.brokersInUse(any(), any(), any(), any())).thenReturn(Future.succeededFuture(Set.of(1000, 1001, 1002, 1003, 2004)));
 
-        KafkaClusterCreator creator = new KafkaClusterCreator(vertx, RECONCILIATION, CO_CONFIG, supplier);
+        KafkaClusterCreator creator = new KafkaClusterCreator(vertx, RECONCILIATION, CO_CONFIG, supplier, KafkaMetadataConfigurationState.KRAFT);
 
         Checkpoint async = context.checkpoint();
         creator.prepareKafkaCluster(KAFKA_WITH_KRAFT, List.of(POOL_CONTROLLERS_WITH_STATUS_5_NODES, POOL_A_WITH_STATUS_5_NODES, POOL_B_WITH_STATUS_5_NODES), Map.of(), null, VERSION_CHANGE, true)
@@ -631,7 +632,7 @@ public class KafkaClusterCreatorTest {
         BrokersInUseCheck brokersInUseOps = supplier.brokersInUseCheck;
         when(brokersInUseOps.brokersInUse(any(), any(), any(), any())).thenReturn(Future.succeededFuture(Set.of(3000, 3001, 3002, 3003)));
 
-        KafkaClusterCreator creator = new KafkaClusterCreator(vertx, RECONCILIATION, CO_CONFIG, supplier);
+        KafkaClusterCreator creator = new KafkaClusterCreator(vertx, RECONCILIATION, CO_CONFIG, supplier, KafkaMetadataConfigurationState.KRAFT);
 
         Checkpoint async = context.checkpoint();
         creator.prepareKafkaCluster(KAFKA_WITH_KRAFT, List.of(POOL_MIXED_WITH_STATUS_5_NODES), Map.of(), null, VERSION_CHANGE, true)
@@ -657,7 +658,7 @@ public class KafkaClusterCreatorTest {
         BrokersInUseCheck brokersInUseOps = supplier.brokersInUseCheck;
         when(brokersInUseOps.brokersInUse(any(), any(), any(), any())).thenReturn(Future.succeededFuture(Set.of(1000, 1001, 1002, 2000, 2001, 2002, 3000, 3001, 3002)));
 
-        KafkaClusterCreator creator = new KafkaClusterCreator(vertx, RECONCILIATION, CO_CONFIG, supplier);
+        KafkaClusterCreator creator = new KafkaClusterCreator(vertx, RECONCILIATION, CO_CONFIG, supplier, KafkaMetadataConfigurationState.KRAFT);
 
         Checkpoint async = context.checkpoint();
         creator.prepareKafkaCluster(KAFKA_WITH_KRAFT, List.of(POOL_CONTROLLERS_WITH_STATUS_5_NODES, POOL_A_WITH_STATUS_5_NODES, POOL_B_WITH_STATUS_5_NODES), Map.of(), CURRENT_PODS_5_NODES, VERSION_CHANGE, true)
@@ -683,7 +684,7 @@ public class KafkaClusterCreatorTest {
         BrokersInUseCheck brokersInUseOps = supplier.brokersInUseCheck;
         when(brokersInUseOps.brokersInUse(any(), any(), any(), any())).thenReturn(Future.succeededFuture(Set.of(1003, 1004, 2003, 2004)));
 
-        KafkaClusterCreator creator = new KafkaClusterCreator(vertx, RECONCILIATION, CO_CONFIG, supplier);
+        KafkaClusterCreator creator = new KafkaClusterCreator(vertx, RECONCILIATION, CO_CONFIG, supplier, KafkaMetadataConfigurationState.KRAFT);
 
         Checkpoint async = context.checkpoint();
         creator.prepareKafkaCluster(KAFKA_WITH_KRAFT, List.of(POOL_CONTROLLERS_WITH_STATUS_5_NODES, POOL_A_WITH_STATUS_5_NODES, POOL_B_WITH_STATUS_5_NODES), Map.of(), null, VERSION_CHANGE, false)
@@ -709,7 +710,7 @@ public class KafkaClusterCreatorTest {
 
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
-        KafkaClusterCreator creator = new KafkaClusterCreator(vertx, RECONCILIATION, CO_CONFIG, supplier);
+        KafkaClusterCreator creator = new KafkaClusterCreator(vertx, RECONCILIATION, CO_CONFIG, supplier, KafkaMetadataConfigurationState.KRAFT);
 
         Checkpoint async = context.checkpoint();
         creator.prepareKafkaCluster(kafka, List.of(POOL_CONTROLLERS_WITH_STATUS_5_NODES, POOL_A_WITH_STATUS_5_NODES, POOL_B_WITH_STATUS_5_NODES), Map.of(), null, VERSION_CHANGE, false)
@@ -735,7 +736,7 @@ public class KafkaClusterCreatorTest {
         BrokersInUseCheck brokersInUseOps = supplier.brokersInUseCheck;
         when(brokersInUseOps.brokersInUse(any(), any(), any(), any())).thenReturn(Future.succeededFuture(Set.of(1000, 1001, 1002, 2000, 2001, 2002, 3000, 3001, 3002)));
 
-        KafkaClusterCreator creator = new KafkaClusterCreator(vertx, RECONCILIATION, CO_CONFIG, supplier);
+        KafkaClusterCreator creator = new KafkaClusterCreator(vertx, RECONCILIATION, CO_CONFIG, supplier, KafkaMetadataConfigurationState.KRAFT);
 
         Checkpoint async = context.checkpoint();
         creator.prepareKafkaCluster(KAFKA_WITH_KRAFT, List.of(POOL_MIXED_NOT_MIXED_ANYMORE, POOL_A_WITH_STATUS, POOL_B_WITH_STATUS), Map.of(), null, VERSION_CHANGE, true)
@@ -762,7 +763,7 @@ public class KafkaClusterCreatorTest {
         BrokersInUseCheck brokersInUseOps = supplier.brokersInUseCheck;
         when(brokersInUseOps.brokersInUse(any(), any(), any(), any())).thenReturn(Future.succeededFuture(Set.of(1000, 1001, 1002, 2000, 2001, 20022)));
 
-        KafkaClusterCreator creator = new KafkaClusterCreator(vertx, RECONCILIATION, CO_CONFIG, supplier);
+        KafkaClusterCreator creator = new KafkaClusterCreator(vertx, RECONCILIATION, CO_CONFIG, supplier, KafkaMetadataConfigurationState.KRAFT);
 
         Checkpoint async = context.checkpoint();
         creator.prepareKafkaCluster(KAFKA_WITH_KRAFT, List.of(POOL_MIXED_NOT_MIXED_ANYMORE, POOL_A_WITH_STATUS, POOL_B_WITH_STATUS), Map.of(), CURRENT_PODS_5_NODES, VERSION_CHANGE, true)
@@ -789,7 +790,7 @@ public class KafkaClusterCreatorTest {
         BrokersInUseCheck brokersInUseOps = supplier.brokersInUseCheck;
         when(brokersInUseOps.brokersInUse(any(), any(), any(), any())).thenReturn(Future.succeededFuture(Set.of(3000, 3002)));
 
-        KafkaClusterCreator creator = new KafkaClusterCreator(vertx, RECONCILIATION, CO_CONFIG, supplier);
+        KafkaClusterCreator creator = new KafkaClusterCreator(vertx, RECONCILIATION, CO_CONFIG, supplier, KafkaMetadataConfigurationState.KRAFT);
 
         Checkpoint async = context.checkpoint();
         creator.prepareKafkaCluster(KAFKA_WITH_KRAFT, List.of(POOL_MIXED_NOT_MIXED_ANYMORE, POOL_A_WITH_STATUS, POOL_B_WITH_STATUS), Map.of(), null, VERSION_CHANGE, false)
@@ -815,7 +816,7 @@ public class KafkaClusterCreatorTest {
 
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
-        KafkaClusterCreator creator = new KafkaClusterCreator(vertx, RECONCILIATION, CO_CONFIG, supplier);
+        KafkaClusterCreator creator = new KafkaClusterCreator(vertx, RECONCILIATION, CO_CONFIG, supplier, KafkaMetadataConfigurationState.KRAFT);
 
         Checkpoint async = context.checkpoint();
         creator.prepareKafkaCluster(kafka, List.of(POOL_MIXED_NOT_MIXED_ANYMORE, POOL_A_WITH_STATUS, POOL_B_WITH_STATUS), Map.of(), null, VERSION_CHANGE, false)

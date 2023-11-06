@@ -35,6 +35,7 @@ import io.strimzi.operator.cluster.model.ClusterCa;
 import io.strimzi.operator.cluster.model.ImagePullPolicy;
 import io.strimzi.operator.cluster.model.KafkaCluster;
 import io.strimzi.operator.cluster.model.KafkaConfiguration;
+import io.strimzi.operator.cluster.model.KafkaMetadataConfigurationState;
 import io.strimzi.operator.cluster.model.KafkaPool;
 import io.strimzi.operator.cluster.model.ListenersUtils;
 import io.strimzi.operator.cluster.model.MetricsAndLogging;
@@ -58,6 +59,7 @@ import io.strimzi.operator.common.model.ClientsCa;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.operator.common.model.NodeUtils;
 import io.strimzi.operator.common.model.StatusDiff;
+import io.strimzi.operator.common.model.StatusUtils;
 import io.strimzi.operator.common.operator.resource.ClusterRoleBindingOperator;
 import io.strimzi.operator.common.operator.resource.ConfigMapOperator;
 import io.strimzi.operator.common.operator.resource.CrdOperator;
@@ -78,6 +80,7 @@ import io.vertx.core.Future;
 import io.vertx.core.Vertx;
 import org.apache.kafka.clients.admin.Admin;
 import org.apache.kafka.common.KafkaException;
+import org.apache.kafka.server.common.MetadataVersion;
 
 import java.time.Clock;
 import java.util.ArrayList;
@@ -153,6 +156,8 @@ public class KafkaReconciler {
     private final Map<Integer, String> kafkaServerCertificateHash = new HashMap<>();
     /* test */ KafkaListenersReconciler.ReconciliationResult listenerReconciliationResults; // Result of the listener reconciliation with the listener details
 
+    private final KafkaMetadataStateManager kafkaMetadataStateManager;
+
     /**
      * Constructs the Kafka reconciler
      *
@@ -166,6 +171,7 @@ public class KafkaReconciler {
      * @param supplier                  Supplier with Kubernetes Resource Operators
      * @param pfa                       PlatformFeaturesAvailability describing the environment we run in
      * @param vertx                     Vert.x instance
+     * @param kafkaMetadataStateManager Instance of the Kafka metadata state manager
      */
     public KafkaReconciler(
             Reconciliation reconciliation,
@@ -177,13 +183,15 @@ public class KafkaReconciler {
             ClusterOperatorConfig config,
             ResourceOperatorSupplier supplier,
             PlatformFeaturesAvailability pfa,
-            Vertx vertx
+            Vertx vertx,
+            KafkaMetadataStateManager kafkaMetadataStateManager
     ) {
         this.reconciliation = reconciliation;
         this.vertx = vertx;
         this.operationTimeoutMs = config.getOperationTimeoutMs();
         this.kafkaNodePoolCrs = nodePools;
         this.kafka = kafka;
+        this.kafkaMetadataStateManager = kafkaMetadataStateManager;
 
         this.clusterCa = clusterCa;
         this.clientsCa = clientsCa;
@@ -229,6 +237,7 @@ public class KafkaReconciler {
      */
     public Future<Void> reconcile(KafkaStatus kafkaStatus, Clock clock)    {
         return modelWarnings(kafkaStatus)
+                .compose(i -> validateVersionsForKRaftMigration(kafkaStatus))
                 .compose(i -> manualPodCleaning())
                 .compose(i -> networkPolicy())
                 .compose(i -> manualRollingUpdate())
@@ -255,7 +264,9 @@ public class KafkaReconciler {
                 // This has to run after all possible rolling updates which might move the pods to different nodes
                 .compose(i -> nodePortExternalListenerStatus())
                 .compose(i -> addListenersToKafkaStatus(kafkaStatus))
-                .compose(i -> updateKafkaVersion(kafkaStatus));
+                .compose(i -> updateKafkaVersion(kafkaStatus))
+                .compose(i -> updateKafkaMetadataMigrationState())
+                .compose(i -> updateKafkaMetadataState(kafkaStatus));
     }
 
     /**
@@ -887,7 +898,7 @@ public class KafkaReconciler {
      * @return  Future which completes when the KRaft metadata version is set to the current version or updated.
      */
     protected Future<Void> metadataVersion(KafkaStatus kafkaStatus) {
-        if (kafka.usesKRaft()) {
+        if (kafkaMetadataStateManager.getMetadataConfigurationState().isKRaft()) {
             return KRaftMetadataManager.maybeUpdateMetadataVersion(reconciliation, vertx, secretOperator, adminClientProvider, kafka.getMetadataVersion(), kafkaStatus);
         } else {
             return Future.succeededFuture();
@@ -1016,6 +1027,55 @@ public class KafkaReconciler {
         return Future.succeededFuture();
     }
 
+    protected Future<Void> updateKafkaMetadataState(KafkaStatus kafkaStatus) {
+        kafkaStatus.setKafkaMetadataState(kafkaMetadataStateManager.computeNextMetadataState(kafkaStatus).name());
+        return Future.succeededFuture();
+    }
+
+    /**
+     * This method checks if a migration is still ongoing on the Kafka side, through the KafkaMetadataStateManager instance.
+     * A ZooKeeper to KRaft migration can take some time and, on each reconcile, the operator checks its status by calling this method.
+     * Internally, the KafkaMetadataStateManager instance is leveraging the endpoint exposed by the Kafka Agent which provides
+     * the KRaft migration state through a corresponding metric.
+     *
+     * @return  Future which completes when the check on the migration is done
+     */
+    protected Future<Void> updateKafkaMetadataMigrationState() {
+        KafkaMetadataConfigurationState kafkaMetadataConfigState = this.kafkaMetadataStateManager.getMetadataConfigurationState();
+        // on each reconcile, would be useless to check migration status if it's not going on
+        if (kafkaMetadataConfigState.isMigration()) {
+            return ReconcilerUtils.clientSecrets(reconciliation, secretOperator)
+                    .compose(compositeFuture -> {
+                        // we should get the quorum controller leader using the Admin Client API describeMetadataQuorum() but
+                        // it's not supported by brokers during migration because they are still connected to ZooKeeper so ...
+                        // going through the controllers set to get metrics from one of them, because all expose the needed metrics
+                        boolean zkMigrationStateChecked = false;
+                        for (NodeRef controller : kafka.controllerNodes()) {
+                            int controllerId = controller.nodeId();
+                            String controllerPodName = kafka.nodePoolForNodeId(controllerId).nodeRef(controllerId).podName();
+                            try {
+                                LOGGER.infoCr(reconciliation, "Checking ZooKeeper migration state on controller {}", controllerPodName);
+                                this.kafkaMetadataStateManager.checkMigrationInProgress(
+                                        reconciliation,
+                                        compositeFuture.resultAt(0),
+                                        compositeFuture.resultAt(1),
+                                        controllerPodName
+                                );
+                                zkMigrationStateChecked = true;
+                                break;
+                            } catch (RuntimeException e) {
+                                LOGGER.warnCr(reconciliation, "Error on checking ZooKeeper migration state on controller {}", controllerPodName);
+                            }
+                        }
+                        return zkMigrationStateChecked ? Future.succeededFuture() : Future.failedFuture(new Throwable("Impossible to check ZooKeeper migration state"));
+                    });
+        } else {
+            // TODO: to be removed, just for monitoring/testing
+            LOGGER.infoCr(reconciliation, "No need to check ZooKeeper to KRaft migration state");
+            return Future.succeededFuture();
+        }
+    }
+
     /**
      * Updates the statuses of the used KafkaNodePools with the used node IDs. Also prepares the list of used node pools
      * for the Kafka CR status (but the Kafka status is not updated in this method).
@@ -1063,5 +1123,44 @@ public class KafkaReconciler {
         } else {
             return Future.succeededFuture();
         }
+    }
+
+    /**
+     * Validate the Kafka version set in the Kafka custom resource, together with the metadata version and the configured
+     * inter.broker.protocol.version and log.message.format.version.
+     * They need to be all aligned and at least 3.4 to support ZooKeeper to KRaft migration.
+     *
+     * @param kafkaStatus Status of the Kafka custom resource where warnings about any issues with metadata state will be added
+     *
+     * @return Future which completes when validation is done
+     */
+    Future<Void> validateVersionsForKRaftMigration(KafkaStatus kafkaStatus) {
+        KafkaMetadataConfigurationState kafkaMetadataConfigState = kafkaMetadataStateManager.getMetadataConfigurationState();
+        if (kafkaMetadataConfigState.isPreMigration()) {
+            // validate 3.4 <= kafka.version && metadataVersion/IBP/LMF == kafka.version
+
+            MetadataVersion kafkaVersion = MetadataVersion.fromVersionString(kafka.getKafkaVersion().version());
+            // this should check that spec.kafka.version is >= 3.4
+            boolean isMigrationSupported = kafkaVersion.isMigrationSupported();
+
+            MetadataVersion metadataVersion = MetadataVersion.fromVersionString(kafka.getMetadataVersion());
+            MetadataVersion interBrokerProtocolVersion = MetadataVersion.fromVersionString(kafka.getInterBrokerProtocolVersion());
+            MetadataVersion logMessageFormatVersion = MetadataVersion.fromVersionString(kafka.getLogMessageFormatVersion());
+
+            if (!isMigrationSupported ||
+                    metadataVersion.compareTo(interBrokerProtocolVersion) != 0 ||
+                    metadataVersion.compareTo(logMessageFormatVersion) != 0) {
+                // set warning condition on Kafka CR status that cluster metadata version, inter.broker.protocol.version and/or log.message.format.version need to be fixed
+                kafkaStatus.addCondition(StatusUtils.buildWarningCondition("KafkaMetadataStateWarning",
+                        "Migration cannot be performed. Please make sure Kafka version is higher than 3.4 and " +
+                                "metadata version, inter.broker.protocol.version and log.message.format.version set to the same value."));
+                LOGGER.errorCr(reconciliation,
+                        "Migration cannot be performed with Kafka version {}, metadata version {}, inter.broker.protocol.version {}, log.message.format.version {}",
+                        kafkaVersion, metadataVersion, interBrokerProtocolVersion, logMessageFormatVersion);
+                throw new IllegalArgumentException("Migration cannot be performed. Please make sure Kafka version is higher than 3.4 and having " +
+                        "metadata version, inter.broker.protocol.version and log.message.format.version set to the same value as well.");
+            }
+        }
+        return Future.succeededFuture();
     }
 }

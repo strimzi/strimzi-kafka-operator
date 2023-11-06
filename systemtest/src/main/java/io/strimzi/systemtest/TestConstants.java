@@ -388,6 +388,12 @@ public interface TestConstants {
      */
     String ROUTE = "route";
 
+
+    /**
+     * Tag for tests that focus on migration from ZK to KRaft
+     */
+    String MIGRATION = "migration";
+
     /**
      * Tag for tests, without ARM,AARCH64 support
      */
@@ -445,6 +451,8 @@ public interface TestConstants {
     String TEST_NAME_KEY = "TEST_NAME";
     String CLUSTER_KEY = "CLUSTER_NAME";
     String KAFKA_NODE_POOL_KEY = "KAFKA_NODE_POOL";
+    String BROKER_POOL_KEY = "BROKER_POOL";
+    String CONTROLLER_POOL_KEY = "CONTROLLER_POOL";
     String SOURCE_CLUSTER_KEY = "SOURCE_CLUSTER_NAME";
     String TARGET_CLUSTER_KEY = "TARGET_CLUSTER_NAME";
     String TOPIC_KEY = "TOPIC_NAME";
