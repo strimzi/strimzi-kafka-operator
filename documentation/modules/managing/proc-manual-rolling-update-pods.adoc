@@ -43,14 +43,18 @@ spec:
 
 . Find the name of the `Pod` you want to manually update.
 +
-For example, if your Kafka cluster is named _my-cluster_, the corresponding `Pod` names are _my-cluster-kafka-index_ and _my-cluster-zookeeper-index_.
-For a Kafka Connect cluster named _my-connect-cluster_, the corresponding `Pod` name is _my-connect-cluster-connect-index_.
-And for a MirrorMaker 2 cluster named _my-mm2-cluster_, the corresponding `Pod` name is _my-mm2-cluster-mirrormaker2-index_.
-The _index_ is a number assigned to the `Pod`.
-
-. Annotate the `Pod` resource in Kubernetes.
+Pod naming conventions are as follows:
 +
-Use `kubectl annotate`:
+--
+* `<cluster_name>-kafka-<index_number>` for a Kafka cluster
+* `<cluster_name>-zookeeper-<index_number>` for a ZooKeeper cluster
+* `<cluster_name>-connect-<index_number>` for a Kafka Connect cluster
+* `<cluster_name>-mirrormaker2-<index_number>` for a MirrorMaker 2 cluster
+--
++
+The `<index_number>` assigned to a pod starts at zero and ends at the total number of replicas minus one.
+
+. Use `kubectl annotate` to annotate the `Pod` resource in Kubernetes:
 +
 [source,shell,subs=+quotes]
 ----

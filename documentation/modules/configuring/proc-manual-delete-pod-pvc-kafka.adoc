@@ -20,13 +20,12 @@ The following procedure should only be performed if you have encountered storage
 
 . Find the name of the `Pod` that you want to delete.
 +
-Kafka broker pods are named _<cluster-name>_-kafka-_<index>_, where _<index>_ starts at zero and ends at the total number of replicas minus one.
+Kafka broker pods are named `<cluster_name>-kafka-<index_number>`, where `<index_number>` starts at zero and ends at the total number of replicas minus one.
 For example, `my-cluster-kafka-0`.
 
-. Annotate the `Pod` resource in Kubernetes.
+. Use `kubectl annotate` to annotate the `Pod` resource in Kubernetes:
 +
-Use `kubectl annotate`:
 [source,shell,subs="+quotes,attributes+"]
-kubectl annotate pod _cluster-name_-kafka-_index_ strimzi.io/delete-pod-and-pvc=true
+kubectl annotate pod <cluster_name>-kafka-<index_number> strimzi.io/delete-pod-and-pvc=true
 
 . Wait for the next reconciliation, when the annotated pod with the underlying persistent volume claim will be deleted and then recreated.
