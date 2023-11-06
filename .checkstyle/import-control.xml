@@ -77,6 +77,8 @@ We also control imports only in production classes and not in tests. This is con
         <allow class="io.strimzi.operator.common.Annotations" />
         <allow class="io.strimzi.operator.cluster.ClusterOperatorConfig" />
         <allow class="io.strimzi.operator.cluster.PlatformFeaturesAvailability" />
+        <allow class="io.strimzi.operator.cluster.operator.resource.KafkaMetadataStateManager" />
+        <allow class="io.strimzi.operator.cluster.operator.resource.KafkaMetadataConfigurationState" />
 
         <!-- Other Strimzi projects -->
         <allow pkg="io.strimzi.kafka.oauth" />
