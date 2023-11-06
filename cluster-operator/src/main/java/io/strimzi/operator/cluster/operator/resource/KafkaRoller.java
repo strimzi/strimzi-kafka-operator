@@ -452,7 +452,7 @@ public class KafkaRoller {
             }
         } catch (ForceableProblem e) {
             if (restartContext.podStuck || restartContext.backOff.done() || e.forceNow) {
-                if (canRoll(nodeRef, 60, TimeUnit.SECONDS, true, restartContext)) {
+                if (canRoll(nodeRef, 60_000, TimeUnit.MILLISECONDS, true, restartContext)) {
                     String errorMsg = e.getMessage();
                     if (e.getCause() != null) {
                         errorMsg += ", caused by:" + (e.getCause().getMessage() != null ? e.getCause().getMessage() : e.getCause());

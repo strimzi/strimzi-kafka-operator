@@ -382,8 +382,9 @@ public class KafkaReconciler {
 
                                     return RestartReasons.of(RestartReason.MANUAL_ROLLING_UPDATE);
                                 },
-                                Map.of(),
-                                Map.of(),
+                                // Pass empty advertised hostnames and ports for the nodes
+                                nodes.stream().collect(Collectors.toMap(NodeRef::nodeId, node -> Map.of())),
+                                nodes.stream().collect(Collectors.toMap(NodeRef::nodeId, node -> Map.of())),
                                 false
                         );
                     } else {
@@ -473,10 +474,7 @@ public class KafkaReconciler {
                                 compositeFuture.resultAt(0),
                                 compositeFuture.resultAt(1),
                                 adminClientProvider,
-                                // if not allowing reconfigurations, provide the configurations defined by the user in the CR to be used for checking controller quorum health
-                                allowReconfiguration ?
-                                        brokerId -> kafka.generatePerBrokerConfiguration(brokerId, kafkaAdvertisedHostnames, kafkaAdvertisedPorts) :
-                                        brokerId -> kafka.getConfiguration().getConfiguration(),
+                                brokerId -> kafka.generatePerBrokerConfiguration(brokerId, kafkaAdvertisedHostnames, kafkaAdvertisedPorts),
                                 logging,
                                 kafka.getKafkaVersion(),
                                 allowReconfiguration,
