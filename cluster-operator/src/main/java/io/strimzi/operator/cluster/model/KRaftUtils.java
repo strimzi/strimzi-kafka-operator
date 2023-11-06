@@ -150,4 +150,37 @@ public class KRaftUtils {
                             "are used and should be removed from the custom resource."));
         }
     }
+
+    /**
+     * Validate the Kafka version set in the Kafka custom resource, together with the metadata version and the configured
+     * inter.broker.protocol.version and log.message.format.version.
+     * They need to be all aligned and at least 3.7.0 to support ZooKeeper to KRaft migration.
+     *
+     * @param kafkaVersionFromCr    Kafka version from the custom resource
+     * @param metadataVersionFromCr Metadata version from the custom resource
+     * @param interBrokerProtocolVersionFromCr  Inter broker protocol version from the configuration of the Kafka custom resource
+     * @param logMessageFormatVersionFromCr Log message format version from the configuration of the Kafka custom resource
+     */
+    public static void validateVersionsForKRaftMigration(String kafkaVersionFromCr, String metadataVersionFromCr,
+                                                         String interBrokerProtocolVersionFromCr, String logMessageFormatVersionFromCr) {
+        // validate 3.7.0 <= kafka.version && metadataVersion/IBP/LMF == kafka.version
+
+        MetadataVersion kafkaVersion = MetadataVersion.fromVersionString(kafkaVersionFromCr);
+        // this should check that spec.kafka.version is >= 3.7.0
+        boolean isMigrationSupported = kafkaVersion.isMigrationSupported();
+
+        MetadataVersion metadataVersion = MetadataVersion.fromVersionString(metadataVersionFromCr);
+        MetadataVersion interBrokerProtocolVersion = MetadataVersion.fromVersionString(interBrokerProtocolVersionFromCr);
+        MetadataVersion logMessageFormatVersion = MetadataVersion.fromVersionString(logMessageFormatVersionFromCr);
+
+        if (!isMigrationSupported ||
+                metadataVersion.compareTo(interBrokerProtocolVersion) != 0 ||
+                metadataVersion.compareTo(logMessageFormatVersion) != 0) {
+            String message = String.format("Migration cannot be performed with Kafka version %s, metadata version %s, inter.broker.protocol.version %s, log.message.format.version %s. " +
+                            "Please make sure Kafka version is higher or equal than 3.7.0 and having " +
+                            "metadata version, inter.broker.protocol.version and log.message.format.version set to the same value as well.",
+                    kafkaVersion, metadataVersion, interBrokerProtocolVersion, logMessageFormatVersion);
+            throw new InvalidResourceException(message);
+        }
+    }
 }

@@ -569,6 +569,14 @@
         </profile>
 
         <profile>
+            <id>azp_migration</id>
+            <properties>
+                <skipTests>false</skipTests>
+                <groups>migration</groups>
+            </properties>
+        </profile>
+
+        <profile>
             <id>scalability</id>
             <properties>
                 <skipTests>false</skipTests>
