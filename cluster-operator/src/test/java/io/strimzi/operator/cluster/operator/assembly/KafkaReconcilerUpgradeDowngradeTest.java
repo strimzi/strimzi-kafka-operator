@@ -24,6 +24,7 @@ import io.strimzi.operator.cluster.model.KafkaConfiguration;
 import io.strimzi.operator.cluster.model.KafkaVersion;
 import io.strimzi.operator.cluster.model.KafkaVersionChange;
 import io.strimzi.operator.cluster.model.PodSetUtils;
+import io.strimzi.operator.cluster.operator.resource.KafkaMetadataStateManager;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.model.ClientsCa;
@@ -268,7 +269,7 @@ public class KafkaReconcilerUpgradeDowngradeTest {
 
     static class MockKafkaReconciler extends KafkaReconciler {
         public MockKafkaReconciler(Reconciliation reconciliation, ResourceOperatorSupplier supplier, Kafka kafkaCr, KafkaVersionChange versionChange) {
-            super(reconciliation, kafkaCr, null, Map.of(), Map.of(), CLUSTER_CA, CLIENTS_CA, versionChange, CO_CONFIG, supplier, PFA, vertx);
+            super(reconciliation, kafkaCr, null, Map.of(), Map.of(), CLUSTER_CA, CLIENTS_CA, versionChange, CO_CONFIG, supplier, PFA, vertx, new KafkaMetadataStateManager(reconciliation, kafkaCr, CO_CONFIG.featureGates().useKRaftEnabled()));
             listenerReconciliationResults = new KafkaListenersReconciler.ReconciliationResult();
         }
 

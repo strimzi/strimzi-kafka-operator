@@ -34,6 +34,8 @@ import io.strimzi.operator.cluster.model.KafkaVersionChange;
 import io.strimzi.operator.cluster.model.ModelUtils;
 import io.strimzi.operator.cluster.model.NodeRef;
 import io.strimzi.operator.cluster.model.PodSetUtils;
+import io.strimzi.operator.cluster.operator.resource.KafkaMetadataConfigurationState;
+import io.strimzi.operator.cluster.operator.resource.KafkaMetadataStateManager;
 import io.strimzi.operator.cluster.operator.resource.ResourceOperatorSupplier;
 import io.strimzi.operator.cluster.operator.resource.StatefulSetOperator;
 import io.strimzi.operator.common.Annotations;
@@ -175,6 +177,12 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     // Copy the metadata version if needed
                     status.setKafkaMetadataVersion(kafkaAssembly.getStatus().getKafkaMetadataVersion());
                 }
+
+                if (status.getKafkaMetadataState() == null
+                        && kafkaAssembly.getStatus().getKafkaMetadataState() != null)  {
+                    // Copy the metadata state if needed
+                    status.setKafkaMetadataState(kafkaAssembly.getStatus().getKafkaMetadataState());
+                }
             }
 
             if (reconcileResult.succeeded())    {
@@ -208,10 +216,12 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
     Future<Void> reconcile(ReconciliationState reconcileState)  {
         Promise<Void> chainPromise = Promise.promise();
 
-        boolean isKRaftEnabled = featureGates.useKRaftEnabled() && ReconcilerUtils.kraftEnabled(reconcileState.kafkaAssembly);
+        KafkaMetadataConfigurationState kafkaMetadataConfigState = reconcileState.kafkaMetadataStateManager.getMetadataConfigurationState();
+        // since PRE_MIGRATION phase (because it's when controllers are deployed during migration) we need to validate usage of node pools and features for KRaft
+        LOGGER.infoCr(reconcileState.reconciliation, "KafkaMetadataConfigurationState = {}, isPreMigrationOrKRaft = {}", kafkaMetadataConfigState, kafkaMetadataConfigState.isPreMigrationOrKRaft());
         boolean nodePoolsEnabled = featureGates.kafkaNodePoolsEnabled() && ReconcilerUtils.nodePoolsEnabled(reconcileState.kafkaAssembly);
 
-        if (isKRaftEnabled) {
+        if (kafkaMetadataConfigState.isPreMigrationOrKRaft()) {
             // Makes sure KRaft is used only with KafkaNodePool custom resources and not with virtual node pools
             if (!nodePoolsEnabled)  {
                 throw new InvalidConfigurationException("The UseKRaft feature gate can be used only together with a Kafka cluster based on the KafkaNodePool resources.");
@@ -220,7 +230,10 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             // Validates features which are currently not supported in KRaft mode
             try {
                 KRaftUtils.validateKafkaCrForKRaft(reconcileState.kafkaAssembly.getSpec(), featureGates.unidirectionalTopicOperatorEnabled());
-                KRaftUtils.kraftWarnings(reconcileState.kafkaAssembly, reconcileState.kafkaStatus);
+                // Validations which need to be done only in full KRaft and not during a migration (i.e. ZooKeeper removal)
+                if (kafkaMetadataConfigState.isKRaft()) {
+                    KRaftUtils.kraftWarnings(reconcileState.kafkaAssembly, reconcileState.kafkaStatus);
+                }
             } catch (InvalidResourceException e)    {
                 return Future.failedFuture(e);
             }
@@ -237,13 +250,17 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             }
         }
 
+        // only when cluster is full KRaft we can avoid reconcile ZooKeeper and not having the automatic handling of
+        // inter broker protocol and log message format via the version change component
+        LOGGER.infoCr(reconcileState.reconciliation, "KafkaMetadataConfigurationState = {}, isKRaftEnabled = {}", kafkaMetadataConfigState, kafkaMetadataConfigState.isKRaft());
+
         reconcileState.initialStatus()
                 // Preparation steps => prepare cluster descriptions, handle CA creation or changes
                 .compose(state -> state.reconcileCas(clock))
-                .compose(state -> state.versionChange(isKRaftEnabled))
+                .compose(state -> state.versionChange(kafkaMetadataConfigState.isKRaft()))
 
                 // Run reconciliations of the different components
-                .compose(state -> isKRaftEnabled ? Future.succeededFuture(state) : state.reconcileZooKeeper(clock))
+                .compose(state -> kafkaMetadataConfigState.isKRaft() ? Future.succeededFuture(state) : state.reconcileZooKeeper(clock))
                 .compose(state -> state.reconcileKafka(clock))
                 .compose(state -> state.reconcileEntityOperator(clock))
                 .compose(state -> state.reconcileCruiseControl(clock))
@@ -268,6 +285,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         private final String name;
         private final Kafka kafkaAssembly;
         private final Reconciliation reconciliation;
+        private final KafkaMetadataStateManager kafkaMetadataStateManager;
 
         /* test */ KafkaVersionChange versionChange;
 
@@ -286,6 +304,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
             this.kafkaAssembly = kafkaAssembly;
             this.namespace = kafkaAssembly.getMetadata().getNamespace();
             this.name = kafkaAssembly.getMetadata().getName();
+            this.kafkaMetadataStateManager = new KafkaMetadataStateManager(reconciliation, kafkaAssembly, featureGates.useKRaftEnabled());
         }
 
         /**
@@ -529,7 +548,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                                 versionChange,
                                 oldStorage,
                                 currentReplicas,
-                                clusterCa
+                                clusterCa,
+                                kafkaMetadataStateManager
                         );
 
                         return Future.succeededFuture(reconciler);
@@ -576,7 +596,8 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
                     config,
                     supplier,
                     pfa,
-                    vertx
+                    vertx,
+                    kafkaMetadataStateManager
             );
         }
 
