@@ -442,6 +442,8 @@ class UserST extends AbstractST {
             .createInstallation()
             .runInstallation();
 
+        cluster.createNamespace(Environment.TEST_SUITE_NAMESPACE);
+
         resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(userClusterName, 1, 1)
             .editMetadata()
                 .withNamespace(Environment.TEST_SUITE_NAMESPACE)
