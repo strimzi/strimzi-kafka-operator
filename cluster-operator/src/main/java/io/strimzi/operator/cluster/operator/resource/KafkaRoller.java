@@ -199,11 +199,6 @@ public class KafkaRoller {
     private boolean initBrokerAdminClient() {
         if (this.brokerAdminClient == null) {
             try {
-                // TODO: Currently, when running in KRaft mode Kafka does not support using Kafka Admin API with controller
-                //       nodes. This is tracked in https://github.com/strimzi/strimzi-kafka-operator/issues/8593.
-                //       Therefore use broker nodes of the cluster to initialise adminClient for allClient.
-                //       Once Kafka Admin API is supported for controllers, brokerNodesForBootstrap can be removed
-                //       from KafkaRoller and we can use "nodes" here instead of it.
                 this.brokerAdminClient = adminClient(nodes.stream().filter(NodeRef::broker).collect(Collectors.toSet()), false);
             } catch (ForceableProblem | FatalProblem e) {
                 LOGGER.warnCr(reconciliation, "Failed to create brokerAdminClient.", e);
