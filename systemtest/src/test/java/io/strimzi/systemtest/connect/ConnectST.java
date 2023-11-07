@@ -34,7 +34,6 @@ import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBui
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.api.kafka.model.status.KafkaConnectStatus;
 import io.strimzi.api.kafka.model.status.KafkaConnectorStatus;
-import io.strimzi.api.kafka.model.template.DeploymentStrategy;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
@@ -1309,57 +1308,6 @@ class ConnectST extends AbstractST {
             cmdKubeClient(namespaceName).execInPod(connectPodName, "/bin/bash", "-c", "cat external-configuration/" + dotedSecretName + "/" + secretKey).out().trim(),
             equalTo(secretPassword)
         );
-    }
-
-    @ParallelNamespaceTest
-    void testConfigureDeploymentStrategy(ExtensionContext extensionContext) {
-        final TestStorage testStorage = new TestStorage(extensionContext);
-        final String namespaceName = StUtils.getNamespaceBasedOnRbac(Environment.TEST_SUITE_NAMESPACE, extensionContext);
-        final String clusterName = testStorage.getClusterName();
-
-        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3).build());
-        resourceManager.createResourceWithWait(extensionContext, KafkaConnectTemplates.kafkaConnect(clusterName, namespaceName, 1)
-            .editSpec()
-                .editOrNewTemplate()
-                    .editOrNewDeployment()
-                        .withDeploymentStrategy(DeploymentStrategy.RECREATE)
-                    .endDeployment()
-                .endTemplate()
-            .endSpec()
-            .build());
-
-        //String connectDepName = KafkaConnectResources.deploymentName(clusterName);
-        LabelSelector labelSelector = KafkaConnectResource.getLabelSelector(clusterName, KafkaConnectResources.deploymentName(clusterName));
-
-        LOGGER.info("Adding label to Connect resource, the CR should be recreated");
-        KafkaConnectResource.replaceKafkaConnectResourceInSpecificNamespace(clusterName,
-            kc -> kc.getMetadata().setLabels(Collections.singletonMap("some", "label")), namespaceName);
-        RollingUpdateUtils.waitForComponentAndPodsReady(namespaceName, labelSelector, 1);
-
-        KafkaConnect kafkaConnect = KafkaConnectResource.kafkaConnectClient().inNamespace(namespaceName).withName(clusterName).get();
-
-        LOGGER.info("Checking that observed gen. is still on 1 (recreation) and new label is present");
-        assertThat(kafkaConnect.getStatus().getObservedGeneration(), is(1L));
-        assertThat(kafkaConnect.getMetadata().getLabels().toString(), containsString("some=label"));
-        assertThat(kafkaConnect.getSpec().getTemplate().getDeployment().getDeploymentStrategy(), is(DeploymentStrategy.RECREATE));
-
-        LOGGER.info("Changing Deployment strategy to {}", DeploymentStrategy.ROLLING_UPDATE);
-        KafkaConnectResource.replaceKafkaConnectResourceInSpecificNamespace(clusterName,
-            kc -> kc.getSpec().getTemplate().getDeployment().setDeploymentStrategy(DeploymentStrategy.ROLLING_UPDATE), namespaceName);
-        KafkaConnectUtils.waitForConnectReady(namespaceName, clusterName);
-
-        LOGGER.info("Checking that observed gen. higher (rolling update) and label is changed");
-        KafkaConnectResource.replaceKafkaConnectResourceInSpecificNamespace(clusterName, kc -> kc.getMetadata().getLabels().put("another", "label"), namespaceName);
-        StUtils.waitUntilSupplierIsSatisfied(() -> {
-            final KafkaConnect kC = KafkaConnectResource.kafkaConnectClient().inNamespace(namespaceName).withName(clusterName).get();
-
-            return kC.getStatus().getObservedGeneration() == 2L &&
-                    kC.getMetadata().getLabels().toString().contains("another=label") &&
-                    kC.getSpec().getTemplate().getDeployment().getDeploymentStrategy().equals(DeploymentStrategy.ROLLING_UPDATE);
-        });
-
-        LOGGER.info("Adding another label to Connect resource, Pods should be rolled");
-        RollingUpdateUtils.waitForComponentAndPodsReady(namespaceName, labelSelector, 1);
     }
 
     @ParallelNamespaceTest

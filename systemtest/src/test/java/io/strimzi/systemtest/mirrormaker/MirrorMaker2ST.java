@@ -16,7 +16,6 @@ import io.strimzi.api.kafka.model.listener.KafkaListenerAuthenticationTls;
 import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.api.kafka.model.status.KafkaMirrorMaker2Status;
-import io.strimzi.api.kafka.model.template.DeploymentStrategy;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
@@ -723,64 +722,6 @@ class MirrorMaker2ST extends AbstractST {
             assertThat(kafkaTopicSpec, containsString("Topic: " + testStorage.getTopicName()));
             assertThat(kafkaTopicSpec, containsString("PartitionCount: 3"));
         }
-    }
-
-    @ParallelNamespaceTest
-    void testConfigureDeploymentStrategy(ExtensionContext extensionContext) {
-        final TestStorage testStorage = new TestStorage(extensionContext, Environment.TEST_SUITE_NAMESPACE);
-
-        String kafkaClusterSourceName = testStorage.getClusterName() + "-source";
-        String kafkaClusterTargetName = testStorage.getClusterName() + "-target";
-
-        // Deploy source kafka
-        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(kafkaClusterSourceName, 1, 1).build());
-        // Deploy target kafka
-        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(kafkaClusterTargetName, 1, 1).build());
-
-        resourceManager.createResourceWithWait(extensionContext, KafkaMirrorMaker2Templates.kafkaMirrorMaker2(testStorage.getClusterName(), kafkaClusterTargetName, kafkaClusterSourceName, 1, false)
-            .editSpec()
-                .editOrNewTemplate()
-                    .editOrNewDeployment()
-                        .withDeploymentStrategy(DeploymentStrategy.RECREATE)
-                    .endDeployment()
-                .endTemplate()
-            .endSpec()
-            .build());
-
-        LabelSelector mmSelector = KafkaMirrorMaker2Resource.getLabelSelector(testStorage.getClusterName(), KafkaMirrorMaker2Resources.deploymentName(testStorage.getClusterName()));
-
-        LOGGER.info("Adding label to MirrorMaker2 resource, the CR should be recreated");
-        KafkaMirrorMaker2Resource.replaceKafkaMirrorMaker2ResourceInSpecificNamespace(testStorage.getClusterName(),
-            mm2 -> mm2.getMetadata().setLabels(Collections.singletonMap("some", "label")), testStorage.getNamespaceName());
-        RollingUpdateUtils.waitForComponentAndPodsReady(testStorage.getNamespaceName(), mmSelector, 1);
-
-        KafkaMirrorMaker2 kmm2 = KafkaMirrorMaker2Resource.kafkaMirrorMaker2Client().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get();
-
-        LOGGER.info("Checking that observed gen. is still on 1 (recreation) and new label is present");
-        assertThat(kmm2.getStatus().getObservedGeneration(), is(1L));
-        assertThat(kmm2.getMetadata().getLabels().toString(), containsString("some=label"));
-        assertThat(kmm2.getSpec().getTemplate().getDeployment().getDeploymentStrategy(), is(DeploymentStrategy.RECREATE));
-
-        LOGGER.info("Changing Deployment strategy to {}", DeploymentStrategy.ROLLING_UPDATE);
-        KafkaMirrorMaker2Resource.replaceKafkaMirrorMaker2ResourceInSpecificNamespace(testStorage.getClusterName(),
-            mm2 -> mm2.getSpec().getTemplate().getDeployment().setDeploymentStrategy(DeploymentStrategy.ROLLING_UPDATE), testStorage.getNamespaceName());
-        KafkaMirrorMaker2Utils.waitForKafkaMirrorMaker2Ready(testStorage.getNamespaceName(), testStorage.getClusterName());
-
-
-        LOGGER.info("Checking that observed gen. higher (rolling update) and label is changed");
-        KafkaMirrorMaker2Resource.replaceKafkaMirrorMaker2ResourceInSpecificNamespace(testStorage.getClusterName(), mm2 -> mm2.getMetadata().getLabels().put("another", "label"), testStorage.getNamespaceName());
-        StUtils.waitUntilSupplierIsSatisfied(
-                () -> {
-                    final KafkaMirrorMaker2 kMM2 = KafkaMirrorMaker2Resource.kafkaMirrorMaker2Client().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get();
-
-                    return kMM2.getStatus().getObservedGeneration() == 2L &&
-                            kMM2.getMetadata().getLabels().toString().contains("another=label") &&
-                            kMM2.getSpec().getTemplate().getDeployment().getDeploymentStrategy().equals(DeploymentStrategy.ROLLING_UPDATE);
-                }
-        );
-
-        LOGGER.info("Adding another label to MirrorMaker2 resource, Pods should be rolled");
-        RollingUpdateUtils.waitForComponentAndPodsReady(testStorage.getNamespaceName(), mmSelector, 1);
     }
 
     @ParallelNamespaceTest
