@@ -217,7 +217,7 @@ public class KafkaRoller {
             try {
                 // TODO: Currently, when running in KRaft mode Kafka does not support using Kafka Admin API with controller
                 //       nodes. This is tracked in https://github.com/strimzi/strimzi-kafka-operator/issues/8593.
-                //       Therefore use broker nodes of the cluster to initialise adminClient for allClient.
+                //       Therefore use broker nodes of the cluster to initialise adminClient for quorum health check.
                 //       Once Kafka Admin API is supported for controllers, nodes.stream().filter(NodeRef:controller)
                 //       can be used here. Until then pass an empty set of nodes so the client is initialized with
                 //       the brokers service.
@@ -936,7 +936,7 @@ public class KafkaRoller {
                     t -> new UnforceableProblem("An error while trying to determine the quorum leader id", t));
             LOGGER.debugCr(reconciliation, "KRaft active controller is {}", id);
         } else {
-            // Don't use allClient here, because it will have cache metadata about which is the controller.
+            // Don't use broker admin client here, because it will have cache metadata about which is the controller.
             try (Admin ac = adminClient(Set.of(nodeRef), false)) {
                 Node controllerNode = null;
                 try {
