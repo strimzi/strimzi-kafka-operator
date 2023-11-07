@@ -23,10 +23,10 @@ You'll need a Kafka cluster that uses TLS encryption and mTLS authentication.
 
 See xref:proc-generating-reassignment-json-files-{context}[Generating reassignment JSON files].
 
-In this procedure, a topic called `my-topic` has 4 replicas and we want to reduce it to 3.
+In this procedure, a topic called `my-topic` has 4 replicas and we want to reduce it to 3. 
 A JSON file named `topics.json` specifies the topic, and was used to generate the `reassignment.json` file.
 
-.Example JSON file specifies `my-topic`
+.Example JSON file specifies `my-topic` 
 [source,json]
 ----
 {
@@ -97,7 +97,7 @@ bin/kafka-reassign-partitions.sh --bootstrap-server
 ----
 +
 NOTE: Removing replicas from a broker does not require any inter-broker data movement, so there is no need to throttle replication.
-If you are adding replicas, then you may want to change the throttle rate.
+If you are adding replicas, then you may want to change the throttle rate. 
 
 . Verify that the change to the topic replicas has completed using the `kafka-reassign-partitions.sh` command line tool from any of the broker pods.
 This is the same command as the previous step, but with the `--verify` option instead of the `--execute` option.
