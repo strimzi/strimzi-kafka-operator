@@ -384,6 +384,10 @@ Use the `verify` build goal and provide `-Dit.test=TestClassName[#testMethodName
 
     mvn verify -pl systemtest -P all -Dit.test=KafkaST#testCustomAndUpdatedValues
 
+You can also run a test with a particular feature gate enabled via the feature gate environment variable.
+
+    STRIMZI_FEATURE_GATES="+FeatureName" mvn verify -pl systemtest -P all -Dit.test=KafkaST#testCustomAndUpdatedValues
+
 ## Skip Teardown
 
 When debugging some types of test cases, the `SKIP_TEARDOWN` env variable can be beneficial.
