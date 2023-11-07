@@ -18,7 +18,7 @@ The Cluster Operator deploys the Entity Operator with the Topic Operator in unid
 +
 [source,shell,subs=+quotes]
 ----
-kubectl delete $(kubectl get kt -o name | grep strimzi-store-topic) && kubectl delete $(kubectl get kt -o name | grep strimzi-topic-operator)
+kubectl delete $(kubectl get kt -n <namespace_name> -o name | grep strimzi-store-topic) && kubectl delete $(kubectl get kt -n <namespace_name> -o name | grep strimzi-topic-operator)
 ---- 
 +
 This command deletes the internal topics, which have names starting `strimzi-store-topic` and `strimzi-topic-operator`.
@@ -29,17 +29,17 @@ This command deletes the internal topics, which have names starting `strimzi-sto
 +
 [source,shell,subs=+quotes]
 ----
-kubectl annotate $(kubectl get kt -o name | grep consumer-offsets) strimzi.io/managed="false" && kubectl annotate $(kubectl get kt -o name | grep transaction-state) strimzi.io/managed="false"
+kubectl annotate $(kubectl get kt -n <namespace_name> -o name | grep consumer-offsets) strimzi.io/managed="false" && kubectl annotate $(kubectl get kt -n <namespace_name> -o name | grep transaction-state) strimzi.io/managed="false"
 ----
 +
 By annotating the `KafkaTopic` resources with `strimzi.io/managed=false`, you indicate that the Topic Operator should no longer manage those topics. 
 In this case, we are adding the annotation to resources for managing the internal topics with names starting `consumer-offsets` and `transaction-state`.
 +
-.. Delete the `KafkaTopic` resources:
+.. When their management is discontinued, delete the `KafkaTopic` resources (without deleting the topics inside Kafka):
 +
 [source,shell,subs=+quotes]
 ----
-kubectl delete $(kubectl get kt -o name | grep consumer-offsets) && kubectl delete $(kubectl get kt -o name | grep transaction-state)
+kubectl delete $(kubectl get kt -n <namespace_name> -o name | grep consumer-offsets) && kubectl delete $(kubectl get kt -n <namespace_name> -o name | grep transaction-state)
 ---- 
 
 .Switching from unidirectional to bidirectional topic management mode
@@ -55,16 +55,43 @@ If `KafkaTopic` resources are using finalizers, ensure that you do one of the fo
 ** xref:con-removing-topic-finalizers-{context}[Remove all finalizers from topics].
 ** Disable the finalizers by setting the `STRIMZI_USE_FINALIZERS` environment variable to `false` in the Topic Operator `env` configuration.
 +
-.Disabling the topic finalizers
+Use the same configuration for a Topic Operator running in a Strimzi-managed cluster or as a standalone deployment. 
++
+.Disabling topic finalizers in a Strimzi-managed cluster
 [source,shell,subs=+quotes]
 ----
+apiVersion: {KafkaApiVersion}
+kind: Kafka
+metadata:
+  name: my-cluster
+spec:
+  # ...
+  entityOperator:
+    topicOperator: {}
+    userOperator: {}
+    template:
+      topicOperatorContainer:
+        env:
+          - name: STRIMZI_USE_FINALIZERS
+            value: "false"
 # ...
-env:
-  - name: STRIMZI_USE_FINALIZERS
-    value: "false"
 ----
 +
-Use the same configuration for a Topic Operator running in a Strimzi-managed cluster or as a standalone deployment.  
+.Disabling topic finalizers in a standalone deployment
+[source,shell,subs=+quotes]
+----
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: strimzi-topic-operator
+spec:
+  template:
+    spec:
+      containers:
+        - name: STRIMZI_USE_FINALIZERS
+          value: "false"
+# ...
+----
 +
 The Topic Operator does not use finalizers in bidirectional mode.
 If they are retained after making the switch from unidirectional mode, you won't be able to delete `KafkaTopic` and related resources. 
