@@ -135,13 +135,7 @@ my-topic  Partition: 2  Leader: 3  Replicas: 2,3,4 Isr: 2,3,4
 . Finally, patch the `KafkaTopic` custom resource to match the new replication factor, and let the operator do the rest
 [source,shell,subs=+quotes]
 ----
-$ kubectl patch kt my-topic --type merge -p '
+kubectl patch kt my-topic --type merge -p '
   spec:
     replicas: 3'
-kafkatopic.kafka.strimzi.io/my-topic patched
-
-$ kubectl get kt -w
-NAME       CLUSTER      PARTITIONS   REPLICATION FACTOR   READY
-my-topic   my-cluster   3            4                    False
-my-topic   my-cluster   3            3                    True
 ----
