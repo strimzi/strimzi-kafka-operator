@@ -396,8 +396,9 @@ public class KafkaRoller {
      * @param restartContext    Restart context
      *
      * @throws InterruptedException     Interrupted while waiting.
-     * @throws ForceableProblem         Some error. Not thrown when finalAttempt==true.
-     * @throws UnforceableProblem       Some error, still thrown when finalAttempt==true.
+     * @throws ForceableProblem         Some error. Not thrown when one of restartContext.podStuck, restartContext.backOff.done()
+     * or exception.forceNow is true AND canRoll is true. Otherwise is thrown.
+     * @throws UnforceableProblem       Some error, always thrown.
      */
     @SuppressWarnings({"checkstyle:CyclomaticComplexity"})
     private void restartIfNecessary(NodeRef nodeRef, RestartContext restartContext)
@@ -574,8 +575,6 @@ public class KafkaRoller {
             return;
         }
 
-//        boolean adminClientInitialised = initAdminClient();
-
         boolean needsRestart = reasonToRestartPod.shouldRestart();
         KafkaBrokerConfigurationDiff diff = null;
         KafkaBrokerLoggingConfigurationDiff loggingDiff = null;
@@ -587,12 +586,24 @@ public class KafkaRoller {
                 String controllerQuorumFetchTimeout = orderedProperties.addStringPairs(desiredConfig).asMap().get(CONTROLLER_QUORUM_FETCH_TIMEOUT_MS_CONFIG_NAME);
                 restartContext.quorumCheck = quorumCheck(controllerAdminClient, controllerQuorumFetchTimeout != null ? Long.parseLong(controllerQuorumFetchTimeout) : CONTROLLER_QUORUM_FETCH_TIMEOUT_MS_CONFIG_DEFAULT);
             } else {
-                // throw UnforceableProblem if it is a pure controller so KafkaRoller moves on
-                // to rolling the brokers, otherwise continue to try rolling other controllers
                 //TODO When https://github.com/strimzi/strimzi-kafka-operator/issues/8593 is complete
-                // we should change this logic to always continue rolling controllers, because failure
-                // to init the client will mean all controllers are down
-                if (!nodeRef.broker()) {
+                // we should change this logic to immediately restart this pod because we cannot connect to it.
+                if (nodeRef.broker()) {
+                    // If it is a combined node (controller and broker) and the admin client cannot be initialised,
+                    // restart this pod. There is no reason to continue as we won't be able to
+                    // connect an admin client to this pod for other checks later.
+                    LOGGER.infoCr(reconciliation, "KafkaQuorumCheck cannot be initialised for {} because none of the brokers do not seem to responding to connection attempts. " +
+                            "Restarting pod because it is a combined node so it is one of the brokers that is not responding.", nodeRef);
+                    reasonToRestartPod.add(RestartReason.POD_UNRESPONSIVE);
+                    restartContext.needsRestart = false;
+                    restartContext.needsReconfig = false;
+                    restartContext.forceRestart = true;
+                    restartContext.diff = null;
+                    restartContext.logDiff = null;
+                    return;
+                } else {
+                    // If it is a controller only node throw an UnforceableProblem, so we try again until the backOff
+                    // is finished, then it will move on to the next controller and eventually the brokers.
                     throw new UnforceableProblem("KafkaQuorumCheck cannot be initialised for " + nodeRef + " because none of the brokers do not seem to responding to connection attempts");
                 }
             }
@@ -936,6 +947,9 @@ public class KafkaRoller {
                     t -> new UnforceableProblem("An error while trying to determine the quorum leader id", t));
             LOGGER.debugCr(reconciliation, "KRaft active controller is {}", id);
         } else {
+            // TODO Either this is a KRaft broker or ZooKeeper broker. Since KafkaRoller does not know if this is KRaft mode or
+            //      not continue with describeCluster. In KRaft mode this returns a random broker and will mean this broker is deferred.
+            //      In future this can be improved by telling KafkaRoller whether the cluster is in KRaft mode or not.
             // Don't use broker admin client here, because it will have cache metadata about which is the controller.
             try (Admin ac = adminClient(Set.of(nodeRef), false)) {
                 Node controllerNode = null;
