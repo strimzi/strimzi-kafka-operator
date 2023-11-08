@@ -131,3 +131,18 @@ my-topic  Partition: 0  Leader: 0  Replicas: 0,1,2 Isr: 0,1,2
 my-topic  Partition: 1  Leader: 2  Replicas: 1,2,3 Isr: 1,2,3
 my-topic  Partition: 2  Leader: 3  Replicas: 2,3,4 Isr: 2,3,4
 ----
+
+. Finally, edit the `KafkaTopic` custom resource to change `.spec.replicas` to 3, and then wait the reconciliation.
++
+[source,shell,subs=+quotes]
+----
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaTopic
+metadata:
+  name: my-topic
+  labels:
+    strimzi.io/cluster: my-cluster
+spec:
+  partitions: 3
+  replicas: 3
+----
