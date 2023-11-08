@@ -6,6 +6,7 @@ package io.strimzi.api.kafka.model.template;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import io.strimzi.api.annotations.DeprecatedProperty;
 import io.strimzi.api.kafka.model.Constants;
 import io.strimzi.api.kafka.model.UnknownPropertyPreserving;
 import io.strimzi.crdgenerator.annotations.Description;
@@ -50,6 +51,8 @@ public class KafkaConnectTemplate implements HasJmxSecretTemplate, Serializable,
 
     @Description("Template for Kafka Connect `Deployment`.")
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
+    @Deprecated
+    @DeprecatedProperty(description = "Kafka Connect and MirrorMaker 2 operands do not use `Deployment` resources anymore. This field will be ignored.")
     public DeploymentTemplate getDeployment() {
         return deployment;
     }
