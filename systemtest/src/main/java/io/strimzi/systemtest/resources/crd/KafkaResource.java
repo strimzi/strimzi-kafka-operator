@@ -169,4 +169,12 @@ public class KafkaResource implements ResourceType<Kafka> {
     public static String getNodePoolName(String clusterName) {
         return Constants.KAFKA_NODE_POOL_PREFIX + hashStub(clusterName);
     }
+
+    public static void annotateKafka(String clusterName, String namespaceName, Map<String, String> annotations) {
+        replaceKafkaResourceInSpecificNamespace(clusterName, kafka -> kafka.getMetadata().getAnnotations().putAll(annotations), namespaceName);
+    }
+
+    public static void removeAnnotation(String clusterName, String namespaceName, String annotationKey) {
+        replaceKafkaResourceInSpecificNamespace(clusterName, kafka -> kafka.getMetadata().getAnnotations().remove(annotationKey), namespaceName);
+    }
 }
