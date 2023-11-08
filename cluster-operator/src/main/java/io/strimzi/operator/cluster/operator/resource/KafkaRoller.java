@@ -889,7 +889,7 @@ public class KafkaRoller {
         //      this function can be reverted to expect nodes to be non empty
         String bootstrapHostnames;
         if (nodes.isEmpty()) {
-            bootstrapHostnames = String.format("%s:%s", KafkaResources.brokersServiceName(cluster), KafkaCluster.REPLICATION_PORT);
+            bootstrapHostnames = String.format("%s:%s", DnsNameGenerator.of(namespace, KafkaResources.brokersServiceName(cluster)).serviceDnsName(), KafkaCluster.REPLICATION_PORT);
         } else {
             bootstrapHostnames = nodes.stream().map(node -> DnsNameGenerator.podDnsName(namespace, KafkaResources.brokersServiceName(cluster), node.podName()) + ":" + KafkaCluster.REPLICATION_PORT).collect(Collectors.joining(","));
         }
