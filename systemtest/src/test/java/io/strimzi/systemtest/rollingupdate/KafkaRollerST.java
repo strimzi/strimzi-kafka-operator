@@ -131,13 +131,8 @@ public class KafkaRollerST extends AbstractST {
         List<Event> events = kubeClient(testStorage.getNamespaceName()).listEventsByResourceUid(uid);
         assertThat(events, hasAllOfReasons(Scheduled, Pulled, Created, Started));
 
-        clients = new KafkaClientsBuilder()
-            .withProducerName(testStorage.getProducerName())
-            .withConsumerName(testStorage.getConsumerName())
-            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
+        clients = new KafkaClientsBuilder(clients)
             .withTopicName(topicNameWith4Replicas)
-            .withMessageCount(testStorage.getMessageCount())
-            .withNamespaceName(testStorage.getNamespaceName())
             .build();
 
         LOGGER.info("Producing and Consuming messages with clients: {}, {} in Namespace {}", testStorage.getProducerName(), testStorage.getConsumerName(), testStorage.getNamespaceName());
