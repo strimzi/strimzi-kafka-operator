@@ -9,6 +9,7 @@ import io.fabric8.kubernetes.api.model.HasMetadata;
 import io.fabric8.kubernetes.api.model.KubernetesResourceList;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.Watcher;
 import io.fabric8.kubernetes.client.dsl.FilterWatchListDeletable;
 import io.fabric8.kubernetes.client.dsl.Informable;
@@ -274,7 +275,7 @@ public abstract class AbstractNamespacedResourceOperator<C extends KubernetesCli
 
     protected Future<ReconcileResult<T>> internalPatch(Reconciliation reconciliation, String namespace, String name, T desired) {
         try {
-            T result = patchOnly(reconciliation, namespace, name, desired);
+            T result = patch(reconciliation, namespace, name, desired);
             LOGGER.debugCr(reconciliation, "{} {} in namespace {} has been patched", resourceKind, name, namespace);
             return Future.succeededFuture(ReconcileResult.patched(result));
         } catch (Exception e) {
@@ -297,11 +298,11 @@ public abstract class AbstractNamespacedResourceOperator<C extends KubernetesCli
         return operation().inNamespace(namespace).withName(name).patch(PatchContext.of(PatchType.JSON), desired);
     }
 
-    protected T patchOnly(Reconciliation reconciliation, String namespace, String name, T desired) {
+    protected T patch(Reconciliation reconciliation, String namespace, String name, T desired) {
         try {
             return operation().inNamespace(namespace).withName(name).patch(serverSideApplyPatchContext(false), desired);
-        } catch (Exception e) {
-            LOGGER.debugCr(reconciliation, "{} {} in namespace {} failed to apply, using force", resourceKind, name, namespace, e);
+        } catch (KubernetesClientException e) {
+            LOGGER.warnCr(reconciliation, "{} {} in namespace {} failed to apply, using force", resourceKind, name, namespace, e);
             return operation().inNamespace(namespace).withName(name).patch(serverSideApplyPatchContext(true), desired);
         }
     }
