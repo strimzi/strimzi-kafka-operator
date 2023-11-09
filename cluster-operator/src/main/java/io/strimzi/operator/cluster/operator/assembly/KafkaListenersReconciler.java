@@ -275,7 +275,7 @@ public class KafkaListenersReconciler {
             result.listenerStatuses.add(ls);
 
             // Set advertised hostnames and ports
-            for (NodeRef node : kafka.nodes()) {
+            for (NodeRef node : kafka.brokerNodes()) {
                 String brokerAddress;
 
                 if (useServiceDnsDomain) {
