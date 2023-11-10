@@ -651,8 +651,8 @@ public class KafkaReconciler {
 
                         String nodeConfiguration = "";
 
-                        // We collect the information needed for the annotation hash for brokers or mixed nodes
-                        // (controller only nodes do not have traditional listener configuration)
+                        // We collect the information needed for the annotation hash for brokers or mixed nodes.
+                        // Controller-only nodes do not have advertised listener configuration and this config is not relevant for them.
                         if (pool.isBroker()) {
                             // The advertised hostname and port might change. If they change, we need to roll the pods.
                             // Here we collect their hash to trigger the rolling update. For per-broker configuration,
