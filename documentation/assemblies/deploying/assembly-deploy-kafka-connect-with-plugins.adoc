@@ -3,7 +3,7 @@
 // deploying/assembly-deploy-kafka-connect.adoc
 
 [id='using-kafka-connect-with-plug-ins-{context}']
-= Adding connectors
+= Adding Kafka Connect connectors
 
 [role="_abstract"]
 Kafka Connect uses connectors to integrate with other systems to stream data.
@@ -32,10 +32,6 @@ include::../../modules/deploying/proc-deploy-kafka-connect-using-kafka-connect-b
 include::../../modules/deploying/proc-deploy-kafka-connect-new-image-from-base.adoc[leveloffset=+1]
 //Procedure to deploy a KafkaConnector resource
 include::../../modules/deploying/proc-deploying-kafkaconnector.adoc[leveloffset=+1]
-//Procedure to manually restart a Kafka connector
-include::../../modules/deploying/proc-manual-restart-connector.adoc[leveloffset=+1]
-//Procedure to manually restart a Kafka connector task
-include::../../modules/deploying/proc-manual-restart-connector-task.adoc[leveloffset=+1]
 //Exposing the Kafka Connect API
 include::../../modules/deploying/con-exposing-kafka-connect-api.adoc[leveloffset=+1]
 //Securing the Kafka Connect API

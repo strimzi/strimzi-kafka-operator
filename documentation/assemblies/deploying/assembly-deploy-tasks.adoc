@@ -40,6 +40,8 @@ include::assembly-deploy-cluster-operator.adoc[leveloffset=+1]
 include::assembly-deploy-kafka-cluster.adoc[leveloffset=+1]
 //Procedure to deploy Kafka Connect
 include::assembly-deploy-kafka-connect.adoc[leveloffset=+1]
+//Adding Kafka Connect connectors
+include::assembly-deploy-kafka-connect-with-plugins.adoc[leveloffset=+1]
 //Procedure to deploy Kafka MirrorMaker
 include::assembly-deploy-kafka-mirror-maker.adoc[leveloffset=+1]
 //Procedure to deploy Kafka Bridge
