@@ -24,6 +24,7 @@ import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaUserTemplates;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.RollingUpdateUtils;
+import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StrimziPodSetUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
@@ -67,6 +68,15 @@ public class CustomCaST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(CustomCaST.class);
     private static final String STRIMZI_INTERMEDIATE_CA = "C=CZ, L=Prague, O=Strimzi, CN=StrimziIntermediateCA";
 
+    /** This test focuses on manual renewal of custom cluster CA.
+     * Steps are following. Create own cluster CA. From the CA create a Bundle that will be used in kafka cluster which is then deployed.
+     * Once everything is set up, kafka reconciliation is paused using annotation. Then a newly generated cluster CA keypair is put in place.
+     * When annotation is removed, kafka resumes and tries to renew cluster certificates using the new CA keypair.
+     * Note: There is a need to keep an old CA key in the secret and remove it only after all components successfully
+     * roll several times (due to the fact that it takes multiple rolling updates to finally update from old keypair to the new one).
+     * Test also verifies communication by producing and consuming messages.
+     * @param extensionContext
+     */
     @ParallelNamespaceTest
     void testReplacingCustomClusterKeyPairToInvokeRenewalProcess(ExtensionContext extensionContext) {
         final TestStorage testStorage = new TestStorage(extensionContext);
@@ -145,6 +155,16 @@ public class CustomCaST extends AbstractST {
         DeploymentUtils.waitTillDepHasRolled(testStorage.getNamespaceName(), testStorage.getEoDeploymentName(), 1, eoPod);
     }
 
+    /** This test focuses on manual renewal of custom clients CA.
+     * Steps are following. Create own cluster CA. From the CA create a Bundle that will be used in kafka cluster which is then deployed.
+     * Once everything is set up, kafka reconciliation is paused using annotation. Then a newly generated cluster CA keypair is put in place.
+     * When annotation is removed, kafka resumes and tries to renew clients certificates using the new CA keypair.
+     * Note: There is a need to keep an old CA key in the secret and remove it only after all components successfully
+     * roll several times (due to the fact that it takes multiple rolling updates to finally update from old keypair to the new one).
+     * Because this test specifically targets clients certificates, EO and ZK must NOT roll, only broker pods should.
+     * Test also verifies communication by producing and consuming messages.
+     * @param extensionContext
+     */
     @ParallelNamespaceTest
     void testReplacingCustomClientsKeyPairToInvokeRenewalProcess(ExtensionContext extensionContext) {
         final TestStorage testStorage = new TestStorage(extensionContext);
@@ -192,6 +212,13 @@ public class CustomCaST extends AbstractST {
         producerMessages(extensionContext, testStorage);
     }
 
+    /** This tests focuses on verifying the functionality of custom cluster and clients CAs.
+     * Steps are following. Before deploying kafka a clients and cluster CAs are created and deployed as secrets.
+     * Kafka is then deployed with those, forcing it NOT to generate own certificate authority.
+     * After verification of correct certificates on zookeeper, user certificates are checked for correctness as well.
+     * Then a producer / consumer jos are deployed to verify communication.
+     * @param extensionContext
+     */
     @ParallelNamespaceTest
     void testCustomClusterCaAndClientsCaCertificates(ExtensionContext extensionContext) {
         final TestStorage testStorage = new TestStorage(extensionContext);
@@ -270,6 +297,13 @@ public class CustomCaST extends AbstractST {
         ClientUtils.waitForClientsSuccess(testStorage, false);
     }
 
+    /** This tests focuses on invoking certificate renewal without renewing the ClusterCA.
+     * Steps are following. Create own cluster CA. From the CA create a Bundle that will be used in kafka cluster which is then deployed.
+     * Once everything is set up, kafka reconciliation is paused using annotation. Then new validityDays and renewalDays are set for cluster CA.
+     * When annotation is removed, kafka resumes and tries to renew cluster certificates using the CA with different validityDays and renewalDays.
+     * Test also verifies that the CA has not been renewed, only the certificates provided by the CA.
+     * @param extensionContext
+     */
     @ParallelNamespaceTest
     void testReplaceCustomClusterCACertificateValidityToInvokeRenewalProcess(ExtensionContext extensionContext) {
         final TestStorage testStorage = new TestStorage(extensionContext);
@@ -316,7 +350,7 @@ public class CustomCaST extends AbstractST {
 
         // Pause Kafka reconciliation
         LOGGER.info("Pause the reconciliation of the Kafka custom resource ({})", KafkaResources.kafkaStatefulSetName(testStorage.getClusterName()));
-        KafkaResource.annotateKafka(testStorage.getClusterName(), testStorage.getNamespaceName(), Collections.singletonMap(Annotations.ANNO_STRIMZI_IO_PAUSE_RECONCILIATION, "true"));
+        KafkaUtils.annotateKafka(testStorage.getClusterName(), testStorage.getNamespaceName(), Collections.singletonMap(Annotations.ANNO_STRIMZI_IO_PAUSE_RECONCILIATION, "true"));
 
         // To test trigger of renewal of CA with short validity dates, both new dates need to be set
         // Otherwise we apply completely new CA using retained old certificate to change manually
@@ -331,7 +365,7 @@ public class CustomCaST extends AbstractST {
 
         // Resume Kafka reconciliation
         LOGGER.info("Resume the reconciliation of the Kafka custom resource ({})", KafkaResources.kafkaStatefulSetName(testStorage.getClusterName()));
-        KafkaResource.removeAnnotation(testStorage.getClusterName(), testStorage.getNamespaceName(), Annotations.ANNO_STRIMZI_IO_PAUSE_RECONCILIATION);
+        KafkaUtils.removeAnnotation(testStorage.getClusterName(), testStorage.getNamespaceName(), Annotations.ANNO_STRIMZI_IO_PAUSE_RECONCILIATION);
 
         // On the next reconciliation, the Cluster Operator performs a `rolling update`:
         //   a) ZooKeeper
@@ -385,6 +419,13 @@ public class CustomCaST extends AbstractST {
         }
     }
 
+    /** This tests focuses on invoking certificate renewal without renewing the ClientsCA.
+     * Steps are following. Create own clients CA. From the CA create a Bundle that will be used in kafka cluster which is then deployed.
+     * Once everything is set up, kafka reconciliation is paused using annotation. Then new validityDays and renewalDays are set for Clients CA.
+     * When annotation is removed, kafka resumes and tries to renew user certificates using the CA with different validityDays and renewalDays.
+     * Test also verifies that the CA has not been renewed, only the certificates provided by the CA.
+     * @param extensionContext
+     */
     @ParallelNamespaceTest
     void testReplaceCustomClientsCACertificateValidityToInvokeRenewalProcess(ExtensionContext extensionContext) {
         final TestStorage testStorage = new TestStorage(extensionContext);
@@ -416,7 +457,7 @@ public class CustomCaST extends AbstractST {
 
         // Pause Kafka reconciliation
         LOGGER.info("Pause the reconciliation of the Kafka custom resource ({})", KafkaResources.kafkaStatefulSetName(testStorage.getClusterName()));
-        KafkaResource.annotateKafka(testStorage.getClusterName(), testStorage.getNamespaceName(), Collections.singletonMap(Annotations.ANNO_STRIMZI_IO_PAUSE_RECONCILIATION, "true"));
+        KafkaUtils.annotateKafka(testStorage.getClusterName(), testStorage.getNamespaceName(), Collections.singletonMap(Annotations.ANNO_STRIMZI_IO_PAUSE_RECONCILIATION, "true"));
 
         LOGGER.info("Change of Kafka validity and renewal days - reconciliation should start");
         final CertificateAuthority newClientsCA = new CertificateAuthority();
@@ -428,7 +469,7 @@ public class CustomCaST extends AbstractST {
 
         // Resume Kafka reconciliation
         LOGGER.info("Resume the reconciliation of the Kafka custom resource ({})", KafkaResources.kafkaStatefulSetName(testStorage.getClusterName()));
-        KafkaResource.removeAnnotation(testStorage.getClusterName(), testStorage.getNamespaceName(), Annotations.ANNO_STRIMZI_IO_PAUSE_RECONCILIATION);
+        KafkaUtils.removeAnnotation(testStorage.getClusterName(), testStorage.getNamespaceName(), Annotations.ANNO_STRIMZI_IO_PAUSE_RECONCILIATION);
 
         // Wait for reconciliation and verify certs have been updated
         DeploymentUtils.waitTillDepHasRolled(testStorage.getNamespaceName(), testStorage.getEoDeploymentName(), 1, entityPods);
@@ -471,7 +512,7 @@ public class CustomCaST extends AbstractST {
     private void manuallyRenewCa(TestStorage testStorage, SystemTestCertHolder oldCa, SystemTestCertHolder newCa) {
         // Pause Kafka reconciliation
         LOGGER.info("Pause the reconciliation of the Kafka custom resource ({})", KafkaResources.kafkaStatefulSetName(testStorage.getClusterName()));
-        KafkaResource.annotateKafka(testStorage.getClusterName(), testStorage.getNamespaceName(), Collections.singletonMap(Annotations.ANNO_STRIMZI_IO_PAUSE_RECONCILIATION, "true"));
+        KafkaUtils.annotateKafka(testStorage.getClusterName(), testStorage.getNamespaceName(), Collections.singletonMap(Annotations.ANNO_STRIMZI_IO_PAUSE_RECONCILIATION, "true"));
 
         String certSecretName = "";
         String keySecretName = "";
@@ -508,7 +549,7 @@ public class CustomCaST extends AbstractST {
 
         // Resume Kafka reconciliation
         LOGGER.info("Resume the reconciliation of the Kafka custom resource ({})", KafkaResources.kafkaStatefulSetName(testStorage.getClusterName()));
-        KafkaResource.removeAnnotation(testStorage.getClusterName(), testStorage.getNamespaceName(), Annotations.ANNO_STRIMZI_IO_PAUSE_RECONCILIATION);
+        KafkaUtils.removeAnnotation(testStorage.getClusterName(), testStorage.getNamespaceName(), Annotations.ANNO_STRIMZI_IO_PAUSE_RECONCILIATION);
     }
 
     private void checkCustomCaCorrectness(final SystemTestCertHolder caHolder, final X509Certificate certificate) {
@@ -576,8 +617,13 @@ public class CustomCaST extends AbstractST {
             .build());
     }
 
+    /**
+     * This method is a helping tool for producing and consuming messages based on context and testStorage variables.
+     * @param extensionContext is needed for the resourceManager to correctly set context.
+     * @param testStorage is required for containing client variables used to build a client job.
+     */
     private void producerMessages(final ExtensionContext extensionContext, final TestStorage testStorage) {
-        // 11. Try to produce messages
+
         final KafkaClients kafkaBasicClientJob = new KafkaClientsBuilder()
             .withNamespaceName(testStorage.getNamespaceName())
             .withProducerName(testStorage.getProducerName())

@@ -525,4 +525,11 @@ public class KafkaUtils {
                 .getBootstrapServers();
     }
 
+    public static void annotateKafka(String clusterName, String namespaceName, Map<String, String> annotations) {
+        replaceKafkaResourceInSpecificNamespace(clusterName, kafka -> kafka.getMetadata().getAnnotations().putAll(annotations), namespaceName);
+    }
+
+    public static void removeAnnotation(String clusterName, String namespaceName, String annotationKey) {
+        replaceKafkaResourceInSpecificNamespace(clusterName, kafka -> kafka.getMetadata().getAnnotations().remove(annotationKey), namespaceName);
+    }
 }
