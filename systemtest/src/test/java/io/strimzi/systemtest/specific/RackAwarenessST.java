@@ -254,17 +254,14 @@ class RackAwarenessST extends AbstractST {
         Assumptions.assumeFalse(Environment.isNamespaceRbacScope());
 
         TestStorage testStorage = storageMap.get(extensionContext);
-        String kafkaClusterSourceName = testStorage.getClusterName() + "-source";
-        String kafkaClusterTargetName = testStorage.getClusterName() + "-target";
-        String sourceMirroredTopicName = kafkaClusterSourceName + "." + testStorage.getTopicName();
 
         resourceManager.createResourceWithWait(extensionContext,
-                KafkaTemplates.kafkaEphemeral(kafkaClusterSourceName, 1, 1).build());
+                KafkaTemplates.kafkaEphemeral(testStorage.getSourceClusterName(), 1, 1).build());
         resourceManager.createResourceWithWait(extensionContext,
-                KafkaTemplates.kafkaEphemeral(kafkaClusterTargetName, 1, 1).build());
+                KafkaTemplates.kafkaEphemeral(testStorage.getTargetClusterName(), 1, 1).build());
 
         resourceManager.createResourceWithWait(extensionContext,
-                KafkaMirrorMaker2Templates.kafkaMirrorMaker2(testStorage.getClusterName(), kafkaClusterTargetName, kafkaClusterSourceName, 1, false)
+                KafkaMirrorMaker2Templates.kafkaMirrorMaker2(testStorage.getClusterName(), testStorage.getTargetClusterName(), testStorage.getSourceClusterName(), 1, false)
                         .editSpec()
                             .withNewRack(TOPOLOGY_KEY)
                             .editFirstMirror()
@@ -297,12 +294,12 @@ class RackAwarenessST extends AbstractST {
 
         // Mirroring messages by: Producing to the Source Kafka Cluster and consuming them from mirrored KafkaTopic in target Kafka Cluster.
 
-        resourceManager.createResourceWithWait(extensionContext, KafkaTopicTemplates.topic(kafkaClusterSourceName, testStorage.getTopicName(), 3, testStorage.getNamespaceName()).build());
+        resourceManager.createResourceWithWait(extensionContext, KafkaTopicTemplates.topic(testStorage.getSourceClusterName(), testStorage.getTopicName(), 3, testStorage.getNamespaceName()).build());
 
-        LOGGER.info("Producing messages into the source Kafka: {}/{}, Topic: {}", testStorage.getNamespaceName(), kafkaClusterSourceName, testStorage.getTopicName());
+        LOGGER.info("Producing messages into the source Kafka: {}/{}, Topic: {}", testStorage.getNamespaceName(), testStorage.getSourceClusterName(), testStorage.getTopicName());
         KafkaClients clients = new KafkaClientsBuilder()
             .withProducerName(testStorage.getProducerName())
-            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(kafkaClusterSourceName))
+            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getSourceClusterName()))
             .withNamespaceName(testStorage.getNamespaceName())
             .withTopicName(testStorage.getTopicName())
             .withMessageCount(testStorage.getMessageCount())
@@ -310,11 +307,11 @@ class RackAwarenessST extends AbstractST {
         resourceManager.createResourceWithWait(extensionContext, clients.producerStrimzi());
         ClientUtils.waitForProducerClientSuccess(testStorage);
 
-        LOGGER.info("Consuming messages in the target Kafka: {}/{} mirrored Topic: {}", testStorage.getNamespaceName(), kafkaClusterTargetName, sourceMirroredTopicName);
+        LOGGER.info("Consuming messages in the target Kafka: {}/{} mirrored Topic: {}", testStorage.getNamespaceName(), testStorage.getTargetClusterName(), testStorage.getMirroredSourceTopicName());
         clients = new KafkaClientsBuilder(clients)
-            .withTopicName(sourceMirroredTopicName)
+            .withTopicName(testStorage.getMirroredSourceTopicName())
             .withConsumerName(testStorage.getConsumerName())
-            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(kafkaClusterTargetName))
+            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getTargetClusterName()))
             .build();
         resourceManager.createResourceWithWait(extensionContext, clients.consumerStrimzi());
         ClientUtils.waitForConsumerClientSuccess(testStorage);

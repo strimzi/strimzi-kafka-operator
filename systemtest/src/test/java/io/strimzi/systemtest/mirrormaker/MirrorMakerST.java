@@ -75,23 +75,20 @@ public class MirrorMakerST extends AbstractST {
     void testMirrorMaker(ExtensionContext extensionContext) {
         final TestStorage testStorage = new TestStorage(extensionContext, Environment.TEST_SUITE_NAMESPACE);
 
-        String kafkaClusterSourceName = testStorage.getClusterName() + "-source";
-        String kafkaClusterTargetName = testStorage.getClusterName() + "-target";
-
         Map<String, String> jvmOptionsXX = new HashMap<>();
         jvmOptionsXX.put("UseG1GC", "true");
 
         resourceManager.createResourceWithWait(extensionContext,
-            KafkaTemplates.kafkaEphemeral(kafkaClusterSourceName, 1, 1).build(),
-            KafkaTemplates.kafkaEphemeral(kafkaClusterTargetName, 1, 1).build()
+            KafkaTemplates.kafkaEphemeral(testStorage.getSourceClusterName(), 1, 1).build(),
+            KafkaTemplates.kafkaEphemeral(testStorage.getTargetClusterName(), 1, 1).build()
         );
 
-        resourceManager.createResourceWithWait(extensionContext, KafkaTopicTemplates.topic(kafkaClusterSourceName, testStorage.getTopicName(), testStorage.getNamespaceName()).build());
+        resourceManager.createResourceWithWait(extensionContext, KafkaTopicTemplates.topic(testStorage.getSourceClusterName(), testStorage.getTopicName(), testStorage.getNamespaceName()).build());
 
         KafkaClients clients = new KafkaClientsBuilder()
             .withProducerName(testStorage.getProducerName())
             .withConsumerName(testStorage.getConsumerName())
-            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(kafkaClusterSourceName))
+            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getSourceClusterName()))
             .withNamespaceName(testStorage.getNamespaceName())
             .withTopicName(testStorage.getTopicName())
             .withMessageCount(testStorage.getMessageCount())
@@ -101,7 +98,7 @@ public class MirrorMakerST extends AbstractST {
         ClientUtils.waitForClientsSuccess(testStorage);
 
         // Deploy MirrorMaker
-        resourceManager.createResourceWithWait(extensionContext, KafkaMirrorMakerTemplates.kafkaMirrorMaker(testStorage.getClusterName(), kafkaClusterSourceName, kafkaClusterTargetName, ClientUtils.generateRandomConsumerGroup(), 1, false)
+        resourceManager.createResourceWithWait(extensionContext, KafkaMirrorMakerTemplates.kafkaMirrorMaker(testStorage.getClusterName(), testStorage.getSourceClusterName(), testStorage.getTargetClusterName(), ClientUtils.generateRandomConsumerGroup(), 1, false)
             .editSpec()
             .withResources(new ResourceRequirementsBuilder()
                     .addToLimits("memory", new Quantity("400M"))
@@ -119,8 +116,8 @@ public class MirrorMakerST extends AbstractST {
 
         verifyLabelsOnPods(testStorage.getNamespaceName(), testStorage.getClusterName(), "mirror-maker", KafkaMirrorMaker.RESOURCE_KIND);
 
-        verifyLabelsForConfigMaps(testStorage.getNamespaceName(), kafkaClusterSourceName, null, kafkaClusterTargetName);
-        verifyLabelsForServiceAccounts(testStorage.getNamespaceName(), kafkaClusterSourceName, null);
+        verifyLabelsForConfigMaps(testStorage.getNamespaceName(), testStorage.getSourceClusterName(), null, testStorage.getTargetClusterName());
+        verifyLabelsForServiceAccounts(testStorage.getNamespaceName(), testStorage.getSourceClusterName(), null);
 
         String mmDepName = KafkaMirrorMakerResources.deploymentName(testStorage.getClusterName());
         String mirrorMakerPodName = kubeClient(testStorage.getNamespaceName()).listPodsByPrefixInName(mmDepName).get(0).getMetadata().getName();
@@ -136,7 +133,7 @@ public class MirrorMakerST extends AbstractST {
                 "-Xmx200m", "-Xms200m", "-XX:+UseG1GC");
 
         clients = new KafkaClientsBuilder(clients)
-            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(kafkaClusterTargetName))
+            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getTargetClusterName()))
             .build();
 
         resourceManager.createResourceWithWait(extensionContext, clients.consumerStrimzi());
@@ -152,14 +149,8 @@ public class MirrorMakerST extends AbstractST {
     void testMirrorMakerTlsAuthenticated(ExtensionContext extensionContext) {
         final TestStorage testStorage = new TestStorage(extensionContext, Environment.TEST_SUITE_NAMESPACE);
 
-        String kafkaClusterSourceName = testStorage.getClusterName() + "-source";
-        String kafkaClusterTargetName = testStorage.getClusterName() + "-target";
-
-        String kafkaSourceUserName = testStorage.getUsername() + "-source";
-        String kafkaTargetUserName = testStorage.getUsername() + "-target";
-
         // Deploy source kafka with tls listener and mutual tls auth
-        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(kafkaClusterSourceName, 1, 1)
+        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getSourceClusterName(), 1, 1)
             .editSpec()
                 .editKafka()
                     .withListeners(new GenericKafkaListenerBuilder()
@@ -174,7 +165,7 @@ public class MirrorMakerST extends AbstractST {
             .build());
 
         // Deploy target kafka with tls listener and mutual tls auth
-        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(kafkaClusterTargetName, 1, 1)
+        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getTargetClusterName(), 1, 1)
             .editSpec()
                 .editKafka()
                     .withListeners(new GenericKafkaListenerBuilder()
@@ -189,36 +180,36 @@ public class MirrorMakerST extends AbstractST {
             .build());
 
         resourceManager.createResourceWithWait(extensionContext,
-            KafkaTopicTemplates.topic(kafkaClusterSourceName, testStorage.getTopicName(), testStorage.getNamespaceName()).build(),
-            KafkaUserTemplates.tlsUser(testStorage.getNamespaceName(), kafkaClusterSourceName, kafkaSourceUserName).build(),
-            KafkaUserTemplates.tlsUser(testStorage.getNamespaceName(), kafkaClusterTargetName, kafkaTargetUserName).build()
+            KafkaTopicTemplates.topic(testStorage.getSourceClusterName(), testStorage.getTopicName(), testStorage.getNamespaceName()).build(),
+            KafkaUserTemplates.tlsUser(testStorage.getNamespaceName(), testStorage.getSourceClusterName(), testStorage.getSourceUsername()).build(),
+            KafkaUserTemplates.tlsUser(testStorage.getNamespaceName(), testStorage.getTargetClusterName(), testStorage.getTargetUsername()).build()
         );
 
         // Initialize CertSecretSource with certificate and secret names for consumer
         CertSecretSource certSecretSource = new CertSecretSource();
         certSecretSource.setCertificate("ca.crt");
-        certSecretSource.setSecretName(KafkaResources.clusterCaCertificateSecretName(kafkaClusterSourceName));
+        certSecretSource.setSecretName(KafkaResources.clusterCaCertificateSecretName(testStorage.getSourceClusterName()));
 
         // Initialize CertSecretSource with certificate and secret names for producer
         CertSecretSource certSecretTarget = new CertSecretSource();
         certSecretTarget.setCertificate("ca.crt");
-        certSecretTarget.setSecretName(KafkaResources.clusterCaCertificateSecretName(kafkaClusterTargetName));
+        certSecretTarget.setSecretName(KafkaResources.clusterCaCertificateSecretName(testStorage.getTargetClusterName()));
 
         KafkaClients clients = new KafkaClientsBuilder()
             .withProducerName(testStorage.getProducerName())
             .withConsumerName(testStorage.getConsumerName())
-            .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(kafkaClusterSourceName))
+            .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(testStorage.getSourceClusterName()))
             .withNamespaceName(testStorage.getNamespaceName())
-            .withUsername(kafkaSourceUserName)
+            .withUsername(testStorage.getSourceUsername())
             .withTopicName(testStorage.getTopicName())
             .withMessageCount(testStorage.getMessageCount())
             .build();
 
-        resourceManager.createResourceWithWait(extensionContext, clients.producerTlsStrimzi(kafkaClusterSourceName), clients.consumerTlsStrimzi(kafkaClusterSourceName));
+        resourceManager.createResourceWithWait(extensionContext, clients.producerTlsStrimzi(testStorage.getSourceClusterName()), clients.consumerTlsStrimzi(testStorage.getSourceClusterName()));
         ClientUtils.waitForClientsSuccess(testStorage);
 
         // Deploy MirrorMaker with tls listener and mutual tls auth
-        resourceManager.createResourceWithWait(extensionContext, KafkaMirrorMakerTemplates.kafkaMirrorMaker(testStorage.getClusterName(), kafkaClusterSourceName, kafkaClusterTargetName, ClientUtils.generateRandomConsumerGroup(), 1, true)
+        resourceManager.createResourceWithWait(extensionContext, KafkaMirrorMakerTemplates.kafkaMirrorMaker(testStorage.getClusterName(), testStorage.getSourceClusterName(), testStorage.getTargetClusterName(), ClientUtils.generateRandomConsumerGroup(), 1, true)
             .editSpec()
                 .editConsumer()
                     .withNewTls()
@@ -226,7 +217,7 @@ public class MirrorMakerST extends AbstractST {
                     .endTls()
                     .withNewKafkaClientAuthenticationTls()
                         .withNewCertificateAndKey()
-                            .withSecretName(kafkaSourceUserName)
+                            .withSecretName(testStorage.getSourceUsername())
                             .withCertificate("user.crt")
                             .withKey("user.key")
                         .endCertificateAndKey()
@@ -238,7 +229,7 @@ public class MirrorMakerST extends AbstractST {
                     .endTls()
                     .withNewKafkaClientAuthenticationTls()
                         .withNewCertificateAndKey()
-                            .withSecretName(kafkaTargetUserName)
+                            .withSecretName(testStorage.getTargetUsername())
                             .withCertificate("user.crt")
                             .withKey("user.key")
                         .endCertificateAndKey()
@@ -248,11 +239,11 @@ public class MirrorMakerST extends AbstractST {
             .build());
 
         clients = new KafkaClientsBuilder(clients)
-            .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(kafkaClusterTargetName))
-            .withUsername(kafkaTargetUserName)
+            .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(testStorage.getTargetClusterName()))
+            .withUsername(testStorage.getTargetUsername())
             .build();
 
-        resourceManager.createResourceWithWait(extensionContext, clients.consumerTlsStrimzi(kafkaClusterTargetName));
+        resourceManager.createResourceWithWait(extensionContext, clients.consumerTlsStrimzi(testStorage.getTargetClusterName()));
         ClientUtils.waitForConsumerClientSuccess(testStorage);
     }
 
@@ -264,14 +255,8 @@ public class MirrorMakerST extends AbstractST {
     void testMirrorMakerTlsScramSha(ExtensionContext extensionContext) {
         final TestStorage testStorage = new TestStorage(extensionContext, Environment.TEST_SUITE_NAMESPACE);
 
-        String kafkaClusterSourceName = testStorage.getClusterName() + "-source";
-        String kafkaClusterTargetName = testStorage.getClusterName() + "-target";
-
-        String kafkaSourceUserName = testStorage.getUsername() + "-source";
-        String kafkaTargetUserName = testStorage.getUsername() + "-target";
-
         // Deploy source kafka with tls listener and SCRAM-SHA authentication
-        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(kafkaClusterSourceName, 1, 1)
+        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getSourceClusterName(), 1, 1)
             .editSpec()
                 .editKafka()
                     .withListeners(new GenericKafkaListenerBuilder()
@@ -286,7 +271,7 @@ public class MirrorMakerST extends AbstractST {
             .build());
 
         // Deploy target kafka with tls listener and SCRAM-SHA authentication
-        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(kafkaClusterTargetName, 1, 1)
+        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getTargetClusterName(), 1, 1)
             .editSpec()
                 .editKafka()
                     .withListeners(new GenericKafkaListenerBuilder()
@@ -302,50 +287,50 @@ public class MirrorMakerST extends AbstractST {
 
         // Deploy topic
         resourceManager.createResourceWithWait(extensionContext,
-            KafkaTopicTemplates.topic(kafkaClusterSourceName, testStorage.getTopicName(), testStorage.getNamespaceName()).build(),
-            KafkaUserTemplates.scramShaUser(testStorage.getNamespaceName(), kafkaClusterSourceName, kafkaSourceUserName).build(),
-            KafkaUserTemplates.scramShaUser(testStorage.getNamespaceName(), kafkaClusterTargetName, kafkaTargetUserName).build()
+            KafkaTopicTemplates.topic(testStorage.getSourceClusterName(), testStorage.getTopicName(), testStorage.getNamespaceName()).build(),
+            KafkaUserTemplates.scramShaUser(testStorage.getNamespaceName(), testStorage.getSourceClusterName(), testStorage.getSourceUsername()).build(),
+            KafkaUserTemplates.scramShaUser(testStorage.getNamespaceName(), testStorage.getTargetClusterName(), testStorage.getTargetUsername()).build()
         );
 
         // Initialize PasswordSecretSource to set this as PasswordSecret in MirrorMaker spec
         PasswordSecretSource passwordSecretSource = new PasswordSecretSource();
-        passwordSecretSource.setSecretName(kafkaSourceUserName);
+        passwordSecretSource.setSecretName(testStorage.getSourceUsername());
         passwordSecretSource.setPassword("password");
 
         // Initialize PasswordSecretSource to set this as PasswordSecret in MirrorMaker spec
         PasswordSecretSource passwordSecretTarget = new PasswordSecretSource();
-        passwordSecretTarget.setSecretName(kafkaTargetUserName);
+        passwordSecretTarget.setSecretName(testStorage.getTargetUsername());
         passwordSecretTarget.setPassword("password");
 
         // Initialize CertSecretSource with certificate and secret names for consumer
         CertSecretSource certSecretSource = new CertSecretSource();
         certSecretSource.setCertificate("ca.crt");
-        certSecretSource.setSecretName(KafkaResources.clusterCaCertificateSecretName(kafkaClusterSourceName));
+        certSecretSource.setSecretName(KafkaResources.clusterCaCertificateSecretName(testStorage.getSourceClusterName()));
 
         // Initialize CertSecretSource with certificate and secret names for producer
         CertSecretSource certSecretTarget = new CertSecretSource();
         certSecretTarget.setCertificate("ca.crt");
-        certSecretTarget.setSecretName(KafkaResources.clusterCaCertificateSecretName(kafkaClusterTargetName));
+        certSecretTarget.setSecretName(KafkaResources.clusterCaCertificateSecretName(testStorage.getTargetClusterName()));
 
         KafkaClients clients = new KafkaClientsBuilder()
             .withProducerName(testStorage.getProducerName())
             .withConsumerName(testStorage.getConsumerName())
-            .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(kafkaClusterSourceName))
+            .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(testStorage.getSourceClusterName()))
             .withNamespaceName(testStorage.getNamespaceName())
-            .withUsername(kafkaSourceUserName)
+            .withUsername(testStorage.getSourceUsername())
             .withTopicName(testStorage.getTopicName())
             .withMessageCount(testStorage.getMessageCount())
             .build();
 
-        resourceManager.createResourceWithWait(extensionContext, clients.producerScramShaTlsStrimzi(kafkaClusterSourceName), clients.consumerScramShaTlsStrimzi(kafkaClusterSourceName));
+        resourceManager.createResourceWithWait(extensionContext, clients.producerScramShaTlsStrimzi(testStorage.getSourceClusterName()), clients.consumerScramShaTlsStrimzi(testStorage.getSourceClusterName()));
         ClientUtils.waitForClientsSuccess(testStorage);
 
         // Deploy MirrorMaker with TLS and ScramSha512
-        resourceManager.createResourceWithWait(extensionContext, KafkaMirrorMakerTemplates.kafkaMirrorMaker(testStorage.getClusterName(), kafkaClusterSourceName, kafkaClusterTargetName, ClientUtils.generateRandomConsumerGroup(), 1, true)
+        resourceManager.createResourceWithWait(extensionContext, KafkaMirrorMakerTemplates.kafkaMirrorMaker(testStorage.getClusterName(), testStorage.getSourceClusterName(), testStorage.getTargetClusterName(), ClientUtils.generateRandomConsumerGroup(), 1, true)
             .editSpec()
                 .editConsumer()
                     .withNewKafkaClientAuthenticationScramSha512()
-                        .withUsername(kafkaSourceUserName)
+                        .withUsername(testStorage.getSourceUsername())
                         .withPasswordSecret(passwordSecretSource)
                     .endKafkaClientAuthenticationScramSha512()
                     .withNewTls()
@@ -354,7 +339,7 @@ public class MirrorMakerST extends AbstractST {
                 .endConsumer()
                 .editProducer()
                     .withNewKafkaClientAuthenticationScramSha512()
-                        .withUsername(kafkaTargetUserName)
+                        .withUsername(testStorage.getTargetUsername())
                         .withPasswordSecret(passwordSecretTarget)
                     .endKafkaClientAuthenticationScramSha512()
                     .withNewTls()
@@ -365,11 +350,11 @@ public class MirrorMakerST extends AbstractST {
             .build());
 
         clients = new KafkaClientsBuilder(clients)
-            .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(kafkaClusterTargetName))
-            .withUsername(kafkaTargetUserName)
+            .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(testStorage.getTargetClusterName()))
+            .withUsername(testStorage.getTargetUsername())
             .build();
 
-        resourceManager.createResourceWithWait(extensionContext, clients.consumerScramShaTlsStrimzi(kafkaClusterTargetName));
+        resourceManager.createResourceWithWait(extensionContext, clients.consumerScramShaTlsStrimzi(testStorage.getTargetClusterName()));
         ClientUtils.waitForConsumerClientSuccess(testStorage);
     }
 
@@ -377,26 +362,23 @@ public class MirrorMakerST extends AbstractST {
     void testIncludeList(ExtensionContext extensionContext) throws UnexpectedException {
         final TestStorage testStorage = new TestStorage(extensionContext, Environment.TEST_SUITE_NAMESPACE);
 
-        String kafkaClusterSourceName = testStorage.getClusterName() + "-source";
-        String kafkaClusterTargetName = testStorage.getClusterName() + "-target";
-
         String topicName = "included-topic";
         String topicNotIncluded = "not-included-topic";
 
         resourceManager.createResourceWithWait(extensionContext,
-            KafkaTemplates.kafkaEphemeral(kafkaClusterSourceName, 1, 1).build(),
-            KafkaTemplates.kafkaEphemeral(kafkaClusterTargetName, 1, 1).build()
+            KafkaTemplates.kafkaEphemeral(testStorage.getSourceClusterName(), 1, 1).build(),
+            KafkaTemplates.kafkaEphemeral(testStorage.getTargetClusterName(), 1, 1).build()
         );
 
         resourceManager.createResourceWithWait(extensionContext,
-            KafkaTopicTemplates.topic(kafkaClusterSourceName, topicName, testStorage.getNamespaceName()).build(),
-            KafkaTopicTemplates.topic(kafkaClusterSourceName, topicNotIncluded, testStorage.getNamespaceName()).build()
+            KafkaTopicTemplates.topic(testStorage.getSourceClusterName(), topicName, testStorage.getNamespaceName()).build(),
+            KafkaTopicTemplates.topic(testStorage.getSourceClusterName(), topicNotIncluded, testStorage.getNamespaceName()).build()
         );
 
         KafkaClients clients = new KafkaClientsBuilder()
             .withProducerName(testStorage.getProducerName())
             .withConsumerName(testStorage.getConsumerName())
-            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(kafkaClusterSourceName))
+            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getSourceClusterName()))
             .withNamespaceName(testStorage.getNamespaceName())
             .withTopicName(topicName)
             .withMessageCount(testStorage.getMessageCount())
@@ -412,7 +394,7 @@ public class MirrorMakerST extends AbstractST {
         resourceManager.createResourceWithWait(extensionContext, clients.producerStrimzi(), clients.consumerStrimzi());
         ClientUtils.waitForClientsSuccess(testStorage);
 
-        resourceManager.createResourceWithWait(extensionContext, KafkaMirrorMakerTemplates.kafkaMirrorMaker(testStorage.getClusterName(), kafkaClusterSourceName, kafkaClusterTargetName, ClientUtils.generateRandomConsumerGroup(), 1, false)
+        resourceManager.createResourceWithWait(extensionContext, KafkaMirrorMakerTemplates.kafkaMirrorMaker(testStorage.getClusterName(), testStorage.getSourceClusterName(), testStorage.getTargetClusterName(), ClientUtils.generateRandomConsumerGroup(), 1, false)
             .editMetadata()
                 .withNamespace(testStorage.getNamespaceName())
             .endMetadata()
@@ -423,7 +405,7 @@ public class MirrorMakerST extends AbstractST {
 
         clients = new KafkaClientsBuilder(clients)
             .withTopicName(topicName)
-            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(kafkaClusterTargetName))
+            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getTargetClusterName()))
             .build();
 
         resourceManager.createResourceWithWait(extensionContext, clients.consumerStrimzi());
@@ -442,10 +424,8 @@ public class MirrorMakerST extends AbstractST {
     @ParallelNamespaceTest
     void testCustomAndUpdatedValues(ExtensionContext extensionContext) {
         final TestStorage testStorage = storageMap.get(extensionContext);
-        final String namespaceName = StUtils.getNamespaceBasedOnRbac(Environment.TEST_SUITE_NAMESPACE, extensionContext);
-        String clusterName = testStorage.getClusterName();
 
-        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 1, 1)
+        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 1, 1)
             .editSpec()
                 .withNewEntityOperator()
                 .endEntityOperator()
@@ -485,7 +465,7 @@ public class MirrorMakerST extends AbstractST {
         int updatedPeriodSeconds = 5;
         int updatedFailureThreshold = 1;
 
-        resourceManager.createResourceWithWait(extensionContext, KafkaMirrorMakerTemplates.kafkaMirrorMaker(clusterName, clusterName, clusterName, ClientUtils.generateRandomConsumerGroup(), 1, false)
+        resourceManager.createResourceWithWait(extensionContext, KafkaMirrorMakerTemplates.kafkaMirrorMaker(testStorage.getClusterName(), testStorage.getClusterName(), testStorage.getClusterName(), ClientUtils.generateRandomConsumerGroup(), 1, false)
             .editSpec()
                 .editProducer()
                     .withConfig(producerConfig)
@@ -515,27 +495,27 @@ public class MirrorMakerST extends AbstractST {
             .endSpec()
             .build());
 
-        Map<String, String> mirrorMakerSnapshot = DeploymentUtils.depSnapshot(namespaceName, KafkaMirrorMakerResources.deploymentName(clusterName));
+        Map<String, String> mirrorMakerSnapshot = DeploymentUtils.depSnapshot(testStorage.getNamespaceName(), KafkaMirrorMakerResources.deploymentName(testStorage.getClusterName()));
 
         // Remove variable which is already in use
         envVarGeneral.remove(usedVariable);
         LOGGER.info("Verifying values before update");
-        checkReadinessLivenessProbe(namespaceName, KafkaMirrorMakerResources.deploymentName(clusterName),
-            KafkaMirrorMakerResources.deploymentName(clusterName), initialDelaySeconds, timeoutSeconds, periodSeconds,
+        checkReadinessLivenessProbe(testStorage.getNamespaceName(), KafkaMirrorMakerResources.deploymentName(testStorage.getClusterName()),
+            KafkaMirrorMakerResources.deploymentName(testStorage.getClusterName()), initialDelaySeconds, timeoutSeconds, periodSeconds,
             successThreshold, failureThreshold);
-        checkSpecificVariablesInContainer(namespaceName, KafkaMirrorMakerResources.deploymentName(clusterName),
-            KafkaMirrorMakerResources.deploymentName(clusterName), envVarGeneral);
-        checkComponentConfiguration(namespaceName, KafkaMirrorMakerResources.deploymentName(clusterName),
-            KafkaMirrorMakerResources.deploymentName(clusterName), "KAFKA_MIRRORMAKER_CONFIGURATION_PRODUCER", producerConfig);
-        checkComponentConfiguration(namespaceName, KafkaMirrorMakerResources.deploymentName(clusterName),
-            KafkaMirrorMakerResources.deploymentName(clusterName), "KAFKA_MIRRORMAKER_CONFIGURATION_CONSUMER", consumerConfig);
+        checkSpecificVariablesInContainer(testStorage.getNamespaceName(), KafkaMirrorMakerResources.deploymentName(testStorage.getClusterName()),
+            KafkaMirrorMakerResources.deploymentName(testStorage.getClusterName()), envVarGeneral);
+        checkComponentConfiguration(testStorage.getNamespaceName(), KafkaMirrorMakerResources.deploymentName(testStorage.getClusterName()),
+            KafkaMirrorMakerResources.deploymentName(testStorage.getClusterName()), "KAFKA_MIRRORMAKER_CONFIGURATION_PRODUCER", producerConfig);
+        checkComponentConfiguration(testStorage.getNamespaceName(), KafkaMirrorMakerResources.deploymentName(testStorage.getClusterName()),
+            KafkaMirrorMakerResources.deploymentName(testStorage.getClusterName()), "KAFKA_MIRRORMAKER_CONFIGURATION_CONSUMER", consumerConfig);
 
         LOGGER.info("Check if actual env variable {} has different value than {}", usedVariable, "test.value");
-        assertThat(StUtils.checkEnvVarInPod(namespaceName, kubeClient().listPods(namespaceName, clusterName, Labels.STRIMZI_KIND_LABEL,
+        assertThat(StUtils.checkEnvVarInPod(testStorage.getNamespaceName(), kubeClient().listPods(testStorage.getNamespaceName(), testStorage.getClusterName(), Labels.STRIMZI_KIND_LABEL,
             KafkaMirrorMaker.RESOURCE_KIND).get(0).getMetadata().getName(), usedVariable), CoreMatchers.is(not("test.value")));
 
         LOGGER.info("Updating values in MirrorMaker container");
-        KafkaMirrorMakerResource.replaceMirrorMakerResourceInSpecificNamespace(clusterName, kmm -> {
+        KafkaMirrorMakerResource.replaceMirrorMakerResourceInSpecificNamespace(testStorage.getClusterName(), kmm -> {
             kmm.getSpec().getTemplate().getMirrorMakerContainer().setEnv(StUtils.createContainerEnvVarsFromMap(envVarUpdated));
             kmm.getSpec().getProducer().setConfig(updatedProducerConfig);
             kmm.getSpec().getConsumer().setConfig(updatedConsumerConfig);
@@ -547,20 +527,20 @@ public class MirrorMakerST extends AbstractST {
             kmm.getSpec().getReadinessProbe().setPeriodSeconds(updatedPeriodSeconds);
             kmm.getSpec().getLivenessProbe().setFailureThreshold(updatedFailureThreshold);
             kmm.getSpec().getReadinessProbe().setFailureThreshold(updatedFailureThreshold);
-        }, namespaceName);
+        }, testStorage.getNamespaceName());
 
-        DeploymentUtils.waitTillDepHasRolled(namespaceName, KafkaMirrorMakerResources.deploymentName(clusterName), 1, mirrorMakerSnapshot);
+        DeploymentUtils.waitTillDepHasRolled(testStorage.getNamespaceName(), KafkaMirrorMakerResources.deploymentName(testStorage.getClusterName()), 1, mirrorMakerSnapshot);
 
         LOGGER.info("Verifying values after update");
-        checkReadinessLivenessProbe(namespaceName, KafkaMirrorMakerResources.deploymentName(clusterName),
-            KafkaMirrorMakerResources.deploymentName(clusterName), updatedInitialDelaySeconds, updatedTimeoutSeconds,
+        checkReadinessLivenessProbe(testStorage.getNamespaceName(), KafkaMirrorMakerResources.deploymentName(testStorage.getClusterName()),
+            KafkaMirrorMakerResources.deploymentName(testStorage.getClusterName()), updatedInitialDelaySeconds, updatedTimeoutSeconds,
                 updatedPeriodSeconds, successThreshold, updatedFailureThreshold);
-        checkSpecificVariablesInContainer(namespaceName, KafkaMirrorMakerResources.deploymentName(clusterName),
-            KafkaMirrorMakerResources.deploymentName(clusterName), envVarUpdated);
-        checkComponentConfiguration(namespaceName, KafkaMirrorMakerResources.deploymentName(clusterName),
-            KafkaMirrorMakerResources.deploymentName(clusterName), "KAFKA_MIRRORMAKER_CONFIGURATION_PRODUCER", updatedProducerConfig);
-        checkComponentConfiguration(namespaceName, KafkaMirrorMakerResources.deploymentName(clusterName),
-            KafkaMirrorMakerResources.deploymentName(clusterName), "KAFKA_MIRRORMAKER_CONFIGURATION_CONSUMER", updatedConsumerConfig);
+        checkSpecificVariablesInContainer(testStorage.getNamespaceName(), KafkaMirrorMakerResources.deploymentName(testStorage.getClusterName()),
+            KafkaMirrorMakerResources.deploymentName(testStorage.getClusterName()), envVarUpdated);
+        checkComponentConfiguration(testStorage.getNamespaceName(), KafkaMirrorMakerResources.deploymentName(testStorage.getClusterName()),
+            KafkaMirrorMakerResources.deploymentName(testStorage.getClusterName()), "KAFKA_MIRRORMAKER_CONFIGURATION_PRODUCER", updatedProducerConfig);
+        checkComponentConfiguration(testStorage.getNamespaceName(), KafkaMirrorMakerResources.deploymentName(testStorage.getClusterName()),
+            KafkaMirrorMakerResources.deploymentName(testStorage.getClusterName()), "KAFKA_MIRRORMAKER_CONFIGURATION_CONSUMER", updatedConsumerConfig);
     }
 
     @ParallelNamespaceTest
@@ -568,15 +548,12 @@ public class MirrorMakerST extends AbstractST {
     void testScaleMirrorMakerUpAndDownToZero(ExtensionContext extensionContext) {
         final TestStorage testStorage = new TestStorage(extensionContext, Environment.TEST_SUITE_NAMESPACE);
 
-        String kafkaClusterSourceName = testStorage.getClusterName() + "-source";
-        String kafkaClusterTargetName = testStorage.getClusterName() + "-target";
-
         resourceManager.createResourceWithWait(extensionContext,
-            KafkaTemplates.kafkaEphemeral(kafkaClusterSourceName, 1, 1).build(),
-            KafkaTemplates.kafkaEphemeral(kafkaClusterTargetName, 1, 1).build()
+            KafkaTemplates.kafkaEphemeral(testStorage.getSourceClusterName(), 1, 1).build(),
+            KafkaTemplates.kafkaEphemeral(testStorage.getTargetClusterName(), 1, 1).build()
         );
 
-        resourceManager.createResourceWithWait(extensionContext, KafkaMirrorMakerTemplates.kafkaMirrorMaker(testStorage.getClusterName(), kafkaClusterTargetName, kafkaClusterSourceName, ClientUtils.generateRandomConsumerGroup(), 1, false).build());
+        resourceManager.createResourceWithWait(extensionContext, KafkaMirrorMakerTemplates.kafkaMirrorMaker(testStorage.getClusterName(), testStorage.getTargetClusterName(), testStorage.getSourceClusterName(), ClientUtils.generateRandomConsumerGroup(), 1, false).build());
 
         int scaleTo = 2;
         long mmObsGen = KafkaMirrorMakerResource.kafkaMirrorMakerClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get().getStatus().getObservedGeneration();
@@ -631,16 +608,13 @@ public class MirrorMakerST extends AbstractST {
     void testConfigureDeploymentStrategy(ExtensionContext extensionContext) {
         final TestStorage testStorage = storageMap.get(extensionContext);
         final String namespaceName = StUtils.getNamespaceBasedOnRbac(Environment.TEST_SUITE_NAMESPACE, extensionContext);
-        String clusterName = testStorage.getClusterName();
-        String kafkaClusterSourceName = clusterName + "-source";
-        String kafkaClusterTargetName = clusterName + "-target";
 
         // Deploy source kafka
-        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(kafkaClusterSourceName, 1, 1).build());
+        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getSourceClusterName(), 1, 1).build());
         // Deploy target kafka
-        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(kafkaClusterTargetName, 1, 1).build());
+        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getTargetClusterName(), 1, 1).build());
 
-        resourceManager.createResourceWithWait(extensionContext, KafkaMirrorMakerTemplates.kafkaMirrorMaker(clusterName, kafkaClusterTargetName, kafkaClusterSourceName, ClientUtils.generateRandomConsumerGroup(), 1, false)
+        resourceManager.createResourceWithWait(extensionContext, KafkaMirrorMakerTemplates.kafkaMirrorMaker(testStorage.getClusterName(), testStorage.getTargetClusterName(), testStorage.getSourceClusterName(), ClientUtils.generateRandomConsumerGroup(), 1, false)
             .editSpec()
                 .editOrNewTemplate()
                     .editOrNewDeployment()
@@ -650,14 +624,14 @@ public class MirrorMakerST extends AbstractST {
             .endSpec()
             .build());
 
-        String mmDepName = KafkaMirrorMakerResources.deploymentName(clusterName);
+        String mmDepName = KafkaMirrorMakerResources.deploymentName(testStorage.getClusterName());
 
         LOGGER.info("Adding label to MirrorMaker resource, the CR should be recreateAndWaitForReadinessd");
-        KafkaMirrorMakerResource.replaceMirrorMakerResourceInSpecificNamespace(clusterName,
+        KafkaMirrorMakerResource.replaceMirrorMakerResourceInSpecificNamespace(testStorage.getClusterName(),
             mm -> mm.getMetadata().setLabels(Collections.singletonMap("some", "label")), namespaceName);
-        DeploymentUtils.waitForDeploymentAndPodsReady(namespaceName, mmDepName, 1);
+        DeploymentUtils.waitForDeploymentAndPodsReady(testStorage.getNamespaceName(), mmDepName, 1);
 
-        KafkaMirrorMaker kmm = KafkaMirrorMakerResource.kafkaMirrorMakerClient().inNamespace(namespaceName).withName(clusterName).get();
+        KafkaMirrorMaker kmm = KafkaMirrorMakerResource.kafkaMirrorMakerClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get();
 
         LOGGER.info("Checking that observed gen. is still on 1 (recreation) and new label is present");
         assertThat(kmm.getStatus().getObservedGeneration(), is(1L));
@@ -665,18 +639,18 @@ public class MirrorMakerST extends AbstractST {
         assertThat(kmm.getSpec().getTemplate().getDeployment().getDeploymentStrategy(), is(DeploymentStrategy.RECREATE));
 
         LOGGER.info("Changing Deployment strategy to {}", DeploymentStrategy.ROLLING_UPDATE);
-        KafkaMirrorMakerResource.replaceMirrorMakerResourceInSpecificNamespace(clusterName,
+        KafkaMirrorMakerResource.replaceMirrorMakerResourceInSpecificNamespace(testStorage.getClusterName(),
             mm -> mm.getSpec().getTemplate().getDeployment().setDeploymentStrategy(DeploymentStrategy.ROLLING_UPDATE), namespaceName);
-        KafkaMirrorMakerUtils.waitForKafkaMirrorMakerReady(namespaceName, clusterName);
+        KafkaMirrorMakerUtils.waitForKafkaMirrorMakerReady(testStorage.getNamespaceName(), testStorage.getClusterName());
 
         LOGGER.info("Adding another label to MirrorMaker resource, Pods should be rolled");
-        KafkaMirrorMakerResource.replaceMirrorMakerResourceInSpecificNamespace(clusterName, mm -> mm.getMetadata().getLabels().put("another", "label"), namespaceName);
-        DeploymentUtils.waitForDeploymentAndPodsReady(namespaceName, mmDepName, 1);
+        KafkaMirrorMakerResource.replaceMirrorMakerResourceInSpecificNamespace(testStorage.getClusterName(), mm -> mm.getMetadata().getLabels().put("another", "label"), namespaceName);
+        DeploymentUtils.waitForDeploymentAndPodsReady(testStorage.getNamespaceName(), mmDepName, 1);
 
         LOGGER.info("Checking that observed gen. higher (rolling update) and label is changed");
         StUtils.waitUntilSupplierIsSatisfied(
             () -> {
-                final KafkaMirrorMaker kMM = KafkaMirrorMakerResource.kafkaMirrorMakerClient().inNamespace(namespaceName).withName(clusterName).get();
+                final KafkaMirrorMaker kMM = KafkaMirrorMakerResource.kafkaMirrorMakerClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get();
 
                 return kMM.getStatus().getObservedGeneration() == 2L &&
                         kMM.getMetadata().getLabels().toString().contains("another=label") &&

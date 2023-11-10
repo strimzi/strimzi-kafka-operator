@@ -120,36 +120,33 @@ public class OpenTelemetryST extends AbstractST {
 
         final TestStorage testStorage = storageMap.get(extensionContext);
 
-        final String kafkaClusterSourceName = testStorage.getClusterName();
-        final String kafkaClusterTargetName = testStorage.getTargetClusterName();
-
-        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(kafkaClusterSourceName, 3, 1).build());
-        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(kafkaClusterTargetName, 3, 1).build());
+        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getSourceClusterName(), 3, 1).build());
+        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getTargetClusterName(), 3, 1).build());
 
         // Create topic and deploy clients before Mirror Maker to not wait for MM to find the new topics
-        resourceManager.createResourceWithWait(extensionContext, KafkaTopicTemplates.topic(kafkaClusterSourceName, testStorage.getTopicName(), 12, 3, testStorage.getNamespaceName()).build());
+        resourceManager.createResourceWithWait(extensionContext, KafkaTopicTemplates.topic(testStorage.getSourceClusterName(), testStorage.getTopicName(), 12, 3, testStorage.getNamespaceName()).build());
 
-        resourceManager.createResourceWithWait(extensionContext, KafkaTopicTemplates.topic(kafkaClusterTargetName, kafkaClusterSourceName + "." + testStorage.getTopicName(), 12, 3, testStorage.getNamespaceName()).build());
+        resourceManager.createResourceWithWait(extensionContext, KafkaTopicTemplates.topic(testStorage.getTargetClusterName(), testStorage.getMirroredSourceTopicName(), 12, 3, testStorage.getNamespaceName()).build());
 
-        LOGGER.info("Setting for Kafka source plain bootstrap: {}", KafkaResources.plainBootstrapAddress(kafkaClusterSourceName));
+        LOGGER.info("Setting for Kafka source plain bootstrap: {}", KafkaResources.plainBootstrapAddress(testStorage.getSourceClusterName()));
 
         KafkaTracingClients sourceKafkaTracingClient = new KafkaTracingClientsBuilder(testStorage.getTracingClients())
             .withTopicName(testStorage.getTopicName())
-            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(kafkaClusterSourceName))
+            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getSourceClusterName()))
             .build();
 
         resourceManager.createResourceWithWait(extensionContext, sourceKafkaTracingClient.producerWithTracing());
 
-        LOGGER.info("Setting for Kafka target plain bootstrap: {}", KafkaResources.plainBootstrapAddress(kafkaClusterTargetName));
+        LOGGER.info("Setting for Kafka target plain bootstrap: {}", KafkaResources.plainBootstrapAddress(testStorage.getTargetClusterName()));
 
         final KafkaTracingClients targetKafkaTracingClient = new KafkaTracingClientsBuilder(testStorage.getTracingClients())
-            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(kafkaClusterTargetName))
-            .withTopicName(kafkaClusterSourceName + "." + testStorage.getTopicName())
+            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getTargetClusterName()))
+            .withTopicName(testStorage.getMirroredSourceTopicName())
             .build();
 
         resourceManager.createResourceWithWait(extensionContext, targetKafkaTracingClient.consumerWithTracing());
 
-        resourceManager.createResourceWithWait(extensionContext, KafkaMirrorMaker2Templates.kafkaMirrorMaker2(testStorage.getClusterName(), kafkaClusterTargetName, kafkaClusterSourceName, 1, false)
+        resourceManager.createResourceWithWait(extensionContext, KafkaMirrorMaker2Templates.kafkaMirrorMaker2(testStorage.getClusterName(), testStorage.getTargetClusterName(), testStorage.getSourceClusterName(), 1, false)
             .editSpec()
                 .withTracing(otelTracing)
                 .withNewTemplate()
@@ -173,7 +170,7 @@ public class OpenTelemetryST extends AbstractST {
             "To_" + testStorage.getTopicName(),
             JAEGER_QUERY_SERVICE);
         TracingUtils.verify(testStorage.getNamespaceName(),
-            JAEGER_CONSUMER_SERVICE, testStorage.getScraperPodName(), "From_" + kafkaClusterSourceName + "." + testStorage.getTopicName(), JAEGER_QUERY_SERVICE);
+            JAEGER_CONSUMER_SERVICE, testStorage.getScraperPodName(), "From_" + testStorage.getMirroredSourceTopicName(), JAEGER_QUERY_SERVICE);
         TracingUtils.verify(testStorage.getNamespaceName(),
             JAEGER_MIRROR_MAKER2_SERVICE,
             testStorage.getScraperPodName(),
@@ -181,7 +178,7 @@ public class OpenTelemetryST extends AbstractST {
             JAEGER_QUERY_SERVICE);
         TracingUtils.verify(testStorage.getNamespaceName(),
             JAEGER_MIRROR_MAKER2_SERVICE, testStorage.getScraperPodName(),
-            "To_" + kafkaClusterSourceName + "." + testStorage.getTopicName(), JAEGER_QUERY_SERVICE);
+            "To_" + testStorage.getMirroredSourceTopicName(), JAEGER_QUERY_SERVICE);
     }
 
     @ParallelNamespaceTest
@@ -192,36 +189,31 @@ public class OpenTelemetryST extends AbstractST {
 
         final TestStorage testStorage = storageMap.get(extensionContext);
 
-        final String kafkaClusterSourceName = testStorage.getClusterName();
-        final String kafkaClusterTargetName = testStorage.getClusterName() + "-target";
-
-        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(kafkaClusterSourceName, 3, 1).build());
-        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(kafkaClusterTargetName, 3, 1).build());
+        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getSourceClusterName(), 3, 1).build());
+        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getTargetClusterName(), 3, 1).build());
 
         // Create topic and deploy clients before Mirror Maker to not wait for MM to find the new topics
-        resourceManager.createResourceWithWait(extensionContext, KafkaTopicTemplates.topic(kafkaClusterSourceName, testStorage.getTopicName(), 12, 3, testStorage.getNamespaceName()).build());
+        resourceManager.createResourceWithWait(extensionContext, KafkaTopicTemplates.topic(testStorage.getSourceClusterName(), testStorage.getTopicName(), 12, 3, testStorage.getNamespaceName()).build());
+        resourceManager.createResourceWithWait(extensionContext, KafkaTopicTemplates.topic(testStorage.getTargetClusterName(), testStorage.getTargetTopicName(), 12, 3, testStorage.getTopicName()).build());
 
-
-        resourceManager.createResourceWithWait(extensionContext, KafkaTopicTemplates.topic(kafkaClusterTargetName, testStorage.getTopicName() + "-target", 12, 3, testStorage.getTopicName()).build());
-
-        LOGGER.info("Setting for Kafka source plain bootstrap: {}", KafkaResources.plainBootstrapAddress(kafkaClusterSourceName));
+        LOGGER.info("Setting for Kafka source plain bootstrap: {}", KafkaResources.plainBootstrapAddress(testStorage.getSourceClusterName()));
 
         final KafkaTracingClients sourceKafkaTracingClient =
             new KafkaTracingClientsBuilder(testStorage.getTracingClients())
-                .withBootstrapAddress(KafkaResources.plainBootstrapAddress(kafkaClusterSourceName))
+                .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getSourceClusterName()))
                 .build();
 
         resourceManager.createResourceWithWait(extensionContext, sourceKafkaTracingClient.producerWithTracing());
 
-        LOGGER.info("Setting for Kafka target plain bootstrap: {}", KafkaResources.plainBootstrapAddress(kafkaClusterTargetName));
+        LOGGER.info("Setting for Kafka target plain bootstrap: {}", KafkaResources.plainBootstrapAddress(testStorage.getTargetClusterName()));
 
         KafkaTracingClients targetKafkaTracingClient =  new KafkaTracingClientsBuilder(testStorage.getTracingClients())
-            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(kafkaClusterTargetName))
+            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getTargetClusterName()))
             .build();
 
         resourceManager.createResourceWithWait(extensionContext, targetKafkaTracingClient.consumerWithTracing());
 
-        resourceManager.createResourceWithWait(extensionContext, KafkaMirrorMakerTemplates.kafkaMirrorMaker(testStorage.getClusterName(), kafkaClusterSourceName, kafkaClusterTargetName,
+        resourceManager.createResourceWithWait(extensionContext, KafkaMirrorMakerTemplates.kafkaMirrorMaker(testStorage.getClusterName(), testStorage.getSourceClusterName(), testStorage.getTargetClusterName(),
                 ClientUtils.generateRandomConsumerGroup(), 1, false)
             .editSpec()
                 .withTracing(otelTracing)
@@ -262,7 +254,6 @@ public class OpenTelemetryST extends AbstractST {
 
         // Create topic and deploy clients before MirrorMaker to not wait for MM to find the new topics
         resourceManager.createResourceWithWait(extensionContext, KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getTopicName(), 12, 3, testStorage.getNamespaceName()).build());
-
         resourceManager.createResourceWithWait(extensionContext, KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getStreamsTopicTargetName(), 12, 3, testStorage.getNamespaceName()).build());
 
         final Map<String, Object> configOfKafkaConnect = new HashMap<>();
