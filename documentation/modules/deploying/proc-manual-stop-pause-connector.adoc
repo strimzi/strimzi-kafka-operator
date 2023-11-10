@@ -58,7 +58,3 @@ You can resume the connector by changing `state` to `running` or removing the co
 NOTE: Alternatively, you can xref:con-exposing-kafka-connect-api-str[expose the Kafka Connect API] and use the `stop` and `pause` endpoints to stop a connector from running.
 For example, `PUT /connectors/<connector_name>/stop`.
 You can then use the `resume` endpoint to restart it. 
- 
-
-
-
