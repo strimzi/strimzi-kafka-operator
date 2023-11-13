@@ -24,6 +24,7 @@ import io.strimzi.operator.common.Annotations;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
+import io.strimzi.systemtest.annotations.KRaftNotSupported;
 import io.strimzi.systemtest.annotations.KRaftWithoutUTONotSupported;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
@@ -75,7 +76,7 @@ public class KafkaRollerST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(KafkaRollerST.class);
 
     @ParallelNamespaceTest
-    @KRaftWithoutUTONotSupported
+    @KRaftNotSupported
     void testKafkaDoesNotRollsWhenTopicIsUnderReplicated(ExtensionContext extensionContext) {
         final TestStorage testStorage = storageMap.get(extensionContext);
         Instant startTime = Instant.now();
