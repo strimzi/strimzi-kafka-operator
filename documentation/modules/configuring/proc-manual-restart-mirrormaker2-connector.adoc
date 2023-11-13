@@ -5,7 +5,7 @@
 = Manually restarting MirrorMaker 2 connectors
 
 [role="_abstract"]
-Use the `restart-connector` annotation to manually trigger a restart of a MirrorMaker 2 connector.
+Use the `strimzi.io/restart-connector` annotation to manually trigger a restart of a MirrorMaker 2 connector.
 
 .Prerequisites
 
@@ -27,14 +27,19 @@ kubectl get KafkaMirrorMaker2
 kubectl describe KafkaMirrorMaker2 <mirrormaker_cluster_name>
 ----
 
-. Restart the connector by annotating the `KafkaMirrorMaker2` resource in Kubernetes:
+. Use the name of the connector to restart the connector by annotating the `KafkaMirrorMaker2` resource in Kubernetes:
 +
 [source,shell,subs="+quotes"]
 ----
 kubectl annotate KafkaMirrorMaker2 <mirrormaker_cluster_name> "strimzi.io/restart-connector=<mirrormaker_connector_name>"
 ----
 +
-The annotation is set to the name of the connector.
+In this example, connector `my-connector` in the `my-mirror-maker-2` cluster is restarted:
++
+[source,shell,subs="+quotes"]
+----
+kubectl annotate KafkaMirrorMaker2 my-mirror-maker-2 "strimzi.io/restart-connector=my-connector"
+----
 
 . Wait for the next reconciliation to occur (every two minutes by default).
 +

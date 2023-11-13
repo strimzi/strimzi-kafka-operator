@@ -5,7 +5,7 @@
 = Manually restarting MirrorMaker 2 connector tasks
 
 [role="_abstract"]
-Use the `restart-connector-task` annotation to manually trigger a restart of a MirrorMaker 2 connector.
+Use the `strimzi.io/restart-connector-task` annotation to manually trigger a restart of a MirrorMaker 2 connector.
 
 .Prerequisites
 
@@ -33,10 +33,15 @@ Task IDs are non-negative integers, starting from 0.
 +
 [source,shell,subs="+quotes"]
 ----
-kubectl annotate KafkaMirrorMaker2 <mirrormaker_cluster_name> "strimzi.io/restart-connector-task=<mirrormaker_connector_name>:0"
+kubectl annotate KafkaMirrorMaker2 <mirrormaker_cluster_name> "strimzi.io/restart-connector-task=<mirrormaker_connector_name>:<task_id>"
 ----
 +
-In this example, task `0` is restarted. 
+In this example, task `0` for connector `my-connector` in the `my-mirror-maker-2` cluster is restarted:
++
+[source,shell,subs="+quotes"]
+----
+kubectl annotate KafkaMirrorMaker2 my-mirror-maker-2 "strimzi.io/restart-connector-task=my-connector:0"
+----
 
 . Wait for the next reconciliation to occur (every two minutes by default).
 +

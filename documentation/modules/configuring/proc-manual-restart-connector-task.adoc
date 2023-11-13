@@ -6,7 +6,7 @@
 = Manually restarting Kafka Connect connector tasks
 
 [role="_abstract"]
-If you are using `KafkaConnector` resources to manage connectors, use the `restart-task` annotation to manually trigger a restart of a connector task.
+If you are using `KafkaConnector` resources to manage connectors, use the `strimzi.io/restart-task` annotation to manually trigger a restart of a connector task.
 
 .Prerequisites
 
