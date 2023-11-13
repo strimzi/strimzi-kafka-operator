@@ -28,8 +28,6 @@ In this guide, the term _connector_ is used when the meaning is clear from the c
 
 //Procedure to deploy a Kafka Connect cluster
 include::../../modules/deploying/proc-deploy-kafka-connect.adoc[leveloffset=+1]
-//Connectors
-include::assembly-deploy-kafka-connect-with-plugins.adoc[leveloffset=+1]
 //Resources created for Kafka Connect
 include::../../modules/configuring/ref-config-list-of-kafka-connect-resources.adoc[leveloffset=+1]
 

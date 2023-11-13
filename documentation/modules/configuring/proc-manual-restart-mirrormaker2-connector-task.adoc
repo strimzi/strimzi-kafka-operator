@@ -2,9 +2,10 @@
 // assembly-management-tasks.adoc
 
 [id='proc-manual-restart-mirrormaker2-connector-task-{context}']
-= Performing restarts of MirrorMaker 2 connector tasks using annotations
+= Manually restarting MirrorMaker 2 connector tasks
 
-This procedure describes how to manually trigger a restart of a Kafka MirrorMaker 2 connector task by using a Kubernetes annotation.
+[role="_abstract"]
+Use the `strimzi.io/restart-connector-task` annotation to manually trigger a restart of a MirrorMaker 2 connector.
 
 .Prerequisites
 
@@ -12,35 +13,37 @@ This procedure describes how to manually trigger a restart of a Kafka MirrorMake
 
 .Procedure
 
-. Find the name of the `KafkaMirrorMaker2` custom resource that controls the Kafka MirrorMaker 2 connector you want to restart:
+. Find the name of the `KafkaMirrorMaker2` custom resource that controls the MirrorMaker 2 connector task you want to restart:
 +
 [source,shell,subs="+quotes"]
 ----
 kubectl get KafkaMirrorMaker2
 ----
 
-. Find the name of the Kafka MirrorMaker 2 connector and the ID of the task to be restarted from the `KafkaMirrorMaker2` custom resource.
+. Find the name of the connector and the ID of the task to be restarted from the `KafkaMirrorMaker2` custom resource:
++
+[source,shell,subs="+quotes"]
+----
+kubectl describe KafkaMirrorMaker2 <mirrormaker_cluster_name>
+----
++
 Task IDs are non-negative integers, starting from 0.
-+
-[source,shell,subs="+quotes"]
-----
-kubectl describe KafkaMirrorMaker2 _KAFKAMIRRORMAKER-2-NAME_
-----
 
-. To restart the connector task, annotate the `KafkaMirrorMaker2` resource in Kubernetes.
-In this example, `kubectl annotate` restarts task _0_ of a connector named `+my-source->my-target.MirrorSourceConnector+`:
+. Use the name and ID to restart the connector task by annotating the `KafkaMirrorMaker2` resource in Kubernetes:
 +
 [source,shell,subs="+quotes"]
 ----
-kubectl annotate KafkaMirrorMaker2 _KAFKAMIRRORMAKER-2-NAME_ "strimzi.io/restart-connector-task=my-source->my-target.MirrorSourceConnector:0"
+kubectl annotate KafkaMirrorMaker2 <mirrormaker_cluster_name> "strimzi.io/restart-connector-task=<mirrormaker_connector_name>:<task_id>"
+----
++
+In this example, task `0` for connector `my-connector` in the `my-mirror-maker-2` cluster is restarted:
++
+[source,shell,subs="+quotes"]
+----
+kubectl annotate KafkaMirrorMaker2 my-mirror-maker-2 "strimzi.io/restart-connector-task=my-connector:0"
 ----
 
 . Wait for the next reconciliation to occur (every two minutes by default).
 +
-The Kafka MirrorMaker 2 connector task is restarted, as long as the annotation was detected by the reconciliation process.
-When the restart task request is accepted, the annotation is removed from the `KafkaMirrorMaker2` custom resource.
-
-[role="_additional-resources"]
-.Additional resources
-
-* xref:con-config-mirrormaker2-{context}[Kafka MirrorMaker 2 cluster configuration].
+The MirrorMaker 2 connector task is restarted, as long as the annotation was detected by the reconciliation process.
+When MirrorMaker 2 accepts the request, the annotation is removed from the `KafkaMirrorMaker2` custom resource.

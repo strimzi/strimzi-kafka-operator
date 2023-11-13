@@ -91,6 +91,12 @@ include::../../modules/configuring/con-config-kafka-connect.adoc[leveloffset=+1]
 include::../../modules/configuring/con-config-kafka-connect-multiple-instances.adoc[leveloffset=+1]
 //if authorization is enabled, configure the Kafka Connect user for read/write access rights
 include::../../modules/configuring/proc-config-kafka-connect-user-authorization.adoc[leveloffset=+2]
+//Procedure to manually pause or stop a Kafka connector
+include::../../modules/configuring/proc-manual-stop-pause-connector.adoc[leveloffset=+2]
+//Procedure to manually restart a Kafka connector
+include::../../modules/configuring/proc-manual-restart-connector.adoc[leveloffset=+2]
+//Procedure to manually restart a Kafka connector task
+include::../../modules/configuring/proc-manual-restart-connector-task.adoc[leveloffset=+2]
 
 //`KafkaMirrorMaker2` resource config
 include::../../modules/configuring/con-config-mirrormaker2.adoc[leveloffset=+1]
@@ -108,6 +114,12 @@ include::../../modules/configuring/con-config-mirrormaker2-tasks-max.adoc[levelo
 include::../../modules/configuring/con-config-mirrormaker2-acls.adoc[leveloffset=+2]
 //securing connections to and from mirrormaker
 include::../../modules/configuring/proc-config-mirrormaker2-securing-connection.adoc[leveloffset=+2]
+//Procedure to manually pause or stop an MM2 connector
+include::../../modules/configuring/proc-manual-stop-pause-mirrormaker2-connector.adoc[leveloffset=+2]
+//Procedure to restart an MM2 connector
+include::../../modules/configuring/proc-manual-restart-mirrormaker2-connector.adoc[leveloffset=+2]
+//Procedure to restart an MM2 connector task
+include::../../modules/configuring/proc-manual-restart-mirrormaker2-connector-task.adoc[leveloffset=+2]
 
 //`KafkaMirrorMaker` resource config
 include::../../modules/configuring/con-config-mirrormaker.adoc[leveloffset=+1]

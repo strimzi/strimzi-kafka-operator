@@ -1,0 +1,65 @@
+// Module included in the following assemblies:
+//
+// assembly-deploy-kafka-connect-with-plugins.adoc
+
+[id='proc-manual-stop-pause-mirrormaker2-connector-{context}']
+= Manually stopping or pausing MirrorMaker 2 connectors
+
+[role="_abstract"]
+If you are using `KafkaMirrorMaker2` resources to configure internal MirrorMaker connectors, use the `state` configuration to either stop or pause a connector.
+In contrast to the paused state, where the connector and tasks remain instantiated, stopping a connector retains only the configuration, with no active processes.
+Stopping a connector from running may be more suitable for longer durations than just pausing.
+While a paused connector is quicker to resume, a stopped connector has the advantages of freeing up memory and resources.
+
+NOTE: The `state` configuration replaces the (deprecated) `pause` configuration in the `KafkaMirrorMaker2ConnectorSpec` schema, which allows pauses on connectors. 
+If you were previously using the `pause` configuration to pause connectors, we encourage you to transition to using the `state` configuration only to avoid conflicts.
+
+.Prerequisites
+
+* The Cluster Operator is running.
+
+.Procedure
+
+. Find the name of the `KafkaMirrorMaker2` custom resource that controls the MirrorMaker 2 connector you want to pause or stop:
++
+[source,shell,subs="+quotes"]
+----
+kubectl get KafkaMirrorMaker2
+----
+
+. Edit the `KafkaMirrorMaker2` resource to stop or pause the connector.
++
+.Example configuration for stopping a MirrorMaker 2 connector
+[source,yaml,subs="+attributes"]
+----
+apiVersion: {KafkaMirrorMaker2ApiVersion}
+kind: KafkaMirrorMaker2
+metadata:
+  name: my-mirror-maker2
+spec:
+  version: {DefaultKafkaVersion}
+  replicas: 3
+  connectCluster: "my-cluster-target"
+  clusters:
+    # ...
+  mirrors:
+  - sourceCluster: "my-cluster-source"
+    targetCluster: "my-cluster-target"
+    sourceConnector:
+      tasksMax: 10
+      autoRestart:
+        enabled: true
+      state: stopped  
+  # ...    
+----
++
+Change the `state` configuration to `stopped` or `paused`.
+The default state for the connector when this property is not set is `running`.  
+
+. Apply the changes to the `KafkaMirrorMaker2` configuration.
++
+You can resume the connector by changing `state` to `running` or removing the configuration.
+
+NOTE: Alternatively, you can xref:con-exposing-kafka-connect-api-str[expose the Kafka Connect API] and use the `stop` and `pause` endpoints to stop a connector from running.
+For example, `PUT /connectors/<connector_name>/stop`.
+You can then use the `resume` endpoint to restart it. 

@@ -3,10 +3,10 @@
 // assembly-deploy-kafka-connect-with-plugins.adoc
 
 [id='proc-manual-restart-connector-task-{context}']
-= Manually restarting Kafka connector tasks
+= Manually restarting Kafka Connect connector tasks
 
 [role="_abstract"]
-If you are using `KafkaConnector` resources to manage connectors, use the `restart-task` annotation to manually trigger a restart of a connector task.
+If you are using `KafkaConnector` resources to manage connectors, use the `strimzi.io/restart-task` annotation to manually trigger a restart of a connector task.
 
 .Prerequisites
 
@@ -21,13 +21,14 @@ If you are using `KafkaConnector` resources to manage connectors, use the `resta
 kubectl get KafkaConnector
 ----
 
-. Find the ID of the task to be restarted from the `KafkaConnector` custom resource.
-Task IDs are non-negative integers, starting from 0:
+. Find the ID of the task to be restarted from the `KafkaConnector` custom resource:
 +
 [source,shell,subs="+quotes"]
 ----
 kubectl describe KafkaConnector <kafka_connector_name>
 ----
++
+Task IDs are non-negative integers, starting from 0.
 
 . Use the ID to restart the connector task by annotating the `KafkaConnector` resource in Kubernetes:
 +

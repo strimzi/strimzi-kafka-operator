@@ -3,10 +3,10 @@
 // assembly-deploy-kafka-connect-with-plugins.adoc
 
 [id='proc-manual-restart-connector-{context}']
-= Manually restarting connectors
+= Manually restarting Kafka Connect connectors
 
 [role="_abstract"]
-If you are using `KafkaConnector` resources to manage connectors, use the `restart` annotation to manually trigger a restart of a connector.
+If you are using `KafkaConnector` resources to manage connectors, use the `strimzi.io/restart` annotation to manually trigger a restart of a connector.
 
 .Prerequisites
 
@@ -21,7 +21,7 @@ If you are using `KafkaConnector` resources to manage connectors, use the `resta
 kubectl get KafkaConnector
 ----
 
-. Restart the connector by annotating the `KafkaConnector` resource in Kubernetes.
+. Restart the connector by annotating the `KafkaConnector` resource in Kubernetes:
 +
 [source,shell,subs="+quotes"]
 ----

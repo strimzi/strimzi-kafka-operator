@@ -36,12 +36,6 @@ include::../../modules/configuring/proc-manual-delete-pod-pvc-zookeeper.adoc[lev
 //performing manual rolling updates
 include::assembly-rolling-updates.adoc[leveloffset=+1]
 
-//steps to restart a connector
-include::../../modules/configuring/proc-manual-restart-mirrormaker2-connector.adoc[leveloffset=+1]
-
-//steps to restart a connector task
-include::../../modules/configuring/proc-manual-restart-mirrormaker2-connector-task.adoc[leveloffset=+1]
-
 //recover a cluster from a PV
 include::assembly-cluster-recovery-volume.adoc[leveloffset=+1]
 
