@@ -8,6 +8,7 @@
   If needed, `KafkaNodePools` can be disabled in the feature gates configuration in the Cluster Operator.
 * The `UnidirectionalTopicOperator` feature gate moves to beta stage and is enabled by default.
   If needed, `UnidirectionalTopicOperator` can be disabled in the feature gates configuration in the Cluster Operator.
+* Improved Kafka Connect metrics and dashboard example files
 
 ### Changes, deprecations and removals
 
