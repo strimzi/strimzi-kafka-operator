@@ -13,11 +13,9 @@ import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaTopicBuilder;
-import io.strimzi.operator.common.MetricsProvider;
-import io.strimzi.operator.common.MicrometerMetricsProvider;
 import io.strimzi.operator.common.Reconciliation;
-import io.strimzi.operator.common.metrics.MetricsHolder;
-import io.strimzi.operator.common.metrics.OperatorMetricsHolder;
+import io.strimzi.operator.topic.v2.metrics.TopicOperatorMetricsHolder;
+import io.strimzi.operator.topic.v2.metrics.TopicOperatorMetricsProvider;
 import org.apache.kafka.clients.admin.Admin;
 import org.apache.kafka.clients.admin.AdminClientConfig;
 import org.apache.kafka.clients.admin.AlterConfigsResult;
@@ -73,7 +71,7 @@ class BatchingTopicControllerTest {
 
     private Admin[] admin = new Admin[] {null};
 
-    private MetricsHolder metrics;
+    private TopicOperatorMetricsHolder metrics;
 
     private static <T> KafkaFuture<T> interruptedFuture() throws ExecutionException, InterruptedException {
         var future = mock(KafkaFuture.class);
@@ -111,8 +109,8 @@ class BatchingTopicControllerTest {
     @BeforeEach
     public void beforeEach() {
         this.client = new KubernetesClientBuilder().build();
-        MetricsProvider metricsProvider = new MicrometerMetricsProvider(new SimpleMeterRegistry());
-        this.metrics = new OperatorMetricsHolder(RESOURCE_KIND, null, metricsProvider);
+        TopicOperatorMetricsProvider metricsProvider = new TopicOperatorMetricsProvider(new SimpleMeterRegistry());
+        this.metrics = new TopicOperatorMetricsHolder(RESOURCE_KIND, null, metricsProvider);
     }
 
     @AfterEach
@@ -130,7 +128,7 @@ class BatchingTopicControllerTest {
     }
 
     private void assertOnUpdateThrowsInterruptedException(KubernetesClient client, Admin admin, KafkaTopic kt) throws ExecutionException, InterruptedException {
-        controller = new BatchingTopicController(Map.of("key", "VALUE"), admin, client, true, metrics, NAMESPACE);
+        controller = new BatchingTopicController(Map.of("key", "VALUE"), admin, client, true, metrics, NAMESPACE, false);
         List<ReconcilableTopic> batch = List.of(new ReconcilableTopic(new Reconciliation("test", "KafkaTopic", NAMESPACE, NAME), kt, BatchingTopicController.topicName(kt)));
         assertThrows(InterruptedException.class, () -> controller.onUpdate(batch));
     }

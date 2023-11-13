@@ -1763,7 +1763,7 @@ include::../api/io.strimzi.api.kafka.model.KafkaConnectSpec.adoc[leveloffset=+1]
 |xref:type-Rack-{context}[`Rack`]
 |tracing                1.2+<.<a|The configuration of tracing in Kafka Connect. The type depends on the value of the `tracing.type` property within the given object, which must be one of [jaeger, opentelemetry].
 |xref:type-JaegerTracing-{context}[`JaegerTracing`], xref:type-OpenTelemetryTracing-{context}[`OpenTelemetryTracing`]
-|template               1.2+<.<a|Template for Kafka Connect and Kafka Mirror Maker 2 resources. The template allows users to specify how the `Deployment`, `Pods` and `Service` are generated.
+|template               1.2+<.<a|Template for Kafka Connect and Kafka Mirror Maker 2 resources. The template allows users to specify how the `Pods`, `Service`, and other services are generated.
 |xref:type-KafkaConnectTemplate-{context}[`KafkaConnectTemplate`]
 |externalConfiguration  1.2+<.<a|Pass data from Secrets or ConfigMaps to the Kafka Connect pods and use them to configure connectors.
 |xref:type-ExternalConfiguration-{context}[`ExternalConfiguration`]
@@ -2007,7 +2007,7 @@ Used in: xref:type-KafkaConnectSpec-{context}[`KafkaConnectSpec`], xref:type-Kaf
 [options="header"]
 |====
 |Property                    |Description
-|deployment           1.2+<.<a|Template for Kafka Connect `Deployment`.
+|deployment           1.2+<.<a|**The `deployment` property has been deprecated.** Kafka Connect and MirrorMaker 2 operands do not use `Deployment` resources anymore. This field will be ignored. Template for Kafka Connect `Deployment`.
 |xref:type-DeploymentTemplate-{context}[`DeploymentTemplate`]
 |podSet               1.2+<.<a|Template for Kafka Connect `StrimziPodSet` resource.
 |xref:type-ResourceTemplate-{context}[`ResourceTemplate`]
@@ -3225,7 +3225,7 @@ Used in: xref:type-KafkaMirrorMaker2-{context}[`KafkaMirrorMaker2`]
 |xref:type-Rack-{context}[`Rack`]
 |tracing                1.2+<.<a|The configuration of tracing in Kafka Connect. The type depends on the value of the `tracing.type` property within the given object, which must be one of [jaeger, opentelemetry].
 |xref:type-JaegerTracing-{context}[`JaegerTracing`], xref:type-OpenTelemetryTracing-{context}[`OpenTelemetryTracing`]
-|template               1.2+<.<a|Template for Kafka Connect and Kafka Mirror Maker 2 resources. The template allows users to specify how the `Deployment`, `Pods` and `Service` are generated.
+|template               1.2+<.<a|Template for Kafka Connect and Kafka Mirror Maker 2 resources. The template allows users to specify how the `Pods`, `Service`, and other services are generated.
 |xref:type-KafkaConnectTemplate-{context}[`KafkaConnectTemplate`]
 |externalConfiguration  1.2+<.<a|Pass data from Secrets or ConfigMaps to the Kafka Connect pods and use them to configure connectors.
 |xref:type-ExternalConfiguration-{context}[`ExternalConfiguration`]

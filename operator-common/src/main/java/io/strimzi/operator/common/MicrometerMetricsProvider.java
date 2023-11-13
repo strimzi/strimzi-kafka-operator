@@ -18,7 +18,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * Wraps creation of Micrometer metrics.
  */
 public class MicrometerMetricsProvider implements MetricsProvider {
-    private final MeterRegistry metrics;
+    protected final MeterRegistry metrics;
 
     /**
      * Constructor of the Micrometer metrics provider which uses the Vert.x provided metrics registry

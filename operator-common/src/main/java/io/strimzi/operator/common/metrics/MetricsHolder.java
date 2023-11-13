@@ -178,7 +178,7 @@ public abstract class MetricsHolder {
      *
      * @param <M>   Type of the metric
      */
-    private static <M> M metric(String namespace, String kind, Labels selectorLabels, Map<String, M> metricMap, Function<Tags, M> fn) {
+    protected static <M> M metric(String namespace, String kind, Labels selectorLabels, Map<String, M> metricMap, Function<Tags, M> fn) {
         String selectorValue = selectorLabels != null ? selectorLabels.toSelectorString() : "";
         Tags metricTags;
         String metricKey = namespace + "/" + kind;

@@ -15,8 +15,8 @@ import io.strimzi.api.kafka.model.status.ConditionBuilder;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
-import io.strimzi.operator.common.metrics.MetricsHolder;
 import io.strimzi.operator.common.model.StatusUtils;
+import io.strimzi.operator.topic.v2.metrics.TopicOperatorMetricsHolder;
 import org.apache.kafka.clients.admin.Admin;
 import org.apache.kafka.clients.admin.AlterConfigOp;
 import org.apache.kafka.clients.admin.AlterConfigsResult;
@@ -53,6 +53,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Predicate;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -69,6 +70,7 @@ public class BatchingTopicController {
     static final String AUTO_CREATE_TOPICS_ENABLE = "auto.create.topics.enable";
     private static final int BROKER_DEFAULT = -1;
     private final boolean useFinalizer;
+    private final boolean enableAdditionalMetrics;
 
     private final Admin admin;
 
@@ -79,15 +81,16 @@ public class BatchingTopicController {
     // Key: topic name, Value: The KafkaTopics known to manage that topic
     /* test */ final Map<String, Set<KubeRef>> topics = new HashMap<>();
 
-    private final MetricsHolder metrics;
+    private final TopicOperatorMetricsHolder metrics;
     private final String namespace;
 
     BatchingTopicController(Map<String, String> selector,
                             Admin admin,
                             KubernetesClient kubeClient,
                             boolean useFinalizer,
-                            MetricsHolder metrics,
-                            String namespace) throws ExecutionException, InterruptedException {
+                            TopicOperatorMetricsHolder metrics,
+                            String namespace,
+                            boolean enableAdditionalMetrics) throws ExecutionException, InterruptedException {
         this.selector = Objects.requireNonNull(selector);
         this.useFinalizer = useFinalizer;
         this.admin = admin;
@@ -113,6 +116,7 @@ public class BatchingTopicController {
         this.kubeClient = kubeClient;
         this.metrics = metrics;
         this.namespace = namespace;
+        this.enableAdditionalMetrics = enableAdditionalMetrics;
     }
 
     /* test */ static boolean isManaged(KafkaTopic kt) {
@@ -152,23 +156,22 @@ public class BatchingTopicController {
     }
 
     private List<ReconcilableTopic> addOrRemoveFinalizer(boolean useFinalizer, List<ReconcilableTopic> reconcilableTopics) {
-        long t0 = System.nanoTime();
         List<ReconcilableTopic> collect = reconcilableTopics.stream()
                 .map(reconcilableTopic ->
                         new ReconcilableTopic(reconcilableTopic.reconciliation(), useFinalizer ? addFinalizer(reconcilableTopic) : removeFinalizer(reconcilableTopic), reconcilableTopic.topicName()))
                 .collect(Collectors.toList());
-        LOGGER.traceOp("{} {} topics in {}ns", useFinalizer ? "Added finalizers to" : "Removed finalizers from", reconcilableTopics.size(), System.nanoTime() - t0);
+        LOGGER.traceOp("{} {} topics", useFinalizer ? "Added finalizers to" : "Removed finalizers from", reconcilableTopics.size());
         return collect;
     }
 
     private KafkaTopic addFinalizer(ReconcilableTopic reconcilableTopic) {
         if (!reconcilableTopic.kt().getMetadata().getFinalizers().contains(FINALIZER)) {
             LOGGER.debugCr(reconcilableTopic.reconciliation(), "Adding finalizer {}", FINALIZER);
-            long t0 = System.nanoTime();
+            Timer.Sample timerSample = startOperationTimer();
             KafkaTopic edit = Crds.topicOperation(kubeClient).resource(reconcilableTopic.kt()).edit(old ->
                     new KafkaTopicBuilder(old).editOrNewMetadata().addToFinalizers(FINALIZER).endMetadata().build());
-            LOGGER.traceCr(reconcilableTopic.reconciliation(), "Added finalizer {}, took {}ns, resourceVersion now {}", FINALIZER, System.nanoTime() - t0,
-                    resourceVersion(edit));
+            stopOperationTimer(timerSample, metrics::addFinalizerTimer);
+            LOGGER.traceCr(reconcilableTopic.reconciliation(), "Added finalizer {}, resourceVersion now {}", FINALIZER, resourceVersion(edit));
             return edit;
         }
         return reconcilableTopic.kt();
@@ -177,11 +180,11 @@ public class BatchingTopicController {
     private KafkaTopic removeFinalizer(ReconcilableTopic reconcilableTopic) {
         if (reconcilableTopic.kt().getMetadata().getFinalizers().contains(FINALIZER)) {
             LOGGER.debugCr(reconcilableTopic.reconciliation(), "Removing finalizer {}", FINALIZER);
-            long t0 = System.nanoTime();
+            Timer.Sample timerSample = startOperationTimer();
             var result = Crds.topicOperation(kubeClient).resource(reconcilableTopic.kt()).edit(old ->
                     new KafkaTopicBuilder(old).editOrNewMetadata().removeFromFinalizers(FINALIZER).endMetadata().build());
-            LOGGER.traceCr(reconcilableTopic.reconciliation(), "Removed finalizer {}, took {}ns, resourceVersion now {}", FINALIZER, System.nanoTime() - t0,
-                    resourceVersion(result));
+            stopOperationTimer(timerSample, metrics::removeFinalizerTimer);
+            LOGGER.traceCr(reconcilableTopic.reconciliation(), "Removed finalizer {}, resourceVersion now {}", FINALIZER, resourceVersion(result));
             return result;
         } else {
             return reconcilableTopic.kt();
@@ -264,18 +267,16 @@ public class BatchingTopicController {
         }).collect(Collectors.toSet());
 
         LOGGER.debugOp("Admin.createTopics({})", newTopics);
-        long t0 = System.nanoTime();
+        Timer.Sample timerSample = startOperationTimer();
         CreateTopicsResult ctr = admin.createTopics(newTopics);
-        if (LOGGER.isTraceEnabled()) {
-            ctr.all().whenComplete((i, e) -> {
-                if (e != null) {
-                    LOGGER.traceOp("Admin.createTopics({}) took {}ns to fail with {}", newTopics, System.nanoTime() - t0, String.valueOf(e));
-                } else {
-                    LOGGER.traceOp("Admin.createTopics({}) took {}ns", newTopics, System.nanoTime() - t0);
-                }
-
-            });
-        }
+        ctr.all().whenComplete((i, e) -> {
+            stopOperationTimer(timerSample, metrics::createTopicsTimer);
+            if (e != null) {
+                LOGGER.traceOp("Admin.createTopics({}) failed with {}", newTopics, String.valueOf(e));
+            } else {
+                LOGGER.traceOp("Admin.createTopics({}) completed", newTopics);
+            }
+        });
         Map<String, KafkaFuture<Void>> values = ctr.values();
         return partitionedByError(kts.stream().map(reconcilableTopic -> {
             try {
@@ -408,7 +409,6 @@ public class BatchingTopicController {
     }
 
     private void updateInternal(List<ReconcilableTopic> topics) {
-        long t3 = System.nanoTime();
         LOGGER.debugOp("Reconciling batch {}", topics);
         var partitionedByDeletion = topics.stream().filter(reconcilableTopic -> {
             var kt = reconcilableTopic.kt();
@@ -465,9 +465,9 @@ public class BatchingTopicController {
         accumulateResults(results, currentStatesOrError, alterConfigsResults, createPartitionsResults);
 
         updateStatuses(results);
-        remainingAfterDeletions.forEach(this::stopTimer);
+        remainingAfterDeletions.forEach(this::stopReconciliationTimer);
 
-        LOGGER.traceOp("Total time reconciling batch of {} KafkaTopics: {}ns", results.size(), System.nanoTime() - t3);
+        LOGGER.traceOp("Reconciled batch of {} KafkaTopics", results.size());
     }
 
     private Predicate<ReconcilableTopic> hasTopicSpec = reconcilableTopic -> {
@@ -534,7 +534,6 @@ public class BatchingTopicController {
 
     private void updateStatuses(Map<ReconcilableTopic, Either<TopicOperatorException, Object>> results) {
         // Update statues with the overall results.
-        var t0 = System.nanoTime();
         results.entrySet().stream().forEach(entry -> {
             var reconcilableTopic = entry.getKey();
             var either = entry.getValue();
@@ -544,7 +543,7 @@ public class BatchingTopicController {
                 updateStatusForException(reconcilableTopic, either.left());
             }
         });
-        LOGGER.traceOp("Updated status of {} KafkaTopics in {}ns", results.size(), System.nanoTime() - t0);
+        LOGGER.traceOp("Updated status of {} KafkaTopics", results.size());
     }
 
     private void accumulateResults(Map<ReconcilableTopic, Either<TopicOperatorException, Object>> results,
@@ -627,12 +626,14 @@ public class BatchingTopicController {
 
         Map<TopicPartition, PartitionReassignment> reassignments;
         LOGGER.traceOp("Admin.listPartitionReassignments({})", apparentDifferentRfPartitions);
-        long t0 = System.nanoTime();
+        Timer.Sample timerSample = startOperationTimer();
         try {
             reassignments = admin.listPartitionReassignments(apparentDifferentRfPartitions).reassignments().get();
-            LOGGER.traceOp("Admin.listPartitionReassignments({}) took {}ns", apparentDifferentRfPartitions, System.nanoTime() - t0);
+            stopOperationTimer(timerSample, metrics::listReassignmentsTimer);
+            LOGGER.traceOp("Admin.listPartitionReassignments({}) completed", apparentDifferentRfPartitions);
         } catch (ExecutionException e) {
-            LOGGER.traceOp("Admin.listPartitionReassignments({}) took {}ns to fail with {}", apparentDifferentRfPartitions, System.nanoTime() - t0, e);
+            stopOperationTimer(timerSample, metrics::listReassignmentsTimer);
+            LOGGER.traceOp("Admin.listPartitionReassignments({}) failed with {}", apparentDifferentRfPartitions, e);
             return apparentlyDifferentRfTopics.stream().map(pair ->
                     pair(pair.getKey, Either.<TopicOperatorException, CurrentState>ofLeft(handleAdminException(e)))).toList();
         } catch (InterruptedException e) {
@@ -675,17 +676,17 @@ public class BatchingTopicController {
         }
         Map<ConfigResource, Collection<AlterConfigOp>> alteredConfigs = someAlterConfigs.stream().collect(Collectors.toMap(entry -> topicConfigResource(entry.getKey().topicName()), Pair::getValue));
         LOGGER.debugOp("Admin.incrementalAlterConfigs({})", alteredConfigs);
-        long t0 = System.nanoTime();
+        Timer.Sample timerSample = startOperationTimer();
         AlterConfigsResult acr = admin.incrementalAlterConfigs(alteredConfigs);
-        if (LOGGER.isTraceEnabled()) {
-            acr.all().whenComplete((i, e) -> {
-                if (e != null) {
-                    LOGGER.traceOp("Admin.incrementalAlterConfigs({}) took {}ns to fail with {}", alteredConfigs, System.nanoTime() - t0, String.valueOf(e));
-                } else {
-                    LOGGER.traceOp("Admin.incrementalAlterConfigs({}) took {}ns", alteredConfigs, System.nanoTime() - t0);
-                }
-            });
-        }
+        stopOperationTimer(timerSample, metrics::alterConfigsTimer);
+        acr.all().whenComplete((i, e) -> {
+            stopOperationTimer(timerSample, metrics::alterConfigsTimer);
+            if (e != null) {
+                LOGGER.traceOp("Admin.incrementalAlterConfigs({}) failed with {}", alteredConfigs, String.valueOf(e));
+            } else {
+                LOGGER.traceOp("Admin.incrementalAlterConfigs({}) completed", alteredConfigs);
+            }
+        });
         var alterConfigsResult = acr.values();
         Stream<Pair<ReconcilableTopic, Either<TopicOperatorException, Void>>> entryStream = someAlterConfigs.stream().map(entry -> {
             try {
@@ -705,17 +706,16 @@ public class BatchingTopicController {
         }
         Map<String, NewPartitions> newPartitions = someCreatePartitions.stream().collect(Collectors.toMap(pair -> pair.getKey().topicName(), Pair::getValue));
         LOGGER.debugOp("Admin.createPartitions({})", newPartitions);
-        long t0 = System.nanoTime();
+        Timer.Sample timerSample = startOperationTimer();
         CreatePartitionsResult cpr = admin.createPartitions(newPartitions);
-        if (LOGGER.isTraceEnabled()) {
-            cpr.all().whenComplete((i, e) -> {
-                if (e != null) {
-                    LOGGER.traceOp("Admin.createPartitions({}) took {}ns to fail with {}", newPartitions, System.nanoTime() - t0, String.valueOf(e));
-                } else {
-                    LOGGER.traceOp("Admin.createPartitions({}) took {}ns", newPartitions, System.nanoTime() - t0);
-                }
-            });
-        }
+        cpr.all().whenComplete((i, e) -> {
+            stopOperationTimer(timerSample, metrics::createPartitionsTimer);
+            if (e != null) {
+                LOGGER.traceOp("Admin.createPartitions({}) failed with {}", newPartitions, String.valueOf(e));
+            } else {
+                LOGGER.traceOp("Admin.createPartitions({}) completed", newPartitions);
+            }
+        });
         var createPartitionsResult = cpr.values();
         var entryStream = someCreatePartitions.stream().map(entry -> {
             try {
@@ -746,34 +746,30 @@ public class BatchingTopicController {
         DescribeTopicsResult describeTopicsResult;
         {
             LOGGER.debugOp("Admin.describeTopics({})", tns);
-            long t0 = System.nanoTime();
+            Timer.Sample timerSample = startOperationTimer();
             describeTopicsResult = admin.describeTopics(tns);
-            if (LOGGER.isTraceEnabled()) {
-                describeTopicsResult.allTopicNames().whenComplete((i, e) -> {
-                    if (e != null) {
-                        LOGGER.traceOp("Admin.describeTopics({}) took {}ns to fail with {}", tns, System.nanoTime() - t0, String.valueOf(e));
-                    } else {
-                        LOGGER.traceOp("Admin.describeTopics({}) took {}ns", tns, System.nanoTime() - t0);
-                    }
-
-                });
-            }
+            describeTopicsResult.allTopicNames().whenComplete((i, e) -> {
+                stopOperationTimer(timerSample, metrics::describeTopicsTimer);
+                if (e != null) {
+                    LOGGER.traceOp("Admin.describeTopics({}) failed with {}", tns, String.valueOf(e));
+                } else {
+                    LOGGER.traceOp("Admin.describeTopics({}) completed", tns);
+                }
+            });
         }
         DescribeConfigsResult describeConfigsResult;
         {
             LOGGER.debugOp("Admin.describeConfigs({})", configResources);
-            long t0 = System.nanoTime();
+            Timer.Sample timerSample = startOperationTimer();
             describeConfigsResult = admin.describeConfigs(configResources);
-            if (LOGGER.isTraceEnabled()) {
-                describeConfigsResult.all().whenComplete((i, e) -> {
-                    if (e != null) {
-                        LOGGER.traceOp("Admin.describeConfigs({}) took {}ns to fail with {}", configResources, System.nanoTime() - t0, String.valueOf(e));
-                    } else {
-                        LOGGER.traceOp("Admin.describeConfigs({}) took {}ns", configResources, System.nanoTime() - t0);
-                    }
-
-                });
-            }
+            describeConfigsResult.all().whenComplete((i, e) -> {
+                stopOperationTimer(timerSample, metrics::describeConfigsTimer);
+                if (e != null) {
+                    LOGGER.traceOp("Admin.describeConfigs({}) failed with {}", configResources, String.valueOf(e));
+                } else {
+                    LOGGER.traceOp("Admin.describeConfigs({}) completed", configResources);
+                }
+            });
         }
 
         var cs1 = describeTopicsResult.topicNameValues();
@@ -863,7 +859,7 @@ public class BatchingTopicController {
             }
             forgetTopic(pair.getKey());
             metrics.successfulReconciliationsCounter(namespace).increment();
-            stopTimer(pair.getKey());
+            stopReconciliationTimer(pair.getKey());
         });
 
         // join that to fail
@@ -886,7 +882,7 @@ public class BatchingTopicController {
             } else {
                 updateStatusForException(entry.getKey(), entry.getValue());
             }
-            stopTimer(entry.getKey());
+            stopReconciliationTimer(entry.getKey());
         });
 
     }
@@ -898,20 +894,17 @@ public class BatchingTopicController {
         var someDeleteTopics = TopicCollection.ofTopicNames(topicNames);
         LOGGER.debugOp("Admin.deleteTopics({})", someDeleteTopics.topicNames());
 
-        long t0 = System.nanoTime();
-
         // Admin delete
+        Timer.Sample timerSample = startOperationTimer();
         DeleteTopicsResult dtr = admin.deleteTopics(someDeleteTopics);
-        if (LOGGER.isTraceEnabled()) {
-            dtr.all().whenComplete((i, e) -> {
-                if (e != null) {
-                    LOGGER.traceOp("Admin.deleteTopics({}) took {}ns to fail with {}", someDeleteTopics.topicNames(), System.nanoTime() - t0, String.valueOf(e));
-                } else {
-                    LOGGER.traceOp("Admin.deleteTopics({}) took {}ns", someDeleteTopics.topicNames(), System.nanoTime() - t0);
-                }
-
-            });
-        }
+        dtr.all().whenComplete((i, e) -> {
+            stopOperationTimer(timerSample, metrics::deleteTopicsTimer);
+            if (e != null) {
+                LOGGER.traceOp("Admin.deleteTopics({}) failed with {}", someDeleteTopics.topicNames(), String.valueOf(e));
+            } else {
+                LOGGER.traceOp("Admin.deleteTopics({}) completed", someDeleteTopics.topicNames());
+            }
+        });
         var futuresMap = dtr.topicNameValues();
         var deleteResult = partitionedByError(batch.stream().map(reconcilableTopic -> {
             try {
@@ -1058,13 +1051,13 @@ public class BatchingTopicController {
                         .withConditions(condition)
                     .endStatus().build();
             LOGGER.debugCr(reconciliation, "Updating status with {}", updatedTopic.getStatus());
-            long t0 = System.nanoTime();
+            Timer.Sample timerSample = startOperationTimer();
             var got = Crds.topicOperation(kubeClient)
                     .resource(updatedTopic)
                     .updateStatus();
-            LOGGER.traceCr(reconciliation, "Updated status to observedGeneration {}, resourceVersion now {}, took {}ns",
-                    got.getStatus().getObservedGeneration(),
-                    resourceVersion(got), System.nanoTime() - t0);
+            stopOperationTimer(timerSample, metrics::updateStatusTimer);
+            LOGGER.traceCr(reconciliation, "Updated status to observedGeneration {}, resourceVersion now {}",
+                    got.getStatus().getObservedGeneration());
         } else {
             LOGGER.traceCr(reconciliation, "Unchanged status of {}", kt.getStatus());
         }
@@ -1084,9 +1077,23 @@ public class BatchingTopicController {
         }
     }
 
-    private void stopTimer(ReconcilableTopic topic) {
+    private void stopReconciliationTimer(ReconcilableTopic topic) {
         if (topic.reconciliationTimerSample() != null) {
             topic.reconciliationTimerSample().stop(metrics.reconciliationsTimer(namespace));
+        }
+    }
+
+    private Timer.Sample startOperationTimer() {
+        if (enableAdditionalMetrics) {
+            return Timer.start(metrics.metricsProvider().meterRegistry());
+        } else {
+            return null;
+        }
+    }
+
+    private void stopOperationTimer(Timer.Sample sample, Function<String, Timer> addMetric) {
+        if (sample != null && enableAdditionalMetrics) {
+            sample.stop(addMetric.apply(namespace));
         }
     }
 }

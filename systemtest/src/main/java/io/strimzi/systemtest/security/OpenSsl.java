@@ -184,7 +184,7 @@ public class OpenSsl {
         String endDate = dates.split("\n")[1].replace("notAfter=", "");
 
         ZoneId gmtZone = ZoneId.of("GMT");
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMM dd HH:mm:ss yyyy z");
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMM d[d] HH:mm:ss yyyy z");
         ZonedDateTime notBefore = ZonedDateTime.of(LocalDateTime.parse(startDate, formatter), gmtZone);
         ZonedDateTime notAfter = ZonedDateTime.of(LocalDateTime.parse(endDate, formatter), gmtZone);
 

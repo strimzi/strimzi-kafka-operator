@@ -23,7 +23,6 @@ import io.fabric8.kubernetes.api.model.Volume;
 import io.fabric8.kubernetes.api.model.VolumeBuilder;
 import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.fabric8.kubernetes.api.model.VolumeMountBuilder;
-import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicy;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyIngressRule;
 import io.fabric8.kubernetes.api.model.networking.v1.NetworkPolicyPeer;
@@ -477,51 +476,6 @@ public class KafkaConnectCluster extends AbstractModel implements SupportsMetric
             builder = ModelUtils.populateAffinityBuilderWithRackLabelSelector(builder, userAffinity, rack.getTopologyKey());
         }
         return builder.build();
-    }
-
-    /**
-     * Generates the Kafka Connect deployment
-     *
-     * @param replicas              Number of replicas the deployment should have
-     * @param deploymentAnnotations Map with Deployment annotations
-     * @param podAnnotations        Map with Pod annotations
-     * @param isOpenShift           Flag indicating if we are on OpenShift or not
-     * @param imagePullPolicy       Image pull policy
-     * @param imagePullSecrets      List of image pull Secrets
-     * @param customContainerImage  Custom container image produced by Kafka Connect Build. If null, the default
-     *                              image will be used.
-     * @return Generated deployment
-     */
-    public Deployment generateDeployment(int replicas,
-                                         Map<String, String> deploymentAnnotations,
-                                         Map<String, String> podAnnotations,
-                                         boolean isOpenShift,
-                                         ImagePullPolicy imagePullPolicy,
-                                         List<LocalObjectReference> imagePullSecrets,
-                                         String customContainerImage) {
-        return WorkloadUtils.createDeployment(
-                componentName,
-                namespace,
-                labels,
-                ownerReference,
-                templateDeployment,
-                replicas,
-                deploymentAnnotations,
-                WorkloadUtils.deploymentStrategy(TemplateUtils.deploymentStrategy(templateDeployment, ROLLING_UPDATE)),
-                WorkloadUtils.createPodTemplateSpec(
-                        componentName,
-                        labels,
-                        templatePod,
-                        defaultPodLabels(),
-                        podAnnotations,
-                        getMergedAffinity(),
-                        ContainerUtils.listOrNull(createInitContainer(imagePullPolicy)),
-                        List.of(createContainer(imagePullPolicy, customContainerImage)),
-                        getVolumes(isOpenShift),
-                        imagePullSecrets,
-                        securityProvider.kafkaConnectPodSecurityContext(new PodSecurityProviderContextImpl(templatePod))
-                )
-        );
     }
 
     /**

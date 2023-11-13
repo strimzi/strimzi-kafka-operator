@@ -107,26 +107,37 @@ public class KafkaConnectTemplates {
      */
     @SuppressFBWarnings("DMI_RANDOM_USED_ONLY_ONCE")
     public static KafkaConnectBuilder kafkaConnectWithFilePlugin(String name, String namespaceName, String clusterName, int replicas, String pathToConnectConfig) {
-        final Plugin fileSinkPlugin = new PluginBuilder()
-            .withName("file-plugin")
-            .withArtifacts(
-                new JarArtifactBuilder()
-                    .withUrl(Environment.ST_FILE_PLUGIN_URL)
-                    .build()
-            )
-            .build();
+        if (!KubeClusterResource.getInstance().isMicroShift() && Environment.CONNECT_IMAGE_WITH_FILE_SINK_PLUGIN.isEmpty()) {
+            final Plugin fileSinkPlugin = new PluginBuilder()
+                .withName("file-plugin")
+                .withArtifacts(
+                    new JarArtifactBuilder()
+                        .withUrl(Environment.ST_FILE_PLUGIN_URL)
+                        .build()
+                )
+                .build();
 
-        final String imageFullPath = Environment.getImageOutputRegistry(namespaceName, Constants.ST_CONNECT_BUILD_IMAGE_NAME, String.valueOf(new Random().nextInt(Integer.MAX_VALUE)));
+            final String imageFullPath = Environment.getImageOutputRegistry(namespaceName, Constants.ST_CONNECT_BUILD_IMAGE_NAME, String.valueOf(new Random().nextInt(Integer.MAX_VALUE)));
 
-        KafkaConnectBuilder kafkaConnectBuilder = kafkaConnect(name, namespaceName, clusterName, replicas, pathToConnectConfig)
-            .editOrNewSpec()
-                .editOrNewBuild()
-                    .withPlugins(fileSinkPlugin)
-                    .withOutput(dockerOutput(imageFullPath))
-                .endBuild()
-            .endSpec();
+            return kafkaConnect(name, namespaceName, clusterName, replicas, pathToConnectConfig)
+                .editOrNewSpec()
+                    .editOrNewBuild()
+                        .withPlugins(fileSinkPlugin)
+                        .withOutput(dockerOutput(imageFullPath))
+                    .endBuild()
+                .endSpec();
+        } else {
+            if (KubeClusterResource.getInstance().isMicroShift()) {
+                LOGGER.warn("Using MicroShift cluster - you should have created your own Connect image with file-sink plugin and pass the image into {} env variable", Environment.CONNECT_IMAGE_WITH_FILE_SINK_PLUGIN_ENV);
+            }
 
-        return kafkaConnectBuilder;
+            LOGGER.info("Using {} image from {} env variable", Environment.CONNECT_IMAGE_WITH_FILE_SINK_PLUGIN, Environment.CONNECT_IMAGE_WITH_FILE_SINK_PLUGIN_ENV);
+
+            return kafkaConnect(name, namespaceName, clusterName, replicas, pathToConnectConfig)
+                .editOrNewSpec()
+                    .withImage(Environment.CONNECT_IMAGE_WITH_FILE_SINK_PLUGIN)
+                .endSpec();
+        }
     }
 
     public static DockerOutput dockerOutput(String imageName) {

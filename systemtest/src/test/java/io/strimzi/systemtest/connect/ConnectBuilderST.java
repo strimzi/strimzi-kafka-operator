@@ -27,6 +27,7 @@ import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.KindNotSupported;
+import io.strimzi.systemtest.annotations.MicroShiftNotSupported;
 import io.strimzi.systemtest.annotations.OpenShiftOnly;
 import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
@@ -76,6 +77,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @Tag(REGRESSION)
 @Tag(CONNECT_COMPONENTS)
 @Tag(CONNECT)
+@MicroShiftNotSupported
 class ConnectBuilderST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(ConnectBuilderST.class);

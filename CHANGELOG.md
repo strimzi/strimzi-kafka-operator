@@ -6,6 +6,8 @@
   All Connect and Mirror Maker 2 operands will now use StrimziPodSets.
 * The `KafkaNodePools` feature gate moves to beta stage and is enabled by default.
   If needed, `KafkaNodePools` can be disabled in the feature gates configuration in the Cluster Operator.
+* The `UnidirectionalTopicOperator` feature gate moves to beta stage and is enabled by default.
+  If needed, `UnidirectionalTopicOperator` can be disabled in the feature gates configuration in the Cluster Operator.
 
 ### Changes, deprecations and removals
 

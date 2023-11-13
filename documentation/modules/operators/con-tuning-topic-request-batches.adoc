@@ -1,0 +1,19 @@
+// Module included in the following assemblies:
+//
+// assembly-using-the-topic-operator.adoc
+
+[id='con-tuning-topic-request-batches-{context}']
+= (Preview) Tuning request batches for topic operations
+
+In unidirectional mode, the Topic Operator uses the request batching capabilities of the Kafka Admin API for operations on topic resources. 
+You can fine-tune the batching mechanism using the following operator configuration properties:
+
+* `STRIMZI_MAX_QUEUE_SIZE` to set the maximum size of the topic event queue. 
+The default value is 1024.
+* `STRIMZI_MAX_BATCH_SIZE` to set the maximum number of topic events allowed in a single batch. 
+The default value is 100.
+* `MAX_BATCH_LINGER_MS` to specify the maximum time to wait for a batch to accumulate items before processing. 
+The default is 100 milliseconds. 
+
+If the maximum size of the request batching queue is exceeded, the Topic Operator shuts down and is restarted. 
+To prevent frequent restarts, consider adjusting the `STRIMZI_MAX_QUEUE_SIZE` property to accommodate the typical load.

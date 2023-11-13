@@ -850,30 +850,26 @@ class SecurityST extends AbstractST {
     @Tag(MIRROR_MAKER)
     void testTlsHostnameVerificationWithMirrorMaker(ExtensionContext extensionContext) {
         final TestStorage testStorage = storageMap.get(extensionContext);
-        final String namespaceName = StUtils.getNamespaceBasedOnRbac(Environment.TEST_SUITE_NAMESPACE, extensionContext);
-        final String clusterName = testStorage.getClusterName();
-        final String sourceKafkaCluster = clusterName + "-source";
-        final String targetKafkaCluster = clusterName + "-target";
 
-        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(sourceKafkaCluster, 1, 1).build());
-        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(targetKafkaCluster, 1, 1).build());
+        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getSourceClusterName(), 1, 1).build());
+        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getTargetClusterName(), 1, 1).build());
 
         LOGGER.info("Getting IP of the source bootstrap service for consumer");
-        String ipOfSourceBootstrapService = kubeClient(namespaceName).getService(namespaceName, KafkaResources.bootstrapServiceName(sourceKafkaCluster)).getSpec().getClusterIP();
+        String ipOfSourceBootstrapService = kubeClient(testStorage.getNamespaceName()).getService(testStorage.getNamespaceName(), KafkaResources.bootstrapServiceName(testStorage.getSourceClusterName())).getSpec().getClusterIP();
 
         LOGGER.info("Getting IP of the target bootstrap service for producer");
-        String ipOfTargetBootstrapService = kubeClient(namespaceName).getService(namespaceName, KafkaResources.bootstrapServiceName(targetKafkaCluster)).getSpec().getClusterIP();
+        String ipOfTargetBootstrapService = kubeClient(testStorage.getNamespaceName()).getService(testStorage.getNamespaceName(), KafkaResources.bootstrapServiceName(testStorage.getTargetClusterName())).getSpec().getClusterIP();
 
         LOGGER.info("KafkaMirrorMaker without config {} will not connect to consumer with address {}:9093", "ssl.endpoint.identification.algorithm", ipOfSourceBootstrapService);
         LOGGER.info("KafkaMirrorMaker without config {} will not connect to producer with address {}:9093", "ssl.endpoint.identification.algorithm", ipOfTargetBootstrapService);
 
-        resourceManager.createResourceWithoutWait(extensionContext, KafkaMirrorMakerTemplates.kafkaMirrorMaker(clusterName, sourceKafkaCluster, targetKafkaCluster,
+        resourceManager.createResourceWithoutWait(extensionContext, KafkaMirrorMakerTemplates.kafkaMirrorMaker(testStorage.getClusterName(), testStorage.getSourceClusterName(), testStorage.getTargetClusterName(),
             ClientUtils.generateRandomConsumerGroup(), 1, true)
             .editSpec()
                 .editConsumer()
                     .withNewTls()
                         .addNewTrustedCertificate()
-                            .withSecretName(KafkaResources.clusterCaCertificateSecretName(sourceKafkaCluster))
+                            .withSecretName(KafkaResources.clusterCaCertificateSecretName(testStorage.getSourceClusterName()))
                             .withCertificate("ca.crt")
                         .endTrustedCertificate()
                     .endTls()
@@ -882,7 +878,7 @@ class SecurityST extends AbstractST {
                 .editProducer()
                     .withNewTls()
                         .addNewTrustedCertificate()
-                            .withSecretName(KafkaResources.clusterCaCertificateSecretName(targetKafkaCluster))
+                            .withSecretName(KafkaResources.clusterCaCertificateSecretName(testStorage.getTargetClusterName()))
                             .withCertificate("ca.crt")
                         .endTrustedCertificate()
                     .endTls()
@@ -891,25 +887,25 @@ class SecurityST extends AbstractST {
             .endSpec()
             .build());
 
-        PodUtils.waitUntilPodIsPresent(namespaceName, clusterName + "-mirror-maker");
+        PodUtils.waitUntilPodIsPresent(testStorage.getNamespaceName(), testStorage.getClusterName() + "-mirror-maker");
 
-        String kafkaMirrorMakerPodName = kubeClient(namespaceName).listPods(namespaceName, clusterName, Labels.STRIMZI_KIND_LABEL, KafkaMirrorMaker.RESOURCE_KIND).get(0).getMetadata().getName();
+        String kafkaMirrorMakerPodName = kubeClient(testStorage.getNamespaceName()).listPods(testStorage.getNamespaceName(), testStorage.getClusterName(), Labels.STRIMZI_KIND_LABEL, KafkaMirrorMaker.RESOURCE_KIND).get(0).getMetadata().getName();
 
-        PodUtils.waitUntilPodIsInCrashLoopBackOff(namespaceName, kafkaMirrorMakerPodName);
+        PodUtils.waitUntilPodIsInCrashLoopBackOff(testStorage.getNamespaceName(), kafkaMirrorMakerPodName);
 
-        assertThat("CrashLoopBackOff", is(kubeClient(namespaceName).getPod(namespaceName, kafkaMirrorMakerPodName).getStatus().getContainerStatuses().get(0)
+        assertThat("CrashLoopBackOff", is(kubeClient(testStorage.getNamespaceName()).getPod(testStorage.getNamespaceName(), kafkaMirrorMakerPodName).getStatus().getContainerStatuses().get(0)
                 .getState().getWaiting().getReason()));
 
         LOGGER.info("KafkaMirrorMaker with config {} will connect to consumer with address {}:9093", "ssl.endpoint.identification.algorithm", ipOfSourceBootstrapService);
         LOGGER.info("KafkaMirrorMaker with config {} will connect to producer with address {}:9093", "ssl.endpoint.identification.algorithm", ipOfTargetBootstrapService);
 
         LOGGER.info("Adding configuration {} to the MirrorMaker", "ssl.endpoint.identification.algorithm");
-        KafkaMirrorMakerResource.replaceMirrorMakerResourceInSpecificNamespace(clusterName, mm -> {
+        KafkaMirrorMakerResource.replaceMirrorMakerResourceInSpecificNamespace(testStorage.getClusterName(), mm -> {
             mm.getSpec().getConsumer().getConfig().put("ssl.endpoint.identification.algorithm", ""); // disable hostname verification
             mm.getSpec().getProducer().getConfig().put("ssl.endpoint.identification.algorithm", ""); // disable hostname verification
-        }, namespaceName);
+        }, testStorage.getNamespaceName());
 
-        KafkaMirrorMakerUtils.waitForKafkaMirrorMakerReady(namespaceName, clusterName);
+        KafkaMirrorMakerUtils.waitForKafkaMirrorMakerReady(testStorage.getNamespaceName(), testStorage.getClusterName());
     }
 
     @ParallelNamespaceTest
@@ -917,15 +913,12 @@ class SecurityST extends AbstractST {
     @Tag(EXTERNAL_CLIENTS_USED)
     void testAclRuleReadAndWrite(ExtensionContext extensionContext) {
         final TestStorage testStorage = storageMap.get(extensionContext);
-        final String namespaceName = StUtils.getNamespaceBasedOnRbac(Environment.TEST_SUITE_NAMESPACE, extensionContext);
-        final String clusterName = testStorage.getClusterName();
-        final String topicName = testStorage.getTopicName();
         final String kafkaUserWrite = "kafka-user-write";
         final String kafkaUserRead = "kafka-user-read";
         final int numberOfMessages = 500;
         final String consumerGroupName = "consumer-group-name-1";
 
-        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(clusterName, 3, 1)
+        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3, 1)
             .editSpec()
                 .editKafka()
                     .withNewKafkaAuthorizationSimple()
@@ -941,13 +934,13 @@ class SecurityST extends AbstractST {
             .endSpec()
             .build());
 
-        resourceManager.createResourceWithWait(extensionContext, KafkaTopicTemplates.topic(clusterName, topicName, namespaceName).build());
-        resourceManager.createResourceWithWait(extensionContext, KafkaUserTemplates.tlsUser(namespaceName, clusterName, kafkaUserWrite)
+        resourceManager.createResourceWithWait(extensionContext, KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getTopicName(), testStorage.getNamespaceName()).build());
+        resourceManager.createResourceWithWait(extensionContext, KafkaUserTemplates.tlsUser(testStorage.getNamespaceName(), testStorage.getClusterName(), kafkaUserWrite)
             .editSpec()
                 .withNewKafkaUserAuthorizationSimple()
                     .addNewAcl()
                         .withNewAclRuleTopicResource()
-                            .withName(topicName)
+                            .withName(testStorage.getTopicName())
                         .endAclRuleTopicResource()
                         .withOperations(AclOperation.WRITE, AclOperation.DESCRIBE, AclOperation.CREATE)
                     .endAcl()
@@ -955,12 +948,12 @@ class SecurityST extends AbstractST {
             .endSpec()
             .build());
 
-        LOGGER.info("Checking KafkaUser: {}/{} that is able to send messages to Topic: {}/{}", namespaceName, kafkaUserWrite, namespaceName, topicName);
+        LOGGER.info("Checking KafkaUser: {}/{} that is able to send messages to Topic: {}/{}", testStorage.getNamespaceName(), kafkaUserWrite, testStorage.getNamespaceName(), testStorage.getTopicName());
 
         ExternalKafkaClient externalKafkaClient = new ExternalKafkaClient.Builder()
-            .withTopicName(topicName)
-            .withNamespaceName(namespaceName)
-            .withClusterName(clusterName)
+            .withTopicName(testStorage.getTopicName())
+            .withNamespaceName(testStorage.getNamespaceName())
+            .withClusterName(testStorage.getClusterName())
             .withKafkaUsername(kafkaUserWrite)
             .withMessageCount(numberOfMessages)
             .withSecurityProtocol(SecurityProtocol.SSL)
@@ -971,12 +964,12 @@ class SecurityST extends AbstractST {
 
         assertThrows(GroupAuthorizationException.class, externalKafkaClient::receiveMessagesTls);
 
-        resourceManager.createResourceWithWait(extensionContext, KafkaUserTemplates.tlsUser(namespaceName, clusterName, kafkaUserRead)
+        resourceManager.createResourceWithWait(extensionContext, KafkaUserTemplates.tlsUser(testStorage.getNamespaceName(), testStorage.getClusterName(), kafkaUserRead)
             .editSpec()
                 .withNewKafkaUserAuthorizationSimple()
                     .addNewAcl()
                         .withNewAclRuleTopicResource()
-                            .withName(topicName)
+                            .withName(testStorage.getTopicName())
                         .endAclRuleTopicResource()
                         .withOperations(AclOperation.READ, AclOperation.DESCRIBE)
                     .endAcl()
@@ -997,7 +990,7 @@ class SecurityST extends AbstractST {
 
         assertThat(newExternalKafkaClient.receiveMessagesTls(), is(numberOfMessages));
 
-        LOGGER.info("Checking KafkaUser: {}/{} that is not able to send messages to Topic: {}/{}", namespaceName, kafkaUserRead, namespaceName, topicName);
+        LOGGER.info("Checking KafkaUser: {}/{} that is not able to send messages to Topic: {}/{}", testStorage.getNamespaceName(), kafkaUserRead, testStorage.getNamespaceName(), testStorage.getTopicName());
         assertThrows(Exception.class, newExternalKafkaClient::sendMessagesTls);
     }
 

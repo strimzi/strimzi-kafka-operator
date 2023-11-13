@@ -10,9 +10,6 @@ This procedure describes how to deploy the Topic Operator using the Cluster Oper
 The Topic Operator can be deployed for use in either bidirectional mode or unidirectional mode.
 To learn more about bidirectional and unidirectional topic management, see xref:ref-operator-topic-{context}[].
 
-NOTE: Unidirectional topic management is available as a preview. 
-Unidirectional topic management is not enabled by default, so you must xref:ref-operator-unidirectional-topic-operator-feature-gate-{context}[enable the `UnidirectionalTopicOperator` feature gate] to be able to use it.
-
 You configure the `entityOperator` property of the `Kafka` resource to include the `topicOperator`.
 By default, the Topic Operator watches for `KafkaTopic` resources in the namespace of the Kafka cluster deployed by the Cluster Operator.
 You can also specify a namespace using `watchedNamespace` in the Topic Operator `spec`.

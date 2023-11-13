@@ -16,6 +16,7 @@ import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.resources.ResourceManager;
+import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.test.TestUtils;
 
@@ -24,6 +25,10 @@ import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 public class KafkaMirrorMaker2Templates {
 
     private KafkaMirrorMaker2Templates() {}
+
+    public static KafkaMirrorMaker2Builder kafkaMirrorMaker2(TestStorage testStorage, int kafkaMirrorMaker2Replicas, boolean tlsListener) {
+        return kafkaMirrorMaker2(testStorage.getClusterName(), testStorage.getTargetClusterName(), testStorage.getSourceClusterName(), kafkaMirrorMaker2Replicas, tlsListener);
+    }
 
     public static KafkaMirrorMaker2Builder kafkaMirrorMaker2(String name, String targetClusterName, String sourceClusterName, int kafkaMirrorMaker2Replicas, boolean tlsListener) {
         KafkaMirrorMaker2 kafkaMirrorMaker2 = getKafkaMirrorMaker2FromYaml(Constants.PATH_TO_KAFKA_MIRROR_MAKER_2_CONFIG);
