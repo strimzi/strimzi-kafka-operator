@@ -48,7 +48,7 @@
   "gnetId": null,
   "graphTooltip": 0,
   "id": null,
-  "iteration": 1699548294870,
+  "iteration": 1699883902639,
   "links": [],
   "panels": [
     {
@@ -748,6 +748,7 @@
       "cacheTimeout": null,
       "columns": [],
       "datasource": "${DS_PROMETHEUS}",
+      "description": "Connectors that have one or more tasks that are not in a running state, i.e. the state is one of paused, failed, unassigned or destroyed.",
       "fieldConfig": {
         "defaults": {
           "custom": {
@@ -755,6 +756,7 @@
             "filterable": false
           },
           "mappings": [],
+          "noValue": "0",
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -835,35 +837,67 @@
       "targets": [
         {
           "expr": "sum(kafka_connect_worker_connector_paused_task_count{namespace=\"$kubernetes_namespace\",strimzi_io_kind=~\"KafkaConnect.*\",strimzi_io_cluster=\"$strimzi_connect_cluster_name\"}) by (connector) != 0",
+          "format": "table",
           "instant": true,
           "interval": "",
-          "legendFormat": "[paused] {{connector}}",
-          "refId": "B"
-        },
-        {
-          "expr": "sum(kafka_connect_worker_connector_failed_task_count{namespace=\"$kubernetes_namespace\",strimzi_io_kind=~\"KafkaConnect.*\",strimzi_io_cluster=\"$strimzi_connect_cluster_name\"}) by (connector) != 0",
-          "instant": true,
-          "interval": "",
-          "legendFormat": "[failed] {{connector}}",
+          "legendFormat": "",
           "refId": "A"
         },
         {
-          "expr": "sum(kafka_connect_worker_connector_unassigned_task_count{namespace=\"$kubernetes_namespace\",strimzi_io_kind=~\"KafkaConnect.*\",strimzi_io_cluster=\"$strimzi_connect_cluster_name\"}) by (connector) != 0",
+          "expr": "sum(kafka_connect_worker_connector_failed_task_count{namespace=\"$kubernetes_namespace\",strimzi_io_kind=~\"KafkaConnect.*\",strimzi_io_cluster=\"$strimzi_connect_cluster_name\"}) by (connector) != 0",
+          "format": "table",
           "instant": true,
           "interval": "",
-          "legendFormat": "[unassigned] {{connector}}",
+          "legendFormat": "",
+          "refId": "B"
+        },
+        {
+          "expr": "sum(kafka_connect_worker_connector_unassigned_task_count{namespace=\"$kubernetes_namespace\",strimzi_io_kind=~\"KafkaConnect.*\",strimzi_io_cluster=\"$strimzi_connect_cluster_name\"}) by (connector) != 0",
+          "format": "table",
+          "instant": true,
+          "interval": "",
+          "legendFormat": "",
           "refId": "C"
         },
         {
           "expr": "sum(kafka_connect_worker_connector_destroyed_task_count{namespace=\"$kubernetes_namespace\",strimzi_io_kind=~\"KafkaConnect.*\",strimzi_io_cluster=\"$strimzi_connect_cluster_name\"}) by (connector) != 0",
+          "format": "table",
           "instant": true,
           "interval": "",
-          "legendFormat": "[destroyed] {{connector}}",
+          "legendFormat": "",
           "refId": "D"
         }
       ],
-      "title": "Connector task state with issues",
+      "title": "Connector Tasks with Issues",
       "transform": "timeseries_to_rows",
+      "transformations": [
+        {
+          "id": "merge",
+          "options": {}
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {},
+            "indexByName": {
+              "Time": 5,
+              "Value #A": 1,
+              "Value #B": 2,
+              "Value #C": 3,
+              "Value #D": 4,
+              "connector": 0
+            },
+            "renameByName": {
+              "Time": "Update Time",
+              "Value #A": "Paused Tasks",
+              "Value #B": "Failed Tasks",
+              "Value #C": "Unassigned Tasks",
+              "Value #D": "Destroyed Tasks",
+              "connector": "Connector"
+            }
+          }
+        }
+      ],
       "type": "table"
     },
     {
