@@ -3,7 +3,7 @@
 // assembly-using-the-topic-operator.adoc
 
 [id='con-changing-topic-operator-mode-{context}']
-= (Preview) Switching between Topic Operator modes
+= Switching between Topic Operator modes
 
 [role="_abstract"]
 You can switch between topic management modes when upgrading or downgrading Strimzi, or when using the same version of Strimzi, as long as the mode is supported for that version. 
@@ -29,17 +29,19 @@ This command deletes the internal topics, which have names starting `strimzi-sto
 +
 [source,shell,subs=+quotes]
 ----
-kubectl annotate $(kubectl get kt -n <namespace_name> -o name | grep consumer-offsets) strimzi.io/managed="false" && kubectl annotate $(kubectl get kt -n <namespace_name> -o name | grep transaction-state) strimzi.io/managed="false"
+kubectl annotate $(kubectl get kt -n <namespace_name> -o name | grep consumer-offsets) strimzi.io/managed="false" \
+&& kubectl annotate $(kubectl get kt -n <namespace_name> -o name | grep transaction-state) strimzi.io/managed="false"
 ----
 +
-By annotating the `KafkaTopic` resources with `strimzi.io/managed=false`, you indicate that the Topic Operator should no longer manage those topics. 
+By annotating the `KafkaTopic` resources with `strimzi.io/managed="false"`, you indicate that the Topic Operator should no longer manage those topics. 
 In this case, we are adding the annotation to resources for managing the internal topics with names starting `consumer-offsets` and `transaction-state`.
 +
 .. When their management is discontinued, delete the `KafkaTopic` resources (without deleting the topics inside Kafka):
 +
 [source,shell,subs=+quotes]
 ----
-kubectl delete $(kubectl get kt -n <namespace_name> -o name | grep consumer-offsets) && kubectl delete $(kubectl get kt -n <namespace_name> -o name | grep transaction-state)
+kubectl delete $(kubectl get kt -n <namespace_name> -o name | grep consumer-offsets) \
+&& kubectl delete $(kubectl get kt -n <namespace_name> -o name | grep transaction-state)
 ---- 
 
 .Switching from unidirectional to bidirectional topic management mode
