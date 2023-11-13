@@ -317,7 +317,7 @@
       "timeFrom": null,
       "timeRegions": [],
       "timeShift": null,
-      "title": "Connection count",
+      "title": "Connection Count",
       "tooltip": {
         "shared": true,
         "sort": 0,
@@ -416,7 +416,7 @@
       "timeFrom": null,
       "timeRegions": [],
       "timeShift": null,
-      "title": "(Source/Producers) Outgoing bytes per second",
+      "title": "(Source/Producers) Outgoing Bytes per Second",
       "tooltip": {
         "shared": true,
         "sort": 0,
@@ -514,7 +514,7 @@
       "timeFrom": null,
       "timeRegions": [],
       "timeShift": null,
-      "title": "(Sink/Consumers) Incoming bytes per second",
+      "title": "(Sink/Consumers) Incoming Bytes per Second",
       "tooltip": {
         "shared": true,
         "sort": 0,
@@ -1049,7 +1049,7 @@
       "timeFrom": null,
       "timeRegions": [],
       "timeShift": null,
-      "title": "Connector task state",
+      "title": "Connector Task State",
       "tooltip": {
         "shared": true,
         "sort": 0,
@@ -1128,8 +1128,8 @@
         "showHeader": true,
         "sortBy": [
           {
-            "desc": true,
-            "displayName": "Update Time"
+            "desc": false,
+            "displayName": "Connector"
           }
         ]
       },
@@ -1254,7 +1254,12 @@
       "id": 41,
       "options": {
         "showHeader": true,
-        "sortBy": []
+        "sortBy": [
+          {
+            "desc": false,
+            "displayName": "Connector"
+          }
+        ]
       },
       "pluginVersion": "7.3.7",
       "targets": [
@@ -1596,7 +1601,7 @@
       "timeFrom": null,
       "timeRegions": [],
       "timeShift": null,
-      "title": "Time spent in GC",
+      "title": "Time Spent in GC",
       "tooltip": {
         "shared": true,
         "sort": 0,
