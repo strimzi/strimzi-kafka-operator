@@ -38,6 +38,17 @@ public class NetworkPolicyOperator extends AbstractNamespacedResourceOperator<Ku
         super(vertx, client, "NetworkPolicy");
     }
 
+    /**
+     * Constructs the Network Policy Operator
+     *
+     * @param vertx     Vert.x instance
+     * @param client    Kubernetes client
+     * @param useServerSideApply Whether to use server side apply
+     */
+    public NetworkPolicyOperator(Vertx vertx, KubernetesClient client, boolean useServerSideApply) {
+        super(vertx, client, "NetworkPolicy", useServerSideApply);
+    }
+
     @Override
     protected MixedOperation<NetworkPolicy, NetworkPolicyList, Resource<NetworkPolicy>> operation() {
         return client.network().networkPolicies();

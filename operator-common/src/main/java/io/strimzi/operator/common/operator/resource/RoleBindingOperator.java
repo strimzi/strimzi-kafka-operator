@@ -26,6 +26,16 @@ public class RoleBindingOperator extends AbstractNamespacedResourceOperator<Kube
         super(vertx, client, "RoleBinding");
     }
 
+    /**
+     * Constructor
+     * @param vertx The Vertx instance
+     * @param client The Kubernetes client
+     * @param useServerSideApply Whether to use server side apply
+     */
+    public RoleBindingOperator(Vertx vertx, KubernetesClient client, boolean useServerSideApply) {
+        super(vertx, client, "RoleBinding", useServerSideApply);
+    }
+
     @Override
     protected MixedOperation<RoleBinding, RoleBindingList, Resource<RoleBinding>> operation() {
         return client.rbac().roleBindings();

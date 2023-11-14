@@ -51,27 +51,22 @@ public class StrimziPodSetCrdOperatorServerSideApplyIT extends StrimziPodSetCrdO
 
         Promise<Void> updateAnnotations = Promise.promise();
 
-        LOGGER.info("Creating resource");
         op.reconcile(Reconciliation.DUMMY_RECONCILIATION, namespace, resourceName, getResource(resourceName))
                 .onComplete(context.succeeding(i -> {
                 }))
                 .compose(rrCreated -> {
-                    LOGGER.info("Created {}", rrCreated.resource());
                     //we don't use the cluster resource as it already contains managedfields property and we cant send that in a patch
                     StrimziPodSet updated = getResourceWithModifiedAnnotations(getResource(resourceName));
-                    LOGGER.info("About to update {}", updated);
                     return op.reconcile(Reconciliation.DUMMY_RECONCILIATION, namespace, resourceName, updated);
                 })
                 .compose(i -> op.getAsync(namespace, resourceName)) // We need to get it again
                 .onComplete(context.succeeding(result -> context.verify(() -> {
                     updateAnnotations.complete();
-                    LOGGER.info("Updated {}", result);
                     assertThat(result.getMetadata().getAnnotations().containsKey("new-test-annotation"), is(true));
                 })));
 
         updateAnnotations.future()
                 .compose(v -> {
-                    LOGGER.info("Deleting resource");
                     return op.reconcile(Reconciliation.DUMMY_RECONCILIATION, namespace, resourceName, null);
                 })
                 .onComplete(context.succeeding(v -> async.flag()));
@@ -89,11 +84,9 @@ public class StrimziPodSetCrdOperatorServerSideApplyIT extends StrimziPodSetCrdO
 
         client.resource(getResourceWithStartingAnnotations(getResource(resourceName))).create();
 
-        LOGGER.info("Creating resource");
         op.reconcile(Reconciliation.DUMMY_RECONCILIATION, namespace, resourceName, getResourceWithModifiedAnnotations(getResource(resourceName)))
                 .onComplete(context.succeeding(result -> context.verify(() -> {
                     updateAnnotations.complete();
-                    LOGGER.info("Updated {}", result);
                     assertThat(result.resource().getMetadata().getAnnotations().containsKey("test-annotation"), is(true));
                     assertThat(result.resource().getMetadata().getAnnotations().containsKey("new-test-annotation"), is(true));
                     assertThat(annotationManagedBy("test-annotation", "strimzi-cluster-operator", result.resource().getMetadata().getManagedFields()), is(false));
@@ -102,7 +95,6 @@ public class StrimziPodSetCrdOperatorServerSideApplyIT extends StrimziPodSetCrdO
 
         updateAnnotations.future()
                 .compose(v -> {
-                    LOGGER.info("Deleting resource");
                     return op.reconcile(Reconciliation.DUMMY_RECONCILIATION, namespace, resourceName, null);
                 })
                 .onComplete(context.succeeding(v -> async.flag()));

@@ -25,6 +25,17 @@ public class BuildOperator extends AbstractNamespacedResourceOperator<OpenShiftC
         super(vertx, client, "Build");
     }
 
+    /**
+     * Constructor
+     *
+     * @param vertx The Vertx instance
+     * @param client The OpenShift client
+     * @param useServerSideApply Whether to use server side apply
+     */
+    public BuildOperator(Vertx vertx, OpenShiftClient client, boolean useServerSideApply) {
+        super(vertx, client, "Build", useServerSideApply);
+    }
+
     @Override
     protected MixedOperation<Build, BuildList, BuildResource> operation() {
         return client.builds();

@@ -55,6 +55,18 @@ public class ServiceOperator extends AbstractNamespacedResourceOperator<Kubernet
         this.endpointOperations = new EndpointOperator(vertx, client);
     }
 
+    /**
+     * Constructor
+     *
+     * @param vertx                 The Vertx instance
+     * @param client                The Kubernetes client
+     * @param useServerSideApply    Whether to use server side apply
+     */
+    public ServiceOperator(Vertx vertx, KubernetesClient client, boolean useServerSideApply) {
+        super(vertx, client, "Service", useServerSideApply);
+        this.endpointOperations = new EndpointOperator(vertx, client);
+    }
+
     @Override
     protected MixedOperation<Service, ServiceList, ServiceResource<Service>> operation() {
         return client.services();

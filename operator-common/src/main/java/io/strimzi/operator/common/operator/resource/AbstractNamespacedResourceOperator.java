@@ -54,7 +54,7 @@ public abstract class AbstractNamespacedResourceOperator<C extends KubernetesCli
      */
     public final static String ANY_NAMESPACE = "*";
 
-    private boolean useServerSideApply = false;
+    private boolean useServerSideApply;
 
     /**
      * Constructor.

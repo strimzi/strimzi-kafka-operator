@@ -28,6 +28,16 @@ public class RoleOperator extends AbstractNamespacedResourceOperator<
         super(vertx, client, "Role");
     }
 
+    /**
+     * Constructor
+     * @param vertx The Vertx instance
+     * @param client The Kubernetes client
+     * @param useServerSideApply Whether to use server side apply
+     */
+    public RoleOperator(Vertx vertx, KubernetesClient client, boolean useServerSideApply) {
+        super(vertx, client, "Role", useServerSideApply);
+    }
+
     @Override
     protected MixedOperation<Role, RoleList, Resource<Role>> operation() {
         return client.rbac().roles();

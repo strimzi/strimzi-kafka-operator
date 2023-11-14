@@ -26,6 +26,16 @@ public class ServiceAccountOperator extends AbstractNamespacedResourceOperator<K
         super(vertx, client, "ServiceAccount");
     }
 
+    /**
+     * Constructor
+     * @param vertx The Vertx instance
+     * @param client The Kubernetes client
+     * @param useServerSideApply Whether to use server side apply
+     */
+    public ServiceAccountOperator(Vertx vertx, KubernetesClient client, boolean useServerSideApply) {
+        super(vertx, client, "ServiceAccount", useServerSideApply);
+    }
+
     @Override
     protected MixedOperation<ServiceAccount, ServiceAccountList, ServiceAccountResource> operation() {
         return client.serviceAccounts();
