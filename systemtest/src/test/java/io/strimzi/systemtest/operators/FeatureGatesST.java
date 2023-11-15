@@ -195,18 +195,20 @@ public class FeatureGatesST extends AbstractST {
     void testKafkaNodePoolFeatureGate(ExtensionContext extensionContext) {
         assumeFalse(Environment.isOlmInstall() || Environment.isHelmInstall());
 
-        final TestStorage testStorage = new TestStorage(extensionContext, CO_NAMESPACE);
+        final TestStorage testStorage = new TestStorage(extensionContext);
 
         List<EnvVar> coEnvVars = new ArrayList<>();
         coEnvVars.add(new EnvVar(Environment.STRIMZI_FEATURE_GATES_ENV, "+KafkaNodePools", null));
         
         clusterOperator = this.clusterOperator.defaultInstallation(extensionContext)
             .withExtraEnvVars(coEnvVars)
+            .withNamespace(Constants.CO_NAMESPACE)
+            .withBindingsNamespaces(Arrays.asList(Constants.CO_NAMESPACE, Environment.TEST_SUITE_NAMESPACE))
             .createInstallation()
             .runInstallation();
 
         LOGGER.info("Deploying Kafka Cluster: {}/{} controlled by KafkaNodePool: {}", testStorage.getNamespaceName(), testStorage.getClusterName(), testStorage.getKafkaNodePoolName());
-        Kafka kafkaCr = KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), 3, 1)
+        Kafka kafkaCr = KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), 3, 3)
             .editOrNewMetadata()
                 .withNamespace(testStorage.getNamespaceName())
                 .addToAnnotations(Annotations.ANNO_STRIMZI_IO_NODE_POOLS, "enabled")
@@ -236,7 +238,7 @@ public class FeatureGatesST extends AbstractST {
             .withTopicName(testStorage.getTopicName())
             .withMessageCount(testStorage.getMessageCount())
             .withDelayMs(500)
-            .withNamespaceName(clusterOperator.getDeploymentNamespace())
+            .withNamespaceName(testStorage.getNamespaceName())
             .build();
 
         LOGGER.info("Producing and Consuming messages with clients: {}, {} in Namespace {}", testStorage.getProducerName(), testStorage.getConsumerName(), testStorage.getNamespaceName());
@@ -280,17 +282,20 @@ public class FeatureGatesST extends AbstractST {
      * - kafka-node-pool
      */
     @IsolatedTest
+    @SuppressWarnings({"checkstyle:MethodLength"})
     void testKafkaManagementTransferToAndFromKafkaNodePool(ExtensionContext extensionContext) {
         assumeFalse(Environment.isKRaftModeEnabled());
         assumeFalse(Environment.isOlmInstall() || Environment.isHelmInstall());
 
-        final TestStorage testStorage = new TestStorage(extensionContext, CO_NAMESPACE);
+        final TestStorage testStorage = new TestStorage(extensionContext);
 
         List<EnvVar> coEnvVars = new ArrayList<>();
         coEnvVars.add(new EnvVar(Environment.STRIMZI_FEATURE_GATES_ENV, "+KafkaNodePools", null));
 
         clusterOperator = this.clusterOperator.defaultInstallation(extensionContext)
             .withExtraEnvVars(coEnvVars)
+            .withNamespace(Constants.CO_NAMESPACE)
+            .withBindingsNamespaces(Arrays.asList(Constants.CO_NAMESPACE, Environment.TEST_SUITE_NAMESPACE))
             .createInstallation()
             .runInstallation();
 
