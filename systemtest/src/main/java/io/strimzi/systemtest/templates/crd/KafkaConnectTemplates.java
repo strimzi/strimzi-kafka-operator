@@ -107,6 +107,10 @@ public class KafkaConnectTemplates {
      */
     @SuppressFBWarnings("DMI_RANDOM_USED_ONLY_ONCE")
     public static KafkaConnectBuilder kafkaConnectWithFilePlugin(String name, String namespaceName, String clusterName, int replicas, String pathToConnectConfig) {
+        return addFileSinkPluginOrImage(namespaceName, kafkaConnect(name, namespaceName, clusterName, replicas, pathToConnectConfig));
+    }
+
+    public static KafkaConnectBuilder addFileSinkPluginOrImage(String namespaceName, KafkaConnectBuilder connectBuilder) {
         if (!KubeClusterResource.getInstance().isMicroShift() && Environment.CONNECT_IMAGE_WITH_FILE_SINK_PLUGIN.isEmpty()) {
             final Plugin fileSinkPlugin = new PluginBuilder()
                 .withName("file-plugin")
@@ -119,7 +123,7 @@ public class KafkaConnectTemplates {
 
             final String imageFullPath = Environment.getImageOutputRegistry(namespaceName, Constants.ST_CONNECT_BUILD_IMAGE_NAME, String.valueOf(new Random().nextInt(Integer.MAX_VALUE)));
 
-            return kafkaConnect(name, namespaceName, clusterName, replicas, pathToConnectConfig)
+            return connectBuilder
                 .editOrNewSpec()
                     .editOrNewBuild()
                         .withPlugins(fileSinkPlugin)
@@ -133,7 +137,7 @@ public class KafkaConnectTemplates {
 
             LOGGER.info("Using {} image from {} env variable", Environment.CONNECT_IMAGE_WITH_FILE_SINK_PLUGIN, Environment.CONNECT_IMAGE_WITH_FILE_SINK_PLUGIN_ENV);
 
-            return kafkaConnect(name, namespaceName, clusterName, replicas, pathToConnectConfig)
+            return connectBuilder
                 .editOrNewSpec()
                     .withImage(Environment.CONNECT_IMAGE_WITH_FILE_SINK_PLUGIN)
                 .endSpec();
