@@ -40,6 +40,7 @@ import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.SecretUtils;
 import io.strimzi.test.TestUtils;
 import java.io.IOException;
+import java.util.List;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
@@ -439,10 +440,9 @@ class UserST extends AbstractST {
     void setup(ExtensionContext extensionContext) {
         this.clusterOperator = this.clusterOperator
             .defaultInstallation(extensionContext)
+            .withBindingsNamespaces(List.of(Environment.TEST_SUITE_NAMESPACE, Constants.CO_NAMESPACE))
             .createInstallation()
             .runInstallation();
-
-        cluster.createNamespace(Environment.TEST_SUITE_NAMESPACE);
 
         resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(userClusterName, 1, 1)
             .editMetadata()
