@@ -162,7 +162,7 @@ public class CruiseControlApiImpl implements CruiseControlApi {
                                    AsyncResult<HttpClientRequest> request, Promise<CruiseControlRebalanceResponse> result) {
         if (request.succeeded()) {
             if (idleTimeout != HTTP_DEFAULT_IDLE_TIMEOUT_SECONDS) {
-                request.result().setTimeout(idleTimeout * 1000);
+                request.result().idleTimeout(idleTimeout * 1000);
             }
 
             if (userTaskId != null) {
@@ -238,7 +238,6 @@ public class CruiseControlApiImpl implements CruiseControlApi {
     }
 
     @Override
-    @SuppressWarnings("deprecation")
     public Future<CruiseControlRebalanceResponse> rebalance(String host, int port, RebalanceOptions options, String userTaskId) {
 
         if (options == null && userTaskId == null) {
