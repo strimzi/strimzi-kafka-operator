@@ -113,6 +113,9 @@ the documentation for more details.
 | `rbac.create`                               | Whether to create RBAC related resources                                        | `yes`                        |
 | `serviceAccountCreate`                      | Whether to create a service account                                             | `yes`                        |
 | `serviceAccount`                            | Cluster Operator's service account                                              | `strimzi-cluster-operator`   |
+| `podDisruptionBudget.enabled`               | Whether to enable the podDisruptionBudget feature                               | `false`                      |
+| `podDisruptionBudget.minAvailable`          | Default value for how many pods must be running in a cluster                    | `1`                          |
+| `podDisruptionBudget.maxUnavailable`        | Default value for how many pods can be down                                     | `nil`                        |
 | `extraEnvs`                                 | Extra environment variables for the Cluster operator container                  | `[]`                         |
 | `kafka.image.registry`                      | Override default Kafka image registry                                           | `nil`                        |
 | `kafka.image.repository`                    | Override default Kafka image repository                                         | `nil`                        |
