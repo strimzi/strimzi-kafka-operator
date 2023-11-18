@@ -565,17 +565,19 @@ public class KafkaClusterWithKRaftTest {
         for (ConfigMap cm : cms)    {
             if (cm.getMetadata().getName().contains("-controllers-"))   {
                 // Controllers
-                assertThat(cm.getData().size(), is(4));
+                assertThat(cm.getData().size(), is(5));
                 assertThat(cm.getData().get(LoggingModel.LOG4J1_CONFIG_MAP_KEY), is(notNullValue()));
                 assertThat(cm.getData().get(KafkaCluster.BROKER_CONFIGURATION_FILENAME), is(notNullValue()));
                 assertThat(cm.getData().get(KafkaCluster.BROKER_CLUSTER_ID_FILENAME), is(notNullValue()));
+                assertThat(cm.getData().get(KafkaCluster.BROKER_METADATA_VERSION_FILENAME), is(notNullValue()));
                 assertThat(cm.getData().get(KafkaCluster.BROKER_LISTENERS_FILENAME), is(nullValue()));
             } else {
                 // Brokers
-                assertThat(cm.getData().size(), is(4));
+                assertThat(cm.getData().size(), is(5));
                 assertThat(cm.getData().get(LoggingModel.LOG4J1_CONFIG_MAP_KEY), is(notNullValue()));
                 assertThat(cm.getData().get(KafkaCluster.BROKER_CONFIGURATION_FILENAME), is(notNullValue()));
                 assertThat(cm.getData().get(KafkaCluster.BROKER_CLUSTER_ID_FILENAME), is(notNullValue()));
+                assertThat(cm.getData().get(KafkaCluster.BROKER_METADATA_VERSION_FILENAME), is(notNullValue()));
                 assertThat(cm.getData().get(KafkaCluster.BROKER_LISTENERS_FILENAME), is(notNullValue()));
             }
         }
@@ -590,7 +592,7 @@ public class KafkaClusterWithKRaftTest {
                                 new GenericKafkaListenerBuilder().withName("external").withPort(9094).withType(KafkaListenerType.NODEPORT).withTls().build())
                         .withNewJmxPrometheusExporterMetricsConfig()
                             .withNewValueFrom()
-                            .withNewConfigMapKeyRef("metrics-cm", "metrics.json", false)
+                                .withNewConfigMapKeyRef("metrics-cm", "metrics.json", false)
                             .endValueFrom()
                         .endJmxPrometheusExporterMetricsConfig()
                     .endKafka()
@@ -620,5 +622,40 @@ public class KafkaClusterWithKRaftTest {
         assertThat(ports.get(1).getContainerPort(), is(9093));
         assertThat(ports.get(2).getContainerPort(), is(9094));
         assertThat(ports.get(3).getContainerPort(), is(9404));
+    }
+
+    @Test
+    public void testKRaftMetadataVersionValidation()   {
+        Kafka kafka = new KafkaBuilder(KAFKA)
+                .editSpec()
+                    .editKafka()
+                        .withMetadataVersion("3.6-IV9")
+                    .endKafka()
+                .endSpec()
+                .build();
+
+        InvalidResourceException ex = assertThrows(InvalidResourceException.class,
+                () -> KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, List.of(KAFKA_POOL_CONTROLLERS, KAFKA_POOL_BROKERS), VERSIONS, true, null, SHARED_ENV_PROVIDER));
+        assertThat(ex.getMessage(), containsString("Metadata version 3.6-IV9 is invalid"));
+    }
+
+    @Test
+    public void testCustomKRaftMetadataVersion()   {
+        Kafka kafka = new KafkaBuilder(KAFKA)
+                .editSpec()
+                    .editKafka()
+                        .withMetadataVersion("3.5-IV1")
+                    .endKafka()
+                .endSpec()
+                .build();
+
+        KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, List.of(KAFKA_POOL_CONTROLLERS, KAFKA_POOL_BROKERS), VERSIONS, true, null, SHARED_ENV_PROVIDER);
+        assertThat(kc.getMetadataVersion(), is("3.5-IV1"));
+    }
+
+    @Test
+    public void testDefaultKRaftMetadataVersion()   {
+        KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, KAFKA, List.of(KAFKA_POOL_CONTROLLERS, KAFKA_POOL_BROKERS), VERSIONS, true, null, SHARED_ENV_PROVIDER);
+        assertThat(kc.getMetadataVersion(), is(VERSIONS.defaultVersion().metadataVersion()));
     }
 }

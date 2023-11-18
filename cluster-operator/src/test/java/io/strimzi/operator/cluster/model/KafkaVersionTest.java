@@ -15,6 +15,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.number.OrderingComparison.greaterThan;
 import static org.hamcrest.number.OrderingComparison.lessThan;
@@ -33,7 +34,7 @@ public class KafkaVersionTest {
 
     @ParallelTest
     public void parsingInvalidVersionTest() {
-        KafkaVersion kv = new KafkaVersion("2.8.0", "2.8", "2.8", "3.6.9", false, true, "");
+        KafkaVersion kv = new KafkaVersion("2.8.0", "2.8", "2.8", "2.8", "3.6.9", false, true, "");
         assertThat(KafkaVersion.compareDottedIVVersions("2.7-IV1", kv.protocolVersion()), lessThan(0));
         assertThat(KafkaVersion.compareDottedIVVersions("2.9-IV1", kv.protocolVersion()), greaterThan(0));
 
@@ -53,24 +54,28 @@ public class KafkaVersionTest {
         assertThat(map.get("1.2.0").version(), is("1.2.0"));
         assertThat(map.get("1.2.0").protocolVersion(), is("1.2"));
         assertThat(map.get("1.2.0").messageVersion(), is("1.2"));
+        assertThat(map.get("1.2.0").metadataVersion(), is("1.2-IV2"));
         assertThat(map.get("1.2.0").isSupported(), is(true));
 
         assertThat(map.containsKey("1.1.0"), is(true));
         assertThat(map.get("1.1.0").version(), is("1.1.0"));
         assertThat(map.get("1.1.0").protocolVersion(), is("1.1"));
         assertThat(map.get("1.1.0").messageVersion(), is("1.1"));
+        assertThat(map.get("1.1.0").metadataVersion(), is(nullValue()));
         assertThat(map.get("1.1.0").isSupported(), is(true));
 
         assertThat(map.containsKey("1.1.1"), is(true));
         assertThat(map.get("1.1.1").version(), is("1.1.1"));
         assertThat(map.get("1.1.1").protocolVersion(), is("1.1"));
         assertThat(map.get("1.1.1").messageVersion(), is("1.1"));
+        assertThat(map.get("1.1.1").metadataVersion(), is("1.1"));
         assertThat(map.get("1.1.1").isSupported(), is(true));
 
         assertThat(map.containsKey("1.0.0"), is(true));
         assertThat(map.get("1.0.0").version(), is("1.0.0"));
         assertThat(map.get("1.0.0").protocolVersion(), is("1.0"));
         assertThat(map.get("1.0.0").messageVersion(), is("1.0"));
+        assertThat(map.get("1.0.0").metadataVersion(), is(nullValue()));
         assertThat(map.get("1.0.0").isSupported(), is(false));
     }
 

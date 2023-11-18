@@ -46,6 +46,7 @@ metadata:
 spec:
   kafka:
     version: 3.6.0
+    metadataVersion: 3.6-IV2
     # The replicas field is required by the Kafka CRD schema while the KafkaNodePools feature gate is in alpha phase.
     # But it will be ignored when Kafka Node Pools are used
     replicas: 3

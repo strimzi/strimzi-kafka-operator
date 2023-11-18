@@ -34,7 +34,7 @@ import java.util.Map;
 )
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonPropertyOrder({
-    "version", "replicas", "image", "listeners", "config", "storage", "authorization", "rack", "brokerRackInitImage",
+    "version", "metadataVersion", "replicas", "image", "listeners", "config", "storage", "authorization", "rack", "brokerRackInitImage",
     "livenessProbe", "readinessProbe", "jvmOptions", "jmxOptions", "resources", "metricsConfig", "logging", "template"})
 @EqualsAndHashCode
 public class KafkaClusterSpec implements HasConfigurableMetrics, HasConfigurableLogging, HasJmxOptions, HasReadinessProbe, HasLivenessProbe, UnknownPropertyPreserving, Serializable {
@@ -56,6 +56,7 @@ public class KafkaClusterSpec implements HasConfigurableMetrics, HasConfigurable
 
     protected Storage storage;
     private String version;
+    private String metadataVersion;
     private Map<String, Object> config = new HashMap<>(0);
     private String brokerRackInitImage;
     private Rack rack;
@@ -73,7 +74,7 @@ public class KafkaClusterSpec implements HasConfigurableMetrics, HasConfigurable
     private KafkaClusterTemplate template;
     private Map<String, Object> additionalProperties = new HashMap<>(0);
 
-    @Description("The kafka broker version. Defaults to {DefaultKafkaVersion}. " +
+    @Description("The Kafka broker version. Defaults to {DefaultKafkaVersion}. " +
             "Consult the user documentation to understand the process required to upgrade or downgrade the version.")
     public String getVersion() {
         return version;
@@ -81,6 +82,17 @@ public class KafkaClusterSpec implements HasConfigurableMetrics, HasConfigurable
 
     public void setVersion(String version) {
         this.version = version;
+    }
+
+    @Description("The KRaft metadata.version that should be used by this Kafka cluster. " +
+            "This field will be ignored when running in ZooKeeper mode. " +
+            "Defaults to {DefaultKafkaMetadataVersion}.")
+    public String getMetadataVersion() {
+        return metadataVersion;
+    }
+
+    public void setMetadataVersion(String metadataVersion) {
+        this.metadataVersion = metadataVersion;
     }
 
     @Description("Kafka broker config properties with the following prefixes cannot be set: " + FORBIDDEN_PREFIXES + " (with the exception of: " + FORBIDDEN_PREFIX_EXCEPTIONS + ").")

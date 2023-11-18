@@ -281,6 +281,7 @@ public class KafkaReconciler {
                 .compose(i -> serviceEndpointsReady())
                 .compose(i -> headlessServiceEndpointsReady())
                 .compose(i -> clusterId(kafkaStatus))
+                .compose(i -> metadataVersion(kafkaStatus))
                 .compose(i -> deletePersistentClaims())
                 .compose(i -> sharedKafkaConfigurationCleanup())
                 // This has to run after all possible rolling updates which might move the pods to different nodes
@@ -925,6 +926,19 @@ public class KafkaReconciler {
                                 return null;
                             });
                 });
+    }
+
+    /**
+     * Manages the KRaft metadata version
+     *
+     * @return  Future which completes when the KRaft metadata version is set to the current version or updated.
+     */
+    protected Future<Void> metadataVersion(KafkaStatus kafkaStatus) {
+        if (kafka.usesKRaft()) {
+            return KRaftMetadataManager.maybeUpdateMetadataVersion(reconciliation, vertx, secretOperator, adminClientProvider, kafka.getMetadataVersion(), kafkaStatus);
+        } else {
+            return Future.succeededFuture();
+        }
     }
 
     /**
