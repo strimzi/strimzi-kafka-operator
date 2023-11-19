@@ -5,7 +5,6 @@
 package io.strimzi.operator.cluster.operator.assembly;
 
 import io.fabric8.kubernetes.api.model.Secret;
-import io.fabric8.kubernetes.client.KubernetesClient;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.operator.cluster.ResourceUtils;
@@ -49,15 +48,10 @@ import static org.mockito.Mockito.when;
 
 @ExtendWith(VertxExtension.class)
 public class PreventBrokerScaleDownCheckTest {
-
     private static final String NAMESPACE = "my-namespace";
     private static final String CLUSTER_NAME = "my-cluster";
     private static final Reconciliation RECONCILIATION = new Reconciliation("test-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME);
     private static Vertx vertx;
-
-    // Injected by Fabric8 Mock Kubernetes Server
-    @SuppressWarnings("unused")
-    private KubernetesClient client;
 
     @BeforeAll
     public static void before() {
@@ -68,7 +62,6 @@ public class PreventBrokerScaleDownCheckTest {
     public static void after() {
         vertx.close();
     }
-
 
     private void mockDescribeTopics(Admin mockAc) {
         when(mockAc.describeTopics(anyCollection())).thenAnswer(invocation -> {
@@ -95,7 +88,6 @@ public class PreventBrokerScaleDownCheckTest {
 
     @Test
     public void testPartitionReplicasNotPresentOnRemovedBrokers(VertxTestContext context) {
-
         Admin admin = mock(Admin.class);
         AdminClientProvider mock = mock(AdminClientProvider.class);
         when(mock.createAdminClient(anyString(), any(), any(), anyString())).thenReturn(admin);
@@ -126,7 +118,6 @@ public class PreventBrokerScaleDownCheckTest {
 
     @Test
     public void testPartitionReplicasPresentOnBrokers(VertxTestContext context) {
-
         Admin admin = mock(Admin.class);
         AdminClientProvider mock = mock(AdminClientProvider.class);
         when(mock.createAdminClient(anyString(), any(), any(), anyString())).thenReturn(admin);
@@ -157,7 +148,6 @@ public class PreventBrokerScaleDownCheckTest {
 
     @Test
     public void testTopicNamesBeingRetrievedCorrectly(VertxTestContext context) {
-
         Admin admin = mock(Admin.class);
         AdminClientProvider mock = mock(AdminClientProvider.class);
         when(mock.createAdminClient(anyString(), any(), any(), anyString())).thenReturn(admin);
@@ -181,7 +171,6 @@ public class PreventBrokerScaleDownCheckTest {
 
     @Test
     public void testTopicDescriptionBeingRetrievedCorrectly(VertxTestContext context) {
-
         Admin admin = mock(Admin.class);
         AdminClientProvider mock = mock(AdminClientProvider.class);
         when(mock.createAdminClient(anyString(), any(), any(), anyString())).thenReturn(admin);
@@ -203,4 +192,3 @@ public class PreventBrokerScaleDownCheckTest {
                 }));
     }
 }
-
