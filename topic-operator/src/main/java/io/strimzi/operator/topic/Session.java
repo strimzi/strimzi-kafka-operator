@@ -133,14 +133,14 @@ public class Session extends AbstractVerticle {
      * Stop the operator.
      */
     @Override
-    @SuppressWarnings("deprecation") // Uses a deprecated executeBlocking call that should be addressed later. This is tracked in https://github.com/strimzi/strimzi-kafka-operator/issues/9233
     public void stop(Promise<Void> stop) throws Exception {
         this.stopped = true;
         Long timerId = this.timerId;
         if (timerId != null) {
             vertx.cancelTimer(timerId);
         }
-        vertx.executeBlocking(blockingResult -> {
+        Promise<Promise<Void>> blockingResult = Promise.promise();
+        vertx.executeBlocking(() -> {
             long timeout = 120_000L;
             long deadline = System.currentTimeMillis() + timeout;
             LOGGER.info("Stopping");
@@ -175,7 +175,6 @@ public class Session extends AbstractVerticle {
             });
 
             promise.future().compose(ignored -> {
-
                 LOGGER.debug("Disconnecting from zookeeper {}", zk);
                 zk.disconnect(zkResult -> {
                     if (zkResult.failed()) {
@@ -198,7 +197,8 @@ public class Session extends AbstractVerticle {
                 });
                 return Future.succeededFuture();
             });
-        }, stop);
+            return null;
+        }).onComplete(ar -> stop.complete());
     }
 
     /**
@@ -247,15 +247,17 @@ public class Session extends AbstractVerticle {
                     LOGGER.error("Topic operator start up failed, cause was", cause);
                 });
     }
-
-    @SuppressWarnings("deprecation") // Uses a deprecated executeBlocking call that should be addressed later. This is tracked in https://github.com/strimzi/strimzi-kafka-operator/issues/9233
+    
     private Future<Promise<Void>> createK8sWatcher(TopicOperator topicOperator) {
-        return executor.executeBlocking(blockingPromise -> {
+        Promise<Promise<Void>> blockingResult = Promise.promise();
+        executor.executeBlocking(() -> {
             Promise<Void> initReconcilePromise = Promise.promise();
             watcher = new K8sTopicWatcher(topicOperator, initReconcilePromise.future(), this::startWatcher);
             LOGGER.debug("Starting watcher");
-            startWatcher().onSuccess(v -> blockingPromise.complete(initReconcilePromise));
+            startWatcher().onSuccess(v -> blockingResult.complete(initReconcilePromise));
+            return null;
         });
+        return blockingResult.future();
     }
 
     private Future<TopicStore> createTopicStoreAsync(Zk zk, Config config) {
