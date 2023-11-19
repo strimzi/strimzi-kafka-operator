@@ -49,19 +49,20 @@ public class ZkImpl implements Zk {
         this.workerExecutor = vertx.createSharedWorkerExecutor(getClass().getName(), 4);
         this.zookeeper = zkClient;
     }
-
-
+    
     @Override
     public Zk create(String path, byte[] data, List<ACL> acls, CreateMode createMode, Handler<AsyncResult<Void>> handler) {
+        Promise<Void> result = Promise.promise();
         workerExecutor.executeBlocking(
             () -> {
                 try {
                     zookeeper.create(path, data == null ? new byte[0] : data, acls, createMode);
-                    return null;
+                    result.complete();
                 } catch (Throwable t) {
-                    throw t;
+                    result.fail(t);
                 }
-            }).onComplete(e -> handler.handle(Future.succeededFuture()));
+                return null;
+            }).onComplete(ar -> handler.handle(result.future()));
         return this;
     }
 
@@ -75,7 +76,7 @@ public class ZkImpl implements Zk {
                 } catch (Throwable t) {
                     throw t;
                 }
-            }).onComplete(e -> handler.handle(Future.succeededFuture()));
+            }).onComplete(ar -> handler.handle(Future.succeededFuture()));
         return this;
     }
 
@@ -89,7 +90,7 @@ public class ZkImpl implements Zk {
                 } catch (Throwable t) {
                     throw t;
                 }
-            }).onComplete(e -> handler.handle(Future.succeededFuture()));
+            }).onComplete(ar -> handler.handle(Future.succeededFuture()));
         return this;
     }
 
@@ -168,18 +169,20 @@ public class ZkImpl implements Zk {
 
     @Override
     public Zk delete(String path, int version, Handler<AsyncResult<Void>> handler) {
+        Promise<Void> result = Promise.promise();
         workerExecutor.executeBlocking(
             () -> {
                 try {
                     if (zookeeper.delete(path, version)) {
-                        return null;
+                        result.complete();
                     } else {
-                        throw new ZkNoNodeException();
+                        result.fail(new ZkNoNodeException());
                     }
                 } catch (Throwable t) {
-                    throw t;
+                    result.fail(t);
                 }
-            }).onComplete(ar -> handler.handle(Future.succeededFuture()));
+                return null;
+            }).onComplete(ar -> handler.handle(result.future()));
         return this;
     }
 
