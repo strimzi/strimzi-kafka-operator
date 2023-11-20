@@ -7,8 +7,6 @@ package io.strimzi.systemtest.tracing;
 import io.strimzi.api.kafka.model.KafkaBridgeResources;
 import io.strimzi.api.kafka.model.KafkaConnectBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
-import io.strimzi.api.kafka.model.connect.build.JarArtifactBuilder;
-import io.strimzi.api.kafka.model.connect.build.PluginBuilder;
 import io.strimzi.api.kafka.model.tracing.OpenTelemetryTracing;
 import io.strimzi.api.kafka.model.tracing.Tracing;
 import io.strimzi.operator.common.Annotations;
@@ -42,7 +40,6 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Random;
 import java.util.Stack;
 
 import static io.strimzi.systemtest.Constants.ACCEPTANCE;
