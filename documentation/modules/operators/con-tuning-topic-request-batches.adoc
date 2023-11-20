@@ -3,7 +3,7 @@
 // assembly-using-the-topic-operator.adoc
 
 [id='con-tuning-topic-request-batches-{context}']
-= (Preview) Tuning request batches for topic operations
+= Tuning request batches for topic operations
 
 In unidirectional mode, the Topic Operator uses the request batching capabilities of the Kafka Admin API for operations on topic resources. 
 You can fine-tune the batching mechanism using the following operator configuration properties:

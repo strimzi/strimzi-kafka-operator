@@ -58,7 +58,7 @@ The status of the newer resources is updated to indicate a conflict, and their `
 
 If a Kafka client application, such as Kafka Streams, automatically creates topics with invalid Kubernetes resource names, the Topic Operator generates a valid `metadata.name` when used in bidirectional mode. 
 It replaces invalid characters and appends a hash to the name. 
-However, this behavior does not apply in (preview) unidirectional mode.
+However, this behavior does not apply in unidirectional mode.
 
 .Example of replacing an invalid topic name
 [source,yaml,subs="attributes+"]

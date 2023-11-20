@@ -3,7 +3,7 @@
 // assembly-using-the-topic-operator.adoc
 
 [id='con-removing-topic-finalizers-{context}']
-= (Preview) Removing finalizers on topics
+= Removing finalizers on topics
 
 [role="_abstract"]
 If the unidirectional Topic Operator is not running, and you want to bypass the finalization process when deleting managed topics, you have to remove the finalizers.   

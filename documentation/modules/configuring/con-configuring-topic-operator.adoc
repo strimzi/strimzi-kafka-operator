@@ -8,8 +8,7 @@
 [role="_abstract"]
 Use `topicOperator` properties in `Kafka.spec.entityOperator` to configure the Topic Operator.
 
-NOTE: If you are using the preview of unidirectional topic management, the following properties are not used and will be ignored: 
-`Kafka.spec.entityOperator.topicOperator.zookeeperSessionTimeoutSeconds` and `Kafka.spec.entityOperator.topicOperator.topicMetadataMaxAttempts`.
+NOTE: If you are using unidirectional topic management, which is enabled by default, the following properties are not used and are ignored: `Kafka.spec.entityOperator.topicOperator.zookeeperSessionTimeoutSeconds` and `Kafka.spec.entityOperator.topicOperator.topicMetadataMaxAttempts`.
 For more information on unidirectional topic management, refer to xref:ref-operator-topic-{context}[].
 
 The following properties are supported:
@@ -33,7 +32,7 @@ Consider increasing this value when topic creation might take more time due to t
 Default `6`.
 
 `image`::
-The `image` property can be used to configure the container image which will be used.
+The `image` property can be used to configure the container image which is used.
 To learn more, refer to the information provided on link:{BookURLConfiguring}#con-common-configuration-images-reference[configuring the `image` property`^].
 
 `resources`::

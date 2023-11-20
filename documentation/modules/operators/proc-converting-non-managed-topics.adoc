@@ -3,7 +3,7 @@
 // assembly-using-the-topic-operator.adoc
 
 [id='proc-converting-non-managed-topics-{context}']
-= (Preview) Enabling topic management for existing Kafka topics
+= Enabling topic management for existing Kafka topics
 
 [role="_abstract"]
 This procedure describes how to enable topic management for topics that are not currently managed through the `KafkaTopic` resource.
