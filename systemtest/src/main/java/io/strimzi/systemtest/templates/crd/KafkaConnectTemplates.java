@@ -105,11 +105,18 @@ public class KafkaConnectTemplates {
      * @param replicas number of KafkaConnect replicas
      * @return KafkaConnect builder with File plugin
      */
-    @SuppressFBWarnings("DMI_RANDOM_USED_ONLY_ONCE")
     public static KafkaConnectBuilder kafkaConnectWithFilePlugin(String name, String namespaceName, String clusterName, int replicas, String pathToConnectConfig) {
         return addFileSinkPluginOrImage(namespaceName, kafkaConnect(name, namespaceName, clusterName, replicas, pathToConnectConfig));
     }
 
+    /**
+     * Method for adding Connect Build with file-sink plugin to the Connect spec or set Connect's image in case that
+     * the image is set in `CONNECT_IMAGE_WITH_FILE_SINK_PLUGIN` env. variable
+     * @param namespaceName namespace for output registry
+     * @param connectBuilder builder of the Connect resource
+     * @return updated Connect resource in builder
+     */
+    @SuppressFBWarnings("DMI_RANDOM_USED_ONLY_ONCE")
     public static KafkaConnectBuilder addFileSinkPluginOrImage(String namespaceName, KafkaConnectBuilder connectBuilder) {
         if (!KubeClusterResource.getInstance().isMicroShift() && Environment.CONNECT_IMAGE_WITH_FILE_SINK_PLUGIN.isEmpty()) {
             final Plugin fileSinkPlugin = new PluginBuilder()
