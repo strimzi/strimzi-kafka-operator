@@ -402,7 +402,7 @@ public abstract class AbstractOperator<
                 callSafely(reconciliation, callable)
                     .onSuccess(handleSafely(reconciliation, handler::complete))
                     .onFailure(handleSafely(reconciliation, handler::fail))
-                    .eventually(ignored -> releaseLockAndTimer(reconciliation, lock, lockName, timerId));
+                    .eventually(() -> releaseLockAndTimer(reconciliation, lock, lockName, timerId));
             } else {
                 LOGGER.debugCr(reconciliation, "Failed to acquire lock {} within {}ms.", lockName, lockTimeoutMs);
                 handler.fail(new UnableToAcquireLockException());
