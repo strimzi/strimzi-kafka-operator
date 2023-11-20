@@ -130,7 +130,7 @@ public class KafkaRoller {
     private Admin controllerAdminClient;
     private KafkaAgentClient kafkaAgentClient;
     private static final String CONTROLLER_QUORUM_FETCH_TIMEOUT_MS_CONFIG_NAME = "controller.quorum.fetch.timeout.ms";
-    private static final long CONTROLLER_QUORUM_FETCH_TIMEOUT_MS_CONFIG_DEFAULT = 2000L;
+    private static final String CONTROLLER_QUORUM_FETCH_TIMEOUT_MS_CONFIG_DEFAULT = "2000";
 
     /**
      * Constructor
@@ -581,13 +581,16 @@ public class KafkaRoller {
         boolean needsReconfig = false;
         if (nodeRef.controller()) {
             if (initControllerAdminClient()) {
+                String controllerQuorumFetchTimeout = CONTROLLER_QUORUM_FETCH_TIMEOUT_MS_CONFIG_DEFAULT;
                 String desiredConfig = kafkaConfigProvider.apply(nodeRef.nodeId());
-                OrderedProperties orderedProperties = new OrderedProperties();
-                String controllerQuorumFetchTimeout = orderedProperties.addStringPairs(desiredConfig).asMap().get(CONTROLLER_QUORUM_FETCH_TIMEOUT_MS_CONFIG_NAME);
-                restartContext.quorumCheck = quorumCheck(controllerAdminClient, controllerQuorumFetchTimeout != null ? Long.parseLong(controllerQuorumFetchTimeout) : CONTROLLER_QUORUM_FETCH_TIMEOUT_MS_CONFIG_DEFAULT);
-            } else {
+                if (desiredConfig != null) {
+                    OrderedProperties orderedProperties = new OrderedProperties();
+                    controllerQuorumFetchTimeout = orderedProperties.addStringPairs(desiredConfig).asMap().getOrDefault(CONTROLLER_QUORUM_FETCH_TIMEOUT_MS_CONFIG_NAME, CONTROLLER_QUORUM_FETCH_TIMEOUT_MS_CONFIG_DEFAULT);
+                }
+                restartContext.quorumCheck = quorumCheck(controllerAdminClient, Long.parseLong(controllerQuorumFetchTimeout));
                 //TODO When https://github.com/strimzi/strimzi-kafka-operator/issues/8593 is complete
                 // we should change this logic to immediately restart this pod because we cannot connect to it.
+            } else {
                 if (nodeRef.broker()) {
                     // If it is a combined node (controller and broker) and the admin client cannot be initialised,
                     // restart this pod. There is no reason to continue as we won't be able to
