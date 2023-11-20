@@ -588,9 +588,9 @@ public class KafkaRoller {
                     controllerQuorumFetchTimeout = orderedProperties.addStringPairs(desiredConfig).asMap().getOrDefault(CONTROLLER_QUORUM_FETCH_TIMEOUT_MS_CONFIG_NAME, CONTROLLER_QUORUM_FETCH_TIMEOUT_MS_CONFIG_DEFAULT);
                 }
                 restartContext.quorumCheck = quorumCheck(controllerAdminClient, Long.parseLong(controllerQuorumFetchTimeout));
+            } else {
                 //TODO When https://github.com/strimzi/strimzi-kafka-operator/issues/8593 is complete
                 // we should change this logic to immediately restart this pod because we cannot connect to it.
-            } else {
                 if (nodeRef.broker()) {
                     // If it is a combined node (controller and broker) and the admin client cannot be initialised,
                     // restart this pod. There is no reason to continue as we won't be able to
