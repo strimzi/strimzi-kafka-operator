@@ -259,21 +259,25 @@ class RollingUpdateST extends AbstractST {
 
     /**
      * @description This test case checks scaling Kafka up and down and that it works correctly during this event.
-     * @steps 1. - Deploy persistent Kafka Cluster with 3 replicas, and also first kafkaTopic with 3 replicas
-     * - Cluster with 3 replicas and Kafka topics are deployed
-     * 2. - Deploy Kafka clients, produce and consume messages targeting created KafkaTopic
-     * - Data are produced and consumed successfully
-     * 3. - Scale up Kafka Cluster from 3 to 5 replicas
-     * - Cluster scales to 5 replicas and volumes as such
-     * 4. - Deploy KafkaTopic with 4 replicas and new clients which will target this KafkaTopic and the first one KafkaTopic
-     * - Topic is deployed and ready, clients successfully communicate with respective KafkaTopics
-     * 5. - Scale down Kafka Cluster back from 5 to 3 replicas
-     * - Cluster scales down to 3 replicas and volumes as such
-     * 6. - Deploy new KafkaTopic and new clients which will target this KafkaTopic, also do the same for the first KafkaTopic
-     * - New KafkaTopic is created and ready, clients successfully communicate with respective KafkaTopics
-     * @usecase - kafka
-     * - scale-up
-     * - scale-down
+     *
+     * @steps
+     *  1. - Deploy persistent Kafka Cluster with 3 replicas, and also first kafkaTopic with 3 replicas
+     *     - Cluster with 3 replicas and Kafka topics are deployed
+     *  2. - Deploy Kafka clients, produce and consume messages targeting created KafkaTopic
+     *     - Data are produced and consumed successfully
+     *  3. - Scale up Kafka Cluster from 3 to 5 replicas
+     *     - Cluster scales to 5 replicas and volumes as such
+     *  4. - Deploy KafkaTopic with 4 replicas and new clients which will target this KafkaTopic and the first one KafkaTopic
+     *     - Topic is deployed and ready, clients successfully communicate with respective KafkaTopics
+     *  5. - Scale down Kafka Cluster back from 5 to 3 replicas
+     *     - Cluster scales down to 3 replicas and volumes as such
+     *  6. - Deploy new KafkaTopic and new clients which will target this KafkaTopic, also do the same for the first KafkaTopic
+     *     - New KafkaTopic is created and ready, clients successfully communicate with respective KafkaTopics
+     *
+     * @usecase
+     *  - kafka
+     *  - scale-up
+     *  - scale-down
      */
     @ParallelNamespaceTest
     @Tag(ACCEPTANCE)
@@ -287,17 +291,17 @@ class RollingUpdateST extends AbstractST {
         final String topicNameScaledBackDown = testStorage.getTopicName() + "-scaled-down";
 
         resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), 3, 3)
-                .editMetadata()
+            .editMetadata()
                 .addToAnnotations(Map.of(Annotations.ANNO_STRIMZI_IO_SKIP_BROKER_SCALEDOWN_CHECK, "true"))
-                .endMetadata()
-                .editSpec()
+            .endMetadata()
+            .editSpec()
                 .editKafka()
-                // Topic Operator doesn't support KRaft, yet, using auto topic creation and default replication factor as workaround
-                .addToConfig(singletonMap("default.replication.factor", Environment.isKRaftModeEnabled() ? 3 : 1))
-                .addToConfig("auto.create.topics.enable", Environment.isKRaftModeEnabled())
+                    // Topic Operator doesn't support KRaft, yet, using auto topic creation and default replication factor as workaround
+                    .addToConfig(singletonMap("default.replication.factor", Environment.isKRaftModeEnabled() ? 3 : 1))
+                    .addToConfig("auto.create.topics.enable", Environment.isKRaftModeEnabled())
                 .endKafka()
-                .endSpec()
-                .build(),
+            .endSpec()
+            .build(),
             KafkaUserTemplates.tlsUser(testStorage).build()
         );
 
@@ -358,7 +362,7 @@ class RollingUpdateST extends AbstractST {
         LOGGER.info("Create new KafkaTopic with replica count requiring existence of brokers added by scaling up");
         KafkaTopic scaledUpKafkaTopicResource = KafkaTopicTemplates.topic(testStorage.getClusterName(), topicNameScaledUp, testStorage.getNamespaceName())
             .editSpec()
-            .withReplicas(initialReplicas + 1)
+                .withReplicas(initialReplicas + 1)
             .endSpec()
             .build();
         resourceManager.createResourceWithWait(extensionContext, scaledUpKafkaTopicResource);
@@ -416,21 +420,25 @@ class RollingUpdateST extends AbstractST {
 
     /**
      * @description This test case checks scaling Zookeeper up and down and that it works correctly during and after this event.
-     * @steps 1. - Deploy persistent Kafka Cluster with 3 replicas, first KafkaTopic, and KafkaUser
-     * - Cluster with 3 replicas and other resources are created and ready
-     * 2. - Deploy Kafka clients, produce and consume messages targeting created KafkaTopic
-     * - Data are produced and consumed successfully
-     * 3. - Scale up Zookeeper Cluster from 3 to 7 replicas
-     * - Cluster scales to 7 replicas, quorum is temporarily lost but regained afterwards
-     * 4. - Deploy new KafkaTopic and new clients which will target this KafkaTopic, and also first KafkaTopic
-     * - New KafkaTopic is deployed and ready, clients successfully communicate with topics represented by mentioned KafkaTopics
-     * 5. - Scale down Zookeeper Cluster back from 7 to 3 replicas
-     * - Cluster scales down to 3, Zookeeper
-     * 6. - Deploy new KafkaTopic and new clients targeting it
-     * - New KafkaTopic is created and ready, all clients can communicate successfully
-     * @usecase - zookeeper
-     * - scale-up
-     * - scale-down
+     *
+     * @steps
+     *  1. - Deploy persistent Kafka Cluster with 3 replicas, first KafkaTopic, and KafkaUser
+     *     - Cluster with 3 replicas and other resources are created and ready
+     *  2. - Deploy Kafka clients, produce and consume messages targeting created KafkaTopic
+     *     - Data are produced and consumed successfully
+     *  3. - Scale up Zookeeper Cluster from 3 to 7 replicas
+     *     - Cluster scales to 7 replicas, quorum is temporarily lost but regained afterwards
+     *  4. - Deploy new KafkaTopic and new clients which will target this KafkaTopic, and also first KafkaTopic
+     *     - New KafkaTopic is deployed and ready, clients successfully communicate with topics represented by mentioned KafkaTopics
+     *  5. - Scale down Zookeeper Cluster back from 7 to 3 replicas
+     *     - Cluster scales down to 3, Zookeeper
+     *  6. - Deploy new KafkaTopic and new clients targeting it
+     *     - New KafkaTopic is created and ready, all clients can communicate successfully
+     *
+     * @usecase
+     *  - zookeeper
+     *  - scale-up
+     *  - scale-down
      */
     @ParallelNamespaceTest
     @Tag(COMPONENT_SCALING)
@@ -574,16 +582,20 @@ class RollingUpdateST extends AbstractST {
 
     /**
      * @description This test case verifies that cluster operator can finish rolling update of components despite being restarted.
-     * @steps 1. - Deploy persistent Kafka Cluster with 3 replicas
-     * - Cluster with 3 replicas is deployed and ready
-     * 2. - Change specification of readiness probe inside Kafka Cluster, thereby triggering Rolling Update
-     * - Rolling Update is triggered
-     * 3. - Delete cluster operator Pod
-     * - Cluster operator Pod is restarted and Rolling Update continues
-     * 4. - Delete cluster operator Pod again, this time in the middle of Kafka Pods being rolled
-     * - Cluster operator Pod is restarted and Rolling Update finish successfully
-     * @usecase - rolling-update
-     * - cluster-operator
+     *
+     * @steps
+     *  1. - Deploy persistent Kafka Cluster with 3 replicas
+     *     - Cluster with 3 replicas is deployed and ready
+     *  2. - Change specification of readiness probe inside Kafka Cluster, thereby triggering Rolling Update
+     *     - Rolling Update is triggered
+     *  3. - Delete cluster operator Pod
+     *     - Cluster operator Pod is restarted and Rolling Update continues
+     *  4. - Delete cluster operator Pod again, this time in the middle of Kafka Pods being rolled
+     *     - Cluster operator Pod is restarted and Rolling Update finish successfully
+     *
+         * @usecase
+     *  - rolling-update
+     *  - cluster-operator
      */
     @IsolatedTest("Deleting Pod of Shared Cluster Operator")
     @Tag(ROLLING_UPDATE)
@@ -595,7 +607,7 @@ class RollingUpdateST extends AbstractST {
 
         resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaPersistent(clusterName, 3, 3)
             .editMetadata()
-            .withNamespace(Environment.TEST_SUITE_NAMESPACE)
+                .withNamespace(Environment.TEST_SUITE_NAMESPACE)
             .endMetadata()
             .build());
 
@@ -615,7 +627,7 @@ class RollingUpdateST extends AbstractST {
 
         TestUtils.waitFor("rolling update starts", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_STATUS_TIMEOUT,
             () -> kubeClient(Environment.TEST_SUITE_NAMESPACE).listPods(Environment.TEST_SUITE_NAMESPACE).stream().filter(pod -> pod.getStatus().getPhase().equals("Running"))
-                .map(pod -> pod.getStatus().getPhase()).collect(Collectors.toList()).size() < kubeClient().listPods(Environment.TEST_SUITE_NAMESPACE).size());
+                    .map(pod -> pod.getStatus().getPhase()).collect(Collectors.toList()).size() < kubeClient().listPods(Environment.TEST_SUITE_NAMESPACE).size());
 
         LabelSelector coLabelSelector = kubeClient().getDeployment(clusterOperator.getDeploymentNamespace(), ResourceManager.getCoDeploymentName()).getSpec().getSelector();
         LOGGER.info("Deleting Cluster Operator Pod with labels {}", coLabelSelector);
@@ -639,19 +651,23 @@ class RollingUpdateST extends AbstractST {
 
     /**
      * @description This test case check that enabling metrics and metrics manipulation triggers Rolling Update.
-     * @steps 1. - Deploy Kafka Cluster with Zookeeper and with disabled metrics configuration
-     * - Cluster is deployed
-     * 2. - Change specification of Kafka Cluster by configuring metrics for Kafka, Zookeeper, and configuring metrics Exporter
-     * - Allowing metrics does not trigger Rolling Update
-     * 3. - Setup or deploy necessary scraper, metric rules, and collectors and collect metrics
-     * - Metrics are successfully collected
-     * 4. - Modify patterns in rules for collecting metrics in Zookeeper and Kafka by updating respective Config Maps
-     * - Respective changes do not trigger Rolling Update, Cluster remains stable and metrics are exposed according to new rules
-     * 5. - Change specification of Kafka Cluster by removing any metric related configuration
-     * - Rolling Update is triggered and metrics are no longer present.
-     * @usecase - metrics
-     * - kafka-metrics-rolling-update
-     * - rolling-update
+     *
+     * @steps
+     *  1. - Deploy Kafka Cluster with Zookeeper and with disabled metrics configuration
+     *     - Cluster is deployed
+     *  2. - Change specification of Kafka Cluster by configuring metrics for Kafka, Zookeeper, and configuring metrics Exporter
+     *     - Allowing metrics does not trigger Rolling Update
+     *  3. - Setup or deploy necessary scraper, metric rules, and collectors and collect metrics
+     *     - Metrics are successfully collected
+     *  4. - Modify patterns in rules for collecting metrics in Zookeeper and Kafka by updating respective Config Maps
+     *     - Respective changes do not trigger Rolling Update, Cluster remains stable and metrics are exposed according to new rules
+     *  5. - Change specification of Kafka Cluster by removing any metric related configuration
+     *     - Rolling Update is triggered and metrics are no longer present.
+     *
+     * @usecase
+     *  - metrics
+     *  - kafka-metrics-rolling-update
+     *  - rolling-update
      */
     @IsolatedTest
     @Tag(ROLLING_UPDATE)
@@ -676,8 +692,8 @@ class RollingUpdateST extends AbstractST {
         final String yaml = mapper.writeValueAsString(kafkaMetrics);
         ConfigMap metricsCMK = new ConfigMapBuilder()
             .withNewMetadata()
-            .withName(metricsCMNameK)
-            .withNamespace(testStorage.getNamespaceName())
+                .withName(metricsCMNameK)
+                .withNamespace(testStorage.getNamespaceName())
             .endMetadata()
             .withData(singletonMap("metrics-config.yml", yaml))
             .build();
@@ -708,8 +724,8 @@ class RollingUpdateST extends AbstractST {
         String metricsCMNameZk = "zk-metrics-cm";
         ConfigMap metricsCMZk = new ConfigMapBuilder()
             .withNewMetadata()
-            .withName(metricsCMNameZk)
-            .withNamespace(testStorage.getNamespaceName())
+                .withName(metricsCMNameZk)
+                 .withNamespace(testStorage.getNamespaceName())
             .endMetadata()
             .withData(singletonMap("metrics-config.yml", mapper.writeValueAsString(zookeeperMetrics)))
             .build();
@@ -729,17 +745,17 @@ class RollingUpdateST extends AbstractST {
 
         resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3, 3)
             .editMetadata()
-            .withNamespace(testStorage.getNamespaceName())
+                .withNamespace(testStorage.getNamespaceName())
             .endMetadata()
             .editSpec()
-            .editKafka()
-            .withMetricsConfig(kafkaMetricsConfig)
-            .endKafka()
-            .editOrNewZookeeper()
-            .withMetricsConfig(zkMetricsConfig)
-            .endZookeeper()
-            .withNewKafkaExporter()
-            .endKafkaExporter()
+                .editKafka()
+                    .withMetricsConfig(kafkaMetricsConfig)
+                .endKafka()
+                .editOrNewZookeeper()
+                    .withMetricsConfig(zkMetricsConfig)
+                .endZookeeper()
+                .withNewKafkaExporter()
+                .endKafkaExporter()
             .endSpec()
             .build());
 
@@ -783,16 +799,16 @@ class RollingUpdateST extends AbstractST {
 
         metricsCMZk = new ConfigMapBuilder()
             .withNewMetadata()
-            .withName(metricsCMNameZk)
-            .withNamespace(testStorage.getNamespaceName())
+                .withName(metricsCMNameZk)
+                .withNamespace(testStorage.getNamespaceName())
             .endMetadata()
             .withData(singletonMap("metrics-config.yml", mapper.writeValueAsString(zookeeperMetrics)))
             .build();
 
         metricsCMK = new ConfigMapBuilder()
             .withNewMetadata()
-            .withName(metricsCMNameK)
-            .withNamespace(testStorage.getNamespaceName())
+                .withName(metricsCMNameK)
+                .withNamespace(testStorage.getNamespaceName())
             .endMetadata()
             .withData(singletonMap("metrics-config.yml", mapper.writeValueAsString(kafkaMetrics)))
             .build();
@@ -849,8 +865,8 @@ class RollingUpdateST extends AbstractST {
     @BeforeAll
     void setup(ExtensionContext extensionContext) {
         this.clusterOperator = this.clusterOperator
-            .defaultInstallation(extensionContext)
-            .createInstallation()
-            .runInstallation();
+                .defaultInstallation(extensionContext)
+                .createInstallation()
+                .runInstallation();
     }
 }

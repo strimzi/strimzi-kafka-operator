@@ -20,12 +20,10 @@ public class ConfigMapUtils {
     private static final Logger LOGGER = LogManager.getLogger(ConfigMapUtils.class);
     private static final long DELETION_TIMEOUT = ResourceOperation.getTimeoutForResourceDeletion();
 
-    private ConfigMapUtils() {
-    }
+    private ConfigMapUtils() { }
 
     /**
      * Wait until the config map has been recovered.
-     *
      * @param name The name of the ConfigMap.
      */
     public static void waitForConfigMapRecovery(String namespaceName, String name, String configMapUid) {

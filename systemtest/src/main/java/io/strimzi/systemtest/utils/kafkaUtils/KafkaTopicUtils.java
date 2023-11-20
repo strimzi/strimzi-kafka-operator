@@ -154,8 +154,8 @@ public class KafkaTopicUtils {
     public static void waitForTopicConfigContains(String namespaceName, String topicName, Map<String, Object> config) {
         LOGGER.info("Waiting for KafkaTopic: {}/{} to contain correct config", namespaceName, topicName);
         TestUtils.waitFor("KafkaTopic: " + namespaceName + "/" + topicName + " to contain correct config",
-            TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_STATUS_TIMEOUT,
-            () -> KafkaTopicUtils.configsAreEqual(KafkaTopicResource.kafkaTopicClient()
+                TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_STATUS_TIMEOUT,
+                () -> KafkaTopicUtils.configsAreEqual(KafkaTopicResource.kafkaTopicClient()
                         .inNamespace(namespaceName).withName(topicName).get().getSpec().getConfig(), config)
         );
         LOGGER.info("KafkaTopic: {}/{} contains correct config", namespaceName, topicName);

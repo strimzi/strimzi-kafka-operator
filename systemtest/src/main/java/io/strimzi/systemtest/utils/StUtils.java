@@ -407,8 +407,7 @@ public class StUtils {
      * @return single or parallel namespace based on cluster configuration
      */
     public static String getNamespaceBasedOnRbac(String namespace, ExtensionContext extensionContext) {
-        return Environment.isNamespaceRbacScope() ? namespace : extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(
-            TestConstants.NAMESPACE_KEY).toString();
+        return Environment.isNamespaceRbacScope() ? namespace : extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(TestConstants.NAMESPACE_KEY).toString();
     }
 
     /**
@@ -543,11 +542,11 @@ public class StUtils {
     }
     public static void waitUntilSuppliersAreMatching(final Supplier<?> sup, final Supplier<?> anotherSup) {
         TestUtils.waitFor(sup.get() + " is matching with" + anotherSup.get(), TestConstants.GLOBAL_POLL_INTERVAL,
-            TestConstants.GLOBAL_STATUS_TIMEOUT, () -> sup.get().equals(anotherSup.get()));
+                TestConstants.GLOBAL_STATUS_TIMEOUT, () -> sup.get().equals(anotherSup.get()));
     }
 
     public static void waitUntilSupplierIsSatisfied(final BooleanSupplier sup) {
         TestUtils.waitFor(sup.getAsBoolean() + " is satisfied", TestConstants.GLOBAL_POLL_INTERVAL,
-            TestConstants.GLOBAL_STATUS_TIMEOUT, sup);
+                TestConstants.GLOBAL_STATUS_TIMEOUT, sup);
     }
 }

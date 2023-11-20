@@ -276,7 +276,7 @@ abstract public class AbstractKafkaClientProperties<C extends AbstractKafkaClien
         // RANDFILE=/tmp/.rnd openssl pkcs12 -export -in $3 -inkey $4 -name $HOSTNAME -password pass:$2 -out $1
         // The following code is needed to avoid race-condition which we see from time to time
         TestUtils.waitFor("client-keystore readiness", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.CO_OPERATION_TIMEOUT_MEDIUM,
-                          () -> Exec.exec("openssl",
+            () -> Exec.exec("openssl",
                 "pkcs12",
                 "-export",
                 "-in", certFile.getAbsolutePath(),

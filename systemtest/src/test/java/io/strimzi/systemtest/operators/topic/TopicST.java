@@ -157,10 +157,10 @@ public class TopicST extends AbstractST {
 
         resourceManager.createResourceWithWait(extensionContext, KafkaTopicTemplates.topic(KAFKA_CLUSTER_NAME, testStorage.getTopicName(), Environment.TEST_SUITE_NAMESPACE)
             .editMetadata()
-            .withNamespace(Environment.TEST_SUITE_NAMESPACE)
+                .withNamespace(Environment.TEST_SUITE_NAMESPACE)
             .endMetadata()
             .editSpec()
-            .withReplicas(3)
+                .withReplicas(3)
             .endSpec()
             .build());
 
@@ -181,7 +181,7 @@ public class TopicST extends AbstractST {
             LOGGER.info("Iteration {}: Recreating {}", i, testStorage.getTopicName());
             resourceManager.createResourceWithWait(extensionContext, KafkaTopicTemplates.topic(KAFKA_CLUSTER_NAME, testStorage.getTopicName(), Environment.TEST_SUITE_NAMESPACE)
                 .editSpec()
-                .withReplicas(3)
+                    .withReplicas(3)
                 .endSpec()
                 .build());
 
@@ -235,16 +235,16 @@ public class TopicST extends AbstractST {
 
         resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3, 1)
             .editMetadata()
-            .withNamespace(Environment.TEST_SUITE_NAMESPACE)
+                .withNamespace(Environment.TEST_SUITE_NAMESPACE)
             .endMetadata()
             .editSpec()
-            .editKafka()
-            .addToConfig("delete.topic.enable", false)
-            .endKafka()
-            .editOrNewEntityOperator()
-            .withNewTopicOperator()
-            .endTopicOperator()
-            .endEntityOperator()
+                .editKafka()
+                    .addToConfig("delete.topic.enable", false)
+                .endKafka()
+                .editOrNewEntityOperator()
+                    .withNewTopicOperator()
+                    .endTopicOperator()
+                .endEntityOperator()
             .endSpec()
             .build());
 
@@ -282,8 +282,8 @@ public class TopicST extends AbstractST {
 
         KafkaTopic kafkaTopic = KafkaTopicTemplates.topic(KAFKA_CLUSTER_NAME, topicName, Environment.TEST_SUITE_NAMESPACE)
             .editSpec()
-            .withReplicas(3)
-            .withPartitions(3)
+                .withReplicas(3)
+                .withPartitions(3)
             .endSpec()
             .build();
 
@@ -320,33 +320,37 @@ public class TopicST extends AbstractST {
 
     /**
      * @description This test case checks Bidirectional Topic Operator metrics regarding different states of KafkaTopic.
-     * @steps 1. - Create KafkaTopic
-     * - KafkaTopic is ready
-     * 2. - Create metrics collector for Topic Operator and collect the metrics
-     * - Metrics collected
-     * 3. - Check that TOpic Operator metrics contains data about reconciliations
-     * - Metrics contains proper data
-     * 4. - Check that metrics contain info about KafkaTopic with name stored in 'topicName' is Ready
-     * - Metrics contains proper data
-     * 5. - Change spec.topicName for topic 'topicName' and wait for NotReady status
-     * - KafkaTopic is in NotReady state
-     * 6. - Check that metrics contain info about KafkaTopic 'topicName' cannot be renamed and that KT status has proper values
-     * - Metrics contains proper data and status contains proper values
-     * 7. - Revert changes in KafkaTopic and change number of Replicas
-     * - KafkaTopic CR replica count is changed
-     * 8. - Check that metrics contain info about KafkaTopic 'topicName' replicas count cannot be changed and KT status has proper values
-     * - Metrics contains proper data and KT status has proper values
-     * 9. - Decrease KT number of partitions
-     * - Partitions count changed
-     * 10. - Check that metrics contains info about KafkaTopic NotReady status and KT status has proper values (cannot change partition count)
-     * - Metrics contains proper data and KT status has proper values
-     * 11. - Set KafkaTopic configuration to default one
-     * - KafkaTopic is in Ready state
-     * 12. - Check that metrics contain info about KafkaTopic 'topicName' is Ready
-     * - Metrics contains proper data
-     * @testcase - topic-operator-metrics
-     * - kafkatopic-ready
-     * - kafkatopic-not-ready
+     *
+     * @steps
+     *  1. - Create KafkaTopic
+     *     - KafkaTopic is ready
+     *  2. - Create metrics collector for Topic Operator and collect the metrics
+     *     - Metrics collected
+     *  3. - Check that TOpic Operator metrics contains data about reconciliations
+     *     - Metrics contains proper data
+     *  4. - Check that metrics contain info about KafkaTopic with name stored in 'topicName' is Ready
+     *     - Metrics contains proper data
+     *  5. - Change spec.topicName for topic 'topicName' and wait for NotReady status
+     *     - KafkaTopic is in NotReady state
+     *  6. - Check that metrics contain info about KafkaTopic 'topicName' cannot be renamed and that KT status has proper values
+     *     - Metrics contains proper data and status contains proper values
+     *  7. - Revert changes in KafkaTopic and change number of Replicas
+     *     - KafkaTopic CR replica count is changed
+     *  8. - Check that metrics contain info about KafkaTopic 'topicName' replicas count cannot be changed and KT status has proper values
+     *     - Metrics contains proper data and KT status has proper values
+     *  9. - Decrease KT number of partitions
+     *     - Partitions count changed
+     *  10. - Check that metrics contains info about KafkaTopic NotReady status and KT status has proper values (cannot change partition count)
+     *      - Metrics contains proper data and KT status has proper values
+     *  11. - Set KafkaTopic configuration to default one
+     *      - KafkaTopic is in Ready state
+     *  12. - Check that metrics contain info about KafkaTopic 'topicName' is Ready
+     *      - Metrics contains proper data
+     *
+     * @testcase
+     *  - topic-operator-metrics
+     *  - kafkatopic-ready
+     *  - kafkatopic-not-ready
      */
     @IsolatedTest
     @UTONotSupported
@@ -444,33 +448,37 @@ public class TopicST extends AbstractST {
 
     /**
      * @description This test case checks Unidirectional Topic Operator metrics regarding different states of KafkaTopic.
-     * @steps 1. - Create KafkaTopic
-     * - KafkaTopic is ready
-     * 2. - Create metrics collector for Topic Operator and collect the metrics
-     * - Metrics collected
-     * 3. - Check that TOpic Operator metrics contains data about reconciliations
-     * - Metrics contains proper data
-     * 4. - Check that metrics contain info about KafkaTopic with name stored in 'topicName' is Ready
-     * - Metrics contains proper data
-     * 5. - Change spec.topicName for topic 'topicName' and wait for NotReady status
-     * - KafkaTopic is in NotReady state
-     * 6. - Check that metrics contain info about KafkaTopic 'topicName' cannot be renamed and that KT status has proper values
-     * - Metrics contains proper data and status contains proper values
-     * 7. - Revert changes in KafkaTopic and change number of Replicas
-     * - KafkaTopic CR replica count is changed
-     * 8. - Check that metrics contain info about KafkaTopic 'topicName' replicas count cannot be changed and KT status has proper values
-     * - Metrics contains proper data and KT status has proper values
-     * 9. - Decrease KT number of partitions
-     * - Partitions count changed
-     * 10. - Check that metrics contains info about KafkaTopic NotReady status and KT status has proper values (cannot change partition count)
-     * - Metrics contains proper data and KT status has proper values
-     * 11. - Set KafkaTopic configuration to default one
-     * - KafkaTopic is in Ready state
-     * 12. - Check that metrics contain info about KafkaTopic 'topicName' is Ready
-     * - Metrics contains proper data
-     * @testcase - topic-operator-metrics
-     * - kafkatopic-ready
-     * - kafkatopic-not-ready
+     *
+     * @steps
+     *  1. - Create KafkaTopic
+     *     - KafkaTopic is ready
+     *  2. - Create metrics collector for Topic Operator and collect the metrics
+     *     - Metrics collected
+     *  3. - Check that TOpic Operator metrics contains data about reconciliations
+     *     - Metrics contains proper data
+     *  4. - Check that metrics contain info about KafkaTopic with name stored in 'topicName' is Ready
+     *     - Metrics contains proper data
+     *  5. - Change spec.topicName for topic 'topicName' and wait for NotReady status
+     *     - KafkaTopic is in NotReady state
+     *  6. - Check that metrics contain info about KafkaTopic 'topicName' cannot be renamed and that KT status has proper values
+     *     - Metrics contains proper data and status contains proper values
+     *  7. - Revert changes in KafkaTopic and change number of Replicas
+     *     - KafkaTopic CR replica count is changed
+     *  8. - Check that metrics contain info about KafkaTopic 'topicName' replicas count cannot be changed and KT status has proper values
+     *     - Metrics contains proper data and KT status has proper values
+     *  9. - Decrease KT number of partitions
+     *     - Partitions count changed
+     *  10. - Check that metrics contains info about KafkaTopic NotReady status and KT status has proper values (cannot change partition count)
+     *      - Metrics contains proper data and KT status has proper values
+     *  11. - Set KafkaTopic configuration to default one
+     *      - KafkaTopic is in Ready state
+     *  12. - Check that metrics contain info about KafkaTopic 'topicName' is Ready
+     *      - Metrics contains proper data
+     *
+     * @testcase
+     *  - topic-operator-metrics
+     *  - kafkatopic-ready
+     *  - kafkatopic-not-ready
      */
     @IsolatedTest
     @KRaftWithoutUTONotSupported
@@ -595,17 +603,21 @@ public class TopicST extends AbstractST {
     /**
      * @description This test case checks that Kafka cluster will not act upon KafkaTopic Custom Resources
      * which are not of its concern, i.e., KafkaTopic Custom Resources are not labeled accordingly.
-     * @steps 1. - Deploy Kafka with short reconciliation time configured on Topic Operator
-     * - Kafka is deployed
-     * 2. - Create KafkaTopic Custom Resource without any labels provided
-     * - KafkaTopic Custom resource is created
-     * 3. - Verify that KafkaTopic specified by created KafkaTopic is not created
-     * - Given KafkaTopic is not present inside Kafka cluster
-     * 4. - Delete given KafkaTopic Custom Resource
-     * - KafkaTopic Custom Resource is deleted
-     * @testcase - topic-operator
-     * - kafka-topic
-     * - labels
+     *
+     * @steps
+     *  1. - Deploy Kafka with short reconciliation time configured on Topic Operator
+     *     - Kafka is deployed
+     *  2. - Create KafkaTopic Custom Resource without any labels provided
+     *     - KafkaTopic Custom resource is created
+     *  3. - Verify that KafkaTopic specified by created KafkaTopic is not created
+     *     - Given KafkaTopic is not present inside Kafka cluster
+     *  4. - Delete given KafkaTopic Custom Resource
+     *     - KafkaTopic Custom Resource is deleted
+     *
+     * @testcase
+     *  - topic-operator
+     *  - kafka-topic
+     *  - labels
      */
     @ParallelNamespaceTest
     void testTopicWithoutLabels(ExtensionContext extensionContext) {
@@ -621,20 +633,20 @@ public class TopicST extends AbstractST {
             ScraperTemplates.scraperPod(namespaceName, scraperName).build(),
             KafkaTemplates.kafkaEphemeral(clusterName, 3)
                 .editSpec()
-                .editEntityOperator()
-                .editTopicOperator()
-                .withReconciliationIntervalSeconds(topicOperatorReconciliationSeconds)
-                .endTopicOperator()
-                .endEntityOperator()
+                    .editEntityOperator()
+                        .editTopicOperator()
+                            .withReconciliationIntervalSeconds(topicOperatorReconciliationSeconds)
+                        .endTopicOperator()
+                    .endEntityOperator()
                 .endSpec().build()
         );
 
-        final String scraperPodName = kubeClient().listPodsByPrefixInName(namespaceName, scraperName).get(0).getMetadata().getName();
+        final String scraperPodName =  kubeClient().listPodsByPrefixInName(namespaceName, scraperName).get(0).getMetadata().getName();
 
         LOGGER.info("Creating KafkaTopic: {}/{} in without any label", namespaceName, kafkaTopicName);
         resourceManager.createResourceWithoutWait(extensionContext, KafkaTopicTemplates.topic(clusterName, kafkaTopicName, 1, 1, 1, namespaceName)
             .editMetadata()
-            .withLabels(null)
+                .withLabels(null)
             .endMetadata().build()
         );
 
@@ -652,7 +664,7 @@ public class TopicST extends AbstractST {
 
         //Deleting topic
         cmdKubeClient(namespaceName).deleteByName("kafkatopic", kafkaTopicName);
-        KafkaTopicUtils.waitForKafkaTopicDeletion(namespaceName, kafkaTopicName);
+        KafkaTopicUtils.waitForKafkaTopicDeletion(namespaceName,  kafkaTopicName);
 
         //Checking KafkaTopic is not present inside Kafka cluster
         List<String> topics = KafkaCmdClient.listTopicsUsingPodCli(namespaceName, scraperPodName, KafkaResources.plainBootstrapAddress(clusterName));
@@ -660,14 +672,14 @@ public class TopicST extends AbstractST {
     }
 
     void assertKafkaTopicStatus(String topicName, String namespace, CustomResourceStatus status, ConditionStatus conditionStatus, int expectedObservedGeneration) {
-        assertKafkaTopicStatus(topicName, namespace, status, conditionStatus, null, null, expectedObservedGeneration);
+        assertKafkaTopicStatus(topicName, namespace,  status, conditionStatus, null, null, expectedObservedGeneration);
     }
 
     void assertKafkaTopicStatus(String topicName, String namespace, CustomResourceStatus status, ConditionStatus conditionStatus, String reason, String message, int expectedObservedGeneration) {
         KafkaTopicStatus kafkaTopicStatus = KafkaTopicResource.kafkaTopicClient().inNamespace(namespace).withName(topicName).get().getStatus();
 
         assertThat(kafkaTopicStatus.getConditions().stream()
-            .anyMatch(condition -> condition.getType().equals(status.toString()) && condition.getStatus().equals(conditionStatus.toString())), CoreMatchers.is(true));
+                .anyMatch(condition -> condition.getType().equals(status.toString()) && condition.getStatus().equals(conditionStatus.toString())), CoreMatchers.is(true));
         assertThat("KafkaTopic status has incorrect Observed Generation", kafkaTopicStatus.getObservedGeneration(), CoreMatchers.is((long) expectedObservedGeneration));
         if (reason != null) {
             assertThat(kafkaTopicStatus.getConditions().stream()
@@ -675,7 +687,7 @@ public class TopicST extends AbstractST {
         }
         if (message != null) {
             assertThat(kafkaTopicStatus.getConditions().stream()
-                .anyMatch(condition -> condition.getMessage().contains(message)), CoreMatchers.is(true));
+                    .anyMatch(condition -> condition.getMessage().contains(message)), CoreMatchers.is(true));
         }
     }
 
@@ -693,7 +705,7 @@ public class TopicST extends AbstractST {
         TestUtils.waitFor("Describing Topic: " + topicName + " using pod CLI", TestConstants.POLL_INTERVAL_FOR_RESOURCE_READINESS, TestConstants.GLOBAL_TIMEOUT,
             () -> {
                 try {
-                    String topicInfo = KafkaCmdClient.describeTopicUsingPodCli(namespaceName, scraperPodName, KafkaResources.plainBootstrapAddress(clusterName), topicName);
+                    String topicInfo =  KafkaCmdClient.describeTopicUsingPodCli(namespaceName, scraperPodName, KafkaResources.plainBootstrapAddress(clusterName), topicName);
                     LOGGER.info("Checking Topic: {} in Kafka: {}", topicName, clusterName);
                     LOGGER.debug("Topic: {} info: {}", topicName, topicInfo);
                     assertThat(topicInfo, containsString("Topic: " + topicName));
@@ -724,22 +736,22 @@ public class TopicST extends AbstractST {
         LOGGER.info("Deploying shared Kafka: {}/{} across all test cases", Environment.TEST_SUITE_NAMESPACE, KAFKA_CLUSTER_NAME);
 
         resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(KAFKA_CLUSTER_NAME, 3, 1)
-                .editMetadata()
+            .editMetadata()
                 .withNamespace(Environment.TEST_SUITE_NAMESPACE)
-                .endMetadata()
-                .editSpec()
+            .endMetadata()
+            .editSpec()
                 .editEntityOperator()
-                .editOrNewTopicOperator()
-                .withReconciliationIntervalSeconds((int) TestConstants.RECONCILIATION_INTERVAL / 1000)
-                .endTopicOperator()
+                    .editOrNewTopicOperator()
+                        .withReconciliationIntervalSeconds((int) TestConstants.RECONCILIATION_INTERVAL / 1000)
+                    .endTopicOperator()
                 .endEntityOperator()
-                .endSpec()
-                .build(),
+            .endSpec()
+            .build(),
             ScraperTemplates.scraperPod(Environment.TEST_SUITE_NAMESPACE, SCRAPER_NAME).build()
         );
 
         scraperPodName = ScraperUtils.getScraperPod(Environment.TEST_SUITE_NAMESPACE).getMetadata().getName();
         topicOperatorReconciliationInterval = KafkaResource.kafkaClient().inNamespace(Environment.TEST_SUITE_NAMESPACE).withName(KAFKA_CLUSTER_NAME).get()
-            .getSpec().getEntityOperator().getTopicOperator().getReconciliationIntervalSeconds() * 1000 + 5_000;
+                .getSpec().getEntityOperator().getTopicOperator().getReconciliationIntervalSeconds() * 1000 + 5_000;
     }
 }

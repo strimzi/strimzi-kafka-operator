@@ -31,12 +31,10 @@ public class DeploymentUtils {
     private static final long READINESS_TIMEOUT = ResourceOperation.getTimeoutForResourceReadiness(TestConstants.DEPLOYMENT);
     private static final long DELETION_TIMEOUT = ResourceOperation.getTimeoutForResourceDeletion();
 
-    private DeploymentUtils() {
-    }
+    private DeploymentUtils() { }
 
     /**
      * Log actual status of deployment with pods
-     *
      * @param deployment - every Deployment, that HasMetadata and has status (fabric8 status)
      **/
     public static void logCurrentDeploymentStatus(Deployment deployment, String namespaceName) {
@@ -91,7 +89,6 @@ public class DeploymentUtils {
 
     /**
      * Returns a map of pod name to resource version for the Pods currently in the given deployment.
-     *
      * @param name The Deployment name.
      * @return A map of pod name to resource version for Pods in the given Deployment.
      */
@@ -103,10 +100,9 @@ public class DeploymentUtils {
 
     /**
      * Method to check that all Pods for expected Deployment were rolled
-     *
      * @param namespaceName Namespace name
-     * @param name          Deployment name
-     * @param snapshot      Snapshot of Pods for Deployment before the rolling update
+     * @param name Deployment name
+     * @param snapshot Snapshot of Pods for Deployment before the rolling update
      * @return true when the Pods for Deployment are recreated
      */
     public static boolean depHasRolled(String namespaceName, String name, Map<String, String> snapshot) {
@@ -126,11 +122,10 @@ public class DeploymentUtils {
 
     /**
      * Method to wait when Deployment will be recreated after rolling update
-     *
      * @param namespaceName Namespace name where pod of the deployment is located
-     * @param name          Deployment name
-     * @param expectedPods  Expected number of Pods
-     * @param snapshot      Snapshot of Pods for Deployment before the rolling update
+     * @param name Deployment name
+     * @param expectedPods Expected number of Pods
+     * @param snapshot Snapshot of Pods for Deployment before the rolling update
      * @return The snapshot of the Deployment after rolling update with Uid for every pod
      */
     public static Map<String, String> waitTillDepHasRolled(String namespaceName, String name, int expectedPods, Map<String, String> snapshot) {
@@ -145,14 +140,13 @@ public class DeploymentUtils {
         LOGGER.info("Waiting for Deployment: {}/{} rolling update", namespaceName, deploymentName);
         TestUtils.waitFor("rolling update of Deployment " + namespaceName + "/" + deploymentName,
             TestConstants.WAIT_FOR_ROLLING_UPDATE_INTERVAL, ResourceOperation.timeoutForPodsOperation(snapshot.size()),
-            () -> depHasRolled(namespaceName, deploymentName, snapshot));
+                () -> depHasRolled(namespaceName, deploymentName, snapshot));
 
         return depSnapshot(namespaceName, deploymentName);
     }
 
     /**
      * Wait until the given Deployment has been recovered.
-     *
      * @param name The name of the Deployment.
      */
     public static void waitForDeploymentRecovery(String namespaceName, String name, String deploymentUid) {
@@ -176,10 +170,9 @@ public class DeploymentUtils {
 
     /**
      * Wait until the given Deployment is ready.
-     *
-     * @param namespaceName  name of the namespace
+     * @param namespaceName name of the namespace
      * @param deploymentName The name of the Deployment.
-     * @param expectPods     The expected number of Pods.
+     * @param expectPods The expected number of Pods.
      */
     public static boolean waitForDeploymentAndPodsReady(String namespaceName, String deploymentName, int expectPods) {
         waitForDeploymentReady(namespaceName, deploymentName);
@@ -193,9 +186,8 @@ public class DeploymentUtils {
 
     /**
      * Wait until the given Deployment has been deleted.
-     *
      * @param namespaceName Namespace name
-     * @param name          The name of the Deployment.
+     * @param name The name of the Deployment.
      */
     public static void waitForDeploymentDeletion(String namespaceName, String name) {
         LOGGER.debug("Waiting for Deployment: {}/{} deletion", namespaceName, name);

@@ -107,8 +107,7 @@ public class SetupClusterOperator {
     private List<ClusterRole> clusterRoles;
     private List<ClusterRoleBinding> clusterRoleBindings;
 
-    private static final Predicate<String> IS_OLM_CLUSTER_WIDE = namespaceToWatch -> namespaceToWatch.equals(
-        TestConstants.WATCH_ALL_NAMESPACES) || namespaceToWatch.split(",").length > 1;
+    private static final Predicate<String> IS_OLM_CLUSTER_WIDE = namespaceToWatch -> namespaceToWatch.equals(TestConstants.WATCH_ALL_NAMESPACES) || namespaceToWatch.split(",").length > 1;
     private static final Predicate<SetupClusterOperator> IS_EMPTY = co -> co.helmResource == null && co.olmResource == null &&
         co.extensionContext == null && co.clusterOperatorName == null && co.namespaceInstallTo == null &&
         co.namespaceToWatch == null && co.bindingsNamespaces == null && co.operationTimeout == 0 && co.reconciliationInterval == 0 &&

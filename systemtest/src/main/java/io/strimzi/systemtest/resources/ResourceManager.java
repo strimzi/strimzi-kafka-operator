@@ -152,7 +152,6 @@ public class ResourceManager {
         new OperatorGroupResource(),
         new KafkaNodePoolResource()
     };
-
     @SafeVarargs
     public final <T extends HasMetadata> void createResourceWithoutWait(ExtensionContext testContext, T... resources) {
         createResource(testContext, false, resources);
@@ -172,10 +171,10 @@ public class ResourceManager {
 
             if (resource.getMetadata().getNamespace() == null) {
                 LOGGER.info("Creating/Updating {} {}",
-                    resource.getKind(), resource.getMetadata().getName());
+                        resource.getKind(), resource.getMetadata().getName());
             } else {
                 LOGGER.info("Creating/Updating {} {}/{}",
-                    resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName());
+                        resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName());
             }
 
             if (resource.getKind().equals(Kafka.RESOURCE_KIND)) {
@@ -337,17 +336,17 @@ public class ResourceManager {
 
             if (resource.getMetadata().getNamespace() == null) {
                 LOGGER.info("Deleting of {} {}",
-                    resource.getKind(), resource.getMetadata().getName());
+                        resource.getKind(), resource.getMetadata().getName());
             } else {
                 LOGGER.info("Deleting of {} {}/{}",
-                    resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName());
+                        resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName());
             }
 
             try {
                 type.delete(resource);
                 assertTrue(waitResourceCondition(resource, ResourceCondition.deletion()),
-                    String.format("Timed out deleting %s %s/%s", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()));
-            } catch (Exception e) {
+                        String.format("Timed out deleting %s %s/%s", resource.getKind(), resource.getMetadata().getNamespace(), resource.getMetadata().getName()));
+            } catch (Exception e)   {
                 if (resource.getMetadata().getNamespace() == null) {
                     LOGGER.error("Failed to delete {} {}", resource.getKind(), resource.getMetadata().getName(), e);
                 } else {
@@ -384,7 +383,7 @@ public class ResourceManager {
             TestConstants.GLOBAL_POLL_INTERVAL_MEDIUM, ResourceOperation.getTimeoutForResourceReadiness(resource.getKind()),
             () -> {
                 T res = type.get(resource.getMetadata().getNamespace(), resource.getMetadata().getName());
-                resourceReady[0] = condition.getPredicate().test(res);
+                resourceReady[0] =  condition.getPredicate().test(res);
                 if (!resourceReady[0]) {
                     type.delete(res);
                 }
@@ -399,10 +398,10 @@ public class ResourceManager {
      * into PodTemplate ensuring that in case of failure {@link io.strimzi.systemtest.logs.LogCollector} will collect all
      * related Pods, which corespondents to such Controller (i.e., Job, Deployment)
      *
-     * @param resource            controller resource from which we copy test suite or test case labels
+     * @param resource controller resource from which we copy test suite or test case labels
      * @param resourcePodTemplate {@link PodTemplateSpec} of the specific resource
-     * @param <T>                 resource, which sings contract with {@link HasMetadata} interface
-     * @param <R>                 {@link PodTemplateSpec}
+     * @param <T> resource, which sings contract with {@link HasMetadata} interface
+     * @param <R> {@link PodTemplateSpec}
      */
     private final <T extends HasMetadata, R extends PodTemplateSpec> void copyTestSuiteAndTestCaseControllerLabelsIntoPodTemplate(final T resource, final R resourcePodTemplate) {
         if (resource.getMetadata().getLabels() != null && resourcePodTemplate.getMetadata().getLabels() != null) {
@@ -425,9 +424,8 @@ public class ResourceManager {
 
     /**
      * Synchronizing all resources which are inside specific extension context.
-     *
      * @param testContext context of the test case
-     * @param <T>         type of the resource which inherits from HasMetadata f.e Kafka, KafkaConnect, Pod, Deployment etc..
+     * @param <T> type of the resource which inherits from HasMetadata f.e Kafka, KafkaConnect, Pod, Deployment etc..
      */
     @SuppressWarnings(value = "unchecked")
     public final <T extends HasMetadata> void synchronizeResources(ExtensionContext testContext) {
@@ -483,7 +481,6 @@ public class ResourceManager {
 
     /**
      * Log actual status of custom resource with Pods.
-     *
      * @param customResource - Kafka, KafkaConnect etc. - every resource that HasMetadata and HasStatus (Strimzi status)
      */
     public static <T extends CustomResource<? extends Spec, ? extends Status>> void logCurrentResourceStatus(T customResource) {
@@ -532,9 +529,8 @@ public class ResourceManager {
 
     /**
      * Wait until the CR is in desired state
-     *
-     * @param operation  - client of CR - for example kafkaClient()
-     * @param resource   - custom resource
+     * @param operation - client of CR - for example kafkaClient()
+     * @param resource - custom resource
      * @param statusType - desired status
      * @return returns CR
      */
@@ -583,7 +579,7 @@ public class ResourceManager {
         LOGGER.info("Waiting for " + resourceType + "/" + resourceName + " readiness");
 
         TestUtils.waitFor("readiness of resource " + resourceType + "/" + resourceName,
-            TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_CMD_CLIENT_TIMEOUT,
+                TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_CMD_CLIENT_TIMEOUT,
             () -> ResourceManager.cmdKubeClient().getResourceReadiness(resourceType, resourceName));
         LOGGER.info("Resource " + resourceType + "/" + resourceName + " is ready");
     }

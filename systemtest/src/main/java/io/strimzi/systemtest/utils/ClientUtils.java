@@ -12,9 +12,7 @@ import io.strimzi.systemtest.utils.kubeUtils.controllers.JobUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
 import io.strimzi.test.TestUtils;
 import io.strimzi.test.WaitException;
-
 import java.util.List;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -25,7 +23,6 @@ import static io.strimzi.systemtest.resources.ResourceManager.kubeClient;
 
 /**
  * ClientUtils class, which provides static methods for the all type clients
- *
  * @see io.strimzi.systemtest.kafkaclients.externalClients.ExternalKafkaClient
  */
 public class ClientUtils {
@@ -35,8 +32,7 @@ public class ClientUtils {
     private static Random rng = new Random();
 
     // ensuring that object can not be created outside of class
-    private ClientUtils() {
-    }
+    private ClientUtils() {}
 
     // Both clients success
     public static void waitForClientsSuccess(TestStorage testStorage) {
@@ -232,7 +228,6 @@ public class ClientUtils {
 
     /**
      * Method which generates random consumer group name
-     *
      * @return consumer group name with pattern: my-consumer-group-*-*
      */
     public static String generateRandomConsumerGroup() {

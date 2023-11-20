@@ -26,12 +26,10 @@ public class JobUtils {
     private static final Logger LOGGER = LogManager.getLogger(JobUtils.class);
     private static final long DELETION_TIMEOUT = ResourceOperation.getTimeoutForResourceDeletion();
 
-    private JobUtils() {
-    }
+    private JobUtils() { }
 
     /**
      * Wait until all Jobs are deleted in given namespace.
-     *
      * @param namespace Delete all jobs in this namespace
      */
     public static void removeAllJobs(String namespace) {
@@ -41,7 +39,6 @@ public class JobUtils {
 
     /**
      * Wait until the given Job has been deleted.
-     *
      * @param name The name of the Job
      */
     public static void waitForJobDeletion(final String namespaceName, String name) {
@@ -53,8 +50,7 @@ public class JobUtils {
 
     /**
      * Delete Job and wait for it's deletion
-     *
-     * @param name      name of the job
+     * @param name name of the job
      * @param namespace name of the Namespace
      */
     public static void deleteJobWithWait(String namespace, String name) {
@@ -64,9 +60,8 @@ public class JobUtils {
 
     /**
      * Delete Jobs with wait
-     *
      * @param namespace - name of the namespace
-     * @param names     - job names
+     * @param names - job names
      */
     public static void deleteJobsWithWait(String namespace, String... names) {
         for (String jobName : names) {
@@ -76,7 +71,6 @@ public class JobUtils {
 
     /**
      * Wait for specific Job failure
-     *
      * @param jobName job name
      * @param timeout timeout in ms after which we assume that job failed
      */
@@ -88,14 +82,12 @@ public class JobUtils {
 
     /**
      * Wait for specific Job Running active status
-     *
-     * @param jobName   Job name
+     * @param jobName Job name
      * @param namespace Namespace
      */
     public static boolean waitForJobRunning(String jobName, String namespace) {
         LOGGER.info("Waiting for Job: {}/{} to be in active state", namespace, jobName);
-        TestUtils.waitFor("Job: " + namespace + "/" + jobName + " to be in active state", TestConstants.GLOBAL_POLL_INTERVAL, ResourceOperation.getTimeoutForResourceReadiness(
-                TestConstants.JOB),
+        TestUtils.waitFor("Job: " + namespace + "/" + jobName + " to be in active state", TestConstants.GLOBAL_POLL_INTERVAL, ResourceOperation.getTimeoutForResourceReadiness(TestConstants.JOB),
             () -> {
                 JobStatus jb = kubeClient().namespace(namespace).getJobStatus(jobName);
                 return jb.getActive() > 0;
@@ -106,8 +98,7 @@ public class JobUtils {
 
     /**
      * Log actual status of Job with pods.
-     *
-     * @param jobName   - name of the job, for which we should scrape status
+     * @param jobName - name of the job, for which we should scrape status
      * @param namespace - namespace/project where is job running
      */
     public static void logCurrentJobStatus(String jobName, String namespace) {

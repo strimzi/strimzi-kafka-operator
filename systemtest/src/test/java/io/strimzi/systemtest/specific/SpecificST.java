@@ -51,8 +51,7 @@ public class SpecificST extends AbstractST {
         final String namespaceWhereCreationOfCustomResourcesIsApproved = "example-1";
 
         // --- a) defining Role and ClusterRoles
-        final Role strimziClusterOperator020 = TestUtils.configFromYaml(SetupClusterOperator.getInstance().switchClusterRolesToRolesIfNeeded(new File(
-            TestConstants.PATH_TO_PACKAGING_INSTALL_FILES + "/cluster-operator/020-ClusterRole-strimzi-cluster-operator-role.yaml"), true), Role.class);
+        final Role strimziClusterOperator020 = TestUtils.configFromYaml(SetupClusterOperator.getInstance().switchClusterRolesToRolesIfNeeded(new File(TestConstants.PATH_TO_PACKAGING_INSTALL_FILES + "/cluster-operator/020-ClusterRole-strimzi-cluster-operator-role.yaml"), true), Role.class);
 
         // specify explicit namespace for Role (for ClusterRole we do not specify namespace because ClusterRole is a non-namespaced resource
         strimziClusterOperator020.getMetadata().setNamespace(namespaceWhereCreationOfCustomResourcesIsApproved);

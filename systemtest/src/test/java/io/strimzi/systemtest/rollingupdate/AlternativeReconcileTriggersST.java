@@ -147,7 +147,7 @@ class AlternativeReconcileTriggersST extends AbstractST {
 
         // wait when annotation will be removed from kafka
         TestUtils.waitFor("CO removes rolling update annotation", TestConstants.WAIT_FOR_ROLLING_UPDATE_INTERVAL, TestConstants.GLOBAL_TIMEOUT,
-            () -> StrimziPodSetUtils.getAnnotationsOfStrimziPodSet(testStorage.getNamespaceName(), kafkaName) == null
+                () -> StrimziPodSetUtils.getAnnotationsOfStrimziPodSet(testStorage.getNamespaceName(), kafkaName) == null
                         || !StrimziPodSetUtils.getAnnotationsOfStrimziPodSet(testStorage.getNamespaceName(), kafkaName).containsKey(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE));
 
         resourceManager.createResourceWithWait(extensionContext, clients.consumerTlsStrimzi(testStorage.getClusterName()));
@@ -168,7 +168,7 @@ class AlternativeReconcileTriggersST extends AbstractST {
 
             // wait when annotation will be removed
             TestUtils.waitFor("CO removes rolling update annotation", TestConstants.WAIT_FOR_ROLLING_UPDATE_INTERVAL, TestConstants.GLOBAL_TIMEOUT,
-                () -> StrimziPodSetUtils.getAnnotationsOfStrimziPodSet(testStorage.getNamespaceName(), zkName) == null
+                    () -> StrimziPodSetUtils.getAnnotationsOfStrimziPodSet(testStorage.getNamespaceName(), zkName) == null
                             || !StrimziPodSetUtils.getAnnotationsOfStrimziPodSet(testStorage.getNamespaceName(), zkName).containsKey(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE));
         }
 

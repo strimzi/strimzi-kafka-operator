@@ -118,8 +118,7 @@ public class TestSuiteNamespaceManager {
         if (StUtils.isParallelNamespaceTest(extensionContext)) {
             // if RBAC is enable we don't run tests in parallel mode and with that said we don't create another namespaces
             if (!Environment.isNamespaceRbacScope()) {
-                final String namespaceToDelete = extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(
-                    TestConstants.NAMESPACE_KEY).toString();
+                final String namespaceToDelete = extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(TestConstants.NAMESPACE_KEY).toString();
                 final String testCaseName = extensionContext.getRequiredTestMethod().getName();
 
                 LOGGER.info("Deleting Namespace: {} for TestCase: {}", namespaceToDelete, StUtils.removePackageName(testCaseName));

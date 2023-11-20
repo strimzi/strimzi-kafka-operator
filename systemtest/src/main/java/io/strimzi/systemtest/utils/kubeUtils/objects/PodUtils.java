@@ -30,8 +30,7 @@ public class PodUtils {
     private static final long DELETION_TIMEOUT = ResourceOperation.getTimeoutForResourceDeletion(TestConstants.POD);
     private static final long READINESS_TIMEOUT = ResourceOperation.getTimeoutForResourceReadiness(TestConstants.POD);
 
-    private PodUtils() {
-    }
+    private PodUtils() { }
 
     /**
      * Returns a map of resource name to resource version for all the pods in the given {@code namespace}
@@ -60,8 +59,7 @@ public class PodUtils {
     }
 
     public static void waitForPodsReady(String namespaceName, LabelSelector selector, int expectPods, boolean containers) {
-        waitForPodsReady(namespaceName, selector, expectPods, containers, () -> {
-        });
+        waitForPodsReady(namespaceName, selector, expectPods, containers, () -> { });
     }
 
     public static void waitForPodsReady(String namespaceName, LabelSelector selector, int expectPods, boolean containers, Runnable onTimeout) {
@@ -105,7 +103,6 @@ public class PodUtils {
      * To wait for the cluster to be updated, the following methods must be used:
      * {@link io.strimzi.systemtest.utils.RollingUpdateUtils#componentHasRolled(String, LabelSelector, Map)},
      * {@link io.strimzi.systemtest.utils.RollingUpdateUtils#waitTillComponentHasRolled(String, LabelSelector, int, Map)} )}
-     *
      * @param podsNamePrefix Cluster name where pods should be deleted
      */
     public static void waitForPodsWithPrefixDeletion(String podsNamePrefix) {
@@ -140,7 +137,7 @@ public class PodUtils {
 
     public static String getFirstPodNameContaining(final String namespaceName, String searchTerm) {
         return kubeClient(namespaceName).listPods(namespaceName).stream().filter(pod -> pod.getMetadata().getName().contains(searchTerm))
-            .findFirst().orElseThrow().getMetadata().getName();
+                .findFirst().orElseThrow().getMetadata().getName();
     }
 
     public static void deletePodWithWait(String namespaceName, String name) {
@@ -243,9 +240,8 @@ public class PodUtils {
 
     /**
      * Ensures that at least one pod from listed (by prefix) is in {@code Pending} phase
-     *
      * @param namespaceName Namespace name
-     * @param podPrefix     - all pods that matched the prefix will be verified
+     * @param podPrefix - all pods that matched the prefix will be verified
      */
     public static void waitForPendingPod(String namespaceName, String podPrefix) {
         LOGGER.info("Waiting for at least one Pod with prefix {}/{} to be in pending phase", namespaceName, podPrefix);
@@ -260,9 +256,8 @@ public class PodUtils {
      * Ensures every pod in a StrimziPodSet is stable in the {@code Running} phase.
      * A pod must be in the Running phase for {@link TestConstants#GLOBAL_RECONCILIATION_COUNT} seconds for
      * it to be considered as stable. Otherwise this procedure will be repeat.
-     *
      * @param podPrefix all pods that matched the prefix will be verified
-     */
+     * */
     public static void verifyThatRunningPodsAreStable(String namespaceName, String podPrefix) {
         LOGGER.info("Verifying that all Pods with prefix {}/{} are stable", namespaceName, podPrefix);
         verifyThatPodsAreStable(namespaceName, podPrefix, "Running");
@@ -286,11 +281,11 @@ public class PodUtils {
                 for (Pod pod : actualPods) {
                     if (pod.getStatus().getPhase().equals(phase)) {
                         LOGGER.info("Pod: {}/{} is in the {} state. Remaining seconds Pod to be stable {}",
-                            namespaceName, pod.getMetadata().getName(), pod.getStatus().getPhase(),
+                                namespaceName, pod.getMetadata().getName(), pod.getStatus().getPhase(),
                             TestConstants.GLOBAL_RECONCILIATION_COUNT - stabilityCounter[0]);
                     } else {
                         LOGGER.info("Pod: {}/{} is not stable in phase following phase {} reset the stability counter from {} to {}",
-                            namespaceName, pod.getMetadata().getName(), pod.getStatus().getPhase(), stabilityCounter[0], 0);
+                                namespaceName, pod.getMetadata().getName(), pod.getStatus().getPhase(), stabilityCounter[0], 0);
                         stabilityCounter[0] = 0;
                         return false;
                     }
@@ -316,8 +311,8 @@ public class PodUtils {
     /**
      * Retrieves a list of Kafka cluster Pods based on TestStorage cluster name attribute {@code testStorage.getClusterName()}.
      *
-     * @param testStorage TestStorage of specific test case
-     * @return Returns a list of Kafka cluster Pods (i.e.., Kafka, ZooKeeper, EO).
+     * @param testStorage   TestStorage of specific test case
+     * @return              Returns a list of Kafka cluster Pods (i.e.., Kafka, ZooKeeper, EO).
      */
     public static List<Pod> getKafkaClusterPods(final TestStorage testStorage) {
         List<Pod> kafkaClusterPods = kubeClient(testStorage.getNamespaceName())

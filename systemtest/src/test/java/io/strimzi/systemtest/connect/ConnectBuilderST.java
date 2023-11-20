@@ -210,8 +210,7 @@ class ConnectBuilderST extends AbstractST {
 
         LOGGER.info("Checking if KafkaConnect resource contains EchoSink KafkaConnector in status");
         kafkaConnect = KafkaConnectResource.kafkaConnectClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get();
-        assertTrue(kafkaConnect.getStatus().getConnectorPlugins().stream().anyMatch(connectorPlugin -> connectorPlugin.getConnectorClass().contains(
-            TestConstants.ECHO_SINK_CLASS_NAME)));
+        assertTrue(kafkaConnect.getStatus().getConnectorPlugins().stream().anyMatch(connectorPlugin -> connectorPlugin.getConnectorClass().contains(TestConstants.ECHO_SINK_CLASS_NAME)));
     }
 
     @ParallelTest
@@ -312,8 +311,7 @@ class ConnectBuilderST extends AbstractST {
         assertThat(kafkaConnect.getStatus().getConditions().get(0).getType(), is(Ready.toString()));
 
         assertTrue(kafkaConnect.getStatus().getConnectorPlugins().size() > 0);
-        assertTrue(kafkaConnect.getStatus().getConnectorPlugins().stream().anyMatch(connectorPlugin -> connectorPlugin.getConnectorClass().contains(
-            TestConstants.ECHO_SINK_CLASS_NAME)));
+        assertTrue(kafkaConnect.getStatus().getConnectorPlugins().stream().anyMatch(connectorPlugin -> connectorPlugin.getConnectorClass().contains(TestConstants.ECHO_SINK_CLASS_NAME)));
     }
 
     @ParallelTest
@@ -411,8 +409,7 @@ class ConnectBuilderST extends AbstractST {
         LOGGER.info("Checking if both Connectors were created and Connect contains both plugins");
         assertThat(kafkaConnect.getSpec().getBuild().getPlugins().size(), is(2));
 
-        assertTrue(kafkaConnect.getStatus().getConnectorPlugins().stream().anyMatch(connectorPlugin -> connectorPlugin.getConnectorClass().contains(
-            TestConstants.ECHO_SINK_CLASS_NAME)));
+        assertTrue(kafkaConnect.getStatus().getConnectorPlugins().stream().anyMatch(connectorPlugin -> connectorPlugin.getConnectorClass().contains(TestConstants.ECHO_SINK_CLASS_NAME)));
         assertTrue(kafkaConnect.getStatus().getConnectorPlugins().stream().anyMatch(connectorPlugin -> connectorPlugin.getConnectorClass().contains(CAMEL_CONNECTOR_HTTP_SINK_CLASS_NAME)));
     }
 

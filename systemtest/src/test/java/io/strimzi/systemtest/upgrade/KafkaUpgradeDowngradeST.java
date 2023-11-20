@@ -350,18 +350,18 @@ public class KafkaUpgradeDowngradeST extends AbstractUpgradeST {
         if (!isUpgrade) {
             LOGGER.info("Verifying that log.message.format attribute updated correctly to version {}", initLogMsgFormat);
             assertThat(Crds.kafkaOperation(kubeClient().getClient()).inNamespace(TestConstants.CO_NAMESPACE).withName(clusterName)
-                .get().getSpec().getKafka().getConfig().get("log.message.format.version"), is(initLogMsgFormat));
+                    .get().getSpec().getKafka().getConfig().get("log.message.format.version"), is(initLogMsgFormat));
             LOGGER.info("Verifying that inter.broker.protocol.version attribute updated correctly to version {}", initInterBrokerProtocol);
             assertThat(Crds.kafkaOperation(kubeClient().getClient()).inNamespace(TestConstants.CO_NAMESPACE).withName(clusterName)
-                .get().getSpec().getKafka().getConfig().get("inter.broker.protocol.version"), is(initInterBrokerProtocol));
+                    .get().getSpec().getKafka().getConfig().get("inter.broker.protocol.version"), is(initInterBrokerProtocol));
         } else {
             if (currentLogMessageFormat != null && currentInterBrokerProtocol != null) {
                 LOGGER.info("Verifying that log.message.format attribute updated correctly to version {}", newVersion.messageVersion());
                 assertThat(Crds.kafkaOperation(kubeClient().getClient()).inNamespace(TestConstants.CO_NAMESPACE).withName(clusterName)
-                    .get().getSpec().getKafka().getConfig().get("log.message.format.version"), is(newVersion.messageVersion()));
+                        .get().getSpec().getKafka().getConfig().get("log.message.format.version"), is(newVersion.messageVersion()));
                 LOGGER.info("Verifying that inter.broker.protocol.version attribute updated correctly to version {}", newVersion.protocolVersion());
                 assertThat(Crds.kafkaOperation(kubeClient().getClient()).inNamespace(TestConstants.CO_NAMESPACE).withName(clusterName)
-                    .get().getSpec().getKafka().getConfig().get("inter.broker.protocol.version"), is(newVersion.protocolVersion()));
+                        .get().getSpec().getKafka().getConfig().get("inter.broker.protocol.version"), is(newVersion.protocolVersion()));
             }
         }
 
