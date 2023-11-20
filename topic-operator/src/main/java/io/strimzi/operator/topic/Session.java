@@ -4,6 +4,7 @@
  */
 package io.strimzi.operator.topic;
 
+import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.Watch;
 import io.micrometer.prometheus.PrometheusMeterRegistry;
@@ -198,6 +199,7 @@ public class Session extends AbstractVerticle {
         return Future.succeededFuture();
     }
 
+    @SuppressFBWarnings("RV_RETURN_VALUE_IGNORED_BAD_PRACTICE")
     private Future<Void> disconnectFromZk(ExecutorService shutdownExecutor) {
         LOGGER.debug("Disconnecting from ZooKeeper");
         Promise<Void> promise = Promise.promise();
@@ -215,6 +217,7 @@ public class Session extends AbstractVerticle {
         return promise.future();
     }
 
+    @SuppressFBWarnings("RV_RETURN_VALUE_IGNORED_BAD_PRACTICE")
     private Future<Void> closeKafkaAdminClient(ExecutorService shutdownExecutor) {
         LOGGER.debug("Closing Kafka admin client");
         if (adminClient != null) {
