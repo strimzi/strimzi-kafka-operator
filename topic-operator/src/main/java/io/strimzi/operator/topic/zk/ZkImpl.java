@@ -52,58 +52,38 @@ public class ZkImpl implements Zk {
     
     @Override
     public Zk create(String path, byte[] data, List<ACL> acls, CreateMode createMode, Handler<AsyncResult<Void>> handler) {
-        Promise<Void> result = Promise.promise();
-        workerExecutor.executeBlocking(
+        workerExecutor.<Void>executeBlocking(
             () -> {
-                try {
-                    zookeeper.create(path, data == null ? new byte[0] : data, acls, createMode);
-                    result.complete();
-                } catch (Throwable t) {
-                    result.fail(t);
-                }
+                zookeeper.create(path, data == null ? new byte[0] : data, acls, createMode);
                 return null;
-            }).onComplete(ar -> handler.handle(result.future()));
+            }).onComplete(handler);
         return this;
     }
 
     @Override
     public Zk setData(String path, byte[] data, int version, Handler<AsyncResult<Void>> handler) {
-        workerExecutor.executeBlocking(
+        workerExecutor.<Void>executeBlocking(
             () -> {
-                try {
-                    zookeeper.writeData(path, data, version);
-                    return null;
-                } catch (Throwable t) {
-                    throw t;
-                }
-            }).onComplete(ar -> handler.handle(Future.succeededFuture()));
+                zookeeper.writeData(path, data, version);
+                return null;
+            }).onComplete(handler);
         return this;
     }
 
     @Override
     public Zk disconnect(Handler<AsyncResult<Void>> handler) {
-        workerExecutor.executeBlocking(
+        workerExecutor.<Void>executeBlocking(
             () -> {
-                try {
-                    zookeeper.close();
-                    return null;
-                } catch (Throwable t) {
-                    throw t;
-                }
-            }).onComplete(ar -> handler.handle(Future.succeededFuture()));
+                zookeeper.close();
+                return null;
+            }).onComplete(handler);
         return this;
     }
 
     @Override
     public Zk getData(String path, Handler<AsyncResult<byte[]>> handler) {
         workerExecutor.executeBlocking(
-            () -> {
-                try {
-                    return (byte[]) zookeeper.readData(path);
-                } catch (Throwable t) {
-                    throw t;
-                }
-            }).onComplete(ar -> handler.handle(ar));
+            () -> (byte[]) zookeeper.readData(path)).onComplete(handler);
         return this;
     }
 
@@ -131,14 +111,10 @@ public class ZkImpl implements Zk {
         Promise<Zk> result = Promise.promise();
         workerExecutor.executeBlocking(
             () -> {
-                try {
-                    IZkDataListener listener = new DataWatchAdapter(watcher);
-                    dataWatches.put(path, listener);
-                    zookeeper.subscribeDataChanges(path, listener);
-                    return null;
-                } catch (Throwable t) {
-                    throw t;
-                }
+                IZkDataListener listener = new DataWatchAdapter(watcher);
+                dataWatches.put(path, listener);
+                zookeeper.subscribeDataChanges(path, listener);
+                return null;
             }).onComplete(ar -> {
                 log("watchData").handle(ar);
                 if (ar.succeeded()) {
@@ -154,15 +130,11 @@ public class ZkImpl implements Zk {
     public Zk unwatchData(String path) {
         workerExecutor.executeBlocking(
             () -> {
-                try {
-                    IZkDataListener listener = dataWatches.remove(path);
-                    if (listener != null) {
-                        zookeeper.unsubscribeDataChanges(path, listener);
-                    }
-                    return null;
-                } catch (Throwable t) {
-                    throw t;
+                IZkDataListener listener = dataWatches.remove(path);
+                if (listener != null) {
+                    zookeeper.unsubscribeDataChanges(path, listener);
                 }
+                return null;
             }).onComplete(ar -> log("unwatchData"));
         return this;
     }
@@ -189,13 +161,7 @@ public class ZkImpl implements Zk {
     @Override
     public Zk children(String path, Handler<AsyncResult<List<String>>> handler) {
         workerExecutor.executeBlocking(
-            () -> {
-                try {
-                    return zookeeper.getChildren(path);
-                } catch (Throwable t) {
-                    throw t;
-                }
-            }).onComplete(ar -> handler.handle(ar));
+            () -> zookeeper.getChildren(path)).onComplete(handler);
         return this;
     }
 
@@ -204,13 +170,9 @@ public class ZkImpl implements Zk {
         Promise<Zk> result = Promise.promise();
         workerExecutor.executeBlocking(
             () -> {
-                try {
-                    IZkChildListener listener = (parentPath, currentChilds) -> watcher.handle(Future.succeededFuture(currentChilds));
-                    childWatches.put(path, listener);
-                    return zookeeper.subscribeChildChanges(path, listener);
-                } catch (Throwable t) {
-                    throw t;
-                }
+                IZkChildListener listener = (parentPath, currentChilds) -> watcher.handle(Future.succeededFuture(currentChilds));
+                childWatches.put(path, listener);
+                return zookeeper.subscribeChildChanges(path, listener);
             }).onComplete(ar -> {
                 log("watchChildren");
                 if (ar.succeeded()) {
@@ -226,15 +188,11 @@ public class ZkImpl implements Zk {
     public Zk unwatchChildren(String path) {
         workerExecutor.executeBlocking(
             () -> {
-                try {
-                    IZkChildListener listener = childWatches.remove(path);
-                    if (listener != null) {
-                        zookeeper.unsubscribeChildChanges(path, listener);
-                    }
-                    return null;
-                } catch (Throwable t) {
-                    throw t;
+                IZkChildListener listener = childWatches.remove(path);
+                if (listener != null) {
+                    zookeeper.unsubscribeChildChanges(path, listener);
                 }
+                return null;
             }).onComplete(ar -> log("unwatchChildren"));
         return this;
     }

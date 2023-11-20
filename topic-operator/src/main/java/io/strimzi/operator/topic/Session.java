@@ -25,7 +25,6 @@ import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.AdminClientConfig;
 import org.apache.kafka.common.config.SslConfigs;
 import org.apache.kafka.common.config.SaslConfigs;
-import org.apache.kafka.common.errors.TimeoutException;
 import org.apache.kafka.streams.StreamsConfig;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -39,6 +38,9 @@ import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
 
 import static io.strimzi.operator.topic.Config.ZOOKEEPER_CONNECT;
@@ -134,71 +136,99 @@ public class Session extends AbstractVerticle {
      */
     @Override
     public void stop(Promise<Void> stop) throws Exception {
+        LOGGER.info("Stopping");
         this.stopped = true;
-        Long timerId = this.timerId;
-        if (timerId != null) {
-            vertx.cancelTimer(timerId);
+        if (this.timerId != null) {
+            vertx.cancelTimer(this.timerId);
         }
-        Promise<Promise<Void>> blockingResult = Promise.promise();
-        vertx.executeBlocking(() -> {
-            long timeout = 120_000L;
-            long deadline = System.currentTimeMillis() + timeout;
-            LOGGER.info("Stopping");
-            LOGGER.debug("Stopping kube watch");
+        ExecutorService shutdownExecutor = Executors.newSingleThreadExecutor();
+        closeKubernetesWatch()
+                .onSuccess(ignored -> LOGGER.debug("Kubernetes watch closed"))
+                .onFailure(cause -> LOGGER.error("Failed to close Kubernetes watch", cause))
+            .compose(ignored -> stopZooKeeperWatcher())
+                .onSuccess(ignored -> LOGGER.debug("ZooKeeper topics watcher stopped"))
+                .onFailure(cause -> LOGGER.error("Failed to stop ZooKeeper topics watcher", cause))
+            .compose(ignored -> stopTopicStoreService())
+                .onSuccess(ignored -> LOGGER.debug("Topic store service stopped"))
+                .onFailure(cause -> LOGGER.error("Failed to stop topic store service", cause))
+            .compose(ignored -> disconnectFromZk(shutdownExecutor))
+                .onSuccess(ignored -> LOGGER.debug("ZooKeeper disconnected"))
+                .onFailure(cause -> LOGGER.error("Failed to disconnect from ZooKeeper", cause))
+            .compose(ignored -> closeKafkaAdminClient(shutdownExecutor))
+                .onSuccess(ignored -> LOGGER.debug("Kafka admin client closed"))
+                .onFailure(cause -> LOGGER.error("Failed to close Kafka admin client", cause))
+            .compose(ignored -> closeHttpHealthServer())
+                .onSuccess(ignored -> LOGGER.debug("HTTP health server closed"))
+                .onFailure(cause -> LOGGER.error("Failed to close HTTP health server", cause))
+            .compose(ignored -> {
+                try {
+                    shutdownExecutor.shutdown();
+                    shutdownExecutor.awaitTermination(10, TimeUnit.SECONDS);
+                } catch (InterruptedException e) {
+                    if (!shutdownExecutor.isTerminated()) {
+                        shutdownExecutor.shutdownNow();
+                    }
+                }
+                LOGGER.info("Stopped");
+                return Future.future(handle -> stop.complete());
+            });
+    }
+
+    private Future<Void> closeKubernetesWatch() {
+        LOGGER.debug("Closing Kubernetes watch");
+        if (topicWatch != null) {
             topicWatch.close();
-            LOGGER.debug("Stopping zk watches");
+        }
+        return Future.succeededFuture();
+    }
+
+    private Future<Void> stopZooKeeperWatcher() {
+        LOGGER.debug("Stopping ZooKeeper watcher");
+        if (topicsWatcher != null) {
             topicsWatcher.stop();
+        }
+        return Future.succeededFuture();
+    }
 
-            Promise<Void> promise = Promise.promise();
-            Handler<Long> longHandler = new Handler<>() {
-                @Override
-                public void handle(Long inflightTimerId) {
-                    if (!topicOperator.isWorkInflight()) {
-                        LOGGER.debug("Inflight work has finished");
-                        promise.complete();
-                    } else if (System.currentTimeMillis() > deadline) {
-                        LOGGER.error("Timeout waiting for inflight work to finish");
-                        promise.complete();
-                    } else {
-                        LOGGER.debug("Waiting for inflight work to finish");
-                        vertx.setTimer(1_000, this);
-                    }
-                }
-            };
-            longHandler.handle(null);
+    private Future<Void> stopTopicStoreService() {
+        LOGGER.debug("Stopping topic store service");
+        if (service != null) {
+            service.stop();
+        }
+        return Future.succeededFuture();
+    }
 
-            promise.future().compose(ignored -> {
-                if (service != null) {
-                    service.stop();
-                }
-                return Future.succeededFuture();
-            });
-
-            promise.future().compose(ignored -> {
-                LOGGER.debug("Disconnecting from zookeeper {}", zk);
-                zk.disconnect(zkResult -> {
-                    if (zkResult.failed()) {
-                        LOGGER.warn("Error disconnecting from zookeeper: {}", String.valueOf(zkResult.cause()));
+    private Future<Void> disconnectFromZk(ExecutorService shutdownExecutor) {
+        LOGGER.debug("Disconnecting from ZooKeeper");
+        Promise<Void> promise = Promise.promise();
+        if (zk != null) {
+            shutdownExecutor.submit(() -> {
+                zk.disconnect(result -> {
+                    if (result.failed()) {
+                        LOGGER.warn("Error disconnecting from ZooKeeper: {}", String.valueOf(result.cause()));
+                        promise.fail(result.cause());
                     }
-                    long timeoutMs = Math.max(1, deadline - System.currentTimeMillis());
-                    LOGGER.debug("Closing AdminClient {} with timeout {}ms", adminClient, timeoutMs);
-                    try {
-                        adminClient.close(Duration.ofMillis(timeoutMs));
-                        HttpServer healthServer = this.healthServer;
-                        if (healthServer != null) {
-                            healthServer.close();
-                        }
-                    } catch (TimeoutException e) {
-                        LOGGER.warn("Timeout while closing AdminClient with timeout {}ms", timeoutMs, e);
-                    } finally {
-                        LOGGER.info("Stopped");
-                        blockingResult.complete();
-                    }
+                    promise.complete();
                 });
-                return Future.succeededFuture();
             });
-            return null;
-        }).onComplete(ar -> stop.complete());
+        }
+        return promise.future();
+    }
+
+    private Future<Void> closeKafkaAdminClient(ExecutorService shutdownExecutor) {
+        LOGGER.debug("Closing Kafka admin client");
+        if (adminClient != null) {
+            shutdownExecutor.submit(() -> adminClient.close(Duration.ofSeconds(2)));
+        }
+        return Future.succeededFuture();
+    }
+
+    private Future<Void> closeHttpHealthServer() {
+        LOGGER.debug("Closing HTTP health server");
+        if (healthServer != null) {
+            healthServer.close();
+        }
+        return Future.succeededFuture();
     }
 
     /**
