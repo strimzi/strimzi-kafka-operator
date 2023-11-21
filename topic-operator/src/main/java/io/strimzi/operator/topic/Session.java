@@ -39,8 +39,6 @@ import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
 
@@ -142,7 +140,6 @@ public class Session extends AbstractVerticle {
         if (this.timerId != null) {
             vertx.cancelTimer(this.timerId);
         }
-        ExecutorService shutdownExecutor = Executors.newSingleThreadExecutor();
         closeKubernetesWatch()
                 .onSuccess(ignored -> LOGGER.debug("Kubernetes watch closed"))
                 .onFailure(cause -> LOGGER.error("Failed to close Kubernetes watch", cause))
@@ -152,24 +149,16 @@ public class Session extends AbstractVerticle {
             .compose(ignored -> stopTopicStoreService())
                 .onSuccess(ignored -> LOGGER.debug("Topic store service stopped"))
                 .onFailure(cause -> LOGGER.error("Failed to stop topic store service", cause))
-            .compose(ignored -> disconnectFromZk(shutdownExecutor))
+            .compose(ignored -> disconnectFromZk())
                 .onSuccess(ignored -> LOGGER.debug("ZooKeeper disconnected"))
                 .onFailure(cause -> LOGGER.error("Failed to disconnect from ZooKeeper", cause))
-            .compose(ignored -> closeKafkaAdminClient(shutdownExecutor))
+            .compose(ignored -> closeKafkaAdminClient())
                 .onSuccess(ignored -> LOGGER.debug("Kafka admin client closed"))
                 .onFailure(cause -> LOGGER.error("Failed to close Kafka admin client", cause))
             .compose(ignored -> closeHttpHealthServer())
                 .onSuccess(ignored -> LOGGER.debug("HTTP health server closed"))
                 .onFailure(cause -> LOGGER.error("Failed to close HTTP health server", cause))
             .compose(ignored -> {
-                try {
-                    shutdownExecutor.shutdown();
-                    shutdownExecutor.awaitTermination(10, TimeUnit.SECONDS);
-                } catch (InterruptedException e) {
-                    if (!shutdownExecutor.isTerminated()) {
-                        shutdownExecutor.shutdownNow();
-                    }
-                }
                 LOGGER.info("Stopped");
                 return Future.future(handle -> stop.complete());
             });
@@ -177,53 +166,96 @@ public class Session extends AbstractVerticle {
 
     private Future<Void> closeKubernetesWatch() {
         LOGGER.debug("Closing Kubernetes watch");
-        if (topicWatch != null) {
-            topicWatch.close();
+        Promise<Void> promise = Promise.promise();
+        if (topicWatch == null) {
+            promise.complete();
+        } else {
+            vertx.<Void>executeBlocking(() -> {
+                try {
+                    topicWatch.close();
+                } finally {
+                    promise.complete();
+                    return null;
+                }
+            });
         }
-        return Future.succeededFuture();
+        return promise.future();
     }
 
     private Future<Void> stopZooKeeperWatcher() {
         LOGGER.debug("Stopping ZooKeeper watcher");
-        if (topicsWatcher != null) {
-            topicsWatcher.stop();
+        Promise<Void> promise = Promise.promise();
+        if (topicsWatcher == null) {
+            promise.complete();
+        } else {
+            vertx.<Void>executeBlocking(() -> {
+                try {
+                    topicsWatcher.stop();
+                } finally {
+                    promise.complete();
+                    return null;
+                }
+            });
         }
-        return Future.succeededFuture();
+        return promise.future();
     }
 
     private Future<Void> stopTopicStoreService() {
         LOGGER.debug("Stopping topic store service");
-        if (service != null) {
+        if (topicOperator != null && service != null) {
+            int timeoutSec = 5;
+            while (topicOperator.isWorkInflight() && timeoutSec-- > 0) {
+                try {
+                    LOGGER.debug("Waiting for inflight operations to complete");
+                    TimeUnit.SECONDS.sleep(1);
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+            }
             service.stop();
         }
         return Future.succeededFuture();
     }
 
     @SuppressFBWarnings("RV_RETURN_VALUE_IGNORED_BAD_PRACTICE")
-    private Future<Void> disconnectFromZk(ExecutorService shutdownExecutor) {
+    private Future<Void> disconnectFromZk() {
         LOGGER.debug("Disconnecting from ZooKeeper");
         Promise<Void> promise = Promise.promise();
         if (zk != null) {
-            shutdownExecutor.submit(() -> {
+            promise.complete();
+        } else {
+            vertx.<Void>executeBlocking(() -> {
                 zk.disconnect(result -> {
                     if (result.failed()) {
                         LOGGER.warn("Error disconnecting from ZooKeeper: {}", String.valueOf(result.cause()));
                         promise.fail(result.cause());
+                    } else {
+                        promise.complete();
                     }
-                    promise.complete();
                 });
+                return null;
             });
         }
         return promise.future();
     }
 
     @SuppressFBWarnings("RV_RETURN_VALUE_IGNORED_BAD_PRACTICE")
-    private Future<Void> closeKafkaAdminClient(ExecutorService shutdownExecutor) {
+    private Future<Void> closeKafkaAdminClient() {
         LOGGER.debug("Closing Kafka admin client");
-        if (adminClient != null) {
-            shutdownExecutor.submit(() -> adminClient.close(Duration.ofSeconds(2)));
+        Promise<Void> promise = Promise.promise();
+        if (adminClient == null) {
+            promise.complete();
+        } else {
+            vertx.<Void>executeBlocking(() -> {
+                try {
+                    adminClient.close(Duration.ofSeconds(2));
+                } finally {
+                    promise.complete();
+                    return null;
+                }
+            });
         }
-        return Future.succeededFuture();
+        return promise.future();
     }
 
     private Future<Void> closeHttpHealthServer() {

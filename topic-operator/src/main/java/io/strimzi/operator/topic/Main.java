@@ -23,10 +23,7 @@ import org.apache.logging.log4j.Logger;
  * redeploying if the config changes.
  */
 public class Main {
-
     private final static Logger LOGGER = LogManager.getLogger(Main.class);
-
-
 
     /**
      * The main method used to run the Cluster Operator
@@ -62,7 +59,7 @@ public class Main {
                         .setJvmMetricsEnabled(true)
                         .setEnabled(true));
         Vertx vertx = Vertx.vertx(options);
-        shutdownHook.register(() -> ShutdownHook.shutdownVertx(vertx, 10_000L));
+        shutdownHook.register(() -> ShutdownHook.shutdownVertx(vertx, config.get(Config.SHUTDOWN_TIMEOUT_MS)));
 
         Session session = new Session(kubeClient, config);
         vertx.deployVerticle(session, ar -> {

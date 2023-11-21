@@ -21,21 +21,14 @@ import org.apache.zookeeper.data.ACL;
 
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Implementation of {@link Zk}
  */
 public class ZkImpl implements Zk {
-
     private final static Logger LOGGER = LogManager.getLogger(ZkImpl.class);
     private final WorkerExecutor workerExecutor;
-
-    private static final <T> Handler<AsyncResult<T>> log(String msg) {
-        return ignored -> {
-            LOGGER.trace("{} returned {}", msg, ignored);
-        };
-    }
+    
     private final Vertx vertx;
     private final ZkClient zookeeper;
 
@@ -116,7 +109,7 @@ public class ZkImpl implements Zk {
                 zookeeper.subscribeDataChanges(path, listener);
                 return null;
             }).onComplete(ar -> {
-                log("watchData").handle(ar);
+                LOGGER.trace("watchData");
                 if (ar.succeeded()) {
                     result.complete(this);
                 } else {
@@ -135,7 +128,7 @@ public class ZkImpl implements Zk {
                     zookeeper.unsubscribeDataChanges(path, listener);
                 }
                 return null;
-            }).onComplete(ar -> log("unwatchData"));
+            }).onComplete(ignored -> LOGGER.trace("unwatchData"));
         return this;
     }
 
@@ -161,7 +154,8 @@ public class ZkImpl implements Zk {
     @Override
     public Zk children(String path, Handler<AsyncResult<List<String>>> handler) {
         workerExecutor.executeBlocking(
-            () -> zookeeper.getChildren(path)).onComplete(handler);
+            () -> zookeeper.getChildren(path))
+            .onComplete(handler);
         return this;
     }
 
@@ -174,7 +168,7 @@ public class ZkImpl implements Zk {
                 childWatches.put(path, listener);
                 return zookeeper.subscribeChildChanges(path, listener);
             }).onComplete(ar -> {
-                log("watchChildren");
+                LOGGER.trace("watchChildren");
                 if (ar.succeeded()) {
                     result.complete(this);
                 } else {
@@ -193,24 +187,14 @@ public class ZkImpl implements Zk {
                     zookeeper.unsubscribeChildChanges(path, listener);
                 }
                 return null;
-            }).onComplete(ar -> log("unwatchChildren"));
+            }).onComplete(ignored -> LOGGER.trace("unwatchChildren"));
         return this;
     }
 
     @Override
     public Future<Boolean> pathExists(String path) {
-        Promise<Boolean> promise = Promise.promise();
-        AtomicBoolean result = new AtomicBoolean(false);
-        workerExecutor.executeBlocking(
-            () -> {
-                try {
-                    result.set(getPathExists(path));
-                } catch (Throwable t) {
-                    result.set(false);
-                }
-                return result.get();
-            }).onComplete(ar -> promise.complete(result.get()));
-        return promise.future();
+        return workerExecutor.executeBlocking(
+            () -> getPathExists(path));
     }
 
     @Override
