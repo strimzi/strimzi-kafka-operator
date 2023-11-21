@@ -5,14 +5,18 @@
 package io.strimzi.operator.cluster.model;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
+import io.fabric8.kubernetes.api.model.ContainerPort;
+import io.fabric8.kubernetes.api.model.EnvVar;
 import io.fabric8.kubernetes.api.model.OwnerReference;
 import io.fabric8.kubernetes.api.model.OwnerReferenceBuilder;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
+import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.Service;
 import io.fabric8.kubernetes.api.model.networking.v1.Ingress;
 import io.fabric8.openshift.api.model.Route;
+import io.strimzi.api.kafka.model.CertificateExpirationPolicy;
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBuilder;
@@ -25,21 +29,35 @@ import io.strimzi.api.kafka.model.nodepool.ProcessRoles;
 import io.strimzi.api.kafka.model.storage.JbodStorageBuilder;
 import io.strimzi.api.kafka.model.storage.PersistentClaimStorageBuilder;
 import io.strimzi.api.kafka.model.storage.Storage;
+import io.strimzi.certs.OpenSslCertManager;
 import io.strimzi.operator.cluster.KafkaVersionTestUtils;
+import io.strimzi.operator.cluster.model.logging.LoggingModel;
 import io.strimzi.operator.cluster.model.nodepools.NodeIdAssignment;
 import io.strimzi.operator.cluster.model.nodepools.NodePoolUtils;
 import io.strimzi.operator.common.Reconciliation;
+import io.strimzi.operator.common.model.Ca;
+import io.strimzi.operator.common.model.ClientsCa;
 import io.strimzi.operator.common.model.InvalidResourceException;
+import io.strimzi.operator.common.model.PasswordGenerator;
+import io.strimzi.test.TestUtils;
 import org.junit.jupiter.api.Test;
 
+import java.security.cert.CertificateParsingException;
+import java.security.cert.X509Certificate;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static io.strimzi.test.TestUtils.set;
+import static java.util.Arrays.asList;
+import static java.util.Collections.emptyMap;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -408,5 +426,199 @@ public class KafkaClusterWithKRaftTest {
             List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, List.of(POOL_CONTROLLERS, POOL_BROKERS), Map.of(), Map.of(), true, SHARED_ENV_PROVIDER);
             KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, pools, VERSIONS, true, null, SHARED_ENV_PROVIDER);
         });
+    }
+
+    @Test
+    public void testGenerateBrokerSecretExternalWithManyDNS() throws CertificateParsingException {
+        ClusterCa clusterCa = new ClusterCa(Reconciliation.DUMMY_RECONCILIATION, new OpenSslCertManager(), new PasswordGenerator(10, "a", "a"), CLUSTER_NAME, null, null);
+        clusterCa.createRenewOrReplace(NAMESPACE, CLUSTER_NAME, emptyMap(), emptyMap(), emptyMap(), null, true);
+        ClientsCa clientsCa = new ClientsCa(Reconciliation.DUMMY_RECONCILIATION, new OpenSslCertManager(), new PasswordGenerator(10, "a", "a"), null, null, null, null, 365, 30, true, CertificateExpirationPolicy.RENEW_CERTIFICATE);
+        clientsCa.createRenewOrReplace(NAMESPACE, CLUSTER_NAME, emptyMap(), emptyMap(), emptyMap(), null, true);
+
+        KafkaCluster kc = KafkaCluster.fromCrd(
+                Reconciliation.DUMMY_RECONCILIATION,
+                KAFKA,
+                List.of(KAFKA_POOL_CONTROLLERS, KAFKA_POOL_BROKERS),
+                VERSIONS,
+                true,
+                null, SHARED_ENV_PROVIDER
+        );
+
+        Map<Integer, Set<String>> externalAddresses = new HashMap<>();
+        externalAddresses.put(1000, TestUtils.set("123.10.125.130", "my-broker-1000"));
+        externalAddresses.put(1001, TestUtils.set("123.10.125.131", "my-broker-1001"));
+        externalAddresses.put(1002, TestUtils.set("123.10.125.132", "my-broker-1002"));
+
+        Secret secret = kc.generateCertificatesSecret(clusterCa, clientsCa, TestUtils.set("123.10.125.140", "my-bootstrap"), externalAddresses, true);
+        assertThat(secret.getData().keySet(), is(set(
+                "my-cluster-controllers-0.crt",  "my-cluster-controllers-0.key", "my-cluster-controllers-0.p12", "my-cluster-controllers-0.password",
+                "my-cluster-controllers-1.crt", "my-cluster-controllers-1.key", "my-cluster-controllers-1.p12", "my-cluster-controllers-1.password",
+                "my-cluster-controllers-2.crt", "my-cluster-controllers-2.key", "my-cluster-controllers-2.p12", "my-cluster-controllers-2.password",
+                "my-cluster-brokers-1000.crt",  "my-cluster-brokers-1000.key", "my-cluster-brokers-1000.p12", "my-cluster-brokers-1000.password",
+                "my-cluster-brokers-1001.crt", "my-cluster-brokers-1001.key", "my-cluster-brokers-1001.p12", "my-cluster-brokers-1001.password",
+                "my-cluster-brokers-1002.crt", "my-cluster-brokers-1002.key", "my-cluster-brokers-1002.p12", "my-cluster-brokers-1002.password")));
+
+        // Controller cert
+        X509Certificate cert = Ca.cert(secret, "my-cluster-controllers-0.crt");
+        assertThat(cert.getSubjectX500Principal().getName(), is("CN=my-cluster-kafka,O=io.strimzi"));
+        assertThat(new HashSet<Object>(cert.getSubjectAlternativeNames()), is(set(
+                asList(2, "my-cluster-controllers-0.my-cluster-kafka-brokers.my-namespace.svc.cluster.local"),
+                asList(2, "my-cluster-controllers-0.my-cluster-kafka-brokers.my-namespace.svc"),
+                asList(2, "my-cluster-kafka-bootstrap"),
+                asList(2, "my-cluster-kafka-bootstrap.my-namespace"),
+                asList(2, "my-cluster-kafka-bootstrap.my-namespace.svc"),
+                asList(2, "my-cluster-kafka-bootstrap.my-namespace.svc.cluster.local"),
+                asList(2, "my-cluster-kafka-brokers"),
+                asList(2, "my-cluster-kafka-brokers.my-namespace"),
+                asList(2, "my-cluster-kafka-brokers.my-namespace.svc"),
+                asList(2, "my-cluster-kafka-brokers.my-namespace.svc.cluster.local"))));
+
+        // Broker cert
+        cert = Ca.cert(secret, "my-cluster-brokers-1000.crt");
+        assertThat(cert.getSubjectX500Principal().getName(), is("CN=my-cluster-kafka,O=io.strimzi"));
+        assertThat(new HashSet<Object>(cert.getSubjectAlternativeNames()), is(set(
+                asList(2, "my-cluster-brokers-1000.my-cluster-kafka-brokers.my-namespace.svc.cluster.local"),
+                asList(2, "my-cluster-brokers-1000.my-cluster-kafka-brokers.my-namespace.svc"),
+                asList(2, "my-cluster-kafka-bootstrap"),
+                asList(2, "my-cluster-kafka-bootstrap.my-namespace"),
+                asList(2, "my-cluster-kafka-bootstrap.my-namespace.svc"),
+                asList(2, "my-cluster-kafka-bootstrap.my-namespace.svc.cluster.local"),
+                asList(2, "my-cluster-kafka-brokers"),
+                asList(2, "my-cluster-kafka-brokers.my-namespace"),
+                asList(2, "my-cluster-kafka-brokers.my-namespace.svc"),
+                asList(2, "my-cluster-kafka-brokers.my-namespace.svc.cluster.local"),
+                asList(2, "my-broker-1000"),
+                asList(2, "my-bootstrap"),
+                asList(7, "123.10.125.140"),
+                asList(7, "123.10.125.130"))));
+    }
+
+    @Test
+    public void testExternalAddressEnvVarNotSetInControllers() {
+        Kafka kafka = new KafkaBuilder(KAFKA)
+                .editSpec()
+                    .editKafka()
+                        .withListeners(new GenericKafkaListenerBuilder().withName("external").withPort(9094).withType(KafkaListenerType.NODEPORT).withTls().build())
+                        .withNewRack()
+                            .withTopologyKey("my-topology-key")
+                        .endRack()
+                    .endKafka()
+                .endSpec()
+                .build();
+
+        KafkaCluster kc = KafkaCluster.fromCrd(
+                Reconciliation.DUMMY_RECONCILIATION,
+                kafka,
+                List.of(KAFKA_POOL_CONTROLLERS, KAFKA_POOL_BROKERS),
+                VERSIONS,
+                true,
+                null,
+                SHARED_ENV_PROVIDER
+        );
+
+        // Controller
+        List<EnvVar> envVars = kc.getInitContainerEnvVars(KAFKA_POOL_CONTROLLERS);
+        assertThat(envVars.size(), is(2));
+        assertThat(envVars.get(0).getName(), is("NODE_NAME"));
+        assertThat(envVars.get(0).getValueFrom(), is(notNullValue()));
+        assertThat(envVars.get(1).getName(), is("RACK_TOPOLOGY_KEY"));
+        assertThat(envVars.get(1).getValue(), is("my-topology-key"));
+
+        // Brokers
+        envVars = kc.getInitContainerEnvVars(KAFKA_POOL_BROKERS);
+        assertThat(envVars.size(), is(3));
+        assertThat(envVars.get(0).getName(), is("NODE_NAME"));
+        assertThat(envVars.get(0).getValueFrom(), is(notNullValue()));
+        assertThat(envVars.get(1).getName(), is("RACK_TOPOLOGY_KEY"));
+        assertThat(envVars.get(1).getValue(), is("my-topology-key"));
+        assertThat(envVars.get(2).getName(), is("EXTERNAL_ADDRESS"));
+        assertThat(envVars.get(2).getValue(), is("TRUE"));
+    }
+
+    @Test
+    public void testConfigMapFields() {
+        Map<Integer, Map<String, String>> advertisedHostnames = Map.of(
+                1000, Map.of("PLAIN_9092", "broker-0"),
+                1001, Map.of("PLAIN_9092", "broker-1"),
+                1002, Map.of("PLAIN_9092", "broker-2")
+        );
+        Map<Integer, Map<String, String>> advertisedPorts = Map.of(
+                1000, Map.of("PLAIN_9092", "9092"),
+                1001, Map.of("PLAIN_9092", "9092"),
+                1002, Map.of("PLAIN_9092", "9092")
+        );
+
+        KafkaCluster kc = KafkaCluster.fromCrd(
+                Reconciliation.DUMMY_RECONCILIATION,
+                KAFKA,
+                List.of(KAFKA_POOL_CONTROLLERS, KAFKA_POOL_BROKERS),
+                VERSIONS,
+                true,
+                "dummy-cluster-id",
+                SHARED_ENV_PROVIDER
+        );
+
+        List<ConfigMap> cms = kc.generatePerBrokerConfigurationConfigMaps(new MetricsAndLogging(null, null), advertisedHostnames, advertisedPorts);
+
+        assertThat(cms.size(), is(6));
+
+        for (ConfigMap cm : cms)    {
+            if (cm.getMetadata().getName().contains("-controllers-"))   {
+                // Controllers
+                assertThat(cm.getData().size(), is(4));
+                assertThat(cm.getData().get(LoggingModel.LOG4J1_CONFIG_MAP_KEY), is(notNullValue()));
+                assertThat(cm.getData().get(KafkaCluster.BROKER_CONFIGURATION_FILENAME), is(notNullValue()));
+                assertThat(cm.getData().get(KafkaCluster.BROKER_CLUSTER_ID_FILENAME), is(notNullValue()));
+                assertThat(cm.getData().get(KafkaCluster.BROKER_LISTENERS_FILENAME), is(nullValue()));
+            } else {
+                // Brokers
+                assertThat(cm.getData().size(), is(4));
+                assertThat(cm.getData().get(LoggingModel.LOG4J1_CONFIG_MAP_KEY), is(notNullValue()));
+                assertThat(cm.getData().get(KafkaCluster.BROKER_CONFIGURATION_FILENAME), is(notNullValue()));
+                assertThat(cm.getData().get(KafkaCluster.BROKER_CLUSTER_ID_FILENAME), is(notNullValue()));
+                assertThat(cm.getData().get(KafkaCluster.BROKER_LISTENERS_FILENAME), is(notNullValue()));
+            }
+        }
+    }
+
+    @Test
+    public void testContainerPorts() {
+        Kafka kafka = new KafkaBuilder(KAFKA)
+                .editSpec()
+                    .editKafka()
+                        .withListeners(new GenericKafkaListenerBuilder().withName("tls").withPort(9093).withType(KafkaListenerType.INTERNAL).withTls().build(),
+                                new GenericKafkaListenerBuilder().withName("external").withPort(9094).withType(KafkaListenerType.NODEPORT).withTls().build())
+                        .withNewJmxPrometheusExporterMetricsConfig()
+                            .withNewValueFrom()
+                            .withNewConfigMapKeyRef("metrics-cm", "metrics.json", false)
+                            .endValueFrom()
+                        .endJmxPrometheusExporterMetricsConfig()
+                    .endKafka()
+                .endSpec()
+                .build();
+
+        KafkaCluster kc = KafkaCluster.fromCrd(
+                Reconciliation.DUMMY_RECONCILIATION,
+                kafka,
+                List.of(KAFKA_POOL_CONTROLLERS, KAFKA_POOL_BROKERS),
+                VERSIONS,
+                true,
+                null,
+                SHARED_ENV_PROVIDER
+        );
+
+        // Controller
+        List<ContainerPort> ports = kc.getContainerPortList(KAFKA_POOL_CONTROLLERS);
+        assertThat(ports.size(), is(2));
+        assertThat(ports.get(0).getContainerPort(), is(9090));
+        assertThat(ports.get(1).getContainerPort(), is(9404));
+
+        // Brokers
+        ports = kc.getContainerPortList(KAFKA_POOL_BROKERS);
+        assertThat(ports.size(), is(4));
+        assertThat(ports.get(0).getContainerPort(), is(9091));
+        assertThat(ports.get(1).getContainerPort(), is(9093));
+        assertThat(ports.get(2).getContainerPort(), is(9094));
+        assertThat(ports.get(3).getContainerPort(), is(9404));
     }
 }

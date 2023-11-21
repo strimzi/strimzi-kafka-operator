@@ -1114,19 +1114,37 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
                 emptyMap());
     }
 
-    /* test */ List<ContainerPort> getContainerPortList() {
+    /**
+     * Node Pool for which the ports should be generated. In KRaft, the ports for controller-only nodes might differ
+     * from broker nodes as they do not need all the listeners for clients or for replication.
+     *
+     * @param pool  Pool for which the ports should be generated
+     *
+     * @return  List of container ports
+     */
+    /* test */ List<ContainerPort> getContainerPortList(KafkaPool pool) {
         List<ContainerPort> ports = new ArrayList<>(listeners.size() + 3);
-        ports.add(ContainerUtils.createContainerPort(CONTROLPLANE_PORT_NAME, CONTROLPLANE_PORT));
-        ports.add(ContainerUtils.createContainerPort(REPLICATION_PORT_NAME, REPLICATION_PORT));
 
-        for (GenericKafkaListener listener : listeners) {
-            ports.add(ContainerUtils.createContainerPort(ListenersUtils.backwardsCompatiblePortName(listener), listener.getPort()));
+        if (!useKRaft || pool.isController()) {
+            // The control plane listener is on all nodes in ZooKeeper based clusters and on nodes with controller role in KRaft
+            ports.add(ContainerUtils.createContainerPort(CONTROLPLANE_PORT_NAME, CONTROLPLANE_PORT));
         }
 
+        // Replication and user-configured listeners are only on nodes with the broker role (this includes all nodes in ZooKeeper based clusters)
+        if (pool.isBroker()) {
+            ports.add(ContainerUtils.createContainerPort(REPLICATION_PORT_NAME, REPLICATION_PORT));
+
+            for (GenericKafkaListener listener : listeners) {
+                ports.add(ContainerUtils.createContainerPort(ListenersUtils.backwardsCompatiblePortName(listener), listener.getPort()));
+            }
+        }
+
+        // Metrics port is enabled on all node types regardless their role
         if (metrics.isEnabled()) {
             ports.add(ContainerUtils.createContainerPort(MetricsModel.METRICS_PORT_NAME, MetricsModel.METRICS_PORT));
         }
 
+        // JMX port is enabled on all node types regardless their role
         ports.addAll(jmx.containerPorts());
 
         return ports;
@@ -1349,7 +1367,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
             varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_INIT_RACK_TOPOLOGY_KEY, rack.getTopologyKey()));
         }
 
-        if (!ListenersUtils.nodePortListeners(listeners).isEmpty()) {
+        if (pool.isBroker() && !ListenersUtils.nodePortListeners(listeners).isEmpty()) {
             varList.add(ContainerUtils.createEnvVar(ENV_VAR_KAFKA_INIT_EXTERNAL_ADDRESS, "TRUE"));
         }
 
@@ -1397,7 +1415,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
                 securityProvider.kafkaContainerSecurityContext(new ContainerSecurityProviderContextImpl(pool.storage, pool.templateContainer)),
                 pool.resources,
                 getEnvVars(pool),
-                getContainerPortList(),
+                getContainerPortList(pool),
                 getVolumeMounts(pool.storage),
                 ProbeUtils.defaultBuilder(livenessProbeOptions).withNewExec().withCommand("/opt/kafka/kafka_liveness.sh").endExec().build(),
                 ProbeUtils.defaultBuilder(readinessProbeOptions).withNewExec().withCommand("/opt/kafka/kafka_readiness.sh").endExec().build(),
@@ -1663,9 +1681,13 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
 
                 data.put(logging.configMapKey(), parsedLogging);
                 data.put(BROKER_CONFIGURATION_FILENAME, generatePerBrokerConfiguration(node, pool, advertisedHostnames, advertisedPorts));
+
                 // List of configured listeners => StrimziPodSets still need this because of OAUTH and how the OAUTH secret
-                // environment variables are parsed in the container bash scripts
-                data.put(BROKER_LISTENERS_FILENAME, listeners.stream().map(ListenersUtils::envVarIdentifier).collect(Collectors.joining(" ")));
+                // environment variables are parsed in the container bash scripts.
+                // The actual content of this file is not used on controller-only nodes as they do not expose any
+                // user-configured listeners. But we still pass there an empty file as that allows us to share the same
+                // script to generate the node configuration.
+                data.put(BROKER_LISTENERS_FILENAME, node.broker() ? listeners.stream().map(ListenersUtils::envVarIdentifier).collect(Collectors.joining(" ")) : null);
 
                 if (useKRaft) {
                     // In KRaft, we need to pass the Kafka CLuster ID

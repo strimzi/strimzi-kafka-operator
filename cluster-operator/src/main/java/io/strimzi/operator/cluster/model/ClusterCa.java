@@ -230,29 +230,35 @@ public class ClusterCa extends Ca {
             subject.addDnsName(DnsNameGenerator.podDnsName(namespace, KafkaResources.brokersServiceName(crName), node.podName()));
             subject.addDnsName(DnsNameGenerator.podDnsNameWithoutClusterDomain(namespace, KafkaResources.brokersServiceName(crName), node.podName()));
 
-            if (externalBootstrapAddresses != null)   {
-                for (String dnsName : externalBootstrapAddresses) {
-                    if (IpAndDnsValidation.isValidIpAddress(dnsName))   {
-                        subject.addIpAddress(dnsName);
-                    } else {
-                        subject.addDnsName(dnsName);
+            // Controller-only nodes do not have the SANs for external listeners.
+            // That helps us to avoid unnecessary rolling updates when the SANs change
+            if (node.broker())    {
+                if (externalBootstrapAddresses != null) {
+                    for (String dnsName : externalBootstrapAddresses) {
+                        if (IpAndDnsValidation.isValidIpAddress(dnsName)) {
+                            subject.addIpAddress(dnsName);
+                        } else {
+                            subject.addDnsName(dnsName);
+                        }
                     }
                 }
-            }
 
-            if (externalAddresses.get(node.nodeId()) != null)   {
-                for (String dnsName : externalAddresses.get(node.nodeId())) {
-                    if (IpAndDnsValidation.isValidIpAddress(dnsName))   {
-                        subject.addIpAddress(dnsName);
-                    } else {
-                        subject.addDnsName(dnsName);
+                if (externalAddresses.get(node.nodeId()) != null) {
+                    for (String dnsName : externalAddresses.get(node.nodeId())) {
+                        if (IpAndDnsValidation.isValidIpAddress(dnsName)) {
+                            subject.addIpAddress(dnsName);
+                        } else {
+                            subject.addDnsName(dnsName);
+                        }
                     }
                 }
             }
 
             return subject.build();
         };
+
         LOGGER.debugCr(reconciliation, "{}: Reconciling kafka broker certificates", this);
+
         return maybeCopyOrGenerateCerts(
             reconciliation,
             nodes,

@@ -1505,7 +1505,7 @@ public class KafkaClusterTest {
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, pools, VERSIONS, false, null, SHARED_ENV_PROVIDER);
 
         // Check port
-        List<ContainerPort> ports = kc.getContainerPortList();
+        List<ContainerPort> ports = kc.getContainerPortList(pools.get(0));
         assertThat(ports.contains(ContainerUtils.createContainerPort(ListenersUtils.BACKWARDS_COMPATIBLE_EXTERNAL_PORT_NAME, 9094)), is(true));
 
         // Check external bootstrap service
@@ -1693,7 +1693,7 @@ public class KafkaClusterTest {
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, pools, VERSIONS, false, null, SHARED_ENV_PROVIDER);
 
         // Check port
-        List<ContainerPort> ports = kc.getContainerPortList();
+        List<ContainerPort> ports = kc.getContainerPortList(pools.get(0));
         assertThat(ports.contains(ContainerUtils.createContainerPort(ListenersUtils.BACKWARDS_COMPATIBLE_EXTERNAL_PORT_NAME, 9094)), is(true));
 
         // Check external bootstrap service
@@ -2095,7 +2095,7 @@ public class KafkaClusterTest {
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, pools, VERSIONS, false, null, SHARED_ENV_PROVIDER);
 
         // Check port
-        List<ContainerPort> ports = kc.getContainerPortList();
+        List<ContainerPort> ports = kc.getContainerPortList(pools.get(0));
         assertThat(ports.contains(ContainerUtils.createContainerPort(ListenersUtils.BACKWARDS_COMPATIBLE_EXTERNAL_PORT_NAME, 9094)), is(true));
 
         // Check external bootstrap service
@@ -2185,7 +2185,7 @@ public class KafkaClusterTest {
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, pools, VERSIONS, false, null, SHARED_ENV_PROVIDER);
 
         // Check port
-        List<ContainerPort> ports = kc.getContainerPortList();
+        List<ContainerPort> ports = kc.getContainerPortList(pools.get(0));
         assertThat(ports.contains(ContainerUtils.createContainerPort(ListenersUtils.BACKWARDS_COMPATIBLE_EXTERNAL_PORT_NAME, 9094)), is(true));
 
         // Check external bootstrap service
@@ -3020,7 +3020,7 @@ public class KafkaClusterTest {
         assertThat(kc.isExposedWithIngress(), is(true));
 
         // Check port
-        List<ContainerPort> ports = kc.getContainerPortList();
+        List<ContainerPort> ports = kc.getContainerPortList(pools.get(0));
         assertThat(ports.contains(ContainerUtils.createContainerPort(ListenersUtils.BACKWARDS_COMPATIBLE_EXTERNAL_PORT_NAME, 9094)), is(true));
 
         // Check external bootstrap service
@@ -3225,7 +3225,7 @@ public class KafkaClusterTest {
         assertThat(kc.isExposedWithClusterIP(), is(true));
 
         // Check port
-        List<ContainerPort> ports = kc.getContainerPortList();
+        List<ContainerPort> ports = kc.getContainerPortList(pools.get(0));
         assertThat(ports.contains(ContainerUtils.createContainerPort(ListenersUtils.BACKWARDS_COMPATIBLE_EXTERNAL_PORT_NAME, 9094)), is(true));
 
         // Check external bootstrap service
