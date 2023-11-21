@@ -64,31 +64,40 @@ class KafkaQuorumCheck {
         });
     }
 
+    /**
+     * Returns true if the majority of the controllers' lastCaughtUpTimestamps (not including the given node) are within
+     * the controller.quorum.fetch.timeout.ms based on the given quorum info.
+     **/
     private boolean isQuorumHealthyWithoutNode(int nodeId, QuorumInfo info) {
         int leaderId = info.leaderId();
         if (leaderId < 0) {
             LOGGER.warnCr(reconciliation, "No controller quorum leader is found because the leader id is set to {}", leaderId);
             return false;
         }
+
         Map<Integer, Long> controllerStates = info.voters().stream().collect(Collectors.toMap(
                 QuorumInfo.ReplicaState::replicaId,
                 state -> state.lastCaughtUpTimestamp().isPresent() ? state.lastCaughtUpTimestamp().getAsLong() : -1));
         int totalNumOfControllers = controllerStates.size();
+
         if (totalNumOfControllers == 1) {
             LOGGER.warnCr(reconciliation, "Performing rolling update on a controller quorum with a single node. The cluster may be " +
                     "in a defective state once the rolling update is complete. It is recommended that a minimum of three controllers are used.");
             return true;
         }
+
         //cannot use normal integer as it's being incremented inside the lambda expression
         AtomicInteger numOfCaughtUpControllers = new AtomicInteger();
         long leaderLastCaughtUpTimestamp = controllerStates.get(leaderId);
         LOGGER.debugCr(reconciliation, "The lastCaughtUpTimestamp for the controller quorum leader (node id {}) is {}", leaderId, leaderLastCaughtUpTimestamp);
+
         controllerStates.forEach((controllerNodeId, lastCaughtUpTimestamp) -> {
             if (lastCaughtUpTimestamp < 0) {
                 LOGGER.warnCr(reconciliation, "No valid lastCaughtUpTimestamp is found for controller {} ", controllerNodeId);
             } else {
                 LOGGER.debugCr(reconciliation, "The lastCaughtUpTimestamp for controller {} is {}", controllerNodeId, lastCaughtUpTimestamp);
                 if (controllerNodeId == leaderId || (leaderLastCaughtUpTimestamp - lastCaughtUpTimestamp) < controllerQuorumFetchTimeoutMs) {
+
                     // skip the controller that we are considering to roll
                     if (controllerNodeId != nodeId) {
                         numOfCaughtUpControllers.getAndIncrement();
@@ -99,8 +108,11 @@ class KafkaQuorumCheck {
                 }
             }
         });
+
         LOGGER.debugCr(reconciliation, "Out of {} controllers, there are {} that have caught up with the controller quorum leader, not including controller {}", totalNumOfControllers, numOfCaughtUpControllers, nodeId);
+
         if (totalNumOfControllers == 2) {
+
             // Only roll the controller if the other one in the quorum has caught up or is the active controller.
             if (numOfCaughtUpControllers.get() == 1) {
                 LOGGER.warnCr(reconciliation, "Performing rolling update on a controller quorum with 2 nodes. The cluster may be " +

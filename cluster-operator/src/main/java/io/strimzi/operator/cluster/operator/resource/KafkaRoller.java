@@ -108,6 +108,8 @@ import static java.util.Collections.singletonList;
 public class KafkaRoller {
 
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(KafkaRoller.class);
+    private static final String CONTROLLER_QUORUM_FETCH_TIMEOUT_MS_CONFIG_NAME = "controller.quorum.fetch.timeout.ms";
+    private static final String CONTROLLER_QUORUM_FETCH_TIMEOUT_MS_CONFIG_DEFAULT = "2000";
 
     private final PodOperator podOperations;
     private final long pollingIntervalMs;
@@ -129,27 +131,25 @@ public class KafkaRoller {
     private Admin brokerAdminClient;
     private Admin controllerAdminClient;
     private KafkaAgentClient kafkaAgentClient;
-    private static final String CONTROLLER_QUORUM_FETCH_TIMEOUT_MS_CONFIG_NAME = "controller.quorum.fetch.timeout.ms";
-    private static final String CONTROLLER_QUORUM_FETCH_TIMEOUT_MS_CONFIG_DEFAULT = "2000";
 
     /**
      * Constructor
      *
-     * @param reconciliation       Reconciliation marker
-     * @param vertx                Vert.x instance
-     * @param podOperations        Pod operator for managing pods
-     * @param pollingIntervalMs    Polling interval in milliseconds
-     * @param operationTimeoutMs   Operation timeout in milliseconds
-     * @param backOffSupplier      Backoff supplier
-     * @param nodes                List of Kafka node references to consider rolling
-     * @param clusterCaCertSecret  Secret with the Cluster CA public key
-     * @param coKeySecret          Secret with the Cluster CA private key
-     * @param adminClientProvider  Kafka Admin client provider
-     * @param kafkaConfigProvider  Kafka configuration provider
-     * @param kafkaLogging         Kafka logging configuration
-     * @param kafkaVersion         Kafka version
-     * @param allowReconfiguration Flag indicting whether reconfiguration is allowed or not
-     * @param eventsPublisher      Kubernetes Events publisher for publishing events about pod restarts
+     * @param reconciliation        Reconciliation marker
+     * @param vertx                 Vert.x instance
+     * @param podOperations         Pod operator for managing pods
+     * @param pollingIntervalMs     Polling interval in milliseconds
+     * @param operationTimeoutMs    Operation timeout in milliseconds
+     * @param backOffSupplier       Backoff supplier
+     * @param nodes                 List of Kafka node references to consider rolling
+     * @param clusterCaCertSecret   Secret with the Cluster CA public key
+     * @param coKeySecret           Secret with the Cluster CA private key
+     * @param adminClientProvider   Kafka Admin client provider
+     * @param kafkaConfigProvider   Kafka configuration provider
+     * @param kafkaLogging          Kafka logging configuration
+     * @param kafkaVersion          Kafka version
+     * @param allowReconfiguration  Flag indicting whether reconfiguration is allowed or not
+     * @param eventsPublisher       Kubernetes Events publisher for publishing events about pod restarts
      */
     public KafkaRoller(Reconciliation reconciliation, Vertx vertx, PodOperator podOperations,
                        long pollingIntervalMs, long operationTimeoutMs, Supplier<BackOff> backOffSupplier, Set<NodeRef> nodes,
@@ -246,23 +246,27 @@ public class KafkaRoller {
                 LOGGER.debugCr(reconciliation, "Verifying cluster pods are up-to-date.");
                 List<NodeRef> controllerPods = new ArrayList<>();
                 List<NodeRef> brokerPods = new ArrayList<>();
+
                 for (NodeRef node : nodes) {
                     // Order the nodes unready first otherwise repeated reconciliations might each restart a pod
                     // only for it not to become ready and thus drive the cluster to a worse state.
                     // in KRaft mode roll unready controllers, then ready controllers, then unready brokers, then ready brokers
                     boolean isReady = podOperations.isReady(namespace, node.podName());
+
                     if (node.controller()) {
                         controllerPods.add(isReady ? controllerPods.size() : 0, node);
                     } else {
                         brokerPods.add(isReady ? brokerPods.size() : 0, node);
                     }
                 }
+
                 LOGGER.debugCr(reconciliation, "Initial order for updating pods (rolling restart or dynamic update) is controller pods={}, broker pods={}", controllerPods, brokerPods);
 
                 List<Future<Void>> controllerFutures = new ArrayList<>(controllerPods.size());
                 for (NodeRef node : controllerPods) {
                     controllerFutures.add(schedule(node, 0, TimeUnit.MILLISECONDS));
                 }
+
                 Future.join(controllerFutures).compose(v -> {
                     List<Future<Void>> brokerFutures = new ArrayList<>(nodes.size());
                     for (NodeRef broker : brokerPods) {
@@ -271,6 +275,7 @@ public class KafkaRoller {
                     return Future.join(brokerFutures);
                 }).onComplete(ar -> {
                     singleExecutor.shutdown();
+
                     try {
                         if (brokerAdminClient != null) {
                             brokerAdminClient.close(Duration.ofSeconds(30));
@@ -278,6 +283,7 @@ public class KafkaRoller {
                     } catch (RuntimeException e) {
                         LOGGER.debugCr(reconciliation, "Exception closing broker admin client", e);
                     }
+
                     try {
                         if (controllerAdminClient != null) {
                             controllerAdminClient.close(Duration.ofSeconds(30));
@@ -285,6 +291,7 @@ public class KafkaRoller {
                     } catch (RuntimeException e) {
                         LOGGER.debugCr(reconciliation, "Exception closing controller admin client", e);
                     }
+
                     vertx.runOnContext(ignored -> result.handle(ar.map((Void) null)));
                 });
             } catch (Exception e)   {
@@ -397,7 +404,7 @@ public class KafkaRoller {
      *
      * @throws InterruptedException     Interrupted while waiting.
      * @throws ForceableProblem         Some error. Not thrown when one of restartContext.podStuck, restartContext.backOff.done()
-     * or exception.forceNow is true AND canRoll is true. Otherwise is thrown.
+     *                                  or exception.forceNow is true AND canRoll is true. Otherwise, is thrown.
      * @throws UnforceableProblem       Some error, always thrown.
      */
     @SuppressWarnings({"checkstyle:CyclomaticComplexity"})
@@ -428,6 +435,7 @@ public class KafkaRoller {
                 if (kafkaAgentClient == null) {
                     this.kafkaAgentClient = initKafkaAgentClient();
                 }
+
                 BrokerState brokerState = kafkaAgentClient.getBrokerState(pod.getMetadata().getName());
                 if (brokerState.isBrokerInRecovery()) {
                     throw new UnforceableProblem("Pod " + nodeRef.podName() + " is not ready because the node is performing log recovery. There are " + brokerState.remainingLogsToRecover() + " logs and " + brokerState.remainingSegmentsToRecover() + " segments left to recover.", e.getCause());
@@ -450,15 +458,15 @@ public class KafkaRoller {
                 restartAndAwaitReadiness(pod, operationTimeoutMs, TimeUnit.MILLISECONDS, restartContext);
             } else if (restartContext.needsRestart || restartContext.needsReconfig) {
                 if (deferController(nodeRef, restartContext)) {
-                    LOGGER.debugCr(reconciliation, "Pod {} is the active controller and there are other pods to verify. Other pods will be verified first.", nodeRef);
-                    throw new ForceableProblem("Pod " + nodeRef.podName() + " is the active controller and there are other pods to verify. Other pods will be verified first.");
+                    LOGGER.debugCr(reconciliation, "Pod {} is the active controller and there are other pods to verify first.", nodeRef);
+                    throw new ForceableProblem("Pod " + nodeRef.podName() + " is the active controller and there are other pods to verify first");
                 } else if (!canRoll(nodeRef, 60, TimeUnit.SECONDS, false, restartContext)) {
                     LOGGER.debugCr(reconciliation, "Pod {} cannot be updated right now", nodeRef);
                     throw new UnforceableProblem("Pod " + nodeRef.podName() + " cannot be updated right now.");
                 } else {
                     // Check for rollability before trying a dynamic update so that if the dynamic update fails we can go to a full restart
                     if (!maybeDynamicUpdateBrokerConfig(nodeRef, restartContext)) {
-                        LOGGER.debugCr(reconciliation, "Pod {} can be rolled now", nodeRef);
+                        LOGGER.infoCr(reconciliation, "Rolling Pod {} due to {}", nodeRef, restartContext.restartReasons.getAllReasonNotes());
                         restartAndAwaitReadiness(pod, operationTimeoutMs, TimeUnit.MILLISECONDS, restartContext);
                     } else {
                         awaitReadiness(pod, operationTimeoutMs, TimeUnit.MILLISECONDS);
@@ -475,11 +483,14 @@ public class KafkaRoller {
             }
         } catch (ForceableProblem e) {
             if (restartContext.podStuck || restartContext.backOff.done() || e.forceNow) {
+
                 if (canRoll(nodeRef, 60_000, TimeUnit.MILLISECONDS, true, restartContext)) {
                     String errorMsg = e.getMessage();
+
                     if (e.getCause() != null) {
                         errorMsg += ", caused by:" + (e.getCause().getMessage() != null ? e.getCause().getMessage() : e.getCause());
                     }
+
                     LOGGER.warnCr(reconciliation, "Pod {} will be force-rolled, due to error: {}", nodeRef, errorMsg);
                     restartContext.restartReasons.add(RestartReason.POD_FORCE_RESTART_ON_ERROR);
                     restartAndAwaitReadiness(pod, operationTimeoutMs, TimeUnit.MILLISECONDS, restartContext);
@@ -505,6 +516,7 @@ public class KafkaRoller {
         if (pod != null && pod.getStatus() != null) {
             Optional<ContainerStatus> kafkaContainerStatus = pod.getStatus().getContainerStatuses().stream()
                     .filter(containerStatus -> containerStatus.getName().equals("kafka")).findFirst();
+
             if (kafkaContainerStatus.isPresent()) {
                 ContainerStateWaiting waiting = kafkaContainerStatus.get().getState().getWaiting();
                 if (waiting != null) {
@@ -580,13 +592,16 @@ public class KafkaRoller {
         KafkaBrokerLoggingConfigurationDiff loggingDiff = null;
         boolean needsReconfig = false;
         if (nodeRef.controller()) {
+
             if (initControllerAdminClient()) {
                 String controllerQuorumFetchTimeout = CONTROLLER_QUORUM_FETCH_TIMEOUT_MS_CONFIG_DEFAULT;
                 String desiredConfig = kafkaConfigProvider.apply(nodeRef.nodeId());
+
                 if (desiredConfig != null) {
                     OrderedProperties orderedProperties = new OrderedProperties();
                     controllerQuorumFetchTimeout = orderedProperties.addStringPairs(desiredConfig).asMap().getOrDefault(CONTROLLER_QUORUM_FETCH_TIMEOUT_MS_CONFIG_NAME, CONTROLLER_QUORUM_FETCH_TIMEOUT_MS_CONFIG_DEFAULT);
                 }
+
                 restartContext.quorumCheck = quorumCheck(controllerAdminClient, Long.parseLong(controllerQuorumFetchTimeout));
             } else {
                 //TODO When https://github.com/strimzi/strimzi-kafka-operator/issues/8593 is complete
@@ -660,8 +675,6 @@ public class KafkaRoller {
                     LOGGER.debugCr(reconciliation, "Pod {} logging needs to be reconfigured.", nodeRef);
                     needsReconfig = true;
                 }
-            } else if (needsRestart) {
-                LOGGER.infoCr(reconciliation, "Rolling Pod {} due to {}", nodeRef, reasonToRestartPod.getAllReasonNotes());
             }
         }
 
@@ -892,7 +905,7 @@ public class KafkaRoller {
         //      this function can be reverted to expect nodes to be non empty
         String bootstrapHostnames;
         if (nodes.isEmpty()) {
-            bootstrapHostnames = String.format("%s:%s", DnsNameGenerator.of(namespace, KafkaResources.brokersServiceName(cluster)).serviceDnsName(), KafkaCluster.REPLICATION_PORT);
+            bootstrapHostnames = String.format("%s:%s", DnsNameGenerator.of(namespace, KafkaResources.bootstrapServiceName(cluster)).serviceDnsName(), KafkaCluster.REPLICATION_PORT);
         } else {
             bootstrapHostnames = nodes.stream().map(node -> DnsNameGenerator.podDnsName(namespace, KafkaResources.brokersServiceName(cluster), node.podName()) + ":" + KafkaCluster.REPLICATION_PORT).collect(Collectors.joining(","));
         }
@@ -953,9 +966,11 @@ public class KafkaRoller {
             // TODO Either this is a KRaft broker or ZooKeeper broker. Since KafkaRoller does not know if this is KRaft mode or
             //      not continue with describeCluster. In KRaft mode this returns a random broker and will mean this broker is deferred.
             //      In future this can be improved by telling KafkaRoller whether the cluster is in KRaft mode or not.
+            //      This is tracked in https://github.com/strimzi/strimzi-kafka-operator/issues/9373.
             // Don't use broker admin client here, because it will have cache metadata about which is the controller.
             try (Admin ac = adminClient(Set.of(nodeRef), false)) {
                 Node controllerNode = null;
+
                 try {
                     DescribeClusterResult describeClusterResult = ac.describeCluster();
                     KafkaFuture<Node> controller = describeClusterResult.controller();
@@ -964,6 +979,7 @@ public class KafkaRoller {
                 } catch (ExecutionException | TimeoutException e) {
                     maybeTcpProbe(nodeRef, e, restartContext);
                 }
+
                 id = controllerNode == null || Node.noNode().equals(controllerNode) ? -1 : controllerNode.id();
                 LOGGER.debugCr(reconciliation, "Controller is {} (only relevant for Zookeeper mode)", id);
             }
