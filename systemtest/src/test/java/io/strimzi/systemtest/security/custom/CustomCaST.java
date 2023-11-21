@@ -5,7 +5,6 @@
 package io.strimzi.systemtest.security.custom;
 
 import io.fabric8.kubernetes.api.model.Secret;
-import io.fabric8.kubernetes.api.model.VolumeMount;
 import io.strimzi.api.kafka.model.CertificateAuthority;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaUser;
@@ -25,6 +24,7 @@ import io.strimzi.systemtest.templates.crd.KafkaTopicTemplates;
 import io.strimzi.systemtest.templates.crd.KafkaUserTemplates;
 import io.strimzi.systemtest.utils.ClientUtils;
 import io.strimzi.systemtest.utils.RollingUpdateUtils;
+import io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.DeploymentUtils;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StrimziPodSetUtils;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
@@ -49,7 +49,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static io.strimzi.systemtest.Constants.REGRESSION;
-import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -69,105 +68,80 @@ public class CustomCaST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(CustomCaST.class);
     private static final String STRIMZI_INTERMEDIATE_CA = "C=CZ, L=Prague, O=Strimzi, CN=StrimziIntermediateCA";
 
+    /** This test focuses on manual renewal of custom cluster CA.
+     * Steps are following. Create own cluster CA. From the CA create a Bundle that will be used in kafka cluster which is then deployed.
+     * Once everything is set up, kafka reconciliation is paused using annotation. Then a newly generated cluster CA keypair is put in place.
+     * When annotation is removed, kafka resumes and tries to renew cluster certificates using the new CA keypair.
+     * Note: There is a need to keep an old CA key in the secret and remove it only after all components successfully
+     * roll several times (due to the fact that it takes multiple rolling updates to finally update from old keypair to the new one).
+     * Test also verifies communication by producing and consuming messages.
+     * @param extensionContext
+     */
     @ParallelNamespaceTest
-    void testReplacingCustomClusterKeyPairToInvokeRenewalProcess(ExtensionContext extensionContext) throws IOException, NoSuchAlgorithmException, InvalidKeySpecException {
+    void testReplacingCustomClusterKeyPairToInvokeRenewalProcess(ExtensionContext extensionContext) {
         final TestStorage testStorage = new TestStorage(extensionContext);
-        // 0. Generate root and intermediate certificate authority with cluster CA
-        SystemTestCertHolder clusterCa =  new SystemTestCertHolder(
-            "CN=" + extensionContext.getRequiredTestClass().getSimpleName() + "ClusterCA",
+        // Generate root and intermediate certificate authority with cluster CA
+        SystemTestCertHolder clusterCa = new SystemTestCertHolder(
+            "CN=" + testStorage.getTestName() + "ClusterCA",
             KafkaResources.clusterCaCertificateSecretName(testStorage.getClusterName()),
             KafkaResources.clusterCaKeySecretName(testStorage.getClusterName()));
 
-        prepareTestCaWithBundleAndKafkaCluster(extensionContext, clusterCa, testStorage);
+        prepareTestCaWithBundleAndKafkaCluster(extensionContext, clusterCa, testStorage, 5, 20);
 
-        // ------- public key part
-
-        // 4. Update the Secret for the CA certificate.
-        //  a) Edit the existing secret to add the new CA certificate and update the certificate generation annotation value.
-        //  b) Rename the current CA certificate to retain it
-        Secret clusterCaCertificateSecret = kubeClient(testStorage.getNamespaceName()).getSecret(testStorage.getNamespaceName(), KafkaResources.clusterCaCertificateSecretName(testStorage.getClusterName()));
-        final String oldCaCertName = clusterCa.retrieveOldCertificateName(clusterCaCertificateSecret, "ca.crt");
-
-        // store the old cert
-        clusterCaCertificateSecret.getData().put(oldCaCertName, clusterCaCertificateSecret.getData().get("ca.crt"));
-
-        //  c) Encode your new CA certificate into base64.
-        LOGGER.info("Generating a new custom 'Cluster certificate authority' with `Root` and `Intermediate` for Strimzi and PEM bundles");
-        clusterCa = new SystemTestCertHolder(
-            "CN=" + extensionContext.getRequiredTestClass().getSimpleName() + "ClusterCAv2",
-            KafkaResources.clusterCaCertificateSecretName(testStorage.getClusterName()),
-            KafkaResources.clusterCaKeySecretName(testStorage.getClusterName()));
-
-        //  d) Update the CA certificate.
-        clusterCaCertificateSecret.getData().put("ca.crt", Base64.getEncoder().encodeToString(Files.readAllBytes(Paths.get(clusterCa.getBundle().getCertPath()))));
-
-        //  e) Increase the value of the CA certificate generation annotation.
-        //  f) Save the secret with the new CA certificate and certificate generation annotation value.
-        SystemTestCertHolder.increaseCertGenerationCounterInSecret(clusterCaCertificateSecret, testStorage, Ca.ANNO_STRIMZI_IO_CA_CERT_GENERATION);
-
-        // ------- private key part
-
-        // 5. Update the Secret for the CA key used to sign your new CA certificate.
-        //  a) Edit the existing secret to add the new CA key and update the key generation annotation value.
-        final Secret clusterCaKeySecret = kubeClient(testStorage.getNamespaceName()).getSecret(testStorage.getNamespaceName(), KafkaResources.clusterCaKeySecretName(testStorage.getClusterName()));
-
-        //  b) Encode the CA key into base64.
-        //  c) Update the CA key.
-        final File strimziKeyPKCS8 = SystemTestCertManager.convertPrivateKeyToPKCS8File(clusterCa.getSystemTestCa().getPrivateKey());
-        clusterCaKeySecret.getData().put("ca.key", Base64.getEncoder().encodeToString(Files.readAllBytes(Paths.get(strimziKeyPKCS8.getAbsolutePath()))));
-
-        // d) Increase the value of the CA key generation annotation.
-        // 6. Save the secret with the new CA key and key generation annotation value.
-        SystemTestCertHolder.increaseCertGenerationCounterInSecret(clusterCaKeySecret, testStorage, Ca.ANNO_STRIMZI_IO_CA_KEY_GENERATION);
-
-        // --- verification phase (Rolling Update of components)
-
-        // 7. save the current state of the Kafka, ZooKeeper and Entity Operator pods
+        // Take snapshots for later comparison
         Map<String, String> kafkaPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getKafkaSelector());
-
         Map<String, String> zkPods = new HashMap<>();
         if (!Environment.isKRaftModeEnabled()) {
             zkPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getZookeeperSelector());
         }
         Map<String, String> eoPod = DeploymentUtils.depSnapshot(testStorage.getNamespaceName(), testStorage.getEoDeploymentName());
 
-        // 8. Resume reconciliation from the pause.
-        LOGGER.info("Resume the reconciliation of the Kafka custom resource ({})", testStorage.getKafkaStatefulSetName());
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), kafka -> {
-            kafka.getMetadata().getAnnotations().remove(Annotations.ANNO_STRIMZI_IO_PAUSE_RECONCILIATION);
-        }, testStorage.getNamespaceName());
+        // Create new CA and renew old one with it
+        final SystemTestCertHolder newClusterCa = new SystemTestCertHolder(
+            "CN=" + testStorage.getTestName() + "ClusterCAv2",
+            KafkaResources.clusterCaCertificateSecretName(testStorage.getClusterName()),
+            KafkaResources.clusterCaKeySecretName(testStorage.getClusterName()));
 
-        // 9. On the next reconciliation, the Cluster Operator performs a `rolling update`:
+        // Get old certificate ca.crt field name
+        Secret clusterCaCertificateSecret = kubeClient(testStorage.getNamespaceName()).getSecret(testStorage.getNamespaceName(), KafkaResources.clusterCaCertificateSecretName(testStorage.getClusterName()));
+        final String oldCaCertName = clusterCa.retrieveOldCertificateName(clusterCaCertificateSecret, "ca.crt");
+
+        manuallyRenewCa(testStorage, clusterCa, newClusterCa);
+
+        // On the next reconciliation, the Cluster Operator performs a `rolling update`:
         //      a) ZooKeeper
         //      b) Kafka
         //      c) and other components to trust the new CA certificate. (i.e., Entity Operator)
-        //  When the rolling update is complete, the Cluster Operator
-        //  will start a new one to generate new server certificates signed by the new CA key.
+        // When the rolling update is complete, the Cluster Operator
+        // will start a new one to generate new server certificates signed by the new CA key.
+        LOGGER.info("Waiting for first round of rolling update");
         if (!Environment.isKRaftModeEnabled()) {
             zkPods = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), testStorage.getZookeeperSelector(), 3, zkPods);
         }
         kafkaPods = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), testStorage.getKafkaSelector(), 3, kafkaPods);
         eoPod = DeploymentUtils.waitTillDepHasRolled(testStorage.getNamespaceName(), testStorage.getEoDeploymentName(), 1, eoPod);
 
-        // second Rolling update to generate new server certificates signed by the new CA key.
+        // Second Rolling update to generate new server certificates signed by the new CA key.
+        LOGGER.info("Waiting for second round of rolling update");
         if (!Environment.isKRaftModeEnabled()) {
             zkPods = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), testStorage.getZookeeperSelector(), 3, zkPods);
         }
         kafkaPods = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), testStorage.getKafkaSelector(), 3, kafkaPods);
         eoPod = DeploymentUtils.waitTillDepHasRolled(testStorage.getNamespaceName(), testStorage.getEoDeploymentName(), 1, eoPod);
 
-        // 10. Try to produce messages
+        LOGGER.info("All rounds of rolling update have been finished");
+        // Try to produce messages
         producerMessages(extensionContext, testStorage);
 
-        // 12. Check that old certificate is not removed after RUs
+        // Get new certificate secret and assert old value is still present
         clusterCaCertificateSecret = kubeClient(testStorage.getNamespaceName()).getSecret(testStorage.getNamespaceName(), KafkaResources.clusterCaCertificateSecretName(testStorage.getClusterName()));
         assertNotNull(clusterCaCertificateSecret.getData().get(oldCaCertName));
 
-        // 13. remove outdated certificate from the secret configuration to ensure that the cluster no longer trusts them.
+        // Remove outdated certificate from the secret configuration to ensure that the cluster no longer trusts them.
         clusterCaCertificateSecret.getData().remove(oldCaCertName);
         kubeClient().patchSecret(testStorage.getNamespaceName(), clusterCaCertificateSecret.getMetadata().getName(), clusterCaCertificateSecret);
 
-        // 14. Start a manual rolling update of your cluster to pick up the changes made to the secret configuration.
+        // Start a manual rolling update of your cluster to pick up the changes made to the secret configuration.
         if (!Environment.isKRaftModeEnabled()) {
             StrimziPodSetUtils.annotateStrimziPodSet(testStorage.getNamespaceName(), testStorage.getZookeeperStatefulSetName(), Collections.singletonMap(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE, "true"));
 
@@ -181,185 +155,80 @@ public class CustomCaST extends AbstractST {
         DeploymentUtils.waitTillDepHasRolled(testStorage.getNamespaceName(), testStorage.getEoDeploymentName(), 1, eoPod);
     }
 
+    /** This test focuses on manual renewal of custom clients CA.
+     * Steps are following. Create own cluster CA. From the CA create a Bundle that will be used in kafka cluster which is then deployed.
+     * Once everything is set up, kafka reconciliation is paused using annotation. Then a newly generated cluster CA keypair is put in place.
+     * When annotation is removed, kafka resumes and tries to renew clients certificates using the new CA keypair.
+     * Note: There is a need to keep an old CA key in the secret and remove it only after all components successfully
+     * roll several times (due to the fact that it takes multiple rolling updates to finally update from old keypair to the new one).
+     * Because this test specifically targets clients certificates, EO and ZK must NOT roll, only broker pods should.
+     * Test also verifies communication by producing and consuming messages.
+     * @param extensionContext
+     */
     @ParallelNamespaceTest
-    void testReplacingCustomClientsKeyPairToInvokeRenewalProcess(ExtensionContext extensionContext) throws IOException, NoSuchAlgorithmException, InvalidKeySpecException {
+    void testReplacingCustomClientsKeyPairToInvokeRenewalProcess(ExtensionContext extensionContext) {
         final TestStorage testStorage = new TestStorage(extensionContext);
-        // 0. Generate root and intermediate certificate authority with clients CA
-        SystemTestCertHolder clientsCa = new SystemTestCertHolder("CN=" + extensionContext.getRequiredTestClass().getSimpleName() + "ClientsCA",
+        // Generate root and intermediate certificate authority with clients CA
+        final SystemTestCertHolder clientsCa = new SystemTestCertHolder(
+            "CN=" + testStorage.getTestName() + "ClientsCA",
             KafkaResources.clientsCaCertificateSecretName(testStorage.getClusterName()),
             KafkaResources.clientsCaKeySecretName(testStorage.getClusterName()));
 
-        prepareTestCaWithBundleAndKafkaCluster(extensionContext, clientsCa, testStorage);
+        prepareTestCaWithBundleAndKafkaCluster(extensionContext, clientsCa, testStorage, 5, 20);
 
-        // ------- public key part
-
-        // 4. Update the Secret for the CA certificate.
-        //  a) Edit the existing secret to add the new CA certificate and update the certificate generation annotation value.
-        //  b) Rename the current CA certificate to retain it
-        final Secret clientsCaCertificateSecret = kubeClient(testStorage.getNamespaceName()).getSecret(testStorage.getNamespaceName(), KafkaResources.clientsCaCertificateSecretName(testStorage.getClusterName()));
-        final String oldCaCertName = clientsCa.retrieveOldCertificateName(clientsCaCertificateSecret, "ca.crt");
-
-        // store the old cert
-        clientsCaCertificateSecret.getData().put(oldCaCertName, clientsCaCertificateSecret.getData().get("ca.crt"));
-
-        //  c) Encode your new CA certificate into base64.
-        LOGGER.info("Generating a new custom 'User certificate authority' with `Root` and `Intermediate` for Strimzi and PEM bundles");
-        clientsCa = new SystemTestCertHolder(
-            "CN=" + extensionContext.getRequiredTestClass().getSimpleName() + "ClientsCAv2",
-            KafkaResources.clientsCaCertificateSecretName(testStorage.getClusterName()),
-            KafkaResources.clientsCaKeySecretName(testStorage.getClusterName()));
-
-        //  d) Update the CA certificate.
-        clientsCaCertificateSecret.getData().put("ca.crt", Base64.getEncoder().encodeToString(Files.readAllBytes(Paths.get(clientsCa.getBundle().getCertPath()))));
-
-        //  e) Increase the value of the CA certificate generation annotation.
-        //  f) Save the secret with the new CA certificate and certificate generation annotation value.
-        SystemTestCertHolder.increaseCertGenerationCounterInSecret(clientsCaCertificateSecret, testStorage, Ca.ANNO_STRIMZI_IO_CA_CERT_GENERATION);
-
-        // ------- private key part
-
-        // 5. Update the Secret for the CA key used to sign your new CA certificate.
-        //  a) Edit the existing secret to add the new CA key and update the key generation annotation value.
-        final Secret clientsCaKeySecret = kubeClient(testStorage.getNamespaceName()).getSecret(testStorage.getNamespaceName(), KafkaResources.clientsCaKeySecretName(testStorage.getClusterName()));
-
-        //  b) Encode the CA key into base64.
-        //  c) Update the CA key.
-        final File strimziKeyPKCS8 = SystemTestCertManager.convertPrivateKeyToPKCS8File(clientsCa.getSystemTestCa().getPrivateKey());
-        clientsCaKeySecret.getData().put("ca.key", Base64.getEncoder().encodeToString(Files.readAllBytes(Paths.get(strimziKeyPKCS8.getAbsolutePath()))));
-        // d) Increase the value of the CA key generation annotation.
-        // 6. Save the secret with the new CA key and key generation annotation value.
-        SystemTestCertHolder.increaseCertGenerationCounterInSecret(clientsCaKeySecret, testStorage, Ca.ANNO_STRIMZI_IO_CA_KEY_GENERATION);
-
-        // --- verification phase (Rolling Update of components)
-
-        // 7. save the current state of the Kafka, ZooKeeper and Entity Operator pods
+        // Take snapshots for later comparison
         final Map<String, String> kafkaPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getKafkaSelector());
-
         Map<String, String> zkPods = new HashMap<>();
         if (!Environment.isKRaftModeEnabled()) {
             zkPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getZookeeperSelector());
         }
         final Map<String, String> eoPod = DeploymentUtils.depSnapshot(testStorage.getNamespaceName(), testStorage.getEoDeploymentName());
 
-        // 8. Resume reconciliation from the pause.
-        LOGGER.info("Resume the reconciliation of the Kafka custom resource ({})", testStorage.getKafkaStatefulSetName());
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), kafka -> {
-            kafka.getMetadata().getAnnotations().remove(Annotations.ANNO_STRIMZI_IO_PAUSE_RECONCILIATION);
-        }, testStorage.getNamespaceName());
+        LOGGER.info("Generating a new custom 'User certificate authority' with `Root` and `Intermediate` for Strimzi and PEM bundles");
+        final SystemTestCertHolder newClientsCa = new SystemTestCertHolder(
+            "CN=" + testStorage.getTestName() + "ClientsCAv2",
+            KafkaResources.clientsCaCertificateSecretName(testStorage.getClusterName()),
+            KafkaResources.clientsCaKeySecretName(testStorage.getClusterName()));
 
-        // 9. On the next reconciliation, the Cluster Operator performs a `rolling update` only for the
+        manuallyRenewCa(testStorage, clientsCa, newClientsCa);
+
+        // On the next reconciliation, the Cluster Operator performs a `rolling update` only for the
         // `Kafka pods`. When the rolling update is complete, the Cluster Operator will start a new one to
         // generate new server certificates signed by the new CA key.
 
-        // a) ZooKeeper must not roll
+        // ZooKeeper must not roll
         if (!Environment.isKRaftModeEnabled()) {
             RollingUpdateUtils.waitForNoRollingUpdate(testStorage.getNamespaceName(), testStorage.getZookeeperSelector(), zkPods);
             assertThat(RollingUpdateUtils.componentHasRolled(testStorage.getNamespaceName(), testStorage.getZookeeperSelector(), zkPods), is(Boolean.FALSE));
         }
 
-        // b) Kafka has to roll
+        // Kafka has to roll
         RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(testStorage.getNamespaceName(), testStorage.getKafkaSelector(), 3, kafkaPods);
 
-        // c) EO must not roll
+        // EO must not roll
         DeploymentUtils.waitForNoRollingUpdate(testStorage.getNamespaceName(), testStorage.getEoDeploymentName(), eoPod);
 
-        // 10. Try to produce messages
+        // Try to produce messages
         producerMessages(extensionContext, testStorage);
     }
 
-    /**
-     * Provides preparation for {@link #testReplacingCustomClientsKeyPairToInvokeRenewalProcess(ExtensionContext)} and
-     * {@link #testReplacingCustomClusterKeyPairToInvokeRenewalProcess(ExtensionContext)} test cases. This consists of
-     * creation of CA with bundles, deployment of Kafka cluster and eventually pausing the reconciliation for specific
-     * Kafka cluster to proceed with updating public or private keys.
-     *
-     * @param extensionContext              context for test case
-     * @param certificateAuthority          certificate authority of Clients or Cluster
-     * @param testStorage                            auxiliary resources for test case
+    /** This tests focuses on verifying the functionality of custom cluster and clients CAs.
+     * Steps are following. Before deploying kafka a clients and cluster CAs are created and deployed as secrets.
+     * Kafka is then deployed with those, forcing it NOT to generate own certificate authority.
+     * After verification of correct certificates on zookeeper, user certificates are checked for correctness as well.
+     * Then a producer / consumer jos are deployed to verify communication.
+     * @param extensionContext
      */
-    private void prepareTestCaWithBundleAndKafkaCluster(final ExtensionContext extensionContext, final SystemTestCertHolder certificateAuthority, final TestStorage testStorage) {
-        // 1. Prepare correspondent Secrets from generated custom CA certificates
-        //  a) Cluster or Clients CA
-        certificateAuthority.prepareCustomSecretsFromBundles(testStorage.getNamespaceName(), testStorage.getClusterName());
-
-        //  b) if Cluster CA is under test - we generate custom Clients CA (it's because in our Kafka configuration we
-        //     specify to not generate CA automatically. Thus we need it generate on our own to avoid issue
-        //     (f.e., Clients CA should not be generated, but the secrets were not found.)
-        if (certificateAuthority.getCaCertSecretName().equals(KafkaResources.clusterCaCertificateSecretName(testStorage.getClusterName())) &&
-            certificateAuthority.getCaKeySecretName().equals(KafkaResources.clusterCaKeySecretName(testStorage.getClusterName()))) {
-            final SystemTestCertHolder clientsCa = new SystemTestCertHolder(
-                "CN=" + extensionContext.getRequiredTestClass().getSimpleName() + "ClientsCA",
-                KafkaResources.clientsCaCertificateSecretName(testStorage.getClusterName()),
-                KafkaResources.clientsCaKeySecretName(testStorage.getClusterName()));
-            clientsCa.prepareCustomSecretsFromBundles(testStorage.getNamespaceName(), testStorage.getClusterName());
-        } else {
-            // otherwise we generate Cluster CA
-            final SystemTestCertHolder clusterCa = new SystemTestCertHolder(
-                "CN=" + extensionContext.getRequiredTestClass().getSimpleName() + "ClusterCA",
-                KafkaResources.clusterCaCertificateSecretName(testStorage.getClusterName()),
-                KafkaResources.clusterCaKeySecretName(testStorage.getClusterName()));
-            clusterCa.prepareCustomSecretsFromBundles(testStorage.getNamespaceName(), testStorage.getClusterName());
-        }
-
-        // 2. Create a Kafka cluster without implicit generation of CA
-        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), 3)
-            .editOrNewSpec()
-                .withNewClientsCa()
-                    .withRenewalDays(5)
-                    .withValidityDays(20)
-                    .withGenerateCertificateAuthority(false)
-                .endClientsCa()
-             .withNewClusterCa()
-                    .withRenewalDays(5)
-                    .withValidityDays(20)
-                    .withGenerateCertificateAuthority(false)
-                .endClusterCa()
-            .endSpec()
-            .build());
-
-        // 3. Pause the reconciliation of the Kafka custom resource
-        LOGGER.info("Pause the reconciliation of the Kafka custom resource ({})", KafkaResources.kafkaStatefulSetName(testStorage.getClusterName()));
-        KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), kafka -> {
-            Map<String, String> kafkaAnnotations = kafka.getMetadata().getAnnotations();
-            if (kafkaAnnotations == null) {
-                kafkaAnnotations = new HashMap<>();
-            }
-            // adding pause annotation
-            kafkaAnnotations.put(Annotations.ANNO_STRIMZI_IO_PAUSE_RECONCILIATION, "true");
-            kafka.getMetadata().setAnnotations(kafkaAnnotations);
-        }, testStorage.getNamespaceName());
-    }
-
-    private void producerMessages(final ExtensionContext extensionContext, final TestStorage testStorage) {
-        // 11. Try to produce messages
-        final KafkaClients kafkaBasicClientJob = new KafkaClientsBuilder()
-            .withNamespaceName(testStorage.getNamespaceName())
-            .withProducerName(testStorage.getProducerName())
-            .withConsumerName(testStorage.getClusterName())
-            .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(testStorage.getClusterName()))
-            .withTopicName(testStorage.getTopicName())
-            .withUsername(testStorage.getUsername())
-            .withMessageCount(testStorage.getMessageCount())
-            .withDelayMs(10)
-            .build();
-
-        resourceManager.createResourceWithWait(extensionContext, KafkaUserTemplates.tlsUser(testStorage).build());
-        resourceManager.createResourceWithWait(extensionContext, kafkaBasicClientJob.producerTlsStrimzi(testStorage.getClusterName()));
-
-        ClientUtils.waitForClientSuccess(testStorage.getProducerName(), testStorage.getNamespaceName(), testStorage.getMessageCount());
-    }
-
     @ParallelNamespaceTest
     void testCustomClusterCaAndClientsCaCertificates(ExtensionContext extensionContext) {
         final TestStorage testStorage = new TestStorage(extensionContext);
-        final String testSuite = extensionContext.getRequiredTestClass().getSimpleName();
 
         final SystemTestCertHolder clientsCa = new SystemTestCertHolder(
-            "CN=" + testSuite + "ClientsCA",
+            "CN=" + testStorage.getTestName() + "ClientsCA",
             KafkaResources.clientsCaCertificateSecretName(testStorage.getClusterName()),
             KafkaResources.clientsCaKeySecretName(testStorage.getClusterName()));
         final SystemTestCertHolder clusterCa = new SystemTestCertHolder(
-            "CN=" + testSuite + "ClusterCA",
+            "CN=" + testStorage.getTestName() + "ClusterCA",
             KafkaResources.clusterCaCertificateSecretName(testStorage.getClusterName()),
             KafkaResources.clusterCaKeySecretName(testStorage.getClusterName()));
 
@@ -428,51 +297,29 @@ public class CustomCaST extends AbstractST {
         ClientUtils.waitForClientsSuccess(testStorage, false);
     }
 
-    private boolean checkMountVolumeSecret(final String namespaceName, final String podName, final VolumeMount volumeMount,
-                                           final String principalDNType, final String expectedPrincipal) {
-        final String dn = cmdKubeClient(namespaceName).execInPod(podName, "/bin/bash", "-c",
-            "openssl x509 -in " + volumeMount.getMountPath() + "/ca.crt -noout -nameopt RFC2253 -" + principalDNType).out().strip();
-        final String certOutIssuer = dn.substring(principalDNType.length() + 1).replace("/", ",");
-        return SystemTestCertManager.containsAllDN(certOutIssuer, expectedPrincipal);
-    }
-
-    private void checkCustomCaCorrectness(final SystemTestCertHolder caHolder, final X509Certificate certificate) {
-        LOGGER.info("Check ClusterCA and ClientsCA certificates");
-        assertThat("Generated ClientsCA or ClusterCA does not have expected Issuer: " + certificate.getIssuerDN(),
-            SystemTestCertManager.containsAllDN(certificate.getIssuerX500Principal().getName(), STRIMZI_INTERMEDIATE_CA));
-        assertThat("Generated ClientsCA or ClusterCA does not have expected Subject: " + certificate.getSubjectDN(),
-            SystemTestCertManager.containsAllDN(certificate.getSubjectX500Principal().getName(), caHolder.getSubjectDn()));
-    }
-
+    /** This tests focuses on invoking certificate renewal without renewing the ClusterCA.
+     * Steps are following. Create own cluster CA. From the CA create a Bundle that will be used in kafka cluster which is then deployed.
+     * Once everything is set up, kafka reconciliation is paused using annotation. Then new validityDays and renewalDays are set for cluster CA.
+     * When annotation is removed, kafka resumes and tries to renew cluster certificates using the CA with different validityDays and renewalDays.
+     * Test also verifies that the CA has not been renewed, only the certificates provided by the CA.
+     * @param extensionContext
+     */
     @ParallelNamespaceTest
-    void testCustomClusterCACertificateRenew(ExtensionContext extensionContext) {
-        TestStorage testStorage = new TestStorage(extensionContext);
-        final String testSuite = extensionContext.getRequiredTestClass().getSimpleName();
+    void testReplaceCustomClusterCACertificateValidityToInvokeRenewalProcess(ExtensionContext extensionContext) {
+        final TestStorage testStorage = new TestStorage(extensionContext);
+        final int renewalDays = 15;
+        final int newRenewalDays = 150;
+        final int validityDays = 20;
+        final int newValidityDays = 200;
 
-        final SystemTestCertHolder clusterCa = new SystemTestCertHolder(
-            "CN=" + testSuite + "ClusterCA",
+        SystemTestCertHolder clusterCa = new SystemTestCertHolder(
+            "CN=" + testStorage.getTestName() + "ClusterCA",
             KafkaResources.clusterCaCertificateSecretName(testStorage.getClusterName()),
             KafkaResources.clusterCaKeySecretName(testStorage.getClusterName()));
 
-        // prepare custom Ca and copy that to the related Secrets
-        clusterCa.prepareCustomSecretsFromBundles(testStorage.getNamespaceName(), testStorage.getClusterName());
+        prepareTestCaWithBundleAndKafkaCluster(extensionContext, clusterCa, testStorage, renewalDays, validityDays);
 
-        final X509Certificate clusterCert = SecretUtils.getCertificateFromSecret(kubeClient(testStorage.getNamespaceName()).getSecret(testStorage.getNamespaceName(),
-            KafkaResources.clusterCaCertificateSecretName(testStorage.getClusterName())), "ca.crt");
-
-        checkCustomCaCorrectness(clusterCa, clusterCert);
-
-        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3)
-            .editOrNewSpec()
-                // Note: Clients Ca is generated automatically
-                .withNewClusterCa()
-                    .withRenewalDays(15)
-                    .withValidityDays(20)
-                    .withGenerateCertificateAuthority(false)
-                .endClusterCa()
-            .endSpec()
-            .build());
-
+        // Make snapshots with original CA
         final Map<String, String> zkPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getZookeeperSelector());
         final Map<String, String> kafkaPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getKafkaSelector());
         final Map<String, String> eoPod = DeploymentUtils.depSnapshot(testStorage.getNamespaceName(), testStorage.getEoDeploymentName());
@@ -493,6 +340,7 @@ public class CustomCaST extends AbstractST {
         X509Certificate zkBrokerCert;
         Date initialZkCertStartTime = null;
         Date initialZkCertEndTime = null;
+
         if (!Environment.isKRaftModeEnabled()) {
             zkCertCreationSecret = kubeClient(testStorage.getNamespaceName()).getSecret(testStorage.getNamespaceName(), testStorage.getClusterName() + "-zookeeper-nodes");
             zkBrokerCert = SecretUtils.getCertificateFromSecret(zkCertCreationSecret, testStorage.getClusterName() + "-zookeeper-0.crt");
@@ -500,13 +348,24 @@ public class CustomCaST extends AbstractST {
             initialZkCertEndTime = zkBrokerCert.getNotAfter();
         }
 
+        // Pause Kafka reconciliation
+        LOGGER.info("Pause the reconciliation of the Kafka custom resource ({})", KafkaResources.kafkaStatefulSetName(testStorage.getClusterName()));
+        KafkaUtils.annotateKafka(testStorage.getClusterName(), testStorage.getNamespaceName(), Collections.singletonMap(Annotations.ANNO_STRIMZI_IO_PAUSE_RECONCILIATION, "true"));
+
+        // To test trigger of renewal of CA with short validity dates, both new dates need to be set
+        // Otherwise we apply completely new CA using retained old certificate to change manually
+
         LOGGER.info("Change of Kafka validity and renewal days - reconciliation should start");
         final CertificateAuthority newClusterCA = new CertificateAuthority();
-        newClusterCA.setRenewalDays(150);
-        newClusterCA.setValidityDays(200);
+        newClusterCA.setRenewalDays(newRenewalDays);
+        newClusterCA.setValidityDays(newValidityDays);
         newClusterCA.setGenerateCertificateAuthority(false);
 
         KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), k -> k.getSpec().setClusterCa(newClusterCA), testStorage.getNamespaceName());
+
+        // Resume Kafka reconciliation
+        LOGGER.info("Resume the reconciliation of the Kafka custom resource ({})", KafkaResources.kafkaStatefulSetName(testStorage.getClusterName()));
+        KafkaUtils.removeAnnotation(testStorage.getClusterName(), testStorage.getNamespaceName(), Annotations.ANNO_STRIMZI_IO_PAUSE_RECONCILIATION);
 
         // On the next reconciliation, the Cluster Operator performs a `rolling update`:
         //   a) ZooKeeper
@@ -540,6 +399,7 @@ public class CustomCaST extends AbstractST {
             changedZkCertEndTime = zkBrokerCert.getNotAfter();
         }
 
+        // Print out certificate dates for debug
         LOGGER.info("Initial ClusterCA cert dates: " + initialCertStartTime + " --> " + initialCertEndTime);
         LOGGER.info("Changed ClusterCA cert dates: " + changedCertStartTime + " --> " + changedCertEndTime);
         LOGGER.info("Kafka Broker cert creation dates: " + initialKafkaBrokerCertStartTime + " --> " + initialKafkaBrokerCertEndTime);
@@ -549,48 +409,37 @@ public class CustomCaST extends AbstractST {
             LOGGER.info("ZooKeeper cert changed dates:  " + changedZkCertStartTime + " --> " + changedZkCertEndTime);
         }
 
-        assertThat("ClusterCA cert should not have changed.",
-            initialCertEndTime.compareTo(changedCertEndTime) == 0);
-        assertThat("Broker certificates start dates have not been renewed.",
-            initialKafkaBrokerCertStartTime.compareTo(changedKafkaBrokerCertStartTime) < 0);
-        assertThat("Broker certificates end dates have not been renewed.",
-            initialKafkaBrokerCertEndTime.compareTo(changedKafkaBrokerCertEndTime) < 0);
+        // Verify renewal result
+        assertThat("ClusterCA cert should not have changed start date.", initialCertEndTime.compareTo(changedCertEndTime) == 0);
+        assertThat("Broker certificates start dates should have been renewed.", initialKafkaBrokerCertStartTime.compareTo(changedKafkaBrokerCertStartTime) < 0);
+        assertThat("Broker certificates end dates should have been renewed.", initialKafkaBrokerCertEndTime.compareTo(changedKafkaBrokerCertEndTime) < 0);
         if (!Environment.isKRaftModeEnabled()) {
-            assertThat("Zookeeper certificates start dates have not been renewed.",
-                    initialZkCertStartTime.compareTo(changedZkCertStartTime) < 0);
-            assertThat("Zookeeper certificates end dates have not been renewed.",
-                    initialZkCertEndTime.compareTo(changedZkCertEndTime) < 0);
+            assertThat("Zookeeper certificates start dates should have been renewed.", initialZkCertStartTime.compareTo(changedZkCertStartTime) < 0);
+            assertThat("Zookeeper certificates end dates should have been renewed.", initialZkCertEndTime.compareTo(changedZkCertEndTime) < 0);
         }
     }
 
+    /** This tests focuses on invoking certificate renewal without renewing the ClientsCA.
+     * Steps are following. Create own clients CA. From the CA create a Bundle that will be used in kafka cluster which is then deployed.
+     * Once everything is set up, kafka reconciliation is paused using annotation. Then new validityDays and renewalDays are set for Clients CA.
+     * When annotation is removed, kafka resumes and tries to renew user certificates using the CA with different validityDays and renewalDays.
+     * Test also verifies that the CA has not been renewed, only the certificates provided by the CA.
+     * @param extensionContext
+     */
     @ParallelNamespaceTest
-    void testClientsCaCertificateRenew(ExtensionContext extensionContext) {
+    void testReplaceCustomClientsCACertificateValidityToInvokeRenewalProcess(ExtensionContext extensionContext) {
         final TestStorage testStorage = new TestStorage(extensionContext);
-        final String testSuite = extensionContext.getRequiredTestClass().getSimpleName();
+        final int renewalDays = 15;
+        final int newRenewalDays = 150;
+        final int validityDays = 20;
+        final int newValidityDays = 200;
 
         final SystemTestCertHolder clientsCa = new SystemTestCertHolder(
-            "CN=" + testSuite + "ClientsCA",
+            "CN=" + testStorage.getTestName() + "ClientsCA",
             KafkaResources.clientsCaCertificateSecretName(testStorage.getClusterName()),
             KafkaResources.clientsCaKeySecretName(testStorage.getClusterName()));
 
-        // prepare custom Ca and copy that to the related Secrets
-        clientsCa.prepareCustomSecretsFromBundles(testStorage.getNamespaceName(), testStorage.getClusterName());
-
-        final X509Certificate clientsCert = SecretUtils.getCertificateFromSecret(kubeClient(testStorage.getNamespaceName()).getSecret(testStorage.getNamespaceName(),
-            KafkaResources.clientsCaCertificateSecretName(testStorage.getClusterName())), "ca.crt");
-
-        checkCustomCaCorrectness(clientsCa, clientsCert);
-
-        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3)
-            .editOrNewSpec()
-                // Note: Cluster Ca is generated automatically
-                .withNewClientsCa()
-                    .withRenewalDays(15)
-                    .withValidityDays(20)
-                    .withGenerateCertificateAuthority(false)
-                .endClientsCa()
-            .endSpec()
-            .build());
+        prepareTestCaWithBundleAndKafkaCluster(extensionContext, clientsCa, testStorage, renewalDays, validityDays);
 
         resourceManager.createResourceWithWait(extensionContext, KafkaUserTemplates.tlsUser(testStorage).build());
         final Map<String, String> entityPods = DeploymentUtils.depSnapshot(testStorage.getNamespaceName(), KafkaResources.entityOperatorDeploymentName(testStorage.getClusterName()));
@@ -606,13 +455,21 @@ public class CustomCaST extends AbstractST {
         final Date initialKafkaUserCertStartTime = userCert.getNotBefore();
         final Date initialKafkaUserCertEndTime = userCert.getNotAfter();
 
+        // Pause Kafka reconciliation
+        LOGGER.info("Pause the reconciliation of the Kafka custom resource ({})", KafkaResources.kafkaStatefulSetName(testStorage.getClusterName()));
+        KafkaUtils.annotateKafka(testStorage.getClusterName(), testStorage.getNamespaceName(), Collections.singletonMap(Annotations.ANNO_STRIMZI_IO_PAUSE_RECONCILIATION, "true"));
+
         LOGGER.info("Change of Kafka validity and renewal days - reconciliation should start");
         final CertificateAuthority newClientsCA = new CertificateAuthority();
-        newClientsCA.setRenewalDays(150);
-        newClientsCA.setValidityDays(200);
+        newClientsCA.setRenewalDays(newRenewalDays);
+        newClientsCA.setValidityDays(newValidityDays);
         newClientsCA.setGenerateCertificateAuthority(false);
 
         KafkaResource.replaceKafkaResourceInSpecificNamespace(testStorage.getClusterName(), k -> k.getSpec().setClientsCa(newClientsCA), testStorage.getNamespaceName());
+
+        // Resume Kafka reconciliation
+        LOGGER.info("Resume the reconciliation of the Kafka custom resource ({})", KafkaResources.kafkaStatefulSetName(testStorage.getClusterName()));
+        KafkaUtils.removeAnnotation(testStorage.getClusterName(), testStorage.getNamespaceName(), Annotations.ANNO_STRIMZI_IO_PAUSE_RECONCILIATION);
 
         // Wait for reconciliation and verify certs have been updated
         DeploymentUtils.waitTillDepHasRolled(testStorage.getNamespaceName(), testStorage.getEoDeploymentName(), 1, entityPods);
@@ -627,17 +484,161 @@ public class CustomCaST extends AbstractST {
         final Date changedKafkaUserCertStartTime = userCert.getNotBefore();
         final Date changedKafkaUserCertEndTime = userCert.getNotAfter();
 
+        // Print out certificate dates for debug
         LOGGER.info("Initial ClientsCA cert dates: " + initialCertStartTime + " --> " + initialCertEndTime);
         LOGGER.info("Changed ClientsCA cert dates: " + changedCertStartTime + " --> " + changedCertEndTime);
         LOGGER.info("Initial userCert dates: " + initialKafkaUserCertStartTime + " --> " + initialKafkaUserCertEndTime);
         LOGGER.info("Changed userCert dates: " + changedKafkaUserCertStartTime + " --> " + changedKafkaUserCertEndTime);
 
-        assertThat("ClientsCA cert should not have changed.",
-                initialCertEndTime.compareTo(changedCertEndTime) == 0);
-        assertThat("UserCert start date has been renewed",
-                initialKafkaUserCertStartTime.compareTo(changedKafkaUserCertStartTime) < 0);
-        assertThat("UserCert end date has been renewed",
-                initialKafkaUserCertEndTime.compareTo(changedKafkaUserCertEndTime) < 0);
+        // Verify renewal process
+        assertThat("ClientsCA cert should not have changed.", initialCertEndTime.compareTo(changedCertEndTime) == 0);
+        assertThat("UserCert start date has been renewed", initialKafkaUserCertStartTime.compareTo(changedKafkaUserCertStartTime) < 0);
+        assertThat("UserCert end date has been renewed", initialKafkaUserCertEndTime.compareTo(changedKafkaUserCertEndTime) < 0);
+    }
+
+    /**
+     * This method simulates user doing manual renewal of Cluster Authority. Process consists of:
+     * 1. Pause Kafka reconciliation
+     * 2. Retain old ca.crt value in new key in format of YEAR-MONTH-DAY'T'HOUR-MINUTE-SECOND'Z'
+     * 3. Change ca.crt and ca.key values in secrets from oldCa to newCa
+     * 4. Increase cert annotation value by one
+     * 5. Patch the secrets to apply mentioned changes
+     * 6. Resume Kafka reconciliation
+     * Based on which CA is changed, different rolling update checks should be done
+     * @param testStorage is necessary for common variables like namespace name and cluster name
+     * @param oldCa represents currently deployed CA which will be replaced - needed for retaining ca.crt value
+     * @param newCa stands for a CA which will be used after the renewal is done
+     */
+    private void manuallyRenewCa(TestStorage testStorage, SystemTestCertHolder oldCa, SystemTestCertHolder newCa) {
+        // Pause Kafka reconciliation
+        LOGGER.info("Pause the reconciliation of the Kafka custom resource ({})", KafkaResources.kafkaStatefulSetName(testStorage.getClusterName()));
+        KafkaUtils.annotateKafka(testStorage.getClusterName(), testStorage.getNamespaceName(), Collections.singletonMap(Annotations.ANNO_STRIMZI_IO_PAUSE_RECONCILIATION, "true"));
+
+        String certSecretName = "";
+        String keySecretName = "";
+
+        if (oldCa.getCaCertSecretName().equals(KafkaResources.clusterCaCertificateSecretName(testStorage.getClusterName()))) {
+            certSecretName = KafkaResources.clusterCaCertificateSecretName(testStorage.getClusterName());
+            keySecretName = KafkaResources.clusterCaKeySecretName(testStorage.getClusterName());
+        } else {
+            certSecretName = KafkaResources.clientsCaCertificateSecretName(testStorage.getClusterName());
+            keySecretName = KafkaResources.clientsCaKeySecretName(testStorage.getClusterName());
+        }
+
+        // Retrieve current CA cert and key
+        Secret caCertificateSecret = kubeClient(testStorage.getNamespaceName()).getSecret(testStorage.getNamespaceName(), certSecretName);
+        Secret caKeySecret = kubeClient(testStorage.getNamespaceName()).getSecret(testStorage.getNamespaceName(), keySecretName);
+
+        // Get old certifcate ca.crt key name in format of YEAR-MONTH-DAY'T'HOUR-MINUTE-SECOND'Z'
+        final String oldCaCertName = oldCa.retrieveOldCertificateName(caCertificateSecret, "ca.crt");
+        caCertificateSecret.getData().put(oldCaCertName, caCertificateSecret.getData().get("ca.crt"));
+
+        try {
+            // Put new CA cert into the ca-cert secret
+            caCertificateSecret.getData().put("ca.crt", Base64.getEncoder().encodeToString(Files.readAllBytes(Paths.get(newCa.getBundle().getCertPath()))));
+            // Put new CA key into the ca secret
+            final File strimziKeyPKCS8 = SystemTestCertManager.convertPrivateKeyToPKCS8File(newCa.getSystemTestCa().getPrivateKey());
+            caKeySecret.getData().put("ca.key", Base64.getEncoder().encodeToString(Files.readAllBytes(Paths.get(strimziKeyPKCS8.getAbsolutePath()))));
+        } catch (IOException | NoSuchAlgorithmException | InvalidKeySpecException e) {
+            throw new RuntimeException(e);
+        }
+
+        // Patch secrets with new values and increase generation counter
+        SystemTestCertHolder.increaseCertGenerationCounterInSecret(caCertificateSecret, testStorage, Ca.ANNO_STRIMZI_IO_CA_CERT_GENERATION);
+        SystemTestCertHolder.increaseCertGenerationCounterInSecret(caKeySecret, testStorage, Ca.ANNO_STRIMZI_IO_CA_KEY_GENERATION);
+
+        // Resume Kafka reconciliation
+        LOGGER.info("Resume the reconciliation of the Kafka custom resource ({})", KafkaResources.kafkaStatefulSetName(testStorage.getClusterName()));
+        KafkaUtils.removeAnnotation(testStorage.getClusterName(), testStorage.getNamespaceName(), Annotations.ANNO_STRIMZI_IO_PAUSE_RECONCILIATION);
+    }
+
+    private void checkCustomCaCorrectness(final SystemTestCertHolder caHolder, final X509Certificate certificate) {
+        LOGGER.info("Check ClusterCA and ClientsCA certificates");
+        assertThat("Generated ClientsCA or ClusterCA does not have expected Issuer: " + certificate.getIssuerDN(),
+            SystemTestCertManager.containsAllDN(certificate.getIssuerX500Principal().getName(), STRIMZI_INTERMEDIATE_CA));
+        assertThat("Generated ClientsCA or ClusterCA does not have expected Subject: " + certificate.getSubjectDN(),
+            SystemTestCertManager.containsAllDN(certificate.getSubjectX500Principal().getName(), caHolder.getSubjectDn()));
+    }
+
+    /**
+     * Provides preparation for {@link #testReplacingCustomClientsKeyPairToInvokeRenewalProcess(ExtensionContext)} and
+     * {@link #testReplacingCustomClusterKeyPairToInvokeRenewalProcess(ExtensionContext)} test cases. This consists of
+     * creation of CA with bundles, deployment of Kafka cluster and eventually pausing the reconciliation for specific
+     * Kafka cluster to proceed with updating public or private keys.
+     *
+     * @param extensionContext              context for test case
+     * @param certificateAuthority          certificate authority of Clients or Cluster
+     * @param testStorage                            auxiliary resources for test case
+     */
+    private void prepareTestCaWithBundleAndKafkaCluster(final ExtensionContext extensionContext, final SystemTestCertHolder certificateAuthority,
+                                                        final TestStorage testStorage, int renewalDays, int validityDays) {
+
+        // 1. Prepare correspondent Secrets from generated custom CA certificates
+        //  a) Cluster or Clients CA
+        certificateAuthority.prepareCustomSecretsFromBundles(testStorage.getNamespaceName(), testStorage.getClusterName());
+
+        final X509Certificate certificate = SecretUtils.getCertificateFromSecret(kubeClient(testStorage.getNamespaceName()).getSecret(testStorage.getNamespaceName(),
+                certificateAuthority.getCaCertSecretName()), "ca.crt");
+        checkCustomCaCorrectness(certificateAuthority, certificate);
+
+        //  b) if Cluster CA is under test - we generate custom Clients CA (it's because in our Kafka configuration we
+        //     specify to not generate CA automatically. Thus we need it generate on our own to avoid issue
+        //     (f.e., Clients CA should not be generated, but the secrets were not found.)
+        if (certificateAuthority.getCaCertSecretName().equals(KafkaResources.clusterCaCertificateSecretName(testStorage.getClusterName())) &&
+            certificateAuthority.getCaKeySecretName().equals(KafkaResources.clusterCaKeySecretName(testStorage.getClusterName()))) {
+            final SystemTestCertHolder clientsCa = new SystemTestCertHolder(
+                "CN=" + testStorage.getTestName() + "ClientsCA",
+                KafkaResources.clientsCaCertificateSecretName(testStorage.getClusterName()),
+                KafkaResources.clientsCaKeySecretName(testStorage.getClusterName()));
+            clientsCa.prepareCustomSecretsFromBundles(testStorage.getNamespaceName(), testStorage.getClusterName());
+        } else {
+            // otherwise we generate Cluster CA
+            final SystemTestCertHolder clusterCa = new SystemTestCertHolder(
+                "CN=" + testStorage.getTestName() + "ClusterCA",
+                KafkaResources.clusterCaCertificateSecretName(testStorage.getClusterName()),
+                KafkaResources.clusterCaKeySecretName(testStorage.getClusterName()));
+            clusterCa.prepareCustomSecretsFromBundles(testStorage.getNamespaceName(), testStorage.getClusterName());
+        }
+
+        // 2. Create a Kafka cluster without implicit generation of CA and paused reconciliation
+        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), 3)
+            .editOrNewSpec()
+                .withNewClientsCa()
+                    .withRenewalDays(renewalDays)
+                    .withValidityDays(validityDays)
+                    .withGenerateCertificateAuthority(false)
+                .endClientsCa()
+             .withNewClusterCa()
+                    .withRenewalDays(renewalDays)
+                    .withValidityDays(validityDays)
+                    .withGenerateCertificateAuthority(false)
+                .endClusterCa()
+            .endSpec()
+            .build());
+    }
+
+    /**
+     * This method is a helping tool for producing and consuming messages based on context and testStorage variables.
+     * @param extensionContext is needed for the resourceManager to correctly set context.
+     * @param testStorage is required for containing client variables used to build a client job.
+     */
+    private void producerMessages(final ExtensionContext extensionContext, final TestStorage testStorage) {
+
+        final KafkaClients kafkaBasicClientJob = new KafkaClientsBuilder()
+            .withNamespaceName(testStorage.getNamespaceName())
+            .withProducerName(testStorage.getProducerName())
+            .withConsumerName(testStorage.getClusterName())
+            .withBootstrapAddress(KafkaResources.tlsBootstrapAddress(testStorage.getClusterName()))
+            .withTopicName(testStorage.getTopicName())
+            .withUsername(testStorage.getUsername())
+            .withMessageCount(testStorage.getMessageCount())
+            .withDelayMs(10)
+            .build();
+
+        resourceManager.createResourceWithWait(extensionContext, KafkaUserTemplates.tlsUser(testStorage).build());
+        resourceManager.createResourceWithWait(extensionContext, kafkaBasicClientJob.producerTlsStrimzi(testStorage.getClusterName()));
+
+        ClientUtils.waitForClientSuccess(testStorage.getProducerName(), testStorage.getNamespaceName(), testStorage.getMessageCount());
     }
 
     @BeforeAll
