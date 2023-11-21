@@ -5,9 +5,8 @@
 package io.strimzi.systemtest.tracing;
 
 import io.strimzi.api.kafka.model.KafkaBridgeResources;
+import io.strimzi.api.kafka.model.KafkaConnectBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
-import io.strimzi.api.kafka.model.connect.build.JarArtifactBuilder;
-import io.strimzi.api.kafka.model.connect.build.PluginBuilder;
 import io.strimzi.api.kafka.model.tracing.OpenTelemetryTracing;
 import io.strimzi.api.kafka.model.tracing.Tracing;
 import io.strimzi.operator.common.Annotations;
@@ -41,7 +40,6 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Random;
 import java.util.Stack;
 
 import static io.strimzi.systemtest.Constants.ACCEPTANCE;
@@ -248,8 +246,6 @@ public class OpenTelemetryST extends AbstractST {
 
         final TestStorage testStorage = storageMap.get(extensionContext);
 
-        final String imageFullPath = Environment.getImageOutputRegistry(testStorage.getNamespaceName(), Constants.ST_CONNECT_BUILD_IMAGE_NAME, String.valueOf(new Random().nextInt(Integer.MAX_VALUE)));
-
         resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaEphemeral(testStorage.getClusterName(), 3, 1).build());
 
         // Create topic and deploy clients before MirrorMaker to not wait for MM to find the new topics
@@ -265,7 +261,7 @@ public class OpenTelemetryST extends AbstractST {
         configOfKafkaConnect.put("key.converter.schemas.enable", "false");
         configOfKafkaConnect.put("value.converter.schemas.enable", "false");
 
-        resourceManager.createResourceWithWait(extensionContext, KafkaConnectTemplates.kafkaConnect(testStorage.getClusterName(), Environment.TEST_SUITE_NAMESPACE, 1)
+        KafkaConnectBuilder connectBuilder = KafkaConnectTemplates.kafkaConnect(testStorage.getClusterName(), Environment.TEST_SUITE_NAMESPACE, 1)
             .editMetadata()
                 .addToAnnotations(Annotations.STRIMZI_IO_USE_CONNECTOR_RESOURCES, "true")
             .endMetadata()
@@ -286,21 +282,9 @@ public class OpenTelemetryST extends AbstractST {
                         .endEnv()
                     .endConnectContainer()
                 .endTemplate()
-                // we need to set this for correct usage of the File plugin - because we need new spec, the kafkaConnectWithFilePlugin
-                // method cannot be used
-                .editOrNewBuild()
-                .withPlugins(new PluginBuilder()
-                    .withName("file-plugin")
-                    .withArtifacts(
-                        new JarArtifactBuilder()
-                            .withUrl(Environment.ST_FILE_PLUGIN_URL)
-                            .build()
-                    )
-                    .build())
-                .withOutput(KafkaConnectTemplates.dockerOutput(imageFullPath))
-                .endBuild()
-            .endSpec()
-            .build());
+            .endSpec();
+
+        resourceManager.createResourceWithWait(extensionContext, KafkaConnectTemplates.addFileSinkPluginOrImage(Environment.TEST_SUITE_NAMESPACE, connectBuilder).build());
 
         resourceManager.createResourceWithWait(extensionContext, KafkaConnectorTemplates.kafkaConnector(testStorage.getClusterName())
             .editSpec()

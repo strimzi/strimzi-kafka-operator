@@ -40,6 +40,7 @@ import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Constants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.KindIPv6NotSupported;
+import io.strimzi.systemtest.annotations.MicroShiftNotSupported;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.kafkaclients.externalClients.ExternalKafkaClient;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
@@ -605,6 +606,7 @@ class ConnectST extends AbstractST {
     }
 
     @ParallelNamespaceTest
+    @MicroShiftNotSupported("The test is using Connect Build feature that is not available on MicroShift")
     void testConnectorTaskAutoRestart(ExtensionContext extensionContext) {
         TestStorage testStorage = new TestStorage(extensionContext);
 
