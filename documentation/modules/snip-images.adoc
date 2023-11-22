@@ -8,6 +8,7 @@
 a|
 * {DockerOrg}/kafka:{DockerTag}-kafka-3.5.0
 * {DockerOrg}/kafka:{DockerTag}-kafka-3.5.1
+* {DockerOrg}/kafka:{DockerTag}-kafka-3.5.2
 * {DockerOrg}/kafka:{DockerTag}-kafka-3.6.0
 * {DockerOrg}/kafka:{DockerTag}-kafka-3.6.1
 
