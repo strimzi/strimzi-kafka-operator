@@ -208,6 +208,13 @@
         <module>systemtest</module>
     </modules>
 
+    <repositories>
+        <repository>
+            <id>apache-staging</id>
+            <url>https://repository.apache.org/content/groups/staging/</url>
+        </repository>
+    </repositories>
+
     <dependencyManagement>
         <dependencies>
             <!-- Runtime and compile time dependencies-->
