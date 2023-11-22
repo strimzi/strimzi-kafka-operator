@@ -24,7 +24,7 @@ import org.apache.kafka.server.common.MetadataVersion;
 import java.util.Map;
 
 /**
- * Utility class for managing KRaft the metadata version. It encapsulates the methods for getting the current metadata
+ * Utility class for managing the KRaft metadata version. It encapsulates the methods for getting the current metadata
  * version and updating it.
  */
 public class KRaftMetadataManager {
@@ -32,12 +32,24 @@ public class KRaftMetadataManager {
     /* test */ static final String METADATA_VERSION_KEY = MetadataVersion.FEATURE_NAME;
 
     /**
-     * Method for managing the KRaft metadata version. This method will get the current metadata version and if needed,
-     * upgrade or downgrade it. It will also update the currently used metadata version in the Kafka CR status. This
-     * method might fail when it fails to communicate with the Kafka cluster and get the metadata version. But it will
-     * not fail when the update of the metadata version fails in order to not fail the whole reconciliation. Such event
-     * will be only logged into the regular logs as well as added to warnings in stat Kafka status. This method also
-     * never attempts unsafe downgrade. Unsafe downgrade is always expected to be done by the user manually.
+     * Utility method for managing the KRaft metadata version.
+     *
+     * This method will get the current metadata version and compare it with the desired. If needed, it will try to
+     * upgrade or downgrade the metadata version to match the desired. It will also update the currently used metadata
+     * version in the Kafka CR status.
+     *
+     * In case this method fails while trying to upgrade the metadata version, it will not fail the whole reconciliation.
+     * And instead, it will log the issue at a warning level and add a warning to the .status section of the Kafka
+     * custom resource. The currently set metadata version will be kept in the status section as well. The main reason
+     * for this is that failures to change the metadata version are expected to happen often. Especially
+     * for downgrades, because Kafka support for metadata version downgrades is very limited. And we do not want to stop
+     * the whole reconciliation just because of that.
+     *
+     * Any other failures - such as failure with getting the current metadata version will be reported as errors and
+     * would break the reconciliation as usually.
+     *
+     * This method also never attempts unsafe downgrade. Unsafe downgrade is always expected to be done by the user
+     * manually.
      *
      * @param reconciliation            Reconciliation marker
      * @param vertx                     Vert.x instance
