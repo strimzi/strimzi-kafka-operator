@@ -24,7 +24,7 @@ import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Util;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
-import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.KindNotSupported;
 import io.strimzi.systemtest.annotations.MicroShiftNotSupported;
@@ -58,11 +58,11 @@ import java.util.Map;
 import java.util.Random;
 import java.util.stream.Collectors;
 
-import static io.strimzi.systemtest.Constants.ACCEPTANCE;
-import static io.strimzi.systemtest.Constants.CONNECT;
-import static io.strimzi.systemtest.Constants.CONNECT_COMPONENTS;
-import static io.strimzi.systemtest.Constants.REGRESSION;
-import static io.strimzi.systemtest.Constants.SANITY;
+import static io.strimzi.systemtest.TestConstants.ACCEPTANCE;
+import static io.strimzi.systemtest.TestConstants.CONNECT;
+import static io.strimzi.systemtest.TestConstants.CONNECT_COMPONENTS;
+import static io.strimzi.systemtest.TestConstants.REGRESSION;
+import static io.strimzi.systemtest.TestConstants.SANITY;
 import static io.strimzi.systemtest.enums.CustomResourceStatus.NotReady;
 import static io.strimzi.systemtest.enums.CustomResourceStatus.Ready;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
@@ -103,12 +103,12 @@ class ConnectBuilderST extends AbstractST {
         .withName(PLUGIN_WITH_TAR_AND_JAR_NAME)
         .withArtifacts(
             new JarArtifactBuilder()
-                .withUrl(Constants.ECHO_SINK_JAR_URL)
-                .withSha512sum(Constants.ECHO_SINK_JAR_CHECKSUM)
+                .withUrl(TestConstants.ECHO_SINK_JAR_URL)
+                .withSha512sum(TestConstants.ECHO_SINK_JAR_CHECKSUM)
                 .build(),
             new TgzArtifactBuilder()
-                .withUrl(Constants.ECHO_SINK_TGZ_URL)
-                .withSha512sum(Constants.ECHO_SINK_TGZ_CHECKSUM)
+                .withUrl(TestConstants.ECHO_SINK_TGZ_URL)
+                .withSha512sum(TestConstants.ECHO_SINK_TGZ_CHECKSUM)
                 .build())
         .build();
 
@@ -125,9 +125,9 @@ class ConnectBuilderST extends AbstractST {
         .withName(PLUGIN_WITH_OTHER_TYPE_NAME)
         .withArtifacts(
             new OtherArtifactBuilder()
-                .withUrl(Constants.ECHO_SINK_JAR_URL)
-                .withFileName(Constants.ECHO_SINK_FILE_NAME)
-                .withSha512sum(Constants.ECHO_SINK_JAR_CHECKSUM)
+                .withUrl(TestConstants.ECHO_SINK_JAR_URL)
+                .withFileName(TestConstants.ECHO_SINK_FILE_NAME)
+                .withSha512sum(TestConstants.ECHO_SINK_JAR_CHECKSUM)
                 .build()
         )
         .build();
@@ -152,8 +152,8 @@ class ConnectBuilderST extends AbstractST {
         Plugin pluginWithWrongChecksum = new PluginBuilder()
             .withName("connector-with-wrong-checksum")
             .withArtifacts(new JarArtifactBuilder()
-                .withUrl(Constants.ECHO_SINK_JAR_URL)
-                .withSha512sum(Constants.ECHO_SINK_JAR_WRONG_CHECKSUM)
+                .withUrl(TestConstants.ECHO_SINK_JAR_URL)
+                .withSha512sum(TestConstants.ECHO_SINK_JAR_WRONG_CHECKSUM)
                 .build())
             .build();
 
@@ -190,8 +190,8 @@ class ConnectBuilderST extends AbstractST {
             Plugin pluginWithRightChecksum = new PluginBuilder()
                 .withName("connector-with-right-checksum")
                 .withArtifacts(new JarArtifactBuilder()
-                    .withUrl(Constants.ECHO_SINK_JAR_URL)
-                    .withSha512sum(Constants.ECHO_SINK_JAR_CHECKSUM)
+                    .withUrl(TestConstants.ECHO_SINK_JAR_URL)
+                    .withSha512sum(TestConstants.ECHO_SINK_JAR_CHECKSUM)
                     .build())
                 .build();
 
@@ -206,11 +206,11 @@ class ConnectBuilderST extends AbstractST {
         LOGGER.info("Checking if KafkaConnect API contains EchoSink KafkaConnector");
         String plugins = cmdKubeClient(testStorage.getNamespaceName()).execInPod(scraperPodName, "curl", "-X", "GET", "http://" + KafkaConnectResources.serviceName(testStorage.getClusterName()) + ":8083/connector-plugins").out();
 
-        assertTrue(plugins.contains(Constants.ECHO_SINK_CLASS_NAME));
+        assertTrue(plugins.contains(TestConstants.ECHO_SINK_CLASS_NAME));
 
         LOGGER.info("Checking if KafkaConnect resource contains EchoSink KafkaConnector in status");
         kafkaConnect = KafkaConnectResource.kafkaConnectClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get();
-        assertTrue(kafkaConnect.getStatus().getConnectorPlugins().stream().anyMatch(connectorPlugin -> connectorPlugin.getConnectorClass().contains(Constants.ECHO_SINK_CLASS_NAME)));
+        assertTrue(kafkaConnect.getStatus().getConnectorPlugins().stream().anyMatch(connectorPlugin -> connectorPlugin.getConnectorClass().contains(TestConstants.ECHO_SINK_CLASS_NAME)));
     }
 
     @ParallelTest
@@ -249,13 +249,13 @@ class ConnectBuilderST extends AbstractST {
                 .withNamespace(testStorage.getNamespaceName())
             .endMetadata()
             .editOrNewSpec()
-                .withClassName(Constants.ECHO_SINK_CLASS_NAME)
+                .withClassName(TestConstants.ECHO_SINK_CLASS_NAME)
                 .withConfig(connectorConfig)
             .endSpec()
             .build());
 
         KafkaConnector kafkaConnector = KafkaConnectorResource.kafkaConnectorClient().inNamespace(testStorage.getNamespaceName()).withName(testStorage.getClusterName()).get();
-        assertThat(kafkaConnector.getSpec().getClassName(), is(Constants.ECHO_SINK_CLASS_NAME));
+        assertThat(kafkaConnector.getSpec().getClassName(), is(TestConstants.ECHO_SINK_CLASS_NAME));
 
         KafkaClients kafkaClients = new KafkaClientsBuilder()
             .withTopicName(testStorage.getTopicName())
@@ -311,7 +311,7 @@ class ConnectBuilderST extends AbstractST {
         assertThat(kafkaConnect.getStatus().getConditions().get(0).getType(), is(Ready.toString()));
 
         assertTrue(kafkaConnect.getStatus().getConnectorPlugins().size() > 0);
-        assertTrue(kafkaConnect.getStatus().getConnectorPlugins().stream().anyMatch(connectorPlugin -> connectorPlugin.getConnectorClass().contains(Constants.ECHO_SINK_CLASS_NAME)));
+        assertTrue(kafkaConnect.getStatus().getConnectorPlugins().stream().anyMatch(connectorPlugin -> connectorPlugin.getConnectorClass().contains(TestConstants.ECHO_SINK_CLASS_NAME)));
     }
 
     @ParallelTest
@@ -362,12 +362,12 @@ class ConnectBuilderST extends AbstractST {
         echoSinkConfig.put("level", "INFO");
 
         LOGGER.info("Creating EchoSink KafkaConnector");
-        resourceManager.createResourceWithWait(extensionContext, KafkaConnectorTemplates.kafkaConnector(Constants.ECHO_SINK_CONNECTOR_NAME, testStorage.getClusterName())
+        resourceManager.createResourceWithWait(extensionContext, KafkaConnectorTemplates.kafkaConnector(TestConstants.ECHO_SINK_CONNECTOR_NAME, testStorage.getClusterName())
             .editMetadata()
                 .withNamespace(testStorage.getNamespaceName())
             .endMetadata()
             .editOrNewSpec()
-                .withClassName(Constants.ECHO_SINK_CLASS_NAME)
+                .withClassName(TestConstants.ECHO_SINK_CLASS_NAME)
                 .withConfig(echoSinkConfig)
             .endSpec()
             .build());
@@ -380,7 +380,7 @@ class ConnectBuilderST extends AbstractST {
         String plugins = cmdKubeClient(testStorage.getNamespaceName()).execInPod(scraperPodName, "curl", "-X", "GET", "http://" + KafkaConnectResources.serviceName(testStorage.getClusterName()) + ":8083/connector-plugins").out();
 
         assertFalse(plugins.contains(CAMEL_CONNECTOR_HTTP_SINK_CLASS_NAME));
-        assertTrue(plugins.contains(Constants.ECHO_SINK_CLASS_NAME));
+        assertTrue(plugins.contains(TestConstants.ECHO_SINK_CLASS_NAME));
 
         LOGGER.info("Adding one more connector to the KafkaConnect");
         KafkaConnectResource.replaceKafkaConnectResourceInSpecificNamespace(testStorage.getClusterName(), kafkaConnect -> {
@@ -409,7 +409,7 @@ class ConnectBuilderST extends AbstractST {
         LOGGER.info("Checking if both Connectors were created and Connect contains both plugins");
         assertThat(kafkaConnect.getSpec().getBuild().getPlugins().size(), is(2));
 
-        assertTrue(kafkaConnect.getStatus().getConnectorPlugins().stream().anyMatch(connectorPlugin -> connectorPlugin.getConnectorClass().contains(Constants.ECHO_SINK_CLASS_NAME)));
+        assertTrue(kafkaConnect.getStatus().getConnectorPlugins().stream().anyMatch(connectorPlugin -> connectorPlugin.getConnectorClass().contains(TestConstants.ECHO_SINK_CLASS_NAME)));
         assertTrue(kafkaConnect.getStatus().getConnectorPlugins().stream().anyMatch(connectorPlugin -> connectorPlugin.getConnectorClass().contains(CAMEL_CONNECTOR_HTTP_SINK_CLASS_NAME)));
     }
 
@@ -443,15 +443,15 @@ class ConnectBuilderST extends AbstractST {
         Map<String, String> connectSnapshot = PodUtils.podSnapshot(testStorage.getNamespaceName(), labelSelector);
         String connectPodName = kubeClient().listPods(testStorage.getNamespaceName(), testStorage.getClusterName(), Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND).get(0).getMetadata().getName();
 
-        LOGGER.info("Checking that plugin has correct file name: {}", Constants.ECHO_SINK_FILE_NAME);
-        assertEquals(getPluginFileNameFromConnectPod(testStorage.getNamespaceName(), connectPodName), Constants.ECHO_SINK_FILE_NAME);
+        LOGGER.info("Checking that plugin has correct file name: {}", TestConstants.ECHO_SINK_FILE_NAME);
+        assertEquals(getPluginFileNameFromConnectPod(testStorage.getNamespaceName(), connectPodName), TestConstants.ECHO_SINK_FILE_NAME);
 
         final Plugin pluginWithoutFileName = new PluginBuilder()
             .withName(PLUGIN_WITH_OTHER_TYPE_NAME)
             .withArtifacts(
                 new OtherArtifactBuilder()
-                    .withUrl(Constants.ECHO_SINK_JAR_URL)
-                    .withSha512sum(Constants.ECHO_SINK_JAR_CHECKSUM)
+                    .withUrl(TestConstants.ECHO_SINK_JAR_URL)
+                    .withSha512sum(TestConstants.ECHO_SINK_JAR_CHECKSUM)
                     .build()
             )
             .build();
@@ -466,8 +466,8 @@ class ConnectBuilderST extends AbstractST {
         LOGGER.info("Checking that plugin has different name than before");
         connectPodName = kubeClient().listPods(testStorage.getNamespaceName(), testStorage.getClusterName(), Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND).get(0).getMetadata().getName();
         String fileName = getPluginFileNameFromConnectPod(testStorage.getNamespaceName(), connectPodName);
-        assertNotEquals(fileName, Constants.ECHO_SINK_FILE_NAME);
-        assertEquals(fileName, Util.hashStub(Constants.ECHO_SINK_JAR_URL));
+        assertNotEquals(fileName, TestConstants.ECHO_SINK_FILE_NAME);
+        assertEquals(fileName, Util.hashStub(TestConstants.ECHO_SINK_JAR_URL));
     }
 
     @Tag(SANITY)
@@ -532,14 +532,14 @@ class ConnectBuilderST extends AbstractST {
 
     private String getImageNameForTestCase() {
         int randomNum = new Random().nextInt(Integer.MAX_VALUE);
-        return Environment.getImageOutputRegistry(Environment.TEST_SUITE_NAMESPACE, Constants.ST_CONNECT_BUILD_IMAGE_NAME, String.valueOf(randomNum));
+        return Environment.getImageOutputRegistry(Environment.TEST_SUITE_NAMESPACE, TestConstants.ST_CONNECT_BUILD_IMAGE_NAME, String.valueOf(randomNum));
 
     }
 
     @BeforeAll
     void setup(ExtensionContext extensionContext) {
         clusterOperator = clusterOperator.defaultInstallation(extensionContext)
-            .withOperationTimeout(Constants.CO_OPERATION_TIMEOUT_SHORT)
+            .withOperationTimeout(TestConstants.CO_OPERATION_TIMEOUT_SHORT)
             .createInstallation()
             .runInstallation();
 

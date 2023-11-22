@@ -27,7 +27,7 @@ import io.strimzi.api.kafka.model.KafkaUser;
 import io.strimzi.api.kafka.model.StrimziPodSet;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.systemtest.AbstractST;
-import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.annotations.KRaftNotSupported;
@@ -73,16 +73,16 @@ import java.util.concurrent.ExecutionException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static io.strimzi.systemtest.Constants.ACCEPTANCE;
-import static io.strimzi.systemtest.Constants.BRIDGE;
-import static io.strimzi.systemtest.Constants.CONNECT;
-import static io.strimzi.systemtest.Constants.CONNECT_COMPONENTS;
-import static io.strimzi.systemtest.Constants.CRUISE_CONTROL;
-import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
-import static io.strimzi.systemtest.Constants.METRICS;
-import static io.strimzi.systemtest.Constants.MIRROR_MAKER2;
-import static io.strimzi.systemtest.Constants.REGRESSION;
-import static io.strimzi.systemtest.Constants.SANITY;
+import static io.strimzi.systemtest.TestConstants.ACCEPTANCE;
+import static io.strimzi.systemtest.TestConstants.BRIDGE;
+import static io.strimzi.systemtest.TestConstants.CONNECT;
+import static io.strimzi.systemtest.TestConstants.CONNECT_COMPONENTS;
+import static io.strimzi.systemtest.TestConstants.CRUISE_CONTROL;
+import static io.strimzi.systemtest.TestConstants.INTERNAL_CLIENTS_USED;
+import static io.strimzi.systemtest.TestConstants.METRICS;
+import static io.strimzi.systemtest.TestConstants.MIRROR_MAKER2;
+import static io.strimzi.systemtest.TestConstants.REGRESSION;
+import static io.strimzi.systemtest.TestConstants.SANITY;
 import static io.strimzi.systemtest.utils.specific.MetricsUtils.assertCoMetricResourceNotNull;
 import static io.strimzi.systemtest.utils.specific.MetricsUtils.assertCoMetricResourceState;
 import static io.strimzi.systemtest.utils.specific.MetricsUtils.assertCoMetricResourceStateNotExists;
@@ -563,7 +563,7 @@ public class MetricsST extends AbstractST {
             .withBootstrapAddress(KafkaBridgeResources.serviceName(bridgeClusterName))
             .withTopicName(bridgeTopicName)
             .withMessageCount(MESSAGE_COUNT)
-            .withPort(Constants.HTTP_BRIDGE_DEFAULT_PORT)
+            .withPort(TestConstants.HTTP_BRIDGE_DEFAULT_PORT)
             .withDelayMs(200)
             .withPollInterval(200)
             .build();
@@ -650,7 +650,7 @@ public class MetricsST extends AbstractST {
         );
 
         ConfigMap externalMetricsCm = new ConfigMapBuilder()
-                .withData(Collections.singletonMap(Constants.METRICS_CONFIG_YAML_NAME, metricsConfigYaml))
+                .withData(Collections.singletonMap(TestConstants.METRICS_CONFIG_YAML_NAME, metricsConfigYaml))
                 .withNewMetadata()
                     .withName("external-metrics-cm")
                     .withNamespace(namespaceSecond)
@@ -662,7 +662,7 @@ public class MetricsST extends AbstractST {
         // spec.kafka.metrics -> spec.kafka.jmxExporterMetrics
         ConfigMapKeySelector cmks = new ConfigMapKeySelectorBuilder()
                 .withName("external-metrics-cm")
-                .withKey(Constants.METRICS_CONFIG_YAML_NAME)
+                .withKey(TestConstants.METRICS_CONFIG_YAML_NAME)
                 .build();
         JmxPrometheusExporterMetrics jmxPrometheusExporterMetrics = new JmxPrometheusExporterMetricsBuilder()
                 .withNewValueFrom()
@@ -678,12 +678,12 @@ public class MetricsST extends AbstractST {
 
         for (String cmName : StUtils.getKafkaConfigurationConfigMaps(kafkaClusterSecondName, 1)) {
             ConfigMap actualCm = kubeClient(namespaceSecond).getConfigMap(cmName);
-            assertThat(actualCm.getData().get(Constants.METRICS_CONFIG_JSON_NAME), is(metricsConfigJson));
+            assertThat(actualCm.getData().get(TestConstants.METRICS_CONFIG_JSON_NAME), is(metricsConfigJson));
         }
 
         // update metrics
         ConfigMap externalMetricsUpdatedCm = new ConfigMapBuilder()
-                .withData(Collections.singletonMap(Constants.METRICS_CONFIG_YAML_NAME, metricsConfigYaml.replace("true", "false")))
+                .withData(Collections.singletonMap(TestConstants.METRICS_CONFIG_YAML_NAME, metricsConfigYaml.replace("true", "false")))
                 .withNewMetadata()
                     .withName("external-metrics-cm")
                     .withNamespace(namespaceSecond)
@@ -695,7 +695,7 @@ public class MetricsST extends AbstractST {
 
         for (String cmName : StUtils.getKafkaConfigurationConfigMaps(kafkaClusterSecondName, 1)) {
             ConfigMap actualCm = kubeClient(namespaceSecond).getConfigMap(cmName);
-            assertThat(actualCm.getData().get(Constants.METRICS_CONFIG_JSON_NAME), is(metricsConfigJson.replace("true", "false")));
+            assertThat(actualCm.getData().get(TestConstants.METRICS_CONFIG_JSON_NAME), is(metricsConfigJson.replace("true", "false")));
         }
     }
 
@@ -712,10 +712,10 @@ public class MetricsST extends AbstractST {
             .createInstallation()
             .runInstallation();
 
-        final String coScraperName = Constants.CO_NAMESPACE + "-" + Constants.SCRAPER_NAME;
-        final String testSuiteScraperName = Environment.TEST_SUITE_NAMESPACE + "-" + Constants.SCRAPER_NAME;
-        final String scraperName = namespaceFirst + "-" + Constants.SCRAPER_NAME;
-        final String secondScraperName = namespaceSecond + "-" + Constants.SCRAPER_NAME;
+        final String coScraperName = TestConstants.CO_NAMESPACE + "-" + TestConstants.SCRAPER_NAME;
+        final String testSuiteScraperName = Environment.TEST_SUITE_NAMESPACE + "-" + TestConstants.SCRAPER_NAME;
+        final String scraperName = namespaceFirst + "-" + TestConstants.SCRAPER_NAME;
+        final String secondScraperName = namespaceSecond + "-" + TestConstants.SCRAPER_NAME;
 
         cluster.setNamespace(namespaceFirst);
 
@@ -735,7 +735,7 @@ public class MetricsST extends AbstractST {
                 .endSpec()
                 .build(),
             KafkaTemplates.kafkaWithMetrics(kafkaClusterSecondName, namespaceSecond, 1, 1).build(),
-            ScraperTemplates.scraperPod(Constants.CO_NAMESPACE, coScraperName).build(),
+            ScraperTemplates.scraperPod(TestConstants.CO_NAMESPACE, coScraperName).build(),
             ScraperTemplates.scraperPod(Environment.TEST_SUITE_NAMESPACE, testSuiteScraperName).build(),
             ScraperTemplates.scraperPod(namespaceFirst, scraperName).build(),
             ScraperTemplates.scraperPod(namespaceSecond, secondScraperName).build()
@@ -750,18 +750,18 @@ public class MetricsST extends AbstractST {
         resourceManager.createResourceWithWait(extensionContext, KafkaUserTemplates.tlsUser(namespaceFirst, kafkaClusterFirstName, KafkaUserUtils.generateRandomNameOfKafkaUser()).build());
         resourceManager.createResourceWithWait(extensionContext, KafkaUserTemplates.tlsUser(namespaceFirst, kafkaClusterFirstName, KafkaUserUtils.generateRandomNameOfKafkaUser()).build());
 
-        coScraperPodName = ResourceManager.kubeClient().listPodsByPrefixInName(Constants.CO_NAMESPACE, coScraperName).get(0).getMetadata().getName();
+        coScraperPodName = ResourceManager.kubeClient().listPodsByPrefixInName(TestConstants.CO_NAMESPACE, coScraperName).get(0).getMetadata().getName();
         testSuiteScraperPodName = ResourceManager.kubeClient().listPodsByPrefixInName(Environment.TEST_SUITE_NAMESPACE, testSuiteScraperName).get(0).getMetadata().getName();
         scraperPodName = ResourceManager.kubeClient().listPodsByPrefixInName(namespaceFirst, scraperName).get(0).getMetadata().getName();
         secondNamespaceScraperPodName = ResourceManager.kubeClient().listPodsByPrefixInName(namespaceSecond, secondScraperName).get(0).getMetadata().getName();
 
         // Allow connections from clients to operators pods when NetworkPolicies are set to denied by default
-        NetworkPolicyResource.allowNetworkPolicySettingsForClusterOperator(extensionContext, Constants.CO_NAMESPACE);
+        NetworkPolicyResource.allowNetworkPolicySettingsForClusterOperator(extensionContext, TestConstants.CO_NAMESPACE);
 
         // wait some time for metrics to be stable - at least reconciliation interval + 10s
         LOGGER.info("Sleeping for {} to give operators and operands some time to stable the metrics values before collecting",
-                Constants.SAFETY_RECONCILIATION_INTERVAL);
-        Thread.sleep(Constants.SAFETY_RECONCILIATION_INTERVAL);
+                TestConstants.SAFETY_RECONCILIATION_INTERVAL);
+        Thread.sleep(TestConstants.SAFETY_RECONCILIATION_INTERVAL);
 
         kafkaCollector = new MetricsCollector.Builder()
             .withScraperPodName(scraperPodName)
@@ -783,7 +783,7 @@ public class MetricsST extends AbstractST {
 
         clusterOperatorCollector = new MetricsCollector.Builder()
             .withScraperPodName(coScraperPodName)
-            .withNamespaceName(Constants.CO_NAMESPACE)
+            .withNamespaceName(TestConstants.CO_NAMESPACE)
             .withComponentType(ComponentType.ClusterOperator)
             .withComponentName(clusterOperator.getClusterOperatorName())
             .build();

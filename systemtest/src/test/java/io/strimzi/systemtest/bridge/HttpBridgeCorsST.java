@@ -8,7 +8,7 @@ import io.strimzi.api.kafka.model.KafkaBridgeHttpCors;
 import io.strimzi.api.kafka.model.KafkaBridgeResources;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.AbstractST;
-import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.ParallelTest;
 import io.strimzi.systemtest.resources.crd.KafkaBridgeResource;
@@ -30,8 +30,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-import static io.strimzi.systemtest.Constants.BRIDGE;
-import static io.strimzi.systemtest.Constants.REGRESSION;
+import static io.strimzi.systemtest.TestConstants.BRIDGE;
+import static io.strimzi.systemtest.TestConstants.REGRESSION;
 import static io.strimzi.systemtest.resources.ResourceManager.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.CoreMatchers.is;
@@ -64,7 +64,7 @@ public class HttpBridgeCorsST extends AbstractST {
         additionalHeaders.put("Access-Control-Request-Method", HttpMethod.POST.toString());
 
         String url = bridgeUrl + "/consumers/" + groupId + "/instances/" + kafkaBridgeUser + "/subscription";
-        String headers = BridgeUtils.addHeadersToString(additionalHeaders, Constants.KAFKA_BRIDGE_JSON_JSON);
+        String headers = BridgeUtils.addHeadersToString(additionalHeaders, TestConstants.KAFKA_BRIDGE_JSON_JSON);
         String response = cmdKubeClient().namespace(Environment.TEST_SUITE_NAMESPACE).execInPod(scraperPodName, "/bin/bash", "-c", BridgeUtils.buildCurlCommand(HttpMethod.OPTIONS, url, headers, "")).out().trim();
         LOGGER.info("Response from Bridge: {}", response);
 
@@ -131,7 +131,7 @@ public class HttpBridgeCorsST extends AbstractST {
             .endMetadata()
             .build());
 
-        String scraperName = Environment.TEST_SUITE_NAMESPACE + "-shared-" + Constants.SCRAPER_NAME;
+        String scraperName = Environment.TEST_SUITE_NAMESPACE + "-shared-" + TestConstants.SCRAPER_NAME;
 
         resourceManager.createResourceWithWait(extensionContext, ScraperTemplates.scraperPod(Environment.TEST_SUITE_NAMESPACE, scraperName).build());
         scraperPodName = kubeClient(Environment.TEST_SUITE_NAMESPACE).listPodsByPrefixInName(Environment.TEST_SUITE_NAMESPACE, scraperName).get(0).getMetadata().getName();
@@ -146,6 +146,6 @@ public class HttpBridgeCorsST extends AbstractST {
         KafkaBridgeHttpCors kafkaBridgeHttpCors = KafkaBridgeResource.kafkaBridgeClient().inNamespace(Environment.TEST_SUITE_NAMESPACE).withName(httpBridgeCorsClusterName).get().getSpec().getHttp().getCors();
         LOGGER.info("Bridge with the following CORS settings {}", kafkaBridgeHttpCors.toString());
 
-        bridgeUrl = KafkaBridgeResources.url(httpBridgeCorsClusterName, Environment.TEST_SUITE_NAMESPACE, Constants.HTTP_BRIDGE_DEFAULT_PORT);
+        bridgeUrl = KafkaBridgeResources.url(httpBridgeCorsClusterName, Environment.TEST_SUITE_NAMESPACE, TestConstants.HTTP_BRIDGE_DEFAULT_PORT);
     }
 }

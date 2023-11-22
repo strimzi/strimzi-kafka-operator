@@ -6,7 +6,7 @@ package io.strimzi.systemtest.templates.crd;
 
 import io.strimzi.api.kafka.model.KafkaBridge;
 import io.strimzi.api.kafka.model.KafkaBridgeBuilder;
-import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.test.TestUtils;
 
@@ -19,7 +19,7 @@ public class KafkaBridgeTemplates {
     }
 
     public static KafkaBridgeBuilder kafkaBridge(String name, String clusterName, String bootstrap, int kafkaBridgeReplicas) {
-        KafkaBridge kafkaBridge = getKafkaBridgeFromYaml(Constants.PATH_TO_KAFKA_BRIDGE_CONFIG);
+        KafkaBridge kafkaBridge = getKafkaBridgeFromYaml(TestConstants.PATH_TO_KAFKA_BRIDGE_CONFIG);
         return defaultKafkaBridge(kafkaBridge, name, clusterName, bootstrap, kafkaBridgeReplicas);
     }
 
@@ -31,7 +31,7 @@ public class KafkaBridgeTemplates {
     public static KafkaBridgeBuilder kafkaBridgeWithCors(String name, String clusterName, String bootstrap,
                                                   int kafkaBridgeReplicas, String allowedCorsOrigin,
                                                   String allowedCorsMethods) {
-        KafkaBridge kafkaBridge = getKafkaBridgeFromYaml(Constants.PATH_TO_KAFKA_BRIDGE_CONFIG);
+        KafkaBridge kafkaBridge = getKafkaBridgeFromYaml(TestConstants.PATH_TO_KAFKA_BRIDGE_CONFIG);
 
         KafkaBridgeBuilder kafkaBridgeBuilder = defaultKafkaBridge(kafkaBridge, name, clusterName, bootstrap, kafkaBridgeReplicas);
 
@@ -53,7 +53,7 @@ public class KafkaBridgeTemplates {
     }
 
     public static KafkaBridgeBuilder kafkaBridgeWithMetrics(String name, String clusterName, String bootstrap, int kafkaBridgeReplicas) {
-        KafkaBridge kafkaBridge = getKafkaBridgeFromYaml(Constants.PATH_TO_KAFKA_BRIDGE_CONFIG);
+        KafkaBridge kafkaBridge = getKafkaBridgeFromYaml(TestConstants.PATH_TO_KAFKA_BRIDGE_CONFIG);
 
         return defaultKafkaBridge(kafkaBridge, name, clusterName, bootstrap, kafkaBridgeReplicas)
             .editSpec()

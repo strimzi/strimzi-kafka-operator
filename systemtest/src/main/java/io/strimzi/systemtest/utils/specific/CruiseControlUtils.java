@@ -8,7 +8,7 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlConfigurationParameters;
 import io.strimzi.operator.common.model.cruisecontrol.CruiseControlEndpoints;
-import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.resources.crd.KafkaTopicResource;
 import io.strimzi.systemtest.utils.kubeUtils.objects.PodUtils;
@@ -84,7 +84,7 @@ public class CruiseControlUtils {
     public static void verifyCruiseControlMetricReporterConfigurationInKafkaConfigMapIsPresent(Properties kafkaProperties) {
         String kafkaClusterName = kafkaProperties.getProperty("cluster-name");
         TestUtils.waitFor("Verify that Kafka configuration " + kafkaProperties.toString() + " has correct CruiseControl metric reporter properties",
-            Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_CRUISE_CONTROL_TIMEOUT, () ->
+            TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_CRUISE_CONTROL_TIMEOUT, () ->
             kafkaProperties.getProperty(CruiseControlConfigurationParameters.METRICS_TOPIC_NAME.getValue()).equals("strimzi.cruisecontrol.metrics") &&
             kafkaProperties.getProperty(CruiseControlConfigurationParameters.METRICS_REPORTER_SSL_ENDPOINT_ID_ALGO.getValue()).equals("HTTPS") &&
             kafkaProperties.getProperty(CruiseControlConfigurationParameters.METRICS_REPORTER_BOOTSTRAP_SERVERS.getValue()).equals(kafkaClusterName + "-kafka-brokers:9091") &&
@@ -102,7 +102,7 @@ public class CruiseControlUtils {
         final int numberOfReplicasSamplesTopic = 2;
 
         TestUtils.waitFor("Verify that Kafka contains CruiseControl Topics with related configuration.",
-            Constants.GLOBAL_POLL_INTERVAL, timeout, () -> {
+            TestConstants.GLOBAL_POLL_INTERVAL, timeout, () -> {
                 KafkaTopic modelTrainingSamples = KafkaTopicResource.kafkaTopicClient().inNamespace(namespaceName).withName(CRUISE_CONTROL_MODEL_TRAINING_SAMPLES_TOPIC).get();
                 KafkaTopic partitionsMetricsSamples = KafkaTopicResource.kafkaTopicClient().inNamespace(namespaceName).withName(CRUISE_CONTROL_PARTITION_METRICS_SAMPLES_TOPIC).get();
 
@@ -127,7 +127,7 @@ public class CruiseControlUtils {
         final int numberOfReplicasMetricTopic = 3;
 
         TestUtils.waitFor("Verify that Kafka contains CruiseControl topics with related configuration.",
-            Constants.GLOBAL_POLL_INTERVAL, timeout, () -> {
+            TestConstants.GLOBAL_POLL_INTERVAL, timeout, () -> {
                 KafkaTopic metrics = KafkaTopicResource.kafkaTopicClient().inNamespace(namespaceName).withName(CRUISE_CONTROL_METRICS_TOPIC).get();
 
                 boolean hasTopicCorrectPartitionsCount =
@@ -141,8 +141,8 @@ public class CruiseControlUtils {
     }
 
     public static void verifyThatCruiseControlTopicsArePresent(String namespaceName) {
-        verifyThatKafkaCruiseControlMetricReporterTopicIsPresent(namespaceName, Constants.GLOBAL_CRUISE_CONTROL_TIMEOUT);
-        verifyThatCruiseControlSamplesTopicsArePresent(namespaceName, Constants.GLOBAL_CRUISE_CONTROL_TIMEOUT);
+        verifyThatKafkaCruiseControlMetricReporterTopicIsPresent(namespaceName, TestConstants.GLOBAL_CRUISE_CONTROL_TIMEOUT);
+        verifyThatCruiseControlSamplesTopicsArePresent(namespaceName, TestConstants.GLOBAL_CRUISE_CONTROL_TIMEOUT);
     }
 
     public static Properties getKafkaCruiseControlMetricsReporterConfiguration(String namespaceName, String clusterName) throws IOException {
@@ -168,7 +168,7 @@ public class CruiseControlUtils {
 
     public static void waitForRebalanceEndpointIsReady(String namespaceName) {
         TestUtils.waitFor("rebalance endpoint to be ready",
-            Constants.API_CRUISE_CONTROL_POLL, Constants.API_CRUISE_CONTROL_TIMEOUT, () -> {
+            TestConstants.API_CRUISE_CONTROL_POLL, TestConstants.API_CRUISE_CONTROL_TIMEOUT, () -> {
                 String response = callApi(namespaceName, SupportedHttpMethods.POST, CruiseControlEndpoints.REBALANCE, SupportedSchemes.HTTPS, true);
                 LOGGER.debug("API response: {}", response);
                 return !response.contains("Error processing POST request '/rebalance' due to: " +

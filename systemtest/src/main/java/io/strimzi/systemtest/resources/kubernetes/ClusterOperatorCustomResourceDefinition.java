@@ -5,7 +5,7 @@
 package io.strimzi.systemtest.resources.kubernetes;
 
 import io.fabric8.kubernetes.api.model.apiextensions.v1.CustomResourceDefinition;
-import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.resources.ResourceType;
 
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
@@ -14,7 +14,7 @@ public class ClusterOperatorCustomResourceDefinition implements ResourceType<Cus
 
     @Override
     public String getKind() {
-        return Constants.CUSTOM_RESOURCE_DEFINITION;
+        return TestConstants.CUSTOM_RESOURCE_DEFINITION;
     }
     @Override
     public CustomResourceDefinition get(String namespace, String name) {

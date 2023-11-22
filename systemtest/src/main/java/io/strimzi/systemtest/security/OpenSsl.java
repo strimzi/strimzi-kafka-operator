@@ -4,7 +4,7 @@
  */
 package io.strimzi.systemtest.security;
 
-import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.TestConstants;
 import io.strimzi.test.TestUtils;
 import java.io.File;
 import java.io.IOException;
@@ -188,10 +188,10 @@ public class OpenSsl {
         ZonedDateTime notBefore = ZonedDateTime.of(LocalDateTime.parse(startDate, formatter), gmtZone);
         ZonedDateTime notAfter = ZonedDateTime.of(LocalDateTime.parse(endDate, formatter), gmtZone);
 
-        TestUtils.waitFor("certificate to be in valid date range", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.CO_OPERATION_TIMEOUT_SHORT,
+        TestUtils.waitFor("certificate to be in valid date range", TestConstants.POLL_INTERVAL_FOR_RESOURCE_READINESS, TestConstants.CO_OPERATION_TIMEOUT_SHORT,
                           () -> {
                 ZonedDateTime now = ZonedDateTime.now(gmtZone);
-                return (now.isAfter(notBefore.plusSeconds(Constants.CA_CERT_VALIDITY_DELAY)) && now.isBefore(notAfter.minusSeconds(Constants.CA_CERT_VALIDITY_DELAY)));
+                return (now.isAfter(notBefore.plusSeconds(TestConstants.CA_CERT_VALIDITY_DELAY)) && now.isBefore(notAfter.minusSeconds(TestConstants.CA_CERT_VALIDITY_DELAY)));
             });
     }
 }

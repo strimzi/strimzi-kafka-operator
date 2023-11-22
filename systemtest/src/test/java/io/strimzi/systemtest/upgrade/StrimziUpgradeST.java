@@ -6,7 +6,7 @@ package io.strimzi.systemtest.upgrade;
 
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.KafkaTopic;
-import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.KRaftNotSupported;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.storage.TestStorage;
@@ -31,9 +31,9 @@ import io.strimzi.systemtest.upgrade.VersionModificationDataLoader.ModificationT
 import java.io.IOException;
 import java.util.Map;
 
-import static io.strimzi.systemtest.Constants.CO_NAMESPACE;
-import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
-import static io.strimzi.systemtest.Constants.UPGRADE;
+import static io.strimzi.systemtest.TestConstants.CO_NAMESPACE;
+import static io.strimzi.systemtest.TestConstants.INTERNAL_CLIENTS_USED;
+import static io.strimzi.systemtest.TestConstants.UPGRADE;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -71,31 +71,31 @@ public class StrimziUpgradeST extends AbstractUpgradeST {
         TestStorage testStorage = new TestStorage(extensionContext);
 
         // Setup env
-        setupEnvAndUpgradeClusterOperator(extensionContext, acrossUpgradeData, testStorage, upgradeKafkaVersion, Constants.CO_NAMESPACE);
+        setupEnvAndUpgradeClusterOperator(extensionContext, acrossUpgradeData, testStorage, upgradeKafkaVersion, TestConstants.CO_NAMESPACE);
 
-        Map<String, String> zooSnapshot = PodUtils.podSnapshot(Constants.CO_NAMESPACE, zkSelector);
-        Map<String, String> kafkaSnapshot = PodUtils.podSnapshot(Constants.CO_NAMESPACE, zkSelector);
-        Map<String, String> eoSnapshot = DeploymentUtils.depSnapshot(Constants.CO_NAMESPACE, KafkaResources.entityOperatorDeploymentName(clusterName));
+        Map<String, String> zooSnapshot = PodUtils.podSnapshot(TestConstants.CO_NAMESPACE, zkSelector);
+        Map<String, String> kafkaSnapshot = PodUtils.podSnapshot(TestConstants.CO_NAMESPACE, zkSelector);
+        Map<String, String> eoSnapshot = DeploymentUtils.depSnapshot(TestConstants.CO_NAMESPACE, KafkaResources.entityOperatorDeploymentName(clusterName));
 
         // Make snapshots of all Pods
         makeSnapshots();
 
         // Upgrade CO
-        changeClusterOperator(acrossUpgradeData, Constants.CO_NAMESPACE, extensionContext);
+        changeClusterOperator(acrossUpgradeData, TestConstants.CO_NAMESPACE, extensionContext);
 
         logPodImages(clusterName);
 
-        RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(Constants.CO_NAMESPACE, zkSelector, 3, zooSnapshot);
-        RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(Constants.CO_NAMESPACE, zkSelector, 3, kafkaSnapshot);
-        DeploymentUtils.waitTillDepHasRolled(Constants.CO_NAMESPACE, KafkaResources.entityOperatorDeploymentName(clusterName), 1, eoSnapshot);
+        RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(TestConstants.CO_NAMESPACE, zkSelector, 3, zooSnapshot);
+        RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(TestConstants.CO_NAMESPACE, zkSelector, 3, kafkaSnapshot);
+        DeploymentUtils.waitTillDepHasRolled(TestConstants.CO_NAMESPACE, KafkaResources.entityOperatorDeploymentName(clusterName), 1, eoSnapshot);
 
         logPodImages(clusterName);
-        checkAllImages(acrossUpgradeData, Constants.CO_NAMESPACE);
+        checkAllImages(acrossUpgradeData, TestConstants.CO_NAMESPACE);
 
         // Verify that Pods are stable
-        PodUtils.verifyThatRunningPodsAreStable(Constants.CO_NAMESPACE, clusterName);
+        PodUtils.verifyThatRunningPodsAreStable(TestConstants.CO_NAMESPACE, clusterName);
         // Verify upgrade
-        verifyProcedure(acrossUpgradeData, testStorage.getProducerName(), testStorage.getConsumerName(), Constants.CO_NAMESPACE);
+        verifyProcedure(acrossUpgradeData, testStorage.getProducerName(), testStorage.getConsumerName(), TestConstants.CO_NAMESPACE);
         assertThat(KafkaUtils.getVersionFromKafkaPodLibs(KafkaResources.kafkaPodName(clusterName, 0)), containsString(acrossUpgradeData.getProcedures().getVersion()));
     }
 
@@ -105,51 +105,51 @@ public class StrimziUpgradeST extends AbstractUpgradeST {
         UpgradeKafkaVersion upgradeKafkaVersion = UpgradeKafkaVersion.getKafkaWithVersionFromUrl(acrossUpgradeData.getFromKafkaVersionsUrl(), acrossUpgradeData.getStartingKafkaVersion());
 
         // Setup env
-        setupEnvAndUpgradeClusterOperator(extensionContext, acrossUpgradeData, testStorage, upgradeKafkaVersion, Constants.CO_NAMESPACE);
+        setupEnvAndUpgradeClusterOperator(extensionContext, acrossUpgradeData, testStorage, upgradeKafkaVersion, TestConstants.CO_NAMESPACE);
 
         // Make snapshots of all Pods
         makeSnapshots();
 
         // Upgrade CO
-        changeClusterOperator(acrossUpgradeData, Constants.CO_NAMESPACE, extensionContext);
+        changeClusterOperator(acrossUpgradeData, TestConstants.CO_NAMESPACE, extensionContext);
         logPodImages(clusterName);
         //  Upgrade kafka
         changeKafkaAndLogFormatVersion(acrossUpgradeData, extensionContext);
         logPodImages(clusterName);
-        checkAllImages(acrossUpgradeData, Constants.CO_NAMESPACE);
+        checkAllImages(acrossUpgradeData, TestConstants.CO_NAMESPACE);
         // Verify that Pods are stable
-        PodUtils.verifyThatRunningPodsAreStable(Constants.CO_NAMESPACE, clusterName);
+        PodUtils.verifyThatRunningPodsAreStable(TestConstants.CO_NAMESPACE, clusterName);
         // Verify upgrade
-        verifyProcedure(acrossUpgradeData, testStorage.getProducerName(), testStorage.getConsumerName(), Constants.CO_NAMESPACE);
+        verifyProcedure(acrossUpgradeData, testStorage.getProducerName(), testStorage.getConsumerName(), TestConstants.CO_NAMESPACE);
     }
 
     @Test
     void testUpgradeAcrossVersionsWithNoKafkaVersion(ExtensionContext extensionContext) throws IOException {
         TestStorage testStorage = new TestStorage(extensionContext);
         // Setup env
-        setupEnvAndUpgradeClusterOperator(extensionContext, acrossUpgradeData, testStorage, null, Constants.CO_NAMESPACE);
+        setupEnvAndUpgradeClusterOperator(extensionContext, acrossUpgradeData, testStorage, null, TestConstants.CO_NAMESPACE);
         // Upgrade CO
-        changeClusterOperator(acrossUpgradeData, Constants.CO_NAMESPACE, extensionContext);
+        changeClusterOperator(acrossUpgradeData, TestConstants.CO_NAMESPACE, extensionContext);
         // Wait till first upgrade finished
-        zkPods = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(Constants.CO_NAMESPACE, zkSelector, 3, zkPods);
-        kafkaPods = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(Constants.CO_NAMESPACE, kafkaSelector, 3, kafkaPods);
-        eoPods = DeploymentUtils.waitTillDepHasRolled(Constants.CO_NAMESPACE, KafkaResources.entityOperatorDeploymentName(clusterName), 1, eoPods);
+        zkPods = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(TestConstants.CO_NAMESPACE, zkSelector, 3, zkPods);
+        kafkaPods = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(TestConstants.CO_NAMESPACE, kafkaSelector, 3, kafkaPods);
+        eoPods = DeploymentUtils.waitTillDepHasRolled(TestConstants.CO_NAMESPACE, KafkaResources.entityOperatorDeploymentName(clusterName), 1, eoPods);
 
         LOGGER.info("Rolling to new images has finished!");
         logPodImages(clusterName);
         //  Upgrade kafka
         changeKafkaAndLogFormatVersion(acrossUpgradeData, extensionContext);
         logPodImages(clusterName);
-        checkAllImages(acrossUpgradeData, Constants.CO_NAMESPACE);
+        checkAllImages(acrossUpgradeData, TestConstants.CO_NAMESPACE);
         // Verify that Pods are stable
-        PodUtils.verifyThatRunningPodsAreStable(Constants.CO_NAMESPACE, clusterName);
+        PodUtils.verifyThatRunningPodsAreStable(TestConstants.CO_NAMESPACE, clusterName);
         // Verify upgrade
-        verifyProcedure(acrossUpgradeData, testStorage.getProducerName(), testStorage.getConsumerName(), Constants.CO_NAMESPACE);
+        verifyProcedure(acrossUpgradeData, testStorage.getProducerName(), testStorage.getConsumerName(), TestConstants.CO_NAMESPACE);
     }
 
     @Test
     void testUpgradeOfKafkaConnectAndKafkaConnector(final ExtensionContext extensionContext) throws IOException {
-        final TestStorage testStorage = new TestStorage(extensionContext, Constants.CO_NAMESPACE);
+        final TestStorage testStorage = new TestStorage(extensionContext, TestConstants.CO_NAMESPACE);
         final UpgradeKafkaVersion upgradeKafkaVersion = new UpgradeKafkaVersion(acrossUpgradeData.getDefaultKafka());
 
         doKafkaConnectAndKafkaConnectorUpgradeOrDowngradeProcedure(extensionContext, acrossUpgradeData, testStorage, upgradeKafkaVersion);
@@ -161,11 +161,11 @@ public class StrimziUpgradeST extends AbstractUpgradeST {
         UpgradeKafkaVersion upgradeKafkaVersion = new UpgradeKafkaVersion();
 
         // Setup env
-        setupEnvAndUpgradeClusterOperator(extensionContext, upgradeData, testStorage, upgradeKafkaVersion, Constants.CO_NAMESPACE);
+        setupEnvAndUpgradeClusterOperator(extensionContext, upgradeData, testStorage, upgradeKafkaVersion, TestConstants.CO_NAMESPACE);
 
         // Upgrade CO to HEAD
         logPodImages(clusterName);
-        changeClusterOperator(upgradeData, Constants.CO_NAMESPACE, extensionContext);
+        changeClusterOperator(upgradeData, TestConstants.CO_NAMESPACE, extensionContext);
 
         if (TestKafkaVersion.supportedVersionsContainsVersion(upgradeData.getDefaultKafkaVersionPerStrimzi())) {
             waitForKafkaClusterRollingUpdate();
@@ -175,24 +175,24 @@ public class StrimziUpgradeST extends AbstractUpgradeST {
         // Upgrade kafka
         changeKafkaAndLogFormatVersion(upgradeData, extensionContext);
         logPodImages(clusterName);
-        checkAllImages(upgradeData, Constants.CO_NAMESPACE);
+        checkAllImages(upgradeData, TestConstants.CO_NAMESPACE);
 
         // Verify that Pods are stable
-        PodUtils.verifyThatRunningPodsAreStable(Constants.CO_NAMESPACE, clusterName);
+        PodUtils.verifyThatRunningPodsAreStable(TestConstants.CO_NAMESPACE, clusterName);
         // Verify upgrade
-        verifyProcedure(upgradeData, testStorage.getProducerName(), testStorage.getConsumerName(), Constants.CO_NAMESPACE);
+        verifyProcedure(upgradeData, testStorage.getProducerName(), testStorage.getConsumerName(), TestConstants.CO_NAMESPACE);
     }
 
     @BeforeEach
     void setupEnvironment() {
-        cluster.createNamespace(Constants.CO_NAMESPACE);
-        StUtils.copyImagePullSecrets(Constants.CO_NAMESPACE);
+        cluster.createNamespace(TestConstants.CO_NAMESPACE);
+        StUtils.copyImagePullSecrets(TestConstants.CO_NAMESPACE);
     }
 
     protected void afterEachMayOverride(ExtensionContext extensionContext) {
         // delete all topics created in test
-        cmdKubeClient(Constants.CO_NAMESPACE).deleteAllByResource(KafkaTopic.RESOURCE_KIND);
-        KafkaTopicUtils.waitForTopicWithPrefixDeletion(Constants.CO_NAMESPACE, topicName);
+        cmdKubeClient(TestConstants.CO_NAMESPACE).deleteAllByResource(KafkaTopic.RESOURCE_KIND);
+        KafkaTopicUtils.waitForTopicWithPrefixDeletion(TestConstants.CO_NAMESPACE, topicName);
 
         ResourceManager.getInstance().deleteResources(extensionContext);
         NamespaceUtils.deleteNamespaceWithWait(CO_NAMESPACE);

@@ -11,7 +11,7 @@ import io.fabric8.kubernetes.api.model.ResourceRequirements;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.AbstractST;
-import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.KRaftNotSupported;
 import io.strimzi.systemtest.annotations.IsolatedTest;
@@ -38,7 +38,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static io.strimzi.systemtest.Constants.REGRESSION;
+import static io.strimzi.systemtest.TestConstants.REGRESSION;
 import static io.strimzi.systemtest.utils.kafkaUtils.KafkaUtils.generateRandomNameOfKafka;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
@@ -240,7 +240,7 @@ class RecoveryST extends AbstractST {
     @BeforeEach
     void setup(ExtensionContext extensionContext) {
         this.clusterOperator = this.clusterOperator.defaultInstallation(extensionContext)
-            .withReconciliationInterval(Constants.CO_OPERATION_TIMEOUT_SHORT)
+            .withReconciliationInterval(TestConstants.CO_OPERATION_TIMEOUT_SHORT)
             .createInstallation()
             .runInstallation();
         cluster.setNamespace(Environment.TEST_SUITE_NAMESPACE);

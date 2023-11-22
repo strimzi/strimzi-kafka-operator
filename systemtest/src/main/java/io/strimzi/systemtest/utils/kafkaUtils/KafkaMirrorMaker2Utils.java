@@ -6,7 +6,7 @@ package io.strimzi.systemtest.utils.kafkaUtils;
 
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2;
 import io.strimzi.api.kafka.model.status.KafkaMirrorMaker2Status;
-import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.crd.KafkaMirrorMaker2Resource;
 import io.strimzi.test.TestUtils;
@@ -46,7 +46,7 @@ public class KafkaMirrorMaker2Utils {
 
     @SuppressWarnings("unchecked")
     public static void waitForKafkaMirrorMaker2ConnectorReadiness(String namespaceName, String clusterName) {
-        TestUtils.waitFor("MirrorMaker2 connectors readiness", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT, () -> {
+        TestUtils.waitFor("MirrorMaker2 connectors readiness", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_TIMEOUT, () -> {
             KafkaMirrorMaker2Status kafkaMirrorMaker2Status = KafkaMirrorMaker2Resource.kafkaMirrorMaker2Client().inNamespace(namespaceName).withName(clusterName).get().getStatus();
             // There should be only three connectors in the status of MM2
             if (kafkaMirrorMaker2Status.getConnectors().size() != 3) {

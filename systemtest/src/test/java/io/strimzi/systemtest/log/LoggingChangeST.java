@@ -20,7 +20,7 @@ import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
-import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.annotations.KRaftWithoutUTONotSupported;
@@ -61,13 +61,13 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Pattern;
 
-import static io.strimzi.systemtest.Constants.BRIDGE;
-import static io.strimzi.systemtest.Constants.CONNECT;
-import static io.strimzi.systemtest.Constants.CONNECT_COMPONENTS;
-import static io.strimzi.systemtest.Constants.MIRROR_MAKER2;
-import static io.strimzi.systemtest.Constants.REGRESSION;
-import static io.strimzi.systemtest.Constants.ROLLING_UPDATE;
-import static io.strimzi.systemtest.Constants.STRIMZI_DEPLOYMENT_NAME;
+import static io.strimzi.systemtest.TestConstants.BRIDGE;
+import static io.strimzi.systemtest.TestConstants.CONNECT;
+import static io.strimzi.systemtest.TestConstants.CONNECT_COMPONENTS;
+import static io.strimzi.systemtest.TestConstants.MIRROR_MAKER2;
+import static io.strimzi.systemtest.TestConstants.REGRESSION;
+import static io.strimzi.systemtest.TestConstants.ROLLING_UPDATE;
+import static io.strimzi.systemtest.TestConstants.STRIMZI_DEPLOYMENT_NAME;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.CoreMatchers.equalTo;
@@ -138,7 +138,7 @@ class LoggingChangeST extends AbstractST {
         String configMapOpName = "json-layout-operators";
         String configMapZookeeperName = "json-layout-zookeeper";
         String configMapKafkaName = "json-layout-kafka";
-        String configMapCOName = Constants.STRIMZI_DEPLOYMENT_NAME;
+        String configMapCOName = TestConstants.STRIMZI_DEPLOYMENT_NAME;
 
         String originalCoLoggers = kubeClient().getClient().configMaps()
             .inNamespace(clusterOperator.getDeploymentNamespace()).withName(configMapCOName).get().getData().get("log4j2.properties");
@@ -290,12 +290,12 @@ class LoggingChangeST extends AbstractST {
         }, testStorage.getNamespaceName());
 
         LOGGER.info("Waiting for log4j2.properties will contain desired settings");
-        TestUtils.waitFor("Logger change", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
+        TestUtils.waitFor("Logger change", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_TIMEOUT,
             () -> cmdKubeClient().namespace(testStorage.getNamespaceName()).execInPodContainer(Level.TRACE, eoPodName, "topic-operator", "cat", "/opt/topic-operator/custom-config/log4j2.properties").out().contains("rootLogger.level=DEBUG")
                         && cmdKubeClient().namespace(testStorage.getNamespaceName()).execInPodContainer(Level.TRACE, eoPodName, "user-operator", "cat", "/opt/user-operator/custom-config/log4j2.properties").out().contains("rootLogger.level=DEBUG")
         );
 
-        TestUtils.waitFor("log to not be empty", Duration.ofMillis(100).toMillis(), Constants.SAFETY_RECONCILIATION_INTERVAL,
+        TestUtils.waitFor("log to not be empty", Duration.ofMillis(100).toMillis(), TestConstants.SAFETY_RECONCILIATION_INTERVAL,
             () -> {
                 String uoLog = StUtils.getLogFromPodByTime(testStorage.getNamespaceName(), eoPodName, "user-operator", "30s");
                 String toLog = StUtils.getLogFromPodByTime(testStorage.getNamespaceName(), eoPodName, "topic-operator", "30s");
@@ -372,14 +372,14 @@ class LoggingChangeST extends AbstractST {
         }, testStorage.getNamespaceName());
 
         LOGGER.info("Waiting for log4j2.properties will contain desired settings");
-        TestUtils.waitFor("Logger change", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
+        TestUtils.waitFor("Logger change", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_TIMEOUT,
             () -> cmdKubeClient().namespace(testStorage.getNamespaceName()).execInPodContainer(Level.TRACE, eoPodName, "topic-operator", "cat", "/opt/topic-operator/custom-config/log4j2.properties").out().contains("rootLogger.level=OFF")
                     && cmdKubeClient().namespace(testStorage.getNamespaceName()).execInPodContainer(Level.TRACE, eoPodName, "user-operator", "cat", "/opt/user-operator/custom-config/log4j2.properties").out().contains("rootLogger.level=OFF")
                     && cmdKubeClient().namespace(testStorage.getNamespaceName()).execInPodContainer(Level.TRACE, eoPodName, "topic-operator", "cat", "/opt/topic-operator/custom-config/log4j2.properties").out().contains("monitorInterval=30")
                     && cmdKubeClient().namespace(testStorage.getNamespaceName()).execInPodContainer(Level.TRACE, eoPodName, "user-operator", "cat", "/opt/user-operator/custom-config/log4j2.properties").out().contains("monitorInterval=30")
         );
 
-        TestUtils.waitFor("log to be empty", Duration.ofMillis(100).toMillis(), Constants.SAFETY_RECONCILIATION_INTERVAL,
+        TestUtils.waitFor("log to be empty", Duration.ofMillis(100).toMillis(), TestConstants.SAFETY_RECONCILIATION_INTERVAL,
             () -> {
                 String uoLog = StUtils.getLogFromPodByTime(testStorage.getNamespaceName(), eoPodName, "user-operator", "30s");
                 String toLog = StUtils.getLogFromPodByTime(testStorage.getNamespaceName(), eoPodName, "topic-operator", "30s");
@@ -426,12 +426,12 @@ class LoggingChangeST extends AbstractST {
         kubeClient().updateConfigMapInNamespace(testStorage.getNamespaceName(), configMapUo);
 
         LOGGER.info("Waiting for log4j2.properties will contain desired settings");
-        TestUtils.waitFor("Logger change", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
+        TestUtils.waitFor("Logger change", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_TIMEOUT,
             () -> cmdKubeClient().namespace(testStorage.getNamespaceName()).execInPodContainer(Level.TRACE, eoPodName, "topic-operator", "cat", "/opt/topic-operator/custom-config/log4j2.properties").out().contains("rootLogger.level=DEBUG")
                         && cmdKubeClient().namespace(testStorage.getNamespaceName()).execInPodContainer(Level.TRACE, eoPodName, "user-operator", "cat", "/opt/user-operator/custom-config/log4j2.properties").out().contains("rootLogger.level=DEBUG")
         );
 
-        TestUtils.waitFor("log to not be empty", Duration.ofMillis(100).toMillis(), Constants.SAFETY_RECONCILIATION_INTERVAL,
+        TestUtils.waitFor("log to not be empty", Duration.ofMillis(100).toMillis(), TestConstants.SAFETY_RECONCILIATION_INTERVAL,
             () -> {
                 String uoLog = StUtils.getLogFromPodByTime(testStorage.getNamespaceName(), eoPodName, "user-operator", "30s");
                 String toLog = StUtils.getLogFromPodByTime(testStorage.getNamespaceName(), eoPodName, "topic-operator", "30s");
@@ -492,12 +492,12 @@ class LoggingChangeST extends AbstractST {
         }, testStorage.getNamespaceName());
 
         LOGGER.info("Waiting for log4j2.properties will contain desired settings");
-        TestUtils.waitFor("Logger change", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
+        TestUtils.waitFor("Logger change", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_TIMEOUT,
             () -> cmdKubeClient().namespace(testStorage.getNamespaceName()).execInPodContainer(Level.TRACE, bridgePodName, KafkaBridgeResources.deploymentName(testStorage.getClusterName()), "cat", "/opt/strimzi/custom-config/log4j2.properties").out().contains("rootLogger.level=DEBUG")
                 && cmdKubeClient().namespace(testStorage.getNamespaceName()).execInPodContainer(Level.TRACE, bridgePodName, KafkaBridgeResources.deploymentName(testStorage.getClusterName()), "cat", "/opt/strimzi/custom-config/log4j2.properties").out().contains("monitorInterval=30")
         );
 
-        TestUtils.waitFor("log to not be empty", Duration.ofMillis(100).toMillis(), Constants.SAFETY_RECONCILIATION_INTERVAL,
+        TestUtils.waitFor("log to not be empty", Duration.ofMillis(100).toMillis(), TestConstants.SAFETY_RECONCILIATION_INTERVAL,
             () -> {
                 String bridgeLog = StUtils.getLogFromPodByTime(testStorage.getNamespaceName(), bridgePodName, KafkaBridgeResources.deploymentName(testStorage.getClusterName()), "30s");
                 return bridgeLog != null && !bridgeLog.isEmpty() && DEFAULT_LOG4J_PATTERN.matcher(bridgeLog).find();
@@ -555,12 +555,12 @@ class LoggingChangeST extends AbstractST {
         }, testStorage.getNamespaceName());
 
         LOGGER.info("Waiting for log4j2.properties will contain desired settings");
-        TestUtils.waitFor("Logger change", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
+        TestUtils.waitFor("Logger change", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_TIMEOUT,
             () -> cmdKubeClient().namespace(testStorage.getNamespaceName()).execInPodContainer(Level.TRACE, bridgePodName, KafkaBridgeResources.deploymentName(testStorage.getClusterName()), "cat", "/opt/strimzi/custom-config/log4j2.properties").out().contains("rootLogger.level = OFF")
                 && cmdKubeClient().namespace(testStorage.getNamespaceName()).execInPodContainer(Level.TRACE, bridgePodName, KafkaBridgeResources.deploymentName(testStorage.getClusterName()), "cat", "/opt/strimzi/custom-config/log4j2.properties").out().contains("monitorInterval=30")
         );
 
-        TestUtils.waitFor("log to be empty", Duration.ofMillis(100).toMillis(), Constants.SAFETY_RECONCILIATION_INTERVAL,
+        TestUtils.waitFor("log to be empty", Duration.ofMillis(100).toMillis(), TestConstants.SAFETY_RECONCILIATION_INTERVAL,
             () -> {
                 String bridgeLog = StUtils.getLogFromPodByTime(testStorage.getNamespaceName(), bridgePodName, KafkaBridgeResources.deploymentName(testStorage.getClusterName()), "30s");
                 return bridgeLog != null && bridgeLog.isEmpty() && !DEFAULT_LOG4J_PATTERN.matcher(bridgeLog).find();
@@ -616,7 +616,7 @@ class LoggingChangeST extends AbstractST {
         kubeClient().updateConfigMapInNamespace(clusterOperator.getDeploymentNamespace(), coMap);
 
         LOGGER.info("Waiting for log4j2.properties will contain desired settings");
-        TestUtils.waitFor("Logger change", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
+        TestUtils.waitFor("Logger change", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_TIMEOUT,
             () -> cmdKubeClient().namespace(clusterOperator.getDeploymentNamespace()).execInPod(coPodName, "/bin/bash", "-c", command).out().contains("rootLogger.level = OFF")
         );
 
@@ -627,7 +627,7 @@ class LoggingChangeST extends AbstractST {
         LOGGER.info("Checking if CO rolled its Pod");
         assertThat(coPod, equalTo(DeploymentUtils.depSnapshot(clusterOperator.getDeploymentNamespace(), STRIMZI_DEPLOYMENT_NAME)));
 
-        TestUtils.waitFor("log to be empty", Duration.ofMillis(100).toMillis(), Constants.SAFETY_RECONCILIATION_INTERVAL,
+        TestUtils.waitFor("log to be empty", Duration.ofMillis(100).toMillis(), TestConstants.SAFETY_RECONCILIATION_INTERVAL,
             () -> {
                 String coLog = StUtils.getLogFromPodByTime(clusterOperator.getDeploymentNamespace(), coPodName, STRIMZI_DEPLOYMENT_NAME, "30s");
                 LOGGER.debug(coLog);
@@ -642,7 +642,7 @@ class LoggingChangeST extends AbstractST {
         kubeClient().updateConfigMapInNamespace(clusterOperator.getDeploymentNamespace(), coMap);
 
         LOGGER.info("Waiting for log4j2.properties will contain desired settings");
-        TestUtils.waitFor("Logger change", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
+        TestUtils.waitFor("Logger change", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_TIMEOUT,
             () -> cmdKubeClient().namespace(clusterOperator.getDeploymentNamespace()).execInPod(coPodName, "/bin/bash", "-c", command).out().contains("rootLogger.level = INFO")
         );
 
@@ -653,7 +653,7 @@ class LoggingChangeST extends AbstractST {
         LOGGER.info("Checking if CO rolled its Pod");
         assertThat(coPod, equalTo(DeploymentUtils.depSnapshot(clusterOperator.getDeploymentNamespace(), STRIMZI_DEPLOYMENT_NAME)));
 
-        TestUtils.waitFor("log to not be empty", Duration.ofMillis(100).toMillis(), Constants.SAFETY_RECONCILIATION_INTERVAL,
+        TestUtils.waitFor("log to not be empty", Duration.ofMillis(100).toMillis(), TestConstants.SAFETY_RECONCILIATION_INTERVAL,
             () -> {
                 String coLog = StUtils.getLogFromPodByTime(clusterOperator.getDeploymentNamespace(), coPodName, STRIMZI_DEPLOYMENT_NAME, "30s");
                 return coLog != null && !coLog.isEmpty() && DEFAULT_LOG4J_PATTERN.matcher(coLog).find();
@@ -709,12 +709,12 @@ class LoggingChangeST extends AbstractST {
         }, testStorage.getNamespaceName());
 
         LOGGER.info("Waiting for log4j.properties will contain desired settings");
-        TestUtils.waitFor("Logger change", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
+        TestUtils.waitFor("Logger change", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_TIMEOUT,
             () -> cmdKubeClient().namespace(testStorage.getNamespaceName()).execInPod(scraperPodName, "curl", "http://" + KafkaConnectResources.serviceName(testStorage.getClusterName())
                         + ":8083/admin/loggers/root").out().contains("DEBUG")
         );
 
-        TestUtils.waitFor("log to not be empty", Duration.ofMillis(100).toMillis(), Constants.SAFETY_RECONCILIATION_INTERVAL,
+        TestUtils.waitFor("log to not be empty", Duration.ofMillis(100).toMillis(), TestConstants.SAFETY_RECONCILIATION_INTERVAL,
             () -> {
                 String kcLog = StUtils.getLogFromPodByTime(testStorage.getNamespaceName(), connectPodName, "", "30s");
                 return kcLog != null && !kcLog.isEmpty() && DEFAULT_LOG4J_PATTERN.matcher(kcLog).find();
@@ -759,12 +759,12 @@ class LoggingChangeST extends AbstractST {
             conn.getSpec().setLogging(connectXternalLogging);
         }, testStorage.getNamespaceName());
 
-        TestUtils.waitFor("Logger change", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
+        TestUtils.waitFor("Logger change", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_TIMEOUT,
             () -> cmdKubeClient().namespace(testStorage.getNamespaceName()).execInPod(scraperPodName, "curl", "http://" + KafkaConnectResources.serviceName(testStorage.getClusterName())
                 + ":8083/admin/loggers/root").out().contains("OFF")
         );
 
-        TestUtils.waitFor("log to be empty", Duration.ofMillis(100).toMillis(), Constants.SAFETY_RECONCILIATION_INTERVAL,
+        TestUtils.waitFor("log to be empty", Duration.ofMillis(100).toMillis(), TestConstants.SAFETY_RECONCILIATION_INTERVAL,
             () -> {
                 String kcLog = StUtils.getLogFromPodByTime(testStorage.getNamespaceName(), connectPodName, "", "30s");
                 return kcLog != null && kcLog.isEmpty() && !DEFAULT_LOG4J_PATTERN.matcher(kcLog).find();
@@ -809,7 +809,7 @@ class LoggingChangeST extends AbstractST {
         String scraperPodName = kubeClient().listPodsByPrefixInName(testStorage.getNamespaceName(), testStorage.getScraperName()).get(0).getMetadata().getName();
         Map<String, String> kafkaPods = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getKafkaSelector());
 
-        TestUtils.waitFor("log to not be empty", Duration.ofMillis(100).toMillis(), Constants.SAFETY_RECONCILIATION_INTERVAL,
+        TestUtils.waitFor("log to not be empty", Duration.ofMillis(100).toMillis(), TestConstants.SAFETY_RECONCILIATION_INTERVAL,
             () -> {
                 boolean[] correctLogging = {true};
 
@@ -829,10 +829,10 @@ class LoggingChangeST extends AbstractST {
         }, testStorage.getNamespaceName());
 
         LOGGER.info("Waiting for dynamic change in the Kafka Pod");
-        TestUtils.waitFor("Logger change", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
+        TestUtils.waitFor("Logger change", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_TIMEOUT,
             () -> KafkaCmdClient.describeKafkaBrokerLoggersUsingPodCli(testStorage.getNamespaceName(), scraperPodName, KafkaResources.plainBootstrapAddress(testStorage.getClusterName()), 0).contains("root=DEBUG"));
 
-        TestUtils.waitFor("log to not be empty", Duration.ofMillis(100).toMillis(), Constants.SAFETY_RECONCILIATION_INTERVAL,
+        TestUtils.waitFor("log to not be empty", Duration.ofMillis(100).toMillis(), TestConstants.SAFETY_RECONCILIATION_INTERVAL,
             () -> {
                 boolean[] correctLogging = {true};
 
@@ -887,10 +887,10 @@ class LoggingChangeST extends AbstractST {
         }, testStorage.getNamespaceName());
 
         LOGGER.info("Waiting for dynamic change in the Kafka Pod");
-        TestUtils.waitFor("Logger change", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
+        TestUtils.waitFor("Logger change", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_TIMEOUT,
             () -> KafkaCmdClient.describeKafkaBrokerLoggersUsingPodCli(testStorage.getNamespaceName(), scraperPodName, KafkaResources.plainBootstrapAddress(testStorage.getClusterName()), 0).contains("root=INFO"));
 
-        TestUtils.waitFor("log to not be empty", Duration.ofMillis(100).toMillis(), Constants.SAFETY_RECONCILIATION_INTERVAL,
+        TestUtils.waitFor("log to not be empty", Duration.ofMillis(100).toMillis(), TestConstants.SAFETY_RECONCILIATION_INTERVAL,
             () -> {
                 boolean[] correctLogging = {true};
 
@@ -925,7 +925,7 @@ class LoggingChangeST extends AbstractST {
         }, testStorage.getNamespaceName());
 
         RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getKafkaSelector(), kafkaPods);
-        TestUtils.waitFor("Logger change", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
+        TestUtils.waitFor("Logger change", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_TIMEOUT,
             () -> KafkaCmdClient.describeKafkaBrokerLoggersUsingPodCli(testStorage.getNamespaceName(), scraperPodName, KafkaResources.plainBootstrapAddress(testStorage.getClusterName()), 0).contains("paprika=INFO"));
     }
 
@@ -1032,7 +1032,7 @@ class LoggingChangeST extends AbstractST {
         kubeClient().updateConfigMapInNamespace(testStorage.getNamespaceName(), configMap);
         RollingUpdateUtils.waitForNoRollingUpdate(testStorage.getNamespaceName(), testStorage.getKafkaSelector(), kafkaPods);
         assertThat("Kafka Pod should not roll", RollingUpdateUtils.componentHasRolled(testStorage.getNamespaceName(), testStorage.getKafkaSelector(), kafkaPods), is(false));
-        TestUtils.waitFor("Verify logger change", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
+        TestUtils.waitFor("Verify logger change", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_TIMEOUT,
             () -> KafkaCmdClient.describeKafkaBrokerLoggersUsingPodCli(testStorage.getNamespaceName(), scraperPodName, KafkaResources.plainBootstrapAddress(testStorage.getClusterName()), 0).contains("kafka.authorizer.logger=ERROR"));
 
         // log4j.appender.CONSOLE.layout.ConversionPattern is changed and thus we need RU
@@ -1064,7 +1064,7 @@ class LoggingChangeST extends AbstractST {
         kubeClient().updateConfigMapInNamespace(testStorage.getNamespaceName(), configMap);
         RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getKafkaSelector(), kafkaPods);
 
-        TestUtils.waitFor("Verify logger change", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
+        TestUtils.waitFor("Verify logger change", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_TIMEOUT,
             () -> KafkaCmdClient.describeKafkaBrokerLoggersUsingPodCli(testStorage.getNamespaceName(), scraperPodName, KafkaResources.plainBootstrapAddress(testStorage.getClusterName()), 0).contains("kafka.authorizer.logger=DEBUG"));
     }
 
@@ -1098,7 +1098,7 @@ class LoggingChangeST extends AbstractST {
 
         Map<String, String> mm2Snapshot = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getMM2Selector());
 
-        TestUtils.waitFor("log to be empty", Duration.ofMillis(100).toMillis(), Constants.SAFETY_RECONCILIATION_INTERVAL,
+        TestUtils.waitFor("log to be empty", Duration.ofMillis(100).toMillis(), TestConstants.SAFETY_RECONCILIATION_INTERVAL,
             () -> {
                 String mmLog = StUtils.getLogFromPodByTime(testStorage.getNamespaceName(), kafkaMM2PodName, "", "30s");
                 return mmLog != null && mmLog.isEmpty() && !DEFAULT_LOG4J_PATTERN.matcher(mmLog).find();
@@ -1114,11 +1114,11 @@ class LoggingChangeST extends AbstractST {
         }, testStorage.getNamespaceName());
 
         LOGGER.info("Waiting for log4j.properties will contain desired settings");
-        TestUtils.waitFor("Logger change", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
+        TestUtils.waitFor("Logger change", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_TIMEOUT,
             () -> cmdKubeClient().namespace(testStorage.getNamespaceName()).execInPod(kafkaMM2PodName, "curl", mm2LogCheckCmd).out().contains("DEBUG")
         );
 
-        TestUtils.waitFor("log to not be empty", Duration.ofMillis(100).toMillis(), Constants.SAFETY_RECONCILIATION_INTERVAL,
+        TestUtils.waitFor("log to not be empty", Duration.ofMillis(100).toMillis(), TestConstants.SAFETY_RECONCILIATION_INTERVAL,
             () -> {
                 String mmLog = StUtils.getLogFromPodByTime(testStorage.getNamespaceName(), kafkaMM2PodName, "", "30s");
                 return mmLog != null && !mmLog.isEmpty() && DEFAULT_LOG4J_PATTERN.matcher(mmLog).find();
@@ -1163,11 +1163,11 @@ class LoggingChangeST extends AbstractST {
             mm2.getSpec().setLogging(mm2XternalLogging);
         }, testStorage.getNamespaceName());
 
-        TestUtils.waitFor("Logger change", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
+        TestUtils.waitFor("Logger change", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_TIMEOUT,
             () -> cmdKubeClient().namespace(testStorage.getNamespaceName()).execInPod(kafkaMM2PodName, "curl", mm2LogCheckCmd).out().contains("OFF")
         );
 
-        TestUtils.waitFor("log to not be empty", Duration.ofMillis(100).toMillis(), Constants.SAFETY_RECONCILIATION_INTERVAL,
+        TestUtils.waitFor("log to not be empty", Duration.ofMillis(100).toMillis(), TestConstants.SAFETY_RECONCILIATION_INTERVAL,
             () -> {
                 String mmLog = StUtils.getLogFromPodByTime(testStorage.getNamespaceName(), kafkaMM2PodName, "", "30s");
                 return mmLog != null && !mmLog.isEmpty() && DEFAULT_LOG4J_PATTERN.matcher(mmLog).find();
@@ -1233,7 +1233,7 @@ class LoggingChangeST extends AbstractST {
         Map<String, String> mm2Snapshot = PodUtils.podSnapshot(testStorage.getNamespaceName(), testStorage.getMM2Selector());
 
         LOGGER.info("Waiting for log4j.properties will contain desired settings");
-        TestUtils.waitFor("Logger init levels", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
+        TestUtils.waitFor("Logger init levels", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_TIMEOUT,
             () -> cmdKubeClient().namespace(testStorage.getNamespaceName()).execInPod(kafkaMM2PodName, "curl", "http://localhost:8083/admin/loggers/root").out().contains("OFF")
         );
 
@@ -1259,7 +1259,7 @@ class LoggingChangeST extends AbstractST {
 
         kubeClient().updateConfigMapInNamespace(testStorage.getNamespaceName(), mm2LoggingMap);
 
-        TestUtils.waitFor("Logger change", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
+        TestUtils.waitFor("Logger change", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_TIMEOUT,
             () -> cmdKubeClient().namespace(testStorage.getNamespaceName()).execInPod(kafkaMM2PodName, "curl", "http://localhost:8083/admin/loggers/root").out().contains("INFO")
                     // not set logger should inherit parent level (in this case 'org.eclipse.jetty.util.thread')
                     && cmdKubeClient().namespace(testStorage.getNamespaceName()).execInPod(kafkaMM2PodName, "curl", "http://localhost:8083/admin/loggers/org.eclipse.jetty.util.thread.strategy.EatWhatYouKill").out().contains("WARN")
@@ -1386,7 +1386,7 @@ class LoggingChangeST extends AbstractST {
         KafkaConnectResource.replaceKafkaConnectResourceInSpecificNamespace(testStorage.getClusterName(), kc -> kc.getSpec().setLogging(inlineError), testStorage.getNamespaceName());
 
         LOGGER.info("Waiting for Connect API loggers will contain desired settings");
-        TestUtils.waitFor("Logger change", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
+        TestUtils.waitFor("Logger change", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_TIMEOUT,
             () -> cmdKubeClient().namespace(testStorage.getNamespaceName()).execInPod(scraperPodName, "curl",
                 "http://" + KafkaConnectResources.serviceName(testStorage.getClusterName()) + ":8083/admin/loggers/" + connectorClassName).out().contains("ERROR")
         );
@@ -1413,7 +1413,7 @@ class LoggingChangeST extends AbstractST {
 
         KafkaConnectResource.replaceKafkaConnectResourceInSpecificNamespace(testStorage.getClusterName(), kc -> kc.getSpec().setLogging(inlineWarn), testStorage.getNamespaceName());
 
-        TestUtils.waitFor("Logger change", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
+        TestUtils.waitFor("Logger change", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_TIMEOUT,
             () -> cmdKubeClient().namespace(testStorage.getNamespaceName()).execInPod(scraperPodName, "curl",
                 "http://" + KafkaConnectResources.serviceName(testStorage.getClusterName()) + ":8083/admin/loggers/root").out().contains("WARN")
         );

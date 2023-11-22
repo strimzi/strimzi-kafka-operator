@@ -10,7 +10,7 @@ import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.status.KafkaTopicStatus;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
-import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.BTONotSupported;
 import io.strimzi.systemtest.annotations.IsolatedTest;
@@ -47,8 +47,8 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.util.List;
 
-import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
-import static io.strimzi.systemtest.Constants.REGRESSION;
+import static io.strimzi.systemtest.TestConstants.INTERNAL_CLIENTS_USED;
+import static io.strimzi.systemtest.TestConstants.REGRESSION;
 import static io.strimzi.systemtest.enums.ConditionStatus.False;
 import static io.strimzi.systemtest.enums.ConditionStatus.True;
 import static io.strimzi.systemtest.enums.CustomResourceStatus.NotReady;
@@ -75,7 +75,7 @@ public class TopicST extends AbstractST {
 
     private static final Logger LOGGER = LogManager.getLogger(TopicST.class);
     private static final String KAFKA_CLUSTER_NAME = "topic-cluster-name";
-    private static final String SCRAPER_NAME = KAFKA_CLUSTER_NAME + "-" + Constants.SCRAPER_NAME;
+    private static final String SCRAPER_NAME = KAFKA_CLUSTER_NAME + "-" + TestConstants.SCRAPER_NAME;
 
     private String scraperPodName;
 
@@ -150,7 +150,7 @@ public class TopicST extends AbstractST {
             AdminClientTemplates.defaultAdminClient(testStorage.getNamespaceName(), testStorage.getAdminName(), KafkaResources.plainBootstrapAddress(KAFKA_CLUSTER_NAME)).build()
         );
 
-        String adminClientPodName = kubeClient().listPods(testStorage.getNamespaceName(), Constants.ADMIN_CLIENT_LABEL_SELECTOR).get(0).getMetadata().getName();
+        String adminClientPodName = kubeClient().listPods(testStorage.getNamespaceName(), TestConstants.ADMIN_CLIENT_LABEL_SELECTOR).get(0).getMetadata().getName();
 
         AdminClient adminClient = new AdminClient(testStorage.getNamespaceName(), adminClientPodName);
         adminClient.configureFromEnv();
@@ -702,7 +702,7 @@ public class TopicST extends AbstractST {
     }
 
     void verifyTopicViaKafka(final String namespaceName, String topicName, int topicPartitions, String clusterName) {
-        TestUtils.waitFor("Describing Topic: " + topicName + " using pod CLI", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, Constants.GLOBAL_TIMEOUT,
+        TestUtils.waitFor("Describing Topic: " + topicName + " using pod CLI", TestConstants.POLL_INTERVAL_FOR_RESOURCE_READINESS, TestConstants.GLOBAL_TIMEOUT,
             () -> {
                 try {
                     String topicInfo =  KafkaCmdClient.describeTopicUsingPodCli(namespaceName, scraperPodName, KafkaResources.plainBootstrapAddress(clusterName), topicName);
@@ -742,7 +742,7 @@ public class TopicST extends AbstractST {
             .editSpec()
                 .editEntityOperator()
                     .editOrNewTopicOperator()
-                        .withReconciliationIntervalSeconds((int) Constants.RECONCILIATION_INTERVAL / 1000)
+                        .withReconciliationIntervalSeconds((int) TestConstants.RECONCILIATION_INTERVAL / 1000)
                     .endTopicOperator()
                 .endEntityOperator()
             .endSpec()

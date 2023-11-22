@@ -17,7 +17,7 @@ import io.strimzi.api.kafka.model.storage.PersistentClaimStorage;
 import io.strimzi.api.kafka.model.storage.PersistentClaimStorageBuilder;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.systemtest.AbstractST;
-import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.KRaftNotSupported;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
@@ -54,9 +54,9 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
-import static io.strimzi.systemtest.Constants.REGRESSION;
-import static io.strimzi.systemtest.Constants.ROLLING_UPDATE;
+import static io.strimzi.systemtest.TestConstants.INTERNAL_CLIENTS_USED;
+import static io.strimzi.systemtest.TestConstants.REGRESSION;
+import static io.strimzi.systemtest.TestConstants.ROLLING_UPDATE;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static java.util.Arrays.asList;
 import static org.hamcrest.CoreMatchers.containsString;
@@ -146,7 +146,7 @@ class AlternativeReconcileTriggersST extends AbstractST {
         RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getKafkaSelector(), 3, kafkaPods);
 
         // wait when annotation will be removed from kafka
-        TestUtils.waitFor("CO removes rolling update annotation", Constants.WAIT_FOR_ROLLING_UPDATE_INTERVAL, Constants.GLOBAL_TIMEOUT,
+        TestUtils.waitFor("CO removes rolling update annotation", TestConstants.WAIT_FOR_ROLLING_UPDATE_INTERVAL, TestConstants.GLOBAL_TIMEOUT,
                 () -> StrimziPodSetUtils.getAnnotationsOfStrimziPodSet(testStorage.getNamespaceName(), kafkaName) == null
                         || !StrimziPodSetUtils.getAnnotationsOfStrimziPodSet(testStorage.getNamespaceName(), kafkaName).containsKey(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE));
 
@@ -167,7 +167,7 @@ class AlternativeReconcileTriggersST extends AbstractST {
             RollingUpdateUtils.waitTillComponentHasRolled(testStorage.getNamespaceName(), testStorage.getZookeeperSelector(), 3, zkPods);
 
             // wait when annotation will be removed
-            TestUtils.waitFor("CO removes rolling update annotation", Constants.WAIT_FOR_ROLLING_UPDATE_INTERVAL, Constants.GLOBAL_TIMEOUT,
+            TestUtils.waitFor("CO removes rolling update annotation", TestConstants.WAIT_FOR_ROLLING_UPDATE_INTERVAL, TestConstants.GLOBAL_TIMEOUT,
                     () -> StrimziPodSetUtils.getAnnotationsOfStrimziPodSet(testStorage.getNamespaceName(), zkName) == null
                             || !StrimziPodSetUtils.getAnnotationsOfStrimziPodSet(testStorage.getNamespaceName(), zkName).containsKey(Annotations.ANNO_STRIMZI_IO_MANUAL_ROLLING_UPDATE));
         }
@@ -220,13 +220,13 @@ class AlternativeReconcileTriggersST extends AbstractST {
             kafka.getSpec().getKafka()
                 .setListeners(asList(
                     new GenericKafkaListenerBuilder()
-                        .withName(Constants.PLAIN_LISTENER_DEFAULT_NAME)
+                        .withName(TestConstants.PLAIN_LISTENER_DEFAULT_NAME)
                         .withPort(9092)
                         .withType(KafkaListenerType.INTERNAL)
                         .withTls(false)
                         .build(),
                     new GenericKafkaListenerBuilder()
-                        .withName(Constants.TLS_LISTENER_DEFAULT_NAME)
+                        .withName(TestConstants.TLS_LISTENER_DEFAULT_NAME)
                         .withPort(9093)
                         .withType(KafkaListenerType.INTERNAL)
                         .withTls(true)

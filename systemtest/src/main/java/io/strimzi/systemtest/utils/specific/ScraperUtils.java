@@ -7,7 +7,7 @@ package io.strimzi.systemtest.utils.specific;
 import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.LabelSelectorBuilder;
 import io.fabric8.kubernetes.api.model.Pod;
-import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.TestConstants;
 
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
@@ -24,7 +24,7 @@ public class ScraperUtils {
 
     private static LabelSelector getDefaultLabelSelector() {
         return new LabelSelectorBuilder()
-            .addToMatchLabels(Constants.SCRAPER_LABEL_KEY, Constants.SCRAPER_LABEL_VALUE)
+            .addToMatchLabels(TestConstants.SCRAPER_LABEL_KEY, TestConstants.SCRAPER_LABEL_VALUE)
             .build();
     }
 }

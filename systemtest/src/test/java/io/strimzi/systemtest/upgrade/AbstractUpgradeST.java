@@ -21,6 +21,7 @@ import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.model.Labels;
 import io.strimzi.systemtest.AbstractST;
 import io.strimzi.systemtest.Environment;
+import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 import io.strimzi.systemtest.resources.ResourceManager;
@@ -58,9 +59,9 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Random;
 
-import static io.strimzi.systemtest.Constants.DEFAULT_SINK_FILE_PATH;
-import static io.strimzi.systemtest.Constants.PATH_TO_KAFKA_TOPIC_CONFIG;
-import static io.strimzi.systemtest.Constants.PATH_TO_PACKAGING_EXAMPLES;
+import static io.strimzi.systemtest.TestConstants.DEFAULT_SINK_FILE_PATH;
+import static io.strimzi.systemtest.TestConstants.PATH_TO_KAFKA_TOPIC_CONFIG;
+import static io.strimzi.systemtest.TestConstants.PATH_TO_PACKAGING_EXAMPLES;
 import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.hamcrest.CoreMatchers.containsString;
@@ -98,11 +99,11 @@ public class AbstractUpgradeST extends AbstractST {
     protected File kafkaYaml;
 
     protected void makeSnapshots() {
-        coPods = DeploymentUtils.depSnapshot(io.strimzi.systemtest.Constants.CO_NAMESPACE, ResourceManager.getCoDeploymentName());
-        zkPods = PodUtils.podSnapshot(io.strimzi.systemtest.Constants.CO_NAMESPACE, zkSelector);
-        kafkaPods = PodUtils.podSnapshot(io.strimzi.systemtest.Constants.CO_NAMESPACE, kafkaSelector);
-        eoPods = DeploymentUtils.depSnapshot(io.strimzi.systemtest.Constants.CO_NAMESPACE, KafkaResources.entityOperatorDeploymentName(clusterName));
-        connectPods = PodUtils.podSnapshot(io.strimzi.systemtest.Constants.CO_NAMESPACE, connectLabelSelector);
+        coPods = DeploymentUtils.depSnapshot(TestConstants.CO_NAMESPACE, ResourceManager.getCoDeploymentName());
+        zkPods = PodUtils.podSnapshot(TestConstants.CO_NAMESPACE, zkSelector);
+        kafkaPods = PodUtils.podSnapshot(TestConstants.CO_NAMESPACE, kafkaSelector);
+        eoPods = DeploymentUtils.depSnapshot(TestConstants.CO_NAMESPACE, KafkaResources.entityOperatorDeploymentName(clusterName));
+        connectPods = PodUtils.podSnapshot(TestConstants.CO_NAMESPACE, connectLabelSelector);
     }
 
     @SuppressWarnings("CyclomaticComplexity")
@@ -148,7 +149,7 @@ public class AbstractUpgradeST extends AbstractST {
                 LOGGER.info("Set Kafka version to " + kafkaVersionFromProcedure);
                 cmdKubeClient().patchResource(getResourceApiVersion(Kafka.RESOURCE_PLURAL, operatorVersion), clusterName, "/spec/kafka/version", kafkaVersionFromProcedure);
                 LOGGER.info("Waiting for Kafka rolling update to finish");
-                kafkaPods = RollingUpdateUtils.waitTillComponentHasRolled(io.strimzi.systemtest.Constants.CO_NAMESPACE, kafkaSelector, 3, kafkaPods);
+                kafkaPods = RollingUpdateUtils.waitTillComponentHasRolled(TestConstants.CO_NAMESPACE, kafkaSelector, 3, kafkaPods);
             }
 
             String logMessageVersion = versionModificationData.getProcedures().getLogMessageVersion();
@@ -169,7 +170,7 @@ public class AbstractUpgradeST extends AbstractST {
                 if ((currentInterBrokerProtocol != null && !currentInterBrokerProtocol.equals(interBrokerProtocolVersion)) ||
                         (currentLogMessageFormat != null && !currentLogMessageFormat.isEmpty() && !currentLogMessageFormat.equals(logMessageVersion))) {
                     LOGGER.info("Waiting for Kafka rolling update to finish");
-                    kafkaPods = RollingUpdateUtils.waitTillComponentHasRolled(io.strimzi.systemtest.Constants.CO_NAMESPACE, kafkaSelector, 3, kafkaPods);
+                    kafkaPods = RollingUpdateUtils.waitTillComponentHasRolled(TestConstants.CO_NAMESPACE, kafkaSelector, 3, kafkaPods);
                 }
                 makeSnapshots();
             }
@@ -178,7 +179,7 @@ public class AbstractUpgradeST extends AbstractST {
                 LOGGER.info("Set Kafka version to " + kafkaVersionFromProcedure);
                 cmdKubeClient().patchResource(getResourceApiVersion(Kafka.RESOURCE_PLURAL, operatorVersion), clusterName, "/spec/kafka/version", kafkaVersionFromProcedure);
                 LOGGER.info("Waiting for Kafka rolling update to finish");
-                kafkaPods = RollingUpdateUtils.waitTillComponentHasRolled(io.strimzi.systemtest.Constants.CO_NAMESPACE, kafkaSelector, kafkaPods);
+                kafkaPods = RollingUpdateUtils.waitTillComponentHasRolled(TestConstants.CO_NAMESPACE, kafkaSelector, kafkaPods);
             }
         }
     }
@@ -201,21 +202,21 @@ public class AbstractUpgradeST extends AbstractST {
 
     protected void waitForKafkaClusterRollingUpdate() {
         LOGGER.info("Waiting for ZK StrimziPodSet roll");
-        zkPods = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(io.strimzi.systemtest.Constants.CO_NAMESPACE, zkSelector, 3, zkPods);
+        zkPods = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(TestConstants.CO_NAMESPACE, zkSelector, 3, zkPods);
         LOGGER.info("Waiting for Kafka StrimziPodSet roll");
-        kafkaPods = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(io.strimzi.systemtest.Constants.CO_NAMESPACE, kafkaSelector, 3, kafkaPods);
+        kafkaPods = RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(TestConstants.CO_NAMESPACE, kafkaSelector, 3, kafkaPods);
         LOGGER.info("Waiting for EO Deployment roll");
         // Check the TO and UO also got upgraded
-        eoPods = DeploymentUtils.waitTillDepHasRolled(io.strimzi.systemtest.Constants.CO_NAMESPACE, KafkaResources.entityOperatorDeploymentName(clusterName), 1, eoPods);
+        eoPods = DeploymentUtils.waitTillDepHasRolled(TestConstants.CO_NAMESPACE, KafkaResources.entityOperatorDeploymentName(clusterName), 1, eoPods);
     }
 
     protected void waitForReadinessOfKafkaCluster() {
         LOGGER.info("Waiting for ZooKeeper StrimziPodSet");
-        RollingUpdateUtils.waitForComponentAndPodsReady(io.strimzi.systemtest.Constants.CO_NAMESPACE, zkSelector, 3);
+        RollingUpdateUtils.waitForComponentAndPodsReady(TestConstants.CO_NAMESPACE, zkSelector, 3);
         LOGGER.info("Waiting for Kafka StrimziPodSet");
-        RollingUpdateUtils.waitForComponentAndPodsReady(io.strimzi.systemtest.Constants.CO_NAMESPACE, kafkaSelector, 3);
+        RollingUpdateUtils.waitForComponentAndPodsReady(TestConstants.CO_NAMESPACE, kafkaSelector, 3);
         LOGGER.info("Waiting for EO Deployment");
-        DeploymentUtils.waitForDeploymentAndPodsReady(io.strimzi.systemtest.Constants.CO_NAMESPACE, KafkaResources.entityOperatorDeploymentName(clusterName), 1);
+        DeploymentUtils.waitForDeploymentAndPodsReady(TestConstants.CO_NAMESPACE, KafkaResources.entityOperatorDeploymentName(clusterName), 1);
     }
 
     protected void  changeClusterOperator(BundleVersionModificationData versionModificationData, String namespace, ExtensionContext extensionContext) throws IOException {
@@ -520,7 +521,7 @@ public class AbstractUpgradeST extends AbstractST {
                     .editSpec()
                         .withClassName("org.apache.kafka.connect.file.FileStreamSinkConnector")
                         .addToConfig("topics", testStorage.getTopicName())
-                        .addToConfig("file", io.strimzi.systemtest.Constants.DEFAULT_SINK_FILE_PATH)
+                        .addToConfig("file", TestConstants.DEFAULT_SINK_FILE_PATH)
                     .endSpec()
                     .build());
             } else {
@@ -535,7 +536,7 @@ public class AbstractUpgradeST extends AbstractST {
                     )
                     .build();
 
-                final String imageFullPath = Environment.getImageOutputRegistry(testStorage.getNamespaceName(), io.strimzi.systemtest.Constants.ST_CONNECT_BUILD_IMAGE_NAME, String.valueOf(new Random().nextInt(Integer.MAX_VALUE)));
+                final String imageFullPath = Environment.getImageOutputRegistry(testStorage.getNamespaceName(), TestConstants.ST_CONNECT_BUILD_IMAGE_NAME, String.valueOf(new Random().nextInt(Integer.MAX_VALUE)));
 
                 KafkaConnect kafkaConnect = new KafkaConnectBuilder(TestUtils.configFromYaml(kafkaConnectYaml, KafkaConnect.class))
                     .editMetadata()

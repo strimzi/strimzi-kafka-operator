@@ -10,7 +10,7 @@ import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListener;
 import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.systemtest.AbstractST;
-import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.kafkaclients.externalClients.ExternalKafkaClient;
 import io.strimzi.systemtest.annotations.IsolatedTest;
@@ -37,12 +37,12 @@ import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
 
-import static io.strimzi.systemtest.Constants.ACCEPTANCE;
-import static io.strimzi.systemtest.Constants.EXTERNAL_CLIENTS_USED;
-import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
-import static io.strimzi.systemtest.Constants.LOADBALANCER_SUPPORTED;
-import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
-import static io.strimzi.systemtest.Constants.REGRESSION;
+import static io.strimzi.systemtest.TestConstants.ACCEPTANCE;
+import static io.strimzi.systemtest.TestConstants.EXTERNAL_CLIENTS_USED;
+import static io.strimzi.systemtest.TestConstants.INTERNAL_CLIENTS_USED;
+import static io.strimzi.systemtest.TestConstants.LOADBALANCER_SUPPORTED;
+import static io.strimzi.systemtest.TestConstants.NODEPORT_SUPPORTED;
+import static io.strimzi.systemtest.TestConstants.REGRESSION;
 import static org.junit.jupiter.api.Assumptions.assumeFalse;
 
 @Tag(REGRESSION)
@@ -207,7 +207,7 @@ public class MultipleListenersST extends AbstractST {
                             .withListenerName(listener.getName())
                             .build();
 
-                        LOGGER.info("Verifying {} listener", Constants.TLS_LISTENER_DEFAULT_NAME);
+                        LOGGER.info("Verifying {} listener", TestConstants.TLS_LISTENER_DEFAULT_NAME);
 
                         // verify phase
                         externalTlsKafkaClient.verifyProducedAndConsumedMessages(
@@ -224,7 +224,7 @@ public class MultipleListenersST extends AbstractST {
                             .withListenerName(listener.getName())
                             .build();
 
-                        LOGGER.info("Verifying {} listener", Constants.PLAIN_LISTENER_DEFAULT_NAME);
+                        LOGGER.info("Verifying {} listener", TestConstants.PLAIN_LISTENER_DEFAULT_NAME);
 
                         // verify phase
                         externalPlainKafkaClient.verifyProducedAndConsumedMessages(

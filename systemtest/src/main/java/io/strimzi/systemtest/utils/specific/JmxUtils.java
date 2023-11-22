@@ -5,7 +5,7 @@
 package io.strimzi.systemtest.utils.specific;
 
 import io.fabric8.kubernetes.api.model.Secret;
-import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.TestConstants;
 import io.strimzi.test.TestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -23,7 +23,7 @@ public class JmxUtils {
     private static final Logger LOGGER = LogManager.getLogger(JmxUtils.class);
 
     private static void createScriptForJMXTermInPod(String podName, String serviceName, String userName, String password, String commands) {
-        String scriptBody = "open service:jmx:rmi:///jndi/rmi://" + serviceName + ":" + Constants.JMX_PORT + "/jmxrmi";
+        String scriptBody = "open service:jmx:rmi:///jndi/rmi://" + serviceName + ":" + TestConstants.JMX_PORT + "/jmxrmi";
 
         if (!userName.equals("") && !password.equals("")) {
             scriptBody += " -u " + userName + " -p " + password + "\n";
@@ -73,7 +73,7 @@ public class JmxUtils {
         String[] result = {""};
 
         LOGGER.info("Waiting for JMX metrics to be present for Service: {}/{}", namespace, serviceName);
-        TestUtils.waitFor("JMX metrics to be present for Service: " + serviceName, Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
+        TestUtils.waitFor("JMX metrics to be present for Service: " + serviceName, TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_TIMEOUT,
             () -> {
                 result[0] = getResultOfJMXTermExec(podName, serviceName);
                 return !result[0].isEmpty();

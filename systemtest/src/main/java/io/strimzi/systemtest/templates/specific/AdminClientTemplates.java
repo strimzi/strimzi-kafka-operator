@@ -8,7 +8,7 @@ import io.fabric8.kubernetes.api.model.LocalObjectReference;
 import io.fabric8.kubernetes.api.model.PodSpecBuilder;
 import io.fabric8.kubernetes.api.model.apps.Deployment;
 import io.fabric8.kubernetes.api.model.apps.DeploymentBuilder;
-import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.enums.DeploymentTypes;
 import org.apache.kafka.common.security.auth.SecurityProtocol;
@@ -38,9 +38,9 @@ public class AdminClientTemplates {
 
     public static DeploymentBuilder defaultAdminClient(String namespaceName, String adminName, String bootstrapName, String additionalConfig) {
         Map<String, String> adminLabels = new HashMap<>();
-        adminLabels.put(Constants.APP_POD_LABEL, Constants.ADMIN_CLIENT_NAME);
-        adminLabels.put(Constants.KAFKA_ADMIN_CLIENT_LABEL_KEY, Constants.KAFKA_ADMIN_CLIENT_LABEL_VALUE);
-        adminLabels.put(Constants.DEPLOYMENT_TYPE, DeploymentTypes.AdminClient.name());
+        adminLabels.put(TestConstants.APP_POD_LABEL, TestConstants.ADMIN_CLIENT_NAME);
+        adminLabels.put(TestConstants.KAFKA_ADMIN_CLIENT_LABEL_KEY, TestConstants.KAFKA_ADMIN_CLIENT_LABEL_VALUE);
+        adminLabels.put(TestConstants.DEPLOYMENT_TYPE, DeploymentTypes.AdminClient.name());
 
         PodSpecBuilder podSpecBuilder = new PodSpecBuilder();
 
@@ -68,7 +68,7 @@ public class AdminClientTemplates {
                     .withNewSpecLike(podSpecBuilder.build())
                         .addNewContainer()
                             .withName(adminName)
-                            .withImagePullPolicy(Constants.IF_NOT_PRESENT_IMAGE_PULL_POLICY)
+                            .withImagePullPolicy(TestConstants.IF_NOT_PRESENT_IMAGE_PULL_POLICY)
                             .withImage(Environment.TEST_CLIENTS_IMAGE)
                             .addNewEnv()
                                 .withName("BOOTSTRAP_SERVERS")

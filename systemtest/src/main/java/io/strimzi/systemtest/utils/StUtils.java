@@ -18,7 +18,7 @@ import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.strimzi.api.kafka.model.ContainerEnvVar;
 import io.strimzi.api.kafka.model.ContainerEnvVarBuilder;
-import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.StrimziPodSetUtils;
@@ -226,7 +226,7 @@ public class StUtils {
     public static JsonArray expectedServiceDiscoveryInfo(int port, String protocol, String auth, boolean tls) {
         JsonObject jsonObject = new JsonObject();
         jsonObject.put("port", port);
-        jsonObject.put(Constants.TLS_LISTENER_DEFAULT_NAME, tls);
+        jsonObject.put(TestConstants.TLS_LISTENER_DEFAULT_NAME, tls);
         jsonObject.put("protocol", protocol);
         jsonObject.put("auth", auth);
 
@@ -261,7 +261,7 @@ public class StUtils {
         //this is only for decrease the number of records - kafka have record/line, operators record/11lines
         String tail = "--tail=" + (containerName.contains("operator") ? "100" : "10");
 
-        TestUtils.waitFor("JSON log to be present in " + pods, Constants.GLOBAL_POLL_INTERVAL_MEDIUM, Constants.GLOBAL_TIMEOUT, () -> {
+        TestUtils.waitFor("JSON log to be present in " + pods, TestConstants.GLOBAL_POLL_INTERVAL_MEDIUM, TestConstants.GLOBAL_TIMEOUT, () -> {
             boolean isJSON = false;
             for (String podName : pods.keySet()) {
                 String log = cmdKubeClient().namespace(namespaceName).execInCurrentNamespace(Level.TRACE, "logs", podName, "-c", containerName, tail).out();
@@ -312,7 +312,7 @@ public class StUtils {
      * @param exceptedString log message to be checked
      */
     public static void waitUntilLogFromPodContainsString(String namespaceName, String podName, String containerName, String timeSince, String exceptedString) {
-        TestUtils.waitFor("log from Pod: " + namespaceName + "/" + podName + " to contain string: " + exceptedString, Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
+        TestUtils.waitFor("log from Pod: " + namespaceName + "/" + podName + " to contain string: " + exceptedString, TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_TIMEOUT,
             () -> getLogFromPodByTime(namespaceName, podName, containerName, timeSince).contains(exceptedString));
     }
 
@@ -377,7 +377,7 @@ public class StUtils {
      * otherwise false
      */
     public static boolean isParallelTest(Object annotationHolder) {
-        return CONTAINS_ANNOTATION.apply(Constants.PARALLEL_TEST, annotationHolder);
+        return CONTAINS_ANNOTATION.apply(TestConstants.PARALLEL_TEST, annotationHolder);
     }
 
     /**
@@ -387,7 +387,7 @@ public class StUtils {
      * otherwise false
      */
     public static boolean isIsolatedTest(Object annotationHolder) {
-        return CONTAINS_ANNOTATION.apply(Constants.ISOLATED_TEST, annotationHolder);
+        return CONTAINS_ANNOTATION.apply(TestConstants.ISOLATED_TEST, annotationHolder);
     }
 
     /**
@@ -397,7 +397,7 @@ public class StUtils {
      * otherwise false
      */
     public static boolean isParallelNamespaceTest(Object annotationHolder) {
-        return CONTAINS_ANNOTATION.apply(Constants.PARALLEL_NAMESPACE, annotationHolder);
+        return CONTAINS_ANNOTATION.apply(TestConstants.PARALLEL_NAMESPACE, annotationHolder);
     }
 
     /**
@@ -407,7 +407,7 @@ public class StUtils {
      * @return single or parallel namespace based on cluster configuration
      */
     public static String getNamespaceBasedOnRbac(String namespace, ExtensionContext extensionContext) {
-        return Environment.isNamespaceRbacScope() ? namespace : extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
+        return Environment.isNamespaceRbacScope() ? namespace : extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(TestConstants.NAMESPACE_KEY).toString();
     }
 
     /**
@@ -541,12 +541,12 @@ public class StUtils {
         return cmNames;
     }
     public static void waitUntilSuppliersAreMatching(final Supplier<?> sup, final Supplier<?> anotherSup) {
-        TestUtils.waitFor(sup.get() + " is matching with" + anotherSup.get(), Constants.GLOBAL_POLL_INTERVAL,
-                Constants.GLOBAL_STATUS_TIMEOUT, () -> sup.get().equals(anotherSup.get()));
+        TestUtils.waitFor(sup.get() + " is matching with" + anotherSup.get(), TestConstants.GLOBAL_POLL_INTERVAL,
+                TestConstants.GLOBAL_STATUS_TIMEOUT, () -> sup.get().equals(anotherSup.get()));
     }
 
     public static void waitUntilSupplierIsSatisfied(final BooleanSupplier sup) {
-        TestUtils.waitFor(sup.getAsBoolean() + " is satisfied", Constants.GLOBAL_POLL_INTERVAL,
-                Constants.GLOBAL_STATUS_TIMEOUT, sup);
+        TestUtils.waitFor(sup.getAsBoolean() + " is satisfied", TestConstants.GLOBAL_POLL_INTERVAL,
+                TestConstants.GLOBAL_STATUS_TIMEOUT, sup);
     }
 }

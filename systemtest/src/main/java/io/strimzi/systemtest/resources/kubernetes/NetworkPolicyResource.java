@@ -15,7 +15,7 @@ import io.strimzi.api.kafka.model.KafkaExporterResources;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.Spec;
 import io.strimzi.api.kafka.model.status.Status;
-import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.enums.DefaultNetworkPolicy;
 import io.strimzi.systemtest.resources.ResourceManager;
@@ -37,7 +37,7 @@ public class NetworkPolicyResource implements ResourceType<NetworkPolicy> {
 
     @Override
     public String getKind() {
-        return Constants.NETWORK_POLICY;
+        return TestConstants.NETWORK_POLICY;
     }
     @Override
     public NetworkPolicy get(String namespace, String name) {
@@ -69,7 +69,7 @@ public class NetworkPolicyResource implements ResourceType<NetworkPolicy> {
     public static void allowNetworkPolicySettingsForClusterOperator(ExtensionContext extensionContext, String namespace) {
         String clusterOperatorKind = "cluster-operator";
         LabelSelector labelSelector = new LabelSelectorBuilder()
-            .addToMatchLabels(Constants.SCRAPER_LABEL_KEY, Constants.SCRAPER_LABEL_VALUE)
+            .addToMatchLabels(TestConstants.SCRAPER_LABEL_KEY, TestConstants.SCRAPER_LABEL_VALUE)
             .build();
 
         LOGGER.info("Apply NetworkPolicy access to {} from Pods with LabelSelector {}", clusterOperatorKind, labelSelector);
@@ -78,7 +78,7 @@ public class NetworkPolicyResource implements ResourceType<NetworkPolicy> {
             .editSpec()
                 .editFirstIngress()
                     .addNewPort()
-                        .withNewPort(Constants.CLUSTER_OPERATOR_METRICS_PORT)
+                        .withNewPort(TestConstants.CLUSTER_OPERATOR_METRICS_PORT)
                         .withProtocol("TCP")
                     .endPort()
                 .endIngress()
@@ -95,7 +95,7 @@ public class NetworkPolicyResource implements ResourceType<NetworkPolicy> {
 
     public static void allowNetworkPolicySettingsForEntityOperator(ExtensionContext extensionContext, String clusterName, String namespace) {
         LabelSelector labelSelector = new LabelSelectorBuilder()
-            .addToMatchLabels(Constants.SCRAPER_LABEL_KEY, Constants.SCRAPER_LABEL_VALUE)
+            .addToMatchLabels(TestConstants.SCRAPER_LABEL_KEY, TestConstants.SCRAPER_LABEL_VALUE)
             .build();
 
         String eoDeploymentName = KafkaResources.entityOperatorDeploymentName(clusterName);
@@ -106,11 +106,11 @@ public class NetworkPolicyResource implements ResourceType<NetworkPolicy> {
             .editSpec()
                 .editFirstIngress()
                     .addNewPort()
-                        .withNewPort(Constants.TOPIC_OPERATOR_METRICS_PORT)
+                        .withNewPort(TestConstants.TOPIC_OPERATOR_METRICS_PORT)
                         .withProtocol("TCP")
                     .endPort()
                     .addNewPort()
-                        .withNewPort(Constants.USER_OPERATOR_METRICS_PORT)
+                        .withNewPort(TestConstants.USER_OPERATOR_METRICS_PORT)
                         .withProtocol("TCP")
                     .endPort()
                 .endIngress()
@@ -130,7 +130,7 @@ public class NetworkPolicyResource implements ResourceType<NetworkPolicy> {
     public static void allowNetworkPolicySettingsForKafkaExporter(ExtensionContext extensionContext, String clusterName, String namespace) {
         String kafkaExporterDeploymentName = KafkaExporterResources.deploymentName(clusterName);
         LabelSelector labelSelector = new LabelSelectorBuilder()
-            .addToMatchLabels(Constants.SCRAPER_LABEL_KEY, Constants.SCRAPER_LABEL_VALUE)
+            .addToMatchLabels(TestConstants.SCRAPER_LABEL_KEY, TestConstants.SCRAPER_LABEL_VALUE)
             .build();
 
         LOGGER.info("Apply NetworkPolicy access to {} from Pods with LabelSelector {}", kafkaExporterDeploymentName, labelSelector);
@@ -139,7 +139,7 @@ public class NetworkPolicyResource implements ResourceType<NetworkPolicy> {
             .editSpec()
                 .editFirstIngress()
                     .addNewPort()
-                        .withNewPort(Constants.COMPONENTS_METRICS_PORT)
+                        .withNewPort(TestConstants.COMPONENTS_METRICS_PORT)
                         .withProtocol("TCP")
                     .endPort()
                 .endIngress()
@@ -163,12 +163,12 @@ public class NetworkPolicyResource implements ResourceType<NetworkPolicy> {
      */
     public static void allowNetworkPolicySettingsForResource(ExtensionContext extensionContext, HasMetadata resource, String deploymentName) {
         LabelSelector labelSelector = new LabelSelectorBuilder()
-            .addToMatchLabels(Constants.SCRAPER_LABEL_KEY, Constants.SCRAPER_LABEL_VALUE)
+            .addToMatchLabels(TestConstants.SCRAPER_LABEL_KEY, TestConstants.SCRAPER_LABEL_VALUE)
             .build();
 
         final String namespaceName = StUtils.isParallelNamespaceTest(extensionContext) && !Environment.isNamespaceRbacScope() ?
             // if parallel namespace test use namespace from store and if RBAC is enable we don't run tests in parallel mode and with that said we don't create another namespaces
-            extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString() :
+            extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(TestConstants.NAMESPACE_KEY).toString() :
             // otherwise use resource namespace
             resource.getMetadata().getNamespace();
 
@@ -183,7 +183,7 @@ public class NetworkPolicyResource implements ResourceType<NetworkPolicy> {
 
         NetworkPolicy networkPolicy = new NetworkPolicyBuilder()
             .withApiVersion("networking.k8s.io/v1")
-            .withKind(Constants.NETWORK_POLICY)
+            .withKind(TestConstants.NETWORK_POLICY)
             .withNewMetadata()
                 .withName(resource.getMetadata().getName() + "-allow")
                 .withNamespace(namespaceName)
@@ -206,7 +206,7 @@ public class NetworkPolicyResource implements ResourceType<NetworkPolicy> {
                         .withProtocol("TCP")
                     .endPort()
                     .addNewPort()
-                        .withNewPort(Constants.JMX_PORT)
+                        .withNewPort(TestConstants.JMX_PORT)
                         .withProtocol("TCP")
                     .endPort()
                 .endIngress()

@@ -21,7 +21,7 @@ import io.fabric8.kubernetes.api.model.rbac.Role;
 import io.fabric8.kubernetes.api.model.rbac.RoleBinding;
 import io.fabric8.kubernetes.api.model.rbac.RoleBindingBuilder;
 import io.fabric8.kubernetes.api.model.rbac.RoleBuilder;
-import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.enums.ClusterOperatorRBACType;
 import io.strimzi.systemtest.enums.OlmInstallationStrategy;
@@ -107,7 +107,7 @@ public class SetupClusterOperator {
     private List<ClusterRole> clusterRoles;
     private List<ClusterRoleBinding> clusterRoleBindings;
 
-    private static final Predicate<String> IS_OLM_CLUSTER_WIDE = namespaceToWatch -> namespaceToWatch.equals(Constants.WATCH_ALL_NAMESPACES) || namespaceToWatch.split(",").length > 1;
+    private static final Predicate<String> IS_OLM_CLUSTER_WIDE = namespaceToWatch -> namespaceToWatch.equals(TestConstants.WATCH_ALL_NAMESPACES) || namespaceToWatch.split(",").length > 1;
     private static final Predicate<SetupClusterOperator> IS_EMPTY = co -> co.helmResource == null && co.olmResource == null &&
         co.extensionContext == null && co.clusterOperatorName == null && co.namespaceInstallTo == null &&
         co.namespaceToWatch == null && co.bindingsNamespaces == null && co.operationTimeout == 0 && co.reconciliationInterval == 0 &&
@@ -142,11 +142,11 @@ public class SetupClusterOperator {
 
         // assign defaults is something is not specified
         if (this.clusterOperatorName == null || this.clusterOperatorName.isEmpty()) {
-            this.clusterOperatorName = Constants.STRIMZI_DEPLOYMENT_NAME;
+            this.clusterOperatorName = TestConstants.STRIMZI_DEPLOYMENT_NAME;
         }
         // if namespace is not set we install operator to 'co-namespace'
         if (this.namespaceInstallTo == null || this.namespaceInstallTo.isEmpty()) {
-            this.namespaceInstallTo = Constants.CO_NAMESPACE;
+            this.namespaceInstallTo = TestConstants.CO_NAMESPACE;
         }
         if (this.namespaceToWatch == null) {
             this.namespaceToWatch = this.namespaceInstallTo;
@@ -156,10 +156,10 @@ public class SetupClusterOperator {
             this.bindingsNamespaces.add(this.namespaceInstallTo);
         }
         if (this.operationTimeout == 0) {
-            this.operationTimeout = Constants.CO_OPERATION_TIMEOUT_DEFAULT;
+            this.operationTimeout = TestConstants.CO_OPERATION_TIMEOUT_DEFAULT;
         }
         if (this.reconciliationInterval == 0) {
-            this.reconciliationInterval = Constants.RECONCILIATION_INTERVAL;
+            this.reconciliationInterval = TestConstants.RECONCILIATION_INTERVAL;
         }
         if (this.extraEnvVars == null) {
             this.extraEnvVars = new ArrayList<>();
@@ -178,7 +178,7 @@ public class SetupClusterOperator {
      * @return true if Cluster Operator namespace not created, otherwise false (i.e., namespace already created)
      */
     private boolean isClusterOperatorNamespaceNotCreated() {
-        return extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.PREPARE_OPERATOR_ENV_KEY + namespaceInstallTo) == null;
+        return extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(TestConstants.PREPARE_OPERATOR_ENV_KEY + namespaceInstallTo) == null;
     }
 
     /**
@@ -198,13 +198,13 @@ public class SetupClusterOperator {
 
         // RBAC set to `NAMESPACE`
         if (Environment.isNamespaceRbacScope() && !Environment.isHelmInstall()) {
-            clusterOperatorBuilder = clusterOperatorBuilder.withNamespace(Constants.CO_NAMESPACE);
+            clusterOperatorBuilder = clusterOperatorBuilder.withNamespace(TestConstants.CO_NAMESPACE);
             return clusterOperatorBuilder;
         }
         // otherwise
         return clusterOperatorBuilder
-            .withNamespace(Constants.CO_NAMESPACE)
-            .withWatchingNamespaces(Constants.WATCH_ALL_NAMESPACES);
+            .withNamespace(TestConstants.CO_NAMESPACE)
+            .withWatchingNamespaces(TestConstants.WATCH_ALL_NAMESPACES);
     }
 
     /**
@@ -336,13 +336,14 @@ public class SetupClusterOperator {
         if (IS_OLM_CLUSTER_WIDE.test(namespaceToWatch)) {
             // if RBAC is enable we don't run tests in parallel mode and with that said we don't create another namespaces
             if (!Environment.isNamespaceRbacScope()) {
-                bindingsNamespaces = bindingsNamespaces.contains(Constants.CO_NAMESPACE) ? Collections.singletonList(Constants.CO_NAMESPACE) : bindingsNamespaces;
+                bindingsNamespaces = bindingsNamespaces.contains(TestConstants.CO_NAMESPACE) ? Collections.singletonList(
+                    TestConstants.CO_NAMESPACE) : bindingsNamespaces;
 
                 createClusterOperatorNamespaceIfPossible();
                 createClusterRoleBindings();
 
                 // watch all namespaces
-                olmConfiguration.withNamespaceToWatch(Constants.WATCH_ALL_NAMESPACES);
+                olmConfiguration.withNamespaceToWatch(TestConstants.WATCH_ALL_NAMESPACES);
 
                 olmResource = new OlmResource(olmConfiguration.withNamespaceName(namespaceInstallTo).build());
                 olmResource.create();
@@ -408,7 +409,7 @@ public class SetupClusterOperator {
                 cluster.createNamespaces(collectorElement, namespaceInstallTo, bindingsNamespaces);
                 StUtils.copyImagePullSecrets(namespaceInstallTo);
 
-                this.extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.PREPARE_OPERATOR_ENV_KEY + namespaceInstallTo, true);
+                this.extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(TestConstants.PREPARE_OPERATOR_ENV_KEY + namespaceInstallTo, true);
             }
         }
     }
@@ -572,41 +573,42 @@ public class SetupClusterOperator {
 
     public String changeLeaseNameInResourceIfNeeded(String yamlPath) {
         final EnvVar leaseEnvVar = extraEnvVars.stream().filter(envVar -> envVar.getName().equals("STRIMZI_LEADER_ELECTION_LEASE_NAME")).findFirst().orElse(null);
-        Map.Entry<String, String> resourceEntry = Constants.LEASE_FILES_AND_RESOURCES.entrySet().stream().filter(entry -> yamlPath.equals(entry.getValue())).findFirst().orElse(null);
+        Map.Entry<String, String> resourceEntry = TestConstants.LEASE_FILES_AND_RESOURCES.entrySet().stream().filter(entry -> yamlPath.equals(entry.getValue())).findFirst().orElse(null);
 
         if (leaseEnvVar != null && resourceEntry != null) {
             try {
                 String[] path = yamlPath.split("/");
-                String fileName = path[path.length - 1].replace(Constants.STRIMZI_DEPLOYMENT_NAME, leaseEnvVar.getValue()).replace(".yaml", "");
+                String fileName = path[path.length - 1].replace(TestConstants.STRIMZI_DEPLOYMENT_NAME, leaseEnvVar.getValue()).replace(".yaml", "");
                 File tmpFile = Files.createTempFile(fileName, "yaml").toFile();
 
                 String tmpFileContent;
                 final String resourceName = leaseEnvVar.getValue() + "-leader-election";
 
                 switch (resourceEntry.getKey()) {
-                    case Constants.ROLE:
+                    case TestConstants.ROLE:
                         RoleBuilder roleBuilder = new RoleBuilder(TestUtils.configFromYaml(yamlPath, Role.class))
                             .editMetadata()
                                 .withName(resourceName)
                             .endMetadata()
-                            .editMatchingRule(rule -> rule.getFirstResourceName().equals(Constants.STRIMZI_DEPLOYMENT_NAME))
+                            .editMatchingRule(rule -> rule.getFirstResourceName().equals(TestConstants.STRIMZI_DEPLOYMENT_NAME))
                                 .withResourceNames(leaseEnvVar.getValue())
                             .endRule();
 
                         tmpFileContent = TestUtils.toYamlString(roleBuilder.build());
                         break;
-                    case Constants.CLUSTER_ROLE:
+                    case TestConstants.CLUSTER_ROLE:
                         ClusterRoleBuilder clusterRoleBuilder = new ClusterRoleBuilder(TestUtils.configFromYaml(yamlPath, ClusterRole.class))
                             .editMetadata()
                                 .withName(resourceName)
                             .endMetadata()
-                            .editMatchingRule(rule -> rule.getResourceNames().stream().findAny().orElse("").equals(Constants.STRIMZI_DEPLOYMENT_NAME))
+                            .editMatchingRule(rule -> rule.getResourceNames().stream().findAny().orElse("").equals(
+                                TestConstants.STRIMZI_DEPLOYMENT_NAME))
                                 .withResourceNames(leaseEnvVar.getValue())
                             .endRule();
 
                         tmpFileContent = TestUtils.toYamlString(clusterRoleBuilder.build());
                         break;
-                    case Constants.ROLE_BINDING:
+                    case TestConstants.ROLE_BINDING:
                         RoleBindingBuilder roleBindingBuilder = new RoleBindingBuilder(TestUtils.configFromYaml(yamlPath, RoleBinding.class))
                             .editMetadata()
                                 .withName(resourceName)
@@ -645,14 +647,14 @@ public class SetupClusterOperator {
         for (File operatorFile : operatorFiles) {
             File createFile = operatorFile;
 
-            if (createFile.getName().contains(Constants.CLUSTER_ROLE + "-")) {
+            if (createFile.getName().contains(TestConstants.CLUSTER_ROLE + "-")) {
                 createFile = switchClusterRolesToRolesIfNeeded(createFile);
             }
 
             final String resourceType = createFile.getName().split("-")[1];
 
             switch (resourceType) {
-                case Constants.ROLE:
+                case TestConstants.ROLE:
                     if (!this.isRolesAndBindingsManagedByAnUser()) {
                         Role role = TestUtils.configFromYaml(createFile, Role.class);
                         ResourceManager.getInstance().createResourceWithWait(extensionContext, new RoleBuilder(role)
@@ -662,13 +664,13 @@ public class SetupClusterOperator {
                             .build());
                     }
                     break;
-                case Constants.CLUSTER_ROLE:
+                case TestConstants.CLUSTER_ROLE:
                     if (!this.isRolesAndBindingsManagedByAnUser()) {
                         ClusterRole clusterRole = TestUtils.configFromYaml(changeLeaseNameInResourceIfNeeded(createFile.getAbsolutePath()), ClusterRole.class);
                         ResourceManager.getInstance().createResourceWithWait(extensionContext, clusterRole);
                     }
                     break;
-                case Constants.SERVICE_ACCOUNT:
+                case TestConstants.SERVICE_ACCOUNT:
                     ServiceAccount serviceAccount = TestUtils.configFromYaml(createFile, ServiceAccount.class);
                     ResourceManager.getInstance().createResourceWithWait(extensionContext, new ServiceAccountBuilder(serviceAccount)
                         .editMetadata()
@@ -676,7 +678,7 @@ public class SetupClusterOperator {
                         .endMetadata()
                         .build());
                     break;
-                case Constants.CONFIG_MAP:
+                case TestConstants.CONFIG_MAP:
                     ConfigMap configMap = TestUtils.configFromYaml(createFile, ConfigMap.class);
                     ResourceManager.getInstance().createResourceWithWait(extensionContext, new ConfigMapBuilder(configMap)
                         .editMetadata()
@@ -685,7 +687,7 @@ public class SetupClusterOperator {
                         .endMetadata()
                         .build());
                     break;
-                case Constants.LEASE:
+                case TestConstants.LEASE:
                     // Loads the resource through Fabric8 Kubernetes Client => that way we do not need to add a direct
                     // dependency on Jackson Datatype JSR310 to decode the Lease resource
                     Lease lease = kubeClient().getClient().leases().load(createFile).item();
@@ -696,7 +698,7 @@ public class SetupClusterOperator {
                             .endMetadata()
                             .build());
                     break;
-                case Constants.CUSTOM_RESOURCE_DEFINITION_SHORT:
+                case TestConstants.CUSTOM_RESOURCE_DEFINITION_SHORT:
                     CustomResourceDefinition customResourceDefinition = TestUtils.configFromYaml(createFile, CustomResourceDefinition.class);
                     ResourceManager.getInstance().createResourceWithWait(extensionContext, customResourceDefinition);
                     break;
@@ -744,44 +746,44 @@ public class SetupClusterOperator {
      */
     public void applyRoleBindings(ExtensionContext extensionContext, String namespace, String bindingsNamespace) {
         // 020-RoleBinding => Cluster Operator rights for managing operands
-        File roleFile = new File(Constants.PATH_TO_PACKAGING_INSTALL_FILES + "/cluster-operator/020-RoleBinding-strimzi-cluster-operator.yaml");
+        File roleFile = new File(TestConstants.PATH_TO_PACKAGING_INSTALL_FILES + "/cluster-operator/020-RoleBinding-strimzi-cluster-operator.yaml");
         RoleBindingResource.roleBinding(extensionContext, switchClusterRolesToRolesIfNeeded(roleFile).getAbsolutePath(), namespace, bindingsNamespace);
 
         // 022-RoleBinding => Leader election RoleBinding (is only in the operator namespace)
-        roleFile = new File(Constants.PATH_TO_PACKAGING_INSTALL_FILES + "/cluster-operator/022-RoleBinding-strimzi-cluster-operator.yaml");
+        roleFile = new File(TestConstants.PATH_TO_PACKAGING_INSTALL_FILES + "/cluster-operator/022-RoleBinding-strimzi-cluster-operator.yaml");
         roleFile = switchClusterRolesToRolesIfNeeded(roleFile);
         RoleBindingResource.roleBinding(extensionContext, changeLeaseNameInResourceIfNeeded(roleFile.getAbsolutePath()), namespace, namespace);
 
         // 023-RoleBinding => Leader election RoleBinding (is only in the operator namespace)
-        roleFile = new File(Constants.PATH_TO_PACKAGING_INSTALL_FILES + "/cluster-operator/023-RoleBinding-strimzi-cluster-operator.yaml");
+        roleFile = new File(TestConstants.PATH_TO_PACKAGING_INSTALL_FILES + "/cluster-operator/023-RoleBinding-strimzi-cluster-operator.yaml");
         RoleBindingResource.roleBinding(extensionContext, switchClusterRolesToRolesIfNeeded(roleFile).getAbsolutePath(), namespace, bindingsNamespace);
 
         // 031-RoleBinding => Entity Operator delegation
-        roleFile = new File(Constants.PATH_TO_PACKAGING_INSTALL_FILES + "/cluster-operator/031-RoleBinding-strimzi-cluster-operator-entity-operator-delegation.yaml");
+        roleFile = new File(TestConstants.PATH_TO_PACKAGING_INSTALL_FILES + "/cluster-operator/031-RoleBinding-strimzi-cluster-operator-entity-operator-delegation.yaml");
         RoleBindingResource.roleBinding(extensionContext, switchClusterRolesToRolesIfNeeded(roleFile).getAbsolutePath(), namespace, bindingsNamespace);
     }
 
     public void applyRoles(ExtensionContext extensionContext, String namespace) {
-        File roleFile = new File(Constants.PATH_TO_PACKAGING_INSTALL_FILES + "/cluster-operator/020-ClusterRole-strimzi-cluster-operator-role.yaml");
+        File roleFile = new File(TestConstants.PATH_TO_PACKAGING_INSTALL_FILES + "/cluster-operator/020-ClusterRole-strimzi-cluster-operator-role.yaml");
         RoleResource.role(extensionContext, switchClusterRolesToRolesIfNeeded(roleFile).getAbsolutePath(), namespace);
 
-        roleFile = new File(Constants.PATH_TO_PACKAGING_INSTALL_FILES + "/cluster-operator/021-ClusterRole-strimzi-cluster-operator-role.yaml");
+        roleFile = new File(TestConstants.PATH_TO_PACKAGING_INSTALL_FILES + "/cluster-operator/021-ClusterRole-strimzi-cluster-operator-role.yaml");
         RoleResource.role(extensionContext, switchClusterRolesToRolesIfNeeded(roleFile).getAbsolutePath(), namespace);
 
-        roleFile = new File(Constants.PATH_TO_PACKAGING_INSTALL_FILES + "/cluster-operator/022-ClusterRole-strimzi-cluster-operator-role.yaml");
+        roleFile = new File(TestConstants.PATH_TO_PACKAGING_INSTALL_FILES + "/cluster-operator/022-ClusterRole-strimzi-cluster-operator-role.yaml");
         roleFile = switchClusterRolesToRolesIfNeeded(roleFile);
         RoleResource.role(extensionContext, changeLeaseNameInResourceIfNeeded(roleFile.getAbsolutePath()), namespace);
 
-        roleFile = new File(Constants.PATH_TO_PACKAGING_INSTALL_FILES + "/cluster-operator/023-ClusterRole-strimzi-cluster-operator-role.yaml");
+        roleFile = new File(TestConstants.PATH_TO_PACKAGING_INSTALL_FILES + "/cluster-operator/023-ClusterRole-strimzi-cluster-operator-role.yaml");
         RoleResource.role(extensionContext, switchClusterRolesToRolesIfNeeded(roleFile).getAbsolutePath(), namespace);
 
-        roleFile = new File(Constants.PATH_TO_PACKAGING_INSTALL_FILES + "/cluster-operator/030-ClusterRole-strimzi-kafka-broker.yaml");
+        roleFile = new File(TestConstants.PATH_TO_PACKAGING_INSTALL_FILES + "/cluster-operator/030-ClusterRole-strimzi-kafka-broker.yaml");
         RoleResource.role(extensionContext, switchClusterRolesToRolesIfNeeded(roleFile).getAbsolutePath(), namespace);
 
-        roleFile = new File(Constants.PATH_TO_PACKAGING_INSTALL_FILES + "/cluster-operator/031-ClusterRole-strimzi-entity-operator.yaml");
+        roleFile = new File(TestConstants.PATH_TO_PACKAGING_INSTALL_FILES + "/cluster-operator/031-ClusterRole-strimzi-entity-operator.yaml");
         RoleResource.role(extensionContext, switchClusterRolesToRolesIfNeeded(roleFile).getAbsolutePath(), namespace);
 
-        roleFile = new File(Constants.PATH_TO_PACKAGING_INSTALL_FILES + "/cluster-operator/033-ClusterRole-strimzi-kafka-client.yaml");
+        roleFile = new File(TestConstants.PATH_TO_PACKAGING_INSTALL_FILES + "/cluster-operator/033-ClusterRole-strimzi-kafka-client.yaml");
         RoleResource.role(extensionContext, switchClusterRolesToRolesIfNeeded(roleFile).getAbsolutePath(), namespace);
     }
 
@@ -804,7 +806,7 @@ public class SetupClusterOperator {
             }
         }
         // cluster-wide installation
-        if (namespaceToWatch.equals(Constants.WATCH_ALL_NAMESPACES)) {
+        if (namespaceToWatch.equals(TestConstants.WATCH_ALL_NAMESPACES)) {
             if (Environment.isNamespaceRbacScope()) {
                 // we override namespaceToWatch to where cluster operator is installed because RBAC is
                 // enabled and we have use only single namespace
@@ -818,11 +820,11 @@ public class SetupClusterOperator {
 
     private static void applyClusterRoleBindings(ExtensionContext extensionContext, String namespace) {
         // 021-ClusterRoleBinding
-        ClusterRoleBindingResource.clusterRoleBinding(extensionContext, Constants.PATH_TO_PACKAGING_INSTALL_FILES + "/cluster-operator/021-ClusterRoleBinding-strimzi-cluster-operator.yaml", namespace);
+        ClusterRoleBindingResource.clusterRoleBinding(extensionContext, TestConstants.PATH_TO_PACKAGING_INSTALL_FILES + "/cluster-operator/021-ClusterRoleBinding-strimzi-cluster-operator.yaml", namespace);
         // 030-ClusterRoleBinding
-        ClusterRoleBindingResource.clusterRoleBinding(extensionContext, Constants.PATH_TO_PACKAGING_INSTALL_FILES + "/cluster-operator/030-ClusterRoleBinding-strimzi-cluster-operator-kafka-broker-delegation.yaml", namespace);
+        ClusterRoleBindingResource.clusterRoleBinding(extensionContext, TestConstants.PATH_TO_PACKAGING_INSTALL_FILES + "/cluster-operator/030-ClusterRoleBinding-strimzi-cluster-operator-kafka-broker-delegation.yaml", namespace);
         // 033-ClusterRoleBinding
-        ClusterRoleBindingResource.clusterRoleBinding(extensionContext, Constants.PATH_TO_PACKAGING_INSTALL_FILES + "/cluster-operator/033-ClusterRoleBinding-strimzi-cluster-operator-kafka-client-delegation.yaml", namespace);
+        ClusterRoleBindingResource.clusterRoleBinding(extensionContext, TestConstants.PATH_TO_PACKAGING_INSTALL_FILES + "/cluster-operator/033-ClusterRoleBinding-strimzi-cluster-operator-kafka-client-delegation.yaml", namespace);
     }
 
     public synchronized void unInstall() {
@@ -836,7 +838,7 @@ public class SetupClusterOperator {
             LOGGER.info(String.join("", Collections.nCopies(76, "=")));
 
             if (this.extensionContext != null) {
-                this.extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.PREPARE_OPERATOR_ENV_KEY + namespaceInstallTo, null);
+                this.extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(TestConstants.PREPARE_OPERATOR_ENV_KEY + namespaceInstallTo, null);
             }
 
             // trigger that we will again create namespace
@@ -974,7 +976,7 @@ public class SetupClusterOperator {
      *    2. Helm &amp; installation    :   return @code{namespaceInstallTo}
      */
     public String getDeploymentNamespace() {
-        return namespaceInstallTo == null ? Constants.CO_NAMESPACE : namespaceInstallTo;
+        return namespaceInstallTo == null ? TestConstants.CO_NAMESPACE : namespaceInstallTo;
     }
 
     public OlmResource getOlmResource() {

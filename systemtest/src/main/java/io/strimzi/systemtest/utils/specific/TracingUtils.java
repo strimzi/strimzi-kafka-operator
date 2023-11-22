@@ -4,7 +4,7 @@
  */
 package io.strimzi.systemtest.utils.specific;
 
-import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.TestConstants;
 import io.strimzi.test.TestUtils;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -36,7 +36,7 @@ public class TracingUtils {
     }
 
     private static void verifyThatServiceIsPresent(String namespaceName, String componentJaegerServiceName, String clientPodName, String jaegerServiceName) {
-        TestUtils.waitFor("Jaeger Service: " + componentJaegerServiceName + " to be present", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT, () -> {
+        TestUtils.waitFor("Jaeger Service: " + componentJaegerServiceName + " to be present", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_TIMEOUT, () -> {
             JsonObject jaegerServices = new JsonObject(cmdKubeClient(namespaceName).execInPod(clientPodName, "/bin/bash", "-c", "curl " + jaegerServiceName + ":" + JAEGER_QUERY_PORT + JAEGER_QUERY_SERVICE_ENDPOINT).out());
 
             if (jaegerServices.getJsonArray("data").contains(componentJaegerServiceName)) {
@@ -50,7 +50,7 @@ public class TracingUtils {
     }
 
     private static void verifyThatServiceTracesArePresent(String namespaceName, String componentJaegerServiceName, String clientPodName, String operation, String jaegerServiceName) {
-        TestUtils.waitFor("Jaeger Service: " + componentJaegerServiceName + " to contain some traces", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT, () -> {
+        TestUtils.waitFor("Jaeger Service: " + componentJaegerServiceName + " to contain some traces", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_TIMEOUT, () -> {
             String query;
             if (operation == null)  {
                 query = jaegerServiceName + ":" + JAEGER_QUERY_PORT + JAEGER_QUERY_SERVICE_TRACES_ENDPOINT + JAEGER_QUERY_SERVICE_PARAM_SERVICE + componentJaegerServiceName;

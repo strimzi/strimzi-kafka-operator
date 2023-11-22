@@ -17,7 +17,7 @@ import io.strimzi.api.kafka.model.KafkaBuilder;
 import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.api.kafka.model.storage.JbodStorage;
-import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.utils.TestKafkaVersion;
 import io.strimzi.test.TestUtils;
@@ -39,7 +39,7 @@ public class KafkaTemplates {
     }
 
     public static KafkaBuilder kafkaEphemeral(String name, int kafkaReplicas, int zookeeperReplicas) {
-        Kafka kafka = getKafkaFromYaml(Constants.PATH_TO_KAFKA_EPHEMERAL_CONFIG);
+        Kafka kafka = getKafkaFromYaml(TestConstants.PATH_TO_KAFKA_EPHEMERAL_CONFIG);
         return defaultKafka(kafka, name, kafkaReplicas, zookeeperReplicas);
     }
 
@@ -48,7 +48,7 @@ public class KafkaTemplates {
     }
 
     public static KafkaBuilder kafkaPersistent(String name, int kafkaReplicas, int zookeeperReplicas) {
-        Kafka kafka = getKafkaFromYaml(Constants.PATH_TO_KAFKA_PERSISTENT_CONFIG);
+        Kafka kafka = getKafkaFromYaml(TestConstants.PATH_TO_KAFKA_PERSISTENT_CONFIG);
         return defaultKafka(kafka, name, kafkaReplicas, zookeeperReplicas)
             .editSpec()
                 .editKafka()
@@ -71,7 +71,7 @@ public class KafkaTemplates {
     }
 
     public static KafkaBuilder kafkaJBOD(String name, int kafkaReplicas, int zookeeperReplicas, JbodStorage jbodStorage) {
-        Kafka kafka = getKafkaFromYaml(Constants.PATH_TO_KAFKA_PERSISTENT_CONFIG);
+        Kafka kafka = getKafkaFromYaml(TestConstants.PATH_TO_KAFKA_PERSISTENT_CONFIG);
         return defaultKafka(kafka, name, kafkaReplicas, zookeeperReplicas)
             .editSpec()
                 .editKafka()
@@ -84,9 +84,9 @@ public class KafkaTemplates {
     }
 
     public static KafkaBuilder kafkaWithMetrics(String name, String namespace, int kafkaReplicas, int zookeeperReplicas) {
-        Kafka kafka = getKafkaFromYaml(Constants.PATH_TO_KAFKA_METRICS_CONFIG);
+        Kafka kafka = getKafkaFromYaml(TestConstants.PATH_TO_KAFKA_METRICS_CONFIG);
         String metricsConfigMapName = name + "-kafka-metrics";
-        ConfigMap metricsCm = TestUtils.configMapFromYaml(Constants.PATH_TO_KAFKA_METRICS_CONFIG, "kafka-metrics");
+        ConfigMap metricsCm = TestUtils.configMapFromYaml(TestConstants.PATH_TO_KAFKA_METRICS_CONFIG, "kafka-metrics");
         metricsCm.getMetadata().setName(metricsConfigMapName);
         if (KubeClusterResource.kubeClient().getClient().configMaps().inNamespace(namespace).withName(metricsConfigMapName).get() != null) {
             KubeClusterResource.kubeClient().getClient().configMaps().inNamespace(namespace).withName(metricsConfigMapName).delete();
@@ -117,7 +117,7 @@ public class KafkaTemplates {
     }
 
     public static KafkaBuilder kafkaWithCruiseControl(String name, int kafkaReplicas, int zookeeperReplicas) {
-        Kafka kafka = getKafkaFromYaml(Constants.PATH_TO_KAFKA_CRUISE_CONTROL_CONFIG);
+        Kafka kafka = getKafkaFromYaml(TestConstants.PATH_TO_KAFKA_CRUISE_CONTROL_CONFIG);
 
         return defaultKafka(kafka, name, kafkaReplicas, zookeeperReplicas)
                 .editSpec()
@@ -129,10 +129,10 @@ public class KafkaTemplates {
     }
 
     public static KafkaBuilder kafkaWithMetricsAndCruiseControlWithMetrics(String name, String namespaceName, int kafkaReplicas, int zookeeperReplicas) {
-        Kafka kafka = getKafkaFromYaml(Constants.PATH_TO_KAFKA_METRICS_CONFIG);
+        Kafka kafka = getKafkaFromYaml(TestConstants.PATH_TO_KAFKA_METRICS_CONFIG);
         String metricsConfigMapName = name + "-kafka-metrics";
         String ccConfigMapName = name + "-cruise-control-metrics-test";
-        ConfigMap kafkaMetricsCm = TestUtils.configMapFromYaml(Constants.PATH_TO_KAFKA_METRICS_CONFIG, "kafka-metrics");
+        ConfigMap kafkaMetricsCm = TestUtils.configMapFromYaml(TestConstants.PATH_TO_KAFKA_METRICS_CONFIG, "kafka-metrics");
         kafkaMetricsCm.getMetadata().setName(metricsConfigMapName);
         if (KubeClusterResource.kubeClient().getClient().configMaps().inNamespace(namespaceName).withName(metricsConfigMapName).get() != null) {
             KubeClusterResource.kubeClient().getClient().configMaps().inNamespace(namespaceName).withName(metricsConfigMapName).delete();
@@ -211,13 +211,13 @@ public class KafkaTemplates {
                     .addToConfig("default.replication.factor", Math.min(kafkaReplicas, 3))
                     .addToConfig("min.insync.replicas", Math.min(Math.max(kafkaReplicas - 1, 1), 2))
                     .withListeners(new GenericKafkaListenerBuilder()
-                                .withName(Constants.PLAIN_LISTENER_DEFAULT_NAME)
+                                .withName(TestConstants.PLAIN_LISTENER_DEFAULT_NAME)
                                 .withPort(9092)
                                 .withType(KafkaListenerType.INTERNAL)
                                 .withTls(false)
                                 .build(),
                             new GenericKafkaListenerBuilder()
-                                .withName(Constants.TLS_LISTENER_DEFAULT_NAME)
+                                .withName(TestConstants.TLS_LISTENER_DEFAULT_NAME)
                                 .withPort(9093)
                                 .withType(KafkaListenerType.INTERNAL)
                                 .withTls(true)

@@ -18,7 +18,7 @@ import io.strimzi.api.kafka.model.status.ListenerStatus;
 import io.strimzi.kafka.config.model.ConfigModel;
 import io.strimzi.kafka.config.model.ConfigModels;
 import io.strimzi.kafka.config.model.Scope;
-import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.cli.KafkaCmdClient;
 import io.strimzi.systemtest.resources.ResourceManager;
@@ -89,7 +89,7 @@ public class KafkaUtils {
      */
     public static void waitForKafkaStatusUpdate(String namespaceName, String clusterName) {
         LOGGER.info("Waiting for Kafka status to be updated");
-        TestUtils.waitFor("Kafka status to be updated", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_STATUS_TIMEOUT, () -> {
+        TestUtils.waitFor("Kafka status to be updated", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_STATUS_TIMEOUT, () -> {
             Kafka k = KafkaResource.kafkaClient().inNamespace(namespaceName).withName(clusterName).get();
             return k.getMetadata().getGeneration() == k.getStatus().getObservedGeneration();
         });
@@ -97,7 +97,7 @@ public class KafkaUtils {
 
     public static void waitUntilKafkaStatusConditionContainsMessage(String clusterName, String namespace, String pattern, long timeout) {
         TestUtils.waitFor("Kafka status to contain message [" + pattern + "]",
-            Constants.GLOBAL_POLL_INTERVAL, timeout, () -> {
+            TestConstants.GLOBAL_POLL_INTERVAL, timeout, () -> {
                 List<Condition> conditions = KafkaResource.kafkaClient().inNamespace(namespace).withName(clusterName).get().getStatus().getConditions();
                 for (Condition condition : conditions) {
                     String conditionMessage = condition.getMessage();
@@ -111,14 +111,14 @@ public class KafkaUtils {
 
     public static void waitUntilStatusKafkaVersionMatchesExpectedVersion(String clusterName, String namespace, String expectedKafkaVersion) {
         TestUtils.waitFor("Kafka version '" + expectedKafkaVersion + "' in Kafka cluster '" + clusterName + "' to match",
-            Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_STATUS_TIMEOUT, () -> {
+            TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_STATUS_TIMEOUT, () -> {
                 String kafkaVersionInStatus = KafkaResource.kafkaClient().inNamespace(namespace).withName(clusterName).get().getStatus().getKafkaVersion();
                 return expectedKafkaVersion.equals(kafkaVersionInStatus);
             });
     }
 
     public static void waitUntilKafkaStatusConditionContainsMessage(String clusterName, String namespace, String pattern) {
-        waitUntilKafkaStatusConditionContainsMessage(clusterName, namespace, pattern, Constants.GLOBAL_STATUS_TIMEOUT);
+        waitUntilKafkaStatusConditionContainsMessage(clusterName, namespace, pattern, TestConstants.GLOBAL_STATUS_TIMEOUT);
     }
 
     public static void waitForZkMntr(String namespaceName, String clusterName, Pattern pattern, int... podIndexes) {
@@ -171,7 +171,7 @@ public class KafkaUtils {
     }
 
     public static void waitForKafkaSecretAndStatusCertsMatches(Supplier<String> kafkaStatusCertificate, Supplier<String> kafkaSecretCertificate) {
-        TestUtils.waitFor("Kafka Secret and Kafka status certificates to match", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
+        TestUtils.waitFor("Kafka Secret and Kafka status certificates to match", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_TIMEOUT,
             () -> kafkaStatusCertificate.get().equals(kafkaSecretCertificate.get()));
     }
 
@@ -195,7 +195,7 @@ public class KafkaUtils {
         }
         eoPods[0] = DeploymentUtils.depSnapshot(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName));
 
-        TestUtils.waitFor("Cluster to be stable and ready", Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_FOR_CLUSTER_STABLE, () -> {
+        TestUtils.waitFor("Cluster to be stable and ready", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.TIMEOUT_FOR_CLUSTER_STABLE, () -> {
             Map<String, String> kafkaSnapshot = PodUtils.podSnapshot(namespaceName, kafkaSelector);
             Map<String, String> eoSnapshot = DeploymentUtils.depSnapshot(namespaceName, KafkaResources.entityOperatorDeploymentName(clusterName));
             boolean kafkaSameAsLast = kafkaSnapshot.equals(kafkaPods[0]);
@@ -308,7 +308,7 @@ public class KafkaUtils {
 
         for (Pod pod : kafkaPods) {
 
-            TestUtils.waitFor("dyn.configuration to change", Constants.GLOBAL_POLL_INTERVAL, Constants.RECONCILIATION_INTERVAL + Duration.ofSeconds(10).toMillis(),
+            TestUtils.waitFor("dyn.configuration to change", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.RECONCILIATION_INTERVAL + Duration.ofSeconds(10).toMillis(),
                 () -> {
                     String result = KafkaCmdClient.describeKafkaBrokerUsingPodCli(namespaceName, scraperPodName, bootstrapServer, brokerId[0]++);
 
@@ -421,7 +421,7 @@ public class KafkaUtils {
 
     public static void waitForKafkaDeletion(String namespaceName, String kafkaClusterName) {
         LOGGER.info("Waiting for deletion of Kafka: {}/{}", namespaceName, kafkaClusterName);
-        TestUtils.waitFor("deletion of Kafka: " + namespaceName + "/" + kafkaClusterName, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, DELETION_TIMEOUT,
+        TestUtils.waitFor("deletion of Kafka: " + namespaceName + "/" + kafkaClusterName, TestConstants.POLL_INTERVAL_FOR_RESOURCE_READINESS, DELETION_TIMEOUT,
             () -> {
                 if (KafkaResource.kafkaClient().inNamespace(namespaceName).withName(kafkaClusterName).get() == null &&
                     StrimziPodSetResource.strimziPodSetClient().inNamespace(namespaceName).withName(KafkaResources.kafkaStatefulSetName(kafkaClusterName)).get() == null  &&
@@ -440,7 +440,7 @@ public class KafkaUtils {
         List<GenericKafkaListener> listeners = KafkaResource.kafkaClient().inNamespace(namespace).withName(clusterName).get().getSpec().getKafka().getListeners();
 
         GenericKafkaListener tlsListener = listenerName == null || listenerName.isEmpty() ?
-            listeners.stream().filter(listener -> Constants.TLS_LISTENER_DEFAULT_NAME.equals(listener.getName())).findFirst().orElseThrow(RuntimeException::new) :
+            listeners.stream().filter(listener -> TestConstants.TLS_LISTENER_DEFAULT_NAME.equals(listener.getName())).findFirst().orElseThrow(RuntimeException::new) :
             listeners.stream().filter(listener -> listenerName.equals(listener.getName())).findFirst().orElseThrow(RuntimeException::new);
         return tlsListener.getConfiguration() == null ?
             KafkaResources.clusterCaCertificateSecretName(clusterName) : tlsListener.getConfiguration().getBrokerCertChainAndKey().getSecretName();
@@ -450,7 +450,7 @@ public class KafkaUtils {
         List<GenericKafkaListener> listeners = KafkaResource.kafkaClient().inNamespace(namespace).withName(clusterName).get().getSpec().getKafka().getListeners();
 
         GenericKafkaListener external = listenerName == null || listenerName.isEmpty() ?
-            listeners.stream().filter(listener -> Constants.EXTERNAL_LISTENER_DEFAULT_NAME.equals(listener.getName())).findFirst().orElseThrow(RuntimeException::new) :
+            listeners.stream().filter(listener -> TestConstants.EXTERNAL_LISTENER_DEFAULT_NAME.equals(listener.getName())).findFirst().orElseThrow(RuntimeException::new) :
             listeners.stream().filter(listener -> listenerName.equals(listener.getName())).findFirst().orElseThrow(RuntimeException::new);
 
         if (external.getConfiguration() == null) {

@@ -14,7 +14,7 @@ import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBuilder;
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.operator.common.model.Labels;
-import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.FIPSNotSupported;
 import io.strimzi.systemtest.annotations.ParallelTest;
@@ -48,15 +48,15 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 
 import java.time.Duration;
 
-import static io.strimzi.systemtest.Constants.ARM64_UNSUPPORTED;
-import static io.strimzi.systemtest.Constants.BRIDGE;
-import static io.strimzi.systemtest.Constants.CONNECT;
-import static io.strimzi.systemtest.Constants.CONNECT_COMPONENTS;
-import static io.strimzi.systemtest.Constants.HTTP_BRIDGE_DEFAULT_PORT;
-import static io.strimzi.systemtest.Constants.MIRROR_MAKER;
-import static io.strimzi.systemtest.Constants.MIRROR_MAKER2;
-import static io.strimzi.systemtest.Constants.OAUTH;
-import static io.strimzi.systemtest.Constants.REGRESSION;
+import static io.strimzi.systemtest.TestConstants.ARM64_UNSUPPORTED;
+import static io.strimzi.systemtest.TestConstants.BRIDGE;
+import static io.strimzi.systemtest.TestConstants.CONNECT;
+import static io.strimzi.systemtest.TestConstants.CONNECT_COMPONENTS;
+import static io.strimzi.systemtest.TestConstants.HTTP_BRIDGE_DEFAULT_PORT;
+import static io.strimzi.systemtest.TestConstants.MIRROR_MAKER;
+import static io.strimzi.systemtest.TestConstants.MIRROR_MAKER2;
+import static io.strimzi.systemtest.TestConstants.OAUTH;
+import static io.strimzi.systemtest.TestConstants.REGRESSION;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 
 @Tag(OAUTH)
@@ -102,7 +102,7 @@ public class OauthPasswordGrantsST extends OauthAbstractST {
             .editSpec()
                 .editKafka()
                     .withListeners(new GenericKafkaListenerBuilder()
-                            .withName(Constants.PLAIN_LISTENER_DEFAULT_NAME)
+                            .withName(TestConstants.PLAIN_LISTENER_DEFAULT_NAME)
                             .withPort(9092)
                             .withType(KafkaListenerType.INTERNAL)
                             .withTls(false)
@@ -173,7 +173,7 @@ public class OauthPasswordGrantsST extends OauthAbstractST {
         verifyOauthConfiguration(kafkaMirrorMakerLogs);
 
         TestUtils.waitFor("MirrorMaker to copy messages from " + oauthClusterName + " to " + testStorage.getTargetClusterName(),
-            Constants.GLOBAL_CLIENTS_POLL, Constants.TIMEOUT_FOR_MIRROR_MAKER_COPY_MESSAGES_BETWEEN_BROKERS,
+            TestConstants.GLOBAL_CLIENTS_POLL, TestConstants.TIMEOUT_FOR_MIRROR_MAKER_COPY_MESSAGES_BETWEEN_BROKERS,
             () -> {
                 LOGGER.info("Deleting the Job");
                 JobUtils.deleteJobWithWait(Environment.TEST_SUITE_NAMESPACE, OAUTH_CONSUMER_NAME);
@@ -237,7 +237,7 @@ public class OauthPasswordGrantsST extends OauthAbstractST {
             .editSpec()
                 .editKafka()
                     .withListeners(new GenericKafkaListenerBuilder()
-                            .withName(Constants.PLAIN_LISTENER_DEFAULT_NAME)
+                            .withName(TestConstants.PLAIN_LISTENER_DEFAULT_NAME)
                             .withPort(9092)
                             .withType(KafkaListenerType.INTERNAL)
                             .withTls(false)
@@ -313,7 +313,7 @@ public class OauthPasswordGrantsST extends OauthAbstractST {
         verifyOauthConfiguration(kafkaMirrorMaker2Logs);
 
         TestUtils.waitFor("MirrorMaker2 to copy messages from " + kafkaSourceClusterName + " to " + kafkaTargetClusterName,
-            Duration.ofSeconds(30).toMillis(), Constants.TIMEOUT_FOR_MIRROR_MAKER_COPY_MESSAGES_BETWEEN_BROKERS,
+            Duration.ofSeconds(30).toMillis(), TestConstants.TIMEOUT_FOR_MIRROR_MAKER_COPY_MESSAGES_BETWEEN_BROKERS,
             () -> {
                 LOGGER.info("Deleting Job: {}/{}", Environment.TEST_SUITE_NAMESPACE, testStorage.getConsumerName());
                 JobUtils.deleteJobWithWait(Environment.TEST_SUITE_NAMESPACE, testStorage.getClusterName());
@@ -410,9 +410,9 @@ public class OauthPasswordGrantsST extends OauthAbstractST {
 
         KafkaConnectUtils.waitUntilKafkaConnectRestApiIsAvailable(Environment.TEST_SUITE_NAMESPACE, kafkaConnectPodName);
 
-        KafkaConnectorUtils.createFileSinkConnector(Environment.TEST_SUITE_NAMESPACE, kafkaConnectPodName, testStorage.getTopicName(), Constants.DEFAULT_SINK_FILE_PATH, "http://localhost:8083");
+        KafkaConnectorUtils.createFileSinkConnector(Environment.TEST_SUITE_NAMESPACE, kafkaConnectPodName, testStorage.getTopicName(), TestConstants.DEFAULT_SINK_FILE_PATH, "http://localhost:8083");
 
-        KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(Environment.TEST_SUITE_NAMESPACE, kafkaConnectPodName, Constants.DEFAULT_SINK_FILE_PATH, "\"Hello-world - 99\"");
+        KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(Environment.TEST_SUITE_NAMESPACE, kafkaConnectPodName, TestConstants.DEFAULT_SINK_FILE_PATH, "\"Hello-world - 99\"");
 
         final String kafkaConnectLogs = KubeClusterResource.cmdKubeClient(Environment.TEST_SUITE_NAMESPACE).execInCurrentNamespace(Level.DEBUG, "logs", kafkaConnectPodName).out();
         verifyOauthConfiguration(kafkaConnectLogs);
@@ -496,7 +496,7 @@ public class OauthPasswordGrantsST extends OauthAbstractST {
             .editSpec()
                 .editKafka()
                     .withListeners(new GenericKafkaListenerBuilder()
-                        .withName(Constants.PLAIN_LISTENER_DEFAULT_NAME)
+                        .withName(TestConstants.PLAIN_LISTENER_DEFAULT_NAME)
                         .withPort(9092)
                         .withType(KafkaListenerType.INTERNAL)
                         .withTls(false)

@@ -4,7 +4,7 @@
  */
 package io.strimzi.systemtest.parallel;
 
-import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.listeners.ExecutionListener;
 import io.strimzi.systemtest.resources.kubernetes.NetworkPolicyResource;
@@ -97,7 +97,7 @@ public class TestSuiteNamespaceManager {
             if (!Environment.isNamespaceRbacScope()) {
                 final String namespaceTestCase = "namespace-" + counterOfNamespaces.getAndIncrement();
 
-                extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(Constants.NAMESPACE_KEY, namespaceTestCase);
+                extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).put(TestConstants.NAMESPACE_KEY, namespaceTestCase);
                 // create namespace by
                 LOGGER.info("Creating Namespace: {} for TestCase: {}", namespaceTestCase, StUtils.removePackageName(testCaseName));
 
@@ -118,7 +118,7 @@ public class TestSuiteNamespaceManager {
         if (StUtils.isParallelNamespaceTest(extensionContext)) {
             // if RBAC is enable we don't run tests in parallel mode and with that said we don't create another namespaces
             if (!Environment.isNamespaceRbacScope()) {
-                final String namespaceToDelete = extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(Constants.NAMESPACE_KEY).toString();
+                final String namespaceToDelete = extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(TestConstants.NAMESPACE_KEY).toString();
                 final String testCaseName = extensionContext.getRequiredTestMethod().getName();
 
                 LOGGER.info("Deleting Namespace: {} for TestCase: {}", namespaceToDelete, StUtils.removePackageName(testCaseName));

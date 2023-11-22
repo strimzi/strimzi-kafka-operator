@@ -8,7 +8,7 @@ import io.fabric8.kubernetes.api.model.PodCondition;
 import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.status.Condition;
 import io.strimzi.operator.common.model.Labels;
-import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.ResourceOperation;
 import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
@@ -52,14 +52,14 @@ public class KafkaConnectUtils {
 
     public static void waitUntilKafkaConnectRestApiIsAvailable(String namespaceName, String podNamePrefix) {
         LOGGER.info("Waiting for KafkaConnect API to be available");
-        TestUtils.waitFor("KafkaConnect API to be available", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_STATUS_TIMEOUT,
+        TestUtils.waitFor("KafkaConnect API to be available", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_STATUS_TIMEOUT,
             () -> cmdKubeClient(namespaceName).execInPod(podNamePrefix, "/bin/bash", "-c", "curl -I http://localhost:8083/connectors").out().contains("HTTP/1.1 200 OK\n"));
         LOGGER.info("KafkaConnect API is available");
     }
 
     public static void waitForMessagesInKafkaConnectFileSink(String namespaceName, String kafkaConnectPodName, String sinkFileName, String message) {
         LOGGER.info("Waiting for messages to be present in file sink on {}/{}", namespaceName, kafkaConnectPodName);
-        TestUtils.waitFor("messages to be present in file sink", Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_FOR_SEND_RECEIVE_MSG,
+        TestUtils.waitFor("messages to be present in file sink", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.TIMEOUT_FOR_SEND_RECEIVE_MSG,
             () -> cmdKubeClient(namespaceName).execInPod(Level.TRACE, kafkaConnectPodName, "/bin/bash", "-c", "cat " + sinkFileName).out().contains(message),
             () -> LOGGER.warn(cmdKubeClient(namespaceName).execInPod(Level.TRACE, kafkaConnectPodName, "/bin/bash", "-c", "cat " + sinkFileName).out()));
         LOGGER.info("Expected messages are in file sink on {}/{}", namespaceName, kafkaConnectPodName);
@@ -78,7 +78,7 @@ public class KafkaConnectUtils {
      */
     public static void waitForKafkaConnectConfigChange(String propertyKey, String propertyValue, String namespace, String clusterName) {
         LOGGER.info("Waiting for KafkaConnect property: {} -> {} to change", propertyKey, propertyValue);
-        TestUtils.waitFor("KafkaConnect property: " + propertyKey + " -> " + propertyValue + " to change", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
+        TestUtils.waitFor("KafkaConnect property: " + propertyKey + " -> " + propertyValue + " to change", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_TIMEOUT,
             () -> {
                 String propertyValueFromKafkaConnect =  (String) KafkaConnectResource.kafkaConnectClient().inNamespace(namespace).withName(clusterName).get().getSpec().getConfig().get(propertyKey);
                 LOGGER.debug("Property key -> {}, Current property value -> {}", propertyKey, propertyValueFromKafkaConnect);
@@ -97,7 +97,7 @@ public class KafkaConnectUtils {
      */
     public static void waitForConnectPodCondition(String conditionReason, String namespace, String clusterName, long timeoutMs) {
         TestUtils.waitFor("KafkaConnect Pod to have condition: " + conditionReason,
-                Constants.GLOBAL_POLL_INTERVAL, timeoutMs, () -> {
+            TestConstants.GLOBAL_POLL_INTERVAL, timeoutMs, () -> {
                 List<String> connectPods = kubeClient().listPodNames(namespace, clusterName, Labels.STRIMZI_KIND_LABEL, KafkaConnect.RESOURCE_KIND);
                 List<PodCondition> conditions = kubeClient().getPod(namespace, connectPods.get(0)).getStatus().getConditions();
                 for (PodCondition condition : conditions) {
@@ -111,7 +111,7 @@ public class KafkaConnectUtils {
 
     public static void waitUntilKafkaConnectStatusConditionContainsMessage(String clusterName, String namespace, String message) {
         TestUtils.waitFor("KafkaConnect status to contain message: [" + message + "]",
-            Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT, () -> {
+            TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_TIMEOUT, () -> {
                 List<Condition> conditions = KafkaConnectResource.kafkaConnectClient().inNamespace(namespace).withName(clusterName).get().getStatus().getConditions();
                 for (Condition condition : conditions) {
                     if (condition.getMessage().matches(message)) {

@@ -7,7 +7,7 @@ package io.strimzi.systemtest.templates.crd;
 import io.strimzi.api.kafka.model.KafkaConnector;
 import io.strimzi.api.kafka.model.KafkaConnectorBuilder;
 import io.strimzi.operator.common.model.Labels;
-import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.test.TestUtils;
 
@@ -28,12 +28,12 @@ public class KafkaConnectorTemplates {
     }
 
     public static KafkaConnectorBuilder kafkaConnector(String name, String clusterName, int maxTasks) {
-        KafkaConnector kafkaConnector = getKafkaConnectorFromYaml(Constants.PATH_TO_KAFKA_CONNECTOR_CONFIG);
+        KafkaConnector kafkaConnector = getKafkaConnectorFromYaml(TestConstants.PATH_TO_KAFKA_CONNECTOR_CONFIG);
         return defaultKafkaConnector(kafkaConnector, name, clusterName, maxTasks);
     }
 
     public static KafkaConnectorBuilder defaultKafkaConnector(String name, String clusterName, int maxTasks) {
-        KafkaConnector kafkaConnector = getKafkaConnectorFromYaml(Constants.PATH_TO_KAFKA_CONNECTOR_CONFIG);
+        KafkaConnector kafkaConnector = getKafkaConnectorFromYaml(TestConstants.PATH_TO_KAFKA_CONNECTOR_CONFIG);
         return defaultKafkaConnector(kafkaConnector, name, clusterName, maxTasks);
     }
 

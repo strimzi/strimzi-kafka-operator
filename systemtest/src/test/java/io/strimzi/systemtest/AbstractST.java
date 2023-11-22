@@ -68,7 +68,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 public abstract class AbstractST implements TestSeparator {
     public static final List<String> LB_FINALIZERS;
     static {
-        LB_FINALIZERS = Environment.LB_FINALIZERS ? List.of(Constants.LOAD_BALANCER_CLEANUP) : null;
+        LB_FINALIZERS = Environment.LB_FINALIZERS ? List.of(TestConstants.LOAD_BALANCER_CLEANUP) : null;
     }
 
     protected final ResourceManager resourceManager = ResourceManager.getInstance();
@@ -93,7 +93,7 @@ public abstract class AbstractST implements TestSeparator {
 
     public static Random rng = new Random();
 
-    public static final int MESSAGE_COUNT = Constants.MESSAGE_COUNT;
+    public static final int MESSAGE_COUNT = TestConstants.MESSAGE_COUNT;
     public static final String USER_NAME = KafkaUserUtils.generateRandomNameOfKafkaUser();
     public static final String TOPIC_NAME = KafkaTopicUtils.generateRandomNameOfTopic();
 
@@ -444,7 +444,7 @@ public abstract class AbstractST implements TestSeparator {
 
     protected void assertNoCoErrorsLogged(String namespaceName, long sinceSeconds) {
         LOGGER.info("Search in strimzi-cluster-operator log for errors in last {} second(s)", sinceSeconds);
-        String clusterOperatorLog = cmdKubeClient(namespaceName).searchInLog(Constants.DEPLOYMENT, ResourceManager.getCoDeploymentName(), sinceSeconds, "Exception", "Error", "Throwable", "OOM");
+        String clusterOperatorLog = cmdKubeClient(namespaceName).searchInLog(TestConstants.DEPLOYMENT, ResourceManager.getCoDeploymentName(), sinceSeconds, "Exception", "Error", "Throwable", "OOM");
         assertThat(clusterOperatorLog, logHasNoUnexpectedErrors());
     }
 

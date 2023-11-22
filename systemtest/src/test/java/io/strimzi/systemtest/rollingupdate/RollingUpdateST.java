@@ -21,7 +21,7 @@ import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.ProbeBuilder;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.systemtest.AbstractST;
-import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.annotations.KRaftNotSupported;
@@ -60,11 +60,11 @@ import java.util.Map;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import static io.strimzi.systemtest.Constants.ACCEPTANCE;
-import static io.strimzi.systemtest.Constants.COMPONENT_SCALING;
-import static io.strimzi.systemtest.Constants.INTERNAL_CLIENTS_USED;
-import static io.strimzi.systemtest.Constants.REGRESSION;
-import static io.strimzi.systemtest.Constants.ROLLING_UPDATE;
+import static io.strimzi.systemtest.TestConstants.ACCEPTANCE;
+import static io.strimzi.systemtest.TestConstants.COMPONENT_SCALING;
+import static io.strimzi.systemtest.TestConstants.INTERNAL_CLIENTS_USED;
+import static io.strimzi.systemtest.TestConstants.REGRESSION;
+import static io.strimzi.systemtest.TestConstants.ROLLING_UPDATE;
 import static io.strimzi.systemtest.k8s.Events.Killing;
 import static io.strimzi.systemtest.matchers.Matchers.hasAllOfReasons;
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
@@ -305,7 +305,7 @@ class RollingUpdateST extends AbstractST {
             KafkaUserTemplates.tlsUser(testStorage).build()
         );
 
-        testDockerImagesForKafkaCluster(testStorage.getClusterName(), Constants.CO_NAMESPACE, testStorage.getNamespaceName(), 3, 3, false);
+        testDockerImagesForKafkaCluster(testStorage.getClusterName(), TestConstants.CO_NAMESPACE, testStorage.getNamespaceName(), 3, 3, false);
 
         LOGGER.info("Running kafkaScaleUpScaleDown {}", testStorage.getClusterName());
 
@@ -625,7 +625,7 @@ class RollingUpdateST extends AbstractST {
             }
         }, Environment.TEST_SUITE_NAMESPACE);
 
-        TestUtils.waitFor("rolling update starts", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_STATUS_TIMEOUT,
+        TestUtils.waitFor("rolling update starts", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_STATUS_TIMEOUT,
             () -> kubeClient(Environment.TEST_SUITE_NAMESPACE).listPods(Environment.TEST_SUITE_NAMESPACE).stream().filter(pod -> pod.getStatus().getPhase().equals("Running"))
                     .map(pod -> pod.getStatus().getPhase()).collect(Collectors.toList()).size() < kubeClient().listPods(Environment.TEST_SUITE_NAMESPACE).size());
 
@@ -725,7 +725,7 @@ class RollingUpdateST extends AbstractST {
         ConfigMap metricsCMZk = new ConfigMapBuilder()
             .withNewMetadata()
                 .withName(metricsCMNameZk)
-                .withNamespace(testStorage.getNamespaceName())
+                 .withNamespace(testStorage.getNamespaceName())
             .endMetadata()
             .withData(singletonMap("metrics-config.yml", mapper.writeValueAsString(zookeeperMetrics)))
             .build();
@@ -831,10 +831,12 @@ class RollingUpdateST extends AbstractST {
         Object zkMetricsJsonToYaml = yamlReader.readValue(zkMetricsConf, Object.class);
         ObjectMapper jsonWriter = new ObjectMapper();
         for (String cmName : StUtils.getKafkaConfigurationConfigMaps(testStorage.getClusterName(), 3)) {
-            assertThat(kubeClient().getClient().configMaps().inNamespace(testStorage.getNamespaceName()).withName(cmName).get().getData().get(Constants.METRICS_CONFIG_JSON_NAME),
+            assertThat(kubeClient().getClient().configMaps().inNamespace(testStorage.getNamespaceName()).withName(cmName).get().getData().get(
+                    TestConstants.METRICS_CONFIG_JSON_NAME),
                 is(jsonWriter.writeValueAsString(kafkaMetricsJsonToYaml)));
         }
-        assertThat(kubeClient().getClient().configMaps().inNamespace(testStorage.getNamespaceName()).withName(KafkaResources.zookeeperMetricsAndLogConfigMapName(testStorage.getClusterName())).get().getData().get(Constants.METRICS_CONFIG_JSON_NAME),
+        assertThat(kubeClient().getClient().configMaps().inNamespace(testStorage.getNamespaceName()).withName(KafkaResources.zookeeperMetricsAndLogConfigMapName(testStorage.getClusterName())).get().getData().get(
+                TestConstants.METRICS_CONFIG_JSON_NAME),
             is(jsonWriter.writeValueAsString(zkMetricsJsonToYaml)));
 
         LOGGER.info("Check if metrics are present in Pod of Kafka and ZooKeeper");

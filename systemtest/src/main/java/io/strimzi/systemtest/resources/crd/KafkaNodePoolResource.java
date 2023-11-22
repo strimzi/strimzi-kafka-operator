@@ -13,7 +13,7 @@ import io.strimzi.api.kafka.model.nodepool.KafkaNodePool;
 import io.strimzi.api.kafka.model.nodepool.KafkaNodePoolBuilder;
 import io.strimzi.api.kafka.model.nodepool.ProcessRoles;
 import io.strimzi.operator.common.model.Labels;
-import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.ResourceType;
@@ -85,7 +85,7 @@ public class KafkaNodePoolResource implements ResourceType<KafkaNodePool> {
             nodeRoles.add(ProcessRoles.CONTROLLER);
         }
 
-        String nodePoolName = Constants.KAFKA_NODE_POOL_PREFIX + hashStub(resource.getMetadata().getName());
+        String nodePoolName = TestConstants.KAFKA_NODE_POOL_PREFIX + hashStub(resource.getMetadata().getName());
 
         KafkaNodePoolBuilder builder = KafkaNodePoolTemplates.defaultKafkaNodePool(resource.getMetadata().getNamespace(), nodePoolName, resource.getMetadata().getName(), resource.getSpec().getKafka().getReplicas())
             .editOrNewMetadata()

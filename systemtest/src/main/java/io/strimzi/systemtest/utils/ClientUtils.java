@@ -5,7 +5,7 @@
 package io.strimzi.systemtest.utils;
 
 import io.strimzi.api.kafka.model.KafkaResources;
-import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.kafkaclients.internalClients.KafkaClientsBuilder;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.systemtest.utils.kubeUtils.controllers.JobUtils;
@@ -49,7 +49,7 @@ public class ClientUtils {
 
     public static void waitForClientsSuccess(String producerName, String consumerName, String namespace, int messageCount, boolean deleteAfterSuccess) {
         LOGGER.info("Waiting for producer: {}/{} and consumer: {}/{} Jobs to finish successfully", namespace, producerName, namespace, consumerName);
-        TestUtils.waitFor("client Jobs to finish successfully", Constants.GLOBAL_POLL_INTERVAL, timeoutForClientFinishJob(messageCount),
+        TestUtils.waitFor("client Jobs to finish successfully", TestConstants.GLOBAL_POLL_INTERVAL, timeoutForClientFinishJob(messageCount),
             () -> kubeClient().checkSucceededJobStatus(namespace, producerName, 1)
                 && kubeClient().checkSucceededJobStatus(namespace, consumerName, 1),
             () -> {
@@ -66,7 +66,7 @@ public class ClientUtils {
     public static void waitForConsumerClientSuccess(TestStorage testStorage) {
         waitForClientSuccess(testStorage.getConsumerName(), testStorage.getNamespaceName(), testStorage.getMessageCount());
     }
-    
+
     public static void waitForProducerClientSuccess(TestStorage testStorage) {
         waitForClientSuccess(testStorage.getProducerName(), testStorage.getNamespaceName(), testStorage.getMessageCount());
     }
@@ -77,7 +77,7 @@ public class ClientUtils {
 
     public static void waitForClientSuccess(String jobName, String namespace, int messageCount, boolean deleteAfterSuccess) {
         LOGGER.info("Waiting for client Job: {}/{} to finish successfully", namespace, jobName);
-        TestUtils.waitFor("client Job to finish successfully", Constants.GLOBAL_POLL_INTERVAL, timeoutForClientFinishJob(messageCount),
+        TestUtils.waitFor("client Job to finish successfully", TestConstants.GLOBAL_POLL_INTERVAL, timeoutForClientFinishJob(messageCount),
             () -> {
                 LOGGER.debug("Client Job: {}/{} has status {}", namespace, jobName, kubeClient().namespace(namespace).getJobStatus(jobName));
                 return kubeClient().checkSucceededJobStatus(namespace, jobName, 1);
@@ -113,7 +113,7 @@ public class ClientUtils {
     public static void waitForClientTimeout(String jobName, String namespace, int messageCount, boolean deleteAfterSuccess) {
         LOGGER.info("Waiting for client Job: {}/{} to reach the timeout limit", namespace, jobName);
         try {
-            TestUtils.waitFor("client Job: " + namespace + "/" + jobName + "to reach the the timeout limit", Constants.GLOBAL_POLL_INTERVAL, timeoutForClientFinishJob(messageCount),
+            TestUtils.waitFor("client Job: " + namespace + "/" + jobName + "to reach the the timeout limit", TestConstants.GLOBAL_POLL_INTERVAL, timeoutForClientFinishJob(messageCount),
                 () -> kubeClient().checkFailedJobStatus(namespace, jobName, 1),
                 () -> JobUtils.logCurrentJobStatus(jobName, namespace));
 
@@ -137,7 +137,7 @@ public class ClientUtils {
     public static void waitForClientsTimeout(TestStorage testStorage) {
         waitForClientsTimeout(testStorage.getProducerName(), testStorage.getConsumerName(), testStorage.getNamespaceName(), testStorage.getMessageCount());
     }
-    
+
     public static void waitForClientsTimeout(String producerName, String consumerName, String namespace, int messageCount) {
         waitForClientsTimeout(producerName, consumerName, namespace, messageCount, true);
     }
@@ -146,7 +146,7 @@ public class ClientUtils {
         LOGGER.info("Waiting for producer {}/{} and consumer {}/{} Jobs to reach the timeout limit", namespace, producerName, namespace, consumerName);
 
         try {
-            TestUtils.waitFor("client Jobs: " + producerName + " and " + consumerName + " in Namespace: " + namespace + " to reach the timeout limit", Constants.GLOBAL_POLL_INTERVAL, timeoutForClientFinishJob(messageCount),
+            TestUtils.waitFor("client Jobs: " + producerName + " and " + consumerName + " in Namespace: " + namespace + " to reach the timeout limit", TestConstants.GLOBAL_POLL_INTERVAL, timeoutForClientFinishJob(messageCount),
                 () -> kubeClient().checkFailedJobStatus(namespace, producerName, 1)
                     && kubeClient().checkFailedJobStatus(namespace, consumerName, 1),
                 () -> {
@@ -168,10 +168,11 @@ public class ClientUtils {
             }
         }
     }
+
     public static void waitForClientContainsAllMessages(String jobName, String namespace, List<String> messages, boolean deleteAfterSuccess) {
         String jobPodName = PodUtils.getPodNameByPrefix(namespace, jobName);
         List<String> notReadyMessages = messages;
-        TestUtils.waitFor("client Job to contain all messages: [" + messages.toString() + "]", Constants.GLOBAL_POLL_INTERVAL, Constants.THROTTLING_EXCEPTION_TIMEOUT, () -> {
+        TestUtils.waitFor("client Job to contain all messages: [" + messages.toString() + "]", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.THROTTLING_EXCEPTION_TIMEOUT, () -> {
             for (String message : messages) {
                 if (kubeClient().logsInSpecificNamespace(namespace, jobPodName).contains(message)) {
                     notReadyMessages.remove(message);
@@ -194,7 +195,7 @@ public class ClientUtils {
         String jobPodName = PodUtils.getPodNameByPrefix(namespace, jobName);
         LOGGER.info("Waiting for client Job: {}/{} to contain message: [{}]", namespace, jobName, message);
 
-        TestUtils.waitFor("client Job to contain message: [" + message + "]", Constants.GLOBAL_POLL_INTERVAL, Constants.THROTTLING_EXCEPTION_TIMEOUT,
+        TestUtils.waitFor("client Job to contain message: [" + message + "]", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.THROTTLING_EXCEPTION_TIMEOUT,
             () -> kubeClient().logsInSpecificNamespace(namespace, jobPodName).contains(message),
             () -> JobUtils.logCurrentJobStatus(jobName, namespace));
 
@@ -211,7 +212,7 @@ public class ClientUtils {
         String jobPodName = PodUtils.getPodNameByPrefix(namespace, jobName);
         LOGGER.info("Waiting for client Job: {}/{} to not contain message: [{}]", namespace, jobName, message);
 
-        TestUtils.waitFor("client Job to contain message: [" + message + "]", Constants.GLOBAL_POLL_INTERVAL, Constants.THROTTLING_EXCEPTION_TIMEOUT,
+        TestUtils.waitFor("client Job to contain message: [" + message + "]", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.THROTTLING_EXCEPTION_TIMEOUT,
             () -> !kubeClient().logsInSpecificNamespace(namespace, jobPodName).contains(message),
             () -> JobUtils.logCurrentJobStatus(jobName, namespace));
 

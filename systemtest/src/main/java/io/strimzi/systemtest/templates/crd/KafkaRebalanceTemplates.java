@@ -6,7 +6,7 @@ package io.strimzi.systemtest.templates.crd;
 
 import io.strimzi.api.kafka.model.KafkaRebalance;
 import io.strimzi.api.kafka.model.KafkaRebalanceBuilder;
-import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.test.TestUtils;
 
@@ -18,7 +18,7 @@ public class KafkaRebalanceTemplates {
     private KafkaRebalanceTemplates() {}
 
     public static KafkaRebalanceBuilder kafkaRebalance(String name) {
-        KafkaRebalance kafkaRebalance = getKafkaRebalanceFromYaml(Constants.PATH_TO_KAFKA_REBALANCE_CONFIG);
+        KafkaRebalance kafkaRebalance = getKafkaRebalanceFromYaml(TestConstants.PATH_TO_KAFKA_REBALANCE_CONFIG);
         return defaultKafkaRebalance(kafkaRebalance, name);
     }
 

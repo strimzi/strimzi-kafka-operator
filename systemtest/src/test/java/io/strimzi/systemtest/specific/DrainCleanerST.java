@@ -6,7 +6,7 @@ package io.strimzi.systemtest.specific;
 
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.systemtest.AbstractST;
-import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.annotations.IsolatedTest;
 import io.strimzi.systemtest.annotations.MicroShiftNotSupported;
@@ -33,8 +33,8 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static io.strimzi.systemtest.Constants.ACCEPTANCE;
-import static io.strimzi.systemtest.Constants.REGRESSION;
+import static io.strimzi.systemtest.TestConstants.ACCEPTANCE;
+import static io.strimzi.systemtest.TestConstants.REGRESSION;
 import static io.strimzi.systemtest.resources.ResourceManager.kubeClient;
 
 @Tag(REGRESSION)
@@ -48,13 +48,13 @@ public class DrainCleanerST extends AbstractST {
     @IsolatedTest
     @RequiredMinKubeApiVersion(version = 1.17)
     void testDrainCleanerWithComponents(ExtensionContext extensionContext) {
-        TestStorage testStorage = new TestStorage(extensionContext, Constants.DRAIN_CLEANER_NAMESPACE);
+        TestStorage testStorage = new TestStorage(extensionContext, TestConstants.DRAIN_CLEANER_NAMESPACE);
 
         final int replicas = 3;
 
         resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaPersistent(testStorage.getClusterName(), replicas)
             .editMetadata()
-                .withNamespace(Constants.DRAIN_CLEANER_NAMESPACE)
+                .withNamespace(TestConstants.DRAIN_CLEANER_NAMESPACE)
             .endMetadata()
             .editSpec()
                 .editKafka()
@@ -74,13 +74,13 @@ public class DrainCleanerST extends AbstractST {
             .endSpec()
             .build());
 
-        resourceManager.createResourceWithWait(extensionContext, KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getTopicName(), Constants.DRAIN_CLEANER_NAMESPACE).build());
+        resourceManager.createResourceWithWait(extensionContext, KafkaTopicTemplates.topic(testStorage.getClusterName(), testStorage.getTopicName(), TestConstants.DRAIN_CLEANER_NAMESPACE).build());
         drainCleaner.createDrainCleaner(extensionContext);
 
         KafkaClients kafkaBasicExampleClients = new KafkaClientsBuilder()
             .withMessageCount(300)
             .withTopicName(testStorage.getTopicName())
-            .withNamespaceName(Constants.DRAIN_CLEANER_NAMESPACE)
+            .withNamespaceName(TestConstants.DRAIN_CLEANER_NAMESPACE)
             .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
             .withProducerName(testStorage.getProducerName())
             .withConsumerName(testStorage.getConsumerName())
@@ -97,26 +97,26 @@ public class DrainCleanerST extends AbstractST {
 
             Map<String, String> zkPod = null;
             if (!Environment.isKRaftModeEnabled()) {
-                zkPod = PodUtils.podSnapshot(Constants.DRAIN_CLEANER_NAMESPACE, testStorage.getZookeeperSelector()).entrySet()
+                zkPod = PodUtils.podSnapshot(TestConstants.DRAIN_CLEANER_NAMESPACE, testStorage.getZookeeperSelector()).entrySet()
                         .stream().filter(snapshot -> snapshot.getKey().equals(zkPodName)).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
             }
-            Map<String, String> kafkaPod = PodUtils.podSnapshot(Constants.DRAIN_CLEANER_NAMESPACE, testStorage.getKafkaSelector()).entrySet()
+            Map<String, String> kafkaPod = PodUtils.podSnapshot(TestConstants.DRAIN_CLEANER_NAMESPACE, testStorage.getKafkaSelector()).entrySet()
                 .stream().filter(snapshot -> snapshot.getKey().equals(kafkaPodName)).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
             if (!Environment.isKRaftModeEnabled()) {
                 LOGGER.info("Evicting Pods: {}", zkPodName);
-                kubeClient().getClient().pods().inNamespace(Constants.DRAIN_CLEANER_NAMESPACE).withName(zkPodName).evict();
+                kubeClient().getClient().pods().inNamespace(TestConstants.DRAIN_CLEANER_NAMESPACE).withName(zkPodName).evict();
             }
             LOGGER.info("Evicting Pods: {}", kafkaPodName);
-            kubeClient().getClient().pods().inNamespace(Constants.DRAIN_CLEANER_NAMESPACE).withName(kafkaPodName).evict();
+            kubeClient().getClient().pods().inNamespace(TestConstants.DRAIN_CLEANER_NAMESPACE).withName(kafkaPodName).evict();
 
             if (!Environment.isKRaftModeEnabled()) {
-                RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(Constants.DRAIN_CLEANER_NAMESPACE, testStorage.getZookeeperSelector(), replicas, zkPod);
+                RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(TestConstants.DRAIN_CLEANER_NAMESPACE, testStorage.getZookeeperSelector(), replicas, zkPod);
             }
-            RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(Constants.DRAIN_CLEANER_NAMESPACE, testStorage.getKafkaSelector(), replicas, kafkaPod);
+            RollingUpdateUtils.waitTillComponentHasRolledAndPodsReady(TestConstants.DRAIN_CLEANER_NAMESPACE, testStorage.getKafkaSelector(), replicas, kafkaPod);
         }
 
-        ClientUtils.waitForClientsSuccess(testStorage.getProducerName(), testStorage.getConsumerName(), Constants.DRAIN_CLEANER_NAMESPACE, 300);
+        ClientUtils.waitForClientsSuccess(testStorage.getProducerName(), testStorage.getConsumerName(), TestConstants.DRAIN_CLEANER_NAMESPACE, 300);
     }
 
     @AfterEach
@@ -128,8 +128,8 @@ public class DrainCleanerST extends AbstractST {
     void setup(ExtensionContext extensionContext) {
         clusterOperator = new SetupClusterOperator.SetupClusterOperatorBuilder()
             .withExtensionContext(extensionContext)
-            .withNamespace(Constants.DRAIN_CLEANER_NAMESPACE)
-            .withOperationTimeout(Constants.CO_OPERATION_TIMEOUT_DEFAULT)
+            .withNamespace(TestConstants.DRAIN_CLEANER_NAMESPACE)
+            .withOperationTimeout(TestConstants.CO_OPERATION_TIMEOUT_DEFAULT)
             .createInstallation()
             .runInstallation();
     }

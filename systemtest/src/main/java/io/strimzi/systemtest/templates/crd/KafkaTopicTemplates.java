@@ -7,7 +7,7 @@ package io.strimzi.systemtest.templates.crd;
 import io.strimzi.api.kafka.model.KafkaTopic;
 import io.strimzi.api.kafka.model.KafkaTopicBuilder;
 import io.strimzi.operator.common.model.Labels;
-import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.storage.TestStorage;
 import io.strimzi.test.TestUtils;
 
@@ -36,7 +36,7 @@ public class KafkaTopicTemplates {
     }
 
     public static KafkaTopicBuilder defaultTopic(String clusterName, String topicName, int partitions, int replicas, int minIsr, String topicNamespace) {
-        KafkaTopic kafkaTopic = getKafkaTopicFromYaml(Constants.PATH_TO_KAFKA_TOPIC_CONFIG);
+        KafkaTopic kafkaTopic = getKafkaTopicFromYaml(TestConstants.PATH_TO_KAFKA_TOPIC_CONFIG);
         return new KafkaTopicBuilder(kafkaTopic)
             .withNewMetadata()
                 .withName(topicName)

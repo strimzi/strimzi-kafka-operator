@@ -5,7 +5,7 @@
 package io.strimzi.systemtest.utils.specific;
 
 import io.fabric8.kubernetes.api.model.LabelSelector;
-import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.Environment;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.vertx.core.json.JsonArray;
@@ -19,7 +19,7 @@ public class KeycloakUtils {
 
     public final static String LATEST_KEYCLOAK_VERSION = "21.0.0";
 
-    private final static LabelSelector SCRAPER_SELECTOR = new LabelSelector(null, Map.of(Constants.APP_POD_LABEL, Constants.SCRAPER_NAME));
+    private final static LabelSelector SCRAPER_SELECTOR = new LabelSelector(null, Map.of(TestConstants.APP_POD_LABEL, TestConstants.SCRAPER_NAME));
 
     private KeycloakUtils() {}
 
@@ -168,7 +168,7 @@ public class KeycloakUtils {
      * @return response from server
      */
     public static String updatePolicyOfRealmClient(String namespaceName, String baseURI, String token, JsonObject policy, String desiredRealm, String clientId) {
-        final String testSuiteScraperPodName = ResourceManager.kubeClient().listPodsByPrefixInName(Environment.TEST_SUITE_NAMESPACE, Constants.SCRAPER_NAME).get(0).getMetadata().getName();
+        final String testSuiteScraperPodName = ResourceManager.kubeClient().listPodsByPrefixInName(Environment.TEST_SUITE_NAMESPACE, TestConstants.SCRAPER_NAME).get(0).getMetadata().getName();
 
         return cmdKubeClient(namespaceName).execInPod(
             testSuiteScraperPodName,
@@ -193,7 +193,7 @@ public class KeycloakUtils {
      * @return result of creation
      */
     public static String importRealm(String namespaceName, String baseURI, String token, String realmData) {
-        final String testSuiteScraperPodName = ResourceManager.kubeClient().listPodsByPrefixInName(Environment.TEST_SUITE_NAMESPACE, Constants.SCRAPER_NAME).get(0).getMetadata().getName();
+        final String testSuiteScraperPodName = ResourceManager.kubeClient().listPodsByPrefixInName(Environment.TEST_SUITE_NAMESPACE, TestConstants.SCRAPER_NAME).get(0).getMetadata().getName();
 
         return cmdKubeClient(namespaceName).execInPod(
                 testSuiteScraperPodName,

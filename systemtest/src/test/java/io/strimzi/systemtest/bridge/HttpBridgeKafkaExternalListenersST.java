@@ -18,7 +18,7 @@ import io.strimzi.api.kafka.model.listener.arraylistener.GenericKafkaListenerBui
 import io.strimzi.api.kafka.model.listener.arraylistener.KafkaListenerType;
 import io.strimzi.api.kafka.model.status.ListenerStatus;
 import io.strimzi.systemtest.AbstractST;
-import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.annotations.ParallelNamespaceTest;
 import io.strimzi.systemtest.kafkaclients.internalClients.BridgeClients;
 import io.strimzi.systemtest.kafkaclients.internalClients.BridgeClientsBuilder;
@@ -41,10 +41,10 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 import java.util.List;
 import java.util.Random;
 
-import static io.strimzi.systemtest.Constants.BRIDGE;
-import static io.strimzi.systemtest.Constants.EXTERNAL_CLIENTS_USED;
-import static io.strimzi.systemtest.Constants.NODEPORT_SUPPORTED;
-import static io.strimzi.systemtest.Constants.REGRESSION;
+import static io.strimzi.systemtest.TestConstants.BRIDGE;
+import static io.strimzi.systemtest.TestConstants.EXTERNAL_CLIENTS_USED;
+import static io.strimzi.systemtest.TestConstants.NODEPORT_SUPPORTED;
+import static io.strimzi.systemtest.TestConstants.REGRESSION;
 
 @Tag(REGRESSION)
 @Tag(BRIDGE)
@@ -121,14 +121,14 @@ public class HttpBridgeKafkaExternalListenersST extends AbstractST {
             .editSpec()
                 .editKafka()
                 .withListeners(new GenericKafkaListenerBuilder()
-                        .withName(Constants.TLS_LISTENER_DEFAULT_NAME)
+                        .withName(TestConstants.TLS_LISTENER_DEFAULT_NAME)
                         .withPort(9093)
                         .withType(KafkaListenerType.INTERNAL)
                         .withTls(true)
                         .withAuth(auth)
                         .build(),
                     new GenericKafkaListenerBuilder()
-                        .withName(Constants.EXTERNAL_LISTENER_DEFAULT_NAME)
+                        .withName(TestConstants.EXTERNAL_LISTENER_DEFAULT_NAME)
                         .withPort(9094)
                         .withType(KafkaListenerType.NODEPORT)
                         .withTls(true)
@@ -144,7 +144,7 @@ public class HttpBridgeKafkaExternalListenersST extends AbstractST {
             .withBootstrapAddress(KafkaBridgeResources.serviceName(ts.getClusterName()))
             .withTopicName(ts.getTopicName())
             .withMessageCount(MESSAGE_COUNT)
-            .withPort(Constants.HTTP_BRIDGE_DEFAULT_PORT)
+            .withPort(TestConstants.HTTP_BRIDGE_DEFAULT_PORT)
             .withNamespaceName(ts.getNamespaceName())
             .build();
 
@@ -152,7 +152,7 @@ public class HttpBridgeKafkaExternalListenersST extends AbstractST {
         resourceManager.createResourceWithWait(extensionContext, KafkaTopicTemplates.topic(ts).build());
 
         // Create user
-        if (auth.getType().equals(Constants.TLS_LISTENER_DEFAULT_NAME)) {
+        if (auth.getType().equals(TestConstants.TLS_LISTENER_DEFAULT_NAME)) {
             resourceManager.createResourceWithWait(extensionContext, KafkaUserTemplates.tlsUser(ts.getNamespaceName(), ts.getClusterName(), weirdUserName)
                 .editMetadata()
                     .withNamespace(ts.getNamespaceName())
@@ -173,7 +173,7 @@ public class HttpBridgeKafkaExternalListenersST extends AbstractST {
                 .endMetadata()
                 .withNewSpecLike(spec)
                     .withBootstrapServers(KafkaResources.tlsBootstrapAddress(ts.getClusterName()))
-                    .withNewHttp(Constants.HTTP_BRIDGE_DEFAULT_PORT)
+                    .withNewHttp(TestConstants.HTTP_BRIDGE_DEFAULT_PORT)
                 .withNewConsumer()
                     .addToConfig(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest")
                 .endConsumer()
@@ -188,7 +188,7 @@ public class HttpBridgeKafkaExternalListenersST extends AbstractST {
         final String kafkaProducerExternalName = "kafka-producer-external" + new Random().nextInt(Integer.MAX_VALUE);
 
         final List<ListenerStatus> listenerStatusList = KafkaResource.kafkaClient().inNamespace(ts.getNamespaceName()).withName(ts.getClusterName()).get().getStatus().getListeners();
-        final String externalBootstrapServers = listenerStatusList.stream().filter(listener -> listener.getName().equals(Constants.EXTERNAL_LISTENER_DEFAULT_NAME))
+        final String externalBootstrapServers = listenerStatusList.stream().filter(listener -> listener.getName().equals(TestConstants.EXTERNAL_LISTENER_DEFAULT_NAME))
             .findFirst()
             .orElseThrow(RuntimeException::new)
             .getBootstrapServers();
@@ -205,7 +205,7 @@ public class HttpBridgeKafkaExternalListenersST extends AbstractST {
             .withAdditionalConfig("ssl.endpoint.identification.algorithm=\n")
             .build();
 
-        if (auth.getType().equals(Constants.TLS_LISTENER_DEFAULT_NAME)) {
+        if (auth.getType().equals(TestConstants.TLS_LISTENER_DEFAULT_NAME)) {
             // tls producer
             resourceManager.createResourceWithWait(extensionContext, externalKafkaProducer.producerTlsStrimzi(ts.getClusterName()));
         } else {

@@ -8,7 +8,7 @@ import io.fabric8.kubernetes.api.model.Secret;
 import io.fabric8.kubernetes.api.model.SecretBuilder;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.operator.common.model.Labels;
-import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.ResourceOperation;
 import io.strimzi.systemtest.security.CertAndKeyFiles;
@@ -38,14 +38,14 @@ import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 public class SecretUtils {
 
     private static final Logger LOGGER = LogManager.getLogger(SecretUtils.class);
-    private static final long READINESS_TIMEOUT = ResourceOperation.getTimeoutForResourceReadiness(Constants.SECRET);
+    private static final long READINESS_TIMEOUT = ResourceOperation.getTimeoutForResourceReadiness(TestConstants.SECRET);
     private static final long DELETION_TIMEOUT = ResourceOperation.getTimeoutForResourceDeletion();
 
     private SecretUtils() { }
 
     public static void waitForSecretReady(String namespaceName, String secretName, Runnable onTimeout) {
         LOGGER.info("Waiting for Secret: {}/{} to exist", namespaceName, secretName);
-        TestUtils.waitFor("Secret: " + secretName + " to exist", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, READINESS_TIMEOUT,
+        TestUtils.waitFor("Secret: " + secretName + " to exist", TestConstants.POLL_INTERVAL_FOR_RESOURCE_READINESS, READINESS_TIMEOUT,
             () -> kubeClient(namespaceName).getSecret(namespaceName, secretName) != null,
             onTimeout);
         LOGGER.info("Secret: {}/{} created", namespaceName, secretName);
@@ -53,7 +53,7 @@ public class SecretUtils {
 
     public static void waitForSecretDeletion(final String namespaceName, String secretName, Runnable onTimeout) {
         LOGGER.info("Waiting for Secret: {}/{} deletion", namespaceName, secretName);
-        TestUtils.waitFor("Secret: " + namespaceName + "/" + secretName + " deletion", Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, READINESS_TIMEOUT,
+        TestUtils.waitFor("Secret: " + namespaceName + "/" + secretName + " deletion", TestConstants.POLL_INTERVAL_FOR_RESOURCE_READINESS, READINESS_TIMEOUT,
             () -> kubeClient(namespaceName).getSecret(namespaceName, secretName) == null,
             onTimeout);
         LOGGER.info("Secret: {}/{} deleted", namespaceName, secretName);
@@ -163,7 +163,7 @@ public class SecretUtils {
 
     public static void waitForCertToChange(String namespaceName, String originalCert, String secretName) {
         LOGGER.info("Waiting for Secret: {}/{} certificate to be replaced", namespaceName, secretName);
-        TestUtils.waitFor("cert to be replaced", Constants.GLOBAL_POLL_INTERVAL, Constants.TIMEOUT_FOR_CLUSTER_STABLE, () -> {
+        TestUtils.waitFor("cert to be replaced", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.TIMEOUT_FOR_CLUSTER_STABLE, () -> {
             Secret secret = kubeClient(namespaceName).getSecret(namespaceName, secretName);
             if (secret != null && secret.getData() != null && secret.getData().containsKey("ca.crt")) {
                 String currentCert = new String(Base64.getDecoder().decode(secret.getData().get("ca.crt")), StandardCharsets.US_ASCII);
@@ -182,7 +182,7 @@ public class SecretUtils {
         kubeClient().getClient().secrets().inNamespace(namespace).withName(secretName).delete();
 
         LOGGER.info("Waiting for Secret: {}/{} to be deleted", namespace, secretName);
-        TestUtils.waitFor(String.format("Deletion of Secret %s#%s", namespace, secretName), Constants.GLOBAL_POLL_INTERVAL, DELETION_TIMEOUT,
+        TestUtils.waitFor(String.format("Deletion of Secret %s#%s", namespace, secretName), TestConstants.GLOBAL_POLL_INTERVAL, DELETION_TIMEOUT,
             () -> kubeClient().getSecret(namespace, secretName) == null);
 
         LOGGER.info("Secret: {}/{} successfully deleted", namespace, secretName);
@@ -204,7 +204,7 @@ public class SecretUtils {
     public static void waitForUserPasswordChange(String namespaceName, String secretName, String expectedEncodedPassword) {
         LOGGER.info("Waiting for user password will be changed to {} in Secret: {}/{}", expectedEncodedPassword, namespaceName, secretName);
         TestUtils.waitFor(String.format("user password will be changed to: %s in secret: %s(%s)", expectedEncodedPassword, namespaceName, secretName),
-            Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
+            TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_TIMEOUT,
             () -> kubeClient().namespace(namespaceName).getSecret(secretName).getData().get("password").equals(expectedEncodedPassword));
     }
 
@@ -237,7 +237,7 @@ public class SecretUtils {
      */
     public static void waitForSpecificLabelKeyValue(String secretName, String namespace, String labelKey, String labelValue) {
         LOGGER.info("Waiting for Secret: {}/{} (corresponding to KafkaUser) to have expected label: {}={}", namespace, secretName, labelKey, labelValue);
-        TestUtils.waitFor("Secret: " + namespace + "/" + secretName + " to exist with the corresponding label: " + labelKey + "=" + labelValue + " for the Kafka cluster", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
+        TestUtils.waitFor("Secret: " + namespace + "/" + secretName + " to exist with the corresponding label: " + labelKey + "=" + labelValue + " for the Kafka cluster", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_TIMEOUT,
             () -> kubeClient().listSecrets(namespace)
                 .stream()
                 .anyMatch(secret -> secretName.equals(secret.getMetadata().getName())

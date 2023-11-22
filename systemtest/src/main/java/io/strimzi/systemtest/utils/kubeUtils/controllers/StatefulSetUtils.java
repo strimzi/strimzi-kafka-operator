@@ -4,7 +4,7 @@
  */
 package io.strimzi.systemtest.utils.kubeUtils.controllers;
 
-import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.ResourceOperation;
 import io.strimzi.systemtest.resources.crd.KafkaResource;
@@ -18,7 +18,7 @@ import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 public class StatefulSetUtils {
 
     private static final Logger LOGGER = LogManager.getLogger(StatefulSetUtils.class);
-    private static final long READINESS_TIMEOUT = ResourceOperation.getTimeoutForResourceReadiness(Constants.STATEFUL_SET);
+    private static final long READINESS_TIMEOUT = ResourceOperation.getTimeoutForResourceReadiness(TestConstants.STATEFUL_SET);
 
     private StatefulSetUtils() { }
 
@@ -33,7 +33,7 @@ public class StatefulSetUtils {
         String resourceName = statefulSetName.contains("-kafka") ? statefulSetName.replace("-kafka", "") : statefulSetName.replace("-zookeeper", "");
 
         LOGGER.info("Waiting for StatefulSet: {}/{} to be ready", namespaceName, statefulSetName);
-        TestUtils.waitFor("readiness of StatefulSet: " + namespaceName + "/" + statefulSetName, Constants.POLL_INTERVAL_FOR_RESOURCE_READINESS, timeout,
+        TestUtils.waitFor("readiness of StatefulSet: " + namespaceName + "/" + statefulSetName, TestConstants.POLL_INTERVAL_FOR_RESOURCE_READINESS, timeout,
             () -> kubeClient(namespaceName).getStatefulSetStatus(namespaceName, statefulSetName),
             () -> ResourceManager.logCurrentResourceStatus(KafkaResource.kafkaClient().inNamespace(namespaceName).withName(resourceName).get()));
 

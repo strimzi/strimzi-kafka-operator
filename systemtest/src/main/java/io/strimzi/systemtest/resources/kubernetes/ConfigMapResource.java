@@ -5,7 +5,7 @@
 package io.strimzi.systemtest.resources.kubernetes;
 
 import io.fabric8.kubernetes.api.model.ConfigMap;
-import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.resources.ResourceType;
 
 import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
@@ -14,7 +14,7 @@ public class ConfigMapResource implements ResourceType<ConfigMap> {
 
     @Override
     public String getKind() {
-        return Constants.CONFIG_MAP;
+        return TestConstants.CONFIG_MAP;
     }
     @Override
     public ConfigMap get(String namespace, String name) {

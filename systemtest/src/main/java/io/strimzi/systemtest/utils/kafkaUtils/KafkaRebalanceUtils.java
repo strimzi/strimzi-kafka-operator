@@ -12,7 +12,7 @@ import io.strimzi.api.kafka.model.status.KafkaRebalanceStatus;
 import io.strimzi.operator.common.Annotations;
 import io.strimzi.operator.common.Reconciliation;
 import io.strimzi.operator.common.ReconciliationLogger;
-import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.ResourceOperation;
 import io.strimzi.systemtest.resources.crd.KafkaRebalanceResource;
@@ -125,10 +125,10 @@ public class KafkaRebalanceUtils {
 
         KafkaRebalanceStatus oldStatus = KafkaRebalanceResource.kafkaRebalanceClient().inNamespace(namespaceName).withName(resourceName).get().getStatus();
 
-        TestUtils.waitFor("KafkaRebalance status to be stable", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_STATUS_TIMEOUT, () -> {
+        TestUtils.waitFor("KafkaRebalance status to be stable", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_STATUS_TIMEOUT, () -> {
             if (KafkaRebalanceResource.kafkaRebalanceClient().inNamespace(namespaceName).withName(resourceName).get().getStatus().equals(oldStatus)) {
                 stableCounter[0]++;
-                if (stableCounter[0] == Constants.GLOBAL_STABILITY_OFFSET_COUNT) {
+                if (stableCounter[0] == TestConstants.GLOBAL_STABILITY_OFFSET_COUNT) {
                     LOGGER.infoCr(reconciliation, "KafkaRebalance status is stable for: {} poll intervals", stableCounter[0]);
                     return true;
                 }
@@ -137,7 +137,7 @@ public class KafkaRebalanceUtils {
                 stableCounter[0] = 0;
                 return false;
             }
-            LOGGER.infoCr(reconciliation, "KafkaRebalance status gonna be stable in {} polls", Constants.GLOBAL_STABILITY_OFFSET_COUNT - stableCounter[0]);
+            LOGGER.infoCr(reconciliation, "KafkaRebalance status gonna be stable in {} polls", TestConstants.GLOBAL_STABILITY_OFFSET_COUNT - stableCounter[0]);
             return false;
         });
     }

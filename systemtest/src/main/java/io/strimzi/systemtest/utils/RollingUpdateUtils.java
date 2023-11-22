@@ -10,7 +10,7 @@ import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaMirrorMaker2;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.operator.common.model.Labels;
-import io.strimzi.systemtest.Constants;
+import io.strimzi.systemtest.TestConstants;
 import io.strimzi.systemtest.resources.ResourceManager;
 import io.strimzi.systemtest.resources.ResourceOperation;
 import io.strimzi.systemtest.resources.crd.KafkaConnectResource;
@@ -75,7 +75,7 @@ public class RollingUpdateUtils {
 
         LOGGER.info("Waiting for component matching {} -> {}/{} rolling update", selector, namespaceName, componentName);
         TestUtils.waitFor("rolling update of component: " + namespaceName + "/" + componentName,
-            Constants.WAIT_FOR_ROLLING_UPDATE_INTERVAL, ResourceOperation.timeoutForPodsOperation(snapshot.size()), () -> {
+            TestConstants.WAIT_FOR_ROLLING_UPDATE_INTERVAL, ResourceOperation.timeoutForPodsOperation(snapshot.size()), () -> {
                 try {
                     return componentHasRolled(namespaceName, selector, snapshot);
                 } catch (Exception e) {
@@ -121,7 +121,7 @@ public class RollingUpdateUtils {
 
         LOGGER.info("Waiting for component matching {} -> {}/{} first rolled Pod", selector, namespaceName, componentName);
         TestUtils.waitFor("first pod's roll : " + namespaceName + "/" + componentName,
-            Constants.WAIT_FOR_ROLLING_UPDATE_INTERVAL, ResourceOperation.timeoutForPodsOperation(snapshot.size()), () -> {
+            TestConstants.WAIT_FOR_ROLLING_UPDATE_INTERVAL, ResourceOperation.timeoutForPodsOperation(snapshot.size()), () -> {
                 try {
                     LOGGER.debug("Existing snapshot: {}/{}", namespaceName, new TreeMap<>(snapshot));
 
@@ -192,12 +192,12 @@ public class RollingUpdateUtils {
         // not need to be final because reference to the array does not get another array assigned
         int[] i = {0};
 
-        TestUtils.waitFor("Pods to remain stable and rolling update not to be triggered", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
+        TestUtils.waitFor("Pods to remain stable and rolling update not to be triggered", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_TIMEOUT,
             () -> {
                 if (!componentHasRolled(namespaceName, selector, pods)) {
                     LOGGER.info("Pods {}/{} did not roll. Must remain stable for: {} second(s)", namespaceName, pods.toString(),
-                        Constants.GLOBAL_RECONCILIATION_COUNT - i[0]);
-                    return i[0]++ == Constants.GLOBAL_RECONCILIATION_COUNT;
+                        TestConstants.GLOBAL_RECONCILIATION_COUNT - i[0]);
+                    return i[0]++ == TestConstants.GLOBAL_RECONCILIATION_COUNT;
                 } else {
                     throw new RuntimeException(pods.toString() + " Pods are rolling!");
                 }
@@ -215,17 +215,17 @@ public class RollingUpdateUtils {
 
         LabelSelector kafkaSelector = KafkaResource.getLabelSelector(clusterName, KafkaResources.kafkaStatefulSetName(clusterName));
 
-        TestUtils.waitFor("Kafka Pods to remain stable and rolling update not to be triggered", Constants.GLOBAL_POLL_INTERVAL, Constants.GLOBAL_TIMEOUT,
+        TestUtils.waitFor("Kafka Pods to remain stable and rolling update not to be triggered", TestConstants.GLOBAL_POLL_INTERVAL, TestConstants.GLOBAL_TIMEOUT,
             () -> {
                 boolean kafkaRolled = componentHasRolled(namespaceName, kafkaSelector, kafkaPods);
 
                 if (!kafkaRolled) {
-                    LOGGER.info("Kafka Pods did not roll. Must remain stable for: {} second(s)", Constants.GLOBAL_RECONCILIATION_COUNT - i[0]);
+                    LOGGER.info("Kafka Pods did not roll. Must remain stable for: {} second(s)", TestConstants.GLOBAL_RECONCILIATION_COUNT - i[0]);
                 } else {
                     throw new RuntimeException(kafkaPods.toString() + " Pods are rolling!");
                 }
 
-                return i[0]++ == Constants.GLOBAL_RECONCILIATION_COUNT;
+                return i[0]++ == TestConstants.GLOBAL_RECONCILIATION_COUNT;
             }
         );
     }
