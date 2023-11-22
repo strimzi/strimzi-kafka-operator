@@ -128,7 +128,9 @@ public class KafkaRoller {
     private final KafkaVersion kafkaVersion;
     private final Reconciliation reconciliation;
     private final boolean allowReconfiguration;
+    // Admin client bootstrapped with broker nodes. It is used to send requests that are only relevant to the brokers
     private Admin brokerAdminClient;
+    // Admin client bootstrapped with KRaft controller nodes. It is used to send requests that are only relevant to KRaft controllers (e.g. describeMetadataQuorum)
     private Admin controllerAdminClient;
     private KafkaAgentClient kafkaAgentClient;
 
@@ -193,10 +195,10 @@ public class KafkaRoller {
     private Function<Pod, RestartReasons> podNeedsRestart;
 
     /**
-     * If brokerAdminClient has not been initialized yet, does exactly that
+     * Initializes brokerAdminClient, if it has not been initialized yet
      * @return true if the creation of AC succeeded, false otherwise
      */
-    private boolean initBrokerAdminClient() {
+    private boolean maybeInitBrokerAdminClient() {
         if (this.brokerAdminClient == null) {
             try {
                 this.brokerAdminClient = adminClient(nodes.stream().filter(NodeRef::broker).collect(Collectors.toSet()), false);
@@ -209,10 +211,10 @@ public class KafkaRoller {
     }
 
     /**
-     * If controllerAdminClient has not been initialized yet, does exactly that
+     * Initializes controllerAdminClient if it has not been initialized yet
      * @return true if the creation of AC succeeded, false otherwise
      */
-    private boolean initControllerAdminClient() {
+    private boolean maybeInitControllerAdminClient() {
         if (this.controllerAdminClient == null) {
             try {
                 // TODO: Currently, when running in KRaft mode Kafka does not support using Kafka Admin API with controller
@@ -438,7 +440,7 @@ public class KafkaRoller {
 
                 BrokerState brokerState = kafkaAgentClient.getBrokerState(pod.getMetadata().getName());
                 if (brokerState.isBrokerInRecovery()) {
-                    throw new UnforceableProblem("Pod " + nodeRef.podName() + " is not ready because the node is performing log recovery. There are " + brokerState.remainingLogsToRecover() + " logs and " + brokerState.remainingSegmentsToRecover() + " segments left to recover.", e.getCause());
+                    throw new UnforceableProblem("Pod " + nodeRef.podName() + " is not ready because the Kafka node is performing log recovery. There are " + brokerState.remainingLogsToRecover() + " logs and " + brokerState.remainingSegmentsToRecover() + " segments left to recover.", e.getCause());
                 }
 
                 if (e.getCause() instanceof TimeoutException) {
@@ -563,6 +565,14 @@ public class KafkaRoller {
         return updatedDynamically;
     }
 
+    private void markRestartContextWithForceRestart(RestartContext restartContext) {
+        restartContext.needsRestart = false;
+        restartContext.needsReconfig = false;
+        restartContext.forceRestart = true;
+        restartContext.diff = null;
+        restartContext.logDiff = null;
+    }
+
     /**
      * Determine whether the pod should be restarted, or the broker reconfigured.
      */
@@ -579,11 +589,7 @@ public class KafkaRoller {
         if (restartContext.podStuck) {
             LOGGER.infoCr(reconciliation, "Pod {} needs to be restarted, because it seems to be stuck and restart might help", nodeRef);
             restartContext.restartReasons.add(RestartReason.POD_STUCK);
-            restartContext.needsRestart = false;
-            restartContext.needsReconfig = false;
-            restartContext.forceRestart = true;
-            restartContext.diff = null;
-            restartContext.logDiff = null;
+            markRestartContextWithForceRestart(restartContext);
             return;
         }
 
@@ -593,7 +599,7 @@ public class KafkaRoller {
         boolean needsReconfig = false;
         if (nodeRef.controller()) {
 
-            if (initControllerAdminClient()) {
+            if (maybeInitControllerAdminClient()) {
                 String controllerQuorumFetchTimeout = CONTROLLER_QUORUM_FETCH_TIMEOUT_MS_CONFIG_DEFAULT;
                 String desiredConfig = kafkaConfigProvider.apply(nodeRef.nodeId());
 
@@ -613,11 +619,7 @@ public class KafkaRoller {
                     LOGGER.infoCr(reconciliation, "KafkaQuorumCheck cannot be initialised for {} because none of the brokers do not seem to responding to connection attempts. " +
                             "Restarting pod because it is a combined node so it is one of the brokers that is not responding.", nodeRef);
                     reasonToRestartPod.add(RestartReason.POD_UNRESPONSIVE);
-                    restartContext.needsRestart = false;
-                    restartContext.needsReconfig = false;
-                    restartContext.forceRestart = true;
-                    restartContext.diff = null;
-                    restartContext.logDiff = null;
+                    markRestartContextWithForceRestart(restartContext);
                     return;
                 } else {
                     // If it is a controller only node throw an UnforceableProblem, so we try again until the backOff
@@ -629,14 +631,10 @@ public class KafkaRoller {
 
         if (nodeRef.broker()) {
 
-            if (!initBrokerAdminClient()) {
+            if (!maybeInitBrokerAdminClient()) {
                 LOGGER.infoCr(reconciliation, "Pod {} needs to be restarted, because it does not seem to responding to connection attempts", nodeRef);
                 reasonToRestartPod.add(RestartReason.POD_UNRESPONSIVE);
-                restartContext.needsRestart = false;
-                restartContext.needsReconfig = false;
-                restartContext.forceRestart = true;
-                restartContext.diff = null;
-                restartContext.logDiff = null;
+                markRestartContextWithForceRestart(restartContext);
                 return;
             }
 

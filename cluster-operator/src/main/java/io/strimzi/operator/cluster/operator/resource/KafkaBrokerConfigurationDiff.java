@@ -166,8 +166,7 @@ public class KafkaBrokerConfigurationDiff extends AbstractJsonDiff {
         orderedProperties.addStringPairs(desired);
         Map<String, String> desiredMap = orderedProperties.asMap();
 
-        int brokerId = nodeRef.nodeId();
-        fillPlaceholderValue(desiredMap, Integer.toString(brokerId));
+        fillPlaceholderValue(desiredMap, Integer.toString(nodeRef.nodeId()));
 
         JsonNode source = PATCH_MAPPER.valueToTree(currentMap);
         JsonNode target = PATCH_MAPPER.valueToTree(desiredMap);
@@ -182,29 +181,28 @@ public class KafkaBrokerConfigurationDiff extends AbstractJsonDiff {
                     .findFirst();
 
             String op = d.get("op").asText();
-            boolean nodeIsController = nodeRef.controller();
             if (optEntry.isPresent()) {
                 ConfigEntry entry = optEntry.get();
                 if ("remove".equals(op)) {
-                    removeProperty(configModel, updatedCE, pathValueWithoutSlash, entry, nodeIsController);
+                    removeProperty(configModel, updatedCE, pathValueWithoutSlash, entry, nodeRef.controller());
                 } else if ("replace".equals(op)) {
                     // entry is in the current, desired is updated value
-                    updateOrAdd(entry.name(), configModel, desiredMap, updatedCE, nodeIsController);
+                    updateOrAdd(entry.name(), configModel, desiredMap, updatedCE, nodeRef.controller());
                 }
             } else {
                 if ("add".equals(op)) {
                     // entry is not in the current, it is added
-                    updateOrAdd(pathValueWithoutSlash, configModel, desiredMap, updatedCE, nodeIsController);
+                    updateOrAdd(pathValueWithoutSlash, configModel, desiredMap, updatedCE, nodeRef.controller());
                 }
             }
 
             if ("remove".equals(op)) {
                 // there is a lot of properties set by default - not having them in desired causes very noisy log output
-                LOGGER.traceCr(reconciliation, "Kafka Broker {} Config Differs : {}", brokerId, d);
+                LOGGER.traceCr(reconciliation, "Kafka Broker {} Config Differs : {}", nodeRef.nodeId(), d);
                 LOGGER.traceCr(reconciliation, "Current Kafka Broker Config path {} has value {}", pathValueWithoutSlash, lookupPath(source, pathValue));
                 LOGGER.traceCr(reconciliation, "Desired Kafka Broker Config path {} has value {}", pathValueWithoutSlash, lookupPath(target, pathValue));
             } else {
-                LOGGER.debugCr(reconciliation, "Kafka Broker {} Config Differs : {}", brokerId, d);
+                LOGGER.debugCr(reconciliation, "Kafka Broker {} Config Differs : {}", nodeRef.nodeId(), d);
                 LOGGER.debugCr(reconciliation, "Current Kafka Broker Config path {} has value {}", pathValueWithoutSlash, lookupPath(source, pathValue));
                 LOGGER.debugCr(reconciliation, "Desired Kafka Broker Config path {} has value {}", pathValueWithoutSlash, lookupPath(target, pathValue));
             }

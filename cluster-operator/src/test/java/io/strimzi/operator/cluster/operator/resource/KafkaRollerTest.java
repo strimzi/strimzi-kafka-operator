@@ -581,7 +581,7 @@ public class KafkaRollerTest {
 
         doFailingRollingRestart(testContext, kafkaRoller,
                 asList(0, 1, 2, 3, 4),
-                KafkaRoller.UnforceableProblem.class, "Pod c-kafka-0 is not ready because the node is performing log recovery. There are 10 logs and 100 segments left to recover.",
+                KafkaRoller.UnforceableProblem.class, "Pod c-kafka-0 is not ready because the Kafka node is performing log recovery. There are 10 logs and 100 segments left to recover.",
                 asList(2, 3, 4, 1));
     }
 
@@ -604,7 +604,7 @@ public class KafkaRollerTest {
 
         doFailingRollingRestart(testContext, kafkaRoller,
                 List.of(0, 1, 2),
-                KafkaRoller.UnforceableProblem.class, "Pod c-kafka-0 is not ready because the node is performing log recovery. There are 10 logs and 100 segments left to recover.",
+                KafkaRoller.UnforceableProblem.class, "Pod c-kafka-0 is not ready because the Kafka node is performing log recovery. There are 10 logs and 100 segments left to recover.",
                 List.of(1, 2));
     }
 

@@ -63,7 +63,7 @@ class KafkaQuorumCheckTest {
     }
 
     @Test
-    public void canRollActiveControllerOdd(VertxTestContext context) {
+    public void canRollActiveControllerOddSizedCluster(VertxTestContext context) {
         Map<Integer, OptionalLong> controllers = new HashMap<>();
         controllers.put(1, OptionalLong.of(10000L));
         controllers.put(2, OptionalLong.of(9500L));
@@ -78,7 +78,7 @@ class KafkaQuorumCheckTest {
     }
 
     @Test
-    public void canRollActiveControllerEven(VertxTestContext context) {
+    public void canRollActiveControllerEvenSizedCluster(VertxTestContext context) {
         Map<Integer, OptionalLong> controllers = new HashMap<>();
         controllers.put(1, OptionalLong.of(10000L));
         controllers.put(2, OptionalLong.of(9500L));
@@ -94,7 +94,7 @@ class KafkaQuorumCheckTest {
     }
 
     @Test
-    public void cannotRollActiveControllerWith1FollowerBehindOdd(VertxTestContext context) {
+    public void cannotRollActiveControllerWith1FollowerBehindOddSizedCluster(VertxTestContext context) {
         Map<Integer, OptionalLong> controllers = new HashMap<>();
         controllers.put(1, OptionalLong.of(10000L));
         controllers.put(2, OptionalLong.of(7000L));
@@ -108,7 +108,7 @@ class KafkaQuorumCheckTest {
     }
 
     @Test
-    public void cannotRollActiveControllerWith1FollowerBehindEven(VertxTestContext context) {
+    public void cannotRollActiveControllerWith1FollowerBehindEvenSizedCluster(VertxTestContext context) {
         Map<Integer, OptionalLong> controllers = new HashMap<>();
         controllers.put(1, OptionalLong.of(10000L));
         controllers.put(2, OptionalLong.of(7000L));
