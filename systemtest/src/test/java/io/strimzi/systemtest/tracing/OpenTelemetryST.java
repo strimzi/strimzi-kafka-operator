@@ -284,7 +284,7 @@ public class OpenTelemetryST extends AbstractST {
                 .endTemplate()
             .endSpec();
 
-        resourceManager.createResourceWithWait(extensionContext, KafkaConnectTemplates.addFileSinkPluginOrImage(Environment.TEST_SUITE_NAMESPACE, connectBuilder).build());
+        resourceManager.createResourceWithWait(extensionContext, KafkaConnectTemplates.addFileSinkPluginOrImage(testStorage.getNamespaceName(), connectBuilder).build());
 
         resourceManager.createResourceWithWait(extensionContext, KafkaConnectorTemplates.kafkaConnector(testStorage.getClusterName())
             .editSpec()
