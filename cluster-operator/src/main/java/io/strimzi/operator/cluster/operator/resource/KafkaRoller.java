@@ -317,8 +317,8 @@ public class KafkaRoller {
         boolean needsReconfig;
         boolean forceRestart;
         boolean podStuck;
-        KafkaBrokerConfigurationDiff diff;
-        KafkaBrokerLoggingConfigurationDiff logDiff;
+        KafkaBrokerConfigurationDiff brokerConfigDiff;
+        KafkaBrokerLoggingConfigurationDiff brokerLoggingDiff;
         KafkaQuorumCheck quorumCheck;
 
         RestartContext(Supplier<BackOff> backOffSupplier) {
@@ -553,7 +553,7 @@ public class KafkaRoller {
 
         if (restartContext.needsReconfig) {
             try {
-                dynamicUpdateBrokerConfig(nodeRef, brokerAdminClient, restartContext.diff, restartContext.logDiff);
+                dynamicUpdateBrokerConfig(nodeRef, brokerAdminClient, restartContext.brokerConfigDiff, restartContext.brokerLoggingDiff);
                 updatedDynamically = true;
             } catch (ForceableProblem e) {
                 LOGGER.debugCr(reconciliation, "Pod {} could not be updated dynamically ({}), will restart", nodeRef, e);
@@ -569,8 +569,8 @@ public class KafkaRoller {
         restartContext.needsRestart = false;
         restartContext.needsReconfig = false;
         restartContext.forceRestart = true;
-        restartContext.diff = null;
-        restartContext.logDiff = null;
+        restartContext.brokerConfigDiff = null;
+        restartContext.brokerLoggingDiff = null;
     }
 
     /**
@@ -594,8 +594,8 @@ public class KafkaRoller {
         }
 
         boolean needsRestart = reasonToRestartPod.shouldRestart();
-        KafkaBrokerConfigurationDiff diff = null;
-        KafkaBrokerLoggingConfigurationDiff loggingDiff = null;
+        KafkaBrokerConfigurationDiff brokerConfigDiff = null;
+        KafkaBrokerLoggingConfigurationDiff brokerLoggingDiff = null;
         boolean needsReconfig = false;
         if (nodeRef.controller()) {
 
@@ -654,11 +654,11 @@ public class KafkaRoller {
 
             if (!needsRestart && allowReconfiguration) {
                 LOGGER.traceCr(reconciliation, "Pod {}: description {}", nodeRef, brokerConfig);
-                diff = new KafkaBrokerConfigurationDiff(reconciliation, brokerConfig, kafkaConfigProvider.apply(nodeRef.nodeId()), kafkaVersion, nodeRef);
-                loggingDiff = logging(nodeRef);
+                brokerConfigDiff = new KafkaBrokerConfigurationDiff(reconciliation, brokerConfig, kafkaConfigProvider.apply(nodeRef.nodeId()), kafkaVersion, nodeRef);
+                brokerLoggingDiff = logging(nodeRef);
 
-                if (diff.getDiffSize() > 0) {
-                    if (diff.canBeUpdatedDynamically()) {
+                if (brokerConfigDiff.getDiffSize() > 0) {
+                    if (brokerConfigDiff.canBeUpdatedDynamically()) {
                         LOGGER.debugCr(reconciliation, "Pod {} needs to be reconfigured.", nodeRef);
                         needsReconfig = true;
                     } else {
@@ -669,7 +669,7 @@ public class KafkaRoller {
                 }
 
                 // needsRestart value might have changed from the check in the parent if. So we need to check it again.
-                if (!needsRestart && loggingDiff.getDiffSize() > 0) {
+                if (!needsRestart && brokerLoggingDiff.getDiffSize() > 0) {
                     LOGGER.debugCr(reconciliation, "Pod {} logging needs to be reconfigured.", nodeRef);
                     needsReconfig = true;
                 }
@@ -679,8 +679,8 @@ public class KafkaRoller {
         restartContext.needsRestart = needsRestart;
         restartContext.needsReconfig = needsReconfig;
         restartContext.forceRestart = false;
-        restartContext.diff = diff;
-        restartContext.logDiff = loggingDiff;
+        restartContext.brokerConfigDiff = brokerConfigDiff;
+        restartContext.brokerLoggingDiff = brokerLoggingDiff;
     }
 
     /**
