@@ -432,7 +432,7 @@ class UserST extends AbstractST {
     void setup(ExtensionContext extensionContext) {
         this.clusterOperator = this.clusterOperator
             .defaultInstallation(extensionContext)
-            .withBindingsNamespaces(List.of(Environment.TEST_SUITE_NAMESPACE, Constants.CO_NAMESPACE))
+            .withBindingsNamespaces(List.of(Environment.TEST_SUITE_NAMESPACE, TestConstants.CO_NAMESPACE))
             .createInstallation()
             .runInstallation();
 
