@@ -9,14 +9,12 @@
 If you are upgrading Kubernetes, refer to the Kubernetes upgrade documentation to check the upgrade path and the steps to upgrade your nodes correctly.
 Before upgrading Kubernetes, link:{supported-configurations}[check the supported versions for your version of Strimzi^].
 
-When performing your upgrade, you'll want to keep your Kafka clusters available.
+When performing your upgrade, ensure the availability of your Kafka clusters by following these steps:
 
-You can employ one of the following strategies:
-
-. Configuring pod disruption budgets
-. Rolling pods by one of these methods:
-.. Using the Strimzi Drain Cleaner
-.. Manually by applying an annotation to your pod
+. Configure pod disruption budgets
+. Roll pods using one of these methods:
+.. Use the AMQ Streams Drain Cleaner (recommended)
+.. Apply an annotation to your pods to roll them manually
 
 When using either of the methods to roll the pods, you must set a pod disruption budget of zero using the `maxUnavailable` property.
 
