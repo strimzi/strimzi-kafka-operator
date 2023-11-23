@@ -128,9 +128,14 @@ public class KafkaRoller {
     private final KafkaVersion kafkaVersion;
     private final Reconciliation reconciliation;
     private final boolean allowReconfiguration;
-    // Admin client bootstrapped with broker nodes. It is used to send requests that are only relevant to the brokers
+    /**
+     * Admin client used to send requests that are only relevant for the brokers. It is bootstrapped with broker nodes that might be rolled.
+     */
     private Admin brokerAdminClient;
-    // Admin client bootstrapped with KRaft controller nodes. It is used to send requests that are only relevant to KRaft controllers (e.g. describeMetadataQuorum)
+    /**
+     * Admin client used to send requests that are only relevant for KRaft controllers (e.g. describeMetadataQuorum). It is bootstrapped with broker bootstrapService
+     * so that requests are forwarded to the controllers.
+     */
     private Admin controllerAdminClient;
     private KafkaAgentClient kafkaAgentClient;
 

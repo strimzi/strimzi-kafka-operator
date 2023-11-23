@@ -18,8 +18,8 @@ import static java.lang.Math.ceil;
 
 /**
  * Provides methods that determine whether it's safe to restart a KRaft controller and the quorum leader id.
- * It is considered safe to restart a KRaft controller if the majority of controllers have caught up with the quorum leader
- * within the controller.quorum.fetch.timeout.ms.
+ * It is considered safe to restart a KRaft controller if the majority of controllers, excluding the one we are
+ * considering to restart, have caught up with the quorum leader within the controller.quorum.fetch.timeout.ms.
  */
 class KafkaQuorumCheck {
 
@@ -38,7 +38,8 @@ class KafkaQuorumCheck {
 
     /**
      * Returns future that completes with true if the given controller can be rolled based on the quorum state. Quorum is considered
-     * healthy if the majority of controllers have caught up with the quorum leader within the controller.quorum.fetch.timeout.ms.
+     * healthy if the majority of controllers, excluding the given node, have caught up with the quorum leader within the
+     * controller.quorum.fetch.timeout.ms.
      */
     Future<Boolean> canRollController(int nodeId) {
         LOGGER.debugCr(reconciliation, "Determining whether controller pod {} can be rolled", nodeId);
