@@ -344,6 +344,7 @@ public class KafkaStatusTest {
                                     .build())
                     .withKafkaVersion("old-kafka")
                     .withOperatorLastSuccessfulVersion("old-operator")
+                    .withKafkaMetadataVersion("old-metadata-version")
                 .endStatus()
                 .build();
 
@@ -382,6 +383,7 @@ public class KafkaStatusTest {
             assertThat(status.getObservedGeneration(), is(2L));
             assertThat(status.getKafkaVersion(), is("old-kafka"));
             assertThat(status.getOperatorLastSuccessfulVersion(), is("old-operator"));
+            assertThat(status.getKafkaMetadataVersion(), is("old-metadata-version"));
 
             async.flag();
         })));

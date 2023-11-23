@@ -258,6 +258,7 @@
 - version: 3.5.0
   format: 3.5
   protocol: 3.5
+  metadata: 3.5
   url: https://archive.apache.org/dist/kafka/3.5.0/kafka_2.13-3.5.0.tgz
   checksum: 7B79BD0844DB683C06C3491955BB183D48A47FA4639D2E241B9F4FF4060C4B70814DAC7D96BEA87DFFCA0C8AE038278C4FABF68D4EA1194228D67D9C3B1D247C
   zookeeper: 3.6.4
@@ -267,6 +268,7 @@
 - version: 3.5.1
   format: 3.5
   protocol: 3.5
+  metadata: 3.5
   url: https://archive.apache.org/dist/kafka/3.5.1/kafka_2.13-3.5.1.tgz
   checksum: B6CEB010A5FE1791843CBC53D34D35993E97E03F9518344B4B5BDF7146D0A4E866CD2D4760CAB319D8B3323A5BF53037A78FED88C9384381AEA2CD0366877763
   zookeeper: 3.6.4
@@ -276,6 +278,7 @@
 - version: 3.6.0
   format: 3.6
   protocol: 3.6
+  metadata: 3.6
   url: https://archive.apache.org/dist/kafka/3.6.0/kafka_2.13-3.6.0.tgz
   checksum: 98D20F475BCCC11EB3CF05362112C788EEA7BFC88ABDDBA66CFCFB48880D3BB97918A90D44EB7C1720527BEBCA93DD231002B5159876F6EE8B7FCD91CC1B0644
   zookeeper: 3.8.2

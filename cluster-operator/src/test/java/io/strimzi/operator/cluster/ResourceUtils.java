@@ -92,12 +92,16 @@ import org.apache.kafka.clients.admin.Admin;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.DescribeClusterResult;
 import org.apache.kafka.clients.admin.DescribeConfigsResult;
+import org.apache.kafka.clients.admin.DescribeFeaturesResult;
 import org.apache.kafka.clients.admin.DescribeTopicsResult;
+import org.apache.kafka.clients.admin.FeatureMetadata;
+import org.apache.kafka.clients.admin.FinalizedVersionRange;
 import org.apache.kafka.clients.admin.ListTopicsResult;
 import org.apache.kafka.clients.admin.TopicListing;
 import org.apache.kafka.common.KafkaFuture;
 import org.apache.kafka.common.Node;
 import org.apache.kafka.common.internals.KafkaFutureImpl;
+import org.apache.kafka.server.common.MetadataVersion;
 
 import java.io.IOException;
 import java.lang.reflect.Constructor;
@@ -106,6 +110,7 @@ import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.List;
+import java.util.Optional;
 import java.util.Properties;
 
 import static java.util.Collections.emptyMap;
@@ -523,6 +528,27 @@ public class ResourceUtils {
                     throw new RuntimeException(e);
                 }
                 when(mock.describeConfigs(any())).thenReturn(dcfr);
+
+                // Mocks the describeFeatures() call used in KRaft to manege metadata version
+                DescribeFeaturesResult dfr;
+                try {
+                    Constructor<DescribeFeaturesResult> declaredConstructor = DescribeFeaturesResult.class.getDeclaredConstructor(KafkaFuture.class);
+                    declaredConstructor.setAccessible(true);
+                    Constructor<FeatureMetadata> declaredConstructor2 = FeatureMetadata.class.getDeclaredConstructor(Map.class, Optional.class, Map.class);
+                    declaredConstructor2.setAccessible(true);
+                    Constructor<FinalizedVersionRange> declaredConstructor3 = FinalizedVersionRange.class.getDeclaredConstructor(Short.TYPE, Short.TYPE);
+                    declaredConstructor3.setAccessible(true);
+
+                    short metadataLevel = MetadataVersion.fromVersionString(KafkaVersionTestUtils.getKafkaVersionLookup().defaultVersion().metadataVersion()).featureLevel();
+                    FinalizedVersionRange finalizedVersionRange = declaredConstructor3.newInstance(metadataLevel, metadataLevel);
+                    FeatureMetadata featureMetadata = declaredConstructor2.newInstance(Map.of(MetadataVersion.FEATURE_NAME, finalizedVersionRange), Optional.ofNullable(null), Map.of());
+                    KafkaFuture<FeatureMetadata> kafkaFuture = KafkaFutureImpl.completedFuture(featureMetadata);
+                    dfr = declaredConstructor.newInstance(kafkaFuture);
+                } catch (ReflectiveOperationException e) {
+                    throw new RuntimeException(e);
+                }
+                when(mock.describeFeatures()).thenReturn(dfr);
+
                 return mock;
             }
         };

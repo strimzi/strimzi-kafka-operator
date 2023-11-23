@@ -406,6 +406,7 @@ public class KafkaVersion implements Comparable<KafkaVersion> {
     private final String version;
     private final String protocolVersion;
     private final String messageVersion;
+    private final String metadataVersion;
     private final String zookeeperVersion;
     private final boolean isDefault;
     private final boolean isSupported;
@@ -417,6 +418,7 @@ public class KafkaVersion implements Comparable<KafkaVersion> {
      * @param version               Kafka version
      * @param protocolVersion       Inter-broker protocol version
      * @param messageVersion        Log message format version
+     * @param metadataVersion       KRaft Metadata version
      * @param zookeeperVersion      ZooKeeper version
      * @param isDefault             Flag indicating if this Kafka version is default
      * @param isSupported           Flag indicating if this Kafka version is supported by this operator version
@@ -426,6 +428,7 @@ public class KafkaVersion implements Comparable<KafkaVersion> {
     public KafkaVersion(@JsonProperty("version") String version,
                         @JsonProperty("protocol") String protocolVersion,
                         @JsonProperty("format") String messageVersion,
+                        @JsonProperty("metadata") String metadataVersion,
                         @JsonProperty("zookeeper") String zookeeperVersion,
                         @JsonProperty("default") boolean isDefault,
                         @JsonProperty("supported") boolean isSupported,
@@ -435,6 +438,7 @@ public class KafkaVersion implements Comparable<KafkaVersion> {
         this.protocolVersion = protocolVersion;
         this.messageVersion = messageVersion;
         this.zookeeperVersion = zookeeperVersion;
+        this.metadataVersion = metadataVersion;
         this.isDefault = isDefault;
         this.isSupported = isSupported;
         this.unsupportedFeatures = unsupportedFeatures;
@@ -447,6 +451,7 @@ public class KafkaVersion implements Comparable<KafkaVersion> {
                 ", protocolVersion='" + protocolVersion + '\'' +
                 ", messageVersion='" + messageVersion + '\'' +
                 ", zookeeperVersion='" + zookeeperVersion + '\'' +
+                ", metadataVersion='" + metadataVersion + '\'' +
                 ", isDefault=" + isDefault +
                 ", isSupported=" + isSupported +
                 ", unsupportedFeatures='" + unsupportedFeatures  + '\'' +
@@ -472,6 +477,13 @@ public class KafkaVersion implements Comparable<KafkaVersion> {
      */
     public String messageVersion() {
         return messageVersion;
+    }
+
+    /**
+     * @return  KRaft metadata version
+     */
+    public String metadataVersion() {
+        return metadataVersion;
     }
 
     /**

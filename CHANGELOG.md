@@ -9,6 +9,7 @@
 * The `UnidirectionalTopicOperator` feature gate moves to beta stage and is enabled by default.
   If needed, `UnidirectionalTopicOperator` can be disabled in the feature gates configuration in the Cluster Operator.
 * Improved Kafka Connect metrics and dashboard example files
+* Allow specifying and managing KRaft metadata version
 
 ### Changes, deprecations and removals
 

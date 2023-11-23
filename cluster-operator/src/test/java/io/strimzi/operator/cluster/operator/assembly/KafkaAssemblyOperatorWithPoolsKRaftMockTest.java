@@ -49,6 +49,7 @@ import java.util.Map;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 @EnableKubernetesMockClient(crud = true)
@@ -271,6 +272,33 @@ public class KafkaAssemblyOperatorWithPoolsKRaftMockTest {
                         // Broker annotations should be the same
                         assertThat(pod.getMetadata().getAnnotations().get(KafkaCluster.ANNO_STRIMZI_BROKER_CONFIGURATION_HASH), is(brokerConfigurationAnnos.get(pod.getMetadata().getName())));
                     });
+
+                    async.flag();
+                })));
+    }
+
+    /**
+     * Tests how the KRaft controller-only nodes have their configuration changes tracked using a Pod annotations. The
+     * annotation on controller-only pods should change when the controller-relevant config is changed. On broker pods
+     * it should never change. To test this, the test does 3 reconciliations:
+     *     - First initial one to establish the pods and collects the annotations
+     *     - Second with change that is not relevant to controllers => annotations should be the same for all nodes as
+     *       before
+     *     - Third with change to a controller-relevant option => annotations for controller nodes should change, for
+     *       broker nodes should be the same
+     *
+     * @param context   Test context
+     */
+    @Test
+    public void testMetadataVersion(VertxTestContext context) {
+        Checkpoint async = context.checkpoint();
+
+        operator.reconcile(new Reconciliation("initial-trigger", Kafka.RESOURCE_KIND, NAMESPACE, CLUSTER_NAME))
+                .onComplete(context.succeeding(v -> context.verify(() -> {
+                    // Check that the metadata version is properly propagated into the .status section
+                    Kafka k = Crds.kafkaOperation(client).inNamespace(NAMESPACE).withName(CLUSTER_NAME).get();
+                    assertThat(k.getStatus(), is(notNullValue()));
+                    assertThat(k.getStatus().getKafkaMetadataVersion(), startsWith(VERSIONS.defaultVersion().metadataVersion() + "-IV"));
 
                     async.flag();
                 })));

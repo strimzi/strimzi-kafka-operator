@@ -123,7 +123,6 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
     protected static final int CONTROLPLANE_PORT = 9090;
     protected static final String CONTROLPLANE_PORT_NAME = "tcp-ctrlplane"; // port name is up to 15 characters
 
-
     /**
      * Port used by the Route listeners
      */
@@ -199,12 +198,18 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
      */
     public static final String BROKER_CLUSTER_ID_FILENAME = "cluster.id";
 
+    /**
+     * Key under which the desired Kafka metadata version is stored in Config Map
+     */
+    public static final String BROKER_METADATA_VERSION_FILENAME = "metadata.version";
+
     // Kafka configuration
     private Rack rack;
     private String initImage;
     private List<GenericKafkaListener> listeners;
     private KafkaAuthorization authorization;
     private KafkaVersion kafkaVersion;
+    private String metadataVersion;
     private boolean useKRaft = false;
     private String clusterId;
     private JmxModel jmx;
@@ -277,6 +282,11 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
 
         // This also validates that the Kafka version is supported
         result.kafkaVersion = versions.supportedVersion(kafkaClusterSpec.getVersion());
+
+        // Sets the KRaft metadata version and validates it is supported
+        String metadataVersion = kafkaClusterSpec.getMetadataVersion() != null ? kafkaClusterSpec.getMetadataVersion() : result.kafkaVersion.metadataVersion();
+        KRaftUtils.validateMetadataVersion(metadataVersion);
+        result.metadataVersion = metadataVersion;
 
         // Number of broker nodes => used later in various validation methods
         long numberOfBrokers = result.brokerNodes().size();
@@ -1690,8 +1700,9 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
                 data.put(BROKER_LISTENERS_FILENAME, node.broker() ? listeners.stream().map(ListenersUtils::envVarIdentifier).collect(Collectors.joining(" ")) : null);
 
                 if (useKRaft) {
-                    // In KRaft, we need to pass the Kafka CLuster ID
+                    // In KRaft, we need to pass the Kafka CLuster ID and the metadata version
                     data.put(BROKER_CLUSTER_ID_FILENAME, clusterId);
+                    data.put(BROKER_METADATA_VERSION_FILENAME, metadataVersion);
                 }
 
                 configMaps.add(ConfigMapUtils.createConfigMap(node.podName(), namespace, pool.labels.withStrimziPodName(node.podName()), pool.ownerReference, data));
@@ -1739,6 +1750,20 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
      */
     public void setInterBrokerProtocolVersion(String interBrokerProtocolVersion) {
         configuration.setConfigOption(KafkaConfiguration.INTERBROKER_PROTOCOL_VERSION, interBrokerProtocolVersion);
+    }
+
+    /**
+     * @return  Kafka's desired metadata version
+     */
+    public String getMetadataVersion() {
+        return metadataVersion;
+    }
+
+    /**
+     * @return  Indicates whether this is a KRaft cluster or not
+     */
+    public boolean usesKRaft() {
+        return useKRaft;
     }
 
     /**

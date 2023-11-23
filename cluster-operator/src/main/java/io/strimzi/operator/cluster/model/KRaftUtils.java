@@ -7,6 +7,7 @@ package io.strimzi.operator.cluster.model;
 import io.strimzi.api.kafka.model.EntityOperatorSpec;
 import io.strimzi.api.kafka.model.KafkaSpec;
 import io.strimzi.operator.common.model.InvalidResourceException;
+import org.apache.kafka.server.common.MetadataVersion;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -46,6 +47,19 @@ public class KRaftUtils {
     /* test */ static void validateEntityOperatorSpec(Set<String> errors, EntityOperatorSpec entityOperator, boolean utoEnabled) {
         if (entityOperator != null && entityOperator.getTopicOperator() != null && !utoEnabled) {
             errors.add("Only Unidirectional Topic Operator is supported when the UseKRaft feature gate is enabled.");
+        }
+    }
+
+    /**
+     * Validates the metadata version
+     *
+     * @param metadataVersion   Metadata version that should be validated
+     */
+    public static void validateMetadataVersion(String metadataVersion)   {
+        try {
+            MetadataVersion.fromVersionString(metadataVersion);
+        } catch (IllegalArgumentException e)    {
+            throw new InvalidResourceException("Metadata version " + metadataVersion + " is invalid", e);
         }
     }
 }

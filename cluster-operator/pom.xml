@@ -224,6 +224,11 @@
             <artifactId>kafka-clients</artifactId>
         </dependency>
         <dependency>
+            <!-- Required for managing KRaft Metadata version -->
+            <groupId>org.apache.kafka</groupId>
+            <artifactId>kafka-server-common</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.apache.zookeeper</groupId>
             <artifactId>zookeeper</artifactId>
         </dependency>

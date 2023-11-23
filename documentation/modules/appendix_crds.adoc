@@ -59,7 +59,9 @@ include::../api/io.strimzi.api.kafka.model.KafkaClusterSpec.adoc[leveloffset=+1]
 [options="header"]
 |====
 |Property                    |Description
-|version              1.2+<.<a|The kafka broker version. Defaults to {DefaultKafkaVersion}. Consult the user documentation to understand the process required to upgrade or downgrade the version.
+|version              1.2+<.<a|The Kafka broker version. Defaults to {DefaultKafkaVersion}. Consult the user documentation to understand the process required to upgrade or downgrade the version.
+|string
+|metadataVersion      1.2+<.<a|The KRaft metadata.version that should be used by this Kafka cluster. This field will be ignored when running in ZooKeeper mode. Defaults to {DefaultKafkaMetadataVersion}.
 |string
 |replicas             1.2+<.<a|The number of pods in the cluster.
 |integer
@@ -1627,6 +1629,8 @@ Used in: xref:type-Kafka-{context}[`Kafka`]
 |operatorLastSuccessfulVersion  1.2+<.<a|The version of the Strimzi Cluster Operator which performed the last successful reconciliation.
 |string
 |kafkaVersion                   1.2+<.<a|The version of Kafka currently deployed in the cluster.
+|string
+|kafkaMetadataVersion           1.2+<.<a|The KRaft metadata.version currently used by the Kafka cluster.
 |string
 |====
 

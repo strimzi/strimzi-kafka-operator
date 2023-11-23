@@ -55,7 +55,10 @@ spec:
                   properties:
                     version:
                       type: string
-                      description: "The kafka broker version. Defaults to {DefaultKafkaVersion}. Consult the user documentation to understand the process required to upgrade or downgrade the version."
+                      description: "The Kafka broker version. Defaults to {DefaultKafkaVersion}. Consult the user documentation to understand the process required to upgrade or downgrade the version."
+                    metadataVersion:
+                      type: string
+                      description: "The KRaft metadata.version that should be used by this Kafka cluster. This field will be ignored when running in ZooKeeper mode. Defaults to {DefaultKafkaMetadataVersion}."
                     replicas:
                       type: integer
                       minimum: 1
@@ -6318,4 +6321,7 @@ spec:
                 kafkaVersion:
                   type: string
                   description: The version of Kafka currently deployed in the cluster.
+                kafkaMetadataVersion:
+                  type: string
+                  description: The KRaft metadata.version currently used by the Kafka cluster.
               description: "The status of the Kafka and ZooKeeper clusters, and Topic Operator."
