@@ -24,6 +24,7 @@ Multi-version upgrades are possible even if the supported Kafka versions differ 
 However, if you attempt to upgrade to a new Strimzi version that does not support the current Kafka version, xref:con-upgrade-cluster-operator-unsupported-kafka-str[an error indicating that the Kafka version is not supported is generated]. 
 In this case, you must upgrade the Kafka version as part of the Strimzi upgrade by changing the `spec.kafka.version` in the `Kafka` custom resource to the supported version for the new Strimzi version.
 
+ifdef::Section[]
 [NOTE]
 ====
 You can review supported Kafka versions in the link:https://strimzi.io/downloads/[Supported versions^] table.
@@ -31,6 +32,7 @@ You can review supported Kafka versions in the link:https://strimzi.io/downloads
 * The *Operators* column lists all released Strimzi versions (the Strimzi version is often called the "Operator version").
 * The *Kafka versions* column lists the supported Kafka versions for each Strimzi version.
 ====
+endif::Section[]
 
 [id='con-upgrade-paths-earlier-versions-{context}']
 == Upgrading from a Strimzi version earlier than 0.22
