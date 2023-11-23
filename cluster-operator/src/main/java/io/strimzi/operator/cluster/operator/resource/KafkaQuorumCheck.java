@@ -17,9 +17,10 @@ import org.apache.kafka.clients.admin.QuorumInfo;
 import static java.lang.Math.ceil;
 
 /**
- * Provides methods that determine whether it's safe to restart a KRaft controller and the quorum leader id.
- * It is considered safe to restart a KRaft controller if the majority of controllers, excluding the one we are
- * considering to restart, have caught up with the quorum leader within the controller.quorum.fetch.timeout.ms.
+ * Provides methods to determine whether it's safe to restart a KRaft controller and identify the quorum leader id.
+ * Restarting a KRaft controller is considered safe if the majority of controllers, excluding the one being
+ * considered for restart, have caught up with the quorum leader within the specified timeout period defined by
+ * controller.quorum.fetch.timeout.ms.
  */
 class KafkaQuorumCheck {
 

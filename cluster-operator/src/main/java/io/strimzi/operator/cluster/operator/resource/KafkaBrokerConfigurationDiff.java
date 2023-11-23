@@ -130,7 +130,7 @@ public class KafkaBrokerConfigurationDiff extends AbstractJsonDiff {
         return brokerConfigDiff.size();
     }
 
-    private static boolean isIgnorableProperty(String key, boolean nodeIsController) {
+    private static boolean isIgnorableProperty(final String key, final boolean nodeIsController) {
         // If node is not a KRaft controller, ignore KRaft controller config properties.
         if (!nodeIsController) {
             return IGNORABLE_PROPERTIES.matcher(key).matches() || IGNORABLE_CONTROLLER_PROPERTIES.matcher(key).matches();

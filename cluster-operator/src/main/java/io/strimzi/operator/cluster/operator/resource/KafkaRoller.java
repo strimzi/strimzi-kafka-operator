@@ -570,6 +570,13 @@ public class KafkaRoller {
         return updatedDynamically;
     }
 
+    /**
+     * Sets the specified {@code RestartContext} to indicate a forced restart is required.
+     * Resets all flags and differences in the context, ensuring only a forced restart
+     * is flagged as necessary.
+     *
+     * @param restartContext The {@code RestartContext} to be updated.
+     */
     private void markRestartContextWithForceRestart(RestartContext restartContext) {
         restartContext.needsRestart = false;
         restartContext.needsReconfig = false;
