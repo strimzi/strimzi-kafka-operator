@@ -557,6 +557,7 @@ public class KafkaClusterWithKRaftTest {
                 "dummy-cluster-id",
                 SHARED_ENV_PROVIDER
         );
+        kc.setMetadataVersion(VERSIONS.defaultVersion().metadataVersion());
 
         List<ConfigMap> cms = kc.generatePerBrokerConfigurationConfigMaps(new MetricsAndLogging(null, null), advertisedHostnames, advertisedPorts);
 
@@ -633,9 +634,10 @@ public class KafkaClusterWithKRaftTest {
                     .endKafka()
                 .endSpec()
                 .build();
+        KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, List.of(KAFKA_POOL_CONTROLLERS, KAFKA_POOL_BROKERS), VERSIONS, true, null, SHARED_ENV_PROVIDER);
 
         InvalidResourceException ex = assertThrows(InvalidResourceException.class,
-                () -> KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, List.of(KAFKA_POOL_CONTROLLERS, KAFKA_POOL_BROKERS), VERSIONS, true, null, SHARED_ENV_PROVIDER));
+                () -> kc.setMetadataVersion("3.6-IV9"));
         assertThat(ex.getMessage(), containsString("Metadata version 3.6-IV9 is invalid"));
     }
 
@@ -650,12 +652,8 @@ public class KafkaClusterWithKRaftTest {
                 .build();
 
         KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafka, List.of(KAFKA_POOL_CONTROLLERS, KAFKA_POOL_BROKERS), VERSIONS, true, null, SHARED_ENV_PROVIDER);
-        assertThat(kc.getMetadataVersion(), is("3.5-IV1"));
-    }
+        kc.setMetadataVersion("3.5-IV1");
 
-    @Test
-    public void testDefaultKRaftMetadataVersion()   {
-        KafkaCluster kc = KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, KAFKA, List.of(KAFKA_POOL_CONTROLLERS, KAFKA_POOL_BROKERS), VERSIONS, true, null, SHARED_ENV_PROVIDER);
-        assertThat(kc.getMetadataVersion(), is(VERSIONS.defaultVersion().metadataVersion()));
+        assertThat(kc.getMetadataVersion(), is("3.5-IV1"));
     }
 }

@@ -99,7 +99,8 @@ public class KafkaAssemblyOperatorPodSetTest {
             VERSIONS.defaultVersion(),
             VERSIONS.defaultVersion(),
             VERSIONS.defaultVersion().protocolVersion(),
-            VERSIONS.defaultVersion().messageVersion()
+            VERSIONS.defaultVersion().messageVersion(),
+            VERSIONS.defaultVersion().metadataVersion()
     );
     private static final String NAMESPACE = "my-ns";
     private static final String CLUSTER_NAME = "my-cluster";

@@ -480,7 +480,103 @@ public class ResourceUtils {
             };
     }
 
+    public static Admin adminClient()   {
+        Admin mock = mock(AdminClient.class);
+        DescribeClusterResult dcr;
+        try {
+            Constructor<DescribeClusterResult> declaredConstructor = DescribeClusterResult.class.getDeclaredConstructor(KafkaFuture.class, KafkaFuture.class, KafkaFuture.class, KafkaFuture.class);
+            declaredConstructor.setAccessible(true);
+            KafkaFuture<Node> objectKafkaFuture = KafkaFuture.completedFuture(new Node(0, "localhost", 9091));
+            KafkaFuture<String> stringKafkaFuture = KafkaFuture.completedFuture("CLUSTERID");
+            dcr = declaredConstructor.newInstance(null, objectKafkaFuture, stringKafkaFuture, null);
+        } catch (ReflectiveOperationException e) {
+            throw new RuntimeException(e);
+        }
+        when(mock.describeCluster()).thenReturn(dcr);
+
+        ListTopicsResult ltr;
+        try {
+            Constructor<ListTopicsResult> declaredConstructor = ListTopicsResult.class.getDeclaredConstructor(KafkaFuture.class);
+            declaredConstructor.setAccessible(true);
+            KafkaFuture<Map<String, TopicListing>> future = KafkaFuture.completedFuture(emptyMap());
+            ltr = declaredConstructor.newInstance(future);
+        } catch (ReflectiveOperationException e) {
+            throw new RuntimeException(e);
+        }
+        when(mock.listTopics(any())).thenReturn(ltr);
+
+        DescribeTopicsResult dtr;
+        try {
+            Constructor<DescribeTopicsResult> declaredConstructor = DescribeTopicsResult.class.getDeclaredConstructor(Map.class);
+            declaredConstructor.setAccessible(true);
+            dtr = declaredConstructor.newInstance(emptyMap());
+        } catch (ReflectiveOperationException e) {
+            throw new RuntimeException(e);
+        }
+        when(mock.describeTopics(anyCollection())).thenReturn(dtr);
+
+        DescribeConfigsResult dcfr;
+        try {
+            Constructor<DescribeConfigsResult> declaredConstructor = DescribeConfigsResult.class.getDeclaredConstructor(Map.class);
+            declaredConstructor.setAccessible(true);
+            dcfr = declaredConstructor.newInstance(emptyMap());
+        } catch (ReflectiveOperationException e) {
+            throw new RuntimeException(e);
+        }
+        when(mock.describeConfigs(any())).thenReturn(dcfr);
+
+        // Mocks the describeFeatures() call used in KRaft to manege metadata version
+        DescribeFeaturesResult dfr;
+        try {
+            Constructor<DescribeFeaturesResult> declaredConstructor = DescribeFeaturesResult.class.getDeclaredConstructor(KafkaFuture.class);
+            declaredConstructor.setAccessible(true);
+            Constructor<FeatureMetadata> declaredConstructor2 = FeatureMetadata.class.getDeclaredConstructor(Map.class, Optional.class, Map.class);
+            declaredConstructor2.setAccessible(true);
+            Constructor<FinalizedVersionRange> declaredConstructor3 = FinalizedVersionRange.class.getDeclaredConstructor(Short.TYPE, Short.TYPE);
+            declaredConstructor3.setAccessible(true);
+
+            short metadataLevel = MetadataVersion.fromVersionString(KafkaVersionTestUtils.getKafkaVersionLookup().defaultVersion().metadataVersion()).featureLevel();
+            FinalizedVersionRange finalizedVersionRange = declaredConstructor3.newInstance(metadataLevel, metadataLevel);
+            FeatureMetadata featureMetadata = declaredConstructor2.newInstance(Map.of(MetadataVersion.FEATURE_NAME, finalizedVersionRange), Optional.ofNullable(null), Map.of());
+            KafkaFuture<FeatureMetadata> kafkaFuture = KafkaFutureImpl.completedFuture(featureMetadata);
+            dfr = declaredConstructor.newInstance(kafkaFuture);
+        } catch (ReflectiveOperationException e) {
+            throw new RuntimeException(e);
+        }
+        when(mock.describeFeatures()).thenReturn(dfr);
+
+        DescribeMetadataQuorumResult dmqr;
+        try {
+            Constructor<DescribeMetadataQuorumResult> declaredConstructor = DescribeMetadataQuorumResult.class.getDeclaredConstructor(KafkaFuture.class);
+            QuorumInfo qrminfo = mock(QuorumInfo.class);
+            KafkaFuture<QuorumInfo> future = KafkaFuture.completedFuture(qrminfo);
+            when(qrminfo.leaderId()).thenReturn(0);
+            QuorumInfo.ReplicaState replicaState0 = mock(QuorumInfo.ReplicaState.class);
+            QuorumInfo.ReplicaState replicaState1 = mock(QuorumInfo.ReplicaState.class);
+            QuorumInfo.ReplicaState replicaState2 = mock(QuorumInfo.ReplicaState.class);
+            when(qrminfo.voters()).thenReturn(List.of(replicaState0, replicaState1, replicaState2));
+            when(replicaState0.replicaId()).thenReturn(0);
+            when(replicaState1.replicaId()).thenReturn(1);
+            when(replicaState2.replicaId()).thenReturn(2);
+            when(replicaState0.lastCaughtUpTimestamp()).thenReturn(OptionalLong.of(0L));
+            when(replicaState1.lastCaughtUpTimestamp()).thenReturn(OptionalLong.of(0L));
+            when(replicaState2.lastCaughtUpTimestamp()).thenReturn(OptionalLong.of(0L));
+            declaredConstructor.setAccessible(true);
+            dmqr = declaredConstructor.newInstance(future);
+        } catch (NoSuchMethodException | InstantiationException | IllegalAccessException |
+                 InvocationTargetException e) {
+            throw new RuntimeException(e);
+        }
+        when(mock.describeMetadataQuorum()).thenReturn(dmqr);
+
+        return mock;
+    }
+
     public static AdminClientProvider adminClientProvider() {
+        return adminClientProvider(adminClient());
+    }
+
+    public static AdminClientProvider adminClientProvider(Admin mockAdminClient) {
         return new AdminClientProvider() {
             @Override
             public Admin createAdminClient(String bootstrapHostnames, Secret clusterCaCertSecret, Secret keyCertSecret, String keyCertName) {
@@ -489,94 +585,7 @@ public class ResourceUtils {
 
             @Override
             public Admin createAdminClient(String bootstrapHostnames, Secret clusterCaCertSecret, Secret keyCertSecret, String keyCertName, Properties config) {
-                Admin mock = mock(AdminClient.class);
-                DescribeClusterResult dcr;
-                try {
-                    Constructor<DescribeClusterResult> declaredConstructor = DescribeClusterResult.class.getDeclaredConstructor(KafkaFuture.class, KafkaFuture.class, KafkaFuture.class, KafkaFuture.class);
-                    declaredConstructor.setAccessible(true);
-                    KafkaFuture<Node> objectKafkaFuture = KafkaFuture.completedFuture(new Node(0, "localhost", 9091));
-                    KafkaFuture<String> stringKafkaFuture = KafkaFuture.completedFuture("CLUSTERID");
-                    dcr = declaredConstructor.newInstance(null, objectKafkaFuture, stringKafkaFuture, null);
-                } catch (ReflectiveOperationException e) {
-                    throw new RuntimeException(e);
-                }
-                when(mock.describeCluster()).thenReturn(dcr);
-
-                ListTopicsResult ltr;
-                try {
-                    Constructor<ListTopicsResult> declaredConstructor = ListTopicsResult.class.getDeclaredConstructor(KafkaFuture.class);
-                    declaredConstructor.setAccessible(true);
-                    KafkaFuture<Map<String, TopicListing>> future = KafkaFuture.completedFuture(emptyMap());
-                    ltr = declaredConstructor.newInstance(future);
-                } catch (ReflectiveOperationException e) {
-                    throw new RuntimeException(e);
-                }
-                when(mock.listTopics(any())).thenReturn(ltr);
-
-                DescribeTopicsResult dtr;
-                try {
-                    Constructor<DescribeTopicsResult> declaredConstructor = DescribeTopicsResult.class.getDeclaredConstructor(Map.class);
-                    declaredConstructor.setAccessible(true);
-                    dtr = declaredConstructor.newInstance(emptyMap());
-                } catch (ReflectiveOperationException e) {
-                    throw new RuntimeException(e);
-                }
-                when(mock.describeTopics(anyCollection())).thenReturn(dtr);
-
-                DescribeConfigsResult dcfr;
-                try {
-                    Constructor<DescribeConfigsResult> declaredConstructor = DescribeConfigsResult.class.getDeclaredConstructor(Map.class);
-                    declaredConstructor.setAccessible(true);
-                    dcfr = declaredConstructor.newInstance(emptyMap());
-                } catch (ReflectiveOperationException e) {
-                    throw new RuntimeException(e);
-                }
-                when(mock.describeConfigs(any())).thenReturn(dcfr);
-
-                // Mocks the describeFeatures() call used in KRaft to manege metadata version
-                DescribeFeaturesResult dfr;
-                try {
-                    Constructor<DescribeFeaturesResult> declaredConstructor = DescribeFeaturesResult.class.getDeclaredConstructor(KafkaFuture.class);
-                    declaredConstructor.setAccessible(true);
-                    Constructor<FeatureMetadata> declaredConstructor2 = FeatureMetadata.class.getDeclaredConstructor(Map.class, Optional.class, Map.class);
-                    declaredConstructor2.setAccessible(true);
-                    Constructor<FinalizedVersionRange> declaredConstructor3 = FinalizedVersionRange.class.getDeclaredConstructor(Short.TYPE, Short.TYPE);
-                    declaredConstructor3.setAccessible(true);
-
-                    short metadataLevel = MetadataVersion.fromVersionString(KafkaVersionTestUtils.getKafkaVersionLookup().defaultVersion().metadataVersion()).featureLevel();
-                    FinalizedVersionRange finalizedVersionRange = declaredConstructor3.newInstance(metadataLevel, metadataLevel);
-                    FeatureMetadata featureMetadata = declaredConstructor2.newInstance(Map.of(MetadataVersion.FEATURE_NAME, finalizedVersionRange), Optional.ofNullable(null), Map.of());
-                    KafkaFuture<FeatureMetadata> kafkaFuture = KafkaFutureImpl.completedFuture(featureMetadata);
-                    dfr = declaredConstructor.newInstance(kafkaFuture);
-                } catch (ReflectiveOperationException e) {
-                    throw new RuntimeException(e);
-                }
-                when(mock.describeFeatures()).thenReturn(dfr);
-
-                DescribeMetadataQuorumResult dmqr;
-                try {
-                    Constructor<DescribeMetadataQuorumResult> declaredConstructor = DescribeMetadataQuorumResult.class.getDeclaredConstructor(KafkaFuture.class);
-                    QuorumInfo qrminfo = mock(QuorumInfo.class);
-                    KafkaFuture<QuorumInfo> future = KafkaFuture.completedFuture(qrminfo);
-                    when(qrminfo.leaderId()).thenReturn(0);
-                    QuorumInfo.ReplicaState replicaState0 = mock(QuorumInfo.ReplicaState.class);
-                    QuorumInfo.ReplicaState replicaState1 = mock(QuorumInfo.ReplicaState.class);
-                    QuorumInfo.ReplicaState replicaState2 = mock(QuorumInfo.ReplicaState.class);
-                    when(qrminfo.voters()).thenReturn(List.of(replicaState0, replicaState1, replicaState2));
-                    when(replicaState0.replicaId()).thenReturn(0);
-                    when(replicaState1.replicaId()).thenReturn(1);
-                    when(replicaState2.replicaId()).thenReturn(2);
-                    when(replicaState0.lastCaughtUpTimestamp()).thenReturn(OptionalLong.of(0L));
-                    when(replicaState1.lastCaughtUpTimestamp()).thenReturn(OptionalLong.of(0L));
-                    when(replicaState2.lastCaughtUpTimestamp()).thenReturn(OptionalLong.of(0L));
-                    declaredConstructor.setAccessible(true);
-                    dmqr = declaredConstructor.newInstance(future);
-                } catch (NoSuchMethodException | InstantiationException | IllegalAccessException |
-                         InvocationTargetException e) {
-                    throw new RuntimeException(e);
-                }
-                when(mock.describeMetadataQuorum()).thenReturn(dmqr);
-                return mock;
+                return mockAdminClient;
             }
         };
     }

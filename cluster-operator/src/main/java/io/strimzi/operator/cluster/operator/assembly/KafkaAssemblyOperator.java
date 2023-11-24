@@ -228,7 +228,7 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         reconcileState.initialStatus()
                 // Preparation steps => prepare cluster descriptions, handle CA creation or changes
                 .compose(state -> state.reconcileCas(clock))
-                .compose(state -> state.versionChange())
+                .compose(state -> state.versionChange(isKRaftEnabled))
 
                 // Run reconciliations of the different components
                 .compose(state -> isKRaftEnabled ? Future.succeededFuture(state) : state.reconcileZooKeeper(clock))
@@ -447,19 +447,27 @@ public class KafkaAssemblyOperator extends AbstractAssemblyOperator<KubernetesCl
         /**
          * Provider method for VersionChangeCreator. Overriding this method can be used to get mocked creator.
          *
+         * @param isKRaftEnabled    Indicates whether KRaft is enabled for this custom resource
+         *
          * @return  VersionChangeCreator instance
          */
-        VersionChangeCreator versionChangeCreator()   {
-            return new VersionChangeCreator(reconciliation, kafkaAssembly, config, supplier);
+        VersionChangeCreator versionChangeCreator(boolean isKRaftEnabled)   {
+            if (isKRaftEnabled)   {
+                return new KRaftVersionChangeCreator(reconciliation, kafkaAssembly, config, supplier);
+            } else {
+                return new ZooKeeperVersionChangeCreator(reconciliation, kafkaAssembly, config, supplier);
+            }
         }
 
         /**
          * Creates the KafkaVersionChange instance describing the version changes in this reconciliation.
          *
+         * @param isKRaftEnabled    Indicates whether KRaft is enabled for this custom resource
+         *
          * @return  Future with Reconciliation State
          */
-        Future<ReconciliationState> versionChange()    {
-            return versionChangeCreator()
+        Future<ReconciliationState> versionChange(boolean isKRaftEnabled)    {
+            return versionChangeCreator(isKRaftEnabled)
                     .reconcile()
                     .compose(versionChange -> {
                         this.versionChange = versionChange;
