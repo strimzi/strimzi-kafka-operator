@@ -40,9 +40,9 @@ spec:
   #...
   build:
     output:
-      type: docker <1>
-      image: my-registry.io/my-org/my-connect-cluster:latest <2>
-      pushSecret: my-registry-credentials <3>
+      type: docker # <1>
+      image: my-registry.io/my-org/my-connect-cluster:latest # <2>
+      pushSecret: my-registry-credentials # <3>
   #...
 ----
 <1> (Required) Type of output used by Strimzi.
@@ -148,9 +148,9 @@ spec:
     plugins:
       - name: my-plugin
         artifacts:
-          - type: jar <1>
-            url: https://my-domain.tld/my-jar.jar <2>
-            sha512sum: 589...ab4 <3>
+          - type: jar # <1>
+            url: https://my-domain.tld/my-jar.jar # <2>
+            sha512sum: 589...ab4 # <3>
           - type: jar
             url: https://my-domain.tld/my-jar2.jar
   #...
@@ -184,9 +184,9 @@ spec:
     plugins:
       - name: my-plugin
         artifacts:
-          - type: tgz <1>
-            url: https://my-domain.tld/my-connector-archive.tgz <2>
-            sha512sum: 158...jg10 <3>
+          - type: tgz # <1>
+            url: https://my-domain.tld/my-connector-archive.tgz # <2>
+            sha512sum: 158...jg10 # <3>
   #...
 ----
 <1> (Required) Type of artifact.
@@ -221,11 +221,11 @@ spec:
     plugins:
       - name: my-plugin
         artifacts:
-          - type: maven <1>
-            repository: https://mvnrepository.com <2>
-            group: org.apache.camel.kafkaconnector <3>
-            artifact: camel-kafka-connector <4>
-            version: 0.11.0 <5>
+          - type: maven # <1>
+            repository: https://mvnrepository.com # <2>
+            group: <maven_group> # <3>
+            artifact: <maven_artifact> # <4>
+            version:  <maven_version_number> # <5>
   #...
 ----
 <1> (Required) Type of artifact.
@@ -258,10 +258,10 @@ spec:
     plugins:
       - name: my-plugin
         artifacts:
-          - type: other  <1>
-            url: https://my-domain.tld/my-other-file.ext  <2>
-            sha512sum: 589...ab4  <3>
-            fileName: name-the-file.ext  <4>
+          - type: other  # <1>
+            url: https://my-domain.tld/my-other-file.ext  # <2>
+            sha512sum: 589...ab4  # <3>
+            fileName: name-the-file.ext  # <4>
   #...
 ----
 <1> (Required) Type of artifact.

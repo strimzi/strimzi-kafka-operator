@@ -2,7 +2,7 @@
 //
 // assembly-using-the-topic-operator.adoc
 
-[id='con-changing-topic-operator-mode-{context}']
+[id='proc-changing-topic-operator-mode-{context}']
 = Switching between Topic Operator modes
 
 [role="_abstract"]
@@ -18,7 +18,8 @@ The Cluster Operator deploys the Entity Operator with the Topic Operator in unid
 +
 [source,shell,subs=+quotes]
 ----
-kubectl delete $(kubectl get kt -n <namespace_name> -o name | grep strimzi-store-topic) && kubectl delete $(kubectl get kt -n <namespace_name> -o name | grep strimzi-topic-operator)
+kubectl delete $(kubectl get kt -n <namespace_name> -o name | grep strimzi-store-topic) \
+  && kubectl delete $(kubectl get kt -n <namespace_name> -o name | grep strimzi-topic-operator)
 ---- 
 +
 This command deletes the internal topics, which have names starting `strimzi-store-topic` and `strimzi-topic-operator`.
@@ -30,7 +31,7 @@ This command deletes the internal topics, which have names starting `strimzi-sto
 [source,shell,subs=+quotes]
 ----
 kubectl annotate $(kubectl get kt -n <namespace_name> -o name | grep consumer-offsets) strimzi.io/managed="false" \
-&& kubectl annotate $(kubectl get kt -n <namespace_name> -o name | grep transaction-state) strimzi.io/managed="false"
+  && kubectl annotate $(kubectl get kt -n <namespace_name> -o name | grep transaction-state) strimzi.io/managed="false"
 ----
 +
 By annotating the `KafkaTopic` resources with `strimzi.io/managed="false"`, you indicate that the Topic Operator should no longer manage those topics. 
@@ -41,7 +42,7 @@ In this case, we are adding the annotation to resources for managing the interna
 [source,shell,subs=+quotes]
 ----
 kubectl delete $(kubectl get kt -n <namespace_name> -o name | grep consumer-offsets) \
-&& kubectl delete $(kubectl get kt -n <namespace_name> -o name | grep transaction-state)
+  && kubectl delete $(kubectl get kt -n <namespace_name> -o name | grep transaction-state)
 ---- 
 
 .Switching from unidirectional to bidirectional topic management mode

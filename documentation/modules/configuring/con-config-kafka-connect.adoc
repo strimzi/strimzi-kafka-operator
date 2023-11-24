@@ -76,16 +76,16 @@ spec:
       image: my-registry.io/my-org/my-connect-cluster:latest
       pushSecret: my-registry-credentials
     plugins: # <10>
-      - name: debezium-postgres-connector
+      - name: connector-1
         artifacts:
           - type: tgz
-            url: https://repo1.maven.org/maven2/io/debezium/debezium-connector-postgres/2.1.3.Final/debezium-connector-postgres-2.1.3.Final-plugin.tar.gz
-            sha512sum: c4ddc97846de561755dc0b021a62aba656098829c70eb3ade3b817ce06d852ca12ae50c0281cc791a5a131cb7fc21fb15f4b8ee76c6cae5dd07f9c11cb7c6e79
-      - name: camel-telegram
+            url: <url_to_download_connector_1_artifact>
+            sha512sum: <SHA-512_checksum_of_connector_1_artifact>
+      - name: connector-2
         artifacts:
-          - type: tgz
-            url: https://repo.maven.apache.org/maven2/org/apache/camel/kafkaconnector/camel-telegram-kafka-connector/0.11.5/camel-telegram-kafka-connector-0.11.5-package.tar.gz
-            sha512sum: d6d9f45e0d1dbfcc9f6d1c7ca2046168c764389c78bc4b867dab32d24f710bb74ccf2a007d7d7a8af2dfca09d9a52ccbc2831fc715c195a3634cca055185bd91
+          - type: jar
+            url: <url_to_download_connector_2_artifact>
+            sha512sum: <SHA-512_checksum_of_connector_2_artifact>
   externalConfiguration: # <11>
     env:
       - name: AWS_ACCESS_KEY_ID
