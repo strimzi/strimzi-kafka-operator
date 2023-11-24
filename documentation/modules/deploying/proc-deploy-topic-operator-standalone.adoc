@@ -168,6 +168,8 @@ The deployment is successful when the `AVAILABLE` output shows `1`.
 Bidirectional topic management requires ZooKeeper for cluster management, and maintains topics through `KafkaTopic` resources and within the Kafka cluster. 
 If you want to switch to using the Topic Operator in this mode, follow these steps to deploy the standalone Topic Operator.
 
+NOTE: As the feature gate enabling the Topic Operator to run in unidirectional mode progresses to General Availability, bidirectional mode will be phased out. This transition is aimed at enhancing the user experience, particularly in supporting Kafka in KRaft mode. 
+
 . Undeploy the current standalone Topic Operator.
 +
 Retain the `KafkaTopic` resources, which are picked up by the Topic Operator when it is deployed again.
