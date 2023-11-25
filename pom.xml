@@ -87,6 +87,13 @@
         </developer>
     </developers>
 
+    <repositories>
+        <repository>
+            <id>apache-staging</id>
+            <url>https://repository.apache.org/content/groups/staging/</url>
+        </repository>
+    </repositories>
+
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.source>17</maven.compiler.source>
@@ -136,7 +143,7 @@
         <fasterxml.jackson-jaxrs.version>2.15.3</fasterxml.jackson-jaxrs.version>
         <vertx.version>4.5.0</vertx.version>
         <vertx-junit5.version>4.5.0</vertx-junit5.version>
-        <kafka.version>3.6.0</kafka.version>
+        <kafka.version>3.6.1</kafka.version>
         <yammer-metrics.version>2.2.0</yammer-metrics.version>
         <zookeeper.version>3.8.3</zookeeper.version>
         <zkclient.version>0.11</zkclient.version>

@@ -2,6 +2,7 @@
 
 ## 0.39.0
 
+* Add support for Apache Kafka 3.6.1
 * The `StableConnectIdentities` feature gate moves to GA stage and is now permanently enabled without the possibility to disable it.
   All Connect and Mirror Maker 2 operands will now use StrimziPodSets.
 * The `KafkaNodePools` feature gate moves to beta stage and is enabled by default.
