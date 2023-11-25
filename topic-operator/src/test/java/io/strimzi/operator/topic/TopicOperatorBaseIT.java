@@ -507,7 +507,7 @@ public abstract class TopicOperatorBaseIT {
     protected void waitFor(BooleanSupplier ready, String message) throws TimeoutException, InterruptedException {
         // Note that this timeout for an individual wait must be less than
         // the Vertx @Timeout for the test as a whole
-        long timeout = 120_000; 
+        long timeout = 120_000;
         long deadline = System.currentTimeMillis() + timeout;
 
         while (System.currentTimeMillis() < deadline) {
