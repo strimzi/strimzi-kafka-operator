@@ -27,7 +27,6 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 
 import static io.strimzi.systemtest.TestConstants.REGRESSION;
-import static io.strimzi.test.k8s.KubeClusterResource.kubeClient;
 import static org.junit.jupiter.api.Assumptions.assumeFalse;
 import static org.hamcrest.MatcherAssert.assertThat;
 
