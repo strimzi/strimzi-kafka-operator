@@ -382,8 +382,9 @@ public class KafkaReconciler {
 
                                     return RestartReasons.of(RestartReason.MANUAL_ROLLING_UPDATE);
                                 },
-                                Map.of(),
-                                Map.of(),
+                                // Pass empty advertised hostnames and ports for the nodes
+                                nodes.stream().collect(Collectors.toMap(NodeRef::nodeId, node -> Map.of())),
+                                nodes.stream().collect(Collectors.toMap(NodeRef::nodeId, node -> Map.of())),
                                 false
                         );
                     } else {

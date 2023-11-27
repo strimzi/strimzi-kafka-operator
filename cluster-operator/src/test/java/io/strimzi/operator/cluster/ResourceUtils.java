@@ -88,15 +88,19 @@ import io.vertx.core.Vertx;
 import io.vertx.core.net.NetClientOptions;
 import io.vertx.core.net.PemKeyCertOptions;
 import io.vertx.core.net.PemTrustOptions;
+import java.lang.reflect.InvocationTargetException;
+import java.util.OptionalLong;
 import org.apache.kafka.clients.admin.Admin;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.DescribeClusterResult;
 import org.apache.kafka.clients.admin.DescribeConfigsResult;
 import org.apache.kafka.clients.admin.DescribeFeaturesResult;
+import org.apache.kafka.clients.admin.DescribeMetadataQuorumResult;
 import org.apache.kafka.clients.admin.DescribeTopicsResult;
 import org.apache.kafka.clients.admin.FeatureMetadata;
 import org.apache.kafka.clients.admin.FinalizedVersionRange;
 import org.apache.kafka.clients.admin.ListTopicsResult;
+import org.apache.kafka.clients.admin.QuorumInfo;
 import org.apache.kafka.clients.admin.TopicListing;
 import org.apache.kafka.common.KafkaFuture;
 import org.apache.kafka.common.Node;
@@ -490,8 +494,8 @@ public class ResourceUtils {
                 try {
                     Constructor<DescribeClusterResult> declaredConstructor = DescribeClusterResult.class.getDeclaredConstructor(KafkaFuture.class, KafkaFuture.class, KafkaFuture.class, KafkaFuture.class);
                     declaredConstructor.setAccessible(true);
-                    KafkaFuture<Node> objectKafkaFuture = KafkaFutureImpl.completedFuture(new Node(0, "localhost", 9091));
-                    KafkaFuture<String> stringKafkaFuture = KafkaFutureImpl.completedFuture("CLUSTERID");
+                    KafkaFuture<Node> objectKafkaFuture = KafkaFuture.completedFuture(new Node(0, "localhost", 9091));
+                    KafkaFuture<String> stringKafkaFuture = KafkaFuture.completedFuture("CLUSTERID");
                     dcr = declaredConstructor.newInstance(null, objectKafkaFuture, stringKafkaFuture, null);
                 } catch (ReflectiveOperationException e) {
                     throw new RuntimeException(e);
@@ -502,7 +506,7 @@ public class ResourceUtils {
                 try {
                     Constructor<ListTopicsResult> declaredConstructor = ListTopicsResult.class.getDeclaredConstructor(KafkaFuture.class);
                     declaredConstructor.setAccessible(true);
-                    KafkaFuture<Map<String, TopicListing>> future = KafkaFutureImpl.completedFuture(emptyMap());
+                    KafkaFuture<Map<String, TopicListing>> future = KafkaFuture.completedFuture(emptyMap());
                     ltr = declaredConstructor.newInstance(future);
                 } catch (ReflectiveOperationException e) {
                     throw new RuntimeException(e);
@@ -549,6 +553,29 @@ public class ResourceUtils {
                 }
                 when(mock.describeFeatures()).thenReturn(dfr);
 
+                DescribeMetadataQuorumResult dmqr;
+                try {
+                    Constructor<DescribeMetadataQuorumResult> declaredConstructor = DescribeMetadataQuorumResult.class.getDeclaredConstructor(KafkaFuture.class);
+                    QuorumInfo qrminfo = mock(QuorumInfo.class);
+                    KafkaFuture<QuorumInfo> future = KafkaFuture.completedFuture(qrminfo);
+                    when(qrminfo.leaderId()).thenReturn(0);
+                    QuorumInfo.ReplicaState replicaState0 = mock(QuorumInfo.ReplicaState.class);
+                    QuorumInfo.ReplicaState replicaState1 = mock(QuorumInfo.ReplicaState.class);
+                    QuorumInfo.ReplicaState replicaState2 = mock(QuorumInfo.ReplicaState.class);
+                    when(qrminfo.voters()).thenReturn(List.of(replicaState0, replicaState1, replicaState2));
+                    when(replicaState0.replicaId()).thenReturn(0);
+                    when(replicaState1.replicaId()).thenReturn(1);
+                    when(replicaState2.replicaId()).thenReturn(2);
+                    when(replicaState0.lastCaughtUpTimestamp()).thenReturn(OptionalLong.of(0L));
+                    when(replicaState1.lastCaughtUpTimestamp()).thenReturn(OptionalLong.of(0L));
+                    when(replicaState2.lastCaughtUpTimestamp()).thenReturn(OptionalLong.of(0L));
+                    declaredConstructor.setAccessible(true);
+                    dmqr = declaredConstructor.newInstance(future);
+                } catch (NoSuchMethodException | InstantiationException | IllegalAccessException |
+                         InvocationTargetException e) {
+                    throw new RuntimeException(e);
+                }
+                when(mock.describeMetadataQuorum()).thenReturn(dmqr);
                 return mock;
             }
         };
