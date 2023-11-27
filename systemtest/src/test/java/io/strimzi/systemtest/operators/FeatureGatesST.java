@@ -160,7 +160,6 @@ public class FeatureGatesST extends AbstractST {
         resourceManager.createResourceWithWait(extensionContext, kafkaNodePoolCr, kafkaCr);
 
         rollKafkaNodePoolWithActiveProducerConsumer(testStorage, kafkaReplicas);
-
     }
 
     /**
@@ -328,7 +327,6 @@ public class FeatureGatesST extends AbstractST {
             clients.consumerStrimzi()
         );
         ClientUtils.waitForClientsSuccess(testStorage);
-
     }
 
     /**
