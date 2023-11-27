@@ -977,7 +977,8 @@ public class KafkaRoller {
             //      not continue with describeCluster. In KRaft mode this returns a random broker and will mean this broker is deferred.
             //      In future this can be improved by telling KafkaRoller whether the cluster is in KRaft mode or not.
             //      This is tracked in https://github.com/strimzi/strimzi-kafka-operator/issues/9373.
-            // Don't use broker admin client here, because it will have cache metadata about which is the controller.
+            // Use admin client connected directly to this broker here, then any exception or timeout trying to connect to
+            // the current node will be caught and handled from this method, rather than appearing elsewhere.
             try (Admin ac = adminClient(Set.of(nodeRef), false)) {
                 Node controllerNode = null;
 
