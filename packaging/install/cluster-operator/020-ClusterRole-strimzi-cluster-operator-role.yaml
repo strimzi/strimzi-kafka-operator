@@ -64,8 +64,6 @@ rules:
     resources:
       # The cluster operator needs to access and manage deployments to run deployment based Strimzi components
       - deployments
-      - deployments/scale
-      - deployments/status
       # The cluster operator needs to access and manage stateful sets to run stateful sets based Strimzi components
       - statefulsets
       # The cluster operator needs to access replica-sets to manage Strimzi components and to determine error states
@@ -76,6 +74,15 @@ rules:
       - watch
       - create
       - delete
+      - patch
+      - update
+  - apiGroups:
+      - "apps"
+    resources:
+      # The Cluster Operator needs to scale Deployments while migrating Connect and Mirror Maker 2 clusters from Deployments to StrimziPodSets
+      - deployments/scale
+    verbs:
+      - get
       - patch
       - update
   - apiGroups:
