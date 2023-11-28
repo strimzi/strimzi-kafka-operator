@@ -4,9 +4,7 @@
  */
 package io.strimzi.systemtest.kafka;
 
-
 import io.fabric8.kubernetes.api.model.EnvVar;
-
 import io.strimzi.api.kafka.model.Kafka;
 import io.strimzi.api.kafka.model.nodepool.KafkaNodePool;
 import io.strimzi.operator.common.Annotations;
@@ -31,7 +29,6 @@ import static org.junit.jupiter.api.Assumptions.assumeFalse;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 import org.junit.jupiter.api.extension.ExtensionContext;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
