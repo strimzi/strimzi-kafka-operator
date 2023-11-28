@@ -838,7 +838,7 @@ public class OauthPlainST extends OauthAbstractST {
                                     .withUserNameClaim(keycloakInstance.getUserNameClaim())
                                     .withEnablePlain(true)
                                     .withTokenEndpointUri(keycloakInstance.getOauthTokenEndpointUri())
-                                    .withCustomClaimCheck("@.clientId && @.clientId =~ /.*hello-world.*/")
+                                    .withCustomClaimCheck("@.client_id && @.client_id =~ /.*hello-world.*/")
                                 .endKafkaListenerAuthenticationOAuth()
                                 .build(),
                             new GenericKafkaListenerBuilder()

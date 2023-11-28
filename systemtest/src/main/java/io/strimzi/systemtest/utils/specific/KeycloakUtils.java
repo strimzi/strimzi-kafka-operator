@@ -17,7 +17,7 @@ import static io.strimzi.test.k8s.KubeClusterResource.cmdKubeClient;
 
 public class KeycloakUtils {
 
-    public final static String LATEST_KEYCLOAK_VERSION = "21.0.0";
+    public final static String LATEST_KEYCLOAK_VERSION = "22.0.5";
 
     private final static LabelSelector SCRAPER_SELECTOR = new LabelSelector(null, Map.of(TestConstants.APP_POD_LABEL, TestConstants.SCRAPER_NAME));
 
