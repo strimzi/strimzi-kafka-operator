@@ -74,7 +74,7 @@ public class KRaftVersionChangeCreator implements VersionChangeCreator {
     }
 
     /**
-     * Collects the information from the Kubernetes resources and created the KafkaVersionChange instance describing the
+     * Collects the information from the Kubernetes resources and creates the KafkaVersionChange instance describing the
      * version change in this reconciliation
      *
      * @return  Future which completes with the KafkaVersionChange instance
@@ -161,7 +161,7 @@ public class KRaftVersionChangeCreator implements VersionChangeCreator {
 
     /**
      * Plans the version change and creates a KafkaVersionChange object which contains the main versions as well as the
-     * inter.broker.protocol.version and log.message.format.version.
+     * metadata version.
      *
      * @return  Future with the KafkaVersionChange instance describing the Kafka version changes
      */

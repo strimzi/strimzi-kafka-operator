@@ -94,7 +94,7 @@ public class ZooKeeperVersionChangeCreator implements VersionChangeCreator {
     }
 
     /**
-     * Collects the information from the Kubernetes resources and created the KafkaVersionChange instance describing the
+     * Collects the information from the Kubernetes resources and creates the KafkaVersionChange instance describing the
      * version change in this reconciliation
      *
      * @return  Future which completes with the KafkaVersionChange instance

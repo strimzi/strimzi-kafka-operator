@@ -348,7 +348,7 @@ public class KafkaUpgradeDowngradeWithKRaftMockTest {
                 })));
     }
 
-    // Checks the upgrade with the metadata version being updated int he same version as Kafka version. Runs 3 reconciliation:
+    // Checks the upgrade with the metadata version being updated to the same version as Kafka version. Runs 3 reconciliation:
     //   - First to create the initial Kafka cluster
     //   - Second to upgrade the Kafka version
     //   - Third to upgrade the metadata version
@@ -473,8 +473,8 @@ public class KafkaUpgradeDowngradeWithKRaftMockTest {
      * DOWNGRADE TESTS
      */
 
-    // Test regular downgrade with message and protocol versions defined everywhere and properly rolled out to all brokers.
-    // The message and protocol versions used is the same as Kafka version we downgrade to.
+    // Test regular downgrade with metadata versions defined everywhere and properly rolled out to all brokers.
+    // The metadata versions used is the same as Kafka version we downgrade to.
     @Test
     public void testDowngradeWhenOldMetadataVersionIsUsed(VertxTestContext context)  {
         Kafka initialKafka = kafkaWithVersions(KafkaVersionTestUtils.LATEST_KAFKA_VERSION,
