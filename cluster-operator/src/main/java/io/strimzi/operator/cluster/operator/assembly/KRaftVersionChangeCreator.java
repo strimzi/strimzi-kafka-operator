@@ -26,7 +26,7 @@ import static io.strimzi.operator.cluster.model.KafkaVersion.compareDottedIVVers
 import static io.strimzi.operator.cluster.model.KafkaVersion.compareDottedVersions;
 
 /**
- * Creates the KafkaVersionChange object from the different versions in the Kafka CR and from the Kafka pods.
+ * Creates the KafkaVersionChange object for a KRaft based clusters from the different versions in the Kafka CR and from the Kafka pods.
  */
 public class KRaftVersionChangeCreator implements VersionChangeCreator {
     private static final ReconciliationLogger LOGGER = ReconciliationLogger.create(KRaftVersionChangeCreator.class.getName());
@@ -41,7 +41,7 @@ public class KRaftVersionChangeCreator implements VersionChangeCreator {
     private final String desiredMetadataVersion;
     private final String currentMetadataVersion;
 
-    // The target versions which should be set in the resul
+    // The target versions which should be set in the result
     private KafkaVersion versionFrom;
     private KafkaVersion versionTo;
 
