@@ -200,7 +200,7 @@ public class KRaftVersionChangeCreator implements VersionChangeCreator {
             if (compareDottedIVVersions(version.metadataVersion(), desiredMetadataVersion) >= 0)    {
                 return desiredMetadataVersion;
             } else if (currentMetadataVersion != null) {
-                LOGGER.warnCr(reconciliation, "Desired metadata version ({}) is newer than the used Kafka version ({}). Current metadata version ({}) will be used instead.", desiredMetadataVersion, version.version(), currentMetadataVersion);
+                LOGGER.warnCr(reconciliation, "Desired metadata version ({}) is newer than the used Kafka version ({}). The cluster will continue to use the current metadata version ({}).", desiredMetadataVersion, version.version(), currentMetadataVersion);
                 return currentMetadataVersion;
             } else {
                 LOGGER.warnCr(reconciliation, "Desired metadata version ({}) is newer than the used Kafka version ({}). Default metadata version for given Kafka version ({}) will be used instead.", desiredMetadataVersion, version.version(), version.metadataVersion());
@@ -213,7 +213,7 @@ public class KRaftVersionChangeCreator implements VersionChangeCreator {
     }
 
     /**
-     * Determines what KRaft metadata version should be used for upgrade
+     * Determines which KRaft metadata version should be used for Kafka upgrade
      *
      * @param reconciliation            Reconciliation marker
      * @param currentMetadataVersion    Currently used metadata version
@@ -244,7 +244,7 @@ public class KRaftVersionChangeCreator implements VersionChangeCreator {
     }
 
     /**
-     * Determines what KRaft metadata version should be used for downgrade
+     * Determines which KRaft metadata version should be used for Kafka downgrade
      *
      * @param reconciliation            Reconciliation marker
      * @param currentMetadataVersion    Currently used metadata version
