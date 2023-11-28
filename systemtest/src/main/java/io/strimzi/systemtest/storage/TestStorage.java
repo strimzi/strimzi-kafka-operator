@@ -144,6 +144,10 @@ final public class TestStorage {
         return extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(key);
     }
 
+    public ExtensionContext getExtensionContext() {
+        return extensionContext;
+    }
+
     public String getTestName() {
         return extensionContext.getStore(ExtensionContext.Namespace.GLOBAL).get(TestConstants.TEST_NAME_KEY).toString();
     }
