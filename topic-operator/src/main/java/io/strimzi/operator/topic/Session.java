@@ -228,10 +228,8 @@ public class Session extends AbstractVerticle {
                 zk.disconnect(result -> {
                     if (result.failed()) {
                         LOGGER.warn("Error disconnecting from ZooKeeper: {}", String.valueOf(result.cause()));
-                        promise.fail(result.cause());
-                    } else {
-                        promise.complete();
                     }
+                    promise.complete();
                 });
                 return null;
             });
