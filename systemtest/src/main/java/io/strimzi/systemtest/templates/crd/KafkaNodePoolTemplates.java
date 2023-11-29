@@ -30,13 +30,6 @@ public class KafkaNodePoolTemplates {
             .endSpec();
     }
 
-    public static KafkaNodePoolBuilder kafkaNodePoolWithBrokerRole(String namespaceName, String nodePoolName, String kafkaClusterName, int kafkaReplicas) {
-        return defaultKafkaNodePool(namespaceName, nodePoolName, kafkaClusterName, kafkaReplicas)
-            .editOrNewSpec()
-                .addToRoles(ProcessRoles.BROKER)
-            .endSpec();
-    }
-
     /**
      * Creates a KafkaNodePoolBuilder for a Kafka instance (mirroring its mandatory specification) with roles based
      * on the environment setting (TestConstants.USE_KRAFT_MODE) having BROKER role in Zookeeper and Kraft mode alike
@@ -47,14 +40,14 @@ public class KafkaNodePoolTemplates {
      * @param kafkaNodePoolReplicas The number of kafka broker replicas for the given node pool.
      * @return KafkaNodePoolBuilder configured with the appropriate (environment variable based) roles based on.
      */
-    public static KafkaNodePoolBuilder fGBasedRoleNodePoolOfKafka(String nodePoolName, Kafka kafka, int kafkaNodePoolReplicas) {
+    public static KafkaNodePoolBuilder kafkaBasedNodePoolWithFgBasedRole(String nodePoolName, Kafka kafka, int kafkaNodePoolReplicas) {
         List<ProcessRoles> roles = new ArrayList<>();
         roles.add(ProcessRoles.BROKER);
 
         if (Environment.isKRaftModeEnabled()) {
             roles.add(ProcessRoles.CONTROLLER);
         }
-        return nodePoolOfKafka(nodePoolName, kafka, roles, kafkaNodePoolReplicas);
+        return kafkaBasedNodePoolWithRole(nodePoolName, kafka, roles, kafkaNodePoolReplicas);
     }
 
     /**
@@ -65,8 +58,8 @@ public class KafkaNodePoolTemplates {
      * @param kafkaNodePoolReplicas The number of kafka broker replicas for the given node pool.
      * @return KafkaNodePoolBuilder configured with the BROKER role.
      */
-    public static KafkaNodePoolBuilder brokerRoleNodePoolOfKafka(String nodePoolName, Kafka kafka, int kafkaNodePoolReplicas) {
-        return nodePoolOfKafka(nodePoolName, kafka, List.of(ProcessRoles.BROKER), kafkaNodePoolReplicas);
+    public static KafkaNodePoolBuilder kafkaBasedNodePoolWithBrokerRole(String nodePoolName, Kafka kafka, int kafkaNodePoolReplicas) {
+        return kafkaBasedNodePoolWithRole(nodePoolName, kafka, List.of(ProcessRoles.BROKER), kafkaNodePoolReplicas);
     }
 
     /**
@@ -77,8 +70,8 @@ public class KafkaNodePoolTemplates {
      * @param kafkaNodePoolReplicas The number of kafka broker replicas for the given node pool.
      * @return KafkaNodePoolBuilder configured with the CONTROLLER role.
      */
-    public static KafkaNodePoolBuilder controllerRoleNodePoolOfKafka(String nodePoolName, Kafka kafka, int kafkaNodePoolReplicas) {
-        return nodePoolOfKafka(nodePoolName, kafka, List.of(ProcessRoles.CONTROLLER), kafkaNodePoolReplicas);
+    public static KafkaNodePoolBuilder kafkaBasedNodePoolWithControllerRole(String nodePoolName, Kafka kafka, int kafkaNodePoolReplicas) {
+        return kafkaBasedNodePoolWithRole(nodePoolName, kafka, List.of(ProcessRoles.CONTROLLER), kafkaNodePoolReplicas);
     }
 
     /**
@@ -89,8 +82,8 @@ public class KafkaNodePoolTemplates {
      * @param kafkaNodePoolReplicas The number of kafka broker replicas for the given node pool.
      * @return KafkaNodePoolBuilder configured with both BROKER and CONTROLLER roles.
      */
-    public static KafkaNodePoolBuilder allRoleNodePoolOfKafka(String nodePoolName, Kafka kafka, int kafkaNodePoolReplicas) {
-        return nodePoolOfKafka(nodePoolName, kafka, List.of(ProcessRoles.BROKER, ProcessRoles.CONTROLLER), kafkaNodePoolReplicas);
+    public static KafkaNodePoolBuilder kafkaBasedNodePoolWithDualRole(String nodePoolName, Kafka kafka, int kafkaNodePoolReplicas) {
+        return kafkaBasedNodePoolWithRole(nodePoolName, kafka, List.of(ProcessRoles.BROKER, ProcessRoles.CONTROLLER), kafkaNodePoolReplicas);
     }
 
     /**
@@ -103,7 +96,7 @@ public class KafkaNodePoolTemplates {
      * @param kafkaNodePoolReplicas The number of kafka broker replicas for the given node pool.
      * @return KafkaNodePoolBuilder configured with the given roles and specifications.
      */
-    private static KafkaNodePoolBuilder nodePoolOfKafka(String nodePoolName, Kafka kafka, List<ProcessRoles> roles, int kafkaNodePoolReplicas) {
+    private static KafkaNodePoolBuilder kafkaBasedNodePoolWithRole(String nodePoolName, Kafka kafka, List<ProcessRoles> roles, int kafkaNodePoolReplicas) {
         return new KafkaNodePoolBuilder()
             .withNewMetadata()
                 .withName(nodePoolName)

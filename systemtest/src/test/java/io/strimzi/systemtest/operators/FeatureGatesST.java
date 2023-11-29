@@ -89,7 +89,7 @@ public class FeatureGatesST extends AbstractST {
             .build();
         kafkaCr.getSpec().getEntityOperator().setTopicOperator(null); // The builder cannot disable the EO. It has to be done this way.
 
-        final KafkaNodePool kafkaNodePoolCr = KafkaNodePoolTemplates.allRoleNodePoolOfKafka(testStorage.getKafkaNodePoolName(), kafkaCr, kafkaReplicas).build();
+        final KafkaNodePool kafkaNodePoolCr = KafkaNodePoolTemplates.kafkaBasedNodePoolWithDualRole(testStorage.getKafkaNodePoolName(), kafkaCr, kafkaReplicas).build();
 
         resourceManager.createResourceWithWait(extensionContext,
             kafkaNodePoolCr,
@@ -135,7 +135,7 @@ public class FeatureGatesST extends AbstractST {
             .endMetadata()
             .build();
 
-        final KafkaNodePool kafkaNodePoolCr = KafkaNodePoolTemplates.brokerRoleNodePoolOfKafka(testStorage.getKafkaNodePoolName(), kafkaCr, kafkaReplicas).build();
+        final KafkaNodePool kafkaNodePoolCr = KafkaNodePoolTemplates.kafkaBasedNodePoolWithBrokerRole(testStorage.getKafkaNodePoolName(), kafkaCr, kafkaReplicas).build();
 
         resourceManager.createResourceWithWait(extensionContext, kafkaNodePoolCr, kafkaCr);
 
@@ -201,7 +201,7 @@ public class FeatureGatesST extends AbstractST {
             .build();
 
         // as the only FG set in the CO is 'KafkaNodePools' (kraft is never included) Broker role is the only one that can be taken
-        final KafkaNodePool kafkaNodePoolCr = KafkaNodePoolTemplates.brokerRoleNodePoolOfKafka(kafkaNodePoolName, kafkaCr, 3).build();
+        final KafkaNodePool kafkaNodePoolCr = KafkaNodePoolTemplates.kafkaBasedNodePoolWithBrokerRole(kafkaNodePoolName, kafkaCr, 3).build();
 
         resourceManager.createResourceWithWait(extensionContext,
             kafkaNodePoolCr,
