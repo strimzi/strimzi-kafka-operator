@@ -128,6 +128,7 @@ public class KafkaClusterWithPoolsTest {
                 KAFKA,
                 List.of(KAFKA_POOL_A, KAFKA_POOL_B),
                 VERSIONS,
+                KafkaVersionTestUtils.DEFAULT_ZOOKEEPER_VERSION_CHANGE,
                 false,
                 null, SHARED_ENV_PROVIDER
         );
@@ -170,6 +171,7 @@ public class KafkaClusterWithPoolsTest {
                 KAFKA,
                 List.of(KAFKA_POOL_A, KAFKA_POOL_B),
                 VERSIONS,
+                KafkaVersionTestUtils.DEFAULT_ZOOKEEPER_VERSION_CHANGE,
                 false,
                 null, SHARED_ENV_PROVIDER
         );
@@ -194,6 +196,7 @@ public class KafkaClusterWithPoolsTest {
                 kafka,
                 List.of(KAFKA_POOL_A, KAFKA_POOL_B),
                 VERSIONS,
+                KafkaVersionTestUtils.DEFAULT_ZOOKEEPER_VERSION_CHANGE,
                 false,
                 null, SHARED_ENV_PROVIDER
         );
@@ -218,6 +221,7 @@ public class KafkaClusterWithPoolsTest {
                 kafka,
                 List.of(KAFKA_POOL_A, KAFKA_POOL_B),
                 VERSIONS,
+                KafkaVersionTestUtils.DEFAULT_ZOOKEEPER_VERSION_CHANGE,
                 false,
                 null, SHARED_ENV_PROVIDER
         );
@@ -257,6 +261,7 @@ public class KafkaClusterWithPoolsTest {
                 kafka,
                 List.of(KAFKA_POOL_A, KAFKA_POOL_B),
                 VERSIONS,
+                KafkaVersionTestUtils.DEFAULT_ZOOKEEPER_VERSION_CHANGE,
                 false,
                 null, SHARED_ENV_PROVIDER
         );
@@ -285,6 +290,7 @@ public class KafkaClusterWithPoolsTest {
                 kafka,
                 List.of(KAFKA_POOL_A, KAFKA_POOL_B),
                 VERSIONS,
+                KafkaVersionTestUtils.DEFAULT_ZOOKEEPER_VERSION_CHANGE,
                 false,
                 null, SHARED_ENV_PROVIDER
         );
@@ -305,6 +311,7 @@ public class KafkaClusterWithPoolsTest {
                 KAFKA,
                 List.of(KAFKA_POOL_A, KAFKA_POOL_B),
                 VERSIONS,
+                KafkaVersionTestUtils.DEFAULT_ZOOKEEPER_VERSION_CHANGE,
                 false,
                 null, SHARED_ENV_PROVIDER
         );
@@ -320,6 +327,7 @@ public class KafkaClusterWithPoolsTest {
                 KAFKA,
                 List.of(KAFKA_POOL_A, KAFKA_POOL_B),
                 VERSIONS,
+                KafkaVersionTestUtils.DEFAULT_ZOOKEEPER_VERSION_CHANGE,
                 false,
                 null, SHARED_ENV_PROVIDER
         );
@@ -359,6 +367,7 @@ public class KafkaClusterWithPoolsTest {
                 KAFKA,
                 List.of(KAFKA_POOL_A, KAFKA_POOL_B),
                 VERSIONS,
+                KafkaVersionTestUtils.DEFAULT_KRAFT_VERSION_CHANGE,
                 true,
                 null, SHARED_ENV_PROVIDER
         );
@@ -391,6 +400,7 @@ public class KafkaClusterWithPoolsTest {
                 KAFKA,
                 List.of(KAFKA_POOL_A, KAFKA_POOL_B),
                 VERSIONS,
+                KafkaVersionTestUtils.DEFAULT_ZOOKEEPER_VERSION_CHANGE,
                 false,
                 null, SHARED_ENV_PROVIDER
         );
@@ -433,7 +443,7 @@ public class KafkaClusterWithPoolsTest {
         // Test exception being raised when only one broker is present
         InvalidResourceException ex = assertThrows(InvalidResourceException.class, () -> {
             List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, List.of(poolA), Map.of(), Map.of(), false, SHARED_ENV_PROVIDER);
-            KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, pools, VERSIONS, false, null, SHARED_ENV_PROVIDER);
+            KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_ZOOKEEPER_VERSION_CHANGE, false, null, SHARED_ENV_PROVIDER);
         });
 
         assertThat(ex.getMessage(), is("Kafka " + NAMESPACE + "/" + CLUSTER_NAME + " has invalid configuration. " +
@@ -449,7 +459,7 @@ public class KafkaClusterWithPoolsTest {
 
         assertDoesNotThrow(() -> {
             List<KafkaPool> pools = NodePoolUtils.createKafkaPools(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, List.of(poolA, poolB), Map.of(), Map.of(), false, SHARED_ENV_PROVIDER);
-            KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, pools, VERSIONS, false, null, SHARED_ENV_PROVIDER);
+            KafkaCluster.fromCrd(Reconciliation.DUMMY_RECONCILIATION, kafkaAssembly, pools, VERSIONS, KafkaVersionTestUtils.DEFAULT_ZOOKEEPER_VERSION_CHANGE, false, null, SHARED_ENV_PROVIDER);
         });
     }
 }
