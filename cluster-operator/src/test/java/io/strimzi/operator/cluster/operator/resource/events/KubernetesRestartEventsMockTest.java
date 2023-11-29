@@ -121,7 +121,8 @@ public class KubernetesRestartEventsMockTest {
             VERSIONS.defaultVersion(),
             VERSIONS.defaultVersion(),
             VERSIONS.defaultVersion().protocolVersion(),
-            VERSIONS.defaultVersion().messageVersion()
+            VERSIONS.defaultVersion().messageVersion(),
+            VERSIONS.defaultVersion().metadataVersion()
     );
 
     private final MockCertManager mockCertManager = new MockCertManager();

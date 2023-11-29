@@ -12,6 +12,7 @@ public class KafkaVersionChange {
     private final KafkaVersion to;
     private final String logMessageFormatVersion;
     private final String interBrokerProtocolVersion;
+    private final String metadataVersion;
     private final int compare;
 
     /**
@@ -21,12 +22,14 @@ public class KafkaVersionChange {
      * @param to                            Desired Kafka version
      * @param interBrokerProtocolVersion    Inter-broker protocol version
      * @param logMessageFormatVersion       Log-message format version
+     * @param metadataVersion               KRaft metadata version
      */
-    public KafkaVersionChange(KafkaVersion from, KafkaVersion to, String interBrokerProtocolVersion, String logMessageFormatVersion) {
+    public KafkaVersionChange(KafkaVersion from, KafkaVersion to, String interBrokerProtocolVersion, String logMessageFormatVersion, String metadataVersion) {
         this.from = from;
         this.to = to;
         this.logMessageFormatVersion = logMessageFormatVersion;
         this.interBrokerProtocolVersion = interBrokerProtocolVersion;
+        this.metadataVersion = metadataVersion;
         this.compare = from.compareTo(to);
     }
 
@@ -58,6 +61,13 @@ public class KafkaVersionChange {
      */
     public String interBrokerProtocolVersion() {
         return interBrokerProtocolVersion;
+    }
+
+    /**
+     * @return  Returns the KRaft metadata version which should be used
+     */
+    public String metadataVersion() {
+        return metadataVersion;
     }
 
     /**

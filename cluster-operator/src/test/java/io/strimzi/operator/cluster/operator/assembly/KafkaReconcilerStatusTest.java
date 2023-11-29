@@ -73,7 +73,8 @@ public class KafkaReconcilerStatusTest {
             VERSIONS.defaultVersion(),
             VERSIONS.defaultVersion(),
             VERSIONS.defaultVersion().protocolVersion(),
-            VERSIONS.defaultVersion().messageVersion()
+            VERSIONS.defaultVersion().messageVersion(),
+            VERSIONS.defaultVersion().metadataVersion()
     );
     private final static ClusterOperatorConfig CO_CONFIG = ResourceUtils.dummyClusterOperatorConfig();
     private final static ClusterCa CLUSTER_CA = new ClusterCa(

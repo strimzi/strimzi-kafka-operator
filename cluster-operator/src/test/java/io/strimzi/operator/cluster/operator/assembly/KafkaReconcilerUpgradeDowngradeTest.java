@@ -132,7 +132,7 @@ public class KafkaReconcilerUpgradeDowngradeTest {
                 .endSpec()
                 .build();
 
-        KafkaVersionChange versionChange = new KafkaVersionChange(VERSIONS.defaultVersion(), VERSIONS.defaultVersion(), null, null);
+        KafkaVersionChange versionChange = new KafkaVersionChange(VERSIONS.defaultVersion(), VERSIONS.defaultVersion(), null, null, null);
 
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
@@ -174,7 +174,7 @@ public class KafkaReconcilerUpgradeDowngradeTest {
 
     @Test
     public void testWithoutAnyVersionsInCR(VertxTestContext context) {
-        KafkaVersionChange versionChange = new KafkaVersionChange(VERSIONS.defaultVersion(), VERSIONS.defaultVersion(), VERSIONS.defaultVersion().protocolVersion(), VERSIONS.defaultVersion().messageVersion());
+        KafkaVersionChange versionChange = new KafkaVersionChange(VERSIONS.defaultVersion(), VERSIONS.defaultVersion(), VERSIONS.defaultVersion().protocolVersion(), VERSIONS.defaultVersion().messageVersion(), null);
 
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 
@@ -226,7 +226,7 @@ public class KafkaReconcilerUpgradeDowngradeTest {
                 .endSpec()
                 .build();
 
-        KafkaVersionChange versionChange = new KafkaVersionChange(VERSIONS.version(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION), VERSIONS.defaultVersion(), KafkaVersionTestUtils.PREVIOUS_PROTOCOL_VERSION, KafkaVersionTestUtils.PREVIOUS_FORMAT_VERSION);
+        KafkaVersionChange versionChange = new KafkaVersionChange(VERSIONS.version(KafkaVersionTestUtils.PREVIOUS_KAFKA_VERSION), VERSIONS.defaultVersion(), KafkaVersionTestUtils.PREVIOUS_PROTOCOL_VERSION, KafkaVersionTestUtils.PREVIOUS_FORMAT_VERSION, null);
 
         ResourceOperatorSupplier supplier = ResourceUtils.supplierWithMocks(false);
 

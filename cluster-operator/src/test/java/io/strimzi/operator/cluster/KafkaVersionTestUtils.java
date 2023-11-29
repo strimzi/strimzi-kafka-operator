@@ -23,6 +23,7 @@ public class KafkaVersionTestUtils {
     public static final String LATEST_KAFKA_VERSION = "3.6.0";
     public static final String LATEST_FORMAT_VERSION = "3.6";
     public static final String LATEST_PROTOCOL_VERSION = "3.6";
+    public static final String LATEST_METADATA_VERSION = "3.6-IV2";
     public static final String LATEST_ZOOKEEPER_VERSION = "3.8.2";
     public static final String LATEST_CHECKSUM = "ABCD1234";
     public static final String LATEST_THIRD_PARTY_VERSION = "3.6.x";
@@ -34,6 +35,7 @@ public class KafkaVersionTestUtils {
     public static final String PREVIOUS_KAFKA_VERSION = "3.5.1";
     public static final String PREVIOUS_FORMAT_VERSION = "3.5";
     public static final String PREVIOUS_PROTOCOL_VERSION = "3.5";
+    public static final String PREVIOUS_METADATA_VERSION = "3.5-IV2";
     public static final String PREVIOUS_ZOOKEEPER_VERSION = "3.6.4";
     public static final String PREVIOUS_CHECKSUM = "ABCD1234";
     public static final String PREVIOUS_THIRD_PARTY_VERSION = "3.4.x";
