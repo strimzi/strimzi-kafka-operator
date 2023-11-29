@@ -57,7 +57,15 @@ public class KRaftUtils {
      */
     public static void validateMetadataVersion(String metadataVersion)   {
         try {
-            MetadataVersion.fromVersionString(metadataVersion);
+            MetadataVersion version = MetadataVersion.fromVersionString(metadataVersion);
+
+            // KRaft is supposed to be supported from metadata version 3.0-IV1. But only from metadata version 3.3-IV0,
+            // the initial metadata version can be set using the kafka-storage.sh utility. And since most metadata
+            // versions do not support downgrade, that means 3.3-IV0 is the oldest metadata version that can be used
+            // with Strimzi.
+            if (version.isLessThan(MetadataVersion.IBP_3_3_IV0)) {
+                throw new InvalidResourceException("The oldest supported metadata version is 3.3-IV0");
+            }
         } catch (IllegalArgumentException e)    {
             throw new InvalidResourceException("Metadata version " + metadataVersion + " is invalid", e);
         }
