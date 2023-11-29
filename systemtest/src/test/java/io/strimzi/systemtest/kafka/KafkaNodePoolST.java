@@ -27,6 +27,7 @@ import org.junit.jupiter.api.Tag;
 import static io.strimzi.systemtest.TestConstants.REGRESSION;
 import static org.junit.jupiter.api.Assumptions.assumeFalse;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import org.junit.jupiter.api.extension.ExtensionContext;
 import java.util.ArrayList;
@@ -38,12 +39,24 @@ public class KafkaNodePoolST extends AbstractST {
     private static final Logger LOGGER = LogManager.getLogger(KafkaNodePoolST.class);
 
     /**
-     * @description This test case verifies KafkaNodePools scaling up and down with correct NodePool IDs, with different NodePools.
-     * @param extensionContext
+     * @description This test case verifies the management of broker IDs in Kafka Node Pools using annotations.
+     *
+     * @steps
+     *  1. - Deploy a Kafka instance with annotations to manage Node Pools and two KafkaNodePools (A and B) with node ids annotations set.
+     *     - Kafka instance is deployed according to Kafka and KafkaNodePools custom resources.
+     *  2. - Verify that the NodePools contain the correct broker IDs as specified.
+     *     - Correct broker IDs are present in NodePools A and B.
+     *  3. - Verify scaling up NodePool A and scaling down NodePool B with annotations for next node IDs and removing node IDs.
+     *     - NodePool A is scaled up and B is scaled down with correct node IDs after scaling.
+     *  4. - Verify missing ID for downscale (NodePool A), already used ID for upscale (NodePool B).
+     *     - NodePool A and B are correctly scaled with appropriate broker IDs assigned.
+     *
+     * @usecase
+     *  - kafka-node-pool
+     *  - broker-id-management
      */
     @ParallelNamespaceTest
     void testKafkaNodePoolBrokerIdsManagementUsingAnnotations(ExtensionContext extensionContext) {
-
         final TestStorage testStorage = new TestStorage(extensionContext);
         String nodePoolNameA = testStorage.getKafkaNodePoolName() + "-a";
         String nodePoolNameB = testStorage.getKafkaNodePoolName() + "-b";
@@ -132,6 +145,7 @@ public class KafkaNodePoolST extends AbstractST {
     @BeforeAll
     void setup(ExtensionContext extensionContext) {
         assumeFalse(Environment.isOlmInstall() || Environment.isHelmInstall());
+        assumeTrue(Environment.isKRaftModeEnabled() && Environment.isKafkaNodePoolsEnabled());
 
         List<EnvVar> coEnvVars = new ArrayList<>();
         coEnvVars.add(new EnvVar(Environment.STRIMZI_FEATURE_GATES_ENV, "+KafkaNodePools", null));
