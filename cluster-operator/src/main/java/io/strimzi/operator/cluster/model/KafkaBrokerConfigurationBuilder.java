@@ -268,8 +268,10 @@ public class KafkaBrokerConfigurationBuilder {
 
         // Security protocol and Control Plane Listener are configured everywhere
 
-        // Control Plane listener is added to security protocol on KRaft broker only nodes as well because validated by Kafka
-        // This is because it will be in the controller.listener.names to allow connecting to controllers
+        // Brokers need to know how to connect to the controllers on the Control Plane listener and what security (encryption/authentication) they should use.
+        // For that reason, we have to configure the Control Plane listener in the broker-only configuration as well,
+        // even though they do not listen at the Control Plane listener port.
+        // The brokers use this configuration to detect how to connect to the controllers, what certificates to use etc.
         securityProtocol.add(CONTROL_PLANE_LISTENER_NAME + ":SSL");
         // Control Plane listener is configured on KRaft broker only nodes as well for allowing TLS certificates keystore generation
         // so that brokers are able to connect to controllers as TLS clients
