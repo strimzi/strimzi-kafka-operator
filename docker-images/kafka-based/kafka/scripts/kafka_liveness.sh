@@ -2,8 +2,9 @@
 set -e
 
 if [ "$STRIMZI_KRAFT_ENABLED" = "true" ]; then
-  # Test KRaft controller process is running
-  . ./kafka_controller_liveness.sh
+  for proc in /proc/*[0-9];
+    do if readlink -f "$proc"/exe | grep -q java; then exit 0; fi;
+  done
 else
   # Test ZK-based broker liveness
   # We expect that either the broker is ready and listening on 9091 (replication port)
