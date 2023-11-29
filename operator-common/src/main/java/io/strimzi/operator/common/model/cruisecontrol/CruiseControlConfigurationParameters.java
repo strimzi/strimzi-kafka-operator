@@ -84,9 +84,9 @@ public enum CruiseControlConfigurationParameters {
     METRIC_REPORTER_TOPIC_NAME("metric.reporter.topic"),
 
     /**
-     * Name of the Cruise Control capacity config file path
+     * Capacity config file
      */
-    CRUISE_CONTROL_CAPACITY_CONFIG_FILE("capacity.config.file"),
+    CAPACITY_CONFIG_FILE("capacity.config.file"),
 
     // Metrics reporter configurations
     /**

@@ -92,16 +92,12 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
     protected static final String TLS_CA_CERTS_VOLUME_NAME = "cluster-ca-certs";
     protected static final String TLS_CA_CERTS_VOLUME_MOUNT = "/etc/cruise-control/cluster-ca-certs/";
     protected static final String CRUISE_CONTROL_CONFIG_VOLUME_NAME = "config";
-    protected static final String CRUISE_CONTROL_SERVER_CONFIG_VOLUME_NAME = "server-config";
-    protected static final String CRUISE_CONTROL_CAPACITY_CONFIG_VOLUME_NAME = "capacity-config";
-    protected static final String LOG_AND_METRICS_CONFIG_VOLUME_NAME = "cruise-control-metrics-and-logging";
+    protected static final String CRUISE_CONTROL_SERVER_CONFIG_FILENAME = "server-config";
+    protected static final String CRUISE_CONTROL_CAPACITY_CONFIG_FILENAME = "capacity-config";
     protected static final String CONFIG_VOLUME_MOUNT = "/opt/cruise-control/custom-config/";
     protected static final String API_AUTH_CONFIG_VOLUME_NAME = "api-auth-config";
     protected static final String API_AUTH_CONFIG_VOLUME_MOUNT = "/opt/cruise-control/api-auth-config/";
-    /**
-     * Name of the Cruise Control broker capacity config file
-     */
-    public static final String DEFAULT_CRUISE_CONTROL_CAPACITY_CONFIG_NAME = CONFIG_VOLUME_MOUNT + CRUISE_CONTROL_CAPACITY_CONFIG_VOLUME_NAME;
+    protected static final String CAPACITY_CONFIG_FILE = CONFIG_VOLUME_MOUNT + CRUISE_CONTROL_CAPACITY_CONFIG_FILENAME;
     protected static final String API_AUTH_CREDENTIALS_FILE = API_AUTH_CONFIG_VOLUME_MOUNT + API_AUTH_FILE_KEY;
 
     protected static final String ENV_VAR_CRUISE_CONTROL_METRICS_ENABLED = "CRUISE_CONTROL_METRICS_ENABLED";
@@ -132,7 +128,6 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
     }
 
     // Cruise Control configuration keys (EnvVariables)
-    protected static final String ENV_VAR_CRUISE_CONTROL_CONFIGURATION = "CRUISE_CONTROL_CONFIGURATION";
     protected static final String ENV_VAR_STRIMZI_KAFKA_BOOTSTRAP_SERVERS = "STRIMZI_KAFKA_BOOTSTRAP_SERVERS";
 
     protected static final String ENV_VAR_API_SSL_ENABLED = "STRIMZI_CC_API_SSL_ENABLED";
@@ -147,6 +142,7 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
     private DeploymentTemplate templateDeployment;
     private PodTemplate templatePod;
     private InternalServiceTemplate templateService;
+
     private static final Map<String, String> DEFAULT_POD_LABELS = new HashMap<>();
     static {
         String value = System.getenv(CO_ENV_VAR_CUSTOM_CRUISE_CONTROL_POD_LABELS);
@@ -524,8 +520,8 @@ public class CruiseControl extends AbstractModel implements SupportsMetrics, Sup
      */
     public ConfigMap generateConfigMap(MetricsAndLogging metricsAndLogging) {
         Map<String, String> configMapData = new HashMap<>(3);
-        configMapData.put(CRUISE_CONTROL_SERVER_CONFIG_VOLUME_NAME, configuration.asOrderedProperties().asPairs());
-        configMapData.put(CRUISE_CONTROL_CAPACITY_CONFIG_VOLUME_NAME, capacity.toString());
+        configMapData.put(CRUISE_CONTROL_SERVER_CONFIG_FILENAME, configuration.asOrderedProperties().asPairs());
+        configMapData.put(CRUISE_CONTROL_CAPACITY_CONFIG_FILENAME, capacity.toString());
         configMapData.putAll(ConfigMapUtils.generateMetricsAndLogConfigMapData(reconciliation, this, metricsAndLogging));
 
         return ConfigMapUtils

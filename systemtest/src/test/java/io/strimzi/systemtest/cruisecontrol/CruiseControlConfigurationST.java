@@ -203,7 +203,7 @@ public class CruiseControlConfigurationST extends AbstractST {
                 CruiseControlConfigurationParameters.BROKER_METRICS_WINDOW_NUM_CONFIG_KEY.getValue(),
                 CruiseControlConfigurationParameters.BROKER_METRICS_WINDOW_MS_CONFIG_KEY.getValue(),
                 CruiseControlConfigurationParameters.COMPLETED_USER_TASK_RETENTION_MS_CONFIG_KEY.getValue(),
-                CruiseControlConfigurationParameters.CRUISE_CONTROL_CAPACITY_CONFIG_FILE.getValue(),
+                CruiseControlConfigurationParameters.CAPACITY_CONFIG_FILE.getValue(),
                 "goals", "default.goals");
 
         for (String propertyName : checkCCProperties) {

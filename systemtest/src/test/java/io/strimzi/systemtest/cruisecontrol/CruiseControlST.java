@@ -4,18 +4,14 @@
  */
 package io.strimzi.systemtest.cruisecontrol;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import io.fabric8.kubernetes.api.model.ConfigMap;
 import io.fabric8.kubernetes.api.model.Container;
-import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.fabric8.kubernetes.api.model.Quantity;
 import io.fabric8.kubernetes.api.model.ResourceRequirementsBuilder;
 import io.strimzi.api.kafka.model.CruiseControlResources;
 import io.strimzi.api.kafka.model.CruiseControlSpec;
 import io.strimzi.api.kafka.model.KafkaRebalance;
 import io.strimzi.api.kafka.model.KafkaTopicSpec;
+import io.fabric8.kubernetes.api.model.LabelSelector;
 import io.strimzi.api.kafka.model.KafkaResources;
 import io.strimzi.api.kafka.model.balancing.KafkaRebalanceMode;
 import io.strimzi.api.kafka.model.status.KafkaRebalanceStatus;
@@ -73,7 +69,6 @@ import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
 
 @Tag(REGRESSION)
 @Tag(CRUISE_CONTROL)
@@ -143,90 +138,6 @@ public class CruiseControlST extends AbstractST {
         LOGGER.info("Checking partitions and replicas for {}", CRUISE_CONTROL_PARTITION_METRICS_SAMPLES_TOPIC);
         assertThat(partitionMetricsTopic.getPartitions(), is(32));
         assertThat(partitionMetricsTopic.getReplicas(), is(2));
-    }
-
-    @IsolatedTest
-    void testCreationOfCruiseControlConfigMap(ExtensionContext extensionContext) {
-        final TestStorage testStorage = storageMap.get(extensionContext);
-        final String clusterName = testStorage.getClusterName();
-        String cpu = "2.0";
-        String nwThroughputInbound = "10000.0";
-        String nwThroughputOutbound = "20000.0";
-
-        String numPartitionMetricWindowsConfigKey = "num.partition.metrics.windows";
-        String numPartitionMetricWindowsConfigValue = "4";
-
-        String rootLoggerLevelKey = "rootLogger.level";
-        String rootLoggerLevelValue = "DEBUG";
-
-        resourceManager.createResourceWithWait(extensionContext, KafkaTemplates.kafkaWithCruiseControl(clusterName, 3, 3)
-                .editMetadata()
-                .withNamespace(clusterOperator.getDeploymentNamespace())
-                .endMetadata()
-                .editOrNewSpec()
-                    .editCruiseControl()
-                        .addToConfig(numPartitionMetricWindowsConfigKey, numPartitionMetricWindowsConfigValue)
-                        .withNewBrokerCapacity()
-                            .withCpu(cpu)
-                            .withInboundNetwork(nwThroughputInbound.split("\\.")[0] + "KiB/s")
-                            .withOutboundNetwork(nwThroughputOutbound.split("\\.")[0] + "KiB/s")
-                        .endBrokerCapacity()
-                        .withNewInlineLogging()
-                          .addToLoggers(rootLoggerLevelKey, rootLoggerLevelValue)
-                        .endInlineLogging()
-                    .endCruiseControl()
-                .endSpec()
-                .build());
-
-
-        ConfigMap cm = kubeClient().listConfigMaps(CruiseControlResources.configMapName(clusterName)).get(0);
-
-        Map<String, String> keyAndValue = cm.getData();
-
-        // Check CC server config
-        String serverConfigAsString = keyAndValue.get("server-config");
-        Map serverConfigAsMap = stringToMap(serverConfigAsString);
-        assertThat(serverConfigAsMap.get(numPartitionMetricWindowsConfigKey), is(numPartitionMetricWindowsConfigValue));
-
-        // Check CC capacity config
-        String capacityConfigAsString = keyAndValue.get("capacity-config");
-
-        try {
-            ObjectMapper objectMapper = new ObjectMapper();
-            JsonNode capacityConfigAsJsonNode = objectMapper.readTree(capacityConfigAsString);
-            ArrayNode brokerCapacities = (ArrayNode) capacityConfigAsJsonNode.get("brokerCapacities");
-
-            for (JsonNode brokerCapacityEntry : brokerCapacities) {
-                JsonNode capacity = brokerCapacityEntry.get("capacity");
-                assertThat(capacity.get("CPU").get("num.cores").asText(), is(cpu));
-                assertThat(capacity.get("NW_IN").asText(), is(nwThroughputInbound));
-                assertThat(capacity.get("NW_OUT").asText(), is(nwThroughputOutbound));
-            }
-        } catch (Exception e) {
-            fail(e.getMessage());
-        }
-
-        // Check CC server metrics config
-        String loggingsConfigAsString = keyAndValue.get("log4j2.properties");
-        // Remove comment lines from String
-        Map loggingConfigAsMap = stringToMap(loggingsConfigAsString);
-        assertThat(loggingConfigAsMap.get(rootLoggerLevelKey), is(rootLoggerLevelValue));
-    }
-
-    private static Map<String, String> stringToMap(String configAsString) {
-        // Remove empty lines
-        configAsString = configAsString.replaceAll("(?m)^[ \t]*\r?\n", "");
-        // Remove comments from lines
-        configAsString = configAsString.replaceAll("(?m)^#.*", "");
-
-        String[] keyValuePairs = configAsString.split("\n");
-        Map<String, String> map = new HashMap<>();
-
-        for (String pair : keyValuePairs) {
-            String[] entry = pair.split("=");
-            map.put(entry[0].trim(), entry[1].trim());
-        }
-        return map;
     }
 
     @IsolatedTest

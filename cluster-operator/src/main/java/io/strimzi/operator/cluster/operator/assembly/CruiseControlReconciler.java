@@ -176,13 +176,13 @@ public class CruiseControlReconciler {
         if (cruiseControl != null) {
             return MetricsAndLoggingUtils.metricsAndLogging(reconciliation, configMapOperator, cruiseControl.logging(), cruiseControl.metrics())
                     .compose(metricsAndLogging -> {
-                        ConfigMap logAndMetricsConfigMap = cruiseControl.generateConfigMap(metricsAndLogging);
+                        ConfigMap configMap = cruiseControl.generateConfigMap(metricsAndLogging);
                         return configMapOperator
                                 .reconcile(
                                         reconciliation,
                                         reconciliation.namespace(),
                                         CruiseControlResources.configMapName(reconciliation.name()),
-                                        logAndMetricsConfigMap
+                                        configMap
                                 ).map((Void) null);
                     });
 
