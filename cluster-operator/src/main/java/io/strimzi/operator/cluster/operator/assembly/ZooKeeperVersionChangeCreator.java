@@ -366,13 +366,6 @@ public class ZooKeeperVersionChangeCreator implements VersionChangeCreator {
         // For that, we need to set the metadata version even in the ZooKeeperVersionChangeCreator class even through it
         // is not used in KRaft mode. As the controllers will be new, we set it based on the Kafka CR or based on the
         // Kafka version used (which will be always the versionTo on the newly deployed controllers).
-        String metadataVersion;
-        if (metadataVersionFromCr != null)  {
-            metadataVersion = metadataVersionFromCr;
-        } else {
-            metadataVersion = versionTo.metadataVersion();
-        }
-
-        return Future.succeededFuture(new KafkaVersionChange(versionFrom, versionTo, interBrokerProtocolVersion, logMessageFormatVersion, metadataVersion));
+        return Future.succeededFuture(new KafkaVersionChange(versionFrom, versionTo, interBrokerProtocolVersion, logMessageFormatVersion, metadataVersionFromCr != null ? metadataVersionFromCr : versionTo.metadataVersion()));
     }
 }
