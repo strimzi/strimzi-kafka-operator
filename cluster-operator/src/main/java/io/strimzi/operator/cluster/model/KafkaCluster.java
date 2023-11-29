@@ -287,7 +287,7 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
         result.kafkaVersion = versions.supportedVersion(kafkaClusterSpec.getVersion());
 
         // Validates and sets the metadata version used in KRaft
-        if (useKRaft && versionChange.metadataVersion() != null) {
+        if (versionChange.metadataVersion() != null) {
             KRaftUtils.validateMetadataVersion(versionChange.metadataVersion());
             result.metadataVersion = versionChange.metadataVersion();
         }
@@ -329,14 +329,14 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
         result.configuration = configuration;
 
         // We set the user-configured inter.broker.protocol.version if needed (when not set by the user)
-        // It is set only in ZooKeeper-mode since in Kraft mode it is ignored and throws warnings
-        if (!useKRaft && versionChange.interBrokerProtocolVersion() != null) {
+        // In KRaft mode, it should be always null
+        if (versionChange.interBrokerProtocolVersion() != null) {
             result.configuration.setConfigOption(KafkaConfiguration.INTERBROKER_PROTOCOL_VERSION, versionChange.interBrokerProtocolVersion());
         }
 
         // We set the user-configured log.message.format.version if needed (when not set by the user)
-        // It is set only in ZooKeeper-mode since in Kraft mode it is ignored and throws warnings
-        if (!useKRaft && versionChange.logMessageFormatVersion() != null) {
+        // In KRaft mode, it should be always null.
+        if (versionChange.logMessageFormatVersion() != null) {
             result.configuration.setConfigOption(KafkaConfiguration.LOG_MESSAGE_FORMAT_VERSION, versionChange.logMessageFormatVersion());
         }
 
