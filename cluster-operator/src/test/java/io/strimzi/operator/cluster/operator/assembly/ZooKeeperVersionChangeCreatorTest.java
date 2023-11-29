@@ -47,7 +47,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(VertxExtension.class)
-public class VersionChangeCreatorTest {
+public class ZooKeeperVersionChangeCreatorTest {
     private static final String NAMESPACE = "my-namespace";
     private static final String CLUSTER_NAME = "my-cluster";
     private static final KafkaVersion.Lookup VERSIONS = KafkaVersionTestUtils.getKafkaVersionLookup();
@@ -1107,7 +1107,7 @@ public class VersionChangeCreatorTest {
 
     // Creates the VersionChangeCreator with the mocks
     private VersionChangeCreator mockVersionChangeCreator(Kafka kafka, ResourceOperatorSupplier ros)  {
-        return new VersionChangeCreator(new Reconciliation("test", "Kafka", NAMESPACE, CLUSTER_NAME), kafka, ResourceUtils.dummyClusterOperatorConfig(), ros);
+        return new ZooKeeperVersionChangeCreator(new Reconciliation("test", "Kafka", NAMESPACE, CLUSTER_NAME), kafka, ResourceUtils.dummyClusterOperatorConfig(), ros);
     }
 
     // Creates ResourceOperatorSupplier with mocks

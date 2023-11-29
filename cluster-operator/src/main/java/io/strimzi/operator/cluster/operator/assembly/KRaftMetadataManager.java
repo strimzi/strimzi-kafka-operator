@@ -165,7 +165,7 @@ public class KRaftMetadataManager {
         FeatureUpdate.UpgradeType upgradeType = desiredMetadataLevel > currentMetadataLevel ? FeatureUpdate.UpgradeType.UPGRADE : FeatureUpdate.UpgradeType.SAFE_DOWNGRADE;
         FeatureUpdate featureUpdate = new FeatureUpdate(desiredMetadataLevel, upgradeType);
 
-        LOGGER.debugCr(reconciliation, "Updating metadata version from {} to {}", currentMetadataLevel, desiredMetadataLevel);
+        LOGGER.infoCr(reconciliation, "Updating metadata version from {} to {}", currentMetadataLevel, desiredMetadataLevel);
 
         return VertxUtil
                 .kafkaFutureToVertxFuture(reconciliation, vertx, kafkaAdmin.updateFeatures(Map.of(METADATA_VERSION_KEY, featureUpdate), options).values().get(METADATA_VERSION_KEY))

@@ -283,11 +283,6 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
         // This also validates that the Kafka version is supported
         result.kafkaVersion = versions.supportedVersion(kafkaClusterSpec.getVersion());
 
-        // Sets the KRaft metadata version and validates it is supported
-        String metadataVersion = kafkaClusterSpec.getMetadataVersion() != null ? kafkaClusterSpec.getMetadataVersion() : result.kafkaVersion.metadataVersion();
-        KRaftUtils.validateMetadataVersion(metadataVersion);
-        result.metadataVersion = metadataVersion;
-
         // Number of broker nodes => used later in various validation methods
         long numberOfBrokers = result.brokerNodes().size();
 
@@ -1757,6 +1752,16 @@ public class KafkaCluster extends AbstractModel implements SupportsMetrics, Supp
      */
     public String getMetadataVersion() {
         return metadataVersion;
+    }
+
+    /**
+     * Sets the KRaft metadata version
+     *
+     * @param metadataVersion   KRaft metadata version
+     */
+    public void setMetadataVersion(String metadataVersion)   {
+        KRaftUtils.validateMetadataVersion(metadataVersion);
+        this.metadataVersion = metadataVersion;
     }
 
     /**

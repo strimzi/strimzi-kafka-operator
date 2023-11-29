@@ -214,6 +214,11 @@ public class KafkaReconciler {
             this.kafka.setLogMessageFormatVersion(versionChange.logMessageFormatVersion());
         }
 
+        // Sets the metadata version used in KRaft
+        if (isKRaftEnabled && versionChange.metadataVersion() != null) {
+            this.kafka.setMetadataVersion(versionChange.metadataVersion());
+        }
+
         this.clusterCa = clusterCa;
         this.clientsCa = clientsCa;
         this.maintenanceWindows = kafkaCr.getSpec().getMaintenanceTimeWindows();

@@ -85,7 +85,8 @@ public class KafkaAssemblyOperatorManualRollingUpdatesTest {
             VERSIONS.defaultVersion(),
             VERSIONS.defaultVersion(),
             VERSIONS.defaultVersion().protocolVersion(),
-            VERSIONS.defaultVersion().messageVersion()
+            VERSIONS.defaultVersion().messageVersion(),
+            VERSIONS.defaultVersion().metadataVersion()
     );
     private final static String NAMESPACE = "testns";
     private final static String CLUSTER_NAME = "my-cluster";
