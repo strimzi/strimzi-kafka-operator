@@ -53,7 +53,7 @@ spec:
                 description: The number of pods in the Kafka Connect group. Defaults to `3`.
               image:
                 type: string
-                description: The docker image for the pods.
+                description: "The Docker image used for generating Kafka Connect pods. If no image name is explicitly specified, it is determined based on the `version` configuration. If a version is not configured, the image name corresponds to the default version specified in the Cluster Operator configuration."
               connectCluster:
                 type: string
                 description: The cluster alias used for Kafka Connect. The value must match the alias of the *target* Kafka cluster as specified in the `spec.clusters` configuration. The target Kafka cluster is used by the underlying Kafka Connect framework for its internal topics.

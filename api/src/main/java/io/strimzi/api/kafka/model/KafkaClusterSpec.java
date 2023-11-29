@@ -84,9 +84,9 @@ public class KafkaClusterSpec implements HasConfigurableMetrics, HasConfigurable
         this.version = version;
     }
 
-    @Description("The KRaft metadata.version that should be used by this Kafka cluster. " +
-            "This field will be ignored when running in ZooKeeper mode. " +
-            "Defaults to {DefaultKafkaMetadataVersion}.")
+    @Description("The KRaft `metadata.version` used by the Kafka cluster. " +
+            "This property is ignored when running in ZooKeeper mode. " +
+            "If the property is not set, it defaults to {DefaultKafkaMetadataVersion} based on the `version` property.")
     public String getMetadataVersion() {
         return metadataVersion;
     }
@@ -159,7 +159,11 @@ public class KafkaClusterSpec implements HasConfigurableMetrics, HasConfigurable
         this.replicas = replicas;
     }
 
-    @Description("The docker image for the pods. The default value depends on the configured `Kafka.spec.kafka.version`.")
+    @Description("The Docker image used for generating Kafka pods. "
+        + "If the property is not set, the default Kafka image version is determined based on the `version` configuration. "  
+        + "If a version is not configured, the image name corresponds to the default version specified in the Cluster Operator configuration. "
+        + "Changing the Kafka image version does not automatically update the image versions for other components, such as Kafka Exporter. " 
+        + "Specific image versions for these components must be set as needed.")
     @JsonInclude(JsonInclude.Include.NON_DEFAULT)
     public String getImage() {
         return image;

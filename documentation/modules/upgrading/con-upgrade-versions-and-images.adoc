@@ -7,8 +7,8 @@
 
 When upgrading Kafka, consider your settings for the `STRIMZI_KAFKA_IMAGES` environment variable and the `Kafka.spec.kafka.version` property.
 
-* Each `Kafka` resource can be configured with a `Kafka.spec.kafka.version`.
-* The Cluster Operator's `STRIMZI_KAFKA_IMAGES` environment variable provides a mapping between the Kafka version and the image to be used when that version is requested in a given `Kafka` resource.
+* Each `Kafka` resource can be configured with a `Kafka.spec.kafka.version`, which defaults to the latest supported Kafka version ({DefaultKafkaVersion}) if not specified.
+* The Cluster Operator's `STRIMZI_KAFKA_IMAGES` environment variable provides a mapping (<kafka_version>=<image>) between a Kafka version and the image to be used when a specific Kafka version is requested in a given `Kafka` resource. For example, {DefaultKafkaVersion}={DockerKafkaImageCurrent}.
 ** If `Kafka.spec.kafka.image` is not configured, the default image for the given version is used.
 ** If `Kafka.spec.kafka.image` is configured, the default image is overridden.
 

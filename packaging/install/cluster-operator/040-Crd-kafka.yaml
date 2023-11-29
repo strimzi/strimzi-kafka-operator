@@ -57,14 +57,14 @@ spec:
                     description: "The Kafka broker version. Defaults to {DefaultKafkaVersion}. Consult the user documentation to understand the process required to upgrade or downgrade the version."
                   metadataVersion:
                     type: string
-                    description: "The KRaft metadata.version that should be used by this Kafka cluster. This field will be ignored when running in ZooKeeper mode. Defaults to {DefaultKafkaMetadataVersion}."
+                    description: "The KRaft `metadata.version` used by the Kafka cluster. This property is ignored when running in ZooKeeper mode. If the property is not set, it defaults to {DefaultKafkaMetadataVersion} based on the `version` property."
                   replicas:
                     type: integer
                     minimum: 1
                     description: The number of pods in the cluster.
                   image:
                     type: string
-                    description: The docker image for the pods. The default value depends on the configured `Kafka.spec.kafka.version`.
+                    description: "The Docker image used for generating Kafka pods. If the property is not set, the default Kafka image version is determined based on the `version` configuration. If a version is not configured, the image name corresponds to the default version specified in the Cluster Operator configuration. Changing the Kafka image version does not automatically update the image versions for other components, such as Kafka Exporter. Specific image versions for these components must be set as needed."
                   listeners:
                     type: array
                     minItems: 1
@@ -1767,7 +1767,7 @@ spec:
                     description: The number of pods in the cluster.
                   image:
                     type: string
-                    description: The docker image for the pods.
+                    description: "The Docker image used for generating ZooKeeper pods. If no image name is explicitly specified, it is determined based on the Kafka version set in `spec.kafka.version`. If a version is not configured, the image name corresponds to the default version specified in the Cluster Operator configuration."
                   storage:
                     type: object
                     properties:
@@ -3916,7 +3916,7 @@ spec:
                 properties:
                   image:
                     type: string
-                    description: The docker image for the pods.
+                    description: "The docker image used for generating Cruise Control pods. If no image name is explicitly specified, the image name corresponds to the name specified in the Cluster Operator configuration. If an image name is not defined in the Cluster Operator configuration, a default value is used."
                   tlsSidecar:
                     type: object
                     properties:
@@ -5562,7 +5562,7 @@ spec:
                 properties:
                   image:
                     type: string
-                    description: The docker image for the pods.
+                    description: "The docker image used for generating the Kafka Exporter pods.If no image name is explicitly specified, the image name corresponds to the version specified in the Cluster Operator configuration. If an image name is not defined in the Cluster Operator configuration, a default value is used."
                   groupRegex:
                     type: string
                     description: Regular expression to specify which consumer groups to collect. Default value is `.*`.

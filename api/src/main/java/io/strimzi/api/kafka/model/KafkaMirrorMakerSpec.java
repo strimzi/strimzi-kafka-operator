@@ -74,7 +74,9 @@ public class KafkaMirrorMakerSpec extends Spec implements HasConfigurableMetrics
         this.version = version;
     }
 
-    @Description("The docker image for the pods.")
+    @Description("The Docker image used for generating Kafka MirrorMaker pods. "
+        + "If no image name is explicitly specified, it is determined based on the `version` configuration. "
+        + "If a version is not configured, the image name corresponds to the default version specified in the Cluster Operator configuration.")
     @JsonInclude(JsonInclude.Include.NON_DEFAULT)
     public String getImage() {
         return image;

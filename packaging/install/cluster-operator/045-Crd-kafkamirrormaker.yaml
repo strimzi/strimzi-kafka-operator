@@ -64,7 +64,7 @@ spec:
                 description: The number of pods in the `Deployment`.
               image:
                 type: string
-                description: The docker image for the pods.
+                description: "The Docker image used for generating Kafka MirrorMaker pods. If no image name is explicitly specified, it is determined based on the `version` configuration. If a version is not configured, the image name corresponds to the default version specified in the Cluster Operator configuration."
               consumer:
                 type: object
                 properties:
