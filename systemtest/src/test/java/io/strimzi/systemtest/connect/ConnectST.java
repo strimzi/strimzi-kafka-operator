@@ -19,6 +19,7 @@ import io.fabric8.kubernetes.api.model.SecretVolumeSourceBuilder;
 import io.strimzi.api.kafka.Crds;
 import io.strimzi.api.kafka.model.AutoRestartBuilder;
 import io.strimzi.api.kafka.model.CertSecretSourceBuilder;
+import io.strimzi.api.kafka.model.ConnectorState;
 import io.strimzi.api.kafka.model.KafkaConnect;
 import io.strimzi.api.kafka.model.KafkaConnectResources;
 import io.strimzi.api.kafka.model.KafkaConnector;
@@ -79,6 +80,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.function.Consumer;
 
 import static io.strimzi.systemtest.TestConstants.ACCEPTANCE;
 import static io.strimzi.systemtest.TestConstants.COMPONENT_SCALING;
@@ -168,6 +170,20 @@ class ConnectST extends AbstractST {
         LOGGER.info("Docker images verified");
     }
 
+    /**
+     * @description This test case verifies pausing, stopping and running of connector via 'spec.pause' or 'spec.state' specification.
+     *
+     * @steps
+     *  1. - Deploy prerequisites for running FileSink KafkaConnector, that is KafkaTopic, Kafka cluster and KafkaConnect.
+     *     - All resources are deployed and ready.
+     *  2. - Deploy FileSink KafkaConnector and Produce and consume messages in given KafkaTopic and .
+     *     - Clients can produce and consume messages.
+     *  3. - Trigger manual Rolling Update.
+     *     - Rolling update is triggered and completed shortly after.
+     *
+     * @usecase
+     *  - kafka-node-pool
+     */
     @ParallelNamespaceTest
     @Tag(SANITY)
     @Tag(SMOKE)
@@ -193,7 +209,7 @@ class ConnectST extends AbstractST {
 
         KafkaConnectUtils.waitUntilKafkaConnectRestApiIsAvailable(testStorage.getNamespaceName(), kafkaConnectPodName);
 
-        LOGGER.info("Creating KafkaConnector with 'pause: true'");
+        LOGGER.info("Creating KafkaConnector without 'spec.pause' or 'spec.state' specified");
 
         resourceManager.createResourceWithWait(extensionContext, KafkaConnectorTemplates.kafkaConnector(testStorage.getClusterName())
             .editSpec()
@@ -237,6 +253,89 @@ class ConnectST extends AbstractST {
         LOGGER.info("Unpausing KafkaConnector, messages should again appear to FileSink file");
         KafkaConnectorResource.replaceKafkaConnectorResourceInSpecificNamespace(testStorage.getClusterName(),
             kafkaConnector -> kafkaConnector.getSpec().setPause(false), testStorage.getNamespaceName());
+
+        KafkaConnectorUtils.waitForConnectorReady(testStorage.getNamespaceName(), testStorage.getClusterName());
+
+        KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(testStorage.getNamespaceName(), kafkaConnectPodName, TestConstants.DEFAULT_SINK_FILE_PATH, "99");
+
+        // TODO add connector  state {- paused - stopped - running}
+        // state.stopped -> state.running
+        LOGGER.info("Stopping KafkaConnector: {}", testStorage.getClusterName());
+        KafkaConnectorResource.replaceKafkaConnectorResourceInSpecificNamespace(testStorage.getClusterName(),
+            kafkaConnector -> kafkaConnector.getSpec().setState(ConnectorState.STOPPED), testStorage.getNamespaceName());
+
+        LOGGER.info("Clearing FileSink file to check if KafkaConnector will be really paused");
+        KafkaConnectUtils.clearFileSinkFile(testStorage.getNamespaceName(), kafkaConnectPodName, TestConstants.DEFAULT_SINK_FILE_PATH);
+
+        resourceManager.createResourceWithWait(extensionContext, kafkaClients.producerStrimzi(), kafkaClients.consumerStrimzi());
+        ClientUtils.waitForClientsSuccess(testStorage);
+
+        LOGGER.info("Because KafkaConnector is paused, no messages should appear to FileSink file");
+        assertThrows(Exception.class, () -> KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(testStorage.getNamespaceName(), kafkaConnectPodName, TestConstants.DEFAULT_SINK_FILE_PATH, "99"));
+
+        LOGGER.info("Unpausing KafkaConnector, messages should again appear to FileSink file");
+        KafkaConnectorResource.replaceKafkaConnectorResourceInSpecificNamespace(testStorage.getClusterName(),
+            kafkaConnector -> kafkaConnector.getSpec().setState(ConnectorState.RUNNING), testStorage.getNamespaceName());
+
+        KafkaConnectorUtils.waitForConnectorReady(testStorage.getNamespaceName(), testStorage.getClusterName());
+
+        KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(testStorage.getNamespaceName(), kafkaConnectPodName, TestConstants.DEFAULT_SINK_FILE_PATH, "99");
+
+        // state.paused -> state.running
+
+        LOGGER.info("Stopping KafkaConnector: {}", testStorage.getClusterName());
+        KafkaConnectorResource.replaceKafkaConnectorResourceInSpecificNamespace(testStorage.getClusterName(),
+            kafkaConnector -> kafkaConnector.getSpec().setState(ConnectorState.PAUSED), testStorage.getNamespaceName());
+
+        LOGGER.info("Clearing FileSink file to check if KafkaConnector will be really paused");
+        KafkaConnectUtils.clearFileSinkFile(testStorage.getNamespaceName(), kafkaConnectPodName, TestConstants.DEFAULT_SINK_FILE_PATH);
+
+        resourceManager.createResourceWithWait(extensionContext, kafkaClients.producerStrimzi(), kafkaClients.consumerStrimzi());
+        ClientUtils.waitForClientsSuccess(testStorage);
+
+        LOGGER.info("Because KafkaConnector is paused, no messages should appear to FileSink file");
+        assertThrows(Exception.class, () -> KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(testStorage.getNamespaceName(), kafkaConnectPodName, TestConstants.DEFAULT_SINK_FILE_PATH, "99"));
+
+        LOGGER.info("Unpausing KafkaConnector, messages should again appear to FileSink file");
+        KafkaConnectorResource.replaceKafkaConnectorResourceInSpecificNamespace(testStorage.getClusterName(),
+            kafkaConnector -> kafkaConnector.getSpec().setState(ConnectorState.RUNNING), testStorage.getNamespaceName());
+
+        KafkaConnectorUtils.waitForConnectorReady(testStorage.getNamespaceName(), testStorage.getClusterName());
+
+        KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(testStorage.getNamespaceName(), kafkaConnectPodName, TestConstants.DEFAULT_SINK_FILE_PATH, "99");
+
+    }
+
+    void helper(TestStorage testStorage, String kafkaConnectPodName, Consumer<KafkaConnector> blockEditor, Consumer<KafkaConnector> unblockEditor){
+
+        LOGGER.info("Stopping KafkaConnector: {}", testStorage.getClusterName());
+        KafkaConnectorResource.replaceKafkaConnectorResourceInSpecificNamespace(testStorage.getClusterName(),
+            kafkaConnector -> kafkaConnector.getSpec().setState(ConnectorState.PAUSED), testStorage.getNamespaceName());
+
+        LOGGER.info("Clearing FileSink file to check if KafkaConnector will be really paused");
+        KafkaConnectUtils.clearFileSinkFile(testStorage.getNamespaceName(), kafkaConnectPodName, TestConstants.DEFAULT_SINK_FILE_PATH);
+
+        KafkaClients kafkaClients = new KafkaClientsBuilder()
+            .withTopicName(testStorage.getTopicName())
+            .withMessageCount(testStorage.getMessageCount())
+            .withBootstrapAddress(KafkaResources.plainBootstrapAddress(testStorage.getClusterName()))
+            .withProducerName(testStorage.getProducerName())
+            .withConsumerName(testStorage.getConsumerName())
+            .withNamespaceName(testStorage.getNamespaceName())
+            .build();
+
+        resourceManager.createResourceWithWait(testStorage.getExtensionContext(), kafkaClients.producerStrimzi(), kafkaClients.consumerStrimzi());
+        ClientUtils.waitForClientsSuccess(testStorage);
+
+        resourceManager.createResourceWithWait(testStorage.getExtensionContext(), kafkaClients.producerStrimzi(), kafkaClients.consumerStrimzi());
+        ClientUtils.waitForClientsSuccess(testStorage);
+
+        LOGGER.info("Because KafkaConnector is paused, no messages should appear to FileSink file");
+        assertThrows(Exception.class, () -> KafkaConnectUtils.waitForMessagesInKafkaConnectFileSink(testStorage.getNamespaceName(), kafkaConnectPodName, TestConstants.DEFAULT_SINK_FILE_PATH, "99"));
+
+        LOGGER.info("Unpausing KafkaConnector, messages should again appear to FileSink file");
+        KafkaConnectorResource.replaceKafkaConnectorResourceInSpecificNamespace(testStorage.getClusterName(),
+            kafkaConnector -> kafkaConnector.getSpec().setState(ConnectorState.RUNNING), testStorage.getNamespaceName());
 
         KafkaConnectorUtils.waitForConnectorReady(testStorage.getNamespaceName(), testStorage.getClusterName());
 
